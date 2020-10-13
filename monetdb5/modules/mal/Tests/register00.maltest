@@ -1,0 +1,8 @@
+statement ok
+language.register("user","mytest","io.print(\"hello world\");","first test")
+
+query T rowsort
+mdb.list("user","mytest")
+----
+end user.mytest;
+

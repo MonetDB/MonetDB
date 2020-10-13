@@ -1,0 +1,36 @@
+statement ok
+function tst():void
+
+statement ok
+	i:= mdb.getStackDepth()
+
+statement ok
+	io.printf("stack depth %d\n",i)
+
+statement ok
+	(h,t):= mdb.getStackTrace()
+
+statement ok
+	io.print(h,t)
+
+statement ok
+	(b0,b1):= mdb.getStackFrame(0)
+
+statement ok
+	io.print(b0,b1)
+
+statement ok
+	(c0,c1):= mdb.getStackFrame(1)
+
+statement ok
+	io.print(c0,c1)
+
+statement ok
+	(d0,d1):= mdb.getStackFrame(2)
+
+statement ok
+end tst
+
+statement error
+user.tst()
+

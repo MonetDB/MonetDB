@@ -1,0 +1,69 @@
+statement ok
+b := bat.new(:lng)
+
+statement ok
+bat.append(b,0:lng)
+
+statement ok
+bat.append(b,1:lng)
+
+statement ok
+bat.append(b,2:lng)
+
+statement ok
+bat.append(b,3:lng)
+
+statement ok
+bat.append(b,4:lng)
+
+statement ok
+bat.append(b,5:lng)
+
+statement ok
+bat.append(b,6:lng)
+
+statement ok
+bat.append(b,7:lng)
+
+statement ok
+bat.append(b,8:lng)
+
+statement ok
+bat.append(b,9:lng)
+
+statement ok
+b1 := bat.partition(b,2,0)
+
+statement error
+io.print(b1)
+
+statement ok
+b2 := bat.partition(b,2,1)
+
+statement error
+io.print(b2)
+
+statement ok
+c1 := bat.partition(b1,2,0)
+
+statement error
+io.print(c1)
+
+statement ok
+c2 := bat.partition(b1,2,1)
+
+statement error
+io.print(c2)
+
+statement ok
+d1 := bat.partition(b2,2,0)
+
+statement error
+io.print(d1)
+
+statement ok
+d2 := bat.partition(b2,2,1)
+
+statement error
+io.print(d2)
+

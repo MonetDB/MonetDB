@@ -1,0 +1,166 @@
+statement ok
+b1:= bat.new(:int)
+
+statement ok
+b2:= bat.new(:int)
+
+statement ok
+b3:= bat.new(:int)
+
+statement ok
+bat.append(b1,1)
+
+statement ok
+bat.append(b1,1)
+
+statement ok
+bat.append(b1,1)
+
+statement ok
+bat.append(b1,1)
+
+statement ok
+bat.append(b1,2)
+
+statement ok
+bat.append(b1,2)
+
+statement ok
+bat.append(b1,2)
+
+statement ok
+bat.append(b1,2)
+
+statement ok
+bat.append(b2,3)
+
+statement ok
+bat.append(b2,3)
+
+statement ok
+bat.append(b2,4)
+
+statement ok
+bat.append(b2,4)
+
+statement ok
+bat.append(b2,3)
+
+statement ok
+bat.append(b2,3)
+
+statement ok
+bat.append(b2,4)
+
+statement ok
+bat.append(b2,4)
+
+statement ok
+bat.append(b3,5)
+
+statement ok
+bat.append(b3,6)
+
+statement ok
+bat.append(b3,5)
+
+statement ok
+bat.append(b3,6)
+
+statement ok
+bat.append(b3,5)
+
+statement ok
+bat.append(b3,6)
+
+statement ok
+bat.append(b3,5)
+
+statement ok
+bat.append(b3,6)
+
+query TIII rowsort
+io.print(b1,b2,b3)
+----
+32 values hashing to ef28dc137d9882eb8b3fa41c4ff3c11d
+
+statement ok
+(g1,grp,ext):= group.multicolumn(b1)
+
+query TT rowsort
+io.print(g1)
+----
+16 values hashing to 43216dd69850bd7771aa59801d26d054
+
+statement ok
+(g2,grp,ext):= group.multicolumn(b2)
+
+query TT rowsort
+io.print(g2)
+----
+16 values hashing to 43216dd69850bd7771aa59801d26d054
+
+statement ok
+(g3,grp,ext):= group.multicolumn(b3)
+
+query TT rowsort
+io.print(g3)
+----
+16 values hashing to 43216dd69850bd7771aa59801d26d054
+
+statement ok
+(g1_1,grp,ext):= group.multicolumn(b1,b1)
+
+query TT rowsort
+io.print(g1_1)
+----
+16 values hashing to 43216dd69850bd7771aa59801d26d054
+
+statement ok
+(g1_2,grp,ext):= group.multicolumn(b1,b2)
+
+query TT rowsort
+io.print(g1_2)
+----
+16 values hashing to d2166818a3056348d4cb02cfcd5bb8d4
+
+statement ok
+(g1_3,grp,ext):= group.multicolumn(b1,b3)
+
+query TT rowsort
+io.print(g1_3)
+----
+16 values hashing to d2166818a3056348d4cb02cfcd5bb8d4
+
+statement ok
+(g1_1_1,grp,ext):= group.multicolumn(b1,b1,b1)
+
+query TT rowsort
+io.print(g1_1_1)
+----
+16 values hashing to 43216dd69850bd7771aa59801d26d054
+
+statement ok
+(g1_2_2,grp,ext):= group.multicolumn(b1,b2,b2)
+
+query TT rowsort
+io.print(g1_2_2)
+----
+16 values hashing to d2166818a3056348d4cb02cfcd5bb8d4
+
+statement ok
+(g1_3_3,grp,ext):= group.multicolumn(b1,b3,b3)
+
+query TT rowsort
+io.print(g1_3_3)
+----
+16 values hashing to d2166818a3056348d4cb02cfcd5bb8d4
+
+statement ok
+(g1_2_3,grp,ext):= group.multicolumn(b1,b2,b3)
+
+query TT rowsort
+io.print(g1_2_3)
+----
+16 values hashing to 41e161aa8812c92d3bc5859ba20cbe1c
+

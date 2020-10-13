@@ -64,6 +64,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             ('.py',           '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
+            ('.maltest',      '.maltest','maltest','MAL'),
             ('.malC',         '.malC',   'mal',    'MAL'),
             #('_s00.malC',     '.malC',   'malXs',  'MAL'),
             #('_p00.malC',     '.malC',   'malXp',  'MAL'),

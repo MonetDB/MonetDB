@@ -29,7 +29,7 @@ mapi.put(mid,"low",low);
 mapi.rpc(mid,"e:=algebra.select(b,d,low,7,true,true,false);");
 mapi.rpc(mid,"i:=aggr.count(e);");
 i:lng:= mapi.rpc(mid,"io.print(i);");
-io.printf(" count %d\n",i);
+io.printf("#count %d\n",i);
 d:bat[:int]:= mapi.rpc(mid,"e1:=algebra.projection(e,b);io.print(e1);");
 io.print(d);
 mapi.disconnect(mid);

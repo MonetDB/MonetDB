@@ -1,0 +1,18 @@
+statement ok
+fs:= inspect.getEnvironment("mapi_port")
+
+statement ok
+port := calc.int(fs)
+
+statement ok
+mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal")
+
+statement error
+mapi.rpc(mid,"io.print(d);")
+
+statement error
+io.print("done")
+
+statement ok
+mapi.disconnect(mid)
+

@@ -7,6 +7,8 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
 import pymonetdb
+from MonetDBtesting.mapicursor import MapiCursor
+import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
@@ -19,6 +21,8 @@ parser.add_argument('--port', action='store', type=int, default=50000,
                     help='port the server listens on')
 parser.add_argument('--database', action='store', default='demo',
                     help='name of the database')
+parser.add_argument('--language', action='store', default='sql',
+                    help='language to connect to the database')
 parser.add_argument('--sort', action='store', default='rowsort',
                     choices=['nosort','rowsort','valuesort'],
                     help='how to sort the values')
@@ -28,13 +32,24 @@ parser.add_argument('--results', action='store', type=argparse.FileType('w'),
                     help='file to store results of queries')
 opts = parser.parse_args()
 
-dbh = pymonetdb.connect(username='monetdb',
+if opts.language == 'sql':
+    dbh = pymonetdb.connect(username='monetdb',
                         password='monetdb',
                         hostname=opts.host,
                         port=opts.port,
                         database=opts.database,
                         autocommit=True)
-crs = dbh.cursor()
+    crs = dbh.cursor()
+else:
+    dbh = malmapi.Connection()
+    dbh.connect(
+                        database=opts.database,
+                        username='monetdb',
+                        password='monetdb',
+                        language='mal',
+                        hostname=opts.host,
+                        port=opts.port)
+    crs = MapiCursor(dbh)
 
 def convertresult(columns, data):
     ndata = []

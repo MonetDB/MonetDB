@@ -1,0 +1,49 @@
+statement ok
+i:=1
+
+statement ok
+in:= nil:int
+
+query T rowsort
+io.printf("int %d %d\n",i,in)
+----
+int 1 nil
+
+query T rowsort
+io.printf("int %d %d %d %d\n",i,in,i,in)
+----
+int 1 nil 1 nil
+
+statement ok
+f:= 3.14
+
+statement ok
+if:= nil:flt
+
+query T rowsort
+io.printf("float mix %f %d\n",f,if)
+----
+float mix 3.140000 nil
+
+statement ok
+l:=1:lng
+
+statement ok
+il:= nil:lng
+
+query T rowsort
+io.printf("long mix %d %d\n",l,il)
+----
+long mix 1 nil
+
+statement ok
+b:= true
+
+statement ok
+ib:= nil:bit
+
+query T rowsort
+io.printf("bit mix %d %d\n",b,ib)
+----
+bit mix 1 nil
+

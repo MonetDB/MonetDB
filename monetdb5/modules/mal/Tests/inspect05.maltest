@@ -1,0 +1,33 @@
+statement ok
+m:= inspect.getModule()
+
+statement ok
+m0:= algebra.select(m,nil:bat[:oid],"bat", "bat", true,true,false);	# limit the list
+k:= inspect.getKind()
+
+statement ok
+f:= inspect.getFunction()
+
+statement ok
+s:= inspect.getSignatures()
+
+statement ok
+f0:= algebra.projection(m0,f)
+
+statement ok
+(fv,forder):= algebra.sort(f0,false,false,true)
+
+statement ok
+m1:= algebra.projectionpath(forder,m0,m)
+
+statement ok
+k0:= algebra.projectionpath(forder,m0,k)
+
+statement ok
+s0:= algebra.projectionpath(forder,m0,s)
+
+query TTTTT rowsort
+io.print(fv,k0,m1,s0)
+----
+370 values hashing to db21c43b48eb6b807e7cc0c310d3663b
+

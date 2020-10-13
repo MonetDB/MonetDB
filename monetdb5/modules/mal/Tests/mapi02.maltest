@@ -1,0 +1,59 @@
+statement ok
+fs:= inspect.getEnvironment("mapi_port")
+
+statement ok
+port := calc.int(fs)
+
+query T rowsort
+io.printf("port %d\n",port)
+----
+p
+
+statement error
+mid:= mapi.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal")
+
+statement error
+mapi.rpc(mid,"include sql;sql.init();")
+
+statement error
+io.print("ready for remote SQL interaction")
+
+statement error
+b:bat[:void,:int] := mapi.bind(mid,"sys","ptables","schema_id",0)
+
+statement error
+c:=algebra.select(b,nil:bat[:oid],0,6000, true,true,false)
+
+statement error
+io.print(c)
+
+statement error
+d:=algebra.select(b,nil:bat[:oid],5,6000, true,true,false)
+
+statement ok
+low:= 5+1
+
+statement error
+io.print("kk")
+
+statement error
+e:=algebra.select(d,nil:bat[:oid],low,7, true,true,false)
+
+statement error
+io.print("k2")
+
+statement error
+i:=aggr.count(e)
+
+statement error
+io.printf(" count %d\n",i)
+
+statement error
+io.print(d)
+
+statement error
+mapi.disconnect(mid)
+
+statement ok
+optimizer.remoteQueries()
+

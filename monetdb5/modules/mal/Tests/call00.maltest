@@ -1,0 +1,53 @@
+statement ok
+function tst(i:int,s:str):bit
+
+statement ok
+	j:= i+1
+
+statement ok
+	io.print(j)
+
+statement ok
+	format:= "hello %s\n"
+
+statement ok
+	io.printf(format,s)
+
+statement ok
+	return tst:=true
+
+statement ok
+end tst
+
+statement ok
+d:= inspect.getSignature("user","tst")
+
+query TT rowsort
+io.print(d)
+----
+@
+(i:int, s:str):bit;
+
+statement error
+user.tst(1,"world")
+
+statement ok
+m:=inspect.getSource("user","tst")
+
+statement error
+io.print(m)
+
+statement ok
+language.call(m)
+
+statement ok
+d:= inspect.getSignature("user","tst")
+
+query TT rowsort
+io.print(d)
+----
+@
+(i:int, s:str):bit;
+@
+(i:int, s:str):bit;
+

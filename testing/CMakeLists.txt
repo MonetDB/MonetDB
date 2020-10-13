@@ -144,6 +144,8 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     malcheck.py
     sqllogictest.py
+    mapicursor.py
+    malmapi.py
     helpers.py
     DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)

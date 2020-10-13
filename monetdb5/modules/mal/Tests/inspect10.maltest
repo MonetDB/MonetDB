@@ -1,0 +1,40 @@
+statement ok
+function dummy(i:int)
+
+statement ok
+	io.print(i)
+
+statement ok
+	b:= mdb.getDefinition()
+
+statement ok
+	io.print(b)
+
+statement ok
+	mdb.list()
+
+statement ok
+end dummy
+
+statement error
+user.dummy(1)
+
+query T rowsort
+io.printf("get function properties\n")
+----
+get function properties
+
+statement ok
+l:= inspect.getSignature("user","dummy")
+
+query TT rowsort
+io.print(l)
+----
+@
+(i:int):void;
+
+query T rowsort
+mdb.list("user","dummy")
+----
+end user.dummy;
+

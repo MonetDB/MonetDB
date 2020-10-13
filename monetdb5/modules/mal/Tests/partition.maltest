@@ -1,0 +1,65 @@
+statement ok
+function tst()
+
+statement ok
+b:= bat.new(:int)
+
+statement ok
+bat.append(b,1)
+
+statement ok
+bat.append(b,2)
+
+statement ok
+bat.append(b,3)
+
+statement ok
+bat.append(b,4)
+
+statement ok
+bat.append(b,5)
+
+statement ok
+c:= bat.partition(b,2,0)
+
+statement ok
+io.print(c)
+
+statement ok
+d:= bat.partition(b,2,1)
+
+statement ok
+io.print(d)
+
+statement ok
+(b1,b2):= bat.partition(b)
+
+statement ok
+io.print(b1)
+
+statement ok
+io.print(b2)
+
+statement ok
+b3:= bat.partition(b)
+
+statement ok
+io.print(b3)
+
+statement ok
+e:= bat.partition(b,2,-1)
+
+statement ok
+io.print(e)
+
+statement ok
+end tst
+
+query T rowsort
+mdb.List("user","tst")
+----
+end user.tst;@#[18] (0)  
+
+statement error
+tst()
+

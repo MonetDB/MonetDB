@@ -1,0 +1,31 @@
+statement ok
+namebat := bat.new( :str)
+
+statement ok
+bat.append(namebat,"tmpdocs")
+
+statement ok
+bat.append(namebat,"tmpterms")
+
+query T rowsort
+io.printf("#source:%s\n","namebat")
+----
+#source:namebat
+
+statement ok
+io.export(namebat, "namebat")
+
+statement ok
+z:= bat.new(:str)
+
+statement ok
+io.import(z,"namebat")
+
+query TT rowsort
+io.print(z)
+----
+@
+tmpdocs
+@
+tmpterms
+

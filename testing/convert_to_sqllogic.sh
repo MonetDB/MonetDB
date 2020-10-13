@@ -117,7 +117,12 @@ fi
 
 dryrun() {
     local f=$1;
-    cat $f | mktest.py --database $db --port $mapi_port;
+    ext=$(echo "${f#*.}");
+    lang='sql';
+    if [[ $ext == "malC" ]];then
+	    lang='mal'
+    fi
+    cat $f | mktest.py --database $db --port $mapi_port --language $lang;
 }
 
 work() {
@@ -126,16 +131,21 @@ work() {
     if [[ "${dry_run}" = true ]];then
         dryrun $f;
     else
+    	ext=$(echo "${f#*.}");
+    	lang='sql';
+    	if [[ $ext == "malC" ]];then
+	    lang='mal'
+    	fi
         if [[ -e $dst ]];then
             if [[ "$overwrite" = "true" ]];then
                 echo ">>> overwriting $dst ...";
-                cat $f | mktest.py --database $db --port $mapi_port > $dst;
+                cat $f | mktest.py --database $db --port $mapi_port --language $lang > $dst;
             else
                 echo "$dst already exists!"
             fi    
         else
             echo ">>> converting $f ...";
-            cat $f | mktest.py --database $db --port $mapi_port > $dst;
+            cat $f | mktest.py --database $db --port $mapi_port --language $lang > $dst;
         fi
     fi
 }
@@ -165,6 +175,10 @@ for f in $files;do
     if [[ $ext == "sql" ]];then
         bn=$(basename $f .sql);
         work $f $dst/$bn.test;
+    fi
+    if [[ $ext == "malC" ]];then
+        bn=$(basename $f .malC);
+        work $f $dst/$bn.maltest;
     fi
 done;
 stop_mserver5

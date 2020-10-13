@@ -1,0 +1,33 @@
+statement ok
+function f1()
+
+statement ok
+	io.print("hello")
+
+statement ok
+end f1
+
+statement ok
+function f2()
+
+statement ok
+	io.print("world")
+
+statement ok
+end f2
+
+statement ok
+function q()
+
+statement ok
+	language.call("user","f1")
+
+statement ok
+	language.call("user","f2")
+
+statement ok
+end q
+
+statement error
+q()
+

@@ -1094,6 +1094,8 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
     elif EXT == ".test" and not CONDITIONALS['HAVE_PYMONETDB']:
         reason = "as pymonetdb is not available."
+    elif EXT == ".maltest" and not CONDITIONALS['HAVE_PYMONETDB']:
+        reason = "as pymonetdb is not available."
     elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
@@ -1185,9 +1187,9 @@ def RunTest(env, test, oktests, pSrvr):
         TestErrFile = TST+".test.err"
 
         t0 = time.time()
-        if CALL == 'sqltest':
+        if CALL == 'sqltest' or CALL == 'maltest':
             # TODO make TestOutFile optional
-            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), TestOutFile, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests)
+            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), TestOutFile, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests, lsql= CALL == 'sqltest')
         else:
          tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
          exit_code = transform_str_return_code(tres)
@@ -1662,7 +1664,7 @@ def mapi_ping(port) :
     return False
 ### mapi_ping() #
 
-def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=False) -> (int, str):
+def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=False, lsql=True) -> (int, str):
     """
     Run SQLLogic test
     returns:
@@ -1678,7 +1680,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
         try:
             sql.connect(hostname='localhost',
                         port=int(env['MAPIPORT']),
-                        database=env['TSTDB'])
+                        database=env['TSTDB'], language='sql' if lsql else 'mal')
         except Exception as e:
             exit_code = F_SOCK
             msg = "Connection refused"

@@ -19,6 +19,8 @@
 # halt
 
 import pymonetdb
+from MonetDBtesting.mapicursor import MapiCursor
+import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
@@ -37,14 +39,25 @@ class SQLLogic:
         self.rpt = report
 
     def connect(self, username='monetdb', password='monetdb',
-                hostname='localhost', port=None, database='demo'):
-        self.dbh = pymonetdb.connect(username=username,
+                hostname='localhost', port=None, database='demo', language='sql'):
+        if language == 'sql':
+            self.dbh = pymonetdb.connect(username=username,
                                      password=password,
                                      hostname=hostname,
                                      port=port,
                                      database=database,
                                      autocommit=True)
-        self.crs = self.dbh.cursor()
+            self.crs = self.dbh.cursor()
+        else:
+            dbh = malmapi.Connection()
+            dbh.connect(
+                                     database=database,
+                                     username=username,
+                                     password=password,
+                                     language=language,
+                                     hostname=hostname,
+                                     port=port)
+            self.crs = MapiCursor(dbh)
 
     def close(self):
         if self.crs:

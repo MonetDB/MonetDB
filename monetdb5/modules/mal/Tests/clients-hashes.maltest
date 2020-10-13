@@ -1,0 +1,105 @@
+statement ok
+p := clients.md5sum("monetdb")
+
+statement error
+io.print(p)
+
+statement ok
+catch MALException:str
+
+statement ok
+io.print("clients.md5sum not available")
+
+statement ok
+exit MALException
+
+statement ok
+p := clients.sha1sum("monetdb")
+
+statement error
+io.print(p)
+
+statement ok
+catch MALException:str
+
+statement ok
+io.print("clients.sha1sum not available")
+
+statement ok
+exit MALException
+
+statement ok
+p := clients.ripemd160sum("monetdb")
+
+statement error
+io.print(p)
+
+statement ok
+catch MALException:str
+
+statement ok
+io.print("clients.ripemd160sum not available")
+
+statement ok
+exit MALException
+
+statement ok
+p := clients.sha2sum("monetdb", 224)
+
+statement error
+io.print(p)
+
+statement ok
+catch MALException:str
+
+statement ok
+io.print("clients.sha2sum (224) not available")
+
+statement ok
+exit MALException
+
+statement ok
+p := clients.sha2sum("monetdb", 256)
+
+statement error
+io.print(p)
+
+statement ok
+catch MALException:str
+
+statement ok
+io.print("clients.sha2sum (256) not available")
+
+statement ok
+exit MALException
+
+statement ok
+p := clients.sha2sum("monetdb", 384)
+
+statement error
+io.print(p)
+
+statement ok
+catch MALException:str
+
+statement ok
+io.print("clients.sha2sum (384) not available")
+
+statement ok
+exit MALException
+
+statement ok
+p := clients.sha2sum("monetdb", 512)
+
+statement error
+io.print(p)
+
+statement ok
+catch MALException:str
+
+statement ok
+io.print("clients.sha2sum (512) not available")
+
+statement ok
+exit MALException
+

@@ -1,0 +1,6 @@
+statement ok
+p := clients.getPasswordHash("monetdb")
+
+statement error
+io.print(p)
+
