@@ -237,6 +237,36 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 #MERGE INTO t2 USING (SELECT * FROM v0) AS v0 ON "isauuid"('4') WHEN MATCHED THEN UPDATE SET tc2 = INTERVAL '3' DAY;
 [ 0	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("tc0" INTEGER NOT NULL,"tc1" TINYINT,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"));
+#CREATE TABLE "sys"."t1" ("tc1" DATE);
+#COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1970-01-24
+#1970-01-24
+#1970-01-24
+[ 3	]
+#CREATE TABLE "sys"."t2" ("tc1" DATE NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"));
+#COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1970-01-25
+#1970-01-14
+#1970-01-01
+#1970-01-16
+#1970-01-19
+[ 5	]
+#create view v0(vc0) as ((select least(r'KZu', trim(case interval '4' day when interval '3' day then r'8|' when interval '3' day then null end))) 
+#intersect distinct (select distinct nullif(ifthenelse((3) not in (2.33, 4.02, -4), r'J{⹾<PBj‣r', 
+#cast(case when 62 then 0.34 when 51 then 0.3 when 34 then 0.4 end as string(274))), sql_max(r'5,賓', 
+#cast(case 3 when 43 then 44 when 0.23 then 0.3 end as string)))));
+#create view v1(vc0) as ((select abs(-4)) intersect distinct (select distinct + (radians(abs(0.4))) group by 3));
+#create view v2(vc0) as (select cast((r'|S4 흮,8GQ') not between symmetric (r'3840') and (r'n') as int));
+#create view v3(vc0) as (values (cast(((abs(0.11))-(((round(0.3, 3))<<(((-3)+(5)))))) as decimal))) with check option;
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(FALSE AS INT) as count FROM t2, t1, v2 FULL OUTER JOIN t0 ON "isauuid"(r'2A') NATURAL JOIN v1 NATURAL JOIN v3) as res;
+% .%17 # table_name
+% %17 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#ROLLBACK;
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
