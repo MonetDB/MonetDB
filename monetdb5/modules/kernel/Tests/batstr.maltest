@@ -1,0 +1,51 @@
+statement ok
+t := bat.new(:str)
+
+statement ok
+t := bat.append(t, "0123456789")
+
+statement ok
+x1 := batstr.string(t, 0)
+
+statement ok
+x2 := batstr.string(t, 3)
+
+statement ok
+x3 := batstr.string(t, 9)
+
+statement ok
+x4 := batstr.string(t, 12)
+
+statement ok
+x5 := batstr.string(t, -6)
+
+query TT rowsort
+io.print(x1)
+----
+@
+0123456789
+
+query TT rowsort
+io.print(x2)
+----
+@
+3456789
+
+query TT rowsort
+io.print(x3)
+----
+@
+9
+
+query TT rowsort
+io.print(x4)
+----
+@
+(empty)
+
+query TT rowsort
+io.print(x5)
+----
+@
+456789
+

@@ -7,7 +7,7 @@ port := calc.int(fs)
 statement ok
 mid:= mapi.reconnect("localhost",port,"s0_0","monetdb","monetdb","mal")
 
-statement ok
+statement error
 mapi.query(mid,"io.print(1);")
 
 query T rowsort

@@ -1,0 +1,2558 @@
+statement ok
+b := bat.new(:int)
+
+statement ok
+bat.append(b, 7)
+
+statement ok
+bat.append(b, 6)
+
+statement ok
+bat.append(b, 8)
+
+statement ok
+bat.append(b, nil:int)
+
+statement ok
+bat.append(b, 9)
+
+statement ok
+bat.append(b, 5)
+
+statement ok
+bat.append(b, 0)
+
+statement ok
+bat.append(b, 3)
+
+statement ok
+bat.append(b, 2)
+
+statement ok
+bat.append(b, 1)
+
+statement ok
+bat.append(b, 4)
+
+statement ok
+s := algebra.sort(b, false, false, true)
+
+statement ok
+r := algebra.sort(b, true, true, true)
+
+statement ok
+bat.setAccess(b, "r")
+
+statement ok
+bat.setAccess(s, "r")
+
+statement ok
+bat.setAccess(r, "r")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nil
+io.print("nil")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4
+io.print("4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6
+io.print("4,5,6")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+bat.orderidx(b,3)
+
+statement ok
+o := bat.getorderidx(b)
+
+query TT rowsort
+io.print(o)
+----
+22 values hashing to 672e607113a8e624dad57d2b66a73858
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nil
+io.print("nil")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4
+io.print("4")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6
+io.print("4,5,6")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, false)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, true)
+
+statement ok
+z := algebra.projection(x, b)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nil
+io.print("nil")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4
+io.print("4")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 4, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, true, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, true, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, false, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, false, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6
+io.print("4,5,6")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, true, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, true, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, false, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 3, 7, false, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, true, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, true, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, false, true, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, false, false, false)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, true, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, true, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, false, true, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(s, nil:bat[:oid], 7, 3, false, false, true)
+
+statement ok
+z := algebra.projection(x, s)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nil
+io.print("nil")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4
+io.print("0,1,2,3,4")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3
+io.print("0,1,2,3")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 5,6,7,8,9
+io.print("5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7,8,9
+io.print("4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, true, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4
+io.print("4")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, true, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, false, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, false, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, true, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,5,6,7,8,9
+io.print("0,1,2,3,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, true, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, false, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 4, 4, false, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, true, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6,7
+io.print("3,4,5,6,7")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, true, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 3,4,5,6
+io.print("3,4,5,6")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, false, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6,7
+io.print("4,5,6,7")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, false, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 4,5,6
+io.print("4,5,6")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, true, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,8,9
+io.print("0,1,2,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, true, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,7,8,9
+io.print("0,1,2,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, false, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,8,9
+io.print("0,1,2,3,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 3, 7, false, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,7,8,9
+io.print("0,1,2,3,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, true, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, true, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, false, true, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, false, false, false)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # nothing
+io.print("nothing")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, true, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, true, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, false, true, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+
+statement ok
+x := algebra.select(r, nil:bat[:oid], 7, 3, false, false, true)
+
+statement ok
+z := algebra.projection(x, r)
+
+statement ok
+z := algebra.sort(z, false, false, true)
+
+statement error
+io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+io.print("0,1,2,3,4,5,6,7,8,9")
+

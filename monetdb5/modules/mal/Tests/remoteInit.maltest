@@ -10,9 +10,6 @@ statement ok
 statement ok
         len := aggr.count(o)
 
-#statement ok
-#        io.print(len)
-
 statement ok
         io.print(o)
 
@@ -93,3 +90,4 @@ user.remote_internal_servegetbat("bat[:str]",remote_test_id_0)
 ----
 @
 oid
+
