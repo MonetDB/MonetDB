@@ -3389,6 +3389,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						 false);
 					r2->tsorted = false;
 					r2->trevsorted = false;
+					r2->tseqbase = oid_nil;
 					*r2p = r2;
 				} else {
 					GDKqsort(r1->theap.base, NULL, NULL,
