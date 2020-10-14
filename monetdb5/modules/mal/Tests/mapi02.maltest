@@ -7,7 +7,7 @@ port := calc.int(fs)
 query T rowsort
 io.printf("port %d\n",port)
 ----
-p
+port 30005
 
 statement error
 mid:= mapi.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal")
@@ -15,8 +15,10 @@ mid:= mapi.reconnect("s0_0","localhost",port,"monetdb","monetdb","mal")
 statement error
 mapi.rpc(mid,"include sql;sql.init();")
 
-statement error
+query T rowsort
 io.print("ready for remote SQL interaction")
+----
+"ready for remote SQL interaction"
 
 statement error
 b:bat[:void,:int] := mapi.bind(mid,"sys","ptables","schema_id",0)
@@ -33,14 +35,18 @@ d:=algebra.select(b,nil:bat[:oid],5,6000, true,true,false)
 statement ok
 low:= 5+1
 
-statement error
+query T rowsort
 io.print("kk")
+----
+"kk"
 
 statement error
 e:=algebra.select(d,nil:bat[:oid],low,7, true,true,false)
 
-statement error
+query T rowsort
 io.print("k2")
+----
+"k2"
 
 statement error
 i:=aggr.count(e)

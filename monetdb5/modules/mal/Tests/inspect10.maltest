@@ -16,8 +16,10 @@ statement ok
 statement ok
 end dummy
 
-statement error
+query T rowsort
 user.dummy(1)
+----
+end user.dummy;
 
 query T rowsort
 io.printf("get function properties\n")

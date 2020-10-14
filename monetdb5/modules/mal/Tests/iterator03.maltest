@@ -43,16 +43,20 @@ statement ok
 statement ok
 	pb_a := bat.append(t,ob_a)
 
-statement error
+query T rowsort
 	qb_a := io.print("build a table finished")
+----
+"build a table finished"
 
 query TT rowsort
 	io.print(t)
 ----
 14 values hashing to cc78f07158a9b8cf11962a8981a68464
 
-statement error
+query T rowsort
 	io.print("start loop")
+----
+"start loop"
 
 statement ok
 	c := 3:lng
@@ -61,14 +65,13 @@ statement ok
 barrier (mloop,chunk) := iterator.new(t,c)
 
 statement ok
-	io.print("next chunk")
-
-statement ok
 	io.print(chunk)
 
 statement ok
 	redo (mloop,chunk) := iterator.next(t,3:lng)
 
-statement error
+query TT rowsort
 exit mloop
+----
+14 values hashing to cc78f07158a9b8cf11962a8981a68464
 

@@ -40,6 +40,8 @@ mdb.setDebug(dbgmsk_restore)
 statement ok
 s:dbl := aggr.sum(b)
 
-statement error
+query T rowsort
 io.print(s)
+----
+1.000000001e+16
 

@@ -10,8 +10,8 @@ statement ok
 statement ok
         len := aggr.count(o)
 
-statement ok
-        io.print(len)
+#statement ok
+#        io.print(len)
 
 statement ok
         io.print(o)
@@ -88,6 +88,8 @@ remote_test_id_0 := bat.new( :str, 33)
 statement ok
 bat.append(remote_test_id_0, "oid":str)
 
-statement error
+query TT rowsort
 user.remote_internal_servegetbat("bat[:str]",remote_test_id_0)
-
+----
+@
+oid

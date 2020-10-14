@@ -19,8 +19,10 @@ lang := "mal"
 statement ok
 mid:= mapi.connect(hs,port,usr,pwd,lang)
 
-statement error
+query T rowsort
 io.print(mid)
+----
+1
 
 statement ok
 mapi.query(mid, "t:= 1+3; io.print(t,\"hello\");")
@@ -88,14 +90,18 @@ io.print(b)
 statement ok
 msg:str := mapi.rpc(mid,"io.print(\"hello world\");")
 
-statement error
+query T rowsort
 io.print(msg)
+----
+"hello world"
 
 statement ok
 o:oid := mapi.rpc(mid,"io.print(34@0);")
 
-statement error
+query T rowsort
 io.print(o)
+----
+34@0
 
 statement ok
 o:oid := mapi.rpc(mid,"io.print(nil:oid);")

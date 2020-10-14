@@ -43,16 +43,20 @@ statement ok
 statement ok
 	pb_a := bat.append(t,ob_a)
 
-statement error
+query T rowsort
 	qb_a := io.print("build a table finished")
+----
+"build a table finished"
 
 query TT rowsort
 	io.print(t)
 ----
 14 values hashing to cc78f07158a9b8cf11962a8981a68464
 
-statement error
+query T rowsort
 	io.print("start loop")
+----
+"start loop"
 
 statement ok
 barrier (h:oid,B2:url) := iterator.new(t)
@@ -63,6 +67,14 @@ statement ok
 statement ok
 	redo (h:oid,B2:url) := iterator.next(t)
 
-statement error
+query T rowsort
 exit h
+----
+"http://robotics.stanford.edu/icons/ "
+"http://www.cwi.nl"
+"http://www.cwi.nl/~mk/Acoi/doc/features.html"
+"http://www.cwi.nl/~monet"
+"http://www.edgeonline.com/"
+"http://www.educ.uva.nl/schoolweb/rocloka.htm"
+"http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"
 

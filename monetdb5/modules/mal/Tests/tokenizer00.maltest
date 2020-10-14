@@ -52,14 +52,18 @@ id := 4:oid
 statement ok
 t  := tokenizer.take(id)
 
-statement error
+query T rowsort
 io.print(t)
+----
+"http://www.ics.forth.gr/~lsidir/"
 
 statement ok
 id := tokenizer.locate(t)
 
-statement error
+query T rowsort
 io.print(id)
+----
+4@0
 
 statement ok
 d:bat[:oid] := tokenizer.getIndex()

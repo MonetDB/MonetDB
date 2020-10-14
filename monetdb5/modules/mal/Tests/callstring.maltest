@@ -28,6 +28,9 @@ statement ok
 statement ok
 end q
 
-statement error
+query T rowsort
 q()
+----
+"hello"
+"world"
 

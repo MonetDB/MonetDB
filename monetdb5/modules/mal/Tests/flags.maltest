@@ -1,8 +1,10 @@
 statement ok
 d := mdb.getDebug()
 
-statement error
+query T rowsort
 io.print(d)
+----
+553648138
 
 statement ok
 (f,v) := mdb.getDebugFlags()

@@ -126,6 +126,8 @@ io.print(res)
 ----
 NULL
 
-statement error
+query T rowsort
 io.print("done")
+----
+"done"
 

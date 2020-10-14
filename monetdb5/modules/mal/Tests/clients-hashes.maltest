@@ -1,8 +1,10 @@
 statement ok
 p := clients.md5sum("monetdb")
 
-statement error
+query T rowsort
 io.print(p)
+----
+"4fe67471e97aae17f10bf200ccadc4e4"
 
 statement ok
 catch MALException:str
@@ -16,8 +18,10 @@ exit MALException
 statement ok
 p := clients.sha1sum("monetdb")
 
-statement error
+query T rowsort
 io.print(p)
+----
+"4751fc28d9a64a043865922548ee7d623743bcad"
 
 statement ok
 catch MALException:str
@@ -31,8 +35,10 @@ exit MALException
 statement ok
 p := clients.ripemd160sum("monetdb")
 
-statement error
+query T rowsort
 io.print(p)
+----
+"930f000ce6242c20ed0211cc5d3612edebf33820"
 
 statement ok
 catch MALException:str
@@ -46,8 +52,10 @@ exit MALException
 statement ok
 p := clients.sha2sum("monetdb", 224)
 
-statement error
+query T rowsort
 io.print(p)
+----
+"ba11e4ad9ac60f775cf1f133a81faf32241d9c136e4d3b193bdbbf1e"
 
 statement ok
 catch MALException:str
@@ -61,8 +69,10 @@ exit MALException
 statement ok
 p := clients.sha2sum("monetdb", 256)
 
-statement error
+query T rowsort
 io.print(p)
+----
+"38e38a32871128f6c9b84c72c4b6c473e53ab084bffb37c094310045716a8247"
 
 statement ok
 catch MALException:str
@@ -76,8 +86,10 @@ exit MALException
 statement ok
 p := clients.sha2sum("monetdb", 384)
 
-statement error
+query T rowsort
 io.print(p)
+----
+"d494cbc91a0d3315210af1c2d14e3758ba7d6716393a234cf9f29d8de077110c9009dd840f9c93a5d350b739253f6bd9"
 
 statement ok
 catch MALException:str
@@ -91,8 +103,10 @@ exit MALException
 statement ok
 p := clients.sha2sum("monetdb", 512)
 
-statement error
+query T rowsort
 io.print(p)
+----
+"a73f1d86383446438ac64f56e15ada38b41fbb18f029d2181723aeb2acac6a831f60e5fdbd64ac2c8c70e035dd44cbbe3b45565ef2d58feb2821a2078c7fad35"
 
 statement ok
 catch MALException:str

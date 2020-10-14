@@ -1,8 +1,10 @@
 statement ok
 d:= clients.getId()
 
-statement error
+query T rowsort
 io.print(d)
+----
+0
 
 statement ok
 (a,b):= clients.getInfo()

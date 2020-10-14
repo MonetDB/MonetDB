@@ -143,8 +143,10 @@ io.print(bp)
 ----
 14 values hashing to 55539ce0595ae7a5b4d44ff89626af4c
 
-statement error
+query T rowsort
 io.print("Start of compound")
+----
+"Start of compound"
 
 statement ok
 (bp,bg):= algebra.firstn(b,0:lng,false,true,false)

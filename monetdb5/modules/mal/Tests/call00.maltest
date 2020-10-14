@@ -28,14 +28,18 @@ io.print(d)
 @
 (i:int, s:str):bit;
 
-statement error
+query T rowsort
 user.tst(1,"world")
+----
+hello world
 
 statement ok
 m:=inspect.getSource("user","tst")
 
-statement error
+query T rowsort
 io.print(m)
+----
+"function user.tst(i:int, s:str):bit;\n    j := calc.+(i, 1:int);\n    io.print(j);\n    format := \"hello %s\\n\";\n    io.printf(format, s);\n    return tst := true;\nend user.tst;\n"
 
 statement ok
 language.call(m)

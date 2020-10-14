@@ -77,9 +77,9 @@ statement ok
 i:lng:= mapi.rpc(mid,"io.print(i);")
 
 query T rowsort
-io.printf("#count %d\n",i)
+io.printf(" count %d\n",i)
 ----
-#count 2
+ count 2
 
 statement ok
 d:bat[:int]:= mapi.rpc(mid,"e1:=algebra.projection(e,b);io.print(e1);")
