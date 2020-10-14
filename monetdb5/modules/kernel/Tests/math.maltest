@@ -1,0 +1,76 @@
+statement ok
+b:= bat.new(:dbl)
+
+statement ok
+bat.append(b,27.0:dbl)
+
+statement ok
+bat.append(b,16.0:dbl)
+
+statement ok
+bat.append(b,nil:dbl)
+
+statement ok
+z:= batmmath.sqrt(b)
+
+query TT rowsort
+io.print(z)
+----
+@
+4.0
+@
+5.196152422706632
+@
+NULL
+
+statement ok
+zz:= batmmath.cbrt(b)
+
+query TT rowsort
+io.print(zz)
+----
+@
+2.519842099789747
+@
+3.0000000000000004
+@
+NULL
+
+statement ok
+f:= bat.new(:flt)
+
+statement ok
+bat.append(f,27.0:flt)
+
+statement ok
+bat.append(f,16.0:flt)
+
+statement ok
+bat.append(f,nil:flt)
+
+statement ok
+zf:= batmmath.sqrt(f)
+
+query TT rowsort
+io.print(zf)
+----
+@
+4.0
+@
+5.196152
+@
+NULL
+
+statement ok
+zzf:= batmmath.cbrt(f)
+
+query TT rowsort
+io.print(zzf)
+----
+@
+2.5198421
+@
+3.0
+@
+NULL
+

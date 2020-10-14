@@ -114,14 +114,32 @@ io.print(level3)
 statement ok
 cnt:bat[:lng] := tokenizer.getCount()
 
-statement error
+query TT rowsort
 io.print(cnt)
+----
+@
+2
+@
+2
+@
+5
+@
+6
 
 statement ok
 cnt:bat[:lng] := tokenizer.getCardinality()
 
-statement error
+query TT rowsort
 io.print(cnt)
+----
+@
+1
+@
+2
+@
+2
+@
+5
 
 statement ok
 tokenizer.close()
