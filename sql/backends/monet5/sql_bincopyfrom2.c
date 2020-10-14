@@ -364,7 +364,7 @@ find_type_rec(str name)
 
 
 static str
-load_column(struct type_rec *rec, BAT *bat, stream *s, int *eof_reached)
+load_column(struct type_rec *rec, BAT *bat, stream *s, lng rows_estimate, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
 	(void)rec;
@@ -376,9 +376,8 @@ load_column(struct type_rec *rec, BAT *bat, stream *s, int *eof_reached)
 		msg = rec->loader(bat, s, eof_reached);
 	} else if (rec->convert_in_place != NULL) {
 		// These types can be read directly into the BAT
-		msg = BATattach_as_bytes(bat, s, 0, rec->convert_in_place, eof_reached);
+		msg = BATattach_as_bytes(bat, s, rows_estimate, rec->convert_in_place, eof_reached);
 	} else if (rec->convert_fixed_width != NULL) {
-		// These types can be read directly into the BAT
 		msg = BATattach_fixed_width(bat, s, rec->convert_fixed_width, rec->record_size, eof_reached);
 	} else {
 		*eof_reached = 0;
@@ -499,7 +498,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 	}
 
 	// Do the work
-	msg = load_column(rec, bat, s, &eof_reached);
+	msg = load_column(rec, bat, s, nrows, &eof_reached);
 	if (eof_reached != 0 && eof_reached != 1) {
 		if (msg)
 			bailout("internal error in sql.importColumn: eof_reached not set (%s). Earlier error: %s", method, msg);
