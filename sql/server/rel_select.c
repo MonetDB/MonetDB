@@ -446,7 +446,7 @@ score_func( sql_subfunc *sf, list *tl)
 }
 
 static list *
-check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list* exps, sql_subfunc *sf, int maybe_zero_or_one)
+check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one)
 {
 	list *nexps = new_exp_list(sql->sa);
 	sql_subtype *atp = NULL;
@@ -488,15 +488,12 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list* exps, sq
 	return nexps;
 }
 
-static sql_exp *
-find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type, sql_subfunc **sf)
+sql_exp *
+find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type)
 {
-	sql_exp *e = NULL;
-	*sf = bind_func_(sql, s, fname, tl, type);
+	sql_subfunc *f = bind_func_(sql, s, fname, tl, type);
 
-	if (*sf) {
-		e = exp_op(sql->sa, exps, *sf);
-	} else if (list_length(tl)) {
+	if (!f && list_length(tl)) {
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
 		if (!funcs)
@@ -514,27 +511,17 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 				}
 			}
 		}
-		if (list_empty(funcs))
-			return NULL;
-
-		*sf = list_fetch(funcs, match);
-		if ((*sf)->func->vararg) {
-			e = exp_op(sql->sa, exps, *sf);
-		} else {
-			list *nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, *sf, 1);
-			e = NULL;
-			if (nexps)
-				e = exp_op(sql->sa, nexps, *sf);
-		}
+		if (!list_empty(funcs))
+			f = list_fetch(funcs, match);
 	}
-	return e;
-}
-
-sql_exp *
-find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
-{
-	sql_subfunc* sf = NULL;
-	return find_table_function_type(sql, s, fname, exps, tl, F_UNION, &sf);
+	if (f) {
+		if (f->func->vararg)
+			return exp_op(sql->sa, exps, f);
+		if (!list_empty(exps) && !(exps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1)))
+			return NULL;
+		return exp_op(sql->sa, exps, f);
+	}
+	return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such %s function '%s'", type == F_UNION ? "table returning" : "loader", fname);
 }
 
 static sql_rel *
@@ -609,9 +596,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		}
 	}
 
-	e = find_table_function(sql, s, fname, list_empty(exps) ? NULL : exps, tl);
-	if (!e)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such table returning function '%s'", fname);
+	if (!(e = find_table_function(sql, s, fname, list_empty(exps) ? NULL : exps, tl, F_UNION)))
+		return NULL;
 	rel = sq;
 
 	if (ast->data.lval->h->next->data.sym)
@@ -6011,10 +5997,9 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		}
 	}
 
-	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
-	if (!e || !sf)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such loader function '%s'", fname);
-
+	if (!(e = find_table_function(sql, s, fname, exps, tl, F_LOADER)))
+		return NULL;
+	sf = e->f;
 	if (sq) {
 		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
 			sql_exp *e = (sql_exp*) n->data;
