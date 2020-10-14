@@ -1,32 +1,7 @@
 START TRANSACTION;
-CREATE SEQUENCE "seq_3310" AS INTEGER;
-CREATE SEQUENCE "seq_3320" AS INTEGER;
-CREATE SEQUENCE "seq_3330" AS INTEGER;
-CREATE SEQUENCE "seq_3361" AS INTEGER;
-CREATE TABLE "sys"."video" (
-	"video_id" int NOT NULL DEFAULT next value for "sys"."seq_3310",
-	"filename" varchar(50) NOT NULL,
-	"media_uri" varchar(50) NOT NULL,
-	"media_time_point" varchar(50) NOT NULL,
-	"media_duration" varchar(50) NOT NULL,
-	"shot" int NOT NULL,
-	"framecount" int NOT NULL,
-	CONSTRAINT "video_video_id_pkey" PRIMARY KEY ("video_id")
-);
 COPY 1 RECORDS INTO "video" FROM stdin USING DELIMITERS E'\t', E'\n', '"';
 1	"20050407_mocky.mpg"	"20050407_mocky.mpg"	"T00:00:00:0F25"	"PT00H47M34S19N25F"	0	71369
-CREATE TABLE "sys"."video_segment" (
-	"video_segment_id" int NOT NULL DEFAULT next value for "sys"."seq_3320",
-	"video_id" int NOT NULL,
-	"segment" varchar(50) NOT NULL,
-	"shot" varchar(50) NOT NULL,
-	"framecount" varchar(50) NOT NULL,
-	"framenumber" int NOT NULL,
-	"framelength" int NOT NULL,
-	CONSTRAINT "video_segment_video_segment_id_pkey" PRIMARY KEY ("video_segment_id"),
-	CONSTRAINT "unq_shot_frame" UNIQUE ("framenumber", "framelength"),
-	CONSTRAINT "fk_video_segment_video_id" FOREIGN KEY ("video_id") REFERENCES "video" ("video_id")
-);
+
 COPY 71 RECORDS INTO "video_segment" FROM stdin USING DELIMITERS E'\t', E'\n', '"';
 1	1	"frame_0"	"T00:00:00:0F25"	"PT00H00M00S01N25F"	0	1
 2	1	"frame_10"	"T00:00:00:10F25"	"PT00H00M00S01N25F"	10	1
@@ -99,38 +74,7 @@ COPY 71 RECORDS INTO "video_segment" FROM stdin USING DELIMITERS E'\t', E'\n', '
 69	1	"frame_53"	"T00:00:02:3F25"	"PT00H00M00S01N25F"	53	1
 70	1	"frame_54"	"T00:00:02:4F25"	"PT00H00M00S01N25F"	54	1
 71	1	"frame_55"	"T00:00:02:5F25"	"PT00H00M00S01N25F"	55	1
-CREATE TABLE "sys"."concepts" (
-	"concepts_id" int NOT NULL DEFAULT next value for "sys"."seq_3330",
-	"video_segment_id" int NOT NULL,
-	"_2personshot_c" real,
-	"_2personshot_r" real,
-	"closeup_c" real,
-	"closeup_r" real,
-	"complete_podium_c" real,
-	"complete_podium_r" real,
-	"draaitafel_c" real,
-	"draaitafel_r" real,
-	"drummer_c" real,
-	"drummer_r" real,
-	"gitarist_c" real,
-	"gitarist_r" real,
-	"instrument_closup_c" real,
-	"instrument_closup_r" real,
-	"medium_podium_c" real,
-	"medium_podium_r" real,
-	"mediumshot_c" real,
-	"mediumshot_r" real,
-	"piano_c" real,
-	"piano_r" real,
-	"publiek_c" real,
-	"publiek_r" real,
-	"rug_artiesten_c" real,
-	"rug_artiesten_r" real,
-	"zanger_c" real,
-	"zanger_r" real,
-	CONSTRAINT "concepts_concepts_id_pkey" PRIMARY KEY ("concepts_id"),
-	CONSTRAINT "fk_concepts_video_segment_id" FOREIGN KEY ("video_segment_id") REFERENCES "video_segment" ("video_segment_id")
-);
+
 COPY 71 RECORDS INTO "concepts" FROM stdin USING DELIMITERS E'\t';
 1	1	0.00577295991	1	0.0256887991	1	0.0251864996	1	1.00000001e-07	1	0.000110772002	1	0.0902884007	1	0.00199038	1	7.84385975e-06	1	0.40575701	1	3.89837987e-05	1	0.0656920969	1	1.00000001e-07	1	1.00000001e-07	1
 2	2	0.0952574983	1	0.140557006	1	0.0421635993	1	0.000323351007	1	0.253017992	1	0.280176997	1	0.0607924014	1	0.0470448993	1	0.233169004	1	0.0635539964	1	0.201076001	1	0.120879002	1	0.386848986	1

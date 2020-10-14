@@ -19,33 +19,37 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 
 	if (dotfile == NULL)
 		return;
+	/* if environment variable DOTMONETDBFILE is set, use it */
+	/* 1. use $DOTMONETDBFILE (if set but empty do not read config file);
+	 * 2. use .monetdb;
+	 * 3. use ${XDG_CONFIG_HOME-$HOME/.config}/monetdb;
+	 * 4. use $HOME/.monetdb
+	 * (3 is standard shell syntax: use XDG_CONFIG_HOME if set, else use
+	 * $HOME/.config in its place)
+	 */
 	if ((cfile = getenv("DOTMONETDBFILE")) == NULL) {
 		/* no environment variable: use a default */
-		if ((config = fopen(".monetdb", "r")) == NULL) {
-			if ((cfile = getenv("HOME")) != NULL) {
-				int len = snprintf(buf, sizeof(buf), "%s%c.monetdb", cfile, DIR_SEP);
-				if (len == -1 || len >= FILENAME_MAX) {
-					cfile = NULL;
-				} else {
-					config = fopen(buf, "r");
-					if (config)
-						cfile = strdup(buf);
-					else
-						cfile = NULL;
+		cfile = ".monetdb";
+		if ((config = fopen(cfile, "r")) == NULL) {
+			const char *xdg = getenv("XDG_CONFIG_HOME");
+			const char *home = getenv("HOME");
+			int len = -1;
+			cfile = buf;
+			if (xdg != NULL)
+				len = snprintf(buf, sizeof(buf), "%s%cmonetdb", xdg, DIR_SEP);
+			else if (home != NULL)
+				len = snprintf(buf, sizeof(buf), "%s%c.config%cmonetdb", home, DIR_SEP, DIR_SEP);
+			if (len == -1 || len >= FILENAME_MAX || (config = fopen(buf, "r")) == NULL) {
+				if (home) {
+					len = snprintf(buf, sizeof(buf), "%s%c.monetdb", home, DIR_SEP);
+					if (len >= 0 && len < FILENAME_MAX)
+						config = fopen(buf, "r");
 				}
 			}
-		} else {
-			cfile = strdup(".monetdb");
 		}
-	} else if (*cfile == 0) {
-		/* empty environment variable: skip the file */
-		cfile = NULL;
-	} else if ((config = fopen(cfile, "r")) == NULL) {
+	} else if (*cfile != 0 && (config = fopen(cfile, "r")) == NULL) {
 		fprintf(stderr, "failed to open file '%s': %s\n",
 			cfile, strerror(errno));
-		cfile = NULL;
-	} else {
-		cfile = strdup(cfile);
 	}
 
 	*dotfile = (DotMonetdb) {0};
@@ -115,9 +119,6 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				fprintf(stderr, "%s:%d: unknown property: %s\n",
 					cfile, line, buf);
 		}
-	}
-	if (cfile)
-		free(cfile);
-	if (config)
 		fclose(config);
+	}
 }

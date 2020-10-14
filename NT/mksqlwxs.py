@@ -88,6 +88,16 @@ def main():
     print(r'        <FileSearch Id="CheckFile2" Name="gdk.h"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
+    print(r'    <Property Id="GEOMMALEXISTS">')
+    print(r'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
+    print(r'        <FileSearch Id="CheckFile3" Name="geom.mal"/>')
+    print(r'      </DirectorySearch>')
+    print(r'    </Property>')
+    print(r'    <Property Id="GEOMLIBEXISTS">')
+    print(r'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
+    print(r'        <FileSearch Id="CheckFile4" Name="_geom.dll"/>')
+    print(r'      </DirectorySearch>')
+    print(r'    </Property>')
     print(r'    <Property Id="PYAPI3EXISTS">')
     print(r'      <DirectorySearch Id="CheckFileDir5" Path="[INSTALLDIR]" Depth="0">')
     print(r'        <FileSearch Id="CheckFile5" Name="pyapi_locatepython3.bat"/>')
@@ -137,8 +147,12 @@ def main():
                r'bin\stream.dll',
                vcpkg.format(r'bin\libiconv.dll'),
                vcpkg.format(r'bin\bz2.dll'),
+               vcpkg.format(r'bin\getopt.dll'),
+               vcpkg.format(r'bin\libcharset.dll'), # for libiconv.dll
                vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\libxml2.dll'),
+               vcpkg.format(r'bin\lz4.dll'),
+               vcpkg.format(r'bin\lzma.dll'),
                vcpkg.format(r'bin\pcre.dll'),
                vcpkg.format(r'bin\zlib1.dll')])
     # id = comp(debug, id, 14,
@@ -187,8 +201,12 @@ def main():
                r'lib\stream.lib',
                vcpkg.format(r'lib\libiconv.lib'),
                vcpkg.format(r'lib\bz2.lib'),
+               vcpkg.format(r'lib\getopt.lib'),
+               vcpkg.format(r'lib\libcharset.lib'),
                vcpkg.format(r'lib\libcrypto.lib'),
                vcpkg.format(r'lib\libxml2.lib'),
+               vcpkg.format(r'lib\lz4.lib'),
+               vcpkg.format(r'lib\lzma.lib'),
                vcpkg.format(r'lib\pcre.lib'),
                vcpkg.format(r'lib\zlib.lib')])
     print(r'            </Directory>')
@@ -258,7 +276,7 @@ def main():
     print(r'      <Feature Id="GeomModule" Level="1000" AllowAdvertise="no" Absent="allow" Title="Geom Module" Description="The GIS (Geographic Information System) extension for MonetDB/SQL.">')
     for f in geom:
         print(r'        <ComponentRef Id="{}"/>'.format(f))
-    print(r'        <Condition Level="1">GEOMEXISTS</Condition>')
+    print(r'        <Condition Level="1">GEOMMALEXISTS OR GEOMLIBEXISTS</Condition>')
     print(r'      </Feature>')
     print(r'    </Feature>')
     print(r'    <UIRef Id="WixUI_Mondo"/>')
