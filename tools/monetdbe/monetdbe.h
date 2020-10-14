@@ -95,11 +95,18 @@ typedef struct {
 } monetdbe_remote;
 
 typedef struct {
+	const char* port;
+	const char* usock;
+} monetdbe_mapi_server;
+
+typedef struct {
 	int memorylimit;  // top off the amount of RAM to be used, in MB
 	int querytimeout;  // graceful terminate query after a few seconds
 	int sessiontimeout;  // graceful terminate the session after a few seconds
 	int nr_threads;  // maximum number of worker treads, limits level of parallelism
 	monetdbe_remote* remote;
+	monetdbe_mapi_server* mapi_server;
+
 } monetdbe_options;
 
 #define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
