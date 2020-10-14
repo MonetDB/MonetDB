@@ -458,10 +458,6 @@ finish_mapi_file_upload(backend *be, bool eof_reached)
 static str
 importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int onclient,  lng nrows)
 {
-	static ATOMIC_TYPE concurrent = ATOMIC_VAR_INIT(0);
-	int current_concurrent = ATOMIC_INC(&concurrent);
-	fprintf(stderr, "IMP start, %d running\n", current_concurrent);
-
 	// In this function we create the BAT and open the file, and tidy
 	// up when things go wrong. The actual work happens in load_column().
 
@@ -535,9 +531,6 @@ end:
 		*ret = 0;
 		*retcnt = 0;
 	}
-
-	current_concurrent = ATOMIC_DEC(&concurrent);
-	fprintf(stderr, "IMP done, %d running\n", current_concurrent);
 
 	return msg;
 }
