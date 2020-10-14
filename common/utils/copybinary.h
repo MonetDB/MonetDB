@@ -23,27 +23,43 @@ typedef struct {
 } copy_binary_timestamp; // natural size: 96, natural alignment: 32
 
 
-// These code sequences are recognized by gcc and clang
-#define COPY_BINARY_BYTESWAP16(u) ( \
-		  ((uint8_t)(u) << 8) \
-		| ((uint8_t)(u>>8)) \
-	)
-#define COPY_BINARY_BYTESWAP32(u) ( \
-		  ((uint8_t)(u) << 24) \
-		| ((uint8_t)(u>>8) << 16) \
-		| ((uint8_t)(u>>16) << 8) \
-		| ((uint8_t)(u>>24)) \
-	)
-#define COPY_BINARY_BYTESWAP64(u) ( \
-		  ((uint8_t)(u>>0) << 56) \
-		| ((uint8_t)(u>>8) << 48) \
-		| ((uint8_t)(u>>16) << 40) \
-		| ((uint8_t)(u>>24) << 32) \
-		| ((uint8_t)(u>>32) << 24) \
-		| ((uint8_t)(u>>40) << 16) \
-		| ((uint8_t)(u>>48) << 8) \
-		| ((uint8_t)(u>>56)) \
-	)
+// According to Godbolt, these code sequences are recognized by
+// GCC at least back to 6.2 and Clang at least back to 6.0.0.
+// I didn't check earlier ones.
+// They properly use byte swapping instructions.
+// MSVC doesn't recognize it but that's no problem because we will
+// not ever use it for big endian platforms.
+
+
+#define COPY_BINARY_BYTESWAP16(value) ( \
+      (((*(uint16_t*)&value) & 0xFF00u) >>  8u) | \
+      (((*(uint16_t*)&value) & 0x00FFu) <<  8u) \
+    )
+
+
+#define COPY_BINARY_BYTESWAP32(value) ( \
+      (((*(uint32_t*)&value) & 0xFF000000u) >> 24u) | \
+      (((*(uint32_t*)&value) & 0x00FF0000u) >>  8u) | \
+      (((*(uint32_t*)&value) & 0x0000FF00u) <<  8u) | \
+      (((*(uint32_t*)&value) & 0x000000FFu) << 24u) \
+    )
+
+
+#define COPY_BINARY_BYTESWAP64(value) ( \
+      (((*(uint64_t*)&value) & 0xFF00000000000000u) >> 56u) | \
+      (((*(uint64_t*)&value) & 0x00FF000000000000u) >> 40u) | \
+      (((*(uint64_t*)&value) & 0x0000FF0000000000u) >> 24u) | \
+      (((*(uint64_t*)&value) & 0x000000FF00000000u) >>  8u) | \
+      (((*(uint64_t*)&value) & 0x00000000FF000000u) <<  8u) | \
+      (((*(uint64_t*)&value) & 0x0000000000FF0000u) << 24u) | \
+      (((*(uint64_t*)&value) & 0x000000000000FF00u) << 40u) | \
+      (((*(uint64_t*)&value) & 0x00000000000000FFu) << 56u) \
+    )
+
+#define COPY_BINARY_BYTESWAP128(value) ( \
+    ( (uint128_t)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[0]   )  << 64 ) \
+    | ( (uint128_t)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[1]   )   ) \
+)
 
 
 #ifdef WORDS_BIGENDIAN
