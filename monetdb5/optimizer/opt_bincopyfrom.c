@@ -15,7 +15,7 @@
 #include "opt_bincopyfrom.h"
 
 static str transform(MalBlkPtr mb, InstrPtr importTable);
-static int extract_column(MalBlkPtr mb, InstrPtr old, int idx, int count_var);
+static int extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count_var);
 
 str
 OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -68,58 +68,59 @@ static str
 transform(MalBlkPtr mb, InstrPtr old)
 {
 	// prototype: (bat1, .., batN) := sql.importTable(schema, table, onclient, path1 , .. ,pathN);
-	int onclient_parm = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
-	bool onserver = !onclient_parm;
+	int onclient_arg = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
+	bool onserver = !onclient_arg;
 	bool onclient = !onserver;
 
-	// In the following loop, we (a) verify there is at least one non-nil column,
-	// and (b) look for the column with the smallest type.
-	int narrowest_idx = -1;
-	int narrowest_type = TYPE_any;
+	// In the following loop we pick a "prototype column".
+	// This is always a column with a non-nil path and will be the first column for
+	// which we emit code. We prefer a prototype column that is quick to import
+	// because ON SERVER, all other columns can be loaded in parallel once we've
+	// loaded the first one.
+	//
+	// Both ON SERVER and ON CLIENT, the prototype column is also used when emitting the
+	// columns with a nil path.
+	int prototype_idx = -1;
+	int prototype_type = TYPE_any;
 	for (int i = 0; i < old->retc; i++) {
 		int var = getArg(old, i);
 		int var_type = getVarType(mb, var);
 		int tail_type = ATOMstorage(getBatType(var_type));
-		if (tail_type >= narrowest_type)
+		if (tail_type >= prototype_type)
 			continue;
 		int path_idx = old->retc + 3 + i;
 		int path_var = getArg(old, path_idx);
 		if (VALisnil(&getVarConstant(mb, path_var)))
 			continue;
 		// this is the best so far
-		narrowest_idx = i;
-		narrowest_type = tail_type;
+		prototype_idx = i;
+		prototype_type = tail_type;
 	}
-	if (narrowest_idx < 0)
+	if (prototype_idx < 0)
 		return createException(MAL, "optimizer.bincopyfrom", SQLSTATE(42000) "all paths are nil");
 
-	int row_count_var;
-	if (onserver) {
-		// First import the narrowest column, which we assume will load quickest.
-		// Pas its row count to the other imports.
-		row_count_var = extract_column(mb, old, narrowest_idx, -1);
-	} else {
-		// with ON CLIENT, parallellism is harmful because there is only a single
-		// connection to the client anyway. Every import will use the row count
-		// of the previous import, which will serialize them.
-		narrowest_idx = -1;
-		row_count_var = -1;
-	}
+	// Always emit the prototype column first
+	int prototype_count_var = extract_column(mb, old, prototype_idx, -1, -1);
+	assert(mb->stop > 0);
+	int prototype_bat_var = getArg(getInstrPtr(mb, mb->stop - 1), 0);
+	assert(prototype_count_var == getArg(getInstrPtr(mb, mb->stop - 1), 1));
 
 	// Then emit the rest of the columns
+
+	int row_count_var = prototype_count_var;
 	for (int i = 0; i < old->retc; i++) {
-		if (i == narrowest_idx)
+		if (i == prototype_idx)
 			continue;
-		int new_row_count_var = extract_column(mb, old, i, row_count_var);
+		int new_row_count_var = extract_column(mb, old, i, prototype_bat_var, row_count_var);
 		if (onclient)
-			row_count_var = new_row_count_var;
+			row_count_var = new_row_count_var; // chain the importColumn statements
 	}
 
 	return MAL_SUCCEED;
 }
 
 static int
-extract_column(MalBlkPtr mb, InstrPtr old, int idx, int count_var)
+extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count_var)
 {
 	int var = getArg(old, idx);
 	int var_type = getVarType(mb, var);
@@ -131,17 +132,26 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, int count_var)
 	int path_var = getArg(old, path_idx);
 	str path = (str)getVarValue(mb, path_var);
 
-	InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
-	setReturnArgument(p, old->argv[idx]);
-	int row_count_var = newTmpVariable(mb, TYPE_lng);
-	pushReturn(mb, p, row_count_var);
-	pushStr(mb, p, var_type_name);
-	pushStr(mb, p, path);
-	pushInt(mb, p, onclient);
-	if (count_var < 0)
-		pushLng(mb, p, 0);
-	else
-		pushArgument(mb, p, count_var);
-
-	return row_count_var;
+	if (!strNil(path)) {
+		InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
+		setReturnArgument(p, old->argv[idx]);
+		int new_count_var = newTmpVariable(mb, TYPE_lng);
+		pushReturn(mb, p, new_count_var);
+		pushStr(mb, p, var_type_name);
+		pushStr(mb, p, path);
+		pushInt(mb, p, onclient);
+		if (count_var < 0)
+			pushLng(mb, p, 0);
+		else
+			pushArgument(mb, p, count_var);
+		return new_count_var;
+	} else {
+		InstrPtr p = newFcnCall(mb, algebraRef, projectRef);
+		setReturnArgument(p, old->argv[idx]);
+		pushArgument(mb, p, proto_bat_var);
+		int proto_bat_type = getVarType(mb, var);
+		int proto_elem_type = getBatType(proto_bat_type);
+		pushNil(mb, p, proto_elem_type);
+		return count_var;
+	}
 }
