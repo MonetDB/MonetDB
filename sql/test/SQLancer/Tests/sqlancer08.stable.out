@@ -297,6 +297,17 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 2	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("tc0" INTEGER NOT NULL);
+#COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#604800000
+#29477
+#1
+#1450957756
+#805478917
+#94
+[ 6	]
+#ROLLBACK;
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
