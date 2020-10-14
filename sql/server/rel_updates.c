@@ -97,6 +97,7 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
+		e = exp_ref(sql, e);
 
 		if (h && i->type == hash_idx)  {
 			list *exps = new_exp_list(sql->sa);
@@ -648,9 +649,8 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		lng = sql_bind_localtype("lng");
 		for (m = i->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
-			sql_exp *e;
-
-			e = list_fetch(get_inserts(updates), c->c->colnr+1);
+			sql_exp *e = list_fetch(get_inserts(updates), c->c->colnr+1);
+			e = exp_ref(sql, e);
 
 			if (h && i->type == hash_idx)  {
 				list *exps = new_exp_list(sql->sa);
