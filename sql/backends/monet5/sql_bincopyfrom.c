@@ -17,522 +17,551 @@
 #include "mal_interpreter.h"
 #include "copybinary.h"
 
-static str
-BATattach_str(bstream *in, BAT *bn)
-{
-	// we have three jobs:
-	// 1. scan for the '\0' that terminates a str value.
-	// 2. validate the utf-8 encoding.
-	// 3. convert \r\n to \n.
-	//
-	// It might be possible to combine all this into a single scan
-	// but it's simpler to first scan for \0 and then when the full string
-	// is available, do a validation/conversion scan.
-
-	// The outer loop iterates over input blocks
-	while (1) {
-		ssize_t nread = bstream_next(in);
-		if (nread < 0) {
-			return createException(SQL, "BATattach_stream", SQLSTATE(42000) "%s", mnstr_peek_error(in->s));
-		}
-		if (nread == 0)
-			break;
-
-		// the middle loop looks for complete strings
-		char *end;
-		while ((end = memchr(&in->buf[in->pos], '\0', in->len - in->pos)) != NULL) {
-			unsigned char *r = (unsigned char*) &in->buf[in->pos];
-			unsigned char *w = (unsigned char*) &in->buf[in->pos];
-			const char *s;
-
-			if (*r == 0x80 && *(r+1) == 0) {
-				// technically a utf-8 violation but we treat it as the NULL marker
-				s = str_nil;
-			} else {
-				s = &in->buf[in->pos]; // to be validated first
-
-				// the inner loop validates them and converts line endings.
-				unsigned int u = 0; // utf-8 state
-				while (1) {
-					if (u > 0) {
-						// must be an utf-8 continuation byte.
-						if ((*r & 0xC0) == 0x80)    // 10xx xxxx
-							u--;
-						else
-							goto bad_utf8;
-					} else if ((*r & 0xF8) == 0xF0) // 1111_0xxx
-						u = 3;
-					else if ((*r & 0xF0) == 0xE0)   // 1110_xxxx
-						u = 2;
-					else if ((*r & 0xE0) == 0xC0)   // 110x xxxx
-						u = 1;
-					else if ((*r & 0xC0) == 0x80)   // 10xx xxxx
-						goto bad_utf8;
-					else if (*r == '\r' && *(r+1) == '\n') // convert!
-						r++;
-					else if (*r == '\0') { // guaranteed to happen.
-						*w = '\0';
-						break;
-					}
-					*w++ = *r++;
-				}
-			}
-
-			if (BUNappend(bn, s, false) != GDK_SUCCEED)
-				return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
-
-			in->pos = end - in->buf + 1;
-		}
-		// If we fall out of the middle loop, part of the buffer may be unconsumed.
-		// This is fine, we'll pick it up on the next iteration.
-	}
-
-	// It's an error to  have data left after falling out of the outer loop.
-	if (in->pos < in->len)
-		return createException(SQL, "BATattach_str", SQLSTATE(42000) "unterminated string at end");
-
-	return MAL_SUCCEED;
-bad_utf8:
-	return createException(SQL, "BATattach_stream", SQLSTATE(42000) "malformed utf-8 byte sequence");
-}
+#define bailout(...) do { \
+		msg = createException(MAL, "sql.importColumn", SQLSTATE(42000) __VA_ARGS__); \
+		goto end; \
+	} while (0)
 
 
 static str
-BATattach_fixed_width(bstream *in, BAT *bn, str (*converter)(void*, size_t, char*, char*), void *cookie, size_t size_external)
+BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, void (*fixup)(void*,void*), int *eof_seen)
 {
-	int internal_type = BATttype(bn);
-	int storage_type = ATOMstorage(internal_type);
-	size_t internal_size = ATOMsize(storage_type);
-	while (1) {
-		ssize_t nread = bstream_next(in);
-		if (nread < 0) {
-			return createException(SQL, "BATattach_fixed_width", SQLSTATE(42000) "%s", mnstr_peek_error(in->s));
-		}
-		if (nread == 0)
-			break;
-
-		size_t n = (in->len - in->pos) / size_external;
-		BUN count = bn->batCount;
-		BUN newCount = count + n;
-		if (BATextend(bn, newCount) != GDK_SUCCEED)
-			return createException(SQL, "BATattach_fixed_width", GDK_EXCEPTION);
-
-		// future work: parallellize this..
-		for (size_t i = 0; i < n; i++) {
-			char *external = in->buf + in->pos + i * size_external;
-			char *internal = Tloc(bn, count + i);
-			str msg = converter(cookie, internal_size, external, internal);
-			if (msg != MAL_SUCCEED)
-				return msg;
-		}
-
-		// All conversions succeeded. Update the bookkeeping.
-		bn->batCount += n;
-		in->pos += n * size_external;
-	}
-
-	// It's an error to  have data left after falling out of the loop.
-	if (in->pos < in->len)
-		return createException(SQL, "BATattach_str", SQLSTATE(42000) "incomplete value at end");
-
-	BATsetcount(bn, bn->batCount);
-	bn->tseqbase = oid_nil;
-	bn->tnonil = bn->batCount == 0;
-	bn->tnil = false;
-	if (bn->batCount <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
-	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-	}
-	return MAL_SUCCEED;
-}
-
-static str
-BATattach_as_bytes(int tt, stream *s, BAT *bn, bool *eof_seen)
-{
+	str msg = MAL_SUCCEED;
+	int tt = BATttype(bat);
 	size_t asz = (size_t) ATOMsize(tt);
 	size_t chunk_size = 1<<20;
 
 	bool eof = false;
 	while (!eof) {
 		assert(chunk_size % asz == 0);
-		size_t n = chunk_size / asz;
+		size_t n;
+		if (rows_estimate > 0) {
+			n = rows_estimate;
+			rows_estimate = 0;
+		} else {
+			n = chunk_size / asz;
+		}
 
 		// First make some room
-		BUN validCount = bn->batCount;
+		BUN validCount = bat->batCount;
 		BUN newCount = validCount + n;
-		if (BATextend(bn, newCount) != GDK_SUCCEED)
-			return createException(SQL, "BATattach_stream", GDK_EXCEPTION);
+		if (BATextend(bat, newCount) != GDK_SUCCEED)
+			bailout("BATattach_as_bytes: %s", GDK_EXCEPTION);
 
 		// Read into the newly allocated space
-		char *start = Tloc(bn, validCount);
+		char *start = Tloc(bat, validCount);
 		char *cur = start;
-		char *end = Tloc(bn, newCount);
+		char *end = Tloc(bat, newCount);
 		while (cur < end) {
 			ssize_t nread = mnstr_read(s, cur, 1, end - cur);
 			if (nread < 0)
-				return createException(SQL, "BATattach_stream", SQLSTATE(42000) "%s", mnstr_peek_error(s));
+				bailout("BATattach_as_bytes: %s", mnstr_peek_error(s));
 			if (nread == 0) {
+				eof = true;
 				size_t tail = (cur - start) % asz;
 				if (tail != 0) {
-					return createException(SQL, "BATattach_stream", SQLSTATE(42000) "final item incomplete: %d bytes instead of %d",
-						(int) tail, (int) asz);
+					bailout("BATattach_as_bytes: final item incomplete: %d bytes instead of %d", (int) tail, (int) asz);
 				}
-				eof = true;
-				if (eof_seen != NULL)
-					*eof_seen = true;
 				end = cur;
 			}
 			cur += (size_t) nread;
 		}
-		bn->batCount += (cur - start) / asz;
+		fixup(start, end);
+		bat->batCount += (end - start) / asz;
 	}
 
-	BATsetcount(bn, bn->batCount);
-	bn->tseqbase = oid_nil;
-	bn->tnonil = bn->batCount == 0;
-	bn->tnil = false;
-	if (bn->batCount <= 1) {
-		bn->tsorted = true;
-		bn->trevsorted = true;
-		bn->tkey = true;
+	BATsetcount(bat, bat->batCount);
+	bat->tseqbase = oid_nil;
+	bat->tnonil = bat->batCount == 0;
+	bat->tnil = false;
+	if (bat->batCount <= 1) {
+		bat->tsorted = true;
+		bat->trevsorted = true;
+		bat->tkey = true;
 	} else {
-		bn->tsorted = false;
-		bn->trevsorted = false;
-		bn->tkey = false;
-	}
-	return MAL_SUCCEED;
-}
-
-static str
-convert_timestamp(void *cookie, size_t internal_size, char *external, char *internal)
-{
-	copy_binary_timestamp *src = (copy_binary_timestamp*) external;
-	timestamp *dst = (timestamp*) internal;
-	(void)internal_size; assert(internal_size == sizeof(*dst));
-
-	COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(*src);
-
-	date dt = date_create(src->date.year, src->date.month, src->date.day);
-	daytime tm = daytime_create(src->time.hours, src->time.minutes, src->time.seconds, src->time.ms);
-	timestamp value = timestamp_create(dt, tm);
-
-	(void)cookie;
-	*dst = value;
-
-	return MAL_SUCCEED;
-}
-
-static str
-convert_date(void *cookie, size_t internal_size, char *external, char *internal)
-{
-	copy_binary_date *src = (copy_binary_date*) external;
-	date *dst = (date*) internal;
-	(void)internal_size; assert(internal_size == sizeof(*dst));
-
-	COPY_BINARY_CONVERT_DATE_ENDIAN(*src);
-
-	date value = date_create(src->year, src->month, src->day);
-
-	(void)cookie;
-	*dst = value;
-
-	return MAL_SUCCEED;
-}
-
-static str
-convert_time(void *cookie, size_t internal_size, char *external, char *internal)
-{
-	copy_binary_time *src = (copy_binary_time*) external;
-	timestamp *dst = (timestamp*) internal;
-	(void)internal_size; assert(internal_size == sizeof(*dst));
-
-	COPY_BINARY_CONVERT_TIME_ENDIAN(*src);
-
-	daytime value = daytime_create(src->hours, src->minutes, src->seconds, src->ms);
-
-	(void)cookie;
-	*dst = value;
-
-	return MAL_SUCCEED;
-}
-
-static str
-BATattach_stream(BAT **result, const char *colname, int tt, stream *s, BUN size, bool *eof_seen)
-{
-	str msg = MAL_SUCCEED;
-	BAT *bn = NULL;
-	bstream *in = NULL;
-
-	bn = COLnew(0, tt, size, TRANSIENT);
-	if (bn == NULL) {
-		msg = createException(SQL, "BATattach_stream", GDK_EXCEPTION);
-		goto end;
-	}
-
-	switch (tt) {
-		case TYPE_bit:
-		case TYPE_bte:
-		case TYPE_sht:
-		case TYPE_bat:
-		case TYPE_int:
-		case TYPE_oid:
-		case TYPE_flt:
-		case TYPE_dbl:
-		case TYPE_lng:
-#ifdef HAVE_HGE
-		case TYPE_hge:
-#endif
-			msg = BATattach_as_bytes(tt, s, bn, eof_seen);
-			break;
-
-		case TYPE_str:
-			in = bstream_create(s, 1 << 20);
-			if (in == NULL) {
-				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto end;
-			}
-			msg = BATattach_str(in, bn);
-			if (eof_seen != NULL)
-				*eof_seen = in->eof;
-			break;
-
-		case TYPE_date:
-			in = bstream_create(s, 1 << 20);
-			if (in == NULL) {
-				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto end;
-			}
-			msg = BATattach_fixed_width(in, bn, convert_date, NULL, sizeof(copy_binary_date));
-			if (eof_seen != NULL)
-				*eof_seen = in->eof;
-			break;
-
-		case TYPE_daytime:
-			in = bstream_create(s, 1 << 20);
-			if (in == NULL) {
-				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto end;
-			}
-			msg = BATattach_fixed_width(in, bn, convert_time, NULL, sizeof(copy_binary_time));
-			if (eof_seen != NULL)
-				*eof_seen = in->eof;
-			break;
-
-		case TYPE_timestamp:
-			in = bstream_create(s, 1 << 20);
-			if (in == NULL) {
-				msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto end;
-			}
-			msg = BATattach_fixed_width(in, bn, convert_timestamp, NULL, sizeof(copy_binary_timestamp));
-			if (eof_seen != NULL)
-				*eof_seen = in->eof;
-			break;
-
-		default:
-			msg = createException(SQL, "sql",
-				SQLSTATE(42000) "Type of column %s not supported for BINARY COPY",
-				colname);
-			goto end;
+		bat->tsorted = false;
+		bat->trevsorted = false;
+		bat->tkey = false;
 	}
 
 end:
-	if (in != NULL){
-		in->s = NULL;
-		bstream_destroy(in);
+	*eof_seen = (int)eof;
+	return msg;
+}
+
+static
+void convert_bte(void *start, void *end)
+{
+	(void)start;
+	(void)end;
+}
+
+static
+void convert_sht(void *start, void *end)
+{
+	for (sht *p = start; p < (sht*)end; p++)
+		COPY_BINARY_CONVERT16(*p);
+}
+
+static
+void convert_int(void *start, void *end)
+{
+	for (int *p = start; p < (int*)end; p++)
+		COPY_BINARY_CONVERT32(*p);
+}
+
+static
+void convert_lng(void *start, void *end)
+{
+	for (lng *p = start; p < (lng*)end; p++)
+		COPY_BINARY_CONVERT64(*p);
+}
+
+#ifdef HAVE_HGE
+static
+void convert_hge(void *start, void *end)
+{
+	for (hge *p = start; p < (hge*)end; p++)
+		COPY_BINARY_CONVERT128(*p);
+}
+#endif
+
+static str
+BATattach_fixed_width(BAT *bat, stream *s, str (*convert)(void*,void*,void*,void*), size_t record_size, int *eof_reached)
+{
+	str msg = MAL_SUCCEED;
+	bstream *bs = NULL;
+
+	size_t chunk_size = 1<<20;
+	assert(record_size > 0);
+	chunk_size -= chunk_size % record_size;
+
+	bs = bstream_create(s, chunk_size);
+	if (bs == NULL) {
+		msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto end;
 	}
-	if (msg == NULL) {
-		*result = bn;
-		return NULL;
+
+	while (1) {
+		ssize_t nread = bstream_next(bs);
+		if (nread < 0)
+			bailout("%s", mnstr_peek_error(s));
+		if (nread == 0)
+			break;
+
+		size_t n = (bs->len - bs->pos) / record_size;
+		size_t extent = n * record_size;
+		BUN count = BATcount(bat);
+		BUN newCount = count + n;
+		if (BATextend(bat, newCount) != GDK_SUCCEED)
+			bailout("%s", GDK_EXCEPTION);
+
+		msg = convert(
+			Tloc(bat, count), Tloc(bat, newCount),
+			&bs->buf[bs->pos], &bs->buf[bs->pos + extent]);
+		if (msg != MAL_SUCCEED)
+			goto end;
+		BATsetcount(bat, newCount);
+		bs->pos += extent;
+	}
+
+	bat->tseqbase = oid_nil;
+	bat->tnonil = bat->batCount == 0;
+	bat->tnil = false;
+	if (bat->batCount <= 1) {
+		bat->tsorted = true;
+		bat->trevsorted = true;
+		bat->tkey = true;
 	} else {
-		*result = NULL;
-		if (bn != NULL)
-			BBPreclaim(bn);
-		return msg;
+		bat->tsorted = false;
+		bat->trevsorted = false;
+		bat->tkey = false;
 	}
+
+end:
+	*eof_reached = 0;
+	if (bs != NULL) {
+		*eof_reached = (int)bs->eof;
+		bs->s = NULL;
+		bstream_destroy(bs);
+	}
+	return msg;
 }
 
 
-/* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);
- * binary attachment only works for simple binary types.
- * Non-simple types require each line to contain a valid ascii representation
- * of the text terminate by a new-line. These strings are passed to the corresponding
- * atom conversion routines to fill the column.
- */
-str
-mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+convert_date(void *dst_start, void *dst_end, void *src_start, void *src_end)
 {
-	mvc *m = NULL;
-	str msg;
-	BUN cnt = 0;
-	sql_column *cnt_col = NULL;
-	bool init = false;
-	int i;
-	const char *sname = *getArgReference_str(stk, pci, 0 + pci->retc);
-	const char *tname = *getArgReference_str(stk, pci, 1 + pci->retc);
-	int onclient = *getArgReference_int(stk, pci, 2 + pci->retc);
-	sql_schema *s;
-	sql_table *t;
-	node *n;
+	date *dst = (date*)dst_start;
+	date *dst_e = (date*)dst_end;
+	copy_binary_date *src = (copy_binary_date*)src_start;
+	copy_binary_date *src_e = (copy_binary_date*)src_end;
+	(void)dst_e; assert(dst_e - dst == src_e - src);
 
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.import_table", SQLSTATE(3F000) "Schema missing %s",sname);
-	t = mvc_bind_table(m, s, tname);
-	if (!t)
-		throw(SQL, "sql", SQLSTATE(42S02) "Table missing %s", tname);
-	if (list_length(t->columns.set) != (pci->argc - (3 + pci->retc)))
-		throw(SQL, "sql", SQLSTATE(42000) "Not enough columns found in input file");
-	if (2 * pci->retc + 3 != pci->argc)
-		throw(SQL, "sql", SQLSTATE(42000) "Not enough output values");
-
-	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.copy_from", "cannot transfer files from client");
+	for (; src < src_e; src++) {
+		COPY_BINARY_CONVERT_DATE_ENDIAN(*src);
+		date value = date_create(src->year, src->month, src->day);
+		*dst++ = value;
 	}
+
+	return MAL_SUCCEED;
+}
+
+static str
+convert_time(void *dst_start, void *dst_end, void *src_start, void *src_end)
+{
+	daytime *dst = (daytime*)dst_start;
+	daytime *dst_e = (daytime*)dst_end;
+	copy_binary_time *src = (copy_binary_time*)src_start;
+	copy_binary_time *src_e = (copy_binary_time*)src_end;
+	(void)dst_e; assert(dst_e - dst == src_e - src);
+
+	for (; src < src_e; src++) {
+		COPY_BINARY_CONVERT_TIME_ENDIAN(*src);
+		daytime value = daytime_create(src->hours, src->minutes, src->seconds, src->ms);
+		*dst++ = value;
+	}
+
+	return MAL_SUCCEED;
+}
+
+static str
+convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end)
+{
+	timestamp *dst = (timestamp*)dst_start;
+	timestamp *dst_e = (timestamp*)dst_end;
+	copy_binary_timestamp *src = (copy_binary_timestamp*)src_start;
+	copy_binary_timestamp *src_e = (copy_binary_timestamp*)src_end;
+	(void)dst_e; assert(dst_e - dst == src_e - src);
+
+	for (; src < src_e; src++) {
+		COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(*src);
+		date dt = date_create(src->date.year, src->date.month, src->date.day);
+		daytime tm = daytime_create(src->time.hours, src->time.minutes, src->time.seconds, src->time.ms);
+		timestamp value = timestamp_create(dt, tm);
+		*dst++ = value;
+	}
+
+	return MAL_SUCCEED;
+}
+
+
+static void
+convert_line_endings(char *text)
+{
+	// read- and write pointers
+	const char *r = text;
+	char *w = text;
+	while (*r) {
+		if (r[0] == '\r' && r[1] == '\n')
+			r++;
+		*w++ = *r++;
+	}
+	*w = '\0';
+}
+
+static str
+append_text(BAT *bat, char *start, char *end)
+{
+	(void)bat;
+
+	char *cr = memchr(start, '\r', end - start);
+	if (cr)
+		convert_line_endings(cr);
+
+	if (BUNappend(bat, start, false) != GDK_SUCCEED)
+		return createException(SQL, "sql.importColumn", GDK_EXCEPTION);
+
+	return MAL_SUCCEED;
+}
+
+// Load items from the stream and put them in the BAT.
+// Because it's text read from a binary stream, we replace \r\n with \n.
+// We don't have to validate the utf-8 structure because BUNappend does that for us.
+static str
+load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached)
+{
+	str msg = MAL_SUCCEED;
+	bstream *bs = NULL;
+
+	bs = bstream_create(s, 1 << 20);
+	if (bs == NULL) {
+		msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto end;
+	}
+
+	// In the outer loop we refill the buffer until the stream ends.
+	// In the inner loop we look for complete \0-terminated strings.
+	while (1) {
+		ssize_t nread = bstream_next(bs);
+		if (nread < 0)
+			bailout("%s", mnstr_peek_error(s));
+		if (nread == 0)
+			break;
+
+		char *buf_start = &bs->buf[bs->pos];
+		char *buf_end = &bs->buf[bs->len];
+		char *start, *end;
+		for (start = buf_start; (end = memchr(start, '\0', buf_end - start)) != NULL; start = end + 1) {
+			msg = append_text(bat, start, end);
+			if (msg != NULL)
+				goto end;
+		}
+		bs->pos = start - buf_start;
+	}
+
+	// It's an error to have date left after falling out of the outer loop
+	if (bs->pos < bs->len)
+		bailout("unterminated string at end");
+
+end:
+	*eof_reached = 0;
+	if (bs != NULL) {
+		*eof_reached = (int)bs->eof;
+		bs->s = NULL;
+		bstream_destroy(bs);
+	}
+	return msg;
+}
+
+
+
+static struct type_rec {
+	char *method;
+	int gdk_type;
+	str (*loader)(BAT *bat, stream *s, int *eof_reached);
+	str (*convert_fixed_width)(void *dst_start, void *dst_end, void *src_start, void *src_end);
+	size_t record_size;
+	void (*convert_in_place)(void *start, void *end);
+} type_recs[] = {
+	{ "bte", TYPE_bte, .convert_in_place=convert_bte, },
+	{ "sht", TYPE_sht, .convert_in_place=convert_sht, },
+	{ "int", TYPE_int, .convert_in_place=convert_int, },
+	{ "lng", TYPE_lng, .convert_in_place=convert_lng, },
+	//
+#ifdef HAVE_HGE
+	{ "hge", TYPE_hge, .convert_in_place=convert_hge, },
+#endif
+	//
+	{ "str", TYPE_str, .loader=load_zero_terminated_text },
+	//
+	{ "date", TYPE_date, .convert_fixed_width=convert_date, .record_size=sizeof(copy_binary_date), },
+	{ "daytime", TYPE_daytime, .convert_fixed_width=convert_time, .record_size=sizeof(copy_binary_time), },
+	{ "timestamp", TYPE_timestamp, .convert_fixed_width=convert_timestamp, .record_size=sizeof(copy_binary_timestamp), },
+
+};
+
+
+static struct type_rec*
+find_type_rec(str name)
+{
+	struct type_rec *end = (struct type_rec*)((char *)type_recs + sizeof(type_recs));
+	for (struct type_rec *t = &type_recs[0]; t < end; t++)
+		if (strcmp(t->method, name) == 0)
+			return t;
+	return NULL;
+}
+
+
+static str
+load_column(struct type_rec *rec, BAT *bat, stream *s, lng rows_estimate, int *eof_reached)
+{
+	str msg = MAL_SUCCEED;
+	(void)rec;
+	(void)bat;
+	(void)s;
+	(void)eof_reached;
+
+	if (rec->loader != NULL) {
+		msg = rec->loader(bat, s, eof_reached);
+	} else if (rec->convert_in_place != NULL) {
+		// These types can be read directly into the BAT
+		msg = BATattach_as_bytes(bat, s, rows_estimate, rec->convert_in_place, eof_reached);
+	} else if (rec->convert_fixed_width != NULL) {
+		msg = BATattach_fixed_width(bat, s, rec->convert_fixed_width, rec->record_size, eof_reached);
+	} else {
+		*eof_reached = 0;
+		bailout("invalid loader configuration for '%s'", rec->method);
+	}
+
+	end:
+		return msg;
+}
+
+
+static str
+start_mapi_file_upload(backend *be, str path, stream **s)
+{
+	str msg = MAL_SUCCEED;
+	*s = NULL;
+
+	stream *ws = be->mvc->scanner.ws;
+	bstream *bs = be->mvc->scanner.rs;
+	stream *rs = bs->s;
+	assert(isa_block_stream(ws));
+	assert(isa_block_stream(rs));
+
+	mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+	mnstr_printf(ws, "rb %s\n", path);
+	mnstr_flush(ws, MNSTR_FLUSH_DATA);
+	while (!bs->eof)
+		bstream_next(bs);
+	char buf[80];
+	if (mnstr_readline(rs, buf, sizeof(buf)) > 1) {
+		msg = createException(IO, "sql.importColumn", "Error %s", buf);
+		goto end;
+	}
+	set_prompting(rs, PROMPT2, ws);
+
+	*s = rs;
+end:
+	return msg;
+}
+
+
+static str
+finish_mapi_file_upload(backend *be, bool eof_reached)
+{
+	str msg = MAL_SUCCEED;
+	stream *ws = be->mvc->scanner.ws;
+	bstream *bs = be->mvc->scanner.rs;
+	stream *rs = bs->s;
+	assert(isa_block_stream(ws));
+	assert(isa_block_stream(rs));
+
+	set_prompting(rs, NULL, NULL);
+	if (!eof_reached) {
+		// Probably due to an error. Read until message boundary.
+		char buf[8190];
+		while (1) {
+			ssize_t nread = mnstr_read(rs, buf, 1, sizeof(buf));
+			if (nread > 0)
+				continue;
+			if (nread < 0)
+				msg = createException(
+					IO, "sql.importColumn",
+					"while syncing read stream: %s", mnstr_peek_error(rs));
+			break;
+		}
+	}
+	mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
+	mnstr_flush(ws, MNSTR_FLUSH_DATA);
+
+	return msg;
+}
+
+
+
+/* Import a single file into a new BAT.
+ */
+static str
+importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int onclient,  lng nrows)
+{
+	// In this function we create the BAT and open the file, and tidy
+	// up when things go wrong. The actual work happens in load_column().
+
+	// These are managed by the end: block.
+	str msg = MAL_SUCCEED;
+	BAT *bat = NULL;
+	stream *stream_to_close = NULL;
+	bool do_finish_mapi = false;
+	int eof_reached = -1; // 1 = read to the end; 0 = stopped reading early; -1 = unset, a bug.
+
+	// This one is not managed by the end: block
+	stream *s;
+
+	// Set safe values
+	*ret = 0;
+	*retcnt = 0;
+
+	// Figure out what kind of data we have
+	struct type_rec *rec = find_type_rec(method);
+	if (rec == NULL)
+		bailout("COPY BINARY FROM not implemented for '%s'", method);
+
+	// Create the BAT
+	bat = COLnew(0, rec->gdk_type, nrows, TRANSIENT);
+	if (bat == NULL)
+		bailout("%s", GDK_EXCEPTION);
+
+	// Open the input stream
+	if (onclient) {
+		s = NULL;
+		do_finish_mapi = true;
+		msg = start_mapi_file_upload(be, path, &s);
+		if (msg != MAL_SUCCEED)
+			goto end;
+	} else {
+		s = stream_to_close = open_rstream(path);
+		if (s == NULL)
+			bailout("Couldn't open '%s' on server: %s", path, mnstr_peek_error(NULL));
+	}
+
+	// Do the work
+	msg = load_column(rec, bat, s, nrows, &eof_reached);
+	if (eof_reached != 0 && eof_reached != 1) {
+		if (msg)
+			bailout("internal error in sql.importColumn: eof_reached not set (%s). Earlier error: %s", method, msg);
+		else
+			bailout("internal error in sql.importColumn: eof_reached not set (%s)", method);
+	}
+	// Fall through into the end block which will clean things up
+end:
+	if (do_finish_mapi) {
+		str msg1 = finish_mapi_file_upload(be, eof_reached == 1);
+		if (msg == MAL_SUCCEED)
+			msg = msg1;
+	}
+
+	if (stream_to_close)
+
+		close_stream(stream_to_close);
+
+	// Manage the return values and `bat`.
+	if (msg == MAL_SUCCEED) {
+		BBPkeepref(bat->batCacheid); // should I call this?
+		*ret = bat->batCacheid;
+		*retcnt = BATcount(bat);
+	} else {
+		if (bat != NULL) {
+			BBPunfix(bat->batCacheid);
+			bat = NULL;
+		}
+		*ret = 0;
+		*retcnt = 0;
+	}
+
+	return msg;
+}
+
+
+str
+mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)mb;
+
+	assert(pci->retc == 2);
+	bat *ret = getArgReference_bat(stk, pci, 0);
+	lng *retcnt = getArgReference_lng(stk, pci, 1);
+
+	assert(pci->argc == 6);
+	str method = *getArgReference_str(stk, pci, 2);
+	str path = *getArgReference_str(stk, pci, 3);
+	int onclient = *getArgReference_int(stk, pci, 4);
+	lng nrows = *getArgReference_lng(stk, pci, 5);
 
 	backend *be = cntxt->sqlcontext;
 
-	for (i = 0; i < pci->retc; i++)
-		*getArgReference_bat(stk, pci, i) = 0;
+	return importColumn(be, ret, retcnt, method, path, onclient, nrows);
+}
 
-	for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
-		sql_column *col = n->data;
-		BAT *c = NULL;
-		int tpe = col->type.type->localtype;
-		const char *fname = *getArgReference_str(stk, pci, i);
+str
+mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
 
-		/* handle the various cases */
-		if (strNil(fname)) {
-			// no filename for this column, skip for now because we potentially don't know the count yet
-			continue;
-		}
-		if (ATOMvarsized(tpe) && tpe != TYPE_str) {
-			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", *getArgReference_str(stk, pci, i));
-			goto bailout;
-		}
-
-		if (tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			if (onclient) {
-				stream *ws = be->mvc->scanner.ws;
-				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_printf(ws, "rb %s\n", fname);
-				msg = MAL_SUCCEED;
-				mnstr_flush(ws, MNSTR_FLUSH_DATA);
-				while (!be->mvc->scanner.rs->eof)
-					bstream_next(be->mvc->scanner.rs);
-				stream *rs = be->mvc->scanner.rs->s;
-				char buf[80];
-				if (mnstr_readline(rs, buf, sizeof(buf)) > 1) {
-					msg = createException(IO, "sql.attach", "%s", buf);
-					goto bailout;
-				}
-				assert(isa_block_stream(rs));
-				assert(isa_block_stream(ws));
-				bool eof = false;
-				set_prompting(rs, PROMPT2, ws);
-				msg = BATattach_stream(&c, col->base.name, col->type.type->localtype, rs, cnt, &eof);
-				set_prompting(rs, NULL, NULL);
-				if (!eof) {
-					// Didn't read everything, probably due to an error.
-					// Read until message boundary.
-					char buf[8190];
-					while (1) {
-						ssize_t nread = mnstr_read(rs, buf, 1, sizeof(buf));
-						if (nread > 0)
-							continue;
-						if (nread < 0) {
-							// do not overwrite existing error message
-							if (msg == NULL)
-								msg = createException(
-									SQL, "mvc_bin_import_table_wrap",
-									SQLSTATE(42000) "while syncing read stream: %s", mnstr_peek_error(rs));
-						}
-						break;
-					}
-				}
-				mnstr_write(ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(ws, MNSTR_FLUSH_DATA);
-				if (msg != NULL)
-					goto bailout;
-			} else {
-				stream *s = open_rstream(fname);
-				if (s != NULL) {
-					msg = BATattach_stream(&c, col->base.name, tpe, s, 0, NULL);
-					close_stream(s);
-				}
-				else
-					msg = createException(
-						SQL, "mvc_bin_import_table_wrap",
-						SQLSTATE(42000) "Failed to attach file %s: %s",
-						fname, mnstr_peek_error(NULL));
-			}
-			if (c == NULL) {
-				if (msg == NULL)
-					msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
-				goto bailout;
-			}
-			if (BATsetaccess(c, BAT_READ) != GDK_SUCCEED) {
-				BBPreclaim(c);
-				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to set internal access while attaching file %s", fname);
-				goto bailout;
-			}
-		} else {
-			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
-			goto bailout;
-		}
-		if (init && cnt != BATcount(c)) {
-			BUN this_cnt = BATcount(c);
-			BBPunfix(c->batCacheid);
-			msg = createException(SQL, "sql",
-				SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts: "
-				"%s has %zu rows, %s has %zu", tname,
-				cnt_col->base.name, (size_t)cnt,
-				col->base.name, (size_t)this_cnt);
-			goto bailout;
-		}
-		cnt = BATcount(c);
-		cnt_col = col;
-		init = true;
-		*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
-		BBPkeepref(c->batCacheid);
-	}
-	if (init) {
-		for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
-			// now that we know the BAT count, we can fill in the columns for which no parameters were passed
-			sql_column *col = n->data;
-			BAT *c = NULL;
-			int tpe = col->type.type->localtype;
-
-			const char *fname = *getArgReference_str(stk, pci, i);
-			if (strNil(fname)) {
-				// fill the new BAT with NULL values
-				c = BATconstant(0, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
-				if (c == NULL) {
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
-				BBPkeepref(c->batCacheid);
-			}
-		}
-	}
-	return MAL_SUCCEED;
-  bailout:
-	for (i = 0; i < pci->retc; i++) {
-		bat bid;
-		if ((bid = *getArgReference_bat(stk, pci, i)) != 0) {
-			BBPrelease(bid);
-			*getArgReference_bat(stk, pci, i) = 0;
-		}
-	}
-	return msg;
+	return createException(MAL, "mvc_bin_import_table_wrap", "MAL operator sql.importTable should have been replaced with sql.importColumn");
 }
