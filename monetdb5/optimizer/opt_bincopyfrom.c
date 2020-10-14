@@ -78,8 +78,9 @@ transform(MalBlkPtr mb, InstrPtr old)
 	int narrowest_type = TYPE_any;
 	for (int i = 0; i < old->retc; i++) {
 		int var = getArg(old, i);
-		int var_type = ATOMstorage(getVarType(mb, var) & 0xFFFF);  // <=== what's the proper way to do this?
-		if (var_type >= narrowest_type)
+		int var_type = getVarType(mb, var);
+		int tail_type = ATOMstorage(getBatType(var_type));
+		if (tail_type >= narrowest_type)
 			continue;
 		int path_idx = old->retc + 3 + i;
 		int path_var = getArg(old, path_idx);
@@ -87,7 +88,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 			continue;
 		// this is the best so far
 		narrowest_idx = i;
-		narrowest_type = var_type;
+		narrowest_type = tail_type;
 	}
 	if (narrowest_idx < 0)
 		return createException(MAL, "optimizer.bincopyfrom", SQLSTATE(42000) "all paths are nil");
@@ -121,8 +122,8 @@ static int
 extract_column(MalBlkPtr mb, InstrPtr old, int idx, int count_var)
 {
 	int var = getArg(old, idx);
-	int var_type = getVarType(mb, var) & 0xFFFF;  // <=== what's the proper way to do this?
-	str var_type_name = ATOMname(var_type);
+	int var_type = getVarType(mb, var);
+	str var_type_name = ATOMname(getBatType(var_type));
 
 	int onclient = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
 
