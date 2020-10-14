@@ -8,7 +8,7 @@ import logging
 from collections import namedtuple
 from typing import Optional, Dict
 from pymonetdb.sql.debug import debug, export
-from pymonetdb.sql import monetize, pythonize, types
+from pymonetdb.sql import monetize
 from pymonetdb.sql.pythonize import strip, py_bool, py_date, py_time, py_timestamp
 from pymonetdb.exceptions import ProgrammingError, InterfaceError
 from pymonetdb import mapi
@@ -19,10 +19,14 @@ logger = logging.getLogger("pymonetdb")
 
 Description = namedtuple('Description', ('name', 'type_code', 'display_size', 'internal_size', 'precision', 'scale',
                                          'null_ok'))
+def no_convert(data):
+    return data
+
 def py_oid(data):
     return int(data[:-2])
 
 mapping = {
+    'none': no_convert,
     'void': strip,
     'str': strip,
     'int': int,
@@ -36,6 +40,7 @@ mapping = {
     'url': strip,
     'uuid': uuid.UUID,
     'json': json.loads,
+    'color': strip,
 }
 
 def convert(data, type_code):
@@ -480,7 +485,7 @@ class MapiCursor(object):
                 self._offset = 0
                 self.lastrowid = None
                 self._rows = [ tuple([ line ] ) ]
-                self.description = [ Description('value', types.VARCHAR, 10, 10, 10, 3, 0) ]
+                self.description = [ Description('value', 'none', 10, 10, 10, 3, 0) ]
                 self.rowcount = 1
                 self._query_id = 1
 
@@ -494,7 +499,7 @@ class MapiCursor(object):
         # fallback for output without headers
         if not self.description:
             self.description = []
-            self.description.append(Description('b', types.VARCHAR, 10, 10, 0, 0, 0))
+            self.description.append(Description('b', 'none', 10, 10, 0, 0, 0))
         if len(elements) == len(self.description):
             self._query_id = 2
             return tuple([convert(element.strip(), description[1])
