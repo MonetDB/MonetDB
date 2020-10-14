@@ -33,6 +33,8 @@ $ Mz.py sql/test/Tests
 
 Converted folders progress:
 ---------------------------
+- monetdb5/modules/atoms	pass
+- monetdb5/modules/mal		pass
 - sql/test/null/Tests           pass
 - sql/test/json/Tests           pass
 - sql/test/Tests                pass
