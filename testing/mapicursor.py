@@ -30,6 +30,7 @@ mapping = {
     'void': strip,
     'str': strip,
     'int': int,
+    'lng': int,
     'oid': py_oid,
     'flt': float,
     'dbl': float,
@@ -194,7 +195,7 @@ class MapiCursor(object):
 
         if query[0] == '#': # skip comment
             return 0
-        if query[-2:] != ';\n':
+        if query.find(';') < 0:
             query += ';\n'
         if query[-1:] != '\n':
             query += '\n'

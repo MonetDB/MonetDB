@@ -1,8 +1,6 @@
-statement ok
+statement error
 language.register("user","mytest","io.print(\"hello world\");","first test")
 
-query T rowsort
+statement error
 mdb.list("user","mytest")
-----
-end user.mytest;
 

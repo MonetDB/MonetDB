@@ -34,36 +34,64 @@ bat.append(b,9:lng)
 statement ok
 b1 := bat.partition(b,2,0)
 
-statement error
+query TT rowsort
 io.print(b1)
+----
+10 values hashing to 724df681dede4af1f635136e48da78d6
 
 statement ok
 b2 := bat.partition(b,2,1)
 
-statement error
+query TT rowsort
 io.print(b2)
+----
+10 values hashing to ff49be35d9801b860b303b889bf78f82
 
 statement ok
 c1 := bat.partition(b1,2,0)
 
-statement error
+query TT rowsort
 io.print(c1)
+----
+@
+0
+@
+1
 
 statement ok
 c2 := bat.partition(b1,2,1)
 
-statement error
+query TT rowsort
 io.print(c2)
+----
+@
+2
+@
+3
+@
+4
 
 statement ok
 d1 := bat.partition(b2,2,0)
 
-statement error
+query TT rowsort
 io.print(d1)
+----
+@
+5
+@
+6
 
 statement ok
 d2 := bat.partition(b2,2,1)
 
-statement error
+query TT rowsort
 io.print(d2)
+----
+@
+7
+@
+8
+@
+9
 

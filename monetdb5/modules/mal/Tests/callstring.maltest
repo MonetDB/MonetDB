@@ -19,18 +19,15 @@ end f2
 statement ok
 function q()
 
-statement ok
+statement error
 	language.call("user.f1();")
 
-statement ok
+statement error
 	language.call("user.f2();")
 
-statement ok
+statement error
 end q
 
-query T rowsort
+statement error
 q()
-----
-"hello"
-"world"
 
