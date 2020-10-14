@@ -41,5 +41,5 @@ Converted folders progress:
 - sql/test/ADT2006              pass
 - sql/test/broken_delete        pass
 - sql/test/astro                pass
-- sql/benchmarks/tpch/Tests     pass
+- sql/benchmarks/tpch           pass
 - sql/benchmarks/tpcds          pass
