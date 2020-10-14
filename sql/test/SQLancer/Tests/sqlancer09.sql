@@ -11,3 +11,11 @@ ALTER TABLE t2 ADD PRIMARY KEY(tc0);
 INSERT INTO t2(tc0) VALUES(44), (126), (117);
 ALTER TABLE t2 ADD FOREIGN KEY (tc0) REFERENCES t2(tc0) MATCH FULL;
 DROP TABLE t2;
+
+START TRANSACTION;
+CREATE TABLE "t2" ("tc0" BIGINT NOT NULL,CONSTRAINT "t2_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t2_tc0_unique" UNIQUE ("tc0"), CONSTRAINT "t2_tc0_fkey" FOREIGN KEY ("tc0") REFERENCES "t2" ("tc0"));
+CREATE TABLE "t0" ("tc0" TINYINT NOT NULL,"tc2" TINYINT NOT NULL,CONSTRAINT "t0_tc2_tc0_unique" UNIQUE ("tc2", "tc0"),CONSTRAINT "t0_tc2_fkey" FOREIGN KEY ("tc2") REFERENCES "t2" ("tc0"));
+
+update t0 set tc2 = 119, tc0 = cast(t0.tc0 as bigint);
+update t0 set tc2 = 119, tc0 = (least(+ (cast(least(0, t0.tc0) as bigint)), sign(scale_down(0.5617888903431327, 0.1081190663385756)))) where true;
+ROLLBACK;
