@@ -227,3 +227,6 @@ COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 
 select round(t2.tc0, 88) from t2;
 ROLLBACK;
+
+PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
+WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);

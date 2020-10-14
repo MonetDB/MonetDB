@@ -1737,9 +1737,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
 	f = bind_func_(sql, s, fname, tl, type);
-	if (f) {
-		return exp_op(sql->sa, exps, f);
-	} else if (list_length(tl)) {
+	if (!f && list_length(tl)) {
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
 		if (!funcs)
@@ -1757,17 +1755,15 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 				}
 			}
 		}
-		if (list_empty(funcs))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
-
-		f = list_fetch(funcs, match);
-		if (f->func->vararg) {
+		if (!list_empty(funcs))
+			f = list_fetch(funcs, match);
+	}
+	if (f) {
+		if (f->func->vararg)
 			return exp_op(sql->sa, exps, f);
-		} else {
-			list *nexps = check_arguments_and_find_largest_any_type(sql, rel, exps, f, table_func);
-			if (nexps)
-				return exp_op(sql->sa, nexps, f);
-		}
+		if (!(exps = check_arguments_and_find_largest_any_type(sql, rel, exps, f, table_func)))
+			return NULL;
+		return exp_op(sql->sa, exps, f);
 	}
 	return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 }

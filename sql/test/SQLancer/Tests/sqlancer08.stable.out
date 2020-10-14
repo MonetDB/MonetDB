@@ -308,6 +308,18 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 #94
 [ 6	]
 #ROLLBACK;
+#PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
+#WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
+#PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
+#WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	3,	1,	0,	3,	2 # length
+[ "bigint",	64,	0,	"",	"%10",	"%3"	]
+[ "char",	0,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	5,	0,	NULL,	NULL,	NULL	]
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
