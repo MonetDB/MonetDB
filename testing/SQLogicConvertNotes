@@ -43,3 +43,5 @@ Converted folders progress:
 - sql/test/astro                pass
 - sql/benchmarks/tpch           pass
 - sql/benchmarks/tpcds          pass
+- sql/benchmarks/ssbm           pass
+- sql/benchmarks/viam           pass
