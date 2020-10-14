@@ -207,6 +207,9 @@ stream *open_stream(const char *restrict filename, const char *restrict flags)
 stream *file_stream(const char *name)
 	__attribute__((__visibility__("hidden")));
 
+int file_remove(const char *filename)
+	__attribute__((__visibility__("hidden")));
+
 /* implementation detail of stdio_stream.c which must be public because
  * for example bstream() special cases on it to provide a fast path for file
  * i/o.

@@ -239,11 +239,6 @@ _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 
 	switch(e->type) {
 	case e_column:
-		if (is_union(f->op)) {
-			int p = list_position(f->exps, rel_find_exp(f, e));
-
-			return list_fetch(t->exps, p);
-		}
 		if (e->l) {
 			ne = rel_bind_column2(sql, f, e->l, e->r, 0);
 			/* if relation name matches expressions relation name, find column based on column name alone */
