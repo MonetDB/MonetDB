@@ -1,0 +1,87 @@
+statement ok
+js:= calc.json("[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }, { \"color\": \"red\", \"price\": 19.95 }]")
+
+query T rowsort
+io.print(js)
+----
+"[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }, { \"color\": \"red\", \"price\": 19.95 }]"
+
+statement ok
+(k,v):= json.unfold(js)
+
+query TTT rowsort
+io.print(k,v)
+----
+15 values hashing to 5cac1b7371af107a0ce969a0fa7b9356
+
+statement ok
+jsn:= json.fold(k,v)
+
+query T rowsort
+io.print(jsn)
+----
+"[{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 },{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 },{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 },{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 },{ \"color\": \"red\", \"price\": 19.95 }]"
+
+statement ok
+(o,l,w):= json.unfold(js)
+
+query TTTT rowsort
+io.print(o,l,w)
+----
+20 values hashing to b11466acaf819ae81847899784af069c
+
+statement ok
+barrier (i,j):= iterator.new(w)
+
+statement ok
+io.print(j)
+
+statement ok
+redo (i,j) := iterator.next(w)
+
+query T rowsort
+exit (i,j)
+----
+"{ \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }"
+"{ \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }"
+"{ \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 }"
+"{ \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }"
+"{ \"color\": \"red\", \"price\": 19.95 }"
+
+statement ok
+js := calc.json("[1,true, [2,false]]")
+
+query T rowsort
+io.print(js)
+----
+"[1,true, [2,false]]"
+
+statement ok
+(l1,l2) := json.unfold(js)
+
+query TT rowsort
+io.print(l2)
+----
+@
+1
+@
+[2,false]
+@
+true
+
+statement ok
+(l0,l1,l2) := json.unfold(js)
+
+query TTT rowsort
+io.print(l0,l2)
+----
+@
+0
+1
+@
+1
+true
+@
+2
+[2,false]
+

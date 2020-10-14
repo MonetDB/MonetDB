@@ -1,0 +1,152 @@
+statement ok
+b:= json.isvalid("{}")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("{}  ")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("{")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("}")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{}  }")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{}  }[1]")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{\"null\": null}")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("{[}]")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{:1}")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{\"k\"}")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{\"k\" :}")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{\"f1\"::1")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{\"f1\":1,\"f2\":2} ")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("{\"f1\":1,\"f2\":2")
+
+query T rowsort
+io.print(b)
+----
+false
+
+statement ok
+b:= json.isvalid("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("[ ]")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("[1,\"f2\", 2]")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("[1 , 2 ]")
+
+query T rowsort
+io.print(b)
+----
+true
+
+statement ok
+b:= json.isvalid("[\"\\/\" , 2 ]")
+
+query T rowsort
+io.print(b)
+----
+true
+

@@ -1,0 +1,25 @@
+statement ok
+b:= uuid.new()
+
+statement ok
+s:str:= uuid.str(b)
+
+statement ok
+x:= uuid.isaUUID(s)
+
+query T rowsort
+io.print(x)
+----
+true
+
+statement ok
+z:uuid:= uuid.uuid(s)
+
+statement ok
+t:= z == b
+
+query T rowsort
+io.print(t)
+----
+true
+

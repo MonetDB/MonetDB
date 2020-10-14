@@ -1,0 +1,221 @@
+statement ok
+b:= json.new("{}")
+
+statement ok
+f:= json.filter(b,"f1")
+
+query T rowsort
+io.print(f)
+----
+"[]"
+
+statement ok
+b:= json.new("{\"f1\":1}")
+
+statement ok
+f:= json.filter(b,"f1")
+
+query T rowsort
+io.print(f)
+----
+"[1]"
+
+statement ok
+b:= json.new("{\"f1\":1,\"f2\":2}")
+
+statement ok
+f:= json.filter(b,"f2")
+
+query T rowsort
+io.print(f)
+----
+"[2]"
+
+statement ok
+f:= json.filter(b,"f1,f2")
+
+query T rowsort
+io.print(f)
+----
+"[1,2]"
+
+statement ok
+b:= json.new("{\"f1\":1,\"f2\":2,\"f1\":3}")
+
+statement ok
+f:= json.filter(b,"f1[0]")
+
+query T rowsort
+io.print(f)
+----
+"[1]"
+
+statement ok
+f:= json.filter(b,"f1[1]")
+
+query T rowsort
+io.print(f)
+----
+"[3]"
+
+statement ok
+f:= json.filter(b,"f1[2]")
+
+query T rowsort
+io.print(f)
+----
+"[]"
+
+statement ok
+f:= json.filter(b,"*")
+
+query T rowsort
+io.print(f)
+----
+"[1,2,3]"
+
+statement ok
+b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}")
+
+statement ok
+f:= json.filter(b,"..f12,$..f2[1]")
+
+query T rowsort
+io.print(f)
+----
+"[3,[2,3,4]]"
+
+statement ok
+f:= json.filter(b,"f1")
+
+query T rowsort
+io.print(f)
+----
+"[{\"f12\":3}]"
+
+statement ok
+f:= json.filter(b,"f1.f12")
+
+query T rowsort
+io.print(f)
+----
+"[3]"
+
+statement ok
+f:= json.filter(b,"$.f1.f12")
+
+query T rowsort
+io.print(f)
+----
+"[3]"
+
+statement ok
+f:= json.filter(b,"..f12")
+
+query T rowsort
+io.print(f)
+----
+"[3]"
+
+statement ok
+b:= json.new("[1,\"f2\", 2]")
+
+statement ok
+f:= json.filter(b,"[0]")
+
+query T rowsort
+io.print(f)
+----
+"[1]"
+
+statement ok
+f:= json.filter(b,"[1]")
+
+query T rowsort
+io.print(f)
+----
+"[\"f2\"]"
+
+statement ok
+f:= json.filter(b,"[2]")
+
+query T rowsort
+io.print(f)
+----
+"[2]"
+
+statement ok
+f:= json.filter(b,"[3]")
+
+query T rowsort
+io.print(f)
+----
+"[]"
+
+statement ok
+b:= json.new("[{\"boter\":1},{\"kaas\":2},{\"eieren\":3}]")
+
+statement ok
+f:= json.filter(b,"[*].*")
+
+query T rowsort
+io.print(f)
+----
+"[1,2,3]"
+
+statement ok
+f:= json.filter(b,"[0]")
+
+query T rowsort
+io.print(f)
+----
+"[{\"boter\":1}]"
+
+statement ok
+f:= json.filter(b,"[0].boter")
+
+query T rowsort
+io.print(f)
+----
+"[1]"
+
+statement ok
+f:= json.filter(b,"[1]")
+
+query T rowsort
+io.print(f)
+----
+"[{\"kaas\":2}]"
+
+statement ok
+f:= json.filter(b,"[1].kaas")
+
+query T rowsort
+io.print(f)
+----
+"[2]"
+
+statement ok
+f:= json.filter(b,"[2]")
+
+query T rowsort
+io.print(f)
+----
+"[{\"eieren\":3}]"
+
+statement ok
+f:= json.filter(b,"[2].eieren")
+
+query T rowsort
+io.print(f)
+----
+"[3]"
+
+statement ok
+f:= json.filter(b,"[3]")
+
+query T rowsort
+io.print(f)
+----
+"[]"
+

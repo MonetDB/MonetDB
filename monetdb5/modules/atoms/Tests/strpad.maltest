@@ -1,0 +1,96 @@
+statement ok
+a := str.lpad("hi", 7)
+
+query T rowsort
+io.print(a)
+----
+"     hi"
+
+statement ok
+a := str.lpad("hixyäbcdef", 7)
+
+query T rowsort
+io.print(a)
+----
+"hixy@bc"
+
+statement ok
+a := str.lpad("hi", 7, "xya")
+
+query T rowsort
+io.print(a)
+----
+"xyaxyhi"
+
+statement ok
+a := str.lpad("hi", 7, "xyä")
+
+query T rowsort
+io.print(a)
+----
+"xy@xyhi"
+
+statement ok
+a := str.lpad("hi", 7, "xyäbcdef")
+
+query T rowsort
+io.print(a)
+----
+"xy@bchi"
+
+statement ok
+a := str.lpad("hixyäbcdef", 7, "lmn")
+
+query T rowsort
+io.print(a)
+----
+"hixy@bc"
+
+statement ok
+a := str.rpad("hi", 7)
+
+query T rowsort
+io.print(a)
+----
+"hi     "
+
+statement ok
+a := str.rpad("hixyäbcdef", 7)
+
+query T rowsort
+io.print(a)
+----
+"hixy@bc"
+
+statement ok
+a := str.rpad("hi", 7, "xya")
+
+query T rowsort
+io.print(a)
+----
+"hixyaxy"
+
+statement ok
+a := str.rpad("hi", 7, "xyä")
+
+query T rowsort
+io.print(a)
+----
+"hixy@xy"
+
+statement ok
+a := str.rpad("hi", 7, "xyäbcdef")
+
+query T rowsort
+io.print(a)
+----
+"hixy@bc"
+
+statement ok
+a := str.rpad("hixyäbcdef", 7, "lmn")
+
+query T rowsort
+io.print(a)
+----
+"hixy@bc"
+

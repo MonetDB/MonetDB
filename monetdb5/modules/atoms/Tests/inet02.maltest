@@ -1,0 +1,112 @@
+statement ok
+i1 := inet.new("192.168.1.5")
+
+query T rowsort
+io.print(i1)
+----
+192.168.1.5
+
+statement ok
+i2 := inet.new("192.168.1.6")
+
+query T rowsort
+io.print(i2)
+----
+192.168.1.6
+
+statement ok
+i3 := inet.new("192.168.1/24")
+
+query T rowsort
+io.print(i3)
+----
+192.168.1.0/24
+
+statement ok
+i4 := inet.new("192.168.1.4")
+
+query T rowsort
+io.print(i4)
+----
+192.168.1.4
+
+statement ok
+e := inet.<(i1, i2)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.<=(i1, i1)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.=(i1, i1)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.>=(i1, i1)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.>(i1, i4)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.!=(i1, i4)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.<<(i1, i3)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.<<=(i3, i3)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.>>(i3, i1)
+
+query T rowsort
+io.print(e)
+----
+true
+
+statement ok
+e := inet.>>=(i3, i3)
+
+query T rowsort
+io.print(e)
+----
+true
+

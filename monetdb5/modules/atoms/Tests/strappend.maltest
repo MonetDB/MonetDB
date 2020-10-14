@@ -1,0 +1,53 @@
+statement ok
+b := bat.new(:str)
+
+statement ok
+bat.append(b, nil:str)
+
+statement ok
+bat.append(b, "short_1")
+
+statement ok
+bat.append(b, "longer_string")
+
+statement ok
+bat.append(b, "8charstr")
+
+statement ok
+bat.append(b, "")
+
+statement ok
+bat.append(b, "10-longstr")
+
+statement ok
+n := bat.new(:str)
+
+statement ok
+bat.append(n, nil:str)
+
+statement ok
+bat.append(n, "short_1")
+
+statement ok
+bat.append(n, "short_2")
+
+statement ok
+bat.append(n, "8charstr")
+
+statement ok
+bat.append(n, "")
+
+statement ok
+bat.append(n, "another 1")
+
+statement ok
+b := bat.append(b, n)
+
+statement ok
+(g,e,h) := group.group(b)
+
+query TTT rowsort
+io.print(b,g)
+----
+36 values hashing to 2da433cf5fb00cb07f3c94fbbffd47b2
+

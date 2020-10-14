@@ -1,0 +1,110 @@
+statement ok
+a:= bat.new(:str)
+
+statement ok
+bat.append(a,"john")
+
+statement ok
+bat.append(a,"john")
+
+statement ok
+bat.append(a,"marie")
+
+statement ok
+t:= bat.new(:str)
+
+statement ok
+bat.append(t,"spring")
+
+statement ok
+bat.append(t,"summer")
+
+statement ok
+bat.append(t,"autum")
+
+statement ok
+ax:= batxml.xml(a)
+
+statement ok
+tx:= batxml.xml(t)
+
+statement ok
+te:= batxml.element("title",tx)
+
+statement ok
+g:= bat.new(:oid)
+
+statement ok
+bat.append(g,0@0)
+
+statement ok
+bat.append(g,0@0)
+
+statement ok
+bat.append(g,1@0)
+
+statement ok
+e:=bat.new(:int)
+
+statement ok
+bat.append(e,0)
+
+statement ok
+bat.append(e,0)
+
+statement ok
+k:= algebra.projection(g,te)
+
+statement error
+io.print(k)
+
+statement ok
+l:= algebra.sort(k,false,false,false)
+
+statement error
+io.print(l)
+
+statement ok
+ag:= xml.subaggr(te,g,e,true)
+
+statement error
+io.print(ag)
+
+statement ok
+cc:= batxml.concat(ax,te)
+
+statement error
+io.print(cc)
+
+query T rowsort
+io.print("author construction")
+----
+"author construction"
+
+statement ok
+ae:= batxml.element("author",cc)
+
+statement error
+io.print(ae)
+
+query T rowsort
+io.print("book construction")
+----
+"book construction"
+
+statement ok
+be:= xml.aggr(ae)
+
+query T rowsort
+io.print(be)
+----
+<author>john<title>spring</title></author><author>john<title>summer</title></author><author>marie<title>autum</title></author>
+
+statement ok
+doc:= xml.element("books",be)
+
+query T rowsort
+io.print(doc)
+----
+<books><author>john<title>spring</title></author><author>john<title>summer</title></author><author>marie<title>autum</title></author></books>
+

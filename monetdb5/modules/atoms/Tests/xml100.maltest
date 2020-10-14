@@ -1,0 +1,55 @@
+statement ok
+b:= "Mary Ann Walker"
+
+statement ok
+c:= "brown"
+
+statement ok
+n:= nil:xml
+
+query T rowsort
+io.print(n)
+----
+NULL
+
+statement ok
+ns:= xml.str(n)
+
+query T rowsort
+io.print(ns)
+----
+NULL
+
+statement ok
+bx:= xml.xml(b)
+
+statement ok
+cx:= xml.xml(c)
+
+statement ok
+xp:= xml.element("person",bx)
+
+query T rowsort
+io.print(xp)
+----
+<person>Mary Ann Walker</person>
+
+statement ok
+xh:= xml.element("hair",nil:xml,nil:xml,cx)
+
+query T rowsort
+io.print(xh)
+----
+<hair>brown</hair>
+
+statement ok
+xx:= xml.forest(xp,xh)
+
+statement ok
+xs:= xml.str(xx)
+
+query T rowsort
+io.print(xs)
+----
+"<person>Mary Ann Walker</person><hair>brown</hair>"
+

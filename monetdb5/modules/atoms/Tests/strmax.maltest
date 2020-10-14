@@ -1,0 +1,49 @@
+statement ok
+s1:= "hello"
+
+statement ok
+s2:= "world"
+
+statement ok
+s3:= nil:str
+
+query T rowsort
+a1:= calc.max(s1,s2); io.print(a1)
+----
+"world"
+
+query T rowsort
+a2:= calc.max(s1,s3); io.print(a2)
+----
+NULL
+
+query T rowsort
+b1:= calc.min(s1,s2); io.print(b1)
+----
+"hello"
+
+query T rowsort
+b2:= calc.min(s1,s3); io.print(b2)
+----
+NULL
+
+query T rowsort
+c1:= calc.max_no_nil(s1,s2); io.print(c1)
+----
+"world"
+
+query T rowsort
+c2:= calc.max_no_nil(s1,s3); io.print(c2)
+----
+"hello"
+
+query T rowsort
+d1:= calc.min_no_nil(s1,s2); io.print(d1)
+----
+"hello"
+
+query T rowsort
+d2:= calc.min_no_nil(s1,s3); io.print(d2)
+----
+"hello"
+

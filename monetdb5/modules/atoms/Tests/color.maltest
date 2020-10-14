@@ -1,0 +1,163 @@
+statement ok
+function testcolor()
+
+statement ok
+    c:= color.rgb(100,101,102)
+
+statement ok
+	cs:= color.str(c)
+
+statement ok
+    io.print(cs)
+
+statement ok
+    V38 := color.red(c)
+
+statement ok
+    io.print(V38)
+
+statement ok
+    V41 := color.green(c)
+
+statement ok
+    io.print(V41)
+
+statement ok
+    V44 := color.blue(c)
+
+statement ok
+    io.print(V44)
+
+statement ok
+    V47 := color.hsv(90.0,0.5,1.0)
+
+statement ok
+    c := V47
+
+statement ok
+	cs:= color.str(c)
+
+statement ok
+    io.print(cs)
+
+statement ok
+    V62 := color.hue(c)
+
+statement ok
+    V63 := color.saturation(c)
+
+statement ok
+    V64 := color.value(c)
+
+statement ok
+    V61 := color.hsv(V62,V63,V64)
+
+statement ok
+	S61 := color.str(V61)
+
+statement ok
+    io.print(S61)
+
+statement ok
+    V66 := color.ycc(200,100,50)
+
+statement ok
+    c := V66
+
+statement ok
+	cs:= color.str(c)
+
+statement ok
+    io.print(cs)
+
+statement ok
+    V73 := color.luminance(c)
+
+statement ok
+    io.print(V73)
+
+statement ok
+    V76 := color.cr(c)
+
+statement ok
+    io.print(V76)
+
+statement ok
+    V79 := color.cb(c)
+
+statement ok
+    io.print(V79)
+
+statement ok
+    V82 := color.color("0x0012ABcd")
+
+statement ok
+    c := V82
+
+statement ok
+	cs:= color.str(c)
+
+statement ok
+    io.print(cs)
+
+statement ok
+    V88 := color.red(c)
+
+statement ok
+    io.print(V88)
+
+statement ok
+    V91 := color.green(c)
+
+statement ok
+    io.print(V91)
+
+statement ok
+    V94 := color.blue(c)
+
+statement ok
+    io.print(V94)
+
+statement ok
+end testcolor
+
+query T rowsort
+user.testcolor()
+----
+14 values hashing to b9143297836ce1f423816314390ca360
+
+statement ok
+	bc:= bat.new(:color)
+
+statement ok
+	bat.append(bc,"0x00000000":color)
+
+statement ok
+	bat.append(bc,"0x0033ff44":color)
+
+statement ok
+	bat.append(bc,"0x00003f44":color)
+
+query TT rowsort
+	io.print(bc)
+----
+@
+x0000000
+@
+x00003F4
+@
+x0033FF4
+
+statement ok
+	z:= batcolor.red(bc)
+
+query TI rowsort
+	io.print(z)
+----
+@
+0
+@
+0
+@
+51
+

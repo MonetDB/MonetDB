@@ -1,0 +1,76 @@
+statement ok
+js:= json.new("{\"myList\":23,\"yours\":[\"a\",\"b\"]}")
+
+statement ok
+j1:=json.keyarray(js)
+
+query T rowsort
+io.print(j1)
+----
+"[\"myList\",\"yours\"]"
+
+statement ok
+a1:=json.valuearray(js)
+
+query T rowsort
+io.print(a1)
+----
+"[23,[\"a\",\"b\"]]"
+
+statement ok
+n1:=json.keys(js)
+
+query TT rowsort
+io.print(n1)
+----
+@
+myList
+@
+yours
+
+statement ok
+v1:=json.values(js)
+
+query TT rowsort
+io.print(v1)
+----
+@
+23
+@
+["a","b"]
+
+statement ok
+js:= json.new("{\"myBoolean\":true,\"myList\":[\"a\",\"b\"],\"myMap\":{\"c\":\"d\",\"a\":\"b\"},\"myObject\":\"myClass\",\"myJsonObject\":{\"myString\":\"myStringValue\"}}")
+
+statement ok
+j1:=json.keyarray(js)
+
+query T rowsort
+io.print(j1)
+----
+"[\"myBoolean\",\"myList\",\"myMap\",\"myObject\",\"myJsonObject\"]"
+
+statement ok
+a1:=json.valuearray(js)
+
+query T rowsort
+io.print(a1)
+----
+"[true,[\"a\",\"b\"],{\"c\":\"d\",\"a\":\"b\"},\"myClass\",{\"myString\":\"myStringValue\"}]"
+
+statement ok
+n1:=json.keys(js)
+
+query TT rowsort
+io.print(n1)
+----
+10 values hashing to 16cfdb1389d2506abdd88312fa2c5270
+
+statement ok
+v1:=json.values(js)
+
+query TT rowsort
+io.print(v1)
+----
+10 values hashing to d77b3729bc7adbef0a8548c505c2c19e
+

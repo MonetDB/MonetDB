@@ -1,0 +1,46 @@
+statement ok
+b:= bat.new(:str)
+
+statement ok
+bat.append(b,"Mary Ann Walker")
+
+statement ok
+bat.append(b,"Annie Chapman")
+
+statement ok
+h:= bat.new(:str)
+
+statement ok
+bat.append(h,"brown")
+
+statement ok
+bat.append(h,"curly dark brown")
+
+query TT rowsort
+io.print(b)
+----
+@
+Annie Chapman
+@
+Mary Ann Walker
+
+statement ok
+bs:= batxml.xml(b)
+
+statement ok
+bc:= batxml.element("name",bs)
+
+statement ok
+aa:= batxml.root(bc,"1.0","no")
+
+statement ok
+as:= batxml.str(aa)
+
+query TT rowsort
+io.print(as)
+----
+@
+<?xml version="1.0" standalone="no"?><name>Annie Chapman</name>
+@
+<?xml version="1.0" standalone="no"?><name>Mary Ann Walker</name>
+
