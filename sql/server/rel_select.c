@@ -493,6 +493,7 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, 
 {
 	sql_subfunc *f = bind_func_(sql, s, fname, tl, type);
 
+	assert(type == F_UNION || type == F_LOADER);
 	if (!f && list_length(tl)) {
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
