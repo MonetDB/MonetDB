@@ -29,29 +29,54 @@ stdout of test 'readonly.Bug-3709` in directory 'sql/test/BugTracker-2015` itsel
 #insert into s10 values (8); 
 [ 1	]
 #alter table s10 set read only; 
-#trace select * from s10; 
-% sys.s10 # table_name
-% x # name
-% int # type
-% 1 # length
-[ 8	]
-#trace select * from s10; 
-% .trace,	.trace # table_name
-% usec,	statement # name
-% bigint,	clob # type
-% 3,	134 # length
-[ 5,	"X_1=0@0:void := querylog.define(\"trace select * from s10;\":str, \"default_pipe\":str, 13:int);"	]
-[ 4,	"X_4=0:int := sql.mvc();"	]
-[ 20,	"X_14=[1]:bat[:str] := bat.pack(\"sys.s10\":str);"	]
-[ 22,	"X_18=[1]:bat[:int] := bat.pack(0:int);"	]
-[ 20,	"X_15=[1]:bat[:str] := bat.pack(\"x\":str);"	]
-[ 18,	"X_17=[1]:bat[:int] := bat.pack(32:int);"	]
-[ 22,	"X_16=[1]:bat[:str] := bat.pack(\"int\":str);"	]
-[ 134,	"C_5=[1]:bat[:cnd] := sql.tid(X_4=0:int, \"sys\":str, \"s10\":str); # select: dense"	]
-[ 10,	"X_11=[1]:bat[:int] := sql.bind(X_4=0:int, \"sys\":str, \"s10\":str, \"x\":str, 0:int);"	]
-[ 11,	"X_12=[1]:bat[:int] := algebra.projection(C_5=[1]:bat[:cnd], X_11=[1]:bat[:int]); # project_int"	]
-[ 350,	"barrier X_70=false:bit := language.dataflow();"	]
-[ 24,	"sql.resultSet(X_14=[1]:bat[:str], X_15=[1]:bat[:str], X_16=[1]:bat[:str], X_17=[1]:bat[:int], X_18=[1]:bat[:int], X_12=[1]:bat[:int]);"	]
+#explain select * from s10; 
+% .explain # table_name
+% mal # name
+% clob # type
+% 114 # length
+function user.main():void;
+    X_1:void := querylog.define("explain select * from s10;":str, "default_pipe":str, 13:int);
+barrier X_70:bit := language.dataflow();
+    X_14:bat[:str] := bat.pack("sys.s10":str);
+    X_15:bat[:str] := bat.pack("x":str);
+    X_16:bat[:str] := bat.pack("int":str);
+    X_17:bat[:int] := bat.pack(32:int);
+    X_18:bat[:int] := bat.pack(0:int);
+    X_4:int := sql.mvc();
+    C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "s10":str);
+    X_11:bat[:int] := sql.bind(X_4:int, "sys":str, "s10":str, "x":str, 0:int);
+    X_12:bat[:int] := algebra.projection(C_5:bat[:oid], X_11:bat[:int]);
+exit X_70:bit;
+    sql.resultSet(X_14:bat[:str], X_15:bat[:str], X_16:bat[:str], X_17:bat[:int], X_18:bat[:int], X_12:bat[:int]);
+end user.main;
+# optimizer.mitosis()
+#inline               actions= 0 time=0 usec 
+#remap                actions= 0 time=1 usec 
+#costmodel            actions= 1 time=1 usec 
+#coercion             actions= 0 time=1 usec 
+#aliases              actions= 0 time=0 usec 
+#evaluate             actions= 0 time=4 usec 
+#emptybind            actions= 0 time=0 usec 
+#pushselect           actions= 0 time=11 usec 
+#aliases              actions= 0 time=1 usec 
+#mergetable           actions= 0 time=19 usec 
+#deadcode             actions= 1 time=6 usec 
+#aliases              actions= 0 time=0 usec 
+#constants            actions= 0 time=1 usec 
+#commonTerms          actions= 0 time=4 usec 
+#projectionpath       actions= 0 time=3 usec 
+#deadcode             actions= 0 time=5 usec 
+#reorder              actions= 1 time=14 usec 
+#matpack              actions= 0 time=0 usec 
+#dataflow             actions= 1 time=16 usec 
+#multiplex            actions= 0 time=1 usec 
+#profiler             actions= 1 time=1 usec 
+#candidates           actions= 1 time=1 usec 
+#deadcode             actions= 0 time=5 usec 
+#postfix              actions= 0 time=3 usec 
+#wlc                  actions= 0 time=0 usec 
+#garbagecollector     actions= 1 time=17 usec 
+#total                actions=28 time=168 usec 
 #rollback;
 #drop table s10; 
 

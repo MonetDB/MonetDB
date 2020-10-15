@@ -272,38 +272,3 @@ tr_find_idx( sql_trans *tr, sql_idx *i)
 		return i;
 	return NULL;
 }
-
-static size_t
-msk_count(BAT *b)
-{
-	size_t nr = 0;
-	BUN cnt = BATcount(b);
-
-	for(BUN p = 0; p < cnt; p++) {
-		nr += (mskGetVal(b, p));
-	}
-	return nr;
-}
-
-BAT *
-msk2oid(BAT *b, ssize_t dcnt)
-{
-	if (dcnt < 0)
-		dcnt = msk_count(b);
-	BUN nr = BATcount(b);
-	BAT *del_ids = COLnew(0, TYPE_oid, dcnt, TRANSIENT);
-	oid seqb = b->hseqbase != oid_nil?b->hseqbase:0;
-	for(BUN p = 0; p < nr; p++) {
-		if (mskGetVal(b, p)) {
-			oid id = p + seqb;
-			if (BUNappend(del_ids, &id, false) != GDK_SUCCEED) {
-				BBPreclaim(del_ids);
-				return NULL;
-			}
-		}
-	}
-	del_ids->tkey = 1;
-	del_ids->tsorted = 1;
-	return del_ids;
-}
-

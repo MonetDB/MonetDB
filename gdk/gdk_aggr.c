@@ -982,7 +982,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 	BUN cnt = 0, ncand = ci->ncand;
 
 	if (ci->tpe == cand_dense && BATcount(b)) {
-		const uint32_t *restrict src = Tloc(b, (ci->seq - b->hseqbase) / 32);
+		const uint32_t *restrict src = mask_cand(b)?ccand_first(b)+ (ci->seq - b->hseqbase) / 32:Tloc(b, (ci->seq - b->hseqbase) / 32);
 		int bits = (ci->seq - b->hseqbase) % 32;
 		if (bits + ncand <= 32) {
 			if (ncand == 32)
@@ -1028,7 +1028,7 @@ BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils, bool abort_on_error, b
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
-	if (ATOMstorage(b->ttype) == TYPE_msk) {
+	if (ATOMstorage(b->ttype) == TYPE_msk || mask_cand(b)) {
 		ncand = mskCountOnes(b, &ci);
 		switch (tp) {
 		case TYPE_bte:

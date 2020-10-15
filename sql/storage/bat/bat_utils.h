@@ -48,6 +48,4 @@ extern sql_table * tr_find_base_table( sql_trans *tr, sql_table *t);
 extern sql_column * tr_find_base_column( sql_trans *tr, sql_column *c);
 extern sql_idx * tr_find_base_idx( sql_trans *tr, sql_idx *i);
 
-extern BAT *msk2oid(BAT *b, ssize_t cnt);
-
 #endif /* BAT_UTILS_H */

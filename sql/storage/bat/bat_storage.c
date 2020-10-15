@@ -201,6 +201,7 @@ count_deletes(storage *d)
 			BBPunfix(c->batCacheid);
 			return 0;
 		}
+		BBPunfix(c->batCacheid);
 	}
 	return cnt;
 }
@@ -345,8 +346,8 @@ cs_update_bat( column_storage *cs, BAT *tids, BAT *updates, int is_new)
 	if (!BATcount(tids))
 		return LOG_OK;
 
-	if (tids && tids->ttype == TYPE_msk) {
-		otids = msk2oid(tids, BATcount(updates));
+	if (tids && (tids->ttype == TYPE_msk || mask_cand(tids))) {
+		otids = BATunmask(tids);
 		if (!otids)
 			return LOG_ERR;
 	}
@@ -582,8 +583,8 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 	if (b == NULL)
 		return LOG_ERR;
 
-	if (i && i->ttype == TYPE_msk) {
-		oi = msk2oid(i, -1);
+	if (i && (i->ttype == TYPE_msk || mask_cand(i))) {
+		oi = BATunmask(i);
 	}
 	if (BATcount(b) >= offset+BATcount(oi)){
 		BAT *ui = BATdense(0, offset, BATcount(oi));
@@ -833,7 +834,7 @@ delta_delete_bat( storage *bat, BAT *i, int is_new)
 	msk T = TRUE;
 	BAT *t, *oi = i;
 
-	if (i->ttype == TYPE_msk)
+	if (i->ttype == TYPE_msk || mask_cand(i))
 			i = BATunmask(i);
 	t = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
 	int ok = LOG_OK;
@@ -1048,6 +1049,8 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 			unlock_table(t->base.id);
 			return LOG_ERR;
 		}
+		bat_destroy(ui);
+		bat_destroy(uv);
 		bat_destroy(uin);
 		bat_destroy(uvn);
 #if 0

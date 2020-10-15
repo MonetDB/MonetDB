@@ -1458,7 +1458,7 @@ BATslice(BAT *b, BUN l, BUN h)
 		goto doreturn;
 	}
 
-	if (b->ttype == TYPE_void && b->tvheap != NULL) {
+	if (complex_cand(b)) {
 		/* slicing a candidate list with exceptions */
 		struct canditer ci;
 		canditer_init(&ci, NULL, b);

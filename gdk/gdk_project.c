@@ -120,14 +120,14 @@ project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
 	struct canditer r1ci = {0}, r2ci = {0};
 
 	MT_thread_setalgorithm(__func__);
-	if (r1->ttype == TYPE_void && r1->tvheap != NULL)
+	if (complex_cand(r1))
 		canditer_init(&r1ci, NULL, r1);
 	else if (!BATtdense(r1))
 		r1t = (const oid *) Tloc(r1, 0);
 	r1seq = r1->hseqbase;
 	r1end = r1seq + BATcount(r1);
 	if (r2) {
-		if (r2->ttype == TYPE_void && r2->tvheap != NULL)
+		if (complex_cand(r2))
 			canditer_init(&r2ci, NULL, r2);
 		else if (!BATtdense(r2))
 			r2t = (const oid *) Tloc(r2, 0);
@@ -310,7 +310,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	assert(r2 == NULL || tpe == ATOMtype(r2->ttype));
 	assert(r2 == NULL || r1->hseqbase + r1->batCount == r2->hseqbase);
 
-	if (BATtdense(l) && lcount > 0) {
+	if (BATtdense(l) && lcount > 0/* && !mask_cand(l)*/) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
 		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1->batCount) {
@@ -330,8 +330,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			goto doreturn;
 		}
 	}
-	if ((l->ttype == TYPE_void && l->tvheap != NULL) ||
-	    l->ttype == TYPE_msk) {
+	if (complex_cand(l) || l->ttype == TYPE_msk) {
 		/* l is candidate list with exceptions or is a bitmask */
 		assert(l->ttype == TYPE_msk || !is_oid_nil(l->tseqbase));
 		lcount = canditer_init(&ci, NULL, l);
@@ -370,7 +369,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		 * right string heap) */
 		tpe = r1->twidth == 1 ? TYPE_bte : (r1->twidth == 2 ? TYPE_sht : (r1->twidth == 4 ? TYPE_int : TYPE_lng));
 		stringtrick = true;
-	} else if (tpe == TYPE_msk) {
+	} else if (tpe == TYPE_msk || mask_cand(r1)) {
 		r1 = BATunmask(r1);
 		if (r1 == NULL)
 			goto doreturn;
@@ -539,7 +538,7 @@ BATprojectchain(BAT **bats)
 	 * temporary work space */
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
-		ndelete += (b->ttype == TYPE_msk);
+		ndelete += (b->ttype == TYPE_msk || mask_cand(b));
 		TRC_DEBUG(ALGO, "arg %d: " ALGOBATFMT "\n",
 			  n + 1, ALGOBATPAR(b));
 	}
@@ -567,8 +566,10 @@ BATprojectchain(BAT **bats)
 	ndelete = 0;
 	for (n = 0; bats[n]; n++) {
 		b = bats[n];
-		if (b->ttype == TYPE_msk) {
-			if ((b = BATunmask(b)) == NULL) {
+		if (b->ttype == TYPE_msk || mask_cand(b)) {
+			BAT *nb = b;
+
+			if ((b = BATunmask(nb)) == NULL) {
 				goto bunins_failed;
 			}
 			tobedeleted[ndelete++] = b;
