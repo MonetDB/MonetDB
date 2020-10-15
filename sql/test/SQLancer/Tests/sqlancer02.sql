@@ -260,3 +260,10 @@ true
 
 SELECT substr(ltrim('1Yc',''), CAST(t2.tc2 AS INT), "second"(CAST(t0.tc0 AS TIMESTAMP))) FROM t2, t0;
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("c0" INTEGER NOT NULL);
+INSERT INTO "t2" VALUES (59), (-3), (5), (0), (1), (-6);
+
+UPDATE t2 SET c0 = 5 WHERE least(((3)=(round(0.55, t2.c0))), true);
+ROLLBACK;
