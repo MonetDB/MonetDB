@@ -115,6 +115,7 @@ gz_stream(stream *inner, int level)
 	if (gz == NULL || state == NULL) {
 		free(gz);
 		free(state);
+		mnstr_set_open_error(inner->name, errno, "couldn't initialize gz stream");
 		return NULL;
 	}
 

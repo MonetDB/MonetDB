@@ -48,6 +48,10 @@ MAPI  = (monetdb) /var/tmp/mtest-446274/.s.monetdb.33895
 QUERY = PREPARE SELECT DISTINCT ?, CAST(CASE least(?, r'weHtU') WHEN ? THEN ? WHEN ? THEN ? WHEN (VALUES (?)) THEN r'G' ELSE ? END AS DATE) WHERE (?) IS NOT NULL LIMIT 519007555986016405;
 ERROR = !Cannot have a parameter (?) for IS NOT NULL operator
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-17349/.s.monetdb.38601
+QUERY = SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;
+ERROR = !overflow in conversion to DECIMAL(18,18).
+CODE  = 22003
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
