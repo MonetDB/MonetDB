@@ -35,6 +35,35 @@
 
 #define BIG lng			/* a larger type */
 
+static void
+finalize_ouput_copy_sorted_property(bat *res, BAT *bn, BAT *b, str msg, bool nils, BUN q)
+{
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = !b || b->tsorted;
+		bn->trevsorted = !b || b->trevsorted;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+}
+
+static void
+unfix_inputs(int nargs, ...)
+{
+	va_list valist;
+
+	va_start(valist, nargs);
+	for (int i = 0; i < nargs; i++) {
+		BAT *b = va_arg(valist, BAT *);
+		if (b)
+			BBPunfix(b->batCacheid);
+	}
+	va_end(valist);
+}
+
 #define TYPE bte
 #include "sql_round_impl.h"
 #undef TYPE

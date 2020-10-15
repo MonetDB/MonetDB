@@ -6,12 +6,16 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
-#define dec_round_body_nonil	FUN(TYPE, dec_round_body_nonil)
 #define dec_round_body		FUN(TYPE, dec_round_body)
 #define dec_round_wrap		FUN(TYPE, dec_round_wrap)
 #define bat_dec_round_wrap	FUN(TYPE, bat_dec_round_wrap)
+#define bat_dec_round_wrap_cst	FUN(TYPE, bat_dec_round_wrap_cst)
+#define bat_dec_round_wrap_nocst	FUN(TYPE, bat_dec_round_wrap_nocst)
+#define round_body		FUN(TYPE, round_body)
 #define round_wrap		FUN(TYPE, round_wrap)
 #define bat_round_wrap		FUN(TYPE, bat_round_wrap)
+#define bat_round_wrap_cst	FUN(TYPE, bat_round_wrap_cst)
+#define bat_round_wrap_nocst	FUN(TYPE, bat_round_wrap_nocst)
 #define nil_2dec		FUN(nil_2dec, TYPE)
 #define str_2dec_body		FUN(str_2dec_body, TYPE)
 #define str_2dec		FUN(str_2dec, TYPE)
@@ -21,7 +25,7 @@
 #define batdec2second_interval	FUN(TYPE, batdec2second_interval)
 
 static inline TYPE
-dec_round_body_nonil(TYPE v, TYPE r)
+dec_round_body(TYPE v, TYPE r)
 {
 	TYPE add = r >> 1;
 
@@ -33,17 +37,6 @@ dec_round_body_nonil(TYPE v, TYPE r)
 	return v / r;
 }
 
-static inline TYPE
-dec_round_body(TYPE v, TYPE r)
-{
-	/* shortcut nil */
-	if (ISNIL(TYPE)(v)) {
-		return NIL(TYPE);
-	} else {
-		return dec_round_body_nonil(v, r);
-	}
-}
-
 str
 dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 {
@@ -52,248 +45,502 @@ dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 
 	if (*r <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-	*res = dec_round_body(*v, *r);
+
+	*res = ISNIL(TYPE)(*v) ? NIL(TYPE) : dec_round_body(*v, *r);
 	return MAL_SUCCEED;
 }
 
 str
-bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
+bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *res, *v;
-	TYPE *src, *dst;
-	BUN i, cnt;
-	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
-
-	/* basic sanity checks */
-	assert(_res && _v && r);
-
-	if (*r <= 0)
-		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-	/* get argument BAT descriptor */
-	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	/* more sanity checks */
-	if (v->ttype != TPE(TYPE)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
-	}
-	cnt = BATcount(v);
-
-	/* allocate result BAT */
-	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
-	if (res == NULL) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	/* access columns as arrays */
-	src = (TYPE *) Tloc(v, 0);
-	dst = (TYPE *) Tloc(res, 0);
-
-	nonil = TRUE;
-	if (v->tnonil) {
-		for (i = 0; i < cnt; i++)
-			dst[i] = dec_round_body_nonil(src[i], *r);
-	} else {
-		for (i = 0; i < cnt; i++) {
-			if (ISNIL(TYPE)(src[i])) {
-				nonil = FALSE;
-				dst[i] = NIL(TYPE);
-			} else {
-				dst[i] = dec_round_body_nonil(src[i], *r);
-			}
-		}
-	}
-
-	/* set result BAT properties */
-	BATsetcount(res, cnt);
-	/* hard to predict correct tail properties in general */
-	res->tnonil = nonil;
-	res->tnil = !nonil;
-	res->tseqbase = oid_nil;
-	res->tsorted = v->tsorted;
-	res->trevsorted = v->trevsorted;
-	BATkey(res, false);
-
-	/* release argument BAT descriptors */
-	BBPunfix(v->batCacheid);
-
-	/* keep result */
-	BBPkeepref(*_res = res->batCacheid);
-
-	return MAL_SUCCEED;
-}
-
-#define cicle1(res, input) \
-	do { \
-		if (ISNIL(TYPE)(input)) { \
-			res = NIL(TYPE); \
-			nils = true; \
-		} else { \
-			res = 0; \
-		} \
-	} while (0)
-
-#define cicle2(res, input, rnd) \
-	do { \
-		if (ISNIL(TYPE)(input)) { \
-			res = NIL(TYPE); \
-			nils = true; \
-		} else { \
-			BIG lres; \
-			if (input > 0) \
-				lres = ((input + rnd) / scales[dff]) * scales[dff]; \
-			else \
-				lres = ((input - rnd) / scales[dff]) * scales[dff]; \
-			res = (TYPE) lres; \
-		} \
-	} while (0)
-
-#define cicle3(res, input, rnd) \
-	do { \
-		if (ISNIL(TYPE)(input)) { \
-			res = NIL(TYPE); \
-			nils = true; \
-		} else { \
-			BIG lres; \
-			if (input > 0) \
-				lres = ((input + rnd) / scales[dff]) * scales[dff]; \
-			else \
-				lres = ((input - rnd) / scales[dff]) * scales[dff]; \
-			res = (TYPE) lres; \
-		} \
-	} while (0)
-
-#define cicle4(res, input) \
-	do { \
-		if (ISNIL(TYPE)(input)) { \
-			res = NIL(TYPE); \
-			nils = true; \
-		} else { \
-			res = input; \
-		} \
-	} while (0)
-
-#define round_body(LOOP, res, input, d, s, r) \
-	do { \
-		if (-r > d) { \
-			LOOP(cicle1(res, input)); \
-		} else if (r > 0 && r < s) { \
-			BIG rnd; \
-			int dff = s - r; \
- \
-			if (dff < 0 || (size_t) dff >= sizeof(scales) / sizeof(scales[0])) { \
-				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds"); \
-				goto bailout; \
-			} \
-			rnd = scales[dff] >> 1; \
-			LOOP(cicle2(res, input, rnd)); \
-		} else if (r <= 0 && -r + s > 0) { \
-			BIG rnd; \
-			int dff = -r + s; \
- \
-			if (dff < 0 || (size_t) dff >= sizeof(scales) / sizeof(scales[0])) { \
-				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds"); \
-				goto bailout; \
-			} \
-			rnd = scales[dff] >> 1; \
-			LOOP(cicle3(res, input, rnd)); \
-		} else { \
-			LOOP(cicle4(res, input)); \
-		} \
-	} while (0)
-
-#define NOLOOP(X) \
-	do { \
-		 X; \
-	} while (0)
-
-str
-round_wrap(TYPE *res, const TYPE *v, const int *d, const int *s, const bte *r)
-{
-	bool nils = false;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	TYPE *restrict src, *restrict dst, x, r = *(TYPE *)getArgReference(stk, pci, 2);
 	str msg = MAL_SUCCEED;
-	/* basic sanity checks */
-	assert(res && v && r && d && s);
-
-	(void) nils;
-	round_body(NOLOOP, *res, *v, *d, *s, *r);
-
-bailout:
-	return msg;
-}
-
-#define BATLOOP(X) \
-	do { \
-		for (i = 0; i < cnt; i++) { \
-			X; \
-		} \
-	} while (0)
-
-str
-bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *r)
-{
-	BAT *res = NULL, *v = NULL;
-	TYPE *src, *dst;
-	BUN i, cnt = 0;
 	bool nils = false;
-	str msg = MAL_SUCCEED;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
-	/* basic sanity checks */
-	assert(_res && _v && r && d && s);
-
-	/* get argument BAT descriptor */
-	if ((v = BATdescriptor(*_v)) == NULL)
-		throw(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	/* more sanity checks */
-	if (v->ttype != TPE(TYPE)) {
+	(void) cntxt;
+	(void) mb;
+	if (r <= 0) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
+		goto bailout;
+	}
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (b->ttype != TPE(TYPE)) {
 		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
 		goto bailout;
 	}
-	cnt = BATcount(v);
-	/* allocate result BAT */
-	if (!(res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT))) {
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	/* access columns as arrays */
-	src = (TYPE *) Tloc(v, 0);
-	dst = (TYPE *) Tloc(res, 0);
+	off1 = b->hseqbase;
+	src = (TYPE *) Tloc(b, 0);
+	dst = (TYPE *) Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			x = src[p1];
 
-	round_body(BATLOOP, dst[i], src[i], *d, *s, *r);
+			if (ISNIL(TYPE)(x)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = dec_round_body(x, r);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			x = src[p1];
 
+			if (ISNIL(TYPE)(x)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = dec_round_body(x, r);
+			}
+		}
+	}
 bailout:
-	/* release argument BAT descriptors */
-	if (v)
-		BBPunfix(v->batCacheid);
-	if (res && !msg) {
-		/* set result BAT properties */
-		BATsetcount(res, cnt);
-		/* hard to predict correct tail properties in general */
-		res->tnonil = !nils;
-		res->tnil = nils;
-		res->tseqbase = oid_nil;
-		res->tsorted = v->tsorted;
-		res->trevsorted = v->trevsorted;
-		BATkey(res, false);
-		/* keep result */
-		BBPkeepref(*_res = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
-
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	unfix_inputs(2, b, bs);
 	return msg;
 }
 
-#undef cicle1
-#undef cicle2
-#undef cicle3
-#undef cicle4
+str
+bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	TYPE *restrict src, *restrict dst, x = *(TYPE *)getArgReference(stk, pci, 1), r;
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 4 ? getArgReference_bat(stk, pci, 3) : NULL;
 
-#undef NOLOOP
-#undef BATLOOP
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (b->ttype != TPE(TYPE)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	src = (TYPE *) Tloc(b, 0);
+	dst = (TYPE *) Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			r = src[p1];
+
+			if (r <= 0) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
+				goto bailout;
+			} else if (ISNIL(TYPE)(x)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = dec_round_body(x, r);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			r = src[p1];
+
+			if (r <= 0) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
+				goto bailout;
+			} else if (ISNIL(TYPE)(x)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = dec_round_body(x, r);
+			}
+		}
+	}
+
+bailout:
+	finalize_ouput_copy_sorted_property(res, bn, NULL, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+str
+bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
+	BUN q = 0;
+	TYPE *src1, *src2, *restrict dst, x, rr;
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+		*r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL,
+		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (left->ttype != TPE(TYPE)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
+		goto bailout;
+	}
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, left, lefts);
+	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+		msg = createException(MAL, "round", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = left->hseqbase;
+	off2 = right->hseqbase;
+	src1 = (TYPE *) Tloc(left, 0);
+	src2 = (TYPE *) Tloc(right, 0);
+	dst = (TYPE *) Tloc(bn, 0);
+	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+			x = src1[p1];
+			rr = src2[p2];
+
+			if (rr <= 0) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
+				goto bailout;
+			} else if (ISNIL(TYPE)(x)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = dec_round_body(x, rr);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+			x = src1[p1];
+			rr = src2[p2];
+
+			if (rr <= 0) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
+				goto bailout;
+			} else if (ISNIL(TYPE)(x)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = dec_round_body(x, rr);
+			}
+		}
+	}
+
+bailout:
+	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q);
+	unfix_inputs(4, left, lefts, right, rights);
+	return msg;
+}
+
+static inline TYPE
+round_body(TYPE v, int d, int s, int r)
+{
+	TYPE res = NIL(TYPE);
+
+	assert(!ISNIL(TYPE)(v));
+
+	if (-r > d) {
+		res = 0;
+	} else if (r > 0 && r < s) {
+		int dff = s - r;
+		BIG rnd = scales[dff] >> 1;
+		BIG lres;
+		if (v > 0)
+			lres = ((v + rnd) / scales[dff]) * scales[dff];
+		else
+			lres = ((v - rnd) / scales[dff]) * scales[dff];
+		res = (TYPE) lres;
+	} else if (r <= 0 && -r + s > 0) {
+		int dff = -r + s;
+		BIG rnd = scales[dff] >> 1;
+		BIG lres;
+		if (v > 0)
+			lres = ((v + rnd) / scales[dff]) * scales[dff];
+		else
+			lres = ((v - rnd) / scales[dff]) * scales[dff];
+		res = (TYPE) lres;
+	} else {
+		res = v;
+	}
+	return res;
+}
+
+str
+round_wrap(TYPE *res, const TYPE *v, const bte *r, const int *d, const int *s)
+{
+	/* basic sanity checks */
+	assert(res && v && r && d && s);
+
+	*res = (ISNIL(TYPE)(*v) || is_bte_nil(*r)) ? NIL(TYPE) : round_body(*v, *d, *s, *r);
+	return MAL_SUCCEED;
+}
+
+str
+bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	TYPE *restrict src, *restrict dst, x;
+	bte r = *getArgReference_bte(stk, pci, 2);
+	int d = *getArgReference_int(stk, pci, pci->argc == 6 ? 3 : 4), s = *getArgReference_int(stk, pci, pci->argc == 6 ? 4 : 5);
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (b->ttype != TPE(TYPE)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	src = (TYPE *) Tloc(b, 0);
+	dst = (TYPE *) Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			x = src[p1];
+
+			if (ISNIL(TYPE)(x) || is_bte_nil(r)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = round_body(x, d, s, r);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			x = src[p1];
+
+			if (ISNIL(TYPE)(x) || is_bte_nil(r)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = round_body(x, d, s, r);
+			}
+		}
+	}
+
+bailout:
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+str
+bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	TYPE *restrict dst, x = *(TYPE *)getArgReference(stk, pci, 1);
+	bte *restrict src, r;
+	int d = *getArgReference_int(stk, pci, pci->argc == 6 ? 3 : 4), s = *getArgReference_int(stk, pci, pci->argc == 6 ? 4 : 5);
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 3) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (b->ttype != TPE(TYPE)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
+		goto bailout;
+	}
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = b->hseqbase;
+	src = (bte *) Tloc(b, 0);
+	dst = (TYPE *) Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			r = src[p1];
+
+			if (ISNIL(TYPE)(x) || is_bte_nil(r)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = round_body(x, d, s, r);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			r = src[p1];
+
+			if (ISNIL(TYPE)(x) || is_bte_nil(r)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = round_body(x, d, s, r);
+			}
+		}
+	}
+
+bailout:
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	unfix_inputs(2, b, bs);
+	return msg;
+}
+
+str
+bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
+	BUN q = 0;
+	TYPE *restrict dst, *src1, x;
+	bte *src2, rr;
+	int d = *getArgReference_int(stk, pci, pci->argc == 7 ? 5 : 3), s = *getArgReference_int(stk, pci, pci->argc == 7 ? 6 : 4);
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0}, ci2 = {0};
+	oid off1, off2;
+	bat *res = getArgReference_bat(stk, pci, 0), *l = getArgReference_bat(stk, pci, 1),
+		*r = getArgReference_bat(stk, pci, 2),
+		*sid1 = pci->argc == 7 ? getArgReference_bat(stk, pci, 3) : NULL,
+		*sid2 = pci->argc == 7 ? getArgReference_bat(stk, pci, 4) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(left = BATdescriptor(*l)) || !(right = BATdescriptor(*r))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (left->ttype != TPE(TYPE)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
+		goto bailout;
+	}
+	if ((sid1 && !is_bat_nil(*sid1) && !(lefts = BATdescriptor(*sid1))) || (sid2 && !is_bat_nil(*sid2) && !(rights = BATdescriptor(*sid2)))) {
+		msg = createException(MAL, "round", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, left, lefts);
+	if (canditer_init(&ci2, right, rights) != q || ci1.hseq != ci2.hseq) {
+		msg = createException(MAL, "round", ILLEGAL_ARGUMENT " Requires bats of identical size");
+		goto bailout;
+	}
+	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), q, TRANSIENT))) {
+		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	off1 = left->hseqbase;
+	off2 = right->hseqbase;
+	src1 = (TYPE *) Tloc(left, 0);
+	src2 = (bte *) Tloc(right, 0);
+	dst = (TYPE *) Tloc(bn, 0);
+	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1), p2 = (canditer_next_dense(&ci2) - off2);
+			x = src1[p1];
+			rr = src2[p2];
+
+			if (ISNIL(TYPE)(x) || is_bte_nil(rr)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = round_body(x, d, s, rr);
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1), p2 = (canditer_next(&ci2) - off2);
+			x = src1[p1];
+			rr = src2[p2];
+
+			if (ISNIL(TYPE)(x) || is_bte_nil(rr)) {
+				dst[i] = NIL(TYPE);
+				nils = true;
+			} else {
+				dst[i] = round_body(x, d, s, rr);
+			}
+		}
+	}
+
+bailout:
+	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q);
+	unfix_inputs(4, left, lefts, right, rights);
+	return msg;
+}
 
 str
 nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
@@ -618,7 +865,6 @@ bailout:
 	return msg;
 }
 
-#undef dec_round_body_nonil
 #undef dec_round_body
 #undef dec_round_wrap
 #undef bat_dec_round_wrap
