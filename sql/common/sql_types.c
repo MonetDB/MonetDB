@@ -761,8 +761,9 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 
 		if (!f->res && !IS_FILT(f))
 			continue;
-		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
-			if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type))
+		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
+			sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
+			if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft)))
 				return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, tp);
 		}
 	}
@@ -782,8 +783,9 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 
 			if (!f->res && !IS_FILT(f))
 				continue;
-			if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
-				if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type))
+			if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
+				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
+				if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft)))
 					return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, tp);
 			}
 		}
