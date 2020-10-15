@@ -1391,7 +1391,7 @@ str mal2str(MalBlkPtr mb, int first, int last);
 int malAtomSize(int size, const char *name);
 str malBootstrap(char *modules[], int embedded);
 str malCommandCall(MalStkPtr stk, InstrPtr pci);
-str malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessionlimit);
+str malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessionlimit, int with_mapi_server);
 void malEmbeddedReset(void);
 _Noreturn void malEmbeddedStop(int status);
 str malExtraModulesBoot(Client c, str extraMalModules[], char *mal_scripts);

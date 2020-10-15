@@ -91,6 +91,9 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 	return GDK_SUCCEED;
 }
 
+#define INCRSIZELOG	(8 + (SIZEOF_OID / 2))
+#define INCRSIZE	(1 << INCRSIZELOG)
+
 /* Create the result bats for a join, returns the absolute maximum
  * number of outputs that could possibly be generated. */
 static BUN
@@ -143,8 +146,8 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 		maxsize = BUN_MAX;
 	}
 	size = estimate == BUN_NONE ? lcnt < rcnt ? lcnt : rcnt : estimate;
-	if (size < 1024)
-		size = 1024;
+	if (size < INCRSIZE)
+		size = INCRSIZE;
 	if (size > maxsize)
 		size = maxsize;
 	if ((rkey | semi | only_misses) & nil_on_miss) {
@@ -213,14 +216,17 @@ maybeextend(BAT *restrict r1, BAT *restrict r2,
 	    BUN cnt, BUN lcur, BUN lcnt, BUN maxsize)
 {
 	if (BATcount(r1) + cnt > BATcapacity(r1)) {
-		/* make some extra space by extrapolating how much
-		 * more we need (fraction of l we've seen so far is
-		 * used to estimate a new size but with a shallow
-		 * slope so that a skewed join doesn't overwhelm) */
+		/* make some extra space by extrapolating how much more
+		 * we need (fraction of l we've seen so far is used to
+		 * estimate a new size but with a shallow slope so that
+		 * a skewed join doesn't overwhelm, whilst making sure
+		 * there is somewhat significant progress) */
 		BUN newcap = (BUN) (lcnt / (lcnt / 4.0 + lcur * .75) * (BATcount(r1) + cnt));
+		newcap = (newcap + INCRSIZE - 1) & ~(((BUN) 1 << INCRSIZELOG) - 1);
 		if (newcap < cnt + BATcount(r1))
-			newcap = cnt + BATcount(r1) + 1024;
-		if (newcap > maxsize)
+			newcap = cnt + BATcount(r1) + INCRSIZE;
+		/* if close to maxsize, then just use maxsize */
+		if (newcap + INCRSIZE > maxsize)
 			newcap = maxsize;
 		/* make sure heap.free is set properly before
 		 * extending */
@@ -3424,6 +3430,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						 false);
 					r2->tsorted = false;
 					r2->trevsorted = false;
+					r2->tseqbase = oid_nil;
 					*r2p = r2;
 				} else {
 					GDKqsort(r1->theap->base, NULL, NULL,

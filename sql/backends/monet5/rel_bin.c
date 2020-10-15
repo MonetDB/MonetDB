@@ -2726,7 +2726,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	/* We did a full join, thats too much.
 	   Reduce this using difference and intersect */
-	c = stmt_mirror(be, left->op4.lval->h->data);
+	c = stmt_mirror(be, bin_first_column(be, left));
 	if (rel->op == op_anti) {
 		join = stmt_tdiff(be, c, jl, lcand);
 	} else {
@@ -3759,7 +3759,7 @@ insert_check_fkey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts, stm
 		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 1), ne);
 	} else {
 		/* releqjoin.count <> inserts[col1].count */
-		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1), ne);
+		s = stmt_binop(be, stmt_aggr(be, idx_inserts, NULL, NULL, cnt, 1, 0, 1), stmt_aggr(be, column(be, s), NULL, NULL, cnt, 1, 0, 1), ne);
 	}
 
 	/* s should be empty */

@@ -603,7 +603,7 @@ SQLinitClient(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
-	msg = SQLprepareClient(c, !GDKembedded());
+	msg = SQLprepareClient(c, true);
 	MT_lock_unset(&sql_contextLock);
 	return msg;
 }
