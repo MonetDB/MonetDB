@@ -159,6 +159,7 @@ if(WIN32)
   install(FILES
     Mlog.bat
     Mtest.py.bat
+    Mz.py.bat
     DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   install(FILES
