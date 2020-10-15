@@ -147,6 +147,18 @@ BuildRequires: python3-numpy
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
 %endif
+# if we were to compile with cmocka support (-DWITH_CMOCKA=ON):
+# BuildRequires: pkgconfig(cmocka)
+# if we were to compile with lz4 support (-DWITH_LZ4=ON):
+# BuildRequires: pkgconfig(liblz4)
+# if we were to compile with NetCDF support (-DNETCDF=ON):
+# BuildRequires: pkgconfig(netcdf)
+# if we were to compile with proj support (-DWITH_PROJ=ON):
+# BuildRequires: pkgconfig(proj)
+# if we were to compile with snappy support (-DWITH_SNAPPY=ON):
+# BuildRequires: pkgconfig(snappy)
+# if we were to compile with valgrind support (-DWITH_VALGRIND=ON):
+# BuildRequires: pkgconfig(valgrind)
 
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
@@ -245,6 +257,7 @@ Summary: MonetDB - Monet Database Management System Client Programs
 Group: Applications/Databases
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Recommends: MonetDB5-server%{?_isa} = %{version}-%{release}
 %endif
 
 %description client
@@ -339,7 +352,7 @@ Requires: %{name}-client-odbc%{?_isa} = %{version}-%{release}
 Recommends: perl-DBD-monetdb >= 1.0
 Recommends: php-monetdb >= 1.0
 %endif
-Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 Requires: python3-pymonetdb >= 1.0.6
 
 %description client-tests
@@ -382,7 +395,7 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package contains the GIS (Geographic Information System)
-extensions for %{name}-SQL-server5.
+extensions for MonetDB5-server.
 
 %files geom-MonetDB5
 %defattr(-,root,root)
@@ -393,7 +406,7 @@ extensions for %{name}-SQL-server5.
 %package R
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description R
 MonetDB is a database management system that is developed from a
@@ -418,7 +431,7 @@ install it.
 %package python3
 Summary: Integration of MonetDB and Python, allowing use of Python from within SQL
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description python3
 MonetDB is a database management system that is developed from a
@@ -442,7 +455,7 @@ install it.
 %package cfitsio
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
-Requires: MonetDB-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server%{?_isa} = %{version}-%{release}
 
 %description cfitsio
 MonetDB is a database management system that is developed from a
@@ -484,8 +497,9 @@ automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
 This package contains the MonetDB server component.  You need this
-package if you want to use the MonetDB database system.  If you want
-to use the SQL front end, you also need %{name}-SQL-server5.
+package if you want to use the MonetDB database system.  If you want to
+use the monetdb and monetdbd programs to manage your databases
+(recommended), you also need %{name}-SQL-server5.
 
 %pre -n MonetDB5-server
 %{?sysusers_create_package:echo 'u monetdb - "MonetDB Server" /var/lib/monetdb' | systemd-sysusers --replace=%_sysusersdir/monetdb.conf -}
@@ -519,6 +533,7 @@ exit 0
 %{_bindir}/mserver5
 %exclude %{_bindir}/stethoscope
 %{_libdir}/libmonetdb5.so.*
+%{_libdir}/libmonetdbsql.so*
 %dir %{_libdir}/monetdb5
 %if %{with cintegration}
 %{_libdir}/monetdb5/lib_capi.so
@@ -572,8 +587,8 @@ main-memory perspective with use of a fully decomposed storage model,
 automatic index management, extensibility of data types and search
 accelerators.  It also has an SQL front end.
 
-This package contains the SQL front end for MonetDB.  If you want to
-use SQL with MonetDB, you will need to install this package.
+This package contains the monetdb and monetdbd programs and the systemd
+configuration.
 
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %post SQL-server5
@@ -605,7 +620,6 @@ use SQL with MonetDB, you will need to install this package.
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
-%{_libdir}/libmonetdbsql.so*
 %doc %{_mandir}/man1/monetdb.1.gz
 %doc %{_mandir}/man1/monetdbd.1.gz
 %dir %{_datadir}/doc/MonetDB-SQL
@@ -770,6 +784,8 @@ export CFLAGS
 %endif
 %cmake3 \
 	-DRELEASE_VERSION=ON \
+	-DRUNDIR=%{_rundir}/monetdb \
+	-DLOGDIR=%{_localstatedir}/log/monetdb \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \
@@ -844,6 +860,16 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Tue Oct 13 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.5-20201013
+- Rebuilt.
+
+* Mon Oct 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.5-20201013
+- clients: mclient and msqldump now also look in $XDG_CONFIG_HOME for the monetdb
+  configuration file.
+
+* Fri Oct 09 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.3-20201009
+- Rebuilt.
+
 * Tue Oct 06 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.1-20201006
 - Rebuilt.
 - BZ#3553: All schema access to ubiquitous functions
@@ -936,7 +962,7 @@ fi
   Instead do SET current_timezone = interval '1' hour;
   Casting between interval and other numeric types is no longer possible
   as well, because they are not compatible.
-- sql: Because of incompatibilities this change may create, if an user intents
+- sql: Because of incompatibilities this change may create, if a user intends
   to convert a numeric value to an interval, the multiplication function
   can be used in the form: <numeric value> * interval '1' <interval length>
   e.g. 10 * interval '1' second = interval '10' second.
@@ -944,7 +970,7 @@ fi
   syntax. This option returns the number of milliseconds since the UNIX
   epoch 1970-01-01 00:00:00 UTC for date, timestamp and time values (it
   can be negative). Meanwhile, for day and second intervals, it returns the
-  total number of milliseconds on the interval. As a side note, the 'EPOCH'
+  total number of milliseconds in the interval. As a side note, the 'EPOCH'
   option is not available for month intervals, because this conversion is
   not transparent for this type.
 

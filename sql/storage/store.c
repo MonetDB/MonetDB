@@ -2598,7 +2598,7 @@ store_hot_snapshot(str tarfile)
 	}
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
-		GDKerror("Failed to open %s for writing: %s", tmppath, mnstr_peek_error(NULL));
+		GDKerror("%s", mnstr_peek_error(NULL));
 		goto end;
 	}
 	do_remove = 1;

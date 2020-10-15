@@ -2303,6 +2303,39 @@ bailout:
 	return err;		/* usually MAL_SUCCEED */
 }
 
+static str
+sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
+{
+	size_t bufsize = 1024, pos = 0;
+	char *buf = NULL, *err = NULL;
+	res_table *output = NULL;
+	BAT *b = NULL;
+
+	if ((buf = GDKmalloc(bufsize)) == NULL)
+		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+	/* if there are 4 'log' functions of the same name in the catalog: ((base 'e' or any base) * (flt or dbl)), then upgrade */
+	pos += snprintf(buf + pos, bufsize - pos,
+					"select id from sys.functions where name = 'log' and mod = 'mmath' and func = 'log' and system = true;\n");
+	assert(pos < bufsize);
+	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
+		goto bailout;
+	if ((b = BATdescriptor(output->cols[0].b))) {
+		if (BATcount(b) == 4) {
+			if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
+				goto bailout;
+			*systabfixed = true;
+		}
+	}
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (output)
+		res_table_destroy(output);
+	GDKfree(buf);
+	return err;		/* usually MAL_SUCCEED */
+}
+
 int
 SQLupgrades(Client c, mvc *m)
 {
@@ -2499,6 +2532,13 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	if ((err = sql_update_oct2020(c, m, prev_schema, &systabfixed)) != NULL) {
+		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+		freeException(err);
+		GDKfree(prev_schema);
+		return -1;
+	}
+
+	if ((err = sql_update_oct2020_sp1(c, m, prev_schema, &systabfixed)) != NULL) {
 		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 		freeException(err);
 		GDKfree(prev_schema);

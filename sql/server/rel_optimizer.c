@@ -1337,16 +1337,16 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 {
 	switch(e->type) {
 	case e_cmp: {
-		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
+		int res = 1, lmust = 0;
 
 		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
-		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
-				(!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) ||
-			(f &&
-				(r->type == e_column || can_push_func(r, rel, &mustr)) &&
-			(f->type == e_column || can_push_func(f, rel, &mustf)) && (*must = (mustr || mustf)));
+		res = can_push_func(l, rel, &lmust) && can_push_func(r, rel, &lmust) && (!f || can_push_func(f, rel, &lmust));
+		if (res && !lmust)
+			return 1;
+		(*must) |= lmust;
+		return res;
 	}
 	case e_convert:
 		return can_push_func(e->l, rel, must);
@@ -1365,7 +1365,8 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		return res;
 	}
 	case e_column:
-		if (rel && !rel_find_exp(rel, e))
+		 /* aliases cannot be bound on the same level, ie same projection */
+		if ((exp_name(e) && !has_label(e)) || (rel && !rel_find_exp(rel, e)))
 			return 0;
 		(*must) = 1;
 		/* fall through */
@@ -7530,7 +7531,7 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 				list *r = e->r;
 				sql_exp *fmt = r->h->data;
 				sql_exp *esc = (r->h->next)?r->h->next->data:NULL;
-				int rewrite = 0;
+				int rewrite = 0, isnull = 0;
 
 				if (fmt->type == e_convert)
 					fmt = fmt->l;
@@ -7540,27 +7541,33 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 
 					if (fmt->l)
 						fa = fmt->l;
-					if (fa && fa->data.vtype == TYPE_str &&
+					if (fa && fa->isnull)
+						isnull = 1;
+					else if (fa && fa->data.vtype == TYPE_str &&
 					    !strchr(fa->data.val.sval, '%') &&
 					    !strchr(fa->data.val.sval, '_'))
 						rewrite = 1;
 				}
-				if (rewrite && esc && is_atom(esc->type)) {
+				if (rewrite && !isnull && esc && is_atom(esc->type)) {
 			 		atom *ea = NULL;
 
 					if (esc->l)
 						ea = esc->l;
-					if (ea && (ea->data.vtype != TYPE_str ||
+					if (ea && ea->isnull)
+						isnull = 1;
+					else if (ea && (ea->data.vtype != TYPE_str ||
 					    strlen(ea->data.val.sval) != 0))
 						rewrite = 0;
 				}
-				if (rewrite) { 	/* rewrite to cmp_equal ! */
+				if (isnull) {
+					list_append(exps, exp_null(v->sql->sa, sql_bind_localtype("bit")));
+					v->changes++;
+				} else if (rewrite) { 	/* rewrite to cmp_equal ! */
 					list *l = e->l;
 					list *r = e->r;
 					sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, cmp_equal);
 
 					if (is_anti(e)) set_anti(ne);
-					/* if rewritten don't cache this query */
 					list_append(exps, ne);
 					v->changes++;
 				} else {

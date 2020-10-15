@@ -16,7 +16,7 @@ target_sources(MonetODBCs
 
 target_include_directories(MonetODBCs
   PRIVATE
-  $<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIR}>
+  $<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIRS}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)

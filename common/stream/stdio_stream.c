@@ -165,6 +165,7 @@ file_fsetpos(stream *restrict s, fpos_t *restrict p)
 
 /* convert a string from UTF-8 to wide characters; the return value is
  * freshly allocated */
+#ifdef HAVE__WFOPEN
 static wchar_t *
 utf8towchar(const char *src)
 {
@@ -246,6 +247,8 @@ utf8towchar(const char *src)
 	return dest;
 }
 
+#else
+
 static char *
 cvfilename(const char *filename)
 {
@@ -281,6 +284,7 @@ cvfilename(const char *filename)
 	 * locale's encoding is not UTF-8) */
 	return strdup(filename);
 }
+#endif
 
 
 stream *
@@ -297,7 +301,6 @@ open_stream(const char *restrict filename, const char *restrict flags)
 	{
 		wchar_t *wfname = utf8towchar(filename);
 		wchar_t *wflags = utf8towchar(flags);
-		(void)cvfilename;
 		if (wfname != NULL && wflags != NULL)
 			fp = _wfopen(wfname, wflags);
 		else
@@ -310,7 +313,6 @@ open_stream(const char *restrict filename, const char *restrict flags)
 #else
 	{
 		char *fname = cvfilename(filename);
-		(void)utf8towchar;
 		if (fname) {
 			fp = fopen(fname, flags);
 			free(fname);
@@ -497,4 +499,25 @@ getFileSize(stream *s)
 	if (fd >= 0 && fstat(fd, &stb) == 0)
 		return (size_t) stb.st_size;
 	return 0;		/* unknown */
+}
+
+int
+file_remove(const char *filename)
+{
+	int rc = -1;
+
+#ifdef HAVE__WFOPEN
+	wchar_t *wfname = utf8towchar(filename);
+	if (wfname != NULL) {
+		rc = _wremove(wfname);
+		free(wfname);
+	}
+#else
+	char *fname = cvfilename(filename);
+	if (fname) {
+		rc = remove(fname);
+		free(fname);
+	}
+#endif
+	return rc;
 }

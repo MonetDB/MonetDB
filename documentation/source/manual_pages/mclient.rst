@@ -37,16 +37,20 @@ lines starting with **\\** (backslash) specially. See the section
 BACKSLASH COMMANDS below.
 
 Before *mclient* starts parsing command line options, it reads a
-*.monetdb* file. If the environment variable **DOTMONETDBFILE** is set,
-it reads the file pointed to by that variable instead. When unset,
-*mclient* searches for a *.monetdb* file in the current working
-directory, and if that doesn't exist, in the current user's home
-directory. This file can contain defaults for the flags **user**,
-**password**, **language**, **database**, **save_history**, **format**,
-and **width**. For example, an entry in a *.monetdb* file that sets the
-default language for *mclient* to mal looks like this: **language=mal**.
-To disable reading the *.monetdb* file, set the variable
-**DOTMONETDBFILE** to the empty string in the environment.
+configuration file. If the environment variable **DOTMONETDBFILE** is
+set and not empty, it reads the file pointed to by that variable. If set
+but empty, no configuration file is read. If unset, *mclient* first
+looks for a file *.monetdb* in the current working directory, and if
+that doesn't exist, it looks for a file *monetdb* in the XDG
+configuration directory (**$XDG_CONFIG_HOME** which defaults to
+**$HOME/.config** if not set), and finally for a file *.monetdb* in the
+current user's home directory. This file can contain defaults for the
+flags **user**, **password**, **language**, **database**,
+**save_history**, **format**, **host**, **port**, and **width**. For
+example, an entry in a *.monetdb* file that sets the default language
+for *mclient* to mal looks like this: **language=mal**. To disable
+reading the *.monetdb* file, set the variable **DOTMONETDBFILE** to the
+empty string in the environment.
 
 OPTIONS
 =======
