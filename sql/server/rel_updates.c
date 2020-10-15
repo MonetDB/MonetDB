@@ -218,25 +218,31 @@ static sql_rel *
 rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
 	sql_rel *p = inserts->r;
-	node *n;
+	bool need_proj = true, special_insert = false;
 
 	if (!t->idxs.set)
 		return inserts;
 
 	inserts->r = rel_label(sql, inserts->r, 1);
-	for (n = t->idxs.set->h; n; n = n->next) {
+	for (node *n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 		sql_rel *ins = inserts->r;
 
 		if (is_union(ins->op))
 			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
+			/* needs projection for hash functions */
+			if (list_length(i->columns) > 1 && hash_index(i->type) && need_proj) {
+				inserts->r = rel_project(sql->sa, inserts->r, rel_projections(sql, inserts->r, NULL, 1, 1));
+				need_proj = false;
+			}
 			rel_insert_hash_idx(sql, alias, i, inserts);
 		} else if (i->type == join_idx) {
+			special_insert = true;
 			rel_insert_join_idx(sql, alias, i, inserts);
 		}
 	}
-	if (inserts->r != p) {
+	if (special_insert) {
 		sql_rel *r = rel_create(sql->sa);
 		if(!r)
 			return NULL;
@@ -813,12 +819,12 @@ static sql_rel *
 rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
 	sql_rel *p = relup->r;
-	node *n;
+	bool need_proj = true, special_update = false;
 
 	if (!t->idxs.set)
 		return relup;
 
-	for (n = t->idxs.set->h; n; n = n->next) {
+	for (node *n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 
 		/* check if update is needed,
@@ -833,12 +839,18 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		 */
 
 		if (hash_index(i->type) || i->type == no_idx) {
+			/* needs projection for hash functions */
+			if (list_length(i->columns) > 1 && hash_index(i->type) && need_proj) {
+				relup->r = rel_project(sql->sa, relup->r, rel_projections(sql, relup->r, NULL, 1, 1));
+				need_proj = false;
+			}
 			rel_update_hash_idx(sql, alias, i, relup);
 		} else if (i->type == join_idx) {
+			special_update = true;
 			rel_update_join_idx(sql, alias, i, relup);
 		}
 	}
-	if (relup->r != p) {
+	if (special_update) {
 		sql_rel *r = rel_create(sql->sa);
 		if(!r)
 			return NULL;
