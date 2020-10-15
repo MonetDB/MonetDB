@@ -9,6 +9,29 @@
 #ifndef _GDK_CAND_H_
 #define _GDK_CAND_H_
 
+/* candidates by design are ordered oid lists, besides native oid bats
+ * there are
+ *	void bats for dense oid lists,
+ *	negative oid lists
+ *	masked oid lists
+ */
+
+#define CAND_NEGOID 0
+#define CAND_MSK 1
+
+typedef struct {
+	uint64_t
+		type:1,
+		mask:1;
+} ccand_t;
+
+#define CCAND(b)	((ccand_t*)(b)->tvheap->base)
+#define complex_cand(b)	((b)->ttype == TYPE_void && (b)->tvheap != NULL)
+#define negoid_cand(b)	(complex_cand(b) && CCAND(b)->type == CAND_NEGOID)
+#define mask_cand(b)	(complex_cand(b) && CCAND(b)->type == CAND_MSK)
+#define ccand_first(b)	((b)->tvheap->base+sizeof(ccand_t))
+#define ccand_free(b)	((b)->tvheap->free-sizeof(ccand_t))
+
 struct canditer {
 	BAT *s;			/* candidate BAT the iterator is based on */
 	union {
@@ -151,5 +174,9 @@ gdk_export BAT *canditer_slice2val(struct canditer *ci, oid lo1, oid hi1, oid lo
 gdk_export gdk_return BATnegcands( BAT *dense_cands, BAT *odels);
 gdk_export gdk_return BATmaskedcands( BAT *dense_cands, BAT *masked, bool selected);
 gdk_export BAT *BATunmask(BAT *b);
+
+gdk_export BAT *BATmergecand(BAT *a, BAT *b);
+gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
+gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
 
 #endif	/* _GDK_CAND_H_ */
