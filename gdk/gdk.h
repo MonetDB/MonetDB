@@ -991,29 +991,7 @@ typedef var_t stridx_t;
 
 #include "gdk_atoms.h"
 
-
-/* candidates by design are ordered oid lists, besides native oid bats
- * there are
- *	void bats for dense oid lists,
- *	negative oid lists
- *	masked oid lists
- */
-
-#define CAND_NEGOID 0
-#define CAND_MSK 1
-
-typedef struct {
-	uint64_t
-		type:1,
-		mask:1;
-} ccand_t;
-
-#define CCAND(b)	((ccand_t*)b->tvheap->base)
-#define complex_cand(b)	(b->ttype == TYPE_void && b->tvheap != NULL)
-#define negoid_cand(b)	(b->ttype == TYPE_void && b->tvheap != NULL && CCAND(b)->type == CAND_NEGOID)
-#define mask_cand(b)	(b->ttype == TYPE_void && b->tvheap != NULL && CCAND(b)->type == CAND_MSK)
-#define ccand_first(b)	(b->tvheap->base+sizeof(ccand_t))
-#define ccand_free(b)	(b->tvheap->free-sizeof(ccand_t))
+#include "gdk_cand.h"
 
 /* return the oid value at BUN position p from the (v)oid bat b
  * works with any TYPE_void or TYPE_oid bat */
@@ -2163,14 +2141,9 @@ gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 
 gdk_export BAT *BATunique(BAT *b, BAT *s);
 
-gdk_export BAT *BATmergecand(BAT *a, BAT *b);
-gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
-gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
-
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));
 
-#include "gdk_cand.h"
 #include "gdk_calc.h"
 
 /*
