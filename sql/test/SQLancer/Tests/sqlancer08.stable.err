@@ -25,6 +25,10 @@ MAPI  = (monetdb) /var/tmp/mtest-8737/.s.monetdb.33653
 QUERY = select round(t2.tc0, 88) from t2;
 ERROR = !Digits out of bounds
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-340793/.s.monetdb.39851
+QUERY = SELECT round(- (((-443710828)||(1616633099))), 789092170);
+ERROR = !overflow in conversion of 789092170 to bte.
+CODE  = 22003
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."
