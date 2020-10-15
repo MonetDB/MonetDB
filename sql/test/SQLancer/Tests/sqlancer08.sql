@@ -30,14 +30,6 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(t0.tc0 <> ANY(VALUES (UU
 	--24
 ROLLBACK;
 
-CREATE TABLE t0(tc0 INTERVAL MONTH DEFAULT (INTERVAL '1997904243' MONTH), tc1 TIME UNIQUE);
-INSERT INTO t0(tc0) VALUES(INTERVAL '444375026' MONTH);
-DELETE FROM t0 WHERE TRUE;
-ALTER TABLE t0 ALTER tc0 SET NOT NULL;
-INSERT INTO t0(tc0) VALUES(INTERVAL '-625288924' MONTH);
-UPDATE t0 SET tc0 = (t0.tc0) WHERE TRUE;
-DROP TABLE t0;
-
 START TRANSACTION;
 CREATE TABLE "t1" ("tc0" DOUBLE NOT NULL,"tc1" CHARACTER LARGE OBJECT);
 COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
@@ -137,3 +129,104 @@ create view v2(vc0, vc1) as (select all sign(((820356984)*(scale_down(0.53676551
 select cast(sum(count) as bigint) from (select all cast(true as int) as count from v2 join salesmart on not ((salesmart.city) between asymmetric (trim(salesmart.city, v2.vc1)) and (r'0.43353835334391844'))) as res;
 	-- 5
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."salesmart"("city" VARCHAR(100));
+COPY 5 RECORDS INTO "sys"."salesmart" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"b~dEQ~"
+"77378079"
+"0.8200084709639743"
+""
+"\015"
+
+SELECT 1 FROM salesmart WHERE CAST(1 AS BOOLEAN) OR "index"(salesmart.city, true);
+	-- 5 1s
+DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = TRUE)OR(CAST("index"(substr(salesmart.city, 1058445329, 887361238), (-528898388) IS NOT NULL) AS BOOLEAN)));
+	-- Delete all rows
+ROLLBACK;
+
+PREPARE SELECT round(-'b', ?);
+PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
+PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, types decimal(2,1) and sec_interval(13,0) are not equal
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY);
+COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL
+76708782777600.000
+96368184086400.000
+105887629728000.000
+4009709779200.000
+-52062825081600.000
+1301584464000.000
+
+create view v0(vc0) as (select distinct sql_neg(abs(nullif(interval '2' month, interval '3' month))) where greatest(nullif(4 in (0.42, 0.43), 'v' ilike '|pRd(Wɮ&'), ((interval '3' second) is null) = false));
+MERGE INTO t2 USING (SELECT * FROM v0) AS v0 ON "isauuid"('4') WHEN MATCHED THEN UPDATE SET tc2 = INTERVAL '3' DAY;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("tc0" INTEGER NOT NULL,"tc1" TINYINT,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"));
+CREATE TABLE "sys"."t1" ("tc1" DATE);
+COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1970-01-24
+1970-01-24
+1970-01-24
+CREATE TABLE "sys"."t2" ("tc1" DATE NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"));
+COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1970-01-25
+1970-01-14
+1970-01-01
+1970-01-16
+1970-01-19
+
+create view v0(vc0) as ((select least(r'KZu', trim(case interval '4' day when interval '3' day then r'8|' when interval '3' day then null end))) 
+intersect distinct (select distinct nullif(ifthenelse((3) not in (2.33, 4.02, -4), r'J{⹾<PBj‣r', 
+cast(case when 62 then 0.34 when 51 then 0.3 when 34 then 0.4 end as string(274))), sql_max(r'5,賓', 
+cast(case 3 when 43 then 44 when 0.23 then 0.3 end as string)))));
+create view v1(vc0) as ((select abs(-4)) intersect distinct (select distinct + (radians(abs(0.4))) group by 3));
+create view v2(vc0) as (select cast((r'|S4 흮,8GQ') not between symmetric (r'3840') and (r'n') as int));
+create view v3(vc0) as (values (cast(((abs(0.11))-(((round(0.3, 3))<<(((-3)+(5)))))) as decimal))) with check option;
+
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(FALSE AS INT) as count FROM t2, t1, v2 FULL OUTER JOIN t0 ON "isauuid"(r'2A') NATURAL JOIN v1 NATURAL JOIN v3) as res;
+ROLLBACK;
+
+START TRANSACTION;
+create view v7(vc0, vc1) as (select all 56, replace(r'0.0074401190660642325', "insert"(r'0.9471086251830542', null, 1872651914, r'(Ga_'), r'2]vK') where not (not (false))) with check option;
+select 1 from v7 where not (((cast(scale_up(4751, -1823537248) as string(86)))not like(v7.vc1)));
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("tc0" BIGINT);
+COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+284462307
+1404201729
+1549521937
+452608969
+
+SELECT 1 FROM t1 WHERE ('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0) ))));
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0))))) AS INT) as count FROM t1) as res;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("tc0" INTEGER NOT NULL);
+COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+604800000
+29477
+1
+1450957756
+805478917
+94
+
+select round(t2.tc0, 88) from t2;
+ROLLBACK;
+
+PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
+WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
+
+SELECT round(- (((-443710828)||(1616633099))), 789092170);
+
+PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
+
+PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
+
+select interval '1' month * cast(1 as bigint);

@@ -1,3 +1,16 @@
+monetdb (11.39.5) unstable; urgency=low
+
+  * Rebuilt.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Tue, 13 Oct 2020 12:43:20 +0200
+
+monetdb (11.39.5) unstable; urgency=low
+
+  * clients: mclient and msqldump now also look in $XDG_CONFIG_HOME for the monetdb
+    configuration file.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 12 Oct 2020 12:43:20 +0200
+
 monetdb (11.39.3) unstable; urgency=low
 
   * Rebuilt.

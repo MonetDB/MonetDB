@@ -41,6 +41,10 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	(void) cntxt;
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -157,6 +161,10 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #endif
 
 	(void) cntxt;
+	if (digits < 0 || (size_t) digits >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -299,6 +307,10 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	lng shift = 0, divider = 1, multiplier = 1;
 #endif
 
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -440,6 +452,10 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	(void) cntxt;
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -628,6 +644,10 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #endif
 
 	(void) cntxt;
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -771,6 +791,10 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 	lng shift = 0, divider = 1, multiplier = 1;
 #endif
 
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -1284,6 +1308,10 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	(void) cntxt;
+	if (scale < 0 || (size_t) scale >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
