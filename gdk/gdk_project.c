@@ -726,14 +726,16 @@ BATprojectchain(BAT **bats)
 		}
 		n++;		/* undo for debug print */
 	}
-	while (ndelete-- > 0)
-		BBPreclaim(tobedeleted[ndelete]);
-	GDKfree(tobedeleted);
 	BATsetcount(bn, ba[0].cnt);
 	bn->tsorted = (ba[0].cnt <= 1) | issorted;
 	bn->trevsorted = ba[0].cnt <= 1;
 	bn->tnonil = nonil & b->tnonil;
 	bn->tseqbase = oid_nil;
+	/* note, b may point to one of the bats in tobedeleted, so
+	 * reclaim after the last use of b */
+	while (ndelete-- > 0)
+		BBPreclaim(tobedeleted[ndelete]);
+	GDKfree(tobedeleted);
 	GDKfree(ba);
 	TRC_DEBUG(ALGO, "with %d bats: " ALGOOPTBATFMT " " LLFMT " usec\n",
 		  n, ALGOOPTBATPAR(bn), GDKusec() - t0);
