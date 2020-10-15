@@ -2729,7 +2729,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	/* We did a full join, thats too much.
 	   Reduce this using difference and intersect */
-	c = stmt_mirror(be, left->op4.lval->h->data);
+	c = stmt_mirror(be, bin_first_column(be, left));
 	if (rel->op == op_anti) {
 		join = stmt_tdiff(be, c, jl, lcand);
 	} else {

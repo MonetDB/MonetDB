@@ -158,7 +158,7 @@ Section: libs
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  monetdb5-server (= ${source:Version})
-Description: MonetDB5 SQL GIS support module
+Description: MonetDB5 add on module for FITS files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search
@@ -190,7 +190,7 @@ Package: monetdb5-server-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends},
  monetdb5-server (= ${source:Version}), libmonetdb-dev (= ${source:Version})
-Description: MonetDB database server version 5
+Description: MonetDB database server version 5 development files
  MonetDB is a database management system that is developed from a
  main-memory perspective with use of a fully decomposed storage model,
  automatic index management, extensibility of data types and search

@@ -38,12 +38,13 @@ dec_round_body(TYPE v, TYPE r)
 str
 dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 {
+	TYPE rr = *r;
 	/* basic sanity checks */
-	assert(res && v && r);
+	assert(res && v);
 
-	if (*r <= 0)
+	if (rr <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
-	*res = dec_round_body(*v, *r);
+	*res = dec_round_body(*v, rr);
 	return MAL_SUCCEED;
 }
 
@@ -51,14 +52,14 @@ str
 bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 {
 	BAT *res, *v;
-	TYPE *src, *dst;
+	TYPE *src, *dst, rr = *r;
 	BUN i, cnt;
 	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
 
 	/* basic sanity checks */
 	assert(_res && _v && r);
 
-	if (*r <= 0)
+	if (rr <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
@@ -85,14 +86,14 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	nonil = TRUE;
 	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
-			dst[i] = dec_round_body_nonil(src[i], *r);
+			dst[i] = dec_round_body_nonil(src[i], rr);
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (ISNIL(TYPE)(src[i])) {
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
-				dst[i] = dec_round_body_nonil(src[i], *r);
+				dst[i] = dec_round_body_nonil(src[i], rr);
 			}
 		}
 	}
@@ -154,8 +155,12 @@ round_wrap(TYPE *res, const TYPE *v, const bte *r)
 {
 	/* basic sanity checks */
 	assert(res && v && r);
+	bte rr = *r;
 
-	*res = round_body(*v, *r);
+	if ((size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
+		throw(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
+
+	*res = round_body(*v, rr);
 	return MAL_SUCCEED;
 }
 
@@ -166,9 +171,13 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	TYPE *src, *dst;
 	BUN i, cnt;
 	int nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	bte rr = *r;
 
 	/* basic sanity checks */
-	assert(_res && _v && r);
+	assert(_res && _v);
+
+	if ((size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
+		throw(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 
 	/* get argument BAT descriptor */
 	if ((v = BATdescriptor(*_v)) == NULL)
@@ -195,14 +204,14 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 	nonil = TRUE;
 	if (v->tnonil) {
 		for (i = 0; i < cnt; i++)
-			dst[i] = round_body_nonil(src[i], *r);
+			dst[i] = round_body_nonil(src[i], rr);
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (ISNIL(TYPE)(src[i])) {
 				nonil = FALSE;
 				dst[i] = NIL(TYPE);
 			} else {
-				dst[i] = round_body_nonil(src[i], *r);
+				dst[i] = round_body_nonil(src[i], rr);
 			}
 		}
 	}
@@ -229,14 +238,18 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 str
 trunc_wrap(TYPE *res, const TYPE *v, const int *r)
 {
+	int rr = *r;
+	if ((size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
+		throw(MAL, "trunc", SQLSTATE(42000) "Digits out of bounds");
+
 	/* shortcut nil */
 	if (ISNIL(TYPE)(*v)) {
 		*res = NIL(TYPE);
-	} else if (*r < 0) {
-		int d = -*r;
+	} else if (rr < 0) {
+		int d = -rr;
 		*res = (TYPE) (trunc((*v) / ((TYPE) scales[d])) * scales[d]);
-	} else if (*r > 0) {
-		int d = *r;
+	} else if (rr > 0) {
+		int d = rr;
 		*res = (TYPE) (trunc(*v * (TYPE) scales[d]) / ((TYPE) scales[d]));
 	} else {
 		*res = (TYPE) trunc(*v);

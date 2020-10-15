@@ -761,8 +761,9 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 
 		if (!f->res && !IS_FILT(f))
 			continue;
-		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
-			if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type))
+		if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
+			sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
+			if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft)))
 				return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, tp);
 		}
 	}
@@ -782,8 +783,9 @@ sql_bind_member(sql_allocator *sa, sql_schema *s, const char *sqlfname, sql_subt
 
 			if (!f->res && !IS_FILT(f))
 				continue;
-			if (strcmp(f->base.name, sqlfname) == 0 && f->type == type) {
-				if (list_length(f->ops) == nrargs && is_subtypeof(tp, &((sql_arg *) f->ops->h->data)->type))
+			if (strcmp(f->base.name, sqlfname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
+				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
+				if ((f->fix_scale == INOUT && type_cmp(tp->type, ft->type) == 0) || (f->fix_scale != INOUT && is_subtypeof(tp, ft)))
 					return (type == F_AGGR) ? _dup_subaggr(sa, f, NULL) : sql_dup_subfunc(sa, f, NULL, tp);
 			}
 		}
@@ -1853,10 +1855,10 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "get_value_for", "sql", "get_value", TRUE, FALSE, SCALE_NONE, 0, LNG, 2, *t, *t);
 		sql_create_func(sa, "restart", "sql", "restart", TRUE, TRUE, SCALE_NONE, 0, LNG, 3, *t, *t, LNG);
 
-		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, BTE, 2, *t, BIT);
-		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, SHT, 2, *t, BIT);
-		sql_create_func(sa, "index", "calc", "index", TRUE, FALSE, SCALE_NONE, 0, INT, 2, *t, BIT);
-		sql_create_func(sa, "strings", "calc", "strings", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
+		sql_create_func(sa, "index", "sql", "index", TRUE, FALSE, SCALE_NONE, 0, BTE, 2, *t, BIT);
+		sql_create_func(sa, "index", "sql", "index", TRUE, FALSE, SCALE_NONE, 0, SHT, 2, *t, BIT);
+		sql_create_func(sa, "index", "sql", "index", TRUE, FALSE, SCALE_NONE, 0, INT, 2, *t, BIT);
+		sql_create_func(sa, "strings", "sql", "strings", FALSE, FALSE, SCALE_NONE, 0, *t, 1, *t);
 
 		sql_create_func(sa, "locate", "str", "locate", FALSE, FALSE, SCALE_NONE, 0, INT, 2, *t, *t);
 		sql_create_func(sa, "locate", "str", "locate3", FALSE, FALSE, SCALE_NONE, 0, INT, 3, *t, *t, INT);
