@@ -32,7 +32,6 @@ import struct
 import signal
 import fnmatch
 import glob
-from MonetDBtesting.helpers import build_work_ctx
 
 try:
     import winreg               # Python 3 on Windows
@@ -211,6 +210,19 @@ def _configure(str):
             changed = changed or str != nstr
             str = nstr
     return str
+
+try:
+    from helpers import build_work_ctx
+except ImportError:
+    try:
+        from MonetDBtesting.helpers import build_work_ctx
+    except ImportError:
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
+        sys.path.insert(0, p)
+        from MonetDBtesting.helpers import build_work_ctx
+        if 'PYTHONPATH' in os.environ:
+            p += os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
 
 try:
     import Mfilter
