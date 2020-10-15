@@ -1629,7 +1629,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sign", "calc", "sign", FALSE, FALSE, SCALE_NONE, 0, BTE, 1, *t);
 		/* scale fixing for intervals */
 		sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
-		sql_create_func(sa, "scale_down", "sql", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
+		sql_create_func(sa, "scale_down", "calc", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 	}
 
 	/* allow smaller types for arguments of mul/div */
@@ -1682,7 +1682,7 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_func(sa, "sign", "calc", "sign", FALSE, FALSE, SCALE_NONE, 0, BTE, 1, *t);
 		/* scale fixing for all numbers */
 		sql_create_func(sa, "scale_up", "calc", "*", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
-		sql_create_func(sa, "scale_down", "sql", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
+		sql_create_func(sa, "scale_down", "calc", "dec_round", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, lt->type);
 		/* numeric functions on INTERVALS */
 		sql_create_func(sa, "sql_mul", "calc", "*", FALSE, FALSE, SCALE_MUL, 0, MONINT, 2, MONINT, *t);
 		sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, MONINT, 2, MONINT, *t);
@@ -1705,7 +1705,7 @@ sqltypeinit( sql_allocator *sa)
 	}
 
 	for (t = decimals; t < dates; t++)
-		sql_create_func(sa, "round", "sql", "round", FALSE, FALSE, INOUT, 0, *t, 2, *t, BTE);
+		sql_create_func(sa, "round", "calc", "round", FALSE, FALSE, INOUT, 0, *t, 2, *t, BTE);
 
 	for (t = numerical; *t != TME; t++) {
 		if (*t == OID || *t == FLT || *t == DBL)

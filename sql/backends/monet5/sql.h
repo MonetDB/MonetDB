@@ -250,15 +250,23 @@ sql5_export str SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 sql5_export str SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str flt_dec_round_wrap(flt *res, const flt *v, const flt *r);
-sql5_export str flt_bat_dec_round_wrap(bat *res, const bat *v, const flt *r);
+sql5_export str flt_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str flt_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str flt_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str flt_round_wrap(flt *res, const flt *v, const bte *r);
-sql5_export str flt_bat_round_wrap(bat *res, const bat *v, const bte *r);
+sql5_export str flt_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str flt_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str flt_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str flt_trunc_wrap(flt *res, const flt *v, const int *r);
 
 sql5_export str dbl_dec_round_wrap(dbl *res, const dbl *v, const dbl *r);
-sql5_export str dbl_bat_dec_round_wrap(bat *res, const bat *v, const dbl *r);
+sql5_export str dbl_bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dbl_bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dbl_bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dbl_round_wrap(dbl *res, const dbl *v, const bte *r);
-sql5_export str dbl_bat_round_wrap(bat *res, const bat *v, const bte *r);
+sql5_export str dbl_bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dbl_bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str dbl_bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str dbl_trunc_wrap(dbl *res, const dbl *v, const int *r);
 
 #define radians(x)	((x) * (3.14159265358979323846 / 180.0))
