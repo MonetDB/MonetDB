@@ -8,17 +8,6 @@
 
 #include "monetdb_config.h"
 #include "sql.h"
-#include "sql_result.h"
-#include "sql_gencode.h"
-#include "sql_storage.h"
-#include "sql_scenario.h"
-#include "store_sequence.h"
-#include "sql_datetime.h"
-#include "rel_optimizer.h"
-#include "rel_distribute.h"
-#include "rel_select.h"
-#include "rel_exp.h"
-#include "rel_dump.h"
 #include "mal_instruction.h"
 
 #define CONCAT_2(a, b)		a##b
@@ -34,15 +23,15 @@
 #define STRING(a)		#a
 
 static void
-finalize_ouput_copy_sorted_property(bat *res, BAT *bn, BAT *b, str msg, bool nils, BUN q)
+finalize_ouput_copy_sorted_property(bat *res, BAT *bn, BAT *b, str msg, bool nils, BUN q, bool try_copy_sorted)
 {
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;
 		bn->tnonil = !nils;
 		bn->tkey = BATcount(bn) <= 1;
-		bn->tsorted = !b || b->tsorted;
-		bn->trevsorted = !b || b->trevsorted;
+		bn->tsorted = ((try_copy_sorted && b->tsorted) || BATcount(bn) <= 1);
+		bn->trevsorted = ((try_copy_sorted && b->trevsorted) || BATcount(bn) <= 1);
 		BBPkeepref(*res = bn->batCacheid);
 	} else if (bn)
 		BBPreclaim(bn);

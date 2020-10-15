@@ -116,7 +116,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -190,7 +190,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, NULL, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -274,7 +274,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -387,7 +387,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -457,7 +457,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -537,7 +537,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -717,17 +717,8 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
+	finalize_ouput_copy_sorted_property(r, res, b, msg, nils, q, false);
 	unfix_inputs(2, b, s);
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = BATcount(res) <= 1;
-		res->tsorted = BATcount(res) <= 1;
-		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	return msg;
 }
 
@@ -845,17 +836,8 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
+	finalize_ouput_copy_sorted_property(r, res, b, msg, nils, q, false);
 	unfix_inputs(2, b, s);
-	if (res && !msg) {
-		BATsetcount(res, q);
-		res->tnil = nils;
-		res->tnonil = !nils;
-		res->tkey = BATcount(res) <= 1;
-		res->tsorted = BATcount(res) <= 1;
-		res->trevsorted = BATcount(res) <= 1;
-		BBPkeepref(*r = res->batCacheid);
-	} else if (res)
-		BBPreclaim(res);
 	return msg;
 }
 

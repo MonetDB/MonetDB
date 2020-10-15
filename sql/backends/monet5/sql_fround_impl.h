@@ -105,7 +105,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -179,7 +179,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, NULL, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -263,7 +263,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
@@ -370,7 +370,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, true);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -445,7 +445,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, NULL, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, b, msg, nils, q, false);
 	unfix_inputs(2, b, bs);
 	return msg;
 }
@@ -530,7 +530,7 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q);
+	finalize_ouput_copy_sorted_property(res, bn, left, msg, nils, q, false);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
 }
