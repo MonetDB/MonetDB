@@ -1299,7 +1299,7 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 			r[x - lo] = x + odels->tseqbase;
 	} else {
 		oid *r = (oid*)(dels->base + sizeof(ccand_t));
-		memcpy(r, Tloc(odels, lo), dels->free);
+		memcpy(r, Tloc(odels, lo), sizeof(oid) * (hi - lo));
 	}
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = dels;
