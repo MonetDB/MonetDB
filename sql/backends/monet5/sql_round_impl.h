@@ -329,7 +329,7 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q = 0;
 	TYPE *restrict src, *restrict dst, x;
 	bte r = *getArgReference_bte(stk, pci, 2);
-	int d = *getArgReference_int(stk, pci, pci->argc == 6 ? 3 : 4), s = *getArgReference_int(stk, pci, pci->argc == 6 ? 4 : 5);
+	int d = *getArgReference_int(stk, pci, pci->argc == 6 ? 4 : 3), s = *getArgReference_int(stk, pci, pci->argc == 6 ? 5 : 4);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0};
@@ -399,7 +399,7 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BUN q = 0;
 	TYPE *restrict dst, x = *(TYPE *)getArgReference(stk, pci, 1);
 	bte *restrict src, r;
-	int d = *getArgReference_int(stk, pci, pci->argc == 6 ? 3 : 4), s = *getArgReference_int(stk, pci, pci->argc == 6 ? 4 : 5);
+	int d = *getArgReference_int(stk, pci, pci->argc == 6 ? 4 : 3), s = *getArgReference_int(stk, pci, pci->argc == 6 ? 5 : 4);
 	str msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = {0};
@@ -717,10 +717,7 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	unfix_inputs(2, b, s);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -848,10 +845,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	unfix_inputs(2, b, s);
 	if (res && !msg) {
 		BATsetcount(res, q);
 		res->tnil = nils;
@@ -868,9 +862,13 @@ bailout:
 #undef dec_round_body
 #undef dec_round_wrap
 #undef bat_dec_round_wrap
+#undef bat_dec_round_wrap_cst
+#undef bat_dec_round_wrap_nocst
 #undef round_body
 #undef round_wrap
 #undef bat_round_wrap
+#undef bat_round_wrap_cst
+#undef bat_round_wrap_nocst
 #undef nil_2dec
 #undef str_2dec_body
 #undef str_2dec
