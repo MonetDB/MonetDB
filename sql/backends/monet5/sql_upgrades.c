@@ -2548,7 +2548,7 @@ SQLupgrades(Client c, mvc *m)
 {
 	sql_subtype tp;
 	sql_subfunc *f;
-	char *err, *prev_schema = GDKstrdup(sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_schema")));
+	char *err, *prev_schema = GDKstrdup(get_string_global_var(m, "current_schema"));
 	sql_schema *s = mvc_bind_schema(m, "sys");
 	sql_table *t;
 	bool systabfixed = false;

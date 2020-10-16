@@ -408,7 +408,7 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 
 	if (!table_privs(sql, t, PRIV_INSERT)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, get_string_global_var(sql, "current_user"), opname, tname);
 	}
 	return t;
 }
@@ -446,7 +446,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 	if (t && !isTempTable(t) && STORE_READONLY)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 	if ((is_delete == 1 && !table_privs(sql, t, PRIV_DELETE)) || (is_delete == 2 && !table_privs(sql, t, PRIV_TRUNCATE)))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), opname, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, get_string_global_var(sql, "current_user"), opname, tname);
 	return t;
 }
 
@@ -899,7 +899,7 @@ sql_exp *
 update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
 {
 	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), t->base.name, cname);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, get_string_global_var(sql, "current_user"), t->base.name, cname);
 	if (!v || (v = exp_check_type(sql, &c->type, r, v, type_equal)) == NULL)
 		return NULL;
 	return v;
@@ -1094,7 +1094,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		}
 		if (opt_where) {
 			if (!table_privs(sql, t, PRIV_SELECT))
-				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", get_string_global_var(sql, "current_user"), tname);
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
 				return NULL;
 			/* handle join */
@@ -1159,7 +1159,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 			sql_exp *e;
 
 			if (!table_privs(sql, t, PRIV_SELECT))
-				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", get_string_global_var(sql, "current_user"), tname);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
@@ -1256,7 +1256,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
 	if (!table_privs(sql, t, PRIV_SELECT))
-		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
