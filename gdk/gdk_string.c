@@ -1243,12 +1243,21 @@ GDKanalytical_str_group_concat(BAT *r, BAT *b, BAT *sep, BAT *s, BAT *e, const c
 		}
 
 		if (empty) {
-			if ((single_str = GDKstrdup(str_nil)) == NULL)
-				goto allocation_error;
+			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */
+				max_group_length = 1;
+				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)
+					goto allocation_error;
+			} else if (1 > max_group_length) {
+				max_group_length = 1;
+				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL)
+					goto allocation_error;
+				single_str = next_single_str;
+			}
+			strcpy(single_str, str_nil);
 			hasnil = true;
 		} else {
 			empty = true;
-			if (!single_str) { /* reuse the same buffer, resize it when needed */
+			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */
 				max_group_length = next_group_length;
 				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL)
 					goto allocation_error;

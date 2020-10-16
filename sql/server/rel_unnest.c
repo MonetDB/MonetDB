@@ -3212,11 +3212,12 @@ rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static sql_rel *
 rewrite_values(visitor *v, sql_rel *rel)
 {
+	int single = is_single(rel);
 	if (!is_simple_project(rel->op) || list_empty(rel->exps))
 		return rel;
 	sql_exp *e = rel->exps->h->data;
 
-	if (!is_values(e) || list_length(exp_get_values(e))<=1 || !rel_has_freevar(v->sql, rel))
+	if (!is_values(e) || list_length(exp_get_values(e))<=1 || (!exp_has_freevar(v->sql, e) && !exp_has_rel(e)))
 		return rel;
 
 	list *exps = sa_list(v->sql->sa);
@@ -3246,7 +3247,8 @@ rewrite_values(visitor *v, sql_rel *rel)
 			cur = nrel;
 		}
 		rel = cur;
-		set_single(rel);
+		if (single)
+			set_single(rel);
 	}
 	return rel;
 }
@@ -3278,6 +3280,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_outer2inner_union);
 
+	rel = rel_visitor_bottomup(&v, rel, &rewrite_values); /* must come before rewrite_exp_rel */
+
 	// remove empty project/groupby !
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
@@ -3285,7 +3289,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
 	rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used, false);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
 
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_values); /* must come before rewrite_exp_rel */
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	if (v.changes > 0)

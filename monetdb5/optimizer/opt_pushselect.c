@@ -298,7 +298,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if (subselects.nr) {
+	if (/* DISABLES CODE */ (0) && subselects.nr) {
 		if (newMalBlkStmt(mb, mb->ssize) <0 ) {
 			GDKfree(vars);
 			goto wrapup;
@@ -386,7 +386,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					actions++;
 				}
 			}
-			/* Leftfetchjoins involving rewriten table ids need to be flattend
+			/* Projections involving rewriten table ids need to be flattend
 		  	 * l = projection(t, c); => l = c;
 		 	 * and
 		 	 * l = projection(s, ntids); => l = s;

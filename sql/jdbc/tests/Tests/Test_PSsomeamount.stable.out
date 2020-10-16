@@ -27,17 +27,12 @@ stdout of test 'Test_PSsomeamount` in directory 'sql/jdbc/tests` itself:
 0. true	true
 1. Preparing and executing a unique statement
 0, true
-1000, true
-2000, true
-3000, true
-4000, true
-5000, true
-6000, true
-7000, true
-8000, true
-9000, true
+20, true
+40, true
+60, true
+80, true
 
-# 18:56:08 >  
-# 18:56:08 >  "Done."
-# 18:56:08 >  
+# 11:53:16 >  
+# 11:53:16 >  "Done."
+# 11:53:16 >  
 
