@@ -4388,7 +4388,7 @@ geom_sql_upgrade(int olddb)
 			"'st_ymax', 'st_ymax', 'st_ymin', 'st_ymin', 'st_z') "
 			"and schema_id = (select id from sys.schemas where name = 'sys');\n");
 	pos += snprintf(buf + pos, bufsize - pos,
-			"update _tables set system = true where name in ('geometry_columns', 'spatial_ref_sys') and schema_id = (select id from schemas where name = 'sys');\n");
+			"update sys._tables set system = true where name in ('geometry_columns', 'spatial_ref_sys') and schema_id = (select id from sys.schemas where name = 'sys');\n");
 
 	return buf;
 }
