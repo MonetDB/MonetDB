@@ -867,7 +867,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		dlist *name = tableref->data.lval->h->data.lval;
 		sql_rel *temp_table = NULL;
 		char *sname = qname_schema(name);
-		sql_schema *s = cur_schema(sql);
+		sql_schema *s = NULL;
 		int allowed = 1;
 
 		tname = qname_schema_object(name);
@@ -875,17 +875,15 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (dlist_length(name) > 2)
 			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: only a schema and table name expected");
 
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 		if (!sname)
 			temp_table = stack_find_rel_view(sql, tname);
 		if (!temp_table)
-			t = find_table_on_scope(sql, &s, sname, tname);
-		if (!t && !temp_table) {
-			return sql_error(sql, 02, SQLSTATE(42S02) "SELECT: no such table '%s'", tname);
-		} else if (!temp_table && !table_privs(sql, t, PRIV_SELECT)) {
+			t = find_table_on_scope(sql, &s, sname, tname, "SELECT");
+		if (!t && !temp_table)
+			return NULL;
+		if (!temp_table && !table_privs(sql, t, PRIV_SELECT))
 			allowed = 0;
-		}
+
 		if (tableref->data.lval->h->next->data.sym)	/* AS */
 			tname = tableref->data.lval->h->next->data.sym->data.lval->h->data.sval;
 		if (temp_table && !t) {

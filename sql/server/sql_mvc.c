@@ -827,6 +827,10 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->label = 0;
 	m->cascade_action = NULL;
 
+	m->search_path = "sys"; //for now this will be static :)
+	m->search_path_has_sys = true;
+	m->search_path_has_tmp = false;
+
 	store_lock();
 	m->session = sql_session_create(1 /*autocommit on*/);
 	store_unlock();

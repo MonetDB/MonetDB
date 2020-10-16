@@ -388,6 +388,8 @@ sql_table *
 insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 {
 	if (!t) {
+		if (sql->session->status) /* if find_table_on_scope was already called, don't overwrite error message */
+			return NULL;
 		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such table '%s'", op, tname);
 	} else if (isView(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
@@ -602,13 +604,11 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *r = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "INSERT INTO: no such schema '%s'", sname);
-	t = find_table_on_scope(sql, &s, sname, tname);
+	t = find_table_on_scope(sql, &s, sname, tname, "INSERT INTO");
 	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL)
 		return NULL;
 	r = insert_generate_inserts(query, t, columns, val_or_q, "INSERT INTO");
@@ -1068,12 +1068,10 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql,sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
-	t = find_table_on_scope(sql, &s, sname, tname);
+	t = find_table_on_scope(sql, &s, sname, tname, "UPDATE");
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : tname), *res = bt;
 
@@ -1146,12 +1144,10 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DELETE FROM: no such schema '%s'", sname);
-	t = find_table_on_scope(sql, &s, sname, tname);
+	t = find_table_on_scope(sql, &s, sname, tname, "DELETE FROM");
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = rel_basetable(sql, t, alias ? alias : tname);
 
@@ -1178,12 +1174,10 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "TRUNCATE: no such schema '%s'", sname);
-	t = find_table_on_scope(sql, &s, sname, tname);
+	t = find_table_on_scope(sql, &s, sname, tname, "TRUNCATE");
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
 	return NULL;
@@ -1243,7 +1237,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL;
 	int processed = 0;
@@ -1251,10 +1245,8 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	assert(tref && search_cond && merge_list);
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "MERGE: no such schema '%s'", sname);
-	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
-		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
+	if (!(t = find_table_on_scope(sql, &s, sname, tname, "MERGE")))
+		return NULL;
 	if (!table_privs(sql, t, PRIV_SELECT))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 	if (isMergeTable(t))
@@ -1472,7 +1464,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL, *nt = NULL;
 	const char *tsep = seps->h->data.sval;
 	const char *rsep = seps->h->next->data.sval;
@@ -1490,9 +1482,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				"COPY INTO: record separator contains '\\r\\n' but "
 				"in the input stream, '\\r\\n' is being normalized into '\\n'");
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-	t = find_table_on_scope(sql, &s, sname, tname);
+	t = find_table_on_scope(sql, &s, sname, tname, "COPY INTO");
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
 	/* Only the MONETDB user is allowed copy into with
@@ -1678,7 +1668,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	dnode *dn;
 	node *n;
@@ -1696,9 +1686,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-	t = find_table_on_scope(sql, &s, sname, tname);
+	t = find_table_on_scope(sql, &s, sname, tname, "COPY INTO");
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
 	if (files == NULL)
@@ -1754,19 +1742,17 @@ static sql_rel *
 copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
-	sql_rel* rel = NULL;
+	sql_rel *rel = NULL;
 	sql_table* t;
 
 	if (!copy_allowed(sql, 1))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "COPY INTO: no such schema '%s'", sname);
-	t = find_table_on_scope(sql, &s, sname, tname);
+	t = find_table_on_scope(sql, &s, sname, tname, "COPY INTO");
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;

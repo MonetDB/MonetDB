@@ -130,17 +130,15 @@ char *
 sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, sqlid grantor)
 {
 	sql_trans *tr = sql->session->tr;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.grant_table",SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
-		throw(SQL,"sql.grant_table",SQLSTATE(42S02) "GRANT: no such table '%s'", tname);
+	if (!(t = find_table_on_scope(sql, &s, sname, tname, "GRANT")))
+		throw(SQL,"sql.grant_table", "%s", sql->errstr);
 
 	allowed = schema_privs(grantor, t->s);
 
@@ -278,10 +276,8 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.revoke_table", SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
-	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
-		throw(SQL,"sql.revoke_table",SQLSTATE(42S02) "REVOKE: no such table '%s'", tname);
+	if (!(t = find_table_on_scope(sql, &s, sname, tname, "REVOKE")))
+		throw(SQL,"sql.revoke_table","%s", sql->errstr);
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
