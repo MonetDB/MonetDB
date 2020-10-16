@@ -298,7 +298,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if (0 && subselects.nr) {
+	if (/* DISABLES CODE */ (0) && subselects.nr) {
 		if (newMalBlkStmt(mb, mb->ssize) <0 ) {
 			GDKfree(vars);
 			goto wrapup;
