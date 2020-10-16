@@ -1822,6 +1822,17 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	return NULL;
 }
 
+static int
+is_project_true(sql_rel *r)
+{
+	if (r && !r->l && list_length(r->exps) == 1) {
+		sql_exp *e = r->exps->h->data;
+		if (exp_is_atom(e) && exp_is_true(e))
+			return 1;
+	}
+	return 0;
+}
+
 static sql_exp *
 rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 {
@@ -1880,6 +1891,10 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				if (r->nrcols != ek.type)
 					return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (r->nrcols < ek.type) ? "few" : "many");
 				re = exp_rel_label(sql, re);
+			} else if (exp_is_rel(re)) {
+				sql_rel *r = exp_rel_get_rel(sql->sa, re);
+				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
+					re = r->exps->h->data;
 			}
 			append(vals, re);
 		}
@@ -5835,7 +5850,7 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 	rname2 = rel_name(t2);
 	if (rname1 && rname2 && strcmp(rname1, rname2) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the CROSS JOIN expression", rname1);
-	
+
 	if (refs) {
 		if (list_find(refs, (char *)rname1, (fcmp) &strcmp))
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname1);
