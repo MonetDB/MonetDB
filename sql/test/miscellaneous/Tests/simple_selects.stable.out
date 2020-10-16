@@ -424,6 +424,17 @@ project (
 | | ) [ tinyint "1" as "x"."x" ]
 | ) [ "x"."x" as "z" ] [ "z" ]
 ) [ "z", tinyint "2" ]
+#select 1, null except select 1, null;
+% .%11,	.%11 # table_name
+% %2,	%3 # name
+% tinyint,	char # type
+% 1,	0 # length
+#select 1, null intersect select 1, null;
+% .%11,	.%11 # table_name
+% %2,	%3 # name
+% tinyint,	char # type
+% 1,	0 # length
+[ 1,	NULL	]
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
