@@ -13,6 +13,8 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 #ALTER TABLE t0 ALTER tc0 SET NOT NULL;
 #INSERT INTO t0(tc0) VALUES(INTERVAL '-625288924' MONTH);
 [ 1	]
+#UPDATE t0 SET tc0 = (t0.tc0) WHERE TRUE;
+[ 1	]
 #DROP TABLE t0;
 #CREATE TABLE t2(tc0 TINYINT);
 #ALTER TABLE t2 ADD PRIMARY KEY(tc0);
