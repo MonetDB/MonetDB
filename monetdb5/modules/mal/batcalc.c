@@ -1537,10 +1537,10 @@ batcalc_init(void)
 	    }
 	  }
 	}
-	{	/* multiplication between integers and long, huge floating-points, returning integers */
+	{	/* multiplication between integers and floating-points, returning integers */
 		int *tp1, *tp2, *tp3;
 		for(tp1 = integer; tp1 < floats && !err; tp1++) {
-			for(tp2 = integer; tp2 < extra && !err; tp2++) {
+			for(tp2 = floats; tp2 < extra && !err; tp2++) {
 				for(tp3 = integer; tp3 < floats && !err; tp3++) {
 					int in1 = *tp3, in2 = *tp2;
 
