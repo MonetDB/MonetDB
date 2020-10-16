@@ -454,13 +454,11 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		dlist *l = return_sym->data.lval;
 		const char *sname = qname_schema(l);
 		const char *tname = qname_schema_object(l);
-		sql_schema *s = cur_schema(sql);
-		sql_table *t;
+		sql_schema *s = NULL;
+		sql_table *t = NULL;
 
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "RETURN: no such schema '%s'", sname);
-		if (!(t = find_table_on_scope(sql, &s, sname, tname)))
-			return sql_error(sql, 02, SQLSTATE(42S02) "RETURN: no such table '%s'", tname);
+		if (!(t = find_table_on_scope(sql, &s, sname, tname, "RETURN")))
+			return NULL;
 
 		if (isDeclaredTable(t)) {
 			rel = rel_table(sql, ddl_create_table, s->base.name, t, SQL_DECLARED_TABLE);
@@ -1238,7 +1236,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *triggername = qname_schema_object(qname);
 	const char *sname = qname_schema(tqname);
 	const char *tname = qname_schema_object(tqname);
-	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
+	sql_schema *ss = NULL, *old_schema = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_trigger *st = NULL;
 	int instantiate = (sql->emode == m_instantiate);
@@ -1250,9 +1248,6 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
-
-	if (sname && !(ss = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "%s TRIGGER: no such schema '%s'", base, sname);
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1268,14 +1263,16 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		}
 	}
 
-	if (create && !mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 	if (create) {
-		if (!(t = find_table_on_scope(sql, &ss, sname, tname)))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
+		if (!(t = find_table_on_scope(sql, &ss, sname, tname, base)))
+			return NULL;
+		if (!mvc_schema_privs(sql, ss))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
+		if (isView(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
+	} else {
+		ss = cur_schema(sql);
 	}
-	if (create && isView(t))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
 	if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: trigger and respective table must belong to the same schema", base);
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
@@ -1504,19 +1501,17 @@ static sql_rel*
 create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
 	sql_rel *rel = NULL;
 	sql_table *t = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
+	if ((t = find_table_on_scope(sql, &s, sname, tname, "CREATE TABLE FROM LOADER")))
+		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if ((t = find_table_on_scope(sql, &s, sname, tname)))
-		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
 	if (!rel || !loader)

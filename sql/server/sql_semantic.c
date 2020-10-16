@@ -102,21 +102,49 @@ tmp_schema(mvc *sql)
 }
 
 sql_table *
-find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname)
+find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname, const char *error)
 {
+	sql_schema *found = NULL;
 	sql_table *t = NULL;
 
-	if (!sname) {
-		t = stack_find_table(sql, tname); /* first try a declared table from the stack */
-		if (!t) { /* then a temporary one */
-			sql_schema *tmp = tmp_schema(sql);
-			t = mvc_bind_table(sql, tmp, tname);
-			if (t)
-				*s = tmp;
+	if (sname) { /* user has explicitly typed the schema, so either the table is there or we return error */
+		if (!(found = mvc_bind_schema(sql, sname)))
+			return sql_error(sql, 02, SQLSTATE(3F000) "%s: No such schema '%s'", error, sname);
+		t = mvc_bind_table(sql, *s, tname);
+	} else {
+		char *p, *sp, *search_path_copy;
+
+		if (*s && (t = mvc_bind_table(sql, *s, tname))) /* there's a default schema to search before all others, eg bind a child table from a merge table */
+			return t;
+		if ((t = stack_find_table(sql, tname))) /* first try a declared table from the stack */
+			return t;
+
+		if (!sql->search_path_has_tmp) { /* if 'tmp' is not in the search path, search it before all others */
+			found = mvc_bind_schema(sql, "tmp");
+			t = mvc_bind_table(sql, found, tname);
+		}
+		if (!t) { /* then current session's schema */
+			found = cur_schema(sql);
+			t = mvc_bind_table(sql, cur_schema(sql), tname);
+		}
+		if (!t && !sql->search_path_has_sys) { /* if 'sys' is not in the current path search it next */
+			found = mvc_bind_schema(sql, "sys");
+			t = mvc_bind_table(sql, found, tname);
+		}
+
+		/* table not found yet, look inside search path */
+		search_path_copy = sa_strdup(sql->ta, sql->search_path);
+		p = strtok_r(search_path_copy, ",", &sp);
+		while (p && !t) {
+			found = mvc_bind_schema(sql, p);
+			if (found)
+				t = mvc_bind_table(sql, found, tname);
+			p = strtok_r(NULL, ",", &sp);
 		}
 	}
-	if (!t) /* then a table from the provided schema */
-		t = mvc_bind_table(sql, *s, tname);
+	if (!t)
+		return sql_error(sql, 02, SQLSTATE(42S02) "%s: No such table '%s'", error, tname);
+	*s = found;
 	return t;
 }
 

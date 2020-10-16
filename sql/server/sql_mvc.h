@@ -142,6 +142,9 @@ typedef struct mvc {
 	/* during query needed flags */
 	unsigned int label;	/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
+	char *search_path; /* schema search path for object lookup */
+	bool search_path_has_sys; /* speed up schema scoping */
+	bool search_path_has_tmp;
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
