@@ -1630,6 +1630,46 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
+#define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+
+static sql_exp *
+exp_check_has_not_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel; (void)depth;
+	if (e && e->type == e_func) {
+		list *args = e->l;
+		sql_subfunc *f = e->f;
+
+		if (f && f->func && is_not_anyequal(f) && exps_have_rel_exp(args)) {
+			v->changes++;
+		}
+	}
+	return e;
+}
+
+static int
+exps_have_not_anyequal(mvc *sql, list *exps)
+{
+	visitor v = { .sql = sql };
+	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_check_has_not_anyequal, true);
+	return v.changes;
+}
+
+/* introduce extra selects for (not) anyequal + subquery */
+static sql_rel *
+not_anyequal_helper(visitor *v, sql_rel *rel)
+{
+	if (is_innerjoin(rel->op) && !list_empty(rel->exps) && exps_have_not_anyequal(v->sql, rel->exps)) {
+		sql_rel *nrel = rel_select(v->sql->sa, rel, NULL);
+		nrel->exps = rel->exps;
+		rel->exps = NULL;
+		rel = nrel;
+	}
+	return rel;
+}
+
 static sql_exp *
 exp_reset_card_and_freevar(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -2116,9 +2156,6 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	}
 	return e;
 }
-
-#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
-#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
 
 static sql_rel *
 rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
@@ -3288,6 +3325,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	// remove empty project/groupby !
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
+	rel = rel_visitor_bottomup(&v, rel, &not_anyequal_helper);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
