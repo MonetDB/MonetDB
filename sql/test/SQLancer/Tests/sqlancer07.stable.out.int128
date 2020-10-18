@@ -472,7 +472,6 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % boolean # type
 % 5 # length
 [ false	]
-[ false	]
 #ROLLBACK;
 #SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;
 % .%3 # table_name
