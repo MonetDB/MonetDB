@@ -480,6 +480,12 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % boolean # type
 % 5 # length
 [ false	]
+#select interval '1' month * cast(1 as bigint);
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 1	]
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."

@@ -473,6 +473,21 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 5 # length
 [ false	]
 #ROLLBACK;
+#PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
+#PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 12,	2,	1,	0,	2,	2 # length
+[ "day_interval",	4,	0,	"",	"%3",	"%3"	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "day_interval",	4,	0,	NULL,	NULL,	NULL	]
+#select interval '1' month * cast(1 as bigint);
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 1	]
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
