@@ -321,7 +321,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	if (mvc_bind_table(sql, s, t->base.name)) {
 		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
-		return sql_message(SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_message(SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, get_string_global_var(sql, "current_user"), s->base.name);
 	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
 		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' cannot have constraints", action, t->base.name);
 	}
@@ -466,7 +466,7 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if (!(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE: Access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (!(t = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not create table '%s'", tname);
 
@@ -783,7 +783,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(be->mvc, sname)))
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(be->mvc, s))
-		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(be->mvc, mvc_bind_schema(be->mvc, "sys"), "current_user")), s->base.name);
+		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(be->mvc, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
@@ -897,7 +897,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 				goto bailout;
 			}
 			if (bulk_func == seqbulk_next_value && !mvc_schema_privs(m, s)) {
-				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
+				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -978,7 +978,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
+		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
 	if (!(seq = find_sql_sequence(s, seqname)))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
@@ -1085,7 +1085,7 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			}
 			if (!mvc_schema_privs(m, s)) {
-				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
+				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
 				goto bailout;
 			}
 			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(seq, BATcount(it)))) {
@@ -4278,7 +4278,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (s == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(3F000) "Schema missing %s",sch);
 	if (!mvc_schema_privs(m, s))
-		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), s->base.name);
+		throw(SQL, "sql.drop_hash", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
 	t = mvc_bind_table(m, s, tbl);
 	if (t == NULL)
 		throw(SQL, "sql.drop_hash", SQLSTATE(42S02) "Table missing %s.%s",sch, tbl);
