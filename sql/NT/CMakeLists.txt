@@ -14,7 +14,7 @@ if(WIN32)
     COMPONENT server)
   install(FILES
     .monetdb
-    DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}
+    DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}
     COMPONENT server)
 endif()
 

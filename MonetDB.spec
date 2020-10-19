@@ -784,8 +784,6 @@ export CFLAGS
 %endif
 %cmake3 \
 	-DRELEASE_VERSION=ON \
-	-DRUNDIR=%{_rundir}/monetdb \
-	-DLOGDIR=%{_localstatedir}/log/monetdb \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
 	-DFITS=%{?with_fits:ON}%{!?with_fits:OFF} \

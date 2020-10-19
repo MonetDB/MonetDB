@@ -221,17 +221,9 @@ macro(monetdb_macro_variables)
   set(INCLUDEDIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
   set(INFODIR "${CMAKE_INSTALL_FULL_INFODIR}")
   set(LIBEXECDIR "${CMAKE_INSTALL_FULL_LIBEXECDIR}")
-  set(LOCALSTATE_DIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
   # set(MANDIR "${CMAKE_INSTALL_FULL_MANDIR}")
   set(SYSCONFDIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
-  set(LOGDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/monetdb"
-    CACHE PATH
-    "Where to put log files (default LOCALSTATEDIR/log/monetdb)")
   set(PKGCONFIGDIR "${LIBDIR}/pkgconfig")
-  set(RUNDIR
-    "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/run/monetdb"
-    CACHE PATH
-    "Where to put pid files (default LOCALSTATEDIR/run/monetdb)")
 endmacro()
 
 macro(monetdb_configure_crypto)

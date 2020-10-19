@@ -213,20 +213,7 @@
 
 #cmakedefine BINDIR "@BINDIR@"
 #cmakedefine LIBDIR "@LIBDIR@"
-#cmakedefine DATADIR "@DATADIR@"
 #cmakedefine LOCALSTATEDIR "@LOCALSTATEDIR@"
-// #cmakedefine QXLOCALSTATEDIR
-// #cmakedefine MONETDB_PREFIX
-#cmakedefine DATAROOTDIR "@DATAROOTDIR@"
-#cmakedefine INCLUDEDIR "@INCLUDEDIR@"
-#cmakedefine INFODIR "@INFODIR@"
-#cmakedefine LIBEXECDIR "@LIBEXECDIR@"
-#cmakedefine LOCALSTATE_DIR "@LOCALSTATE_DIR@"
-//#cmakedefine MANDIR "@MANDIR@"
-#cmakedefine SYSCONFDIR "@SYSCONFDIR@"
-#cmakedefine LOGDIR "@LOGDIR@"
-#cmakedefine PKGCONFIGDIR "@PKGCONFIGDIR@"
-#cmakedefine RUNDIR "@RUNDIR@"
 
 // End Section: monetdb macro variables
 
