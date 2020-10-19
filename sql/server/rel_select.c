@@ -4421,31 +4421,23 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		bclass = bt->type->eclass;
 
 		if ((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-			if (EC_NUMBER(bclass))
-				a = atom_general(sql->sa, bt, NULL);
-			else
-				a = atom_general(sql->sa, it, NULL);
+			a = (frame_type == FRAME_RANGE) ? atom_general(sql->sa, EC_NUMBER(bclass) ? bt : it, NULL) : 
+											  atom_max_value(sql->sa, EC_NUMBER(bclass) ? bt : it);
 		} else if (bound->data.i_val == CURRENT_ROW_BOUND) {
-			if (EC_NUMBER(bclass))
-				a = atom_zero_value(sql->sa, bt);
-			else
-				a = atom_zero_value(sql->sa, it);
+			a = atom_zero_value(sql->sa, EC_NUMBER(bclass) ? bt : it);
 		} else {
 			assert(0);
 		}
 		res = exp_atom(sql->sa, a);
 	} else { /* arbitrary expression case */
 		exp_kind ek = {type_value, card_column, FALSE};
-		const char* bound_desc = (token == SQL_PRECEDING) ? "PRECEDING" : "FOLLOWING";
+		const char *bound_desc = (token == SQL_PRECEDING) ? "PRECEDING" : "FOLLOWING";
 		iet = exp_subtype(ie);
 
 		assert(token == SQL_PRECEDING || token == SQL_FOLLOWING);
-		if (bound->token == SQL_NULL)
-			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
-		res = rel_value_exp2(query, &p, bound, f, ek);
-		if (!res)
+		if (!(res = rel_value_exp2(query, &p, bound, f, ek)))
 			return NULL;
-		if (!(bt = exp_subtype(res))) {
+		if (!(bt = exp_subtype(res))) { /* frame bound is a parameter */
 			sql_subtype *t = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 			if (rel_set_type_param(sql, t, p, res, 0) < 0) /* workaround */
 				return NULL;
@@ -4454,6 +4446,8 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		bclass = bt->type->eclass;
 		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
+		if (exp_is_null(res))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
 			char *err = subtype2string2(sql->ta, bt);
 			if (!err)
@@ -4823,6 +4817,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		if (!supports_frames)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation and first_value, last_value and nth_value functions");
+		if (excl != EXCLUDE_NONE)
+			return sql_error(sql, 02, SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
 		if (list_empty(obe) && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
 		if (wstart->token == SQL_FOLLOWING && wend->token == SQL_PRECEDING)
@@ -4843,43 +4839,28 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 		}
 
-		if ((fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f | sql_window)) == NULL)
-			return NULL;
-		if ((fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f | sql_window)) == NULL)
-			return NULL;
-		if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
-									   wstart->token, wend->token) == NULL)
-			return NULL;
-	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
-		sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *bt;
-		unsigned char sclass;
-
-		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
-		sclass = bt->type->eclass;
-		if (sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
-			fstart = exp_null(sql->sa, bt);
-			if (order_by_clause)
-				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, bt));
+		if (rstart->type == type_int && rend->type == type_int) { /* special cases, don't calculate bounds */
+			if (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == CURRENT_ROW_BOUND)
+				frame_type = FRAME_UNBOUNDED_TILL_CURRENT_ROW;
+			else if (rstart->data.i_val == CURRENT_ROW_BOUND && rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND)
+				frame_type = FRAME_CURRENT_ROW_TILL_UNBOUNDED;
+			else if (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND)
+				frame_type = FRAME_ALL;
+			else if (rstart->data.i_val == CURRENT_ROW_BOUND && rend->data.i_val == CURRENT_ROW_BOUND)
+				frame_type = FRAME_CURRENT_ROW;
 			else
-				fend = exp_null(sql->sa, bt);
+				assert(0);
 		} else {
-			fstart = exp_null(sql->sa, it);
-			if (order_by_clause)
-				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, it));
-			else
-				fend = exp_null(sql->sa, it);
+			if (!(fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f | sql_window)))
+				return NULL;
+			if (!(fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f | sql_window)))
+				return NULL;
+			if (!generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, excl,
+											wstart->token, wend->token))
+				return NULL;
 		}
-		//if (!obe)
-		//	frame_type = FRAME_ALL;
-
-		if (fstart && !exp_name(fstart))
-			exp_label(sql->sa, fstart, ++sql->label);
-		if (fend && !exp_name(fend))
-			exp_label(sql->sa, fend, ++sql->label);
-
-		if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
-									   SQL_PRECEDING, SQL_FOLLOWING) == NULL)
-			return NULL;
+	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
+		frame_type = list_empty(obe) ? FRAME_ALL : FRAME_UNBOUNDED_TILL_CURRENT_ROW;
 	}
 
 	if (!pe || !oe)
@@ -4890,8 +4871,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		exp_label(sql->sa, eend, ++sql->label);
 
 	if (!supports_frames) {
-		append(fargs, pe);
-		append(fargs, oe);
+		list_append(fargs, pe);
+		list_append(fargs, oe);
 	}
 
 	types = exp_types(sql->sa, fargs);
@@ -4904,10 +4885,15 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	}
 	args = sa_list(sql->sa);
 	for (node *n = fargs->h ; n ; n = n->next)
-		append(args, n->data);
+		list_append(args, n->data);
 	if (supports_frames) {
-		append(args, start);
-		append(args, eend);
+		list_append(args, exp_atom_int(sql->sa, frame_type));
+		if (pe)
+			list_append(fargs, exp_copy(sql, pe));
+		if (start)
+			list_append(args, start);
+		if (eend)
+			list_append(args, eend);
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
 	if (call && !exp_name(call))

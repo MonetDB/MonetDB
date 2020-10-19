@@ -107,8 +107,8 @@ typedef enum sql_dependency {
 #define FRAME_GROUPS 2
 #define FRAME_UNBOUNDED_TILL_CURRENT_ROW 3
 #define FRAME_CURRENT_ROW_TILL_UNBOUNDED 4
-#define FRAME_ALL_ROWS 5
-#define FRAME_JUST_CURRENT_ROW 6
+#define FRAME_ALL 5
+#define FRAME_CURRENT_ROW 6
 
 /* the following list of macros are used by SQLwindow_bound function */
 #define BOUND_FIRST_HALF_PRECEDING  0
