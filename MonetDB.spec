@@ -815,7 +815,10 @@ export CFLAGS
 %cmake3_build
 
 %install
+mkdir -p "%{buildroot}/usr"
+for d in etc var; do mkdir "%{buildroot}/$d"; ln -s ../$d "%{buildroot}/usr/$d"; done
 %cmake3_install
+rm "%{buildroot}/usr/var" "%{buildroot}/usr/etc"
 
 # move file to correct location
 %if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
