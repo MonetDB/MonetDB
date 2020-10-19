@@ -906,6 +906,7 @@ delta_delete_bat( sql_dbat *bat, BAT *i )
 		return LOG_ERR;
 
 	if (isEbat(b)) {
+		assert(ATOMtype(b->ttype) == TYPE_oid);
 		temp_destroy(bat->dbid);
 		bat->dbid = temp_copy(b->batCacheid, FALSE);
 		if (bat->dbid == BID_NIL)
@@ -936,6 +937,7 @@ delta_delete_val( sql_dbat *bat, oid rid )
 
 	if (isEbat(b)) {
 		temp_destroy(bat->dbid);
+		assert(ATOMtype(b->ttype) == TYPE_oid);
 		bat->dbid = temp_copy(b->batCacheid, FALSE);
 		if (bat->dbid == BID_NIL)
 			return LOG_ERR;
@@ -1664,6 +1666,7 @@ load_dbat(sql_dbat *bat, int bid)
 {
 	BAT *b = quick_descriptor(bid);
 	if(b) {
+		assert(ATOMtype(b->ttype) == TYPE_oid);
 		bat->dbid = temp_create(b);
 		bat->cnt = BATcount(b);
 		return LOG_OK;
@@ -2189,6 +2192,7 @@ gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 	cdb = temp_descriptor(dbid);
 	if(cdb) {
 		(*changes)++;
+		assert(ATOMtype(cdb->ttype) == TYPE_oid);
 		assert(!isEbat(cdb));
 		if (d->cleared) {
 			bat_clear(cdb);
@@ -2625,6 +2629,7 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 	if (tdb->cnt < BATcount(db) || fdb->cleared) {
 		BAT *odb = temp_descriptor(tdb->dbid);
 		if(odb) {
+			assert(ATOMtype(odb->ttype) == TYPE_oid);
 			if (isEbat(odb)){
 				temp_destroy(tdb->dbid);
 				tdb->dbid = temp_copy(odb->batCacheid, false);
