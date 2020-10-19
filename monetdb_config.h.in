@@ -214,15 +214,12 @@
 #cmakedefine BINDIR "@BINDIR@"
 #cmakedefine LIBDIR "@LIBDIR@"
 #cmakedefine DATADIR "@DATADIR@"
-#cmakedefine DATA_DIR "@DATA_DIR@"
 #cmakedefine LOCALSTATEDIR "@LOCALSTATEDIR@"
 // #cmakedefine QXLOCALSTATEDIR
 // #cmakedefine MONETDB_PREFIX
 #cmakedefine DATAROOTDIR "@DATAROOTDIR@"
-#cmakedefine BIN_DIR "@BIN_DIR@"
 #cmakedefine INCLUDEDIR "@INCLUDEDIR@"
 #cmakedefine INFODIR "@INFODIR@"
-#cmakedefine LIB_DIR "@LIB_DIR@"
 #cmakedefine LIBEXECDIR "@LIBEXECDIR@"
 #cmakedefine LOCALSTATE_DIR "@LOCALSTATE_DIR@"
 //#cmakedefine MANDIR "@MANDIR@"
