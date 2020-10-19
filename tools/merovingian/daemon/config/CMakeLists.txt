@@ -20,7 +20,7 @@ configure_file(.merovingian_properties.in
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd
-  DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/logrotate.d
+	DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/logrotate.d
   COMPONENT sql)
 
 install(FILES
@@ -31,7 +31,7 @@ install(FILES
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/.merovingian_properties
   .merovingian_lock
-  DESTINATION ${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/monetdb5/dbfarm
+	DESTINATION ${CMAKE_INSTALL_LOCALSTATEDIR}/monetdb5/dbfarm
   COMPONENT sql)
 
 install(DIRECTORY 

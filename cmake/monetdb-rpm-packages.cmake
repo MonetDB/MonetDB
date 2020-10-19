@@ -87,17 +87,12 @@ set(CPACK_RPM_server_PACKAGE_NAME "MonetDB5-server")
 set(CPACK_RPM_server_FILE_NAME "${CPACK_RPM_server_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_server_PACKAGE_SUMMARY "MonetDB - Monet Database Management System")
 set(CPACK_RPM_server_PACKAGE_REQUIRES "%{name}-client%{?_isa} = %{version}-%{release}")
-# TODO: check for hugeint
-set(CPACK_RPM_server_PACKAGE_RECOMMENDS "%{name}-SQL-server5%{?_isa} = %{version}-%{release}, MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}")
+set(CPACK_RPM_server_PACKAGE_RECOMMENDS "%{name}-SQL-server5%{?_isa} = %{version}-%{release}")
+
 set(CPACK_RPM_server_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
 set(CPACK_RPM_server_PACKAGE_CONFLICTS "python-pymonetdb < 1.0.6")
 # TODO: check for rhel
 set(CPACK_RPM_server_PACKAGE_REQUIRES_PRE "shadow-utils, systemd")
-
-set(CPACK_RPM_hugeint_PACKAGE_NAME "MonetDB5-server-hugeint")
-set(CPACK_RPM_hugeint_FILE_NAME "${CPACK_RPM_hugeint_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
-set(CPACK_RPM_hugeint_PACKAGE_SUMMARY "MonetDB - 128-bit integer support for MonetDB5-server")
-set(CPACK_RPM_hugeint_PACKAGE_REQUIRES "MonetDB5-server%{?_isa}")
 
 set(CPACK_RPM_serverdev_PACKAGE_NAME "MonetDB5-server-devel")
 set(CPACK_RPM_serverdev_FILE_NAME "${CPACK_RPM_serverdev_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
@@ -108,15 +103,8 @@ set(CPACK_RPM_sql_PACKAGE_NAME "SQL-server5")
 set(CPACK_RPM_sql_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_RPM_sql_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
 set(CPACK_RPM_sql_PACKAGE_SUMMARY "MonetDB5 SQL server modules")
 set(CPACK_RPM_sql_PACKAGE_REQUIRES_PRE "MonetDB5-server%{?_isa} = %{version}-%{release}")
-# TODO: check hugeint
-set(CPACK_RPM_sql_PACKAGE_RECOMMENDS "%{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}")
 set(CPACK_RPM_sql_PACKAGE_SUGGESTS "%{name}-client%{?_isa} = %{version}-%{release}")
 # TODO: systemd_requires?
-
-set(CPACK_RPM_sqlint128_PACKAGE_NAME "SQL-server5-hugeint")
-set(CPACK_RPM_sqlint128_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_RPM_sqlint128_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
-set(CPACK_RPM_sqlint128_PACKAGE_SUMMARY "MonetDB5 128 bit integer (hugeint) support for SQL")
-set(CPACK_RPM_sqlint128_PACKAGE_REQUIRES "MonetDB5-server-hugeint%{?_isa} = %{version}-%{release}, MonetDB-SQL-server5%{?_isa} = %{version}-%{release}")
 
 set(CPACK_RPM_testing_PACKAGE_NAME "testing")
 set(CPACK_RPM_testing_FILE_NAME "${CMAKE_PROJECT_NAME}-${CPACK_RPM_testing_PACKAGE_NAME}-${MONETDB_VERSION}.rpm")
