@@ -74,8 +74,8 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 [ 4	]
 #START TRANSACTION;
 #select 1 from integers where (((0.7161494983624688) in (integers.i)) = true) = false;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -208,13 +208,13 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 #select all integers.i from another_t inner join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) 
 #where true union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) 
 #where not (true) union all select all integers.i from another_t join integers on ((another_t.col3)<=(cast((another_t.col4) between symmetric (cast(0.29924480503501805 as int)) and (another_t.col3) as int))) where (true) is null;
-% .%26 # table_name
+% .%20 # table_name
 % i # name
 % int # type
 % 1 # length
 #select 1 from another_t join integers on (cast(another_t.col4 between 1 and 2 as int)) where false;
-% .%11 # table_name
-% %11 # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 #SELECT another_T.col2 FROM tbl_productsales, integers LEFT OUTER JOIN another_T ON another_T.col1 > 1 WHERE another_T.col2 > 1 GROUP BY another_T.col2 HAVING COUNT((another_T.col2) IN (another_T.col2)) > 0;
@@ -315,14 +315,14 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 #select all count(all 0.5923759) from v0 left outer join t0 on (('1')||
 #cast((0.95672141382556563637962199209141544997692108154296875) in (0.93132256561636328484610203304328024387359619140625, t0.c0) as varchar(32)) like('jBlZöx TW9*ࡈxw㟩*'));
-% .%7 # table_name
-% %7 # name
+% .%5 # table_name
+% %5 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select 1 from v0 join t0 on (((substr('1', 1, v0.c0)) || (1) in (1, t0.c0)) like 'a'); --simplified
-% .%10 # table_name
-% %10 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #ROLLBACK;
@@ -584,18 +584,18 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE t0("c0" DOUBLE PRECISION, "c1" VARCHAR(496));
 #create view v0(c0, c1) as (select all t0.c0, r'epfNW⟚榢tptPbC{5{ZW}6,R' from t0) with check option;
 #select 1 from v0 full outer join t0 on (cast(('a') in ('a') as string) ilike v0.c0);
-% .%11 # table_name
-% %11 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #select 1 from v0 full outer join t0 on cast((v0.c1) in (1) as string) like v0.c0;
-% .%6 # table_name
-% %6 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #select cast(sum(all + (cast(t0.c0 as int))) as bigint) from v0 full outer join t0 on ((cast((cast(v0.c1 as boolean)) not in (true, ((t0.c0)=(t0.c0)), cast(1745166981 as boolean)) as string))ilike(v0.c0));
-% .%14 # table_name
-% %14 # name
+% .%12 # table_name
+% %12 # name
 % bigint # type
 % 1 # length
 [ NULL	]
@@ -619,8 +619,8 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 #create view v0(c0) as (select distinct 0.4 from t0 where ((t0.c0)and((((lower(t0.c1))||(((((-69891801)/(1210439951)))+(cast(0.5895729273161221 as int)))))) between symmetric (cast(0.3 as string)) and (greatest(t0.c1, ((t0.c1)||(-2045486895)))))));
 #create view v1(c0) as (select distinct t0.c1 from t0 where t0.c0);
 #select max(all abs(+ (- (- (-1620427795))))) from v0, t0 join v1 on ((((v1.c0)||(t0.c1)))ilike(v1.c0));
-% .%5 # table_name
-% %5 # name
+% .%3 # table_name
+% %3 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -654,6 +654,21 @@ stdout of test 'sqlancer01` in directory 'sql/test/SQLancer` itself:
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;
+#START TRANSACTION;
+#CREATE TABLE "t1" ("tc0" INTERVAL SECOND NOT NULL);
+#COPY 5 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1857760205.000
+#7200.000
+#1663017017.000
+#1483319956.000
+#34749555.000
+[ 5	]
+#SELECT 1 FROM t1 where "truncate"(CAST(ifthenelse(TRUE, INTERVAL '5' DAY, INTERVAL '3' DAY) AS STRING), "minute"(COALESCE(TIME '22:09:18', TIME '09:37:03', TIME '22:05:56'))) = '1';
+% .%2 # table_name
+% %2 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
 
 # 11:08:12 >  
 # 11:08:12 >  "Done."

@@ -1121,6 +1121,7 @@ str batpyapi3Ref;
 str batrapiRef;
 str batsqlRef;
 str batstrRef;
+bool batstr_func_has_candidates(const char *func);
 str batxmlRef;
 str bbpRef;
 str betweenRef;
