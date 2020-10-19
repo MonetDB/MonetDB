@@ -4608,7 +4608,10 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (window_ident && !get_window_clauses(sql, window_ident, &partition_by_clause, &order_by_clause, &frame_clause))
 		return NULL;
 
-	frame_type = order_by_clause ? FRAME_RANGE : FRAME_ROWS;
+	if (frame_clause)
+		frame_type = frame_clause->data.lval->h->next->next->data.i_val;
+	else
+		frame_type = order_by_clause ? FRAME_RANGE : FRAME_ROWS;
 	aname = qname_schema_object(dn->data.lval);
 	sname = qname_schema(dn->data.lval);
 
@@ -4807,8 +4810,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (oe && !exp_name(oe))
 		exp_label(sql->sa, oe, ++sql->label);
 
-	if (frame_clause || supports_frames)
-		ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
+	if (frame_clause || supports_frames) {
+		if (frame_type == FRAME_RANGE)
+			ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
+		else
+			ie = exp_copy(sql, oe);
+	}
 
 	/* Frame */
 	if (frame_clause) {
@@ -4816,7 +4823,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		symbol *wstart = d->data.sym, *wend = d->next->data.sym, *rstart = wstart->data.lval->h->data.sym,
 			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
-		frame_type = d->next->next->data.i_val;
 
 		if (!supports_frames)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation and first_value, last_value and nth_value functions");
