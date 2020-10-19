@@ -4608,10 +4608,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (window_ident && !get_window_clauses(sql, window_ident, &partition_by_clause, &order_by_clause, &frame_clause))
 		return NULL;
 
-	if (frame_clause)
-		frame_type = frame_clause->data.lval->h->next->next->data.i_val;
-	else
-		frame_type = order_by_clause ? FRAME_RANGE : FRAME_ROWS;
+	frame_type = frame_clause ? frame_clause->data.lval->h->next->next->data.i_val : FRAME_RANGE;
 	aname = qname_schema_object(dn->data.lval);
 	sname = qname_schema(dn->data.lval);
 
