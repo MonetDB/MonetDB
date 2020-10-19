@@ -52,6 +52,10 @@ MAPI  = (monetdb) /var/tmp/mtest-17349/.s.monetdb.38601
 QUERY = SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;
 ERROR = !overflow in conversion to DECIMAL(18,18).
 CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-20193/.s.monetdb.38814
+QUERY = PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
+ERROR = !SELECT: no such binary operator 'sql_mul(bigint,month_interval)'
+CODE  = 42000
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."

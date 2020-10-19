@@ -73,7 +73,7 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t1" ("c0" INTERVAL MONTH,"c1" BOOLEAN);
 #CREATE TABLE "t2" ("c0" INTERVAL MONTH);
 #SELECT CAST(t1.c1 AS INT) FROM t1, t0 RIGHT OUTER JOIN t2 ON ((SELECT DISTINCT t1.c0 FROM t1, t0 WHERE FALSE)) NOT IN (t0.c0);
-% sys.%4 # table_name
+% .%4 # table_name
 % %4 # name
 % int # type
 % 1 # length
@@ -467,11 +467,10 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 1,	1 # length
 [ 1,	2	]
 #SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN (0.5854332103580835, CASE WHEN v4.vc0 THEN (SELECT 0.023816515 WHERE TRUE) END));
-% .%16 # table_name
-% %16 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
-[ false	]
 [ false	]
 #ROLLBACK;
 #SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;
@@ -480,6 +479,12 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % boolean # type
 % 5 # length
 [ false	]
+#select interval '1' month * cast(1 as bigint);
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 1	]
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
