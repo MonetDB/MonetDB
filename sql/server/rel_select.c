@@ -4888,12 +4888,12 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		list_append(args, n->data);
 	if (supports_frames) {
 		list_append(args, exp_atom_int(sql->sa, frame_type));
-		if (pe)
-			list_append(fargs, exp_copy(sql, pe));
-		if (start)
+		if (start && eend) {
 			list_append(args, start);
-		if (eend)
 			list_append(args, eend);
+		}
+		if (gbe)
+			list_append(args, exp_copy(sql, pe));
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
 	if (call && !exp_name(call))

@@ -37,7 +37,6 @@
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(IMP, LIMIT)		\
 	do {								\
 		if (p) {						\
-			np = (bit*)Tloc(p, 0);			\
 			for (; i < cnt; i++) {			\
 				if (np[i]) 			\
 					ANALYTICAL_WINDOW_BOUNDS_ROWS##IMP(LIMIT); \
@@ -88,7 +87,6 @@
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(IMP, LIMIT)		\
 	do {								\
 		if (p) {						\
-			np = (bit*)Tloc(p, 0);			\
 			for (; i < cnt; i++) {			\
 				if (np[i]) 			\
 					ANALYTICAL_WINDOW_BOUNDS_GROUPS##IMP(LIMIT); \
@@ -380,7 +378,7 @@ static gdk_return
 GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding, lng first_half)
 {
 	lng cnt = (BUN) BATcount(b), nils = 0, *restrict rb = (lng *) Tloc(r, 0), i = 0, k = 0, j = 0;
-	bit *np;
+	bit *restrict np = p ? (bit*)Tloc(p, 0) : NULL;
 	int abort_on_error = 1;
 
 	if (l) {		/* dynamic bounds */
@@ -486,7 +484,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 	bit *np = p ? (bit *) Tloc(p, 0) : NULL;
 	BATiter bpi = bat_iterator(b);
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(tp1);
-	const void *restrict nil = ATOMnilptr(tp1);
+	const void *nil = ATOMnilptr(tp1);
 	int abort_on_error = 1;
 
 	if (l) {		/* dynamic bounds */
@@ -649,7 +647,7 @@ static gdk_return
 GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding)
 {
 	lng cnt = (lng) BATcount(b), *restrict rb = (lng *) Tloc(r, 0), i = 0, k = 0, j = 0;
-	bit *np, *bp = (bit*) Tloc(b, 0);
+	bit *restrict np = p ? (bit*)Tloc(p, 0) : NULL, *restrict bp = (bit*) Tloc(b, 0);
 
 	if (b->ttype != TYPE_bit) {
 		GDKerror("groups frame bound type must be of type bit\n");

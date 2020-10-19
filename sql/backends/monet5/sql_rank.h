@@ -28,7 +28,9 @@ sql5_export str SQLlag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* aggregates */
+sql5_export str SQLmin_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLmax_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
