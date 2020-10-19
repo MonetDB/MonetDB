@@ -50,7 +50,7 @@
 					if ((TPE2)(ABSOLUTE(calc)) > rlimit) \
 						break;			\
 				}					\
-				rb[k] = j++;				\
+				rb[k] = ++j;				\
 			}						\
 		} else {						\
 			for (; k < i; k++) {			\
@@ -74,7 +74,7 @@
 							break;		\
 					}				\
 				}					\
-				rb[k] = j++;				\
+				rb[k] = ++j;				\
 			}						\
 		}							\
 	} while (0)
@@ -134,7 +134,7 @@
 						v = bp[j];		\
 					}				\
 				}					\
-				rb[k] = j++;				\
+				rb[k] = ++j;				\
 			}						\
 		} else {						\
 			for (; k < i; k++) {			\
@@ -161,7 +161,7 @@
 						}			\
 					}				\
 				}					\
-				rb[k] = j++;			\
+				rb[k] = ++j;			\
 			}						\
 		}							\
 	} while (0)
@@ -238,7 +238,7 @@
 					if (ABSOLUTE((TPE) atomcmp(v, next)) > (TPE) LIMIT) \
 						break;			\
 				}					\
-				rb[k] = j++;					\
+				rb[k] = ++j;					\
 			}						\
 		} else {						\
 			for (; k < i; k++) {			\
@@ -262,7 +262,7 @@
 							break;		\
 					}				\
 				}					\
-				rb[k] = j++;					\
+				rb[k] = ++j;					\
 			}						\
 		}							\
 	} while (0)
@@ -320,7 +320,7 @@
 						v = next;		\
 					}				\
 				}					\
-				rb[k] = j++;				\
+				rb[k] = ++j;				\
 			}						\
 		} else {						\
 			for (; k < i; k++) {			\
@@ -349,7 +349,7 @@
 						}			\
 					}				\
 				}					\
-				rb[k] = j++;					\
+				rb[k] = ++j;					\
 			}						\
 		}							\
 	} while (0)
