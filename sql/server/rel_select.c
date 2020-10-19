@@ -4823,7 +4823,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		if (!supports_frames)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation and first_value, last_value and nth_value functions");
-		if (!obe && frame_type == FRAME_GROUPS)
+		if (list_empty(obe) && frame_type == FRAME_GROUPS)
 			return sql_error(sql, 02, SQLSTATE(42000) "GROUPS frame requires an order by expression");
 		if (wstart->token == SQL_FOLLOWING && wend->token == SQL_PRECEDING)
 			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must come after PRECEDING offset");
@@ -4831,22 +4831,16 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			return sql_error(sql, 02, SQLSTATE(42000) "CURRENT ROW offset must come after PRECEDING offset");
 		if (wstart->token == SQL_FOLLOWING && wend->token == SQL_CURRENT_ROW)
 			return sql_error(sql, 02, SQLSTATE(42000) "FOLLOWING offset must come after CURRENT ROW offset");
-		if (wstart->token != SQL_CURRENT_ROW && wend->token != SQL_CURRENT_ROW && wstart->token == wend->token &&
-		   (frame_type != FRAME_ROWS && frame_type != FRAME_ALL))
+		if (wstart->token != SQL_CURRENT_ROW && wend->token != SQL_CURRENT_ROW && wstart->token == wend->token && frame_type != FRAME_ROWS)
 			return sql_error(sql, 02, SQLSTATE(42000) "Non-centered windows are only supported in row frames");
-		if (!obe && frame_type == FRAME_RANGE) {
-			bool ok_preceding = false, ok_following = false;
-			if ((wstart->token == SQL_PRECEDING || wstart->token == SQL_CURRENT_ROW) &&
-			   (rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW) && rstart->type == type_int &&
-			   (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND || rstart->data.i_val == CURRENT_ROW_BOUND))
-				ok_preceding = true;
-			if ((wend->token == SQL_FOLLOWING || wend->token == SQL_CURRENT_ROW) &&
-			   (rend->token == SQL_FOLLOWING || rend->token == SQL_CURRENT_ROW) && rend->type == type_int &&
-			   (rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND || rend->data.i_val == CURRENT_ROW_BOUND))
-				ok_following = true;
-			if (!ok_preceding || !ok_following)
-				return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING/FOLLOWING offset requires an order by expression");
-			frame_type = FRAME_ALL; /* special case, iterate the entire partition */
+		if (frame_type == FRAME_RANGE) {
+			if ((wstart->token == SQL_PRECEDING && rstart->type != type_int) || (wstart->token == SQL_FOLLOWING && rstart->type != type_int) ||
+				(wend->token == SQL_PRECEDING && rend->type != type_int) || (wend->token == SQL_FOLLOWING && rend->type != type_int)) {
+				if (list_empty(obe))
+					return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING/FOLLOWING offset requires an order by expression");
+				if (list_length(obe) > 1)
+					return sql_error(sql, 02, SQLSTATE(42000) "RANGE with offset PRECEDING/FOLLOWING requires exactly one ORDER BY column");
+			}
 		}
 
 		if ((fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f | sql_window)) == NULL)
@@ -4875,8 +4869,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			else
 				fend = exp_null(sql->sa, it);
 		}
-		if (!obe)
-			frame_type = FRAME_ALL;
+		//if (!obe)
+		//	frame_type = FRAME_ALL;
 
 		if (fstart && !exp_name(fstart))
 			exp_label(sql->sa, fstart, ++sql->label);

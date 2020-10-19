@@ -164,7 +164,7 @@
 		} \
 	} while(0)
 
-str //VERY IMPORTANT -> the FRAME_ALL case shall never fall here, as well as FRAME_GROUPS and FRAME_ROWS
+str //VERY IMPORTANT -> only FRAME_RANGE shall fall here
 MTIMEanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2,
 						   bool preceding, lng first_half)
 {
