@@ -13,57 +13,61 @@
 
 #define ANALYTICAL_DIFF_IMP(TPE)				\
 	do {							\
-		TPE *bp = (TPE*)Tloc(b, 0);			\
-		TPE prev = *bp, *end = bp + cnt;		\
+		TPE *bp = (TPE*)Tloc(b, 0), prev = bp[0];		\
 		if (np) {					\
-			for (; bp < end; bp++, rb++, np++) {	\
-				*rb = *np;			\
-				if (*bp != prev) {		\
-					*rb = TRUE;		\
-					prev = *bp;		\
-				}				\
+			for (; i < cnt; i++) {	\
+				TPE next = bp[i]; \
+				if (next != prev) {		\
+					rb[i] = TRUE;		\
+					prev = next;		\
+				} else {	\
+					rb[i] = np[i];			\
+				}			\
 			}					\
 		} else {					\
-			for (; bp < end; bp++, rb++) {		\
-				if (*bp == prev) {		\
-					*rb = FALSE;		\
+			for (; i < cnt; i++) {		\
+				TPE next = bp[i]; \
+				if (next == prev) {		\
+					rb[i] = FALSE;		\
 				} else {			\
-					*rb = TRUE;		\
-					prev = *bp;		\
+					rb[i] = TRUE;		\
+					prev = next;		\
 				}				\
-			}					\
-		}						\
+			}				\
+		}				\
 	} while (0)
 
 /* We use NaN for floating point null values, which always output false on equality tests */
 #define ANALYTICAL_DIFF_FLOAT_IMP(TPE)					\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0);				\
-		TPE prev = *bp, *end = bp + cnt;			\
+		TPE *bp = (TPE*)Tloc(b, 0), prev = bp[0];		\
 		if (np) {						\
-			for (; bp < end; bp++, rb++, np++) {		\
-				*rb = *np;				\
-				if (*bp != prev && (!is_##TPE##_nil(*bp) || !is_##TPE##_nil(prev))) { \
-					*rb = TRUE;			\
-					prev = *bp;			\
-				}					\
+			for (; i < cnt; i++) {		\
+				TPE next = bp[i]; \
+				if (next != prev && (!is_##TPE##_nil(next) || !is_##TPE##_nil(prev))) { \
+					rb[i] = TRUE;			\
+					prev = next;			\
+				} else {	\
+					rb[i] = np[i];			\
+				}			\
 			}						\
 		} else {						\
-			for (; bp < end; bp++, rb++) {			\
-				if (*bp == prev || (is_##TPE##_nil(*bp) && is_##TPE##_nil(prev))) { \
-					*rb = FALSE;			\
+			for (; i < cnt; i++) {			\
+				TPE next = bp[i]; \
+				if (next == prev || (is_##TPE##_nil(next) && is_##TPE##_nil(prev))) { \
+					rb[i] = FALSE;			\
 				} else {				\
-					*rb = TRUE;			\
-					prev = *bp;			\
-				}					\
-			}						\
-		}							\
+					rb[i] = TRUE;			\
+					prev = next;		\
+				}				\
+			}				\
+		}				\
 	} while (0)
 
 gdk_return
 GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 {
-	BUN i, cnt = BATcount(b);
+	BUN i = 0, cnt = BATcount(b);
 	bit *restrict rb = (bit *) Tloc(r, 0), *restrict np = p ? (bit *) Tloc(p, 0) : NULL;
 
 	switch (ATOMbasetype(tpe)) {
@@ -103,22 +107,22 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		ptr v = BUNtail(it, 0), next;
 		int (*atomcmp) (const void *, const void *) = ATOMcompare(tpe);
 		if (np) {
-			for (i = 0; i < cnt; i++, rb++, np++) {
-				*rb = *np;
+			for (i = 0; i < cnt; i++) {
+				rb[i] = np[i];
 				next = BUNtail(it, i);
 				if (atomcmp(v, next) != 0) {
-					*rb = TRUE;
+					rb[i] = TRUE;
 					v = next;
 				}
 			}
 		} else {
-			for (i = 0; i < cnt; i++, rb++) {
+			for (i = 0; i < cnt; i++) {
 				next = BUNtail(it, i);
 				if (atomcmp(v, next) != 0) {
-					*rb = TRUE;
+					rb[i] = TRUE;
 					v = next;
 				} else {
-					*rb = FALSE;
+					rb[i] = FALSE;
 				}
 			}
 		}
