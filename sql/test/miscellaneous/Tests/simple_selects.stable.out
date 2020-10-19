@@ -400,6 +400,41 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 [ "12/02/11"	]
 [ "12/02/12"	]
 [ "12/02/13"	]
+#select x as z, 2 from (select 1) as x(x) order by z, z;
+% .,	.%1 # table_name
+% z,	%1 # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	2	]
+#select x as z, 2 from (select 1) as x(x) group by z, z;
+% .,	.%2 # table_name
+% z,	%2 # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	2	]
+#plan select x as z, 2 from (select 1) as x(x) group by z, z;
+% .plan # table_name
+% rel # name
+% clob # type
+% 32 # length
+project (
+| group by (
+| | project (
+| | |  [ boolean "true" ]
+| | ) [ tinyint "1" as "x"."x" ]
+| ) [ "x"."x" as "z" ] [ "z" ]
+) [ "z", tinyint "2" ]
+#select 1, null except select 1, null;
+% .%11,	.%11 # table_name
+% %2,	%3 # name
+% tinyint,	char # type
+% 1,	0 # length
+#select 1, null intersect select 1, null;
+% .%11,	.%11 # table_name
+% %2,	%3 # name
+% tinyint,	char # type
+% 1,	0 # length
+[ 1,	NULL	]
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

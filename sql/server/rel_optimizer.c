@@ -1337,16 +1337,16 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 {
 	switch(e->type) {
 	case e_cmp: {
-		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
+		int res = 1, lmust = 0;
 
 		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
-		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
-				(!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) ||
-			(f &&
-				(r->type == e_column || can_push_func(r, rel, &mustr)) &&
-			(f->type == e_column || can_push_func(f, rel, &mustf)) && (*must = (mustr || mustf)));
+		res = can_push_func(l, rel, &lmust) && can_push_func(r, rel, &lmust) && (!f || can_push_func(f, rel, &lmust));
+		if (res && !lmust)
+			return 1;
+		(*must) |= lmust;
+		return res;
 	}
 	case e_convert:
 		return can_push_func(e->l, rel, must);
@@ -1365,7 +1365,8 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		return res;
 	}
 	case e_column:
-		if (rel && !rel_find_exp(rel, e))
+		 /* aliases cannot be bound on the same level, ie same projection */
+		if ((exp_name(e) && !has_label(e)) || (rel && !rel_find_exp(rel, e)))
 			return 0;
 		(*must) = 1;
 		/* fall through */
@@ -2149,7 +2150,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			ne = exps_bind_column2(f->exps, e->l, e->r, NULL);
 		if (!ne && !e->l)
 			ne = exps_bind_column(f->exps, e->r, NULL, NULL, 1);
-		if (!ne || (ne->type != e_column && ne->type != e_atom))
+		if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 			return NULL;
 		while (ne && has_label(ne) && f->op == op_project && ne->type == e_column) {
 			sql_exp *oe = e, *one = ne;
@@ -2167,7 +2168,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				e = oe;
 				break;
 			}
-			if (ne->type != e_column && ne->type != e_atom)
+			if (ne->type != e_column && (ne->type != e_atom || ne->f))
 				return NULL;
 		}
 		/* possibly a groupby/project column is renamed */
@@ -2178,7 +2179,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			if (!gbe && !e->l)
 				gbe = exps_bind_column(f->r, ne->r, NULL, NULL, 1);
 			ne = gbe;
-			if (!ne || (ne->type != e_column && ne->type != e_atom))
+			if (!ne || (ne->type != e_column && (ne->type != e_atom || ne->f)))
 				return NULL;
 		}
 		if (ne->type == e_atom)
@@ -4864,7 +4865,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			l = l->l;
 		*/
 
-		if (!is_join(l->op) || rel_is_ref(l))
+		if (!is_join(l->op) || is_full(l->op) || rel_is_ref(l))
 			return rel;
 
 		lop = l->op;
@@ -4896,6 +4897,10 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			if (!right && !left)
 				return rel;
 		}
+		if (left && is_right(lop))
+			return rel;
+		if (right && is_left(lop))
+			return rel;
 		nsexps = exps_copy(v->sql, rel->exps);
 		njexps = exps_copy(v->sql, l->exps);
 		if (left)
@@ -4906,7 +4911,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		if (left)
 			l = rel_crossproduct(v->sql->sa, l, rel_dup(lr), lop);
 		else
-			l = rel_crossproduct(v->sql->sa, l, rel_dup(ll), lop);
+			l = rel_crossproduct(v->sql->sa, rel_dup(ll), l, lop);
 		l->exps = njexps;
 		rel_destroy(rel);
 		rel = l;
@@ -6043,7 +6048,7 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 	if (is_groupby(rel->op) && rel->r && !rel_is_ref(rel)) {
 		int nr = 0, anr = 0;
 		list *gbe, *ngbe, *arg, *exps, *nexps;
-		sql_exp *distinct = NULL, *darg;
+		sql_exp *distinct = NULL, *darg, *found;
 		sql_rel *l = NULL;
 
 		for (n=rel->exps->h; n && nr <= 2; n = n->next) {
@@ -6092,17 +6097,22 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 		}
 
 		darg = arg->h->data;
-		list_append(gbe, darg = exp_copy(v->sql, darg));
-		exp_label(v->sql->sa, darg, ++v->sql->label);
-
-		darg = exp_ref(v->sql, darg);
+		if ((found = exps_find_exp(gbe, darg))) { /* first find if the aggregate argument already exists in the grouping list */
+			darg = exp_ref(v->sql, found);
+		} else {
+			list_append(gbe, darg = exp_copy(v->sql, darg));
+			exp_label(v->sql->sa, darg, ++v->sql->label);
+			darg = exp_ref(v->sql, darg);
+		}
 		list_append(exps, darg);
 		darg = exp_ref(v->sql, darg);
 		arg->h->data = darg;
-		l = rel->l = rel_groupby(v->sql, rel->l, gbe);
-		l->exps = exps;
-		set_processed(l);
-		rel->r = ngbe;
+		if (!exp_match_list(ngbe, gbe)) { /* if the grouping columns match don't create an extra grouping */
+			l = rel->l = rel_groupby(v->sql, rel->l, gbe);
+			l->exps = exps;
+			set_processed(l);
+			rel->r = ngbe;
+		}
 		rel->exps = nexps;
 		set_nodistinct(distinct);
 		append(nexps, distinct);
@@ -7525,7 +7535,7 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 				list *r = e->r;
 				sql_exp *fmt = r->h->data;
 				sql_exp *esc = (r->h->next)?r->h->next->data:NULL;
-				int rewrite = 0;
+				int rewrite = 0, isnull = 0;
 
 				if (fmt->type == e_convert)
 					fmt = fmt->l;
@@ -7535,27 +7545,33 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 
 					if (fmt->l)
 						fa = fmt->l;
-					if (fa && fa->data.vtype == TYPE_str &&
+					if (fa && fa->isnull)
+						isnull = 1;
+					else if (fa && fa->data.vtype == TYPE_str &&
 					    !strchr(fa->data.val.sval, '%') &&
 					    !strchr(fa->data.val.sval, '_'))
 						rewrite = 1;
 				}
-				if (rewrite && esc && is_atom(esc->type)) {
+				if (rewrite && !isnull && esc && is_atom(esc->type)) {
 			 		atom *ea = NULL;
 
 					if (esc->l)
 						ea = esc->l;
-					if (ea && (ea->data.vtype != TYPE_str ||
+					if (ea && ea->isnull)
+						isnull = 1;
+					else if (ea && (ea->data.vtype != TYPE_str ||
 					    strlen(ea->data.val.sval) != 0))
 						rewrite = 0;
 				}
-				if (rewrite) { 	/* rewrite to cmp_equal ! */
+				if (isnull) {
+					list_append(exps, exp_null(v->sql->sa, sql_bind_localtype("bit")));
+					v->changes++;
+				} else if (rewrite) { 	/* rewrite to cmp_equal ! */
 					list *l = e->l;
 					list *r = e->r;
 					sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, cmp_equal);
 
 					if (is_anti(e)) set_anti(ne);
-					/* if rewritten don't cache this query */
 					list_append(exps, ne);
 					v->changes++;
 				} else {

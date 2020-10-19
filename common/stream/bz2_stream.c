@@ -137,6 +137,7 @@ bz2_stream(stream *inner, int level)
 	if (bz == NULL || state == NULL) {
 		free(bz);
 		free(state);
+		mnstr_set_open_error(inner->name, errno, "couldn't initialize bz2 stream");
 		return NULL;
 	}
 

@@ -300,7 +300,7 @@ do_batstr_conststr_str(bat *ret, const bat *l, const str *s2, const char *name, 
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (!strNil(x) &&
+		if (!strNil(x) && !strNil(*s2) &&
 			(msg = (*func)(&y, &x, s2)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -354,8 +354,7 @@ do_batstr_batstr_str(bat *ret, const bat *l, const bat *l2, const char *name, st
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		x2 = (str) BUNtvar(bi2, p);
-		if (!strNil(x) &&
-			!strNil(x2) &&
+		if (!strNil(x) && !strNil(x2) &&
 			(msg = (*func)(&y, &x, &x2)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -403,7 +402,7 @@ do_batstr_constint_str(bat *ret, const bat *l, const int *n, const char *name, s
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (!strNil(x) &&
+		if (!strNil(x) && !is_int_nil(*n) &&
 			(msg = (*func)(&y, &x, n)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -458,7 +457,7 @@ do_batstr_batint_str(bat *ret, const bat *l, const bat *n, const char *name, str
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		nn = *(int *)BUNtloc(bi2, p);
-		if (!strNil(x) &&
+		if (!strNil(x) && !is_int_nil(nn) &&
 			(msg = (*func)(&y, &x, &nn)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -506,7 +505,7 @@ do_batstr_constint_conststr_str(bat *ret, const bat *l, const int *n, const str 
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (!strNil(x) &&
+		if (!strNil(x) && !is_int_nil(*n) && !strNil(*s2) &&
 			(msg = (*func)(&y, &x, n, s2)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -561,7 +560,7 @@ do_batstr_batint_conststr_str(bat *ret, const bat *l, const bat *n, const str *s
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		nn = *(int *)BUNtloc(bi2, p);
-		if (!strNil(x) &&
+		if (!strNil(x) && !is_int_nil(nn) && !strNil(*s2) &&
 			(msg = (*func)(&y, &x, &nn, s2)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -616,8 +615,7 @@ do_batstr_constint_batstr_str(bat *ret, const bat *l, const int *n, const bat *l
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
 		x2 = (str) BUNtvar(bi2, p);
-		if (!strNil(x) &&
-			!strNil(x2) &&
+		if (!strNil(x) && !is_int_nil(*n) && !strNil(x2) &&
 			(msg = (*func)(&y, &x, n, &x2)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -685,8 +683,7 @@ do_batstr_batint_batstr_str(bat *ret, const bat *l, const bat *n, const bat *l2,
 		x = (str) BUNtvar(bi, p);
 		nn = *(int *)BUNtloc(bi2, p);
 		x2 = (str) BUNtvar(bi3, p);
-		if (!strNil(x) &&
-			!strNil(x2) &&
+		if (!strNil(x) && !is_int_nil(nn) && !strNil(x2) &&
 			(msg = (*func)(&y, &x, &nn, &x2)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)
@@ -1193,7 +1190,7 @@ do_batstr_str_int_cst(bat *ret, const bat *l, const int *cst, const char *name, 
 	BATloop(b, p, q) {
 		y = NULL;
 		x = (str) BUNtvar(bi, p);
-		if (!strNil(x) &&
+		if (!strNil(x) && !is_int_nil(*cst) &&
 			(msg = (*func)(&y, &x, cst)) != MAL_SUCCEED)
 			goto bailout;
 		if (y == NULL)

@@ -1091,15 +1091,20 @@ exp_cmp( sql_exp *e1, sql_exp *e2)
 	return (e1 == e2)?0:-1;
 }
 
+#define alias_cmp(e1, e2) \
+	do { \
+		if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0) \
+			return strcmp(e1->alias.name, e2->alias.name); \
+		if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name) \
+			return strcmp(e1->alias.name, e2->alias.name); \
+	} while (0);
+
 int
 exp_equal( sql_exp *e1, sql_exp *e2)
 {
 	if (e1 == e2)
 		return 0;
-	if (e1->alias.rname && e2->alias.rname && strcmp(e1->alias.rname, e2->alias.rname) == 0)
-		return strcmp(e1->alias.name, e2->alias.name);
-	if (!e1->alias.rname && !e2->alias.rname && e1->alias.label == e2->alias.label && e1->alias.name && e2->alias.name)
-		return strcmp(e1->alias.name, e2->alias.name);
+	alias_cmp(e1, e2);
 	return -1;
 }
 
@@ -1288,6 +1293,10 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 {
 	if (exp_match(e1, e2))
 		return 1;
+	if (is_ascending(e1) != is_ascending(e2) || nulls_last(e1) != nulls_last(e2) || zero_if_empty(e1) != zero_if_empty(e2) ||
+		need_no_nil(e1) != need_no_nil(e2) || is_anti(e1) != is_anti(e2) || is_semantics(e1) != is_semantics(e2) ||
+		need_distinct(e1) != need_distinct(e2))
+		return 0;
 	if (e1->type == e2->type) {
 		switch(e1->type) {
 		case e_cmp:
@@ -1300,7 +1309,7 @@ exp_match_exp( sql_exp *e1, sql_exp *e2)
 		            exp_match_list(e1->l, e2->l) &&
 			    exp_match_list(e1->r, e2->r))
 				return 1;
-			else if (e1->flag == e2->flag && is_anti(e1) == is_anti(e2) &&
+			else if (e1->flag == e2->flag &&
 				(e1->flag == cmp_in || e1->flag == cmp_notin) &&
 		            exp_match_exp(e1->l, e2->l) &&
 			    exp_match_list(e1->r, e2->r))
@@ -1351,6 +1360,27 @@ exps_any_match(list *l, sql_exp *e)
 	for (node *n = l->h; n ; n = n->next) {
 		sql_exp *ne = (sql_exp *) n->data;
 		if (exp_match_exp(ne, e))
+			return ne;
+	}
+	return NULL;
+}
+
+static int
+exp_no_alias(sql_exp *e1, sql_exp *e2)
+{
+	alias_cmp(e1, e2);
+	/* at least one of the expressions don't have an alias, so there's a match */
+	return 0;
+}
+
+sql_exp *
+exps_any_match_same_or_no_alias(list *l, sql_exp *e)
+{
+	if (!l)
+		return NULL;
+	for (node *n = l->h; n ; n = n->next) {
+		sql_exp *ne = (sql_exp *) n->data;
+		if ((exp_match(ne, e) || exp_refers(ne, e) || exp_match_exp(ne, e)) && exp_no_alias(e, ne) == 0)
 			return ne;
 	}
 	return NULL;
@@ -1899,18 +1929,16 @@ exp_is_atom( sql_exp *e )
 		return exp_is_atom(e->l);
 	case e_func:
 	case e_aggr:
-	{
-		int r = (e->card == CARD_ATOM);
-		node *n;
-		list *l = e->l;
-
-		if (r && l)
-			for (n = l->h; n && r; n = n->next)
-				r &= exp_is_atom(n->data);
-		return r;
-	}
-	case e_column:
+		return e->card == CARD_ATOM && exps_are_atoms(e->l);
 	case e_cmp:
+		if (e->card != CARD_ATOM)
+			return 0;
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_are_atoms(e->l) && exps_are_atoms(e->r);
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_is_atom(e->l) && exps_are_atoms(e->r);
+		return exp_is_atom(e->l) && exp_is_atom(e->r) && (!e->f || exp_is_atom(e->f));
+	case e_column:
 	case e_psm:
 		return 0;
 	}
@@ -2030,6 +2058,56 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
+static void exp_rel_update_set_freevar(sql_exp *e);
+
+static void
+exps_rel_update_set_freevar(list *exps)
+{
+	if (!list_empty(exps))
+		for (node *n=exps->h; n ; n=n->next)
+			exp_rel_update_set_freevar(n->data);
+}
+
+static void
+exp_rel_update_set_freevar(sql_exp *e)
+{
+	if (!e)
+		return ;
+
+	switch(e->type){
+	case e_func:
+	case e_aggr:
+		exps_rel_update_set_freevar(e->l);
+		break;
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			exps_rel_update_set_freevar(e->l);
+			exps_rel_update_set_freevar(e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			exp_rel_update_set_freevar(e->l);
+			exps_rel_update_set_freevar(e->r);
+		} else {
+			exp_rel_update_set_freevar(e->l);
+			exp_rel_update_set_freevar(e->r);
+			if (e->f)
+				exp_rel_update_set_freevar(e->f);
+		}
+		break;
+	case e_convert:
+		exp_rel_update_set_freevar(e->l);
+		break;
+	case e_atom:
+		if (e->f)
+			exps_rel_update_set_freevar(e->f);
+		break;
+	case e_column:
+		set_freevar(e, 1);
+		break;
+	case e_psm:
+		break;
+	}
+}
+
 static list *
 exp_rel_update_exps(mvc *sql, list *exps)
 {
@@ -2041,7 +2119,7 @@ exp_rel_update_exps(mvc *sql, list *exps)
 		if (exp_has_rel(e))
 			n->data = exp_rel_update_exp(sql, e);
 		else if (!exp_is_atom(e))
-			set_freevar(e,1);
+			exp_rel_update_set_freevar(e);
 	}
 	list_hash_clear(exps);
 	return exps;
@@ -2056,7 +2134,8 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 	switch(e->type){
 	case e_func:
 	case e_aggr:
-		e->l = exp_rel_update_exps(sql, e->l);
+		if (exps_have_rel_exp(e->l))
+			e->l = exp_rel_update_exps(sql, e->l);
 		return e;
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -2079,7 +2158,8 @@ exp_rel_update_exp(mvc *sql, sql_exp *e)
 		}
 		return e;
 	case e_convert:
-		e->l = exp_rel_update_exp(sql, e->l);
+		if (exp_has_rel(e->l))
+			e->l = exp_rel_update_exp(sql, e->l);
 		return e;
 	case e_psm:
 		if (exp_is_rel(e)) {
@@ -2113,7 +2193,7 @@ int
 exps_are_atoms( list *exps)
 {
 	int atoms = 1;
-	if (exps)
+	if (!list_empty(exps))
 		for(node *n=exps->h; n && atoms; n=n->next)
 			atoms &= exp_is_atom(n->data);
 	return atoms;
@@ -2202,30 +2282,45 @@ exp_has_sideeffect( sql_exp *e )
 	return 0;
 }
 
-int
-exp_unsafe( sql_exp *e, int allow_identity)
+static int
+exps_have_unsafe(list *exps, int allow_identity)
 {
-	if (!e)
-		return 0;
+	int unsafe = 0;
 
-	if (e->type != e_func && e->type != e_convert)
+	if (list_empty(exps))
 		return 0;
+	for (node *n = exps->h; n && !unsafe; n = n->next)
+		unsafe |= exp_unsafe(n->data, allow_identity);
+	return unsafe;
+}
 
-	if (e->type == e_convert && e->l)
+int
+exp_unsafe(sql_exp *e, int allow_identity)
+{
+	switch (e->type) {
+	case e_convert:
 		return exp_unsafe(e->l, allow_identity);
-	if ((e->type == e_func || e->type == e_aggr) && e->l) {
+	case e_aggr:
+	case e_func: {
 		sql_subfunc *f = e->f;
-		list *args = e->l;
-		node *n;
 
 		if (IS_ANALYTIC(f->func) || (!allow_identity && is_identity(e, NULL)))
 			return 1;
-		for(n = args->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			if (exp_unsafe(e, allow_identity))
-				return 1;
+		return exps_have_unsafe(e->l, allow_identity);
+	} break;
+	case e_cmp: {
+		if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return exp_unsafe(e->l, allow_identity) || exps_have_unsafe(e->r, allow_identity);
+		} else if (e->flag == cmp_or || e->flag == cmp_filter) {
+			return exps_have_unsafe(e->l, allow_identity) || exps_have_unsafe(e->r, allow_identity);
+		} else {
+			return exp_unsafe(e->l, allow_identity) || exp_unsafe(e->r, allow_identity) || (e->f && exp_unsafe(e->f, allow_identity));
 		}
+	} break;
+	case e_column:
+	case e_atom:
+	case e_psm:
+		return 0;
 	}
 	return 0;
 }
@@ -2680,15 +2775,23 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 
 		/* HACK alert: digits should be less than max */
 #ifdef HAVE_HGE
-		if (ares->type.type->radix == 10 && res->digits > 39)
+		if (ares->type.type->radix == 10 && res->digits > 39) {
 			res->digits = 39;
-		if (ares->type.type->radix == 2 && res->digits > 128)
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
+		if (ares->type.type->radix == 2 && res->digits > 128) {
 			res->digits = 128;
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
 #else
-		if (ares->type.type->radix == 10 && res->digits > 19)
+		if (ares->type.type->radix == 10 && res->digits > 19) {
 			res->digits = 19;
-		if (ares->type.type->radix == 2 && res->digits > 64)
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
+		if (ares->type.type->radix == 2 && res->digits > 64) {
 			res->digits = 64;
+			res->scale = MIN(res->scale, res->digits - 1);
+		}
 #endif
 
 		/* numeric types are fixed length */
@@ -2939,13 +3042,17 @@ exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 	if (!e)
 		return 0;
 
+	assert(e->type == e_atom);
 	if (e->f) {
 		const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
 		if (next_rel && next_exp && !strcmp(next_rel, *relname) && !strcmp(next_exp, *expname))
 			for (node *n = ((list *) e->f)->h; n; n = n->next)
-				exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname);
+				if (exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname) < 0)
+					return -1;
 	}
-	if ((e->f || (!e->l && !e->r && !e->f)) && !e->tpe.type) {
+	if (e->f && !e->tpe.type) {
+		e->tpe = *type;
+	} else if (!e->l && !e->r && !e->f && !e->tpe.type) {
 		if (set_type_param(sql, type, e->flag) == 0)
 			e->tpe = *type;
 		else

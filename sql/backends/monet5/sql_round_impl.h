@@ -10,8 +10,6 @@
 #define dec_round_body		FUN(TYPE, dec_round_body)
 #define dec_round_wrap		FUN(TYPE, dec_round_wrap)
 #define bat_dec_round_wrap	FUN(TYPE, bat_dec_round_wrap)
-#define round_body_nonil	FUN(TYPE, round_body_nonil)
-#define round_body		FUN(TYPE, round_body)
 #define round_wrap		FUN(TYPE, round_wrap)
 #define bat_round_wrap		FUN(TYPE, bat_round_wrap)
 #define nil_2dec		FUN(nil_2dec, TYPE)
@@ -127,67 +125,120 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	return MAL_SUCCEED;
 }
 
-static inline TYPE
-round_body_nonil(TYPE v, int d, int s, int r)
-{
-	TYPE res = NIL(TYPE);
+#define cicle1(res, input) \
+	do { \
+		if (ISNIL(TYPE)(input)) { \
+			res = NIL(TYPE); \
+			nils = true; \
+		} else { \
+			res = 0; \
+		} \
+	} while (0)
 
-	assert(!ISNIL(TYPE)(v));
+#define cicle2(res, input, rnd) \
+	do { \
+		if (ISNIL(TYPE)(input)) { \
+			res = NIL(TYPE); \
+			nils = true; \
+		} else { \
+			BIG lres; \
+			if (input > 0) \
+				lres = ((input + rnd) / scales[dff]) * scales[dff]; \
+			else \
+				lres = ((input - rnd) / scales[dff]) * scales[dff]; \
+			res = (TYPE) lres; \
+		} \
+	} while (0)
 
-	if (-r > d) {
-		res = 0;
-	} else if (r > 0 && r < s) {
-		int dff = s - r;
-		BIG rnd = scales[dff] >> 1;
-		BIG lres;
-		if (v > 0)
-			lres = ((v + rnd) / scales[dff]) * scales[dff];
-		else
-			lres = ((v - rnd) / scales[dff]) * scales[dff];
-		res = (TYPE) lres;
-	} else if (r <= 0 && -r + s > 0) {
-		int dff = -r + s;
-		BIG rnd = scales[dff] >> 1;
-		BIG lres;
-		if (v > 0)
-			lres = ((v + rnd) / scales[dff]) * scales[dff];
-		else
-			lres = ((v - rnd) / scales[dff]) * scales[dff];
-		res = (TYPE) lres;
-	} else {
-		res = v;
-	}
-	return res;
-}
+#define cicle3(res, input, rnd) \
+	do { \
+		if (ISNIL(TYPE)(input)) { \
+			res = NIL(TYPE); \
+			nils = true; \
+		} else { \
+			BIG lres; \
+			if (input > 0) \
+				lres = ((input + rnd) / scales[dff]) * scales[dff]; \
+			else \
+				lres = ((input - rnd) / scales[dff]) * scales[dff]; \
+			res = (TYPE) lres; \
+		} \
+	} while (0)
 
-static inline TYPE
-round_body(TYPE v, int d, int s, int r)
-{
-	/* shortcut nil */
-	if (ISNIL(TYPE)(v)) {
-		return NIL(TYPE);
-	} else {
-		return round_body_nonil(v, d, s, r);
-	}
-}
+#define cicle4(res, input) \
+	do { \
+		if (ISNIL(TYPE)(input)) { \
+			res = NIL(TYPE); \
+			nils = true; \
+		} else { \
+			res = input; \
+		} \
+	} while (0)
+
+#define round_body(LOOP, res, input, d, s, r) \
+	do { \
+		if (-r > d) { \
+			LOOP(cicle1(res, input)); \
+		} else if (r > 0 && r < s) { \
+			BIG rnd; \
+			int dff = s - r; \
+ \
+			if (dff < 0 || (size_t) dff >= sizeof(scales) / sizeof(scales[0])) { \
+				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds"); \
+				goto bailout; \
+			} \
+			rnd = scales[dff] >> 1; \
+			LOOP(cicle2(res, input, rnd)); \
+		} else if (r <= 0 && -r + s > 0) { \
+			BIG rnd; \
+			int dff = -r + s; \
+ \
+			if (dff < 0 || (size_t) dff >= sizeof(scales) / sizeof(scales[0])) { \
+				msg = createException(MAL, "round", SQLSTATE(42000) "Digits out of bounds"); \
+				goto bailout; \
+			} \
+			rnd = scales[dff] >> 1; \
+			LOOP(cicle3(res, input, rnd)); \
+		} else { \
+			LOOP(cicle4(res, input)); \
+		} \
+	} while (0)
+
+#define NOLOOP(X) \
+	do { \
+		 X; \
+	} while (0)
 
 str
 round_wrap(TYPE *res, const TYPE *v, const int *d, const int *s, const bte *r)
 {
+	bool nils = false;
+	str msg = MAL_SUCCEED;
 	/* basic sanity checks */
 	assert(res && v && r && d && s);
 
-	*res = round_body(*v, *d, *s, *r);
-	return MAL_SUCCEED;
+	(void) nils;
+	round_body(NOLOOP, *res, *v, *d, *s, *r);
+
+bailout:
+	return msg;
 }
+
+#define BATLOOP(X) \
+	do { \
+		for (i = 0; i < cnt; i++) { \
+			X; \
+		} \
+	} while (0)
 
 str
 bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *r)
 {
-	BAT *res, *v;
+	BAT *res = NULL, *v = NULL;
 	TYPE *src, *dst;
-	BUN i, cnt;
-	bool nonil;		/* TRUE: we know there are no NIL (NULL) values */
+	BUN i, cnt = 0;
+	bool nils = false;
+	str msg = MAL_SUCCEED;
 
 	/* basic sanity checks */
 	assert(_res && _v && r && d && s);
@@ -198,55 +249,51 @@ bat_round_wrap(bat *_res, const bat *_v, const int *d, const int *s, const bte *
 
 	/* more sanity checks */
 	if (v->ttype != TPE(TYPE)) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 1 must have a " STRING(TYPE) " tail");
+		goto bailout;
 	}
 	cnt = BATcount(v);
-
 	/* allocate result BAT */
-	res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT);
-	if (res == NULL) {
-		BBPunfix(v->batCacheid);
-		throw(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!(res = COLnew(v->hseqbase, TPE(TYPE), cnt, TRANSIENT))) {
+		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
 
 	/* access columns as arrays */
 	src = (TYPE *) Tloc(v, 0);
 	dst = (TYPE *) Tloc(res, 0);
 
-	nonil = true;
-	if (v->tnonil) {
-		for (i = 0; i < cnt; i++)
-			dst[i] = round_body_nonil(src[i], *d, *s, *r);
-	} else {
-		for (i = 0; i < cnt; i++) {
-			if (ISNIL(TYPE)(src[i])) {
-				nonil = false;
-				dst[i] = NIL(TYPE);
-			} else {
-				dst[i] = round_body_nonil(src[i], *d, *s, *r);
-			}
-		}
-	}
+	round_body(BATLOOP, dst[i], src[i], *d, *s, *r);
 
-	/* set result BAT properties */
-	BATsetcount(res, cnt);
-	/* hard to predict correct tail properties in general */
-	res->tnonil = nonil;
-	res->tnil = !nonil;
-	res->tseqbase = oid_nil;
-	res->tsorted = v->tsorted;
-	res->trevsorted = v->trevsorted;
-	BATkey(res, false);
-
+bailout:
 	/* release argument BAT descriptors */
-	BBPunfix(v->batCacheid);
+	if (v)
+		BBPunfix(v->batCacheid);
+	if (res && !msg) {
+		/* set result BAT properties */
+		BATsetcount(res, cnt);
+		/* hard to predict correct tail properties in general */
+		res->tnonil = !nils;
+		res->tnil = nils;
+		res->tseqbase = oid_nil;
+		res->tsorted = v->tsorted;
+		res->trevsorted = v->trevsorted;
+		BATkey(res, false);
+		/* keep result */
+		BBPkeepref(*_res = res->batCacheid);
+	} else if (res)
+		BBPreclaim(res);
 
-	/* keep result */
-	BBPkeepref(*_res = res->batCacheid);
-
-	return MAL_SUCCEED;
+	return msg;
 }
+
+#undef cicle1
+#undef cicle2
+#undef cicle3
+#undef cicle4
+
+#undef NOLOOP
+#undef BATLOOP
 
 str
 nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
@@ -282,7 +329,7 @@ str_2dec_body(TYPE *res, const str val, const int d, const int sc)
 
 	if (digits < 0)
 		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
-	if (d < 0 || d >= (int) (sizeof(scales) / sizeof(scales[0])))
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0]))
 		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
 
 	value = decimal_from_str(s, &end);
@@ -431,16 +478,20 @@ str
 dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, const int *sk)
 {
 	BIG value = *dec;
+	int scale = *sc;
+
+	if (scale < 0 || (size_t) scale >= sizeof(scales) / sizeof(scales[0]))
+		throw(SQL, "calc.dec2second_interval", SQLSTATE(42000) "Digits out of bounds");
 
 	(void) ek;
 	(void) sk;
 	if (ISNIL(TYPE)(*dec)) {
 		value = lng_nil;
-	} else if (*sc < 3) {
-		int d = 3 - *sc;
+	} else if (scale < 3) {
+		int d = 3 - scale;
 		value *= scales[d];
-	} else if (*sc > 3) {
-		int d = *sc - 3;
+	} else if (scale > 3) {
+		int d = scale - 3;
 		lng rnd = scales[d] >> 1;
 
 		value += rnd;
@@ -466,6 +517,10 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if (sc < 0 || (size_t) sc >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
 		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -553,7 +608,6 @@ bailout:
 #undef dec_round_body
 #undef dec_round_wrap
 #undef bat_dec_round_wrap
-#undef round_body_nonil
 #undef round_body
 #undef round_wrap
 #undef bat_round_wrap
