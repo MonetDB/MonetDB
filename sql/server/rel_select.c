@@ -973,33 +973,23 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 	}
 }
 
-static inline sql_exp *
-rel_exp_variable_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *vname)
+static sql_exp *
+rel_exp_variable_on_scope(mvc *sql, const char *sname, const char *vname)
 {
+	sql_schema *s = NULL;
+	sql_subtype *tpe;
 	sql_var *var = NULL;
 	sql_arg *a = NULL;
 	int level = 1;
 
-	if (!sname && (var = stack_find_var_frame(sql, vname, &level))) /* check if variable is known from the stack */
-		return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
-	if (!sname && (a = sql_bind_param(sql, vname))) /* then if it is a parameter */
-		return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), 1);
-	if ((var = find_global_var(sql, s, vname))) /* then if it is a global var */
-		return exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+	(void) tpe;
+	if (find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SELECT")) {
+		if (var) /* if variable is known from the stack or a global var */
+			return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
+		if (a) /* if variable is a parameter */
+			return exp_param_or_declared(sql->sa, NULL, sa_strdup(sql->sa, vname), &(a->type), level);
+	}
 	return NULL;
-}
-
-static sql_exp *
-rel_var_ref(mvc *sql, const char *sname, const char *vname)
-{
-	sql_schema *s = cur_schema(sql);
-	sql_exp *res = NULL;
-
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
-	if (!(res = rel_exp_variable_on_scope(sql, s, sname, vname)))
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s%s%s' unknown", sname ? sname : "", sname ? "." : "", vname);
-	return res;
 }
 
 static sql_exp *
@@ -1126,7 +1116,7 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) /* If no column was found, try a variable or parameter */
-			exp = rel_exp_variable_on_scope(sql, cur_schema(sql), NULL, name);
+			exp = rel_exp_variable_on_scope(sql, NULL, name);
 
 		if (!exp)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: identifier '%s' unknown", name);
@@ -4968,7 +4958,7 @@ rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek)
 		dlist *l = se->data.lval;
 		const char *sname = qname_schema(l);
 		const char *vname = qname_schema_object(l);
-		return rel_var_ref(sql, sname, vname);
+		return rel_exp_variable_on_scope(sql, sname, vname);
 	}
 	case SQL_VALUES:
 	case SQL_WITH:
