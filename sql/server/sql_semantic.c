@@ -102,15 +102,15 @@ tmp_schema(mvc *sql)
 }
 
 sql_table *
-find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname, const char *error)
+find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname, const char *error, bool isView)
 {
 	sql_schema *found = NULL;
 	sql_table *t = NULL;
 
 	if (sname) { /* user has explicitly typed the schema, so either the table is there or we return error */
 		if (!(found = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "%s: No such schema '%s'", error, sname);
-		t = mvc_bind_table(sql, *s, tname);
+			return sql_error(sql, 02, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname);
+		t = mvc_bind_table(sql, found, tname);
 	} else {
 		char *p, *sp, *search_path_copy;
 
@@ -143,7 +143,8 @@ find_table_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tna
 		}
 	}
 	if (!t)
-		return sql_error(sql, 02, SQLSTATE(42S02) "%s: No such table '%s'", error, tname);
+		return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such %s %s%s%s'%s'",
+						 error, isView ? "view" : "table", sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
 	*s = found;
 	return t;
 }

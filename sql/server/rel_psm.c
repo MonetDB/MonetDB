@@ -457,7 +457,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		sql_schema *s = NULL;
 		sql_table *t = NULL;
 
-		if (!(t = find_table_on_scope(sql, &s, sname, tname, "RETURN")))
+		if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "RETURN", false)))
 			return NULL;
 
 		if (isDeclaredTable(t)) {
@@ -1243,7 +1243,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	list *sq = NULL;
 	sql_rel *r = NULL;
-	char *q, *base = replace ? "CREATE OR REPLACE" : "CREATE";
+	char *q, *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
 	dlist *columns = trigger_event->data.lval;
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
@@ -1264,23 +1264,23 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 
 	if (create) {
-		if (!(t = find_table_on_scope(sql, &ss, sname, tname, base)))
+		if (!(t = find_table_or_view_on_scope(sql, &ss, sname, tname, base, false)))
 			return NULL;
 		if (!mvc_schema_privs(sql, ss))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 		if (isView(t))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
 	} else {
 		ss = cur_schema(sql);
 	}
 	if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: trigger and respective table must belong to the same schema", base);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: trigger and respective table must belong to the same schema", base);
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 		if (replace) {
 			if (mvc_drop_trigger(sql, ss, st))
-				return sql_error(sql, 02, SQLSTATE(HY013) "%s TRIGGER: %s", base, MAL_MALLOC_FAIL);
+				return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
 		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: name '%s' already in use", base, triggername);
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
 		}
 	}
 
@@ -1288,30 +1288,30 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		switch (trigger_event->token) {
 			case SQL_INSERT: {
 				if (old_name)
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old name not allowed at insert events", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old name not allowed at insert events", base);
 				event = 0;
 			}	break;
 			case SQL_DELETE: {
 				if (new_name)
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: new name not allowed at delete events", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: new name not allowed at delete events", base);
 				event = 1;
 			}	break;
 			case SQL_TRUNCATE: {
 				if (new_name)
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: new name not allowed at truncate events", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: new name not allowed at truncate events", base);
 				event = 3;
 			}	break;
 			case SQL_UPDATE: {
 				if (old_name && new_name && !strcmp(old_name, new_name))
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				if (!old_name && new_name && !strcmp("old", new_name))
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				if (!new_name && old_name && !strcmp("new", old_name))
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				event = 2;
 			}	break;
 			default:
-				return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: invalid event: %s", base, token2string(trigger_event->token));
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: invalid event: %s", base, token2string(trigger_event->token));
 		}
 
 		assert(triggered_action->h->type == type_int);
@@ -1508,8 +1508,10 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	sql_rel *rel = NULL;
 	sql_table *t = NULL;
 
-	if ((t = find_table_on_scope(sql, &s, sname, tname, "CREATE TABLE FROM LOADER")))
+	if ((t = find_table_or_view_on_scope(sql, &s, sname, tname, "CREATE TABLE FROM LOADER", false)))
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
+	sql->errstr[0] = '\0'; /* reset table not found error */
+	sql->session->status = 0;
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 
