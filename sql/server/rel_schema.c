@@ -514,10 +514,13 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	sql_schema *fs = ss;
 	sql_table *ft = NULL;
 
-	ft = find_table_on_scope(sql, &fs, rsname, rtname, "CONSTRAINT FOREIGN KEY");
+	ft = find_table_or_view_on_scope(sql, &fs, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
 	/* self referenced table */
-	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0)
+	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0) {
+		sql->errstr[0] = '\0'; /* reset table not found error */
+		sql->session->status = 0;
 		ft = t;
+	}
 	if (!ft) {
 		return SQL_ERR;
 	} else if (list_find_name(t->keys.set, name)) {
@@ -851,7 +854,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_table *ot = NULL;
 		node *n;
 
-		if (!(ot = find_table_on_scope(sql, &os, sname, name, action)))
+		if (!(ot = find_table_or_view_on_scope(sql, &os, sname, name, action, isView(t))))
 			return SQL_ERR;
 		for (n = ot->columns.set->h; n; n = n->next) {
 			sql_column *oc = n->data;
@@ -1111,26 +1114,27 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 }
 
 static sql_rel *
-rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
+rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
 {
 	mvc *sql = query->sql;
 	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	int instantiate = (sql->emode == m_instantiate || !persistent);
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
 
-	(void) ss;
 	(void) check;		/* Stefan: unused!? */
 
-	t = find_table_on_scope(sql, &s, sname, name, base);
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE VIEW: no such schema '%s'", sname);
+	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
+		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+
 	if (create) {
-		if (t) {
-			if ((!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
-				return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+		if ((t = find_table_or_view_on_scope(sql, &s, sname, name, base, true))) {
 			if (replace) {
 				if (!isView(t)) {
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to drop view '%s': is a table", base, name);
@@ -1149,10 +1153,11 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 			} else {
 				return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
 			}
+		} else {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
 		}
-	} else if (!t)
-		return NULL;
-
+	}
 	if (ast) {
 		sql_rel *sq = NULL;
 		char *q = QUERY(sql->scanner);
@@ -1192,8 +1197,6 @@ rel_create_view(sql_query *query, sql_schema *ss, dlist *qname, dlist *column_sp
 			}
 			return rel_table(sql, ddl_create_view, s->base.name, t, SQL_PERSIST);
 		}
-		s = NULL;
-		t = find_table_on_scope(sql, &s, sname, name, base);
 		if (!persistent && column_spec)
 			sq = view_rename_columns(sql, name, sq, column_spec);
 		if (sq && sq->op == op_project && sq->l && sq->exps && sq->card == CARD_AGGR) {
@@ -1384,17 +1387,46 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 	}
 }
 
-static str
-get_schema_name(mvc *sql, sql_schema *s, char *sname, char *tname, const char *err)
+static sql_rel *
+sql_drop_table(sql_query *query, dlist *qname, int nr, int if_exists)
 {
-	if (!sname) {
-		sql_table *t = find_table_on_scope(sql, &s, sname, tname, err);
+	mvc *sql = query->sql;
+	char *sname = qname_schema(qname);
+	char *tname = qname_schema_object(qname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
 
-		if (t && t->s)
-			return t->s->base.name;
-		return s->base.name;
+	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "DROP TABLE", false))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		return NULL;
 	}
-	return sname;
+
+	return rel_drop(sql->sa, ddl_drop_table, s->base.name, tname, nr, if_exists);
+}
+
+static sql_rel *
+sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
+{
+	mvc *sql = query->sql;
+	char *sname = qname_schema(qname);
+	char *tname = qname_schema_object(qname);
+	sql_schema *s = NULL;
+	sql_table *t = NULL;
+
+	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "DROP VIEW", true))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		return NULL;
+	}
+
+	return rel_drop(sql->sa, ddl_drop_view, s->base.name, tname, nr, if_exists);
 }
 
 static sql_rel *
@@ -1408,9 +1440,12 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	sql_rel *res = NULL, *r;
 	sql_exp **updates, *e;
 
-	if (!(t = find_table_on_scope(sql, &s, sname, tname, "ALTER TABLE"))) {
-		if (if_exists)
+	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "ALTER TABLE", false))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		return NULL;
 	}
 	if (!mvc_schema_privs(sql, s))
@@ -1431,7 +1466,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		char *nsname = qname_schema(nqname);
 		char *ntname = qname_schema_object(nqname);
 
-		if (!(pt = find_table_on_scope(sql, &spt, nsname, ntname, "ALTER TABLE")))
+		if (!(pt = find_table_or_view_on_scope(sql, &spt, nsname, ntname, "ALTER TABLE", false)))
 			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
 		if (isView(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
@@ -1529,8 +1564,9 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		char *kname = l->h->data.sval;
 		int drop_action = l->h->next->data.i_val;
 
-		sname = get_schema_name(sql, s, sname, tname, "DROP CONSTRAINT");
-		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
+		if (!(t = find_table_or_view_on_scope(sql, &s, sname, kname, "DROP CONSTRAINT", isView(t))))
+			return NULL;
+		return rel_drop(sql->sa, ddl_drop_constraint, s->base.name, kname, drop_action, 0);
 	}
 
 	if (t->s && !nt->s)
@@ -1849,8 +1885,10 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 		sql_schema *s = NULL;
 		sql_table *t = NULL;
 
-		if ((t = find_table_on_scope(sql, &s, sname, tname, "GRANT")))
+		if ((t = find_table_or_view_on_scope(sql, &s, sname, tname, "GRANT", false)))
 			token = SQL_TABLE;
+		sql->errstr[0] = '\0'; /* reset table not found error */
+		sql->session->status = 0;
 	}
 
 	switch (token) {
@@ -2029,8 +2067,10 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 		sql_schema *s = NULL;
 		sql_table *t = NULL;
 
-		if ((t = find_table_on_scope(sql, &s, sname, tname, "REVOKE")))
+		if ((t = find_table_or_view_on_scope(sql, &s, sname, tname, "REVOKE", false)))
 			token = SQL_TABLE;
+		sql->errstr[0] = '\0'; /* reset table not found error */
+		sql->session->status = 0;
 	}
 
 	switch (token) {
@@ -2066,7 +2106,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 
-	if (!(t = find_table_on_scope(sql, &s, sname, tname, "CREATE INDEX")))
+	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "CREATE INDEX", false)))
 		return NULL;
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -2174,7 +2214,7 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	qname = sym->data.lval;
 	sname = qname_schema(qname);
 	tname = qname_schema_object(qname);
-	t = find_table_on_scope(sql, &s, sname, tname, "COMMENT ON");
+	t = find_table_or_view_on_scope(sql, &s, sname, tname, "COMMENT ON", !want_table);
 	if (t && t->s && isTempSchema(t->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
@@ -2184,9 +2224,9 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return t->base.id;
 	}
 
-	sql_error(sql, 02, SQLSTATE(42S02) "COMMENT ON: no such %s: %s.%s",
+	sql_error(sql, 02, SQLSTATE(42S02) "COMMENT ON: no such %s: %s%s%s",
 		want_table ? "table" : "view",
-		s->base.name, tname);
+		s ? s->base.name: "", s ? "." : "", tname);
 	return 0;
 }
 
@@ -2214,7 +2254,7 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		assert(colname->h->next->next->type == type_string);
 		cname = colname->h->next->next->data.sval;
 	}
-	if (!(t = find_table_on_scope(sql, &s, sname, tname, "COMMENT ON"))) {
+	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "COMMENT ON", false))) {
 		return 0;
 	}
 	if (t && t->s && isTempSchema(t->s)) {
@@ -2458,9 +2498,12 @@ rel_rename_table(mvc *sql, char *schema_name, char *old_name, char *new_name, in
 
 	assert(schema_name && old_name && new_name);
 
-	if (!(t = find_table_on_scope(sql, &s, schema_name, old_name, "ALTER TABLE"))) {
-		if (if_exists)
+	if (!(t = find_table_or_view_on_scope(sql, &s, schema_name, old_name, "ALTER TABLE", false))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		return NULL;
 	}
 	if (!mvc_schema_privs(sql, s))
@@ -2501,9 +2544,12 @@ rel_rename_column(mvc *sql, char *schema_name, char *table_name, char *old_name,
 
 	assert(schema_name && table_name && old_name && new_name);
 
-	if (!(t = find_table_on_scope(sql, &s, schema_name, table_name, "ALTER TABLE"))) {
-		if (if_exists)
+	if (!(t = find_table_or_view_on_scope(sql, &s, schema_name, table_name, "ALTER TABLE", false))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		return NULL;
 	}
 	if (!mvc_schema_privs(sql, s))
@@ -2546,9 +2592,12 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 
 	assert(old_schema && tname && new_schema);
 
-	if (!(ot = find_table_on_scope(sql, &os, old_schema, tname, "ALTER TABLE"))) {
-		if (if_exists)
+	if (!(ot = find_table_or_view_on_scope(sql, &os, old_schema, tname, "ALTER TABLE", false))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		return NULL;
 	}
 	if (!mvc_schema_privs(sql, os))
@@ -2650,7 +2699,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->next->next->type == type_int);
 		assert(l->h->next->next->next->next->type == type_int);
-		ret = rel_create_view(query, NULL, l->h->data.lval,
+		ret = rel_create_view(query, l->h->data.lval,
 							  l->h->next->data.lval,
 							  l->h->next->next->data.sym,
 							  l->h->next->next->next->data.i_val,
@@ -2660,27 +2709,20 @@ rel_schemas(sql_query *query, symbol *s)
 	case SQL_DROP_TABLE:
 	{
 		dlist *l = s->data.lval;
-		char *sname = qname_schema(l->h->data.lval);
-		char *tname = qname_schema_object(l->h->data.lval);
 
 		assert(l->h->next->type == type_int);
-		sname = get_schema_name(sql, NULL, sname, tname, "DROP TABLE");
-
-		ret = rel_drop(sql->sa, ddl_drop_table, sname, tname,
-						 l->h->next->data.i_val,
-						 l->h->next->next->data.i_val); /* if exists */
+		ret = sql_drop_table(query, l->h->data.lval,
+							 l->h->next->data.i_val,
+						 	 l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_DROP_VIEW:
 	{
 		dlist *l = s->data.lval;
-		char *sname = qname_schema(l->h->data.lval);
-		char *tname = qname_schema_object(l->h->data.lval);
 
 		assert(l->h->next->type == type_int);
-		sname = get_schema_name(sql, NULL, sname, tname, "DROP VIEW");
-		ret = rel_drop(sql->sa, ddl_drop_view, sname, tname,
-						 l->h->next->data.i_val,
-						 l->h->next->next->data.i_val); /* if exists */
+		ret = sql_drop_view(query, l->h->data.lval,
+							l->h->next->data.i_val,
+							l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_ALTER_TABLE:
 	{

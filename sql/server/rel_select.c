@@ -878,7 +878,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (!sname)
 			temp_table = stack_find_rel_view(sql, tname);
 		if (!temp_table)
-			t = find_table_on_scope(sql, &s, sname, tname, "SELECT");
+			t = find_table_or_view_on_scope(sql, &s, sname, tname, "SELECT", false);
 		if (!t && !temp_table)
 			return NULL;
 		if (!temp_table && !table_privs(sql, t, PRIV_SELECT))

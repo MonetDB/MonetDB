@@ -137,7 +137,7 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (!(t = find_table_on_scope(sql, &s, sname, tname, "GRANT")))
+	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "GRANT", false)))
 		throw(SQL,"sql.grant_table", "%s", sql->errstr);
 
 	allowed = schema_privs(grantor, t->s);
@@ -276,7 +276,7 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (!(t = find_table_on_scope(sql, &s, sname, tname, "REVOKE")))
+	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "REVOKE", false)))
 		throw(SQL,"sql.revoke_table","%s", sql->errstr);
 
 	allowed = schema_privs(grantor, t->s);
