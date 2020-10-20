@@ -12,5 +12,5 @@
 # is, however, crucial that the file locations in this file are present.
 
 
-logfile=@LOGDIR@/merovingian.log
-pidfile=@RUNDIR@/merovingian.pid
+logfile=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/monetdb/merovingian.log
+pidfile=@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid

@@ -54,7 +54,8 @@ if(GDAL_FOUND)
     PRIVATE 
     LIBGTIFF)
 
-  install(TARGETS shp 
-    DESTINATION 
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  install(TARGETS 
+    shp 
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    COMPONENT server)
 endif()
