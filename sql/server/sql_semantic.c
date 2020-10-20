@@ -101,7 +101,7 @@ tmp_schema(mvc *sql)
 	return mvc_bind_schema(sql, "tmp");
 }
 
-#define search_object_on_path(CALL, EXTRA) \
+#define search_object_on_path(CALL, EXTRA, ERROR_CODE) \
 	do { \
 		sql_schema *found = NULL; \
  \
@@ -143,7 +143,7 @@ tmp_schema(mvc *sql)
 			} \
 		} \
 		if (!res) \
-			return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
+			return sql_error(sql, 02, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
 		*s = found; \
 	} while (0)
 
@@ -159,7 +159,7 @@ find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const c
 	const char *objstr = isView ? "view" : "table";
 	sql_table *res = NULL;
 
-	search_object_on_path(res = mvc_bind_table(sql, found, name), table_extra);
+	search_object_on_path(res = mvc_bind_table(sql, found, name), table_extra, SQLSTATE(42S02));
 	return res;
 }
 
@@ -169,7 +169,7 @@ find_sequence_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *
 	const char *objstr = "sequence";
 	sql_sequence *res = NULL;
 
-	search_object_on_path(res = find_sql_sequence(found, name), ;);
+	search_object_on_path(res = find_sql_sequence(found, name), ;, SQLSTATE(42000));
 	return res;
 }
 
@@ -179,7 +179,7 @@ find_idx_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name,
 	const char *objstr = "index";
 	sql_idx *res = NULL;
 
-	search_object_on_path(res = mvc_bind_idx(sql, found, name), ;);
+	search_object_on_path(res = mvc_bind_idx(sql, found, name), ;, SQLSTATE(42S12));
 	return res;
 }
 
@@ -189,7 +189,7 @@ find_type_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name
 	const char *objstr = "type";
 	sql_type *res = NULL;
 
-	search_object_on_path(res = schema_bind_type(sql, found, name), ;);
+	search_object_on_path(res = schema_bind_type(sql, found, name), ;, SQLSTATE(42S01));
 	return res;
 }
 
@@ -199,7 +199,7 @@ find_trigger_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *n
 	const char *objstr = "trigger";
 	sql_trigger *res = NULL;
 
-	search_object_on_path(res = mvc_bind_trigger(sql, found, name), ;);
+	search_object_on_path(res = mvc_bind_trigger(sql, found, name), ;, SQLSTATE(42000));
 	return res;
 }
 
