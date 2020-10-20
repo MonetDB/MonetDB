@@ -1416,6 +1416,48 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	return mdbe->msg;
 }
 
+static char*
+monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema_name, const char *table_name, size_t *column_count,
+					char ***column_names, int **column_types)
+{
+	char buf[140];
+	snprintf(buf, 140, "SELECT * FROM %s.%s WHERE FALSE;", schema_name, table_name);
+
+	monetdbe_result* result = NULL;
+
+	if ((mdbe->msg = monetdbe_query_remote(mdbe, buf, &result, NULL, NULL)) != MAL_SUCCEED) {
+		return mdbe->msg;
+	}
+
+	*column_names = GDKzalloc(sizeof(char*) * result->ncols);
+	*column_types = GDKzalloc(sizeof(int) * result->ncols);
+
+
+	if (*column_names == NULL || *column_types == NULL) {
+		GDKfree(*column_names);
+		GDKfree(*column_types);
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL);
+		// TODO: handle error
+	}
+
+	for (size_t c = 0; c < result->ncols; c++) {
+		monetdbe_column* rcol;
+		if ((mdbe->msg = monetdbe_result_fetch(result, &rcol, c)) != NULL) {
+			// TODO: handle error
+		}
+
+		(*column_names)[c] = rcol->name;
+
+		int tpe = monetdbe_type(rcol->type);
+		if (tpe == -1) {
+			// TODO: handle error
+		}
+		(*column_types)[c] = tpe;
+	}
+
+	return mdbe->msg;
+}
+
 char*
 monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count,
 					char ***column_names, int **column_types)
@@ -1429,14 +1471,8 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_columns")) != MAL_SUCCEED) {
-
 		return mdbe->msg;
 	}
-
-	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
-		goto cleanup;
-	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
-		goto cleanup;
 	if (!column_count) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter column_count is NULL");
 		goto cleanup;
@@ -1453,6 +1489,15 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter table_name is NULL");
 		goto cleanup;
 	}
+
+	if (mdbe->mid) {
+		return monetdbe_get_columns_remote(mdbe, schema_name, table_name, column_count, column_names, column_types);
+	}
+
+	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
+		goto cleanup;
+	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
+		goto cleanup;
 	if (schema_name) {
 		if (!(s = mvc_bind_schema(m, schema_name))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Could not find schema %s", schema_name);
@@ -1593,23 +1638,67 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		goto cleanup;
 	}
 
-	if (schema) {
-		if (!(s = mvc_bind_schema(m, schema))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Schema missing %s", schema);
+	if (mdbe->mid) {
+		// We are going to insert the data into a temporary table which is used in the coming remote logic.
+		if (!(t = create_sql_table(m->sa, NULL, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, 0))) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create temporary table");
 			goto cleanup;
 		}
-	} else {
-		s = cur_schema(m);
-	}
-	if (!(t = mvc_bind_table(m, s, table))) {
-		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Table missing %s.%s", schema, table);
-		goto cleanup;
-	}
 
-	/* for now no default values, ie user should supply all columns */
-	if (column_count != (size_t)list_length(t->columns.set)) {
-		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
-		goto cleanup;
+		size_t actual_column_count;
+		char** column_names;
+		int* column_types;
+
+		if ((mdbe->msg = monetdbe_get_columns_remote(
+				mdbe,
+				schema,
+				table,
+				&actual_column_count,
+				&column_names,
+				&column_types)) != MAL_SUCCEED) {
+			goto cleanup;
+		}
+
+		if (actual_column_count != column_count) {
+			// TODO handle error
+		}
+
+		for (i = 0; i < column_count && n; i++) {
+			sql_type *t = SA_ZNEW(m->sa, sql_type);
+			t->localtype = monetdbe_type(column_types[i]);
+
+			sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
+			sql_init_subtype(st, t, 0, 0);
+
+			if (!mvc_create_column(m, t, column_names[i], &st)) {
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+				goto cleanup;
+				// TODO handle error
+			}
+		}
+	}
+	else {
+		// !mdbe->mid
+		// inserting into existing local table.
+
+		if (schema) {
+			if (!(s = mvc_bind_schema(m, schema))) {
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Schema missing %s", schema);
+				goto cleanup;
+			}
+		} else {
+			s = cur_schema(m);
+		}
+		if (!(t = mvc_bind_table(m, s, table))) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Table missing %s.%s", schema, table);
+			goto cleanup;
+		}
+
+		/* for now no default values, ie user should supply all columns */
+		if (column_count != (size_t)list_length(t->columns.set)) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
+			goto cleanup;
+		}
 	}
 
 	cnt = input[0]->count;
