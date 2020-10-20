@@ -461,7 +461,8 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			return NULL;
 
 		if (isDeclaredTable(t)) {
-			rel = rel_table(sql, ddl_create_table, s->base.name, t, SQL_DECLARED_TABLE);
+			assert(!s);
+			rel = rel_table(sql, ddl_create_table, cur_schema(sql)->base.name, t, SQL_DECLARED_TABLE);
 		} else {
 			rel = rel_basetable(sql, t, t->base.name);
 			for (node *n = rel->exps->h ; n ; n = n->next) {
