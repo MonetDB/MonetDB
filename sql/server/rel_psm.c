@@ -1424,7 +1424,7 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_exp *sample_exp = NULL, *call, *mm_exp = NULL;
-	const char *sname = NULL, *tname = NULL;
+	const char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
 	list *tl = sa_list(sql->sa);
 	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
@@ -1443,16 +1443,11 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	append(exps, sample_exp);
 	append(tl, exp_subtype(sample_exp));
 
-	assert(qname);
-	if (qname) {
-		if (qname->h->next)
-			sname = qname_schema(qname);
-		else
-			sname = qname_schema_object(qname);
-		if (!sname)
-			sname = cur_schema(sql)->base.name;
-		if (qname->h->next)
-			tname = qname_schema_object(qname);
+	if (sname && tname) {
+		sql_schema *s = NULL;
+		if (!find_table_or_view_on_scope(sql, &s, sname, tname, "ANALYZE", false))
+			return NULL;
+		sname = s->base.name;
 	}
 	/* call analyze( [schema, [ table ]], opt_sample_size, opt_minmax ) */
 	if (sname) {
