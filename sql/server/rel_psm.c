@@ -1236,11 +1236,11 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *triggername = qname_schema_object(qname);
 	const char *sname = qname_schema(tqname);
 	const char *tname = qname_schema_object(tqname);
-	sql_schema *ss = NULL, *old_schema = cur_schema(sql);
-	sql_table *t = NULL;
-	sql_trigger *st = NULL;
 	int instantiate = (sql->emode == m_instantiate);
 	int create = (!instantiate && sql->emode != m_deps), event, orientation;
+	sql_schema *ss = create ? NULL : cur_schema(sql), *old_schema = cur_schema(sql);
+	sql_table *t = NULL;
+	sql_trigger *st = NULL;
 	list *sq = NULL;
 	sql_rel *r = NULL;
 	char *q, *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
@@ -1270,21 +1270,16 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 		if (isView(t))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
-	} else {
-		ss = cur_schema(sql);
-	}
-	if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "%s: trigger and respective table must belong to the same schema", base);
-	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
-		if (replace) {
-			if (mvc_drop_trigger(sql, ss, st))
-				return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
-		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
+		if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: trigger and respective table must belong to the same schema", base);
+		if ((st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
+			if (replace) {
+				if (mvc_drop_trigger(sql, ss, st))
+					return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
+			} else {
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
+			}
 		}
-	}
-
-	if (create) {
 		switch (trigger_event->token) {
 			case SQL_INSERT: {
 				if (old_name)
