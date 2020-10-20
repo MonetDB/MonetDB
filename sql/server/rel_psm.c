@@ -57,27 +57,6 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
-/* vname can be
-	- 'parameter of the function' (ie in the param list)
-	- local variable, declared earlier
-	- global variable, also declared earlier
-*/
-static void*
-resolve_variable_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *vname, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *action)
-{
-	if (!sname && (*var = stack_find_var_frame(sql, vname, level))) { /* check if variable is known from the stack */
-		*tpe = &((*var)->var.tpe);
-	} else if (!sname && (*a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
-		*tpe = &((*a)->type);
-		*level = 1;
-	} else if ((*var = find_global_var(sql, s, vname))) { /* then if it is a global var */
-		*tpe = &((*var)->var.tpe);
-		*level = 0;
-	} else
-		return sql_error(sql, 01, SQLSTATE(42000) "%s: Variable '%s%s%s' unknown", action, sname ? sname : "", sname ? "." : "", vname);
-	return level;
-}
-
 /* SET [ schema '.' ] variable = value and set ( [ schema1 '.' ] variable1, .., [ schemaN '.' ] variableN) = (query) */
 static sql_exp *
 psm_set_exp(sql_query *query, dnode *n)
@@ -94,14 +73,11 @@ psm_set_exp(sql_query *query, dnode *n)
 		exp_kind ek = {type_value, card_value, FALSE};
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
-		sql_schema *s = cur_schema(sql);
+		sql_schema *s = NULL;
 		sql_var *var = NULL;
 		sql_arg *a = NULL;
 
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
-
-		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
+		if (!find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SET"))
 			return NULL;
 		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm, ek)))
 			return NULL;
@@ -134,14 +110,11 @@ psm_set_exp(sql_query *query, dnode *n)
 			const char *sname = qname_schema(nqname);
 			const char *vname = qname_schema_object(nqname);
 			sql_exp *v = n->data;
-			sql_schema *s = cur_schema(sql);
+			sql_schema *s = NULL;
 			sql_var *var = NULL;
 			sql_arg *a = NULL;
 
-			if (sname && !(s = mvc_bind_schema(sql, sname)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
-
-			if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
+			if (!find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SET"))
 				return NULL;
 
 			v = exp_ref(sql, v);
@@ -181,7 +154,6 @@ rel_psm_declare(mvc *sql, dnode *n)
 			dlist *qname = ids->data.lval;
 			const char *sname = qname_schema(qname);
 			const char *tname = qname_schema_object(qname);
-			sql_schema *s = cur_schema(sql);
 			sql_exp *r = NULL;
 			sql_arg *a;
 
@@ -192,7 +164,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
 			/* check if we overwrite a scope local variable declare x; declare x; */
 			if (frame_find_var(sql, tname))
-				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared", s->base.name, tname);
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' already declared", tname);
 			/* variables are put on stack, globals on a separate list */
 			if (!frame_push_var(sql, tname, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -589,17 +561,14 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		dlist *qname = n->data.lval;
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
-		sql_schema *s = cur_schema(sql);
+		sql_schema *s = NULL;
 		sql_exp *v = m->data;
 		int level;
 		sql_var *var;
 		sql_subtype *tpe;
 		sql_arg *a = NULL;
 
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
-
-		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SELECT INTO"))
+		if (!find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SELECT INTO"))
 			return NULL;
 
 		v = exp_ref(sql, v);

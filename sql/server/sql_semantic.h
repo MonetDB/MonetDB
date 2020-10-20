@@ -27,6 +27,7 @@ extern sql_sequence *find_sequence_on_scope(mvc *sql, sql_schema **s, const char
 extern sql_idx *find_idx_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
 extern sql_type *find_type_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
 extern sql_trigger *find_trigger_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
+extern bool find_variable_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error);
 
 extern char *qname_schema(dlist *qname);
 extern char *qname_schema_object(dlist *qname);

@@ -118,7 +118,7 @@ tmp_schema(mvc *sql)
 				CALL; \
 			} \
 			EXTRA; \
-			if (!sql->search_path_has_tmp) { /* if 'tmp' is not in the search path, search it before all others */ \
+			if (!res && !sql->search_path_has_tmp) { /* if 'tmp' is not in the search path, search it before all others */ \
 				found = mvc_bind_schema(sql, "tmp"); \
 				CALL; \
 			} \
@@ -149,7 +149,7 @@ tmp_schema(mvc *sql)
 
 #define table_extra \
 	do { \
-		if (strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
+		if (!res && strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
 			return res; \
 	} while (0)
 
@@ -200,6 +200,44 @@ find_trigger_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *n
 	sql_trigger *res = NULL;
 
 	search_object_on_path(res = mvc_bind_trigger(sql, found, name), ;, SQLSTATE(42000));
+	return res;
+}
+
+/* A variable can be any of the following, from the innermost to the outermost:
+	- 'parameter of the function' (ie in the param list)
+	- local variable, declared earlier
+	- global variable, also declared earlier
+*/
+#define variable_extra \
+	do { \
+		if (!res) { \
+			if ((*var = stack_find_var_frame(sql, name, level))) { /* check if variable is known from the stack */ \
+				*tpe = &((*var)->var.tpe); \
+				res = true; \
+			} else if ((*a = sql_bind_param(sql, name))) { /* then if it is a parameter */ \
+				*tpe = &((*a)->type); \
+				*level = 1; \
+				res = true; \
+			} \
+		} \
+	} while (0)
+
+#define var_find_on_global \
+	do { \
+		if ((*var = find_global_var(sql, found, name))) { /* then if it is a global var */ \
+			*tpe = &((*var)->var.tpe); \
+			*level = 0; \
+			res = true; \
+		} \
+	} while (0)
+
+bool
+find_variable_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error)
+{
+	const char *objstr = "variable";
+	bool res = false;
+
+	search_object_on_path(var_find_on_global, variable_extra, SQLSTATE(42000));
 	return res;
 }
 
