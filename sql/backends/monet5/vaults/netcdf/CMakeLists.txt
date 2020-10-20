@@ -55,7 +55,8 @@ if(NETCDF_FOUND)
     PRIVATE 
     LIBNCDF)
 
-  install(TARGETS netcdff 
-    DESTINATION 
-    ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  install(TARGETS 
+    netcdff 
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+    COMPONENT server)
 endif()

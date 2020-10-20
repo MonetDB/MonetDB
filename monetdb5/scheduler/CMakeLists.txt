@@ -30,7 +30,8 @@ install(TARGETS run_adder
   COMPONENT run_adder)
 install(FILES
   run_adder.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_adder)
 
 add_library(run_isolate MODULE)
 target_sources(run_isolate
@@ -55,7 +56,8 @@ install(TARGETS run_isolate
   COMPONENT run_isolate)
 install(FILES
   run_isolate.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_isolate)
 
 add_library(run_memo MODULE)
 target_sources(run_memo
@@ -81,4 +83,5 @@ install(TARGETS run_memo
   COMPONENT run_memo)
 install(FILES
   run_memo.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_memo)
