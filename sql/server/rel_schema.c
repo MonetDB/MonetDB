@@ -22,20 +22,6 @@
 
 #include "mal_authorize.h"
 
-static sql_table *
-_bind_table(sql_table *t, sql_schema *ss, sql_schema *s, char *name)
-{
-	sql_table *tt = NULL;
-
-	if (t && strcmp(t->base.name, name) == 0)
-		tt = t;
-	if (!tt && ss)
-		tt = find_sql_table(ss, name);
-	if (!tt && s)
-		tt = find_sql_table(s, name);
-	return tt;
-}
-
 sql_rel *
 rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 {
@@ -339,7 +325,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		char *rsname = qname_schema(n->data.lval);
 		char *rtname = qname_schema_object(n->data.lval);
 		int ref_actions = n->next->next->next->data.i_val;
-		sql_schema *rs = cur_schema(sql);
+		sql_schema *rs = ss;
 		sql_table *rt;
 		sql_fkey *fk;
 		list *cols;
@@ -347,21 +333,8 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		sql_kc *kc;
 
 		assert(n->next->next->next->type == type_int);
-/*
-		if (isTempTable(t)) {
-			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT: constraints on temporary tables are not supported\n");
+		if (!(rt = find_table_or_view_on_scope(sql, &rs, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t))))
 			return res;
-		}
-*/
-
-		if (rsname && !(rs = mvc_bind_schema(sql, rsname))) {
-			(void) sql_error(sql, 02, SQLSTATE(3F000) "CONSTRAINT FOREIGN KEY: no such schema '%s'", rsname);
-			return res;
-		}
-		if (!(rt = _bind_table(t, ss, rs, rtname))) {
-			(void) sql_error(sql, 02, SQLSTATE(42S02) "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
-			return res;
-		}
 		if (name && mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
@@ -388,12 +361,8 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		kc = rk->columns->h->data;
 		if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
 			str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
-
-			if (!tp1 || !tp2)
-				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			else
-				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
-								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
+							 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
@@ -568,12 +537,8 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			}
 			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
 				str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
-
-				if (!tp1 || !tp2)
-					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				else
-					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
-									 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
+								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 				return SQL_ERR;
 			}
 			mvc_create_fkc(sql, fk, cs);
@@ -970,11 +935,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
 				err = sql_subtype_string(sql->ta, &(t->part.pcol->type));
-				if (!err) {
-					sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				} else {
-					sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
-				}
+				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
 				return SQL_ERR;
 			}
 		} else if (isPartitionedByExpressionTable(t)) {
@@ -1044,16 +1005,10 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (tt == tt_remote) {
 			char *local_user = get_string_global_var(sql, "current_user");
 			char *local_table = sa_strconcat(sql->sa, sa_strconcat(sql->sa, s->base.name, "."), name);
-			if (!local_table) {
-				return sql_error(sql, 02, SQLSTATE(HY013) "%s TABLE: " MAL_MALLOC_FAIL, action);
-			}
 			if (!mapiuri_valid(loc))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 
 			const char *remote_uri = mapiuri_uri(loc, sql->sa);
-			if (remote_uri == NULL) {
-				return sql_error(sql, 02, SQLSTATE(HY013) "%s TABLE: " MAL_MALLOC_FAIL, action);
-			}
 			char *reg_credentials = AUTHaddRemoteTableCredentials(local_table, local_user, remote_uri, username, password, pw_encrypted);
 			if (reg_credentials != 0) {
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: cannot register credentials for remote table '%s' in vault: %s", action, name, reg_credentials);
@@ -1630,13 +1585,12 @@ rel_role(sql_allocator *sa, char *grantee, char *auth, int grantor, int admin, i
 }
 
 static sql_rel *
-rel_grant_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int grant, int grantor)
+rel_grant_roles(mvc *sql, dlist *roles, dlist *grantees, int grant, int grantor)
 {
 	sql_rel *res = NULL;
 	/* grant roles to the grantees */
 	dnode *r, *g;
 
-	(void) schema;
 	for (r = roles->h; r; r = r->next) {
 		char *role = r->data.sval;
 
@@ -1653,13 +1607,12 @@ rel_grant_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int
 }
 
 static sql_rel *
-rel_revoke_roles(mvc *sql, sql_schema *schema, dlist *roles, dlist *grantees, int admin, int grantor)
+rel_revoke_roles(mvc *sql, dlist *roles, dlist *grantees, int admin, int grantor)
 {
 	sql_rel *res = NULL;
 	/* revoke roles from the grantees */
 	dnode *r, *g;
 
-	(void) schema;
 	for (r = roles->h; r; r = r->next) {
 		char *role = r->data.sval;
 
@@ -2738,7 +2691,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_grant_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
+		ret = rel_grant_roles(sql, l->h->data.lval,	/* authids */
 				  l->h->next->data.lval,	/* grantees */
 				  l->h->next->next->data.i_val,	/* admin? */
 				  l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id);
@@ -2750,7 +2703,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_revoke_roles(sql, cur_schema(sql), l->h->data.lval,	/* authids */
+		ret = rel_revoke_roles(sql, l->h->data.lval,	/* authids */
 				  l->h->next->data.lval,	/* grantees */
 				  l->h->next->next->data.i_val,	/* admin? */
 				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id);
