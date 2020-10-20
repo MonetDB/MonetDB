@@ -1129,9 +1129,9 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	(void) check;		/* Stefan: unused!? */
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE VIEW: no such schema '%s'", sname);
+		return sql_error(sql, 02, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s VIEW: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
 
 	if (create) {
 		if ((t = find_table_or_view_on_scope(sql, &s, sname, name, base, true))) {
@@ -1564,9 +1564,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		char *kname = l->h->data.sval;
 		int drop_action = l->h->next->data.i_val;
 
-		if (!(t = find_table_or_view_on_scope(sql, &s, sname, kname, "DROP CONSTRAINT", isView(t))))
-			return NULL;
-		return rel_drop(sql->sa, ddl_drop_constraint, s->base.name, kname, drop_action, 0);
+		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
 	}
 
 	if (t->s && !nt->s)
