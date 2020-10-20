@@ -22,6 +22,7 @@ typedef struct exp_kind_t {
 sql_export sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
 extern sql_table *find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname, const char *error, bool isView);
+extern sql_sequence *find_sequence_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
 
 extern char *qname_schema(dlist *qname);
 extern char *qname_schema_object(dlist *qname);

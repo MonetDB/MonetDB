@@ -2231,19 +2231,16 @@ rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	(void)sql;
 	(void)sym;
 	dlist *qname;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	char *seqname, *sname;
 	sql_sequence *seq;
 
 	assert(sym->type == type_list);
 	qname = sym->data.lval;
 	sname = qname_schema(qname);
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, SQLSTATE(3F000) "COMMENT ON: no such schema: %s", sname);
-		return 0;
-	}
 	seqname = qname_schema_object(qname);
-	seq = find_sql_sequence(s, seqname);
+
+	seq = find_sequence_on_scope(sql, &s, sname, seqname, "COMMENT ON");
 	if (seq && seq->s && isTempSchema(seq->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
@@ -2253,8 +2250,6 @@ rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return seq->base.id;
 	}
 
-	sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: no such sequence: %s.%s",
-		s->base.name, seqname);
 	return 0;
 }
 
