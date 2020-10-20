@@ -1403,17 +1403,19 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 {
 	const char *sname = qname_schema(qname);
 	const char *tname = qname_schema_object(qname);
-	sql_schema *ss = cur_schema(sql);
+	sql_schema *s = NULL;
 
-	if (sname && !(ss = mvc_bind_schema(sql, sname))) {
-		if (if_exists)
-			return rel_drop_trigger(sql, sname, tname, if_exists);
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
+	if (!find_trigger_on_scope(sql, &s, sname, tname, "DROP TRIGGER")) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset trigger not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		return NULL;
 	}
-
-	if (!mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ss->base.name);
-	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
+	if (!mvc_schema_privs(sql, s))
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+	return rel_drop_trigger(sql, s->base.name, tname, if_exists);
 }
 
 static sql_rel *
