@@ -60,58 +60,7 @@ FUN(,TP1,_num2dec_,TP2) (TP2 *res, const TP1 *v, const int *d2, const int *s2)
 
 #if IS_NUMERIC(TP1)
 str
-FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATconvert(b, NULL, TPE(TP2), true, *s1, 0, 0);
-	BBPunfix(b->batCacheid);
-	if (bn == NULL)
-		throw(SQL, "sql."STRNG(FUN(dec,TP1,_2_,TP2)), GDK_EXCEPTION);
-	BBPkeepref(*res = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-str
-FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const int *d2, const int *S2)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_dec2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATconvert(b, NULL, TPE(TP2), true, *S1, *S2, *d2);
-	BBPunfix(b->batCacheid);
-	if (bn == NULL)
-		throw(SQL, "sql."STRNG(FUN(,TP1,_dec2dec_,TP2)), GDK_EXCEPTION);
-
-	BBPkeepref(*res = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-#endif
-
-str
-FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const int *d2, const int *s2)
-{
-	BAT *b, *bn;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		throw(SQL, "batcalc."STRNG(FUN(,TP1,_num2dec_,TP2)), SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
-	}
-	bn = BATconvert(b, NULL, TPE(TP2), true, 0, *s2, *d2);
-	BBPunfix(b->batCacheid);
-	if (bn == NULL)
-		throw(SQL, "sql."STRNG(FUN(,TP1,_num2dec_,TP2)), GDK_EXCEPTION);
-	BBPkeepref(*res = bn->batCacheid);
-	return MAL_SUCCEED;
-}
-
-#if IS_NUMERIC(TP1)
-str
-FUN(bat,TP1,_dec2_cand_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid)
+FUN(bat,TP1,_dec2_,TP2) (bat *res, const int *s1, const bat *bid, const bat *sid)
 {
 	BAT *b, *s = NULL, *bn;
 
@@ -133,7 +82,7 @@ FUN(bat,TP1,_dec2_cand_,TP2) (bat *res, const int *s1, const bat *bid, const bat
 }
 
 str
-FUN(bat,TP1,_dec2dec_cand_,TP2) (bat *res, const int *S1, const bat *bid, const bat *sid, const int *d2, const int *S2)
+FUN(bat,TP1,_dec2dec_,TP2) (bat *res, const int *S1, const bat *bid, const bat *sid, const int *d2, const int *S2)
 {
 	BAT *b, *s = NULL, *bn;
 
@@ -157,7 +106,7 @@ FUN(bat,TP1,_dec2dec_cand_,TP2) (bat *res, const int *S1, const bat *bid, const 
 #endif
 
 str
-FUN(bat,TP1,_num2dec_cand_,TP2) (bat *res, const bat *bid, const bat *sid, const int *d2, const int *s2)
+FUN(bat,TP1,_num2dec_,TP2) (bat *res, const bat *bid, const bat *sid, const int *d2, const int *s2)
 {
 	BAT *b, *s = NULL, *bn;
 
