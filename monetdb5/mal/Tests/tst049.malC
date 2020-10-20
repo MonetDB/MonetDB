@@ -69,10 +69,10 @@ z:= mal.manifold("str","like",b,"_3456%");
 io.print(z);
 z:= mal.manifold("str","like",b,"%23");
 io.print(z);
-z:= mal.manifold("str","like",b,"%","?");
+z:= mal.manifold("str","like3",b,"%","?");
 io.print(z);
-z:= mal.manifold("str","like",b,"?%","?");
+z:= mal.manifold("str","like3",b,"?%","?");
 io.print(z);
-z:= mal.manifold("str","like",b,".%",".");
+z:= mal.manifold("str","like3",b,".%",".");
 io.print(z);
 
