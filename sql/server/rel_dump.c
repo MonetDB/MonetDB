@@ -1674,7 +1674,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				rel = rel_basetable(sql, t, tname);
 				if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
 					return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
-									 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+									 get_string_global_var(sql, "current_user"), s->base.name, tname);
 
 				if (!r[*pos])
 					return rel;

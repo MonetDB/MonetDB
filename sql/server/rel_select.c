@@ -912,7 +912,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			}
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -946,7 +946,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				rel = rel_reduce_on_column_privileges(sql, rel, t);
 			if (allowed && rel)
 				return rel;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
@@ -954,7 +954,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (!allowed) {
 			res = rel_reduce_on_column_privileges(sql, res, t);
 			if (!res)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym, refs);
@@ -3870,7 +3870,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "NEXT VALUE FOR: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 
 	if (!find_sql_sequence(s, seq) && !stack_find_rel_view(sql, seq))
 		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: no such sequence '%s'.'%s'", s->base.name, seq);
