@@ -3859,24 +3859,24 @@ rel_cast(sql_query *query, sql_rel **rel, symbol *se, int f)
 static sql_exp *
 rel_next_value_for( mvc *sql, symbol *se )
 {
-	char *seq = qname_schema_object(se->data.lval);
 	char *sname = qname_schema(se->data.lval);
-	sql_schema *s = cur_schema(sql);
+	char *seqname = qname_schema_object(se->data.lval);
+	sql_schema *s = NULL;
 	sql_subtype t;
 	sql_subfunc *f;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "NEXT VALUE FOR: no such schema '%s'", sname);
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-
-	if (!find_sql_sequence(s, seq) && !stack_find_rel_view(sql, seq))
-		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: no such sequence '%s'.'%s'", s->base.name, seq);
+	if (!stack_find_rel_view(sql, seqname)) {
+		if (!find_sequence_on_scope(sql, &s, sname, seqname, "NEXT VALUE FOR"))
+			return NULL;
+		if (!mvc_schema_privs(sql, s))
+			return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+	}
 	sql_find_subtype(&t, "varchar", 0, 0);
-	f = sql_bind_func(sql->sa, s, "next_value_for", &t, &t, F_FUNC);
+	f = sql_bind_func(sql->sa, sql->session->schema, "next_value_for", &t, &t, F_FUNC);
 	assert(f);
-	return exp_binop(sql->sa, exp_atom_str(sql->sa, s->base.name, &t),
-			exp_atom_str(sql->sa, seq, &t), f);
+	if (!s) /* sequence found in the stack. use session's schema? */
+		s = cur_schema(sql);
+	return exp_binop(sql->sa, exp_atom_str(sql->sa, s->base.name, &t), exp_atom_str(sql->sa, seqname, &t), f);
 }
 
 /* some users like to use aliases already in the groupby */

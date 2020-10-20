@@ -101,7 +101,7 @@ tmp_schema(mvc *sql)
 	return mvc_bind_schema(sql, "tmp");
 }
 
-#define search_object_on_path(CALL) \
+#define search_object_on_path(CALL, EXTRA) \
 	do { \
 		sql_schema *found = NULL; \
  \
@@ -113,10 +113,11 @@ tmp_schema(mvc *sql)
 		} else { \
 			char *p, *sp, *search_path_copy; \
  \
-			if (*s && (res = mvc_bind_table(sql, *s, tname))) /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
-				return res; \
-			if (strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, tname))) /* for tables, first try a declared table from the stack */ \
-				return res; \
+			if (*s) { \
+				found = *s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
+				CALL; \
+			} \
+			EXTRA; \
 			if (!sql->search_path_has_tmp) { /* if 'tmp' is not in the search path, search it before all others */ \
 				found = mvc_bind_schema(sql, "tmp"); \
 				CALL; \
@@ -142,17 +143,33 @@ tmp_schema(mvc *sql)
 			} \
 		} \
 		if (!res) \
-			return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname); \
+			return sql_error(sql, 02, SQLSTATE(42S02) "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
 		*s = found; \
 	} while (0)
 
+#define table_extra \
+	do { \
+		if (strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
+			return res; \
+	} while (0)
+
 sql_table *
-find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname, const char *error, bool isView)
+find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error, bool isView)
 {
 	const char *objstr = isView ? "view" : "table";
 	sql_table *res = NULL;
 
-	search_object_on_path(res = mvc_bind_table(sql, found, tname));
+	search_object_on_path(res = mvc_bind_table(sql, found, name), table_extra);
+	return res;
+}
+
+sql_sequence *
+find_sequence_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+{
+	const char *objstr = "sequence";
+	sql_sequence *res = NULL;
+
+	search_object_on_path(res = find_sql_sequence(found, name), ;);
 	return res;
 }
 
