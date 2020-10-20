@@ -173,6 +173,36 @@ find_sequence_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *
 	return res;
 }
 
+sql_idx *
+find_idx_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+{
+	const char *objstr = "index";
+	sql_idx *res = NULL;
+
+	search_object_on_path(res = mvc_bind_idx(sql, found, name), ;);
+	return res;
+}
+
+sql_type *
+find_type_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+{
+	const char *objstr = "type";
+	sql_type *res = NULL;
+
+	search_object_on_path(res = schema_bind_type(sql, found, name), ;);
+	return res;
+}
+
+sql_trigger *
+find_trigger_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+{
+	const char *objstr = "trigger";
+	sql_trigger *res = NULL;
+
+	search_object_on_path(res = mvc_bind_trigger(sql, found, name), ;);
+	return res;
+}
+
 char *
 qname_schema(dlist *qname)
 {

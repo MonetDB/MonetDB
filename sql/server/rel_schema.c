@@ -1210,16 +1210,12 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 {
 	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TYPE: no such schema '%s'", sname);
-
-	if (schema_bind_type(sql, s, name) == NULL) {
-		return sql_error(sql, 02, SQLSTATE(42S01) "DROP TYPE: type '%s' does not exist", name);
-	} else if (!mvc_schema_privs(sql, s)) {
+	if (!find_type_on_scope(sql, &s, sname, name, "DROP TYPE"))
+		return NULL;
+	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	}
 	return rel_schema2(sql->sa, ddl_drop_type, s->base.name, name, drop_action);
 }
 
@@ -1232,14 +1228,13 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TYPE: no such schema '%s'", sname);
-
-	if (schema_bind_type(sql, s, name) != NULL) {
+	if (schema_bind_type(sql, s, name) != NULL)
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TYPE: name '%s' already in use", name);
-	} else if (!mvc_schema_privs(sql, s)) {
+	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	}
 	return rel_schema3(sql->sa, ddl_create_type, s->base.name, name, impl);
 }
+
 static char *
 dlist_get_schema_name(dlist *name_auth)
 {
@@ -2199,19 +2194,16 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 static sqlid
 rel_find_designated_index(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	dlist *qname;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	char *iname, *sname;
 	sql_idx *idx;
 
 	assert(sym->type == type_list);
 	qname = sym->data.lval;
 	sname = qname_schema(qname);
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, SQLSTATE(3F000) "COMMENT ON: no such schema: %s", sname);
-		return 0;
-	}
 	iname = qname_schema_object(qname);
-	idx = mvc_bind_idx(sql, s, iname);
+	if (!(idx = find_idx_on_scope(sql, &s, sname, iname, "COMMENT ON")))
+		return 0;
 	if (idx && idx->t->s && isTempSchema(idx->t->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
@@ -2724,10 +2716,12 @@ rel_schemas(sql_query *query, symbol *s)
 	case SQL_DROP_INDEX: {
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l);
-
-		if (!sname)
-			sname = cur_schema(sql)->base.name;
-		ret = rel_schema2(sql->sa, ddl_drop_index, sname, qname_schema_object(l), 0);
+		char *iname = qname_schema_object(l);
+		sql_schema *s = NULL;
+		
+		if (!find_idx_on_scope(sql, &s, sname, iname, "DROP INDEX"))
+			return NULL;
+		ret = rel_schema2(sql->sa, ddl_drop_index, s->base.name, iname, 0);
 	} 	break;
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
