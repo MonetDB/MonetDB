@@ -1089,7 +1089,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
 
 	if (create) {
-		if ((t = find_table_or_view_on_scope(sql, &s, sname, name, base, true))) {
+		if ((t = mvc_bind_table(sql, s, name))) {
 			if (replace) {
 				if (!isView(t)) {
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to drop view '%s': is a table", base, name);
@@ -1709,16 +1709,17 @@ rel_grant_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 }
 
 static sql_rel *
-rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
+rel_grant_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
 {
+	sql_schema *s = NULL;
 	sql_rel *res = NULL;
 	dnode *gn;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 
-	if (!sname)
-		sname = cur->base.name;
+	if (!find_table_or_view_on_scope(sql, &s, sname, tname, "GRANT", false))
+		return NULL;
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
 		char *grantee = gn->data.sval;
@@ -1727,7 +1728,7 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 			grantee = "public";
 
 		if (!privs) {
-			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, tname, grantee, all, NULL, grant, grantor, ddl_grant))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, all, NULL, grant, grantor, ddl_grant))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1763,12 +1764,12 @@ rel_grant_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *gr
 
 				for (cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
-					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, tname, grantee, priv, cname, grant, grantor, ddl_grant))) == NULL) {
+					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, cname, grant, grantor, ddl_grant))) == NULL) {
 						rel_destroy(res);
 						return NULL;
 					}
 				}
-			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, tname, grantee, priv, NULL, grant, grantor, ddl_grant))) == NULL) {
+			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, NULL, grant, grantor, ddl_grant))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1830,25 +1831,12 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 	symbol *obj = privs->h->next->data.sym;
 	tokens token = obj->token;
 
-	if (token == SQL_NAME) {
-		dlist *qname = obj->data.lval;
-		char *sname = qname_schema(qname);
-		char *tname = qname_schema_object(qname);
-		sql_schema *s = NULL;
-		sql_table *t = NULL;
-
-		if ((t = find_table_or_view_on_scope(sql, &s, sname, tname, "GRANT", false)))
-			token = SQL_TABLE;
-		sql->errstr[0] = '\0'; /* reset table not found error */
-		sql->session->status = 0;
-	}
-
 	switch (token) {
 	case SQL_GRANT:
 		return rel_grant_global(sql, cur, obj_privs, grantees, grant, grantor);
 	case SQL_TABLE:
 	case SQL_NAME:
-		return rel_grant_table(sql, cur, obj_privs, obj->data.lval, grantees, grant, grantor);
+		return rel_grant_table(sql, obj_privs, obj->data.lval, grantees, grant, grantor);
 	case SQL_FUNC: {
 		dlist *r = obj->data.lval;
 		dlist *qname = r->h->data.lval;
@@ -1891,16 +1879,17 @@ rel_revoke_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int 
 }
 
 static sql_rel *
-rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
+rel_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
 {
+	sql_schema *s = NULL;
 	dnode *gn;
 	sql_rel *res = NULL;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 
-	if (!sname)
-		sname = cur->base.name;
+	if (!find_table_or_view_on_scope(sql, &s, sname, tname, "REVOKE", false))
+		return NULL;
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
 		char *grantee = gn->data.sval;
@@ -1909,7 +1898,7 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *g
 			grantee = "public";
 
 		if (!privs) {
-			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, tname, grantee, all, NULL, grant, grantor, ddl_revoke))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, all, NULL, grant, grantor, ddl_revoke))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1945,12 +1934,12 @@ rel_revoke_table(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *g
 
 				for (cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
-					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, tname, grantee, priv, cname, grant, grantor, ddl_revoke))) == NULL) {
+					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, cname, grant, grantor, ddl_revoke))) == NULL) {
 						rel_destroy(res);
 						return NULL;
 					}
 				}
-			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, tname, grantee, priv, NULL, grant, grantor, ddl_revoke))) == NULL) {
+			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, NULL, grant, grantor, ddl_revoke))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -2012,26 +2001,12 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 	symbol *obj = privs->h->next->data.sym;
 	tokens token = obj->token;
 
-	if (token == SQL_NAME) {
-		dlist *qname = obj->data.lval;
-		char *sname = qname_schema(qname);
-		char *tname = qname_schema_object(qname);
-		sql_schema *s = NULL;
-		sql_table *t = NULL;
-
-		if ((t = find_table_or_view_on_scope(sql, &s, sname, tname, "REVOKE", false)))
-			token = SQL_TABLE;
-		sql->errstr[0] = '\0'; /* reset table not found error */
-		sql->session->status = 0;
-	}
-
 	switch (token) {
 	case SQL_GRANT:
 		return rel_revoke_global(sql, cur, obj_privs, grantees, grant, grantor);
 	case SQL_TABLE:
-		return rel_revoke_table(sql, cur, obj_privs, obj->data.lval, grantees, grant, grantor);
 	case SQL_NAME:
-		return rel_revoke_table(sql, cur, obj_privs, obj->data.lval, grantees, grant, grantor);
+		return rel_revoke_table(sql, obj_privs, obj->data.lval, grantees, grant, grantor);
 	case SQL_FUNC: {
 		dlist *r = obj->data.lval;
 		dlist *qname = r->h->data.lval;
