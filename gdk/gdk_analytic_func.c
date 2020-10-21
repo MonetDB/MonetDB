@@ -1905,71 +1905,6 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		}				\
 	} while(0)
 
-#define ANALYTICAL_PROD_CALC_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, TPE3) \
-	do { \
-		TPE2 curval = TPE2##_nil; \
-		for (; k < i; k++) { \
-			TPE1 v = bp[k]; \
-			PROD_NUM(TPE1, TPE2, TPE3); \
-			rb[k] = curval; \
-			has_nils |= is_##TPE2##_nil(curval);	\
-		} \
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2, TPE3) \
-	do { \
-		TPE2 curval = TPE2##_nil; \
-		for (j = i - 1; j >= k; j--) { \
-			TPE1 v = bp[j]; \
-			PROD_NUM(TPE1, TPE2, TPE3); \
-			rb[j] = curval; \
-			has_nils |= is_##TPE2##_nil(curval);	\
-		} \
-		k = i; \
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_ALL_ROWS(TPE1, TPE2, TPE3)	\
-	do { \
-		TPE2 curval = TPE2##_nil; \
-		for (; j < i; j++) { \
-			TPE1 v = bp[j]; \
-			PROD_NUM(TPE1, TPE2, TPE3); \
-		} \
-		for (; k < i; k++) \
-			rb[k] = curval; \
-		has_nils |= is_##TPE2##_nil(curval);	\
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_CURRENT_ROW(TPE1, TPE2, TPE3)	\
-	do {								\
-		for (; k < i; k++) { \
-			TPE1 v = bp[k]; \
-			if (is_##TPE1##_nil(v)) {	\
-				rb[k] = TPE2##_nil; \
-				has_nils = true; \
-			} else	{		\
-				rb[k] = (TPE2) v; \
-			} \
-		} \
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_OTHERS(TPE1, TPE2, TPE3)	\
-	do {								\
-		TPE2 curval = TPE2##_nil;			\
-		for (; k < i; k++) {				\
-			TPE1 *bs = bp + start[k], *be = bp + end[k];				\
-			for (; bs < be; bs++) {				\
-				TPE1 v = *bs;				\
-				PROD_NUM(TPE1, TPE2, TPE3); \
-			}						\
-			rb[k] = curval;					\
-			if (is_##TPE2##_nil(curval))			\
-				has_nils = true;			\
-			else						\
-				curval = TPE2##_nil;	/* For the next iteration */	\
-		}							\
-	} while (0)
-
 /* product on integers while checking for overflows on the output  */
 #define PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP) \
 	do {	\
@@ -1981,73 +1916,8 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		}					\
 	} while(0)
 
-#define ANALYTICAL_PROD_CALC_NUM_LIMIT_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, REAL_IMP) \
-	do { \
-		TPE2 curval = TPE2##_nil; \
-		for (; k < i; k++) { \
-			TPE1 v = bp[k]; \
-			PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP); \
-			rb[k] = curval; \
-			has_nils |= is_##TPE2##_nil(curval);	\
-		} \
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_LIMIT_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2, REAL_IMP) \
-	do { \
-		TPE2 curval = TPE2##_nil; \
-		for (j = i - 1; j >= k; j--) { \
-			TPE1 v = bp[j]; \
-			PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP); \
-			rb[j] = curval; \
-			has_nils |= is_##TPE2##_nil(curval);	\
-		} \
-		k = i; \
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_LIMIT_ALL_ROWS(TPE1, TPE2, REAL_IMP)	\
-	do { \
-		TPE2 curval = TPE2##_nil; \
-		for (; j < i; j++) { \
-			TPE1 v = bp[j]; \
-			PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP); \
-		} \
-		for (; k < i; k++) \
-			rb[k] = curval; \
-		has_nils |= is_##TPE2##_nil(curval);	\
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_LIMIT_CURRENT_ROW(TPE1, TPE2, REAL_IMP)	\
-	do {								\
-		for (; k < i; k++) { \
-			TPE1 v = bp[k]; \
-			if (is_##TPE1##_nil(v)) {	\
-				rb[k] = TPE2##_nil; \
-				has_nils = true; \
-			} else	{		\
-				rb[k] = (TPE2) v; \
-			} \
-		} \
-	} while (0)
-
-#define ANALYTICAL_PROD_CALC_NUM_LIMIT_OTHERS(TPE1, TPE2, REAL_IMP)	\
-	do {								\
-		TPE2 curval = TPE2##_nil;			\
-		for (; k < i; k++) {				\
-			TPE1 *bs = bp + start[k], *be = bp + end[k];				\
-			for (; bs < be; bs++) {				\
-				TPE1 v = *bs;				\
-				PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP); \
-			}						\
-			rb[k] = curval;					\
-			if (is_##TPE2##_nil(curval))			\
-				has_nils = true;			\
-			else						\
-				curval = TPE2##_nil;	/* For the next iteration */	\
-		}							\
-	} while (0)
-
 /* product on floating-points */
-#define PROD_FP(TPE1, TPE2) \
+#define PROD_FP(TPE1, TPE2, ARG3) \
 	do {	\
 		if (!is_##TPE1##_nil(v)) {		\
 			if (is_##TPE2##_nil(curval)) {	\
@@ -2063,42 +1933,42 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		}			\
 	} while(0)
 
-#define ANALYTICAL_PROD_CALC_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */ \
+#define ANALYTICAL_PROD_CALC_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, REAL_IMP) \
 	do { \
 		TPE2 curval = TPE2##_nil; \
 		for (; k < i; k++) { \
 			TPE1 v = bp[k]; \
-			PROD_FP(TPE1, TPE2); \
+			REAL_IMP; \
 			rb[k] = curval; \
 			has_nils |= is_##TPE2##_nil(curval);	\
 		} \
 	} while (0)
 
-#define ANALYTICAL_PROD_CALC_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */ \
+#define ANALYTICAL_PROD_CALC_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2, REAL_IMP) \
 	do { \
 		TPE2 curval = TPE2##_nil; \
 		for (j = i - 1; j >= k; j--) { \
 			TPE1 v = bp[j]; \
-			PROD_FP(TPE1, TPE2); \
+			REAL_IMP; \
 			rb[j] = curval; \
 			has_nils |= is_##TPE2##_nil(curval);	\
 		} \
 		k = i; \
 	} while (0)
 
-#define ANALYTICAL_PROD_CALC_FP_ALL_ROWS(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */	\
+#define ANALYTICAL_PROD_CALC_NUM_ALL_ROWS(TPE1, TPE2, REAL_IMP)	\
 	do { \
 		TPE2 curval = TPE2##_nil; \
 		for (; j < i; j++) { \
 			TPE1 v = bp[j]; \
-			PROD_FP(TPE1, TPE2); \
+			REAL_IMP; \
 		} \
 		for (; k < i; k++) \
 			rb[k] = curval; \
 		has_nils |= is_##TPE2##_nil(curval);	\
 	} while (0)
 
-#define ANALYTICAL_PROD_CALC_FP_CURRENT_ROW(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */	\
+#define ANALYTICAL_PROD_CALC_NUM_CURRENT_ROW(TPE1, TPE2, REAL_IMP)	\
 	do {								\
 		for (; k < i; k++) { \
 			TPE1 v = bp[k]; \
@@ -2111,14 +1981,14 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		} \
 	} while (0)
 
-#define ANALYTICAL_PROD_CALC_FP_OTHERS(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */		\
+#define ANALYTICAL_PROD_CALC_NUM_OTHERS(TPE1, TPE2, REAL_IMP)	\
 	do {								\
 		TPE2 curval = TPE2##_nil;			\
 		for (; k < i; k++) {				\
-			TPE1 *bs = bp + start[i], *be = bp + end[i];	\
+			TPE1 *bs = bp + start[k], *be = bp + end[k];				\
 			for (; bs < be; bs++) {				\
 				TPE1 v = *bs;				\
-				PROD_FP(TPE1, TPE2); \
+				REAL_IMP; \
 			}						\
 			rb[k] = curval;					\
 			if (is_##TPE2##_nil(curval))			\
@@ -2128,20 +1998,20 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		}							\
 	} while (0)
 
-#define ANALYTICAL_PROD_CALC_NUM_PARTITIONS(TPE1, TPE2, TPE3_OR_REAL_IMP, IMP)		\
+#define ANALYTICAL_PROD_CALC_NUM_PARTITIONS(TPE1, TPE2, IMP)		\
 	do {						\
 		TPE1 *bp = (TPE1*)Tloc(b, 0);	 \
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
-					IMP(TPE1, TPE2, TPE3_OR_REAL_IMP);	\
+					IMP;	\
 			}						\
 			i = cnt;			\
-			IMP(TPE1, TPE2, TPE3_OR_REAL_IMP);	\
+			IMP;	\
 		} else {				\
 			i = cnt;					\
-			IMP(TPE1, TPE2, TPE3_OR_REAL_IMP);	\
+			IMP;	\
 		}							\
 	} while (0)
 
@@ -2150,16 +2020,16 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 	case TYPE_lng:{	\
 		switch (tp1) {	\
 		case TYPE_bte:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, lng, hge, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(bte, lng, PROD_NUM(bte, lng, hge)));	\
 			break;	\
 		case TYPE_sht:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, lng, hge, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(sht, lng, PROD_NUM(sht, lng, hge)));	\
 			break;	\
 		case TYPE_int:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, lng, hge, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(int, lng, PROD_NUM(int, lng, hge)));	\
 			break;	\
 		case TYPE_lng:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(lng, lng, hge, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(lng, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(lng, lng, PROD_NUM(lng, lng, hge)));	\
 			break;	\
 		default:	\
 			goto nosupport;	\
@@ -2169,19 +2039,19 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 	case TYPE_hge:{	\
 		switch (tp1) {	\
 		case TYPE_bte:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, hge, HGEMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, hge, ANALYTICAL_PROD_CALC_NUM_##IMP(bte, hge, PROD_NUM_LIMIT(bte, hge, HGEMUL_CHECK)));	\
 			break;	\
 		case TYPE_sht:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, hge, HGEMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, hge, ANALYTICAL_PROD_CALC_NUM_##IMP(sht, hge, PROD_NUM_LIMIT(sht, hge, HGEMUL_CHECK)));	\
 			break;	\
 		case TYPE_int:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, hge, HGEMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, hge, ANALYTICAL_PROD_CALC_NUM_##IMP(int, hge, PROD_NUM_LIMIT(int, hge, HGEMUL_CHECK)));	\
 			break;	\
 		case TYPE_lng:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(lng, hge, HGEMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(lng, hge, ANALYTICAL_PROD_CALC_NUM_##IMP(lng, hge, PROD_NUM_LIMIT(lng, hge, HGEMUL_CHECK)));	\
 			break;	\
 		case TYPE_hge:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(hge, hge, HGEMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, hge, ANALYTICAL_PROD_CALC_NUM_##IMP(bte, hge, PROD_NUM_LIMIT(hge, hge, HGEMUL_CHECK)));	\
 			break;	\
 		default:	\
 			goto nosupport;	\
@@ -2193,16 +2063,16 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 	case TYPE_lng:{	\
 		switch (tp1) {	\
 		case TYPE_bte:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, lng, LNGMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(bte, lng, PROD_NUM(bte, lng, LNGMUL_CHECK)));	\
 			break;	\
 		case TYPE_sht:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, lng, LNGMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(sht, lng, PROD_NUM(sht, lng, LNGMUL_CHECK)));	\
 			break;	\
 		case TYPE_int:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, lng, LNGMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(int, lng, PROD_NUM(int, lng, LNGMUL_CHECK)));	\
 			break;	\
 		case TYPE_lng:	\
-			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(lng, lng, LNGMUL_CHECK, ANALYTICAL_PROD_CALC_NUM_LIMIT_##IMP);	\
+			ANALYTICAL_PROD_CALC_NUM_PARTITIONS(lng, lng, ANALYTICAL_PROD_CALC_NUM_##IMP(lng, lng, PROD_NUM(lng, lng, LNGMUL_CHECK)));	\
 			break;	\
 		default:	\
 			goto nosupport;	\
@@ -2217,7 +2087,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		case TYPE_bte:{	\
 			switch (tp1) {	\
 			case TYPE_bte:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, bte, sht, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, bte, ANALYTICAL_PROD_CALC_NUM_##IMP(bte, bte, PROD_NUM(bte, bte, sht)));	\
 				break;	\
 			default:	\
 				goto nosupport;	\
@@ -2227,10 +2097,10 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		case TYPE_sht:{	\
 			switch (tp1) {	\
 			case TYPE_bte:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, sht, int, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, sht, ANALYTICAL_PROD_CALC_NUM_##IMP(bte, sht, PROD_NUM(bte, sht, int)));	\
 				break;	\
 			case TYPE_sht:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, sht, int, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, sht, ANALYTICAL_PROD_CALC_NUM_##IMP(sht, sht, PROD_NUM(sht, sht, int)));	\
 				break;	\
 			default:	\
 				goto nosupport;	\
@@ -2240,13 +2110,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		case TYPE_int:{	\
 			switch (tp1) {	\
 			case TYPE_bte:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, int, lng, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(bte, int, ANALYTICAL_PROD_CALC_NUM_##IMP(bte, int, PROD_NUM(bte, int, lng)));	\
 				break;	\
 			case TYPE_sht:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, int, lng, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(sht, int, ANALYTICAL_PROD_CALC_NUM_##IMP(sht, int, PROD_NUM(sht, int, lng)));	\
 				break;	\
 			case TYPE_int:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, int, lng, ANALYTICAL_PROD_CALC_NUM_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(int, int, ANALYTICAL_PROD_CALC_NUM_##IMP(int, int, PROD_NUM(int, int, lng)));	\
 				break;	\
 			default:	\
 				goto nosupport;	\
@@ -2257,7 +2127,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		case TYPE_flt:{	\
 			switch (tp1) {	\
 			case TYPE_flt:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(flt, flt, ;, ANALYTICAL_PROD_CALC_FP_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(flt, flt, ANALYTICAL_PROD_CALC_NUM_##IMP(flt, flt, PROD_FP(flt, flt, ;)));	\
 				break;	\
 			default:	\
 				goto nosupport;	\
@@ -2267,10 +2137,10 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int f
 		case TYPE_dbl:{	\
 			switch (tp1) {	\
 			case TYPE_flt:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(flt, dbl, ;, ANALYTICAL_PROD_CALC_FP_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(flt, dbl, ANALYTICAL_PROD_CALC_NUM_##IMP(flt, dbl, PROD_FP(flt, dbl, ;)));	\
 				break;	\
 			case TYPE_dbl:	\
-				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(dbl, dbl, ;, ANALYTICAL_PROD_CALC_FP_##IMP);	\
+				ANALYTICAL_PROD_CALC_NUM_PARTITIONS(dbl, dbl, ANALYTICAL_PROD_CALC_NUM_##IMP(dbl, dbl, PROD_FP(dbl, dbl, ;)));	\
 				break;	\
 			default:	\
 				goto nosupport;	\
