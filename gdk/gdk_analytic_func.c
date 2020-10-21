@@ -910,182 +910,235 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	return GDK_SUCCEED;
 }
 
-#define ANALYTICAL_MIN_MAX_CALC_FIXED(TPE, OP)				\
-	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), v, curval = TPE##_nil, *restrict rb = (TPE*)Tloc(r, 0); \
-		switch (frame_type) {		\
-		case 3: /* unbounded until current row */	{	\
-			for (; k < i; k++) { \
-				v = bp[k];				\
-				if (!is_##TPE##_nil(v)) {		\
-					if (is_##TPE##_nil(curval))	\
-						curval = v;	\
-					else				\
-						curval = OP(v, curval); \
-				}					\
-				rb[k] = curval; \
-				has_nils |= is_##TPE##_nil(curval); \
-			} \
-		} break;		\
-		case 4: /* current row until unbounded */	{	\
-			for (j = i - 1; j >= k; j--) { \
-				v = bp[j];				\
-				if (!is_##TPE##_nil(v)) {		\
-					if (is_##TPE##_nil(curval))	\
-						curval = v;	\
-					else				\
-						curval = OP(v, curval); \
-				}					\
-				rb[j] = curval; \
-				has_nils |= is_##TPE##_nil(curval); \
-			} \
-		} break;		\
-		case 5: /* all rows */	{	\
-			for (j = k; j < i; j++) { \
-				v = bp[j];				\
-				if (!is_##TPE##_nil(v)) {		\
-					if (is_##TPE##_nil(curval))	\
-						curval = v;	\
-					else				\
-						curval = OP(v, curval); \
-				}					\
-			} \
-			for (; k < i; k++) \
-				rb[k] = curval; \
+#define ANALYTICAL_MIN_MAX_CALC_FIXED_UNBOUNDED_TILL_CURRENT_ROW(TPE, MIN_MAX)	\
+	do { \
+		TPE curval = TPE##_nil; \
+		for (; k < i; k++) { \
+			v = bp[k];				\
+			if (!is_##TPE##_nil(v)) {		\
+				if (is_##TPE##_nil(curval))	\
+					curval = v;	\
+				else				\
+					curval = MIN_MAX(v, curval); \
+			}					\
+			rb[k] = curval; \
 			has_nils |= is_##TPE##_nil(curval); \
-		} break;		\
-		case 6: /* current row */ {	\
-			for (; k < i; k++) { \
-				v = bp[k]; \
-				rb[k] = v; \
-				has_nils |= is_##TPE##_nil(v); \
-			} \
-		} break;		\
-		default: {		\
-			for (; k < i; k++) { \
-				TPE *bs = bp + start[k];				\
-				TPE *be = bp + end[k];				\
-				for (; bs < be; bs++) {				\
-					v = *bs;				\
-					if (!is_##TPE##_nil(v)) {		\
-						if (is_##TPE##_nil(curval))	\
-							curval = v;	\
-						else				\
-							curval = OP(v, curval); \
-					}					\
-				}						\
-				rb[k] = curval;					\
-				if (is_##TPE##_nil(curval))			\
-					has_nils = true;			\
-				else						\
-					curval = TPE##_nil;	/* For the next iteration */	\
-			}		\
-		}		\
-		}	\
+		} \
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED(SIGN_OP)				\
-	do {								\
-		curval = (void*) nil; \
-		switch (frame_type) {		\
-		case 3: /* unbounded until current row */	{	\
-			for (; k < i; k++) { \
-				void *next = BUNtail(bpi, k);	\
-				if (atomcmp(next, nil) != 0) {		\
-					if (atomcmp(curval, nil) == 0)	\
-						curval = next;		\
+#define ANALYTICAL_MIN_MAX_CALC_FIXED_CURRENT_ROW_TILL_UNBOUNDED(TPE, MIN_MAX)	\
+	do { \
+		TPE curval = TPE##_nil; \
+		for (j = i - 1; j >= k; j--) { \
+			v = bp[j];				\
+			if (!is_##TPE##_nil(v)) {		\
+				if (is_##TPE##_nil(curval))	\
+					curval = v;	\
+				else				\
+					curval = MIN_MAX(v, curval); \
+			}					\
+			rb[j] = curval; \
+			has_nils |= is_##TPE##_nil(curval); \
+		} \
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_FIXED_ALL_ROWS(TPE, MIN_MAX)	\
+	do { \
+		TPE curval = TPE##_nil; \
+		for (j = k; j < i; j++) { \
+			v = bp[j];				\
+			if (!is_##TPE##_nil(v)) {		\
+				if (is_##TPE##_nil(curval))	\
+					curval = v;	\
+				else				\
+					curval = MIN_MAX(v, curval); \
+			}					\
+		} \
+		for (; k < i; k++) \
+			rb[k] = curval; \
+		has_nils |= is_##TPE##_nil(curval); \
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_FIXED_CURRENT_ROW(TPE, MIN_MAX)	\
+	do { \
+		for (; k < i; k++) { \
+			v = bp[k]; \
+			rb[k] = v; \
+			has_nils |= is_##TPE##_nil(v); \
+		} \
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_FIXED_OTHERS(TPE, MIN_MAX)	\
+	do { \
+		TPE curval = TPE##_nil; \
+		for (; k < i; k++) { \
+			TPE *bs = bp + start[k];				\
+			TPE *be = bp + end[k];				\
+			for (; bs < be; bs++) {				\
+				v = *bs;				\
+				if (!is_##TPE##_nil(v)) {		\
+					if (is_##TPE##_nil(curval))	\
+						curval = v;	\
 					else				\
-						curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
+						curval = MIN_MAX(v, curval); \
 				}					\
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
-				has_nils |= atomcmp(curval, nil) == 0;		\
-			} \
-		} break;		\
-		case 4: /* current row until unbounded */	{	\
-			for (j = i - 1; j >= k; j--) { \
-				void *next = BUNtail(bpi, j);	\
-				if (atomcmp(next, nil) != 0) {		\
-					if (atomcmp(curval, nil) == 0)	\
-						curval = next;		\
-					else				\
-						curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
-				}					\
-				if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
-				has_nils |= atomcmp(curval, nil) == 0;		\
-			} \
-		} break;		\
-		case 5: /* all rows */	{	\
-			for (j = k; j < i; j++) { \
-				void *next = BUNtail(bpi, j);	\
-				if (atomcmp(next, nil) != 0) {		\
-					if (atomcmp(curval, nil) == 0)	\
-						curval = next;		\
-					else				\
-						curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
-				}					\
-			} \
-			for (; k < i; k++) \
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
+			}						\
+			rb[k] = curval;					\
+			if (is_##TPE##_nil(curval))			\
+				has_nils = true;			\
+			else						\
+				curval = TPE##_nil;	/* For the next iteration */	\
+		}		\
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_UNBOUNDED_TILL_CURRENT_ROW(GT_LT)	\
+	do { \
+		void *curval = (void*) nil; \
+		for (; k < i; k++) { \
+			void *next = BUNtail(bpi, k);	\
+			if (atomcmp(next, nil) != 0) {		\
+				if (atomcmp(curval, nil) == 0)	\
+					curval = next;		\
+				else				\
+					curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+			}					\
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
 			has_nils |= atomcmp(curval, nil) == 0;		\
-		} break;		\
-		case 6: /* current row */ {	\
-			for (; k < i; k++) { \
-				void *next = BUNtail(bpi, k); \
-				if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
-				has_nils |= atomcmp(next, nil) == 0;		\
-			} \
-		} break;		\
-		default: {		\
-			for (; k < i; k++) { \
-				j = start[k];					\
-				l = end[k];					\
-				curval = (void*) nil;				\
-				for (;j < l; j++) {				\
-					void *next = BUNtail(bpi, j);	\
-					if (atomcmp(next, nil) != 0) {		\
-						if (atomcmp(curval, nil) == 0)	\
-							curval = next;		\
-						else				\
-							curval = atomcmp(next, curval) SIGN_OP 0 ? curval : next; \
-					}					\
-				}						\
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
-					return GDK_FAIL; \
-				has_nils |= atomcmp(curval, nil) == 0;		\
-			}							\
-		}		\
-		}	\
+		} \
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_PARTITIONS(TPE, OP)		\
+#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_CURRENT_ROW_TILL_UNBOUNDED(GT_LT)	\
+	do { \
+		void *curval = (void*) nil; \
+		for (j = i - 1; j >= k; j--) { \
+			void *next = BUNtail(bpi, j);	\
+			if (atomcmp(next, nil) != 0) {		\
+				if (atomcmp(curval, nil) == 0)	\
+					curval = next;		\
+				else				\
+					curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+			}					\
+			if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+			has_nils |= atomcmp(curval, nil) == 0;		\
+		} \
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_ALL_ROWS(GT_LT)	\
+	do { \
+		void *curval = (void*) nil; \
+		for (j = k; j < i; j++) { \
+			void *next = BUNtail(bpi, j);	\
+			if (atomcmp(next, nil) != 0) {		\
+				if (atomcmp(curval, nil) == 0)	\
+					curval = next;		\
+				else				\
+					curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+			}					\
+		} \
+		for (; k < i; k++) \
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+		has_nils |= atomcmp(curval, nil) == 0;		\
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_CURRENT_ROW(GT_LT)	\
+	do { \
+		for (; k < i; k++) { \
+			void *next = BUNtail(bpi, k); \
+			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+			has_nils |= atomcmp(next, nil) == 0;		\
+		} \
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_OTHERS(GT_LT)	\
+	do { \
+		void *curval = (void*) nil; \
+		for (; k < i; k++) { \
+			j = start[k];					\
+			l = end[k];					\
+			curval = (void*) nil;				\
+			for (;j < l; j++) {				\
+				void *next = BUNtail(bpi, j);	\
+				if (atomcmp(next, nil) != 0) {		\
+					if (atomcmp(curval, nil) == 0)	\
+						curval = next;		\
+					else				\
+						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
+				}					\
+			}						\
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+			has_nils |= atomcmp(curval, nil) == 0;		\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX_PARTITIONS(TPE, MIN_MAX, IMP)		\
 	do {					\
+		TPE *bp = (TPE*)Tloc(b, 0), v, *restrict rb = (TPE*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
-					ANALYTICAL_MIN_MAX_CALC_FIXED(TPE, OP); \
+					ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX); \
 			}						\
 			i = cnt;			\
-			ANALYTICAL_MIN_MAX_CALC_FIXED(TPE, OP);	\
+			ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX);	\
 		} else {				\
 			i = cnt;					\
-			ANALYTICAL_MIN_MAX_CALC_FIXED(TPE, OP);	\
+			ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX);	\
 		}							\
 	} while (0)
 
 #ifdef HAVE_HGE
-#define ANALYTICAL_MIN_MAX_LIMIT(OP)			\
+#define ANALYTICAL_MIN_MAX_LIMIT(MIN_MAX, IMP)			\
 	case TYPE_hge:					\
-		ANALYTICAL_MIN_MAX_PARTITIONS(hge, OP);	\
+		ANALYTICAL_MIN_MAX_PARTITIONS(hge, MIN_MAX, IMP);	\
 	break;
 #else
-#define ANALYTICAL_MIN_MAX_LIMIT(OP)
+#define ANALYTICAL_MIN_MAX_LIMIT(MIN_MAX, IMP)
 #endif
 
-#define ANALYTICAL_MIN_MAX(OP, IMP, SIGN_OP)				\
+#define ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, IMP)		\
+	do { \
+		switch (ATOMbasetype(tpe)) {				\
+		case TYPE_bte:							\
+			ANALYTICAL_MIN_MAX_PARTITIONS(bte, MIN_MAX, IMP);			\
+			break;							\
+		case TYPE_sht:							\
+			ANALYTICAL_MIN_MAX_PARTITIONS(sht, MIN_MAX, IMP);			\
+			break;							\
+		case TYPE_int:							\
+			ANALYTICAL_MIN_MAX_PARTITIONS(int, MIN_MAX, IMP);			\
+			break;							\
+		case TYPE_lng:							\
+			ANALYTICAL_MIN_MAX_PARTITIONS(lng, MIN_MAX, IMP);			\
+			break;							\
+			ANALYTICAL_MIN_MAX_LIMIT(MIN_MAX, IMP)				\
+		case TYPE_flt:							\
+			ANALYTICAL_MIN_MAX_PARTITIONS(flt, MIN_MAX, IMP);			\
+			break;							\
+		case TYPE_dbl:							\
+			ANALYTICAL_MIN_MAX_PARTITIONS(dbl, MIN_MAX, IMP);			\
+			break;							\
+		default: {							\
+			if (p) {						\
+				for (; i < cnt; i++) {			\
+					if (np[i]) 			\
+						ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT); \
+				}						\
+				i = cnt;				\
+				ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT);	\
+			} else {						\
+				i = cnt;					\
+				ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT);	\
+			}							\
+		}								\
+		}								\
+	} while (0)
+
+#define ANALYTICAL_MIN_MAX(OP, MIN_MAX, GT_LT)				\
 gdk_return								\
 GDKanalytical##OP(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)		\
 {									\
@@ -1093,45 +1146,27 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_typ
 	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b);					\
 	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;		\
 	bit *restrict np = p ? Tloc(p, 0) : NULL; 	\
+	BATiter bpi = bat_iterator(b);				\
+	const void *nil = ATOMnilptr(tpe);			\
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
 									\
-	switch (ATOMbasetype(tpe)) {				\
-	case TYPE_bte:							\
-		ANALYTICAL_MIN_MAX_PARTITIONS(bte, IMP);			\
-		break;							\
-	case TYPE_sht:							\
-		ANALYTICAL_MIN_MAX_PARTITIONS(sht, IMP);			\
-		break;							\
-	case TYPE_int:							\
-		ANALYTICAL_MIN_MAX_PARTITIONS(int, IMP);			\
-		break;							\
-	case TYPE_lng:							\
-		ANALYTICAL_MIN_MAX_PARTITIONS(lng, IMP);			\
-		break;							\
-		ANALYTICAL_MIN_MAX_LIMIT(IMP)				\
-	case TYPE_flt:							\
-		ANALYTICAL_MIN_MAX_PARTITIONS(flt, IMP);			\
-		break;							\
-	case TYPE_dbl:							\
-		ANALYTICAL_MIN_MAX_PARTITIONS(dbl, IMP);			\
-		break;							\
-	default: {							\
-		BATiter bpi = bat_iterator(b);				\
-		const void *nil = ATOMnilptr(tpe);			\
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
-		void *curval = (void*) nil; 		\
-		if (p) {						\
-			for (; i < cnt; i++) {			\
-				if (np[i]) 			\
-					ANALYTICAL_MIN_MAX_CALC_VARSIZED(SIGN_OP); \
-			}						\
-			i = cnt;				\
-			ANALYTICAL_MIN_MAX_CALC_VARSIZED(SIGN_OP);	\
-		} else {						\
-			i = cnt;					\
-			ANALYTICAL_MIN_MAX_CALC_VARSIZED(SIGN_OP);	\
-		}							\
-	}								\
-	}								\
+	switch (frame_type) {		\
+	case 3: /* unbounded until current row */	{	\
+		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, UNBOUNDED_TILL_CURRENT_ROW); \
+	} break;		\
+	case 4: /* current row until unbounded */	{	\
+		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW_TILL_UNBOUNDED); \
+	} break;		\
+	case 5: /* all rows */	{	\
+		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, ALL_ROWS); \
+	} break;		\
+	case 6: /* current row */ {	\
+		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
+	} break;		\
+	default: {		\
+		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
+	}		\
+	}	\
 	BATsetcount(r, (BUN) cnt);						\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
