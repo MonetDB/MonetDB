@@ -31,7 +31,7 @@ override_dh_auto_configure:
 	-DWITH_CMOCKA=OFF \
 	-DWITH_CRYPTO=ON \
 	-DWITH_CURL=ON \
-	-DWITH_LZ4=OFF \
+	-DWITH_LZ4=ON \
 	-DWITH_LZMA=ON \
 	-DWITH_PCRE=ON \
 	-DWITH_PROJ=OFF \
