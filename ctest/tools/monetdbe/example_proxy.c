@@ -33,8 +33,10 @@ main(void)
 	if (monetdbe_open(&mdbe, "mapi:monetdb://127.0.0.1:50000?database=devdb", &opt))
 		error("Failed to open database")
 
-	if ((err = monetdbe_query(mdbe, "SELECT x, y, 1 AS some_int FROM test; ", &result, NULL)) != NULL)
+	if ((err = monetdbe_query(mdbe, "SELECT * FROM test; ", &result, NULL)) != NULL)
 		error(err)
+
+	monetdbe_column* appendable_columns[2];
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
@@ -42,6 +44,7 @@ main(void)
 			monetdbe_column* rcol;
 			if ((err = monetdbe_result_fetch(result, &rcol, c)) != NULL)
 				error(err)
+			appendable_columns[c] = rcol;
 			switch (rcol->type) {
 				case monetdbe_int8_t: {
 					monetdbe_column_int8_t * col = (monetdbe_column_int8_t *) rcol;
@@ -91,6 +94,9 @@ main(void)
 		printf("\n");
 	}
 
+	if ((err = monetdbe_append(mdbe, "sys", "test", appendable_columns, 2)) != NULL)
+		error(err)
+
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
 
@@ -109,6 +115,7 @@ main(void)
 
 	if ((err = monetdbe_execute(stmt, &result, NULL)) != NULL)
 		error(err)
+
 
 	fprintf(stdout, "Query result with %zu cols and %"PRId64" rows\n", result->ncols, result->nrows);
 	for (int64_t r = 0; r < result->nrows; r++) {
