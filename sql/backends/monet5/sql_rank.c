@@ -1429,26 +1429,26 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
-					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int, int))
+do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
+					  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int, int, int), bool has_bounds, int max_arg)
 {
-	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
-	int tp1, tp2;
-	gdk_return gdk_res;
+	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL, *p = NULL;
+	int tp1, tp2, frame_type;
 	str msg = MAL_SUCCEED;
+	bat *res = NULL;
 
 	(void) cntxt;
-	if (((isaBatType(getArgType(mb, pci, 2)) && getBatType(getArgType(mb, pci, 2)) != TYPE_lng) ||
-		(isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng))) {
-		throw(SQL, op, "%s", err);
-	}
+	if (pci->argc != max_arg && pci->argc != max_arg - 1)
+		throw(SQL, op, "wrong number of arguments to function count");
 	tp1 = getArgType(mb, pci, 1);
+	frame_type = *getArgReference_int(stk, pci, 2);
 
 	if (isaBatType(tp1)) {
 		tp1 = getBatType(tp1);
-		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-		if (!b)
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
 	}
 	switch (tp1) {
 		case TYPE_bte:
@@ -1469,37 +1469,32 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			tp2 = TYPE_dbl;
 			break;
 		default: {
-			if(b) BBPunfix(b->batCacheid);
-			throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+			goto bailout;
 		}
 	}
 	if (b) {
-		bat *res;
-
-		voidresultBAT(r, tp2, BATcount(b), b, op);
-		s = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-		if (!s) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-		}
-		e = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-		if (!e) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			BBPunfix(s->batCacheid);
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-		}
 		res = getArgReference_bat(stk, pci, 0);
-		gdk_res = func(r, b, s, e, tp1, tp2);
+		if (!(r = COLnew(b->hseqbase, tp2, BATcount(b), TRANSIENT))) {
+			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		if (has_bounds && isaBatType(getArgType(mb, pci, 3)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (has_bounds && isaBatType(getArgType(mb, pci, 4)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (pci->argc == max_arg && isaBatType(getArgType(mb, pci, max_arg - 1)) &&
+			!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
 
-		BBPunfix(b->batCacheid);
-		BBPunfix(s->batCacheid);
-		BBPunfix(e->batCacheid);
-		if (gdk_res == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, op, GDK_EXCEPTION);
+		if (func(r, p, b, s, e, tp1, tp2, frame_type) != GDK_SUCCEED)
+			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		/* the pointers here will always point from bte to dbl, so no strings are handled here */
 		ptr res = getArgReference(stk, pci, 0);
@@ -1545,24 +1540,43 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 				*(dbl*)res = *((dbl*)in);
 				break;
 			default:
-				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
 		}
 	}
+
+bailout:
+	unfix_inputs(4, b, s, e, p);
+	if (r && !msg) {
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
+	} else if (r)
+		BBPreclaim(r);
 	return msg;
+}
+
+str
+SQLsum_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", GDKanalyticalsum, false, 4);
 }
 
 str
 SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", SQLSTATE(42000) "sum(:any_1,:lng,:lng)",
-								 GDKanalyticalsum);
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.sum", GDKanalyticalsum, true, 6);
+}
+
+str
+SQLprod_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", GDKanalyticalprod, false, 4);
 }
 
 str
 SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", SQLSTATE(42000) "prod(:any_1,:lng,:lng)",
-								 GDKanalyticalprod);
+	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", GDKanalyticalprod, true, 6);
 }
 
 str
