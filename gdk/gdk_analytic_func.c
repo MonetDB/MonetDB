@@ -2192,22 +2192,22 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int 
 	return GDK_FAIL;
 }
 
-#define ANALYTICAL_AVERAGE_CALC_NUM(TPE,lng_hge)			\
-	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v, a = 0;		\
-		for (; i < cnt; i++, rb++) {				\
-			bs = bp + start[i];				\
-			be = bp + end[i];				\
-			for (; bs < be; bs++) {				\
-				v = *bs;				\
-				if (!is_##TPE##_nil(v)) {		\
-					ADD_WITH_CHECK(v, sum, lng_hge, sum, GDK_##lng_hge##_max, goto avg_overflow##TPE); \
-					/* count only when no overflow occurs */ \
-					n++;				\
-				}					\
-			}						\
+#ifdef HAVE_HGE
+#define LNG_HGE hge
+#else
+#define LNG_HGE lng
+#endif
+
+#define ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE) \
+	if (!is_##TPE##_nil(v)) {		\
+		ADD_WITH_CHECK(v, sum, LNG_HGE, sum, GDK_##LNG_HGE##_max, goto avg_overflow##TPE##IMP##PART); \
+		/* count only when no overflow occurs */ \
+		n++;				\
+	}
+
+#define ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
 			if (0) {					\
-avg_overflow##TPE:							\
+avg_overflow##TPE##IMP##PART:							\
 				assert(n > 0);				\
 				if (sum >= 0) {				\
 					a = (TPE) (sum / n);		\
@@ -2220,102 +2220,277 @@ avg_overflow##TPE:							\
 						a--;			\
 						rr = n - rr;		\
 					}				\
-				}					\
-				for (; bs < be; bs++) {			\
-					v = *bs;			\
-					if (is_##TPE##_nil(v))		\
-						continue;		\
-					AVERAGE_ITER(TPE, v, a, rr, n);	\
-				}					\
+				}
+
+#define ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
 				curval = a + (dbl) rr / n;		\
-				goto calc_done##TPE;			\
+				goto calc_done##TPE##IMP##PART;			\
 			}						\
 			curval = n > 0 ? (dbl) sum / n : dbl_nil;	\
-calc_done##TPE:								\
-			*rb = curval;					\
+calc_done##TPE##IMP##PART:
+
+#define ANALYTICAL_AVG_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP, PART, LNG_HGE) \
+	do { \
+		for (; k < i; k++) { \
+			v = bp[k]; \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE) \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+			for (; k < i; k++) {			\
+				v = bp[k];			\
+				if (is_##TPE##_nil(v))		\
+					continue;		\
+				AVERAGE_ITER(TPE, v, a, rr, n);	\
+			}					\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
+			rb[k] = curval;					\
 			has_nils = has_nils || (n == 0);		\
-			n = 0;						\
-			sum = 0;					\
+		} \
+		n = 0;				\
+		sum = 0;			\
+		a = 0; 			\
+	} while (0)
+
+#define ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP, PART, LNG_HGE) \
+	do { \
+		for (j = i - 1; j >= k; j--) { \
+			v = bp[j]; \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE) \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+			for (; j >= k; j--) { \
+				v = bp[j];			\
+				if (is_##TPE##_nil(v))		\
+					continue;		\
+				AVERAGE_ITER(TPE, v, a, rr, n);	\
+			}					\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
+			rb[j] = curval;					\
+			has_nils = has_nils || (n == 0);		\
+		} \
+		n = 0;				\
+		sum = 0;			\
+		a = 0; 			\
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_AVG_IMP_NUM_ALL_ROWS(TPE, IMP, PART, LNG_HGE)	\
+	do { \
+		dbl dr = 0; \
+		for (; j < i; j++) { \
+			v = bp[j]; \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE) \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+			for (; j < i; j++) { \
+				v = bp[j];			\
+				if (is_##TPE##_nil(v))		\
+					continue;		\
+				AVERAGE_ITER(TPE, v, a, rr, n);	\
+			}					\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
+			dr = curval; \
+		} \
+		for (; k < i; k++) \
+			rb[k] = dr; \
+		has_nils = has_nils || (n == 0);		\
+		n = 0;				\
+		sum = 0;			\
+		a = 0; 			\
+	} while (0)
+
+#define ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW(TPE, IMP, PART, LNG_HGE)	\
+	do { \
+		for (; k < i; k++) { \
+			v = bp[k]; \
+			if (is_##TPE##_nil(v)) {	\
+				rb[k] = dbl_nil; \
+				has_nils = true; \
+			} else	{		\
+				rb[k] = (dbl) v; \
+			} \
+		} \
+	} while (0)
+
+#define ANALYTICAL_AVG_IMP_NUM_OTHERS(TPE, IMP, PART, LNG_HGE)	\
+	do {								\
+		TPE *be = 0, *bs = 0;	 \
+		for (; k < i; k++) {				\
+			bs = bp + start[k];				\
+			be = bp + end[k];				\
+			for (; bs < be; bs++) {				\
+				v = *bs;				\
+				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE) \
+			}						\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+			for (; bs < be; bs++) {			\
+				v = *bs;			\
+				if (is_##TPE##_nil(v))		\
+					continue;		\
+				AVERAGE_ITER(TPE, v, a, rr, n);	\
+			}					\
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
+			rb[k] = curval;					\
+			has_nils = has_nils || (n == 0);		\
+			n = 0;				\
+			sum = 0;			\
+			a = 0; 			\
 		}							\
 	} while (0)
 
-#ifdef HAVE_HGE
-#define ANALYTICAL_AVERAGE_LNG_HGE(TPE) ANALYTICAL_AVERAGE_CALC_NUM(TPE,hge)
-#else
-#define ANALYTICAL_AVERAGE_LNG_HGE(TPE) ANALYTICAL_AVERAGE_CALC_NUM(TPE,lng)
-#endif
+#define ANALYTICAL_AVG_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP, PART, LNG_HGE) \
+	do { \
+		for (; k < i; k++) { \
+			v = bp[k]; \
+			if (!is_##TPE##_nil(v))		\
+				AVERAGE_ITER_FLOAT(TPE, v, a, n); \
+			rb[k] = curval; \
+			has_nils = has_nils || (n == 0);		\
+		} \
+		n = 0;			\
+		a = 0; 		\
+	} while (0)
 
-#define ANALYTICAL_AVERAGE_CALC_FP(TPE)					\
+#define ANALYTICAL_AVG_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP, PART, LNG_HGE) \
+	do { \
+		for (j = i - 1; j >= k; j--) { \
+			v = bp[j]; \
+			if (!is_##TPE##_nil(v))		\
+				AVERAGE_ITER_FLOAT(TPE, v, a, n); \
+			rb[j] = curval; \
+			has_nils = has_nils || (n == 0);		\
+		} \
+		n = 0;		\
+		a = 0;		\
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_AVG_IMP_FP_ALL_ROWS(TPE, IMP, PART, LNG_HGE)	\
+	do { \
+		for (; j < i; j++) { \
+			v = bp[j]; \
+			if (!is_##TPE##_nil(v))		\
+				AVERAGE_ITER_FLOAT(TPE, v, a, n); \
+		} \
+		curval = (n > 0) ? a : dbl_nil;			\
+		for (; k < i; k++) \
+			rb[k] = curval; \
+		has_nils = has_nils || (n == 0);		\
+		n = 0;		\
+		a = 0; 		\
+	} while (0)
+
+#define ANALYTICAL_AVG_IMP_FP_CURRENT_ROW(TPE, IMP, PART, LNG_HGE)	 ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW(TPE, IMP, PART, LNG_HGE)
+
+#define ANALYTICAL_AVG_IMP_FP_OTHERS(TPE, IMP, PART, LNG_HGE)			\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v;		\
-		dbl a = 0;						\
-		for (; i < cnt; i++, rb++) {				\
-			bs = bp + start[i];				\
-			be = bp + end[i];				\
+		TPE *be = 0, *bs = 0;	 \
+		for (; k < i; k++) {				\
+			bs = bp + start[k];				\
+			be = bp + end[k];				\
 			for (; bs < be; bs++) {				\
 				v = *bs;				\
 				if (!is_##TPE##_nil(v))			\
 					AVERAGE_ITER_FLOAT(TPE, v, a, n); \
 			}						\
 			curval = (n > 0) ? a : dbl_nil;			\
-			*rb = curval;					\
+			rb[k] = curval;					\
 			has_nils = has_nils || (n == 0);		\
-			n = 0;						\
-			a = 0;						\
+			n = 0;			\
+			a = 0; 		\
 		}							\
 	} while (0)
 
+#define ANALYTICAL_AVG_PARTITIONS(TPE, IMP, LNG_HGE, REAL_IMP)		\
+	do {						\
+		TPE *bp = (TPE*)Tloc(b, 0), v = 0; \
+		if (p) {					\
+			for (; i < cnt; i++) {		\
+				if (np[i]) 			\
+					REAL_IMP(TPE, IMP, P1, LNG_HGE);	\
+			}						\
+			i = cnt;			\
+			REAL_IMP(TPE, IMP, P2, LNG_HGE);	\
+		} else {				\
+			i = cnt;					\
+			REAL_IMP(TPE, IMP, P3, LNG_HGE);	\
+		}							\
+	} while (0)
+
+#if HAVE_HGE
+#define ANALYTICAL_AVG_LIMIT(IMP, LNG_HGE) \
+	case TYPE_hge: \
+		ANALYTICAL_AVG_PARTITIONS(hge, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_NUM_##IMP); \
+		break;
+#else
+#define ANALYTICAL_PROD_LIMIT(IMP, LNG_HGE)
+#endif
+
+#define ANALYTICAL_AVG_BRANCHES(IMP, LNG_HGE)		\
+	do { \
+		switch (tpe) {	\
+		case TYPE_bte:	\
+			ANALYTICAL_AVG_PARTITIONS(bte, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_NUM_##IMP);	\
+			break;	\
+		case TYPE_sht:	\
+			ANALYTICAL_AVG_PARTITIONS(sht, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_NUM_##IMP);	\
+			break;	\
+		case TYPE_int:	\
+			ANALYTICAL_AVG_PARTITIONS(int, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_NUM_##IMP);	\
+			break;	\
+		case TYPE_lng:	\
+			ANALYTICAL_AVG_PARTITIONS(lng, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_NUM_##IMP);	\
+			break;	\
+		ANALYTICAL_AVG_LIMIT(IMP, LNG_HGE)	\
+		case TYPE_flt:	\
+			ANALYTICAL_AVG_PARTITIONS(flt, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_FP_##IMP);	\
+			break;	\
+		case TYPE_dbl:	\
+			ANALYTICAL_AVG_PARTITIONS(dbl, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_FP_##IMP);	\
+			break;	\
+		default:	\
+			goto nosupport;	\
+		}	\
+	} while (0)
+
 gdk_return
-GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+GDKanalyticalavg(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	BUN i = 0, cnt = BATcount(b), nils = 0;
-	lng n = 0, rr = 0;
+	lng i = 0, j = 0, k = 0, cnt = (lng) BATcount(b), n = 0, rr = 0;
+	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	dbl *restrict rb = (dbl *) Tloc(r, 0), curval = 0, a = 0;
+	bit *restrict np = p ? Tloc(p, 0) : NULL;
 	bool abort_on_error = true;
-	lng *restrict start, *restrict end;
-	dbl *restrict rb = (dbl *) Tloc(r, 0), curval;
+	BUN nils = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else
 	lng sum = 0;
 #endif
 
-	assert(s && e);
-	start = (lng *) Tloc(s, 0);
-	end = (lng *) Tloc(e, 0);
-
-	switch (tpe) {
-	case TYPE_bte:
-		ANALYTICAL_AVERAGE_LNG_HGE(bte);
-		break;
-	case TYPE_sht:
-		ANALYTICAL_AVERAGE_LNG_HGE(sht);
-		break;
-	case TYPE_int:
-		ANALYTICAL_AVERAGE_LNG_HGE(int);
-		break;
-	case TYPE_lng:
-		ANALYTICAL_AVERAGE_LNG_HGE(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		ANALYTICAL_AVERAGE_LNG_HGE(hge);
-		break;
-#endif
-	case TYPE_flt:
-		ANALYTICAL_AVERAGE_CALC_FP(flt);
-		break;
-	case TYPE_dbl:
-		ANALYTICAL_AVERAGE_CALC_FP(dbl);
-		break;
-	default:
-		GDKerror("average of type %s to dbl unsupported.\n", ATOMname(tpe));
-		return GDK_FAIL;
+	switch (frame_type) {
+	case 3: /* unbounded until current row */	{
+		ANALYTICAL_AVG_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW, LNG_HGE);
+	} break;
+	case 4: /* current row until unbounded */	{
+		ANALYTICAL_AVG_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED, LNG_HGE);
+	} break;
+	case 5: /* all rows */	{
+		ANALYTICAL_AVG_BRANCHES(ALL_ROWS, LNG_HGE);
+	} break;
+	case 6: /* current row */ {
+		ANALYTICAL_AVG_BRANCHES(CURRENT_ROW, LNG_HGE);
+	} break;
+	default: {
+		ANALYTICAL_AVG_BRANCHES(OTHERS, LNG_HGE);
 	}
+	}
+
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
+      nosupport:
+	GDKerror("average of type %s to dbl unsupported.\n", ATOMname(tpe));
+	return GDK_FAIL;
 }
 
 #ifdef TRUNCATE_NUMBERS
@@ -2364,7 +2539,7 @@ GDKanalyticalavg(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	} while (0)
 
 gdk_return
-GDKanalyticalavginteger(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
+GDKanalyticalavginteger(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
 	BUN i = 0, cnt = BATcount(b);
@@ -2373,6 +2548,9 @@ GDKanalyticalavginteger(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	assert(s && e);
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
+
+	(void) p;
+	(void) frame_type;
 
 	switch (tpe) {
 	case TYPE_bte:
@@ -2393,13 +2571,15 @@ GDKanalyticalavginteger(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		break;
 #endif
 	default:
-		GDKerror("average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
-		return GDK_FAIL;
+		goto nosupport;
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
+      nosupport:
+	GDKerror("average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
+	return GDK_FAIL;
 }
 
 #define ANALYTICAL_STDEV_VARIANCE_CALC(TPE, SAMPLE, OP)	\

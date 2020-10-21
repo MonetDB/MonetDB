@@ -1579,30 +1579,25 @@ SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_analytical_sumprod(cntxt, mb, stk, pci, "sql.prod", GDKanalyticalprod, true, 6);
 }
 
-str
-SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg)
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &s, &e, cntxt, mb, stk, pci, false, 0, TYPE_dbl, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
-	gdk_return gdk_res;
+	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, has_bounds,
+								max_arg, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
+	bat *res = NULL;
 
 	if (msg)
-		return msg;
+		goto bailout;
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
 
 	if (b) {
-		bat *res = getArgReference_bat(stk, pci, 0);
+		res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavg(r, b, s, e, tpe);
-		BBPunfix(b->batCacheid);
-		if (s) BBPunfix(s->batCacheid);
-		if (e) BBPunfix(e->batCacheid);
-		if (gdk_res == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, "sql.avg", GDK_EXCEPTION);
+		if (GDKanalyticalavg(r, p, b, s, e, tpe, frame_type) != GDK_SUCCEED)
+			msg = createException(SQL, "sql.avg", GDK_EXCEPTION);
 	} else {
 		/* the pointers here will always point from bte to dbl, so no strings are handled here */
 		ptr res = getArgReference(stk, pci, 0);
@@ -1635,36 +1630,52 @@ SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				*(dbl*)res = *((dbl*)in);
 				break;
 			default:
-				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to dbl", ATOMname(tpe));
+				msg = createException(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to dbl", ATOMname(tpe));
 		}
 	}
+
+bailout:
+	unfix_inputs(4, b, s, e, p);
+	if (r && !msg) {
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
+	} else if (r)
+		BBPreclaim(r);
 	return msg;
 }
 
 str
-SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+SQLavg_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_avg(cntxt, mb, stk, pci, false, 4);
+}
+
+str
+SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_avg(cntxt, mb, stk, pci, true, 6);
+}
+
+static str
+do_avginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg)
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &s, &e, cntxt, mb, stk, pci, 0, false, 0, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
-	gdk_return gdk_res;
+	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &s, &e, cntxt, mb, stk, pci, 0, has_bounds,
+								max_arg, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
+	bat *res = NULL;
 
 	if (msg)
-		return msg;
+		goto bailout;
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
 
 	if (b) {
-		bat *res = getArgReference_bat(stk, pci, 0);
+		res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalavginteger(r, b, s, e, tpe);
-		BBPunfix(b->batCacheid);
-		if (s) BBPunfix(s->batCacheid);
-		if (e) BBPunfix(e->batCacheid);
-		if (gdk_res == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, "sql.avg", GDK_EXCEPTION);
+		if (GDKanalyticalavginteger(r, p, b, s, e, tpe, frame_type) != GDK_SUCCEED)
+			msg = createException(SQL, "sql.avg", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
@@ -1678,13 +1689,34 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			case TYPE_hge:
 #endif
 				if (!VALcopy(res, in))
-					throw(SQL, "sql.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL); /* malloc failure should never happen, but let it be here */
+					msg = createException(SQL, "sql.avg", SQLSTATE(HY013) MAL_MALLOC_FAIL); /* malloc failure should never happen, but let it be here */
 				break;
 			default:
-				throw(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to %s", ATOMname(tpe), ATOMname(tpe));
+				msg = createException(SQL, "sql.avg", SQLSTATE(42000) "sql.avg not available for %s to %s", ATOMname(tpe), ATOMname(tpe));
 		}
 	}
+
+bailout:
+	unfix_inputs(4, b, s, e, p);
+	if (r && !msg) {
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
+	} else if (r)
+		BBPreclaim(r);
 	return msg;
+}
+
+str
+SQLavginteger_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_avginteger(cntxt, mb, stk, pci, false, 4);
+}
+
+str
+SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_avginteger(cntxt, mb, stk, pci, true, 6);
 }
 
 static str
