@@ -2198,6 +2198,7 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int 
 #define LNG_HGE lng
 #endif
 
+/* average on integers */
 #define ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE) \
 	if (!is_##TPE##_nil(v)) {		\
 		ADD_WITH_CHECK(v, sum, LNG_HGE, sum, GDK_##LNG_HGE##_max, goto avg_overflow##TPE##IMP##PART); \
@@ -2335,6 +2336,7 @@ calc_done##TPE##IMP##PART:
 		}							\
 	} while (0)
 
+/* average on floating-points */
 #define ANALYTICAL_AVG_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP, PART, LNG_HGE) \
 	do { \
 		for (; k < i; k++) { \
@@ -2381,10 +2383,9 @@ calc_done##TPE##IMP##PART:
 
 #define ANALYTICAL_AVG_IMP_FP_OTHERS(TPE, IMP, PART, LNG_HGE)			\
 	do {								\
-		TPE *be = 0, *bs = 0;	 \
 		for (; k < i; k++) {				\
-			bs = bp + start[k];				\
-			be = bp + end[k];				\
+			TPE *bs = bp + start[k];				\
+			TPE *be = bp + end[k];				\
 			for (; bs < be; bs++) {				\
 				v = *bs;				\
 				if (!is_##TPE##_nil(v))			\
@@ -2514,23 +2515,94 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_type
 	} while(0)
 #endif
 
-#define ANALYTICAL_AVERAGE_INT_CALC(TPE)			\
+#define ANALYTICAL_AVG_INT_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
+	do { \
+		TPE avg = 0; \
+		for (; k < i; k++) { \
+			TPE v = bp[k]; \
+			if (!is_##TPE##_nil(v))	\
+				AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
+			if (ncnt == 0) {	\
+				has_nils = true; \
+				rb[k] = TPE##_nil; \
+			} else { \
+				dbl avgfinal = avg; \
+				ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avgfinal, rem, ncnt); \
+				rb[k] = avgfinal; \
+			} \
+		} \
+		rem = 0; \
+		ncnt = 0; \
+		avg = 0; \
+	} while (0)
+
+#define ANALYTICAL_AVG_INT_CURRENT_ROW_TILL_UNBOUNDED(TPE) \
+	do { \
+		TPE avg = 0; \
+		for (j = i - 1; j >= k; j--) { \
+			TPE v = bp[j]; \
+			if (!is_##TPE##_nil(v))	\
+				AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
+			if (ncnt == 0) {	\
+				has_nils = true; \
+				rb[k] = TPE##_nil; \
+			} else { \
+				dbl avgfinal = avg; \
+				ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avgfinal, rem, ncnt); \
+				rb[k] = avgfinal; \
+			} \
+		} \
+		rem = 0; \
+		ncnt = 0; \
+		avg = 0; \
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_AVG_INT_ALL_ROWS(TPE)	\
+	do { \
+		TPE avg = 0; \
+		for (; j < i; j++) { \
+			TPE v = bp[j]; \
+			if (!is_##TPE##_nil(v))	\
+				AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
+		} \
+		if (ncnt == 0) {	\
+			has_nils = true; \
+			rb[k] = TPE##_nil; \
+		} else { \
+			ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt); \
+			rb[k] = avg; \
+		} \
+		rem = 0; \
+		ncnt = 0; \
+		avg = 0; \
+	} while (0)
+
+#define ANALYTICAL_AVG_INT_CURRENT_ROW(TPE)	\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0), *bs, *be, v, avg = 0;	\
-		for (; i < cnt; i++) {				\
-			bs = bp + start[i];				\
-			be = bp + end[i];				\
+		for (; k < i; k++) { \
+			TPE v = bp[k]; \
+			rb[k] = bp[k]; \
+			has_nils |= is_##TPE##_nil(v); \
+		} \
+	} while (0)
+
+#define ANALYTICAL_AVG_INT_OTHERS(TPE)			\
+	do {								\
+		TPE avg = 0; \
+		for (; k < i; k++) {			\
+			TPE *bs = bp + start[k], *be = bp + end[k];				\
 			for (; bs < be; bs++) {				\
-				v = *bs;				\
+				TPE v = *bs;				\
 				if (!is_##TPE##_nil(v))	\
 					AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
 			}	\
 			if (ncnt == 0) {	\
 				has_nils = true; \
-				rb[i] = TPE##_nil; \
+				rb[k] = TPE##_nil; \
 			} else { \
 				ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt); \
-				rb[i] = avg; \
+				rb[k] = avg; \
 			} \
 			rem = 0; \
 			ncnt = 0; \
@@ -2538,41 +2610,79 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_type
 		}	\
 	} while (0)
 
+#define ANALYTICAL_AVG_INT_PARTITIONS(TPE, IMP)		\
+	do {						\
+		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0); \
+		if (p) {					\
+			for (; i < cnt; i++) {		\
+				if (np[i]) 			\
+					IMP(TPE);	\
+			}						\
+			i = cnt;			\
+			IMP(TPE);	\
+		} else {				\
+			i = cnt;					\
+			IMP(TPE);	\
+		}							\
+	} while (0)
+
+#if HAVE_HGE
+#define ANALYTICAL_AVG_INT_LIMIT(IMP) \
+	case TYPE_hge: \
+		ANALYTICAL_AVG_INT_PARTITIONS(hge, ANALYTICAL_AVG_INT_##IMP); \
+		break;
+#else
+#define ANALYTICAL_AVG_INT_LIMIT(IMP)
+#endif
+
+#define ANALYTICAL_AVG_INT_BRANCHES(IMP)		\
+	do { \
+		switch (tpe) {	\
+		case TYPE_bte:	\
+			ANALYTICAL_AVG_INT_PARTITIONS(bte, ANALYTICAL_AVG_INT_##IMP);	\
+			break;	\
+		case TYPE_sht:	\
+			ANALYTICAL_AVG_INT_PARTITIONS(sht, ANALYTICAL_AVG_INT_##IMP);	\
+			break;	\
+		case TYPE_int:	\
+			ANALYTICAL_AVG_INT_PARTITIONS(int, ANALYTICAL_AVG_INT_##IMP);	\
+			break;	\
+		case TYPE_lng:	\
+			ANALYTICAL_AVG_INT_PARTITIONS(lng, ANALYTICAL_AVG_INT_##IMP);	\
+			break;	\
+		ANALYTICAL_AVG_INT_LIMIT(IMP)	\
+		default:	\
+			goto nosupport;	\
+		}	\
+	} while (0)
+
+
 gdk_return
 GDKanalyticalavginteger(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	BUN i = 0, cnt = BATcount(b);
-	lng *restrict start, *restrict end, rem = 0, ncnt = 0;
+	lng i = 0, j = 0, k = 0, cnt = (lng) BATcount(b), rem = 0, ncnt = 0;
+	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	bit *restrict np = p ? Tloc(p, 0) : NULL;
 
-	assert(s && e);
-	start = (lng *) Tloc(s, 0);
-	end = (lng *) Tloc(e, 0);
-
-	(void) p;
-	(void) frame_type;
-
-	switch (tpe) {
-	case TYPE_bte:
-		ANALYTICAL_AVERAGE_INT_CALC(bte);
-		break;
-	case TYPE_sht:
-		ANALYTICAL_AVERAGE_INT_CALC(sht);
-		break;
-	case TYPE_int:
-		ANALYTICAL_AVERAGE_INT_CALC(int);
-		break;
-	case TYPE_lng:
-		ANALYTICAL_AVERAGE_INT_CALC(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		ANALYTICAL_AVERAGE_INT_CALC(hge);
-		break;
-#endif
-	default:
-		goto nosupport;
+	switch (frame_type) {
+	case 3: /* unbounded until current row */	{
+		ANALYTICAL_AVG_INT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+	} break;
+	case 4: /* current row until unbounded */	{
+		ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+	} break;
+	case 5: /* all rows */	{
+		ANALYTICAL_AVG_INT_BRANCHES(ALL_ROWS);
+	} break;
+	case 6: /* current row */ {
+		ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW);
+	} break;
+	default: {
+		ANALYTICAL_AVG_INT_BRANCHES(OTHERS);
 	}
+	}
+
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
