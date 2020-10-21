@@ -38,7 +38,9 @@ sql5_export str SQLsum_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 sql5_export str SQLsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLprod_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLavg_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLavg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLavginteger_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* statistical functions */
