@@ -70,7 +70,6 @@
 #ifdef HAVE_MAPI
 
 
-
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_function.h" /* for printFunction */
@@ -1138,7 +1137,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * The implementation is based on serialisation of the block into a string
  * followed by remote parsing.
  */
-static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, const char *fcn)
+static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, const char *mod, const char *fcn)
 {
 	str tmp, qry, msg;
 	connection c;
@@ -1176,32 +1175,60 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
+	/* get a free, typed identifier for the remote host */
+	char ident[BUFSIZ];
+	tmp = RMTgetId(ident, sym->def, getInstrPtr(sym->def, 0), 0);
+	if (tmp != MAL_SUCCEED) {
+		MT_lock_unset(&c->lock);
+		return tmp;
+	}
+	
+	*fcn_id = GDKmalloc(strlen(ident));
+	if (*fcn_id == NULL) {
+		//TODO: handle error
+	}
+
+	strcpy(*fcn_id, ident);
+
+	Symbol prg;
+
+	if ((prg = newFunction(putName(mod), putName(*fcn_id), FUNCTIONsymbol)) == NULL) {
+		// TODO: handle error
+		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
+	}
+	prg->def = copyMalBlk(sym->def);
+	// TODO: handle if == NULL
+	setFunctionId(getInstrPtr(prg->def, 0), putName(*fcn_id));
+
 	/* make sure the program is error free */
-	msg = chkProgram(cntxt->usermodule, sym->def);
-	if ( msg == MAL_SUCCEED || sym->def->errors) {
+	msg = chkProgram(cntxt->usermodule, prg->def);
+	if ( msg != MAL_SUCCEED || prg->def->errors) {
 		MT_lock_unset(&c->lock);
 		throw(MAL, "remote.register",
 				"function '%s.%s' contains syntax or type errors",
-				mod, fcn);
+				mod, *fcn_id);
 	}
 
-	qry = mal2str(sym->def, 0, sym->def->stop);
+	qry = mal2str(prg->def, 0, prg->def->stop);
 	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, qry);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
 	GDKfree(qry);
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
+	freeSymbol(prg);
+
 	MT_lock_unset(&c->lock);
 	return msg;
 }
 
 static str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	char *fcn_id = *getArgReference_str(stk, pci, 0);
 	const char *conn = *getArgReference_str(stk, pci, 1);
 	const char *mod = *getArgReference_str(stk, pci, 2);
 	const char *fcn = *getArgReference_str(stk, pci, 3);
 	(void)mb;
-	return RMTregisterInternal(cntxt, conn, mod, fcn);
+	return RMTregisterInternal(cntxt, &fcn_id, conn, mod, fcn);
 }
 
 /**
@@ -1615,7 +1642,7 @@ mel_func remote_init_funcs[] = {
  command("remote", "disconnect", RMTdisconnect, false, "disconnects the connection pointed to by handle (received from a call to connect()", args(1,2, arg("",void),arg("conn",str))),
  pattern("remote", "get", RMTget, false, "retrieves a copy of remote object ident", args(1,3, argany("",0),arg("conn",str),arg("ident",str))),
  pattern("remote", "put", RMTput, false, "copies object to the remote site and returns its identifier", args(1,3, arg("",str),arg("conn",str),argany("object",0))),
- pattern("remote", "register", RMTregister, false, "register <mod>.<fcn> at the remote site", args(1,4, arg("",void),arg("conn",str),arg("mod",str),arg("fcn",str))),
+ pattern("remote", "register", RMTregister, false, "register <mod>.<fcn> at the remote site", args(1,4, arg("",str),arg("conn",str),arg("mod",str),arg("fcn",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> and returns the handle to its result", args(1,4, arg("",str),arg("conn",str),arg("mod",str),arg("func",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> and returns the handle to its result", args(1,4, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, arg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),

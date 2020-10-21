@@ -80,6 +80,9 @@ function user.%temp(X1, ..., XN)
     sql.affectedRows(m, c);
 end
 
+function user.%temp2()
+    remote.put()
+
 Register this function and remotely execute it:
 remote.register(conn, user, %temp)
 remote.exec(conn, user, %temp, RB1, ..., RBN)
