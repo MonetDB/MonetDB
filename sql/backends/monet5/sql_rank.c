@@ -23,6 +23,20 @@
 		r->tnonil = true;					\
 	} while (0)
 
+static void
+unfix_inputs(int nargs, ...)
+{
+	va_list valist;
+
+	va_start(valist, nargs);
+	for (int i = 0; i < nargs; i++) {
+		BAT *b = va_arg(valist, BAT *);
+		if (b)
+			BBPunfix(b->batCacheid);
+	}
+	va_end(valist);
+}
+
 str
 SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1305,13 +1319,10 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool
 	}
 
 bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (s)
-		BBPunfix(s->batCacheid);
+	unfix_inputs(4, b, s, e, p);
 	if (r && !msg) {
-		r->tsorted = false;
-		r->trevsorted = false;
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
 		BBPkeepref(*res = r->batCacheid);
 	} else if (r)
 		BBPreclaim(r);
@@ -1342,69 +1353,79 @@ SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return SQLanalytical_func(cntxt, mb, stk, pci, true, 6, "sql.max", SQLSTATE(42000) "max(:any_1,:lng,:lng)", GDKanalyticalmax);
 }
 
-str
-SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_count(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg)
 {
-	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
-	int tpe;
-	bit *ignore_nils;
-	gdk_return gdk_res;
+	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL, *p = NULL;
+	int tpe, frame_type;
+	bit ignore_nils;
+	bat *res = NULL;
+	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	if (pci->argc != 5 || getArgType(mb, pci, 2) != TYPE_bit ||
-		(getArgType(mb, pci, 3) != TYPE_lng && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
-		(getArgType(mb, pci, 4) != TYPE_lng && getBatType(getArgType(mb, pci, 4)) != TYPE_lng)) {
-		throw(SQL, "sql.count", "%s", "count(:any_1,:bit,:lng,:lng)");
-	}
+	if (pci->argc != max_arg && pci->argc != max_arg - 1)
+		throw(SQL, "sql.count", "wrong number of arguments to function count");
 	tpe = getArgType(mb, pci, 1);
-	ignore_nils = getArgReference_bit(stk, pci, 2);
+	ignore_nils = *getArgReference_bit(stk, pci, 2);
+	frame_type = *getArgReference_int(stk, pci, 3);
 
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
-	if (isaBatType(getArgType(mb, pci, 1))) {
-		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-		if (!b)
-			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+	if (isaBatType(getArgType(mb, pci, 1)) && (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
+		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
-	if (b) {
-		voidresultBAT(r, TYPE_lng, BATcount(b), b, "sql.count");
+	if (b && !(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
+		msg = createException(SQL, "sql.count", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 3))) {
-		s = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-		if (!s) {
-			if (b) BBPunfix(b->batCacheid);
-			if (r) BBPunfix(r->batCacheid);
-			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
-		}
+	if (has_bounds && isaBatType(getArgType(mb, pci, 4)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
+		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 4))) {
-		e = BATdescriptor(*getArgReference_bat(stk, pci, 4));
-		if (!e) {
-			if (b) BBPunfix(b->batCacheid);
-			if (r) BBPunfix(r->batCacheid);
-			if (s) BBPunfix(s->batCacheid);
-			throw(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
-		}
+	if (has_bounds && isaBatType(getArgType(mb, pci, 5)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
+		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if (pci->argc == max_arg && isaBatType(getArgType(mb, pci, max_arg - 1)) &&
+		!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1)))) {
+		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
 	}
 
 	if (b) {
-		bat *res = getArgReference_bat(stk, pci, 0);
+		res = getArgReference_bat(stk, pci, 0);
 
-		gdk_res = GDKanalyticalcount(r, b, s, e, ignore_nils, tpe);
-		BBPunfix(b->batCacheid);
-		if (s) BBPunfix(s->batCacheid);
-		if (e) BBPunfix(e->batCacheid);
-		if (gdk_res == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, "sql.count", GDK_EXCEPTION);
+		if (GDKanalyticalcount(r, p, b, s, e, ignore_nils, tpe, frame_type) != GDK_SUCCEED)
+			msg = createException(SQL, "sql.count", GDK_EXCEPTION);
 	} else {
 		lng *res = getArgReference_lng(stk, pci, 0);
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
 
-		*res = (VALisnil(in) && *ignore_nils) ? 0 : 1;
+		*res = (VALisnil(in) && ignore_nils) ? 0 : 1;
 	}
-	return MAL_SUCCEED;
+
+bailout:
+	unfix_inputs(4, b, s, e, p);
+	if (r && !msg) {
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
+	} else if (r)
+		BBPreclaim(r);
+	return msg;
+}
+
+str
+SQLcount_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_count(cntxt, mb, stk, pci, false, 5);
+}
+
+str
+SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_count(cntxt, mb, stk, pci, true, 7);
 }
 
 static str
