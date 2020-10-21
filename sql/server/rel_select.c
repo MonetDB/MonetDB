@@ -4839,7 +4839,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 		}
 
-		if (rstart->type == type_int && rend->type == type_int) { /* special cases, don't calculate bounds */
+		if ((rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW || rstart->token == SQL_FOLLOWING) && rstart->type == type_int &&
+			(rend->token == SQL_PRECEDING || rend->token == SQL_CURRENT_ROW || rend->token == SQL_FOLLOWING) && rend->type == type_int) {
+			 /* special cases, don't calculate bounds */
 			if (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == CURRENT_ROW_BOUND)
 				frame_type = FRAME_UNBOUNDED_TILL_CURRENT_ROW;
 			else if (rstart->data.i_val == CURRENT_ROW_BOUND && rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND)
