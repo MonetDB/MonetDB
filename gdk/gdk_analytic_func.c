@@ -1543,22 +1543,86 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, bit ignore_nils, int 
 	return GDK_SUCCEED;
 }
 
-#define ANALYTICAL_SUM_IMP_NUM(TPE1, TPE2)				\
-	do {								\
-		TPE1 *bs, *be, v;					\
-		for (; i < cnt; i++, rb++) {				\
-			bs = bp + start[i];				\
-			be = bp + end[i];				\
-			for (; bs < be; bs++) {				\
-				v = *bs;				\
+/* sum on fixed size integers */
+#define ANALYTICAL_SUM_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2) \
+	do { \
+		TPE2 curval = TPE2##_nil; \
+		for (; k < i; k++) { \
+			TPE1 v = bp[k]; \
+			if (!is_##TPE1##_nil(v)) {		\
+				if (is_##TPE2##_nil(curval))	\
+					curval = (TPE2) v;	\
+				else				\
+					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}					\
+			rb[k] = curval; \
+			has_nils |= is_##TPE2##_nil(curval);	\
+		} \
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2) \
+	do { \
+		TPE2 curval = TPE2##_nil; \
+		for (j = i - 1; j >= k; j--) { \
+			TPE1 v = bp[j]; \
+			if (!is_##TPE1##_nil(v)) {		\
+				if (is_##TPE2##_nil(curval))	\
+					curval = (TPE2) v;	\
+				else				\
+					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}					\
+			rb[j] = curval; \
+			has_nils |= is_##TPE2##_nil(curval);	\
+		} \
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_NUM_ALL_ROWS(TPE1, TPE2)	\
+	do { \
+		TPE2 curval = TPE2##_nil; \
+		for (; j < i; j++) { \
+			TPE1 v = bp[j]; \
+			if (!is_##TPE1##_nil(v)) {		\
+				if (is_##TPE2##_nil(curval))	\
+					curval = (TPE2) v;	\
+				else				\
+					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}					\
+		} \
+		for (; k < i; k++) \
+			rb[k] = curval; \
+		has_nils |= is_##TPE2##_nil(curval);	\
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_NUM_CURRENT_ROW(TPE1, TPE2)	\
+	do { \
+		for (; k < i; k++) { \
+			TPE1 v = bp[k]; \
+			if (is_##TPE1##_nil(v)) {	\
+				rb[k] = TPE2##_nil; \
+				has_nils = true; \
+			} else	{		\
+				rb[k] = (TPE2) v; \
+			} \
+		} \
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_NUM_OTHERS(TPE1, TPE2)	\
+	do { \
+		TPE2 curval = TPE2##_nil; \
+		for (; k < i; k++) {		\
+			TPE1 *bs = bp + start[k];		\
+			TPE1 *be = bp + end[k];		\
+			for (; bs < be; bs++) {			\
+				TPE1 v = *bs;				\
 				if (!is_##TPE1##_nil(v)) {		\
 					if (is_##TPE2##_nil(curval))	\
-						curval = (TPE2) v;      \
+						curval = (TPE2) v;	\
 					else				\
 						ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 				}					\
 			}						\
-			*rb = curval;					\
+			rb[k] = curval;					\
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
@@ -1566,14 +1630,94 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, bit ignore_nils, int 
 		}							\
 	} while (0)
 
-#define ANALYTICAL_SUM_IMP_FP(TPE1, TPE2)				\
+/* sum on floating-points */
+#define ANALYTICAL_SUM_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2) /* TODO go through a version of dofsum which returns the current partials */ \
+	do { \
+		TPE2 curval = TPE2##_nil; \
+		for (; k < i; k++) { \
+			TPE1 v = bp[k]; \
+			if (!is_##TPE1##_nil(v)) {		\
+				if (is_##TPE2##_nil(curval))	\
+					curval = (TPE2) v;	\
+				else				\
+					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}					\
+			rb[k] = curval; \
+			has_nils |= is_##TPE2##_nil(curval);	\
+		} \
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2) /* TODO go through a version of dofsum which returns the current partials */ \
+	do { \
+		TPE2 curval = TPE2##_nil; \
+		for (j = i - 1; j >= k; j--) { \
+			TPE1 v = bp[j]; \
+			if (!is_##TPE1##_nil(v)) {		\
+				if (is_##TPE2##_nil(curval))	\
+					curval = (TPE2) v;	\
+				else				\
+					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}					\
+			rb[j] = curval; \
+			has_nils |= is_##TPE2##_nil(curval);	\
+		} \
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_FP_ALL_ROWS(TPE1, TPE2)	\
+	do { \
+		TPE2 curval = TPE2##_nil; \
+		for (; j < i; j++) { \
+			TPE1 v = bp[j]; \
+			if (!is_##TPE1##_nil(v)) {		\
+				if (is_##TPE2##_nil(curval))	\
+					curval = (TPE2) v;	\
+				else				\
+					ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
+			}					\
+		} \
+		for (; k < i; k++) \
+			rb[k] = curval; \
+		has_nils |= is_##TPE2##_nil(curval);	\
+	} while (0)
+
+#define ANALYTICAL_SUM_FP_NUM_ALL_ROWS(TPE1, TPE2)	\
+	do { \
+		TPE1 *bs = &(bp[k]);	\
+		BUN parcel = (BUN)(i - k);	\
+		TPE2 curval = TPE2##_nil; \
+		if (dofsum(bs, 0,			\
+				&(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
+				parcel, &curval, 1, TYPE_##TPE1, \
+				TYPE_##TPE2, NULL, 0, 0, true, \
+				false, true) == BUN_NONE) {	\
+			goto bailout;			\
+		}	\
+		for (; k < i; k++) \
+			rb[k] = curval; \
+		has_nils |= is_##TPE2##_nil(curval);	\
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW(TPE1, TPE2)	\
+	do { \
+		for (; k < i; k++) { \
+			TPE1 v = bp[k]; \
+			if (is_##TPE1##_nil(v)) {	\
+				rb[k] = TPE2##_nil; \
+				has_nils = true; \
+			} else	{		\
+				rb[k] = (TPE2) v; \
+			} \
+		} \
+	} while (0)
+
+#define ANALYTICAL_SUM_IMP_FP_OTHERS(TPE1, TPE2)				\
 	do {								\
-		TPE1 *bs;						\
-		BUN parcel;						\
-		for (; i < cnt; i++, rb++) {				\
-			if (end[i] > start[i]) {			\
-				bs = bp + start[i];			\
-				parcel = (BUN)(end[i] - start[i]);	\
+		TPE2 curval = TPE2##_nil; \
+		for (; k < i; k++) {		\
+			if (end[k] > start[k]) {			\
+				TPE1 *bs = bp + start[k];			\
+				BUN parcel = (BUN)(end[k] - start[k]);	\
 				if (dofsum(bs, 0,			\
 					   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
 					   parcel, &curval, 1, TYPE_##TPE1, \
@@ -1582,7 +1726,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, bit ignore_nils, int 
 					goto bailout;			\
 				}					\
 			}						\
-			*rb = curval;					\
+			rb[k] = curval;					\
 			if (is_##TPE2##_nil(curval))			\
 				has_nils = true;			\
 			else						\
@@ -1592,132 +1736,165 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, bit ignore_nils, int 
 
 #define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)		\
 	do {						\
-		TPE1 *bp = (TPE1*)Tloc(b, 0);           \
-		TPE2 *restrict rb, curval = TPE2##_nil; \
-		rb = (TPE2*)Tloc(r, 0);                 \
-		IMP(TPE1, TPE2);                        \
+		TPE1 *bp = (TPE1*)Tloc(b, 0);	 \
+		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
+		if (p) {					\
+			for (; i < cnt; i++) {		\
+				if (np[i]) 			\
+					IMP(TPE1, TPE2);	\
+			}						\
+			i = cnt;			\
+			IMP(TPE1, TPE2);	\
+		} else {				\
+			i = cnt;					\
+			IMP(TPE1, TPE2);	\
+		}							\
+	} while (0)
+
+#if HAVE_HGE
+#define ANALYTICAL_SUM_LIMIT(IMP)	\
+	case TYPE_hge:{		\
+		switch (tp1) {		\
+		case TYPE_bte:		\
+			ANALYTICAL_SUM_CALC(bte, hge, ANALYTICAL_SUM_IMP_NUM_##IMP);		\
+			break;			\
+		case TYPE_sht:		\
+			ANALYTICAL_SUM_CALC(sht, hge, ANALYTICAL_SUM_IMP_NUM_##IMP);		\
+			break;			\
+		case TYPE_int:		\
+			ANALYTICAL_SUM_CALC(int, hge, ANALYTICAL_SUM_IMP_NUM_##IMP);		\
+			break;			\
+		case TYPE_lng:		\
+			ANALYTICAL_SUM_CALC(lng, hge, ANALYTICAL_SUM_IMP_NUM_##IMP);		\
+			break;			\
+		case TYPE_hge:		\
+			ANALYTICAL_SUM_CALC(hge, hge, ANALYTICAL_SUM_IMP_NUM_##IMP);		\
+			break;		\
+		default:		\
+			goto nosupport;		\
+		}			\
+		break;		\
+	}
+#else
+#define ANALYTICAL_SUM_LIMIT(IMP)
+#endif
+
+#define ANALYTICAL_SUM_BRANCHES(IMP)		\
+	do { \
+		switch (tp2) {		\
+		case TYPE_bte:{		\
+			switch (tp1) {		\
+			case TYPE_bte:		\
+				ANALYTICAL_SUM_CALC(bte, bte, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			default:		\
+				goto nosupport;		\
+			}		\
+			break;		\
+		}		\
+		case TYPE_sht:{		\
+			switch (tp1) {		\
+			case TYPE_bte:		\
+				ANALYTICAL_SUM_CALC(bte, sht, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			case TYPE_sht:		\
+				ANALYTICAL_SUM_CALC(sht, sht, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			default:		\
+				goto nosupport;		\
+			}		\
+			break;		\
+		}		\
+		case TYPE_int:{		\
+			switch (tp1) {		\
+			case TYPE_bte:		\
+				ANALYTICAL_SUM_CALC(bte, int, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			case TYPE_sht:		\
+				ANALYTICAL_SUM_CALC(sht, int, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			case TYPE_int:		\
+				ANALYTICAL_SUM_CALC(int, int, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			default:		\
+				goto nosupport;		\
+			}		\
+			break;		\
+		}		\
+		case TYPE_lng:{		\
+			switch (tp1) {		\
+			case TYPE_bte:		\
+				ANALYTICAL_SUM_CALC(bte, lng, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			case TYPE_sht:		\
+				ANALYTICAL_SUM_CALC(sht, lng, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			case TYPE_int:		\
+				ANALYTICAL_SUM_CALC(int, lng, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			case TYPE_lng:		\
+				ANALYTICAL_SUM_CALC(lng, lng, ANALYTICAL_SUM_IMP_NUM_##IMP);	\
+				break;		\
+			default:		\
+				goto nosupport;		\
+			}		\
+			break;		\
+		}		\
+		ANALYTICAL_SUM_LIMIT(IMP)		\
+		case TYPE_flt:{		\
+			switch (tp1) {		\
+			case TYPE_flt:		\
+				ANALYTICAL_SUM_CALC(flt, flt, ANALYTICAL_SUM_IMP_FP_##IMP);		\
+				break;		\
+			default:		\
+				goto nosupport;		\
+			}		\
+			break;		\
+		}		\
+		case TYPE_dbl:{		\
+			switch (tp1) {		\
+			case TYPE_flt:		\
+				ANALYTICAL_SUM_CALC(flt, dbl, ANALYTICAL_SUM_IMP_FP_##IMP);		\
+				break;		\
+			case TYPE_dbl:		\
+				ANALYTICAL_SUM_CALC(dbl, dbl, ANALYTICAL_SUM_IMP_FP_##IMP);		\
+				break;		\
+			default:		\
+				goto nosupport;		\
+			}		\
+			break;		\
+		}		\
+		default:		\
+			goto nosupport;		\
+		}		\
 	} while (0)
 
 gdk_return
-GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
+GDKanalyticalsum(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
 	bool has_nils = false;
-	BUN i = 0, cnt = BATcount(b), nils = 0;
+	lng i = 0, j = 0, k = 0, cnt = (lng) BATcount(b);
+	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	bit *restrict np = p ? Tloc(p, 0) : NULL;
 	int abort_on_error = 1;
-	lng *restrict start, *restrict end;
+	BUN nils = 0;
 
-	assert(s && e);
-	start = (lng *) Tloc(s, 0);
-	end = (lng *) Tloc(e, 0);
-
-	switch (tp2) {
-	case TYPE_bte:{
-		switch (tp1) {
-		case TYPE_bte:
-			ANALYTICAL_SUM_CALC(bte, bte, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		default:
-			goto nosupport;
-		}
-		break;
+	switch (frame_type) {
+	case 3: /* unbounded until current row */	{
+		ANALYTICAL_SUM_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+	} break;
+	case 4: /* current row until unbounded */	{
+		ANALYTICAL_SUM_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+	} break;
+	case 5: /* all rows */	{
+		ANALYTICAL_SUM_BRANCHES(ALL_ROWS);
+	} break;
+	case 6: /* current row */ {
+		ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
+	} break;
+	default: {
+		ANALYTICAL_SUM_BRANCHES(OTHERS);
 	}
-	case TYPE_sht:{
-		switch (tp1) {
-		case TYPE_bte:
-			ANALYTICAL_SUM_CALC(bte, sht, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_sht:
-			ANALYTICAL_SUM_CALC(sht, sht, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		default:
-			goto nosupport;
-		}
-		break;
-	}
-	case TYPE_int:{
-		switch (tp1) {
-		case TYPE_bte:
-			ANALYTICAL_SUM_CALC(bte, int, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_sht:
-			ANALYTICAL_SUM_CALC(sht, int, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_int:
-			ANALYTICAL_SUM_CALC(int, int, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		default:
-			goto nosupport;
-		}
-		break;
-	}
-	case TYPE_lng:{
-		switch (tp1) {
-		case TYPE_bte:
-			ANALYTICAL_SUM_CALC(bte, lng, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_sht:
-			ANALYTICAL_SUM_CALC(sht, lng, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_int:
-			ANALYTICAL_SUM_CALC(int, lng, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_lng:
-			ANALYTICAL_SUM_CALC(lng, lng, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		default:
-			goto nosupport;
-		}
-		break;
-	}
-#ifdef HAVE_HGE
-	case TYPE_hge:{
-		switch (tp1) {
-		case TYPE_bte:
-			ANALYTICAL_SUM_CALC(bte, hge, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_sht:
-			ANALYTICAL_SUM_CALC(sht, hge, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_int:
-			ANALYTICAL_SUM_CALC(int, hge, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_lng:
-			ANALYTICAL_SUM_CALC(lng, hge, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		case TYPE_hge:
-			ANALYTICAL_SUM_CALC(hge, hge, ANALYTICAL_SUM_IMP_NUM);
-			break;
-		default:
-			goto nosupport;
-		}
-		break;
-	}
-#endif
-	case TYPE_flt:{
-		switch (tp1) {
-		case TYPE_flt:
-			ANALYTICAL_SUM_CALC(flt, flt, ANALYTICAL_SUM_IMP_FP);
-			break;
-		default:
-			goto nosupport;
-		}
-		break;
-	}
-	case TYPE_dbl:{
-		switch (tp1) {
-		case TYPE_flt:
-			ANALYTICAL_SUM_CALC(flt, dbl, ANALYTICAL_SUM_IMP_FP);
-			break;
-		case TYPE_dbl:
-			ANALYTICAL_SUM_CALC(dbl, dbl, ANALYTICAL_SUM_IMP_FP);
-			break;
-		default:
-			goto nosupport;
-		}
-		break;
-	}
-	default:
-		goto nosupport;
 	}
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
@@ -1817,7 +1994,7 @@ GDKanalyticalsum(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 	} while (0)
 
 gdk_return
-GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
+GDKanalyticalprod(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
 	bool has_nils = false;
 	BUN i = 0, cnt = BATcount(b), nils = 0;
@@ -1827,6 +2004,9 @@ GDKanalyticalprod(BAT *r, BAT *b, BAT *s, BAT *e, int tp1, int tp2)
 	assert(s && e);
 	start = (lng *) Tloc(s, 0);
 	end = (lng *) Tloc(e, 0);
+
+	(void) frame_type;
+	(void) p;
 
 	switch (tp2) {
 	case TYPE_bte:{
