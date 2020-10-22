@@ -4443,11 +4443,11 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return NULL;
 			bt = exp_subtype(res);
 		}
+		if (exp_is_null(res))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
 		bclass = bt->type->eclass;
 		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
-		if (exp_is_null(res))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
 		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
 			char *err = subtype2string2(sql->ta, bt);
 			if (!err)
@@ -4814,6 +4814,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		symbol *wstart = d->data.sym, *wend = d->next->data.sym, *rstart = wstart->data.lval->h->data.sym,
 			   *rend = wend->data.lval->h->data.sym;
 		int excl = d->next->next->next->data.i_val;
+		bool shortcut = false;
 
 		if (!supports_frames)
 			return sql_error(sql, 02, SQLSTATE(42000) "OVER: frame extend only possible with aggregation and first_value, last_value and nth_value functions");
@@ -4830,8 +4831,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (wstart->token != SQL_CURRENT_ROW && wend->token != SQL_CURRENT_ROW && wstart->token == wend->token && frame_type != FRAME_ROWS)
 			return sql_error(sql, 02, SQLSTATE(42000) "Non-centered windows are only supported in row frames");
 		if (frame_type == FRAME_RANGE) {
-			if ((wstart->token == SQL_PRECEDING && rstart->type != type_int) || (wstart->token == SQL_FOLLOWING && rstart->type != type_int) ||
-				(wend->token == SQL_PRECEDING && rend->type != type_int) || (wend->token == SQL_FOLLOWING && rend->type != type_int)) {
+			if (((wstart->token == SQL_PRECEDING || wstart->token == SQL_FOLLOWING) && rstart->token != SQL_PRECEDING && rstart->token != SQL_CURRENT_ROW && rstart->token != SQL_FOLLOWING) ||
+				((wend->token == SQL_PRECEDING || wend->token == SQL_FOLLOWING) && rend->token != SQL_PRECEDING && rend->token != SQL_CURRENT_ROW && rend->token != SQL_FOLLOWING)) {
 				if (list_empty(obe))
 					return sql_error(sql, 02, SQLSTATE(42000) "RANGE frame with PRECEDING/FOLLOWING offset requires an order by expression");
 				if (list_length(obe) > 1)
@@ -4839,20 +4840,27 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			}
 		}
 
-		if ((rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW || rstart->token == SQL_FOLLOWING) && rstart->type == type_int &&
+		if (list_empty(obe) && frame_type == FRAME_RANGE) { /* window functions are weird */
+			frame_type = FRAME_ALL;
+			shortcut = true;
+		} else if ((rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW || rstart->token == SQL_FOLLOWING) && rstart->type == type_int &&
 			(rend->token == SQL_PRECEDING || rend->token == SQL_CURRENT_ROW || rend->token == SQL_FOLLOWING) && rend->type == type_int) {
 			 /* special cases, don't calculate bounds */
-			if (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == CURRENT_ROW_BOUND)
+			if (frame_type != FRAME_ROWS && rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == CURRENT_ROW_BOUND) {
 				frame_type = FRAME_UNBOUNDED_TILL_CURRENT_ROW;
-			else if (rstart->data.i_val == CURRENT_ROW_BOUND && rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND)
+				shortcut = true;
+			} else if (frame_type != FRAME_ROWS && rstart->data.i_val == CURRENT_ROW_BOUND && rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND) {
 				frame_type = FRAME_CURRENT_ROW_TILL_UNBOUNDED;
-			else if (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND)
+				shortcut = true;
+			} else if (rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == UNBOUNDED_FOLLOWING_BOUND) {
 				frame_type = FRAME_ALL;
-			else if (rstart->data.i_val == CURRENT_ROW_BOUND && rend->data.i_val == CURRENT_ROW_BOUND)
+				shortcut = true;
+			} else if (rstart->data.i_val == CURRENT_ROW_BOUND && rend->data.i_val == CURRENT_ROW_BOUND) {
 				frame_type = FRAME_CURRENT_ROW;
-			else
-				assert(0);
-		} else {
+				shortcut = true;
+			}
+		}
+		if (!shortcut) {
 			if (!(fstart = calculate_window_bound(query, p, wstart->token, rstart, ie, frame_type, f | sql_window)))
 				return NULL;
 			if (!(fend = calculate_window_bound(query, p, wend->token, rend, ie, frame_type, f | sql_window)))
