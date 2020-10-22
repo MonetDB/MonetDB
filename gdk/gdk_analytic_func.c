@@ -1055,166 +1055,231 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, int tpe, int frame_typ
 ANALYTICAL_MIN_MAX(min, MIN, >)
 ANALYTICAL_MIN_MAX(max, MAX, <)
 
-/* Counting all rows including nils */
-#define ANALYTICAL_COUNT_ALL_UNBOUNDED_TILL_CURRENT_ROW	\
-	do { \
-		curval = 0; \
-		for (; k < i; k++) \
-			rb[k] = ++curval; \
-	} while (0)
-
-#define ANALYTICAL_COUNT_ALL_CURRENT_ROW_TILL_UNBOUNDED	\
-	do { \
-		curval = 0; \
-		for (j = i - 1; j >= k; j--) \
-			rb[j] = ++curval; \
-		k = i; \
-	} while (0)
-
-#define ANALYTICAL_COUNT_ALL_ALL_ROWS	\
-	do { \
-		curval = i - k; \
-		for (; k < i; k++) \
-			rb[k] = curval; \
-	} while (0)
-
-#define ANALYTICAL_COUNT_ALL_CURRENT_ROW	\
-	do { \
-		for (; k < i; k++) \
-			rb[k] = 1; \
-	} while (0)
-
-#define ANALYTICAL_COUNT_ALL_OTHERS	\
-	do { \
-		for (; k < i; k++) \
-			rb[k] = (end[k] > start[k]) ? (end[k] - start[k]) : 0; \
-	} while (0)
-
 /* Counting no nils for fixed sizes */
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
 	do { \
 		curval = 0; \
-		for (; k < i; k++) { \
-			curval += !is_##TPE##_nil(bpf[k]); \
-			rb[k] = curval; \
-		} \
+		if (count_all) { \
+			for (; k < i;) { \
+				TPE v = bpf[k]; \
+				j = k++; \
+				curval++; \
+				while (k < i && bpf[k] == v) { \
+					k++; \
+					curval++; \
+				} \
+				for (; j < k; j++) \
+					rb[j] = curval; \
+			} \
+		} else { \
+			for (; k < i;) { \
+				TPE v = bpf[k]; \
+				j = k++; \
+				curval += !is_##TPE##_nil(bpf[k]); \
+				while (k < i && bpf[k] == v) { \
+					k++; \
+					curval += !is_##TPE##_nil(bpf[k]); \
+				} \
+				for (; j < k; j++) \
+					rb[j] = curval; \
+			} \
+		}	\
 	} while (0)
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_CURRENT_ROW_TILL_UNBOUNDED(TPE) \
 	do { \
 		curval = 0; \
-		for (j = i - 1; j >= k; j--) { \
-			curval += !is_##TPE##_nil(bpf[j]); \
-			rb[j] = curval; \
+		if (count_all) { \
+			for (j = i - 1; j >= k; ) { \
+				TPE v = bpf[j]; \
+				l = j--; \
+				curval++; \
+				while (j >= k && bpf[j] == v) { \
+					j--; \
+					curval++; \
+				} \
+				m = MAX(k, j); \
+				for (; l >= m; l--) \
+					rb[l] = curval; \
+			}	\
+		} else { \
+			for (j = i - 1; j >= k; ) { \
+				TPE v = bpf[j]; \
+				l = j--; \
+				curval += !is_##TPE##_nil(bpf[j]); \
+				while (j >= k && bpf[j] == v) { \
+					j--; \
+					curval += !is_##TPE##_nil(bpf[j]); \
+				} \
+				m = MAX(k, j); \
+				for (; l >= m; l--) \
+					rb[l] = curval; \
+			}	\
 		} \
 		k = i; \
 	} while (0)
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_ALL_ROWS(TPE)	\
 	do { \
-		curval = 0; \
-		for (; j < i; j++) \
-			curval += !is_##TPE##_nil(bpf[j]); \
-		for (; k < i; k++) \
-			rb[k] = curval; \
+		if (count_all) { \
+			curval = i - k; \
+			for (; k < i; k++) \
+				rb[k] = curval; \
+		} else {	\
+			curval = 0; \
+			for (; j < i; j++) \
+				curval += !is_##TPE##_nil(bpf[j]); \
+			for (; k < i; k++) \
+				rb[k] = curval; \
+		}	\
 	} while (0)
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_CURRENT_ROW(TPE)	\
 	do { \
-		for (; k < i; k++) \
-			rb[k] = !is_##TPE##_nil(bpf[k]); \
+		if (count_all) { \
+			for (; k < i; k++) \
+				rb[k] = 1; \
+		} else { \
+			for (; k < i; k++) \
+				rb[k] = !is_##TPE##_nil(bpf[k]); \
+		} \
 	} while (0)
 
 #define ANALYTICAL_COUNT_NO_NIL_FIXED_OTHERS(TPE)	\
 	do { \
-		curval = 0; \
-		for (; k < i; k++) {			\
-			TPE *bs = bpf + start[k];		\
-			TPE *be = bpf + end[k];		\
-			for (; bs < be; bs++)			\
-				curval += !is_##TPE##_nil(*bs);	\
-			rb[k] = curval;		\
-			curval = 0;		\
-		}						\
-	} while (0)
-
-/* Counting no nils for strings */
-#define ANALYTICAL_COUNT_NO_NIL_STR_UNBOUNDED_TILL_CURRENT_ROW(TPE_CAST, OFFSET) \
-	do { \
-		curval = 0; \
-		for (; j < i; j++) { \
-			curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-			rb[j] = curval; \
-		} \
-	} while (0)
-
-#define ANALYTICAL_COUNT_NO_NIL_STR_CURRENT_ROW_TILL_UNBOUNDED(TPE_CAST, OFFSET)	\
-	do { \
-		curval = 0; \
-		for (j = i - 1; j >= k; j--) { \
-			curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-			rb[j] = curval; \
-		} \
-		k = i; \
-	} while (0)
-
-#define ANALYTICAL_COUNT_NO_NIL_STR_ALL_ROWS(TPE_CAST, OFFSET)	\
-	do { \
-		curval = 0; \
-		for (; j < i; j++) \
-			curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-		for (; k < i; k++) \
-			rb[k] = curval; \
-	} while (0)
-
-#define ANALYTICAL_COUNT_NO_NIL_STR_CURRENT_ROW(TPE_CAST, OFFSET)	\
-	do { \
-		for (; j < i; j++) \
-			rb[j] = base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-	} while (0)
-
-#define ANALYTICAL_COUNT_NO_NIL_STR_OTHERS(TPE_CAST, OFFSET)		\
-	do {								\
-		curval = 0; \
-		for (; k < i; k++) {				\
-			j = start[k];					\
-			l = end[k];					\
-			for (; j < l; j++)				\
-				curval += base[(var_t) ((TPE_CAST) bp) OFFSET] != '\200'; \
-			rb[k] = curval;					\
-			curval = 0;					\
-		}							\
+		if (count_all) { \
+			for (; k < i; k++) \
+				rb[k] = (end[k] > start[k]) ? (end[k] - start[k]) : 0; \
+		} else {	\
+			curval = 0; \
+			for (; k < i; k++) {			\
+				TPE *bs = bpf + start[k];		\
+				TPE *be = bpf + end[k];		\
+				for (; bs < be; bs++)			\
+					curval += !is_##TPE##_nil(*bs);	\
+				rb[k] = curval;		\
+				curval = 0;		\
+			}						\
+		}	\
 	} while (0)
 
 /* Counting no nils for other types */
 #define ANALYTICAL_COUNT_NO_NIL_OTHERS_UNBOUNDED_TILL_CURRENT_ROW \
 	do { \
 		curval = 0; \
-		if (isvarsized) { \
-			for (; k < i; k++) { \
-				curval += cmp(nil, base + ((const var_t *) bp)[k]) != 0; \
-				rb[k] = curval; \
+		if (count_all) { \
+			if (isvarsized) { \
+				for (; k < i; ) { \
+					const void *v = base + ((const var_t *) bp)[k]; \
+					j = k++; \
+					curval++; \
+					while (k < i && cmp(base + ((const var_t *) bp)[k], v) == 0) { \
+						k++; \
+						curval++; \
+					} \
+					for (; j < k; j++) \
+						rb[j] = curval; \
+				} \
+			} else { \
+				for (; k < i; ) { \
+					const void *v = Tloc(b, k); \
+					j = k++; \
+					curval++; \
+					while (k < i && cmp(Tloc(b, k), v) == 0) { \
+						k++; \
+						curval++; \
+					} \
+					for (; j < k; j++) \
+						rb[j] = curval; \
+				} \
 			} \
 		} else { \
-			for (; k < i; k++) { \
-				curval += cmp(Tloc(b, k), nil) != 0; \
-				rb[k] = curval; \
+			if (isvarsized) { \
+				for (; k < i; ) { \
+					const void *v = base + ((const var_t *) bp)[k]; \
+					j = k++; \
+					curval += cmp(v, nil) != 0; \
+					while (k < i && cmp(base + ((const var_t *) bp)[k], v) == 0) { \
+						k++; \
+						curval += cmp(base + ((const var_t *) bp)[k], nil) != 0; \
+					} \
+					for (; j < k; j++) \
+						rb[j] = curval; \
+				} \
+			} else { \
+				for (; k < i; ) { \
+					const void *v = Tloc(b, k); \
+					j = k++; \
+					curval += cmp(v, nil) != 0; \
+					while (k < i && cmp(Tloc(b, k), v) == 0) { \
+						k++; \
+						curval += cmp(Tloc(b, k), nil) != 0; \
+					} \
+					for (; j < k; j++) \
+						rb[j] = curval; \
+				} \
 			} \
-		} \
+		}	\
 	} while (0)
 
 #define ANALYTICAL_COUNT_NO_NIL_OTHERS_CURRENT_ROW_TILL_UNBOUNDED \
 	do { \
 		curval = 0; \
-		if (isvarsized) { \
-			for (j = i - 1; j >= k; j--) { \
-				curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0; \
-				rb[j] = curval; \
+		if (count_all) { \
+			if (isvarsized) { \
+				for (j = i - 1; j >= k; ) { \
+					const void *v = base + ((const var_t *) bp)[j]; \
+					l = j--; \
+					curval++; \
+					while (j >= k && cmp(base + ((const var_t *) bp)[j], v) == 0) { \
+						j--; \
+						curval++; \
+					} \
+					m = MAX(k, j); \
+					for (; l >= m; l--) \
+						rb[l] = curval; \
+				}	\
+			} else { \
+				for (j = i - 1; j >= k; ) { \
+					void *v = Tloc(b, j); \
+					l = j--; \
+					curval++; \
+					while (j >= k && cmp(Tloc(b, j), v) == 0) { \
+						j--; \
+						curval++; \
+					} \
+					m = MAX(k, j); \
+					for (; l >= m; l--) \
+						rb[l] = curval; \
+				}	\
 			} \
 		} else { \
-			for (j = i - 1; j >= k; j--) { \
-				curval += cmp(Tloc(b, j), nil) != 0; \
-				rb[j] = curval; \
+			if (isvarsized) { \
+				for (j = i - 1; j >= k; ) { \
+					const void *v = base + ((const var_t *) bp)[j]; \
+					l = j--; \
+					curval += cmp(v, nil) != 0; \
+					while (j >= k && cmp(base + ((const var_t *) bp)[j], v) == 0) { \
+						j--; \
+						curval += cmp(base + ((const var_t *) bp)[j], nil) != 0; \
+					} \
+					m = MAX(k, j); \
+					for (; l >= m; l--) \
+						rb[l] = curval; \
+				}	\
+			} else { \
+				for (j = i - 1; j >= k; ) { \
+					void *v = Tloc(b, j); \
+					l = j--; \
+					curval += cmp(v, nil) != 0; \
+					while (j >= k && cmp(Tloc(b, j), v) == 0) { \
+						j--; \
+						curval += cmp(Tloc(b, j), nil) != 0; \
+					} \
+					m = MAX(k, j); \
+					for (; l >= m; l--) \
+						rb[l] = curval; \
+				}	\
 			} \
 		} \
 		k = i; \
@@ -1223,50 +1288,64 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 #define ANALYTICAL_COUNT_NO_NIL_OTHERS_ALL_ROWS	\
 	do { \
 		curval = 0; \
-		if (isvarsized) { \
-			for (; j < i; j++) \
-				curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0; \
-		} else { \
-			for (; j < i; j++) \
-				curval += cmp(Tloc(b, j), nil) != 0; \
-		} \
+		if (count_all) { \
+			curval = i - k; \
+		} else {	\
+			if (isvarsized) { \
+				for (; j < i; j++) \
+					curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0; \
+			} else { \
+				for (; j < i; j++) \
+					curval += cmp(Tloc(b, j), nil) != 0; \
+			} \
+		}	\
 		for (; k < i; k++) \
 			rb[k] = curval; \
 	} while (0)
 
 #define ANALYTICAL_COUNT_NO_NIL_OTHERS_CURRENT_ROW	\
 	do { \
-		if (isvarsized) { \
+		if (count_all) { \
 			for (; k < i; k++) \
-				rb[k] = cmp(nil, base + ((const var_t *) bp)[k]) != 0; \
+				rb[k] = 1; \
 		} else { \
-			for (; k < i; k++) \
-				rb[k] = cmp(Tloc(b, k), nil) != 0; \
+			if (isvarsized) { \
+				for (; k < i; k++) \
+					rb[k] = cmp(nil, base + ((const var_t *) bp)[k]) != 0; \
+			} else { \
+				for (; k < i; k++) \
+					rb[k] = cmp(Tloc(b, k), nil) != 0; \
+			} \
 		} \
 	} while (0)
 
 #define ANALYTICAL_COUNT_NO_NIL_OTHERS_OTHERS	\
 	do { \
-		curval = 0; \
-		if (isvarsized) { \
-			for (; k < i; k++) { \
-				j = start[k]; \
-				l = end[k]; \
-				for (; j < l; j++) \
-					curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0; \
-				rb[k] = curval; \
-				curval = 0; \
+		if (count_all) { \
+			for (; k < i; k++) \
+				rb[k] = (end[k] > start[k]) ? (end[k] - start[k]) : 0; \
+		} else {	\
+			curval = 0; \
+			if (isvarsized) { \
+				for (; k < i; k++) { \
+					j = start[k]; \
+					l = end[k]; \
+					for (; j < l; j++) \
+						curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0; \
+					rb[k] = curval; \
+					curval = 0; \
+				} \
+			} else { \
+				for (; k < i; k++) { \
+					j = start[k]; \
+					l = end[k]; \
+					for (; j < l; j++) \
+						curval += cmp(Tloc(b, j), nil) != 0; \
+					rb[k] = curval; \
+					curval = 0; \
+				} \
 			} \
-		} else { \
-			for (; k < i; k++) { \
-				j = start[k]; \
-				l = end[k]; \
-				for (; j < l; j++) \
-					curval += cmp(Tloc(b, j), nil) != 0; \
-				rb[k] = curval; \
-				curval = 0; \
-			} \
-		} \
+		}	\
 	} while (0)
 
 /* Now do the count analytic function branches */
@@ -1278,12 +1357,9 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				if (np[i]) 			\
 					ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE); \
 			}						\
-			i = cnt;			\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE);	\
-		} else {				\
-			i = cnt;					\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE);	\
-		}							\
+		}	\
+		i = cnt;			\
+		ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE);	\
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -1295,107 +1371,52 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 #define ANALYTICAL_COUNT_NO_NIL_LIMIT(IMP)
 #endif
 
-#define ANALYTICAL_COUNT_NO_NIL_STR_PARTITIONS(TPE_CAST, OFFSET, IMP)		\
-	do {					\
-		if (p) {					\
-			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
-					ANALYTICAL_COUNT_NO_NIL_STR_##IMP(TPE_CAST, OFFSET); \
-			}						\
-			i = cnt;			\
-			ANALYTICAL_COUNT_NO_NIL_STR_##IMP(TPE_CAST, OFFSET);	\
-		} else {				\
-			i = cnt;					\
-			ANALYTICAL_COUNT_NO_NIL_STR_##IMP(TPE_CAST, OFFSET);	\
-		}							\
-	} while (0)
-
-#if SIZEOF_VAR_T != SIZEOF_INT
-#define ANALYTICAL_COUNT_NO_NIL_STR_LIMIT(IMP)			\
-	case 4:					\
-		ANALYTICAL_COUNT_NO_NIL_STR_PARTITIONS(const unsigned int *,[j], IMP);	\
-	break;
-#else
-#define ANALYTICAL_COUNT_NO_NIL_STR_LIMIT(IMP)
-#endif
-
 #define ANALYTICAL_COUNT_BRANCHES(IMP)		\
 	do { \
-		if (!ignore_nils || b->tnonil) {	\
+		switch (ATOMbasetype(tpe)) {		\
+		case TYPE_bte:					\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(bte, IMP);		\
+			break;							\
+		case TYPE_sht:							\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(sht, IMP);		\
+			break;							\
+		case TYPE_int:							\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(int, IMP);		\
+			break;							\
+		case TYPE_lng:							\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(lng, IMP);		\
+			break;							\
+			ANALYTICAL_COUNT_NO_NIL_LIMIT(IMP)			\
+		case TYPE_flt:							\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(flt, IMP);		\
+			break;							\
+		case TYPE_dbl:							\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(dbl, IMP);		\
+			break;							\
+		default: {							\
 			if (p) {						\
 				for (; i < cnt; i++) {			\
 					if (np[i]) 			\
-						ANALYTICAL_COUNT_ALL_##IMP; \
+						ANALYTICAL_COUNT_NO_NIL_OTHERS_##IMP; \
 				}						\
-				i = cnt;				\
-				ANALYTICAL_COUNT_ALL_##IMP;	\
-			} else {						\
-				i = cnt;					\
-				ANALYTICAL_COUNT_ALL_##IMP;	\
-			}							\
-		} else {	\
-			switch (ATOMbasetype(tpe)) {				\
-			case TYPE_bte:							\
-				ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(bte, IMP);			\
-				break;							\
-			case TYPE_sht:							\
-				ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(sht, IMP);			\
-				break;							\
-			case TYPE_int:							\
-				ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(int, IMP);			\
-				break;							\
-			case TYPE_lng:							\
-				ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(lng, IMP);			\
-				break;							\
-				ANALYTICAL_COUNT_NO_NIL_LIMIT(IMP)				\
-			case TYPE_flt:							\
-				ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(flt, IMP);			\
-				break;							\
-			case TYPE_dbl:							\
-				ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(dbl, IMP);			\
-				break;							\
-			case TYPE_str: {		\
-				switch (b->twidth) {	\
-				case 1:	\
-					ANALYTICAL_COUNT_NO_NIL_STR_PARTITIONS(const unsigned char *,[j] + GDK_VAROFFSET, IMP);	\
-					break;	\
-				case 2:	\
-					ANALYTICAL_COUNT_NO_NIL_STR_PARTITIONS(const unsigned short *,[j] + GDK_VAROFFSET, IMP);	\
-					break;	\
-				ANALYTICAL_COUNT_NO_NIL_STR_LIMIT(IMP);	\
-				default:	\
-					ANALYTICAL_COUNT_NO_NIL_STR_PARTITIONS(const var_t *,[j], IMP);	\
-					break;	\
-				}	\
-			}	break;	\
-			default: {							\
-				if (p) {						\
-					for (; i < cnt; i++) {			\
-						if (np[i]) 			\
-							ANALYTICAL_COUNT_NO_NIL_OTHERS_##IMP; \
-					}						\
-					i = cnt;				\
-					ANALYTICAL_COUNT_NO_NIL_OTHERS_##IMP;	\
-				} else {						\
-					i = cnt;					\
-					ANALYTICAL_COUNT_NO_NIL_OTHERS_##IMP;	\
-				}							\
-			}								\
-			}								\
-		}	\
+			}	\
+			i = cnt;				\
+			ANALYTICAL_COUNT_NO_NIL_OTHERS_##IMP;	\
+		}								\
+		}								\
 	} while (0)
 
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, bit ignore_nils, int tpe, int frame_type)
 {
-	lng i = 0, j = 0, k = 0, l = 0, curval = 0, cnt = (lng) BATcount(b);
+	lng i = 0, j = 0, k = 0, l = 0, m = 0, curval = 0, cnt = (lng) BATcount(b);
 	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL, *restrict rb = (lng *) Tloc(r, 0);
 	bit *restrict np = p ? Tloc(p, 0) : NULL;
 	const void *restrict nil = ATOMnilptr(tpe);
 	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
 	const char *restrict base = b->tvheap ? b->tvheap->base: NULL;
 	const void *restrict bp = Tloc(b, 0);
-	bool isvarsized = b->tvarsized;
+	bool isvarsized = b->tvarsized, count_all = !ignore_nils || b->tnonil;
 
 	switch (frame_type) {
 	case 3: /* unbounded until current row */	{
