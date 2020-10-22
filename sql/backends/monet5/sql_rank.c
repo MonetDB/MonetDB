@@ -865,7 +865,8 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 				  int max_arg, const char *mod, const char *err)
 {
 	(void) cntxt;
-	if (pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg - 2)
+	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
+		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
 		throw(SQL, mod, "%s: wrong number of arguments to function %s", err, err);
 
 	if (isaBatType(getArgType(mb, pci, 1)) && !(*b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
@@ -1362,7 +1363,8 @@ do_count(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bound
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	if (pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg - 2)
+	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
+		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
 		throw(SQL, "sql.count", "wrong number of arguments to function count");
 	tpe = getArgType(mb, pci, 1);
 	ignore_nils = *getArgReference_bit(stk, pci, 2);
@@ -1445,8 +1447,9 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	bat *res = NULL;
 
 	(void) cntxt;
-	if (pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg - 2)
-		throw(SQL, op, "wrong number of arguments to function count");
+	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
+		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
+		throw(SQL, op, "wrong number of arguments to function %s", op);
 	tp1 = getArgType(mb, pci, 1);
 	frame_type = *getArgReference_int(stk, pci, 2);
 
