@@ -4901,7 +4901,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (start && eend) {
 			list_append(args, start);
 			list_append(args, eend);
-		}
+		} else if (frame_type == FRAME_UNBOUNDED_TILL_CURRENT_ROW || frame_type == FRAME_CURRENT_ROW_TILL_UNBOUNDED)
+			list_append(args, exp_copy(sql, oe));
 		if (gbe)
 			list_append(args, exp_copy(sql, pe));
 	}
