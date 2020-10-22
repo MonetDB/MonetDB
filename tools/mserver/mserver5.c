@@ -480,7 +480,6 @@ main(int argc, char **av)
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog, -1);
 
-	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (debug)
 		mo_print_options(set, setlen);
 
@@ -529,6 +528,7 @@ main(int argc, char **av)
 			fprintf(stderr, "%s\n", GDKerrbuf);
 		exit(1);
 	}
+	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
