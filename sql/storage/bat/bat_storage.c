@@ -846,30 +846,50 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 	return ok;
 }
 
-static int
-append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
+static void*
+append_col_prepare(sql_trans *tr, sql_column *c)
 {
-	int ok = LOG_OK;
-	BAT *b = i;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return ok;
-
 	if (bind_col_data(tr, c) == LOG_ERR)
-		return LOG_ERR;
+		return NULL;
 
-	bat = c->data;
+	sql_delta *delta = c->data;
+
 	/* appends only write */
-	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
+	delta->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	/* inserts are ordered with the current delta implementation */
 	/* therefor mark appends as reads */
 	assert(tr != gtrans);
 	c->t->s->base.rtime = c->t->base.rtime = tr->stime;
-	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, i);
-	else
-		ok = delta_append_val(bat, i);
+
+	return delta;
+}
+
+static int
+append_col_execute(void *incoming_delta, void *incoming_bat)
+{
+	sql_delta *delta = incoming_delta;
+	BAT *bat = incoming_bat;
+
+	if (!BATcount(bat))
+		return LOG_OK;
+	int ok = delta_append_bat(delta, bat);
+	return ok;
+}
+
+static int
+append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
+{
+	sql_delta *delta = append_col_prepare(tr, c);
+	if (delta == NULL)
+		return LOG_ERR;
+
+	int ok;
+	if (tpe == TYPE_bat) {
+		ok = append_col_execute(delta, i);
+	} else {
+		ok = delta_append_val(delta, i);
+	}
+
 	return ok;
 }
 
@@ -3110,6 +3130,8 @@ bat_storage_init( store_functions *sf)
 	sf->bind_del_data = (bind_del_data_fptr)&bind_del_data;
 
 	sf->append_col = (append_col_fptr)&append_col;
+	sf->append_col_prep = (append_col_prep_fptr)&append_col_prepare;
+	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
 	sf->append_idx = (append_idx_fptr)&append_idx;
 	sf->update_col = (update_col_fptr)&update_col;
 	sf->update_idx = (update_idx_fptr)&update_idx;

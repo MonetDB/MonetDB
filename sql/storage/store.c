@@ -38,9 +38,9 @@ int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
 
-store_functions store_funcs;
-table_functions table_funcs;
-logger_functions logger_funcs;
+store_functions store_funcs = { NULL };
+table_functions table_funcs = { NULL };
+logger_functions logger_funcs = { NULL };
 
 static int schema_number = 0; /* each committed schema change triggers a new
 				 schema number (session wise unique number) */
