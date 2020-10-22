@@ -789,10 +789,10 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_CALC_FIXED_UNBOUNDED_TILL_CURRENT_ROW(TPE, MIN_MAX)	\
 	do { \
+		TPE curval = TPE##_nil;	\
 		for (; k < i;) { \
-			j = k++; \
-			TPE curval = bp[j]; \
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				if (!is_##TPE##_nil(bp[k])) {		\
 					if (is_##TPE##_nil(curval))	\
 						curval = bp[k];	\
@@ -800,7 +800,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 						curval = MIN_MAX(bp[k], curval); \
 				}					\
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
 			has_nils |= is_##TPE##_nil(curval); \
@@ -809,18 +809,18 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_CALC_FIXED_CURRENT_ROW_TILL_UNBOUNDED(TPE, MIN_MAX)	\
 	do { \
+		TPE curval = TPE##_nil;	\
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			TPE curval = bp[l]; \
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				if (!is_##TPE##_nil(bp[j])) {		\
 					if (is_##TPE##_nil(curval))	\
 						curval = bp[j];	\
 					else				\
 						curval = MIN_MAX(bp[j], curval); \
-				}					\
+				}	\
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
@@ -880,10 +880,10 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_CALC_VARSIZED_UNBOUNDED_TILL_CURRENT_ROW(GT_LT)	\
 	do { \
+		const void *curval = nil;	\
 		for (; k < i;) { \
-			j = k++; \
-			void *curval = BUNtail(bpi, j);	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				void *next = BUNtail(bpi, k); \
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
@@ -892,7 +892,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 				}					\
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
 					return GDK_FAIL; \
@@ -902,10 +902,10 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_CALC_VARSIZED_CURRENT_ROW_TILL_UNBOUNDED(GT_LT)	\
 	do { \
+		const void *curval = nil;	\
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			void *curval = BUNtail(bpi, l);	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				void *next = BUNtail(bpi, j); \
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
@@ -914,7 +914,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 				}					\
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				if (tfastins_nocheckVAR(r, l, curval, Tsize(r)) != GDK_SUCCEED) \
@@ -1075,23 +1075,21 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		curval = 0; \
 		if (count_all) { \
 			for (; k < i;) { \
-				j = k++; \
-				curval++; \
-				while (k < i && !op[k]) { \
-					curval++; \
+				j = k; \
+				do {	\
+					curval++;	\
 					k++; \
-				} \
+				} while (k < i && !op[k]);	\
 				for (; j < k; j++) \
 					rb[j] = curval; \
 			} \
 		} else { \
 			for (; k < i;) { \
-				j = k++; \
-				curval += !is_##TPE##_nil(bp[j]); \
-				while (k < i && !op[k]) { \
+				j = k; \
+				do {	\
 					curval += !is_##TPE##_nil(bp[k]); \
 					k++; \
-				} \
+				} while (k < i && !op[k]);	\
 				for (; j < k; j++) \
 					rb[j] = curval; \
 			} \
@@ -1103,24 +1101,22 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		curval = 0; \
 		if (count_all) { \
 			for (j = i - 1; j >= k; ) { \
-				l = j--; \
-				curval++; \
-				while (j >= k && !op[j]) { \
-					curval++; \
+				l = j; \
+				do {	\
+					curval++;	\
 					j--; \
-				} \
+				} while (j >= k && !op[j]);	\
 				m = MAX(k, j); \
 				for (; l >= m; l--) \
 					rb[l] = curval; \
 			}	\
 		} else { \
 			for (j = i - 1; j >= k; ) { \
-				l = j--; \
-				curval += !is_##TPE##_nil(bp[l]); \
-				while (j >= k && !op[j]) { \
+				l = j; \
+				do {	\
 					curval += !is_##TPE##_nil(bp[j]); \
 					j--; \
-				} \
+				} while (j >= k && !op[j]);	\
 				m = MAX(k, j); \
 				for (; l >= m; l--) \
 					rb[l] = curval; \
@@ -1178,25 +1174,22 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do { \
 		curval = 0; \
 		if (count_all) { \
-			for (; k < i; ) { \
-				j = k++; \
-				curval++; \
-				while (k < i && !op[k]) { \
-					curval++; \
+			for (; k < i;) { \
+				j = k; \
+				do {	\
+					curval++;	\
 					k++; \
-				} \
+				} while (k < i && !op[k]);	\
 				for (; j < k; j++) \
 					rb[j] = curval; \
 			} \
 		} else { \
 			for (; k < i; ) { \
-				j = k++; \
-				const void *v = BUNtail(bpi, j); \
-				curval += cmp(v, nil) != 0; \
-				while (k < i && !op[k]) { \
+				j = k; \
+				do {	\
 					curval += cmp(BUNtail(bpi, k), nil) != 0; \
 					k++; \
-				} \
+				} while (k < i && !op[k]);	\
 				for (; j < k; j++) \
 					rb[j] = curval; \
 			} \
@@ -1208,30 +1201,27 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		curval = 0; \
 		if (count_all) { \
 			for (j = i - 1; j >= k; ) { \
-				l = j--; \
-				curval++; \
-				while (j >= k && !op[j]) { \
-					curval++; \
+				l = j; \
+				do {	\
+					curval++;	\
 					j--; \
-				} \
+				} while (j >= k && !op[j]);	\
 				m = MAX(k, j); \
 				for (; l >= m; l--) \
 					rb[l] = curval; \
 			}	\
 		} else { \
 			for (j = i - 1; j >= k; ) { \
-				l = j--; \
-				const void *v = Tloc(b, l); \
-				curval += cmp(v, nil) != 0; \
-				while (j >= k && !op[j]) { \
+				l = j; \
+				do {	\
 					curval += cmp(BUNtail(bpi, j), nil) != 0; \
 					j--; \
-				} \
+				} while (j >= k && !op[j]);	\
 				m = MAX(k, j); \
 				for (; l >= m; l--) \
 					rb[l] = curval; \
 			}	\
-	} \
+		} \
 		k = i; \
 	} while (0)
 
@@ -1373,10 +1363,10 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 /* sum on fixed size integers */
 #define ANALYTICAL_SUM_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2) \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (; k < i;) { \
-			j = k++; \
-			TPE2 curval = is_##TPE1##_nil(bp[j]) ? TPE2##_nil : (TPE2) bp[j];	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				if (!is_##TPE1##_nil(bp[k])) {		\
 					if (is_##TPE2##_nil(curval))	\
 						curval = (TPE2) bp[k];	\
@@ -1384,7 +1374,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 						ADD_WITH_CHECK(bp[k], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 				}					\
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
 			has_nils |= is_##TPE2##_nil(curval);	\
@@ -1393,10 +1383,10 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 
 #define ANALYTICAL_SUM_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2) \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			TPE2 curval = is_##TPE1##_nil(bp[l]) ? TPE2##_nil : (TPE2) bp[l];	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				if (!is_##TPE1##_nil(bp[j])) {		\
 					if (is_##TPE2##_nil(curval))	\
 						curval = (TPE2) bp[j];	\
@@ -1404,7 +1394,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 						ADD_WITH_CHECK(bp[j], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 				}					\
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
@@ -1469,10 +1459,10 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 /* sum on floating-points */
 #define ANALYTICAL_SUM_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2) /* TODO go through a version of dofsum which returns the current partials */ \
 	do { \
+		TPE2 curval = TPE2##_nil;	\
 		for (; k < i;) { \
-			j = k++; \
-			TPE2 curval = is_##TPE1##_nil(bp[j]) ? TPE2##_nil : (TPE2) bp[j];	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				if (!is_##TPE1##_nil(bp[k])) {		\
 					if (is_##TPE2##_nil(curval))	\
 						curval = (TPE2) bp[k];	\
@@ -1480,7 +1470,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 						ADD_WITH_CHECK(bp[k], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 				}					\
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
 			has_nils |= is_##TPE2##_nil(curval);	\
@@ -1489,10 +1479,10 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 
 #define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2) /* TODO go through a version of dofsum which returns the current partials */ \
 	do { \
+		TPE2 curval = TPE2##_nil;	\
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			TPE2 curval = is_##TPE1##_nil(bp[l]) ? TPE2##_nil : (TPE2) bp[l];	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				if (!is_##TPE1##_nil(bp[j])) {		\
 					if (is_##TPE2##_nil(curval))	\
 						curval = (TPE2) bp[j];	\
@@ -1500,7 +1490,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 						ADD_WITH_CHECK(bp[j], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 				}					\
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
@@ -1749,13 +1739,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 #define ANALYTICAL_PROD_CALC_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, TPE3) \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (; k < i;) { \
-			j = k++; \
-			TPE2 curval = is_##TPE1##_nil(bp[j]) ? TPE2##_nil : (TPE2) bp[j];	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				PROD_NUM(TPE1, TPE2, TPE3, bp[k]); \
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
 			has_nils |= is_##TPE2##_nil(curval);	\
@@ -1764,13 +1754,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 #define ANALYTICAL_PROD_CALC_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2, TPE3) \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			TPE2 curval = is_##TPE1##_nil(bp[l]) ? TPE2##_nil : (TPE2) bp[l];	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				PROD_NUM(TPE1, TPE2, TPE3, bp[j]); \
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
@@ -1834,13 +1824,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, REAL_IMP) \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (; k < i;) { \
-			j = k++; \
-			TPE2 curval = is_##TPE1##_nil(bp[j]) ? TPE2##_nil : (TPE2) bp[j];	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP, bp[k]); \
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
 			has_nils |= is_##TPE2##_nil(curval);	\
@@ -1849,13 +1839,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2, REAL_IMP) \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			TPE2 curval = is_##TPE1##_nil(bp[l]) ? TPE2##_nil : (TPE2) bp[l];	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP, bp[j]); \
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
@@ -1925,13 +1915,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 #define ANALYTICAL_PROD_CALC_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */ \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (; k < i;) { \
-			j = k++; \
-			TPE2 curval = is_##TPE1##_nil(bp[j]) ? TPE2##_nil : (TPE2) bp[j];	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				PROD_FP(TPE1, TPE2, bp[k]);	\
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
 			has_nils |= is_##TPE2##_nil(curval);	\
@@ -1940,13 +1930,13 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 #define ANALYTICAL_PROD_CALC_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */ \
 	do { \
+		TPE2 curval = TPE2##_nil; \
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			TPE2 curval = is_##TPE1##_nil(bp[l]) ? TPE2##_nil : (TPE2) bp[l];	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				PROD_FP(TPE1, TPE2, bp[j]);	\
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
@@ -2227,10 +2217,10 @@ calc_done##TPE##IMP##PART:
 
 #define ANALYTICAL_AVG_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP, PART, LNG_HGE) \
 	do { \
+		dbl curval = dbl_nil;	\
 		for (; k < i;) { \
-			dbl curval = is_##TPE##_nil(bp[k]) ? dbl_nil : (dbl) bp[k];	\
-			j = k++; \
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE, bp[k]) \
 				ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
 				while (k < i && !op[k]) { \
@@ -2241,10 +2231,10 @@ calc_done##TPE##IMP##PART:
 				}					\
 				ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
-			has_nils = has_nils || (n == 0);		\
+			has_nils |= (n == 0);		\
 		} \
 		n = 0;				\
 		sum = 0;			\
@@ -2253,10 +2243,10 @@ calc_done##TPE##IMP##PART:
 
 #define ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP, PART, LNG_HGE) \
 	do { \
+		dbl curval = dbl_nil;	\
 		for (j = i - 1; j >= k; ) { \
-			dbl curval = is_##TPE##_nil(bp[j]) ? dbl_nil : (dbl) bp[j];	\
-			l = j--; \
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, LNG_HGE, bp[j]) \
 				ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
 				while (j >= k && !op[j]) { \
@@ -2267,11 +2257,11 @@ calc_done##TPE##IMP##PART:
 				}					\
 				ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
-			has_nils = has_nils || (n == 0);		\
+			has_nils |= (n == 0);		\
 		}	\
 		n = 0;				\
 		sum = 0;			\
@@ -2297,7 +2287,7 @@ calc_done##TPE##IMP##PART:
 		} \
 		for (; k < i; k++) \
 			rb[k] = dr; \
-		has_nils = has_nils || (n == 0);		\
+		has_nils |= (n == 0);		\
 		n = 0;				\
 		sum = 0;			\
 		a = 0; 			\
@@ -2335,7 +2325,7 @@ calc_done##TPE##IMP##PART:
 			}					\
 			ANALYTICAL_AVERAGE_CALC_NUM_STEP3(TPE, IMP, PART) \
 			rb[k] = curval;					\
-			has_nils = has_nils || (n == 0);		\
+			has_nils |= (n == 0);		\
 			n = 0;				\
 			sum = 0;			\
 			a = 0; 			\
@@ -2345,17 +2335,20 @@ calc_done##TPE##IMP##PART:
 /* average on floating-points */
 #define ANALYTICAL_AVG_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP, PART, LNG_HGE) \
 	do { \
+		dbl curval = dbl_nil;	\
 		for (; k < i;) { \
-			j = k++; \
-			dbl curval = is_##TPE##_nil(bp[j]) ? dbl_nil : (dbl) bp[j];	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				if (!is_##TPE##_nil(bp[k]))		\
 					AVERAGE_ITER_FLOAT(TPE, bp[k], a, n); \
 				k++; \
-			} \
+			} while (k < i && !op[k]);	\
+			if (n > 0)	\
+				curval = a;	\
+			else	\
+				has_nils = true;	\
 			for (; j < k; j++) \
 				rb[j] = curval; \
-			has_nils = has_nils || (n == 0);		\
 		} \
 		n = 0;			\
 		a = 0; 		\
@@ -2363,18 +2356,21 @@ calc_done##TPE##IMP##PART:
 
 #define ANALYTICAL_AVG_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP, PART, LNG_HGE) \
 	do { \
+		dbl curval = dbl_nil;	\
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			dbl curval = is_##TPE##_nil(bp[l]) ? dbl_nil : (dbl) bp[l];	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				if (!is_##TPE##_nil(bp[j]))		\
 					AVERAGE_ITER_FLOAT(TPE, bp[j], a, n); \
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
+			if (n > 0)	\
+				curval = a;	\
+			else	\
+				has_nils = true;	\
 			m = MAX(k, j); \
 			for (; l >= m; l--) \
 				rb[l] = curval; \
-			has_nils = has_nils || (n == 0);		\
 		}	\
 		n = 0;		\
 		a = 0;		\
@@ -2383,15 +2379,18 @@ calc_done##TPE##IMP##PART:
 
 #define ANALYTICAL_AVG_IMP_FP_ALL_ROWS(TPE, IMP, PART, LNG_HGE)	\
 	do { \
+		dbl curval = dbl_nil;	\
 		for (; j < i; j++) { \
 			TPE v = bp[j]; \
 			if (!is_##TPE##_nil(v))		\
 				AVERAGE_ITER_FLOAT(TPE, v, a, n); \
 		} \
-		curval = (n > 0) ? a : dbl_nil;			\
+		if (n > 0)	\
+			curval = a;	\
+		else	\
+			has_nils = true;	\
 		for (; k < i; k++) \
 			rb[k] = curval; \
-		has_nils = has_nils || (n == 0);		\
 		n = 0;		\
 		a = 0; 		\
 	} while (0)
@@ -2410,7 +2409,7 @@ calc_done##TPE##IMP##PART:
 			}						\
 			curval = (n > 0) ? a : dbl_nil;			\
 			rb[k] = curval;					\
-			has_nils = has_nils || (n == 0);		\
+			has_nils |= (n == 0);		\
 			n = 0;			\
 			a = 0; 		\
 		}							\
@@ -2471,7 +2470,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	bool has_nils = false;
 	lng i = 0, j = 0, k = 0, l = 0, m = 0, cnt = (lng) BATcount(b), n = 0, rr = 0;
 	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
-	dbl *restrict rb = (dbl *) Tloc(r, 0), curval = 0, a = 0;
+	dbl *restrict rb = (dbl *) Tloc(r, 0), curval = dbl_nil, a = 0;
 	bit *restrict np = p ? Tloc(p, 0) : NULL, *restrict op = o ? Tloc(o, 0) : NULL;
 	bool abort_on_error = true;
 	BUN nils = 0;
@@ -2533,16 +2532,12 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	do { \
 		TPE avg = 0; \
 		for (; k < i;) { \
-			j = k++; \
-			if (!is_##TPE##_nil(bp[j])) {	\
-				avg = bp[j];	\
-				ncnt++;	\
-			}	\
-			while (k < i && !op[k]) { \
+			j = k; \
+			do {	\
 				if (!is_##TPE##_nil(bp[k]))	\
 					AVERAGE_ITER(TPE, bp[k], avg, rem, ncnt); \
-				k++;	\
-			} \
+				k++; \
+			} while (k < i && !op[k]);	\
 			if (ncnt == 0) {	\
 				has_nils = true; \
 				for (; j < k; j++) \
@@ -2562,16 +2557,12 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	do { \
 		TPE avg = 0; \
 		for (j = i - 1; j >= k; ) { \
-			l = j--; \
-			if (!is_##TPE##_nil(bp[l])) {	\
-				avg = bp[l];	\
-				ncnt++;	\
-			}	\
-			while (j >= k && !op[j]) { \
+			l = j; \
+			do {	\
 				if (!is_##TPE##_nil(bp[j]))	\
 					AVERAGE_ITER(TPE, bp[j], avg, rem, ncnt); \
 				j--; \
-			} \
+			} while (j >= k && !op[j]);	\
 			m = MAX(k, j); \
 			if (ncnt == 0) {	\
 				has_nils = true; \

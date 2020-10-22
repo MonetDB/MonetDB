@@ -4421,8 +4421,7 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		bclass = bt->type->eclass;
 
 		if ((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-			a = (frame_type == FRAME_RANGE) ? atom_general(sql->sa, EC_NUMBER(bclass) ? bt : it, NULL) : 
-											  atom_max_value(sql->sa, EC_NUMBER(bclass) ? bt : it);
+			a = atom_general(sql->sa, EC_NUMBER(bclass) ? bt : it, NULL);
 		} else if (bound->data.i_val == CURRENT_ROW_BOUND) {
 			a = atom_zero_value(sql->sa, EC_NUMBER(bclass) ? bt : it);
 		} else {
