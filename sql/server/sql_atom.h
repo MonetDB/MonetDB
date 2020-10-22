@@ -77,6 +77,5 @@ extern lng scales[MAX_SCALE];
 #endif
 
 extern atom *atom_zero_value(sql_allocator *sa, sql_subtype* tpe);
-extern atom *atom_max_value(sql_allocator *sa, sql_subtype *tpe);
 
 #endif /* _SQL_ATOM_H_ */
