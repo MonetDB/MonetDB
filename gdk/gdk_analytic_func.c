@@ -11,6 +11,10 @@
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
 
+/* needed for some operators on floating-points */
+#define NAN_CHECK(TPE, i) || (is_##TPE##_nil(v) && is_##TPE##_nil(bp[i]))
+#define NO_NAN_CHECK(TPE, i)
+
 #define NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST)	\
 	do {					\
 		for (TPE i = 0; rb < rp; i++, rb++) {	\
@@ -1056,15 +1060,15 @@ ANALYTICAL_MIN_MAX(min, MIN, >)
 ANALYTICAL_MIN_MAX(max, MAX, <)
 
 /* Counting no nils for fixed sizes */
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_UNBOUNDED_TILL_CURRENT_ROW(TPE, NAN_CHECK) \
 	do { \
 		curval = 0; \
 		if (count_all) { \
 			for (; k < i;) { \
-				TPE v = bpf[k]; \
+				TPE v = bp[k]; \
 				j = k++; \
 				curval++; \
-				while (k < i && bpf[k] == v) { \
+				while (k < i && (bp[k] == v NAN_CHECK(TPE, k))) { \
 					k++; \
 					curval++; \
 				} \
@@ -1073,12 +1077,12 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			} \
 		} else { \
 			for (; k < i;) { \
-				TPE v = bpf[k]; \
+				TPE v = bp[k]; \
 				j = k++; \
-				curval += !is_##TPE##_nil(bpf[k]); \
-				while (k < i && bpf[k] == v) { \
+				curval += !is_##TPE##_nil(bp[k]); \
+				while (k < i && (bp[k] == v NAN_CHECK(TPE, k))) { \
 					k++; \
-					curval += !is_##TPE##_nil(bpf[k]); \
+					curval += !is_##TPE##_nil(bp[k]); \
 				} \
 				for (; j < k; j++) \
 					rb[j] = curval; \
@@ -1086,15 +1090,15 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		}	\
 	} while (0)
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_CURRENT_ROW_TILL_UNBOUNDED(TPE) \
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_CURRENT_ROW_TILL_UNBOUNDED(TPE, NAN_CHECK) \
 	do { \
 		curval = 0; \
 		if (count_all) { \
 			for (j = i - 1; j >= k; ) { \
-				TPE v = bpf[j]; \
+				TPE v = bp[j]; \
 				l = j--; \
 				curval++; \
-				while (j >= k && bpf[j] == v) { \
+				while (j >= k && (bp[j] == v NAN_CHECK(TPE, j))) { \
 					j--; \
 					curval++; \
 				} \
@@ -1104,12 +1108,12 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			}	\
 		} else { \
 			for (j = i - 1; j >= k; ) { \
-				TPE v = bpf[j]; \
+				TPE v = bp[j]; \
 				l = j--; \
-				curval += !is_##TPE##_nil(bpf[j]); \
-				while (j >= k && bpf[j] == v) { \
+				curval += !is_##TPE##_nil(bp[j]); \
+				while (j >= k && (bp[j] == v NAN_CHECK(TPE, j))) { \
 					j--; \
-					curval += !is_##TPE##_nil(bpf[j]); \
+					curval += !is_##TPE##_nil(bp[j]); \
 				} \
 				m = MAX(k, j); \
 				for (; l >= m; l--) \
@@ -1119,7 +1123,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		k = i; \
 	} while (0)
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_ALL_ROWS(TPE)	\
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_ALL_ROWS(TPE, NAN_CHECK) \
 	do { \
 		if (count_all) { \
 			curval = i - k; \
@@ -1128,24 +1132,24 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} else {	\
 			curval = 0; \
 			for (; j < i; j++) \
-				curval += !is_##TPE##_nil(bpf[j]); \
+				curval += !is_##TPE##_nil(bp[j]); \
 			for (; k < i; k++) \
 				rb[k] = curval; \
 		}	\
 	} while (0)
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_CURRENT_ROW(TPE)	\
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_CURRENT_ROW(TPE, NAN_CHECK) \
 	do { \
 		if (count_all) { \
 			for (; k < i; k++) \
 				rb[k] = 1; \
 		} else { \
 			for (; k < i; k++) \
-				rb[k] = !is_##TPE##_nil(bpf[k]); \
+				rb[k] = !is_##TPE##_nil(bp[k]); \
 		} \
 	} while (0)
 
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_OTHERS(TPE)	\
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_OTHERS(TPE, NAN_CHECK) \
 	do { \
 		if (count_all) { \
 			for (; k < i; k++) \
@@ -1153,8 +1157,8 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} else {	\
 			curval = 0; \
 			for (; k < i; k++) {			\
-				TPE *bs = bpf + start[k];		\
-				TPE *be = bpf + end[k];		\
+				TPE *bs = bp + start[k];		\
+				TPE *be = bp + end[k];		\
 				for (; bs < be; bs++)			\
 					curval += !is_##TPE##_nil(*bs);	\
 				rb[k] = curval;		\
@@ -1170,10 +1174,10 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		if (count_all) { \
 			if (isvarsized) { \
 				for (; k < i; ) { \
-					const void *v = base + ((const var_t *) bp)[k]; \
+					const void *v = base + ((const var_t *) bheap)[k]; \
 					j = k++; \
 					curval++; \
-					while (k < i && cmp(base + ((const var_t *) bp)[k], v) == 0) { \
+					while (k < i && cmp(base + ((const var_t *) bheap)[k], v) == 0) { \
 						k++; \
 						curval++; \
 					} \
@@ -1196,12 +1200,12 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} else { \
 			if (isvarsized) { \
 				for (; k < i; ) { \
-					const void *v = base + ((const var_t *) bp)[k]; \
+					const void *v = base + ((const var_t *) bheap)[k]; \
 					j = k++; \
 					curval += cmp(v, nil) != 0; \
-					while (k < i && cmp(base + ((const var_t *) bp)[k], v) == 0) { \
+					while (k < i && cmp(base + ((const var_t *) bheap)[k], v) == 0) { \
 						k++; \
-						curval += cmp(base + ((const var_t *) bp)[k], nil) != 0; \
+						curval += cmp(base + ((const var_t *) bheap)[k], nil) != 0; \
 					} \
 					for (; j < k; j++) \
 						rb[j] = curval; \
@@ -1228,10 +1232,10 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		if (count_all) { \
 			if (isvarsized) { \
 				for (j = i - 1; j >= k; ) { \
-					const void *v = base + ((const var_t *) bp)[j]; \
+					const void *v = base + ((const var_t *) bheap)[j]; \
 					l = j--; \
 					curval++; \
-					while (j >= k && cmp(base + ((const var_t *) bp)[j], v) == 0) { \
+					while (j >= k && cmp(base + ((const var_t *) bheap)[j], v) == 0) { \
 						j--; \
 						curval++; \
 					} \
@@ -1256,12 +1260,12 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} else { \
 			if (isvarsized) { \
 				for (j = i - 1; j >= k; ) { \
-					const void *v = base + ((const var_t *) bp)[j]; \
+					const void *v = base + ((const var_t *) bheap)[j]; \
 					l = j--; \
 					curval += cmp(v, nil) != 0; \
-					while (j >= k && cmp(base + ((const var_t *) bp)[j], v) == 0) { \
+					while (j >= k && cmp(base + ((const var_t *) bheap)[j], v) == 0) { \
 						j--; \
-						curval += cmp(base + ((const var_t *) bp)[j], nil) != 0; \
+						curval += cmp(base + ((const var_t *) bheap)[j], nil) != 0; \
 					} \
 					m = MAX(k, j); \
 					for (; l >= m; l--) \
@@ -1293,7 +1297,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} else {	\
 			if (isvarsized) { \
 				for (; j < i; j++) \
-					curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0; \
+					curval += cmp(nil, base + ((const var_t *) bheap)[j]) != 0; \
 			} else { \
 				for (; j < i; j++) \
 					curval += cmp(Tloc(b, j), nil) != 0; \
@@ -1311,7 +1315,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} else { \
 			if (isvarsized) { \
 				for (; k < i; k++) \
-					rb[k] = cmp(nil, base + ((const var_t *) bp)[k]) != 0; \
+					rb[k] = cmp(nil, base + ((const var_t *) bheap)[k]) != 0; \
 			} else { \
 				for (; k < i; k++) \
 					rb[k] = cmp(Tloc(b, k), nil) != 0; \
@@ -1331,7 +1335,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 					j = start[k]; \
 					l = end[k]; \
 					for (; j < l; j++) \
-						curval += cmp(nil, base + ((const var_t *) bp)[j]) != 0; \
+						curval += cmp(nil, base + ((const var_t *) bheap)[j]) != 0; \
 					rb[k] = curval; \
 					curval = 0; \
 				} \
@@ -1349,23 +1353,23 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	} while (0)
 
 /* Now do the count analytic function branches */
-#define ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(TPE, IMP)		\
+#define ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(TPE, NAN_CHECK, IMP)		\
 	do {					\
-		TPE *bpf = (TPE*)bp; \
+		TPE *bp = (TPE*) bheap; \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
-					ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE); \
+					ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE, NAN_CHECK); \
 			}						\
 		}	\
 		i = cnt;			\
-		ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE);	\
+		ANALYTICAL_COUNT_NO_NIL_FIXED_##IMP(TPE, NAN_CHECK);	\
 	} while (0)
 
 #ifdef HAVE_HGE
 #define ANALYTICAL_COUNT_NO_NIL_LIMIT(IMP)			\
 	case TYPE_hge:					\
-		ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(hge, IMP);	\
+		ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(hge, NO_NAN_CHECK, IMP);	\
 	break;
 #else
 #define ANALYTICAL_COUNT_NO_NIL_LIMIT(IMP)
@@ -1375,23 +1379,23 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do { \
 		switch (ATOMbasetype(tpe)) {		\
 		case TYPE_bte:					\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(bte, IMP);		\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(bte, NO_NAN_CHECK, IMP);		\
 			break;							\
 		case TYPE_sht:							\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(sht, IMP);		\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(sht, NO_NAN_CHECK, IMP);		\
 			break;							\
 		case TYPE_int:							\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(int, IMP);		\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(int, NO_NAN_CHECK, IMP);		\
 			break;							\
 		case TYPE_lng:							\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(lng, IMP);		\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(lng, NO_NAN_CHECK, IMP);		\
 			break;							\
 			ANALYTICAL_COUNT_NO_NIL_LIMIT(IMP)			\
 		case TYPE_flt:							\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(flt, IMP);		\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(flt, NAN_CHECK, IMP);		\
 			break;							\
 		case TYPE_dbl:							\
-			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(dbl, IMP);		\
+			ANALYTICAL_COUNT_NO_NIL_FIXED_PARTITIONS(dbl, NAN_CHECK, IMP);		\
 			break;							\
 		default: {							\
 			if (p) {						\
@@ -1415,7 +1419,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *b, BAT *s, BAT *e, bit ignore_nils, int 
 	const void *restrict nil = ATOMnilptr(tpe);
 	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
 	const char *restrict base = b->tvheap ? b->tvheap->base: NULL;
-	const void *restrict bp = Tloc(b, 0);
+	const void *restrict bheap = Tloc(b, 0);
 	bool isvarsized = b->tvarsized, count_all = !ignore_nils || b->tnonil;
 
 	switch (frame_type) {
