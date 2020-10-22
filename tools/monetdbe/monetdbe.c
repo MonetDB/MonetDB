@@ -1710,7 +1710,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 				// TODO handle error
 			}
 
-			int idx = newVariable(mb, NULL, 0, newBatType(tpe->localtype));
+			int idx = newTmpVariable(mb, newBatType(tpe->localtype));
 			f = pushArgument(mb, f, idx);
 
 			InstrPtr a = newInstruction(mb, sqlRef, appendRef);
@@ -1929,13 +1929,18 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			if (b == NULL) {
 				// TODO: handle error
 			}
-			ValRecord v = { .len=0 };
-			VALset(&v, TYPE_bat, &b->batCacheid);
+
+			int idx = newTmpVariable(mb, newBatType(c->type.type->localtype));
+			ValRecord v = { .vtype = TYPE_bat, .len = ATOMlen(TYPE_bat, &b->batCacheid), .val.bval = b->batCacheid};
+			// TODO: check gdk_value.h functions. They don't seem to handle TYPE_bat that well e.g. VALset.
+			getVarConstant(mb, idx) = v;
+			setVarConstant(mb, idx);
 
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
+			;
 			setArgType(mb, p, 0, TYPE_str);
 			p = pushStr(mb, p, mdbe->mid);
-			p = pushValue(mb, p, &v);
+			p = pushArgument(mb, p, idx);
 
 			e = pushArgument(mb, e, getArg(p, 0));
 		}
