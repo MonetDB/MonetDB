@@ -148,7 +148,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
 nosupport:
-	GDKerror("type %s not supported for the ntile type.\n", ATOMname(tpe));
+	GDKerror("42000!type %s not supported for the ntile type.\n", ATOMname(tpe));
 	return GDK_FAIL;
 }
 
@@ -370,104 +370,308 @@ GDKanalyticallast(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	return GDK_SUCCEED;
 }
 
-#define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(TPE1)			\
+#define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_TRIVIAL(TPE1)			\
 	do {								\
-		TPE1 *bp = (TPE1*)Tloc(b, 0), *bs, *be, curval, *restrict rb = (TPE1*)Tloc(r, 0); \
+		TPE1 *bp = (TPE1*)Tloc(b, 0), *restrict rb = (TPE1*)Tloc(r, 0); \
+		TPE1 curval = !is_lng_nil(nth) && nth <= i - k ? bp[nth - 1 + k] : TPE1##_nil; \
+		for (; k < i; k++)			\
+			rb[k] = curval;				\
+		has_nils |= is_##TPE1##_nil(curval);	\
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_CURRENT_ROW(TPE1)			\
+	do {								\
+		TPE1 *bp = (TPE1*)Tloc(b, 0), *restrict rb = (TPE1*)Tloc(r, 0); \
+		for (; k < i; k++) { \
+			rb[k] = nth == 1 ? bp[k] : TPE1##_nil; \
+			has_nils |= is_##TPE1##_nil(rb[k]); \
+		} \
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_OTHERS(TPE1)			\
+	do {								\
+		TPE1 *bp = (TPE1*)Tloc(b, 0), *restrict rb = (TPE1*)Tloc(r, 0); \
 		if (is_lng_nil(nth)) {					\
 			has_nils = true;				\
-			for (; i < cnt; i++, rb++)			\
-				*rb = TPE1##_nil;			\
+			for (; k < i; k++)			\
+				rb[k] = TPE1##_nil;			\
 		} else {						\
 			nth--;						\
-			for (; i < cnt; i++, rb++) {			\
-				bs = bp + start[i];			\
-				be = bp + end[i];			\
-				curval = (be > bs && nth < (end[i] - start[i])) ? *(bs + nth) : TPE1##_nil; \
-				*rb = curval;				\
+			for (; k < i; k++) {			\
+				TPE1 *bs = bp + start[k];			\
+				TPE1 *be = bp + end[k];			\
+				TPE1 curval = (be > bs && nth < (end[k] - start[k])) ? *(bs + nth) : TPE1##_nil; \
+				rb[k] = curval;				\
 				has_nils |= is_##TPE1##_nil(curval);	\
 			}						\
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, TPE2, TPE3)		\
+#define ANALYTICAL_NTHVALUE_IMP_SINGLE_VARSIZED_TRIVIAL		\
+	do {								\
+		const void *curval = !is_lng_nil(nth) && nth <= i - k ? BUNtail(bpi, (BUN) (nth - 1 + k)) : nil; \
+		for (; k < i; k++)			\
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+		has_nils |= atomcmp(curval, nil) == 0;	\
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_SINGLE_VARSIZED_CURRENT_ROW			\
+	do {								\
+		for (; k < i; k++) { \
+			const void *curval = nth == 1 ? BUNtail(bpi, (BUN) k) : nil; \
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+			has_nils |= atomcmp(curval, nil) == 0;	\
+		} \
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_SINGLE_VARSIZED_OTHERS			\
+	do {								\
+		if (is_lng_nil(nth)) {	\
+			has_nils = true;	\
+			for (; k < i; k++)	\
+				if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED) \
+					return GDK_FAIL; \
+		} else {	\
+			nth--;	\
+			for (; k < i; k++) {	\
+				const void *curval = (end[k] > start[k] && nth < (end[k] - start[k])) ? BUNtail(bpi, (BUN) (start[k] + nth)) : nil;	\
+				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+					return GDK_FAIL; \
+				has_nils |= atomcmp(curval, nil) == 0;	\
+			}	\
+		}	\
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_TRIVIAL(TPE1, TPE2, TPE3)			\
 	do {								\
 		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
-		for (; i < cnt; i++, rb++) {				\
-			TPE2 lnth = lp[i];				\
-			bs = bp + start[i];				\
-			be = bp + end[i];				\
-			if (is_##TPE2##_nil(lnth) || be <= bs || (TPE3)(lnth - 1) > (TPE3)(end[i] - start[i])) { \
+		for (; k < i; k++)	{		\
+			if (!is_##TPE2##_nil(lp[k]) && lp[k] <= 0) goto invalidnth;	\
+			rb[k] = !is_##TPE2##_nil(lp[k]) && lp[k] <= i - k ? bp[lp[k] - 1 + k] : TPE1##_nil; \
+			has_nils |= is_##TPE1##_nil(rb[k]);	\
+		}	\
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_CURRENT_ROW(TPE1, TPE2, TPE3)			\
+	do {								\
+		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
+		for (; k < i; k++) { \
+			if (!is_##TPE2##_nil(lp[k]) && lp[k] <= 0) goto invalidnth;	\
+			rb[k] = lp[k] == 1 ? bp[k] : TPE1##_nil; \
+			has_nils |= is_##TPE1##_nil(rb[k]); \
+		} \
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_OTHERS(TPE1, TPE2, TPE3)		\
+	do {								\
+		TPE1 curval;	\
+		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
+		for (; k < i; k++) {				\
+			TPE2 lnth = lp[k];				\
+			TPE1 *bs = bp + start[k];				\
+			TPE1 *be = bp + end[k];				\
+			if (!is_##TPE2##_nil(nth) && nth <= 0) goto invalidnth;	\
+			if (is_##TPE2##_nil(lnth) || be <= bs || (TPE3)(lnth - 1) > (TPE3)(end[k] - start[k])) { \
 				curval = TPE1##_nil;	\
 				has_nils = true;	\
 			} else {						\
 				curval = *(bs + lnth - 1);		\
 				has_nils |= is_##TPE1##_nil(curval);	\
 			}	\
-			*rb = curval;	\
+			rb[k] = curval;	\
+		}							\
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_TRIVIAL(TPE1, TPE2)			\
+	do {								\
+		const void *curval = nil;	\
+		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
+		for (; k < i; k++)	{		\
+			if (!is_##TPE2##_nil(lp[k]) && lp[k] <= 0) goto invalidnth;	\
+			curval = !is_##TPE2##_nil(lp[k]) && lp[k] <= i - k ? BUNtail(bpi, (BUN) (lp[k] - 1 + k)) : nil; \
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+			has_nils |= atomcmp(curval, nil) == 0;	\
+		}	\
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_CURRENT_ROW(TPE1, TPE2)			\
+	do {								\
+		const void *curval = nil;	\
+		TPE2 *restrict lp = (TPE2*)Tloc(l, 0);			\
+		for (; k < i; k++) { \
+			if (!is_##TPE2##_nil(lp[k]) && lp[k] <= 0) goto invalidnth;	\
+			curval = lp[k] == 1 ? BUNtail(bpi, (BUN) lp[k]) : nil; \
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
+			has_nils |= atomcmp(curval, nil) == 0;	\
+		} \
+	} while (0)
+
+#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_OTHERS(TPE1, TPE2)		\
+	do {								\
+		const void *curval = nil;	\
+		TPE1 *restrict lp = (TPE1*)Tloc(l, 0);			\
+		for (; k < i; k++) {					\
+			TPE1 lnth = lp[k];				\
+			if (!is_##TPE1##_nil(nth) && nth <= 0) goto invalidnth;	\
+			if (is_##TPE1##_nil(lnth) || end[k] <= start[k] || (TPE2)(lnth - 1) > (TPE2)(end[k] - start[k])) {	\
+				curval = (void *) nil;			\
+				has_nils = true; \
+			} else {	\
+				curval = BUNtail(bpi, (BUN) (start[k] + lnth - 1)); \
+				has_nils |= atomcmp(curval, nil) == 0;	\
+			}	\
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+				return GDK_FAIL; \
 		}							\
 	} while (0)
 
 #ifdef HAVE_HGE
-#define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)			\
+#define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1, IMP)			\
 	case TYPE_hge:							\
-		ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, hge, hge);	\
+		ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_##IMP(TPE1, hge, hge);	\
 		break;
 #else
-#define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)
+#define ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1, IMP)
 #endif
 
-#define ANALYTICAL_NTHVALUE_CALC_FIXED(TPE1)				\
+#define ANALYTICAL_NTHVALUE_MULTI_FIXED(TPE1, IMP)				\
 	do {								\
-		TPE1 *bp = (TPE1*)Tloc(b, 0), *bs, *be, curval, *restrict rb = (TPE1*)Tloc(r, 0);	\
+		TPE1 *bp = (TPE1*)Tloc(b, 0), *restrict rb = (TPE1*)Tloc(r, 0);	\
 		switch (tp2) {						\
 		case TYPE_bte:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, bte, lng); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_##IMP(TPE1, bte, lng); \
 			break;						\
 		case TYPE_sht:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, sht, lng); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_##IMP(TPE1, sht, lng); \
 			break;						\
 		case TYPE_int:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, int, lng); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_##IMP(TPE1, int, lng); \
 			break;						\
 		case TYPE_lng:						\
-			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED(TPE1, lng, lng); \
+			ANALYTICAL_NTHVALUE_IMP_MULTI_FIXED_##IMP(TPE1, lng, lng); \
 			break;						\
-		ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1)		\
+		ANALYTICAL_NTHVALUE_CALC_FIXED_HGE(TPE1, IMP)		\
 		default:						\
 			goto nosupport;					\
 		}							\
 	} while (0)
 
-#define ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(TPE1, TPE2)		\
-	do {								\
-		TPE1 *restrict lp = (TPE1*)Tloc(l, 0);			\
-		for (; i < cnt; i++) {					\
-			TPE1 lnth = lp[i];				\
-			if (is_##TPE1##_nil(lnth) || end[i] <= start[i] || (TPE2)(lnth - 1) > (TPE2)(end[i] - start[i])) {	\
-				curval = (void *) nil;			\
-				has_nils = true; \
-			} else {	\
-				curval = BUNtail(bpi, (BUN) (start[i] + lnth - 1)); \
-				has_nils |= atomcmp(curval, nil) == 0;	\
+#ifdef HAVE_HGE
+#define ANALYTICAL_NTH_VALUE_SINGLE_LIMIT(IMP)			\
+	case TYPE_hge:					\
+		ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_##IMP(hge);	\
+	break;
+#define ANALYTICAL_NTHVALUE_MULTI_FIXED_LIMIT(IMP)			\
+	case TYPE_hge:					\
+		ANALYTICAL_NTHVALUE_MULTI_FIXED(hge, IMP);	\
+	break;
+#define ANALYTICAL_NTHVALUE_MULTI_VARSIZED_LIMIT(IMP)			\
+	case TYPE_hge:					\
+		ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_##IMP(hge, hge);	\
+	break;
+#else
+#define ANALYTICAL_NTH_VALUE_SINGLE_LIMIT(IMP)
+#define ANALYTICAL_NTHVALUE_MULTI_FIXED_LIMIT(IMP)
+#define ANALYTICAL_NTHVALUE_MULTI_FIXED_VARSIZED(IMP)
+#endif
+
+#define ANALYTICAL_NTH_VALUE_BRANCHES(IMP)		\
+	do { \
+		if (bound) {		\
+			switch (ATOMbasetype(tp1)) {		\
+			case TYPE_bte:		\
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_##IMP(bte);		\
+				break;		\
+			case TYPE_sht:		\
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_##IMP(sht);		\
+				break;		\
+			case TYPE_int:		\
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_##IMP(int);		\
+				break;		\
+			case TYPE_lng:		\
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_##IMP(lng);		\
+				break;		\
+			ANALYTICAL_NTH_VALUE_SINGLE_LIMIT(IMP)	\
+			case TYPE_flt:		\
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_##IMP(flt);		\
+				break;		\
+			case TYPE_dbl:		\
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED_##IMP(dbl);		\
+				break;		\
+			default: {							\
+				ANALYTICAL_NTHVALUE_IMP_SINGLE_VARSIZED_##IMP;	\
+			}								\
 			}	\
-			if (BUNappend(r, curval, false) != GDK_SUCCEED) \
-				return GDK_FAIL;			\
-		}							\
+		} else {	\
+			switch (ATOMbasetype(tp1)) {	\
+			case TYPE_bte:	\
+				ANALYTICAL_NTHVALUE_MULTI_FIXED(bte, IMP);	\
+				break;	\
+			case TYPE_sht:	\
+				ANALYTICAL_NTHVALUE_MULTI_FIXED(sht, IMP);	\
+				break;	\
+			case TYPE_int:	\
+				ANALYTICAL_NTHVALUE_MULTI_FIXED(int, IMP);	\
+				break;	\
+			case TYPE_lng:	\
+				ANALYTICAL_NTHVALUE_MULTI_FIXED(lng, IMP);	\
+				break;	\
+			ANALYTICAL_NTHVALUE_MULTI_FIXED_LIMIT(IMP)	\
+			case TYPE_flt:	\
+				ANALYTICAL_NTHVALUE_MULTI_FIXED(flt, IMP);	\
+				break;	\
+			case TYPE_dbl:	\
+				ANALYTICAL_NTHVALUE_MULTI_FIXED(dbl, IMP);	\
+				break;	\
+			default:{	\
+				switch (tp2) {	\
+				case TYPE_bte:	\
+					ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_##IMP(bte, lng);	\
+					break;	\
+				case TYPE_sht:	\
+					ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_##IMP(sht, lng);	\
+					break;	\
+				case TYPE_int:	\
+					ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_##IMP(int, lng);	\
+					break;	\
+				case TYPE_lng:	\
+					ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED_##IMP(lng, lng);	\
+					break;	\
+				ANALYTICAL_NTHVALUE_MULTI_VARSIZED_LIMIT(IMP)	\
+				default:	\
+					goto nosupport;	\
+				}	\
+			}	\
+			}	\
+		}	\
+	} while (0)
+
+#define ANALYTICAL_NTH_VALUE_PARTITIONS(IMP)		\
+	do {					\
+		if (p) {					\
+			for (; i < cnt; i++) {		\
+				if (np[i]) 			\
+					ANALYTICAL_NTH_VALUE_BRANCHES(IMP); \
+			}						\
+		}		\
+		i = cnt;					\
+		ANALYTICAL_NTH_VALUE_BRANCHES(IMP); \
 	} while (0)
 
 gdk_return
-GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restrict bound, int tp1, int tp2)
+GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *p, BAT *s, BAT *e, BAT *l, const void *restrict bound, int tp1, int tp2, int frame_type)
 {
-	BUN i = 0, cnt = BATcount(b);
-	lng *restrict start, *restrict end, nth = 0;
 	bool has_nils = false;
-	const void *restrict nil = ATOMnilptr(tp1);
-	int (*atomcmp) (const void *, const void *) = ATOMcompare(tp1);
-	void *curval;
-
-	assert(s && e && ((l && !bound) || (!l && bound)));
-	start = (lng *) Tloc(s, 0);
-	end = (lng *) Tloc(e, 0);
+	lng i = 0, k = 0, cnt = (lng) BATcount(b), nth = 0;
+	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	bit *restrict np = p ? Tloc(p, 0) : NULL; 
+	BATiter bpi = bat_iterator(b);
+	const void *nil = ATOMnilptr(tp1);
+	int (*atomcmp)(const void *, const void *) = ATOMcompare(tp1);
 
 	if (bound) {
 		switch (tp2) {
@@ -495,105 +699,33 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *l, const void *restri
 		default:
 			goto nosupport;
 		}
-		switch (ATOMbasetype(tp1)) {
-		case TYPE_bte:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(bte);
-			break;
-		case TYPE_sht:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(sht);
-			break;
-		case TYPE_int:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(int);
-			break;
-		case TYPE_lng:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(lng);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(hge);
-			break;
-#endif
-		case TYPE_flt:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(flt);
-			break;
-		case TYPE_dbl:
-			ANALYTICAL_NTHVALUE_IMP_SINGLE_FIXED(dbl);
-			break;
-		default:{
-			BATiter bpi = bat_iterator(b);
-			if (is_lng_nil(nth)) {
-				has_nils = true;
-				for (; i < cnt; i++)
-					if (BUNappend(r, nil, false) != GDK_SUCCEED)
-						return GDK_FAIL;
-			} else {
-				nth--;
-				for (; i < cnt; i++) {
-					curval = (end[i] > start[i] && nth < (end[i] - start[i])) ? BUNtail(bpi, (BUN) (start[i] + nth)) : (void *) nil;
-					if (BUNappend(r, curval, false) != GDK_SUCCEED)
-						return GDK_FAIL;
-					has_nils |= atomcmp(curval, nil) == 0;
-				}
-			}
-		}
-		}
-	} else {
-		switch (ATOMbasetype(tp1)) {
-		case TYPE_bte:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(bte);
-			break;
-		case TYPE_sht:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(sht);
-			break;
-		case TYPE_int:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(int);
-			break;
-		case TYPE_lng:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(lng);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(hge);
-			break;
-#endif
-		case TYPE_flt:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(flt);
-			break;
-		case TYPE_dbl:
-			ANALYTICAL_NTHVALUE_CALC_FIXED(dbl);
-			break;
-		default:{
-			BATiter bpi = bat_iterator(b);
-			switch (tp2) {
-			case TYPE_bte:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(bte, lng);
-				break;
-			case TYPE_sht:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(sht, lng);
-				break;
-			case TYPE_int:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(int, lng);
-				break;
-			case TYPE_lng:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(lng, lng);
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				ANALYTICAL_NTHVALUE_IMP_MULTI_VARSIZED(hge, hge);
-				break;
-#endif
-			default:
-				goto nosupport;
-			}
-		}
+		if (!is_lng_nil(nth) && nth <= 0)
+			goto invalidnth;
+	}
+
+	switch (frame_type) {
+		case 3:
+		case 4:
+		case 5: {
+			ANALYTICAL_NTH_VALUE_PARTITIONS(TRIVIAL);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_NTH_VALUE_PARTITIONS(CURRENT_ROW);
+		} break;
+		default: {
+			ANALYTICAL_NTH_VALUE_PARTITIONS(OTHERS);
 		}
 	}
+
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
-      nosupport:
-	GDKerror("type %s not supported for the nth_value.\n", ATOMname(tp2));
+nosupport:
+	GDKerror("42000!type %s not supported for the nth_value.\n", ATOMname(tp2));
+	return GDK_FAIL;
+invalidnth:
+	GDKerror("42000!nth_value must be greater than zero.\n");
 	return GDK_FAIL;
 }
 
@@ -1802,10 +1934,10 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
       bailout:
-	GDKerror("error while calculating floating-point sum\n");
+	GDKerror("42000!error while calculating floating-point sum\n");
 	return GDK_FAIL;
       nosupport:
-	GDKerror("type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
       calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -2260,7 +2392,7 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
       nosupport:
-	GDKerror("type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	GDKerror("42000!type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
       calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
@@ -2592,7 +2724,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
       nosupport:
-	GDKerror("average of type %s to dbl unsupported.\n", ATOMname(tpe));
+	GDKerror("42000!average of type %s to dbl unsupported.\n", ATOMname(tpe));
 	return GDK_FAIL;
 }
 
@@ -2794,7 +2926,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
       nosupport:
-	GDKerror("average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
+	GDKerror("42000!average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
 	return GDK_FAIL;
 }
 
@@ -2869,7 +3001,7 @@ GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
 		ANALYTICAL_STDEV_VARIANCE_CALC(dbl, SAMPLE, OP); \
 		break; \
 	default: \
-		GDKerror("%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
+		GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
 		return GDK_FAIL; \
 	} \
 	BATsetcount(r, cnt); \
@@ -2962,7 +3094,7 @@ GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
 		ANALYTICAL_COVARIANCE_CALC(dbl, SAMPLE, OP); \
 		break; \
 	default: \
-		GDKerror("covariance of type %s unsupported.\n", ATOMname(tpe)); \
+		GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
 		return GDK_FAIL; \
 	} \
 	BATsetcount(r, cnt); \
@@ -3053,7 +3185,7 @@ GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
 		ANALYTICAL_CORRELATION_CALC(dbl);
 		break;
 	default:
-		GDKerror("correlation of type %s unsupported.\n", ATOMname(tpe));
+		GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
 		return GDK_FAIL;
 	}
 	BATsetcount(r, cnt);
