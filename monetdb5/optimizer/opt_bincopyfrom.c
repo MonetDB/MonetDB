@@ -28,6 +28,7 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	(void)pci;
 
 	str importTableRef = putName("importTable");
+	str append_batRef = putName("append_bat");
 
 	int found_at = -1;
 	for (int i = 0; i < mb->stop; i++) {
@@ -47,13 +48,21 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		goto end;
 	}
 
+	bool importTable_seen;
+	importTable_seen = false;
 	for (int i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
-		if (p->modname != sqlRef || p->fcnname != importTableRef) {
+		if (p->modname == sqlRef && p->fcnname == importTableRef) {
+			msg = transform(mb, p);
+			importTable_seen = true;
+		} else if (p->modname == sqlRef && p->fcnname == appendRef && isaBatType(getArgType(mb, p, 5))) {
+			if (importTable_seen) {
+				setFunctionId(p, append_batRef);
+			}
 			pushInstruction(mb, p);
-			continue;
+		} else {
+			pushInstruction(mb, p);
 		}
-		msg = transform(mb, p);
 		if (msg != MAL_SUCCEED)
 			return msg;
 	}
