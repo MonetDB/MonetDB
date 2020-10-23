@@ -260,6 +260,7 @@ SQLprepareClient(Client c, int login)
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
+	MT_lock_unset(&sql_contextLock);
 	if (login) {
 		str schema = monet5_user_set_def_schema(m, c->user);
 		if (!schema) {
@@ -270,6 +271,7 @@ SQLprepareClient(Client c, int login)
 	}
 
 bailout:
+	MT_lock_set(&sql_contextLock);
 	/* expect SQL text first */
 	if (be)
 		be->language = 'S';
