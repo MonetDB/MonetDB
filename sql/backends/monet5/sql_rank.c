@@ -890,8 +890,8 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 do_nth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg)
 {
-	BAT *r = NULL, *b = NULL, *l = NULL, *p = NULL, *s = NULL, *e = NULL;
-	int tp1, tp2, frame_type;
+	BAT *r = NULL, *b = NULL, *l = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
+	int tpe, frame_type;
 	bat *res = NULL;
 	str msg = MAL_SUCCEED;
 	bool is_a_bat;
@@ -901,27 +901,30 @@ do_nth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_b
 		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
 		throw(SQL, "sql.nth_value", "wrong number of arguments to function nth_value");
 
-	tp1 = getArgType(mb, pci, 1);
-	tp2 = getArgType(mb, pci, 2);
-	is_a_bat = isaBatType(tp2);
+	tpe = getArgType(mb, pci, 1);
+	is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	frame_type = *getArgReference_int(stk, pci, 3);
 
-	if (isaBatType(tp1)) {
-		void *nth = NULL;
+	if (isaBatType(tpe)) {
+		lng *nth = NULL;
 		res = getArgReference_bat(stk, pci, 0);
 
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
 			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		tp1 = getBatType(tp1);
-		if (b && !(r = COLnew(b->hseqbase, tp1, BATcount(b), TRANSIENT))) {
+		tpe = getBatType(tpe);
+		if (b && !(r = COLnew(b->hseqbase, tpe, BATcount(b), TRANSIENT))) {
 			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		if (is_a_bat && (!(l = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
-			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
-			goto bailout;
+		if (is_a_bat) {
+			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
+				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+		} else {
+			nth = getArgReference_lng(stk, pci, 2);
 		}
 		if (has_bounds) {
 			if (isaBatType(getArgType(mb, pci, 4)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
@@ -933,7 +936,11 @@ do_nth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_b
 				goto bailout;
 			}
 		} else if (frame_type == 3 || frame_type == 4) {
-			max_arg++; /* order is not needed for nth_value */
+			if (isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
+				msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+			max_arg++;
 		}
 		if (pci->argc == max_arg && isaBatType(getArgType(mb, pci, max_arg - 1)) &&
 			!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1)))) {
@@ -941,42 +948,38 @@ do_nth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_b
 			goto bailout;
 		}
 
-		if (is_a_bat)
-			tp2 = getBatType(tp2);
-		else
-			nth = getArgReference(stk, pci, 2);
-		if (GDKanalyticalnthvalue(r, b, p, s, e, l, nth, tp1, tp2, frame_type) != GDK_SUCCEED)
+		if (GDKanalyticalnthvalue(r, b, p, o, s, e, l, nth, tpe, frame_type) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.nth_value", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
-		ValRecord *nth = &(stk)->stk[(pci)->argv[2]];
+		lng nth = 0;
 
-		switch (tp2) {
-			case TYPE_bte:
-				NTH_VALUE_SINGLE_IMP(bte);
-				break;
-			case TYPE_sht:
-				NTH_VALUE_SINGLE_IMP(sht);
-				break;
-			case TYPE_int:
-				NTH_VALUE_SINGLE_IMP(int);
-				break;
-			case TYPE_lng:
-				NTH_VALUE_SINGLE_IMP(lng);
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				NTH_VALUE_SINGLE_IMP(hge);
-				break;
-#endif
-			default:
-				throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value offset not available for type %s", ATOMname(tp2));
+		if (getArgType(mb, pci, 2) != TYPE_lng) {
+			msg = createException(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value offset not available for type %s", ATOMname(getArgType(mb, pci, 2)));
+			goto bailout;
+		}
+		nth = *getArgReference_lng(stk, pci, 2);
+		if (!is_lng_nil(nth) && nth < 1) {
+			msg = createException(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value must be greater than zero");
+			goto bailout;
+		}
+		if (is_lng_nil(nth) || nth > 1) {
+			ValRecord def = (ValRecord) {.vtype = TYPE_void,};
+			if (!VALinit(&def, tpe, ATOMnilptr(tpe)) || !VALcopy(res, &def)) {
+				VALclear(&def);
+				msg = createException(SQL, "sql.ntile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			VALclear(&def);
+		} else {
+			if (!VALcopy(res, in))
+				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
 
 bailout:
-	unfix_inputs(5, b, l, p, s, e);
+	unfix_inputs(6, b, l, p, o, s, e);
 	if (r && !msg) {
 		r->tsorted = BATcount(r) <= 1;
 		r->trevsorted = BATcount(r) <= 1;
