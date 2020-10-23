@@ -115,11 +115,11 @@ end user.main;
 % 210 # length
 function user.main():void;
     X_1:void := querylog.define("explain select replace(a1,a2,a3), id\nfrom (\n select name as a1, \\'a\\' as a2, \\'A\\' as a3, id + 1 as id \n from sys.functions\n) as x;":str, "sequential_pipe":str, 29:int);
-    X_42:bat[:str] := bat.pack("sys.%2":str, "sys.x":str);
-    X_43:bat[:str] := bat.pack("%2":str, "id":str);
-    X_44:bat[:str] := bat.pack("varchar":str, "bigint":str);
-    X_45:bat[:int] := bat.pack(0:int, 64:int);
-    X_46:bat[:int] := bat.pack(0:int, 0:int);
+    X_43:bat[:str] := bat.pack("sys.%2":str, "sys.x":str);
+    X_44:bat[:str] := bat.pack("%2":str, "id":str);
+    X_45:bat[:str] := bat.pack("varchar":str, "bigint":str);
+    X_46:bat[:int] := bat.pack(0:int, 64:int);
+    X_47:bat[:int] := bat.pack(0:int, 0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "functions":str);
     X_19:bat[:str] := sql.bind(X_4:int, "sys":str, "functions":str, "name":str, 0:int);
@@ -130,10 +130,10 @@ function user.main():void;
     X_24:bat[:int] := sql.projectdelta(C_5:bat[:oid], X_15:bat[:int], X_16:bat[:oid], X_17:bat[:int]);
     X_28:bat[:str] := algebra.project(X_24:bat[:int], "a":str);
     X_31:bat[:str] := algebra.project(X_24:bat[:int], "A":str);
-    X_38:bat[:str] := batstr.replace(X_25:bat[:str], X_28:bat[:str], X_31:bat[:str]);
-    X_32:bat[:lng] := batcalc.lng(X_24:bat[:int]);
-    X_35:bat[:lng] := batcalc.+(X_32:bat[:lng], 1:lng, nil:BAT);
-    sql.resultSet(X_42:bat[:str], X_43:bat[:str], X_44:bat[:str], X_45:bat[:int], X_46:bat[:int], X_38:bat[:str], X_35:bat[:lng]);
+    X_39:bat[:str] := batstr.replace(X_25:bat[:str], X_28:bat[:str], X_31:bat[:str]);
+    X_32:bat[:lng] := batcalc.lng(X_24:bat[:int], nil:BAT);
+    X_36:bat[:lng] := batcalc.+(X_32:bat[:lng], 1:lng, nil:BAT);
+    sql.resultSet(X_43:bat[:str], X_44:bat[:str], X_45:bat[:str], X_46:bat[:int], X_47:bat[:int], X_39:bat[:str], X_36:bat[:lng]);
 end user.main;
 #inline               actions= 0 time=2 usec 
 #remap                actions= 1 time=50 usec 
