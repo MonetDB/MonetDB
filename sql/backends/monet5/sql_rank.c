@@ -845,28 +845,75 @@ bailout:
 	return msg;
 }
 
-str
-SQLfirst_value_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char *err,
+			   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, false, 4, "sql.first_value", SQLSTATE(42000) "first_value(:any_1,:lng,:lng)", GDKanalyticalfirst);
+	int tpe = getArgType(mb, pci, 1);
+	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
+	bat *res = NULL;
+	str msg = MAL_SUCCEED;
+
+	(void) cntxt;
+	if (pci->argc != 4 || (getArgType(mb, pci, 2) != TYPE_lng && getBatType(getArgType(mb, pci, 2)) != TYPE_lng) ||
+		(getArgType(mb, pci, 3) != TYPE_lng && getBatType(getArgType(mb, pci, 3)) != TYPE_lng)) {
+		throw(SQL, op, "%s", err);
+	}
+	tpe = getArgType(mb, pci, 1);
+
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+	if (isaBatType(getArgType(mb, pci, 1))) {
+		res = getArgReference_bat(stk, pci, 0);
+
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (!(r = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT))) {
+			msg = createException(MAL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (!(e = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+
+		if (func(r, b, s, e, tpe) != GDK_SUCCEED)
+			msg = createException(SQL, op, GDK_EXCEPTION);
+	} else {
+		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
+		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
+
+		if (!VALcopy(res, in))
+			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+bailout:
+	unfix_inputs(3, b, s, e);
+	if (r && !msg) {
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
+	} else if (r)
+		BBPreclaim(r);
+	return MAL_SUCCEED;
 }
 
 str
 SQLfirst_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, true, 6, "sql.first_value", SQLSTATE(42000) "first_value(:any_1,:lng,:lng)", GDKanalyticalfirst);
-}
-
-str
-SQLlast_value_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return SQLanalytical_func(cntxt, mb, stk, pci, false, 4, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:lng,:lng)", GDKanalyticallast);
+	return do_limit_value(cntxt, mb, stk, pci, "sql.first_value", SQLSTATE(42000) "first_value(:any_1,:lng,:lng)", GDKanalyticalfirst);
 }
 
 str
 SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, true, 6, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:lng,:lng)", GDKanalyticallast);
+	return do_limit_value(cntxt, mb, stk, pci, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:lng,:lng)", GDKanalyticallast);
 }
 
 #define NTH_VALUE_SINGLE_IMP(TPE) \
@@ -887,23 +934,23 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} \
 	} while(0)
 
-static str
-do_nth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg)
+str
+SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r = NULL, *b = NULL, *l = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	int tpe, frame_type;
+	BAT *r = NULL, *b = NULL, *l = NULL, *s = NULL, *e = NULL;
+	int tpe;
 	bat *res = NULL;
 	str msg = MAL_SUCCEED;
 	bool is_a_bat;
 
 	(void) cntxt;
-	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
-		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
-		throw(SQL, "sql.nth_value", "wrong number of arguments to function nth_value");
+	if (pci->argc != 5 || (getArgType(mb, pci, 3) != TYPE_lng && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
+		(getArgType(mb, pci, 4) != TYPE_lng && getBatType(getArgType(mb, pci, 4)) != TYPE_lng)) {
+		throw(SQL, "sql.nth_value", SQLSTATE(42000) "nth_value(:any_1,:number,:lng,:lng)");
+	}
 
 	tpe = getArgType(mb, pci, 1);
 	is_a_bat = isaBatType(getArgType(mb, pci, 2));
-	frame_type = *getArgReference_int(stk, pci, 3);
 
 	if (isaBatType(tpe)) {
 		lng *nth = NULL;
@@ -926,29 +973,16 @@ do_nth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_b
 		} else {
 			nth = getArgReference_lng(stk, pci, 2);
 		}
-		if (has_bounds) {
-			if (isaBatType(getArgType(mb, pci, 4)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
-				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
-				goto bailout;
-			}
-			if (isaBatType(getArgType(mb, pci, 5)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
-				msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
-				goto bailout;
-			}
-		} else if (frame_type == 3 || frame_type == 4) {
-			if (isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
-				msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
-				goto bailout;
-			}
-			max_arg++;
+		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
+			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
 		}
-		if (pci->argc == max_arg && isaBatType(getArgType(mb, pci, max_arg - 1)) &&
-			!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1)))) {
+		if (!(e = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
 			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
 
-		if (GDKanalyticalnthvalue(r, b, p, o, s, e, l, nth, tpe, frame_type) != GDK_SUCCEED)
+		if (GDKanalyticalnthvalue(r, b, s, e, l, nth, tpe) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.nth_value", GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
@@ -979,7 +1013,7 @@ do_nth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_b
 	}
 
 bailout:
-	unfix_inputs(6, b, l, p, o, s, e);
+	unfix_inputs(4, b, l, s, e);
 	if (r && !msg) {
 		r->tsorted = BATcount(r) <= 1;
 		r->trevsorted = BATcount(r) <= 1;
@@ -1007,19 +1041,6 @@ bailout:
 		} \
 		l_value = is_##TPE##_nil(rval) ? BUN_NONE : (BUN)rval; \
 	} while(0)
-
-str
-SQLnth_value_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return do_nth_value(cntxt, mb, stk, pci, false, 5);
-}
-
-str
-SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	return do_nth_value(cntxt, mb, stk, pci, true, 7);
-}
-
 
 static str
 do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* desc,
