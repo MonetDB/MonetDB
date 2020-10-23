@@ -4074,8 +4074,8 @@ def main(argv) :
             CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
     if THISFILE == "Mtest.py": # env['MAPIPORT'] not available on Mapprove.py
-        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         try:
+            s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
             s.bind(('::1', int(env['MAPIPORT'])))
         except socket.error as err:
             CONDITIONALS['HAVE_IPV6'] = '' # False
