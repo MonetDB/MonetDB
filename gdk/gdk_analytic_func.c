@@ -209,12 +209,28 @@ nosupport:
 		}								\
 	} while (0)
 
-#define ANALYTICAL_FIRST_LAST_FIXED_F_TRIVIAL(TPE)	\
+#define ANALYTICAL_FIRST_LAST_FIXED_F_CURRENT_ROW_TILL_UNBOUNDED(TPE)	\
 	do { \
-		TPE curval = bp[k];	\
+		for (j = l; ; j--) { \
+			if (op[j] || j == k) {	\
+				TPE curval = bp[j];	\
+				for (; l >= j; l--) \
+					rb[l] = curval; \
+				has_nils |= is_##TPE##_nil(curval); \
+				if (j == k)	\
+					break;	\
+				l = j - 1;	\
+			}	\
+		}	\
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_FIRST_LAST_FIXED_F_ALL_ROWS(TPE)	\
+	do { \
+		TPE v = bp[k]; \
 		for (; k < i; k++) \
-			rb[k] = curval; \
-		has_nils |= is_##TPE##_nil(curval); \
+			rb[k] = v; \
+		has_nils |= is_##TPE##_nil(v); \
 	} while (0)
 
 #define ANALYTICAL_FIRST_LAST_FIXED_F_CURRENT_ROW(TPE)	\
@@ -236,7 +252,24 @@ nosupport:
 		}						\
 	} while (0)
 
-#define ANALYTICAL_FIRST_LAST_VARSIZED_F_TRIVIAL	\
+#define ANALYTICAL_FIRST_LAST_VARSIZED_F_CURRENT_ROW_TILL_UNBOUNDED	\
+	do { \
+		for (j = l; ; j--) { \
+			if (op[j] || j == k) {	\
+				const void *curval = BUNtail(bpi, j);	\
+				for (; l >= j; l--) \
+					if (tfastins_nocheckVAR(r, l, curval, Tsize(r)) != GDK_SUCCEED) \
+						return GDK_FAIL; \
+				has_nils |= atomcmp(curval, nil) == 0;	\
+				if (j == k)	\
+					break;	\
+				l = j - 1;	\
+			}	\
+		}	\
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_FIRST_LAST_VARSIZED_F_ALL_ROWS	\
 	do { \
 		const void *curval = BUNtail(bpi, k);	\
 		for (; k < i; k++) \
@@ -269,19 +302,20 @@ gdk_return
 GDKanalyticalfirst(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	lng i = 0, k = 0, cnt = (lng) BATcount(b);
+	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b);
 	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
-	bit *restrict np = p ? Tloc(p, 0) : NULL;
+	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	BATiter bpi = bat_iterator(b);
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 
-	(void) o;
 	switch (frame_type) {
-	case 3:
-	case 4:
-	case 5: {
-		ANALYTICAL_FIRST_LAST_BRANCHES(F_TRIVIAL);
+	case 4: /* current row until unbounded */	{
+		ANALYTICAL_FIRST_LAST_BRANCHES(F_CURRENT_ROW_TILL_UNBOUNDED);
+	} break;
+	case 3: /* unbounded until current row */
+	case 5: /* all rows */	{
+		ANALYTICAL_FIRST_LAST_BRANCHES(F_ALL_ROWS);
 	} break;
 	case 6: /* current row */ {
 		ANALYTICAL_FIRST_LAST_BRANCHES(F_CURRENT_ROW);
@@ -297,12 +331,26 @@ GDKanalyticalfirst(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int 
 	return GDK_SUCCEED;
 }
 
-#define ANALYTICAL_FIRST_LAST_FIXED_L_TRIVIAL(TPE)	\
+#define ANALYTICAL_FIRST_LAST_FIXED_L_UNBOUNDED_TILL_CURRENT_ROW(TPE)	\
 	do { \
-		TPE curval = bp[i - 1];	\
+		for (; k < i;) { \
+			j = k; \
+			do {	\
+				k++; \
+			} while (k < i && !op[k]);	\
+			TPE curval = bp[k - 1];	\
+			for (; j < k; j++) \
+				rb[j] = curval; \
+			has_nils |= is_##TPE##_nil(curval); \
+		} \
+	} while (0)
+
+#define ANALYTICAL_FIRST_LAST_FIXED_L_ALL_ROWS(TPE)	\
+	do { \
+		TPE v = bp[i - 1]; \
 		for (; k < i; k++) \
-			rb[k] = curval; \
-		has_nils |= is_##TPE##_nil(curval); \
+			rb[k] = v; \
+		has_nils |= is_##TPE##_nil(v); \
 	} while (0)
 
 #define ANALYTICAL_FIRST_LAST_FIXED_L_CURRENT_ROW(TPE)	ANALYTICAL_FIRST_LAST_FIXED_F_CURRENT_ROW(TPE)
@@ -317,7 +365,22 @@ GDKanalyticalfirst(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int 
 		}						\
 	} while (0)
 
-#define ANALYTICAL_FIRST_LAST_VARSIZED_L_TRIVIAL	\
+#define ANALYTICAL_FIRST_LAST_VARSIZED_L_UNBOUNDED_TILL_CURRENT_ROW	\
+	do { \
+		for (; k < i;) { \
+			j = k; \
+			do {	\
+				k++; \
+			} while (k < i && !op[k]);	\
+			const void *curval = BUNtail(bpi, k - 1);	\
+			for (; j < k; j++) \
+				if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
+					return GDK_FAIL; \
+			has_nils |= atomcmp(curval, nil) == 0;	\
+		} \
+	} while (0)
+
+#define ANALYTICAL_FIRST_LAST_VARSIZED_L_ALL_ROWS	\
 	do { \
 		const void *curval = BUNtail(bpi, i - 1);	\
 		for (; k < i; k++) \
@@ -342,19 +405,20 @@ gdk_return
 GDKanalyticallast(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	lng i = 0, k = 0, cnt = (lng) BATcount(b);
+	lng i = 0, j = 0, k = 0, cnt = (lng) BATcount(b);
 	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
-	bit *restrict np = p ? Tloc(p, 0) : NULL; 
+	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	BATiter bpi = bat_iterator(b);
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 
-	(void) o;
 	switch (frame_type) {
-	case 3:
-	case 4:
-	case 5: {
-		ANALYTICAL_FIRST_LAST_BRANCHES(L_TRIVIAL);
+	case 3: /* unbounded until current row */	{
+		ANALYTICAL_FIRST_LAST_BRANCHES(L_UNBOUNDED_TILL_CURRENT_ROW);
+	} break;
+	case 4: /* current row until unbounded */
+	case 5: /* all rows */	{
+		ANALYTICAL_FIRST_LAST_BRANCHES(L_ALL_ROWS);
 	} break;
 	case 6: /* current row */ {
 		ANALYTICAL_FIRST_LAST_BRANCHES(L_CURRENT_ROW);
