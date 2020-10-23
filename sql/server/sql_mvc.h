@@ -285,6 +285,8 @@ extern lng val_get_number(ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, lng v);
 #endif
 
+#define get_string_global_var(m, val) (sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), val)))
+
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);

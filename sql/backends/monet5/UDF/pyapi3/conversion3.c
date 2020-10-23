@@ -1115,20 +1115,20 @@ str ConvertFromSQLType(BAT *b, sql_subtype *sql_subtype, BAT **ret_bat,
 		// numeric field and convert the one it's actually stored in
 		switch (bat_type) {
 			case TYPE_bte:
-				res = batbte_dec2_dbl(&result, &hpos, &b->batCacheid);
+				res = batbte_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
 				break;
 			case TYPE_sht:
-				res = batsht_dec2_dbl(&result, &hpos, &b->batCacheid);
+				res = batsht_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
 				break;
 			case TYPE_int:
-				res = batint_dec2_dbl(&result, &hpos, &b->batCacheid);
+				res = batint_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
 				break;
 			case TYPE_lng:
-				res = batlng_dec2_dbl(&result, &hpos, &b->batCacheid);
+				res = batlng_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
 				break;
 #ifdef HAVE_HGE
 			case TYPE_hge:
-				res = bathge_dec2_dbl(&result, &hpos, &b->batCacheid);
+				res = bathge_dec2_dbl(&result, &hpos, &b->batCacheid, NULL);
 				break;
 #endif
 			default:
@@ -1160,16 +1160,16 @@ str ConvertToSQLType(Client cntxt, BAT *b, sql_subtype *sql_subtype,
 
 	switch (sql_subtype->type->eclass) {
 		case EC_TIMESTAMP:
-			res = batstr_2time_timestamp(&result_bat, &b->batCacheid, &digits);
+			res = batstr_2time_timestamp(&result_bat, &b->batCacheid, NULL, &digits);
 			break;
 		case EC_TIME:
-			res = batstr_2time_daytime(&result_bat, &b->batCacheid, &digits);
+			res = batstr_2time_daytime(&result_bat, &b->batCacheid, NULL, &digits);
 			break;
 		case EC_DATE:
-			res = batstr_2_date(&result_bat, &b->batCacheid);
+			res = batstr_2_date(&result_bat, &b->batCacheid, NULL);
 			break;
 		case EC_DEC:
-			res = batdbl_num2dec_lng(&result_bat, &b->batCacheid,
+			res = batdbl_num2dec_lng(&result_bat, &b->batCacheid, NULL,
 									 &digits, &scale);
 			break;
 		default:
