@@ -112,15 +112,6 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-#define CHECK_NEGATIVES_COLUMN(TPE) \
-	for (TPE *lp = (TPE*)Tloc(l, 0), *lend = lp + BATcount(l); lp < lend && !is_negative; lp++) { \
-		is_negative |= !is_##TPE##_nil(*lp) && (*lp < 0); \
-	} \
-
-#define CHECK_NEGATIVES_SINGLE(TPE, MEMBER) \
-	is_negative = !is_##TPE##_nil(vlimit->val.MEMBER) && vlimit->val.MEMBER < 0; \
-	limit = &vlimit->val.MEMBER; \
-
 str
 SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -149,8 +140,8 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat *res = getArgReference_bat(stk, pci, 0);
 		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 1)), *p = NULL, *r, *l = NULL;
 		int tp1, tp2 = getArgType(mb, pci, part_offset + 5);
-		void* limit = NULL;
-		bool is_negative = false, is_a_bat;
+		void *limit = NULL;
+		bool is_a_bat;
 		gdk_return gdk_code;
 
 		if (!b)
@@ -167,90 +158,16 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			tp2 = getBatType(tp2);
 
 		voidresultBAT(r, TYPE_lng, BATcount(b), b, "sql.window_bound");
-		if(is_a_bat) { //SQL_CURRENT_ROW shall never fall in limit validation
-			l = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 5));
-			if (!l) {
+		if (is_a_bat) { //SQL_CURRENT_ROW shall never fall in limit validation
+			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 5)))) {
 				BBPunfix(b->batCacheid);
 				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
 			}
-			if ((unit == 0 || unit == 2) && l->tnil) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(l->batCacheid);
-				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-null for %s frame", preceding ? "PRECEDING" : "FOLLOWING", (unit == 0) ? "ROWS" : "GROUPS");
-			}
-			switch (tp2) {
-				case TYPE_bte:
-					CHECK_NEGATIVES_COLUMN(bte)
-					break;
-				case TYPE_sht:
-					CHECK_NEGATIVES_COLUMN(sht)
-					break;
-				case TYPE_int:
-					CHECK_NEGATIVES_COLUMN(int)
-					break;
-				case TYPE_lng:
-					CHECK_NEGATIVES_COLUMN(lng)
-					break;
-				case TYPE_flt:
-					CHECK_NEGATIVES_COLUMN(flt)
-					break;
-				case TYPE_dbl:
-					CHECK_NEGATIVES_COLUMN(dbl)
-					break;
-#ifdef HAVE_HGE
-				case TYPE_hge:
-					CHECK_NEGATIVES_COLUMN(hge)
-					break;
-#endif
-				default: {
-					BBPunfix(b->batCacheid);
-					BBPunfix(l->batCacheid);
-					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit not available for %s", "sql.window_bound", ATOMname(tp2));
-				}
-			}
-			if (is_negative) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(l->batCacheid);
-				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "All values on %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
-			}
 		} else {
-			ValRecord *vlimit = &(stk)->stk[(pci)->argv[part_offset + 5]];
-
-			switch (tp2) {
-				case TYPE_bte:
-					CHECK_NEGATIVES_SINGLE(bte, btval)
-					break;
-				case TYPE_sht:
-					CHECK_NEGATIVES_SINGLE(sht, shval)
-					break;
-				case TYPE_int:
-					CHECK_NEGATIVES_SINGLE(int, ival)
-					break;
-				case TYPE_lng:
-					CHECK_NEGATIVES_SINGLE(lng, lval)
-					break;
-				case TYPE_flt:
-					CHECK_NEGATIVES_SINGLE(flt, fval)
-					break;
-				case TYPE_dbl:
-					CHECK_NEGATIVES_SINGLE(dbl, dval)
-					break;
-#ifdef HAVE_HGE
-				case TYPE_hge:
-					CHECK_NEGATIVES_SINGLE(hge, hval)
-					break;
-#endif
-				default: {
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.window_bound", SQLSTATE(42000) "%s limit is not available for %s", "sql.window_bound", ATOMname(tp2));
-				}
-			}
-			if (is_negative)
-				throw(SQL, "sql.window_bound", SQLSTATE(42000) "The %s boundary must be non-negative", preceding ? "PRECEDING" : "FOLLOWING");
+			limit = getArgReference(stk, pci, part_offset + 5);
 		}
 		if (part_offset) {
-			p = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-			if (!p) {
+			if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
 				if(l) BBPunfix(l->batCacheid);
 				BBPunfix(b->batCacheid);
 				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -258,13 +175,13 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		//On RANGE frame, when "CURRENT ROW" is not specified, the ranges are calculated with SQL intervals in mind
-		if((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && unit == 1 && bound < 4) {
+		if ((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && unit == 1 && bound < 4) {
 			msg = MTIMEanalyticalrangebounds(r, b, p, l, limit, tp1, tp2, preceding, first_half);
-			if(msg == MAL_SUCCEED)
+			if (msg == MAL_SUCCEED)
 				BBPkeepref(*res = r->batCacheid);
 		} else {
 			gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, first_half);
-			if(gdk_code == GDK_SUCCEED)
+			if (gdk_code == GDK_SUCCEED)
 				BBPkeepref(*res = r->batCacheid);
 			else
 				msg = createException(SQL, "sql.window_bound", GDK_EXCEPTION);
