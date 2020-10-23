@@ -2185,10 +2185,13 @@ flusher_should_run(void)
 	char *reason_to = NULL, *reason_not_to = NULL;
 	int changes;
 
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
+
 	if (flusher.countdown_ms <= 0)
 		reason_to = "timer expired";
 
-	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 1000000;
+	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 100000;
 	if ((changes = logger_funcs.changes()) >= many_changes)
 		reason_to = "many changes";
 	else if (changes == 0)
@@ -2318,7 +2321,8 @@ store_apply_deltas(bool not_locked)
 void
 store_flush_log(void)
 {
-	ATOMIC_SET(&flusher.flush_now, 1);
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
 }
 
 /* Call while holding bs_lock */
@@ -7555,8 +7559,17 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
+	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
+
 	sql_trans *tr;
 	int snr;
+
+	/* add wait when flush is realy needed */
+	while (ATOMIC_GET(&flusher.flush_now)) {
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(sleeptime);
+		MT_lock_set(&bs_lock);
+	}
 
 	tr = s->tr;
 	snr = tr->schema_number;
