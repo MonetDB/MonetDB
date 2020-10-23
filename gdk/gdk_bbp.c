@@ -3682,6 +3682,10 @@ BBPdiskscan(const char *parent, size_t baseoff)
 				/* older versions used .thash which we
 				 * can simply ignore */
 				delete = true;
+			} else if (strncmp(p + 1, "thsh", 4) == 0) {
+				/* temporary hash files which we can
+				 * simply ignore */
+				delete = true;
 			} else if (strncmp(p + 1, "timprints", 9) == 0) {
 				BAT *b = getdesc(bid);
 				delete = b == NULL;

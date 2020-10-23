@@ -60,17 +60,51 @@ static struct rusage prevUsage;
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
+/*
+ * We use a buffer (`logbuffer`) where we incrementally create the output JSON object. Initially we allocate LOGLEN (8K)
+ * bytes and we keep the capacity of the buffer (`logcap`) and the length of the current string (`loglen`).
+ *
+ * We use the `logadd` macro to add data to our buffer (usually key-value pairs). This macro offers an interface similar
+ * to printf.
+ *
+ * The first snprintf bellow happens in a statically allocated buffer that might be much smaller than logcap. We do not
+ * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
+ *
+ * There are three cases:
+ *
+ * 1. The new string fits in the current buffer -> we just update the buffer
+ *
+ * 2. The new string does not fit in the current buffer, but is smaller than the capacity of the buffer -> we output the
+ * current contents of the buffer and start at the beginnig.
+ *
+ * 3. The new string exceeds the current capacity of the buffer -> we output the current contents and reallocate the
+ * buffer. The new capacity is 1.5 times the length of the new string.
+ */
 #define logadd(...)														\
 	do {																\
 		char tmp_buff[LOGLEN];											\
-		int tmp_len = 0;												\
+		size_t tmp_len = 0;												\
 		tmp_len = snprintf(tmp_buff, LOGLEN, __VA_ARGS__);				\
-		if (loglen + tmp_len < LOGLEN)									\
-			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
-		else {															\
+		if (loglen + tmp_len < logcap)									\
+			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
+		else if (tmp_len < logcap) {									\
 			logjsonInternal(logbuffer);									\
 			lognew();													\
-			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
+			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
+		}																\
+		else {															\
+			char *alloc_buff;											\
+			logjsonInternal(logbuffer);									\
+			logcap = tmp_len + tmp_len/2;								\
+			alloc_buff = (char *)realloc(logbuffer, logcap);			\
+			if (alloc_buff == NULL) {									\
+				TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n"); \
+				free(logbuffer);										\
+				return;													\
+			}															\
+			logbuffer = alloc_buff;										\
+			lognew();													\
+			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
 		}																\
 	} while (0)
 
@@ -87,27 +121,6 @@ static void logjsonInternal(char *logbuffer)
 		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
 	MT_lock_unset(&mal_profileLock);
-}
-
-static char *
-truncate_string(char *inp)
-{
-	size_t len;
-	char *ret;
-	size_t ret_len = LOGLEN/2;
-	size_t padding = 64;
-
-	len = strlen(inp);
-	ret = (char *)GDKmalloc(ret_len + 1);
-	if (ret == NULL) {
-		return NULL;
-	}
-
-	snprintf(ret, ret_len + 1, "%.*s...<truncated>...%.*s",
-			 (int) (ret_len/2), inp, (int) (ret_len/2 - padding),
-			 inp + (len - ret_len/2 + padding));
-
-	return ret;
 }
 
 /* JSON rendering method of performance data.
@@ -127,8 +140,8 @@ EXAMPLE:
 static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	char logbuffer[LOGLEN], *logbase;
-	size_t loglen;
+	char *logbuffer = NULL, *logbase;
+	size_t loglen, logcap = LOGLEN;
 	str c;
 	str stmtq;
 	lng usec;
@@ -149,6 +162,12 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
  */
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
+
+	logbuffer = (char *)malloc(logcap);
+	if (logbuffer == NULL) {
+		TRC_ERROR(MAL_SERVER, "Profiler JSON buffer allocation failure\n");
+		return;
+	}
 
 	usec= pci->clock;
 	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
@@ -274,17 +293,11 @@ This information can be used to determine memory footprint and variable life tim
 					logadd(",\"count\":"BUNFMT, cnt);
 					logadd(",\"size\":" LLFMT, total);
 				} else{
-					char *truncated = NULL;
 					tname = getTypeName(tpe);
 					logadd(",\"type\":\"%s\"", tname);
 					logadd(",\"const\":%d", isVarConstant(mb, getArg(pci,j)));
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
-					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
-						truncated = truncate_string(stmtq);
-						GDKfree(stmtq);
-						stmtq = truncated;
-					}
 					if (stmtq)
 						logadd(",\"value\":\"%s\"", stmtq);
 					GDKfree(cv);
@@ -301,6 +314,7 @@ This information can be used to determine memory footprint and variable life tim
 		}
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
+	free(logbuffer);
 }
 
 /* the OS details on cpu load are read from /proc/stat
@@ -380,8 +394,8 @@ void
 profilerHeartbeatEvent(char *alter)
 {
 	char cpuload[BUFSIZ];
-	char logbuffer[LOGLEN], *logbase;
-	int loglen;
+	char *logbuffer = NULL, *logbase;
+	size_t loglen, logcap = LOGLEN;
 	lng usec;
 	uint64_t microseconds;
 
@@ -393,6 +407,12 @@ profilerHeartbeatEvent(char *alter)
 	/* get CPU load on beat boundaries only */
 	if (getCPULoad(cpuload))
 		return;
+
+	logbuffer = (char *)malloc(logcap);
+	if (logbuffer == NULL) {
+		TRC_ERROR(MAL_SERVER, "Profiler JSON buffer allocation failure\n");
+		return;
+	}
 
 	lognew();
 	logadd("{"); // fill in later with the event counter
@@ -425,6 +445,7 @@ profilerHeartbeatEvent(char *alter)
 	logadd("\"cpuload\":%s",cpuload);
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
+	free(logbuffer);
 }
 
 void

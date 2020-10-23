@@ -32,7 +32,7 @@ else()
   set(QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 endif()
 set(QXSOURCE "${CMAKE_SOURCE_DIR}")
-set(QXsysconfdir "${CMAKE_INSTALL_SYSCONFDIR}")
+set(QXsysconfdir "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 set(SOURCE "${CMAKE_SOURCE_DIR}")
 
 if (HAVE_CURL)

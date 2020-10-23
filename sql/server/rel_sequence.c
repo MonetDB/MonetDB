@@ -93,13 +93,13 @@ rel_create_seq(
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
 	if (find_sql_sequence(s, name)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
 	} else if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	}
 
 	/* generate defaults */
@@ -259,14 +259,14 @@ rel_alter_seq(
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
 	if (!(seq = find_sql_sequence(s, name))) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", name);
 	}
 	if (!mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	}
 
 	/* first alter the known values */

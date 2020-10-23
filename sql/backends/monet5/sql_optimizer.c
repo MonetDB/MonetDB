@@ -28,32 +28,7 @@
 static lng
 SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 {
-	lng size = 0;
-	BAT *b;
-	switch(access){
-	case 0:
-		b= store_funcs.bind_col(tr, c, RDONLY);
-		if (b) {
-			size += getBatSpace(b);
-			BBPunfix(b->batCacheid);
-		}
-		break;
-	case 1:
-		assert(0);
-		break;
-	case 2:
-		b = store_funcs.bind_col(tr, c, RD_UPD_VAL);
-		if (b) {
-			size += getBatSpace(b);
-			BBPunfix(b->batCacheid);
-		}
-		b = store_funcs.bind_col(tr, c, RD_UPD_ID);
-		if (b) {
-			size+= getBatSpace(b);
-			BBPunfix(b->batCacheid);
-		}
-	}
-	return size;
+	return store_funcs.count_col(tr, c, access);
 }
 
 /*
@@ -114,24 +89,16 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			char *idxname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
 			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
 			sql_schema *s = mvc_bind_schema(m, sname);
-			BAT *b;
 
 			if (getFunctionId(p) == bindidxRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-					b = store_funcs.bind_idx(tr, i, RDONLY);
-					if (b) {
-						space += (size =getBatSpace(b));
-						if (!size) {
-							sql_column *c = i->t->columns.set->h->data;
-							size = SQLgetColumnSize(tr, c, access);
-						}
+					sql_column *c = i->t->columns.set->h->data;
+					size = SQLgetColumnSize(tr, c, access);
 
-						if( !prepare && size == 0 && ! i->t->system){
-							setFunctionId(p, emptybindidxRef);
-						}
-						BBPunfix(b->batCacheid);
+					if( !prepare && size == 0 && ! i->t->system){
+						setFunctionId(p, emptybindidxRef);
 					}
 				}
 			}
@@ -144,7 +111,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 str
 getSQLoptimizer(mvc *m)
 {
-	char *opt = sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "optimizer"));
+	char *opt = get_string_global_var(m, "optimizer");
 	char *pipe = "default_pipe";
 
 	if (opt)

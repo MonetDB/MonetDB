@@ -47,14 +47,14 @@ sql_drop_statistics(mvc *m, sql_table *t)
 		throw(SQL, "sql_drop_statistics", SQLSTATE(42S02) "DROP STATISTICS: %s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (!table_privs(m, t, PRIV_SELECT))
 		throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to table '%s.%s'", 
-			  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), t->s->base.name, t->base.name);
+			  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 	if (isTable(t) && t->columns.set) {
 		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 			sql_column *c = (sql_column *) ncol->data;
 
 			if (!column_privs(m, c, PRIV_SELECT))
 				throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to column '%s' on table '%s.%s'", 
-					  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), c->base.name, t->s->base.name, t->base.name);
+					  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
 		}
 	}
 
@@ -141,7 +141,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 				if (!table_privs(m, t, PRIV_SELECT))
 					throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'", 
-						  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), t->s->base.name, t->base.name);
+						  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 				if (isTable(t) && t->columns.set) {
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 						sql_column *c = (sql_column *) ncol->data;
@@ -151,7 +151,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						cfnd = 1;
 						if (!column_privs(m, c, PRIV_SELECT))
 							throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'", 
-								  sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), "current_user")), c->base.name, t->s->base.name, t->base.name);
+								  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
 					}
 				}
 			}
