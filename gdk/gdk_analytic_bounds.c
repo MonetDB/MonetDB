@@ -183,8 +183,6 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 			if (is_##TPE##_nil(olimit) || olimit < 0)	\
 				goto invalid_bound;	\
 			rlimit = UPCAST;	\
-			if (is_lng_nil(rlimit) || rlimit < 0)	\
-				goto invalid_bound;	\
 			for (j = k; ; j--) {		\
 				if (j == m) {		\
 					j++; \
@@ -552,7 +550,7 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 			rb[k] = i;
 	}
 
-	BATsetcount(r, cnt);
+	BATsetcount(r, (BUN) cnt);
 	r->tnonil = false;
 	r->tnil = false;
 	return GDK_SUCCEED;
@@ -655,7 +653,7 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		}
 	}
 
-	BATsetcount(r, cnt);
+	BATsetcount(r, (BUN) cnt);
 	r->tnonil = (nils == 0);
 	r->tnil = (nils > 0);
 	return GDK_SUCCEED;
@@ -674,7 +672,7 @@ static gdk_return
 GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, bool preceding)
 {
 	lng cnt = (lng) BATcount(b), nils = 0, *restrict rb = (lng *) Tloc(r, 0), i = 0, k = 0, j = 0;
-	bit *np = p ? (bit *) Tloc(p, 0) : NULL;
+	bit *restrict np = p ? (bit *) Tloc(p, 0) : NULL;
 	BATiter bpi = bat_iterator(b);
 	int (*atomcmp) (const void *, const void *) = ATOMcompare(tp1);
 	const void *nil = ATOMnilptr(tp1);
@@ -849,7 +847,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			goto bound_not_supported;
 		}
 	}
-	BATsetcount(r, cnt);
+	BATsetcount(r, (BUN) cnt);
 	r->tnonil = (nils == 0);
 	r->tnil = (nils > 0);
 	return GDK_SUCCEED;
@@ -967,7 +965,7 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, lng, limit, olimit);
 		}
 	}
-	BATsetcount(r, cnt);
+	BATsetcount(r, (BUN) cnt);
 	return GDK_SUCCEED;
       bound_not_supported:
 	GDKerror("42000!groups frame bound type %s not supported.\n", ATOMname(tp2));
