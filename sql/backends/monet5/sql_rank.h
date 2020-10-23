@@ -30,6 +30,7 @@ sql5_export str SQLfirst_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 sql5_export str SQLlast_value_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLnth_value_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* aggregates */
 sql5_export str SQLmin_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
