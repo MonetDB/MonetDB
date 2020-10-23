@@ -4609,7 +4609,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 
 	is_nth_value = !strcmp(aname, "nth_value");
-	supports_frames = window_function->token != SQL_RANK || is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
+	bool is_value = is_nth_value || !strcmp(aname, "first_value") || !strcmp(aname, "last_value");
+	supports_frames = window_function->token != SQL_RANK || is_value;
 
 	if (is_sql_update_set(f) || is_sql_psm(f) || is_sql_values(f) || is_sql_join(f) || is_sql_where(f) || is_sql_groupby(f) || is_sql_having(f) || is_psm_call(f) || is_sql_from(f)) {
 		char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
@@ -4842,7 +4843,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		if (list_empty(obe) && frame_type == FRAME_RANGE) { /* window functions are weird */
 			frame_type = FRAME_ALL;
 			shortcut = true;
-		} else if ((rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW || rstart->token == SQL_FOLLOWING) && rstart->type == type_int &&
+		} else if (!is_value && (rstart->token == SQL_PRECEDING || rstart->token == SQL_CURRENT_ROW || rstart->token == SQL_FOLLOWING) && rstart->type == type_int &&
 			(rend->token == SQL_PRECEDING || rend->token == SQL_CURRENT_ROW || rend->token == SQL_FOLLOWING) && rend->type == type_int) {
 			 /* special cases, don't calculate bounds */
 			if (frame_type != FRAME_ROWS && rstart->data.i_val == UNBOUNDED_PRECEDING_BOUND && rend->data.i_val == CURRENT_ROW_BOUND) {
@@ -4869,7 +4870,20 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				return NULL;
 		}
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
-		frame_type = list_empty(obe) ? FRAME_ALL : FRAME_UNBOUNDED_TILL_CURRENT_ROW;
+		if (is_value) {
+			sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"),
+						*bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);;
+			unsigned char sclass = bt->type->eclass;
+
+			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMBER(sclass) ? bt : it));
+			fend = order_by_clause ? exp_atom(sql->sa, atom_zero_value(sql->sa, EC_NUMBER(sclass) ? bt : it)) : exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMBER(sclass) ? bt : it));
+
+			if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
+										SQL_PRECEDING, SQL_FOLLOWING) == NULL)
+				return NULL;
+		} else {
+			frame_type = list_empty(obe) ? FRAME_ALL : FRAME_UNBOUNDED_TILL_CURRENT_ROW;
+		}
 	}
 
 	if (!pe || !oe)
@@ -4896,13 +4910,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	for (node *n = fargs->h ; n ; n = n->next)
 		list_append(args, n->data);
 	if (supports_frames) {
-		list_append(args, exp_atom_int(sql->sa, frame_type));
+		if (!is_value)
+			list_append(args, exp_atom_int(sql->sa, frame_type));
 		if (start && eend) {
 			list_append(args, start);
 			list_append(args, eend);
 		} else if (frame_type == FRAME_UNBOUNDED_TILL_CURRENT_ROW || frame_type == FRAME_CURRENT_ROW_TILL_UNBOUNDED)
 			list_append(args, exp_copy(sql, oe));
-		if (gbe)
+		if (gbe && !is_value)
 			list_append(args, exp_copy(sql, pe));
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
