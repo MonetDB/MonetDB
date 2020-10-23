@@ -4075,13 +4075,12 @@ def main(argv) :
 
     if THISFILE == "Mtest.py": # env['MAPIPORT'] not available on Mapprove.py
         try:
-            s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-            s.bind(('::1', int(env['MAPIPORT'])))
+            with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+                s.bind(('::1', int(env['MAPIPORT'])))
         except socket.error as err:
             CONDITIONALS['HAVE_IPV6'] = '' # False
         else:
             CONDITIONALS['HAVE_IPV6'] = '#' # True
-        s.close()
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
