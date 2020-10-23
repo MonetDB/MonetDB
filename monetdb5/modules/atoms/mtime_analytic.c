@@ -33,10 +33,11 @@
 	do {																\
 		lng m = k - 1;													\
 		TPE1 v, vmin, vmax;												\
-		TPE2 rlimit;													\
 		if (b->tnonil) {												\
-			for (; k<i; k++, rb++) {									\
-				rlimit = (TPE2) LIMIT;									\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
 				v = bp[k];												\
 				vmin = SUB(v, rlimit);									\
 				vmax = ADD(v, rlimit);									\
@@ -48,11 +49,13 @@
 						break;											\
 				}														\
 				j++;													\
-				*rb = j;												\
+				rb[k] = j;												\
 			}															\
 		} else {														\
-			for (; k<i; k++, rb++) {									\
-				rlimit = (TPE2) LIMIT;									\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
 				v = bp[k];												\
 				if (is_##TPE1##_nil(v)) {								\
 					for (j=k; ; j--) {									\
@@ -73,7 +76,7 @@
 					}													\
 				}														\
 				j++;													\
-				*rb = j;												\
+				rb[k] = j;												\
 			}															\
 		} \
 	} while(0)
@@ -81,10 +84,11 @@
 #define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
 		TPE1 v, vmin, vmax;												\
-		TPE2 rlimit;													\
 		if (b->tnonil) {												\
-			for (; k<i; k++, rb++) {									\
-				rlimit = (TPE2) LIMIT;									\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
 				v = bp[k];												\
 				vmin = SUB(v, rlimit);									\
 				vmax = ADD(v, rlimit);									\
@@ -93,11 +97,13 @@
 						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
 						break;											\
 				}														\
-				*rb = j;												\
+				rb[k] = j;												\
 			}															\
 		} else {														\
-			for (; k<i; k++, rb++) {									\
-				rlimit = (TPE2) LIMIT;									\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
 				v = bp[k];												\
 				if (is_##TPE1##_nil(v)) {								\
 					for (j=k+1; j<i; j++) {								\
@@ -115,7 +121,7 @@
 							break;										\
 					}													\
 				}														\
-				*rb = j;												\
+				rb[k] = j;												\
 			}															\
 		} \
 	} while(0)
@@ -123,28 +129,21 @@
 #define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(TPE1, IMP, LIMIT, TPE2, SUB, ADD) \
 	do { \
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0); \
-		if(np) { \
-			nend += cnt; \
-			for(; np<nend; np++) { \
-				if (*np) { \
-					i += (np - pnp); \
+		if (p) {						\
+			for (; i < cnt; i++) {			\
+				if (np[i]) 			\
 					IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
-					pnp = np; \
-				} \
-			} \
-			i += (np - pnp); \
-			IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
-		} else { \
-			i += (lng) cnt; \
-			IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
-		} \
+			}						\
+		}		\
+		i = cnt;					\
+		IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
 	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(IMP, LIMIT) \
 	do { \
-		if(tp1 == TYPE_date) { \
+		if (tp1 == TYPE_date) { \
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, date_sub_month, date_add_month); \
-		} else if(tp1 == TYPE_timestamp) { \
+		} else if (tp1 == TYPE_timestamp) { \
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
 		} else { \
 			goto type_not_supported; \
@@ -153,11 +152,11 @@
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(IMP, LIMIT) \
 	do { \
-		if(tp1 == TYPE_daytime) { \
+		if (tp1 == TYPE_daytime) { \
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, daytime_sub_msec, daytime_add_msec); \
-		} else if(tp1 == TYPE_date) { \
+		} else if (tp1 == TYPE_date) { \
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, date_sub_msec, date_add_msec); \
-		} else if(tp1 == TYPE_timestamp) { \
+		} else if (tp1 == TYPE_timestamp) { \
 			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
 		} else { \
 			goto type_not_supported; \
@@ -168,9 +167,9 @@ str //VERY IMPORTANT -> only FRAME_RANGE shall fall here
 MTIMEanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void* restrict bound, int tp1, int tp2,
 						   bool preceding, lng first_half)
 {
-	BUN cnt = BATcount(b), nils = 0;
-	lng *restrict rb = (lng*) Tloc(r, 0), i = 0, k = 0, j = 0;
-	bit *np = p ? (bit*) Tloc(p, 0) : NULL, *pnp = np, *nend = np;
+	BUN nils = 0;
+	lng *restrict rb = (lng*) Tloc(r, 0), i = 0, k = 0, j = 0, cnt = (lng) BATcount(b);
+	bit *restrict np = p ? (bit*) Tloc(p, 0) : NULL;
 	str msg = MAL_SUCCEED;
 
 	(void) first_half;
@@ -227,4 +226,6 @@ bound_not_supported:
 	throw(MAL, "mtime.analyticalrangebounds", SQLSTATE(42000) "range frame bound type %s not supported.\n", ATOMname(tp2));
 type_not_supported:
 	throw(MAL, "mtime.analyticalrangebounds", SQLSTATE(42000) "type %s not supported for %s frame bound type.\n", ATOMname(tp1), ATOMname(tp2));
+invalid_bound:
+	throw(MAL, "mtime.analyticalrangebounds", SQLSTATE(42000) "range frame bound must be non negative and non null\n");
 }

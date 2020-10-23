@@ -34,8 +34,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       cast(sum(aa) over (order by aa groups unbounded preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint),
 #       cast(sum(aa) over (partition by bb order by bb range unbounded preceding) as bigint),
-% sys.%10,	sys.%20,	sys.%30,	sys.%40,	sys.%50,	sys.%60,	sys.%70,	sys.%100 # table_name
-% %10,	%20,	%30,	%40,	%50,	%60,	%70,	%100 # name
+% sys.%10,	sys.%14,	sys.%24,	sys.%30,	sys.%34,	sys.%44,	sys.%50,	sys.%54 # table_name
+% %10,	%14,	%24,	%30,	%34,	%44,	%50,	%54 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 2,	2,	2,	2,	2,	2,	2,	2 # length
 [ 1,	20,	1,	4,	4,	1,	6,	6	]
@@ -54,8 +54,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       count(aa) over (order by aa range between unbounded preceding and current row),
 #       min(aa) over (order by aa range between unbounded preceding and current row),
 #       max(aa) over (order by aa range between unbounded preceding and current row),
-% sys.%10,	sys.%20,	sys.%27,	sys.%36,	sys.%45,	sys.%54,	sys.%63,	sys.%72 # table_name
-% %10,	%20,	%27,	%36,	%45,	%54,	%63,	%72 # name
+% sys.%4,	sys.%10,	sys.%13,	sys.%16,	sys.%21,	sys.%24,	sys.%27,	sys.%32 # table_name
+% %4,	%10,	%13,	%16,	%21,	%24,	%27,	%32 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	2,	2,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -74,8 +74,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       count(aa) over (order by aa groups between unbounded preceding and current row),
 #       min(aa) over (order by aa groups between unbounded preceding and current row),
 #       max(aa) over (order by aa groups between unbounded preceding and current row),
-% sys.%10,	sys.%20,	sys.%27,	sys.%36,	sys.%45,	sys.%54,	sys.%63,	sys.%72 # table_name
-% %10,	%20,	%27,	%36,	%45,	%54,	%63,	%72 # name
+% sys.%4,	sys.%10,	sys.%13,	sys.%16,	sys.%21,	sys.%24,	sys.%27,	sys.%32 # table_name
+% %4,	%10,	%13,	%16,	%21,	%24,	%27,	%32 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	2,	2,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -112,8 +112,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       count(aa) over (order by aa range between unbounded preceding and current row),
 #       min(aa) over (order by aa range between unbounded preceding and current row),
 #       max(aa) over (order by aa range between unbounded preceding and current row),
-% sys.%10,	sys.%20,	sys.%27,	sys.%36,	sys.%45,	sys.%54,	sys.%63,	sys.%72 # table_name
-% %10,	%20,	%27,	%36,	%45,	%54,	%63,	%72 # name
+% sys.%4,	sys.%10,	sys.%13,	sys.%16,	sys.%21,	sys.%24,	sys.%27,	sys.%32 # table_name
+% %4,	%10,	%13,	%16,	%21,	%24,	%27,	%32 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	1,	1,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -129,8 +129,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       count(aa) over (order by aa groups between unbounded preceding and current row),
 #       min(aa) over (order by aa groups between unbounded preceding and current row),
 #       max(aa) over (order by aa groups between unbounded preceding and current row),
-% sys.%10,	sys.%20,	sys.%27,	sys.%36,	sys.%45,	sys.%54,	sys.%63,	sys.%72 # table_name
-% %10,	%20,	%27,	%36,	%45,	%54,	%63,	%72 # name
+% sys.%4,	sys.%10,	sys.%13,	sys.%16,	sys.%21,	sys.%24,	sys.%27,	sys.%32 # table_name
+% %4,	%10,	%13,	%16,	%21,	%24,	%27,	%32 # name
 % bigint,	bigint,	bigint,	bigint,	int,	int,	double,	double # type
 % 2,	2,	1,	1,	1,	1,	24,	24 # length
 [ 4,	4,	4,	4,	1,	1,	1,	1	]
@@ -163,8 +163,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       count(aa) over (order by bb groups between current row and unbounded following),
 #       count(aa) over (partition by bb order by bb rows unbounded preceding),
 #       count(aa) over (partition by bb order by bb range unbounded preceding),
-% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%43,	sys.%52,	sys.%61,	sys.%70 # table_name
-% %7,	%16,	%25,	%34,	%43,	%52,	%61,	%70 # name
+% sys.%7,	sys.%12,	sys.%21,	sys.%24,	sys.%27,	sys.%36,	sys.%41,	sys.%44 # table_name
+% %7,	%12,	%21,	%24,	%27,	%36,	%41,	%44 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1,	1,	1 # length
 [ 7,	7,	7,	7,	7,	1,	3,	3	]
@@ -183,8 +183,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       min(aa) over (order by bb groups between current row and unbounded following),
 #       min(aa) over (partition by bb order by bb rows unbounded preceding),
 #       min(aa) over (partition by bb order by bb range unbounded preceding),
-% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%43,	sys.%52,	sys.%61,	sys.%70 # table_name
-% %7,	%16,	%25,	%34,	%43,	%52,	%61,	%70 # name
+% sys.%7,	sys.%12,	sys.%21,	sys.%24,	sys.%27,	sys.%36,	sys.%41,	sys.%44 # table_name
+% %7,	%12,	%21,	%24,	%27,	%36,	%41,	%44 # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 7,	7,	7,	7,	7,	7,	7,	7 # length
 [ "another",	"another",	"another",	"another",	"another",	"one",	"another",	"another"	]
@@ -203,8 +203,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       max(aa) over (order by bb groups between current row and unbounded following),
 #       max(aa) over (partition by bb order by bb rows unbounded preceding),
 #       max(aa) over (partition by bb order by bb range unbounded preceding),
-% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%43,	sys.%52,	sys.%61,	sys.%70 # table_name
-% %7,	%16,	%25,	%34,	%43,	%52,	%61,	%70 # name
+% sys.%7,	sys.%12,	sys.%21,	sys.%24,	sys.%27,	sys.%36,	sys.%41,	sys.%44 # table_name
+% %7,	%12,	%21,	%24,	%27,	%36,	%41,	%44 # name
 % varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 6,	6,	6,	6,	6,	6,	6,	6 # length
 [ "stress",	"stress",	"stress",	"stress",	"stress",	"one",	"stress",	"stress"	]
@@ -255,8 +255,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       floor(avg(aa) over (order by bb range between current row and unbounded following)),
 #       floor(avg(aa) over (partition by bb order by bb rows unbounded preceding)),
 #       floor(avg(aa) over (partition by bb order by bb range unbounded preceding)) from overflowme;
-% sys.%65,	sys.%66,	sys.%67,	sys.%70,	sys.%71,	sys.%72 # table_name
-% %65,	%66,	%67,	%70,	%71,	%72 # name
+% sys.%37,	sys.%40,	sys.%41,	sys.%42,	sys.%43,	sys.%44 # table_name
+% %37,	%40,	%41,	%42,	%43,	%44 # name
 % double,	double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24,	24 # length
 [ 2147483645,	2147483645,	2147483645,	2147483645,	2147483644,	2147483645	]
