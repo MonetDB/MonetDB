@@ -823,6 +823,9 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 	const void *nil = ATOMnilptr(tp1);
 	int abort_on_error = 1;
 
+	if ((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && tp2 != TYPE_int && tp2 != TYPE_lng)
+		goto bound_not_supported;
+
 	if (l) {		/* dynamic bounds */
 		if (l->tnil)
 			goto invalid_bound;
@@ -914,6 +917,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 		case TYPE_int:
 		case TYPE_lng:{
 			lng limit = 0;
+			int int_limit = 0;
 			switch (tp2) {
 			case TYPE_bte:{
 				bte ll = (*(bte *) bound);
@@ -932,19 +936,17 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				break;
 			}
 			case TYPE_int:{
-				int ll = (*(int *) bound);
-				if (ll == GDK_int_max)
+				int_limit = (*(int *) bound);
+				if (int_limit == GDK_int_max)
 					return GDKanalyticalallbounds(r, b, p, preceding);
 				else
-					limit = is_int_nil(ll) ? lng_nil : (lng) ll;
+					limit = is_int_nil(int_limit) ? lng_nil : (lng) int_limit;
 				break;
 			}
 			case TYPE_lng:{
-				lng ll = (*(lng *) bound);
-				if (ll == GDK_lng_max)
+				limit = (*(lng *) bound);
+				if (limit == GDK_lng_max)
 					return GDKanalyticalallbounds(r, b, p, preceding);
-				else
-					limit = is_lng_nil(ll) ? lng_nil : (lng) ll;
 				break;
 			}
 			default:
@@ -955,9 +957,9 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			} else if (tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) {
 				if (tp2 == TYPE_int) {
 					if (preceding) {
-						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_PRECEDING, limit);
+						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_PRECEDING, int_limit);
 					} else {
-						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_FOLLOWING, limit);
+						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_FOLLOWING, int_limit);
 					}
 				} else {
 					if (preceding) {
