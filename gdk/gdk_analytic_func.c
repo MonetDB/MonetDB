@@ -11,74 +11,64 @@
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
 
-#define NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST)	\
+#define NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
 	do {					\
-		for (TPE i = 0; rb < rp; i++, rb++) {	\
+		TPE j = 0; \
+		UPCAST ncnt = (UPCAST) (i - k); \
+		for (; k < i; k++, j++) {	\
 			TPE val = NEXT_VALUE; \
 			if (is_##TPE##_nil(val)) {	\
 				has_nils = true;	\
-				*rb = TPE##_nil;	\
+				rb[k] = TPE##_nil;	\
 			} else { \
 				UPCAST nval = (UPCAST) LNG_HGE; \
+				VALIDATION /* validation must come after null check */	\
 				if (nval >= ncnt) { \
-					*rb = i + 1;  \
+					rb[k] = j + 1;  \
 				} else { \
 					UPCAST bsize = ncnt / nval; \
 					UPCAST top = ncnt - nval * bsize; \
 					UPCAST small = top * (bsize + 1); \
-					if ((UPCAST) i < small) \
-						*rb = (TPE)(1 + i / (bsize + 1)); \
+					if ((UPCAST) j < small) \
+						rb[k] = (TPE)(1 + j / (bsize + 1)); \
 					else \
-						*rb = (TPE)(1 + top + (i - small) / bsize); \
+						rb[k] = (TPE)(1 + top + (j - small) / bsize); \
 				} \
 			} \
 		} \
 	} while (0)
 
-#define ANALYTICAL_NTILE_IMP(TPE, NEXT_VALUE, LNG_HGE, UPCAST)	\
+#define ANALYTICAL_NTILE_IMP(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
 	do {							\
-		TPE *rp, *rb;	\
-		UPCAST ncnt; \
-		rb = rp = (TPE*)Tloc(r, 0);		\
-		if (p) {					\
-			pnp = np = (bit*)Tloc(p, 0);	\
-			end = np + cnt;				\
-			for (; np < end; np++) {	\
-				if (*np) {			\
-					ncnt = np - pnp;	\
-					rp += ncnt;		\
-					NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST);\
-					pnp = np;	\
-				}				\
-			}					\
-			ncnt = np - pnp;			\
-			rp += ncnt;				\
-			NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST);	\
-		} else {					\
-			ncnt = (UPCAST) cnt; \
-			rp += cnt;				\
-			NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST);	\
-		}						\
+		TPE *restrict rb = (TPE*)Tloc(r, 0);		\
+		if (p) {						\
+			for (; i < cnt; i++) {			\
+				if (np[i]) 			\
+					NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION);\
+			}						\
+		} 					\
+		i = cnt;					\
+		NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION);	\
 	} while (0)
 
 #define ANALYTICAL_NTILE_SINGLE_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
 		TPE ntl = *(TPE*) ntile; \
-		ANALYTICAL_NTILE_IMP(TPE, ntl, LNG_HGE, UPCAST); \
+		if (!is_##TPE##_nil(ntl) && ntl < 0) goto invalidntile; \
+		ANALYTICAL_NTILE_IMP(TPE, ntl, LNG_HGE, UPCAST, ;); \
 	} while (0)
 
 #define ANALYTICAL_NTILE_MULTI_IMP(TPE, LNG_HGE, UPCAST) \
 	do {	\
-		BUN k = 0; \
 		TPE *restrict nn = (TPE*)Tloc(n, 0);	\
-		ANALYTICAL_NTILE_IMP(TPE, nn[k++], LNG_HGE, UPCAST); \
+		ANALYTICAL_NTILE_IMP(TPE, nn[k], LNG_HGE, UPCAST, if (val < 0) goto invalidntile;); \
 	} while (0)
 
 gdk_return
 GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
 {
-	BUN cnt = BATcount(b);
-	bit *np, *pnp, *end;
+	lng i = 0, k = 0, cnt = (lng) BATcount(b);
+	bit *restrict np = p ? Tloc(p, 0) : NULL;
 	bool has_nils = false;
 
 	assert((n && !ntile) || (!n && ntile));
@@ -149,6 +139,9 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 	return GDK_SUCCEED;
 nosupport:
 	GDKerror("42000!type %s not supported for the ntile type.\n", ATOMname(tpe));
+	return GDK_FAIL;
+invalidntile:
+	GDKerror("42000!ntile must be greater than zero.\n");
 	return GDK_FAIL;
 }
 
