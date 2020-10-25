@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_analytic.h"
+#include "gdk_time.h"
 #include "gdk_calc_private.h"
 
 #define ANALYTICAL_DIFF_IMP(TPE)				\
@@ -516,6 +517,150 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	} while (0)
 #endif
 
+#define date_sub_month(D,M)			date_add_month(D,-(M))
+#define timestamp_sub_month(T,M)	timestamp_add_month(T,-(M))
+
+#define daytime_add_msec(D,M)		daytime_add_usec(D, 1000*(M))
+#define daytime_sub_msec(D,M)		daytime_add_usec(D, -1000*(M))
+#define date_add_msec(D,M)			date_add_day(D,(int) ((M)/(24*60*60*1000)))
+#define date_sub_msec(D,M)			date_add_day(D,(int) (-(M)/(24*60*60*1000)))
+#define timestamp_add_msec(T,M)		timestamp_add_usec(T, (M)*1000)
+#define timestamp_sub_msec(T,M)		timestamp_add_usec(T, -(M)*1000)
+
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
+	do {																\
+		lng m = k - 1;													\
+		TPE1 v, vmin, vmax;												\
+		if (b->tnonil) {												\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
+				v = bp[k];												\
+				vmin = SUB(v, rlimit);									\
+				vmax = ADD(v, rlimit);									\
+				for (j=k; ; j--) {										\
+					if (j == m)											\
+						break;											\
+					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
+						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
+						break;											\
+				}														\
+				j++;													\
+				rb[k] = j;												\
+			}															\
+		} else {														\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
+				v = bp[k];												\
+				if (is_##TPE1##_nil(v)) {								\
+					for (j=k; ; j--) {									\
+						if (!is_##TPE1##_nil(bp[j]))					\
+							break;										\
+					}													\
+				} else {												\
+					vmin = SUB(v, rlimit);								\
+					vmax = ADD(v, rlimit);								\
+					for (j=k; ; j--) {									\
+						if (j == m)										\
+							break;										\
+						if (is_##TPE1##_nil(bp[j]))						\
+							break;										\
+						if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||	\
+							(!is_##TPE1##_nil(vmax) && bp[j] > vmax))	\
+							break;										\
+					}													\
+				}														\
+				j++;													\
+				rb[k] = j;												\
+			}															\
+		} \
+	} while(0)
+
+#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
+	do {																\
+		TPE1 v, vmin, vmax;												\
+		if (b->tnonil) {												\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
+				v = bp[k];												\
+				vmin = SUB(v, rlimit);									\
+				vmax = ADD(v, rlimit);									\
+				for (j=k+1; j<i; j++) {									\
+					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||		\
+						(!is_##TPE1##_nil(vmax) && bp[j] > vmax))		\
+						break;											\
+				}														\
+				rb[k] = j;												\
+			}															\
+		} else {														\
+			for (; k < i; k++) {									\
+				TPE2 rlimit = LIMIT;	\
+				if (is_##TPE1##_nil(rlimit) || rlimit < 0)	\
+					goto invalid_bound;	\
+				v = bp[k];												\
+				if (is_##TPE1##_nil(v)) {								\
+					for (j=k+1; j<i; j++) {								\
+						if (!is_##TPE1##_nil(bp[j]))					\
+							break;										\
+					}													\
+				} else {												\
+					vmin = SUB(v, rlimit);								\
+					vmax = ADD(v, rlimit);								\
+					for (j=k+1; j<i; j++) {								\
+						if (is_##TPE1##_nil(bp[j]))						\
+							break;										\
+						if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||	\
+							(!is_##TPE1##_nil(vmax) && bp[j] > vmax))	\
+							break;										\
+					}													\
+				}														\
+				rb[k] = j;												\
+			}															\
+		} \
+	} while(0)
+
+#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(TPE1, IMP, LIMIT, TPE2, SUB, ADD) \
+	do { \
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0); \
+		if (p) {						\
+			for (; i < cnt; i++) {			\
+				if (np[i]) 			\
+					IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
+			}						\
+		}		\
+		i = cnt;					\
+		IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
+	} while(0)
+
+#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(IMP, LIMIT) \
+	do { \
+		if (tp1 == TYPE_date) { \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, date_sub_month, date_add_month); \
+		} else if (tp1 == TYPE_timestamp) { \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
+		} else { \
+			goto type_not_supported; \
+		} \
+	} while(0)
+
+#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(IMP, LIMIT) \
+	do { \
+		if (tp1 == TYPE_daytime) { \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, daytime_sub_msec, daytime_add_msec); \
+		} else if (tp1 == TYPE_date) { \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, date_sub_msec, date_add_msec); \
+		} else if (tp1 == TYPE_timestamp) { \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
+		} else { \
+			goto type_not_supported; \
+		} \
+	} while(0)
+
 static gdk_return
 GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 {
@@ -702,7 +847,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 		}
 		case TYPE_int:{
 			int *restrict limit = (int *) Tloc(l, 0);
-			if (preceding) {
+			if (tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) {
+				if (preceding) {
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_PRECEDING, limit[k]);
+				} else {
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_FOLLOWING, limit[k]);
+				}
+			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_NUM(_PRECEDING, limit[k], int);
 			} else {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_NUM(_FOLLOWING, limit[k], int);
@@ -711,7 +862,13 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 		}
 		case TYPE_lng:{
 			lng *restrict limit = (lng *) Tloc(l, 0);
-			if (preceding) {
+			if (tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) {
+				if (preceding) {
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(_PRECEDING, limit[k]);
+				} else {
+					ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(_FOLLOWING, limit[k]);
+				}
+			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_NUM(_PRECEDING, limit[k], lng);
 			} else {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_NUM(_FOLLOWING, limit[k], lng);
@@ -795,6 +952,20 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			}
 			if (is_lng_nil(limit) || limit < 0) {
 				goto invalid_bound;
+			} else if (tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) {
+				if (tp2 == TYPE_int) {
+					if (preceding) {
+						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_PRECEDING, limit);
+					} else {
+						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(_FOLLOWING, limit);
+					}
+				} else {
+					if (preceding) {
+						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(_PRECEDING, limit);
+					} else {
+						ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(_FOLLOWING, limit);
+					}
+				}
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_NUM(_PRECEDING, limit, lng);
 			} else {

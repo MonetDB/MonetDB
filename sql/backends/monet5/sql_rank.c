@@ -9,7 +9,6 @@
 #include "monetdb_config.h"
 #include "sql_rank.h"
 #include "gdk_analytic.h"
-#include "mtime.h"
 
 #define voidresultBAT(r,tpe,cnt,b,err)					\
 	do {								\
@@ -142,7 +141,6 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int tp1, tp2 = getArgType(mb, pci, part_offset + 5);
 		void *limit = NULL;
 		bool is_a_bat;
-		gdk_return gdk_code;
 
 		if (!b)
 			throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
@@ -175,17 +173,10 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		//On RANGE frame, when "CURRENT ROW" is not specified, the ranges are calculated with SQL intervals in mind
-		if ((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && unit == 1 && bound < 4) {
-			msg = MTIMEanalyticalrangebounds(r, b, p, l, limit, tp1, tp2, preceding, first_half);
-			if (msg == MAL_SUCCEED)
-				BBPkeepref(*res = r->batCacheid);
-		} else {
-			gdk_code = GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, first_half);
-			if (gdk_code == GDK_SUCCEED)
-				BBPkeepref(*res = r->batCacheid);
-			else
-				msg = createException(SQL, "sql.window_bound", GDK_EXCEPTION);
-		}
+		if (GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, first_half) == GDK_SUCCEED)
+			BBPkeepref(*res = r->batCacheid);
+		else
+			msg = createException(SQL, "sql.window_bound", GDK_EXCEPTION);
 		if(l) BBPunfix(l->batCacheid);
 		if(p) BBPunfix(p->batCacheid);
 		BBPunfix(b->batCacheid);
