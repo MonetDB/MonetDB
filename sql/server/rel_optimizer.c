@@ -3260,7 +3260,7 @@ rel_push_down_bounds(visitor *v, sql_rel *rel)
 
 		for (n = exps->h; n ; n = n->next) {
 			sql_exp *e = n->data;
-			int cnt, fcnt;
+			int cnt, fcnt, is_value, i = 0;
 			sql_exp *b1, *b2;
 			sql_subfunc *f;
 			list *l;
@@ -3274,13 +3274,15 @@ rel_push_down_bounds(visitor *v, sql_rel *rel)
 				continue;
 
 			/* Extract sql.diff calls into a lower projection and re-use them */
+			is_value = !strcmp(f->func->base.name, "nth_value") || !strcmp(f->func->base.name, "first_value") || !strcmp(f->func->base.name, "last_value");
 			cnt = list_length(l);
 			fcnt = list_length(f->func->ops);
 			if (cnt >= 3) {
-				b1 = (sql_exp*) list_fetch(l, cnt - fcnt - 2); /* we add extra arguments for window functions, remvoe them from the count */
-				b2 = (sql_exp*) list_fetch(l, cnt - fcnt - 1);
+				int pos1 = fcnt + 1 - is_value, pos2 = fcnt + 2 - is_value;
+				b1 = (sql_exp*) list_fetch(l, pos1); /* the 'window_bound' calls are added after the function arguments and frame type  */
+				b2 = (sql_exp*) list_fetch(l, pos2);
 
-				if (b1->type == e_func && b2->type == e_func) { /* if both are 'window_bound' calls, push down a diff call */
+				if (b1 && b1->type == e_func && b2 && b2->type == e_func) { /* if both are 'window_bound' calls, push down a diff call */
 					sql_subfunc *sf1 = (sql_subfunc*) b1->f, *sf2 = (sql_subfunc*) b2->f;
 
 					if (!strcmp(sf1->func->base.name, "window_bound") && !strcmp(sf2->func->base.name, "window_bound")) {
@@ -3304,6 +3306,14 @@ rel_push_down_bounds(visitor *v, sql_rel *rel)
 							}
 
 							v->changes++;
+						}
+					} else if (!strcmp(sf1->func->base.name, "diff") && !strcmp(sf2->func->base.name, "diff") && exp_match_exp(b1, b2)) { /* for global window functions */
+						rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
+						b1 = rel_project_add_exp(v->sql, rel->l, b1);
+						
+						for (node *n = l->h; n ; n = n->next, i++) {
+							if (i == pos1 || i == pos2)
+								n->data = exp_ref(v->sql, b1);
 						}
 					}
 				}
