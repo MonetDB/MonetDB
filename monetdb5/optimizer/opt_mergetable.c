@@ -310,7 +310,6 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 			for(j=1; j < mat[m].mi->argc; j++) {
 				if (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)){
 					InstrPtr q = copyInstruction(p);
-
 					if(!q){
 						freeInstruction(r);
 						return NULL;
@@ -335,7 +334,6 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 	} else {
 		for(k=1; k < mat[m].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
-
 			if(!q)
 				return NULL;
 			getArg(q, 0) = newTmpVariable(mb, tpe);
@@ -1927,7 +1925,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr *old;
 	matlist_t ml;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit, bailout = 0;
-	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars, maxvars;
+	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;//, maxvars;
 	char buf[256], *group_input;
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -1938,7 +1936,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	oldtop= mb->stop;
 
 	vars = (int*) GDKmalloc(sizeof(int)* mb->vtop);
-	maxvars = mb->vtop;
+	//maxvars = mb->vtop;
 	group_input = (char*) GDKzalloc(sizeof(char)* mb->vtop);
 	if (vars == NULL || group_input == NULL){
 		if (vars)
@@ -2339,6 +2337,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* select on insert, should use last tid only */
+#if 0
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   !ml.v[m].packed && /* not packed yet */
@@ -2352,6 +2351,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			actions++;
 			continue;
 		}
+#endif
 
 		/* select on update, with nil bat */
 		if (match == 1 && fm == 1 && isSelect(p) && p->retc == 1 &&
