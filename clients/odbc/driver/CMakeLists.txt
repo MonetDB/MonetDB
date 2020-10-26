@@ -7,7 +7,7 @@
 #]]
 
 add_library(MonetODBC
-  SHARED)
+  MODULE)
 
 target_sources(MonetODBC
   PRIVATE
@@ -114,7 +114,7 @@ target_include_directories(MonetODBC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_compile_definitions(MonetODBC
-  PRIVATE 
+  PRIVATE
   LIBMONETODBCS)
 
 target_link_libraries(MonetODBC
