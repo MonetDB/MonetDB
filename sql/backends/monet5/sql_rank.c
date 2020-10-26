@@ -36,6 +36,17 @@ unfix_inputs(int nargs, ...)
 	va_end(valist);
 }
 
+static void
+finalize_output(bat *res, BAT *r, str msg)
+{
+	if (r && !msg) {
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
+	} else if (r)
+		BBPreclaim(r);
+}
+
 str
 SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -719,24 +730,19 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 bailout:
 	unfix_inputs(3, b, p, n);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return MAL_SUCCEED;
 }
 
 static str
 SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, BAT **e, Client cntxt,
 				  MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rtype, bool has_bounds,
-				  int max_arg, const char *mod, const char *err)
+				  int max_arg, const char *mod)
 {
 	(void) cntxt;
 	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
 		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
-		throw(SQL, mod, "%s: wrong number of arguments to function %s", err, err);
+		throw(SQL, mod, "%s: wrong number of arguments to function %s", mod, mod);
 
 	if (isaBatType(getArgType(mb, pci, 1)) && !(*b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
@@ -763,12 +769,12 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 }
 
 static str
-SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg, const char *op, const char *err,
+SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg, const char *op,
 				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, has_bounds, max_arg, op, err);
+	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, has_bounds, max_arg, op);
 	bat *res = NULL;
 
 	if (msg)
@@ -788,17 +794,12 @@ SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool
 
 bailout:
 	unfix_inputs(5, b, p, o, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
 static str
-do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char *err,
+do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 			   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	int tpe = getArgType(mb, pci, 1);
@@ -809,7 +810,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 	(void) cntxt;
 	if (pci->argc != 4 || (getArgType(mb, pci, 2) != TYPE_lng && getBatType(getArgType(mb, pci, 2)) != TYPE_lng) ||
 		(getArgType(mb, pci, 3) != TYPE_lng && getBatType(getArgType(mb, pci, 3)) != TYPE_lng)) {
-		throw(SQL, op, "%s", err);
+		throw(SQL, op, SQLSTATE(42000) "wrong number of arguments to function %s", op);
 	}
 	tpe = getArgType(mb, pci, 1);
 
@@ -847,25 +848,20 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 
 bailout:
 	unfix_inputs(3, b, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return MAL_SUCCEED;
 }
 
 str
 SQLfirst_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_limit_value(cntxt, mb, stk, pci, "sql.first_value", SQLSTATE(42000) "first_value(:any_1,:lng,:lng)", GDKanalyticalfirst);
+	return do_limit_value(cntxt, mb, stk, pci, "sql.first_value", GDKanalyticalfirst);
 }
 
 str
 SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_limit_value(cntxt, mb, stk, pci, "sql.last_value", SQLSTATE(42000) "last_value(:any_1,:lng,:lng)", GDKanalyticallast);
+	return do_limit_value(cntxt, mb, stk, pci, "sql.last_value", GDKanalyticallast);
 }
 
 #define NTH_VALUE_SINGLE_IMP(TPE) \
@@ -966,12 +962,7 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 bailout:
 	unfix_inputs(4, b, l, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
@@ -1137,25 +1128,25 @@ SQLlead(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLmin_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, false, 4, "sql.min", SQLSTATE(42000) "min(:any_1,:lng,:lng)", GDKanalyticalmin);
+	return SQLanalytical_func(cntxt, mb, stk, pci, false, 4, "sql.min", GDKanalyticalmin);
 }
 
 str
 SQLmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, true, 6, "sql.min", SQLSTATE(42000) "min(:any_1,:lng,:lng)", GDKanalyticalmin);
+	return SQLanalytical_func(cntxt, mb, stk, pci, true, 6, "sql.min", GDKanalyticalmin);
 }
 
 str
 SQLmax_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, false, 4, "sql.max", SQLSTATE(42000) "max(:any_1,:lng,:lng)", GDKanalyticalmax);
+	return SQLanalytical_func(cntxt, mb, stk, pci, false, 4, "sql.max", GDKanalyticalmax);
 }
 
 str
 SQLmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return SQLanalytical_func(cntxt, mb, stk, pci, true, 6, "sql.max", SQLSTATE(42000) "max(:any_1,:lng,:lng)", GDKanalyticalmax);
+	return SQLanalytical_func(cntxt, mb, stk, pci, true, 6, "sql.max", GDKanalyticalmax);
 }
 
 static str
@@ -1170,7 +1161,7 @@ do_count(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bound
 	(void) cntxt;
 	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
 		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
-		throw(SQL, "sql.count", "wrong number of arguments to function count");
+		throw(SQL, "sql.count", SQLSTATE(42000) "wrong number of arguments to function count");
 	tpe = getArgType(mb, pci, 1);
 	ignore_nils = *getArgReference_bit(stk, pci, 2);
 	frame_type = *getArgReference_int(stk, pci, 3);
@@ -1221,12 +1212,7 @@ do_count(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bound
 
 bailout:
 	unfix_inputs(5, b, p, o, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
@@ -1254,7 +1240,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 	(void) cntxt;
 	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
 		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
-		throw(SQL, op, "wrong number of arguments to function %s", op);
+		throw(SQL, op, SQLSTATE(42000) "wrong number of arguments to function %s", op);
 	tp1 = getArgType(mb, pci, 1);
 	frame_type = *getArgReference_int(stk, pci, 2);
 
@@ -1369,12 +1355,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 
 bailout:
 	unfix_inputs(5, b, p, o, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
@@ -1407,8 +1388,7 @@ do_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds,
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, has_bounds,
-								max_arg, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
+	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, has_bounds, max_arg, "sql.avg");
 	bat *res = NULL;
 
 	if (msg)
@@ -1459,12 +1439,7 @@ do_avg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds,
 
 bailout:
 	unfix_inputs(5, b, p, o, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
@@ -1485,8 +1460,7 @@ do_avginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, has_bounds,
-								max_arg, "sql.avg", SQLSTATE(42000) "avg(:any_1,:lng,:lng)");
+	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, 0, has_bounds, max_arg, "sql.avg");
 	bat *res = NULL;
 
 	if (msg)
@@ -1521,12 +1495,7 @@ do_avginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_
 
 bailout:
 	unfix_inputs(5, b, p, o, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
@@ -1543,12 +1512,12 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char *err,
+do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), bool has_bounds, int max_arg)
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, has_bounds, max_arg, op, err);
+	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, has_bounds, max_arg, op);
 	bat *res = NULL;
 
 	if (msg)
@@ -1584,69 +1553,56 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 
 bailout:
 	unfix_inputs(5, b, p, o, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
 str
 SQLstddev_samp_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdev", SQLSTATE(42000) "stddev(:any_1,:lng,:lng)",
-								  GDKanalytical_stddev_samp, false, 4);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdev", GDKanalytical_stddev_samp, false, 4);
 }
 
 str
 SQLstddev_pop_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdevp", SQLSTATE(42000) "stdevp(:any_1,:lng,:lng)",
-								  GDKanalytical_stddev_pop, false, 4);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdevp", GDKanalytical_stddev_pop, false, 4);
 }
 
 str
 SQLvar_samp_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variance", SQLSTATE(42000) "variance(:any_1,:lng,:lng)",
-								  GDKanalytical_variance_samp, false, 4);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variance", GDKanalytical_variance_samp, false, 4);
 }
 
 str
 SQLvar_pop_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", SQLSTATE(42000) "variancep(:any_1,:lng,:lng)",
-								  GDKanalytical_variance_pop, false, 4);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", GDKanalytical_variance_pop, false, 4);
 }
 
 str
 SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdev", SQLSTATE(42000) "stddev(:any_1,:lng,:lng)",
-								  GDKanalytical_stddev_samp, true, 6);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdev", GDKanalytical_stddev_samp, true, 6);
 }
 
 str
 SQLstddev_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdevp", SQLSTATE(42000) "stdevp(:any_1,:lng,:lng)",
-								  GDKanalytical_stddev_pop, true, 6);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdevp", GDKanalytical_stddev_pop, true, 6);
 }
 
 str
 SQLvar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variance", SQLSTATE(42000) "variance(:any_1,:lng,:lng)",
-								  GDKanalytical_variance_samp, true, 6);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variance", GDKanalytical_variance_samp, true, 6);
 }
 
 str
 SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", SQLSTATE(42000) "variancep(:any_1,:lng,:lng)",
-								  GDKanalytical_variance_pop, true, 6);
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", GDKanalytical_variance_pop, true, 6);
 }
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
@@ -1796,7 +1752,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 static str
-do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char *err,
+do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op,
 							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), lng minimum, dbl defaultv,
 							  dbl single_case, bool has_bounds, int max_arg)
 {
@@ -1809,7 +1765,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	(void)cntxt;
 	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
 		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
-		throw(SQL, op, "%s", err);
+		throw(SQL, op, SQLSTATE(42000) "wrong number of arguments to function %s", op);
 
 	tp1 = getArgType(mb, pci, 1);
 	tp2 = getArgType(mb, pci, 2);
@@ -1921,55 +1877,44 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 bailout:
 	unfix_inputs(6, b, c, p, o, s, e);
-	if (r && !msg) {
-		r->tsorted = BATcount(r) <= 1;
-		r->trevsorted = BATcount(r) <= 1;
-		BBPkeepref(*res = r->batCacheid);
-	} else if (r)
-		BBPreclaim(r);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
 str
 SQLcovar_samp_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil, false, 5);
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil, false, 5);
 }
 
 str
 SQLcovar_pop_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_pop, 0, 0.0f, 0.0f, false, 5);
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", GDKanalytical_covariance_pop, 0, 0.0f, 0.0f, false, 5);
 }
 
 str
 SQLcorr_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_correlation, 0, dbl_nil, dbl_nil, false, 5);
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", GDKanalytical_correlation, 0, dbl_nil, dbl_nil, false, 5);
 }
 
 str
 SQLcovar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil, true, 7);
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil, true, 7);
 }
 
 str
 SQLcovar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_pop, 0, 0.0f, 0.0f, true, 7);
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", GDKanalytical_covariance_pop, 0, 0.0f, 0.0f, true, 7);
 }
 
 str
 SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_correlation, 0, dbl_nil, dbl_nil, true, 7);
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", GDKanalytical_correlation, 0, dbl_nil, dbl_nil, true, 7);
 }
 
 str
