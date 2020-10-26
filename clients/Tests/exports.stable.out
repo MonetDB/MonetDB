@@ -342,6 +342,7 @@ void HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int alignment);
 var_t HEAP_malloc(BAT *b, size_t nbytes);
 void HEAPdecref(Heap *h, bool remove);
 gdk_return HEAPextend(Heap *h, size_t size, bool mayshare) __attribute__((__warn_unused_result__));
+void HEAPincref(Heap *h);
 size_t HEAPmemsize(Heap *h);
 size_t HEAPvmsize(Heap *h);
 void IMPSdestroy(BAT *b);

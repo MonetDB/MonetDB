@@ -21,14 +21,13 @@ stdout of test 'msk003` in directory 'monetdb5/mal` itself:
 # h	t  # name
 # void	oid  # type
 #--------------------------#
-[ 0@0,	1@0	]
-[ 1@0,	3@0	]
-[ 2@0,	5@0	]
-[ 3@0,	6@0	]
-[ 4@0,	8@0	]
+[ 1@0,	1@0	]
+[ 2@0,	3@0	]
+[ 3@0,	5@0	]
+[ 4@0,	6@0	]
+[ 5@0,	8@0	]
 
-Exception expected due to non-correct OID list
-# 07:26:10 >  
-# 07:26:10 >  "Done."
-# 07:26:10 >  
+# 12:30:51 >  
+# 12:30:51 >  "Done."
+# 12:30:51 >  
 
