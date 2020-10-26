@@ -2294,7 +2294,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (ui) BBPunfix(ui->batCacheid);
 			if (uv) BBPunfix(uv->batCacheid);
 
-	    	if (!nui || !nuv || BATreplace(bn, nui, nuv, true) != GDK_SUCCEED) {
+	    		if (!nui || !nuv || BATreplace(bn, nui, nuv, true) != GDK_SUCCEED) {
 				if (bn) BBPunfix(bn->batCacheid);
 				if (nui) BBPunfix(nui->batCacheid);
 				if (nuv) BBPunfix(nuv->batCacheid);

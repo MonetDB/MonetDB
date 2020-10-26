@@ -109,9 +109,9 @@ VIEWcreate(oid seq, BAT *b)
 	bn->batCapacity = b->batCapacity;
 	MT_lock_set(&b->theaplock);
 	bn->T = b->T;
-	(void) ATOMIC_INC(&b->theap->refs);
+	HEAPincref(b->theap);
 	if (b->tvheap)
-		(void) ATOMIC_INC(&b->tvheap->refs);
+		HEAPincref(b->tvheap);
 	MT_lock_unset(&b->theaplock);
 
 	if (tp)

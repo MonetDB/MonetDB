@@ -2399,6 +2399,10 @@ incref(bat i, bool logical, bool lock)
 		assert(!logical);
 		if (tp) {
 			assert(pb != NULL);
+			if (b->theap != pb->theap) {
+				HEAPincref(pb->theap);
+				HEAPdecref(b->theap, false);
+			}
 			b->theap = pb->theap;
 		}
 		/* done loading, release descriptor */
@@ -2492,6 +2496,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 			assert(b == NULL || b->tvheap == NULL || BBP_refs(b->tvheap->parentid) > 0);
 			refs = --BBP_refs(i);
 			if (b && refs == 0) {
+				tp = VIEWtparent(b);
 				tvp = VIEWvtparent(b);
 			}
 		}

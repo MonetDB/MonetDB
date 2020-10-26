@@ -181,6 +181,7 @@ count_deletes(storage *d)
 			bat_destroy(b);
 			return 0;
 		}
+		bat_destroy(b);
 	} else {
 		BAT *ui, *uv, *c;
 
@@ -192,16 +193,18 @@ count_deletes(storage *d)
 		c = COLcopy(b, b->ttype, true, TRANSIENT);
 		bat_destroy(b);
 		if (BATreplace(c, ui, uv, true) != GDK_SUCCEED) {
-			BBPunfix(c->batCacheid);
+			bat_destroy(ui);
+			bat_destroy(uv);
+			bat_destroy(c);
 			return 0;
 		}
-		BBPunfix(ui->batCacheid);
-		BBPunfix(uv->batCacheid);
+		bat_destroy(ui);
+		bat_destroy(uv);
 		if (BATsum(&cnt, TYPE_lng, c, NULL, true, false, false) != GDK_SUCCEED) {
-			BBPunfix(c->batCacheid);
+			bat_destroy(c);
 			return 0;
 		}
-		BBPunfix(c->batCacheid);
+		bat_destroy(c);
 	}
 	return cnt;
 }
@@ -240,19 +243,7 @@ cs_bind_ubat( column_storage *cs, int access, int type)
 		else
 			b = temp_descriptor(cs->uvbid);
 	} else {
-		log_bid bb;
-
-		if (access == RD_UPD_ID) {
-			bb = e_bat(TYPE_oid);
-			if(bb == BID_NIL)
-				return NULL;
-			b = temp_descriptor(bb);
-		} else {
-			bb = e_bat(type);
-			if(bb == BID_NIL)
-				return NULL;
-			b = temp_descriptor(bb);
-		}
+		b = e_BAT(access == RD_UPD_ID?TYPE_oid:type);
 	}
 	return b;
 }
@@ -272,7 +263,9 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 		return NULL;
 	bat_set_access(b, BAT_READ);
 	/* return slice */
-	return BATslice(b, 0, cnt);
+	BAT *s = BATslice(b, 0, cnt);
+	bat_destroy(b);
+	return s;
 }
 
 static BAT *
@@ -381,8 +374,7 @@ cs_update_bat( column_storage *cs, BAT *tids, BAT *updates, int is_new)
 			res = LOG_ERR;
 		else if (BATreplace(b, otids, updates, true) != GDK_SUCCEED)
 			res = LOG_ERR;
-		if (b)
-			bat_destroy(b);
+		bat_destroy(b);
 	}
 	if (otids != tids)
 		bat_destroy(otids);
@@ -455,12 +447,6 @@ dup_cs(column_storage *ocs, column_storage *cs, int type, int c_isnew, int temp)
 			return LOG_ERR;
 	} else {
 		(void)c_isnew;
-		/* move the bat to the new col, fixup the old col*/
-		//if (oc_isnew) {
-		//	BAT *b = ...
-		//	bat_set_access(b, BAT_READ);
-		//	bat_destroy(b);
-		//}
 		temp_dup(cs->bid);
 	}
 	if (!temp) {
@@ -595,6 +581,7 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 			bat_destroy(ui);
 			return LOG_ERR;
 		}
+		assert(!isVIEW(b));
 		bat_destroy(ui);
 	} else {
 		//assert (isNew(t) || isTempTable(t) || bat->cs.cleared);
@@ -611,17 +598,16 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 			}
 		}
 		if (isVIEW(oi) && b->batCacheid == VIEWtparent(oi)) {
-            BAT *ic = COLcopy(oi, oi->ttype, true, TRANSIENT);
+            		BAT *ic = COLcopy(oi, oi->ttype, true, TRANSIENT);
 
 			if (ic == NULL || BATappend(b, ic, NULL, true) != GDK_SUCCEED) {
 				if (oi != i)
 					bat_destroy(oi);
-                if(ic)
-					bat_destroy(ic);
-                bat_destroy(b);
-                return LOG_ERR;
-            }
-            bat_destroy(ic);
+				bat_destroy(ic);
+                		bat_destroy(b);
+                		return LOG_ERR;
+            		}
+            		bat_destroy(ic);
 		} else if (BATappend(b, oi, NULL, true) != GDK_SUCCEED) {
 			if (oi != i)
 				bat_destroy(oi);
@@ -631,6 +617,7 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 	}
 	if (oi != i)
 		bat_destroy(oi);
+	assert(!isVIEW(b));
 	bat_destroy(b);
 	return LOG_OK;
 }
@@ -835,17 +822,16 @@ delta_delete_bat( storage *bat, BAT *i, int is_new)
 	BAT *t, *oi = i;
 
 	if (i->ttype == TYPE_msk || mask_cand(i))
-			i = BATunmask(i);
+		i = BATunmask(i);
 	t = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
 	int ok = LOG_OK;
 
 	assert(i->ttype != TYPE_msk);
-	if (t) {
+	if (t) 
 		ok = cs_update_bat( &bat->cs, i, t, is_new);
-	}
-	BBPunfix(t->batCacheid);
+	bat_destroy(t);
 	if (i != oi)
-		BBPunfix(i->batCacheid);
+		bat_destroy(i);
 	return ok;
 }
 
@@ -907,9 +893,12 @@ claim_cs(column_storage *cs, size_t cnt)
 	const void *nilptr = ATOMnilptr(b->ttype);
 
 	for(size_t i=0; i<cnt; i++){
-		if (BUNappend(b, nilptr, TRUE) != GDK_SUCCEED)
+		if (BUNappend(b, nilptr, TRUE) != GDK_SUCCEED) {
+			bat_destroy(b);
 			return LOG_ERR;
+		}
 	}
+	bat_destroy(b);
 	return LOG_OK;
 }
 
@@ -1029,10 +1018,12 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 
 		if (/* DISABLES CODE */ (0) && table_claim_space(tr, t, cnt) == LOG_ERR) {
 			unlock_table(t->base.id);
+			bat_destroy(b);
 			return LOG_ERR;
 		}
 		if (cs_real_update_bats(&s->cs, &ui, &uv) == LOG_ERR) {
 			unlock_table(t->base.id);
+			bat_destroy(b);
 			return LOG_ERR;
 		}
 
@@ -1042,17 +1033,19 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		if (!uin || !uvn ||
 				BATappend(ui, uin, NULL, true) != GDK_SUCCEED ||
 				BATappend(uv, uvn, NULL, true) != GDK_SUCCEED) {
-			if (uin) bat_destroy(uin);
-			if (uvn) bat_destroy(uvn);
+			assert(!isVIEW(uin) && !isVIEW(uvn));
+			bat_destroy(uin);
+			bat_destroy(uvn);
 			bat_destroy(ui);
 			bat_destroy(uv);
+			bat_destroy(b);
 			unlock_table(t->base.id);
 			return LOG_ERR;
 		}
-		bat_destroy(ui);
-		bat_destroy(uv);
 		bat_destroy(uin);
 		bat_destroy(uvn);
+		bat_destroy(ui);
+		bat_destroy(uv);
 #if 0
 		for(lng i=0; i<(lng)cnt; i++, id++) {
 			/* create void-bat ui (id,cnt), msk-0's (write in chunks of 32bit */
@@ -1081,6 +1074,7 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 			return LOG_ERR;
 		}
 	}
+	assert(!isVIEW(b));
 	bat_destroy(b);
 	assert(isTempTable(t) || s->cs.cleared || ps->cs.bid == s->cs.bid);
 
@@ -1159,10 +1153,9 @@ static int
 load_cs(column_storage *cs, int type, sqlid id)
 {
 	int bid = logger_find_bat(bat_logger, id);
-	BAT *b = temp_descriptor(bid);
-	if (!b)
+	if (!bid)
 		return LOG_ERR;
-	cs->bid = temp_create(b);
+	cs->bid = temp_dup(bid);
 	cs->ucnt = 0;
 	cs->uibid = e_bat(TYPE_oid);
 	cs->uvbid = e_bat(type);
@@ -1187,8 +1180,10 @@ log_create_delta(sql_delta *bat, sqlid id)
 	assert(bat->cs.uibid && bat->cs.uvbid);
 	if (bat->cs.uibid == BID_NIL || bat->cs.uvbid == BID_NIL)
 		res = LOG_ERR;
-	if (GDKinmemory(0))
+	if (GDKinmemory(0)) {
+		bat_destroy(b);
 		return res;
+	}
 
 	bat_set_access(b, BAT_READ);
 	ok = log_bat_persists(bat_logger, b, id);
@@ -1339,7 +1334,6 @@ create_idx(sql_trans *tr, sql_idx *ni)
 				ok = LOG_ERR;
 		}
 		bat->cs.ucnt = 0;
-
 	}
 	return ok;
 }
@@ -1658,8 +1652,7 @@ clear_cs(sql_trans *tr, column_storage *cs)
 			bat_clear(b);
 			BATcommit(b, BUN_NONE);
 		}
-		if (b)
-			bat_destroy(b);
+		bat_destroy(b);
 	}
 	if (cs->uvbid) {
 		b = temp_descriptor(cs->uvbid);
@@ -1667,8 +1660,7 @@ clear_cs(sql_trans *tr, column_storage *cs)
 			bat_clear(b);
 			BATcommit(b, BUN_NONE);
 		}
-		if (b)
-			bat_destroy(b);
+		bat_destroy(b);
 	}
 	cs->cleared = 1;
 	cs->ucnt = 0;

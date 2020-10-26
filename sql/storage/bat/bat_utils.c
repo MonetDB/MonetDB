@@ -49,11 +49,12 @@ temp_destroy(log_bid b)
 		BBPrelease(b);
 }
 
-void
+log_bid
 temp_dup(log_bid b)
 {
 	if (b)
 		BBPretain(b);
+	return b;
 }
 
 log_bid
@@ -154,8 +155,10 @@ ebat_copy(log_bid b)
 		return BID_NIL;
 	if (!ebats[o->ttype]) {
 		ebats[o->ttype] = bat_new(o->ttype, 0, TRANSIENT);
-		if (!ebats[o->ttype])
+		if (!ebats[o->ttype]) {
+			bat_destroy(o);
 			return BID_NIL;
+		}
 	}
 
 	if (BATcount(o)) {

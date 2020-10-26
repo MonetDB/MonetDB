@@ -562,8 +562,10 @@ la_bat_updates(logger *lg, logaction *la)
 			}
 		}
 		cnt = (BUN)(la->offset + la->nr);
-		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED)
+		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED) {
+			logbat_destroy(b);
 			return GDK_FAIL;
+		}
 	} else if (!lg->flushing && la->type == LOG_UPDATE) {
 		BATiter vi = bat_iterator(la->b);
 		BUN p, q;
@@ -643,8 +645,10 @@ la_bat_create(logger *lg, logaction *la)
 		BATtseqbase(b, 0);
 
 	if (BATsetaccess(b, BAT_READ) != GDK_SUCCEED ||
-	    logger_add_bat(lg, b, la->cid) != GDK_SUCCEED)
+	    logger_add_bat(lg, b, la->cid) != GDK_SUCCEED) {
+		logbat_destroy(b);
 		return GDK_FAIL;
+	}
 	logbat_destroy(b);
 	return GDK_SUCCEED;
 }

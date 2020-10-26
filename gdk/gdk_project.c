@@ -448,7 +448,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			assert(r1->tvheap->parentid > 0);
 			BBPshare(r1->tvheap->parentid);
 			bn->tvheap = r1->tvheap;
-			(void) ATOMIC_INC(&r1->tvheap->refs);
+			HEAPincref(r1->tvheap);
 			MT_lock_unset(&r1->theaplock);
 		} else {
 			/* make copy of string heap */
@@ -682,7 +682,7 @@ BATprojectchain(BAT **bats)
 			MT_lock_set(&b->theaplock);
 			BBPshare(b->tvheap->parentid);
 			bn->tvheap = b->tvheap;
-			(void) ATOMIC_INC(&b->tvheap->refs);
+			HEAPincref(b->tvheap);
 			MT_lock_unset(&b->theaplock);
 			bn->ttype = b->ttype;
 			bn->tvarsized = true;

@@ -124,7 +124,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				if (b->tvheap->parentid != bid)
 					BBPunshare(b->tvheap->parentid);
 				HEAPdecref(b->tvheap, true);
-				(void) ATOMIC_INC(&n->tvheap->refs);
+				HEAPincref(n->tvheap);
 				b->tvheap = n->tvheap;
 				BBPshare(n->tvheap->parentid);
 				MT_lock_unset(&b->theaplock);
@@ -433,7 +433,7 @@ append_varsized_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 			BBPunshare(b->tvheap->parentid);
 		BBPshare(n->tvheap->parentid);
 		HEAPdecref(b->tvheap, true);
-		(void) ATOMIC_INC(&n->tvheap->refs);
+		HEAPincref(n->tvheap);
 		b->tvheap = n->tvheap;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&n->theaplock);
