@@ -327,6 +327,7 @@ delta_update_bat( sql_delta *bat, BAT *tids, BAT *updates, int is_new)
 		}
 		if (BATappend(ui, tids, o, true) != GDK_SUCCEED ||
 		    BATappend(uv, updates, o, true) != GDK_SUCCEED) {
+			bat_destroy(o);
 			bat_destroy(ui);
 			bat_destroy(uv);
 			return LOG_ERR;
@@ -551,6 +552,7 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 					return LOG_ERR;
 				bat_set_access(b, BAT_READ);
 				bat->ibid = temp_create(b);
+				bat_destroy(b);
 			}
 		} else { /* old column */
 			bat->ibid = ebat_copy(bat->ibid, bat->ibase, 0);
@@ -715,8 +717,7 @@ delta_append_bat( sql_delta *bat, BAT *i )
 		if (isVIEW(i) && b->batCacheid == VIEWtparent(i)) {
 			BAT *ic = COLcopy(i, i->ttype, true, TRANSIENT);
 			if (ic == NULL || BATappend(b, ic, NULL, true) != GDK_SUCCEED) {
-				if(ic)
-					bat_destroy(ic);
+				bat_destroy(ic);
 				bat_destroy(b);
 				return LOG_ERR;
 			}
@@ -1339,8 +1340,10 @@ log_create_delta(sql_delta *bat, char tpe, oid id)
 		bat->uvbid = e_bat(b->ttype);
 	if (bat->uibid == BID_NIL || bat->uvbid == BID_NIL)
 		res = LOG_ERR;
-	if (GDKinmemory())
+	if (GDKinmemory()) {
+		bat_destroy(b);
 		return res;
+	}
 
 	ok = logger_add_bat(bat_logger, b, bat->name, tpe, id);
 	if (ok == GDK_SUCCEED)
@@ -1976,8 +1979,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 			bat_clear(b);
 			BATcommit(b);
 		}
-		if (b)
-			bat_destroy(b);
+		bat_destroy(b);
 	}
 	if (bat->bid) {
 		b = temp_descriptor(bat->bid);
@@ -2001,8 +2003,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 			bat_clear(b);
 			BATcommit(b);
 		}
-		if (b)
-			bat_destroy(b);
+		bat_destroy(b);
 	}
 	if (bat->uvbid) {
 		b = temp_descriptor(bat->uvbid);
@@ -2010,8 +2011,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 			bat_clear(b);
 			BATcommit(b);
 		}
-		if (b)
-			bat_destroy(b);
+		bat_destroy(b);
 	}
 	bat->cleared = 1;
 	bat->ibase = 0;
@@ -2689,9 +2689,8 @@ static int
 update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
 	sql_trans *oldest = oldest_active_transaction();
-	sql_table *ot = NULL;
 	int ok = LOG_OK;
-	node *n, *m, *o = NULL;
+	node *n, *m;
 
 	if (ATOMIC_GET(&store_nr_active) == 1 || ft->base.allocated) {
 		if (ATOMIC_GET(&store_nr_active) > 1 && ft->data) { /* move delta */
@@ -2710,9 +2709,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			}
 			while (b && b->wtime >= oldest->stime)
 				b = b->next;
-			/* find table t->base.stime */
-			ot = tr_find_table(oldest, tt);
-			if (b && ot && b->wtime < ot->base.stime) {
+			if (b && b->next) {
 				/* anything older can go */
 				delayed_destroy_dbat(b->next);
 				b->next = NULL;
@@ -2737,9 +2734,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			ft->data = NULL;
 		}
 	}
-	if (ot)
-		o = ot->columns.set->h;
-	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
+	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
 		sql_column *cc = n->data; // TODO: either stick to to/from terminology or old/current terminology
 		sql_column *oc = m->data;
 
@@ -2747,7 +2742,6 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime || (oc->base.wtime == cc->base.wtime && oc->base.allocated /* alter */));
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
-				sql_column *oldc = NULL;
 
 				if (!oc->data)
 					oc->base.allocated = cc->base.allocated;
@@ -2763,10 +2757,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				}
 				while (b && b->wtime >= oldest->stime)
 					b = b->next;
-				/* find column c->base.stime */
-				if (o)
-					oldc = o->data;
-				if (oldc && b && oldc->base.id == cc->base.id && b->wtime < oldc->base.stime) {
+				if (b && b->next) {
 					/* anything older can go */
 					delayed_destroy_bat(b->next);
 					b->next = NULL;
@@ -2820,10 +2811,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cc->base.allocated = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
-		o = NULL;
-		if (ot)
-			o = ot->idxs.set->h;
-		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
+		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
 
@@ -2836,7 +2824,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (ATOMIC_GET(&store_nr_active) == 1 || (ci->base.wtime && ci->base.allocated)) {
 				if (ATOMIC_GET(&store_nr_active) > 1 && ci->data) { /* move delta */
 					sql_delta *b = ci->data;
-					sql_idx *oldi = NULL;
+					//sql_idx *oldi = NULL;
 
 					if (!oi->data)
 						oi->base.allocated = ci->base.allocated;
@@ -2852,10 +2840,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					}
 					while (b && b->wtime >= oldest->stime)
 						b = b->next;
-					/* find idx i->base.stime */
-					if (o)
-						oldi = o->data;
-					if (oldi && b && oldi->base.id == ci->base.id && b->wtime < oldi->base.stime) {
+					if (b && b->next) {
 						/* anything older can go */
 						delayed_destroy_bat(b->next);
 						b->next = NULL;
@@ -3011,7 +2996,7 @@ snapshot_bat(sql_delta *cbat)
 	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {
 		BAT *ins = temp_descriptor(cbat->ibid);
 		if(ins) {
-			if (BATsave(ins) != GDK_SUCCEED) {
+			if (!GDKinmemory() && BATsave(ins) != GDK_SUCCEED) {
 				bat_destroy(ins);
 				return LOG_ERR;
 			}
