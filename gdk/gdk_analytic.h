@@ -37,10 +37,10 @@ gdk_export gdk_return GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, 
 gdk_export gdk_return GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type);
 gdk_export gdk_return GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type);
 
-gdk_export gdk_return GDKanalytical_stddev_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
-gdk_export gdk_return GDKanalytical_stddev_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
-gdk_export gdk_return GDKanalytical_variance_samp(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
-gdk_export gdk_return GDKanalytical_variance_pop(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
+gdk_export gdk_return GDKanalytical_stddev_samp(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type);
+gdk_export gdk_return GDKanalytical_stddev_pop(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type);
+gdk_export gdk_return GDKanalytical_variance_samp(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type);
+gdk_export gdk_return GDKanalytical_variance_pop(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type);
 gdk_export gdk_return GDKanalytical_covariance_pop(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_covariance_samp(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe);
