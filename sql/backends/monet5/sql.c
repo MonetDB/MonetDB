@@ -1764,34 +1764,34 @@ mvc_append_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-// tmp_1, cookie_1 := sql.append_prep(chain_0, s, t, c_1);
+// chain_out, cookie_1, ..., cookie_N := sql.append_prep(chain_in, s, t, c_1, ... c_N);
 str
 mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *chain_out = getArgReference_int(stk, pci, 0);
-	ptr *cookie_out = getArgReference_ptr(stk, pci, 1);
-	int chain_in = *getArgReference_int(stk, pci, 2);
+	int chain_in = *getArgReference_int(stk, pci, pci->retc);
 	mvc *m = NULL;
 	str msg;
-	const char *sname = *getArgReference_str(stk, pci, 3);
-	const char *tname = *getArgReference_str(stk, pci, 4);
-	const char *cname = *getArgReference_str(stk, pci, 5);
+	const char *sname = *getArgReference_str(stk, pci, pci->retc + 1);
+	const char *tname = *getArgReference_str(stk, pci, pci->retc + 2);
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
 
+	// for N columns, we ought to have N + 1 return values and N + 3 parameters.
+	int first_col = pci->retc + 3;
+	int first_ret = 1;
+	int ncolumns = pci->retc - first_ret;
+	if (pci->argc - first_col != ncolumns)
+		throw(SQL, "sql.append_prep",
+			SQLSTATE(42000) "sql.append_prep inconsistent argument count argc=%d retc=%d", pci->argc, pci->retc);
+
 	*chain_out = chain_in;
-	*cookie_out = NULL;
 
 	if (strNil(sname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat schema name is nil");
+		throw(SQL, "sql.append_prep", SQLSTATE(42000) "schema name is nil");
 	if (strNil(tname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat table name is nil");
-	if (strNil(cname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat column name is nil");
-
-	if (cname[0] == '%')
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat not intended for indices: %s.%s.%s", sname, tname, cname);
+		throw(SQL, "sql.append_prep", SQLSTATE(42000) "table name is nil");
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1799,17 +1799,29 @@ mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(3F000) "Schema missing %s", sname);
+		throw(SQL, "sql.append_prep", SQLSTATE(3F000) "Schema missing %s", sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
-	c = mvc_bind_column(m, t, cname);
-	if (c == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
+		throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 
-	void *cookie = store_funcs.append_col_prep(m->session->tr, c);
+	for (int i = 0; i < ncolumns; i++) {
+		const char *cname = *getArgReference_str(stk, pci, first_col + i);
+		ptr *cookie_out = getArgReference_ptr(stk, pci, first_ret + i);
 
-	*cookie_out = cookie;
+		if (strNil(cname))
+			throw(SQL, "sql.append_prep", SQLSTATE(42000) "column name %d is nil", i);
+		if (cname[0] == '%')
+			throw(SQL, "sql.append_prep", SQLSTATE(42000) "sql.append_prep not intended for indices: %s.%s.%s", sname, tname, cname);
+
+		c = mvc_bind_column(m, t, cname);
+		if (c == NULL)
+			throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
+
+		void *cookie = store_funcs.append_col_prep(m->session->tr, c);
+
+		*cookie_out = cookie;
+	}
+
 	return MAL_SUCCEED;
 }
 
@@ -5392,7 +5404,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
 
 
- pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,6, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
+ pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.",
+ 	args(1,6,
+		arg("",int),
+		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
 
  pattern("sql", "append_bat", mvc_append_bat_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.",
     args(1,6, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),batargany("ins",1))),
@@ -5400,8 +5415,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "append_prep", mvc_append_prep_wrap, false,
  	"Prepare to append to the column. Return new mvc state and cookie to pass to append_exec",
     args(2,6,
-		arg("",int),arg("",ptr),
-		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str))),
+		arg("",int),vararg("",ptr),
+		arg("mvc",int),arg("sname",str),arg("tname",str),vararg("cname",str))),
  pattern("sql", "append_exec", mvc_append_exec_wrap, false, "Perform the actual append",
     args(1,3,
 		arg("",void),
