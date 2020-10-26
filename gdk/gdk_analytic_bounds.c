@@ -952,7 +952,7 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 			default:
 				assert(0);
 			}
-			if (is_lng_nil(limit) || limit < 0) {
+			if (is_lng_nil(limit) || limit < 0 || is_int_nil(int_limit) || int_limit < 0) {
 				goto invalid_bound;
 			} else if (tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) {
 				if (tp2 == TYPE_int) {
