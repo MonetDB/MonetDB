@@ -368,6 +368,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == mvcRef) return FALSE;
 		if (getFunctionId(p) == singleRef) return FALSE;
 		if (getFunctionId(p) == importColumnRef) return FALSE;
+		if (getFunctionId(p) == append_execRef) return FALSE;
 		return TRUE;
 	}
 	if( getModuleId(p) == mapiRef){

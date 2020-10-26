@@ -1850,6 +1850,23 @@ mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+
+// chain_out := sql.append_prep(chain_in, cookie_1, ... cookie_N);
+str
+mvc_append_finish_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *chain_out = getArgReference_int(stk, pci, 0);
+	int chain_in = *getArgReference_int(stk, pci, 1);
+
+	*chain_out = chain_in;
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+	return MAL_SUCCEED;
+}
+
+
 /*mvc_update_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
 mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -5419,11 +5436,18 @@ static mel_func sql_init_funcs[] = {
 		arg("mvc",int),arg("sname",str),arg("tname",str),vararg("cname",str))),
  pattern("sql", "append_exec", mvc_append_exec_wrap, false, "Perform the actual append",
     args(1,3,
-		arg("",void),
+		arg("",ptr),
 		arg("cookie",ptr),batargany("ins",1))),
 
     // tmp_1, cookie_1 := sql.append_prep(chain_0, s, t, c_1);
     // done_1 := sql.append_exec(cookie_1, bat_1);
+
+ pattern("sql", "append_finish", mvc_append_finish_wrap, false,
+ 	"Reconvene the sql.append_prep/sql.append_exec workflow",
+    args(1,3,
+		arg("",int),
+		arg("mvc",int),vararg("cookie",ptr))),
+
 
 
 

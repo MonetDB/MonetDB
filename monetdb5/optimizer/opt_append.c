@@ -16,10 +16,12 @@
 
 typedef struct parstate {
 	InstrPtr prep_stmt;
+	InstrPtr finish_stmt;
 } parstate;
 
 static str transform(parstate *state, MalBlkPtr mb, InstrPtr importTable);
 static int setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old);
+static void flush_finish_stmt(parstate *state, MalBlkPtr mb);
 
 
 str
@@ -58,13 +60,14 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			msg = transform(&state, mb, p);
 		} else {
 			if (mayhaveSideEffects(cntxt, mb, p, false)) {
-				state = (parstate) { NULL };
+				flush_finish_stmt(&state, mb);
 			}
 			pushInstruction(mb, p);
 		}
 		if (msg != MAL_SUCCEED)
 			return msg;
 	}
+	assert(state.prep_stmt == NULL);
 
 end:
 	if (old_mb_stmt)
@@ -97,10 +100,13 @@ transform(parstate *state, MalBlkPtr mb, InstrPtr old)
 	int cookie_var = setup_append_prep(state, mb, old);
 
 	str append_execRef = putName("append_exec");
+	int ret_cookie = newTmpVariable(mb, TYPE_ptr);
 	InstrPtr e = newFcnCall(mb, sqlRef, append_execRef);
+	setReturnArgument(e, ret_cookie);
 	pushArgument(mb, e, cookie_var);
 	pushArgument(mb, e, data_var);
 
+	pushArgument(mb, state->finish_stmt, ret_cookie);
 	// fprintf(stderr, "TRIGGER\n");
 
 	return MAL_SUCCEED;
@@ -162,15 +168,22 @@ setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old)
 
 	int cookie_var = newTmpVariable(mb, TYPE_ptr);
 	if (prep_stmt == NULL) {
-		str append_prepRef = putName("append_prep");
+		flush_finish_stmt(state, mb);
+
+		int chain = newTmpVariable(mb, TYPE_int);
 		InstrPtr p = newFcnCall(mb, sqlRef, append_prepRef);
-		setReturnArgument(p, chain_out_var);
+		setReturnArgument(p, chain);
 		pushReturn(mb, p, cookie_var);
 		pushArgument(mb, p, chain_in_var);
 		pushArgument(mb, p, sname_var);
 		pushArgument(mb, p, tname_var);
 		pushArgument(mb, p, cname_var);
 		state->prep_stmt = p;
+
+		InstrPtr f = newInstructionArgs(mb, sqlRef, append_finishRef, 2);
+		state->finish_stmt = f;
+		setReturnArgument(f, chain_out_var);
+		pushArgument(mb, f, chain);
 	} else {
 		// Append to existing first, to ensure there is room
 		pushArgument(mb, prep_stmt, cname_var);
@@ -180,9 +193,21 @@ setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old)
 			setArg(prep_stmt, i, getArg(prep_stmt, i - 1));
 		setArg(prep_stmt, prep_stmt->retc, cookie_var);
 		prep_stmt->retc += 1;
+
 		// Always use the chain_out of the latest sql_append:
-		setArg(prep_stmt, 0, chain_out_var);
+		setArg(state->finish_stmt, 0, chain_out_var);
 	}
 
 	return cookie_var;
+}
+
+
+static void
+flush_finish_stmt(parstate *state, MalBlkPtr mb)
+{
+	if (state->finish_stmt) {
+		pushInstruction(mb, state->finish_stmt);
+	}
+	state->prep_stmt = NULL;
+	state->finish_stmt = NULL;
 }
