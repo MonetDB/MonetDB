@@ -20,7 +20,7 @@
 extern BAT *temp_descriptor(log_bid b);
 extern BAT *quick_descriptor(log_bid b);
 extern void temp_destroy(log_bid b);
-extern void temp_dup(log_bid b);
+extern log_bid temp_dup(log_bid b);
 extern log_bid temp_create(BAT *b);
 extern log_bid temp_copy(log_bid b, int temp);
 

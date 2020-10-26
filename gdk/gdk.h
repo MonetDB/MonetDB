@@ -851,6 +851,7 @@ gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
 gdk_export void HEAPdecref(Heap *h, bool remove);
+gdk_export void HEAPincref(Heap *h);
 
 /*
  * @- Internal HEAP Chunk Management

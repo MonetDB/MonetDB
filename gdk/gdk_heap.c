@@ -710,11 +710,19 @@ void
 HEAPdecref(Heap *h, bool remove)
 {
 	h->remove |= remove;
+	//printf("dec ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
 	if (ATOMIC_DEC(&h->refs) == 0) {
 		ATOMIC_DESTROY(&h->refs);
 		HEAPfree(h, h->remove);
 		GDKfree(h);
 	}
+}
+
+void
+HEAPincref(Heap *h)
+{
+	//printf("inc ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
+	(void)ATOMIC_INC(&h->refs);
 }
 
 /*
