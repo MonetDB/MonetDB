@@ -2623,6 +2623,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 
 #define ANALYTICAL_STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	\
 	do { \
+		TPE *bp = (TPE*)Tloc(b, 0); \
 		for (; k < i;) { \
 			j = k; \
 			do {	\
@@ -2653,10 +2654,11 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 
 #define ANALYTICAL_STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	\
 	do { \
+		TPE *bp = (TPE*)Tloc(b, 0); \
 		l = i - 1; \
 		for (j = l; ; j--) { \
 			TPE v = bp[j]; \
-			if (!is_##TPE##_nil(bp[j]))	{	\
+			if (!is_##TPE##_nil(v))	{	\
 				n++;				\
 				delta = (dbl) v - mean;		\
 				mean += delta / n;		\
@@ -2686,6 +2688,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 
 #define ANALYTICAL_STDEV_VARIANCE_ALL_ROWS(TPE, SAMPLE, OP)	\
 	do { \
+		TPE *bp = (TPE*)Tloc(b, 0); \
 		for (; j < i; j++) { \
 			TPE v = bp[j]; \
 			if (is_##TPE##_nil(v))		\
@@ -2712,7 +2715,6 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 
 #define ANALYTICAL_STDEV_VARIANCE_CURRENT_ROW(TPE, SAMPLE, OP)	\
 	do {								\
-		(void) bp;	\
 		for (; k < i; k++) \
 			rb[k] = SAMPLE == 1 ? dbl_nil : 0;	\
 		has_nils = is_dbl_nil(rb[k - 1]); \
@@ -2720,6 +2722,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 
 #define ANALYTICAL_STDEV_VARIANCE_OTHERS(TPE, SAMPLE, OP)	\
 	do {								\
+		TPE *bp = (TPE*)Tloc(b, 0); \
 		for (; k < i; k++) {			\
 			TPE *bs = bp + start[k], *be = bp + end[k];		\
 			for (; bs < be; bs++) {				\
@@ -2745,9 +2748,8 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 		}	\
 	} while (0)
 
-#define ANALYTICAL_STDEV_VARIANCE_PARTITIONS(TPE, SAMPLE, OP, IMP)		\
+#define ANALYTICAL_STATISTICS_PARTITIONS(TPE, SAMPLE, OP, IMP)		\
 	do {						\
-		TPE *bp = (TPE*)Tloc(b, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
@@ -2759,30 +2761,36 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	} while (0)
 
 #ifdef HAVE_HGE
-#define ANALYTICAL_STDEV_VARIANCE_LIMIT(IMP, SAMPLE, OP) \
+#define ANALYTICAL_STATISTICS_LIMIT(IMP, SAMPLE, OP) \
 	case TYPE_hge: \
-		ANALYTICAL_STDEV_VARIANCE_PARTITIONS(hge, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP); \
+		ANALYTICAL_STATISTICS_PARTITIONS(hge, SAMPLE, OP, ANALYTICAL_##IMP); \
 	break;
 #else
-#define ANALYTICAL_STDEV_VARIANCE_LIMIT(IMP, SAMPLE, OP)
+#define ANALYTICAL_STATISTICS_LIMIT(IMP, SAMPLE, OP)
 #endif
 
-#define ANALYTICAL_STDEV_VARIANCE_BRANCHES(IMP, SAMPLE, OP)		\
+#define ANALYTICAL_STATISTICS_BRANCHES(IMP, SAMPLE, OP)		\
 	do { \
 		switch (tpe) {	\
 		case TYPE_bte:	\
-			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(bte, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			ANALYTICAL_STATISTICS_PARTITIONS(bte, SAMPLE, OP, ANALYTICAL_##IMP);	\
 			break;	\
 		case TYPE_sht:	\
-			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(sht, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			ANALYTICAL_STATISTICS_PARTITIONS(sht, SAMPLE, OP, ANALYTICAL_##IMP);	\
 			break;	\
 		case TYPE_int:	\
-			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(int, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			ANALYTICAL_STATISTICS_PARTITIONS(int, SAMPLE, OP, ANALYTICAL_##IMP);	\
 			break;	\
 		case TYPE_lng:	\
-			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(lng, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			ANALYTICAL_STATISTICS_PARTITIONS(lng, SAMPLE, OP, ANALYTICAL_##IMP);	\
 			break;	\
-		ANALYTICAL_STDEV_VARIANCE_LIMIT(IMP, SAMPLE, OP)	\
+		case TYPE_flt:	\
+			ANALYTICAL_STATISTICS_PARTITIONS(flt, SAMPLE, OP, ANALYTICAL_##IMP);	\
+			break;	\
+		case TYPE_dbl:	\
+			ANALYTICAL_STATISTICS_PARTITIONS(dbl, SAMPLE, OP, ANALYTICAL_##IMP);	\
+			break;	\
+		ANALYTICAL_STATISTICS_LIMIT(IMP, SAMPLE, OP)	\
 		default:	\
 			goto nosupport;	\
 		}	\
@@ -2801,23 +2809,23 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	\
 	switch (frame_type) {	\
 	case 3: /* unbounded until current row */	{	\
-		ANALYTICAL_STDEV_VARIANCE_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
+		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
 	} break;	\
 	case 4: /* current row until unbounded */	{	\
-		ANALYTICAL_STDEV_VARIANCE_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
+		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
 	} break;	\
 	case 5: /* all rows */	{	\
-		ANALYTICAL_STDEV_VARIANCE_BRANCHES(ALL_ROWS, SAMPLE, OP);	\
+		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_ALL_ROWS, SAMPLE, OP);	\
 	} break;	\
 	case 6: /* current row */ {	\
-		ANALYTICAL_STDEV_VARIANCE_BRANCHES(CURRENT_ROW, SAMPLE, OP);	\
+		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
 	} break;	\
 	default: {	\
-		ANALYTICAL_STDEV_VARIANCE_BRANCHES(OTHERS, SAMPLE, OP);	\
+		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP);	\
 	}	\
 	}	\
 	\
-	BATsetcount(r, cnt); \
+	BATsetcount(r, (BUN) cnt); \
 	r->tnonil = !has_nils;	\
 	r->tnil = has_nils;	\
 	return GDK_SUCCEED; \
@@ -2834,16 +2842,123 @@ GDK_ANALYTICAL_STDEV_VARIANCE(stddev_pop, 0, sqrt(m2 / n), "standard deviation")
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_samp, 1, m2 / (n - 1), "variance")
 GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 
-#define ANALYTICAL_COVARIANCE_CALC(TPE, SAMPLE, OP)	\
+#define ANALYTICAL_COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	\
+	do { \
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		for (; k < i;) { \
+			j = k; \
+			do {	\
+				TPE v1 = bp1[k], v2 = bp2[k]; \
+				if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
+					n++;				\
+					delta1 = (dbl) v1 - mean1;		\
+					mean1 += delta1 / n;		\
+					delta2 = (dbl) v2 - mean2;		\
+					mean2 += delta2 / n;		\
+					m2 += delta1 * ((dbl) v2 - mean2);	\
+				}	\
+				k++; \
+			} while (k < i && !op[k]);	\
+			if (isinf(m2))	\
+				goto overflow;		\
+			if (n > SAMPLE) { \
+				for (; j < k; j++) \
+					rb[j] = OP; \
+			} else { \
+				for (; j < k; j++) \
+					rb[j] = dbl_nil; \
+				has_nils = true; \
+			} \
+		} \
+		n = 0;	\
+		mean1 = 0;	\
+		mean2 = 0;	\
+		m2 = 0; \
+	} while (0)
+
+#define ANALYTICAL_COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	\
+	do { \
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		l = i - 1; \
+		for (j = l; ; j--) { \
+			TPE v1 = bp1[j], v2 = bp2[j]; \
+			if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
+				n++;				\
+				delta1 = (dbl) v1 - mean1;		\
+				mean1 += delta1 / n;		\
+				delta2 = (dbl) v2 - mean2;		\
+				mean2 += delta2 / n;		\
+				m2 += delta1 * ((dbl) v2 - mean2);	\
+			}	\
+			if (op[j] || j == k) {	\
+				if (isinf(m2))	\
+					goto overflow;		\
+				if (n > SAMPLE) { \
+					for (; l >= j; l--) \
+						rb[l] = OP; \
+				} else { \
+					for (; l >= j; l--) \
+						rb[l] = dbl_nil; \
+					has_nils = true; \
+				} \
+				if (j == k)	\
+					break;	\
+				l = j - 1;	\
+			}	\
+		}	\
+		n = 0;	\
+		mean1 = 0;	\
+		mean2 = 0;	\
+		m2 = 0; \
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_COVARIANCE_ALL_ROWS(TPE, SAMPLE, OP)	\
+	do { \
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		for (; j < i; j++) { \
+			TPE v1 = bp1[j], v2 = bp2[j]; \
+			if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
+				n++;				\
+				delta1 = (dbl) v1 - mean1;		\
+				mean1 += delta1 / n;		\
+				delta2 = (dbl) v2 - mean2;		\
+				mean2 += delta2 / n;		\
+				m2 += delta1 * ((dbl) v2 - mean2);	\
+			}	\
+		} \
+		if (isinf(m2))	\
+			goto overflow;		\
+		if (n > SAMPLE) { \
+			for (; k < i; k++) \
+				rb[k] = OP; \
+		} else { \
+			for (; k < i; k++) \
+				rb[k] = dbl_nil; \
+			has_nils = true; \
+		} \
+		n = 0;	\
+		mean1 = 0;	\
+		mean2 = 0;	\
+		m2 = 0; \
+	} while (0)
+
+#define ANALYTICAL_COVARIANCE_CURRENT_ROW(TPE, SAMPLE, OP)	\
 	do {								\
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0), *bs1, *be1, *bs2, v1, v2;	\
-		for (; i < cnt; i++, rb++) {		\
-			bs1 = bp1 + start[i];				\
-			be1 = bp1 + end[i];				\
-			bs2 = bp2 + start[i];		\
+		for (; k < i; k++) \
+			rb[k] = SAMPLE == 1 ? dbl_nil : 0;	\
+		has_nils = is_dbl_nil(rb[k - 1]); \
+	} while (0)
+
+#define ANALYTICAL_COVARIANCE_OTHERS(TPE, SAMPLE, OP)	\
+	do {								\
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
+		for (; k < i; k++) {		\
+			TPE *bs1 = bp1 + start[k];				\
+			TPE *be1 = bp1 + end[k];				\
+			TPE *bs2 = bp2 + start[k];		\
 			for (; bs1 < be1; bs1++, bs2++) {	\
-				v1 = *bs1;				\
-				v2 = *bs2;				\
+				TPE v1 = *bs1, v2 = *bs2;				\
 				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
 					continue;		\
 				n++;				\
@@ -2853,13 +2968,13 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 				mean2 += delta2 / n;		\
 				m2 += delta1 * ((dbl) v2 - mean2);	\
 			}	\
-			if (isinf(m2)) {	\
+			if (isinf(m2))	\
 				goto overflow;		\
-			} else if (n > SAMPLE) { \
-				*rb = OP; \
+			if (n > SAMPLE) { \
+				rb[k] = OP; \
 			} else { \
-				*rb = dbl_nil; \
-				nils++; \
+				rb[k] = dbl_nil; \
+				has_nils = true; \
 			} \
 			n = 0;	\
 			mean1 = 0;	\
@@ -2868,55 +2983,41 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 		}	\
 	} while (0)
 
-#ifdef HAVE_HGE
-#define ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP) \
-	case TYPE_hge: \
-		ANALYTICAL_COVARIANCE_CALC(hge, SAMPLE, OP); \
-	break;
-#else
-#define ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP)
-#endif
-
 #define GDK_ANALYTICAL_COVARIANCE(NAME, SAMPLE, OP) \
 gdk_return \
-GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
+GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
-	BUN i = 0, cnt = BATcount(b1), n = 0, nils = 0; \
-	lng *restrict start, *restrict end; \
+	bool has_nils = false;	\
+	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b1), n = 0; \
+	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;	\
+	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
- \
-	assert(s && e && BATcount(b1) == BATcount(b2)); \
-	start = (lng *) Tloc(s, 0); \
-	end = (lng *) Tloc(e, 0); \
- \
-	switch (tpe) { \
-	case TYPE_bte: \
-		ANALYTICAL_COVARIANCE_CALC(bte, SAMPLE, OP); \
-		break; \
-	case TYPE_sht: \
-		ANALYTICAL_COVARIANCE_CALC(sht, SAMPLE, OP); \
-		break; \
-	case TYPE_int: \
-		ANALYTICAL_COVARIANCE_CALC(int, SAMPLE, OP); \
-		break; \
-	case TYPE_lng: \
-		ANALYTICAL_COVARIANCE_CALC(lng, SAMPLE, OP); \
-		break; \
-	ANALYTICAL_COVARIANCE_LIMIT(SAMPLE, OP) \
-	case TYPE_flt:\
-		ANALYTICAL_COVARIANCE_CALC(flt, SAMPLE, OP); \
-		break; \
-	case TYPE_dbl: \
-		ANALYTICAL_COVARIANCE_CALC(dbl, SAMPLE, OP); \
-		break; \
-	default: \
-		GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
-		return GDK_FAIL; \
-	} \
-	BATsetcount(r, cnt); \
-	r->tnonil = nils == 0; \
-	r->tnil = nils > 0; \
+	\
+	switch (frame_type) {	\
+	case 3: /* unbounded until current row */	{	\
+		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
+	} break;	\
+	case 4: /* current row until unbounded */	{	\
+		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
+	} break;	\
+	case 5: /* all rows */	{	\
+		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_ALL_ROWS, SAMPLE, OP);	\
+	} break;	\
+	case 6: /* current row */ {	\
+		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP);	\
+	} break;	\
+	default: {	\
+		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP);	\
+	}	\
+	}	\
+	\
+	BATsetcount(r, (BUN) cnt); \
+	r->tnonil = !has_nils;	\
+	r->tnil = has_nils;	\
 	return GDK_SUCCEED; \
+  nosupport:	\
+	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
+	return GDK_FAIL; \
   overflow: \
 	GDKerror("22003!overflow in calculation.\n"); \
 	return GDK_FAIL; \
@@ -2925,16 +3026,141 @@ GDKanalytical_##NAME(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe) \
 GDK_ANALYTICAL_COVARIANCE(covariance_samp, 1, m2 / (n - 1))
 GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 
-#define ANALYTICAL_CORRELATION_CALC(TPE)	\
+#define ANALYTICAL_CORRELATION_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
+	do { \
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		for (; k < i;) { \
+			j = k; \
+			do {	\
+				TPE v1 = bp1[k], v2 = bp2[k]; \
+				if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
+					n++;	\
+					delta1 = (dbl) v1 - mean1;	\
+					mean1 += delta1 / n;	\
+					delta2 = (dbl) v2 - mean2;	\
+					mean2 += delta2 / n;	\
+					aux = (dbl) v2 - mean2; \
+					up += delta1 * aux;	\
+					down1 += delta1 * ((dbl) v1 - mean1);	\
+					down2 += delta2 * aux;	\
+				}	\
+				k++; \
+			} while (k < i && !op[k]);	\
+			if (isinf(up) || isinf(down1) || isinf(down2))	\
+				goto overflow;	\
+			if (n != 0 && down1 != 0 && down2 != 0) { \
+				res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+				assert(!is_dbl_nil(res)); \
+			} else { \
+				res = dbl_nil; \
+				has_nils = true; \
+			} \
+			for (; j < k; j++) \
+				rb[j] = res; \
+		} \
+		n = 0;	\
+		mean1 = 0;	\
+		mean2 = 0;	\
+		up = 0; \
+		down1 = 0;	\
+		down2 = 0;	\
+	} while (0)
+
+#define ANALYTICAL_CORRELATION_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
+	do { \
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		l = i - 1; \
+		for (j = l; ; j--) { \
+			TPE v1 = bp1[j], v2 = bp2[j]; \
+			if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
+				n++;	\
+				delta1 = (dbl) v1 - mean1;	\
+				mean1 += delta1 / n;	\
+				delta2 = (dbl) v2 - mean2;	\
+				mean2 += delta2 / n;	\
+				aux = (dbl) v2 - mean2; \
+				up += delta1 * aux;	\
+				down1 += delta1 * ((dbl) v1 - mean1);	\
+				down2 += delta2 * aux;	\
+			}	\
+			if (op[j] || j == k) {	\
+				if (isinf(up) || isinf(down1) || isinf(down2))	\
+					goto overflow;	\
+				if (n != 0 && down1 != 0 && down2 != 0) { \
+					res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+					assert(!is_dbl_nil(res)); \
+				} else { \
+					res = dbl_nil; \
+					has_nils = true; \
+				} \
+				for (; l >= j; l--) \
+					rb[l] = res; \
+				if (j == k)	\
+					break;	\
+				l = j - 1;	\
+			}	\
+		}	\
+		n = 0;	\
+		mean1 = 0;	\
+		mean2 = 0;	\
+		up = 0; \
+		down1 = 0;	\
+		down2 = 0;	\
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_CORRELATION_ALL_ROWS(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
+	do { \
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0); \
+		for (; j < i; j++) { \
+			TPE v1 = bp1[j], v2 = bp2[j]; \
+			if (!is_##TPE##_nil(v1) && !is_##TPE##_nil(v2))	{	\
+				n++;	\
+				delta1 = (dbl) v1 - mean1;	\
+				mean1 += delta1 / n;	\
+				delta2 = (dbl) v2 - mean2;	\
+				mean2 += delta2 / n;	\
+				aux = (dbl) v2 - mean2; \
+				up += delta1 * aux;	\
+				down1 += delta1 * ((dbl) v1 - mean1);	\
+				down2 += delta2 * aux;	\
+			}	\
+		} \
+		if (isinf(up) || isinf(down1) || isinf(down2))	\
+			goto overflow;	\
+		if (n != 0 && down1 != 0 && down2 != 0) { \
+			res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+			assert(!is_dbl_nil(res)); \
+		} else { \
+			res = dbl_nil; \
+			has_nils = true; \
+		} \
+		for (; k < i ; k++)	\
+			rb[k] = res;	\
+		n = 0;	\
+		mean1 = 0;	\
+		mean2 = 0;	\
+		up = 0; \
+		down1 = 0;	\
+		down2 = 0;	\
+	} while (0)
+
+#define ANALYTICAL_CORRELATION_CURRENT_ROW(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
 	do {								\
-		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0), *bs1, *be1, *bs2, v1, v2;	\
-		for (; i < cnt; i++, rb++) {		\
-			bs1 = bp1 + start[i];				\
-			be1 = bp1 + end[i];				\
-			bs2 = bp2 + start[i];		\
+		for (; k < i; k++) \
+			rb[k] = dbl_nil;	\
+		has_nils = true; \
+	} while (0)
+
+#define ANALYTICAL_CORRELATION_OTHERS(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
+	do {								\
+		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
+		for (; k < i; k++) {		\
+			TPE *bs1 = bp1 + start[i];				\
+			TPE *be1 = bp1 + end[i];				\
+			TPE *bs2 = bp2 + start[i];		\
 			for (; bs1 < be1; bs1++, bs2++) {	\
-				v1 = *bs1;				\
-				v2 = *bs2;				\
+				TPE v1 = *bs1, v2 = *bs2;				\
 				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
 					continue;		\
 				n++;	\
@@ -2947,15 +3173,16 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 				down1 += delta1 * ((dbl) v1 - mean1);	\
 				down2 += delta2 * aux;	\
 			}	\
-			if (isinf(up) || isinf(down1) || isinf(down2)) {	\
+			if (isinf(up) || isinf(down1) || isinf(down2))	\
 				goto overflow;	\
-			} else if (n != 0 && down1 != 0 && down2 != 0) { \
-				*rb = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
-				assert(!is_dbl_nil(*rb)); \
+			if (n != 0 && down1 != 0 && down2 != 0) { \
+				res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+				assert(!is_dbl_nil(res)); \
 			} else { \
-				*rb = dbl_nil; \
-				nils++; \
+				res = dbl_nil; \
+				has_nils = true; \
 			} \
+			rb[k] = res;	\
 			n = 0;	\
 			mean1 = 0;	\
 			mean2 = 0;	\
@@ -2966,48 +3193,39 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 	} while (0)
 
 gdk_return
-GDKanalytical_correlation(BAT *r, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe)
+GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
-	BUN i = 0, cnt = BATcount(b1), n = 0, nils = 0;
-	lng *restrict start, *restrict end;
-	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux;
+	bool has_nils = false;
+	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b1), n = 0;
+	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, res;
 
-	assert(s && e && BATcount(b1) == BATcount(b2));
-	start = (lng *) Tloc(s, 0);
-	end = (lng *) Tloc(e, 0);
-
-	switch (tpe) {
-	case TYPE_bte:
-		ANALYTICAL_CORRELATION_CALC(bte);
-		break;
-	case TYPE_sht:
-		ANALYTICAL_CORRELATION_CALC(sht);
-		break;
-	case TYPE_int:
-		ANALYTICAL_CORRELATION_CALC(int);
-		break;
-	case TYPE_lng:
-		ANALYTICAL_CORRELATION_CALC(lng);
-		break;
-#ifdef HAVE_HGE
-	case TYPE_hge:
-		ANALYTICAL_CORRELATION_CALC(hge);
-		break;
-#endif
-	case TYPE_flt:
-		ANALYTICAL_CORRELATION_CALC(flt);
-		break;
-	case TYPE_dbl:
-		ANALYTICAL_CORRELATION_CALC(dbl);
-		break;
-	default:
-		GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
-		return GDK_FAIL;
+	switch (frame_type) {
+	case 3: /* unbounded until current row */	{
+		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_UNBOUNDED_TILL_CURRENT_ROW, ;, ;);
+	} break;
+	case 4: /* current row until unbounded */	{
+		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW_TILL_UNBOUNDED, ;, ;);
+	} break;
+	case 5: /* all rows */	{
+		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_ALL_ROWS, ;, ;);
+	} break;
+	case 6: /* current row */ {
+		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW, ;, ;);
+	} break;
+	default: {
+		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_OTHERS, ;, ;);
 	}
-	BATsetcount(r, cnt);
-	r->tnonil = nils == 0;
-	r->tnil = nils > 0;
+	}
+
+	BATsetcount(r, (BUN) cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
 	return GDK_SUCCEED;
+  nosupport:
+	GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
+	return GDK_FAIL;
   overflow:
 	GDKerror("22003!overflow in calculation.\n");
 	return GDK_FAIL;
