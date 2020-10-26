@@ -2500,11 +2500,13 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 				AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
 		} \
 		if (ncnt == 0) {	\
+			for (; k < i; k++)	\
+				rb[k] = TPE##_nil; \
 			has_nils = true; \
-			rb[k] = TPE##_nil; \
 		} else { \
 			ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt); \
-			rb[k] = avg; \
+			for (; k < i; k++)	\
+				rb[k] = avg; \
 		} \
 		rem = 0; \
 		ncnt = 0; \
@@ -2619,14 +2621,109 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	return GDK_FAIL;
 }
 
-#define ANALYTICAL_STDEV_VARIANCE_CALC(TPE, SAMPLE, OP)	\
+#define ANALYTICAL_STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	\
+	do { \
+		for (; k < i;) { \
+			j = k; \
+			do {	\
+				TPE v = bp[k]; \
+				if (!is_##TPE##_nil(v))	 {	\
+					n++;				\
+					delta = (dbl) v - mean;		\
+					mean += delta / n;		\
+					m2 += delta * ((dbl) v - mean);	\
+				}	\
+				k++; \
+			} while (k < i && !op[k]);	\
+			if (isinf(m2)) {	\
+				goto overflow;		\
+			} else if (n > SAMPLE) { \
+				for (; j < k; j++) \
+					rb[j] = OP; \
+			} else { \
+				for (; j < k; j++) \
+					rb[j] = dbl_nil; \
+				has_nils = true; \
+			} \
+		} \
+		n = 0;	\
+		mean = 0;	\
+		m2 = 0; \
+	} while (0)
+
+#define ANALYTICAL_STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	\
+	do { \
+		l = i - 1; \
+		for (j = l; ; j--) { \
+			TPE v = bp[j]; \
+			if (!is_##TPE##_nil(bp[j]))	{	\
+				n++;				\
+				delta = (dbl) v - mean;		\
+				mean += delta / n;		\
+				m2 += delta * ((dbl) v - mean);	\
+			}	\
+			if (op[j] || j == k) {	\
+				if (isinf(m2)) {	\
+					goto overflow;		\
+				} else if (n > SAMPLE) { \
+					for (; l >= j; l--) \
+						rb[l] = OP; \
+				} else { \
+					for (; l >= j; l--) \
+						rb[l] = dbl_nil; \
+					has_nils = true; \
+				} \
+				if (j == k)	\
+					break;	\
+				l = j - 1;	\
+			}	\
+		}	\
+		n = 0;	\
+		mean = 0;	\
+		m2 = 0; \
+		k = i; \
+	} while (0)
+
+#define ANALYTICAL_STDEV_VARIANCE_ALL_ROWS(TPE, SAMPLE, OP)	\
+	do { \
+		for (; j < i; j++) { \
+			TPE v = bp[j]; \
+			if (is_##TPE##_nil(v))		\
+				continue;		\
+			n++;				\
+			delta = (dbl) v - mean;		\
+			mean += delta / n;		\
+			m2 += delta * ((dbl) v - mean);	\
+		} \
+		if (isinf(m2)) {	\
+			goto overflow;		\
+		} else if (n > SAMPLE) { \
+			for (; k < i; k++) \
+				rb[k] = OP; \
+		} else { \
+			for (; k < i; k++) \
+				rb[k] = dbl_nil; \
+			has_nils = true; \
+		} \
+		n = 0;	\
+		mean = 0;	\
+		m2 = 0; \
+	} while (0)
+
+#define ANALYTICAL_STDEV_VARIANCE_CURRENT_ROW(TPE, SAMPLE, OP)	\
 	do {								\
-		TPE *bp = (TPE*)Tloc(b, 0), *bs, *be, v;		\
-		for (; i < cnt; i++, rb++) {				\
-			bs = bp + start[i];				\
-			be = bp + end[i];				\
+		(void) bp;	\
+		for (; k < i; k++) \
+			rb[k] = SAMPLE == 1 ? dbl_nil : 0;	\
+		has_nils = is_dbl_nil(rb[k - 1]); \
+	} while (0)
+
+#define ANALYTICAL_STDEV_VARIANCE_OTHERS(TPE, SAMPLE, OP)	\
+	do {								\
+		for (; k < i; k++) {			\
+			TPE *bs = bp + start[k], *be = bp + end[k];		\
 			for (; bs < be; bs++) {				\
-				v = *bs;				\
+				TPE v = *bs;				\
 				if (is_##TPE##_nil(v))		\
 					continue;		\
 				n++;				\
@@ -2637,10 +2734,10 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 			if (isinf(m2)) {	\
 				goto overflow;		\
 			} else if (n > SAMPLE) { \
-				*rb = OP; \
+				rb[k] = OP; \
 			} else { \
-				*rb = dbl_nil; \
-				nils++; \
+				rb[k] = dbl_nil; \
+				has_nils = true; \
 			} \
 			n = 0;	\
 			mean = 0;	\
@@ -2648,55 +2745,85 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 		}	\
 	} while (0)
 
+#define ANALYTICAL_STDEV_VARIANCE_PARTITIONS(TPE, SAMPLE, OP, IMP)		\
+	do {						\
+		TPE *bp = (TPE*)Tloc(b, 0); \
+		if (p) {					\
+			for (; i < cnt; i++) {		\
+				if (np[i]) 			\
+					IMP(TPE, SAMPLE, OP);	\
+			}						\
+		}	\
+		i = cnt;			\
+		IMP(TPE, SAMPLE, OP);	\
+	} while (0)
+
 #ifdef HAVE_HGE
-#define ANALYTICAL_STDEV_VARIANCE_LIMIT(SAMPLE, OP) \
+#define ANALYTICAL_STDEV_VARIANCE_LIMIT(IMP, SAMPLE, OP) \
 	case TYPE_hge: \
-		ANALYTICAL_STDEV_VARIANCE_CALC(hge, SAMPLE, OP); \
+		ANALYTICAL_STDEV_VARIANCE_PARTITIONS(hge, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP); \
 	break;
 #else
-#define ANALYTICAL_STDEV_VARIANCE_LIMIT(SAMPLE, OP)
+#define ANALYTICAL_STDEV_VARIANCE_LIMIT(IMP, SAMPLE, OP)
 #endif
+
+#define ANALYTICAL_STDEV_VARIANCE_BRANCHES(IMP, SAMPLE, OP)		\
+	do { \
+		switch (tpe) {	\
+		case TYPE_bte:	\
+			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(bte, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			break;	\
+		case TYPE_sht:	\
+			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(sht, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			break;	\
+		case TYPE_int:	\
+			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(int, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			break;	\
+		case TYPE_lng:	\
+			ANALYTICAL_STDEV_VARIANCE_PARTITIONS(lng, SAMPLE, OP, ANALYTICAL_STDEV_VARIANCE_##IMP);	\
+			break;	\
+		ANALYTICAL_STDEV_VARIANCE_LIMIT(IMP, SAMPLE, OP)	\
+		default:	\
+			goto nosupport;	\
+		}	\
+	} while (0)
+
 
 #define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP, DESC) \
 gdk_return \
-GDKanalytical_##NAME(BAT *r, BAT *b, BAT *s, BAT *e, int tpe) \
+GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
-	BUN i = 0, cnt = BATcount(b), n = 0, nils = 0; \
-	lng *restrict start, *restrict end; \
+	bool has_nils = false;	\
+	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b), n = 0; \
+	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;	\
+	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
- \
-	assert(s && e); \
-	start = (lng *) Tloc(s, 0); \
-	end = (lng *) Tloc(e, 0); \
- \
-	switch (tpe) { \
-	case TYPE_bte: \
-		ANALYTICAL_STDEV_VARIANCE_CALC(bte, SAMPLE, OP); \
-		break; \
-	case TYPE_sht: \
-		ANALYTICAL_STDEV_VARIANCE_CALC(sht, SAMPLE, OP); \
-		break; \
-	case TYPE_int: \
-		ANALYTICAL_STDEV_VARIANCE_CALC(int, SAMPLE, OP); \
-		break; \
-	case TYPE_lng: \
-		ANALYTICAL_STDEV_VARIANCE_CALC(lng, SAMPLE, OP); \
-		break; \
-	ANALYTICAL_STDEV_VARIANCE_LIMIT(SAMPLE, OP) \
-	case TYPE_flt:\
-		ANALYTICAL_STDEV_VARIANCE_CALC(flt, SAMPLE, OP); \
-		break; \
-	case TYPE_dbl: \
-		ANALYTICAL_STDEV_VARIANCE_CALC(dbl, SAMPLE, OP); \
-		break; \
-	default: \
-		GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
-		return GDK_FAIL; \
-	} \
+	\
+	switch (frame_type) {	\
+	case 3: /* unbounded until current row */	{	\
+		ANALYTICAL_STDEV_VARIANCE_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
+	} break;	\
+	case 4: /* current row until unbounded */	{	\
+		ANALYTICAL_STDEV_VARIANCE_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
+	} break;	\
+	case 5: /* all rows */	{	\
+		ANALYTICAL_STDEV_VARIANCE_BRANCHES(ALL_ROWS, SAMPLE, OP);	\
+	} break;	\
+	case 6: /* current row */ {	\
+		ANALYTICAL_STDEV_VARIANCE_BRANCHES(CURRENT_ROW, SAMPLE, OP);	\
+	} break;	\
+	default: {	\
+		ANALYTICAL_STDEV_VARIANCE_BRANCHES(OTHERS, SAMPLE, OP);	\
+	}	\
+	}	\
+	\
 	BATsetcount(r, cnt); \
-	r->tnonil = nils == 0; \
-	r->tnil = nils > 0; \
+	r->tnonil = !has_nils;	\
+	r->tnil = has_nils;	\
 	return GDK_SUCCEED; \
+  nosupport:	\
+	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
+	return GDK_FAIL; \
   overflow: \
 	GDKerror("22003!overflow in calculation.\n"); \
 	return GDK_FAIL; \

@@ -1544,11 +1544,11 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 static str
 do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
-					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
+					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), bool has_bounds, int max_arg)
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
 	BAT *r = NULL, *b = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
-	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, false, 0, op, err);
+	str msg = SQLanalytics_args(&r, &b, &frame_type, &p, &o, &s, &e, cntxt, mb, stk, pci, TYPE_dbl, has_bounds, max_arg, op, err);
 	bat *res = NULL;
 
 	if (msg)
@@ -1559,7 +1559,7 @@ do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 	if (b) {
 		res = getArgReference_bat(stk, pci, 0);
 
-		if (func(r, b, s, e, tpe) != GDK_SUCCEED)
+		if (func(r, p, o, b, s, e, tpe, frame_type) != GDK_SUCCEED)
 			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
@@ -1594,31 +1594,59 @@ bailout:
 }
 
 str
+SQLstddev_samp_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdev", SQLSTATE(42000) "stddev(:any_1,:lng,:lng)",
+								  GDKanalytical_stddev_samp, false, 4);
+}
+
+str
+SQLstddev_pop_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdevp", SQLSTATE(42000) "stdevp(:any_1,:lng,:lng)",
+								  GDKanalytical_stddev_pop, false, 4);
+}
+
+str
+SQLvar_samp_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variance", SQLSTATE(42000) "variance(:any_1,:lng,:lng)",
+								  GDKanalytical_variance_samp, false, 4);
+}
+
+str
+SQLvar_pop_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", SQLSTATE(42000) "variancep(:any_1,:lng,:lng)",
+								  GDKanalytical_variance_pop, false, 4);
+}
+
+str
 SQLstddev_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdev", SQLSTATE(42000) "stddev(:any_1,:lng,:lng)",
-								  GDKanalytical_stddev_samp);
+								  GDKanalytical_stddev_samp, true, 6);
 }
 
 str
 SQLstddev_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.stdevp", SQLSTATE(42000) "stdevp(:any_1,:lng,:lng)",
-								  GDKanalytical_stddev_pop);
+								  GDKanalytical_stddev_pop, true, 6);
 }
 
 str
 SQLvar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variance", SQLSTATE(42000) "variance(:any_1,:lng,:lng)",
-								  GDKanalytical_variance_samp);
+								  GDKanalytical_variance_samp, true, 6);
 }
 
 str
 SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_stddev_and_variance(cntxt, mb, stk, pci, "sql.variancep", SQLSTATE(42000) "variancep(:any_1,:lng,:lng)",
-								  GDKanalytical_variance_pop);
+								  GDKanalytical_variance_pop, true, 6);
 }
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE(TPE) \
