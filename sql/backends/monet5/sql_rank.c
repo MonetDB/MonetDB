@@ -763,7 +763,7 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 }
 
 static str
-SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg, const char* op, const char* err,
+SQLanalytical_func(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg, const char *op, const char *err,
 				   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int))
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
@@ -995,7 +995,7 @@ bailout:
 	} while(0)
 
 static str
-do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* desc,
+do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char* desc,
 			gdk_return (*func)(BAT *, BAT *, BAT *, BUN, const void* restrict, int),
 			gdk_return (*dual)(BAT *, BAT *, BAT *, BUN, const void* restrict, int))
 {
@@ -1543,7 +1543,7 @@ SQLavginteger(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
+do_stddev_and_variance(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char *err,
 					   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), bool has_bounds, int max_arg)
 {
 	int tpe = getArgType(mb, pci, 1), frame_type;
@@ -1649,43 +1649,171 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								  GDKanalytical_variance_pop, true, 6);
 }
 
-#define COVARIANCE_AND_CORRELATION_ONE_SIDE(TPE) \
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_UNBOUNDED_TILL_CURRENT_ROW(TPE) \
 	do { \
-		TPE *restrict bp = (TPE*)Tloc(b, 0); \
-		for (BUN i = 0; i < cnt; i++) { \
-			for (lng j = start[i] ; j < end[i] ; j++) { \
+		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		for (; k < i;) { \
+			j = k; \
+			do {	\
+				n += !is_##TPE##_nil(bp[k]);	\
+				k++; \
+			} while (k < i && !opp[k]);	\
+			if (n > minimum) { /* covariance_samp requires at least one value */ \
+				rr = val; \
+			} else { \
+				rr = dbl_nil; \
+				has_nils = true; \
+			} \
+			for (; j < k; j++) \
+				rb[j] = rr; \
+		} \
+		n = 0;	\
+		k = i; \
+	} while (0)
+
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW_TILL_UNBOUNDED(TPE) \
+	do { \
+		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		l = i - 1; \
+		for (j = l; ; j--) { \
+			n += !is_##TPE##_nil(bp[j]);	\
+			if (opp[j] || j == k) {	\
+				if (n > minimum) { /* covariance_samp requires at least one value */ \
+					rr = val; \
+				} else { \
+					rr = dbl_nil; \
+					has_nils = true; \
+				} \
+				for (; l >= j; l--) \
+					rb[l] = rr; \
+				if (j == k)	\
+					break;	\
+				l = j - 1;	\
+			}	\
+		}	\
+		n = 0;	\
+		k = i; \
+	} while (0)
+
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_ALL_ROWS(TPE) \
+	do { \
+		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		for (; j < i; j++) \
+			n += !is_##TPE##_nil(bp[j]);	\
+		if (n > minimum) { /* covariance_samp requires at least one value */ \
+			rr = val; \
+		} else { \
+			rr = dbl_nil; \
+			has_nils = true; \
+		} \
+		for (; k < i; k++) \
+			rb[k] = rr;	\
+		n = 0; \
+	} while (0)
+
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_CURRENT_ROW(TPE) \
+	do { \
+		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		for (; k < i; k++) { \
+			n += !is_##TPE##_nil(bp[k]);	\
+			if (n > minimum) { /* covariance_samp requires at least one value */ \
+				rb[k] = val; \
+			} else { \
+				rb[k] = dbl_nil; \
+				has_nils = true; \
+			} \
+			n = 0; \
+		}	\
+	} while (0)
+
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_OTHERS(TPE) \
+	do { \
+		TPE *restrict bp = (TPE*)Tloc(d, 0); \
+		for (; k < i; k++) { \
+			for (j = start[k] ; j < end[k] ; j++) { \
 				if (is_##TPE##_nil(bp[j])) \
 					continue; \
 				n++; \
 			} \
 			if (n > minimum) { /* covariance_samp requires at least one value */ \
-				rb[i] = res; \
+				rb[k] = val; \
 			} else { \
-				rb[i] = dbl_nil; \
+				rb[k] = dbl_nil; \
 				has_nils = true; \
 			} \
 			n = 0; \
 		} \
 	} while (0)
 
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(TPE, IMP)		\
+	do {						\
+		if (p) {					\
+			for (; i < cnt; i++) {		\
+				if (np[i]) 			\
+					IMP(TPE);	\
+			}						\
+		}	\
+		i = cnt;			\
+		IMP(TPE);	\
+	} while (0)
+
+#ifdef HAVE_HGE
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP) \
+	case TYPE_hge: \
+		COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(hge, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP); \
+	break;
+#else
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP)
+#endif
+
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(IMP)		\
+	do { \
+		switch (tp1) {	\
+		case TYPE_bte:	\
+			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(bte, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
+			break;	\
+		case TYPE_sht:	\
+			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(sht, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
+			break;	\
+		case TYPE_int:	\
+			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(int, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
+			break;	\
+		case TYPE_lng:	\
+			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(lng, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
+			break;	\
+		case TYPE_flt:	\
+			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(flt, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
+			break;	\
+		case TYPE_dbl:	\
+			COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(dbl, COVARIANCE_AND_CORRELATION_ONE_SIDE_##IMP);	\
+			break;	\
+		COVARIANCE_AND_CORRELATION_ONE_SIDE_LIMIT(IMP)	\
+		default: {	\
+			msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1)); \
+			goto bailout; \
+		} \
+		}	\
+	} while (0)
+
 static str
-do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char* op, const char* err,
-							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, int), BUN minimum, dbl defaultv, dbl single_case)
+do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char *op, const char *err,
+							  gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, BAT *, int, int), lng minimum, dbl defaultv,
+							  dbl single_case, bool has_bounds, int max_arg)
 {
-	BAT *r = NULL, *b = NULL, *c = NULL, *s = NULL, *e = NULL;
-	int tp1, tp2;
-	gdk_return gdk_res = GDK_SUCCEED;
+	BAT *r = NULL, *b = NULL, *c = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
+	int tp1, tp2, frame_type;
 	bool is_a_bat1, is_a_bat2;
 	str msg = MAL_SUCCEED;
+	bat *res = NULL;
 
 	(void)cntxt;
-	if (pci->argc != 5 || ((isaBatType(getArgType(mb, pci, 3)) && getBatType(getArgType(mb, pci, 3)) != TYPE_lng) ||
-		 (isaBatType(getArgType(mb, pci, 4)) && getBatType(getArgType(mb, pci, 4)) != TYPE_lng))) {
+	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
+		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1))
 		throw(SQL, op, "%s", err);
-	}
 
 	tp1 = getArgType(mb, pci, 1);
 	tp2 = getArgType(mb, pci, 2);
+	frame_type = *getArgReference_int(stk, pci, 3);
 	is_a_bat1 = isaBatType(tp1);
 	is_a_bat2 = isaBatType(tp2);
 
@@ -1696,85 +1824,79 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	if (tp1 != tp2)
 		throw(SQL, op, SQLSTATE(42000) "The input arguments for %s must be from the same type", op);
 
-	if (is_a_bat1) {
-		bat *res = getArgReference_bat(stk, pci, 0);
+	if (is_a_bat1 || is_a_bat2) {
+		res = getArgReference_bat(stk, pci, 0);
 
-		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-		if (!b)
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		if (is_a_bat1 && !(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (is_a_bat2 && !(c = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (!(r = COLnew(b->hseqbase, TYPE_dbl, BATcount(b), TRANSIENT))) {
+			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 
-		voidresultBAT(r, TYPE_dbl, BATcount(b), b, op);
-		s = BATdescriptor(*getArgReference_bat(stk, pci, 3));
-		if (!s) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-		}
-		e = BATdescriptor(*getArgReference_bat(stk, pci, 4));
-		if (!e) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			BBPunfix(s->batCacheid);
-			throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
-		}
-		if (is_a_bat2) {
-			c = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-			if (!e) {
-				BBPunfix(b->batCacheid);
-				BBPunfix(r->batCacheid);
-				BBPunfix(s->batCacheid);
-				BBPunfix(e->batCacheid);
-				throw(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+		if (has_bounds) {
+			if (isaBatType(getArgType(mb, pci, 4)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
+				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
 			}
-			gdk_res = func(r, b, c, s, e, tp1);
+			if (isaBatType(getArgType(mb, pci, 5)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
+				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+		} else if (frame_type == 3 || frame_type == 4) {
+			if (isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
+				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+			max_arg++;
+		}
+		if (pci->argc == max_arg && isaBatType(getArgType(mb, pci, max_arg - 1)) &&
+			!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1)))) {
+			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+
+		if (is_a_bat1 && is_a_bat2) {
+			if (func(r, p, o, b, c, s, e, tp1, frame_type) != GDK_SUCCEED)
+				msg = createException(SQL, op, GDK_EXCEPTION);
 		} else {
 			/* corner case, second column is a constant, calculate it this way... */
-			BUN cnt = BATcount(b), n = 0;
-			ValRecord *input2 = &(stk)->stk[(pci)->argv[2]];
-			dbl *restrict rb = (dbl*) Tloc(r, 0), res = VALisnil(input2) ? dbl_nil : defaultv;
-			lng *restrict start = (lng*) Tloc(s, 0), *restrict end = (lng*) Tloc(e, 0);
-			bool has_nils = is_dbl_nil(res);
+			BAT *d = b ? b : c;
+			ValRecord *input2 = &(stk)->stk[(pci)->argv[b ? 2 : 1]];
+			lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(d), n = 0;
+			lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+			bit *np = p ? Tloc(p, 0) : NULL, *opp = o ? Tloc(o, 0) : NULL;
+			dbl *restrict rb = (dbl *) Tloc(r, 0), val = VALisnil(input2) ? dbl_nil : defaultv, rr;
+			bool has_nils = is_dbl_nil(val);
 
-			switch (tp1) {
-			case TYPE_bte:
-				COVARIANCE_AND_CORRELATION_ONE_SIDE(bte);
-				break;
-			case TYPE_sht:
-				COVARIANCE_AND_CORRELATION_ONE_SIDE(sht);
-				break;
-			case TYPE_int:
-				COVARIANCE_AND_CORRELATION_ONE_SIDE(int);
-				break;
-			case TYPE_lng:
-				COVARIANCE_AND_CORRELATION_ONE_SIDE(lng);
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-				COVARIANCE_AND_CORRELATION_ONE_SIDE(hge);
-				break;
-#endif
-			case TYPE_flt:
-				COVARIANCE_AND_CORRELATION_ONE_SIDE(flt);
-				break;
-			case TYPE_dbl:
-				COVARIANCE_AND_CORRELATION_ONE_SIDE(dbl);
-				break;
-			default:
-				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+			switch (frame_type) {
+			case 3: /* unbounded until current row */	{
+				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+			} break;
+			case 4: /* current row until unbounded */	{
+				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+			} break;
+			case 5: /* all rows */	{
+				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(ALL_ROWS);
+			} break;
+			case 6: /* current row */ {
+				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW);
+			} break;
+			default: {
+				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
 			}
-			BATsetcount(r, cnt);
+			}
+
+			BATsetcount(r, (BUN) cnt);
 			r->tnonil = !has_nils;
 			r->tnil = has_nils;
 		}
-
-		BBPunfix(b->batCacheid);
-		BBPunfix(s->batCacheid);
-		BBPunfix(e->batCacheid);
-		if (c) BBPunfix(c->batCacheid);
-		if (gdk_res == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, op, GDK_EXCEPTION);
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
 		ValRecord *input1 = &(stk)->stk[(pci)->argv[1]];
@@ -1793,31 +1915,61 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 				*res = (VALisnil(input1) || VALisnil(input2)) ? dbl_nil : single_case;
 				break;
 			default:
-				throw(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
+				msg = createException(SQL, op, SQLSTATE(42000) "%s not available for %s", op, ATOMname(tp1));
 		}
 	}
+
+bailout:
+	unfix_inputs(6, b, c, p, o, s, e);
+	if (r && !msg) {
+		r->tsorted = BATcount(r) <= 1;
+		r->trevsorted = BATcount(r) <= 1;
+		BBPkeepref(*res = r->batCacheid);
+	} else if (r)
+		BBPreclaim(r);
 	return msg;
+}
+
+str
+SQLcovar_samp_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
+										 GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil, false, 5);
+}
+
+str
+SQLcovar_pop_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
+										 GDKanalytical_covariance_pop, 0, 0.0f, 0.0f, false, 5);
+}
+
+str
+SQLcorr_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
+										 GDKanalytical_correlation, 0, dbl_nil, dbl_nil, false, 5);
 }
 
 str
 SQLcovar_samp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariance", SQLSTATE(42000) "covariance(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil);
+										 GDKanalytical_covariance_samp, 1, 0.0f, dbl_nil, true, 7);
 }
 
 str
 SQLcovar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.covariancep", SQLSTATE(42000) "covariancep(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_covariance_pop, 0, 0.0f, 0.0f);
+										 GDKanalytical_covariance_pop, 0, 0.0f, 0.0f, true, 7);
 }
 
 str
 SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", SQLSTATE(42000) "corr(:any_1,:any_1,:lng,:lng)",
-										 GDKanalytical_correlation, 0, dbl_nil, dbl_nil);
+										 GDKanalytical_correlation, 0, dbl_nil, dbl_nil, true, 7);
 }
 
 str
