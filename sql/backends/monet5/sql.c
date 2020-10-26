@@ -1764,20 +1764,24 @@ mvc_append_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+// tmp_1, cookie_1 := sql.append_prep(chain_0, s, t, c_1);
 str
 mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = getArgReference_int(stk, pci, 0);
+	int *chain_out = getArgReference_int(stk, pci, 0);
+	ptr *cookie_out = getArgReference_ptr(stk, pci, 1);
+	int chain_in = *getArgReference_int(stk, pci, 2);
 	mvc *m = NULL;
 	str msg;
-	const char *sname = *getArgReference_str(stk, pci, 2);
-	const char *tname = *getArgReference_str(stk, pci, 3);
-	const char *cname = *getArgReference_str(stk, pci, 4);
-	assert(isaBatType(getArgType(mb, pci, 5)));
-	bat batid = *getArgReference_bat(stk, pci, 5);
+	const char *sname = *getArgReference_str(stk, pci, 3);
+	const char *tname = *getArgReference_str(stk, pci, 4);
+	const char *cname = *getArgReference_str(stk, pci, 5);
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
+
+	*chain_out = chain_in;
+	*cookie_out = NULL;
 
 	if (strNil(sname))
 		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat schema name is nil");
@@ -1789,7 +1793,6 @@ mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (cname[0] == '%')
 		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat not intended for indices: %s.%s.%s", sname, tname, cname);
 
-	*res = 0;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
@@ -1804,85 +1807,30 @@ mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (c == NULL)
 		throw(SQL, "sql.append_bat", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
 
-	fprintf(stderr, "WOOOOOPIE1\n");
 	void *cookie = store_funcs.append_col_prep(m->session->tr, c);
 
-	BAT *b = BATdescriptor(batid);
-	if (b == NULL)
-		throw(SQL, "sql.append_exec", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
-	if( b && BATcount(b) > 4096 && !b->batTransient)
-		BATmsync(b);
-
-	fprintf(stderr, "WOOOOOPIE2\n");
-	int ret = store_funcs.append_col_exec(cookie, b);
-
-	if (b) {
-		BBPunfix(b->batCacheid);
-	}
-
-	if (ret != LOG_OK)
-		throw(SQL, "sql_append_bat_exec", GDK_EXCEPTION);
-
+	*cookie_out = cookie;
 	return MAL_SUCCEED;
 }
 
+// sql.append_exec(cookie_1, bat_1);
 str
 mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int *res = getArgReference_int(stk, pci, 0);
-	mvc *m = NULL;
-	str msg;
-	const char *sname = *getArgReference_str(stk, pci, 2);
-	const char *tname = *getArgReference_str(stk, pci, 3);
-	const char *cname = *getArgReference_str(stk, pci, 4);
-	assert(isaBatType(getArgType(mb, pci, 5)));
-	bat batid = *getArgReference_bat(stk, pci, 5);
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-
-	if (strNil(sname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat schema name is nil");
-	if (strNil(tname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat table name is nil");
-	if (strNil(cname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat column name is nil");
-
-	if (cname[0] == '%')
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat not intended for indices: %s.%s.%s", sname, tname, cname);
-
-	*res = 0;
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, sname);
-	if (s == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(3F000) "Schema missing %s", sname);
-	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
-	c = mvc_bind_column(m, t, cname);
-	if (c == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
-
-	fprintf(stderr, "WOOOOOPIE1\n");
-	void *cookie = store_funcs.append_col_prep(m->session->tr, c);
+	(void) cntxt;
+	(void) mb;
+	void *cookie = *getArgReference_ptr(stk, pci, 1);
+	bat batid = *getArgReference_bat(stk, pci, 2);
 
 	BAT *b = BATdescriptor(batid);
 	if (b == NULL)
-		throw(SQL, "sql.append_bat_exec", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
+		throw(SQL, "sql.append_bat_exec", SQLSTATE(HY005) "Cannot access column descriptor");
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 
-	fprintf(stderr, "WOOOOOPIE2\n");
 	int ret = store_funcs.append_col_exec(cookie, b);
 
-	if (b) {
-		BBPunfix(b->batCacheid);
-	}
+	BBPunfix(b->batCacheid);
 
 	if (ret != LOG_OK)
 		throw(SQL, "sql_append_bat_exec", GDK_EXCEPTION);
@@ -5456,7 +5404,7 @@ static mel_func sql_init_funcs[] = {
 		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str))),
  pattern("sql", "append_exec", mvc_append_exec_wrap, false, "Perform the actual append",
     args(1,3,
-		arg("",int),
+		arg("",void),
 		arg("cookie",ptr),batargany("ins",1))),
 
     // tmp_1, cookie_1 := sql.append_prep(chain_0, s, t, c_1);
