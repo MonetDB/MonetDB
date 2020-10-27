@@ -4803,6 +4803,22 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			ie = oe;
 	}
 
+	if (!pe || !oe)
+		return NULL;
+	if (!supports_frames) {
+		list_append(fargs, pe);
+		list_append(fargs, oe);
+	}
+
+	types = exp_types(sql->sa, fargs);
+	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
+		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
+		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
+			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
+		}
+	}
+
 	/* Frame */
 	if (frame_clause) {
 		dnode *d = frame_clause->data.lval->h;
@@ -4867,7 +4883,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
 		if (is_value) {
 			sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"),
-						*bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);;
+						*bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 			unsigned char sclass = bt->type->eclass;
 
 			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMBER(sclass) ? bt : it));
@@ -4881,21 +4897,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	}
 
-	if (!pe || !oe)
-		return NULL;
-	if (!supports_frames) {
-		list_append(fargs, pe);
-		list_append(fargs, oe);
-	}
-
-	types = exp_types(sql->sa, fargs);
-	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
-		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
-		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
-			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-		}
-	}
 	args = sa_list(sql->sa);
 	for (node *n = fargs->h ; n ; n = n->next)
 		list_append(args, n->data);
