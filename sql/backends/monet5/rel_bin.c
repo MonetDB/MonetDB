@@ -5342,6 +5342,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	node *n = NULL;
 	int error = 0;
 	struct tablelist* new_list = SA_NEW(sql->ta, struct tablelist), *list_node;
+	stmt **deleted_cols = NULL;
 
 	if (!new_list) {
 		sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -5386,17 +5387,31 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 
 		v = stmt_tid(be, next, 0);
 
+		/*  project all columns */
+		if (list_length(t->triggers.set) || t->p) {
+			int nr = 0;
+			deleted_cols = table_update_stmts(sql, t, &nr);
+			int i = 0;
+			for (node *n = t->columns.set->h; n; n = n->next, i++) {
+				sql_column *c = n->data;
+				stmt *s = stmt_col(be, c, v, v->partition);
+
+				deleted_cols[i] = s;
+				list_append(l, s);
+			}
+		}
+
 		/* before */
 		if (be->cur_append && !be->first_statement_generated) {
 			for (sql_table *up = t->p ; up ; up = up->p) {
-				if (!sql_delete_triggers(be, up, v, NULL, 0, 3, 4)) {
+				if (!sql_delete_triggers(be, up, v, deleted_cols, 0, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
 					goto finalize;
 				}
 			}
 		}
-		if (!sql_delete_triggers(be, next, v, NULL, 0, 3, 4)) {
+		if (!sql_delete_triggers(be, next, v, deleted_cols, 0, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
@@ -5416,14 +5431,14 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		/* after */
 		if (be->cur_append && !be->first_statement_generated) {
 			for (sql_table *up = t->p ; up ; up = up->p) {
-				if (!sql_delete_triggers(be, up, v, NULL, 1, 3, 4)) {
+				if (!sql_delete_triggers(be, up, v, deleted_cols, 1, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
 					goto finalize;
 				}
 			}
 		}
-		if (!sql_delete_triggers(be, next, v, NULL, 1, 3, 4)) {
+		if (!sql_delete_triggers(be, next, v, deleted_cols, 1, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
