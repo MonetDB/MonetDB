@@ -19,9 +19,10 @@ typedef struct parstate {
 	InstrPtr finish_stmt;
 } parstate;
 
-static str transform(parstate *state, MalBlkPtr mb, InstrPtr importTable);
-static int setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old);
+static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable);
+static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old);
 static void flush_finish_stmt(parstate *state, MalBlkPtr mb);
+static void pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr instr);
 
 
 str
@@ -57,7 +58,7 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (int i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
 		if (p->modname == sqlRef && p->fcnname == appendRef && isaBatType(getArgType(mb, p, 5))) {
-			msg = transform(&state, mb, p);
+			msg = transform(&state, cntxt, mb, p);
 		} else {
 			if (mayhaveSideEffects(cntxt, mb, p, false)) {
 				flush_finish_stmt(&state, mb);
@@ -76,7 +77,7 @@ end:
 }
 
 static str
-transform(parstate *state, MalBlkPtr mb, InstrPtr old)
+transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
 {
 	// take the old instruction apart
 	assert(old->retc == 1);
@@ -97,7 +98,7 @@ transform(parstate *state, MalBlkPtr mb, InstrPtr old)
 	}
 
 
-	int cookie_var = setup_append_prep(state, mb, old);
+	int cookie_var = setup_append_prep(state, cntxt, mb, old);
 
 	str append_execRef = putName("append_exec");
 	int ret_cookie = newTmpVariable(mb, TYPE_ptr);
@@ -113,7 +114,7 @@ transform(parstate *state, MalBlkPtr mb, InstrPtr old)
 }
 
 static int
-setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old)
+setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
 {
 	// take the old instruction apart
 	assert(old->retc == 1);
@@ -184,6 +185,8 @@ setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old)
 		setReturnArgument(f, chain_out_var);
 		f = pushArgument(mb, f, chain);
 		state->finish_stmt = f;
+
+		pull_prep_towards_beginning(cntxt, mb, p);
 	} else {
 		// Append to existing first, to ensure there is room
 		prep_stmt = pushArgument(mb, prep_stmt, cname_var);
@@ -212,4 +215,43 @@ flush_finish_stmt(parstate *state, MalBlkPtr mb)
 	}
 	state->prep_stmt = NULL;
 	state->finish_stmt = NULL;
+}
+
+
+static bool
+can_swap_prep_with(Client cntxt, MalBlkPtr mb, InstrPtr prep, InstrPtr other)
+{
+	if (mayhaveSideEffects(cntxt, mb, other, false)) {
+		// probably not safe to pull it across a side effect, and chainflow wouldn't benefit anyway
+		return false;
+	}
+
+	int chain_var = getArg(prep, prep->retc);
+	for (int i = 0; i < other->retc; i++)
+		if (chain_var == getArg(other, i)) {
+			// it defines the chain var we use, we must not violate causality
+			break;
+		}
+
+	return true; // okay
+}
+
+static void
+pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr prep)
+{
+	int prep_loc = prep->pc;
+	int tgt = prep_loc;
+
+	while (tgt > 0) {
+		int new_tgt = tgt - 1;
+		InstrPtr other = getInstrPtr(mb, new_tgt);
+		if (!can_swap_prep_with(cntxt, mb, prep, other))
+			break;
+		tgt = new_tgt;
+	}
+
+	if (tgt != prep_loc) {
+		moveInstruction(mb, prep_loc, tgt);
+	} else {
+	}
 }
