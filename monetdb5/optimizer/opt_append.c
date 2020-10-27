@@ -106,7 +106,7 @@ transform(parstate *state, MalBlkPtr mb, InstrPtr old)
 	pushArgument(mb, e, cookie_var);
 	pushArgument(mb, e, data_var);
 
-	pushArgument(mb, state->finish_stmt, ret_cookie);
+	state->finish_stmt = pushArgument(mb, state->finish_stmt, ret_cookie);
 	// fprintf(stderr, "TRIGGER\n");
 
 	return MAL_SUCCEED;
