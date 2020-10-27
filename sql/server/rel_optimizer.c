@@ -3261,7 +3261,7 @@ rel_push_down_bounds(visitor *v, sql_rel *rel)
 		for (n = exps->h; n ; n = n->next) {
 			sql_exp *e = n->data;
 			int cnt, fcnt, is_value, i = 0;
-			sql_exp *b1, *b2;
+			sql_exp *b1, *b2, *last, *found;
 			sql_subfunc *f;
 			list *l;
 
@@ -3316,6 +3316,9 @@ rel_push_down_bounds(visitor *v, sql_rel *rel)
 								n->data = exp_ref(v->sql, b1);
 						}
 					}
+					last = l->t->data; /* find duplicate diff call for partition finding and reference the original one */
+					if (last->type == e_func && !strcmp(((sql_subfunc*) last->f)->func->base.name, "diff") && (found = exps_any_match(((sql_rel*)rel->l)->exps, last)))
+						l->t->data = exp_ref(v->sql, found);
 				}
 			}
 		}
