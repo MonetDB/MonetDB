@@ -103,8 +103,8 @@ transform(parstate *state, MalBlkPtr mb, InstrPtr old)
 	int ret_cookie = newTmpVariable(mb, TYPE_ptr);
 	InstrPtr e = newFcnCall(mb, sqlRef, append_execRef);
 	setReturnArgument(e, ret_cookie);
-	pushArgument(mb, e, cookie_var);
-	pushArgument(mb, e, data_var);
+	e = pushArgument(mb, e, cookie_var);
+	e = pushArgument(mb, e, data_var);
 
 	state->finish_stmt = pushArgument(mb, state->finish_stmt, ret_cookie);
 	// fprintf(stderr, "TRIGGER\n");
@@ -174,20 +174,20 @@ setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old)
 		InstrPtr p = newFcnCall(mb, sqlRef, append_prepRef);
 		setReturnArgument(p, chain);
 		pushReturn(mb, p, cookie_var);
-		pushArgument(mb, p, chain_in_var);
-		pushArgument(mb, p, sname_var);
-		pushArgument(mb, p, tname_var);
-		pushArgument(mb, p, cname_var);
+		p = pushArgument(mb, p, chain_in_var);
+		p = pushArgument(mb, p, sname_var);
+		p = pushArgument(mb, p, tname_var);
+		p = pushArgument(mb, p, cname_var);
 		state->prep_stmt = p;
 
 		InstrPtr f = newInstructionArgs(mb, sqlRef, append_finishRef, 2);
-		state->finish_stmt = f;
 		setReturnArgument(f, chain_out_var);
-		pushArgument(mb, f, chain);
+		f = pushArgument(mb, f, chain);
+		state->finish_stmt = f;
 	} else {
 		// Append to existing first, to ensure there is room
-		pushArgument(mb, prep_stmt, cname_var);
-		pushArgument(mb, prep_stmt, cookie_var);
+		prep_stmt = pushArgument(mb, prep_stmt, cname_var);
+		prep_stmt = pushArgument(mb, prep_stmt, cookie_var);
 		// Now move the cookie_var to its proper location
 		for (int i = prep_stmt->argc - 1; i > prep_stmt->retc; i--)
 			setArg(prep_stmt, i, getArg(prep_stmt, i - 1));
@@ -196,6 +196,8 @@ setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old)
 
 		// Always use the chain_out of the latest sql_append:
 		setArg(state->finish_stmt, 0, chain_out_var);
+
+		state->prep_stmt = prep_stmt;
 	}
 
 	return cookie_var;

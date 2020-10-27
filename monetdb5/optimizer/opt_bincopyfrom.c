@@ -150,15 +150,15 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count
 		if (count_var < 0)
 			pushLng(mb, p, 0);
 		else
-			pushArgument(mb, p, count_var);
+			p = pushArgument(mb, p, count_var);
 		return new_count_var;
 	} else {
 		InstrPtr p = newFcnCall(mb, algebraRef, projectRef);
 		setReturnArgument(p, old->argv[idx]);
-		pushArgument(mb, p, proto_bat_var);
+		p = pushArgument(mb, p, proto_bat_var);
 		int proto_bat_type = getVarType(mb, var);
 		int proto_elem_type = getBatType(proto_bat_type);
-		pushNil(mb, p, proto_elem_type);
+		p = pushNil(mb, p, proto_elem_type);
 		return count_var;
 	}
 }
