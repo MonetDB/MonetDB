@@ -1335,7 +1335,7 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
 
-    	if (HEAPalloc(msks, (BATcount(masked)+31)/32 + (sizeof(ccand_t)/sizeof(int)), sizeof(int), 0) != GDK_SUCCEED) {
+    	if (HEAPalloc(msks, (BATcount(masked)+31)/32 + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
 		GDKfree(msks);
         	return GDK_FAIL;
 	}
@@ -1343,9 +1343,9 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 	c->type = CAND_MSK;
 	c->mask = selected;
     	msks->parentid = dense_cands->batCacheid;
-	msks->free = sizeof(ccand_t) + (BATcount(masked)+31)/32 * sizeof(int);
-	int *r = (int*)(msks->base + sizeof(ccand_t));
-	memcpy(r, Tloc(masked, 0), (BATcount(masked)+31)/32 * sizeof(int));
+	msks->free = sizeof(ccand_t) + (BATcount(masked)+31)/32 * sizeof(uint32_t);
+	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
+	memcpy(r, Tloc(masked, 0), (BATcount(masked)+31)/32 * sizeof(uint32_t));
 	dense_cands->batDirtydesc = true;
 	dense_cands->tvheap = msks;
 	/*
