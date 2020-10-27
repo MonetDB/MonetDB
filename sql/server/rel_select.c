@@ -4912,6 +4912,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			list_append(args, start && eend ? exp_copy(sql, pe) : pe);
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
+	if (supports_frames)
+		set_frame_support(call);
 	*rel = p;
 	return call;
 }
