@@ -605,47 +605,79 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 	e->l = exps_rewrite(sql, rel, e->l, ad);
 	sf = e->f;
 	/* window functions need to be run per freevars */
-	if (sf->func->type == F_ANALYTIC && list_length(sf->func->ops) > 2) {
+	if (sf->func->type == F_ANALYTIC && strcmp(sf->func->base.name, "window_bound") != 0 && strcmp(sf->func->base.name, "diff") != 0 && ad) {
 		sql_subtype *bt = sql_bind_localtype("bit");
-		node *d;
-		list *rankopargs = e->l;
-		/* window_bound has partition/orderby as first argument (before normal expressions), others as second (and have a boolean placeholder) */
-		int is_wb = (strcmp(sf->func->base.name, "window_bound") == 0);
-		int is_ntile = (strcmp(sf->func->base.name, "ntile") == 0);
-		node *n = (is_wb)?rankopargs->h:(is_ntile)?rankopargs->h->next->next:rankopargs->h->next;
-		sql_exp *pe = n->data;
+		list *rankopargs = e->l, *gbe = ((list*)e->r)->h->data;
+		sql_exp *pe = list_empty(gbe) ? NULL : (sql_exp*)gbe->t->data;
+		bool has_pe = pe != NULL;
 
-		/* if pe is window_bound function skip */
-		if (pe->type == e_func) {
-			sf = pe->f;
-			if (strcmp(sf->func->base.name, "window_bound") == 0)
-				return e;
-		}
-		/* find partition expression in rankfunc */
-		/* diff function */
-		if (exp_is_atom(pe) || (is_wb && (pe->type != e_func || strcmp(sf->func->base.name, "diff") != 0)))
+		if (!pe || pe->type != e_func || strcmp(((sql_subfunc *)pe->f)->func->base.name, "diff") != 0)
 			pe = NULL;
-		else
-			is_wb = 0;
-		if (ad)
-		for(d=ad->h; d; d=d->next) {
+
+		for(node *d = ad->h; d; d=d->next) {
 			sql_subfunc *df;
-			sql_exp *e = d->data;
+			sql_exp *de = d->data;
 			list *args = sa_list(sql->sa);
 			if (pe) {
-				df = sql_bind_func(sql->sa, NULL, "diff", bt, exp_subtype(e), F_ANALYTIC);
+				df = sql_bind_func(sql->sa, NULL, "diff", bt, exp_subtype(de), F_ANALYTIC);
 				append(args, pe);
 			} else {
-				df = sql_bind_func(sql->sa, NULL, "diff", exp_subtype(e), NULL, F_ANALYTIC);
+				df = sql_bind_func(sql->sa, NULL, "diff", exp_subtype(de), NULL, F_ANALYTIC);
 			}
 			assert(df);
-			append(args, e);
+			append(args, de);
 			pe = exp_op(sql->sa, args, df);
 		}
-		if (is_wb)
-			e->l = list_prepend(rankopargs, pe);
-		else
-			n->data = pe;
+
+		if (!supports_frames(e)) {
+			for (node *n = rankopargs->h; n ; n = n->next) {
+				if (n->next == rankopargs->t) {
+					n->data = pe;
+					break;
+				}
+			}
+		} else if (!strcmp(sf->func->base.name, "nth_value") || !strcmp(sf->func->base.name, "first_value") || !strcmp(sf->func->base.name, "last_value")) {
+			sql_exp *window1 = list_fetch(rankopargs, list_length(sf->func->ops)), *window2 = list_fetch(rankopargs, list_length(sf->func->ops) + 1);
+			list *lw1 = window1->l, *lw2 = window2->l; /* the value functions require bound functions always */
+
+			if (has_pe) {
+				assert(list_length(window1->l) == 6);
+				lw1->h->data = exp_copy(sql, pe);
+				lw2->h->data = exp_copy(sql, pe);
+			} else {
+				window1->l = list_prepend(lw1, exp_copy(sql, pe));
+				window2->l = list_prepend(lw2, exp_copy(sql, pe));
+			}
+		} else { /* aggregate case */
+			bool found_window_bound = false;
+			for (node *n = rankopargs->h; n && !found_window_bound ; n = n->next) {
+				sql_exp *e = n->data;
+				found_window_bound |= e->type == e_func && !strcmp(((sql_subfunc *)e->f)->func->base.name, "window_bound");
+			}
+
+			if (found_window_bound) { /* complex case, requires bound function call */
+				sql_exp *window1 = list_fetch(rankopargs, list_length(sf->func->ops) + 1), *window2 = list_fetch(rankopargs, list_length(sf->func->ops) + 2);
+				list *lw1 = window1->l, *lw2 = window2->l;
+				assert(list_length(window1->l) == list_length(window2->l));
+
+				if (has_pe) {
+					assert(list_length(window1->l) == 6);
+					lw1->h->data = exp_copy(sql, pe);
+					lw2->h->data = exp_copy(sql, pe);
+				} else {
+					assert(list_length(window1->l) == 5);
+					window1->l = list_prepend(lw1, exp_copy(sql, pe));
+					window2->l = list_prepend(lw2, exp_copy(sql, pe));
+					list_append(e->l, exp_copy(sql, pe));
+				}
+			} else { /* trivial case, there's no need to compute bounds */
+				if (has_pe) {
+					rankopargs->t->data = pe;
+				} else {
+					e->l = list_append(e->l, pe);
+				}
+			}
+		}
 	}
 	return e;
 }
@@ -1676,6 +1708,8 @@ exp_reset_card_and_freevar(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void)v;
 	(void)depth;
 
+	if (e->type == e_func && e->r) /* mark as normal (analytic) function now */
+		e->r = NULL;
 	reset_freevar(e); /* unnesting is done, we can remove the freevar flag */
 	if (!rel->l)
 		return e;
@@ -2066,7 +2100,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	sql_rel *rell = NULL;
 	int needed = 0;
 
-	if (!is_simple_project(rel->op) || e->type != e_func || !e->r /* e->r means window function */)
+	if (!is_simple_project(rel->op) || e->type != e_func || list_length(e->r) < 2 /* e->r means window function */)
 		return e;
 
 	(void)depth;
@@ -2140,8 +2174,8 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		rell->r = gbe;
 		rel->l = rell;
 
-		/* mark as normal (analytic) function now */
-		e->r = NULL;
+		/* remove obe argument, so this function won't be called again on this expression */
+		list_remove_node(r, r->t);
 
 		/* add project with rank */
 		rell = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rell->l, NULL, 1, 1));
@@ -2151,8 +2185,8 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		append(rell->exps, e);
 		e = exp_ref(v->sql, e);
 	} else {
-		/* mark as normal (analytic) function now */
-		e->r = NULL;
+		/* remove obe argument, so this function won't be called again on this expression */
+		list_remove_node(r, r->t);
 	}
 	return e;
 }
