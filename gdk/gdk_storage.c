@@ -1019,6 +1019,24 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 gdk_return
 BATprint(stream *fdout, BAT *b)
 {
+	if (complex_cand(b)) {
+		struct canditer ci;
+		canditer_init(&ci, NULL, b);
+		mnstr_printf(fdout,
+			     "#--------------------------#\n"
+			     "# h\t%s  # name\n"
+			     "# void\toid  # type\n"
+			     "#--------------------------#\n",
+			     b->tident);
+		for (BUN i = 0; i < ci.ncand; i++) {
+			oid o = canditer_next(&ci);
+			mnstr_printf(fdout,
+				     "[ " OIDFMT "@0,\t" OIDFMT "@0  ]\n",
+				     (oid) (i + ci.hseq), o);
+		}
+		return GDK_SUCCEED;
+	}
+
 	BAT *argv[2];
 	gdk_return ret = GDK_FAIL;
 
