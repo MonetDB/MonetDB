@@ -42,6 +42,7 @@ finalize_output(bat *res, BAT *r, str msg)
 	if (r && !msg) {
 		r->tsorted = BATcount(r) <= 1;
 		r->trevsorted = BATcount(r) <= 1;
+		r->tkey = BATcount(r) <= 1;
 		BBPkeepref(*res = r->batCacheid);
 	} else if (r)
 		BBPreclaim(r);
@@ -735,9 +736,8 @@ bailout:
 }
 
 static str
-SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, BAT **e, Client cntxt,
-				  MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int rtype, bool has_bounds,
-				  int max_arg, const char *mod)
+SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, BAT **e, Client cntxt, MalBlkPtr mb,
+				  MalStkPtr stk, InstrPtr pci, int rtype, bool has_bounds, int max_arg, const char *mod)
 {
 	(void) cntxt;
 	if ((has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1) ||
@@ -1917,74 +1917,83 @@ SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return do_covariance_and_correlation(cntxt, mb, stk, pci, "sql.corr", GDKanalytical_correlation, 0, dbl_nil, dbl_nil, true, 7);
 }
 
-str
-SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+do_strgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bounds, int max_arg)
 {
-	BAT *r = NULL, *b = NULL, *sep = NULL, *s = NULL, *e = NULL;
-	int parameters = 2;
-	gdk_return gdk_res = GDK_SUCCEED;
+	BAT *r = NULL, *b = NULL, *sep = NULL, *p = NULL, *o = NULL, *s = NULL, *e = NULL;
+	int separator_offset = 0, tpe, frame_type;
 	str msg = MAL_SUCCEED, separator = NULL;
+	bat *res = NULL;
 
 	(void)cntxt;
-	if (pci->argc != 4 && pci->argc != 5)
-		throw(SQL, "sql.strgroup_concat", SQLSTATE(42000) "Requires 4 or 5 parameters");
+	if ((has_bounds && pci->argc != max_arg + 1 && pci->argc != max_arg && pci->argc != max_arg - 1) ||
+		(!has_bounds && pci->argc != max_arg && pci->argc != max_arg - 1 && pci->argc != max_arg + 1 && pci->argc != max_arg + 2))
+		throw(SQL, "sql.strgroup_concat", SQLSTATE(42000) "wrong number of arguments to function sql.strgroup_concat");
+
+	tpe = getArgType(mb, pci, 2);
+	if (isaBatType(tpe))
+		tpe = getBatType(tpe);
+	if (tpe == TYPE_str) /* there's a separator */
+		separator_offset = 1;
+	else
+		assert(tpe == TYPE_int); /* otherwise it must be the frame type */
+
+	frame_type = *getArgReference_int(stk, pci, 2 + separator_offset);
 
 	if (isaBatType(getArgType(mb, pci, 1))) {
-		bat *res = getArgReference_bat(stk, pci, 0);
+		res = getArgReference_bat(stk, pci, 0);
 
-		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-		if (!b)
-			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
-		voidresultBAT(r, TYPE_str, BATcount(b), b, "sql.strgroup_concat");
-
-		if (pci->argc == 5) {
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (!(r = COLnew(b->hseqbase, TYPE_str, BATcount(b), TRANSIENT))) {
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		if (separator_offset) {
 			if (isaBatType(getArgType(mb, pci, 2))) {
-				sep = BATdescriptor(*getArgReference_bat(stk, pci, 2));
-				if (!sep) {
-					BBPunfix(b->batCacheid);
-					BBPunfix(r->batCacheid);
-					throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+				if (!(sep = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
+					msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+					goto bailout;
 				}
 			} else
 				separator = *getArgReference_str(stk, pci, 2);
-			parameters++;
 		} else
 			separator = ",";
 
-		s = BATdescriptor(*getArgReference_bat(stk, pci, parameters));
-		if (!s) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			if (sep) BBPunfix(sep->batCacheid);
-			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (has_bounds) {
+			if (isaBatType(getArgType(mb, pci, 3 + separator_offset)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 3 + separator_offset)))) {
+				msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+			if (isaBatType(getArgType(mb, pci, 4 + separator_offset)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 4 + separator_offset)))) {
+				msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+		} else if (frame_type == 3 || frame_type == 4) {
+			if (isaBatType(getArgType(mb, pci, 3 + separator_offset)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3 + separator_offset)))) {
+				msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
+			}
+			max_arg++;
 		}
-		e = BATdescriptor(*getArgReference_bat(stk, pci, parameters + 1));
-		if (!e) {
-			BBPunfix(b->batCacheid);
-			BBPunfix(r->batCacheid);
-			if (sep) BBPunfix(sep->batCacheid);
-			BBPunfix(s->batCacheid);
-			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (pci->argc == max_arg + separator_offset && isaBatType(getArgType(mb, pci, max_arg - 1 + separator_offset)) &&
+			!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1 + separator_offset)))) {
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
 		}
 
 		assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
-		gdk_res = GDKanalytical_str_group_concat(r, b, sep, s, e, separator);
-
-		BBPunfix(b->batCacheid);
-		BBPunfix(s->batCacheid);
-		BBPunfix(e->batCacheid);
-		if (sep) BBPunfix(sep->batCacheid);
-		if (gdk_res == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, "sql.strgroup_concat", GDK_EXCEPTION);
+		if (GDKanalytical_str_group_concat(r, p, o, b, sep, s, e, separator, frame_type) != GDK_SUCCEED)
+			msg = createException(SQL, "sql.strgroup_concat", GDK_EXCEPTION);
 	} else {
 		str *res = getArgReference_str(stk, pci, 0);
 		str in = *getArgReference_str(stk, pci, 1);
 
 		if (strNil(in)) {
 			*res = GDKstrdup(str_nil);
-		} else if (pci->argc == 5) {
+		} else if (separator_offset) {
 			str sep = *getArgReference_str(stk, pci, 2);
 			size_t l1 = strlen(in), l2 = strNil(sep) ? 0 : strlen(sep);
 
@@ -1999,7 +2008,23 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*res = GDKstrdup(in);
 		}
 		if (!*res)
-			throw(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+
+bailout:
+	unfix_inputs(6, b, sep, p, o, s, e);
+	finalize_output(res, r, msg);
 	return msg;
+}
+
+str
+SQLstrgroup_concat_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_strgroup_concat(cntxt, mb, stk, pci, false, 4);
+}
+
+str
+SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return do_strgroup_concat(cntxt, mb, stk, pci, true, 6);
 }
