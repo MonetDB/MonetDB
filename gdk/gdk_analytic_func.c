@@ -193,7 +193,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		for (; k < cnt; k++) {
 			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, start[k]) : nil;
-			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
 				return GDK_FAIL;
 			has_nils |= atomcmp(curval, nil) == 0;
 		}
@@ -254,7 +254,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		for (; k < cnt; k++) {
 			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, (BUN) (end[k] - 1)) : nil;
-			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
 				return GDK_FAIL;
 			has_nils |= atomcmp(curval, nil) == 0;
 		}
@@ -355,7 +355,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 					curval = BUNtail(bpi, (BUN) (start[k] + lnth - 1));
 					has_nils |= atomcmp(curval, nil) == 0;
 				}
-				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
 					return GDK_FAIL;
 			}
 		}
@@ -391,13 +391,13 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 			if (is_lng_nil(nth)) {
 				has_nils = true;
 				for (; k < cnt; k++)
-					if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED)
+					if (tfastins_nocheckVAR(r, (BUN) k, nil, Tsize(r)) != GDK_SUCCEED)
 						return GDK_FAIL;
 			} else {
 				nth--;
 				for (; k < cnt; k++) {
 					const void *curval = (end[k] > start[k] && nth < (end[k] - start[k])) ? BUNtail(bpi, (BUN) (start[k] + nth)) : nil;
-					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
+					if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
 						return GDK_FAIL;
 					has_nils |= atomcmp(curval, nil) == 0;
 				}
@@ -796,7 +796,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				k++; \
 			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
-				if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
+				if (tfastins_nocheckVAR(r, (BUN) j, curval, Tsize(r)) != GDK_SUCCEED) \
 					return GDK_FAIL; \
 			has_nils |= atomcmp(curval, nil) == 0;		\
 		} \
@@ -816,7 +816,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			}					\
 			if (op[j] || j == k) {	\
 				for (; l >= j; l--) \
-					if (tfastins_nocheckVAR(r, l, curval, Tsize(r)) != GDK_SUCCEED) \
+					if (tfastins_nocheckVAR(r, (BUN) l, curval, Tsize(r)) != GDK_SUCCEED) \
 						return GDK_FAIL; \
 				has_nils |= atomcmp(curval, nil) == 0;		\
 				if (j == k)	\
@@ -840,7 +840,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			}					\
 		} \
 		for (; k < i; k++) \
-			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED) \
 				return GDK_FAIL; \
 		has_nils |= atomcmp(curval, nil) == 0;		\
 	} while (0)
@@ -849,7 +849,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	do { \
 		for (; k < i; k++) { \
 			void *next = BUNtail(bpi, k); \
-			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, (BUN) k, next, Tsize(r)) != GDK_SUCCEED) \
 				return GDK_FAIL; \
 			has_nils |= atomcmp(next, nil) == 0;		\
 		} \
@@ -871,7 +871,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 				}					\
 			}						\
-			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED) \
 				return GDK_FAIL; \
 			has_nils |= atomcmp(curval, nil) == 0;		\
 		}							\

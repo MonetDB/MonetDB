@@ -62,6 +62,7 @@ sql5_export str SQLcorr_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 sql5_export str SQLcorr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 /* other functions */
+sql5_export str SQLstrgroup_concat_global(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _SQL_RANK_H */
