@@ -1037,7 +1037,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		/* call our remote helper to do this more efficiently */
 		mnstr_printf(sout,
-				"%s := remote.batload(:%s, " BUNFMT ");\n",
+				"%s := remote.batload(nil:%s, " BUNFMT ");\n",
 				ident, tail, (bid == 0 ? 0 : BATcount(b)));
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 		GDKfree(tail);
@@ -1223,12 +1223,12 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 }
 
 static str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-	char *fcn_id = *getArgReference_str(stk, pci, 0);
+	char **fcn_id = getArgReference_str(stk, pci, 0);
 	const char *conn = *getArgReference_str(stk, pci, 1);
 	const char *mod = *getArgReference_str(stk, pci, 2);
 	const char *fcn = *getArgReference_str(stk, pci, 3);
 	(void)mb;
-	return RMTregisterInternal(cntxt, &fcn_id, conn, mod, fcn);
+	return RMTregisterInternal(cntxt, fcn_id, conn, mod, fcn);
 }
 
 /**
@@ -1250,21 +1250,25 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)cntxt;
 	(void)mb;
+	bool no_return_arguments = 0;
 
 	columnar_result_callback* rcb = NULL;
 	ValRecord *v = &(stk)->stk[(pci)->argv[4]];
 	if (pci->retc == 1 && (pci->argc >= 4) && (v->vtype == TYPE_ptr) ) {
 		rcb = (columnar_result_callback*) v->val.pval;
-		i = 1; //There is only one (void) return argument.
 	}
-	else {
-		for (i = 0; i < pci->retc; i++) {
+
+	for (i = 0; i < pci->retc; i++) {
+		if (stk->stk[pci->argv[i]].vtype == TYPE_str) {
 			tmp = *getArgReference_str(stk, pci, i);
 			if (tmp == NULL || strcmp(tmp, (str)str_nil) == 0)
 				throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT
 						": return value %d is NULL or nil", i);
 		}
+		else
+			no_return_arguments = 1;
 	}
+
 	conn = *getArgReference_str(stk, pci, i++);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
@@ -1281,19 +1285,19 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-	if(!rcb && pci->argc - pci->retc < 3) /* conn, mod, func, ... */
+	if(!no_return_arguments && pci->argc - pci->retc < 3) /* conn, mod, func, ... */
 		throw(MAL, "remote.exec", ILLEGAL_ARGUMENT  " MAL instruction misses arguments");
 
 	len = 0;
 	/* count how big a buffer we need */
 	len += 2 * (pci->retc > 1);
-	if (!rcb)
+	if (!no_return_arguments)
 		for (i = 0; i < pci->retc; i++) {
 			len += 2 * (i > 0);
 			len += strlen(*getArgReference_str(stk, pci, i));
 		}
 
-	const int arg_index = rcb?4:3;
+	const int arg_index = rcb ? 4 : 3;
 
 	len += strlen(mod) + strlen(func) + 6;
 	for (i = arg_index; i < pci->argc - pci->retc; i++) {
@@ -1309,7 +1313,7 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (pci->retc > 1)
 		qbuf[len++] = '(';
-	if (!rcb)
+	if (!no_return_arguments)
 		for (i = 0; i < pci->retc; i++)
 			len += snprintf(&qbuf[len], buflen - len, "%s%s",
 					(i > 0 ? ", " : ""), *getArgReference_str(stk, pci, i));
@@ -1318,7 +1322,7 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		qbuf[len++] = ')';
 
 	/* build the function invocation string in qbuf */
-	if (!rcb && pci->retc > 0) {
+	if (!no_return_arguments && pci->retc > 0) {
 		len += snprintf(&qbuf[len], buflen - len, " := %s.%s(", mod, func);
 	}
 	else {
@@ -1648,6 +1652,7 @@ mel_func remote_init_funcs[] = {
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, arg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and applying function pointer rcb as callback to handle any results.", args(0,5, arg("conn",str),arg("mod",str),arg("func",str),arg("rcb",ptr), vararg("",str))),
+ pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and ignoring results.", args(0,4, arg("conn",str),arg("mod",str),arg("func",str), vararg("",str))),
  command("remote", "isalive", RMTisalive, false, "check if conn is still valid and connected", args(1,2, arg("",int),arg("conn",str))),
  pattern("remote", "batload", RMTbatload, false, "create a BAT of the given type and size, and load values from the input stream", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("remote", "batbincopy", RMTbincopyto, false, "dump BAT b in binary form to the stream", args(1,2, arg("",void),batargany("b",0))),

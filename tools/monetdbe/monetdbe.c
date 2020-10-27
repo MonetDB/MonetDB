@@ -1681,9 +1681,10 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		InstrPtr f = getInstrPtr(mb, 0);
 		f->retc = f->argc = 0;
 		f = pushReturn(mb, f, newTmpVariable(mb, TYPE_int));
-		InstrPtr c = newInstruction(mb, sqlRef, mvcRef);
-		c = pushReturn(mb, c, newTmpVariable(mb, TYPE_int));
-		pushInstruction(mb, c);
+		InstrPtr c = newFcnCall(mb, sqlRef, mvcRef);
+		setArgType(mb, c, 0, TYPE_int);
+
+		int mvc_id = getArg(c, 0);
 
 		for (i = 0; i < column_count; i++) {
 
@@ -1713,21 +1714,25 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			int idx = newTmpVariable(mb, newBatType(tpe->localtype));
 			f = pushArgument(mb, f, idx);
 
-			InstrPtr a = newInstruction(mb, sqlRef, appendRef);
-			setDestVar(a, newTmpVariable(mb, TYPE_any));
-			a = pushArgument(mb, a, getArg(c, 0));
+			InstrPtr a = newFcnCall(mb, sqlRef, appendRef);
+			setArgType(mb, a, 0, TYPE_int);
+			a = pushArgument(mb, a, mvc_id);
 			a = pushStr(mb, a, schema);
 			a = pushStr(mb, a, table);
 			a = pushStr(mb, a, actual_column_names[i]);
 			a = pushArgument(mb, a, idx);
-			pushInstruction(mb, a);
+
+			mvc_id = getArg(a, 0);
 		}
 
 		InstrPtr r = newInstruction(mb, NULL, NULL);
 		r->barrier= RETURNsymbol;
 		r->retc = r->argc = 0;
-		r = pushReturn(mb, r, getArg(c, 0));
+		r = pushReturn(mb, r, mvc_id);
+		r = pushArgument(mb, r, mvc_id);
 		pushInstruction(mb, r);
+
+		pushEndInstruction(mb);
 
 		if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
 			return mdbe->msg;
