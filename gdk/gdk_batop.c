@@ -593,7 +593,7 @@ append_msk_bat(BAT *b, BAT *n, struct canditer *ci)
 				*bp++ |= (*np & mask) << boff;
 				cnt -= 32;
 			}
-			if (cnt > noff) {
+			if (cnt > boff) {
 				/* the last bits come from two words
 				 * in n */
 				*bp = (*np++ & ~mask) >> noff;
