@@ -698,6 +698,10 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.ntile", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
+		if ((p && BATcount(b) != BATcount(p)) || (n && BATcount(b) != BATcount(n))) {
+			msg = createException(SQL, "sql.ntile", ILLEGAL_ARGUMENT " Requires bats of identical size");
+			goto bailout;
+		}
 
 		if (GDKanalyticalntile(r, b, p, n, tp2, ntile) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.ntile", GDK_EXCEPTION);
@@ -764,6 +768,9 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 		if (!(*p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1))))
 			throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	}
+	if ((*s && BATcount(*b) != BATcount(*s)) || (*e && BATcount(*b) != BATcount(*e)) ||
+		(*p && BATcount(*b) != BATcount(*p)) || (*o && BATcount(*b) != BATcount(*o)))
+		throw(SQL, mod, ILLEGAL_ARGUMENT " Requires bats of identical size");
 
 	return MAL_SUCCEED;
 }
@@ -833,6 +840,10 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 		}
 		if (!(e = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e))) {
+			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
 
@@ -929,6 +940,10 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.nth_value", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
+		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (l && BATcount(b) != BATcount(l))) {
+			msg = createException(SQL, "sql.nth_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
+			goto bailout;
+		}
 
 		if (GDKanalyticalnthvalue(r, b, s, e, l, nth, tpe) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.nth_value", GDK_EXCEPTION);
@@ -997,6 +1012,7 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	BAT *b = NULL, *l = NULL, *d = NULL, *p = NULL, *r = NULL;
 	bool tp2_is_a_bat;
 	str msg = MAL_SUCCEED;
+	bat *res = NULL;
 
 	(void)cntxt;
 	if (pci->argc < 4 || pci->argc > 6)
@@ -1061,32 +1077,30 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	assert(default_value); //default value must be set
 
 	if (isaBatType(tp1)) {
-		bat *res = getArgReference_bat(stk, pci, 0);
-		b = BATdescriptor(*getArgReference_bat(stk, pci, 1));
-		if (!b) {
+		res = getArgReference_bat(stk, pci, 0);
+		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		gdk_return gdk_code;
 
 		tp1 = getBatType(tp1);
-		voidresultBAT(r, tp1, BATcount(b), b, op);
+		if (!(r = COLnew(b->hseqbase, tp1, BATcount(b), TRANSIENT))) {
+			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		if (isaBatType(getArgType(mb, pci, base))) {
-			p = BATdescriptor(*getArgReference_bat(stk, pci, base));
-			if (!p) {
+			if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, base)))) {
 				msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 				goto bailout;
 			}
 		}
-
-		gdk_code = gdk_call(r, b, p, l_value, default_value, tp1);
-
-		if (gdk_code == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else {
-			msg = createException(SQL, op, GDK_EXCEPTION);
+		if ((p && BATcount(b) != BATcount(p)) || (l && BATcount(b) != BATcount(l)) || (d && BATcount(b) != BATcount(d))) {
+			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
+
+		if (gdk_call(r, b, p, l_value, default_value, tp1) != GDK_SUCCEED)
+			msg = createException(SQL, op, GDK_EXCEPTION);
 	} else {
 		ValRecord *res = &(stk)->stk[(pci)->argv[0]];
 		ValRecord *in = &(stk)->stk[(pci)->argv[1]];
@@ -1104,12 +1118,8 @@ do_lead_lag(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const char 
 	}
 
 bailout:
-	if (b) BBPunfix(b->batCacheid);
-	if (p) BBPunfix(p->batCacheid);
-	if (l) BBPunfix(l->batCacheid);
-	if (d) BBPunfix(d->batCacheid);
-	if (msg && r)
-		BBPreclaim(r);
+	unfix_inputs(4, b, p, l, d);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
@@ -1195,6 +1205,10 @@ do_count(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool has_bound
 	if (pci->argc == max_arg && isaBatType(getArgType(mb, pci, max_arg - 1)) &&
 		!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1)))) {
 		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
+		goto bailout;
+	}
+	if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o))) {
+		msg = createException(SQL, "sql.count", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 
@@ -1299,6 +1313,10 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		if (pci->argc == max_arg && isaBatType(getArgType(mb, pci, max_arg - 1)) &&
 			!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o))) {
+			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
 
@@ -1817,6 +1835,10 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
+		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o)) || (c && BATcount(b) != BATcount(c))) {
+			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
+			goto bailout;
+		}
 
 		if (is_a_bat1 && is_a_bat2) {
 			if (func(r, p, o, b, c, s, e, tp1, frame_type) != GDK_SUCCEED)
@@ -1981,6 +2003,10 @@ do_strgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool
 		if (pci->argc == max_arg + separator_offset && isaBatType(getArgType(mb, pci, max_arg - 1 + separator_offset)) &&
 			!(p = BATdescriptor(*getArgReference_bat(stk, pci, max_arg - 1 + separator_offset)))) {
 			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if ((s && BATcount(b) != BATcount(s)) || (e && BATcount(b) != BATcount(e)) || (p && BATcount(b) != BATcount(p)) || (o && BATcount(b) != BATcount(o)) || (sep && BATcount(b) != BATcount(sep))) {
+			msg = createException(SQL, "sql.strgroup_concat", ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
 
