@@ -1462,6 +1462,16 @@ BATslice(BAT *b, BUN l, BUN h)
 		/* slicing a candidate list with exceptions */
 		struct canditer ci;
 		canditer_init(&ci, NULL, b);
+		if (b->hseqbase + l >= ci.hseq) {
+			l = b->hseqbase + l - ci.hseq;
+			h = b->hseqbase + h - ci.hseq;
+		} else {
+			l = 0;
+			if (b->hseqbase + h >= ci.hseq)
+				h = b->hseqbase + h - ci.hseq;
+			else
+				h = 0;
+		}
 		bn = canditer_slice(&ci, l, h);
 		goto doreturn;
 	}
