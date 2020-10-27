@@ -4803,9 +4803,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (frame_clause || supports_frames) {
 		if (frame_type == FRAME_RANGE)
-			ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
+			ie = obe ? (sql_exp*) obe->t->data : in;
 		else
-			ie = exp_copy(sql, oe);
+			ie = oe;
 	}
 
 	/* Frame */
@@ -4916,9 +4916,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			list_append(args, start);
 			list_append(args, eend);
 		} else if (frame_type == FRAME_UNBOUNDED_TILL_CURRENT_ROW || frame_type == FRAME_CURRENT_ROW_TILL_UNBOUNDED)
-			list_append(args, exp_copy(sql, oe));
+			list_append(args, oe);
 		if (gbe && !is_value)
-			list_append(args, exp_copy(sql, pe));
+			list_append(args, start && eend ? exp_ref(sql, pe) : pe);
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
 	if (call && !exp_name(call))
