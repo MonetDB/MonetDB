@@ -1065,10 +1065,21 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			f = sql_bind_func_(sql->sa, s, cname, ops, F_FUNC);
 			if (!f)
 				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
-			if (!f && list_length(ops) > 1) {
-				list_remove_node(ops, ops->t);
+			if (!f && nops > 1) {
 				list_remove_node(ops, ops->t); /* some window functions require don't include the bounds on their definition, ugh */
 				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+				if (!f && nops > 2) {
+					list_remove_node(ops, ops->t);
+					f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+					if (!f && nops > 3) {
+						list_remove_node(ops, ops->t);
+						f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+						if (!f && nops > 4) {
+							list_remove_node(ops, ops->t);
+							f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+						}
+					}
+				}
 			}
 
 			/* fix scale of mul function, other type casts are explicit */
