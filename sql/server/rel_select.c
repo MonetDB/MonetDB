@@ -4918,7 +4918,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		} else if (frame_type == FRAME_UNBOUNDED_TILL_CURRENT_ROW || frame_type == FRAME_CURRENT_ROW_TILL_UNBOUNDED)
 			list_append(args, oe);
 		if (gbe && !is_value)
-			list_append(args, start && eend ? exp_ref(sql, pe) : pe);
+			list_append(args, start && eend ? exp_copy(sql, pe) : pe);
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
 	if (call && !exp_name(call))
