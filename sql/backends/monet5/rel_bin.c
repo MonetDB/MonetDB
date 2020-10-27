@@ -5013,7 +5013,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 }
 
 static int
-sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int type)
+sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, stmt **deleted_cols, int type)
 {
 	/* Put single relation of updates and old values on to the stack */
 	sql_rel *r = NULL;
@@ -5023,7 +5023,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int 
 
 	ti->t = t;
 	ti->tids = tids;
-	ti->updates = NULL;
+	ti->updates = deleted_cols;
 	ti->type = type;
 	ti->nn = name;
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -5039,7 +5039,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int 
 }
 
 static int
-sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_type, int internal_type)
+sql_delete_triggers(backend *be, sql_table *t, stmt *tids, stmt **deleted_cols, int time, int firing_type, int internal_type)
 {
 	mvc *sql = be->mvc;
 	node *n;
@@ -5059,7 +5059,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, int time, int firing_
 
 			if (!o) o = "old";
 
-			if(!sql_stack_add_deleted(sql, o, t, tids, internal_type)) {
+			if(!sql_stack_add_deleted(sql, o, t, tids, deleted_cols, internal_type)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -5167,6 +5167,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	mvc *sql = be->mvc;
 	stmt *v = NULL, *s = NULL;
 	list *l = sa_list(sql->sa);
+	stmt **deleted_cols = NULL;
 
 	if (rows) {
 		v = rows;
@@ -5174,14 +5175,28 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 		v = stmt_tid(be, t, 0);
 	}
 
+	/*  project all columns */
+	if (list_length(t->triggers.set) || t->p) {
+		int nr = 0;
+		deleted_cols = table_update_stmts(sql, t, &nr);
+		int i = 0;
+		for (node *n = t->columns.set->h; n; n = n->next, i++) {
+			sql_column *c = n->data;
+			stmt *s = stmt_col(be, c, v, v->partition);
+
+			deleted_cols[i] = s;
+			list_append(l, s);
+		}
+	}
+
 /* before */
 	if (be->cur_append && !be->first_statement_generated) {
 		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_delete_triggers(be, up, v, 0, 1, 3))
+			if (!sql_delete_triggers(be, up, v, deleted_cols, 0, 1, 3))
 				return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", up->base.name);
 		}
 	}
-	if (!sql_delete_triggers(be, t, v, 0, 1, 3))
+	if (!sql_delete_triggers(be, t, v, deleted_cols, 0, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 
 	if (!sql_delete_keys(be, t, v, l, "DELETE", 0))
@@ -5198,11 +5213,11 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 /* after */
 	if (be->cur_append && !be->first_statement_generated) {
 		for(sql_table *up = t->p ; up ; up = up->p) {
-			if (!sql_delete_triggers(be, up, v, 1, 1, 3))
+			if (!sql_delete_triggers(be, up, v, deleted_cols, 1, 1, 3))
 				return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", up->base.name);
 		}
 	}
-	if (!sql_delete_triggers(be, t, v, 1, 1, 3))
+	if (!sql_delete_triggers(be, t, v, deleted_cols, 1, 1, 3))
 		return sql_error(sql, 02, SQLSTATE(27000) "DELETE: triggers failed for table '%s'", t->base.name);
 	if (rows)
 		s = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR), 1, 0, 1);
@@ -5374,14 +5389,14 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		/* before */
 		if (be->cur_append && !be->first_statement_generated) {
 			for (sql_table *up = t->p ; up ; up = up->p) {
-				if (!sql_delete_triggers(be, up, v, 0, 3, 4)) {
+				if (!sql_delete_triggers(be, up, v, NULL, 0, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
 					goto finalize;
 				}
 			}
 		}
-		if (!sql_delete_triggers(be, next, v, 0, 3, 4)) {
+		if (!sql_delete_triggers(be, next, v, NULL, 0, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
@@ -5401,14 +5416,14 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		/* after */
 		if (be->cur_append && !be->first_statement_generated) {
 			for (sql_table *up = t->p ; up ; up = up->p) {
-				if (!sql_delete_triggers(be, up, v, 1, 3, 4)) {
+				if (!sql_delete_triggers(be, up, v, NULL, 1, 3, 4)) {
 					sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", up->base.name);
 					error = 1;
 					goto finalize;
 				}
 			}
 		}
-		if (!sql_delete_triggers(be, next, v, 1, 3, 4)) {
+		if (!sql_delete_triggers(be, next, v, NULL, 1, 3, 4)) {
 			sql_error(sql, 02, SQLSTATE(27000) "TRUNCATE: triggers failed for table '%s'", next->base.name);
 			error = 1;
 			goto finalize;
