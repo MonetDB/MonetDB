@@ -4483,8 +4483,6 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 			}
 		}
 	}
-	if (res && !exp_name(res))
-		exp_label(sql->sa, res, ++sql->label);
 	return res;
 }
 
@@ -4767,8 +4765,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	} else {
 		pe = exp_atom_bool(sql->sa, 0);
 	}
-	if (pe && !exp_name(pe))
-		exp_label(sql->sa, pe, ++sql->label);
+
 	/* diff for orderby */
 	if (obe) {
 		sql_subtype *bt = sql_bind_localtype("bit");
@@ -4798,8 +4795,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	} else {
 		oe = exp_atom_bool(sql->sa, 0);
 	}
-	if (oe && !exp_name(oe))
-		exp_label(sql->sa, oe, ++sql->label);
 
 	if (frame_clause || supports_frames) {
 		if (frame_type == FRAME_RANGE)
@@ -4888,11 +4883,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 	if (!pe || !oe)
 		return NULL;
-	if (start && !exp_name(start))
-		exp_label(sql->sa, start, ++sql->label);
-	if (eend && !exp_name(eend))
-		exp_label(sql->sa, eend, ++sql->label);
-
 	if (!supports_frames) {
 		list_append(fargs, pe);
 		list_append(fargs, oe);
@@ -4921,8 +4911,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			list_append(args, start && eend ? exp_copy(sql, pe) : pe);
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
-	if (call && !exp_name(call))
-		exp_label(sql->sa, call, ++sql->label);
 	*rel = p;
 	return call;
 }
