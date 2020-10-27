@@ -76,8 +76,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ "stress"	]
 [ "please"	]
 #select cast(sum(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 15	]
@@ -91,8 +91,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ 21	]
 #select cast(sum(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 20	]
@@ -106,8 +106,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ 21	]
 #select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -121,8 +121,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 9	]
@@ -136,8 +136,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 15	]
@@ -151,8 +151,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2880	]
 [ 576	]
 #select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 5 # length
 [ 90	]
@@ -166,8 +166,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 2880	]
 [ 576	]
 #select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -181,8 +181,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 450	]
 [ NULL	]
 #select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 24	]
@@ -766,20 +766,20 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 #select count(*) over (rows unbounded preceding);
-% .%1 # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) over (rows 200 preceding);
-% .%1 # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
 #select count(*) over (rows between 5 preceding and 0 following);
-% .%1 # table_name
-% %1 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 1	]
@@ -844,8 +844,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ NULL	]
 #select cast(sum(aa) over (rows unbounded preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 15	]
@@ -859,8 +859,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 46	]
 [ 46	]
 #select cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -874,8 +874,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows unbounded preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 6 # length
 [ 15	]
@@ -889,8 +889,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 259200	]
 [ 259200	]
 #select cast(prod(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -1054,8 +1054,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 15	]
 [ NULL	]
 #select cast(sum(aa) over (rows 2 preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 15	]
@@ -1069,8 +1069,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 18	]
 [ 14	]
 #select cast(sum(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 2 # length
 [ 3	]
@@ -1084,8 +1084,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 26	]
 [ NULL	]
 #select cast(prod(aa) over (rows 2 preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 15	]
@@ -1099,8 +1099,8 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 [ 192	]
 [ 48	]
 #select cast(prod(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % bigint # type
 % 3 # length
 [ 3	]
@@ -1642,16 +1642,16 @@ stdout of test 'analytics02` in directory 'sql/test/analytics` itself:
 #insert into overflowme values (2147483644), (2147483645), (2147483646);
 [ 3	]
 #select floor(avg(a) over (rows between 2 preceding and 0 following)) from overflowme;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2147483644	]
 [ 2147483644	]
 [ 2147483645	]
 #select floor(avg(a) over (rows between 2 preceding and 2 following)) from overflowme;
-% sys.%2 # table_name
-% %2 # name
+% sys.%1 # table_name
+% %1 # name
 % double # type
 % 24 # length
 [ 2147483645	]
