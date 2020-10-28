@@ -10,18 +10,6 @@
 #include "sql_rank.h"
 #include "gdk_analytic.h"
 
-#define voidresultBAT(r,tpe,cnt,b,err)					\
-	do {								\
-		r = COLnew(b->hseqbase, tpe, cnt, TRANSIENT);		\
-		if (r == NULL) {					\
-			BBPunfix(b->batCacheid);			\
-			throw(MAL, err, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		}							\
-		r->tsorted = false;					\
-		r->trevsorted = false;					\
-		r->tnonil = true;					\
-	} while (0)
-
 static void
 unfix_inputs(int nargs, ...)
 {
@@ -51,76 +39,78 @@ finalize_output(bat *res, BAT *r, str msg)
 str
 SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	BAT *r = NULL, *b = NULL, *c = NULL;
+	bat *res = NULL;
+	str msg = MAL_SUCCEED;
+
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
-		bat *res = getArgReference_bat(stk, pci, 0);
-		bat *bid = getArgReference_bat(stk, pci, 1);
-		BAT *b = BATdescriptor(*bid), *c, *r;
 		gdk_return gdk_code = GDK_SUCCEED;
 
-		if (!b)
-			throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+		res = getArgReference_bat(stk, pci, 0);
+		if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
+			msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
 		if (pci->argc > 2) {
 			if (isaBatType(getArgType(mb, pci, 2))) {
-				voidresultBAT(r, TYPE_bit, BATcount(b), b, "sql.diff");
+				if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
+					msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
 				c = b;
-				bid = getArgReference_bat(stk, pci, 2);
-				b = BATdescriptor(*bid);
-				if (!b) {
-					BBPunfix(c->batCacheid);
-					throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+				if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
+					msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+					goto bailout;
 				}
 				gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
-				BBPunfix(c->batCacheid);
 			} else { /* the input is a constant, so the output is the previous sql.diff output */
 				assert(b->ttype == TYPE_bit);
-				r = COLcopy(b, TYPE_bit, false, TRANSIENT);
-				if (!r) {
-					BBPunfix(b->batCacheid);
-					throw(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (!(r = COLcopy(b, TYPE_bit, false, TRANSIENT))) {
+					msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
 				}
 			}
 		} else {
-			voidresultBAT(r, TYPE_bit, BATcount(b), b, "sql.diff");
+			if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
+				msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
 			gdk_code = GDKanalyticaldiff(r, b, NULL, b->ttype);
 		}
-		BBPunfix(b->batCacheid);
-		if (gdk_code == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, "sql.diff", GDK_EXCEPTION);
+		if (gdk_code != GDK_SUCCEED)
+			msg = createException(SQL, "sql.diff", GDK_EXCEPTION);
 	} else if (pci->argc > 2 && isaBatType(getArgType(mb, pci, 2))) {
-		bat *res = getArgReference_bat(stk, pci, 0);
 		bit prev = *getArgReference_bit(stk, pci, 1);
-		bat *bid = getArgReference_bat(stk, pci, 2);
-		BAT *b = BATdescriptor(*bid), *r, *c;
 		bit *restrict cb;
-		gdk_return gdk_code = GDK_SUCCEED;
 
-		if (!b)
-			throw(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
-		voidresultBAT(r, TYPE_bit, BATcount(b), b, "sql.diff");
-
-		c = COLnew(0, TYPE_bit, BATcount(b), TRANSIENT);
-		if (!c) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		res = getArgReference_bat(stk, pci, 0);
+		if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, 2))))) {
+			msg = createException(SQL, "sql.diff", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
+		if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {
+			msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
+		if (!(c = COLnew(0, TYPE_bit, BATcount(b), TRANSIENT))) {
+			msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
 		}
 		cb = (bit *) Tloc(c, 0);
 		memset(cb, prev, BATcount(b));
 
-		gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
-		BBPunfix(b->batCacheid);
-		BBPreclaim(c);
-		if (gdk_code == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
-			throw(SQL, "sql.diff", GDK_EXCEPTION);
+		if (GDKanalyticaldiff(r, b, c, b->ttype) != GDK_SUCCEED)
+			msg = createException(SQL, "sql.diff", GDK_EXCEPTION);
 	} else {
 		bit *res = getArgReference_bit(stk, pci, 0);
 		*res = FALSE;
 	}
-	return MAL_SUCCEED;
+
+bailout:
+	unfix_inputs(2, b, c);
+	finalize_output(res, r, msg);
+	return msg;
 }
 
 str
@@ -130,6 +120,8 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bool preceding;
 	lng first_half;
 	int unit, bound, excl, part_offset = (pci->argc > 6);
+	bat *res = NULL;
+	BAT *r = NULL, *b = NULL, *p = NULL, *l = NULL;
 
 	if ((pci->argc != 6 && pci->argc != 7) || getArgType(mb, pci, part_offset + 2) != TYPE_int ||
 		getArgType(mb, pci, part_offset + 3) != TYPE_int || getArgType(mb, pci, part_offset + 4) != TYPE_int) {
@@ -148,55 +140,57 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
-		bat *res = getArgReference_bat(stk, pci, 0);
-		BAT *b = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 1)), *p = NULL, *r, *l = NULL;
 		int tp1, tp2 = getArgType(mb, pci, part_offset + 5);
 		void *limit = NULL;
 		bool is_a_bat;
 
-		if (!b)
-			throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+		res = getArgReference_bat(stk, pci, 0);
+		if ((!(b = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 1))))) {
+			msg = createException(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+			goto bailout;
+		}
 		tp1 = b->ttype;
 
 		if (excl != 0) {
-			BBPunfix(b->batCacheid);
-			throw(SQL, "sql.window_bound", SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
+			msg = createException(SQL, "sql.window_bound", SQLSTATE(42000) "Only EXCLUDE NO OTHERS exclusion is currently implemented");
+			goto bailout;
 		}
 
 		is_a_bat = isaBatType(tp2);
 		if (is_a_bat)
 			tp2 = getBatType(tp2);
 
-		voidresultBAT(r, TYPE_lng, BATcount(b), b, "sql.window_bound");
+		if (!(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
+			msg = createException(SQL, "sql.window_bound", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		if (is_a_bat) { //SQL_CURRENT_ROW shall never fall in limit validation
-			if (!(l = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 5)))) {
-				BBPunfix(b->batCacheid);
-				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+			if ((!(l = BATdescriptor(*getArgReference_bat(stk, pci, part_offset + 5))))) {
+				msg = createException(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
 			}
 		} else {
 			limit = getArgReference(stk, pci, part_offset + 5);
 		}
 		if (part_offset) {
-			if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
-				if(l) BBPunfix(l->batCacheid);
-				BBPunfix(b->batCacheid);
-				throw(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+			if ((!(p = BATdescriptor(*getArgReference_bat(stk, pci, 1))))) {
+				msg = createException(SQL, "sql.window_bound", SQLSTATE(HY005) "Cannot access column descriptor");
+				goto bailout;
 			}
 		}
 
 		//On RANGE frame, when "CURRENT ROW" is not specified, the ranges are calculated with SQL intervals in mind
-		if (GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, first_half) == GDK_SUCCEED)
-			BBPkeepref(*res = r->batCacheid);
-		else
+		if (GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, first_half) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.window_bound", GDK_EXCEPTION);
-		if(l) BBPunfix(l->batCacheid);
-		if(p) BBPunfix(p->batCacheid);
-		BBPunfix(b->batCacheid);
 	} else {
 		lng *res = getArgReference_lng(stk, pci, 0);
 
 		*res = preceding ? -first_half : first_half;
 	}
+
+bailout:
+	unfix_inputs(3, b, p, l);
+	finalize_output(res, r, msg);
 	return msg;
 }
 
@@ -733,7 +727,7 @@ SQLntile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			ntile = getArgReference(stk, pci, 2);
 		}
 		if (!(r = COLnew(b->hseqbase, tp2, BATcount(b), TRANSIENT))) {
-			msg = createException(MAL, "sql.ntile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(SQL, "sql.ntile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 		if (isaBatType(getArgType(mb, pci, 3)) && !(p = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
@@ -865,7 +859,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 			goto bailout;
 		}
 		if (!(r = COLnew(b->hseqbase, b->ttype, BATcount(b), TRANSIENT))) {
-			msg = createException(MAL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
 		if (!(s = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
