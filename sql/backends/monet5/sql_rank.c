@@ -39,7 +39,7 @@ unfix_inputs(int nargs, ...)
 static void
 finalize_output(bat *res, BAT *r, str msg)
 {
-	if (r && !msg) {
+	if (res && r && !msg) {
 		r->tsorted = BATcount(r) <= 1;
 		r->trevsorted = BATcount(r) <= 1;
 		r->tkey = BATcount(r) <= 1;
