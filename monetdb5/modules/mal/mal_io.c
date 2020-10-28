@@ -87,7 +87,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 		return MAL_SUCCEED;
 	}
 	if (isaBatType(tpe) ) {
-		BAT *b[2];
+		BAT *b;
 
 		if (is_bat_nil(*(bat *) val)) {
 			if (hd)
@@ -97,31 +97,20 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 				mnstr_printf(fp, "%s", tl);
 			return MAL_SUCCEED;
 		}
-		b[1] = BATdescriptor(*(bat *) val);
-		if (b[1] == NULL) {
+		b = BATdescriptor(*(bat *) val);
+		if (b == NULL) {
 			throw(MAL, "io.print", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 		if (nobat) {
 			if (hd)
 				mnstr_printf(fp, "%s", hd);
-			mnstr_printf(fp, "<%s>", BBPname(b[1]->batCacheid));
+			mnstr_printf(fp, "<%s>", BBPname(b->batCacheid));
 			if (tl)
 				mnstr_printf(fp, "%s", tl);
 		} else {
-			b[0] = BATdense(b[1]->hseqbase, b[1]->hseqbase, BATcount(b[1]));
-			if (b[0] == NULL) {
-				BBPunfix(b[1]->batCacheid);
-				throw(MAL, "io.print", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			if (BATroles(b[0], "h") != GDK_SUCCEED) {
-				BBPunfix(b[0]->batCacheid);
-				BBPunfix(b[1]->batCacheid);
-				throw(MAL, "io.print", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			BATprintcolumns(cntxt->fdout, 2, b);
-			BBPunfix(b[0]->batCacheid);
+			BATprint(cntxt->fdout, b);
 		}
-		BBPunfix(b[1]->batCacheid);
+		BBPunfix(b->batCacheid);
 		return MAL_SUCCEED;
 	}
 	if (hd)
