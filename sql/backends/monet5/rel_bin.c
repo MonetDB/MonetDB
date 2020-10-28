@@ -1015,7 +1015,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		else if (exps) {
 			unsigned nrcols = 0;
 
-			if (sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0))
+			if (sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0 || strcmp(sql_func_mod(f->func), "mtime") == 0
+						|| (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
 				push_cands = 1;
 			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
@@ -2728,7 +2729,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	/* We did a full join, thats too much.
 	   Reduce this using difference and intersect */
-	c = stmt_mirror(be, left->op4.lval->h->data);
+	c = stmt_mirror(be, bin_first_column(be, left));
 	if (rel->op == op_anti) {
 		join = stmt_tdiff(be, c, jl, lcand);
 	} else {

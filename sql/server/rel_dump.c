@@ -1591,8 +1591,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (!(s = mvc_bind_schema(sql, sname)))
 					return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
 				*e = 0; /* closing table udf name string */
-				if (!(tudf = find_table_function(sql, s, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs))))
-					return sql_error(sql, 02, SQLSTATE(42S02) "No such table returning function '%s.%s'\n", sname, tname);
+				if (!(tudf = find_table_function(sql, s, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs), F_UNION)))
+					return NULL;
 				sf = tudf->f;
 				if (tudf->type != e_func || sf->func->type != F_UNION)
 					return sql_error(sql, 02, SQLSTATE(42000) "'%s' does not return a table\n", exp_func_name(tudf));
@@ -1674,7 +1674,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				rel = rel_basetable(sql, t, tname);
 				if (!table_privs(sql, t, PRIV_SELECT) && !(rel = rel_reduce_on_column_privileges(sql, rel, t)))
 					return sql_error(sql, -1, SQLSTATE(42000) "Access denied for %s to table '%s.%s'\n",
-									 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+									 get_string_global_var(sql, "current_user"), s->base.name, tname);
 
 				if (!r[*pos])
 					return rel;

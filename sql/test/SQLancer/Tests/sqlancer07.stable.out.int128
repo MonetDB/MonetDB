@@ -73,7 +73,7 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "t1" ("c0" INTERVAL MONTH,"c1" BOOLEAN);
 #CREATE TABLE "t2" ("c0" INTERVAL MONTH);
 #SELECT CAST(t1.c1 AS INT) FROM t1, t0 RIGHT OUTER JOIN t2 ON ((SELECT DISTINCT t1.c0 FROM t1, t0 WHERE FALSE)) NOT IN (t0.c0);
-% sys.%4 # table_name
+% .%4 # table_name
 % %4 # name
 % int # type
 % 1 # length
@@ -152,12 +152,12 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #INSERT INTO "t2" VALUES ('4'),('4'),('3eSU8,'),(''),('5E~쟱'),('~'),('1386006226'),('0.19005213960704492'),('''{Mdd뒆VB'''),('\015␱%L%]'),('+'),(''),('㕚o+k');
 [ 13	]
 #select t0.c1 from t0 where (5) in (case when t0.c1 = 'a' then 1 end, (select 3));
-% .t0 # table_name
+% sys.t0 # table_name
 % c1 # name
 % varchar # type
 % 0 # length
 #select t0.c1 from t0 where (5) in ((select 3), case when t0.c1 = 'a' then 1 end);
-% .t0 # table_name
+% sys.t0 # table_name
 % c1 # name
 % varchar # type
 % 0 # length
@@ -201,8 +201,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #INSERT INTO "t2" VALUES (596983192), (-601428889), (1688368391);
 [ 3	]
 #SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE t0.c0 % (SELECT 1 WHERE FALSE) <= t1.c0;
-% .%4 # table_name
-% %4 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 #SELECT t1.c0 FROM t2, t0 CROSS JOIN t1 WHERE ((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0));
@@ -321,8 +321,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #INSERT INTO "t1" VALUES (1);
 [ 1	]
 #SELECT 1 FROM t0 WHERE (EXISTS (SELECT 1 WHERE FALSE)) IN ((SELECT FALSE)); -- rel_push_semijoin_down_or_up is causing the issue
-% .%11 # table_name
-% %11 # name
+% .%7 # table_name
+% %7 # name
 % tinyint # type
 % 1 # length
 #SELECT t0.c0 FROM t0 WHERE (EXISTS (SELECT TRUE, 0.3, INTERVAL '5' MONTH, TIME '16:59:58' WHERE FALSE)) IN ((SELECT DISTINCT FALSE FROM t1), (('0.9')NOT ILIKE('')));
@@ -426,8 +426,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #INSERT INTO "t2" VALUES (446453788), (1973525566), (1604369323), (-907882617), (1067873323), (1615259391), (1286378024);
 [ 7	]
 #SELECT 1 FROM t0 RIGHT OUTER JOIN t1 ON 3 IN ((SELECT 2), t1.c0);
-% .%10 # table_name
-% %10 # name
+% .%6 # table_name
+% %6 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -454,9 +454,21 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % %10 # name
 % tinyint # type
 % 1 # length
+#SELECT 1 FROM (SELECT 1) as v3(c0) RIGHT JOIN (SELECT 2) as v4(c0) ON (0.6) NOT IN (0.5, (SELECT 0.2));
+% .%7 # table_name
+% %7 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#SELECT * FROM (SELECT 1) as v3(c0) LEFT JOIN (SELECT 2) as v4(c0) ON (0.6) NOT IN ((SELECT v4.c0), 0.5);
+% .v3,	.v4 # table_name
+% c0,	c0 # name
+% tinyint,	tinyint # type
+% 1,	1 # length
+[ 1,	2	]
 #SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN (0.5854332103580835, CASE WHEN v4.vc0 THEN (SELECT 0.023816515 WHERE TRUE) END));
-% .%16 # table_name
-% %16 # name
+% .%15 # table_name
+% %15 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -467,6 +479,12 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % boolean # type
 % 5 # length
 [ false	]
+#select interval '1' month * cast(1 as bigint);
+% .%2 # table_name
+% %2 # name
+% month_interval # type
+% 1 # length
+[ 1	]
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."

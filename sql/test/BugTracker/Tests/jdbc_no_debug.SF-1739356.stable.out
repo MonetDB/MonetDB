@@ -55,8 +55,8 @@ Operation successful
 +--------------------------------------------------------------------------------------------------------------------+
 | mal                                                                                                   |
 +====================================================================================================================+
-| function user.s4_0():void;                                                                                         |
-|     X_1:void := querylog.define("explain select count(*) from tables\n;":str, "sequential_pipe":str, 33:int); |
+| function user.main():void;                                                                                         |
+|     X_1:void := querylog.define("explain select count(*) from tables\n;":str, "sequential_pipe":str, 32:int);      |
 |     X_42:bat[:lng] := bat.new(nil:lng);                                                                       |
 |     X_4:int := sql.mvc();                                                                                              |
 |     X_22:bat[:sht] := sql.bind(X_4:int, "sys":str, "_tables":str, "type":str, 0:int);                         |
@@ -68,40 +68,40 @@ Operation successful
 |     C_94:bat[:oid] := algebra.thetaselect(X_24:bat[:sht], C_5:bat[:oid], 2:sht, "!=":str);                         |
 |     C_30:bat[:oid] := sql.subdelta(C_91:bat[:oid], C_5:bat[:oid], X_25:bat[:oid], C_92:bat[:oid], C_94:bat[:oid]); |
 |     X_34:lng := aggr.count(C_30:bat[:oid]);                                                                   |
-|     X_41:bat[:lng] := sql.single(X_34:lng);                                                                   |
+|     X_41:bat[:lng] := bat.single(X_34:lng);                                                                        |
 |     C_35:bat[:oid] := sql.tid(X_4:int, "tmp":str, "_tables":str);                                             |
 |     X_40:lng := aggr.count(C_35:bat[:oid]);                                                                   |
 |     X_44:bat[:lng] := bat.append(X_42:bat[:lng], X_41:bat[:lng], true:bit);                                   |
 |     X_46:bat[:lng] := bat.append(X_44:bat[:lng], X_40:lng, true:bit);                                         |
 |     X_47:lng := aggr.sum(X_46:bat[:lng]);                                                                     |
 |     sql.resultSet(".%10":str, "%10":str, "bigint":str, 64:int, 0:int, 7:int, X_47:lng);                            |
-| end user.s4_0;                                                                                                     |
-| #inline               actions= 0 time=1 usec                                                                       |
+| end user.main;                                                                                                     |
+| #inline               actions= 0 time=0 usec                                                                       |
 | #remap                actions= 0 time=1 usec                                                                       |
-| #costmodel            actions= 1 time=2 usec                                                                       |
-| #coercion             actions= 1 time=6 usec                                                                       |
-| #aliases              actions= 1 time=7 usec                                                                       |
-| #evaluate             actions= 0 time=7 usec                                                                       |
+| #costmodel            actions= 1 time=1 usec                                                                       |
+| #coercion             actions= 0 time=1 usec                                                                       |
+| #aliases              actions= 1 time=4 usec                                                                       |
+| #evaluate             actions= 0 time=4 usec                                                                       |
 | #emptybind            actions= 0 time=1 usec                                                                       |
-| #pushselect           actions= 2 time=25 usec                                                                      |
+| #pushselect           actions= 2 time=16 usec                                                                      |
 | #aliases              actions= 0 time=0 usec                                                                       |
-| #mergetable           actions= 0 time=40 usec                                                                      |
-| #deadcode             actions=14 time=16 usec                                                                      |
+| #mergetable           actions= 0 time=27 usec                                                                      |
+| #deadcode             actions=14 time=7 usec                                                                       |
 | #aliases              actions= 0 time=1 usec                                                                       |
-| #constants            actions= 1 time=8 usec                                                                       |
-| #commonTerms          actions= 0 time=7 usec                                                                       |
-| #projectionpath       actions= 0 time=3 usec                                                                       |
-| #deadcode             actions= 0 time=8 usec                                                                       |
-| #reorder              actions= 1 time=23 usec                                                                      |
+| #constants            actions= 1 time=3 usec                                                                       |
+| #commonTerms          actions= 0 time=4 usec                                                                       |
+| #projectionpath       actions= 0 time=2 usec                                                                       |
+| #deadcode             actions= 0 time=4 usec                                                                       |
+| #reorder              actions= 1 time=12 usec                                                                      |
 | #matpack              actions= 0 time=0 usec                                                                       |
 | #multiplex            actions= 0 time=1 usec                                                                       |
 | #profiler             actions= 1 time=1 usec                                                                       |
-| #candidates           actions= 1 time=1 usec                                                                       |
-| #deadcode             actions= 0 time=7 usec                                                                       |
-| #postfix              actions= 0 time=6 usec                                                                       |
+| #candidates           actions= 1 time=0 usec                                                                       |
+| #deadcode             actions= 0 time=4 usec                                                                       |
+| #postfix              actions= 0 time=3 usec                                                                       |
 | #wlc                  actions= 0 time=0 usec                                                                       |
-| #garbagecollector     actions= 1 time=40 usec                                                                      |
-| #total                actions=27 time=306 usec                                                                     |
+| #garbagecollector     actions= 1 time=23 usec                                                                      |
+| #total                actions=27 time=175 usec                                                                     |
 +--------------------------------------------------------------------------------------------------------------------+
 47 rows
 

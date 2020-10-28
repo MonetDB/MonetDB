@@ -67,9 +67,11 @@ set_target_properties(microbenchmark
   PROPERTIES
   OUTPUT_NAME _microbenchmark)
 
-install(TARGETS microbenchmark
+install(TARGETS 
+  microbenchmark
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT microbenchmark)
 install(FILES
   microbenchmark.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT microbenchmark)

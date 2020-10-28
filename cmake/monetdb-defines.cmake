@@ -206,7 +206,6 @@ macro(monetdb_macro_variables)
   set(BINDIR "${CMAKE_INSTALL_FULL_BINDIR}")
   set(LIBDIR "${CMAKE_INSTALL_FULL_LIBDIR}")
   set(DATADIR "${CMAKE_INSTALL_FULL_DATADIR}")
-  set(DATA_DIR "${CMAKE_INSTALL_FULL_DATADIR}")
   set(LOCALSTATEDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
   if(WIN32)
     # Fix cmake conversions
@@ -219,22 +218,12 @@ macro(monetdb_macro_variables)
   endif()
 
   set(DATAROOTDIR "${CMAKE_INSTALL_FULL_DATAROOTDIR}")
-  set(BIN_DIR "${CMAKE_INSTALL_FULL_BINDIR}")
   set(INCLUDEDIR "${CMAKE_INSTALL_FULL_INCLUDEDIR}")
   set(INFODIR "${CMAKE_INSTALL_FULL_INFODIR}")
-  set(LIB_DIR "${CMAKE_INSTALL_FULL_LIBDIR}")
   set(LIBEXECDIR "${CMAKE_INSTALL_FULL_LIBEXECDIR}")
-  set(LOCALSTATE_DIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}")
   # set(MANDIR "${CMAKE_INSTALL_FULL_MANDIR}")
   set(SYSCONFDIR "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
-  set(LOGDIR "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/log/monetdb"
-    CACHE PATH
-    "Where to put log files (default LOCALSTATEDIR/log/monetdb)")
   set(PKGCONFIGDIR "${LIBDIR}/pkgconfig")
-  set(RUNDIR
-    "${CMAKE_INSTALL_FULL_LOCALSTATEDIR}/run/monetdb"
-    CACHE PATH
-    "Where to put pid files (default LOCALSTATEDIR/run/monetdb)")
 endmacro()
 
 macro(monetdb_configure_crypto)

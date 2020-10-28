@@ -3128,6 +3128,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	q = pushArgument(mb, q, v->nr);
 	if (sel && !pushed && !v->cand)
 		q = pushArgument(mb, q, sel->nr);
+	else if (v->nrcols > 0 && t->type->eclass != EC_EXTERNAL)
+		q = pushNil(mb, q, TYPE_bat);
 
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
@@ -3210,7 +3212,6 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 	InstrPtr q = NULL;
 	const char *mod, *fimp;
 	sql_subtype *tpe = NULL;
-	int special = 0;
 
 	node *n;
 	stmt *o = NULL;
@@ -3303,8 +3304,6 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 			q = table_func_create_result(mb, q, f->func, f->res);
 		if (list_length(ops->op4.lval))
 			tpe = tail_type(ops->op4.lval->h->data);
-		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC)
-			special = 1;
 
 		for (n = ops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
@@ -3313,13 +3312,13 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 				q = pushNil(mb, q, TYPE_bat);
 			else
 				q = pushArgument(mb, q, op->nr);
-			if (op && special) {
-				q = pushInt(mb, q, tpe->digits);
-				setVarUDFtype(mb, getArg(q, q->argc-1));
-				q = pushInt(mb, q, tpe->scale);
-				setVarUDFtype(mb, getArg(q, q->argc-1));
-			}
-			special = 0;
+		}
+		/* special case for round function on decimals */
+		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
+			q = pushInt(mb, q, tpe->digits);
+			setVarUDFtype(mb, getArg(q, q->argc-1));
+			q = pushInt(mb, q, tpe->scale);
+			setVarUDFtype(mb, getArg(q, q->argc-1));
 		}
 	}
 

@@ -322,3 +322,9 @@ ROLLBACK;
 
 SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;
 	-- error, overflow in conversion
+
+PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
+
+PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
+
+select interval '1' month * cast(1 as bigint);
