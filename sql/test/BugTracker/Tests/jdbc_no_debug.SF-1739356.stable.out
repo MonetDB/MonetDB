@@ -64,8 +64,8 @@ Operation successful
 |     C_87:bat[:oid] := algebra.thetaselect(X_19:bat[:sht], C_5:bat[:oid], 2:sht, "!=":str);                    |
 |     (X_21:bat[:oid], X_22:bat[:sht]) := sql.bind(X_4:int, "sys":str, "_tables":str, "type":str, 2:int);       |
 |     C_88:bat[:oid] := algebra.thetaselect(X_22:bat[:sht], nil:bat[:oid], 2:sht, "!=":str);                    |
-|     C_26:bat[:cnd] := sql.subdelta(C_87:bat[:oid], C_5:bat[:oid], X_21:bat[:oid], C_88:bat[:oid]);            |
-|     X_30:lng := aggr.count(C_26:bat[:cnd]);                                                                   |
+|     C_26:bat[:oid] := sql.subdelta(C_87:bat[:oid], C_5:bat[:oid], X_21:bat[:oid], C_88:bat[:oid]);            |
+|     X_30:lng := aggr.count(C_26:bat[:oid]);                                                                   |
 |     X_37:bat[:lng] := bat.single(X_30:lng);                                                                   |
 |     C_31:bat[:oid] := sql.tid(X_4:int, "tmp":str, "_tables":str);                                             |
 |     X_36:lng := aggr.count(C_31:bat[:oid]);                                                                   |

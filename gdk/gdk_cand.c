@@ -14,8 +14,6 @@
 bool
 BATiscand(BAT *b)
 {
-	if (b->ttype == TYPE_msk)
-		return true;
 	if (ATOMtype(b->ttype) != TYPE_oid)
 		return false;
 	if (complex_cand(b))
