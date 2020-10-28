@@ -163,6 +163,8 @@ select dense_rank() over (rows 200 preceding) from analytics; --error
 select ntile(1) over (rows 200 preceding) from analytics; --error
 select lead(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from analytics; --error
 
+select last_value() over () from analytics; --error, function not found
+
 prepare select count(*) over (partition by ?) from analytics; --error
 
 drop table analytics;

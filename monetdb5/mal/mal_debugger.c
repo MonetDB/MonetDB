@@ -82,7 +82,7 @@ printBATproperties(stream *f, BAT *b)
 static void
 printBATelm(stream *f, bat i, BUN cnt, BUN first)
 {
-	BAT *b, *bs[2]={0};
+	BAT *b, *bs = NULL;
 	str tpe;
 
 	b = BATdescriptor(i);
@@ -99,19 +99,14 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 				mnstr_printf(f, "Sample " BUNFMT " out of " BUNFMT "\n", cnt, BATcount(b));
 			}
 			/* cut out a portion of the BAT for display */
-			bs[1] = BATslice(b, first, first + cnt);
+			bs = BATslice(b, first, first + cnt);
 			/* get the void values */
-			if (bs[1] == NULL)
+			if (bs == NULL)
 				mnstr_printf(f, "Failed to take chunk\n");
 			else {
-				bs[0] = BATdense(0, bs[1]->hseqbase, BATcount(bs[1]));
-				if( bs[0] == NULL){
-					mnstr_printf(f, "Failed to take chunk index\n");
-				} else {
-					BATprintcolumns(f, 2, bs);
-					BBPunfix(bs[0]->batCacheid);
-					BBPunfix(bs[1]->batCacheid);
-				}
+				if (BATprint(f, bs) != GDK_SUCCEED)
+					mnstr_printf(f, "Failed to print chunk\n");
+				BBPunfix(bs->batCacheid);
 			}
 		}
 
