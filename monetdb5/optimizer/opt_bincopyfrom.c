@@ -13,7 +13,6 @@
 #include "monetdb_config.h"
 #include "mal_builder.h"
 #include "opt_bincopyfrom.h"
-#include "opt_append.h"
 
 static str transform(MalBlkPtr mb, InstrPtr importTable);
 static int extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count_var);
@@ -48,12 +47,9 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		goto end;
 	}
 
-	bool importTable_seen;
-	importTable_seen = false;
 	for (int i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
 		if (p->modname == sqlRef && p->fcnname == importTableRef) {
-			importTable_seen = true;
 			msg = transform(mb, p);
 		} else {
 			pushInstruction(mb, p);
@@ -61,9 +57,6 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		if (msg != MAL_SUCCEED)
 			return msg;
 	}
-
-	if (importTable_seen)
-		msg = OPTparappendImplementation(cntxt, mb, stk, pci);
 
 end:
 	if (old_mb_stmt)

@@ -89,6 +89,7 @@ QOToptimize(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("aliases", "Alias removal optimizer"),
+ optwrapper_pattern("bincopyfrom", "Parallellize column loading"),
  optwrapper_pattern("coercions", "Handle simple type coercions"),
  optwrapper_pattern("commonTerms", "Common sub-expression optimizer"),
  optwrapper_pattern("candidates", "Mark candidate list variables"),
@@ -114,11 +115,11 @@ static mel_func optimizer_init_funcs[] = {
  pattern("optimizer", "orcam", OPTorcam, false, "Inverse macro processor for current function", args(1,3, arg("",void),arg("targetmod",str),arg("targetfcn",str))),
  pattern("optimizer", "orcam", OPTorcam, false, "Inverse macro, find pattern and replace with a function call.", args(1,5, arg("",void),arg("mod",str),arg("fcn",str),arg("targetmod",str),arg("targetfcn",str))),
  optwrapper_pattern("mergetable", "Resolve the multi-table definitions"),
- optwrapper_pattern("bincopyfrom", "Parallellize column loading"),
  optwrapper_pattern("mitosis", "Modify the plan to exploit parallel processing on multiple cores"),
  optwrapper_pattern("multiplex", "Compiler for multiplexed instructions"),
  optwrapper_pattern("matpack", "Unroll the mat.pack operation"),
  optwrapper_pattern("json", "Unroll the mat.pack operation"),
+ optwrapper_pattern("parappend", "Parallellize column loading"),
  optwrapper_pattern("reduce", "Reduce the stack space claims"),
  optwrapper_pattern("remap", "Remapping function calls to a their multiplex variant"),
  optwrapper_pattern("remoteQueries", "Resolve the multi-table definitions"),

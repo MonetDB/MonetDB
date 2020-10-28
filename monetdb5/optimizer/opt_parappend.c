@@ -12,7 +12,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_builder.h"
-#include "opt_append.h"
+#include "opt_parappend.h"
 
 typedef struct parstate {
 	InstrPtr prep_stmt;

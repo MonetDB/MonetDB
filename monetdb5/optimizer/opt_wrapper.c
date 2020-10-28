@@ -21,6 +21,7 @@
  * The optimizer used so far
 */
 #include "opt_aliases.h"
+#include "opt_bincopyfrom.h"
 #include "opt_coercion.h"
 #include "opt_commonTerms.h"
 #include "opt_candidates.h"
@@ -40,9 +41,9 @@
 #include "opt_oltp.h"
 #include "opt_postfix.h"
 #include "opt_mergetable.h"
-#include "opt_bincopyfrom.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
+#include "opt_parappend.h"
 #include "opt_profiler.h"
 #include "opt_pushselect.h"
 #include "opt_querylog.h"
@@ -61,6 +62,7 @@ struct{
 	lng timing;
 } codes[] = {
 	{"aliases", &OPTaliasesImplementation,0,0},
+	{"bincopyfrom", &OPTbincopyfromImplementation,0,0},
 	{"candidates", &OPTcandidatesImplementation,0,0},
 	{"coercions", &OPTcoercionImplementation,0,0},
 	{"commonTerms", &OPTcommonTermsImplementation,0,0},
@@ -77,10 +79,10 @@ struct{
 	{"json", &OPTjsonImplementation,0,0},
 	{"matpack", &OPTmatpackImplementation,0,0},
 	{"mergetable", &OPTmergetableImplementation,0,0},
-	{"bincopyfrom", &OPTbincopyfromImplementation,0,0},
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
+	{"parappend", &OPTparappendImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},
