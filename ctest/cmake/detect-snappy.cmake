@@ -37,13 +37,7 @@ elseif(${LINUX_DISTRO} STREQUAL "fedora")
       legacyvariable HAVE_SNAPPY
       variablename SNAPPY_FOUND)
   endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "31")
-    assert_package_detected(
-      detect TRUE
-      legacyvariable HAVE_SNAPPY
-      variablename SNAPPY_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "32")
+  if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "31")
     assert_package_detected(
       detect TRUE
       legacyvariable HAVE_SNAPPY

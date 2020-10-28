@@ -27,19 +27,7 @@ elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
       variablename VALGRIND_FOUND)
   endif()
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "30")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_VALGRIND
-      variablename VALGRIND_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "31")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_VALGRIND
-      variablename VALGRIND_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "32")
+  if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "30")
     assert_package_detected(
       detect FALSE
       legacyvariable HAVE_VALGRIND
