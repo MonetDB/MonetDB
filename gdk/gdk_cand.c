@@ -447,7 +447,20 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		.s = s,
 	};
 
-	if (s->ttype == TYPE_void && !mask_cand(s)) {
+	if (mask_cand(s)) {
+		ci->tpe = cand_mask;
+		ci->mask = (const uint32_t *) ccand_first(s);
+		ci->seq = s->hseqbase - CCAND(s)->firstbit;
+		ci->hseq = ci->seq;
+		ci->nvals = ccand_free(s) / sizeof(uint32_t);
+		cnt = ci->nvals * 32;
+	} else if (s->ttype == TYPE_msk) {
+		assert(0);
+		ci->tpe = cand_mask;
+		ci->mask = (const uint32_t *) s->theap->base;
+		ci->seq = s->hseqbase;
+		ci->nvals = (cnt + 31U) / 32U;
+	} else if (s->ttype == TYPE_void) {
 		assert(!is_oid_nil(ci->seq));
 		if (s->tvheap) {
 			assert(ccand_free(s) % SIZEOF_OID == 0);
@@ -462,19 +475,6 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		} else {
 			ci->tpe = cand_dense;
 		}
-	} else if (s->ttype == TYPE_void && mask_cand(s)) {
-		ci->tpe = cand_mask;
-		ci->mask = (const uint32_t *) ccand_first(s);
-		ci->seq = s->hseqbase - CCAND(s)->firstbit;
-		ci->hseq = ci->seq;
-		ci->nvals = ccand_free(s) / sizeof(uint32_t);
-		cnt = ci->nvals * 32;
-	} else if (s->ttype == TYPE_msk) {
-		assert(0);
-		ci->tpe = cand_mask;
-		ci->mask = (const uint32_t *) s->theap->base;
-		ci->seq = s->hseqbase;
-		ci->nvals = (cnt + 31U) / 32U;
 	} else if (is_oid_nil(ci->seq)) {
 		ci->tpe = cand_materialized;
 		ci->oids = (const oid *) Tloc(s, 0);
@@ -1273,6 +1273,7 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 		GDKfree(dels);
         	return GDK_FAIL;
 	}
+	ATOMIC_INIT(&dels->refs, 1);
 	c = (ccand_t *) dels->base;
 	*c = (ccand_t) {
 		.type = CAND_NEGOID,
@@ -1346,11 +1347,12 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 			c->firstbit = candmask_lobit(r[i]) + i * 32;
 		cnt += candmask_pop(r[i]);
 	}
-	/* no point having a mask if it's empty */
 	if (cnt > 0) {
+		ATOMIC_INIT(&msks->refs, 1);
 		dense_cands->tvheap = msks;
 		dense_cands->hseqbase += c->firstbit;
 	} else {
+		/* no point having a mask if it's empty */
 		HEAPfree(msks, true);
 		GDKfree(msks);
 	}
@@ -1366,7 +1368,7 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 BAT *
 BATunmask(BAT *b)
 {
-	BAT *bn = COLnew(0, TYPE_oid, 1024, TRANSIENT);
+	BAT *bn = COLnew(0, TYPE_oid, mask_cand(b) ? BATcount(b) : 1024, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -1377,11 +1379,13 @@ BATunmask(BAT *b)
 	const uint32_t *src;
 	oid *dst = (oid *) Tloc(bn, 0);
 	BUN n = 0;
+	oid hseq = b->hseqbase;
 
 	if (mask_cand(b)) {
-		cnt = ccand_free(b) / 4;
+		cnt = ccand_free(b) / sizeof(uint32_t);
 		rem = 0;
 		src = (const uint32_t *) ccand_first(b);
+		hseq -= CCAND(b)->firstbit;
 	} else {
 		cnt = BATcount(b) / 32;
 		rem = BATcount(b) % 32;
@@ -1400,7 +1404,7 @@ BATunmask(BAT *b)
 					}
 					dst = (oid *) Tloc(bn, 0);
 				}
-				dst[n++] = b->hseqbase + p * 32 + i;
+				dst[n++] = hseq + p * 32 + i;
 			}
 		}
 	}
@@ -1416,7 +1420,7 @@ BATunmask(BAT *b)
 					}
 					dst = (oid *) Tloc(bn, 0);
 				}
-				dst[n++] = b->hseqbase + cnt * 32 + i;
+				dst[n++] = hseq + cnt * 32 + i;
 			}
 		}
 	}
