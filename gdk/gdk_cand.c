@@ -1240,45 +1240,47 @@ canditer_slice2val(struct canditer *ci, oid lo1, oid hi1, oid lo2, oid hi2)
 				      lo2, hi2, ci->ncand);
 }
 
-gdk_return
-BATnegcands(BAT *dense_cands, BAT *odels)
+BAT *
+BATnegcands(BUN nr, BAT *odels)
 {
 	const char *nme;
 	Heap *dels;
 	BUN lo, hi;
 	ccand_t *c;
+	BAT *bn;
 
-	assert(BATtdense(dense_cands));
-	assert(dense_cands->ttype == TYPE_void);
-	assert(dense_cands->batRole == TRANSIENT);
-
+	bn = BATdense(0, 0, nr);
+	if (bn == NULL)
+		return NULL;
 	if (BATcount(odels) == 0)
-		return GDK_SUCCEED;
+		return bn;
 
-	lo = SORTfndfirst(odels, &dense_cands->tseqbase);
-	hi = SORTfndfirst(odels, &(oid) {dense_cands->tseqbase + BATcount(dense_cands)});
+	lo = SORTfndfirst(odels, &bn->tseqbase);
+	hi = SORTfndfirst(odels, &(oid) {bn->tseqbase + BATcount(bn)});
 	if (lo == hi)
-		return GDK_SUCCEED;
+		return bn;
 
-	nme = BBP_physical(dense_cands->batCacheid);
+	nme = BBP_physical(bn->batCacheid);
 	if ((dels = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (dels->farmid = BBPselectfarm(dense_cands->batRole, dense_cands->ttype, varheap)) < 0){
+	    (dels->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
 		GDKfree(dels);
-		return GDK_FAIL;
+		BBPreclaim(bn);
+		return NULL;
 	}
 	strconcat_len(dels->filename, sizeof(dels->filename),
 		      nme, ".theap", NULL);
 
     	if (HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid), 0) != GDK_SUCCEED) {
 		GDKfree(dels);
-        	return GDK_FAIL;
+		BBPreclaim(bn);
+        	return NULL;
 	}
 	ATOMIC_INIT(&dels->refs, 1);
 	c = (ccand_t *) dels->base;
 	*c = (ccand_t) {
 		.type = CAND_NEGOID,
 	};
-    	dels->parentid = dense_cands->batCacheid;
+    	dels->parentid = bn->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
 	if (odels->ttype == TYPE_void) {
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
@@ -1288,37 +1290,45 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		memcpy(r, Tloc(odels, lo), sizeof(oid) * (hi - lo));
 	}
-	dense_cands->batDirtydesc = true;
-	dense_cands->tvheap = dels;
-	BATsetcount(dense_cands, dense_cands->batCount - (hi - lo));
+	bn->batDirtydesc = true;
+	bn->tvheap = dels;
+	BATsetcount(bn, bn->batCount - (hi - lo));
 	TRC_DEBUG(ALGO, "BATnegcands(cands=" ALGOBATFMT ","
 		  "dels=" ALGOBATFMT ")\n",
-		  ALGOBATPAR(dense_cands),
+		  ALGOBATPAR(bn),
 		  ALGOBATPAR(odels));
-    	return GDK_SUCCEED;
+	TRC_DEBUG(ALGO, "nr=" BUNFMT ", odels=" ALGOBATFMT
+		  " -> " ALGOBATFMT "\n",
+		  nr, ALGOBATPAR(odels),
+		  ALGOBATPAR(bn));
+    	return bn;
 }
 
-gdk_return
-BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
+BAT *
+BATmaskedcands(oid hseq, BAT *masked, bool selected)
 {
 	const char *nme;
 	Heap *msks;
 	ccand_t *c;
 	BUN nmask;
+	BAT *bn;
 
-	assert(BATtdense(dense_cands));
-	assert(dense_cands->ttype == TYPE_void);
-	assert(dense_cands->batRole == TRANSIENT);
 	assert(masked->ttype == TYPE_msk);
 
-	if (BATcount(masked) == 0)
-		return GDK_SUCCEED;
+	bn = COLnew(hseq, TYPE_void, 0, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
+	BATtseqbase(bn, hseq);
 
-	nme = BBP_physical(dense_cands->batCacheid);
+	if (BATcount(masked) == 0)
+		return bn;
+
+	nme = BBP_physical(bn->batCacheid);
 	if ((msks = (Heap*)GDKzalloc(sizeof(Heap))) == NULL ||
-	    (msks->farmid = BBPselectfarm(dense_cands->batRole, dense_cands->ttype, varheap)) < 0){
+	    (msks->farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap)) < 0){
 		GDKfree(msks);
-		return GDK_FAIL;
+		BBPreclaim(bn);
+		return NULL;
 	}
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
@@ -1326,14 +1336,15 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 	nmask = (BATcount(masked) + 31) / 32;
     	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
 		GDKfree(msks);
-        	return GDK_FAIL;
+		BBPreclaim(bn);
+        	return NULL;
 	}
 	c = (ccand_t *) msks->base;
 	*c = (ccand_t) {
 		.type = CAND_MSK,
 		.mask = selected,
 	};
-    	msks->parentid = dense_cands->batCacheid;
+    	msks->parentid = bn->batCacheid;
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
 	memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
@@ -1349,20 +1360,21 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 	}
 	if (cnt > 0) {
 		ATOMIC_INIT(&msks->refs, 1);
-		dense_cands->tvheap = msks;
-		dense_cands->hseqbase += c->firstbit;
+		bn->tvheap = msks;
+		bn->hseqbase += c->firstbit;
 	} else {
 		/* no point having a mask if it's empty */
 		HEAPfree(msks, true);
 		GDKfree(msks);
 	}
-	dense_cands->batDirtydesc = true;
-	BATsetcount(dense_cands, cnt);
-	TRC_DEBUG(ALGO, "BATmaskedcands(cands=" ALGOBATFMT ","
-		  "masked=" ALGOBATFMT ")\n",
-		  ALGOBATPAR(dense_cands),
-		  ALGOBATPAR(masked));
-    	return GDK_SUCCEED;
+	bn->batDirtydesc = true;
+	BATsetcount(bn, cnt);
+	TRC_DEBUG(ALGO, "hseq=" OIDFMT ", masked=" ALGOBATFMT ", selected=%s"
+		  " -> " ALGOBATFMT "\n",
+		  hseq, ALGOBATPAR(masked),
+		  selected ? "true" : "false",
+		  ALGOBATPAR(bn));
+    	return bn;
 }
 
 BAT *
