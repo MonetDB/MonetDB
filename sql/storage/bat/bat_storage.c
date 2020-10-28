@@ -43,6 +43,18 @@ timestamp_dbat( storage *d, int ts)
 	return d;
 }
 
+static void
+lock_table(sqlid id)
+{
+	MT_lock_set(&table_locks[id&(NR_TABLE_LOCKS-1)]);
+}
+
+static void
+unlock_table(sqlid id)
+{
+	MT_lock_unset(&table_locks[id&(NR_TABLE_LOCKS-1)]);
+}
+
 static size_t
 count_inserts( segment *s, sql_trans *tr)
 {
@@ -227,7 +239,10 @@ count_del(sql_trans *tr, sql_table *t, int access)
 		return d->cs.ucnt;
 	if (access == 1)
 		return count_inserts(d->segs->head, tr);
-	return count_deletes(d);
+	lock_table(t->base.id);
+	size_t cnt = count_deletes(d);
+	unlock_table(t->base.id);
+	return cnt;
 }
 
 static BAT *
@@ -934,18 +949,6 @@ table_claim_space(sql_trans *tr, sql_table *t, size_t cnt)
 		}
 	}
 	return LOG_OK;
-}
-
-static void
-lock_table(sqlid id)
-{
-	MT_lock_set(&table_locks[id&(NR_TABLE_LOCKS-1)]);
-}
-
-static void
-unlock_table(sqlid id)
-{
-	MT_lock_unset(&table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
 
 static BAT *
