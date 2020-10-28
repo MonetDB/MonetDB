@@ -4407,26 +4407,26 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 	return e; /* return something to say there were no errors */
 }
 
+#define EC_NUMERIC(e) (e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
+
 static sql_exp*
 calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
 	mvc *sql = query->sql;
 	sql_subtype *bt, *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *iet;
-	sql_class bclass = EC_ANY;
 	sql_exp *res = NULL;
 
 	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
-		bclass = bt->type->eclass;
 
 		if ((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-			if (EC_NUMBER(bclass))
+			if (EC_NUMBER(bt->type->eclass))
 				a = atom_general(sql->sa, bt, NULL);
 			else
 				a = atom_general(sql->sa, it, NULL);
 		} else if (bound->data.i_val == CURRENT_ROW_BOUND) {
-			if (EC_NUMBER(bclass))
+			if (EC_NUMBER(bt->type->eclass))
 				a = atom_zero_value(sql->sa, bt);
 			else
 				a = atom_zero_value(sql->sa, it);
@@ -4451,40 +4451,24 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return NULL;
 			bt = exp_subtype(res);
 		}
-		bclass = bt->type->eclass;
-		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
+		if (!EC_NUMERIC(bt->type->eclass))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
-		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
-			char *err = subtype2string2(sql->ta, bt);
-			if (!err)
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
-							 (frame_type == FRAME_ROWS) ? "rows":"groups", err);
-			sa_reset(sql->ta);
+		if (exp_is_null(res))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
+		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bt->type->eclass != EC_NUM && !(res = exp_check_type(sql, lon, p, res, type_equal)))
 			return NULL;
-		}
 		if (frame_type == FRAME_RANGE) {
-			if (bclass == EC_FLT && iet->type->eclass != EC_FLT)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't floating-point while on %s boundary are", bound_desc);
-			if (bclass != EC_FLT && iet->type->eclass == EC_FLT)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't floating-point while on input are", bound_desc);
-			if (bclass == EC_DEC && iet->type->eclass != EC_DEC)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't decimals while on %s boundary are", bound_desc);
-			if (bclass != EC_DEC && iet->type->eclass == EC_DEC)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
-			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
-				char *err = subtype2string2(sql->ta, iet);
-				if (!err)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
+			sql_class iet_class = iet->type->eclass;
+
+			if (EC_NUMERIC(iet_class) && !(res = exp_check_type(sql, iet, p, res, type_equal)))
+				return NULL;
+			if ((iet_class == EC_TIME || iet_class == EC_TIME_TZ) && bt->type->eclass != EC_SEC) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", subtype2string2(sql->ta, iet), bound_desc);
 				sa_reset(sql->ta);
 				return NULL;
 			}
-			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
-				char *err = subtype2string2(sql->ta, iet);
-				if (!err)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
+			if (EC_TEMP(iet->type->eclass) && !EC_INTERVAL(bt->type->eclass)) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string2(sql->ta, iet), bound_desc);
 				sa_reset(sql->ta);
 				return NULL;
 			}
@@ -4810,6 +4794,20 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (frame_clause || supports_frames)
 		ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
 
+	if (!supports_frames) {
+		append(fargs, pe);
+		append(fargs, oe);
+	}
+
+	types = exp_types(sql->sa, fargs);
+	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
+		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
+		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
+			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
+		}
+	}
+
 	/* Frame */
 	if (frame_clause) {
 		dnode *d = frame_clause->data.lval->h;
@@ -4859,7 +4857,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 		sclass = bt->type->eclass;
-		if (sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
+		if (EC_NUMERIC(sclass)) {
 			fstart = exp_null(sql->sa, bt);
 			if (order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, bt));
@@ -4892,19 +4890,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (eend && !exp_name(eend))
 		exp_label(sql->sa, eend, ++sql->label);
 
-	if (!supports_frames) {
-		append(fargs, pe);
-		append(fargs, oe);
-	}
-
-	types = exp_types(sql->sa, fargs);
-	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
-		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
-		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
-			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-		}
-	}
 	args = sa_list(sql->sa);
 	for (node *n = fargs->h ; n ; n = n->next)
 		append(args, n->data);
