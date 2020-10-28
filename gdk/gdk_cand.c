@@ -1342,12 +1342,18 @@ BATmaskedcands(oid hseq, BAT *masked, bool selected)
 	c = (ccand_t *) msks->base;
 	*c = (ccand_t) {
 		.type = CAND_MSK,
-		.mask = selected,
+//		.mask = true,
 	};
     	msks->parentid = bn->batCacheid;
 	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
-	memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
+	if (selected) {
+		memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
+	} else {
+		const uint32_t *s = (const uint32_t *) Tloc(masked, 0);
+		for (BUN i = 0; i < nmask; i++)
+			r[i] = ~s[i];
+	}
 	/* make sure last word doesn't have any spurious bits set */
 	BUN cnt = BATcount(masked) % 32;
 	if (cnt > 0)
@@ -1384,7 +1390,7 @@ BATunmask(BAT *b)
 	if (bn == NULL)
 		return NULL;
 
-	assert(!mask_cand(b) || CCAND(b)->mask); /* todo handle negmask case */
+//	assert(!mask_cand(b) || CCAND(b)->mask); /* todo handle negmask case */
 	BUN cnt;
 	uint32_t rem;
 	uint32_t val;
