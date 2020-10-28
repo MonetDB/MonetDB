@@ -2690,8 +2690,8 @@ static mel_func json_init_funcs[] = {
  command("aggr", "jsonaggr", JSONgroupStr, false, "Aggregate the double values to array.", args(1,2, arg("",str),batarg("val",dbl))),
  command("aggr", "subjsonaggr", JSONsubjson, false, "Grouped aggregation of values.", args(1,5, batarg("",str),batarg("val",str),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
  command("aggr", "subjsonaggr", JSONsubjson, false, "Grouped aggregation of values.", args(1,5, batarg("",str),batarg("val",dbl),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("aggr", "subjsonaggr", JSONsubjsoncand, false, "Grouped aggregation of values with candidates list.", args(1,6, batarg("",str),batarg("val",str),batarg("g",oid),batargany("e",1),batarg("s",cnd),arg("skip_nils",bit))),
- command("aggr", "subjsonaggr", JSONsubjsoncand, false, "Grouped aggregation of values with candidates list.", args(1,6, batarg("",str),batarg("val",dbl),batarg("g",oid),batargany("e",1),batarg("s",cnd),arg("skip_nils",bit))),
+ command("aggr", "subjsonaggr", JSONsubjsoncand, false, "Grouped aggregation of values with candidates list.", args(1,6, batarg("",str),batarg("val",str),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "subjsonaggr", JSONsubjsoncand, false, "Grouped aggregation of values with candidates list.", args(1,6, batarg("",str),batarg("val",dbl),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
  { .imp=NULL }
 };
 #include "mal_import.h"

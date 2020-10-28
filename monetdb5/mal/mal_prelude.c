@@ -180,11 +180,7 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 	} else {
 		int mask = 0;
 #ifdef MEL_STR
-		if (a->isbat && strcmp(a->type, "cnd") == 0) {
-			tpe = getAtomIndex("oid", 3, -1);
-			mask = 1 << 23;
-		} else
-			tpe = getAtomIndex(a->type, strlen(a->type),-1);
+		tpe = getAtomIndex(a->type, strlen(a->type),-1);
 #else
 		tpe = a->type ;
 #endif
@@ -308,8 +304,6 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 		tpe = a->type;
 		if (a->isbat)
 			tpe = newBatType(tpe);
-		if (a->iscand)
-			tpe |= 1 << 23;
 	}
 	return newTmpVariable(mb, tpe);
 }

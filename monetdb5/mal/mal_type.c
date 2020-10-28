@@ -45,8 +45,6 @@ getTypeName(malType tpe)
 			snprintf(buf, sizeof(buf), "bat[:any%c%d]",TMPMARKER,  k);
 		else if (getBatType(tpe) == TYPE_any)
 			snprintf(buf, sizeof(buf), "bat[:any]");
-		else if (tpe & 1 << 23)
-			snprintf(buf, sizeof(buf), "bat[:cnd]");
 		else
 			snprintf(buf, sizeof(buf), "bat[:%s]", ATOMname(getBatType(tpe)));
 		return GDKstrdup(buf);
