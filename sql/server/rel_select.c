@@ -4727,8 +4727,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 			if (!exp_subtype(e))
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at PARTITION BY clause from window functions");
-			if (!exp_name(e))
-				exp_label(sql->sa, e, ++sql->label);
 
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
@@ -4757,8 +4755,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 			if (!exp_subtype(e))
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: parameters not allowed at ORDER BY clause from window functions");
-			if (!exp_name(e))
-				exp_label(sql->sa, e, ++sql->label);
 
 			e = exp_copy(sql, e);
 			args = sa_list(sql->sa);
@@ -4783,8 +4779,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		else
 			ie = oe;
 	}
-	if (!pe || !oe)
-		return NULL;
+	assert(oe && pe);
 
 	types = exp_types(sql->sa, fargs);
 	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
@@ -4879,13 +4874,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	list_append(args, oe);
 	if (supports_frames) {
 		list_append(args, exp_atom_int(sql->sa, frame_type));
-		if (start && eend) {
-			list_append(args, start);
-			list_append(args, eend);
-		} else {
-			list_append(args, exp_atom_lng(sql->sa, 1));
-			list_append(args, exp_atom_lng(sql->sa, 1));
-		}
+		list_append(args, start ? start : exp_atom_lng(sql->sa, 1));
+		list_append(args, eend ? eend : exp_atom_lng(sql->sa, 1));
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
 	*rel = p;
