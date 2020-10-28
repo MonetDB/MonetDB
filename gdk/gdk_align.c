@@ -176,7 +176,6 @@ BATmaterialize(BAT *b)
 	if ((tail = GDKmalloc(sizeof(Heap))) == NULL)
 		return GDK_FAIL;
 	*tail = *b->theap;
-	ATOMIC_INIT(&tail->refs, 1);
 	p = 0;
 	q = BUNlast(b);
 	assert(cnt >= q - p);
@@ -190,9 +189,11 @@ BATmaterialize(BAT *b)
 	strconcat_len(b->theap->filename, sizeof(b->theap->filename),
 		      BBP_physical(b->batCacheid), ".tail", NULL);
 	if (HEAPalloc(tail, cnt, sizeof(oid), 0) != GDK_SUCCEED) {
+		GDKfree(tail);
 		return GDK_FAIL;
 	}
 
+	ATOMIC_INIT(&tail->refs, 1);
 	/* point of no return */
 	MT_lock_set(&b->theaplock);
 	assert(ATOMIC_GET(&b->theap->refs) > 0);
