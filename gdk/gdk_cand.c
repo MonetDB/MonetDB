@@ -374,27 +374,6 @@ binsearchcand(const oid *cand, BUN hi, oid o)
 	return hi;
 }
 
-/* population count: count number of 1 bits in a value */
-static inline uint32_t __attribute__((__const__))
-pop(uint32_t x)
-{
-#ifdef __GNUC__
-	return (uint32_t) __builtin_popcount(x);
-#else
-#ifdef _MSC_VER
-	return (uint32_t) __popcnt((unsigned int) (x));
-#else
-	/* divide and conquer implementation */
-	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
-	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
-	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
-	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
-	return x;
-#endif
-#endif
-}
-
 /* count number of 1 bits in ci->mask between bit positions lo
  * (inclusive) and hi (not inclusive) */
 static BUN
@@ -412,12 +391,12 @@ count_mask_bits(struct canditer *ci, BUN lo, BUN hi)
 	lo %= 32;
 	hi %= 32;
 	if (loi == hii)
-		return (BUN) pop((ci->mask[loi] & ((1U << hi) - 1)) >> lo);
-	n = (BUN) pop(ci->mask[loi++] >> lo);
+		return (BUN) candmask_pop((ci->mask[loi] & ((1U << hi) - 1)) >> lo);
+	n = (BUN) candmask_pop(ci->mask[loi++] >> lo);
 	while (loi < hii)
-		n += (BUN) pop(ci->mask[loi++]);
+		n += (BUN) candmask_pop(ci->mask[loi++]);
 	if (hi != 0)
-		n += (BUN) pop(ci->mask[loi] & ((1U << hi) - 1));
+		n += (BUN) candmask_pop(ci->mask[loi] & ((1U << hi) - 1));
 	return n;
 }
 
@@ -867,7 +846,7 @@ canditer_idx(struct canditer *ci, BUN p)
 		break;
 	case cand_mask: {
 		BUN x;
-		if ((x = pop(ci->mask[0] >> ci->firstbit)) > p) {
+		if ((x = candmask_pop(ci->mask[0] >> ci->firstbit)) > p) {
 			for (uint8_t i = ci->firstbit; ; i++) {
 				if (ci->mask[0] & (1U << i)) {
 					if (p == 0)
@@ -879,7 +858,7 @@ canditer_idx(struct canditer *ci, BUN p)
 		for (BUN n = 1; n < ci->nvals; n++) {
 			uint32_t mask = ci->mask[n];
 			p -= x;
-			x = pop(mask);
+			x = candmask_pop(mask);
 			if (x > p) {
 				for (uint8_t i = 0; ; i++) {
 					if (mask & (1U << i)) {

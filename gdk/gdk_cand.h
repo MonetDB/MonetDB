@@ -63,7 +63,7 @@ struct canditer {
 };
 
 /* returns the position of the lowest order bit in x, i.e. the
- * smallest n such that (x & (1<<n)) != 0; or -1 if x is 0 */
+ * smallest n such that (x & (1<<n)) != 0; must not be called with 0 */
 static inline int __attribute__((__const__))
 candmask_lobit(uint32_t x)
 {
@@ -83,6 +83,27 @@ candmask_lobit(uint32_t x)
 	if ((x & 0x0000000F) == 0) { n +=  4; x >>=  4; }
 	if ((x & 0x00000003) == 0) { n +=  2; x >>=  2; }
 	return n - (x & 1);
+#endif
+}
+
+/* population count: count number of 1 bits in a value */
+static inline uint32_t __attribute__((__const__))
+candmask_pop(uint32_t x)
+{
+#ifdef __GNUC__
+	return (uint32_t) __builtin_popcount(x);
+#else
+#ifdef _MSC_VER
+	return (uint32_t) __popcnt((unsigned int) (x));
+#else
+	/* divide and conquer implementation */
+	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
+	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
+	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
+	return x;
+#endif
 #endif
 }
 

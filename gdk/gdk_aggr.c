@@ -955,27 +955,6 @@ BATgroupsum(BAT *b, BAT *g, BAT *e, BAT *s, int tp, bool skip_nils, bool abort_o
 	return bn;
 }
 
-/* population count: count number of 1 bits in a value */
-static inline uint32_t __attribute__((__const__))
-pop(uint32_t x)
-{
-#ifdef __GNUC__
-	return (uint32_t) __builtin_popcount(x);
-#else
-#ifdef _MSC_VER
-	return (uint32_t) __popcnt((unsigned int) (x));
-#else
-	/* divide and conquer implementation */
-	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
-	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
-	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
-	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
-	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
-	return x;
-#endif
-#endif
-}
-
 static BUN
 mskCountOnes(BAT *b, struct canditer *ci)
 {
@@ -986,21 +965,21 @@ mskCountOnes(BAT *b, struct canditer *ci)
 		int bits = (ci->seq - b->hseqbase) % 32;
 		if (bits + ncand <= 32) {
 			if (ncand == 32)
-				return pop(src[0]);
-			return pop(src[0] & (((1U << ncand) - 1) << bits));
+				return candmask_pop(src[0]);
+			return candmask_pop(src[0] & (((1U << ncand) - 1) << bits));
 		}
 		if (bits != 0) {
-			cnt = pop(src[0] & (~0U << bits));
+			cnt = candmask_pop(src[0] & (~0U << bits));
 			src++;
 			ncand -= 32 - bits;
 		}
 		while (ncand >= 32) {
-			cnt += pop(*src);
+			cnt += candmask_pop(*src);
 			src++;
 			ncand -= 32;
 		}
 		if (ncand > 0)
-			cnt += pop(*src & ((1U << ncand) - 1));
+			cnt += candmask_pop(*src & ((1U << ncand) - 1));
 		return cnt;
 	}
 	for (BUN i = 0; i < ci->ncand; i++) {
