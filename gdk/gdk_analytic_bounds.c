@@ -1232,6 +1232,8 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 		}
 	}
 	BATsetcount(r, (BUN) cnt);
+	r->tnonil = true;
+	r->tnil = false;
 	return GDK_SUCCEED;
       bound_not_supported:
 	GDKerror("42000!groups frame bound type %s not supported.\n", ATOMname(tp2));
