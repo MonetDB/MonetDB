@@ -4407,23 +4407,23 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 	return e; /* return something to say there were no errors */
 }
 
+#define EC_NUMERIC(e) (e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
+
 static sql_exp*
 calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
 	mvc *sql = query->sql;
-	sql_subtype *bt, *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *iet;
-	sql_class bclass = EC_ANY;
+	sql_subtype *bt, *lon = sql_bind_localtype("lng"), *iet = exp_subtype(ie);
 	sql_exp *res = NULL;
 
 	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
-		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
-		bclass = bt->type->eclass;
+		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : iet;
 
 		if ((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-			a = atom_max_value(sql->sa, EC_NUMBER(bclass) ? bt : it);
+			a = atom_max_value(sql->sa, EC_NUMERIC(bt->type->eclass) ? bt : lon);
 		} else if (bound->data.i_val == CURRENT_ROW_BOUND) {
-			a = atom_zero_value(sql->sa, EC_NUMBER(bclass) ? bt : it);
+			a = atom_zero_value(sql->sa, EC_NUMERIC(bt->type->eclass) ? bt : lon);
 		} else {
 			assert(0);
 		}
@@ -4431,53 +4431,34 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 	} else { /* arbitrary expression case */
 		exp_kind ek = {type_value, card_column, FALSE};
 		const char *bound_desc = (token == SQL_PRECEDING) ? "PRECEDING" : "FOLLOWING";
-		iet = exp_subtype(ie);
 
 		assert(token == SQL_PRECEDING || token == SQL_FOLLOWING);
 		if (!(res = rel_value_exp2(query, &p, bound, f, ek)))
 			return NULL;
 		if (!(bt = exp_subtype(res))) { /* frame bound is a parameter */
-			sql_subtype *t = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
+			sql_subtype *t = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : iet;
 			if (rel_set_type_param(sql, t, p, res, 0) < 0) /* workaround */
 				return NULL;
 			bt = exp_subtype(res);
 		}
 		if (exp_is_null(res))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
-		bclass = bt->type->eclass;
-		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
-		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
-			char *err = subtype2string2(sql->ta, bt);
-			if (!err)
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
-							 (frame_type == FRAME_ROWS) ? "rows":"groups", err);
-			sa_reset(sql->ta);
+		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bt->type->eclass != EC_NUM && !(res = exp_check_type(sql, lon, p, res, type_equal)))
 			return NULL;
-		}
 		if (frame_type == FRAME_RANGE) {
-			if (bclass == EC_FLT && iet->type->eclass != EC_FLT)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't floating-point while on %s boundary are", bound_desc);
-			if (bclass != EC_FLT && iet->type->eclass == EC_FLT)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't floating-point while on input are", bound_desc);
-			if (bclass == EC_DEC && iet->type->eclass != EC_DEC)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't decimals while on %s boundary are", bound_desc);
-			if (bclass != EC_DEC && iet->type->eclass == EC_DEC)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
-			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
-				char *err = subtype2string2(sql->ta, iet);
-				if (!err)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
+			sql_class iet_class = iet->type->eclass;
+
+			if (!EC_NUMERIC(iet_class) && !EC_TEMP(iet_class))
+				return sql_error(sql, 02, SQLSTATE(42000) "Ranges with arbitrary expressions are available to numeric, interval and temporal types only");
+			if (EC_NUMERIC(iet_class) && !(res = exp_check_type(sql, iet, p, res, type_equal)))
+				return NULL;
+			if ((iet_class == EC_TIME || iet_class == EC_TIME_TZ) && bt->type->eclass != EC_SEC) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", subtype2string2(sql->ta, iet), bound_desc);
 				sa_reset(sql->ta);
 				return NULL;
 			}
-			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
-				char *err = subtype2string2(sql->ta, iet);
-				if (!err)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
+			if (EC_TEMP(iet->type->eclass) && !EC_INTERVAL(bt->type->eclass)) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string2(sql->ta, iet), bound_desc);
 				sa_reset(sql->ta);
 				return NULL;
 			}
@@ -4877,15 +4858,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
 		if (is_value) {
-			sql_subtype *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"),
-						*bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
+			sql_subtype *lon = sql_bind_localtype("lng"), *bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 			unsigned char sclass = bt->type->eclass;
 
-			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMBER(sclass) ? bt : it));
-			fend = order_by_clause ? exp_atom(sql->sa, atom_zero_value(sql->sa, EC_NUMBER(sclass) ? bt : it)) : exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMBER(sclass) ? bt : it));
+			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : lon));
+			fend = order_by_clause ? exp_atom(sql->sa, atom_zero_value(sql->sa, EC_NUMERIC(sclass) ? bt : lon)) : exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : lon));
 
 			if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
-										SQL_PRECEDING, SQL_FOLLOWING) == NULL)
+										   SQL_PRECEDING, SQL_FOLLOWING) == NULL)
 				return NULL;
 		} else {
 			frame_type = list_empty(obe) ? FRAME_ALL : FRAME_UNBOUNDED_TILL_CURRENT_ROW;

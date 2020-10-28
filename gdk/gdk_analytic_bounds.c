@@ -230,7 +230,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		ANALYTICAL_WINDOW_BOUNDS_GROUPS##IMP(TPE, LIMIT, UPCAST);	\
 	} while (0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_PRECEDING(TPE1, LIMIT, TPE2) \
+#define ANALYTICAL_WINDOW_BOUNDS_RANGE_PRECEDING(TPE1, LIMIT, TPE2) \
 	do {								\
 		lng m = k - 1;						\
 		TPE1 v, calc;						\
@@ -281,7 +281,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}							\
 	} while (0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_FOLLOWING(TPE1, LIMIT, TPE2) \
+#define ANALYTICAL_WINDOW_BOUNDS_RANGE_FOLLOWING(TPE1, LIMIT, TPE2) \
 	do {								\
 		TPE1 v, calc;						\
 		TPE2 rlimit;						\
@@ -325,7 +325,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		}							\
 	} while (0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(TPE1, IMP, LIMIT, TPE2)	\
+#define ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(TPE1, IMP, LIMIT, TPE2)	\
 	do {								\
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);			\
 		if (np) {						\
@@ -338,122 +338,23 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		IMP(TPE1, LIMIT, TPE2);				\
 	} while (0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_PRECEDING(LIMIT, TPE)	\
-	do {								\
-		lng m = k - 1;						\
-		TPE rlimit = 0; 	\
-		if (b->tnonil) {					\
-			for (; k < i; k++) {			\
-				TPE olimit = LIMIT;	\
-				if (is_##TPE##_nil(olimit) || olimit < 0)	\
-					goto invalid_bound;	\
-				rlimit = (TPE) olimit;			\
-				void *v = BUNtail(bpi, (BUN) k);	\
-				for (j = k; ; j--) {			\
-					void *next;			\
-					if (j == m)			\
-						break;			\
-					next = BUNtail(bpi, (BUN) j);	\
-					if (ABSOLUTE((TPE) atomcmp(v, next)) > olimit) \
-						break;			\
-				}					\
-				rb[k] = ++j;					\
-			}						\
-		} else {						\
-			for (; k < i; k++) {			\
-				TPE olimit = LIMIT;	\
-				if (is_##TPE##_nil(olimit) || olimit < 0)	\
-					goto invalid_bound;	\
-				rlimit = (TPE) olimit;			\
-				void *v = BUNtail(bpi, (BUN) k);	\
-				if (atomcmp(v, nil) == 0) {		\
-					for (j = k; ; j--) {		\
-						if (j == m)		\
-							break;		\
-						if (atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
-							break;		\
-					}				\
-				} else {				\
-					for (j = k; ; j--) {		\
-						void *next;		\
-						if (j == m)		\
-							break;		\
-						next = BUNtail(bpi, (BUN) j); \
-						if (atomcmp(next, nil) == 0) \
-							break;		\
-						if (ABSOLUTE((TPE) atomcmp(v, next)) > rlimit) \
-							break;		\
-					}				\
-				}					\
-				rb[k] = ++j;					\
-			}						\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE_FOLLOWING(LIMIT, TPE)	\
-	do {								\
-		if (b->tnonil) {					\
-			for (; k < i; k++) {			\
-				void *v = BUNtail(bpi, (BUN) k);	\
-				for (j = k + 1; j < i; j++) {		\
-					void *next = BUNtail(bpi, (BUN) j); \
-					if (ABSOLUTE((TPE) atomcmp(v, next)) > (TPE) LIMIT) \
-						break;			\
-				}					\
-				rb[k] = j;				\
-			}						\
-		} else {						\
-			for (; k < i; k++) {			\
-				void *v = BUNtail(bpi, (BUN) k);	\
-				if (atomcmp(v, nil) == 0) {		\
-					for (j = k + 1; j < i; j++) {	\
-						if (atomcmp(BUNtail(bpi, (BUN) j), nil) != 0) \
-							break;		\
-					}				\
-				} else {				\
-					for (j = k + 1; j < i; j++) {	\
-						void *next = BUNtail(bpi, (BUN) j); \
-						if (atomcmp(next, nil) == 0) \
-							break;		\
-						if (ABSOLUTE((TPE) atomcmp(v, next)) > (TPE) LIMIT) \
-							break;		\
-					}				\
-				}					\
-				rb[k] = j;				\
-			}						\
-		}							\
-	} while (0)
-
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_NUM(IMP, LIMIT, CAST)	\
 	do {								\
 		switch (tp1) {						\
-		case TYPE_bit:						\
-		case TYPE_flt:						\
-		case TYPE_dbl:						\
-			goto type_not_supported;			\
 		case TYPE_bte:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, lng); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(bte, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, lng); \
 			break;						\
 		case TYPE_sht:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, lng); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(sht, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, lng); \
 			break;						\
 		case TYPE_int:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, lng); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(int, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, lng); \
 			break;						\
 		case TYPE_lng:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, lng); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(lng, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, lng); \
 			break;						\
-		default: {						\
-			if (p) {					\
-				np = (bit*)Tloc(p, 0);			\
-				for (; i < cnt; i++) {			\
-					if (np[i]) 			\
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE##IMP(LIMIT, CAST); \
-				}					\
-			} 					\
-			i = cnt;				\
-			ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE##IMP(LIMIT, CAST); \
-		}							\
+		default:						\
+			goto type_not_supported;	\
 		}							\
 	} while (0)
 
@@ -461,7 +362,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	do {								\
 		switch (tp1) {						\
 			case TYPE_flt:					\
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(flt, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, flt); \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(flt, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, flt); \
 				break;					\
 			default:					\
 				goto type_not_supported;		\
@@ -472,7 +373,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 	do {								\
 		switch (tp1) {						\
 			case TYPE_dbl:					\
-				ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(dbl, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, dbl); \
+				ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(dbl, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, dbl); \
 				break;					\
 			default:					\
 				goto type_not_supported;		\
@@ -483,36 +384,23 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_HGE(IMP, LIMIT)		\
 	do {								\
 		switch (tp1) {						\
-		case TYPE_bit:						\
-		case TYPE_flt:						\
-		case TYPE_dbl:						\
-			goto type_not_supported;			\
 		case TYPE_bte:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(bte, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, hge); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(bte, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, hge); \
 			break;						\
 		case TYPE_sht:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(sht, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, hge); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(sht, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, hge); \
 			break;						\
 		case TYPE_int:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(int, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, hge); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(int, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, hge); \
 			break;						\
 		case TYPE_lng:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(lng, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, hge); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(lng, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, hge); \
 			break;						\
 		case TYPE_hge:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED(hge, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE##IMP, LIMIT, hge); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(hge, ANALYTICAL_WINDOW_BOUNDS_RANGE##IMP, LIMIT, hge); \
 			break;						\
-		default: {						\
-			if (p) {					\
-				np = (bit*)Tloc(p, 0);		\
-				for (; i < cnt; i++) {		\
-					if (np[i])			\
-						ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE##IMP(LIMIT, hge); \
-				}					\
-			} 					\
-			i = cnt;				\
-			ANALYTICAL_WINDOW_BOUNDS_VARSIZED_RANGE##IMP(LIMIT, hge); \
-		}							\
+		default:						\
+			goto type_not_supported;	\
 		}							\
 	} while (0)
 #endif
@@ -527,7 +415,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 #define timestamp_add_msec(T,M)		timestamp_add_usec(T, (M)*1000)
 #define timestamp_sub_msec(T,M)		timestamp_add_usec(T, -(M)*1000)
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
+#define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
 		lng m = k - 1;													\
 		TPE1 v, vmin, vmax;												\
@@ -579,7 +467,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		} \
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
+#define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {																\
 		TPE1 v, vmin, vmax;												\
 		if (b->tnonil) {												\
@@ -624,7 +512,7 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 		} \
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(TPE1, IMP, LIMIT, TPE2, SUB, ADD) \
+#define ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(TPE1, IMP, LIMIT, TPE2, SUB, ADD) \
 	do { \
 		TPE1 *restrict bp = (TPE1*)Tloc(b, 0); \
 		if (p) {						\
@@ -639,26 +527,33 @@ GDKanalyticaldiff(BAT *r, BAT *b, BAT *p, int tpe)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_MONTH_INTERVAL(IMP, LIMIT) \
 	do { \
-		if (tp1 == TYPE_date) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, date_sub_month, date_add_month); \
-		} else if (tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
-		} else { \
-			goto type_not_supported; \
-		} \
+		switch (tp1) {	\
+		case TYPE_date:		\
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, LIMIT, int, date_sub_month, date_add_month); \
+			break;		\
+		case TYPE_timestamp:	\
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
+			break;	\
+		default:	\
+			goto type_not_supported;	\
+		}		\
 	} while(0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_MTIME_SEC_INTERVAL(IMP, LIMIT) \
 	do { \
-		if (tp1 == TYPE_daytime) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, daytime_sub_msec, daytime_add_msec); \
-		} else if (tp1 == TYPE_date) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, date_sub_msec, date_add_msec); \
-		} else if (tp1 == TYPE_timestamp) { \
-			ANALYTICAL_WINDOW_BOUNDS_CALC_FIXED_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_FIXED_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
-		} else { \
-			goto type_not_supported; \
-		} \
+		switch (tp1) {	\
+		case TYPE_date:		\
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, LIMIT, lng, date_sub_msec, date_add_msec); \
+			break;		\
+		case TYPE_daytime:		\
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, LIMIT, lng, daytime_sub_msec, daytime_add_msec); \
+			break;		\
+		case TYPE_timestamp:		\
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
+			break;	\
+		default:		\
+			goto type_not_supported;	\
+		}	\
 	} while(0)
 
 static gdk_return
@@ -700,6 +595,197 @@ GDKanalyticalallbounds(BAT *r, BAT *b, BAT *p, bool preceding)
 	r->tnil = false;
 	return GDK_SUCCEED;
 }
+
+#define ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED_PRECEDING(TPE, NAN_CHECK)	\
+	do {								\
+		TPE prev = bp[k];		\
+		l = j;	\
+		for (; k < i; k++) {	\
+			TPE next = bp[k]; \
+			if (next != prev NAN_CHECK) { 	\
+				for ( ; j < k ; j++)\
+					rb[j] = l; \
+				l = j;	\
+				prev = next; \
+			}	\
+		}	\
+		for ( ; j < k ; j++) \
+			rb[j] = l; \
+	} while (0)
+
+#define ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED_FOLLOWING(TPE, NAN_CHECK)	\
+	do {								\
+		TPE prev = bp[k];		\
+		for (; k < i; k++) {	\
+			TPE next = bp[k]; \
+			if (next != prev NAN_CHECK) { 	\
+				l += k - j; \
+				for ( ; j < k ; j++) \
+					rb[j] = l;	\
+				prev = next; \
+			}	\
+		}	\
+		l += k - j; \
+		for ( ; j < k ; j++) \
+			rb[j] = l;	\
+	} while (0)
+
+#define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(IMP, TPE, NAN_CHECK)	\
+	do {								\
+		TPE *restrict bp = (TPE*)Tloc(b, 0);	\
+		if (p) {						\
+			for (; i < cnt; i++) {			\
+				if (np[i]) 			\
+					ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED##IMP(TPE, NAN_CHECK);	\
+			}						\
+		} 		\
+		i = cnt;					\
+		ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED##IMP(TPE, NAN_CHECK);	\
+	} while (0)
+
+#define NO_NAN_CHECK /* nulls match on this operator */
+
+static gdk_return
+GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when the limit is 0, ie match peer rows */
+{
+	lng *restrict rb = (lng *) Tloc(r, 0), i = 0, k = 0, j = 0, l = 0, cnt = (lng) BATcount(b);
+	bit *restrict np = p ? (bit *) Tloc(p, 0) : NULL;
+
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte: {
+		if (preceding) {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, bte, NO_NAN_CHECK);
+		} else {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, bte, NO_NAN_CHECK);
+		}
+	} break;
+	case TYPE_sht: {
+		if (preceding) {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, sht, NO_NAN_CHECK);
+		} else {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, sht, NO_NAN_CHECK);
+		}
+	} break;
+	case TYPE_int: {
+		if (preceding) {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, int, NO_NAN_CHECK);
+		} else {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, int, NO_NAN_CHECK);
+		}
+	} break;
+	case TYPE_lng: {
+		if (preceding) {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, lng, NO_NAN_CHECK);
+		} else {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, lng, NO_NAN_CHECK);
+		}
+	} break;
+#ifdef HAVE_HGE
+	case TYPE_hge: {
+		if (preceding) {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, hge, NO_NAN_CHECK);
+		} else {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, hge, NO_NAN_CHECK);
+		}
+	} break;
+#endif
+	case TYPE_flt: {
+		if (preceding) {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, flt, && (!is_flt_nil(next) || !is_flt_nil(prev)));
+		} else {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, flt, && (!is_flt_nil(next) || !is_flt_nil(prev)));
+		}
+	} break;
+	case TYPE_dbl: {
+		if (preceding) {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_PRECEDING, dbl, && (!is_dbl_nil(next) || !is_dbl_nil(prev)));
+		} else {
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(_FOLLOWING, dbl, && (!is_dbl_nil(next) || !is_dbl_nil(prev)));
+		}
+	} break;
+	default: {
+		BATiter it = bat_iterator(b);
+		ptr prev, next;
+		int (*atomcmp) (const void *, const void *) = ATOMcompare(b->ttype);
+
+		if (preceding) {
+			if (p) {
+				for (; i < cnt; i++) {
+					if (np[i]) {
+						prev = BUNtail(it, k);
+						l = j;
+						for (; k < i; k++) {
+							next = BUNtail(it, k);
+							if (atomcmp(prev, next) != 0) {
+								for ( ; j < k ; j++)
+									rb[j] = l;
+								l = j;
+								prev = next;
+							}
+						}
+						for ( ; j < k ; j++)
+							rb[j] = l;
+					}
+				}
+			}
+			i = cnt;
+			prev = BUNtail(it, k);
+			l = j;
+			for (; k < i; k++) {
+				next = BUNtail(it, k);
+				if (atomcmp(prev, next) != 0) {
+					for ( ; j < k ; j++)
+						rb[j] = l;
+					l = j;
+					prev = next;
+				}
+			}
+			for ( ; j < k ; j++)
+				rb[j] = l;
+		} else {
+			if (p) {
+				for (; i < cnt; i++) {
+					if (np[i]) {
+						prev = BUNtail(it, k);
+						for (; k < i; k++) {
+							next = BUNtail(it, k);
+							if (next != prev) {
+								l += k - j;
+								for ( ; j < k ; j++)
+									rb[j] = l;
+								prev = next;
+							}
+						}
+						l += k - j;
+						for ( ; j < k ; j++)
+							rb[j] = l;
+					}
+				}
+			}
+			i = cnt;
+			prev = BUNtail(it, k);
+			for (; k < i; k++) {
+				next = BUNtail(it, k);
+				if (next != prev) {
+					l += k - j;
+					for ( ; j < k ; j++)
+						rb[j] = l;
+					prev = next;
+				}
+			}
+			l += k - j;
+			for ( ; j < k ; j++)
+				rb[j] = l;
+		}
+	}
+	}
+
+	BATsetcount(r, (BUN) cnt);
+	r->tnonil = false;
+	r->tnil = false;
+	return GDK_SUCCEED;
+}
+
 
 static gdk_return
 GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding, lng first_half)
@@ -818,9 +904,6 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 {
 	lng cnt = (lng) BATcount(b), nils = 0, *restrict rb = (lng *) Tloc(r, 0), i = 0, k = 0, j = 0;
 	bit *restrict np = p ? (bit *) Tloc(p, 0) : NULL;
-	BATiter bpi = bat_iterator(b);
-	int (*atomcmp) (const void *, const void *) = ATOMcompare(tp1);
-	const void *nil = ATOMnilptr(tp1);
 	int abort_on_error = 1;
 
 	if ((tp1 == TYPE_daytime || tp1 == TYPE_date || tp1 == TYPE_timestamp) && tp2 != TYPE_int && tp2 != TYPE_lng)
@@ -923,30 +1006,35 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				bte ll = (*(bte *) bound);
 				if (ll == GDK_bte_max)	/* UNBOUNDED PRECEDING and UNBOUNDED FOLLOWING cases, avoid overflow */
 					return GDKanalyticalallbounds(r, b, p, preceding);
-				else
-					limit = is_bte_nil(ll) ? lng_nil : (lng) ll;
+				if (ll == 0)
+					return GDKanalyticalpeers(r, b, p, preceding);
+				limit = is_bte_nil(ll) ? lng_nil : (lng) ll;
 				break;
 			}
 			case TYPE_sht:{
 				sht ll = (*(sht *) bound);
 				if (ll == GDK_sht_max)
 					return GDKanalyticalallbounds(r, b, p, preceding);
-				else
-					limit = is_sht_nil(ll) ? lng_nil : (lng) ll;
+				if (ll == 0)
+					return GDKanalyticalpeers(r, b, p, preceding);
+				limit = is_sht_nil(ll) ? lng_nil : (lng) ll;
 				break;
 			}
 			case TYPE_int:{
 				int_limit = (*(int *) bound);
 				if (int_limit == GDK_int_max)
 					return GDKanalyticalallbounds(r, b, p, preceding);
-				else
-					limit = is_int_nil(int_limit) ? lng_nil : (lng) int_limit;
+				if (int_limit == 0)
+					return GDKanalyticalpeers(r, b, p, preceding);
+				limit = is_int_nil(int_limit) ? lng_nil : (lng) int_limit;
 				break;
 			}
 			case TYPE_lng:{
 				limit = (*(lng *) bound);
 				if (limit == GDK_lng_max)
 					return GDKanalyticalallbounds(r, b, p, preceding);
+				if (limit == 0)
+					return GDKanalyticalpeers(r, b, p, preceding);
 				break;
 			}
 			default:
@@ -981,6 +1069,8 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				goto invalid_bound;
 			} else if (limit == GDK_flt_max) {
 				return GDKanalyticalallbounds(r, b, p, preceding);
+			} else if (limit == 0) {
+				return GDKanalyticalpeers(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_FLT(_PRECEDING, limit);
 			} else {
@@ -994,6 +1084,8 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				goto invalid_bound;
 			} else if (limit == GDK_dbl_max) {
 				return GDKanalyticalallbounds(r, b, p, preceding);
+			} else if (limit == 0) {
+				return GDKanalyticalpeers(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_DBL(_PRECEDING, limit);
 			} else {
@@ -1008,6 +1100,8 @@ GDKanalyticalrangebounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bo
 				goto invalid_bound;
 			} else if (limit == GDK_hge_max) {
 				return GDKanalyticalallbounds(r, b, p, preceding);
+			} else if (limit == 0) {
+				return GDKanalyticalpeers(r, b, p, preceding);
 			} else if (preceding) {
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_RANGE_HGE(_PRECEDING, limit);
 			} else {
