@@ -117,11 +117,11 @@ snapshot_database_stream(char *dbname, stream *s)
 
 	handle = mapi_prepare(conn, "CALL sys.hot_snapshot('/root/dummy', 0)");
 	if (handle == NULL || mapi_error(conn)) {
-		e = newErr("prepare failed: %s", mapi_error_str(conn));
+		e = newErr("mapi_prepare: %s", mapi_error_str(conn));
 		goto bailout;
 	}
 	if (mapi_execute(handle) != MOK) {
-		e = newErr("internal error: execute failed: %s", mapi_result_error(handle));
+		e = newErr("%s", mapi_result_error(handle));
 		goto bailout;
 	}
 
@@ -192,15 +192,15 @@ snapshot_database_to(char *dbname, char *dest)
 	/* Trigger the snapshot */
 	handle = mapi_prepare(conn, "CALL sys.hot_snapshot(?)");
 	if (handle == NULL || mapi_error(conn)) {
-		e = newErr("prepare failed: %s", mapi_error_str(conn));
+		e = newErr("mapi_prepare: %s", mapi_error_str(conn));
 		goto bailout;
 	}
 	if (mapi_param_string(handle, 0, 12, dest, NULL) != MOK) {
-		e = newErr("internal error: mapi_param_string: %s", mapi_error_str(conn));
+		e = newErr("mapi_param_string: %s", mapi_error_str(conn));
 		goto bailout;
 	}
 	if (mapi_execute(handle) != MOK) {
-		e = newErr("internal error: execute failed: %s", mapi_result_error(handle));
+		e = newErr("%s", mapi_result_error(handle));
 		goto bailout;
 	}
 

@@ -39,7 +39,7 @@ str_2_blob(blob **res, const str *val)
 }
 
 str
-batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
+batstr_2_blob(bat *res, const bat *bid, const bat *sid)
 {
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
@@ -67,17 +67,32 @@ batstr_2_blob_cand(bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 
-	for (BUN i = 0; i < q; i++) {
-		BUN p = (BUN) (canditer_next(&ci) - off);
-		str v = (str) BUNtvar(bi, p);
+	if (ci.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next_dense(&ci) - off);
+			str v = (str) BUNtvar(bi, p);
 
-		if ((msg = str_2_blob_imp(&r, &rlen, v)))
-			goto bailout;
-		if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
-			msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto bailout;
+			if ((msg = str_2_blob_imp(&r, &rlen, v)))
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= ATOMcmp(TYPE_blob, r, ATOMnilptr(TYPE_blob)) == 0;
 		}
-		nils |= ATOMcmp(TYPE_blob, r, ATOMnilptr(TYPE_blob)) == 0;
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next(&ci) - off);
+			str v = (str) BUNtvar(bi, p);
+
+			if ((msg = str_2_blob_imp(&r, &rlen, v)))
+				goto bailout;
+			if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.str_2_blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= ATOMcmp(TYPE_blob, r, ATOMnilptr(TYPE_blob)) == 0;
+		}
 	}
 
 bailout:
@@ -97,12 +112,6 @@ bailout:
 	} else if (dst)
 		BBPreclaim(dst);
 	return msg;
-}
-
-str
-batstr_2_blob(bat *res, const bat *bid)
-{
-	return batstr_2_blob_cand(res, bid, NULL);
 }
 
 /* TODO get max size for all from type */
@@ -254,38 +263,75 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 	}
 
-	if (from_str) { /* string to string */
-		for (BUN i = 0; i < q; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			str v = (str) BUNtail(bi, p);
+	if (ci.tpe == cand_dense) {
+		if (from_str) { /* string to string */
+			for (BUN i = 0; i < q; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				str v = (str) BUNtvar(bi, p);
 
-			if (strNil(v)) {
-				if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
-					msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
+				if (strNil(v)) {
+					if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
+						msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					nils = true;
+				} else {
+					if ((msg = SQLstr_cast_str(&r, &rlen, v, digits)) != MAL_SUCCEED)
+						goto bailout;
+					if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
 				}
-				nils = true;
-			} else {
-				if ((msg = SQLstr_cast_str(&r, &rlen, v, digits)) != MAL_SUCCEED)
+			}
+		} else { /* any other type to string */
+			for (BUN i = 0; i < q; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				ptr v = BUNtail(bi, p);
+
+				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout;
 				if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
 					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
+				nils |= strNil(r);
 			}
 		}
-	} else { /* any other type to string */
-		for (BUN i = 0; i < q; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			ptr v = BUNtail(bi, p);
+	} else {
+		if (from_str) { /* string to string */
+			for (BUN i = 0; i < q; i++) {
+				oid p = (canditer_next(&ci) - off);
+				str v = (str) BUNtvar(bi, p);
 
-			if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
-				goto bailout;
-			if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout;
+				if (strNil(v)) {
+					if (tfastins_nocheckVAR(dst, i, str_nil, Tsize(dst)) != GDK_SUCCEED) {
+						msg = createException(MAL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+					nils = true;
+				} else {
+					if ((msg = SQLstr_cast_str(&r, &rlen, v, digits)) != MAL_SUCCEED)
+						goto bailout;
+					if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						goto bailout;
+					}
+				}
 			}
-			nils |= strNil(r);
+		} else { /* any other type to string */
+			for (BUN i = 0; i < q; i++) {
+				oid p = (canditer_next(&ci) - off);
+				ptr v = BUNtail(bi, p);
+
+				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
+					goto bailout;
+				if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
+				nils |= strNil(r);
+			}
 		}
 	}
 

@@ -446,7 +446,7 @@ score_func( sql_subfunc *sf, list *tl)
 }
 
 static list *
-check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list* exps, sql_subfunc *sf, int maybe_zero_or_one)
+check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one)
 {
 	list *nexps = new_exp_list(sql->sa);
 	sql_subtype *atp = NULL;
@@ -488,15 +488,13 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list* exps, sq
 	return nexps;
 }
 
-static sql_exp *
-find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type, sql_subfunc **sf)
+sql_exp *
+find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type)
 {
-	sql_exp *e = NULL;
-	*sf = bind_func_(sql, s, fname, tl, type);
+	sql_subfunc *f = bind_func_(sql, s, fname, tl, type);
 
-	if (*sf) {
-		e = exp_op(sql->sa, exps, *sf);
-	} else if (list_length(tl)) {
+	assert(type == F_UNION || type == F_LOADER);
+	if (!f && list_length(tl)) {
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
 		if (!funcs)
@@ -514,27 +512,17 @@ find_table_function_type(mvc *sql, sql_schema *s, char *fname, list *exps, list 
 				}
 			}
 		}
-		if (list_empty(funcs))
-			return NULL;
-
-		*sf = list_fetch(funcs, match);
-		if ((*sf)->func->vararg) {
-			e = exp_op(sql->sa, exps, *sf);
-		} else {
-			list *nexps = check_arguments_and_find_largest_any_type(sql, NULL, exps, *sf, 1);
-			e = NULL;
-			if (nexps)
-				e = exp_op(sql->sa, nexps, *sf);
-		}
+		if (!list_empty(funcs))
+			f = list_fetch(funcs, match);
 	}
-	return e;
-}
-
-sql_exp *
-find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl)
-{
-	sql_subfunc* sf = NULL;
-	return find_table_function_type(sql, s, fname, exps, tl, F_UNION, &sf);
+	if (f) {
+		if (f->func->vararg)
+			return exp_op(sql->sa, exps, f);
+		if (!list_empty(exps) && !(exps = check_arguments_and_find_largest_any_type(sql, NULL, exps, f, 1)))
+			return NULL;
+		return exp_op(sql->sa, exps, f);
+	}
+	return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such %s function '%s'", type == F_UNION ? "table returning" : "loader", fname);
 }
 
 static sql_rel *
@@ -609,9 +597,8 @@ rel_named_table_function(sql_query *query, sql_rel *rel, symbol *ast, int latera
 		}
 	}
 
-	e = find_table_function(sql, s, fname, list_empty(exps) ? NULL : exps, tl);
-	if (!e)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such table returning function '%s'", fname);
+	if (!(e = find_table_function(sql, s, fname, list_empty(exps) ? NULL : exps, tl, F_UNION)))
+		return NULL;
 	rel = sq;
 
 	if (ast->data.lval->h->next->data.sym)
@@ -925,7 +912,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			}
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -959,7 +946,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				rel = rel_reduce_on_column_privileges(sql, rel, t);
 			if (allowed && rel)
 				return rel;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
@@ -967,7 +954,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (!allowed) {
 			res = rel_reduce_on_column_privileges(sql, res, t);
 			if (!res)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym, refs);
@@ -1737,9 +1724,7 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
 	f = bind_func_(sql, s, fname, tl, type);
-	if (f) {
-		return exp_op(sql->sa, exps, f);
-	} else if (list_length(tl)) {
+	if (!f && list_length(tl)) {
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
 		if (!funcs)
@@ -1757,17 +1742,15 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 				}
 			}
 		}
-		if (list_empty(funcs))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
-
-		f = list_fetch(funcs, match);
-		if (f->func->vararg) {
+		if (!list_empty(funcs))
+			f = list_fetch(funcs, match);
+	}
+	if (f) {
+		if (f->func->vararg)
 			return exp_op(sql->sa, exps, f);
-		} else {
-			list *nexps = check_arguments_and_find_largest_any_type(sql, rel, exps, f, table_func);
-			if (nexps)
-				return exp_op(sql->sa, nexps, f);
-		}
+		if (!(exps = check_arguments_and_find_largest_any_type(sql, rel, exps, f, table_func)))
+			return NULL;
+		return exp_op(sql->sa, exps, f);
 	}
 	return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
 }
@@ -1839,6 +1822,17 @@ rel_exists_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 	return NULL;
 }
 
+static int
+is_project_true(sql_rel *r)
+{
+	if (r && !r->l && list_length(r->exps) == 1) {
+		sql_exp *e = r->exps->h->data;
+		if (exp_is_atom(e) && exp_is_true(e))
+			return 1;
+	}
+	return 0;
+}
+
 static sql_exp *
 rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 {
@@ -1897,6 +1891,10 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 				if (r->nrcols != ek.type)
 					return sql_error(sql, 02, SQLSTATE(42000) "Subquery has too %s columns", (r->nrcols < ek.type) ? "few" : "many");
 				re = exp_rel_label(sql, re);
+			} else if (exp_is_rel(re)) {
+				sql_rel *r = exp_rel_get_rel(sql->sa, re);
+				if (is_project(r->op) && is_project_true(r->l) && list_length(r->exps) == 1)
+					re = r->exps->h->data;
 			}
 			append(vals, re);
 		}
@@ -2213,12 +2211,19 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!rs)
 			return NULL;
 
+		if (!exp_is_rel(ls) && !exp_is_rel(rs) && ls->card < rs->card) {
+			sql_exp *swap = ls; /* has to swap parameters like in the rel_logical_exp case */
+			ls = rs;
+			rs = swap;
+			cmp_type = swap_compare(cmp_type);
+		}
+
 		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
 			return NULL;
 		if (exp_is_null(ls) && exp_is_null(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
 
-		ls = exp_compare_func(sql, ls, rs, compare_func(compare_str2type(compare_op), quantifier?0:need_not), quantifier);
+		ls = exp_compare_func(sql, ls, rs, compare_func(cmp_type, quantifier?0:need_not), quantifier);
 		if (need_not && quantifier)
 			ls = rel_unop_(sql, NULL, ls, NULL, "not", card_value);
 		return ls;
@@ -3865,7 +3870,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "NEXT VALUE FOR: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 
 	if (!find_sql_sequence(s, seq) && !stack_find_rel_view(sql, seq))
 		return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: no such sequence '%s'.'%s'", s->base.name, seq);
@@ -4402,26 +4407,26 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 	return e; /* return something to say there were no errors */
 }
 
+#define EC_NUMERIC(e) (e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
+
 static sql_exp*
 calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
 	mvc *sql = query->sql;
 	sql_subtype *bt, *it = sql_bind_localtype("int"), *lon = sql_bind_localtype("lng"), *iet;
-	sql_class bclass = EC_ANY;
 	sql_exp *res = NULL;
 
 	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
-		bclass = bt->type->eclass;
 
 		if ((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-			if (EC_NUMBER(bclass))
+			if (EC_NUMBER(bt->type->eclass))
 				a = atom_general(sql->sa, bt, NULL);
 			else
 				a = atom_general(sql->sa, it, NULL);
 		} else if (bound->data.i_val == CURRENT_ROW_BOUND) {
-			if (EC_NUMBER(bclass))
+			if (EC_NUMBER(bt->type->eclass))
 				a = atom_zero_value(sql->sa, bt);
 			else
 				a = atom_zero_value(sql->sa, it);
@@ -4446,40 +4451,24 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 				return NULL;
 			bt = exp_subtype(res);
 		}
-		bclass = bt->type->eclass;
-		if (!(bclass == EC_NUM || EC_INTERVAL(bclass) || bclass == EC_DEC || bclass == EC_FLT))
+		if (!EC_NUMERIC(bt->type->eclass))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must be of a countable SQL type", bound_desc);
-		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bclass != EC_NUM) {
-			char *err = subtype2string2(sql->ta, bt);
-			if (!err)
-				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			(void) sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary on %s frame can't be %s type", bound_desc,
-							 (frame_type == FRAME_ROWS) ? "rows":"groups", err);
-			sa_reset(sql->ta);
+		if (exp_is_null(res))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
+		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bt->type->eclass != EC_NUM && !(res = exp_check_type(sql, lon, p, res, type_equal)))
 			return NULL;
-		}
 		if (frame_type == FRAME_RANGE) {
-			if (bclass == EC_FLT && iet->type->eclass != EC_FLT)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't floating-point while on %s boundary are", bound_desc);
-			if (bclass != EC_FLT && iet->type->eclass == EC_FLT)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't floating-point while on input are", bound_desc);
-			if (bclass == EC_DEC && iet->type->eclass != EC_DEC)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values in input aren't decimals while on %s boundary are", bound_desc);
-			if (bclass != EC_DEC && iet->type->eclass == EC_DEC)
-				return sql_error(sql, 02, SQLSTATE(42000) "Values on %s boundary aren't decimals while on input are", bound_desc);
-			if (bclass != EC_SEC && iet->type->eclass == EC_TIME) {
-				char *err = subtype2string2(sql->ta, iet);
-				if (!err)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", err, bound_desc);
+			sql_class iet_class = iet->type->eclass;
+
+			if (EC_NUMERIC(iet_class) && !(res = exp_check_type(sql, iet, p, res, type_equal)))
+				return NULL;
+			if ((iet_class == EC_TIME || iet_class == EC_TIME_TZ) && bt->type->eclass != EC_SEC) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type up to the day", subtype2string2(sql->ta, iet), bound_desc);
 				sa_reset(sql->ta);
 				return NULL;
 			}
-			if (EC_INTERVAL(bclass) && !EC_TEMP(iet->type->eclass)) {
-				char *err = subtype2string2(sql->ta, iet);
-				if (!err)
-					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", err, bound_desc);
+			if (EC_TEMP(iet->type->eclass) && !EC_INTERVAL(bt->type->eclass)) {
+				(void) sql_error(sql, 02, SQLSTATE(42000) "For %s input the %s boundary must be an interval type", subtype2string2(sql->ta, iet), bound_desc);
 				sa_reset(sql->ta);
 				return NULL;
 			}
@@ -4805,6 +4794,20 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (frame_clause || supports_frames)
 		ie = exp_copy(sql, obe ? (sql_exp*) obe->t->data : in);
 
+	if (!supports_frames) {
+		append(fargs, pe);
+		append(fargs, oe);
+	}
+
+	types = exp_types(sql->sa, fargs);
+	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
+		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
+		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
+			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
+		}
+	}
+
 	/* Frame */
 	if (frame_clause) {
 		dnode *d = frame_clause->data.lval->h;
@@ -4854,7 +4857,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 
 		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
 		sclass = bt->type->eclass;
-		if (sclass == EC_POS || sclass == EC_NUM || sclass == EC_DEC || EC_INTERVAL(sclass)) {
+		if (EC_NUMERIC(sclass)) {
 			fstart = exp_null(sql->sa, bt);
 			if (order_by_clause)
 				fend = exp_atom(sql->sa, atom_zero_value(sql->sa, bt));
@@ -4887,19 +4890,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (eend && !exp_name(eend))
 		exp_label(sql->sa, eend, ++sql->label);
 
-	if (!supports_frames) {
-		append(fargs, pe);
-		append(fargs, oe);
-	}
-
-	types = exp_types(sql->sa, fargs);
-	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
-		wf = find_func(sql, s, aname, list_length(types), F_ANALYTIC, NULL);
-		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
-			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function '%s(%s)' not found", aname, arg_list ? arg_list : "");
-		}
-	}
 	args = sa_list(sql->sa);
 	for (node *n = fargs->h ; n ; n = n->next)
 		append(args, n->data);
@@ -5845,7 +5835,7 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 	rname2 = rel_name(t2);
 	if (rname1 && rname2 && strcmp(rname1, rname2) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the CROSS JOIN expression", rname1);
-	
+
 	if (refs) {
 		if (list_find(refs, (char *)rname1, (fcmp) &strcmp))
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname1);
@@ -6008,10 +5998,9 @@ rel_loader_function(sql_query *query, symbol* fcall, list *fexps, sql_subfunc **
 		}
 	}
 
-	e = find_table_function_type(sql, s, fname, exps, tl, F_LOADER, &sf);
-	if (!e || !sf)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such loader function '%s'", fname);
-
+	if (!(e = find_table_function(sql, s, fname, exps, tl, F_LOADER)))
+		return NULL;
+	sf = e->f;
 	if (sq) {
 		for (node *n = sq->exps->h, *m = sf->func->ops->h ; n && m ; n = n->next, m = m->next) {
 			sql_exp *e = (sql_exp*) n->data;

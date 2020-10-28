@@ -2199,10 +2199,13 @@ flusher_should_run(void)
 	char *reason_to = NULL, *reason_not_to = NULL;
 	int changes;
 
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
+
 	if (flusher.countdown_ms <= 0)
 		reason_to = "timer expired";
 
-	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 1000000;
+	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 100000;
 	if ((changes = logger_funcs.changes()) >= many_changes)
 		reason_to = "many changes";
 	else if (changes == 0)
@@ -2330,7 +2333,8 @@ store_apply_deltas(bool not_locked)
 void
 store_flush_log(void)
 {
-	ATOMIC_SET(&flusher.flush_now, 1);
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
 }
 
 /* Call while holding bs_lock */
@@ -2822,7 +2826,7 @@ store_hot_snapshot(str tarfile)
 	}
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
-		GDKerror("Failed to open %s for writing: %s", tmppath, mnstr_peek_error(NULL));
+		GDKerror("%s", mnstr_peek_error(NULL));
 		goto end;
 	}
 	do_remove = 1;
@@ -7603,8 +7607,17 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
+	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
+
 	sql_trans *tr = s->tr;
 	int snr = tr->schema_number;
+
+	/* add wait when flush is realy needed */
+	while (ATOMIC_GET(&flusher.flush_now)) {
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(sleeptime);
+		MT_lock_set(&bs_lock);
+	}
 
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans &&
