@@ -961,7 +961,7 @@ mskCountOnes(BAT *b, struct canditer *ci)
 	BUN cnt = 0, ncand = ci->ncand;
 
 	if (ci->tpe == cand_dense && BATcount(b)) {
-		const uint32_t *restrict src = mask_cand(b)?ccand_first(b)+ (ci->seq - b->hseqbase) / 32:Tloc(b, (ci->seq - b->hseqbase) / 32);
+		const uint32_t *restrict src = mask_cand(b) ? ccand_first(b) + (ci->seq - b->hseqbase) / 32 : Tloc(b, (ci->seq - b->hseqbase) / 32);
 		int bits = (ci->seq - b->hseqbase) % 32;
 		if (bits + ncand <= 32) {
 			if (ncand == 32)

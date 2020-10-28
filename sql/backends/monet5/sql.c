@@ -2322,7 +2322,6 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if(d == NULL)
 			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		BAThseqbase(d, sb);
 		*res = d->batCacheid;
 	} else {
 		/* create void,void bat with length and oid's set */

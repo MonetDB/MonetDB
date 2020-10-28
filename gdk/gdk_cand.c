@@ -465,8 +465,10 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	} else if (s->ttype == TYPE_void && mask_cand(s)) {
 		ci->tpe = cand_mask;
 		ci->mask = (const uint32_t *) ccand_first(s);
-		ci->seq = s->hseqbase;
-		ci->nvals = (cnt + 31U) / 32U;
+		ci->seq = s->hseqbase - CCAND(s)->firstbit;
+		ci->hseq = ci->seq;
+		ci->nvals = ccand_free(s) / sizeof(uint32_t);
+		cnt = ci->nvals * 32;
 	} else if (s->ttype == TYPE_msk) {
 		assert(0);
 		ci->tpe = cand_mask;
@@ -667,7 +669,10 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		assert(i >= 0);	/* there should be a set bit */
 		ci->firstbit += i;
 		cnt -= i;
-		ci->mskoff = s->hseqbase + (ci->mask - (const uint32_t *) (mask_cand(s)?ccand_first(s):s->theap->base)) * 32U;
+		if (mask_cand(s))
+			ci->mskoff = s->hseqbase - CCAND(s)->firstbit + (ci->mask - (const uint32_t *) ccand_first(s)) * 32U;
+		else
+			ci->mskoff = s->hseqbase + (ci->mask - (const uint32_t *) s->theap->base) * 32U;
 		ci->seq = ci->mskoff + ci->firstbit;
 		ci->hseq = ci->seq;
 		ci->nextbit = ci->firstbit;
@@ -1268,16 +1273,18 @@ BATnegcands(BAT *dense_cands, BAT *odels)
 		GDKfree(dels);
         	return GDK_FAIL;
 	}
-	c = (ccand_t*)dels->base;
-	c->type = CAND_NEGOID;
+	c = (ccand_t *) dels->base;
+	*c = (ccand_t) {
+		.type = CAND_NEGOID,
+	};
     	dels->parentid = dense_cands->batCacheid;
 	dels->free = sizeof(ccand_t) + sizeof(oid) * (hi - lo);
 	if (odels->ttype == TYPE_void) {
-		oid *r = (oid*)(dels->base + sizeof(ccand_t));
+		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		for (BUN x = lo; x < hi; x++)
 			r[x - lo] = x + odels->tseqbase;
 	} else {
-		oid *r = (oid*)(dels->base + sizeof(ccand_t));
+		oid *r = (oid *) (dels->base + sizeof(ccand_t));
 		memcpy(r, Tloc(odels, lo), sizeof(oid) * (hi - lo));
 	}
 	dense_cands->batDirtydesc = true;
@@ -1296,6 +1303,7 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 	const char *nme;
 	Heap *msks;
 	ccand_t *c;
+	BUN nmask;
 
 	assert(BATtdense(dense_cands));
 	assert(dense_cands->ttype == TYPE_void);
@@ -1314,25 +1322,40 @@ BATmaskedcands(BAT *dense_cands, BAT *masked, bool selected)
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
 
-    	if (HEAPalloc(msks, (BATcount(masked)+31)/32 + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
+	nmask = (BATcount(masked) + 31) / 32;
+    	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
 		GDKfree(msks);
         	return GDK_FAIL;
 	}
-	c = (ccand_t*)msks->base;
-	c->type = CAND_MSK;
-	c->mask = selected;
+	c = (ccand_t *) msks->base;
+	*c = (ccand_t) {
+		.type = CAND_MSK,
+		.mask = selected,
+	};
     	msks->parentid = dense_cands->batCacheid;
-	msks->free = sizeof(ccand_t) + (BATcount(masked)+31)/32 * sizeof(uint32_t);
+	msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 	uint32_t *r = (uint32_t*)(msks->base + sizeof(ccand_t));
-	memcpy(r, Tloc(masked, 0), (BATcount(masked)+31)/32 * sizeof(uint32_t));
+	memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
+	/* make sure last word doesn't have any spurious bits set */
+	BUN cnt = BATcount(masked) % 32;
+	if (cnt > 0)
+		r[nmask - 1] &= (1U << cnt) - 1;
+	cnt = 0;
+	for (BUN i = 0; i < nmask; i++) {
+		if (cnt == 0 && r[i] != 0)
+			c->firstbit = candmask_lobit(r[i]) + i * 32;
+		cnt += candmask_pop(r[i]);
+	}
+	/* no point having a mask if it's empty */
+	if (cnt > 0) {
+		dense_cands->tvheap = msks;
+		dense_cands->hseqbase += c->firstbit;
+	} else {
+		HEAPfree(msks, true);
+		GDKfree(msks);
+	}
 	dense_cands->batDirtydesc = true;
-	dense_cands->tvheap = msks;
-	/*
-	lng cnt = 0;
-	if (BATsum(&cnt, TYPE_lng, masked, NULL, true, false, false) != GDK_SUCCEED)
-		return GDK_FAIL;
-	 */
-	BATsetcount(dense_cands, BATcount(masked));
+	BATsetcount(dense_cands, cnt);
 	TRC_DEBUG(ALGO, "BATmaskedcands(cands=" ALGOBATFMT ","
 		  "masked=" ALGOBATFMT ")\n",
 		  ALGOBATPAR(dense_cands),
@@ -1348,13 +1371,22 @@ BATunmask(BAT *b)
 		return NULL;
 
 	assert(!mask_cand(b) || CCAND(b)->mask); /* todo handle negmask case */
-	BUN cnt = BATcount(b) / 32;
-	uint32_t rem = (uint32_t) (BATcount(b) % 32);
+	BUN cnt;
+	uint32_t rem;
 	uint32_t val;
-	const uint32_t *src = (const uint32_t *) (mask_cand(b)?ccand_first(b):Tloc(b, 0));
+	const uint32_t *src;
 	oid *dst = (oid *) Tloc(bn, 0);
 	BUN n = 0;
 
+	if (mask_cand(b)) {
+		cnt = ccand_free(b) / 4;
+		rem = 0;
+		src = (const uint32_t *) ccand_first(b);
+	} else {
+		cnt = BATcount(b) / 32;
+		rem = BATcount(b) % 32;
+		src = (const uint32_t *) Tloc(b, 0);
+	}
 	for (BUN p = 0; p < cnt; p++) {
 		if ((val = src[p]) == 0)
 			continue;
