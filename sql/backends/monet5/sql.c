@@ -2305,15 +2305,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		/* true == deleted, need not deleted  */
 		if (bn) {
-			if (BATcount(bn)) {
-				d = BATcalcnot(bn, NULL);
-				BBPunfix(bn->batCacheid);
-				if (d == NULL)
-					throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			} else
-				d = bn;
-			tids = BATmaskedcands(sb, d, true);
-			BBPunfix(d->batCacheid);
+			tids = BATmaskedcands(sb, bn, false);
+			BBPunfix(bn->batCacheid);
 			if (tids == NULL) {
 				throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
 			}

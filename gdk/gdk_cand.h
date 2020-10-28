@@ -22,7 +22,7 @@
 typedef struct {
 	uint64_t
 		type:1,
-		mask:1,
+//		mask:1,
 		firstbit:48;
 } ccand_t;
 
