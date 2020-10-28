@@ -2361,18 +2361,18 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		freeg = 1;
 		if (t2->ttype == TYPE_void) {
 			map = NULL;
-			mapoff = t2->tseqbase;
 		} else {
 			map = (const oid *) Tloc(t2, 0);
+			mapoff = t2->tseqbase;
 		}
 		if (g && BATtdense(g)) {
 			for (p = 0, q = BATcount(g); p < q; p++) {
 				switch (b->ttype) {
 				case TYPE_str:
-					v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] : p + mapoff));
+					v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] - mapoff : p));
 					break;
 				case TYPE_dbl:
-					val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] : p + mapoff));
+					val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] - mapoff : p));
 					if (!is_dbl_nil(*val)) {
 						snprintf(temp, sizeof(temp), "%f", *val);
 						v = (const char *) temp;
