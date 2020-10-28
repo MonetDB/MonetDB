@@ -875,12 +875,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		*e = old;
 		skipWS(r, pos);
 		if (pexps) {
-			int mul = 0;
-			exp = exps_bind_column2(pexps, tname, cname, &mul);
+			exp = exps_bind_column2(pexps, tname, cname, NULL);
 			if (exp)
 				exp = exp_alias_or_copy(sql, tname, cname, lrel, exp);
-			(void) mul;
-			assert(mul == 0);
 		}
 		if (!exp && lrel) {
 			exp = rel_bind_column2(sql, lrel, tname, cname, 0);
