@@ -630,33 +630,24 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 			pe = exp_op(sql->sa, args, df);
 		}
 
-		if (!supports_frames(e)) {
-			for (node *n = rankopargs->h; n ; n = n->next) {
-				if (n->next == rankopargs->t) {
-					n->data = pe;
-					break;
-				}
+		for (node *n = rankopargs->h; n ; n = n->next, i++) { /* at rel_select pe is added right after the function's arguments */
+			if (i == list_length(sf->func->ops)) {
+				n->data = pe;
+				break;
 			}
-		} else {
-			for (node *n = rankopargs->h; n ; n = n->next, i++) {
-				if (i == list_length(sf->func->ops)) {
-					n->data = pe;
-					break;
-				}
-			}
-			last = rankopargs->t->data;
-			if (last && last->type == e_func && !strcmp(((sql_subfunc *)last->f)->func->base.name, "window_bound")) {
-				sql_exp *window1 = list_fetch(rankopargs, list_length(rankopargs) - 2), *window2 = list_fetch(rankopargs, list_length(rankopargs) - 1);
-				list *lw1 = window1->l, *lw2 = window2->l; /* the value functions require bound functions always */
+		}
+		last = rankopargs->t->data; /* if the window function has bounds calls, update them */
+		if (last && last->type == e_func && !strcmp(((sql_subfunc *)last->f)->func->base.name, "window_bound")) {
+			sql_exp *window1 = list_fetch(rankopargs, list_length(rankopargs) - 2), *window2 = list_fetch(rankopargs, list_length(rankopargs) - 1);
+			list *lw1 = window1->l, *lw2 = window2->l; /* the value functions require bound functions always */
 
-				if (has_pe) {
-					assert(list_length(window1->l) == 6);
-					lw1->h->data = exp_copy(sql, pe);
-					lw2->h->data = exp_copy(sql, pe);
-				} else {
-					window1->l = list_prepend(lw1, exp_copy(sql, pe));
-					window2->l = list_prepend(lw2, exp_copy(sql, pe));
-				}
+			if (has_pe) {
+				assert(list_length(window1->l) == 6);
+				lw1->h->data = exp_copy(sql, pe);
+				lw2->h->data = exp_copy(sql, pe);
+			} else {
+				window1->l = list_prepend(lw1, exp_copy(sql, pe));
+				window2->l = list_prepend(lw2, exp_copy(sql, pe));
 			}
 		}
 	}

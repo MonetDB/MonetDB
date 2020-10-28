@@ -1427,50 +1427,50 @@ sqltypeinit( sql_allocator *sa)
 		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, *t);
 	}
 
-	sql_create_analytic(sa, "rank", "sql", "rank", SCALE_NONE, INT, 3, ANY, BIT, BIT);
-	sql_create_analytic(sa, "dense_rank", "sql", "dense_rank", SCALE_NONE, INT, 3, ANY, BIT, BIT);
-	sql_create_analytic(sa, "row_number", "sql", "row_number", SCALE_NONE, INT, 3, ANY, BIT, BIT);
-	sql_create_analytic(sa, "percent_rank", "sql", "percent_rank", SCALE_NONE, DBL, 3, ANY, BIT, BIT);
-	sql_create_analytic(sa, "cume_dist", "sql", "cume_dist", SCALE_NONE, DBL, 3, ANY, BIT, BIT);
+	sql_create_analytic(sa, "rank", "sql", "rank", SCALE_NONE, INT, 1, ANY);
+	sql_create_analytic(sa, "dense_rank", "sql", "dense_rank", SCALE_NONE, INT, 1, ANY);
+	sql_create_analytic(sa, "row_number", "sql", "row_number", SCALE_NONE, INT, 1, ANY);
+	sql_create_analytic(sa, "percent_rank", "sql", "percent_rank", SCALE_NONE, DBL, 1, ANY);
+	sql_create_analytic(sa, "cume_dist", "sql", "cume_dist", SCALE_NONE, DBL, 1, ANY);
 
-	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, BTE, 4, ANY, BTE, BIT, BIT);
-	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, SHT, 4, ANY, SHT, BIT, BIT);
-	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, INT, 4, ANY, INT, BIT, BIT);
-	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, LNG, 4, ANY, LNG, BIT, BIT);
+	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, BTE, 2, ANY, BTE);
+	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, SHT, 2, ANY, SHT);
+	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, INT, 2, ANY, INT);
+	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, LNG, 2, ANY, LNG);
 #ifdef HAVE_HGE
-	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, HGE, 4, ANY, HGE, BIT, BIT);
-#endif
-
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 3, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, BTE, BIT, BIT);
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, SHT, BIT, BIT);
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, INT, BIT, BIT);
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, LNG, BIT, BIT);
-#ifdef HAVE_HGE
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 4, ANY, HGE, BIT, BIT);
-#endif
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, BTE, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, SHT, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, INT, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, LNG, ANY, BIT, BIT);
-#ifdef HAVE_HGE
-	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
+	sql_create_analytic(sa, "ntile", "sql", "ntile", SCALE_NONE, HGE, 2, ANY, HGE);
 #endif
 
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 3, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, BTE, BIT, BIT);
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, SHT, BIT, BIT);
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, INT, BIT, BIT);
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, LNG, BIT, BIT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 1, ANY);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 2, ANY, BTE);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 2, ANY, SHT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 2, ANY, INT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 2, ANY, LNG);
 #ifdef HAVE_HGE
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 4, ANY, HGE, BIT, BIT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 2, ANY, HGE);
 #endif
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, BTE, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, SHT, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, INT, ANY, BIT, BIT);
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, LNG, ANY, BIT, BIT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 3, ANY, BTE, ANY);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 3, ANY, SHT, ANY);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 3, ANY, INT, ANY);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 3, ANY, LNG, ANY);
 #ifdef HAVE_HGE
-	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 5, ANY, HGE, ANY, BIT, BIT);
+	sql_create_analytic(sa, "lag", "sql", "lag", SCALE_NONE, ANY, 3, ANY, HGE, ANY);
+#endif
+
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 1, ANY);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 2, ANY, BTE);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 2, ANY, SHT);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 2, ANY, INT);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 2, ANY, LNG);
+#ifdef HAVE_HGE
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 2, ANY, HGE);
+#endif
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 3, ANY, BTE, ANY);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 3, ANY, SHT, ANY);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 3, ANY, INT, ANY);
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 3, ANY, LNG, ANY);
+#ifdef HAVE_HGE
+	sql_create_analytic(sa, "lead", "sql", "lead", SCALE_NONE, ANY, 3, ANY, HGE, ANY);
 #endif
 
 	/* these analytic functions support frames */
