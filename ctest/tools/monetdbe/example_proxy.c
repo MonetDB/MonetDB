@@ -164,7 +164,7 @@ main(void)
 
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
-/*
+
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (100, 'temp');", NULL, NULL)) != NULL)
 		error(err)
 
@@ -364,7 +364,7 @@ main(void)
 
 	if ((err = monetdbe_cleanup_result(mdbe, result)) != NULL)
 		error(err)
-*/
+
 	if (monetdbe_close(mdbe))
 		error("Failed to close database")
 	return 0;
