@@ -3255,16 +3255,13 @@ static sql_rel *
 rel_push_down_bounds(visitor *v, sql_rel *rel)
 {
 	if (is_simple_project(rel->op) && rel->exps) {
-		list *exps = rel->exps;
-		node *n;
-
-		for (n = exps->h; n ; n = n->next) {
-			sql_exp *e = n->data;
-			int cnt, fcnt, is_value, i = 0;
-			sql_exp *b1, *b2, *last, *found;
+		for (node *n = rel->exps->h; n ; n = n->next) {
+			sql_exp *e = n->data, *b1, *b2, *pe, *oe, *found1, *found2;
 			sql_subfunc *f;
 			list *l;
+			int pe_pos, oe_pos;
 
+			 /* on rel_rankop the partition and ordering expressions are copied into window bounds, so avoid duplicates by referencing them back */
 			if (e->type != e_func || ((sql_subfunc*)e->f)->func->type != F_ANALYTIC)
 				continue;
 
@@ -3274,51 +3271,58 @@ rel_push_down_bounds(visitor *v, sql_rel *rel)
 				continue;
 
 			/* Extract sql.diff calls into a lower projection and re-use them */
-			is_value = !strcmp(f->func->base.name, "nth_value") || !strcmp(f->func->base.name, "first_value") || !strcmp(f->func->base.name, "last_value");
-			cnt = list_length(l);
-			fcnt = list_length(f->func->ops);
-			if (cnt >= 3) {
-				int pos1 = fcnt + 1 - is_value, pos2 = fcnt + 2 - is_value;
-				b1 = (sql_exp*) list_fetch(l, pos1); /* the 'window_bound' calls are added after the function arguments and frame type  */
-				b2 = (sql_exp*) list_fetch(l, pos2);
+			b1 = (sql_exp*) list_fetch(l, list_length(l) - 2); /* the 'window_bound' calls are added after the function arguments and frame type  */
+			b2 = (sql_exp*) list_fetch(l, list_length(l) - 1);
 
-				if (b1 && b1->type == e_func && b2 && b2->type == e_func) { /* if both are 'window_bound' calls, push down a diff call */
-					sql_subfunc *sf1 = (sql_subfunc*) b1->f, *sf2 = (sql_subfunc*) b2->f;
+			if (b1 && b1->type == e_func && b2 && b2->type == e_func) { /* if both are 'window_bound' calls, push down a diff call */
+				sql_subfunc *sf1 = (sql_subfunc*) b1->f, *sf2 = (sql_subfunc*) b2->f;
 
-					if (!strcmp(sf1->func->base.name, "window_bound") && !strcmp(sf2->func->base.name, "window_bound")) {
-						list *args1 = (list*) b1->l, *args2 = (list*) b2->l;
-						sql_exp *first1 = (sql_exp*) args1->h->data, *first2 = (sql_exp*) args2->h->data;
+				if (!strcmp(sf1->func->base.name, "window_bound") && !strcmp(sf2->func->base.name, "window_bound")) {
+					list *args1 = (list*) b1->l, *args2 = (list*) b2->l;
+					sql_exp *first1 = (sql_exp*) args1->h->data, *first2 = (sql_exp*) args2->h->data;
 
-						if (first1->type == e_func && exp_match_exp(first1, first2)) { /* push down only function calls to avoid infinite recursion */
-							rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
-							first1 = rel_project_add_exp(v->sql, rel->l, first1);
-							args1->h->data = exp_ref(v->sql, first1);
-							args2->h->data = exp_ref(v->sql, first1);
+					if (first1->type == e_func && exp_match_exp(first1, first2)) { /* push down only function calls to avoid infinite recursion */
+						rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
+						first1 = rel_project_add_exp(v->sql, rel->l, first1);
+						args1->h->data = exp_ref(v->sql, first1);
+						args2->h->data = exp_ref(v->sql, first1);
 
-							if (list_length(args1) == 6 && list_length(args2) == 6) {
-								sql_exp *second1 = (sql_exp*) args1->h->next->data, *second2 = (sql_exp*) args2->h->next->data;
+						if (list_length(args1) == 6 && list_length(args2) == 6) {
+							sql_exp *second1 = (sql_exp*) args1->h->next->data, *second2 = (sql_exp*) args2->h->next->data;
 
-								if (second1->type == e_func && exp_match_exp(second1, second2)) {
-									second1 = rel_project_add_exp(v->sql, rel->l, second1);
-									args1->h->next->data = exp_ref(v->sql, second1);
-									args2->h->next->data = exp_ref(v->sql, second1);
+							if (second1->type == e_func && exp_match_exp(second1, second2)) {
+								second1 = rel_project_add_exp(v->sql, rel->l, second1);
+								args1->h->next->data = exp_ref(v->sql, second1);
+								args2->h->next->data = exp_ref(v->sql, second1);
+							}
+						}
+
+						v->changes++;
+
+						/* these expressions are identical to the ones passed to window_bound, so reference the pushed down ones */
+						pe_pos = list_length(l) - 5;
+						pe = (sql_exp*) list_fetch(l, pe_pos);
+						if (pe && pe->type == e_func && (found1 = exps_any_match(((sql_rel*)rel->l)->exps, pe))) {
+							int i = 0; /* I had trouble while trying to set both on the same loop */
+							for (node *n = l->h; n ; n = n->next, i++) {
+								if (i == pe_pos) {
+									n->data = exp_ref(v->sql, found1);
+									break;
 								}
 							}
-
-							v->changes++;
 						}
-					} else if (!strcmp(sf1->func->base.name, "diff") && !strcmp(sf2->func->base.name, "diff") && exp_match_exp(b1, b2)) { /* for global window functions */
-						rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
-						b1 = rel_project_add_exp(v->sql, rel->l, b1);
-						
-						for (node *n = l->h; n ; n = n->next, i++) {
-							if (i == pos1 || i == pos2)
-								n->data = exp_ref(v->sql, b1);
+						oe_pos = list_length(l) - 4;
+						oe = (sql_exp*) list_fetch(l, oe_pos);
+						if (oe && oe->type == e_func && (found2 = exps_any_match(((sql_rel*)rel->l)->exps, oe))) {
+							int i = 0;
+							for (node *n = l->h; n ; n = n->next, i++) {
+								if (i == oe_pos) {
+									n->data = exp_ref(v->sql, found2);
+									break;
+								}
+							}
 						}
 					}
-					last = l->t->data; /* find duplicate diff call for partition finding and reference the original one */
-					if (last->type == e_func && !strcmp(((sql_subfunc*) last->f)->func->base.name, "diff") && (found = exps_any_match(((sql_rel*)rel->l)->exps, last)))
-						l->t->data = exp_ref(v->sql, found);
 				}
 			}
 		}
