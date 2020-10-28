@@ -22,15 +22,16 @@
 typedef struct {
 	uint64_t
 		type:1,
-		mask:1;
+		mask:1,
+		firstbit:48;
 } ccand_t;
 
-#define CCAND(b)	((ccand_t*)(b)->tvheap->base)
+#define CCAND(b)	((ccand_t *) (b)->tvheap->base)
 #define complex_cand(b)	((b)->ttype == TYPE_void && (b)->tvheap != NULL)
 #define negoid_cand(b)	(complex_cand(b) && CCAND(b)->type == CAND_NEGOID)
 #define mask_cand(b)	(complex_cand(b) && CCAND(b)->type == CAND_MSK)
-#define ccand_first(b)	((b)->tvheap->base+sizeof(ccand_t))
-#define ccand_free(b)	((b)->tvheap->free-sizeof(ccand_t))
+#define ccand_first(b)	((b)->tvheap->base + sizeof(ccand_t))
+#define ccand_free(b)	((b)->tvheap->free - sizeof(ccand_t))
 
 struct canditer {
 	BAT *s;			/* candidate BAT the iterator is based on */

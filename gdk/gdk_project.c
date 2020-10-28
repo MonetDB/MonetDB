@@ -310,7 +310,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	assert(r2 == NULL || tpe == ATOMtype(r2->ttype));
 	assert(r2 == NULL || r1->hseqbase + r1->batCount == r2->hseqbase);
 
-	if (BATtdense(l) && lcount > 0/* && !mask_cand(l)*/) {
+	if (BATtdense(l) && lcount > 0) {
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
 		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1->batCount) {
