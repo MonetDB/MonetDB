@@ -608,8 +608,9 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 	if (sf->func->type == F_ANALYTIC && strcmp(sf->func->base.name, "window_bound") != 0 && strcmp(sf->func->base.name, "diff") != 0 && ad) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		list *rankopargs = e->l, *gbe = ((list*)e->r)->h->data;
-		sql_exp *pe = list_empty(gbe) ? NULL : (sql_exp*)gbe->t->data;
+		sql_exp *pe = list_empty(gbe) ? NULL : (sql_exp*)gbe->t->data, *last;
 		bool has_pe = pe != NULL;
+		int i = 0;
 
 		if (!pe || pe->type != e_func || strcmp(((sql_subfunc *)pe->f)->func->base.name, "diff") != 0)
 			pe = NULL;
@@ -636,45 +637,25 @@ exp_rewrite(mvc *sql, sql_rel *rel, sql_exp *e, list *ad)
 					break;
 				}
 			}
-		} else if (!strcmp(sf->func->base.name, "nth_value") || !strcmp(sf->func->base.name, "first_value") || !strcmp(sf->func->base.name, "last_value")) {
-			sql_exp *window1 = list_fetch(rankopargs, list_length(sf->func->ops)), *window2 = list_fetch(rankopargs, list_length(sf->func->ops) + 1);
-			list *lw1 = window1->l, *lw2 = window2->l; /* the value functions require bound functions always */
-
-			if (has_pe) {
-				assert(list_length(window1->l) == 6);
-				lw1->h->data = exp_copy(sql, pe);
-				lw2->h->data = exp_copy(sql, pe);
-			} else {
-				window1->l = list_prepend(lw1, exp_copy(sql, pe));
-				window2->l = list_prepend(lw2, exp_copy(sql, pe));
+		} else {
+			for (node *n = rankopargs->h; n ; n = n->next, i++) {
+				if (i == list_length(sf->func->ops)) {
+					n->data = pe;
+					break;
+				}
 			}
-		} else { /* aggregate case */
-			bool found_window_bound = false;
-			for (node *n = rankopargs->h; n && !found_window_bound ; n = n->next) {
-				sql_exp *e = n->data;
-				found_window_bound |= e->type == e_func && !strcmp(((sql_subfunc *)e->f)->func->base.name, "window_bound");
-			}
-
-			if (found_window_bound) { /* complex case, requires bound function call */
-				sql_exp *window1 = list_fetch(rankopargs, list_length(sf->func->ops) + 1), *window2 = list_fetch(rankopargs, list_length(sf->func->ops) + 2);
-				list *lw1 = window1->l, *lw2 = window2->l;
-				assert(list_length(window1->l) == list_length(window2->l));
+			last = rankopargs->t->data;
+			if (last && last->type == e_func && !strcmp(((sql_subfunc *)last->f)->func->base.name, "window_bound")) {
+				sql_exp *window1 = list_fetch(rankopargs, list_length(rankopargs) - 2), *window2 = list_fetch(rankopargs, list_length(rankopargs) - 1);
+				list *lw1 = window1->l, *lw2 = window2->l; /* the value functions require bound functions always */
 
 				if (has_pe) {
 					assert(list_length(window1->l) == 6);
 					lw1->h->data = exp_copy(sql, pe);
 					lw2->h->data = exp_copy(sql, pe);
 				} else {
-					assert(list_length(window1->l) == 5);
 					window1->l = list_prepend(lw1, exp_copy(sql, pe));
 					window2->l = list_prepend(lw2, exp_copy(sql, pe));
-					list_append(e->l, exp_copy(sql, pe));
-				}
-			} else { /* trivial case, there's no need to compute bounds */
-				if (has_pe) {
-					rankopargs->t->data = pe;
-				} else {
-					e->l = list_append(e->l, pe);
 				}
 			}
 		}

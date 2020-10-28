@@ -4901,15 +4901,16 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	for (node *n = fargs->h ; n ; n = n->next)
 		list_append(args, n->data);
 	if (supports_frames) {
-		if (!is_value)
-			list_append(args, exp_atom_int(sql->sa, frame_type));
+		list_append(args, exp_copy(sql, pe));
+		list_append(args, exp_copy(sql, oe));
+		list_append(args, exp_atom_int(sql->sa, frame_type));
 		if (start && eend) {
 			list_append(args, start);
 			list_append(args, eend);
-		} else if (frame_type == FRAME_UNBOUNDED_TILL_CURRENT_ROW || frame_type == FRAME_CURRENT_ROW_TILL_UNBOUNDED)
-			list_append(args, oe);
-		if (gbe && !is_value)
-			list_append(args, start && eend ? exp_copy(sql, pe) : pe);
+		} else {
+			list_append(args, exp_atom_lng(sql->sa, 1));
+			list_append(args, exp_atom_lng(sql->sa, 1));
+		}
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
 	if (supports_frames)
