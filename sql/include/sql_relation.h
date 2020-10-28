@@ -52,7 +52,6 @@ typedef struct expression {
 	 nulls_last:1,	/* return null after all other rows */
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
 	 distinct:1,
-	 frames:1, /* needed for window functions with frame support, ie aggregates and last_value, first_value and nth_value functions */
 
 	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
 	 need_no_nil:1,
@@ -227,10 +226,6 @@ typedef enum operator_type {
 #define set_nulls_last(e) 	((e)->nulls_last=1)
 #define set_nulls_first(e) 	((e)->nulls_last=0)
 #define set_direction(e, dir) 	((e)->ascending = (dir&1), (e)->nulls_last = (dir&2)?1:0)
-
-#define supports_frames(e) 	 	 ((e)->frames)
-#define set_frame_support(e) 	 ((e)->frames = 1)
-#define reset_supports_frames(e) ((e)->frames = 0)
 
 #define is_anti(e) 		((e)->anti)
 #define set_anti(e)  		(e)->anti = 1

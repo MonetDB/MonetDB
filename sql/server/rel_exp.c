@@ -663,8 +663,6 @@ exp_propagate(sql_allocator *sa, sql_exp *ne, sql_exp *oe)
 		set_semantics(ne);
 	if (is_ascending(oe))
 		set_ascending(ne);
-	if (supports_frames(oe))
-		set_frame_support(ne);
 	if (nulls_last(oe))
 		set_nulls_last(ne);
 	if (need_distinct(oe))

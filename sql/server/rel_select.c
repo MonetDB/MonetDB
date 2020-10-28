@@ -4802,13 +4802,8 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		else
 			ie = oe;
 	}
-
 	if (!pe || !oe)
 		return NULL;
-	if (!supports_frames) {
-		list_append(fargs, pe);
-		list_append(fargs, oe);
-	}
 
 	types = exp_types(sql->sa, fargs);
 	if (!(wf = bind_func_(sql, s, aname, types, F_ANALYTIC))) {
@@ -4900,9 +4895,9 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	args = sa_list(sql->sa);
 	for (node *n = fargs->h ; n ; n = n->next)
 		list_append(args, n->data);
+	list_append(args, pe);
+	list_append(args, oe);
 	if (supports_frames) {
-		list_append(args, exp_copy(sql, pe));
-		list_append(args, exp_copy(sql, oe));
 		list_append(args, exp_atom_int(sql->sa, frame_type));
 		if (start && eend) {
 			list_append(args, start);
@@ -4913,8 +4908,6 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	}
 	call = exp_rank_op(sql->sa, list_empty(args) ? NULL : args, gbe, obe, wf);
-	if (supports_frames)
-		set_frame_support(call);
 	*rel = p;
 	return call;
 }
