@@ -2303,21 +2303,20 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			BBPunfix(nui->batCacheid);
 			BBPunfix(nuv->batCacheid);
 		}
-		d = NULL;
 		/* true == deleted, need not deleted  */
 		if (bn) {
-			tids = BATdense(sb, sb, (BUN) nr);
-			if (bn && BATcount(bn))
+			if (BATcount(bn)) {
 				d = BATcalcnot(bn, NULL);
-			if (bn)
 				BBPunfix(bn->batCacheid);
-			if (d && BATmaskedcands(tids, d, true) != GDK_SUCCEED) {
-				if (d) BBPunfix(d->batCacheid);
-				if (tids) BBPunfix(tids->batCacheid);
+				if (d == NULL)
+					throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			} else
+				d = bn;
+			tids = BATmaskedcands(sb, d, true);
+			BBPunfix(d->batCacheid);
+			if (tids == NULL) {
 				throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
 			}
-			if (d)
-				BBPunfix(d->batCacheid);
 			d = tids;
 		}
 		if(d == NULL)

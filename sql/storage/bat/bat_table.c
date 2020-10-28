@@ -17,10 +17,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
 	size_t nr = store_funcs.count_col(tr, c, 0), dcnt = 0;
-	BAT *tids = BATdense(0, 0, (BUN) nr);
-
-	if (!tids)
-		return NULL;
+	BAT *tids = NULL;
 
 	if ((dcnt=store_funcs.count_del(tr, t, 0)) > 0 || store_funcs.count_del(tr, t, 2) > 0) {
 		BAT *d;
@@ -45,24 +42,21 @@ _delta_cands(sql_trans *tr, sql_table *t)
 				d = nd;
 			}
 			BAT *del_ids = BATunmask(d);
-			if (!del_ids) {
-				bat_destroy(d);
-				bat_destroy(tids);
+			bat_destroy(d);
+			if (del_ids == NULL) {
 				return NULL;
 			}
-			bat_destroy(d);
-			gdk_return ret = BATnegcands(tids, del_ids);
+			tids = BATnegcands((BUN) nr, del_ids);
 			BBPunfix(del_ids->batCacheid);
-			if (ret != GDK_SUCCEED) {
-				BBPreclaim(del_ids);
-				bat_destroy(tids);
+			if (tids == NULL) {
 				return NULL;
 			}
 		} else {
-			bat_destroy(tids);
 			return NULL;
 		}
 	}
+	if (tids == NULL)
+		tids = BATdense(0, 0, (BUN) nr);
 	return tids;
 }
 
