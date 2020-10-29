@@ -16,7 +16,7 @@ when no --dst-dir specified assumes --src-dir. The curent process is to place co
 Usage scenarios:
 
 1. Convert all tests under given `Tests` folder at once:
-$ ./testing/convert_to_sqllogic.sh -s slq/test/null/Tests
+$ ./testing/convert_to_sqllogic.sh -s sql/test/null/Tests
 
 2. Convert individual tests
 $ ./testing/convert_to_sqllogic.sh --dst-dir sql/test/null/Tests/ sql/test/null/Tests/coalesce.sql sql/test/null/Tests/coalesce2.sql
