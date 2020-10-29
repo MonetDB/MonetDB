@@ -1,0 +1,78 @@
+statement ok
+start transaction
+
+statement ok
+create table analytics (aa interval second, bb interval month)
+
+statement ok
+insert into analytics values (interval '15' second, interval '3' month), (interval '3' second, interval '1' month), (interval '2' second, interval '1' month),
+                             (interval '5' second, interval '3' month), (NULL, interval '2' month), (interval '3' second, interval '2' month),
+                             (interval '4' second, interval '1' month), (interval '6' second, interval '3' month), (interval '8' second, interval '2' month), (NULL, interval '4' month)
+
+query TTTT rowsort
+select avg(aa) over (partition by bb),
+       avg(aa) over (partition by bb order by bb asc),
+       avg(aa) over (partition by bb order by bb desc),
+       avg(aa) over (order by bb desc) from analytics
+----
+40 values hashing to 3487f2dce1e9fa3346df26cc8735125d
+
+query TTTT rowsort
+select avg(bb) over (partition by bb),
+       avg(bb) over (partition by bb order by bb asc),
+       avg(bb) over (partition by bb order by bb desc),
+       avg(bb) over (order by bb desc) from analytics
+----
+40 values hashing to 14f6cc69a7904b1fe01d52980576bb69
+
+query TTTT rowsort
+select avg(aa) over (partition by aa),
+       avg(aa) over (partition by aa order by aa asc),
+       avg(aa) over (partition by aa order by aa desc),
+       avg(aa) over (order by aa desc) from analytics
+----
+40 values hashing to 309076af448805f468ced9fe990f8b31
+
+query TTTT rowsort
+select avg(bb) over (partition by aa),
+       avg(bb) over (partition by aa order by aa asc),
+       avg(bb) over (partition by aa order by aa desc),
+       avg(bb) over (order by aa desc) from analytics
+----
+40 values hashing to 14f6cc69a7904b1fe01d52980576bb69
+
+query TTTT rowsort
+select avg(interval '1' second) over (partition by bb),
+       avg(interval '1' second) over (partition by bb order by bb asc),
+       avg(interval '1' month) over (partition by bb order by bb desc),
+       avg(interval '1' month) over (order by bb desc) from analytics
+----
+40 values hashing to e59fabe490b25331eefb69c00792cd89
+
+query TTTT rowsort
+select avg(interval '-1' second) over (partition by bb),
+       avg(interval '-1' second) over (partition by bb order by bb asc),
+       avg(interval '-100' month) over (partition by bb order by bb desc),
+       avg(interval '-100' month) over (order by bb desc) from analytics
+----
+40 values hashing to 6ba28b4044378de0de384c7cfd0bec92
+
+query TTTTTT rowsort
+select avg(aa) over (),
+       avg(bb) over (),
+       avg(aa) over (),
+       avg(bb) over (),
+       avg(interval '1' second) over (),
+       avg(interval '1' month) over () from analytics
+----
+60 values hashing to 8f2e4635e7be6949ed37cb88e3b34e1c
+
+query TT rowsort
+select avg(CAST(NULL as interval second)) over (),
+       avg(CAST(NULL as interval month)) over () from analytics
+----
+20 values hashing to 902615685c027333162cc9ece5d11dfa
+
+statement ok
+rollback
+

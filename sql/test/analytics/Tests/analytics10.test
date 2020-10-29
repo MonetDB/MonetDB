@@ -1,0 +1,452 @@
+statement ok
+CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int)
+
+statement ok
+INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Game',400),(3,'Fashion','Shirt',500),(4,'Fashion','Shorts',100)
+
+query I rowsort
+SELECT CAST(SUM(TotalSales) as BIGINT) AS TotalSales FROM tbl_ProductSales
+----
+1200
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ()
+----
+1200
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY (), ()
+----
+1200
+
+statement error
+SELECT
+    *
+FROM tbl_ProductSales
+GROUP BY ()
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY Product_Category
+----
+600
+600
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY Product_Category, ()
+----
+600
+600
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY Product_Name
+----
+100
+200
+400
+500
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY Product_Category, Product_Name
+----
+100
+200
+400
+500
+
+statement error
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP ()
+
+query TI rowsort
+SELECT
+    Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category)
+----
+Fashion
+600
+Game
+600
+NULL
+1200
+
+query TI rowsort
+SELECT
+    Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Name)
+----
+10 values hashing to 63842f5a497ce27b8be5fb06f533cce3
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category, Product_Name)
+----
+21 values hashing to fbce57c6159a884ed56f8379265d8f19
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category, Product_Name) HAVING SUM(TotalSales) > 400
+----
+12 values hashing to c98bd6c8186784c3da5af0bf778b0f52
+
+statement error
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE()
+
+query TI rowsort
+SELECT
+    Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales FROM tbl_ProductSales
+GROUP BY CUBE(Product_Category)
+----
+Fashion
+600
+Game
+600
+NULL
+1200
+
+query TI rowsort
+SELECT
+    Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE(Product_Name)
+----
+10 values hashing to 63842f5a497ce27b8be5fb06f533cce3
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE(Product_Category, Product_Name)
+----
+33 values hashing to 5e89b76ff52132015fd9be61527b523c
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE(Product_Category, Product_Name) ORDER BY Product_Category, Product_Name
+----
+33 values hashing to 5e89b76ff52132015fd9be61527b523c
+
+statement error
+SELECT
+    Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category), 1+1
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, ROLLUP(Product_Category, Product_Name)
+----
+36 values hashing to d035145c315f82a8ab4becc045f14443
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY (ColID), ROLLUP(Product_Category, Product_Name)
+----
+36 values hashing to d035145c315f82a8ab4becc045f14443
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY (ColID), CUBE(Product_Category, Product_Name)
+----
+48 values hashing to be5f8db6a2eaf19eb5390123a3f76b75
+
+query TI rowsort
+SELECT
+    Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category), ROLLUP(Product_Category)
+----
+14 values hashing to f7b95597668b193d8c184778f6469b4a
+
+query TI rowsort
+SELECT
+    Product_Category, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE(Product_Category), CUBE(Product_Category)
+----
+14 values hashing to f7b95597668b193d8c184778f6469b4a
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category, Product_Name), ROLLUP(Product_Category, Product_Name)
+----
+81 values hashing to 9b57c42dcdf6881a2caa3a2f083593ae
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE(Product_Category, Product_Name), CUBE(Product_Category, Product_Name)
+----
+165 values hashing to 4830997d5df2eb81b7b9155f4902b4df
+
+query TTI rowsort
+SELECT
+    Product_Category, Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP(Product_Category, Product_Name), CUBE(Product_Category, Product_Name)
+----
+117 values hashing to 58a2e9e8748cc0488ecca1227621241f
+
+query TI rowsort
+SELECT
+    Product_Name, CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Name))
+----
+10 values hashing to 63842f5a497ce27b8be5fb06f533cce3
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name, ColID))
+----
+100
+1200
+200
+400
+500
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP((Product_Category, Product_Name), ColID)
+----
+100
+100
+1200
+200
+200
+400
+400
+500
+500
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ROLLUP((Product_Category, Product_Name), ColID), ColID
+----
+12 values hashing to 3b78f664e52eec82d10a440884aa4194
+
+query II rowsort
+SELECT
+    COUNT(*), CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID, ROLLUP((Product_Category, ColID), Product_Name)
+----
+96 values hashing to 1db6cb61d39cc78b402270b620a165e1
+
+query I rowsort
+SELECT
+    DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID, ROLLUP((Product_Category, ColID), Product_Name)
+----
+100
+200
+400
+500
+
+statement error
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS()
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS(())
+----
+1200
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category))
+----
+600
+600
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category, Product_Name), (ColID))
+----
+100
+100
+200
+200
+400
+400
+500
+500
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), ())
+----
+1200
+600
+600
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS((Product_Category), (Product_Category))
+----
+600
+600
+600
+600
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, GROUPING SETS ((Product_Name), (Product_Category))
+----
+100
+100
+200
+200
+400
+400
+500
+500
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, CUBE (Product_Category, ColID), GROUPING SETS ((Product_Name), (Product_Category))
+----
+32 values hashing to b79d0959c7f847b23536edbf2f55a8d6
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS(CUBE(Product_Category, Product_Name), ROLLUP(ColID, Product_Name))
+----
+20 values hashing to 7fb44d1be15f1ffa83c32ce67af91f71
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, GROUPING SETS (GROUPING SETS (()), (Product_Name), (Product_Category))
+----
+12 values hashing to 3b78f664e52eec82d10a440884aa4194
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY GROUPING SETS (ROLLUP(ColID), (), GROUPING SETS ((Product_Category, Product_Name), CUBE(ColID), ColID))
+----
+19 values hashing to a05028a6811f075e6b96abb3f6ede39c
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales
+GROUP BY ColID, GROUPING SETS (GROUPING SETS (()), (Product_Name), (Product_Category)) LIMIT 1 OFFSET 2
+----
+500
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+ORDER BY SUM(TotalSales)
+----
+100
+1200
+200
+400
+500
+600
+600
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+HAVING SUM(TotalSales) > 600
+----
+1200
+
+query I rowsort
+SELECT
+    DISTINCT CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+ORDER BY SUM(TotalSales)
+----
+100
+1200
+200
+400
+500
+600
+
+query I rowsort
+SELECT
+    CAST(SUM(TotalSales) as BIGINT) AS TotalSales
+FROM tbl_ProductSales GROUP BY ROLLUP (Product_Category, ColID)
+HAVING SUM(TotalSales) > 600
+ORDER BY AVG(TotalSales)
+----
+1200
+
+statement ok
+DROP TABLE tbl_ProductSales
+

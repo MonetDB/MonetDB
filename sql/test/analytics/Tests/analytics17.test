@@ -1,0 +1,93 @@
+statement ok
+start transaction
+
+statement ok
+create table analytics (aa int, bb int)
+
+statement ok
+insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
+
+query TTTT rowsort
+select group_concat(aa, aa) over (partition by bb),
+       group_concat(aa, aa) over (partition by bb order by bb asc),
+       group_concat(aa, aa) over (partition by bb order by bb desc),
+       group_concat(aa, aa) over (order by bb desc) from analytics
+----
+40 values hashing to 02ade55c8ae2c98e5608c8d0ed60ca5a
+
+query TTTT rowsort
+select group_concat(bb, bb) over (partition by bb),
+       group_concat(bb, bb) over (partition by bb order by bb asc),
+       group_concat(bb, bb) over (partition by bb order by bb desc),
+       group_concat(bb, bb) over (order by bb desc) from analytics
+----
+40 values hashing to 54d17323a4e1ee435a092ef10065ed88
+
+query TTTT rowsort
+select group_concat(aa, bb) over (partition by bb),
+       group_concat(aa, bb) over (partition by bb order by bb asc),
+       group_concat(aa, bb) over (partition by bb order by bb desc),
+       group_concat(aa, bb) over (order by bb desc) from analytics
+----
+40 values hashing to 53414425dfb700c3d9b375acd2a108bc
+
+query TTTT rowsort
+select group_concat(bb, aa) over (partition by bb),
+       group_concat(bb, aa) over (partition by bb order by bb asc),
+       group_concat(bb, aa) over (partition by bb order by bb desc),
+       group_concat(bb, aa) over (order by bb desc) from analytics
+----
+40 values hashing to d31f5f2964d74e8b56d96e1a0be23102
+
+query TTTT rowsort
+select group_concat(aa, 1) over (partition by bb),
+       group_concat(aa, 1) over (partition by bb order by bb asc),
+       group_concat(aa, 1) over (partition by bb order by bb desc),
+       group_concat(aa, 1) over (order by bb desc) from analytics
+----
+40 values hashing to 6d69bf94d1ef5e3260ee0c016d67ecef
+
+query TTTT rowsort
+select group_concat(bb, -100) over (partition by bb),
+       group_concat(bb, -100) over (partition by bb order by bb asc),
+       group_concat(bb, -100) over (partition by bb order by bb desc),
+       group_concat(bb, -100) over (order by bb desc) from analytics
+----
+40 values hashing to 1d2c5bbb9f1c13696ba3ec89bc0d99ce
+
+query TTTTTT rowsort
+select group_concat(aa, aa) over (),
+       group_concat(bb, bb) over (),
+       group_concat(aa, bb) over (),
+       group_concat(bb, aa) over (),
+       group_concat(aa, 1) over (),
+       group_concat(aa, 1) over () from analytics
+----
+60 values hashing to e69739d18cc8d7bfca9dde2328f468f8
+
+query TTTTT rowsort
+select group_concat(NULL, 2) over (),
+       group_concat(2, NULL) over (),
+       group_concat(aa, NULL) over (),
+       group_concat(NULL, aa) over (),
+       group_concat(NULL, NULL) over () from analytics
+----
+50 values hashing to aa83b859d7931f7b3c4d7c06528c966f
+
+statement ok
+create table testmore (a int, b clob)
+
+statement ok
+insert into testmore values (1, 'another'), (1, 'testing'), (1, 'todo'), (2, 'lets'), (3, 'get'), (2, 'harder'), (3, 'even'), (2, 'more'), (1, ''), (3, 'even'), (2, NULL), (1, '')
+
+query ITTTT rowsort
+select a, listagg(a) over (),
+       listagg(a) over (order by a),
+       listagg(a, min(b)) over (),
+       listagg(a, min(b)) over (partition by max(b)) from testmore group by a
+----
+15 values hashing to a4bc72a4e215364ef77bf0d28c56b84b
+
+statement ok
+rollback
+
