@@ -1655,7 +1655,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			goto cleanup;
 
 		sql_schema* s;
-		if (!(s = find_sql_schema(m->session->tr, "tmp"))) {
+		if (!(s = mvc_bind_schema(m, "tmp"))) {
 			// TODO handle error
 			goto cleanup;
 		}
