@@ -783,18 +783,20 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 	if (pci->argc != 7)
 		throw(SQL, mod, ILLEGAL_ARGUMENT "%s requires exactly 7 arguments", mod);
 
+	*frame_type = *getArgReference_int(stk, pci, 4);
+	assert(*frame_type >= 0 && *frame_type <= 6);
+
 	if (isaBatType(getArgType(mb, pci, 1)) && !(*b = BATdescriptor(*getArgReference_bat(stk, pci, 1))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	if (*b && !(*r = COLnew((*b)->hseqbase, rtype ? rtype : (*b)->ttype, BATcount(*b), TRANSIENT)))
 		throw(MAL, mod, SQLSTATE(HY013) MAL_MALLOC_FAIL); 
 	if (isaBatType(getArgType(mb, pci, 2)) && !(*p = BATdescriptor(*getArgReference_bat(stk, pci, 2))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
-	if (isaBatType(getArgType(mb, pci, 3)) && !(*o = BATdescriptor(*getArgReference_bat(stk, pci, 3))))
+	if ((*frame_type == 3 || *frame_type == 4) && isaBatType(getArgType(mb, pci, 3)) && !(*o = BATdescriptor(*getArgReference_bat(stk, pci, 3))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
-	*frame_type = *getArgReference_int(stk, pci, 4);
-	if (isaBatType(getArgType(mb, pci, 5)) && !(*s = BATdescriptor(*getArgReference_bat(stk, pci, 5))))
+	if (*frame_type < 3 && isaBatType(getArgType(mb, pci, 5)) && !(*s = BATdescriptor(*getArgReference_bat(stk, pci, 5))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
-	if (isaBatType(getArgType(mb, pci, 6)) && !(*e = BATdescriptor(*getArgReference_bat(stk, pci, 6))))
+	if (*frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(*e = BATdescriptor(*getArgReference_bat(stk, pci, 6))))
 		throw(SQL, mod, SQLSTATE(HY005) "Cannot access column descriptor");
 	if ((*s && BATcount(*b) != BATcount(*s)) || (*e && BATcount(*b) != BATcount(*e)) ||
 		(*p && BATcount(*b) != BATcount(*p)) || (*o && BATcount(*b) != BATcount(*o)))
@@ -840,7 +842,7 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 			   gdk_return (*func)(BAT *, BAT *, BAT *, BAT *, int))
 {
 	int tpe = getArgType(mb, pci, 1);
-	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL;
+	BAT *r = NULL, *b = NULL, *s = NULL, *e = NULL; /* p and o are ignored for this one */
 	bat *res = NULL;
 	str msg = MAL_SUCCEED;
 
@@ -928,7 +930,7 @@ SQLlast_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *r = NULL, *b = NULL, *l = NULL, *s = NULL, *e = NULL;
+	BAT *r = NULL, *b = NULL, *l = NULL, *s = NULL, *e = NULL; /* p and o are ignored for this one */
 	int tpe;
 	bat *res = NULL;
 	str msg = MAL_SUCCEED;
@@ -1196,6 +1198,7 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	tpe = getArgType(mb, pci, 1);
 	ignore_nils = *getArgReference_bit(stk, pci, 2);
 	frame_type = *getArgReference_int(stk, pci, 5);
+	assert(frame_type >= 0 && frame_type <= 6);
 
 	if (isaBatType(tpe))
 		tpe = getBatType(tpe);
@@ -1211,15 +1214,15 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
+	if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
 		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 6)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
+	if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
 		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto bailout;
 	}
-	if (isaBatType(getArgType(mb, pci, 7)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
+	if (frame_type < 3 && isaBatType(getArgType(mb, pci, 7)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
 		msg = createException(SQL, "sql.count", SQLSTATE(HY005) "Cannot access column descriptor");
 		goto bailout;
 	}
@@ -1264,6 +1267,7 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 		throw(SQL, op, ILLEGAL_ARGUMENT "%s requires exactly 7 arguments", op);
 	tp1 = getArgType(mb, pci, 1);
 	frame_type = *getArgReference_int(stk, pci, 4);
+	assert(frame_type >= 0 && frame_type <= 6);
 
 	if (isaBatType(tp1)) {
 		tp1 = getBatType(tp1);
@@ -1305,15 +1309,15 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 3)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
+		if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 3)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 5)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
+		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 5)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 5)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 6)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
+		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
@@ -1732,6 +1736,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	tp1 = getArgType(mb, pci, 1);
 	tp2 = getArgType(mb, pci, 2);
 	frame_type = *getArgReference_int(stk, pci, 5);
+	assert(frame_type >= 0 && frame_type <= 6);
 	is_a_bat1 = isaBatType(tp1);
 	is_a_bat2 = isaBatType(tp2);
 
@@ -1761,15 +1766,15 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
+		if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 4)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 4)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 6)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
+		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 6)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 7)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
+		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 7)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 7)))) {
 			msg = createException(SQL, op, SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
@@ -1884,6 +1889,7 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		assert(tpe == TYPE_bit); /* otherwise it must be the partition's type */
 
 	frame_type = *getArgReference_int(stk, pci, 4 + separator_offset);
+	assert(frame_type >= 0 && frame_type <= 6);
 
 	if (isaBatType(getArgType(mb, pci, 1))) {
 		res = getArgReference_bat(stk, pci, 0);
@@ -1911,15 +1917,15 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 3 + separator_offset)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3 + separator_offset)))) {
+		if ((frame_type == 3 || frame_type == 4) && isaBatType(getArgType(mb, pci, 3 + separator_offset)) && !(o = BATdescriptor(*getArgReference_bat(stk, pci, 3 + separator_offset)))) {
 			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 5 + separator_offset)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 5 + separator_offset)))) {
+		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 5 + separator_offset)) && !(s = BATdescriptor(*getArgReference_bat(stk, pci, 5 + separator_offset)))) {
 			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
-		if (isaBatType(getArgType(mb, pci, 6 + separator_offset)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 6 + separator_offset)))) {
+		if (frame_type < 3 && isaBatType(getArgType(mb, pci, 6 + separator_offset)) && !(e = BATdescriptor(*getArgReference_bat(stk, pci, 6 + separator_offset)))) {
 			msg = createException(SQL, "sql.strgroup_concat", SQLSTATE(HY005) "Cannot access column descriptor");
 			goto bailout;
 		}
