@@ -1,0 +1,110 @@
+statement ok
+start transaction
+
+statement ok
+create table analytics (aa int, bb int, cc bigint)
+
+statement ok
+insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL)
+
+query RRRR rowsort
+select stddev_samp(aa) over (partition by bb),
+       stddev_samp(aa) over (partition by bb order by bb asc),
+       stddev_samp(aa) over (partition by bb order by bb desc),
+       stddev_samp(aa) over (order by bb desc) from analytics
+----
+40 values hashing to 2cbc0da584a35149d85b013011f9bef2
+
+query RRRR rowsort
+select stddev_samp(cc) over (partition by bb),
+       stddev_samp(cc) over (partition by bb order by bb asc),
+       stddev_samp(cc) over (partition by bb order by bb desc),
+       stddev_samp(cc) over (order by bb desc) from analytics
+----
+40 values hashing to 2cbc0da584a35149d85b013011f9bef2
+
+query RRRR rowsort
+select stddev_pop(aa) over (partition by bb),
+       stddev_pop(aa) over (partition by bb order by bb asc),
+       stddev_pop(aa) over (partition by bb order by bb desc),
+       stddev_pop(aa) over (order by bb desc) from analytics
+----
+40 values hashing to b2a17801319522e013bcc9fd4ee6d460
+
+query RRRR rowsort
+select stddev_pop(cc) over (partition by bb),
+       stddev_pop(cc) over (partition by bb order by bb asc),
+       stddev_pop(cc) over (partition by bb order by bb desc),
+       stddev_pop(cc) over (order by bb desc) from analytics
+----
+40 values hashing to b2a17801319522e013bcc9fd4ee6d460
+
+query RRRR rowsort
+select var_samp(aa) over (partition by bb),
+       var_samp(aa) over (partition by bb order by bb asc),
+       var_samp(aa) over (partition by bb order by bb desc),
+       var_samp(aa) over (order by bb desc) from analytics
+----
+40 values hashing to c5eaba4ec47f12cef293d5277c7abadc
+
+query RRRR rowsort
+select var_samp(cc) over (partition by bb),
+       var_samp(cc) over (partition by bb order by bb asc),
+       var_samp(cc) over (partition by bb order by bb desc),
+       var_samp(cc) over (order by bb desc) from analytics
+----
+40 values hashing to c5eaba4ec47f12cef293d5277c7abadc
+
+query RRRR rowsort
+select var_pop(aa) over (partition by bb),
+       var_pop(aa) over (partition by bb order by bb asc),
+       var_pop(aa) over (partition by bb order by bb desc),
+       var_pop(aa) over (order by bb desc) from analytics
+----
+40 values hashing to 0fa0a58d04c1d7d4c5d5b515053a91ce
+
+query RRRR rowsort
+select var_pop(cc) over (partition by bb),
+       var_pop(cc) over (partition by bb order by bb asc),
+       var_pop(cc) over (partition by bb order by bb desc),
+       var_pop(cc) over (order by bb desc) from analytics
+----
+40 values hashing to 0fa0a58d04c1d7d4c5d5b515053a91ce
+
+query RRRR rowsort
+select stddev_samp(aa) over (),
+       stddev_pop(aa) over (),
+       var_samp(aa) over (),
+       var_pop(aa) over () from analytics
+----
+40 values hashing to 078cdca944c83137c53e28164cd8de29
+
+query RRRR rowsort
+select stddev_samp(NULL) over (),
+       stddev_pop(NULL) over (),
+       var_samp(NULL) over (),
+       var_pop(NULL) over () from analytics
+----
+40 values hashing to c592fdbc473c6ef69c4747110455fb4a
+
+statement ok
+rollback
+
+statement ok
+create table stressme (aa varchar(64), bb int)
+
+statement ok
+insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4)
+
+statement error
+select stddev_samp(aa) over (partition by bb) from stressme
+
+statement error
+select stddev_samp() over (partition by bb) from stressme
+
+statement error
+select stddev_samp(*) over (partition by bb) from stressme
+
+statement ok
+drop table stressme
+

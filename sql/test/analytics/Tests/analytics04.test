@@ -1,0 +1,107 @@
+statement ok
+create table analytics (aa int, bb int, cc bigint)
+
+statement ok
+start transaction
+
+statement ok
+insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL)
+
+query IIIIIII rowsort
+select count(*) over (rows between 3 preceding and 2 preceding),
+       count(*) over (rows between 2 following and 3 following),
+       count(*) over (rows between 3 preceding and 3 preceding),
+       count(*) over (rows between 3 preceding and 9 preceding),
+       count(*) over (rows between current row and current row),
+       count(*) over (rows between 0 following and 0 following),
+       count(*) over (rows between 0 preceding and 0 preceding) from analytics
+----
+70 values hashing to a05e79754939ae461a79093b4a5830a4
+
+query IIIIIII rowsort
+select count(aa) over (partition by bb order by bb rows between 3 preceding and 2 preceding),
+       count(aa) over (partition by bb order by bb rows between 2 following and 3 following),
+       count(aa) over (partition by bb order by bb rows between 3 preceding and 3 preceding),
+       count(aa) over (partition by bb order by bb rows between 3 preceding and 9 preceding),
+       count(aa) over (partition by bb order by bb rows between current row and current row),
+       count(aa) over (partition by bb order by bb rows between 0 following and 0 following),
+       count(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) from analytics
+----
+70 values hashing to 082e4b7ffec380304fb21489ffb072ed
+
+query IIIIIII rowsort
+select cast(sum(aa) over (rows between 3 preceding and 2 preceding) as bigint),
+       cast(sum(aa) over (rows between 2 following and 3 following) as bigint),
+       cast(sum(aa) over (rows between 3 preceding and 3 preceding) as bigint),
+       cast(sum(aa) over (rows between 3 preceding and 9 preceding) as bigint),
+       cast(sum(aa) over (rows between current row and current row) as bigint),
+       cast(sum(aa) over (rows between 0 following and 0 following) as bigint),
+       cast(sum(aa) over (rows between 0 preceding and 0 preceding) as bigint) from analytics
+----
+70 values hashing to ffbd2ae612e9fbf0ac16e4fbe0f89684
+
+query IIIIIII rowsort
+select cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 2 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb rows between 2 following and 3 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 3 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 9 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb rows between current row and current row) as bigint),
+       cast(sum(aa) over (partition by bb order by bb rows between 0 following and 0 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) as bigint) from analytics
+----
+70 values hashing to ef0a1b1f9f2b4b1a30fc50bc6854c087
+
+statement ok
+rollback
+
+statement error
+select count(*) over (order by bb range between 3 preceding and 2 preceding),
+       count(*) over (order by bb range between 2 following and 3 following),
+       count(*) over (order by bb range between 3 preceding and 3 preceding),
+       count(*) over (order by bb range between 3 preceding and 9 preceding),
+       count(*) over (order by bb range between current row and current row),
+       count(*) over (order by bb range between 0 following and 0 following),
+       count(*) over (order by bb range between 0 preceding and 0 preceding) from analytics
+
+statement error
+select cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 2 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb range between 2 following and 3 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 3 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb range between 3 preceding and 9 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb range between current row and current row) as bigint),
+       cast(sum(aa) over (partition by bb order by bb range between 0 following and 0 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb range between 0 preceding and 0 preceding) as bigint) from analytics
+
+statement error
+select count(*) over (order by bb groups between 3 preceding and 2 preceding),
+       count(*) over (order by bb groups between 2 following and 3 following),
+       count(*) over (order by bb groups between 3 preceding and 3 preceding),
+       count(*) over (order by bb groups between 3 preceding and 9 preceding),
+       count(*) over (order by bb groups between current row and current row),
+       count(*) over (order by bb groups between 0 following and 0 following),
+       count(*) over (order by bb groups between 0 preceding and 0 preceding) from analytics
+
+statement error
+select cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 2 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb groups between 2 following and 3 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 3 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb groups between 3 preceding and 9 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb groups between current row and current row) as bigint),
+       cast(sum(aa) over (partition by bb order by bb groups between 0 following and 0 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb groups between 0 preceding and 0 preceding) as bigint) from analytics
+
+statement error
+select count(*) over (rows between 3 following and 2 preceding) from analytics
+
+statement error
+select count(*) over (rows between current row and 2 preceding) from analytics
+
+statement error
+select count(*) over (rows between 3 following and current row) from analytics
+
+statement error
+select count(distinct aa) over (rows between 1 preceding and current row) from analytics
+
+statement ok
+drop table analytics
+
