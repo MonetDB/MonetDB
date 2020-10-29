@@ -1459,41 +1459,40 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 					char ***column_names, int **column_types)
 {
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
-	mvc *m;
-	sql_schema *s;
-	sql_table *t;
-	int columns;
-	node *n;
-
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_columns")) != MAL_SUCCEED) {
 		return mdbe->msg;
 	}
 	if (!column_count) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter column_count is NULL");
-		goto cleanup;
+		return mdbe->msg;
 	}
 	if (!column_names) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter column_names is NULL");
-		goto cleanup;
+		return mdbe->msg;
 	}
 	if (!column_types) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter column_types is NULL");
-		goto cleanup;
+		return mdbe->msg;
 	}
 	if (!table_name) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Parameter table_name is NULL");
-		goto cleanup;
+		return mdbe->msg;
 	}
 
 	if (mdbe->mid) {
 		return monetdbe_get_columns_remote(mdbe, schema_name, table_name, column_count, column_names, column_types);
 	}
 
+	mvc *m;
+	sql_schema *s;
+	sql_table *t;
+	int columns;
+
 	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
-		goto cleanup;
+		return mdbe->msg;
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
-		goto cleanup;
+		return mdbe->msg;
 	if (schema_name) {
 		if (!(s = mvc_bind_schema(m, schema_name))) {
 			mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Could not find schema %s", schema_name);
@@ -1524,7 +1523,7 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 		goto cleanup;
 	}
 
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (node *n = t->columns.set->h; n; n = n->next) {
 		sql_column *col = n->data;
 		(*column_names)[col->colnr] = col->base.name;
 		(*column_types)[col->colnr] = embedded_type(col->type.type->localtype);
