@@ -1955,7 +1955,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		break;	\
 	}
 #else
-#define ANALYTICAL_PROD_LIMIT(IMP)
+#define ANALYTICAL_PROD_LIMIT(IMP)	\
 	case TYPE_lng:{	\
 		switch (tp1) {	\
 		case TYPE_bte:	\
@@ -2344,7 +2344,7 @@ calc_done##TPE##IMP##PART:
 		ANALYTICAL_AVG_PARTITIONS(hge, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_NUM_##IMP); \
 		break;
 #else
-#define ANALYTICAL_PROD_LIMIT(IMP, LNG_HGE)
+#define ANALYTICAL_AVG_LIMIT(IMP, LNG_HGE)
 #endif
 
 #define ANALYTICAL_AVG_BRANCHES(IMP, LNG_HGE)		\
@@ -2764,7 +2764,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 #define ANALYTICAL_STATISTICS_LIMIT(IMP, SAMPLE, OP) \
 	case TYPE_hge: \
 		ANALYTICAL_STATISTICS_PARTITIONS(hge, SAMPLE, OP, ANALYTICAL_##IMP); \
-	break;
+		break;
 #else
 #define ANALYTICAL_STATISTICS_LIMIT(IMP, SAMPLE, OP)
 #endif
