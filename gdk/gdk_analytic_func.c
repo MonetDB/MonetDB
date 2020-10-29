@@ -1473,7 +1473,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 		IMP(TPE1, TPE2);	\
 	} while (0)
 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 #define ANALYTICAL_SUM_LIMIT(IMP)	\
 	case TYPE_hge:{		\
 		switch (tp1) {		\
@@ -1911,7 +1911,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		IMP(TPE1, TPE2, TPE3_OR_REAL_IMP);	\
 	} while (0)
 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 #define ANALYTICAL_PROD_LIMIT(IMP)	\
 	case TYPE_lng:{	\
 		switch (tp1) {	\
@@ -2338,7 +2338,7 @@ calc_done##TPE##IMP##PART:
 		REAL_IMP(TPE, IMP, P3, LNG_HGE);	\
 	} while (0)
 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 #define ANALYTICAL_AVG_LIMIT(IMP, LNG_HGE) \
 	case TYPE_hge: \
 		ANALYTICAL_AVG_PARTITIONS(hge, IMP, LNG_HGE, ANALYTICAL_AVG_IMP_NUM_##IMP); \
@@ -2556,7 +2556,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 		IMP(TPE);	\
 	} while (0)
 
-#if HAVE_HGE
+#ifdef HAVE_HGE
 #define ANALYTICAL_AVG_INT_LIMIT(IMP) \
 	case TYPE_hge: \
 		ANALYTICAL_AVG_INT_PARTITIONS(hge, ANALYTICAL_AVG_INT_##IMP); \
