@@ -1688,9 +1688,17 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		 */
 		assert(mb->vid == 0);
 
-		// sql.mvc has one comment and for each column there is one sql.append statement plus comment.
+		/*
+		 * Comments generate variable names during parsing:
+		 * sql.mvc has one comment and for each column there is one sql.append statement plus comment.
+		 */
 		const int nr_of_comments = 1 + column_count;
-		const int nr_of_constant_terms =  3 /* schema + table + column_name*/ * column_count;
+		/*
+		 * constant terms generate variable names during parsing:
+		 * Each sql.append has three constant terms: schema + table + column_name.
+		 * There is one sql.append stmt for each column.
+		 */
+		const int nr_of_constant_terms =  3 * column_count;
 		mb->vid = nr_of_comments + nr_of_constant_terms;
 		// END OF HACK
 
@@ -1953,7 +1961,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 			int idx = newTmpVariable(mb, newBatType(c->type.type->localtype));
 			ValRecord v = { .vtype = TYPE_bat, .len = ATOMlen(TYPE_bat, &b->batCacheid), .val.bval = b->batCacheid};
-			// TODO: check gdk_value.h functions. They don't seem to handle TYPE_bat that well e.g. VALset.
 			getVarConstant(mb, idx) = v;
 			setVarConstant(mb, idx);
 
