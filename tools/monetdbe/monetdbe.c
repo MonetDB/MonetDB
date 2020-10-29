@@ -1434,21 +1434,45 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 	*column_types = GDKzalloc(sizeof(int) * result->ncols);
 
 
-	if (*column_names == NULL || *column_types == NULL) {
-		GDKfree(*column_names);
-		GDKfree(*column_types);
+	if (*column_names == NULL || *column_types == NULL)
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL);
-		// TODO: handle error
-	}
 
-	for (size_t c = 0; c < result->ncols; c++) {
-		monetdbe_column* rcol;
-		if ((mdbe->msg = monetdbe_result_fetch(result, &rcol, c)) != NULL) {
-			// TODO: handle error
+	size_t c;
+	if (!mdbe->msg)
+		for (c = 0; c < result->ncols; c++) {
+			monetdbe_column* rcol;
+			if ((mdbe->msg = monetdbe_result_fetch(result, &rcol, c)) != NULL) {
+				break;
+			}
+
+			if (((*column_names)[c] = GDKstrdup(rcol->name)) == NULL) {
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL);
+				break;
+			}
+			(*column_types)[c] = rcol->type;
 		}
 
-		(*column_names)[c] = rcol->name;
-		(*column_types)[c] = rcol->type;
+	// cleanup
+	if  (result) {
+		char* msg = monetdbe_cleanup_result_internal(mdbe, (monetdbe_result_internal*) result);
+
+		if (msg && mdbe->msg) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "multiple errors: %s; %s", mdbe->msg, msg);
+		}
+		else if (msg) {
+			mdbe->msg = msg;
+		}
+	}
+
+	if (mdbe->msg ) {
+
+		if (*column_names) for (c = 0; c < *column_count; c++) GDKfree((*column_names)[c]);
+
+		GDKfree(*column_names);
+		GDKfree(*column_types);
+
+		*column_names = NULL;
+		*column_types = NULL;
 	}
 
 	return mdbe->msg;
@@ -1638,7 +1662,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		// We are going to insert the data into a temporary table which is used in the coming remote logic.
 
 		size_t actual_column_count;
-		char** actual_column_names;
+		char** actual_column_names = NULL;
 		int* actual_column_types;
 
 		if ((mdbe->msg = monetdbe_get_columns_remote(
