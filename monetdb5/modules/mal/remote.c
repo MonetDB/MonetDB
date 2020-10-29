@@ -1185,7 +1185,7 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 	
 	*fcn_id = GDKmalloc(strlen(ident));
 	if (*fcn_id == NULL) {
-		//TODO: handle error
+		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
 
 	strcpy(*fcn_id, ident);
@@ -1193,11 +1193,13 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 	Symbol prg;
 
 	if ((prg = newFunction(putName(mod), putName(*fcn_id), FUNCTIONsymbol)) == NULL) {
-		// TODO: handle error
 		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
-	prg->def = copyMalBlk(sym->def);
-	// TODO: handle if == NULL
+
+	if ((prg->def = copyMalBlk(sym->def)) == NULL) {
+		freeSymbol(prg);
+		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
+	}
 	setFunctionId(getInstrPtr(prg->def, 0), putName(*fcn_id));
 
 	/* make sure the program is error free */

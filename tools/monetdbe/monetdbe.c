@@ -679,7 +679,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_optio
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
 		return -2;
 	}
-	MalStkPtr stk = prepareMALstack(mb, mb->vsize); // TODO: clean up after usage
+	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
 	stk->keepAlive = TRUE;
 	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED ) {
 		return -2;
@@ -1222,9 +1222,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		return mdbe->msg;
 	}
 
-	MalStkPtr stk = prepareMALstack(mb, mb->vsize); // TODO: clean up after usage
-	stk->keepAlive = TRUE;
-	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED )
+	if ( (mdbe->msg = runMAL(c, mb, 0, NULL)) != MAL_SUCCEED )
 		return mdbe->msg;
 
 	if (result) {
@@ -1416,6 +1414,17 @@ monetdbe_cleanup_result(monetdbe_database dbhdl, monetdbe_result* result)
 	return mdbe->msg;
 }
 
+static inline void
+cleanup_get_columns_result(size_t column_count, char ** column_names, int *column_types) {
+		if (column_names) for (size_t c = 0; c < column_count; c++) GDKfree(column_names[c]);
+
+		GDKfree(column_names);
+		GDKfree(column_types);
+
+		column_names = NULL;
+		column_types = NULL;
+}
+
 static char*
 monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema_name, const char *table_name, size_t *column_count,
 					char ***column_names, int **column_types)
@@ -1437,9 +1446,8 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 	if (*column_names == NULL || *column_types == NULL)
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL);
 
-	size_t c;
 	if (!mdbe->msg)
-		for (c = 0; c < result->ncols; c++) {
+		for (size_t c = 0; c < result->ncols; c++) {
 			monetdbe_column* rcol;
 			if ((mdbe->msg = monetdbe_result_fetch(result, &rcol, c)) != NULL) {
 				break;
@@ -1465,14 +1473,7 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 	}
 
 	if (mdbe->msg ) {
-
-		if (*column_names) for (c = 0; c < *column_count; c++) GDKfree((*column_names)[c]);
-
-		GDKfree(*column_names);
-		GDKfree(*column_types);
-
-		*column_names = NULL;
-		*column_types = NULL;
+		cleanup_get_columns_result(*column_count, *column_names, *column_types);
 	}
 
 	return mdbe->msg;
@@ -1620,6 +1621,130 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 			bat_data->data[it] = (tpe) *val;							\
 	}
 
+static char*
+append_create_remote_append_mal_program(
+	Symbol* prg,
+	sql_schema **s,
+	sql_table **t,
+	Client c, const char* schema, const char* table, size_t ccount, char** cnames, int* ctypes) {
+
+	char* msg					= MAL_SUCCEED;
+	char buf[16]				= {0};
+	char* remote_program_name	= number2name(buf, sizeof(buf), ++((backend*) c->sqlcontext)->remote);
+
+	assert(s && t);
+	assert(c->sqlcontext && ((backend *) c->sqlcontext)->mvc);
+	mvc* m = ((backend *) c->sqlcontext)->mvc;
+
+	Symbol _prg;
+	MalBlkPtr mb = NULL;
+	InstrPtr f = NULL, v = NULL, a = NULL, r = NULL;
+	int mvc_id = -1;
+
+	if (!(*s = mvc_bind_schema(m, "tmp"))) {
+		return createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+	}
+
+	if (!(*t = sql_trans_create_table(m->session->tr, *s, table, NULL, tt_table, false, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
+		return createException(SQL, "monetdbe.monetdbe_append", "Cannot create temporary table");
+	}
+
+	assert(prg);
+
+	*prg	= NULL;
+	_prg	= newFunction(userRef, putName(remote_program_name), FUNCTIONsymbol); // remote program
+	mb		= _prg->def;
+
+	{ // START OF HACK
+		/*
+		 * This is a hack to make sure that the serialized remote program is correctly parsed on the remote side.
+		 * Since the mal serializer (mal_listing) on the local side will use generated variable names,
+		 * The parsing process on the remote side can and will clash with generated variable names on the remote side.
+		 * Because serialiser and the parser will both use the same namespace of generated variable names.
+		 * Adding an offset to the counter that generates the variable names on the local side
+		 * circumvents this shortcoming in the MAL parser.
+		 */
+
+		assert(mb->vid == 0);
+
+		/*
+			* Comments generate variable names during parsing:
+			* sql.mvc has one comment and for each column there is one sql.append statement plus comment.
+			*/
+		const int nr_of_comments = 1 + ccount;
+		/*
+			* constant terms generate variable names during parsing:
+			* Each sql.append has three constant terms: schema + table + column_name.
+			* There is one sql.append stmt for each column.
+			*/
+		const int nr_of_constant_terms =  3 * ccount;
+		mb->vid = nr_of_comments + nr_of_constant_terms;
+	} // END OF HACK
+
+	f = getInstrPtr(mb, 0);
+	f->retc = f->argc = 0;
+	f = pushReturn(mb, f, newTmpVariable(mb, TYPE_int));
+	v = newFcnCall(mb, sqlRef, mvcRef);
+	setArgType(mb, v, 0, TYPE_int);
+
+	mvc_id = getArg(v, 0);
+
+	for (size_t i = 0; i < ccount; i++) {
+
+		sql_type *tpe = SA_ZNEW(m->sa, sql_type);
+		tpe->localtype = monetdbe_type(ctypes[i]);
+		sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
+		sql_init_subtype(st, tpe, 0, 0);
+
+		sql_column* col;
+		if (!(col = mvc_create_column(m, *t, cnames[i], st))) {
+			msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
+
+		if (store_funcs.create_col(m->session->tr, col) != LOG_OK) {
+			msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
+
+		int idx = newTmpVariable(mb, newBatType(tpe->localtype));
+		f = pushArgument(mb, f, idx);
+
+		a = newFcnCall(mb, sqlRef, appendRef);
+		setArgType(mb, a, 0, TYPE_int);
+		a = pushArgument(mb, a, mvc_id);
+		a = pushStr(mb, a, schema);
+		a = pushStr(mb, a, table);
+		a = pushStr(mb, a, cnames[i]);
+		a = pushArgument(mb, a, idx);
+
+		mvc_id = getArg(a, 0);
+	}
+
+	r = newInstruction(mb, NULL, NULL);
+	r->barrier= RETURNsymbol;
+	r->retc = r->argc = 0;
+	r = pushReturn(mb, r, mvc_id);
+	r = pushArgument(mb, r, mvc_id);
+	pushInstruction(mb, r);
+
+	pushEndInstruction(mb);
+
+	if ( (msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
+		goto cleanup;
+	}
+
+	assert(msg == MAL_SUCCEED);
+	*prg = _prg;
+	return msg;
+
+cleanup:
+	assert(msg != MAL_SUCCEED);
+	freeSymbol(_prg);
+	*prg = NULL;
+	return msg;
+}
+
 char*
 monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count)
 {
@@ -1630,8 +1755,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	size_t i, cnt;
 	node *n;
 
-	char buf[16] = {0};
-	char* remote_program_name = NULL;
+	Symbol remote_prg = NULL;
 
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
@@ -1661,9 +1785,10 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	if (mdbe->mid) {
 		// We are going to insert the data into a temporary table which is used in the coming remote logic.
 
-		size_t actual_column_count;
+		size_t actual_column_count = 0;
 		char** actual_column_names = NULL;
-		int* actual_column_types;
+		int* actual_column_types = NULL;
+		sql_schema* s = NULL;
 
 		if ((mdbe->msg = monetdbe_get_columns_remote(
 				mdbe,
@@ -1672,121 +1797,55 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 				&actual_column_count,
 				&actual_column_names,
 				&actual_column_types)) != MAL_SUCCEED) {
-			goto cleanup;
+			goto remote_cleanup;
 		}
 
-		if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
-			goto cleanup;
-
-		sql_schema* s;
-		if (!(s = mvc_bind_schema(m, "tmp"))) {
-			// TODO handle error
-			goto cleanup;
+		if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED) {
+			goto remote_cleanup;
 		}
 
-		if (!(t = sql_trans_create_table(m->session->tr, s, table, NULL, tt_table, false, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0))) {
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot create temporary table");
-			goto cleanup;
-		}
-
+		// TODO: is this check necessary?
 		if (actual_column_count != column_count) {
-			// TODO handle error
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append",
+							"The number of to-be-appended columns doesn't match the number of existing columns: %zu != %zu",
+							column_count,
+							actual_column_count);
+			goto remote_cleanup;
 		}
 
-		const char *mod		= "user";
-		remote_program_name	= number2name(
-											buf,
-											sizeof(buf),
-											++((backend*)  mdbe->c->sqlcontext)->remote);
-
-		Symbol prg	= newFunction(putName(mod), putName(remote_program_name), FUNCTIONsymbol); // remote program
-		MalBlkPtr mb	= prg->def;
-
-		/* START OF HACK
-		 * This is a hack to make sure that the serialized remote program is correctly parsed on the remote side.
-		 * Since the mal serializer (mal_listing) on the local side will use generated variable names,
-		 * The parsing process on the remote side can and will clash with generated variable names on the remote side.
-		 * Because serialiser and the parser will both use the same namespace of generated variable names.
-		 * Adding an offset to the counter that generates the variable names on the local side
-		 * circumvents this shortcoming in the MAL parser.
-		 */
-		assert(mb->vid == 0);
-
-		/*
-		 * Comments generate variable names during parsing:
-		 * sql.mvc has one comment and for each column there is one sql.append statement plus comment.
-		 */
-		const int nr_of_comments = 1 + column_count;
-		/*
-		 * constant terms generate variable names during parsing:
-		 * Each sql.append has three constant terms: schema + table + column_name.
-		 * There is one sql.append stmt for each column.
-		 */
-		const int nr_of_constant_terms =  3 * column_count;
-		mb->vid = nr_of_comments + nr_of_constant_terms;
-		// END OF HACK
-
-		InstrPtr f = getInstrPtr(mb, 0);
-		f->retc = f->argc = 0;
-		f = pushReturn(mb, f, newTmpVariable(mb, TYPE_int));
-		InstrPtr c = newFcnCall(mb, sqlRef, mvcRef);
-		setArgType(mb, c, 0, TYPE_int);
-
-		int mvc_id = getArg(c, 0);
-
+		// TODO: are these checks necessary?
 		for (i = 0; i < column_count; i++) {
-
 			if (strcmp(actual_column_names[i], input[i]->name) != 0 || actual_column_types[i] != (int) input[i]->type ) {
-				// TODO handle error
-				goto cleanup;
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append",
+							"The name of the to-be-appended column doesn't match the name of the existing column at the current index %zu: %s != %s",
+							i,
+							input[i]->name,
+							actual_column_names[i]);
+				goto remote_cleanup;
 			}
-
-			sql_type *tpe = SA_ZNEW(m->sa, sql_type);
-			tpe->localtype = monetdbe_type(actual_column_types[i]);
-			sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
-			sql_init_subtype(st, tpe, 0, 0);
-
-			sql_column* col;
-			if (!(col = mvc_create_column(m, t, actual_column_names[i], st))) {
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-				goto cleanup;
-				// TODO handle error
-			}
-
-			if (store_funcs.create_col(m->session->tr, col) != LOG_OK) {
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-				goto cleanup;
-				// TODO handle error
-			}
-
-			int idx = newTmpVariable(mb, newBatType(tpe->localtype));
-			f = pushArgument(mb, f, idx);
-
-			InstrPtr a = newFcnCall(mb, sqlRef, appendRef);
-			setArgType(mb, a, 0, TYPE_int);
-			a = pushArgument(mb, a, mvc_id);
-			a = pushStr(mb, a, schema);
-			a = pushStr(mb, a, table);
-			a = pushStr(mb, a, actual_column_names[i]);
-			a = pushArgument(mb, a, idx);
-
-			mvc_id = getArg(a, 0);
 		}
 
-		InstrPtr r = newInstruction(mb, NULL, NULL);
-		r->barrier= RETURNsymbol;
-		r->retc = r->argc = 0;
-		r = pushReturn(mb, r, mvc_id);
-		r = pushArgument(mb, r, mvc_id);
-		pushInstruction(mb, r);
-
-		pushEndInstruction(mb);
-
-		if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
-			return mdbe->msg;
+		if ((mdbe->msg = append_create_remote_append_mal_program
+							(&remote_prg,
+							&s,
+							&t,
+							mdbe->c,
+							schema,
+							table,
+							actual_column_count,
+							actual_column_names,
+							actual_column_types)) != MAL_SUCCEED) {
+			goto remote_cleanup;
 		}
 
-		insertSymbol(mdbe->c->usermodule, prg);
+		insertSymbol(mdbe->c->usermodule, remote_prg);
+
+remote_cleanup:
+		if (mdbe->msg) {
+			cleanup_get_columns_result(actual_column_count, actual_column_names, actual_column_types);
+			freeSymbol(remote_prg);
+			goto cleanup;
+		}
 	}
 	else {
 		// !mdbe->mid
@@ -1955,20 +2014,24 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	}
 
 	if (mdbe->mid) {
-
-		const char *mod = "user";
 		char nme[16];
 		const char *name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
-		Symbol prg	= newFunction(putName(mod), putName(name), FUNCTIONsymbol); // local program
-		MalBlkPtr mb	= prg->def;
+		Symbol prg; // local program
+
+		if ( (prg = newFunction(userRef, putName(name), FUNCTIONsymbol)) == NULL ) {
+			mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+			goto cleanup;
+		}
+
+		MalBlkPtr mb = prg->def;
 		InstrPtr f = getInstrPtr(mb, 0);
 		f->retc = f->argc = 0;
 
 		InstrPtr r = newFcnCall(mb, remoteRef, registerRef);
 		setArgType(mb, r, 0, TYPE_str);
 		r = pushStr(mb, r, mdbe->mid);
-		r = pushStr(mb, r, mod);
-		r = pushStr(mb, r, remote_program_name);
+		r = pushStr(mb, r, userRef);
+		r = pushStr(mb, r, putName(remote_prg->name));
 
 		InstrPtr e = newInstruction(mb, remoteRef, execRef);
 		setDestVar(e, newTmpVariable(mb, TYPE_any));
@@ -1980,13 +2043,16 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			sql_column *c = n->data;
 			BAT* b = store_funcs.bind_col(m->session->tr, c, RDONLY);
 			if (b == NULL) {
-				// TODO: handle error
+				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+				freeSymbol(prg);
+				goto cleanup;
 			}
 
 			int idx = newTmpVariable(mb, newBatType(c->type.type->localtype));
 			ValRecord v = { .vtype = TYPE_bat, .len = ATOMlen(TYPE_bat, &b->batCacheid), .val.bval = b->batCacheid};
 			getVarConstant(mb, idx) = v;
 			setVarConstant(mb, idx);
+			BBPunfix(b->batCacheid);
 
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
 			;
@@ -2005,15 +2071,20 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 		pushInstruction(mb, ri);
 
 		if ( (mdbe->msg = chkProgram(mdbe->c->usermodule, mb)) != MAL_SUCCEED ) {
-			return mdbe->msg;
+			freeSymbol(prg);
+			goto cleanup;
 		}
 
-		MalStkPtr stk = prepareMALstack(mb, mb->vsize); // TODO: clean up after usage
+		MalStkPtr stk = prepareMALstack(mb, mb->vsize);
 		stk->keepAlive = TRUE;
 
 		mdbe->msg = runMAL(mdbe->c, mb, 0, stk);
-	}
 
+		// TODO: figure out what goes wrong during garbage collection
+		// garbageCollector(mdbe->c, mb, stk, TRUE);
+		// freeStack(stk);
+		freeSymbol(prg);
+	}
 
 cleanup:
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
