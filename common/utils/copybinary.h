@@ -57,8 +57,8 @@ typedef struct {
     )
 
 #define COPY_BINARY_BYTESWAP128(value) ( \
-    ( (uint128_t)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[0]   )  << 64 ) \
-    | ( (uint128_t)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[1]   )   ) \
+    ( (uhge)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[0]   )  << 64 ) \
+    | ( (uhge)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[1]   )   ) \
 )
 
 
