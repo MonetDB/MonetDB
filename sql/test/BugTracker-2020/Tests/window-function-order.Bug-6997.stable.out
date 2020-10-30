@@ -17,7 +17,7 @@ stdout of test 'window-function-order.Bug-6997` in directory 'sql/test/BugTracke
 #from "ordertest";
 % sys.ordertest,	sys.ordertest,	sys.ordertest,	sys.ordertest,	sys.,	sys.,	sys.,	sys. # table_name
 % str,	ordera,	orderb,	num,	orderbya,	orderbyab,	orderbyba,	orderbyb # name
-% clob,	int,	int,	int,	hugeint,	hugeint,	hugeint,	hugeint # type
+% clob,	int,	int,	int,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	2,	2,	2,	2,	2 # length
 [ "a",	1,	1,	1,	1,	1,	1,	61	]
 [ "a",	2,	1,	10,	11,	11,	11,	61	]

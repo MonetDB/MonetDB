@@ -113,7 +113,7 @@ project (
 | | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
 | | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" NULLS LAST ]
 | | | | | | ) [ "f"."id", "p"."number" ] [ "f"."id" ASC, "p"."number" ASC ]
-| | | | | ) [ "f"."id", sys.row_number(sys.star(), boolean "false", sys.diff(sys.diff("f"."id" ASC), "p"."number" ASC)) as "line" ]
+| | | | | ) [ "f"."id", sys.row_number(sys.star(), boolean "false", sys.diff(sys.diff("f"."id"), "p"."number")) as "line" ]
 | | | | ) [ "f"."id" as "fid", "line" ]
 | | | ) [ "fid" ] [ "line" ASC ]
 | | ) [ "fid" as "commented_function_signatures_6542"."fid" ]
