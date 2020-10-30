@@ -260,6 +260,7 @@ SQLprepareClient(Client c, int login)
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
+	MT_lock_unset(&sql_contextLock);
 	if (login) {
 		str schema = monet5_user_set_def_schema(m, c->user);
 		if (!schema) {
@@ -270,6 +271,7 @@ SQLprepareClient(Client c, int login)
 	}
 
 bailout:
+	MT_lock_set(&sql_contextLock);
 	/* expect SQL text first */
 	if (be)
 		be->language = 'S';
@@ -335,6 +337,10 @@ SQLinit(Client c)
 	backend *be = NULL;
 	mvc *m = NULL;
 	sql_allocator *sa = NULL;
+	const char *opt_pipe;
+
+	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
+		throw(SQL, "sql.init", SQLSTATE(42000) "invalid sql optimizer pipeline %s", opt_pipe);
 
 	MT_lock_set(&sql_contextLock);
 

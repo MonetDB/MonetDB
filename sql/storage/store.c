@@ -849,8 +849,6 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->persistence = SQL_PERSIST;
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 	t->cleared = 0;
@@ -2199,10 +2197,13 @@ flusher_should_run(void)
 	char *reason_to = NULL, *reason_not_to = NULL;
 	int changes;
 
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
+
 	if (flusher.countdown_ms <= 0)
 		reason_to = "timer expired";
 
-	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 1000000;
+	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 100000;
 	if ((changes = logger_funcs.changes()) >= many_changes)
 		reason_to = "many changes";
 	else if (changes == 0)
@@ -2330,7 +2331,8 @@ store_apply_deltas(bool not_locked)
 void
 store_flush_log(void)
 {
-	ATOMIC_SET(&flusher.flush_now, 1);
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
 }
 
 /* Call while holding bs_lock */
@@ -5502,9 +5504,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sql_trans_drop_dependencies(tr, t->base.id);
 	sql_trans_drop_obj_priv(tr, t->base.id);
 
-	if (isKindOfTable(t) || isView(t))
-		if (sys_drop_columns(tr, t, drop_action))
-			return -1;
+	if (sys_drop_columns(tr, t, drop_action))
+		return -1;
 
 	if (isGlobal(t))
 		tr->schema_updates ++;
@@ -6283,7 +6284,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	/* temps all belong to a special tmp schema and only views/remote
 	   have a query */
 	assert( (isTable(t) ||
-		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || (isRemote(t) && !sql));
 
 	t->query = sql ? sa_strdup(tr->sa, sql) : NULL;
 	t->s = s;
@@ -6291,8 +6292,6 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (sz < 0)
 		t->sz = COLSIZE;
 	cs_add(&s->tables, t, TR_NEW);
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 
@@ -6659,9 +6658,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (isKindOfTable(t))
-		if (sys_drop_column(tr, col, drop_action))
-			return -1;
+	if (sys_drop_column(tr, col, drop_action))
+		return -1;
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&t->columns, n, col->base.flags);
@@ -7603,8 +7601,17 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
+	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
+
 	sql_trans *tr = s->tr;
 	int snr = tr->schema_number;
+
+	/* add wait when flush is realy needed */
+	while (ATOMIC_GET(&flusher.flush_now)) {
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(sleeptime);
+		MT_lock_set(&bs_lock);
+	}
 
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans &&

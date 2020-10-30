@@ -140,6 +140,13 @@ BuildRequires: pkgconfig(openssl)
 BuildRequires: pkgconfig(libpcre) >= 4.5
 %endif
 BuildRequires: pkgconfig(zlib)
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} > 7
+# not on RHEL 7
+BuildRequires: pkgconfig(liblz4) >= 1.8
+%global LZ4 ON
+%else
+%global LZ4 OFF
+%endif
 %if %{with py3integration}
 BuildRequires: pkgconfig(python3) >= 3.5
 BuildRequires: python3-numpy
@@ -149,8 +156,6 @@ BuildRequires: pkgconfig(libR)
 %endif
 # if we were to compile with cmocka support (-DWITH_CMOCKA=ON):
 # BuildRequires: pkgconfig(cmocka)
-# if we were to compile with lz4 support (-DWITH_LZ4=ON):
-# BuildRequires: pkgconfig(liblz4)
 # if we were to compile with NetCDF support (-DNETCDF=ON):
 # BuildRequires: pkgconfig(netcdf)
 # if we were to compile with proj support (-DWITH_PROJ=ON):
@@ -801,7 +806,7 @@ export CFLAGS
 	-DWITH_CMOCKA=OFF \
 	-DWITH_CRYPTO=ON \
 	-DWITH_CURL=ON \
-	-DWITH_LZ4=OFF \
+	-DWITH_LZ4=%{LZ4} \
 	-DWITH_LZMA=ON \
 	-DWITH_PCRE=ON \
 	-DWITH_PROJ=OFF \
