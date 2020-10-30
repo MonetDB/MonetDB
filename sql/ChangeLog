@@ -1,3 +1,7 @@
 # ChangeLog file for sql
 # This file is updated with Maddlog
 
+* Fri Oct 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
+- Leftover STREAM table definition from Datacell extension was removed
+  from the parser. They had no effect anymore.
+

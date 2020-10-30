@@ -1,4 +1,5 @@
 CREATE  STREAM TABLE strt  (id int primary key, nm varchar(123) NOT NULL);
+CREATE merge TABLE strt  (id int primary key, nm varchar(123) NOT NULL);
 \d
 SELECT table_id, * FROM sys._columns WHERE (table_id) NOT IN (SELECT id FROM sys._tables);
 -- no rows

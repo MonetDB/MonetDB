@@ -143,7 +143,6 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			if (atom_type(a)->type->localtype == TYPE_ptr) {
 				sql_table *t = a->data.val.pval;
 				mnstr_printf(fout, "%s(%s)",
-					isStream(t)?"stream":
 					isMergeTable(t)?"merge table":
 					isReplicaTable(t)?"replica table":"table",
 					t->base.name);
@@ -406,13 +405,11 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 			}
 			if (sname)
 				mnstr_printf(fout, "%s(%s.%s)",
-					isStream(t)?"stream":
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
 					sname, tname);
 			else
 		  		mnstr_printf(fout, "%s(%s)",
-					isStream(t)?"stream":
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
 					tname);

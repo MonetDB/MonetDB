@@ -1390,16 +1390,8 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (tname) {
 		if (!(t = mvc_bind_table(m, s, tname)))
 			throw(SQL, "sql.delta", SQLSTATE(3F000) "No such table '%s' in schema '%s'", tname, s->base.name);
-		if (isView(t))
-			throw(SQL, "sql.delta", SQLSTATE(42000) "Views don't have delta values");
-		if (isMergeTable(t))
-			throw(SQL, "sql.delta", SQLSTATE(42000) "Merge tables don't have delta values");
-		if (isStream(t))
-			throw(SQL, "sql.delta", SQLSTATE(42000) "Stream tables don't have delta values");
-		if (isRemote(t))
-			throw(SQL, "sql.delta", SQLSTATE(42000) "Remote tables don't have delta values");
-		if (isReplicaTable(t))
-			throw(SQL, "sql.delta", SQLSTATE(42000) "Replica tables don't have delta values");
+		if (!isTable(t))
+			throw(SQL, "sql.delta", SQLSTATE(42000) "%s don't have delta values", TABLE_TYPE_DESCRIPTION(t->type, t->properties));
 		if (cname) {
 			if (!(c = mvc_bind_column(m, t, cname)))
 				throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
@@ -1410,7 +1402,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else if (s->tables.set) {
 		for (n = s->tables.set->h; n ; n = n->next) {
 			t = (sql_table *) n->data;
-			if (!(isView(t) || isMergeTable(t) || isStream(t) || isRemote(t) || isReplicaTable(t)))
+			if (isTable(t))
 				nrows += t->columns.set->cnt;
 		}
 	}
@@ -1461,7 +1453,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else if (s->tables.set) {
 			for (n = s->tables.set->h; n ; n = n->next) {
 				t = (sql_table *) n->data;
-				if (!(isView(t) || isMergeTable(t) || isStream(t) || isRemote(t) || isReplicaTable(t))) {
+				if (isTable(t)) {
 					cleared = (t->cleared != 0);
 					deletes = (lng) store_funcs.count_del(m->session->tr, t);
 
