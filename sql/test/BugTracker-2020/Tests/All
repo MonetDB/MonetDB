@@ -27,3 +27,5 @@ table-udf-distinct.Bug-6965
 HAVE_PYMONETDB?table-udf-on-remote.Bug-6971
 integers-intervals.Bug-6979
 window-function-order.Bug-6997
+semijoin.Bug-7001
+drop-stream-table.Bug-7005
