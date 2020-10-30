@@ -22,7 +22,6 @@ DROP TABLE "triples" CASCADE;
 DROP TABLE mt;
 DROP TABLE remt;
 DROP TABLE replt;
-DROP TABLE strt;
 
 DROP TABLE gtmpt;
 

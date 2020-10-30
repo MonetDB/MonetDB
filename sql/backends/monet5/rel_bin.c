@@ -2178,11 +2178,11 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 							left_reference = right_reference = 1;
 						}
 					} else {
-						if (l->card != CARD_ATOM) {
+						if (l->card != CARD_ATOM || !exp_is_atom(l)) {
 							left_reference += rel_find_exp(rel->l, l) != NULL;
 							right_reference += rel_find_exp(rel->r, l) != NULL;
 						}
-						if (r->card != CARD_ATOM) {
+						if (r->card != CARD_ATOM || !exp_is_atom(r)) {
 							left_reference += rel_find_exp(rel->l, r) != NULL;
 							right_reference += rel_find_exp(rel->r, r) != NULL;
 						}
@@ -2193,7 +2193,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 					for (node *n = l->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
-						if (ee->card != CARD_ATOM) {
+						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
 							left_reference += rel_find_exp(rel->l, ee) != NULL;
 							right_reference += rel_find_exp(rel->r, ee) != NULL;
 						}
@@ -2201,7 +2201,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 					for (node *n = r->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
-						if (ee->card != CARD_ATOM) {
+						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
 							left_reference += rel_find_exp(rel->l, ee) != NULL;
 							right_reference += rel_find_exp(rel->r, ee) != NULL;
 						}
