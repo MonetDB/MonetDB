@@ -1,0 +1,12 @@
+stderr of test 'drop-stream-table.Bug-7005` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 20:09:31 >  
+# 20:09:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-67704" "--port=30508"
+# 20:09:31 >  
+
+
+# 20:09:31 >  
+# 20:09:31 >  "Done."
+# 20:09:31 >  
+
