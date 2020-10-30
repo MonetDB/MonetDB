@@ -2065,6 +2065,32 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static void /* replace diff arguments to avoid duplicate work. The arguments must be iterated in this order! */
+diff_replace_arguments(mvc *sql, sql_exp *e, list *ordering, int *pos, int *i)
+{
+	if (e->type == e_func && !strcmp(((sql_subfunc*)e->f)->func->base.name, "diff")) {
+		list *args = (list*)e->l;
+		sql_exp *first = args->h->data, *second = list_length(args) == 2 ? args->h->next->data : NULL;
+
+		if (first->type == e_func && !strcmp(((sql_subfunc*)first->f)->func->base.name, "diff")) {
+			diff_replace_arguments(sql, first, ordering, pos, i);
+		} else {
+			sql_exp *ne = args->h->data = exp_ref(sql, list_fetch(ordering, pos[*i]));
+			set_descending(ne);
+			set_nulls_first(ne);
+			*i = *i + 1;
+		}
+		if (second && second->type == e_func && !strcmp(((sql_subfunc*)second->f)->func->base.name, "diff")) {
+			diff_replace_arguments(sql, second, ordering, pos, i);
+		} else if (second) {
+			sql_exp *ne = args->h->next->data = exp_ref(sql, list_fetch(ordering, pos[*i]));
+			set_descending(ne);
+			set_nulls_first(ne);
+			*i = *i + 1;
+		}
+	}
+}
+
 /* exp visitor */
 static sql_exp *
 rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
@@ -2099,14 +2125,25 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 		}
 	}
+
+	/* The following array remembers the original positions of gbe and obe expressions to replace them in order later at diff_replace_arguments */
+	int gbeoffset = list_length(gbe), i = 0, added = 0;
+	int *pos = SA_NEW_ARRAY(v->sql->ta, int, gbeoffset + list_length(obe));
+
 	if (gbe || obe) {
+		if (gbe)
+			for (i = 0 ; i < gbeoffset ; i++)
+				pos[i] = i;
+
 		if (gbe && obe) {
 			gbe = list_merge(sa_list(v->sql->sa), gbe, (fdup)NULL); /* make sure the p->r is a different list than the gbe list */
-			for(node *n = obe->h ; n ; n = n->next) {
+			i = 0;
+			for(node *n = obe->h ; n ; n = n->next, i++) {
 				sql_exp *e1 = n->data;
 				bool found = false;
+				int j = 0;
 
-				for(node *nn = gbe->h ; nn && !found ; nn = nn->next) {
+				for(node *nn = gbe->h ; nn ; nn = nn->next, j++) {
 					sql_exp *e2 = nn->data;
 					/* the partition expression order should be the same as the one in the order by clause (if it's in there as well) */
 					if (exp_match(e1, e2)) {
@@ -2119,13 +2156,21 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						else
 							set_nulls_first(e2);
 						found = true;
+						break;
 					}
 				}
-				if(!found)
+				if (!found) {
+					pos[gbeoffset + i] = gbeoffset + added;
+					added++;
 					append(gbe, e1);
+				} else {
+					pos[gbeoffset + i] = j;
+				}
 			}
 		} else if (obe) {
-			for(node *n = obe->h ; n ; n = n->next) {
+			assert(!gbe);
+			i = 0;
+			for(node *n = obe->h ; n ; n = n->next, i++) {
 				sql_exp *oe = n->data;
 				if (!exps_find_exp(rell->exps, oe)) {
 					sql_exp *ne = exp_ref(v->sql, oe);
@@ -2140,10 +2185,29 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					n->data = ne;
 					append(rell->exps, oe);
 				}
+				pos[i] = i;
 			}
 			gbe = obe;
 		}
-		rell->r = gbe;
+
+		list *ordering = sa_list(v->sql->sa); /* add exps from gbe and obe as ordering expressions */
+		for(node *n = gbe->h ; n ; n = n->next) {
+			sql_exp *next = n->data;
+			sql_exp *found = exps_find_exp(rell->exps, next);
+			sql_exp *ref = exp_ref(v->sql, found ? found : next);
+
+			if (is_ascending(next))
+				set_ascending(ref);
+			if (nulls_last(next))
+				set_nulls_last(ref);
+			set_descending(next);
+			set_nulls_first(next);
+			if (!found)
+				list_append(rell->exps, next);
+			list_append(ordering, ref);
+		}
+		rell = rel_project(v->sql->sa, rell, rel_projections(v->sql, rell, NULL, 1, 1));
+		rell->r = ordering;
 		rel->l = rell;
 
 		/* remove obe argument, so this function won't be called again on this expression */
@@ -2151,6 +2215,55 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		/* add project with rank */
 		rell = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rell->l, NULL, 1, 1));
+		i = 0;
+
+		for (node *n = l->h; n ; n = n->next) { /* replace the updated arguments */
+			sql_exp *e = n->data;
+
+			if (e->type == e_func && !strcmp(((sql_subfunc*)e->f)->func->base.name, "window_bound"))
+				continue;
+			diff_replace_arguments(v->sql, e, ordering, pos, &i);
+		}
+
+		sql_exp *b1 = (sql_exp*) list_fetch(l, list_length(l) - 2); /* the 'window_bound' calls are added after the function arguments and frame type */
+		sql_exp *b2 = (sql_exp*) list_fetch(l, list_length(l) - 1);
+
+		if (b1 && b1->type == e_func && !strcmp(((sql_subfunc*)b1->f)->func->base.name, "window_bound")) {
+			list *ll = b1->l;
+			rell = rel->l = rel_project(v->sql->sa, rell, rel_projections(v->sql, rell, NULL, 1, 1));
+
+			int pe_pos = list_length(l) - 5; /* append the new partition expression to the list of expressions */
+			sql_exp *pe = (sql_exp*) list_fetch(l, pe_pos);
+			list_append(rell->exps, pe);
+
+			if (list_length(ll) == 6) { /* update partition definition for window function input if that's the case */
+				((list*)b1->l)->h->data = exp_ref(v->sql, pe);
+				((list*)b2->l)->h->data = exp_ref(v->sql, pe);
+			}
+			i = 0; /* the partition may get a new reference, update it on the window function list of arguments as well */
+			for (node *n = l->h; n ; n = n->next, i++) {
+				if (i == pe_pos) {
+					n->data = exp_ref(v->sql, pe);
+					break;
+				}
+			}
+
+			int oe_pos = list_length(ll) - 5; /* push the ordering expression out the bound function to avoid redundant work */
+			/* now this is the tricky, part, the ordering expression, may be a column, or any projection, only the later requires the push down */
+			sql_exp *oe = (sql_exp*) list_fetch(ll, oe_pos);
+			if (oe->type != e_column) {
+				list_append(rell->exps, oe);
+
+				if (list_length(ll) == 5) {
+					((list*)b1->l)->h->data = exp_ref(v->sql, oe);
+					((list*)b2->l)->h->data = exp_ref(v->sql, oe);
+				} else {
+					((list*)b1->l)->h->next->data = exp_ref(v->sql, oe);
+					((list*)b2->l)->h->next->data = exp_ref(v->sql, oe);
+				}
+			}
+		}
+
 		/* move rank down add ref */
 		if (!exp_name(e))
 			e = exp_label(v->sql->sa, e, ++v->sql->label);
