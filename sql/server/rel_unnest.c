@@ -2248,18 +2248,38 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 
-			int oe_pos = list_length(ll) - 5; /* push the ordering expression out the bound function to avoid redundant work */
-			/* now this is the tricky, part, the ordering expression, may be a column, or any projection, only the later requires the push down */
-			sql_exp *oe = (sql_exp*) list_fetch(ll, oe_pos);
-			if (oe->type != e_column) {
-				list_append(rell->exps, oe);
+			sql_exp *frame_type = (sql_exp*) list_fetch(l, list_length(l) - 3);
+			atom *a = frame_type->l;
+			int nr = (int)atom_get_int(a);
 
-				if (list_length(ll) == 5) {
-					((list*)b1->l)->h->data = exp_ref(v->sql, oe);
-					((list*)b2->l)->h->data = exp_ref(v->sql, oe);
-				} else {
-					((list*)b1->l)->h->next->data = exp_ref(v->sql, oe);
-					((list*)b2->l)->h->next->data = exp_ref(v->sql, oe);
+			if (nr == FRAME_RANGE && obe) { /* for range we pass the last order by column (otherwise it's either invalid or is a special case)*/
+				int oe_pos = list_length(ll) - 5;
+				sql_exp *oe = (sql_exp*) list_fetch(ll, oe_pos);
+				if (oe->type != e_column && oe->type != e_atom) {
+					sql_exp *common	 = list_fetch(ordering, pos[gbeoffset + list_length(obe) - 1]);
+
+					if (list_length(ll) == 5) {
+						((list*)b1->l)->h->data = exp_ref(v->sql, common);
+						((list*)b2->l)->h->data = exp_ref(v->sql, common);
+					} else {
+						((list*)b1->l)->h->next->data = exp_ref(v->sql, common);
+						((list*)b2->l)->h->next->data = exp_ref(v->sql, common);
+					}
+				}
+			} else if (nr == FRAME_ROWS || nr == FRAME_GROUPS) {
+				int oe_pos = list_length(l) - 4; /* for groups and rows, we push the ordering diff call, reference it back */
+				/* now this is the tricky, part, the ordering expression, may be a column, or any projection, only the later requires the push down */
+				sql_exp *oe = (sql_exp*) list_fetch(l, oe_pos);
+				if (oe->type != e_column && oe->type != e_atom) {
+					list_append(rell->exps, oe);
+
+					if (list_length(ll) == 5) {
+						((list*)b1->l)->h->data = exp_ref(v->sql, oe);
+						((list*)b2->l)->h->data = exp_ref(v->sql, oe);
+					} else {
+						((list*)b1->l)->h->next->data = exp_ref(v->sql, oe);
+						((list*)b2->l)->h->next->data = exp_ref(v->sql, oe);
+					}
 				}
 			}
 		}
