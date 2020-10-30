@@ -245,7 +245,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('STDIN'),
   ('STDOUT'),
   ('STORAGE'),
-  ('STREAM'),
   ('STRING'),
   ('SUBSTRING'),
   ('SYMMETRIC'),
@@ -311,7 +310,7 @@ CREATE TABLE sys.table_types (
     table_type_name VARCHAR(25) NOT NULL UNIQUE);
 
 -- Values taken from sql/include/sql_catalog.h see enum table_types:
--- table = 0, view = 1, merge_table = 3, stream = 4, remote = 5, replica_table = 6
+-- table = 0, view = 1, merge_table = 3, stream = 4 (not used anymore), remote = 5, replica_table = 6
 -- Note: values 10, 11, 20 and 30 are synthetically constructed, see
 -- view sys.tables. Do not change them as they are used by ODBC
 -- SQLTables(SQL_ALL_TABLE_TYPES) and JDBC methods getTableTypes() and
@@ -320,7 +319,6 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
   (0, 'TABLE'),
   (1, 'VIEW'),
   (3, 'MERGE TABLE'),
-  (4, 'STREAM TABLE'),
   (5, 'REMOTE TABLE'),
   (6, 'REPLICA TABLE'),
 -- synthetically constructed system obj variants (added 10 to

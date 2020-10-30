@@ -175,7 +175,6 @@ sql_table *
 mvc_create_table_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *tname, dlist *column_spec, int temp, int commit_action, const char *action)
 {
 	table_types tt =(temp == SQL_REMOTE)?tt_remote:
-		(temp == SQL_STREAM)?tt_stream:
 		(temp == SQL_MERGE_TABLE)?tt_merge_table:
 		(temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 
@@ -644,7 +643,6 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
 				  isMergeTable(t)?"MERGE TABLE":
 				  isRemote(t)?"REMOTE TABLE":
-				  isStream(t)?"STREAM TABLE":
 				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
 				  t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
 		return SQL_ERR;
@@ -726,7 +724,6 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
 				isRemote(t)?"REMOTE TABLE":
-				isStream(t)?"STREAM TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
 				t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
 		return SQL_ERR;
@@ -959,7 +956,6 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 {
 	mvc *sql = query->sql;
 	int tt = (temp == SQL_REMOTE)?tt_remote:
-		 (temp == SQL_STREAM)?tt_stream:
 		 (temp == SQL_MERGE_TABLE)?tt_merge_table:
 		 (temp == SQL_REPLICA_TABLE)?tt_replica_table:tt_table;
 	bit properties = partition_def ? (bit) partition_def->data.lval->h->next->next->data.i_val : 0;
