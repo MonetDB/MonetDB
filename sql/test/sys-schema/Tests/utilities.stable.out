@@ -32,8 +32,8 @@ stdout of test 'utilities` in directory 'sql/test/sys-schema` itself:
 #  RETURN SELECT min(id) from sys.tables where name = tname AND schema_id = (SELECT id from sys.schemas where name = sname);
 #END;
 #SELECT table_id('sys','tables') > 2000;
-% .%17 # table_name
-% %17 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -74,8 +74,8 @@ stdout of test 'utilities` in directory 'sql/test/sys-schema` itself:
 % 3 # length
 [ "sys"	]
 #SELECT table_id('tables') > 2000;
-% .%17 # table_name
-% %17 # name
+% .%14 # table_name
+% %14 # name
 % boolean # type
 % 5 # length
 [ true	]
