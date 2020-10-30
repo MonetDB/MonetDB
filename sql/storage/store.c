@@ -5506,9 +5506,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sql_trans_drop_dependencies(tr, t->base.id);
 	sql_trans_drop_obj_priv(tr, t->base.id);
 
-	if (isKindOfTable(t) || isView(t))
-		if (sys_drop_columns(tr, t, drop_action))
-			return -1;
+	if (sys_drop_columns(tr, t, drop_action))
+		return -1;
 
 	if (isGlobal(t))
 		tr->schema_updates ++;
@@ -6663,9 +6662,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (isKindOfTable(t))
-		if (sys_drop_column(tr, col, drop_action))
-			return -1;
+	if (sys_drop_column(tr, col, drop_action))
+		return -1;
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&t->columns, n, col->base.flags);
