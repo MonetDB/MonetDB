@@ -1960,9 +1960,9 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 5.5	]
 [ 5.5	]
 [ 5.5	]
-[ 8.666666667	]
-[ 8.666666667	]
-[ 8.666666667	]
+[ 8.666666985	]
+[ 8.666666985	]
+[ 8.666666985	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb asc) from debugme;
 % sys.%1 # table_name
@@ -1975,9 +1975,9 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 [ 5.5	]
 [ 5.5	]
 [ 5.5	]
-[ 8.666666667	]
-[ 8.666666667	]
-[ 8.666666667	]
+[ 8.666666985	]
+[ 8.666666985	]
+[ 8.666666985	]
 [ NULL	]
 #select avg(aa) over (partition by bb order by bb desc) from debugme;
 % sys.%1 # table_name
@@ -1985,9 +1985,9 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % double # type
 % 24 # length
 [ NULL	]
-[ 8.666666667	]
-[ 8.666666667	]
-[ 8.666666667	]
+[ 8.666666985	]
+[ 8.666666985	]
+[ 8.666666985	]
 [ 5.5	]
 [ 5.5	]
 [ 5.5	]
@@ -2000,15 +2000,15 @@ stdout of test 'analytics00` in directory 'sql/test/analytics` itself:
 % double # type
 % 24 # length
 [ NULL	]
-[ 8.666666667	]
-[ 8.666666667	]
-[ 8.666666667	]
-[ 7.4	]
-[ 7.4	]
-[ 7.4	]
-[ 5.75	]
-[ 5.75	]
-[ 5.75	]
+[ 8.666666985	]
+[ 8.666666985	]
+[ 8.666666985	]
+[ 7.400000095	]
+[ 7.400000095	]
+[ 7.400000095	]
+[ 5.750000477	]
+[ 5.750000477	]
+[ 5.750000477	]
 #create table overflowme (a int); --we test on 32-bit machines up so this should be safe to test an overflow
 #insert into overflowme values (2147483644), (2147483645), (2147483646);
 [ 3	]
