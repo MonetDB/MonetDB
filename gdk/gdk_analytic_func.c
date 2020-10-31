@@ -133,7 +133,7 @@ GDKanalyticalntile(BAT *r, BAT *b, BAT *p, BAT *n, int tpe, const void *restrict
 			goto nosupport;
 		}
 	}
-	BATsetcount(r, cnt);
+	BATsetcount(r, BATcount(b));
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -403,7 +403,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 		}
 	}
 
-	BATsetcount(r, cnt);
+	BATsetcount(r, BATcount(b));
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
