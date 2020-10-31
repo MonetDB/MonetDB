@@ -985,9 +985,9 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (; k < i;) { \
 				j = k; \
 				do {	\
-					curval++;	\
 					k++; \
 				} while (k < i && !op[k]);	\
+				curval += k - j; \
 				for (; j < k; j++) \
 					rb[j] = curval; \
 			} \
@@ -1010,8 +1010,8 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		l = i - 1; \
 		if (count_all) { \
 			for (j = l; ; j--) { \
-				curval++;	\
 				if (op[j] || j == k) {	\
+					curval += l - j + 1; \
 					for (; ; l--) { \
 						rb[l] = curval; \
 						if (l == j)	\
@@ -1092,9 +1092,9 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (; k < i;) { \
 				j = k; \
 				do {	\
-					curval++;	\
 					k++; \
 				} while (k < i && !op[k]);	\
+				curval += k - j; \
 				for (; j < k; j++) \
 					rb[j] = curval; \
 			} \
@@ -1117,8 +1117,8 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		l = i - 1; \
 		if (count_all) { \
 			for (j = l; ; j--) { \
-				curval++;	\
 				if (op[j] || j == k) {	\
+					curval += l - j + 1; \
 					for (; ; l--) { \
 						rb[l] = curval; \
 						if (l == j)	\
