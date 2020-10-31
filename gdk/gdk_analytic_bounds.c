@@ -872,9 +872,9 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		} else if (is_lng_nil(limit) || limit < 0) {
 			goto invalid_bound;	
 		} else if (preceding) {
-			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, lng, limit, olimit);
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, lng, limit, (oid) olimit);
 		} else {
-			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, lng, limit, olimit);
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, lng, limit, (oid) olimit);
 		}
 	}
 
