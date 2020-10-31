@@ -1271,7 +1271,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		empty = true; \
 		for (; k < i;) { \
 			str nsep, nstr;	\
-			lng m = k;	\
+			oid m = k;	\
 			j = k; \
 			do {	\
 				k++; \
