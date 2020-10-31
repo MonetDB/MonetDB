@@ -392,10 +392,32 @@ cleanup:
 }
 
 static int
+monetdbe_close_remote(monetdbe_database_internal *mdbe)
+{
+	assert(mdbe && mdbe->mid);
+
+	int err = 0;
+
+	if (mdbe->msg) {
+		err = 1;
+		clear_error(mdbe);
+	}
+
+	if ( (mdbe->msg = RMTdisconnect(NULL, &(mdbe->mid))) != MAL_SUCCEED) {
+		err = 1;
+		clear_error(mdbe);
+	}
+
+	GDKfree(mdbe->mid);
+	mdbe->mid = NULL;
+
+	return err;
+}
+
+static int
 monetdbe_close_internal(monetdbe_database_internal *mdbe)
 {
-	if (!mdbe)
-		return 0;
+	assert(mdbe);
 
 	if (validate_database_handle_noerror(mdbe)) {
 		open_dbs--;
@@ -675,7 +697,8 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_optio
 	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED ) {
 		return -2;
 	}
-	mdbe->mid = strdup(*getArgReference_str(stk, p, 0));
+
+	mdbe->mid = GDKstrdup(*getArgReference_str(stk, p, 0));
 
 	garbageCollector(c, mb, stk, TRUE);
 	freeStack(stk);
@@ -733,24 +756,24 @@ monetdbe_close(monetdbe_database dbhdl)
 		return 0;
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	int err = 0;
+
 	MT_lock_set(&embedded_lock);
+	if (mdbe->mid)
+		err = monetdbe_close_remote(mdbe);
 
-	// TODO it is a bit unclear how to handle the error in a faulty disconnect.
-	char* msg = NULL;
-	if (mdbe->mid) {
-		msg = RMTdisconnect(NULL, &(mdbe->mid));
-	}
+	err = (monetdbe_close_internal(mdbe) || err);
 
-	int err = monetdbe_close_internal(mdbe);
 	if (!open_dbs)
 		monetdbe_shutdown_internal();
 	MT_lock_unset(&embedded_lock);
 
-	if (!err && msg) {
+	if (err) {
 		return -2;
 	}
 
-	return err;
+	return 0;
 }
 
 char *
