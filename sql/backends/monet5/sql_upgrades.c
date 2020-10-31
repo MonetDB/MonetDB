@@ -2565,8 +2565,34 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 				goto bailout;
 			*systabfixed = true;
+
+			pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
+
+			/* 51_sys_schema_extensions, remove stream table entries */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"ALTER TABLE sys.keywords SET READ WRITE;\n"
+					"DELETE FROM sys.keywords where keyword = 'STREAM';\n"
+					"ALTER TABLE sys.table_types SET READ WRITE;\n"
+					"DELETE FROM sys.table_types where table_type_id = 4;\n");
+
+			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			if ((err = SQLstatementIntern(c, buf, "update", true, false, NULL)) != MAL_SUCCEED)
+				goto bailout;
+		
+			pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
+					"ALTER TABLE sys.keywords SET READ ONLY;\n"
+					"ALTER TABLE sys.table_types SET READ ONLY;\n");
+			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+			assert(pos < bufsize);
+			printf("Running database upgrade commands:\n%s\n", buf);
+			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 		}
 	}
+
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);

@@ -1,0 +1,25 @@
+stdout of test 'drop-stream-table.Bug-7005` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 20:09:31 >  
+# 20:09:31 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-67704" "--port=30508"
+# 20:09:31 >  
+
+#CREATE merge TABLE strt  (id int primary key, nm varchar(123) NOT NULL);
+MERGE TABLE  sys.strt
+#SELECT table_id, * FROM sys._columns WHERE (table_id) NOT IN (SELECT id FROM sys._tables);
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% table_id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+#DROP TABLE strt;
+#SELECT table_id, * FROM sys._columns WHERE (table_id) NOT IN (SELECT id FROM sys._tables);
+% sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns,	sys._columns # table_name
+% table_id,	id,	name,	type,	type_digits,	type_scale,	table_id,	default,	null,	number,	storage # name
+% int,	int,	varchar,	varchar,	int,	int,	int,	varchar,	boolean,	int,	varchar # type
+% 1,	1,	0,	0,	1,	1,	1,	0,	5,	1,	0 # length
+
+# 20:09:31 >  
+# 20:09:31 >  "Done."
+# 20:09:31 >  
+
