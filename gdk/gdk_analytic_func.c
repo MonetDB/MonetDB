@@ -251,7 +251,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 		break;
 	default:{
 		for (; k < cnt; k++) {
-			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, (BUN) (end[k] - 1)) : nil;
+			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, end[k] - 1) : nil;
 			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 				return GDK_FAIL;
 			has_nils |= atomcmp(curval, nil) == 0;
@@ -796,7 +796,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				k++; \
 			} while (k < i && !op[k]);	\
 			for (; j < k; j++) \
-				if (tfastins_nocheckVAR(r, (BUN) j, curval, Tsize(r)) != GDK_SUCCEED) \
+				if (tfastins_nocheckVAR(r, j, curval, Tsize(r)) != GDK_SUCCEED) \
 					return GDK_FAIL; \
 			has_nils |= atomcmp(curval, nil) == 0;		\
 		} \
@@ -1435,7 +1435,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 #define ANALYTICAL_SUM_IMP_FP_ALL_ROWS(TPE1, TPE2)	\
 	do { \
 		TPE1 *bs = &(bp[k]);	\
-		BUN parcel = (BUN)(i - k);	\
+		BUN parcel = i - k;	\
 		TPE2 curval = TPE2##_nil; \
 		if (dofsum(bs, 0,			\
 				&(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
@@ -1468,7 +1468,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 		for (; k < i; k++) {		\
 			if (end[k] > start[k]) {			\
 				TPE1 *bs = bp + start[k];			\
-				BUN parcel = (BUN)(end[k] - start[k]);	\
+				BUN parcel = end[k] - start[k];	\
 				if (dofsum(bs, 0,			\
 					   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
 					   parcel, &curval, 1, TYPE_##TPE1, \
