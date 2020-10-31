@@ -1671,13 +1671,13 @@ append_create_remote_append_mal_program(
 			* Comments generate variable names during parsing:
 			* sql.mvc has one comment and for each column there is one sql.append statement plus comment.
 			*/
-		const int nr_of_comments = 1 + ccount;
+		const int nr_of_comments = (int) 1 + ccount;
 		/*
 			* constant terms generate variable names during parsing:
 			* Each sql.append has three constant terms: schema + table + column_name.
 			* There is one sql.append stmt for each column.
 			*/
-		const int nr_of_constant_terms =  3 * ccount;
+		const int nr_of_constant_terms =  (int)  3 * ccount;
 		mb->vid = nr_of_comments + nr_of_constant_terms;
 	} // END OF HACK
 
@@ -1692,7 +1692,7 @@ append_create_remote_append_mal_program(
 	for (size_t i = 0; i < ccount; i++) {
 
 		sql_type *tpe = SA_ZNEW(m->sa, sql_type);
-		tpe->localtype = monetdbe_type(ctypes[i]);
+		tpe->localtype = monetdbe_type((monetdbe_types) ctypes[i]);
 		sql_subtype *st = SA_ZNEW(m->sa, sql_subtype);
 		sql_init_subtype(st, tpe, 0, 0);
 
