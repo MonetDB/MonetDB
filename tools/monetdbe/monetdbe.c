@@ -1130,9 +1130,6 @@ cleanup:
 static char*
 monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id)
 {
-	// TODO: do something with affected_rows
-	(void) affected_rows;
-
 	const char *mod = "user";
 	char nme[16];
 
@@ -1243,6 +1240,10 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 			((monetdbe_result_internal*) *result)->type = Q_PREPARE;
 		else
 			((monetdbe_result_internal*) *result)->type = (be->results) ? be->results->query_type : m->type;
+
+
+		if (!be->results && be->rowcnt >= 0 && affected_rows)
+			*affected_rows = be->rowcnt;
 	}
 
 	return mdbe->msg;
