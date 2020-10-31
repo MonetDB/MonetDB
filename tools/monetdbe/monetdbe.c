@@ -1804,27 +1804,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 			goto remote_cleanup;
 		}
 
-		// TODO: is this check necessary?
-		if (actual_column_count != column_count) {
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append",
-							"The number of to-be-appended columns doesn't match the number of existing columns: %zu != %zu",
-							column_count,
-							actual_column_count);
-			goto remote_cleanup;
-		}
-
-		// TODO: are these checks necessary?
-		for (i = 0; i < column_count; i++) {
-			if (strcmp(actual_column_names[i], input[i]->name) != 0 || actual_column_types[i] != (int) input[i]->type ) {
-				mdbe->msg = createException(MAL, "monetdbe.monetdbe_append",
-							"The name of the to-be-appended column doesn't match the name of the existing column at the current index %zu: %s != %s",
-							i,
-							input[i]->name,
-							actual_column_names[i]);
-				goto remote_cleanup;
-			}
-		}
-
 		if ((mdbe->msg = append_create_remote_append_mal_program
 							(&remote_prg,
 							&s,
@@ -1866,12 +1845,12 @@ remote_cleanup:
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Table missing %s.%s", schema, table);
 			goto cleanup;
 		}
+	}
 
-		/* for now no default values, ie user should supply all columns */
-		if (column_count != (size_t)list_length(t->columns.set)) {
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
-			goto cleanup;
-		}
+	/* for now no default values, ie user should supply all columns */
+	if (column_count != (size_t)list_length(t->columns.set)) {
+		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
+		goto cleanup;
 	}
 
 	cnt = input[0]->count;
