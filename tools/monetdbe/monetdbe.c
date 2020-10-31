@@ -464,15 +464,6 @@ monetdbe_shutdown_internal(void) // Call this function always inside the embedde
 	}
 }
 
-static bool
-monetdbe_is_remote(char* dbname) {
-
-	// TODO copied from mal_client.c
-	return dbname != NULL && (strncmp(dbname, "mapi:monetdb://", 15) == 0);
-}
-
-
-
 static void
 monetdbe_startup(monetdbe_database_internal *mdbe, char* dbdir, monetdbe_options *opts)
 {
@@ -711,7 +702,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	mdbe->msg = NULL;
 	mdbe->c = NULL;
 
-	bool is_remote = monetdbe_is_remote(url);
+	bool is_remote = opts->remote != NULL;
 	if (!monetdbe_embedded_initialized) {
 		/* When used as a remote mapi proxy,
 		 * it is still necessary to have an initialized monetdbe. E.g. for BAT life cycle management.
