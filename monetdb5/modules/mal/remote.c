@@ -1183,18 +1183,20 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 		return tmp;
 	}
 	
-	*fcn_id = GDKmalloc(strlen(ident));
+	*fcn_id = GDKstrdup(ident);
 	if (*fcn_id == NULL) {
 		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
-
-	strcpy(*fcn_id, ident);
 
 	Symbol prg;
 
 	if ((prg = newFunction(putName(mod), putName(*fcn_id), FUNCTIONsymbol)) == NULL) {
 		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
+
+	// We only need the Symbol not the inner program stub. So we clear it.
+	freeMalBlk(prg->def);
+	prg->def = NULL;
 
 	if ((prg->def = copyMalBlk(sym->def)) == NULL) {
 		freeSymbol(prg);
