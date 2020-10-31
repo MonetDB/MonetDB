@@ -945,24 +945,27 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	BATiter bpi = bat_iterator(b);				\
 	const void *nil = ATOMnilptr(tpe);			\
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
-									\
-	switch (frame_type) {		\
-	case 3: /* unbounded until current row */	{	\
-		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, UNBOUNDED_TILL_CURRENT_ROW); \
-	} break;		\
-	case 4: /* current row until unbounded */	{	\
-		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW_TILL_UNBOUNDED); \
-	} break;		\
-	case 5: /* all rows */	{	\
-		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, ALL_ROWS); \
-	} break;		\
-	case 6: /* current row */ {	\
-		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
-	} break;		\
-	default: {		\
-		ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
-	}		\
-	}	\
+	\
+	if (cnt > 0) {	\
+		switch (frame_type) {		\
+		case 3: /* unbounded until current row */	{	\
+			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, UNBOUNDED_TILL_CURRENT_ROW); \
+		} break;		\
+		case 4: /* current row until unbounded */	{	\
+			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW_TILL_UNBOUNDED); \
+		} break;		\
+		case 5: /* all rows */	{	\
+			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, ALL_ROWS); \
+		} break;		\
+		case 6: /* current row */ {	\
+			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, CURRENT_ROW); \
+		} break;		\
+		default: {		\
+			ANALYTICAL_MIN_MAX_BRANCHES(MIN_MAX, GT_LT, OTHERS); \
+		}		\
+		}	\
+	} \
+	\
 	BATsetcount(r, (BUN) cnt);						\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
@@ -1242,23 +1245,26 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	bool count_all = !ignore_nils || b->tnonil;
 	BATiter bpi = bat_iterator(b);
 
-	switch (frame_type) {
-	case 3: /* unbounded until current row */	{
-		ANALYTICAL_COUNT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-	} break;
-	case 4: /* current row until unbounded */	{
-		ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-	} break;
-	case 5: /* all rows */	{
-		ANALYTICAL_COUNT_BRANCHES(ALL_ROWS);
-	} break;
-	case 6: /* current row */ {
-		ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW);
-	} break;
-	default: {
-		ANALYTICAL_COUNT_BRANCHES(OTHERS);
+	if (cnt > 0) {
+		switch (frame_type) {
+		case 3: /* unbounded until current row */	{
+			ANALYTICAL_COUNT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+		} break;
+		case 4: /* current row until unbounded */	{
+			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+		} break;
+		case 5: /* all rows */	{
+			ANALYTICAL_COUNT_BRANCHES(ALL_ROWS);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_COUNT_BRANCHES(CURRENT_ROW);
+		} break;
+		default: {
+			ANALYTICAL_COUNT_BRANCHES(OTHERS);
+		}
+		}
 	}
-	}
+
 	BATsetcount(r, (BUN) cnt);
 	r->tnonil = true;
 	r->tnil = false;
@@ -1601,23 +1607,26 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 	int abort_on_error = 1;
 	BUN nils = 0;
 
-	switch (frame_type) {
-	case 3: /* unbounded until current row */	{
-		ANALYTICAL_SUM_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-	} break;
-	case 4: /* current row until unbounded */	{
-		ANALYTICAL_SUM_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-	} break;
-	case 5: /* all rows */	{
-		ANALYTICAL_SUM_BRANCHES(ALL_ROWS);
-	} break;
-	case 6: /* current row */ {
-		ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
-	} break;
-	default: {
-		ANALYTICAL_SUM_BRANCHES(OTHERS);
+	if (cnt > 0) {
+		switch (frame_type) {
+		case 3: /* unbounded until current row */	{
+			ANALYTICAL_SUM_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+		} break;
+		case 4: /* current row until unbounded */	{
+			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+		} break;
+		case 5: /* all rows */	{
+			ANALYTICAL_SUM_BRANCHES(ALL_ROWS);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
+		} break;
+		default: {
+			ANALYTICAL_SUM_BRANCHES(OTHERS);
+		}
+		}
 	}
-	}
+
 	BATsetcount(r, (BUN) cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
@@ -2058,22 +2067,24 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	int abort_on_error = 1;
 	BUN nils = 0;
 
-	switch (frame_type) {
-	case 3: /* unbounded until current row */	{
-		ANALYTICAL_PROD_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-	} break;
-	case 4: /* current row until unbounded */	{
-		ANALYTICAL_PROD_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-	} break;
-	case 5: /* all rows */	{
-		ANALYTICAL_PROD_BRANCHES(ALL_ROWS);
-	} break;
-	case 6: /* current row */ {
-		ANALYTICAL_PROD_BRANCHES(CURRENT_ROW);
-	} break;
-	default: {
-		ANALYTICAL_PROD_BRANCHES(OTHERS);
-	}
+	if (cnt > 0) {
+		switch (frame_type) {
+		case 3: /* unbounded until current row */	{
+			ANALYTICAL_PROD_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+		} break;
+		case 4: /* current row until unbounded */	{
+			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+		} break;
+		case 5: /* all rows */	{
+			ANALYTICAL_PROD_BRANCHES(ALL_ROWS);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_PROD_BRANCHES(CURRENT_ROW);
+		} break;
+		default: {
+			ANALYTICAL_PROD_BRANCHES(OTHERS);
+		}
+		}
 	}
 
 	BATsetcount(r, (BUN) cnt);
@@ -2396,22 +2407,24 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	lng sum = 0;
 #endif
 
-	switch (frame_type) {
-	case 3: /* unbounded until current row */	{
-		ANALYTICAL_AVG_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW, LNG_HGE);
-	} break;
-	case 4: /* current row until unbounded */	{
-		ANALYTICAL_AVG_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED, LNG_HGE);
-	} break;
-	case 5: /* all rows */	{
-		ANALYTICAL_AVG_BRANCHES(ALL_ROWS, LNG_HGE);
-	} break;
-	case 6: /* current row */ {
-		ANALYTICAL_AVG_BRANCHES(CURRENT_ROW, LNG_HGE);
-	} break;
-	default: {
-		ANALYTICAL_AVG_BRANCHES(OTHERS, LNG_HGE);
-	}
+	if (cnt > 0) {
+		switch (frame_type) {
+		case 3: /* unbounded until current row */	{
+			ANALYTICAL_AVG_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW, LNG_HGE);
+		} break;
+		case 4: /* current row until unbounded */	{
+			ANALYTICAL_AVG_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED, LNG_HGE);
+		} break;
+		case 5: /* all rows */	{
+			ANALYTICAL_AVG_BRANCHES(ALL_ROWS, LNG_HGE);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_AVG_BRANCHES(CURRENT_ROW, LNG_HGE);
+		} break;
+		default: {
+			ANALYTICAL_AVG_BRANCHES(OTHERS, LNG_HGE);
+		}
+		}
 	}
 
 	BATsetcount(r, (BUN) cnt);
@@ -2600,22 +2613,24 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 
-	switch (frame_type) {
-	case 3: /* unbounded until current row */	{
-		ANALYTICAL_AVG_INT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-	} break;
-	case 4: /* current row until unbounded */	{
-		ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-	} break;
-	case 5: /* all rows */	{
-		ANALYTICAL_AVG_INT_BRANCHES(ALL_ROWS);
-	} break;
-	case 6: /* current row */ {
-		ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW);
-	} break;
-	default: {
-		ANALYTICAL_AVG_INT_BRANCHES(OTHERS);
-	}
+	if (cnt > 0) {
+		switch (frame_type) {
+		case 3: /* unbounded until current row */	{
+			ANALYTICAL_AVG_INT_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+		} break;
+		case 4: /* current row until unbounded */	{
+			ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+		} break;
+		case 5: /* all rows */	{
+			ANALYTICAL_AVG_INT_BRANCHES(ALL_ROWS);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_AVG_INT_BRANCHES(CURRENT_ROW);
+		} break;
+		default: {
+			ANALYTICAL_AVG_INT_BRANCHES(OTHERS);
+		}
+		}
 	}
 
 	BATsetcount(r, (BUN) cnt);
@@ -2813,22 +2828,24 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
 	\
-	switch (frame_type) {	\
-	case 3: /* unbounded until current row */	{	\
-		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
-	} break;	\
-	case 4: /* current row until unbounded */	{	\
-		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
-	} break;	\
-	case 5: /* all rows */	{	\
-		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_ALL_ROWS, SAMPLE, OP);	\
-	} break;	\
-	case 6: /* current row */ {	\
-		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
-	} break;	\
-	default: {	\
-		ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP);	\
-	}	\
+	if (cnt > 0) {	\
+		switch (frame_type) {	\
+		case 3: /* unbounded until current row */	{	\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
+		} break;	\
+		case 4: /* current row until unbounded */	{	\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
+		} break;	\
+		case 5: /* all rows */	{	\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_ALL_ROWS, SAMPLE, OP);	\
+		} break;	\
+		case 6: /* current row */ {	\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_CURRENT_ROW, SAMPLE, OP);	\
+		} break;	\
+		default: {	\
+			ANALYTICAL_STATISTICS_BRANCHES(STDEV_VARIANCE_OTHERS, SAMPLE, OP);	\
+		}	\
+		}	\
 	}	\
 	\
 	BATsetcount(r, (BUN) cnt); \
@@ -2999,22 +3016,24 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	\
-	switch (frame_type) {	\
-	case 3: /* unbounded until current row */	{	\
-		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
-	} break;	\
-	case 4: /* current row until unbounded */	{	\
-		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
-	} break;	\
-	case 5: /* all rows */	{	\
-		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_ALL_ROWS, SAMPLE, OP);	\
-	} break;	\
-	case 6: /* current row */ {	\
-		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP);	\
-	} break;	\
-	default: {	\
-		ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP);	\
-	}	\
+	if (cnt > 0) {	\
+		switch (frame_type) {	\
+		case 3: /* unbounded until current row */	{	\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_UNBOUNDED_TILL_CURRENT_ROW, SAMPLE, OP);	\
+		} break;	\
+		case 4: /* current row until unbounded */	{	\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW_TILL_UNBOUNDED, SAMPLE, OP);	\
+		} break;	\
+		case 5: /* all rows */	{	\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_ALL_ROWS, SAMPLE, OP);	\
+		} break;	\
+		case 6: /* current row */ {	\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_CURRENT_ROW, SAMPLE, OP);	\
+		} break;	\
+		default: {	\
+			ANALYTICAL_STATISTICS_BRANCHES(COVARIANCE_OTHERS, SAMPLE, OP);	\
+		}	\
+		}	\
 	}	\
 	\
 	BATsetcount(r, (BUN) cnt); \
@@ -3207,22 +3226,24 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, res;
 
-	switch (frame_type) {
-	case 3: /* unbounded until current row */	{
-		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_UNBOUNDED_TILL_CURRENT_ROW, ;, ;);
-	} break;
-	case 4: /* current row until unbounded */	{
-		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW_TILL_UNBOUNDED, ;, ;);
-	} break;
-	case 5: /* all rows */	{
-		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_ALL_ROWS, ;, ;);
-	} break;
-	case 6: /* current row */ {
-		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW, ;, ;);
-	} break;
-	default: {
-		ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_OTHERS, ;, ;);
-	}
+	if (cnt > 0) {
+		switch (frame_type) {
+		case 3: /* unbounded until current row */	{
+			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_UNBOUNDED_TILL_CURRENT_ROW, ;, ;);
+		} break;
+		case 4: /* current row until unbounded */	{
+			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW_TILL_UNBOUNDED, ;, ;);
+		} break;
+		case 5: /* all rows */	{
+			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_ALL_ROWS, ;, ;);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_CURRENT_ROW, ;, ;);
+		} break;
+		default: {
+			ANALYTICAL_STATISTICS_BRANCHES(CORRELATION_OTHERS, ;, ;);
+		}
+		}
 	}
 
 	BATsetcount(r, (BUN) cnt);
