@@ -2073,14 +2073,7 @@ remote_cleanup:
 			goto cleanup;
 		}
 
-		MalStkPtr stk = prepareMALstack(mb, mb->vsize);
-		stk->keepAlive = TRUE;
-
-		mdbe->msg = runMAL(mdbe->c, mb, 0, stk);
-
-		// TODO: figure out what goes wrong during garbage collection
-		// garbageCollector(mdbe->c, mb, stk, TRUE);
-		// freeStack(stk);
+		mdbe->msg = runMAL(mdbe->c, mb, 0, NULL);
 		freeSymbol(prg);
 	}
 
