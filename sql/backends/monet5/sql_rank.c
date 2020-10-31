@@ -118,7 +118,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	bool preceding;
-	lng first_half;
+	oid second_half;
 	int unit, bound, excl, part_offset = (pci->argc > 6);
 	bat *res = NULL;
 	BAT *r = NULL, *b = NULL, *p = NULL, *l = NULL;
@@ -136,7 +136,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(bound >= 0 && bound <= 5);
 	assert(excl >= 0 && excl <= 2);
 	preceding = (bound % 2 == 0);
-	first_half = (bound < 2 || bound == 4);
+	second_half = !(bound < 2 || bound == 4);
 
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
@@ -160,7 +160,7 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (is_a_bat)
 			tp2 = getBatType(tp2);
 
-		if (!(r = COLnew(b->hseqbase, TYPE_lng, BATcount(b), TRANSIENT))) {
+		if (!(r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT))) {
 			msg = createException(SQL, "sql.window_bound", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
@@ -180,12 +180,12 @@ SQLwindow_bound(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		//On RANGE frame, when "CURRENT ROW" is not specified, the ranges are calculated with SQL intervals in mind
-		if (GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, first_half) != GDK_SUCCEED)
+		if (GDKanalyticalwindowbounds(r, b, p, l, limit, tp1, tp2, unit, preceding, second_half) != GDK_SUCCEED)
 			msg = createException(SQL, "sql.window_bound", GDK_EXCEPTION);
 	} else {
-		lng *res = getArgReference_lng(stk, pci, 0);
+		oid *res = getArgReference_oid(stk, pci, 0);
 
-		*res = preceding ? -first_half : first_half;
+		*res = preceding ? 0 : 1;
 	}
 
 bailout:
@@ -801,8 +801,8 @@ SQLanalytics_args(BAT **r, BAT **b, int *frame_type, BAT **p, BAT **o, BAT **s, 
 	if ((*s && BATcount(*b) != BATcount(*s)) || (*e && BATcount(*b) != BATcount(*e)) ||
 		(*p && BATcount(*b) != BATcount(*p)) || (*o && BATcount(*b) != BATcount(*o)))
 		throw(SQL, mod, ILLEGAL_ARGUMENT " Requires bats of identical size");
-	if ((*p && (*p)->ttype != TYPE_bit) || (*o && (*o)->ttype != TYPE_bit) || (*s && (*s)->ttype != TYPE_lng) || (*e && (*e)->ttype != TYPE_lng))
-		throw(SQL, mod, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be lng");
+	if ((*p && (*p)->ttype != TYPE_bit) || (*o && (*o)->ttype != TYPE_bit) || (*s && (*s)->ttype != TYPE_oid) || (*e && (*e)->ttype != TYPE_oid))
+		throw(SQL, mod, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
 
 	return MAL_SUCCEED;
 }
@@ -876,8 +876,8 @@ do_limit_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const ch
 			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
-		if ((s && s->ttype != TYPE_lng) || (e && e->ttype != TYPE_lng)) {
-			msg = createException(SQL, op, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be lng");
+		if ((s && s->ttype != TYPE_oid) || (e && e->ttype != TYPE_oid)) {
+			msg = createException(SQL, op, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
 			goto bailout;
 		}
 
@@ -976,8 +976,8 @@ SQLnth_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.nth_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
-		if ((s && s->ttype != TYPE_lng) || (e && e->ttype != TYPE_lng)) {
-			msg = createException(SQL, "sql.nth_value", ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be lng");
+		if ((s && s->ttype != TYPE_oid) || (e && e->ttype != TYPE_oid)) {
+			msg = createException(SQL, "sql.nth_value", ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
 			goto bailout;
 		}
 
@@ -1230,8 +1230,8 @@ SQLcount(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.count", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
-	if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_lng) || (e && e->ttype != TYPE_lng)) {
-		msg = createException(SQL, "sql.count", ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be lng");
+	if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_oid) || (e && e->ttype != TYPE_oid)) {
+		msg = createException(SQL, "sql.count", ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
 		goto bailout;
 	}
 
@@ -1325,8 +1325,8 @@ do_analytical_sumprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, c
 			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
-		if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_lng) || (e && e->ttype != TYPE_lng)) {
-			msg = createException(SQL, op, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be lng");
+		if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_oid) || (e && e->ttype != TYPE_oid)) {
+			msg = createException(SQL, op, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
 			goto bailout;
 		}
 
@@ -1608,8 +1608,11 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					rr = dbl_nil; \
 					has_nils = true; \
 				} \
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = rr; \
+					if (l == j)	\
+						break;	\
+				} \
 				if (j == k)	\
 					break;	\
 				l = j - 1;	\
@@ -1782,8 +1785,8 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			msg = createException(SQL, op, ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
-		if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_lng) || (e && e->ttype != TYPE_lng)) {
-			msg = createException(SQL, op, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be lng");
+		if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_oid) || (e && e->ttype != TYPE_oid)) {
+			msg = createException(SQL, op, ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
 			goto bailout;
 		}
 
@@ -1794,31 +1797,33 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			/* corner case, second column is a constant, calculate it this way... */
 			BAT *d = b ? b : c;
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[b ? 2 : 1]];
-			lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(d), n = 0;
-			lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+			lng n = 0;
 			bit *np = p ? Tloc(p, 0) : NULL, *opp = o ? Tloc(o, 0) : NULL;
 			dbl *restrict rb = (dbl *) Tloc(r, 0), val = VALisnil(input2) ? dbl_nil : defaultv, rr;
 			bool has_nils = is_dbl_nil(val);
 
-			switch (frame_type) {
-			case 3: /* unbounded until current row */	{
-				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
-			} break;
-			case 4: /* current row until unbounded */	{
-				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
-			} break;
-			case 5: /* all rows */	{
-				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(ALL_ROWS);
-			} break;
-			case 6: /* current row */ {
-				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW);
-			} break;
-			default: {
-				COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
-			}
+			if (cnt > 0) {
+				switch (frame_type) {
+				case 3: /* unbounded until current row */	{
+					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(UNBOUNDED_TILL_CURRENT_ROW);
+				} break;
+				case 4: /* current row until unbounded */	{
+					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW_TILL_UNBOUNDED);
+				} break;
+				case 5: /* all rows */	{
+					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(ALL_ROWS);
+				} break;
+				case 6: /* current row */ {
+					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(CURRENT_ROW);
+				} break;
+				default: {
+					COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
+				}
+				}
 			}
 
-			BATsetcount(r, (BUN) cnt);
+			BATsetcount(r, cnt);
 			r->tnonil = !has_nils;
 			r->tnil = has_nils;
 		}
@@ -1933,8 +1938,8 @@ SQLstrgroup_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = createException(SQL, "sql.strgroup_concat", ILLEGAL_ARGUMENT " Requires bats of identical size");
 			goto bailout;
 		}
-		if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_lng) || (e && e->ttype != TYPE_lng)) {
-			msg = createException(SQL, "sql.strgroup_concat", ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be lng");
+		if ((p && p->ttype != TYPE_bit) || (o && o->ttype != TYPE_bit) || (s && s->ttype != TYPE_oid) || (e && e->ttype != TYPE_oid)) {
+			msg = createException(SQL, "sql.strgroup_concat", ILLEGAL_ARGUMENT " p and o must be bit type and s and e must be oid");
 			goto bailout;
 		}
 

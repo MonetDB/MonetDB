@@ -160,8 +160,7 @@ gdk_return
 GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 {
 	bool has_nils = false;
-	lng k = 0, cnt = (lng) BATcount(b);
-	lng *restrict start = (lng*)Tloc(s, 0), *restrict end = (lng*)Tloc(e, 0);
+	oid k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
 	BATiter bpi = bat_iterator(b);
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
@@ -193,14 +192,14 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		for (; k < cnt; k++) {
 			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, start[k]) : nil;
-			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 				return GDK_FAIL;
 			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
 	}
 
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -221,8 +220,7 @@ gdk_return
 GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 {
 	bool has_nils = false;
-	lng k = 0, cnt = (lng) BATcount(b);
-	lng *restrict start = (lng*)Tloc(s, 0), *restrict end = (lng*)Tloc(e, 0);
+	oid k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
 	BATiter bpi = bat_iterator(b);
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
@@ -254,13 +252,13 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		for (; k < cnt; k++) {
 			const void *curval = (end[k] > start[k]) ? BUNtail(bpi, (BUN) (end[k] - 1)) : nil;
-			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 				return GDK_FAIL;
 			has_nils |= atomcmp(curval, nil) == 0;
 		}
 	}
 	}
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -278,7 +276,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			for (; k < cnt; k++) {			\
 				TPE *bs = bp + start[k];			\
 				TPE *be = bp + end[k];			\
-				TPE curval = (be > bs && nth < (end[k] - start[k])) ? *(bs + nth) : TPE##_nil; \
+				TPE curval = (be > bs && nth < (lng)(end[k] - start[k])) ? *(bs + nth) : TPE##_nil; \
 				rb[k] = curval;				\
 				has_nils |= is_##TPE##_nil(curval);	\
 			}						\
@@ -293,7 +291,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			TPE *bs = bp + start[k];				\
 			TPE *be = bp + end[k];				\
 			if (!is_lng_nil(lnth) && lnth <= 0) goto invalidnth;	\
-			if (is_lng_nil(lnth) || be <= bs || lnth - 1 > end[k] - start[k]) { \
+			if (is_lng_nil(lnth) || be <= bs || lnth - 1 > (lng)(end[k] - start[k])) { \
 				curval = TPE##_nil;	\
 				has_nils = true;	\
 			} else {						\
@@ -308,9 +306,8 @@ gdk_return
 GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe)
 {
 	bool has_nils = false;
-	lng k = 0, cnt = (lng) BATcount(b), nth = pnth ? *pnth : 0;
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
-	lng *restrict tp = t ? (lng*)Tloc(t, 0) : NULL;
+	oid k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	lng nth = pnth ? *pnth : 0, *restrict tp = t ? (lng*)Tloc(t, 0) : NULL;
 	BATiter bpi = bat_iterator(b);
 	const void *nil = ATOMnilptr(tpe);
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
@@ -348,14 +345,14 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 			for (; k < cnt; k++) {
 				lng lnth = tp[k];
 				if (!is_lng_nil(nth) && nth <= 0) goto invalidnth;
-				if (is_lng_nil(lnth) || end[k] <= start[k] || (lng)(lnth - 1) > (lng)(end[k] - start[k])) {
+				if (is_lng_nil(lnth) || end[k] <= start[k] || lnth - 1 > (lng)(end[k] - start[k])) {
 					curval = (void *) nil;
 					has_nils = true;
 				} else {
-					curval = BUNtail(bpi, (BUN) (start[k] + lnth - 1));
+					curval = BUNtail(bpi, start[k] + (oid)(lnth - 1));
 					has_nils |= atomcmp(curval, nil) == 0;
 				}
-				if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 					return GDK_FAIL;
 			}
 		}
@@ -391,13 +388,13 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 			if (is_lng_nil(nth)) {
 				has_nils = true;
 				for (; k < cnt; k++)
-					if (tfastins_nocheckVAR(r, (BUN) k, nil, Tsize(r)) != GDK_SUCCEED)
+					if (tfastins_nocheckVAR(r, k, nil, Tsize(r)) != GDK_SUCCEED)
 						return GDK_FAIL;
 			} else {
 				nth--;
 				for (; k < cnt; k++) {
-					const void *curval = (end[k] > start[k] && nth < (end[k] - start[k])) ? BUNtail(bpi, (BUN) (start[k] + nth)) : nil;
-					if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED)
+					const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtail(bpi, start[k] + (oid) nth) : nil;
+					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 						return GDK_FAIL;
 					has_nils |= atomcmp(curval, nil) == 0;
 				}
@@ -720,8 +717,11 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					curval = MIN_MAX(bp[j], curval); \
 			}	\
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
-					rb[l] = curval; \
+				for (; ; l--) { \
+					rb[l] = curval;	\
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= is_##TPE##_nil(curval); \
 				if (j == k)	\
 					break;	\
@@ -815,9 +815,12 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 			}					\
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
-					if (tfastins_nocheckVAR(r, (BUN) l, curval, Tsize(r)) != GDK_SUCCEED) \
+				for (; ; l--) { \
+					if (tfastins_nocheckVAR(r, l, curval, Tsize(r)) != GDK_SUCCEED) \
 						return GDK_FAIL; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= atomcmp(curval, nil) == 0;		\
 				if (j == k)	\
 					break;	\
@@ -840,7 +843,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			}					\
 		} \
 		for (; k < i; k++) \
-			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
 				return GDK_FAIL; \
 		has_nils |= atomcmp(curval, nil) == 0;		\
 	} while (0)
@@ -849,7 +852,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	do { \
 		for (; k < i; k++) { \
 			void *next = BUNtail(bpi, k); \
-			if (tfastins_nocheckVAR(r, (BUN) k, next, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
 				return GDK_FAIL; \
 			has_nils |= atomcmp(next, nil) == 0;		\
 		} \
@@ -862,7 +865,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			j = start[k];					\
 			l = end[k];					\
 			curval = (void*) nil;				\
-			for (;j < l; j++) {				\
+			for (; j < l; j++) {				\
 				void *next = BUNtail(bpi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
@@ -871,7 +874,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 				}					\
 			}						\
-			if (tfastins_nocheckVAR(r, (BUN) k, curval, Tsize(r)) != GDK_SUCCEED) \
+			if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED) \
 				return GDK_FAIL; \
 			has_nils |= atomcmp(curval, nil) == 0;		\
 		}							\
@@ -939,8 +942,7 @@ gdk_return								\
 GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)		\
 {									\
 	bool has_nils = false;						\
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b);					\
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;		\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;	\
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL; 	\
 	BATiter bpi = bat_iterator(b);				\
 	const void *nil = ATOMnilptr(tpe);			\
@@ -966,7 +968,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 		}	\
 	} \
 	\
-	BATsetcount(r, (BUN) cnt);						\
+	BATsetcount(r, cnt);						\
 	r->tnonil = !has_nils;						\
 	r->tnil = has_nils;						\
 	return GDK_SUCCEED;						\
@@ -1010,8 +1012,11 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (j = l; ; j--) { \
 				curval++;	\
 				if (op[j] || j == k) {	\
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = curval; \
+						if (l == j)	\
+							break;	\
+					} \
 					if (j == k)	\
 						break;	\
 					l = j - 1;	\
@@ -1021,8 +1026,11 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (j = l; ; j--) { \
 				curval += !is_##TPE##_nil(bp[j]); \
 				if (op[j] || j == k) {	\
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = curval; \
+						if (l == j)	\
+							break;	\
+					} \
 					if (j == k)	\
 						break;	\
 					l = j - 1;	\
@@ -1035,7 +1043,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 #define ANALYTICAL_COUNT_FIXED_ALL_ROWS(TPE) \
 	do { \
 		if (count_all) { \
-			curval = i - k; \
+			curval = (lng)(i - k); \
 			for (; k < i; k++) \
 				rb[k] = curval; \
 		} else {	\
@@ -1062,7 +1070,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do { \
 		if (count_all) { \
 			for (; k < i; k++) \
-				rb[k] = (end[k] > start[k]) ? (end[k] - start[k]) : 0; \
+				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
 			curval = 0; \
 			for (; k < i; k++) {			\
@@ -1111,8 +1119,11 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (j = l; ; j--) { \
 				curval++;	\
 				if (op[j] || j == k) {	\
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = curval; \
+						if (l == j)	\
+							break;	\
+					} \
 					if (j == k)	\
 						break;	\
 					l = j - 1;	\
@@ -1122,8 +1133,11 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			for (j = l; ; j--) { \
 				curval += cmp(BUNtail(bpi, j), nil) != 0;	\
 				if (op[j] || j == k) {	\
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = curval; \
+						if (l == j)	\
+							break;	\
+					} \
 					if (j == k)	\
 						break;	\
 					l = j - 1;	\
@@ -1137,7 +1151,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do { \
 		curval = 0; \
 		if (count_all) { \
-			curval = i - k; \
+			curval = (lng)(i - k); \
 		} else {	\
 			for (; j < i; j++) \
 				curval += cmp(BUNtail(bpi, j), nil) != 0; \
@@ -1161,7 +1175,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 	do { \
 		if (count_all) { \
 			for (; k < i; k++) \
-				rb[k] = (end[k] > start[k]) ? (end[k] - start[k]) : 0; \
+				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
 			curval = 0; \
 			for (; k < i; k++) { \
@@ -1236,8 +1250,8 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_nils, int tpe, int frame_type)
 {
-	lng i = 0, j = 0, k = 0, l = 0, curval = 0, cnt = (lng) BATcount(b);
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL, *restrict rb = (lng *) Tloc(r, 0);
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	lng curval = 0, *restrict rb = (lng *) Tloc(r, 0);
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	const void *restrict nil = ATOMnilptr(tpe);
 	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
@@ -1265,7 +1279,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 		}
 	}
 
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
 	return GDK_SUCCEED;
@@ -1304,8 +1318,11 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 					ADD_WITH_CHECK(bp[j], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 			}					\
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = curval; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= is_##TPE2##_nil(curval);	\
 				if (j == k)	\
 					break;	\
@@ -1401,8 +1418,11 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 					ADD_WITH_CHECK(bp[j], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
 			}					\
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = curval; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= is_##TPE2##_nil(curval);	\
 				if (j == k)	\
 					break;	\
@@ -1601,8 +1621,7 @@ gdk_return
 GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
 	bool has_nils = false;
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b);
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	int abort_on_error = 1;
 	BUN nils = 0;
@@ -1627,7 +1646,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		}
 	}
 
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -1675,8 +1694,11 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		for (j = l; ; j--) { \
 			PROD_NUM(TPE1, TPE2, TPE3, bp[j]); \
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = curval; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= is_##TPE2##_nil(curval);	\
 				if (j == k)	\
 					break;	\
@@ -1761,8 +1783,11 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		for (j = l; ; j--) { \
 			PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP, bp[j]); \
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = curval; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= is_##TPE2##_nil(curval);	\
 				if (j == k)	\
 					break;	\
@@ -1853,8 +1878,11 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		for (j = l; ; j--) { \
 			PROD_FP(TPE1, TPE2, bp[j]);	\
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = curval; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= is_##TPE2##_nil(curval);	\
 				if (j == k)	\
 					break;	\
@@ -2061,8 +2089,7 @@ gdk_return
 GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
 	bool has_nils = false;
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b);
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	int abort_on_error = 1;
 	BUN nils = 0;
@@ -2087,7 +2114,7 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 		}
 	}
 
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -2180,8 +2207,11 @@ calc_done##TPE##IMP##PART: \
 			if (op[j] || j == k) {	\
 				curval = n > 0 ? (dbl) sum / n : dbl_nil;	\
 calc_done##TPE##IMP##PART: \
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = curval; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= (n == 0);		\
 				if (j == k)	\
 					break;	\
@@ -2292,8 +2322,11 @@ calc_done##TPE##IMP##PART: \
 			if (!is_##TPE##_nil(bp[j]))		\
 				AVERAGE_ITER_FLOAT(TPE, bp[j], a, n); \
 			if (op[j] || j == k) {	\
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = curval; \
+					if (l == j)	\
+						break;	\
+				} \
 				has_nils |= is_##TPE##_nil(curval);	\
 				if (j == k)	\
 					break;	\
@@ -2395,8 +2428,8 @@ gdk_return
 GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b), n = 0, rr = 0;
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	lng n = 0, rr = 0;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), curval = dbl_nil;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	bool abort_on_error = true;
@@ -2427,7 +2460,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 		}
 	}
 
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -2492,13 +2525,19 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 			if (op[j] || j == k) {	\
 				if (ncnt == 0) {	\
 					has_nils = true; \
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = TPE##_nil; \
+						if (l == j)	\
+							break;	\
+					} \
 				} else { \
 					TPE avgfinal = avg; \
 					ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avgfinal, rem, ncnt); \
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = avgfinal; \
+						if (l == j)	\
+							break;	\
+					} \
 				} \
 				if (j == k)	\
 					break;	\
@@ -2609,8 +2648,8 @@ gdk_return
 GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b), rem = 0, ncnt = 0;
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	lng rem = 0, ncnt = 0;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 
 	if (cnt > 0) {
@@ -2633,7 +2672,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 		}
 	}
 
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;
@@ -2689,11 +2728,17 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 				if (isinf(m2)) {	\
 					goto overflow;		\
 				} else if (n > SAMPLE) { \
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = OP; \
+						if (l == j)	\
+							break;	\
+					} \
 				} else { \
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = dbl_nil; \
+						if (l == j)	\
+							break;	\
+					} \
 					has_nils = true; \
 				} \
 				if (j == k)	\
@@ -2823,8 +2868,8 @@ gdk_return \
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
 	bool has_nils = false;	\
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b), n = 0; \
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;	\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;	\
+	lng n = 0;	\
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
 	\
@@ -2848,7 +2893,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 		}	\
 	}	\
 	\
-	BATsetcount(r, (BUN) cnt); \
+	BATsetcount(r, cnt); \
 	r->tnonil = !has_nils;	\
 	r->tnil = has_nils;	\
 	return GDK_SUCCEED; \
@@ -2917,11 +2962,17 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 				if (isinf(m2))	\
 					goto overflow;		\
 				if (n > SAMPLE) { \
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = OP; \
+						if (l == j)	\
+							break;	\
+					} \
 				} else { \
-					for (; l >= j; l--) \
+					for (; ; l--) { \
 						rb[l] = dbl_nil; \
+						if (l == j)	\
+							break;	\
+					} \
 					has_nils = true; \
 				} \
 				if (j == k)	\
@@ -3011,8 +3062,8 @@ gdk_return \
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
 	bool has_nils = false;	\
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b1), n = 0; \
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;	\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;	\
+	lng n = 0;	\
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	\
@@ -3036,7 +3087,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 		}	\
 	}	\
 	\
-	BATsetcount(r, (BUN) cnt); \
+	BATsetcount(r, cnt); \
 	r->tnonil = !has_nils;	\
 	r->tnil = has_nils;	\
 	return GDK_SUCCEED; \
@@ -3118,8 +3169,11 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 					res = dbl_nil; \
 					has_nils = true; \
 				} \
-				for (; l >= j; l--) \
+				for (; ; l--) { \
 					rb[l] = res; \
+					if (l == j)	\
+						break;	\
+				} \
 				if (j == k)	\
 					break;	\
 				l = j - 1;	\
@@ -3221,8 +3275,8 @@ gdk_return
 GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	lng i = 0, j = 0, k = 0, l = 0, cnt = (lng) BATcount(b1), n = 0;
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	lng n = 0;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, res;
 
@@ -3246,7 +3300,7 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 		}
 	}
 
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;

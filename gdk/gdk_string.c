@@ -1178,8 +1178,8 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 
 #define compute_next_single_str(START, END)	\
 	do {	\
-		for (lng m = START; m < END; m++) {	\
-			sb = BUNtvar(bi, (BUN) m);	\
+		for (oid m = START; m < END; m++) {	\
+			sb = BUNtvar(bi, m);	\
 	\
 			if (separator) {	\
 				if (!strNil(sb)) {	\
@@ -1190,7 +1190,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 				}	\
 			} else { /* sep case */	\
 				assert(sep != NULL);	\
-				sl = BUNtvar(bis, (BUN) m);	\
+				sl = BUNtvar(bis, m);	\
 	\
 				if (!strNil(sb)) {	\
 					next_group_length += strlen(sb);	\
@@ -1226,8 +1226,8 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 				single_str = next_single_str;	\
 			}	\
 \
-			for (lng m = START; m < END; m++) {	\
-				sb = BUNtvar(bi, (BUN) m);	\
+			for (oid m = START; m < END; m++) {	\
+				sb = BUNtvar(bi, m);	\
 \
 				if (separator) {	\
 					if (strNil(sb))	\
@@ -1242,7 +1242,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 					empty = false;	\
 				} else { /* sep case */	\
 					assert(sep != NULL);	\
-					sl = BUNtvar(bis, (BUN) m);	\
+					sl = BUNtvar(bis, m);	\
 \
 					if (strNil(sb))	\
 						continue;	\
@@ -1277,7 +1277,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 				k++; \
 			} while (k < i && !op[k]);	\
 			for (; j < k; j++) {	\
-				nstr = BUNtvar(bi, (BUN) j);	\
+				nstr = BUNtvar(bi, j);	\
 				if (!strNil(nstr)) {	\
 					slice_length += strlen(nstr);	\
 					if (!empty) {	\
@@ -1285,7 +1285,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 							nsep = (str) separator; \
 						} else { /* sep case */	\
 							assert(sep != NULL);	\
-							nsep = BUNtvar(bis, (BUN) j);	\
+							nsep = BUNtvar(bis, j);	\
 						}	\
 						if (!strNil(nsep))	\
 							slice_length += strlen(nsep);	\
@@ -1295,14 +1295,14 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 			}	\
 			if (empty) {	\
 				for (j = m; j < k; j++) \
-					if (tfastins_nocheckVAR(r, (BUN) j, str_nil, Tsize(r)) != GDK_SUCCEED)	\
+					if (tfastins_nocheckVAR(r, j, str_nil, Tsize(r)) != GDK_SUCCEED)	\
 						goto allocation_error;	\
 				has_nils = true;	\
 			} else {	\
 				char save = single_str[slice_length];	\
 				single_str[slice_length] = '\0';	\
 				for (j = m; j < k; j++) \
-					if (tfastins_nocheckVAR(r, (BUN) j, single_str, Tsize(r)) != GDK_SUCCEED)	\
+					if (tfastins_nocheckVAR(r, j, single_str, Tsize(r)) != GDK_SUCCEED)	\
 						goto allocation_error;	\
 				single_str[slice_length] = save; \
 			}	\
@@ -1315,15 +1315,15 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		empty = true;	\
 		compute_next_single_str(k, i); \
 		for (; k < i; k++) 	\
-			if (tfastins_nocheckVAR(r, (BUN) k, single_str, Tsize(r)) != GDK_SUCCEED)	\
+			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED)	\
 				goto allocation_error;	\
 	} while (0)
 
 #define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW \
 	do {	\
 		for (; k < i; k++) {	\
-			str next = BUNtvar(bi, (BUN) k); \
-			if (tfastins_nocheckVAR(r, (BUN) k, next, Tsize(r)) != GDK_SUCCEED)	\
+			str next = BUNtvar(bi, k); \
+			if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED)	\
 				goto allocation_error;	\
 			has_nils |= strNil(next); \
 		}	\
@@ -1335,7 +1335,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 			next_group_length = next_length = offset = 0;	\
 			empty = true;	\
 			compute_next_single_str(start[k], end[k]); \
-			if (tfastins_nocheckVAR(r, (BUN) k, single_str, Tsize(r)) != GDK_SUCCEED)	\
+			if (tfastins_nocheckVAR(r, k, single_str, Tsize(r)) != GDK_SUCCEED)	\
 				goto allocation_error;	\
 		}	\
 	} while (0)
@@ -1356,8 +1356,7 @@ gdk_return
 GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
 {
 	bool has_nils = false, empty;
-	lng i = 0, j = 0, k = 0, cnt = (lng) BATcount(b);
-	lng *restrict start = s ? (lng*)Tloc(s, 0) : NULL, *restrict end = e ? (lng*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	BATiter bi, bis = (BATiter) {0};
 	str sb, sl, single_str = NULL, next_single_str;
@@ -1380,25 +1379,27 @@ GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s,
 	else
 		separator_length = strlen(separator);
 
-	switch (frame_type) {
-	case 3: /* unbounded until current row */	{
-		ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW);
-	} break;
-	case 4: /* current row until unbounded */
-		goto notimplemented;
-	case 5: /* all rows */	{
-		ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS);
-	} break;
-	case 6: /* current row */ {
-		ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW);
-	} break;
-	default: {
-		ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_OTHERS);
-	}
+	if (cnt > 0) {
+		switch (frame_type) {
+		case 3: /* unbounded until current row */	{
+			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW);
+		} break;
+		case 4: /* current row until unbounded */
+			goto notimplemented;
+		case 5: /* all rows */	{
+			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS);
+		} break;
+		case 6: /* current row */ {
+			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW);
+		} break;
+		default: {
+			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_OTHERS);
+		}
+		}
 	}
 
 	GDKfree(single_str);
-	BATsetcount(r, (BUN) cnt);
+	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
 	return GDK_SUCCEED;

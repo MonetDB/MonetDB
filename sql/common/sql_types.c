@@ -1423,8 +1423,8 @@ sqltypeinit( sql_allocator *sa)
 	for (t = numerical; *t != TME; t++) {
 		if (*t == OID)
 			continue;
-		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 5, ANY, INT, INT, INT, *t);
-		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, LNG, 6, BIT, ANY, INT, INT, INT, *t);
+		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, OID, 5, ANY, INT, INT, INT, *t);
+		sql_create_analytic(sa, "window_bound", "sql", "window_bound", SCALE_NONE, OID, 6, BIT, ANY, INT, INT, INT, *t);
 	}
 
 	sql_create_analytic(sa, "rank", "sql", "rank", SCALE_NONE, INT, 1, ANY);
