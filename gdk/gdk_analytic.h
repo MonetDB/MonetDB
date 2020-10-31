@@ -23,7 +23,7 @@ gdk_export gdk_return GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const 
 gdk_export gdk_return GDKanalyticalwindowbounds(BAT *r, BAT *b, BAT *p, BAT *l,
 						const void *restrict bound,
 						int tp1, int tp2, int unit,
-						bool preceding, lng first_half);
+						bool preceding, oid first_half);
 
 gdk_export gdk_return GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
 gdk_export gdk_return GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe);
