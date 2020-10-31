@@ -992,8 +992,12 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	btable_iter		= bat_iterator(btable);
 	function		=  BUNtvar(btable_iter, BATcount(btable)-1);
 
-	// TODO pass a proper temporary function name.
-	prg				= newFunction(userRef, putName("temp"), FUNCTIONsymbol);
+	{
+		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
+		char nme[16]		= {0};		
+		const char* name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
+		prg					= newFunction(userRef, putName(name), FUNCTIONsymbol);
+	}
 
 	resizeMalBlk(prg->def, (int) nparams + 3 /*function declaration + remote.exec + return statement*/);
 	mb = prg->def;
