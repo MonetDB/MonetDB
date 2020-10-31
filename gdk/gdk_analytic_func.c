@@ -1434,7 +1434,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 
 #define ANALYTICAL_SUM_IMP_FP_ALL_ROWS(TPE1, TPE2)	\
 	do { \
-		TPE1 *bs = &(bp[k]);	\
+		TPE1 *bs = bp + k;	\
 		BUN parcel = i - k;	\
 		TPE2 curval = TPE2##_nil; \
 		if (dofsum(bs, 0,			\
