@@ -208,11 +208,6 @@ SQLhelp sqlhelp1[] = {
 	 "[MINVALUE intval | NO MINVALUE] [MAXVALUE intval | NO MAXVALUE] [CACHE intval] [[NO] CYCLE]",
 	 "seq_int_datatype,intval",
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/SerialTypes"},
-	{"CREATE STREAM TABLE",
-	 "Temporary table, locked during updates/ continues query processing",
-	 "CREATE STREAM TABLE [ IF NOT EXISTS ] qname table_source\n",
-	 "table_source",
-	 NULL},
 	{"CREATE TABLE",
 	 "Create a new table",
 	 "CREATE TABLE [ IF NOT EXISTS ] qname table_source [STORAGE ident string]\n"
