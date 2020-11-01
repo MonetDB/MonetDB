@@ -1690,13 +1690,13 @@ append_create_remote_append_mal_program(
 			* Comments generate variable names during parsing:
 			* sql.mvc has one comment and for each column there is one sql.append statement plus comment.
 			*/
-		const int nr_of_comments = (int) 1 + ccount;
+		const int nr_of_comments = (int) (1 + ccount);
 		/*
 			* constant terms generate variable names during parsing:
 			* Each sql.append has three constant terms: schema + table + column_name.
 			* There is one sql.append stmt for each column.
 			*/
-		const int nr_of_constant_terms =  (int)  3 * ccount;
+		const int nr_of_constant_terms =  (int)  (3 * ccount);
 		mb->vid = nr_of_comments + nr_of_constant_terms;
 	} // END OF HACK
 
