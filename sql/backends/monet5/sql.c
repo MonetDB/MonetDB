@@ -1817,6 +1817,8 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t == NULL)
 		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
 	*res = mvc_clear_table(m, t);
+	if (*res == BUN_NONE)
+		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "clear failed");
 	return MAL_SUCCEED;
 }
 
@@ -4540,7 +4542,8 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	}
 	BBPunfix(del->batCacheid);
 
-	mvc_clear_table(m, t);
+	if (mvc_clear_table(m, t) == BUN_NONE)
+		throw(SQL, name, SQLSTATE(42000) "vacumm: clear failed");
 	for (o = t->columns.set->h, i = 0; o; o = o->next, i++) {
 		sql_column *c = o->data;
 		BAT *ins = BATdescriptor(bids[i]);	/* use the insert bat */

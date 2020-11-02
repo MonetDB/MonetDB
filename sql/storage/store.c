@@ -6468,28 +6468,34 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 {
 	node *n = t->columns.set->h;
 	sql_column *c = n->data;
-	BUN sz = 0;
+	BUN sz = 0, nsz = 0;
 
 	t->cleared = 1;
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.wtime = tr->wstime;
 
-	sz += store_funcs.clear_col(tr, c);
-	sz -= store_funcs.clear_del(tr, t);
+	if ((nsz = store_funcs.clear_col(tr, c)) == BUN_NONE)
+		return BUN_NONE;
+	sz += nsz;
+	if ((nsz = store_funcs.clear_del(tr, t)) == BUN_NONE)
+		return BUN_NONE;
+	sz -= nsz;
 
 	for (n = n->next; n; n = n->next) {
 		c = n->data;
 		c->base.wtime = tr->wstime;
 
-		(void)store_funcs.clear_col(tr, c);
+		if (store_funcs.clear_col(tr, c) == BUN_NONE)
+			return BUN_NONE;
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *ci = n->data;
 
 			ci->base.wtime = tr->wstime;
-			if (isTable(ci->t) && idx_has_column(ci->type))
-				(void)store_funcs.clear_idx(tr, ci);
+			if (isTable(ci->t) && idx_has_column(ci->type) &&
+				store_funcs.clear_idx(tr, ci) == BUN_NONE)
+				return BUN_NONE;
 		}
 	}
 	return sz;
