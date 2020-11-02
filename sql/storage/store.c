@@ -37,6 +37,7 @@ store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
+int store_debug = 0;
 
 store_functions store_funcs;
 table_functions table_funcs;
@@ -2062,6 +2063,7 @@ store_init(int debug, store_type store, int readonly, int singleuser, backend_st
 
 	store_readonly = readonly;
 	store_singleuser = singleuser;
+	store_debug = debug;
 
 	MT_lock_set(&bs_lock);
 
@@ -7565,7 +7567,7 @@ sql_trans_begin(sql_session *s)
 	int snr;
 
 	/* add wait when flush is realy needed */
-	while (ATOMIC_GET(&flusher.flush_now)) {
+	while ((store_debug&16)==16 && ATOMIC_GET(&flusher.flush_now)) {
 		MT_lock_unset(&bs_lock);
 		MT_sleep_ms(sleeptime);
 		MT_lock_set(&bs_lock);
