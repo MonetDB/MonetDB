@@ -1332,7 +1332,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 (!b->batTransient &&
 		  ATOMsize(b->ttype) >= sizeof(BUN) / 4 &&
 		  BATcount(b) * (ATOMsize(b->ttype) + 2 * sizeof(BUN)) < GDK_mem_maxsize / 2));
-	if (equi && !hash && parent != 0) {
+	if (/* DISABLES CODE */ (0) && equi && !hash && parent != 0) {
 		/* use parent hash if it already exists and if either
 		 * a quick check shows the value we're looking for
 		 * does not occur, or if it is cheaper to check the
