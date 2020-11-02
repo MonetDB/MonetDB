@@ -981,7 +981,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		   (BATcheckhash(b) ||
 		    (!b->batTransient &&
 		     BAThash(b) == GDK_SUCCEED) ||
-		    ((parent = VIEWtparent(b)) != 0 &&
+		    (/* DISABLES CODE */ (0) &&
+		     (parent = VIEWtparent(b)) != 0 &&
 		     BATcheckhash(BBPdescriptor(parent))))) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
@@ -991,7 +992,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * duplicates in the hash table to find an old
 		 * group */
 		algomsg = "existing hash -- ";
-		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->thash == NULL &&
+		    /* DISABLES CODE */ (0) &&
+		    (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */

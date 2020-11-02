@@ -197,7 +197,7 @@ BATcheckimprints(BAT *b)
 {
 	bool ret;
 
-	if (VIEWtparent(b)) {
+	if (/* DISABLES CODE */ (0) && VIEWtparent(b)) {
 		assert(b->timprints == NULL);
 		b = BBPdescriptor(VIEWtparent(b));
 	}
@@ -363,7 +363,7 @@ BATimprints(BAT *b)
 	if (BATcheckimprints(b))
 		return GDK_SUCCEED;
 
-	if (VIEWtparent(b)) {
+	if (/* DISABLES CODE */ (0) && VIEWtparent(b)) {
 		/* views always keep null pointer and need to obtain
 		 * the latest imprint from the parent at query time */
 		s2 = b;		/* remember for ACCELDEBUG print */
@@ -638,7 +638,7 @@ IMPSremove(BAT *b)
 	Imprints *imprints;
 
 	assert(b->timprints != NULL);
-	assert(!VIEWtparent(b));
+	assert(/* DISABLES CODE */ (1) || !VIEWtparent(b));
 
 	if ((imprints = b->timprints) != NULL) {
 		b->timprints = NULL;
@@ -666,7 +666,8 @@ IMPSdestroy(BAT *b)
 				  BATDIR,
 				  BBP_physical(b->batCacheid),
 				  "timprints");
-		} else if (b->timprints != NULL && !VIEWtparent(b))
+		} else if (b->timprints != NULL &&
+			   (/* DISABLES CODE */ (1) || !VIEWtparent(b)))
 			IMPSremove(b);
 		MT_lock_unset(&b->batIdxLock);
 	}
@@ -687,13 +688,13 @@ IMPSfree(BAT *b)
 		if (imprints != NULL && imprints != (Imprints *) 1) {
 			if (GDKinmemory(b->theap->farmid)) {
 				b->timprints = NULL;
-				if (!VIEWtparent(b)) {
+				if (/* DISABLES CODE */ (1) || !VIEWtparent(b)) {
 					HEAPfree(&imprints->imprints, true);
 					GDKfree(imprints);
 				}
 			} else {
 				b->timprints = (Imprints *) 1;
-				if (!VIEWtparent(b)) {
+				if (/* DISABLES CODE */ (1) || !VIEWtparent(b)) {
 					HEAPfree(&imprints->imprints, false);
 					GDKfree(imprints);
 				}
