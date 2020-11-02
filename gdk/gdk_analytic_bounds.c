@@ -785,7 +785,7 @@ GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when
 #define BOUND_TP         int
 #define BOUND_NULL       int_nil
 #define BOUND_IS_NULL(x) is_int_nil(x)
-#define BOUND_MAX  GDK_int_max
+#define BOUND_MAX        GDK_int_max
 #else
 #define BOUND_TP         lng
 #define BOUND_NULL       lng_nil
