@@ -266,7 +266,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("TABLE", TABLE);
 	failed += keywords_insert("TEMPORARY", TEMPORARY);
 	failed += keywords_insert("TEMP", TEMP);
-	failed += keywords_insert("STREAM", STREAM);
 	failed += keywords_insert("REMOTE", REMOTE);
 	failed += keywords_insert("MERGE", MERGE);
 	failed += keywords_insert("REPLICA", REPLICA);

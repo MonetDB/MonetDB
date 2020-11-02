@@ -837,8 +837,6 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->persistence = SQL_PERSIST;
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 	t->cleared = 0;
@@ -5233,9 +5231,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sql_trans_drop_dependencies(tr, t->base.id);
 	sql_trans_drop_obj_priv(tr, t->base.id);
 
-	if (isKindOfTable(t) || isView(t))
-		if (sys_drop_columns(tr, t, drop_action))
-			return -1;
+	if (sys_drop_columns(tr, t, drop_action))
+		return -1;
 
 	if (isGlobal(t))
 		tr->schema_updates ++;
@@ -6014,7 +6011,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	/* temps all belong to a special tmp schema and only views/remote
 	   have a query */
 	assert( (isTable(t) ||
-		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || (isRemote(t) && !sql));
 
 	t->query = sql ? sa_strdup(tr->sa, sql) : NULL;
 	t->s = s;
@@ -6022,8 +6019,6 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (sz < 0)
 		t->sz = COLSIZE;
 	cs_add(&s->tables, t, TR_NEW);
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 
@@ -6364,9 +6359,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (isKindOfTable(t))
-		if (sys_drop_column(tr, col, drop_action))
-			return -1;
+	if (sys_drop_column(tr, col, drop_action))
+		return -1;
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&t->columns, n, col->base.flags);

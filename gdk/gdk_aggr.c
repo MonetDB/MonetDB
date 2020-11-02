@@ -3575,6 +3575,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 			BUN r;
 			if (!b->tnonil) {
+				MT_thread_setalgorithm(pb ? "binsearch on parent oidx" : "binsearch on oids");
 				r = binsearch(ords, 0, b->ttype, Tloc(b, 0),
 					      b->tvheap ? b->tvheap->base : NULL,
 					      b->twidth, 0, BATcount(b),
@@ -3590,6 +3591,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				/* no non-nil values */
 				pos = oid_nil;
 			} else {
+				MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
 				pos = ords[r];
 			}
 		} else if ((VIEWtparent(b) == 0 ||
@@ -3599,6 +3601,8 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
 			int i;
 
+
+			MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
 			pos = oid_nil;
 			/* find first non-empty bin */
 			for (i = 0; i < imprints->bits; i++) {
@@ -3681,6 +3685,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		     BATcheckorderidx(pb))) {
 			const oid *ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 
+			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
 			pos = ords[BATcount(b) - 1];
 			/* nils are first, ie !skipnil, check for nils */
 			if (!skipnil) {
@@ -3699,6 +3704,7 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
 			int i;
 
+			MT_thread_setalgorithm(VIEWtparent(b) ? "using parent imprints" : "using imprints");
 			pos = oid_nil;
 			/* find last non-empty bin */
 			for (i = imprints->bits - 1; i >= 0; i--) {
@@ -3981,6 +3987,7 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		     BATcount(pb) == BATcount(b) &&
 		     pb->hseqbase == b->hseqbase &&
 		     BATcheckorderidx(pb))) {
+			MT_thread_setalgorithm(pb ? "using parent oidx" : "using oids");
 			ords = (const oid *) (pb ? pb->torderidx->base : b->torderidx->base) + ORDERIDXOFF;
 		} else {
 			if (BATsort(NULL, &t1, NULL, b, NULL, g, false, false, false) != GDK_SUCCEED)
