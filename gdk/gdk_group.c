@@ -322,7 +322,7 @@
 		INIT_0;							\
 		assert(grps == NULL);					\
 		if (ci.tpe == cand_dense) {				\
-			MT_thread_setalgorithm("GRP_use_existing_hash_table, dense"); \
+			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, dense, parent hash" : "GRP_use_existing_hash_table, dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb + lo;			\
@@ -356,7 +356,7 @@
 				}					\
 			}						\
 		} else {						\
-			MT_thread_setalgorithm("GRP_use_existing_hash_table, !dense"); \
+			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense"); \
 			for (r = 0; r < cnt; r++) {			\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb + lo;			\
@@ -992,6 +992,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * since we may have to go through long lists of
 		 * duplicates in the hash table to find an old
 		 * group */
+		bool phash = false;
 		algomsg = "existing hash -- ";
 		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
@@ -1001,6 +1002,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
 			b = b2;
 			bi = bat_iterator(b);
+			algomsg = "existing parent hash -- ";
+			phash = true;
 		}
 		hs = b->thash;
 		gn->tsorted = true; /* be optimistic */
