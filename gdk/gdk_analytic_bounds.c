@@ -781,6 +781,18 @@ GDKanalyticalpeers(BAT *r, BAT *b, BAT *p, bool preceding) /* used in range when
 	return GDK_SUCCEED;
 }
 
+#if SIZEOF_OID == SIZEOF_INT
+#define BOUND_TP         int
+#define BOUND_NULL       int_nil
+#define BOUND_IS_NULL(x) is_int_nil(x)
+#define BOUND_MAX  GDK_int_max
+#else
+#define BOUND_TP         lng
+#define BOUND_NULL       lng_nil
+#define BOUND_IS_NULL(x) is_lng_nil(x)
+#define BOUND_MAX        GDK_lng_max
+#endif
+
 static gdk_return
 GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding, oid second_half)
 {
@@ -822,9 +834,17 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		case TYPE_lng:{
 			lng *restrict limit = (lng *) Tloc(l, 0);
 			if (preceding) {
+#if SIZEOF_OID == SIZEOF_INT
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, lng, limit[k], (olimit > (lng) GDK_oid_max) ? GDK_oid_max : (oid) olimit);
+#else
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, lng, limit[k], (oid) olimit);
+#endif
 			} else {
+#if SIZEOF_OID == SIZEOF_INT
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, lng, limit[k], (olimit > (lng) GDK_oid_max) ? GDK_oid_max : (oid) olimit);
+#else
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, lng, limit[k], (oid) olimit);
+#endif
 			}
 			break;
 		}
@@ -842,39 +862,44 @@ GDKanalyticalrowbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict boun
 		default:
 			goto bound_not_supported;
 		}
-	} else {	/* static bounds, all the limits are cast to lng */
-		lng limit;
+	} else {	/* static bounds, all the limits are cast to the word size */
+		BOUND_TP limit;
 		switch (tp2) {
 		case TYPE_bte:
-			limit = is_bte_nil(*(bte *) bound) ? lng_nil : (lng) *(bte *) bound;
+			limit = is_bte_nil(*(bte *) bound) ? BOUND_NULL : (BOUND_TP) *(bte *) bound;
 			break;
 		case TYPE_sht:
-			limit = is_sht_nil(*(sht *) bound) ? lng_nil : (lng) *(sht *) bound;
+			limit = is_sht_nil(*(sht *) bound) ? BOUND_NULL : (BOUND_TP) *(sht *) bound;
 			break;
 		case TYPE_int:
-			limit = is_int_nil(*(int *) bound) ? lng_nil : (lng) *(int *) bound;
+			limit = is_int_nil(*(int *) bound) ? BOUND_NULL : (BOUND_TP) *(int *) bound;
 			break;
-		case TYPE_lng:
+		case TYPE_lng: {
+#if SIZEOF_OID == SIZEOF_INT
+			lng nval = *(lng *) bound;
+			limit = is_lng_nil(nval) ? BOUND_NULL : (nval > (lng) BOUND_MAX) ? BOUND_MAX : (BOUND_TP) nval;
+#else
 			limit = (lng) (*(lng *) bound);
-			break;
+#endif
+		} break;
 #ifdef HAVE_HGE
 		case TYPE_hge: {
 			hge nval = *(hge *) bound;
-			limit = is_hge_nil(nval) ? lng_nil : (nval > (hge) GDK_lng_max) ? GDK_lng_max : (lng) nval;
+			limit = is_hge_nil(nval) ? BOUND_NULL : (nval > (hge) BOUND_MAX) ? BOUND_MAX : (BOUND_TP) nval;
 			break;
 		}
 #endif
 		default:
 			goto bound_not_supported;
 		}
-		if (limit == GDK_lng_max) {
+		if (limit == BOUND_MAX) {
 			return GDKanalyticalallbounds(r, b, p, preceding);
-		} else if (is_lng_nil(limit) || limit < 0) {
-			goto invalid_bound;	
+		} else if (BOUND_IS_NULL(limit) || limit < 0) {
+			goto invalid_bound;
 		} else if (preceding) {
-			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, lng, limit, (oid) olimit);
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_PRECEDING, BOUND_TP, limit, (oid) olimit);
 		} else {
-			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, lng, limit, (oid) olimit);
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(_FOLLOWING, BOUND_TP, limit, (oid) olimit);
 		}
 	}
 
@@ -1168,9 +1193,17 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 		case TYPE_lng:{
 			lng *restrict limit = (lng *) Tloc(l, 0);
 			if (preceding) {
+#if SIZEOF_OID == SIZEOF_INT
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, lng, limit[k], (olimit > (lng) GDK_oid_max) ? GDK_oid_max : (oid) olimit);
+#else
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, lng, limit[k], (oid) olimit);
+#endif
 			} else {
+#if SIZEOF_OID == SIZEOF_INT
+				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, lng, limit[k], (olimit > (lng) GDK_oid_max) ? GDK_oid_max : (oid) olimit);
+#else
 				ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, lng, limit[k], (oid) olimit);
+#endif
 			}
 			break;
 		}
@@ -1188,39 +1221,44 @@ GDKanalyticalgroupsbounds(BAT *r, BAT *b, BAT *p, BAT *l, const void *restrict b
 		default:
 			goto bound_not_supported;
 		}
-	} else {	/* static bounds, all the limits are cast to lng */
-		lng limit;
+	} else {	/* static bounds, all the limits are cast to the word size */
+		BOUND_TP limit;
 		switch (tp2) {
 		case TYPE_bte:
-			limit = is_bte_nil(*(bte *) bound) ? lng_nil : (lng) *(bte *) bound;
+			limit = is_bte_nil(*(bte *) bound) ? BOUND_NULL : (BOUND_TP) *(bte *) bound;
 			break;
 		case TYPE_sht:
-			limit = is_sht_nil(*(sht *) bound) ? lng_nil : (lng) *(sht *) bound;
+			limit = is_sht_nil(*(sht *) bound) ? BOUND_NULL : (BOUND_TP) *(sht *) bound;
 			break;
 		case TYPE_int:
-			limit = is_int_nil(*(int *) bound) ? lng_nil : (lng) *(int *) bound;
+			limit = is_int_nil(*(int *) bound) ? BOUND_NULL : (BOUND_TP) *(int *) bound;
 			break;
-		case TYPE_lng:
+		case TYPE_lng: {
+#if SIZEOF_OID == SIZEOF_INT
+			lng nval = *(lng *) bound;
+			limit = is_lng_nil(nval) ? BOUND_NULL : (nval > (lng) BOUND_MAX) ? BOUND_MAX : (BOUND_TP) nval;
+#else
 			limit = (lng) (*(lng *) bound);
-			break;
+#endif
+		} break;
 #ifdef HAVE_HGE
 		case TYPE_hge: {
 			hge nval = *(hge *) bound;
-			limit = is_hge_nil(nval) ? lng_nil : (nval > (hge) GDK_lng_max) ? GDK_lng_max : (lng) nval;
+			limit = is_hge_nil(nval) ? BOUND_NULL : (nval > (hge) BOUND_MAX) ? BOUND_MAX : (BOUND_TP) nval;
 			break;
 		}
 #endif
 		default:
 			goto bound_not_supported;
 		}
-		if (limit == GDK_lng_max) {
+		if (limit == BOUND_MAX) {
 			return GDKanalyticalallbounds(r, b, p, preceding);
-		} else if (is_lng_nil(limit) || limit < 0) {
-			goto invalid_bound;	
+		} else if (BOUND_IS_NULL(limit) || limit < 0) {
+			goto invalid_bound;
 		} else if (preceding) {
-			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, lng, limit, (oid) olimit);
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_PRECEDING, BOUND_TP, limit, (oid) olimit);
 		} else {
-			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, lng, limit, (oid) olimit);
+			ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(_FOLLOWING, BOUND_TP, limit, (oid) olimit);
 		}
 	}
 	BATsetcount(r, cnt);
