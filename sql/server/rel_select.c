@@ -4409,21 +4409,27 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 
 #define EC_NUMERIC(e) (e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
 
+#if SIZEOF_OID == SIZEOF_INT /* generate bound sizes according to the CPU word size */
+#define BOUND_TP "int"
+#else
+#define BOUND_TP "lng"
+#endif
+
 static sql_exp*
 calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
 	mvc *sql = query->sql;
-	sql_subtype *bt, *lon = sql_bind_localtype("lng"), *iet = exp_subtype(ie);
+	sql_subtype *bt, *bound_tp = sql_bind_localtype(BOUND_TP), *iet = exp_subtype(ie);
 	sql_exp *res = NULL;
 
 	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
 		atom *a = NULL;
-		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : iet;
+		bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : iet;
 
 		if ((bound->data.i_val == UNBOUNDED_PRECEDING_BOUND || bound->data.i_val == UNBOUNDED_FOLLOWING_BOUND)) {
-			a = atom_max_value(sql->sa, EC_NUMERIC(bt->type->eclass) ? bt : lon);
+			a = atom_max_value(sql->sa, EC_NUMERIC(bt->type->eclass) ? bt : bound_tp);
 		} else if (bound->data.i_val == CURRENT_ROW_BOUND) {
-			a = atom_zero_value(sql->sa, EC_NUMERIC(bt->type->eclass) ? bt : lon);
+			a = atom_zero_value(sql->sa, EC_NUMERIC(bt->type->eclass) ? bt : bound_tp);
 		} else {
 			assert(0);
 		}
@@ -4436,14 +4442,14 @@ calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound
 		if (!(res = rel_value_exp2(query, &p, bound, f, ek)))
 			return NULL;
 		if (!(bt = exp_subtype(res))) { /* frame bound is a parameter */
-			sql_subtype *t = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : iet;
+			sql_subtype *t = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : iet;
 			if (rel_set_type_param(sql, t, p, res, 0) < 0) /* workaround */
 				return NULL;
 			bt = exp_subtype(res);
 		}
 		if (exp_is_null(res))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s offset must not be NULL", bound_desc);
-		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bt->type->eclass != EC_NUM && !(res = exp_check_type(sql, lon, p, res, type_equal)))
+		if ((frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) && bt->type->eclass != EC_NUM && !(res = exp_check_type(sql, bound_tp, p, res, type_equal)))
 			return NULL;
 		if (frame_type == FRAME_RANGE) {
 			sql_class iet_class = iet->type->eclass;
@@ -4721,7 +4727,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (gbe) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 
-		for( n = gbe->h; n; n = n->next)  {
+		for( n = gbe->h; n; n = n->next) {
 			sql_subfunc *df;
 			sql_exp *e = n->data;
 
@@ -4853,14 +4859,14 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
 		if (is_value) {
-			sql_subtype *lon = sql_bind_localtype("lng"), *bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? lon : exp_subtype(ie);
+			sql_subtype *bound_tp = sql_bind_localtype(BOUND_TP), *bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : exp_subtype(ie);
 			unsigned char sclass = bt->type->eclass;
 
-			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : lon));
-			fend = order_by_clause ? exp_atom(sql->sa, atom_zero_value(sql->sa, EC_NUMERIC(sclass) ? bt : lon)) : exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : lon));
+			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : bound_tp));
+			fend = order_by_clause ? exp_atom(sql->sa, atom_zero_value(sql->sa, EC_NUMERIC(sclass) ? bt : bound_tp)) :
+									 exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : bound_tp));
 
-			if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE,
-										   SQL_PRECEDING, SQL_FOLLOWING) == NULL)
+			if (generate_window_bound_call(sql, &start, &eend, s, gbe ? pe : NULL, ie, fstart, fend, frame_type, EXCLUDE_NONE, SQL_PRECEDING, SQL_FOLLOWING) == NULL)
 				return NULL;
 		} else {
 			frame_type = list_empty(obe) ? FRAME_ALL : FRAME_UNBOUNDED_TILL_CURRENT_ROW;
