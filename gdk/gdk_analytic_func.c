@@ -1617,6 +1617,31 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 		}		\
 	} while (0)
 
+static gdk_return /* This is a workaround for a MSVC compiler bug at build engine version 16.7.0+b89cb5fde Will test again after the next release */
+GDKanalyticalsumothers(BAT *r, BAT *p, bit *np, BAT *b, oid *restrict start, oid *restrict end, int tp1, int tp2)
+{
+	bool has_nils = false;
+	oid i = 0, k = 0, cnt = BATcount(b);
+	int abort_on_error = 1;
+	BUN nils = 0;
+
+	ANALYTICAL_SUM_BRANCHES(OTHERS);
+
+	BATsetcount(r, cnt);
+	r->tnonil = !has_nils;
+	r->tnil = has_nils;
+	return GDK_SUCCEED;
+      bailout:
+	GDKerror("42000!error while calculating floating-point sum\n");
+	return GDK_FAIL;
+      nosupport:
+	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
+	return GDK_FAIL;
+      calc_overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	return GDK_FAIL;
+}
+
 gdk_return
 GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
@@ -1641,7 +1666,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
-			ANALYTICAL_SUM_BRANCHES(OTHERS);
+			return GDKanalyticalsumothers(r, p, np, b, start, end, tp1, tp2);
 		}
 		}
 	}
