@@ -1647,7 +1647,8 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 *  ii) it is not an equi-select, and
 		 * iii) is not var-sized.
 		 */
-		bool use_imprints = !equi &&
+		bool use_imprints = /* DISABLES CODE */ (0) &&
+			!equi &&
 			!b->tvarsized &&
 			(!b->batTransient ||
 			 (parent != 0 &&
