@@ -2772,9 +2772,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					oc->data = timestamp_delta(o->data, oc->base.stime);
 				}
 				assert(oc->data);
-				if (tr_merge_delta(tr, oc->data, oc->unique == 1) != LOG_OK)
-					ok = LOG_ERR;
-				cc->data = NULL;
+				if (cc->base.wtime) {
+					if (tr_merge_delta(tr, oc->data, oc->unique == 1) != LOG_OK)
+						ok = LOG_ERR;
+					cc->data = NULL;
+				}
 			} else if (cc->data) {
 				tr_handle_snapshot(tr, cc->data);
 				oc->data = cc->data;
@@ -2853,9 +2855,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						oi->data = timestamp_delta(o->data, oi->base.stime);
 					}
 					assert(oi->data);
-					if (tr_merge_delta(tr, oi->data, 0) != LOG_OK)
-						ok = LOG_ERR;
-					ci->data = NULL;
+					if (ci->base.wtime) {
+						if (tr_merge_delta(tr, oi->data, 0) != LOG_OK)
+							ok = LOG_ERR;
+						ci->data = NULL;
+					}
 				} else if (ci->data) {
 					tr_handle_snapshot(tr, ci->data);
 					oi->data = ci->data;
