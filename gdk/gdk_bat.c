@@ -556,9 +556,9 @@ BATclear(BAT *b, bool force)
 			if (ATOMheap(b->ttype, th, 0) != GDK_SUCCEED)
 				return GDK_FAIL;
 			ATOMIC_INIT(&th->refs, 1);
+			MT_lock_set(&b->theaplock);
 			th->parentid = b->tvheap->parentid;
 			th->dirty = true;
-			MT_lock_set(&b->theaplock);
 			HEAPdecref(b->tvheap, false);
 			b->tvheap = th;
 			MT_lock_unset(&b->theaplock);
@@ -1736,7 +1736,7 @@ BATkey(BAT *b, bool flag)
 		b->tseqbase = oid_nil;
 	} else
 		b->tnokey[0] = b->tnokey[1] = 0;
-	if (flag && VIEWtparent(b)) {
+	if (/* DISABLES CODE */ (0) && flag && VIEWtparent(b)) {
 		/* if a view is key, then so is the parent if the two
 		 * are aligned */
 		BAT *bp = BBP_cache(VIEWtparent(b));

@@ -3190,14 +3190,14 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	*r1p = NULL;
 	if (r2p)
 		*r2p = NULL;
-	if ((parent = VIEWtparent(l)) != 0) {
+	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b)) {
 			l = b;
 		}
 	}
-	if ((parent = VIEWtparent(r)) != 0) {
+	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b)) {
@@ -3298,7 +3298,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	if (rhash) {
 		/* average chain length */
 		rcost = (double) BATcount(r) / r->thash->nheads;
-	} else if ((parent = VIEWtparent(r)) != 0) {
+	} else if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		rhash = prhash = BATcheckhash(b);
 		if (prhash) {
@@ -3347,7 +3347,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		if (lhash) {
 			/* average chain length */
 			lcost = (double) BATcount(l) / l->thash->nheads;
-		} else if ((parent = VIEWtparent(l)) != 0) {
+		} else if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
 			BAT *b = BBPdescriptor(parent);
 			lhash = plhash = BATcheckhash(b);
 			if (plhash) {
@@ -3607,13 +3607,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((parent = VIEWtparent(l)) != 0) {
+	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (l->hseqbase == b->hseqbase &&
 		    BATcount(l) == BATcount(b))
 			l = b;
 	}
-	if ((parent = VIEWtparent(r)) != 0) {
+	if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		if (r->hseqbase == b->hseqbase &&
 		    BATcount(r) == BATcount(b))
@@ -3703,7 +3703,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if (lhash) {
 		/* average chain length */
 		lcost = (double) BATcount(l) / l->thash->nheads;
-	} else if ((parent = VIEWtparent(l)) != 0) {
+	} else if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(l)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		lhash = plhash = BATcheckhash(b);
 		if (plhash) {
@@ -3747,7 +3747,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if (rhash) {
 		/* average chain length */
 		rcost = (double) BATcount(r) / r->thash->nheads;
-	} else if ((parent = VIEWtparent(r)) != 0) {
+	} else if (/* DISABLES CODE */ (0) && (parent = VIEWtparent(r)) != 0) {
 		BAT *b = BBPdescriptor(parent);
 		rhash = prhash = BATcheckhash(b);
 		if (prhash) {

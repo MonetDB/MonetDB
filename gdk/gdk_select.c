@@ -475,7 +475,7 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
-	if (use_imprints && VIEWtparent(b)) {				\
+	if (use_imprints && /* DISABLES CODE */ (0) && VIEWtparent(b)) { \
 		BAT *parent = BBPdescriptor(VIEWtparent(b));		\
 		assert(parent);						\
 		basesrc = (const TYPE *) Tloc(parent, 0);		\
@@ -1362,10 +1362,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	    !(b->tsorted || b->trevsorted) &&
 	    ci.tpe == cand_dense &&
 	    (BATcheckorderidx(b) ||
-	     (VIEWtparent(b) &&
+	     (/* DISABLES CODE */ (0) &&
+	      VIEWtparent(b) &&
 	      BATcheckorderidx(BBPquickdesc(VIEWtparent(b), false))))) {
 		BAT *view = NULL;
-		if (VIEWtparent(b) && !BATcheckorderidx(b)) {
+		if (/* DISABLES CODE */ (0) && VIEWtparent(b) && !BATcheckorderidx(b)) {
 			view = b;
 			b = BBPdescriptor(VIEWtparent(b));
 		}
@@ -1831,9 +1832,9 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	}
 
 	if (!BATordered(l) && !BATordered_rev(l) &&
-	    (BATcheckorderidx(l) || (VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
+	    (BATcheckorderidx(l) || (/* DISABLES CODE */ (0) && VIEWtparent(l) && BATcheckorderidx(BBPquickdesc(VIEWtparent(l), false))))) {
 		use_orderidx = true;
-		if (VIEWtparent(l) && !BATcheckorderidx(l)) {
+		if (/* DISABLES CODE */ (0) && VIEWtparent(l) && !BATcheckorderidx(l)) {
 			l = BBPdescriptor(VIEWtparent(l));
 		}
 	}
@@ -1960,7 +1961,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	} else if (!anti && !symmetric &&
 		   (BATcount(rl) > 2 ||
 		    !l->batTransient ||
-		    (VIEWtparent(l) != 0 &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(l) != 0 &&
 		     (tmp = BBPquickdesc(VIEWtparent(l), false)) != NULL &&
 		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&

@@ -3565,7 +3565,8 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
 		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
@@ -3592,7 +3593,8 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 				pos = ords[r];
 			}
 		} else if ((VIEWtparent(b) == 0 ||
-			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			    (/* DISABLES CODE */ (0) &&
+			     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) &&
 			   BATcheckimprints(b)) {
 			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
 			int i;
@@ -3670,7 +3672,8 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		BAT *pb = NULL;
 
 		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
 		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&
@@ -3690,7 +3693,8 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 					pos = z;
 			}
 		} else if ((VIEWtparent(b) == 0 ||
-			    BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b)))) &&
+			    (/* DISABLES CODE */ (0) &&
+			     BATcount(b) == BATcount(BBPdescriptor(VIEWtparent(b))))) &&
 			   BATcheckimprints(b)) {
 			Imprints *imprints = VIEWtparent(b) ? BBPdescriptor(VIEWtparent(b))->timprints : b->timprints;
 			int i;
@@ -3970,7 +3974,8 @@ doBATgroupquantile(BAT *b, BAT *g, BAT *e, BAT *s, int tp, double quantile,
 		t1 = NULL;
 
 		if (BATcheckorderidx(b) ||
-		    (VIEWtparent(b) &&
+		    (/* DISABLES CODE */ (0) &&
+		     VIEWtparent(b) &&
 		     (pb = BBPdescriptor(VIEWtparent(b))) != NULL &&
 		     pb->tbaseoff == b->tbaseoff &&
 		     BATcount(pb) == BATcount(b) &&

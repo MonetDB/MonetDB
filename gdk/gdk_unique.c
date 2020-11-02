@@ -155,7 +155,8 @@ BATunique(BAT *b, BAT *s)
 		   (!b->batTransient &&
 		    cnt == BATcount(b) &&
 		    BAThash(b) == GDK_SUCCEED) ||
-		   ((parent = VIEWtparent(b)) != 0 &&
+		   (/* DISABLES CODE */ (0) &&
+		    (parent = VIEWtparent(b)) != 0 &&
 		    BATcheckhash(BBPdescriptor(parent)))) {
 		BUN lo;
 		oid seq;
@@ -165,7 +166,7 @@ BATunique(BAT *b, BAT *s)
 		 * is a view on a bat that already has a hash table */
 		algomsg = "unique: existing hash";
 		seq = b->hseqbase;
-		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->thash == NULL && /* DISABLES CODE */ (0) && (parent = VIEWtparent(b)) != 0) {
 			BAT *b2 = BBPdescriptor(parent);
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;

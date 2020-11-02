@@ -1634,7 +1634,8 @@ BATkeyed(BAT *b)
 		} else if (BATcheckhash(b) ||
 			   (!b->batTransient &&
 			    BAThash(b) == GDK_SUCCEED) ||
-			   (VIEWtparent(b) != 0 &&
+			   (/* DISABLES CODE */ (0) &&
+			    VIEWtparent(b) != 0 &&
 			    BATcheckhash(BBPdescriptor(VIEWtparent(b))))) {
 			/* we already have a hash table on b, or b is
 			 * persistent and we could create a hash
@@ -2041,7 +2042,8 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 	}
 	if (VIEWtparent(b)) {
 		pb = BBPdescriptor(VIEWtparent(b));
-		if (b->tbaseoff != pb->tbaseoff ||
+		if (/* DISABLES CODE */ (1) ||
+		    b->tbaseoff != pb->tbaseoff ||
 		    BATcount(b) != BATcount(pb) ||
 		    b->hseqbase != pb->hseqbase ||
 		    BATatoms[b->ttype].atomCmp != BATatoms[pb->ttype].atomCmp)

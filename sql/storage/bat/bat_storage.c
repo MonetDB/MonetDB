@@ -613,7 +613,7 @@ delta_append_bat( sql_delta *bat, size_t offset, BAT *i, sql_table *t )
 			}
 		}
 		if (isVIEW(oi) && b->batCacheid == VIEWtparent(oi)) {
-            		BAT *ic = COLcopy(oi, oi->ttype, true, TRANSIENT);
+			BAT *ic = COLcopy(oi, oi->ttype, true, TRANSIENT);
 
 			if (ic == NULL || BATappend(b, ic, NULL, true) != GDK_SUCCEED) {
 				if (oi != i)
@@ -842,7 +842,7 @@ delta_delete_bat( storage *bat, BAT *i, int is_new)
 	int ok = LOG_OK;
 
 	assert(i->ttype != TYPE_msk);
-	if (t) 
+	if (t)
 		ok = cs_update_bat( &bat->cs, i, t, is_new);
 	bat_destroy(t);
 	if (i != oi)
