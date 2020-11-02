@@ -218,7 +218,7 @@ count_deletes(storage *d)
 		}
 		bat_destroy(c);
 	}
-	return cnt;
+	return (size_t) cnt;
 }
 
 static size_t
