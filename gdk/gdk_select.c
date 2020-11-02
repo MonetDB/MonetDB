@@ -1781,7 +1781,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	oid ro;
 	oid rlval = oid_nil, rhval = oid_nil;
 	int sorted = 0;		/* which output column is sorted */
-	BAT *tmp;
+	BAT *tmp = NULL;
 	bool use_orderidx = false;
 	const char *algo = NULL;
 
@@ -1967,6 +1967,7 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		     !tmp->batTransient) ||
 		    BATcheckimprints(l)) &&
 		   BATimprints(l) == GDK_SUCCEED) {
+		(void) tmp;	/* void cast because of disabled code */
 		/* implementation using imprints on left column
 		 *
 		 * we use imprints if we can (the type is right for

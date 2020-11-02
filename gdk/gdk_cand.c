@@ -448,7 +448,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	if (mask_cand(s)) {
 		ci->tpe = cand_mask;
 		ci->mask = (const uint32_t *) ccand_first(s);
-		ci->seq = s->hseqbase - CCAND(s)->firstbit;
+		ci->seq = s->hseqbase - (oid) CCAND(s)->firstbit;
 		ci->hseq = ci->seq;
 		ci->nvals = ccand_free(s) / sizeof(uint32_t);
 		cnt = ci->nvals * 32;
@@ -668,7 +668,7 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 		ci->firstbit += i;
 		cnt -= i;
 		if (mask_cand(s))
-			ci->mskoff = s->hseqbase - CCAND(s)->firstbit + (ci->mask - (const uint32_t *) ccand_first(s)) * 32U;
+			ci->mskoff = s->hseqbase - (oid) CCAND(s)->firstbit + (ci->mask - (const uint32_t *) ccand_first(s)) * 32U;
 		else
 			ci->mskoff = s->hseqbase + (ci->mask - (const uint32_t *) s->theap->base) * 32U;
 		ci->seq = ci->mskoff + ci->firstbit;
@@ -1365,7 +1365,7 @@ BATmaskedcands(oid hseq, BAT *masked, bool selected)
 	if (cnt > 0) {
 		ATOMIC_INIT(&msks->refs, 1);
 		bn->tvheap = msks;
-		bn->hseqbase += c->firstbit;
+		bn->hseqbase += (oid) c->firstbit;
 	} else {
 		/* no point having a mask if it's empty */
 		HEAPfree(msks, true);
@@ -1401,7 +1401,7 @@ BATunmask(BAT *b)
 		cnt = ccand_free(b) / sizeof(uint32_t);
 		rem = 0;
 		src = (const uint32_t *) ccand_first(b);
-		hseq -= CCAND(b)->firstbit;
+		hseq -= (oid) CCAND(b)->firstbit;
 	} else {
 		cnt = BATcount(b) / 32;
 		rem = BATcount(b) % 32;
