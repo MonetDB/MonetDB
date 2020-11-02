@@ -38,7 +38,7 @@ BATunique(BAT *b, BAT *s)
 	BUN hb;
 	BATiter bi;
 	int (*cmp)(const void *, const void *);
-	bat parent;
+	bat parent = 0;
 	struct canditer ci;
 	PROPrec *prop;
 	const char *algomsg = "";
@@ -171,6 +171,7 @@ BATunique(BAT *b, BAT *s)
 			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
 			bi = bat_iterator(b);
+			algomsg = "unique: existing parent hash";
 		} else {
 			lo = 0;
 		}

@@ -2526,7 +2526,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
-	MT_thread_setalgorithm(__func__);
 	int t = ATOMbasetype(r->ttype);
 	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
 		t = TYPE_void;
@@ -2561,6 +2560,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rh = canditer_last(rci) + 1 - r->hseqbase;
 	if (phash) {
 		/* there is a hash on the parent which we should use */
+		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash");
 		BAT *b = BBPdescriptor(VIEWtparent(r));
 		TRC_DEBUG(ALGO, "%s(%s): using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
@@ -2574,6 +2574,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		r = b;
 	} else if (hash) {
 		/* there is a hash on r which we should use */
+		MT_thread_setalgorithm(swapped ? "hashjoin using existing hash (swapped)" : "hashjoin using existing hash");
 		hsh = r->thash;
 		TRC_DEBUG(ALGO, ALGOBATFMT ": using "
 			  "existing hash%s\n",
@@ -2584,6 +2585,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		 * candidate list */
 		char ext[32];
 		assert(rci->s);
+		MT_thread_setalgorithm(swapped ? "hashjoin using candidate hash (swapped)" : "hashjoin using candidate hash");
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
 			  "hash for candidate list " ALGOBATFMT "%s%s\n",
 			  ALGOBATPAR(r), ALGOBATPAR(rci->s),
@@ -2598,6 +2600,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		hash_cand = true;
 	} else {
 		/* we need to create a hash on r */
+		MT_thread_setalgorithm(swapped ? "hashjoin using new hash (swapped)" : "hashjoin using new hash");
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
