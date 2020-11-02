@@ -1159,22 +1159,6 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-	/* check remote definition */
-	snprintf(buf, BUFSIZ, "inspect.getSignature(\"%s\",\"%s\");", mod, fcn);
-	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);
-	msg = RMTquery(&mhdl, "remote.register", c->mconn, buf);
-	if (msg == MAL_SUCCEED) {
-		MT_lock_unset(&c->lock);
-		throw(MAL, "remote.register",
-				"function already exists at the remote site: %s.%s",
-				mod, fcn);
-	} else {
-		/* we basically hope/assume this is a "doesn't exist" error */
-		freeException(msg);
-	}
-	if (mhdl)
-		mapi_close_handle(mhdl);
-
 	/* get a free, typed identifier for the remote host */
 	char ident[BUFSIZ];
 	tmp = RMTgetId(ident, sym->def, getInstrPtr(sym->def, 0), 0);
@@ -1182,16 +1166,42 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 		MT_lock_unset(&c->lock);
 		return tmp;
 	}
-	
+
+	/* check remote definition */
+	snprintf(buf, BUFSIZ, "b:bit:=inspect.getExistence(\"%s\",\"%s\");\nio.print(b);", mod, ident);
+	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);
+	if ((msg = RMTquery(&mhdl, "remote.register", c->mconn, buf)) != MAL_SUCCEED){
+		MT_lock_unset(&c->lock);
+		return msg;
+	}
+
+	char* result;
+	if ( mapi_get_field_count(mhdl) && mapi_fetch_row(mhdl) && (result = mapi_fetch_field(mhdl, 0))) {
+		if (strcmp(result, "false") != 0)
+			msg = createException(MAL, "remote.register",
+					"function already exists at the remote site: %s.%s",
+					mod, fcn);
+	}
+	else
+		msg = createException(MAL, "remote.register", OPERATION_FAILED);
+
+	mapi_close_handle(mhdl);
+
+	if (msg) {
+		MT_lock_unset(&c->lock);
+		return msg;
+	}
+
 	*fcn_id = GDKstrdup(ident);
 	if (*fcn_id == NULL) {
-		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
+		MT_lock_unset(&c->lock);
+		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
 
 	Symbol prg;
-
 	if ((prg = newFunction(putName(mod), putName(*fcn_id), FUNCTIONsymbol)) == NULL) {
-		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
+		MT_lock_unset(&c->lock);
+		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
 
 	// We only need the Symbol not the inner program stub. So we clear it.
@@ -1200,7 +1210,7 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 
 	if ((prg->def = copyMalBlk(sym->def)) == NULL) {
 		freeSymbol(prg);
-		return createException(MAL, "Remote register", MAL_MALLOC_FAIL);
+		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
 	setFunctionId(getInstrPtr(prg->def, 0), putName(*fcn_id));
 
