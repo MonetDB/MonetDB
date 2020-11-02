@@ -1647,11 +1647,11 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		 *  ii) it is not an equi-select, and
 		 * iii) is not var-sized.
 		 */
-		bool use_imprints = /* DISABLES CODE */ (0) &&
-			!equi &&
+		bool use_imprints = !equi &&
 			!b->tvarsized &&
 			(!b->batTransient ||
-			 (parent != 0 &&
+			 (/* DISABLES CODE */ (0) &&
+			  parent != 0 &&
 			  (tmp = BBPquickdesc(parent, false)) != NULL &&
 			  !tmp->batTransient));
 		bn = scanselect(b, &ci, bn, tl, th, li, hi, equi, anti,
