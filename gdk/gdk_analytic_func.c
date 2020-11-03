@@ -938,7 +938,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 
 #define ANALYTICAL_MIN_MAX_PARTITIONS(TPE, MIN_MAX, IMP)		\
 	do {					\
-		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0); \
+		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
@@ -1270,7 +1270,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 /* Now do the count analytic function branches */
 #define ANALYTICAL_COUNT_FIXED_PARTITIONS(TPE, IMP)		\
 	do {					\
-		TPE *bp = (TPE*) bheap; \
+		TPE *restrict bp = (TPE*) bheap; \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
@@ -1507,7 +1507,7 @@ cleanup:
 
 #define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)		\
 	do {						\
-		TPE1 *bp = (TPE1*)Tloc(b, 0);	 \
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);	 \
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
@@ -2013,7 +2013,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 
 #define ANALYTICAL_PROD_CALC_NUM_PARTITIONS(TPE1, TPE2, TPE3_OR_REAL_IMP, IMP)		\
 	do {						\
-		TPE1 *bp = (TPE1*)Tloc(b, 0);	 \
+		TPE1 *restrict bp = (TPE1*)Tloc(b, 0);	 \
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
@@ -2494,7 +2494,7 @@ avg_fp_deltas(dbl)
 
 #define ANALYTICAL_AVG_PARTITIONS(TPE, IMP, REAL_IMP)		\
 	do {						\
-		TPE *bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)Tloc(b, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
@@ -2749,7 +2749,7 @@ avg_int_deltas(lng)
 
 #define ANALYTICAL_AVG_INT_PARTITIONS(TPE, IMP)		\
 	do {						\
-		TPE *bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0); \
+		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
 				if (np[i]) 			\
@@ -2836,7 +2836,7 @@ nosupport:
 
 #define ANALYTICAL_STDEV_VARIANCE_UNBOUNDED_TILL_CURRENT_ROW(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)Tloc(b, 0); \
 		for (; k < i;) { \
 			j = k; \
 			do {	\
@@ -2867,7 +2867,7 @@ nosupport:
 
 #define ANALYTICAL_STDEV_VARIANCE_CURRENT_ROW_TILL_UNBOUNDED(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)Tloc(b, 0); \
 		l = i - 1; \
 		for (j = l; ; j--) { \
 			TPE v = bp[j]; \
@@ -2907,7 +2907,7 @@ nosupport:
 
 #define ANALYTICAL_STDEV_VARIANCE_ALL_ROWS(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)Tloc(b, 0); \
 		for (; j < i; j++) { \
 			TPE v = bp[j]; \
 			if (is_##TPE##_nil(v))		\
@@ -2977,7 +2977,7 @@ typedef struct stdev_var_deltas {
 	} while (0)
 #define ANALYTICAL_STDEV_VARIANCE_OTHERS(TPE, SAMPLE, OP)	\
 	do { \
-		TPE *bp = (TPE*)Tloc(b, 0); \
+		TPE *restrict bp = (TPE*)Tloc(b, 0); \
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(stdev_var_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
