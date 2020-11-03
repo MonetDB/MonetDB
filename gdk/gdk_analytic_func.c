@@ -2944,32 +2944,54 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 		has_nils = is_dbl_nil(rb[k - 1]); \
 	} while (0)
 
+typedef struct stdev_var_deltas {
+	BUN n;
+	dbl mean;
+	dbl m2;
+	dbl delta;
+} stdev_var_deltas;
+
+#define INIT_AGGREGATE_STDEV_VARIANCE(TPE, SAMPLE, OP) \
+	do { \
+		computed = (stdev_var_deltas) {.n = 0, .mean = 0, .m2 = 0, .delta = dbl_nil}; \
+	} while (0)
+#define COMPUTE_LEVEL0_STDEV_VARIANCE(X, TPE, SAMPLE, OP) \
+	do { \
+		TPE v = bp[j + X]; \
+		computed = is_##TPE##_nil(v) ? (stdev_var_deltas) {.n = 0, .mean = 0, .m2 = 0, .delta = dbl_nil} : (stdev_var_deltas) {.n = 1, .mean = (dbl)v, .m2 = 0, .delta = (dbl)v}; \
+	} while (0)
+#define COMPUTE_LEVELN_STDEV_VARIANCE(VAL, TPE, SAMPLE, OP) \
+	do { \
+		if (!is_dbl_nil(VAL.delta)) {		\
+			computed.n++; \
+			computed.delta = VAL.delta - computed.mean;		\
+			computed.mean += computed.delta / computed.n;		\
+			computed.m2 += computed.delta * (VAL.delta - computed.mean);	\
+		}				\
+	} while (0)
+#define FINALIZE_AGGREGATE_STDEV_VARIANCE(TPE, SAMPLE, OP) \
+	do { \
+		dbl m2 = computed.m2; \
+		BUN n = computed.n; \
+		if (isinf(m2)) {	\
+			goto overflow;		\
+		} else if (n > SAMPLE) { \
+			rb[k] = OP; \
+		} else { \
+			rb[k] = dbl_nil; \
+			has_nils = true; \
+		} \
+	} while (0)
 #define ANALYTICAL_STDEV_VARIANCE_OTHERS(TPE, SAMPLE, OP)	\
-	do {								\
+	do { \
 		TPE *bp = (TPE*)Tloc(b, 0); \
-		for (; k < i; k++) {			\
-			TPE *bs = bp + start[k], *be = bp + end[k];		\
-			for (; bs < be; bs++) {				\
-				TPE v = *bs;				\
-				if (is_##TPE##_nil(v))		\
-					continue;		\
-				n++;				\
-				delta = (dbl) v - mean;		\
-				mean += delta / n;		\
-				m2 += delta * ((dbl) v - mean);	\
-			}						\
-			if (isinf(m2)) {	\
-				goto overflow;		\
-			} else if (n > SAMPLE) { \
-				rb[k] = OP; \
-			} else { \
-				rb[k] = dbl_nil; \
-				has_nils = true; \
-			} \
-			n = 0;	\
-			mean = 0;	\
-			m2 = 0; \
-		}	\
+		oid ncount = i - k; \
+		if ((res = rebuild_segmentree(ncount, sizeof(stdev_var_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, TPE, SAMPLE, OP); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(stdev_var_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, FINALIZE_AGGREGATE_STDEV_VARIANCE, TPE, SAMPLE, OP); \
+		j = k; \
 	} while (0)
 
 #define ANALYTICAL_STATISTICS_PARTITIONS(TPE, SAMPLE, OP, IMP)		\
@@ -3026,10 +3048,13 @@ gdk_return \
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
 	bool has_nils = false;	\
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;	\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,	\
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0; \
 	lng n = 0;	\
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
+	void *segment_tree = NULL; \
+	gdk_return res = GDK_SUCCEED; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {	\
@@ -3054,12 +3079,16 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	BATsetcount(r, cnt); \
 	r->tnonil = !has_nils;	\
 	r->tnil = has_nils;	\
-	return GDK_SUCCEED; \
-  nosupport:	\
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */	\
+overflow:	\
+	GDKerror("22003!overflow in calculation.\n");	\
+	res = GDK_FAIL;	\
+cleanup:	\
+	GDKfree(segment_tree);	\
+	GDKfree(levels_offset);	\
+	return res;	\
+nosupport:	\
 	GDKerror("42000!%s of type %s unsupported.\n", DESC, ATOMname(tpe)); \
-	return GDK_FAIL; \
-  overflow: \
-	GDKerror("22003!overflow in calculation.\n"); \
 	return GDK_FAIL; \
 }
 
