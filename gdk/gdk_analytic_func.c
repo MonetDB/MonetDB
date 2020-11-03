@@ -50,8 +50,8 @@ rebuild_segmentree(oid ncount, oid data_size, void **segment_tree, oid *tree_cap
 	return GDK_SUCCEED;
 }
 
-/* segment_tree, levels_offset and nlevels must be already defined. ARG1 and ARG2 are to be used by the aggregate */
-#define populate_segment_tree(CAST, COUNT, INIT_AGGREGATE, COMPUTE_LEVEL0, COMPUTE_LEVELN, ARG1, ARG2) \
+/* segment_tree, levels_offset and nlevels must be already defined. ARG1, ARG2 and ARG3 are to be used by the aggregate */
+#define populate_segment_tree(CAST, COUNT, INIT_AGGREGATE, COMPUTE_LEVEL0, COMPUTE_LEVELN, ARG1, ARG2, ARG3) \
 	do {	\
 		CAST *ctree = (CAST *) segment_tree; \
 		CAST *prev_level_begin = ctree; \
@@ -63,7 +63,7 @@ rebuild_segmentree(oid ncount, oid data_size, void **segment_tree, oid *tree_cap
 	\
 			for (oid x = pos; x < end; x++) { \
 				CAST computed; \
-				COMPUTE_LEVEL0(x, ARG1, ARG2);	\
+				COMPUTE_LEVEL0(x, ARG1, ARG2, ARG3);	\
 				ctree[tree_offset++] = computed; \
 			} \
 		} \
@@ -75,9 +75,9 @@ rebuild_segmentree(oid ncount, oid data_size, void **segment_tree, oid *tree_cap
 				oid begin = pos, end = MIN(level_size, pos + SEGMENT_TREE_FANOUT), width = end - begin; \
 				CAST computed; \
 	\
-				INIT_AGGREGATE(ARG1, ARG2);	\
+				INIT_AGGREGATE(ARG1, ARG2, ARG3);	\
 				for (oid x = 0; x < width; x++) \
-					COMPUTE_LEVELN(prev_level_begin[x], ARG1, ARG2);	\
+					COMPUTE_LEVELN(prev_level_begin[x], ARG1, ARG2, ARG3);	\
 				ctree[tree_offset++] = computed; \
 				prev_level_begin += width; \
 			} \
@@ -85,12 +85,12 @@ rebuild_segmentree(oid ncount, oid data_size, void **segment_tree, oid *tree_cap
 		} \
 	} while (0)
 
-#define compute_on_segment_tree(CAST, START, END, INIT_AGGREGATE, COMPUTE, FINALIZE_AGGREGATE, ARG1, ARG2)	\
+#define compute_on_segment_tree(CAST, START, END, INIT_AGGREGATE, COMPUTE, FINALIZE_AGGREGATE, ARG1, ARG2, ARG3)	\
 	do { /* taken from https://www.vldb.org/pvldb/vol8/p1058-leis.pdf */	\
 		oid begin = START, tend = END; \
 		CAST computed; \
 	\
-		INIT_AGGREGATE(ARG1, ARG2);	\
+		INIT_AGGREGATE(ARG1, ARG2, ARG3);	\
 		for (oid level = 0; level < nlevels; level++) { \
 			CAST *tlevel = (CAST *) segment_tree + levels_offset[level]; \
 			oid parent_begin = begin / SEGMENT_TREE_FANOUT; \
@@ -98,25 +98,25 @@ rebuild_segmentree(oid ncount, oid data_size, void **segment_tree, oid *tree_cap
 	\
 			if (parent_begin == parent_end) { \
 				for (oid pos = begin; pos < tend; pos++) \
-					COMPUTE(tlevel[pos], ARG1, ARG2);	\
+					COMPUTE(tlevel[pos], ARG1, ARG2, ARG3);	\
 				break; \
 			} \
 			oid group_begin = parent_begin * SEGMENT_TREE_FANOUT; \
 			if (begin != group_begin) { \
 				oid limit = group_begin + SEGMENT_TREE_FANOUT; \
 				for (oid pos = begin; pos < limit; pos++) \
-					COMPUTE(tlevel[pos], ARG1, ARG2);	\
+					COMPUTE(tlevel[pos], ARG1, ARG2, ARG3);	\
 				parent_begin++; \
 			} \
 			oid group_end = parent_end * SEGMENT_TREE_FANOUT; \
 			if (tend != group_end) { \
 				for (oid pos = group_end; pos < tend; pos++) \
-					COMPUTE(tlevel[pos], ARG1, ARG2);	\
+					COMPUTE(tlevel[pos], ARG1, ARG2, ARG3);	\
 			} \
 			begin = parent_begin; \
 			tend = parent_end; \
 		} \
-		FINALIZE_AGGREGATE(ARG1, ARG2); \
+		FINALIZE_AGGREGATE(ARG1, ARG2, ARG3); \
 	} while (0)
 
 #define NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
@@ -865,15 +865,15 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		} \
 	} while (0)
 
-#define INIT_AGGREGATE_MIN_MAX_FIXED(TPE, MIN_MAX) \
+#define INIT_AGGREGATE_MIN_MAX_FIXED(TPE, MIN_MAX, NOTHING) \
 	do { \
 		computed = TPE##_nil; \
 	} while (0)
-#define COMPUTE_LEVEL0_MIN_MAX_FIXED(X, TPE, MIN_MAX) \
+#define COMPUTE_LEVEL0_MIN_MAX_FIXED(X, TPE, MIN_MAX, NOTHING) \
 	do { \
 		computed = bp[j + X]; \
 	} while (0)
-#define COMPUTE_LEVELN_MIN_MAX_FIXED(VAL, TPE, MIN_MAX) \
+#define COMPUTE_LEVELN_MIN_MAX_FIXED(VAL, TPE, MIN_MAX, NOTHING) \
 	do { \
 		if (!is_##TPE##_nil(VAL)) {	\
 			if (is_##TPE##_nil(computed))	\
@@ -882,7 +882,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				computed = MIN_MAX(computed, VAL); \
 		} \
 	} while (0)
-#define FINALIZE_AGGREGATE_MIN_MAX_FIXED(TPE, MIN_MAX) \
+#define FINALIZE_AGGREGATE_MIN_MAX_FIXED(TPE, MIN_MAX, NOTHING) \
 	do { \
 		rb[k] = computed;	\
 		has_nils |= is_##TPE##_nil(computed); \
@@ -892,9 +892,9 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		oid ncount = i - k; \
 		if ((res = rebuild_segmentree(ncount, sizeof(TPE), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
-		populate_segment_tree(TPE, ncount, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVEL0_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, TPE, MIN_MAX); \
+		populate_segment_tree(TPE, ncount, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVEL0_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, TPE, MIN_MAX, NOTHING); \
 		for (; k < i; k++) \
-			compute_on_segment_tree(TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, FINALIZE_AGGREGATE_MIN_MAX_FIXED, TPE, MIN_MAX); \
+			compute_on_segment_tree(TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, FINALIZE_AGGREGATE_MIN_MAX_FIXED, TPE, MIN_MAX, NOTHING); \
 		j = k; \
 	} while (0)
 
@@ -976,15 +976,15 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		} \
 	} while (0)
 
-#define INIT_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING) \
+#define INIT_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		computed = (void*) nil; \
 	} while (0)
-#define COMPUTE_LEVEL0_MIN_MAX_VARSIZED(X, GT_LT, NOTHING) \
+#define COMPUTE_LEVEL0_MIN_MAX_VARSIZED(X, GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		computed = BUNtail(bpi, j + X); \
 	} while (0)
-#define COMPUTE_LEVELN_MIN_MAX_VARSIZED(VAL, GT_LT, NOTHING) \
+#define COMPUTE_LEVELN_MIN_MAX_VARSIZED(VAL, GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		if (atomcmp(VAL, nil) != 0) {		\
 			if (atomcmp(computed, nil) == 0)	\
@@ -993,7 +993,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				computed = atomcmp(VAL, computed) GT_LT 0 ? computed : VAL; \
 		} \
 	} while (0)
-#define FINALIZE_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING) \
+#define FINALIZE_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		if ((res = tfastins_nocheckVAR(r, k, computed, Tsize(r))) != GDK_SUCCEED) \
 			goto cleanup; \
@@ -1004,9 +1004,9 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		oid ncount = i - k; \
 		if ((res = rebuild_segmentree(ncount, sizeof(void*), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
-		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVEL0_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, GT_LT, NOTHING); \
+		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVEL0_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, GT_LT, NOTHING, NOTHING); \
 		for (; k < i; k++) \
-			compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, FINALIZE_AGGREGATE_MIN_MAX_VARSIZED, GT_LT, NOTHING); \
+			compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, FINALIZE_AGGREGATE_MIN_MAX_VARSIZED, GT_LT, NOTHING, NOTHING); \
 		j = k; \
 	} while (0)
 
@@ -1202,19 +1202,19 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} \
 	} while (0)
 
-#define INIT_AGGREGATE_COUNT(TPE, NOTHING) \
+#define INIT_AGGREGATE_COUNT(TPE, NOTHING1, NOTHING2) \
 	do { \
 		computed = 0; \
 	} while (0)
-#define COMPUTE_LEVEL0_COUNT_FIXED(X, TPE, NOTHING) \
+#define COMPUTE_LEVEL0_COUNT_FIXED(X, TPE, NOTHING1, NOTHING2) \
 	do { \
 		computed = !is_##TPE##_nil(bp[j + X]); \
 	} while (0)
-#define COMPUTE_LEVELN_COUNT(VAL, NOTHING1, NOTHING2) \
+#define COMPUTE_LEVELN_COUNT(VAL, NOTHING1, NOTHING2, NOTHING3) \
 	do { \
 		computed += VAL; \
 	} while (0)
-#define FINALIZE_AGGREGATE_COUNT(NOTHING1, NOTHING2) \
+#define FINALIZE_AGGREGATE_COUNT(NOTHING1, NOTHING2, NOTHING3) \
 	do { \
 		rb[k] = computed;	\
 	} while (0)
@@ -1227,9 +1227,9 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			oid ncount = i - k; \
 			if ((res = rebuild_segmentree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup; \
-			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING); \
+			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
 			for (; k < i; k++) \
-				compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, TPE, NOTHING); \
+				compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, TPE, NOTHING, NOTHING); \
 			j = k; \
 		}	\
 	} while (0)
@@ -1321,7 +1321,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} \
 	} while (0)
 
-#define COMPUTE_LEVEL0_COUNT_OTHERS(X, NOTHING1, NOTHING2) \
+#define COMPUTE_LEVEL0_COUNT_OTHERS(X, NOTHING1, NOTHING2, NOTHING3) \
 	do { \
 		computed = cmp(BUNtail(bpi, j + X), nil) != 0; \
 	} while (0)
@@ -1334,9 +1334,9 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 			oid ncount = i - k; \
 			if ((res = rebuild_segmentree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup; \
-			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING, NOTHING); \
+			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING, NOTHING, NOTHING); \
 			for (; k < i; k++) \
-				compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, NOTHING, NOTHING); \
+				compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, NOTHING, NOTHING, NOTHING); \
 			j = k; \
 		}	\
 	} while (0)
@@ -1520,16 +1520,16 @@ cleanup:
 		} \
 	} while (0)
 
-#define INIT_AGGREGATE_SUM(NOTHING, TPE2) \
+#define INIT_AGGREGATE_SUM(NOTHING1, TPE2, NOTHING2) \
 	do { \
 		computed = TPE2##_nil; \
 	} while (0)
-#define COMPUTE_LEVEL0_SUM(X, TPE1, TPE2) \
+#define COMPUTE_LEVEL0_SUM(X, TPE1, TPE2, NOTHING) \
 	do { \
 		TPE1 v = bp[j + X]; \
 		computed = is_##TPE1##_nil(v) ? TPE2##_nil : (TPE2) v; \
 	} while (0)
-#define COMPUTE_LEVELN_SUM_NUM(VAL, NOTHING, TPE2) \
+#define COMPUTE_LEVELN_SUM_NUM(VAL, NOTHING1, TPE2, NOTHING2) \
 	do { \
 		if (!is_##TPE2##_nil(VAL)) {		\
 			if (is_##TPE2##_nil(computed))	\
@@ -1538,7 +1538,7 @@ cleanup:
 				ADD_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, goto calc_overflow); \
 		}	\
 	} while (0)
-#define FINALIZE_AGGREGATE_SUM(NOTHING, TPE2) \
+#define FINALIZE_AGGREGATE_SUM(NOTHING1, TPE2, NOTHING2) \
 	do { \
 		rb[k] = computed;	\
 		has_nils |= is_##TPE2##_nil(computed); \
@@ -1548,9 +1548,9 @@ cleanup:
 		oid ncount = i - k; \
 		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
-		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_SUM, COMPUTE_LEVEL0_SUM, COMPUTE_LEVELN_SUM_NUM, TPE1, TPE2); \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_SUM, COMPUTE_LEVEL0_SUM, COMPUTE_LEVELN_SUM_NUM, TPE1, TPE2, NOTHING); \
 		for (; k < i; k++) \
-			compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_SUM, COMPUTE_LEVELN_SUM_NUM, FINALIZE_AGGREGATE_SUM, TPE1, TPE2); \
+			compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_SUM, COMPUTE_LEVELN_SUM_NUM, FINALIZE_AGGREGATE_SUM, TPE1, TPE2, NOTHING); \
 		j = k; \
 	} while (0)
 
