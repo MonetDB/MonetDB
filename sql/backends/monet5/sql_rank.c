@@ -1692,12 +1692,17 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do {						\
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
+				if (np[i]) 	{		\
+covariance##TPE##IMP: \
 					IMP(TPE);	\
+				} \
 			}						\
 		}	\
-		i = cnt;			\
-		IMP(TPE);	\
+		if (!last) { /* hack to reduce code explosion, there's no need to duplicate the code to iterate each partition */ \
+			last = true; \
+			i = cnt; \
+			goto covariance##TPE##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -1820,7 +1825,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			lng n = 0;
 			bit *np = p ? Tloc(p, 0) : NULL, *opp = o ? Tloc(o, 0) : NULL;
 			dbl *restrict rb = (dbl *) Tloc(r, 0), val = VALisnil(input2) ? dbl_nil : defaultv, rr;
-			bool has_nils = is_dbl_nil(val);
+			bool has_nils = is_dbl_nil(val), last = false;
 
 			if (cnt > 0) {
 				switch (frame_type) {

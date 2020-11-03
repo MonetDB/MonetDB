@@ -941,12 +941,17 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
-					ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX); \
+				if (np[i]) 	{		\
+minmaxfixed##TPE##IMP: \
+					ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX);	\
+				} \
 			}						\
 		}		\
-		i = cnt;					\
-		ANALYTICAL_MIN_MAX_CALC_FIXED_##IMP(TPE, MIN_MAX);	\
+		if (!last) { /* hack to reduce code explosion, there's no need to duplicate the code to iterate each partition */ \
+			last = true; \
+			i = cnt; \
+			goto minmaxfixed##TPE##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -983,12 +988,17 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		default: {							\
 			if (p) {						\
 				for (; i < cnt; i++) {			\
-					if (np[i]) 			\
-						ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT); \
+				if (np[i]) 	{		\
+minmaxvarsized##IMP: \
+					ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT);	\
+				} \
 				}						\
 			} 					\
-			i = cnt;					\
-			ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT);	\
+			if (!last) { \
+				last = true; \
+				i = cnt; \
+				goto minmaxvarsized##IMP; \
+			} \
 		}								\
 		}								\
 	} while (0)
@@ -1006,6 +1016,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
+	bool last = false ; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {		\
@@ -1273,12 +1284,17 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		TPE *restrict bp = (TPE*) bheap; \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
+				if (np[i]) 	{		\
+count##TPE##IMP: \
 					ANALYTICAL_COUNT_FIXED_##IMP(TPE); \
+				} \
 			}						\
 		}	\
-		i = cnt;			\
-		ANALYTICAL_COUNT_FIXED_##IMP(TPE);	\
+		if (!last) { \
+			last = true; \
+			i = cnt; \
+			goto count##TPE##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -1315,12 +1331,17 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		default: {							\
 			if (p) {						\
 				for (; i < cnt; i++) {			\
-					if (np[i]) 			\
-						ANALYTICAL_COUNT_OTHERS_##IMP; \
+					if (np[i]) 	{		\
+countothers##IMP: \
+						ANALYTICAL_COUNT_OTHERS_##IMP;	\
+					} \
 				}						\
 			}	\
-			i = cnt;				\
-			ANALYTICAL_COUNT_OTHERS_##IMP;	\
+			if (!last) { \
+				last = true; \
+				i = cnt; \
+				goto countothers##IMP; \
+			} \
 		}								\
 		}								\
 	} while (0)
@@ -1339,6 +1360,7 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	BATiter bpi = bat_iterator(b);
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -1511,12 +1533,17 @@ cleanup:
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
+				if (np[i]) 	{		\
+sum##TPE1##TPE2##IMP: \
 					IMP(TPE1, TPE2);	\
-			}						\
+				} \
+			}	\
 		}	\
-		i = cnt;					\
-		IMP(TPE1, TPE2);	\
+		if (!last) { \
+			last = true; \
+			i = cnt; \
+			goto sum##TPE1##TPE2##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -1646,6 +1673,7 @@ GDKanalyticalsumothers(BAT *r, BAT *p, bit *np, BAT *b, oid *restrict start, oid
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	bool last = false;
 
 	ANALYTICAL_SUM_BRANCHES(OTHERS);
 
@@ -1673,6 +1701,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	int abort_on_error = 1;
 	BUN nils = 0;
+	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2017,12 +2046,17 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		TPE2 *restrict rb = (TPE2*)Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
+				if (np[i]) 	{		\
+prod##TPE1##TPE2##IMP: \
 					IMP(TPE1, TPE2, TPE3_OR_REAL_IMP);	\
+				} \
 			}						\
 		}	\
-		i = cnt;					\
-		IMP(TPE1, TPE2, TPE3_OR_REAL_IMP);	\
+		if (!last) { \
+			last = true; \
+			i = cnt; \
+			goto prod##TPE1##TPE2##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -2173,6 +2207,7 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2221,16 +2256,16 @@ nosupport:
 #endif
 
 /* average on integers */
-#define ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, ARG) \
+#define ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, ARG) \
 	if (!is_##TPE##_nil(ARG)) {		\
-		ADD_WITH_CHECK(ARG, sum, LNG_HGE, sum, GDK_LNG_HGE_max, goto avg_overflow##TPE##IMP##PART); \
+		ADD_WITH_CHECK(ARG, sum, LNG_HGE, sum, GDK_LNG_HGE_max, goto avg_overflow##TPE##IMP); \
 		/* count only when no overflow occurs */ \
 		n++;				\
 	}
 
-#define ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+#define ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP) \
 			if (0) {					\
-avg_overflow##TPE##IMP##PART:							\
+avg_overflow##TPE##IMP:							\
 				assert(n > 0);				\
 				if (sum >= 0) {				\
 					a = (TPE) (sum / n);		\
@@ -2245,15 +2280,15 @@ avg_overflow##TPE##IMP##PART:							\
 					}				\
 				}
 
-#define ANALYTICAL_AVG_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP, PART) \
+#define ANALYTICAL_AVG_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP) \
 	do { \
 		TPE a = 0; \
 		dbl curval = dbl_nil;	\
 		for (; k < i;) { \
 			j = k; \
 			do {	\
-				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, bp[k]) \
-				ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+				ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, bp[k]) \
+				ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP) \
 					while (k < i && !op[k]) { \
 						TPE v = bp[k++];			\
 						if (is_##TPE##_nil(v))		\
@@ -2261,12 +2296,12 @@ avg_overflow##TPE##IMP##PART:							\
 						AVERAGE_ITER(TPE, v, a, rr, n);	\
 					}					\
 					curval = a + (dbl) rr / n;		\
-					goto calc_done##TPE##IMP##PART;			\
+					goto calc_done##TPE##IMP;			\
 				}						\
 				k++; \
 			} while (k < i && !op[k]);	\
 			curval = n > 0 ? (dbl) sum / n : dbl_nil;	\
-calc_done##TPE##IMP##PART: \
+calc_done##TPE##IMP: \
 			for (; j < k; j++) \
 				rb[j] = curval; \
 			has_nils |= (n == 0);		\
@@ -2275,14 +2310,14 @@ calc_done##TPE##IMP##PART: \
 		sum = 0;			\
 	} while (0)
 
-#define ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP, PART) \
+#define ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP) \
 	do { \
 		TPE a = 0; \
 		dbl curval = dbl_nil;	\
 		l = i - 1; \
 		for (j = l; ; j--) { \
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, bp[j]) \
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, bp[j]) \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP) \
 				while (!(op[j] || j == k)) { \
 					TPE v = bp[j--];			\
 					if (is_##TPE##_nil(v))		\
@@ -2290,11 +2325,11 @@ calc_done##TPE##IMP##PART: \
 					AVERAGE_ITER(TPE, v, a, rr, n);	\
 				}					\
 				curval = a + (dbl) rr / n;		\
-				goto calc_done##TPE##IMP##PART;			\
+				goto calc_done##TPE##IMP;			\
 			}	\
 			if (op[j] || j == k) {	\
 				curval = n > 0 ? (dbl) sum / n : dbl_nil;	\
-calc_done##TPE##IMP##PART: \
+calc_done##TPE##IMP: \
 				for (; ; l--) { \
 					rb[l] = curval; \
 					if (l == j)	\
@@ -2311,13 +2346,13 @@ calc_done##TPE##IMP##PART: \
 		k = i; \
 	} while (0)
 
-#define ANALYTICAL_AVG_IMP_NUM_ALL_ROWS(TPE, IMP, PART)	\
+#define ANALYTICAL_AVG_IMP_NUM_ALL_ROWS(TPE, IMP)	\
 	do { \
 		TPE a = 0; \
 		for (; j < i; j++) { \
 			TPE v = bp[j]; \
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, PART, v) \
-			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP, PART) \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP1(TPE, IMP, v) \
+			ANALYTICAL_AVERAGE_CALC_NUM_STEP2(TPE, IMP) \
 				for (; j < i; j++) { \
 					v = bp[j];			\
 					if (is_##TPE##_nil(v))		\
@@ -2325,11 +2360,11 @@ calc_done##TPE##IMP##PART: \
 					AVERAGE_ITER(TPE, v, a, rr, n);	\
 				}					\
 				curval = a + (dbl) rr / n;		\
-				goto calc_done##TPE##IMP##PART;			\
+				goto calc_done##TPE##IMP;			\
 			}	\
 		} \
 		curval = n > 0 ? (dbl) sum / n : dbl_nil;	\
-calc_done##TPE##IMP##PART: \
+calc_done##TPE##IMP: \
 		for (; k < i; k++) \
 			rb[k] = curval; \
 		has_nils |= (n == 0);		\
@@ -2337,7 +2372,7 @@ calc_done##TPE##IMP##PART: \
 		sum = 0;			\
 	} while (0)
 
-#define ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW(TPE, IMP, PART)	\
+#define ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW(TPE, IMP)	\
 	do { \
 		for (; k < i; k++) { \
 			TPE v = bp[k]; \
@@ -2377,7 +2412,7 @@ typedef struct avg_num_deltas {lng n; LNG_HGE sum;} avg_num_deltas; /* TODO add 
 			rb[k] = ((dbl) computed.sum) / computed.n;	\
 		} \
 	} while (0)
-#define ANALYTICAL_AVG_IMP_NUM_OTHERS(TPE, IMP, PART)	\
+#define ANALYTICAL_AVG_IMP_NUM_OTHERS(TPE, IMP)	\
 	do { \
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_num_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
@@ -2389,7 +2424,7 @@ typedef struct avg_num_deltas {lng n; LNG_HGE sum;} avg_num_deltas; /* TODO add 
 	} while (0)
 
 /* average on floating-points */
-#define ANALYTICAL_AVG_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP, PART) \
+#define ANALYTICAL_AVG_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE, IMP) \
 	do { \
 		TPE a = 0; \
 		dbl curval = dbl_nil;	\
@@ -2410,7 +2445,7 @@ typedef struct avg_num_deltas {lng n; LNG_HGE sum;} avg_num_deltas; /* TODO add 
 		n = 0;			\
 	} while (0)
 
-#define ANALYTICAL_AVG_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP, PART) \
+#define ANALYTICAL_AVG_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE, IMP) \
 	do { \
 		TPE a = 0; \
 		dbl curval = dbl_nil;	\
@@ -2434,7 +2469,7 @@ typedef struct avg_num_deltas {lng n; LNG_HGE sum;} avg_num_deltas; /* TODO add 
 		k = i; \
 	} while (0)
 
-#define ANALYTICAL_AVG_IMP_FP_ALL_ROWS(TPE, IMP, PART)	\
+#define ANALYTICAL_AVG_IMP_FP_ALL_ROWS(TPE, IMP)	\
 	do { \
 		TPE a = 0; \
 		dbl curval = dbl_nil;	\
@@ -2452,7 +2487,7 @@ typedef struct avg_num_deltas {lng n; LNG_HGE sum;} avg_num_deltas; /* TODO add 
 		n = 0;		\
 	} while (0)
 
-#define ANALYTICAL_AVG_IMP_FP_CURRENT_ROW(TPE, IMP, PART)	 ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW(TPE, IMP, PART)
+#define ANALYTICAL_AVG_IMP_FP_CURRENT_ROW(TPE, IMP)	 ANALYTICAL_AVG_IMP_NUM_CURRENT_ROW(TPE, IMP)
 
 #define avg_fp_deltas(TPE) typedef struct avg_fp_deltas_##TPE {TPE a; lng n;} avg_fp_deltas_##TPE;
 avg_fp_deltas(flt)
@@ -2481,7 +2516,7 @@ avg_fp_deltas(dbl)
 			rb[k] = computed.a;	\
 		} \
 	} while (0)
-#define ANALYTICAL_AVG_IMP_FP_OTHERS(TPE, IMP, PART)	\
+#define ANALYTICAL_AVG_IMP_FP_OTHERS(TPE, IMP)	\
 	do { \
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_fp_deltas_##TPE), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
@@ -2497,12 +2532,17 @@ avg_fp_deltas(dbl)
 		TPE *restrict bp = (TPE*)Tloc(b, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
-					REAL_IMP(TPE, IMP, P1);	\
+				if (np[i]) 	{		\
+avg##TPE##IMP: \
+					REAL_IMP(TPE, IMP);	\
+				} \
 			}						\
-		}			\
-		i = cnt;					\
-		REAL_IMP(TPE, IMP, P3);	\
+		}	\
+		if (!last) { \
+			last = true; \
+			i = cnt; \
+			goto avg##TPE##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -2554,6 +2594,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	bool last = false;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else
@@ -2752,12 +2793,17 @@ avg_int_deltas(lng)
 		TPE *restrict bp = (TPE*)Tloc(b, 0), *restrict rb = (TPE *) Tloc(r, 0); \
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
-					IMP(TPE);	\
+				if (np[i]) 	{		\
+avg##TPE##IMP: \
+					IMP(TPE); \
+				} \
 			}						\
 		}	\
-		i = cnt;			\
-		IMP(TPE);	\
+		if (!last) { \
+			last = true; \
+			i = cnt; \
+			goto avg##TPE##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -2801,6 +2847,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2991,12 +3038,17 @@ typedef struct stdev_var_deltas {
 	do {						\
 		if (p) {					\
 			for (; i < cnt; i++) {		\
-				if (np[i]) 			\
+				if (np[i]) 	{		\
+statistics##TPE##IMP: \
 					IMP(TPE, SAMPLE, OP);	\
+				} \
 			}						\
 		}	\
-		i = cnt;			\
-		IMP(TPE, SAMPLE, OP);	\
+		if (!last) { \
+			last = true; \
+			i = cnt; \
+			goto statistics##TPE##IMP; \
+		} \
 	} while (0)
 
 #ifdef HAVE_HGE
@@ -3047,6 +3099,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
+	bool last = false; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {	\
@@ -3254,6 +3307,7 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
+	bool last = false; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {	\
@@ -3493,6 +3547,7 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
+	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
