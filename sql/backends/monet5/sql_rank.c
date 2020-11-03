@@ -1653,23 +1653,39 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}	\
 	} while (0)
 
-#define COVARIANCE_AND_CORRELATION_ONE_SIDE_OTHERS(TPE) \
+#define INIT_AGGREGATE_COUNT(TPE, NOTHING1, NOTHING2) \
+	do { \
+		computed = 0; \
+	} while (0)
+#define COMPUTE_LEVEL0_COUNT_FIXED(X, TPE, NOTHING1, NOTHING2) \
+	do { \
+		computed = !is_##TPE##_nil(bp[j + X]); \
+	} while (0)
+#define COMPUTE_LEVELN_COUNT(VAL, NOTHING1, NOTHING2, NOTHING3) \
+	do { \
+		computed += VAL; \
+	} while (0)
+#define FINALIZE_AGGREGATE_COUNT(NOTHING1, NOTHING2, NOTHING3) \
+	do { \
+		if (computed > minimum) { /* covariance_samp requires at least one value */ \
+			rb[k] = val; \
+		} else { \
+			rb[k] = dbl_nil; \
+			has_nils = true; \
+		} \
+	} while (0)
+#define COVARIANCE_AND_CORRELATION_ONE_SIDE_OTHERS(TPE)	\
 	do { \
 		TPE *restrict bp = (TPE*)Tloc(d, 0); \
-		for (; k < i; k++) { \
-			for (j = start[k] ; j < end[k] ; j++) { \
-				if (is_##TPE##_nil(bp[j])) \
-					continue; \
-				n++; \
-			} \
-			if (n > minimum) { /* covariance_samp requires at least one value */ \
-				rb[k] = val; \
-			} else { \
-				rb[k] = dbl_nil; \
-				has_nils = true; \
-			} \
-			n = 0; \
+		oid ncount = i - k; \
+		if (GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels) != GDK_SUCCEED) { \
+			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			goto bailout; \
 		} \
+		populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, TPE, NOTHING, NOTHING); \
+		j = k; \
 	} while (0)
 
 #define COVARIANCE_AND_CORRELATION_ONE_SIDE_PARTITIONS(TPE, IMP)		\
@@ -1731,6 +1747,8 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	bool is_a_bat1, is_a_bat2;
 	str msg = MAL_SUCCEED;
 	bat *res = NULL;
+	void *segment_tree = NULL;
+	oid *levels_offset = NULL;
 
 	(void)cntxt;
 	if (pci->argc != 8)
@@ -1797,7 +1815,8 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			/* corner case, second column is a constant, calculate it this way... */
 			BAT *d = b ? b : c;
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[b ? 2 : 1]];
-			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+				tree_capacity = 0, nlevels = 0, levels_capacity = 0;
 			lng n = 0;
 			bit *np = p ? Tloc(p, 0) : NULL, *opp = o ? Tloc(o, 0) : NULL;
 			dbl *restrict rb = (dbl *) Tloc(r, 0), val = VALisnil(input2) ? dbl_nil : defaultv, rr;
@@ -1850,6 +1869,8 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 	}
 
 bailout:
+	GDKfree(segment_tree);
+	GDKfree(levels_offset);
 	unfix_inputs(6, b, c, p, o, s, e);
 	finalize_output(res, r, msg);
 	return msg;
