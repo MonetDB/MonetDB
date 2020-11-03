@@ -2663,26 +2663,45 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 		} \
 	} while (0)
 
-#define ANALYTICAL_AVG_INT_OTHERS(TPE)			\
-	do {								\
-		TPE avg = 0; \
-		for (; k < i; k++) {			\
-			TPE *bs = bp + start[k], *be = bp + end[k];				\
-			for (; bs < be; bs++) {				\
-				TPE v = *bs;				\
-				if (!is_##TPE##_nil(v))	\
-					AVERAGE_ITER(TPE, v, avg, rem, ncnt); \
-			}	\
-			if (ncnt == 0) {	\
-				has_nils = true; \
-				rb[k] = TPE##_nil; \
-			} else { \
-				ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(avg, rem, ncnt); \
-				rb[k] = avg; \
-			} \
-			rem = 0; \
-			ncnt = 0; \
-		}	\
+#define avg_int_deltas(TPE) typedef struct avg_int_deltas_##TPE { TPE avg; lng rem, ncnt;} avg_int_deltas_##TPE;
+avg_int_deltas(bte)
+avg_int_deltas(sht)
+avg_int_deltas(int)
+avg_int_deltas(lng)
+
+#define INIT_AGGREGATE_AVG_INT(TPE, NOTHING1, NOTHING2) \
+	do { \
+		computed = (avg_int_deltas_##TPE) {.avg = 0, .rem = 0, .ncnt = 0}; \
+	} while (0)
+#define COMPUTE_LEVEL0_AVG_INT(X, TPE, NOTHING1, NOTHING2) \
+	do { \
+		TPE v = bp[j + X]; \
+		computed = is_##TPE##_nil(v) ? (avg_int_deltas_##TPE) {.avg = 0, .rem = 0, .ncnt = 0} : (avg_int_deltas_##TPE) {.avg = v, .rem = 0, .ncnt = 1}; \
+	} while (0)
+#define COMPUTE_LEVELN_AVG_INT(VAL, TPE, NOTHING1, NOTHING2) \
+	do { \
+		if (VAL.ncnt > 0)	\
+			AVERAGE_ITER(TPE, VAL.avg, computed.avg, computed.rem, computed.ncnt); \
+	} while (0)
+#define FINALIZE_AGGREGATE_AVG_INT(TPE, NOTHING1, NOTHING2) \
+	do { \
+		if (computed.ncnt == 0) {	\
+			has_nils = true; \
+			rb[k] = TPE##_nil; \
+		} else { \
+			ANALYTICAL_AVERAGE_INT_CALC_FINALIZE(computed.avg, computed.rem, computed.ncnt); \
+			rb[k] = computed.avg; \
+		} \
+	} while (0)
+#define ANALYTICAL_AVG_INT_OTHERS(TPE)	\
+	do { \
+		oid ncount = i - k; \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_int_deltas_##TPE), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(avg_int_deltas_##TPE, ncount, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVEL0_AVG_INT, COMPUTE_LEVELN_AVG_INT, TPE, NOTHING, NOTHING); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(avg_int_deltas_##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_INT, COMPUTE_LEVELN_AVG_INT, FINALIZE_AGGREGATE_AVG_INT, TPE, NOTHING, NOTHING); \
+		j = k; \
 	} while (0)
 
 #define ANALYTICAL_AVG_INT_PARTITIONS(TPE, IMP)		\
@@ -2699,6 +2718,7 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	} while (0)
 
 #ifdef HAVE_HGE
+avg_int_deltas(hge)
 #define ANALYTICAL_AVG_INT_LIMIT(IMP) \
 	case TYPE_hge: \
 		ANALYTICAL_AVG_INT_PARTITIONS(hge, ANALYTICAL_AVG_INT_##IMP); \
@@ -2732,9 +2752,12 @@ gdk_return
 GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0;
 	lng rem = 0, ncnt = 0;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
+	void *segment_tree = NULL;
+	gdk_return res = GDK_SUCCEED;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2759,8 +2782,11 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return GDK_SUCCEED;
-      nosupport:
+cleanup:
+	GDKfree(segment_tree);
+	GDKfree(levels_offset);
+	return res;
+nosupport:
 	GDKerror("42000!average of type %s to %s unsupported.\n", ATOMname(tpe), ATOMname(tpe));
 	return GDK_FAIL;
 }
