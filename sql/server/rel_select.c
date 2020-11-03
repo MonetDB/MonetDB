@@ -4409,17 +4409,11 @@ generate_window_bound_call(mvc *sql, sql_exp **estart, sql_exp **eend, sql_schem
 
 #define EC_NUMERIC(e) (e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
 
-#if SIZEOF_OID == SIZEOF_INT /* generate bound sizes according to the CPU word size */
-#define BOUND_TP "int"
-#else
-#define BOUND_TP "lng"
-#endif
-
 static sql_exp*
 calculate_window_bound(sql_query *query, sql_rel *p, tokens token, symbol *bound, sql_exp *ie, int frame_type, int f)
 {
 	mvc *sql = query->sql;
-	sql_subtype *bt, *bound_tp = sql_bind_localtype(BOUND_TP), *iet = exp_subtype(ie);
+	sql_subtype *bt, *bound_tp = sql_bind_localtype("lng"), *iet = exp_subtype(ie);
 	sql_exp *res = NULL;
 
 	if ((bound->token == SQL_PRECEDING || bound->token == SQL_FOLLOWING || bound->token == SQL_CURRENT_ROW) && bound->type == type_int) {
@@ -4859,7 +4853,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		}
 	} else if (supports_frames) { /* for analytic functions with no frame clause, we use the standard default values */
 		if (is_value) {
-			sql_subtype *bound_tp = sql_bind_localtype(BOUND_TP), *bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : exp_subtype(ie);
+			sql_subtype *bound_tp = sql_bind_localtype("lng"), *bt = (frame_type == FRAME_ROWS || frame_type == FRAME_GROUPS) ? bound_tp : exp_subtype(ie);
 			unsigned char sclass = bt->type->eclass;
 
 			fstart = exp_atom(sql->sa, atom_max_value(sql->sa, EC_NUMERIC(sclass) ? bt : bound_tp));
