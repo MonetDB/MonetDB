@@ -597,6 +597,75 @@ stdout of test 'analytics15` in directory 'sql/test/analytics` itself:
 [ 2.125,	0	]
 [ 2.125,	0	]
 [ 0.76,	0	]
+#select corr(aa, 1) over (order by bb rows between 5 preceding and 0 following),
+#       corr(aa, aa) over (order by bb rows between 5 preceding and 2 following),
+#       corr(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
+#       corr(aa, bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+% sys.%5,	sys.%10,	sys.%13,	sys.%16 # table_name
+% %5,	%10,	%13,	%16 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+#select corr(bb, aa) over (order by bb rows 2 preceding),
+#       corr(10, bb) over (partition by bb order by bb rows 2 preceding),
+#       corr(bb, aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics;
+% sys.%4,	.%7,	sys.%12 # table_name
+% %4,	%7,	%12 # name
+% double,	double,	double # type
+% 24,	24,	24 # length
+[ NULL,	NULL,	NULL	]
+[ NULL,	NULL,	NULL	]
+[ NULL,	NULL,	NULL	]
+[ -1,	NULL,	-0.5	]
+[ NULL,	NULL,	0.3273268354	]
+[ NULL,	NULL,	NULL	]
+[ 0.2250175802,	NULL,	-1	]
+[ NULL,	NULL,	NULL	]
+[ 0.909934971,	NULL,	NULL	]
+[ NULL,	NULL,	NULL	]
+#select corr(aa, 1) over (order by bb groups between 5 preceding and 0 following),
+#       corr(aa, aa) over (order by bb groups between 5 preceding and 2 following),
+#       corr(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
+#       corr(aa, bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics;
+% sys.%5,	sys.%10,	sys.%13,	sys.%16 # table_name
+% %5,	%10,	%13,	%16 # name
+% double,	double,	double,	double # type
+% 24,	24,	24,	24 # length
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+[ NULL,	1,	NULL,	NULL	]
+#select corr(bb, aa) over (order by bb groups 2 preceding),
+#       corr(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics;
+% sys.%4,	.%7 # table_name
+% %4,	%7 # name
+% double,	double # type
+% 24,	24 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+[ 0.5838742081,	NULL	]
+[ 0.5838742081,	NULL	]
+[ 0.5838742081,	NULL	]
+[ 0.6245106046,	NULL	]
+[ 0.6245106046,	NULL	]
+[ 0.6245106046,	NULL	]
+[ 0.3758141918,	NULL	]
 #rollback;
 
 # 11:48:30 >  

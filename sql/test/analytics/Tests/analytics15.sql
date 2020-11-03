@@ -159,4 +159,21 @@ select covar_pop(aa, 1) over (order by bb groups between 5 preceding and 0 follo
 select covar_pop(bb, aa) over (order by bb groups 2 preceding),
        covar_pop(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics;
 
+select corr(aa, 1) over (order by bb rows between 5 preceding and 0 following),
+       corr(aa, aa) over (order by bb rows between 5 preceding and 2 following),
+       corr(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       corr(aa, bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select corr(bb, aa) over (order by bb rows 2 preceding),
+       corr(10, bb) over (partition by bb order by bb rows 2 preceding),
+       corr(bb, aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics;
+
+select corr(aa, 1) over (order by bb groups between 5 preceding and 0 following),
+       corr(aa, aa) over (order by bb groups between 5 preceding and 2 following),
+       corr(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       corr(aa, bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics;
+
+select corr(bb, aa) over (order by bb groups 2 preceding),
+       corr(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics;
+
 rollback;

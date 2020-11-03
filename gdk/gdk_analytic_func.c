@@ -3208,20 +3208,20 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 		has_nils = is_dbl_nil(rb[k - 1]); \
 	} while (0)
 
-typedef struct stdev_covariance_deltas {
+typedef struct covariance_deltas {
 	BUN n;
 	dbl mean1, mean2, delta1, delta2, m2;
-} stdev_covariance_deltas;
+} covariance_deltas;
 
 #define INIT_AGGREGATE_COVARIANCE(TPE, SAMPLE, OP) \
 	do { \
-		computed = (stdev_covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil}; \
+		computed = (covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil}; \
 	} while (0)
 #define COMPUTE_LEVEL0_COVARIANCE(X, TPE, SAMPLE, OP) \
 	do { \
 		TPE v1 = bp1[j + X], v2 = bp2[j + X]; \
-		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (stdev_covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil} \
-															: (stdev_covariance_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .m2 = 0, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
+		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil} \
+															: (covariance_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .m2 = 0, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
 	} while (0)
 #define COMPUTE_LEVELN_COVARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
@@ -3239,11 +3239,11 @@ typedef struct stdev_covariance_deltas {
 	do { \
 		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(stdev_covariance_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = rebuild_segmentree(ncount, sizeof(covariance_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
-		populate_segment_tree(stdev_covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
+		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++) \
-			compute_on_segment_tree(stdev_covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
+			compute_on_segment_tree(covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
 		j = k; \
 	} while (0)
 
@@ -3322,14 +3322,14 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 			if (isinf(up) || isinf(down1) || isinf(down2))	\
 				goto overflow;	\
 			if (n != 0 && down1 != 0 && down2 != 0) { \
-				res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
-				assert(!is_dbl_nil(res)); \
+				rr = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+				assert(!is_dbl_nil(rr)); \
 			} else { \
-				res = dbl_nil; \
+				rr = dbl_nil; \
 				has_nils = true; \
 			} \
 			for (; j < k; j++) \
-				rb[j] = res; \
+				rb[j] = rr; \
 		} \
 		n = 0;	\
 		mean1 = 0;	\
@@ -3360,14 +3360,14 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 				if (isinf(up) || isinf(down1) || isinf(down2))	\
 					goto overflow;	\
 				if (n != 0 && down1 != 0 && down2 != 0) { \
-					res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
-					assert(!is_dbl_nil(res)); \
+					rr = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+					assert(!is_dbl_nil(rr)); \
 				} else { \
-					res = dbl_nil; \
+					rr = dbl_nil; \
 					has_nils = true; \
 				} \
 				for (; ; l--) { \
-					rb[l] = res; \
+					rb[l] = rr; \
 					if (l == j)	\
 						break;	\
 				} \
@@ -3405,14 +3405,14 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 		if (isinf(up) || isinf(down1) || isinf(down2))	\
 			goto overflow;	\
 		if (n != 0 && down1 != 0 && down2 != 0) { \
-			res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
-			assert(!is_dbl_nil(res)); \
+			rr = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+			assert(!is_dbl_nil(rr)); \
 		} else { \
-			res = dbl_nil; \
+			rr = dbl_nil; \
 			has_nils = true; \
 		} \
 		for (; k < i ; k++)	\
-			rb[k] = res;	\
+			rb[k] = rr;	\
 		n = 0;	\
 		mean1 = 0;	\
 		mean2 = 0;	\
@@ -3428,54 +3428,76 @@ GDK_ANALYTICAL_COVARIANCE(covariance_pop, 0, m2 / n)
 		has_nils = true; \
 	} while (0)
 
-#define ANALYTICAL_CORRELATION_OTHERS(TPE, SAMPLE, OP)	/* SAMPLE and OP not used */ \
-	do {								\
+
+typedef struct correlation_deltas {
+	BUN n;
+	dbl mean1, mean2, delta1, delta2, up, down1, down2;
+} correlation_deltas;
+
+#define INIT_AGGREGATE_CORRELATION(TPE, SAMPLE, OP) \
+	do { \
+		computed = (correlation_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil, .up = 0, .down1 = 0, .down2 = 0}; \
+	} while (0)
+#define COMPUTE_LEVEL0_CORRELATION(X, TPE, SAMPLE, OP) \
+	do { \
+		TPE v1 = bp1[j + X], v2 = bp2[j + X]; \
+		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (correlation_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil, .up = 0, .down1 = 0, .down2 = 0} \
+															: (correlation_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .delta1 = (dbl)v1, .delta2 = (dbl)v2, .up = 0, .down1 = 0, .down2 = 0}; \
+	} while (0)
+#define COMPUTE_LEVELN_CORRELATION(VAL, TPE, SAMPLE, OP) \
+	do { \
+		if (!is_dbl_nil(VAL.delta1)) {	/* only has to check one of the sides */	\
+			computed.n++; \
+			computed.delta1 = VAL.delta1 - computed.mean1;		\
+			computed.mean1 += computed.delta1 / computed.n;		\
+			computed.delta2 = VAL.delta2 - computed.mean2;		\
+			computed.mean2 += computed.delta2 / computed.n;		\
+			dbl aux = VAL.delta2 - computed.mean2; \
+			computed.up += computed.delta1 * aux;	\
+			computed.down1 += computed.delta1 * (VAL.delta1 - computed.mean1);	\
+			computed.down2 += computed.delta2 * aux;	\
+		}				\
+	} while (0)
+#define FINALIZE_AGGREGATE_CORRELATION(TPE, SAMPLE, OP) \
+	do { \
+		n = computed.n; \
+		up = computed.up; \
+		down1 = computed.down1;	\
+		down2 = computed.down2;	\
+		if (isinf(up) || isinf(down1) || isinf(down2))	\
+			goto overflow;	\
+		if (n != 0 && down1 != 0 && down2 != 0) { \
+			rr = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
+			assert(!is_dbl_nil(rr)); \
+		} else { \
+			rr = dbl_nil; \
+			has_nils = true; \
+		} \
+		rb[k] = rr;	\
+	} while (0)
+#define ANALYTICAL_CORRELATION_OTHERS(TPE, SAMPLE, OP) 	/* SAMPLE and OP not used */	\
+	do { \
 		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
-		for (; k < i; k++) {		\
-			TPE *bs1 = bp1 + start[i];				\
-			TPE *be1 = bp1 + end[i];				\
-			TPE *bs2 = bp2 + start[i];		\
-			for (; bs1 < be1; bs1++, bs2++) {	\
-				TPE v1 = *bs1, v2 = *bs2;				\
-				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
-					continue;		\
-				n++;	\
-				delta1 = (dbl) v1 - mean1;	\
-				mean1 += delta1 / n;	\
-				delta2 = (dbl) v2 - mean2;	\
-				mean2 += delta2 / n;	\
-				aux = (dbl) v2 - mean2; \
-				up += delta1 * aux;	\
-				down1 += delta1 * ((dbl) v1 - mean1);	\
-				down2 += delta2 * aux;	\
-			}	\
-			if (isinf(up) || isinf(down1) || isinf(down2))	\
-				goto overflow;	\
-			if (n != 0 && down1 != 0 && down2 != 0) { \
-				res = (up / n) / (sqrt(down1 / n) * sqrt(down2 / n)); \
-				assert(!is_dbl_nil(res)); \
-			} else { \
-				res = dbl_nil; \
-				has_nils = true; \
-			} \
-			rb[k] = res;	\
-			n = 0;	\
-			mean1 = 0;	\
-			mean2 = 0;	\
-			up = 0; \
-			down1 = 0;	\
-			down2 = 0;	\
-		}	\
+		oid ncount = i - k; \
+		if ((res = rebuild_segmentree(ncount, sizeof(correlation_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, TPE, SAMPLE, OP); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(correlation_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVELN_CORRELATION, FINALIZE_AGGREGATE_CORRELATION, TPE, SAMPLE, OP); \
+		j = k; \
 	} while (0)
 
 gdk_return
 GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
 	bool has_nils = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0;
 	lng n = 0;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
-	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, res;
+	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
+	void *segment_tree = NULL;
+	gdk_return res = GDK_SUCCEED;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -3500,11 +3522,15 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return GDK_SUCCEED;
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */
+overflow:
+	GDKerror("22003!overflow in calculation.\n");
+	res = GDK_FAIL;
+cleanup:
+	GDKfree(segment_tree);
+	GDKfree(levels_offset);
+	return res;
   nosupport:
 	GDKerror("42000!correlation of type %s unsupported.\n", ATOMname(tpe));
-	return GDK_FAIL;
-  overflow:
-	GDKerror("22003!overflow in calculation.\n");
 	return GDK_FAIL;
 }
