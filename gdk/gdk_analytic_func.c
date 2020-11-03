@@ -1202,21 +1202,35 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} \
 	} while (0)
 
-#define ANALYTICAL_COUNT_FIXED_OTHERS(TPE) \
+#define INIT_AGGREGATE_COUNT(TPE, NOTHING) \
 	do { \
-		if (count_all) { \
+		computed = 0; \
+	} while (0)
+#define COMPUTE_LEVEL0_COUNT_FIXED(X, TPE, NOTHING) \
+	do { \
+		computed = !is_##TPE##_nil(bp[j + X]); \
+	} while (0)
+#define COMPUTE_LEVELN_COUNT(VAL, NOTHING1, NOTHING2) \
+	do { \
+		computed += VAL; \
+	} while (0)
+#define FINALIZE_AGGREGATE_COUNT(NOTHING1, NOTHING2) \
+	do { \
+		rb[k] = computed;	\
+	} while (0)
+#define ANALYTICAL_COUNT_FIXED_OTHERS(TPE)	\
+	do { \
+		if (count_all) { /* no segment tree required for the global case (it scales in O(n)) */ \
 			for (; k < i; k++) \
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
-			curval = 0; \
-			for (; k < i; k++) {			\
-				TPE *bs = bp + start[k];		\
-				TPE *be = bp + end[k];		\
-				for (; bs < be; bs++)			\
-					curval += !is_##TPE##_nil(*bs);	\
-				rb[k] = curval;		\
-				curval = 0;		\
-			}						\
+			oid ncount = i - k; \
+			if ((res = rebuild_segmentree(ncount, data_size, &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+				goto cleanup; \
+			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING); \
+			for (; k < i; k++) \
+				compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, TPE, NOTHING); \
+			j = k; \
 		}	\
 	} while (0)
 
@@ -1307,21 +1321,23 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 		} \
 	} while (0)
 
+#define COMPUTE_LEVEL0_COUNT_OTHERS(X, NOTHING1, NOTHING2) \
+	do { \
+		computed = cmp(BUNtail(bpi, j + X), nil) != 0; \
+	} while (0)
 #define ANALYTICAL_COUNT_OTHERS_OTHERS	\
 	do { \
-		if (count_all) { \
+		if (count_all) { /* no segment tree required for the global case (it scales in O(n)) */ \
 			for (; k < i; k++) \
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
-			curval = 0; \
-			for (; k < i; k++) { \
-				j = start[k]; \
-				l = end[k]; \
-				for (; j < l; j++) \
-					curval += cmp(BUNtail(bpi, j), nil) != 0; \
-				rb[k] = curval; \
-				curval = 0; \
-			} \
+			oid ncount = i - k; \
+			if ((res = rebuild_segmentree(ncount, data_size, &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+				goto cleanup; \
+			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING, NOTHING); \
+			for (; k < i; k++) \
+				compute_on_segment_tree(lng, start[k] - j, end[k] - j, INIT_AGGREGATE_COUNT, COMPUTE_LEVELN_COUNT, FINALIZE_AGGREGATE_COUNT, NOTHING, NOTHING); \
+			j = k; \
 		}	\
 	} while (0)
 
@@ -1386,7 +1402,8 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 gdk_return
 GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_nils, int tpe, int frame_type)
 {
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+		*levels_offset = NULL, data_size = sizeof(lng), tree_capacity = 0, nlevels = 0, levels_capacity = 0;
 	lng curval = 0, *restrict rb = (lng *) Tloc(r, 0);
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	const void *restrict nil = ATOMnilptr(tpe);
@@ -1394,6 +1411,8 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	const void *restrict bheap = Tloc(b, 0);
 	bool count_all = !ignore_nils || b->tnonil;
 	BATiter bpi = bat_iterator(b);
+	void *segment_tree = NULL;
+	gdk_return res = GDK_SUCCEED;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -1418,7 +1437,10 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
-	return GDK_SUCCEED;
+cleanup:
+	GDKfree(segment_tree);
+	GDKfree(levels_offset);
+	return res;
 }
 
 /* sum on fixed size integers */
