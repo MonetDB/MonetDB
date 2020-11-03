@@ -890,7 +890,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 #define ANALYTICAL_MIN_MAX_CALC_FIXED_OTHERS(TPE, MIN_MAX)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, data_size, &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = rebuild_segmentree(ncount, sizeof(TPE), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(TPE, ncount, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVEL0_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, TPE, MIN_MAX); \
 		for (; k < i; k++) \
@@ -1002,7 +1002,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 #define ANALYTICAL_MIN_MAX_CALC_VARSIZED_OTHERS(GT_LT)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, data_size, &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = rebuild_segmentree(ncount, sizeof(void*), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVEL0_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, GT_LT, NOTHING); \
 		for (; k < i; k++) \
@@ -1073,7 +1073,7 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 {									\
 	bool has_nils = false;						\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL, \
-		*levels_offset = NULL, data_size = ATOMextern(tpe) ? sizeof(void*) : ATOMsize(tpe), tree_capacity = 0, nlevels = 0, levels_capacity = 0;	\
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0;	\
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL; 	\
 	BATiter bpi = bat_iterator(b);				\
 	const void *nil = ATOMnilptr(tpe);			\
@@ -1225,7 +1225,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
 			oid ncount = i - k; \
-			if ((res = rebuild_segmentree(ncount, data_size, &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			if ((res = rebuild_segmentree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup; \
 			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING); \
 			for (; k < i; k++) \
@@ -1332,7 +1332,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
 			oid ncount = i - k; \
-			if ((res = rebuild_segmentree(ncount, data_size, &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			if ((res = rebuild_segmentree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup; \
 			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING, NOTHING); \
 			for (; k < i; k++) \
@@ -1403,7 +1403,7 @@ gdk_return
 GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_nils, int tpe, int frame_type)
 {
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
-		*levels_offset = NULL, data_size = sizeof(lng), tree_capacity = 0, nlevels = 0, levels_capacity = 0;
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0;
 	lng curval = 0, *restrict rb = (lng *) Tloc(r, 0);
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	const void *restrict nil = ATOMnilptr(tpe);
@@ -1520,75 +1520,44 @@ cleanup:
 		} \
 	} while (0)
 
+#define INIT_AGGREGATE_SUM(NOTHING, TPE2) \
+	do { \
+		computed = TPE2##_nil; \
+	} while (0)
+#define COMPUTE_LEVEL0_SUM(X, TPE1, TPE2) \
+	do { \
+		TPE1 v = bp[j + X]; \
+		computed = is_##TPE1##_nil(v) ? TPE2##_nil : (TPE2) v; \
+	} while (0)
+#define COMPUTE_LEVELN_SUM_NUM(VAL, NOTHING, TPE2) \
+	do { \
+		if (!is_##TPE2##_nil(VAL)) {		\
+			if (is_##TPE2##_nil(computed))	\
+				computed = (TPE2) VAL;	\
+			else		\
+				ADD_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, goto calc_overflow); \
+		}	\
+	} while (0)
+#define FINALIZE_AGGREGATE_SUM(NOTHING, TPE2) \
+	do { \
+		rb[k] = computed;	\
+		has_nils |= is_##TPE2##_nil(computed); \
+	} while (0)
 #define ANALYTICAL_SUM_IMP_NUM_OTHERS(TPE1, TPE2)	\
 	do { \
-		TPE2 curval = TPE2##_nil; \
-		for (; k < i; k++) {		\
-			TPE1 *bs = bp + start[k];		\
-			TPE1 *be = bp + end[k];		\
-			for (; bs < be; bs++) {			\
-				TPE1 v = *bs;				\
-				if (!is_##TPE1##_nil(v)) {		\
-					if (is_##TPE2##_nil(curval))	\
-						curval = (TPE2) v;	\
-					else				\
-						ADD_WITH_CHECK(v, curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
-				}					\
-			}						\
-			rb[k] = curval;					\
-			if (is_##TPE2##_nil(curval))			\
-				has_nils = true;			\
-			else						\
-				curval = TPE2##_nil;	/* For the next iteration */ \
-		}							\
+		oid ncount = i - k; \
+		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_SUM, COMPUTE_LEVEL0_SUM, COMPUTE_LEVELN_SUM_NUM, TPE1, TPE2); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_SUM, COMPUTE_LEVELN_SUM_NUM, FINALIZE_AGGREGATE_SUM, TPE1, TPE2); \
+		j = k; \
 	} while (0)
 
 /* sum on floating-points */
-#define ANALYTICAL_SUM_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2) /* TODO go through a version of dofsum which returns the current partials */ \
-	do { \
-		TPE2 curval = TPE2##_nil;	\
-		for (; k < i;) { \
-			j = k; \
-			do {	\
-				if (!is_##TPE1##_nil(bp[k])) {		\
-					if (is_##TPE2##_nil(curval))	\
-						curval = (TPE2) bp[k];	\
-					else				\
-						ADD_WITH_CHECK(bp[k], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
-				}					\
-				k++; \
-			} while (k < i && !op[k]);	\
-			for (; j < k; j++) \
-				rb[j] = curval; \
-			has_nils |= is_##TPE2##_nil(curval);	\
-		} \
-	} while (0)
-
-#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2) /* TODO go through a version of dofsum which returns the current partials */ \
-	do { \
-		TPE2 curval = TPE2##_nil; \
-		l = i - 1; \
-		for (j = l; ; j--) { \
-			if (!is_##TPE1##_nil(bp[j])) {		\
-				if (is_##TPE2##_nil(curval))	\
-					curval = (TPE2) bp[j];	\
-				else				\
-					ADD_WITH_CHECK(bp[j], curval, TPE2, curval, GDK_##TPE2##_max, goto calc_overflow); \
-			}					\
-			if (op[j] || j == k) {	\
-				for (; ; l--) { \
-					rb[l] = curval; \
-					if (l == j)	\
-						break;	\
-				} \
-				has_nils |= is_##TPE2##_nil(curval);	\
-				if (j == k)	\
-					break;	\
-				l = j - 1;	\
-			}	\
-		}	\
-		k = i; \
-	} while (0)
+/* TODO go through a version of dofsum which returns the current partials for all the cases */
+#define ANALYTICAL_SUM_IMP_FP_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_UNBOUNDED_TILL_CURRENT_ROW(TPE1, TPE2)
+#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_CURRENT_ROW_TILL_UNBOUNDED(TPE1, TPE2)
 
 #define ANALYTICAL_SUM_IMP_FP_ALL_ROWS(TPE1, TPE2)	\
 	do { \
@@ -1607,41 +1576,8 @@ cleanup:
 		has_nils |= is_##TPE2##_nil(curval);	\
 	} while (0)
 
-#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW(TPE1, TPE2)	\
-	do { \
-		for (; k < i; k++) { \
-			TPE1 v = bp[k]; \
-			if (is_##TPE1##_nil(v)) {	\
-				rb[k] = TPE2##_nil; \
-				has_nils = true; \
-			} else	{		\
-				rb[k] = (TPE2) v; \
-			} \
-		} \
-	} while (0)
-
-#define ANALYTICAL_SUM_IMP_FP_OTHERS(TPE1, TPE2)				\
-	do {								\
-		TPE2 curval = TPE2##_nil; \
-		for (; k < i; k++) {		\
-			if (end[k] > start[k]) {			\
-				TPE1 *bs = bp + start[k];			\
-				BUN parcel = end[k] - start[k];	\
-				if (dofsum(bs, 0,			\
-					   &(struct canditer){.tpe = cand_dense, .ncand = parcel,}, \
-					   parcel, &curval, 1, TYPE_##TPE1, \
-					   TYPE_##TPE2, NULL, 0, 0, true, \
-					   false, true) == BUN_NONE) {	\
-					goto bailout;			\
-				}					\
-			}						\
-			rb[k] = curval;					\
-			if (is_##TPE2##_nil(curval))			\
-				has_nils = true;			\
-			else						\
-				curval = TPE2##_nil;	/* For the next iteration */ \
-		}							\
-	} while (0)
+#define ANALYTICAL_SUM_IMP_FP_CURRENT_ROW(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_CURRENT_ROW(TPE1, TPE2)
+#define ANALYTICAL_SUM_IMP_FP_OTHERS(TPE1, TPE2) ANALYTICAL_SUM_IMP_NUM_OTHERS(TPE1, TPE2)
 
 #define ANALYTICAL_SUM_CALC(TPE1, TPE2, IMP)		\
 	do {						\
@@ -1779,24 +1715,27 @@ static gdk_return /* This is a workaround for a MSVC compiler bug at build engin
 GDKanalyticalsumothers(BAT *r, BAT *p, bit *np, BAT *b, oid *restrict start, oid *restrict end, int tp1, int tp2)
 {
 	bool has_nils = false;
-	oid i = 0, k = 0, cnt = BATcount(b);
+	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0;
 	int abort_on_error = 1;
 	BUN nils = 0;
+	void *segment_tree = NULL;
+	gdk_return res = GDK_SUCCEED;
 
 	ANALYTICAL_SUM_BRANCHES(OTHERS);
 
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return GDK_SUCCEED;
-      bailout:
-	GDKerror("42000!error while calculating floating-point sum\n");
-	return GDK_FAIL;
-      nosupport:
-	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
-      calc_overflow:
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */
+calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
+	res = GDK_FAIL;
+cleanup:
+	GDKfree(segment_tree);
+	GDKfree(levels_offset);
+	return res;
+nosupport:
+	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
 }
 
