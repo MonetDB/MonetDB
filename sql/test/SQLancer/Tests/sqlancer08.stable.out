@@ -52,15 +52,6 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 % 2 # length
 [ 24	]
 #ROLLBACK;
-#CREATE TABLE t0(tc0 INTERVAL MONTH DEFAULT (INTERVAL '1997904243' MONTH), tc1 TIME UNIQUE);
-#INSERT INTO t0(tc0) VALUES(INTERVAL '444375026' MONTH);
-[ 1	]
-#DELETE FROM t0 WHERE TRUE;
-[ 1	]
-#ALTER TABLE t0 ALTER tc0 SET NOT NULL;
-#INSERT INTO t0(tc0) VALUES(INTERVAL '-625288924' MONTH);
-[ 1	]
-#DROP TABLE t0;
 #START TRANSACTION;
 #CREATE TABLE "t1" ("tc0" DOUBLE NOT NULL,"tc1" CHARACTER LARGE OBJECT);
 #COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
@@ -222,6 +213,104 @@ stdout of test 'sqlancer08` in directory 'sql/test/SQLancer` itself:
 [ "double",	53,	17,	"",	"%2",	"%2"	]
 [ "char",	9,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	8,	0,	NULL,	NULL,	NULL	]
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY);
+#COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#NULL
+#76708782777600.000
+#96368184086400.000
+#105887629728000.000
+#4009709779200.000
+#-52062825081600.000
+#1301584464000.000
+[ 7	]
+#create view v0(vc0) as (select distinct sql_neg(abs(nullif(interval '2' month, interval '3' month))) where greatest(nullif(4 in (0.42, 0.43), 'v' ilike '|pRd(Wɮ&'), ((interval '3' second) is null) = false));
+#MERGE INTO t2 USING (SELECT * FROM v0) AS v0 ON "isauuid"('4') WHEN MATCHED THEN UPDATE SET tc2 = INTERVAL '3' DAY;
+[ 0	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("tc0" INTEGER NOT NULL,"tc1" TINYINT,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"));
+#CREATE TABLE "sys"."t1" ("tc1" DATE);
+#COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1970-01-24
+#1970-01-24
+#1970-01-24
+[ 3	]
+#CREATE TABLE "sys"."t2" ("tc1" DATE NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"));
+#COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#1970-01-25
+#1970-01-14
+#1970-01-01
+#1970-01-16
+#1970-01-19
+[ 5	]
+#create view v0(vc0) as ((select least(r'KZu', trim(case interval '4' day when interval '3' day then r'8|' when interval '3' day then null end))) 
+#intersect distinct (select distinct nullif(ifthenelse((3) not in (2.33, 4.02, -4), r'J{⹾<PBj‣r', 
+#cast(case when 62 then 0.34 when 51 then 0.3 when 34 then 0.4 end as string(274))), sql_max(r'5,賓', 
+#cast(case 3 when 43 then 44 when 0.23 then 0.3 end as string)))));
+#create view v1(vc0) as ((select abs(-4)) intersect distinct (select distinct + (radians(abs(0.4))) group by 3));
+#create view v2(vc0) as (select cast((r'|S4 흮,8GQ') not between symmetric (r'3840') and (r'n') as int));
+#create view v3(vc0) as (values (cast(((abs(0.11))-(((round(0.3, 3))<<(((-3)+(5)))))) as decimal))) with check option;
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(FALSE AS INT) as count FROM t2, t1, v2 FULL OUTER JOIN t0 ON "isauuid"(r'2A') NATURAL JOIN v1 NATURAL JOIN v3) as res;
+% .%17 # table_name
+% %17 # name
+% bigint # type
+% 1 # length
+[ NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#create view v7(vc0, vc1) as (select all 56, replace(r'0.0074401190660642325', "insert"(r'0.9471086251830542', null, 1872651914, r'(Ga_'), r'2]vK') where not (not (false))) with check option;
+#select 1 from v7 where not (((cast(scale_up(4751, -1823537248) as string(86)))not like(v7.vc1)));
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("tc0" BIGINT);
+#COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#284462307
+#1404201729
+#1549521937
+#452608969
+[ 4	]
+#SELECT 1 FROM t1 WHERE ('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0) ))));
+% .%1 # table_name
+% %1 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(('1255780658' > (least(1287317023, ((0.8056138 + t1.tc0))))) AS INT) as count FROM t1) as res;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("tc0" INTEGER NOT NULL);
+#COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#604800000
+#29477
+#1
+#1450957756
+#805478917
+#94
+[ 6	]
+#ROLLBACK;
+#PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
+#WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
+#PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
+#WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	3,	1,	0,	3,	2 # length
+[ "bigint",	64,	0,	"",	"%10",	"%3"	]
+[ "char",	0,	0,	NULL,	NULL,	NULL	]
+[ "bigint",	64,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	5,	0,	NULL,	NULL,	NULL	]
 
 # 11:38:36 >  
 # 11:38:36 >  "Done."

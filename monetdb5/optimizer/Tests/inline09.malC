@@ -6,9 +6,9 @@ end foo;
 
 inline function bar(a:str,b:str):str;
 	sa:= user.foo(a);
-	sa:= str.substring(sa, 1, 5);
+	sa:= str.substring3(sa, 1, 5);
 	sb:= user.foo(b);
-	sb:= str.substring(sb, 1, 3);
+	sb:= str.substring3(sb, 1, 3);
 	c:= sa+sb;
 	return bar:=c;
 end bar;

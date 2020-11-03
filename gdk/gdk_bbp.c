@@ -235,7 +235,7 @@ static volatile MT_Id locked_by = 0;
 	} while (0)
 
 static int BBPunloadCnt = 0;
-static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER("GDKunloadLock");
+static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER(GDKunloadLock);
 
 void
 BBPlock(void)
@@ -3623,6 +3623,10 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "thash", 5) == 0) {
 				/* older versions used .thash which we
 				 * can simply ignore */
+				delete = true;
+			} else if (strncmp(p + 1, "thsh", 4) == 0) {
+				/* temporary hash files which we can
+				 * simply ignore */
 				delete = true;
 			} else if (strncmp(p + 1, "timprints", 9) == 0) {
 				BAT *b = getdesc(bid);
