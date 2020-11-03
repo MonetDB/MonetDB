@@ -2946,9 +2946,7 @@ GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe,
 
 typedef struct stdev_var_deltas {
 	BUN n;
-	dbl mean;
-	dbl m2;
-	dbl delta;
+	dbl mean, delta, m2;
 } stdev_var_deltas;
 
 #define INIT_AGGREGATE_STDEV_VARIANCE(TPE, SAMPLE, OP) \
@@ -3041,7 +3039,6 @@ typedef struct stdev_var_deltas {
 			goto nosupport;	\
 		}	\
 	} while (0)
-
 
 #define GDK_ANALYTICAL_STDEV_VARIANCE(NAME, SAMPLE, OP, DESC) \
 gdk_return \
@@ -3211,37 +3208,43 @@ GDK_ANALYTICAL_STDEV_VARIANCE(variance_pop, 0, m2 / n, "variance")
 		has_nils = is_dbl_nil(rb[k - 1]); \
 	} while (0)
 
+typedef struct stdev_covariance_deltas {
+	BUN n;
+	dbl mean1, mean2, delta1, delta2, m2;
+} stdev_covariance_deltas;
+
+#define INIT_AGGREGATE_COVARIANCE(TPE, SAMPLE, OP) \
+	do { \
+		computed = (stdev_covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil}; \
+	} while (0)
+#define COMPUTE_LEVEL0_COVARIANCE(X, TPE, SAMPLE, OP) \
+	do { \
+		TPE v1 = bp1[j + X], v2 = bp2[j + X]; \
+		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (stdev_covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil} \
+															: (stdev_covariance_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .m2 = 0, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
+	} while (0)
+#define COMPUTE_LEVELN_COVARIANCE(VAL, TPE, SAMPLE, OP) \
+	do { \
+		if (!is_dbl_nil(VAL.delta1)) {	/* only has to check one of the sides */	\
+			computed.n++; \
+			computed.delta1 = VAL.delta1 - computed.mean1;		\
+			computed.mean1 += computed.delta1 / computed.n;		\
+			computed.delta2 = VAL.delta2 - computed.mean2;		\
+			computed.mean2 += computed.delta2 / computed.n;		\
+			computed.m2 += computed.delta1 * (VAL.delta2 - computed.mean2);	\
+		}				\
+	} while (0)
+#define FINALIZE_AGGREGATE_COVARIANCE(TPE, SAMPLE, OP) FINALIZE_AGGREGATE_STDEV_VARIANCE(TPE, SAMPLE, OP)
 #define ANALYTICAL_COVARIANCE_OTHERS(TPE, SAMPLE, OP)	\
-	do {								\
+	do { \
 		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
-		for (; k < i; k++) {		\
-			TPE *bs1 = bp1 + start[k];				\
-			TPE *be1 = bp1 + end[k];				\
-			TPE *bs2 = bp2 + start[k];		\
-			for (; bs1 < be1; bs1++, bs2++) {	\
-				TPE v1 = *bs1, v2 = *bs2;				\
-				if (is_##TPE##_nil(v1) || is_##TPE##_nil(v2))	\
-					continue;		\
-				n++;				\
-				delta1 = (dbl) v1 - mean1;		\
-				mean1 += delta1 / n;		\
-				delta2 = (dbl) v2 - mean2;		\
-				mean2 += delta2 / n;		\
-				m2 += delta1 * ((dbl) v2 - mean2);	\
-			}	\
-			if (isinf(m2))	\
-				goto overflow;		\
-			if (n > SAMPLE) { \
-				rb[k] = OP; \
-			} else { \
-				rb[k] = dbl_nil; \
-				has_nils = true; \
-			} \
-			n = 0;	\
-			mean1 = 0;	\
-			mean2 = 0;	\
-			m2 = 0; \
-		}	\
+		oid ncount = i - k; \
+		if ((res = rebuild_segmentree(ncount, sizeof(stdev_covariance_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(stdev_covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(stdev_covariance_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, FINALIZE_AGGREGATE_COVARIANCE, TPE, SAMPLE, OP); \
+		j = k; \
 	} while (0)
 
 #define GDK_ANALYTICAL_COVARIANCE(NAME, SAMPLE, OP) \
@@ -3249,10 +3252,13 @@ gdk_return \
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
 	bool has_nils = false;	\
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;	\
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,	\
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0; \
 	lng n = 0;	\
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;	\
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
+	void *segment_tree = NULL; \
+	gdk_return res = GDK_SUCCEED; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {	\
@@ -3277,12 +3283,16 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	BATsetcount(r, cnt); \
 	r->tnonil = !has_nils;	\
 	r->tnil = has_nils;	\
-	return GDK_SUCCEED; \
-  nosupport:	\
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */	\
+overflow:	\
+	GDKerror("22003!overflow in calculation.\n");	\
+	res = GDK_FAIL;	\
+cleanup:	\
+	GDKfree(segment_tree);	\
+	GDKfree(levels_offset);	\
+	return res;	\
+nosupport:	\
 	GDKerror("42000!covariance of type %s unsupported.\n", ATOMname(tpe)); \
-	return GDK_FAIL; \
-  overflow: \
-	GDKerror("22003!overflow in calculation.\n"); \
 	return GDK_FAIL; \
 }
 
