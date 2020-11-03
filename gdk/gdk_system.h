@@ -320,8 +320,6 @@ static void wininit_##n(void)						\
 __declspec(allocate(".CRT$XCU")) void (*wininit_##n##_)(void) = wininit_##n; \
 __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 
-#pragma intrinsic(_InterlockedCompareExchangePointer)
-
 #define MT_lock_init(l, n)					\
 	do {							\
 		InitializeCriticalSection(&(l)->lock);		\
