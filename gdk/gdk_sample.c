@@ -172,11 +172,11 @@ BATsample_with_seed(BAT *b, BUN n, unsigned seed)
 	return do_batsample(b, n, rse, NULL);
 }
 
+static MT_Lock rse_lock = MT_LOCK_INITIALIZER(rse_lock);
 BAT *
 BATsample(BAT *b, BUN n)
 {
 	static random_state_engine rse;
-	static MT_Lock rse_lock = MT_LOCK_INITIALIZER("rse_lock");
 
 	MT_lock_set(&rse_lock);
 	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)

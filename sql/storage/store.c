@@ -21,8 +21,8 @@
 #define CATALOG_VERSION 52300
 int catalog_version = 0;
 
-static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");		/* protect access of the gtrans structure */
-static MT_Lock flush_lock = MT_LOCK_INITIALIZER("flush_lock");		/* protect flushing and hot snapshots */
+static MT_Lock bs_lock = MT_LOCK_INITIALIZER(bs_lock);		/* protect access of the gtrans structure */
+static MT_Lock flush_lock = MT_LOCK_INITIALIZER(flush_lock);		/* protect flushing and hot snapshots */
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static size_t new_trans_size = 0;
@@ -37,6 +37,7 @@ int trans_id = 0;
 int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
+int store_debug = 0;
 
 store_functions store_funcs;
 table_functions table_funcs;
@@ -2036,6 +2037,7 @@ store_init(sql_allocator *pa, int debug, store_type store, int readonly, int sin
 
 	store_readonly = readonly;
 	store_singleuser = singleuser;
+	store_debug = debug;
 
 	MT_lock_set(&bs_lock);
 	MT_lock_set(&flush_lock);

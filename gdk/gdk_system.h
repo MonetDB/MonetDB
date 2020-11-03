@@ -172,17 +172,11 @@ gdk_export int MT_join_thread(MT_Id t);
 #include "matomic.h"
 
 /* define this to keep lock statistics (can be expensive) */
-/* #define LOCK_STATS */
+/* #define LOCK_STATS 1 */
 
 /* define this if you want to use pthread (or Windows) locks instead
  * of atomic instructions for locking (latching) */
-#ifndef WIN32
-/* on Linux (and in general pthread using systems) use native locks;
- * on Windows use locks based on atomic instructions and sleeps since
- * the Windows lock implementations (Mutex and CriticalSection) are
- * too heavy and impossible to initialize statically */
 #define USE_NATIVE_LOCKS 1
-#endif
 
 #ifdef LOCK_STATS
 
@@ -290,7 +284,7 @@ gdk_export int MT_join_thread(MT_Id t);
 
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
-	HANDLE lock;
+	CRITICAL_SECTION lock;
 	char name[MT_NAME_LEN];
 #ifdef LOCK_STATS
 	size_t count;
@@ -302,63 +296,64 @@ typedef struct MT_Lock {
 #endif
 } MT_Lock;
 
-#ifdef LOCK_STATS
-#define MT_LOCK_INITIALIZER(n)	{ .lock = NULL, .name = n, .next = (struct MT_Lock *) -1, }
+/* Windows defines read as _read and adds a deprecation warning to read
+ * if you were to still use that.  We need the token "read" here.  We
+ * cannot simply #undef read, since that messes up the deprecation
+ * stuff.  So we define _read as read to change the token back to "read"
+ * where replacement stops (recursive definitions are allowed in C and
+ * are handled well).  After our use, we remove the definition of _read
+ * so everything reverts back to the way it was.  Bonus: this also works
+ * if "read" was not defined. */
+#define _read read
+#pragma section(".CRT$XCU", read)
+#undef _read
+#ifdef _WIN64
+#define _LOCK_PREF_ ""
 #else
-#define MT_LOCK_INITIALIZER(n)	{ .lock = NULL, .name = n, }
+#define _LOCK_PREF_ "_"
 #endif
+#define MT_LOCK_INITIALIZER(n) { 0 };					\
+static void wininit_##n(void)						\
+{									\
+	MT_lock_init(&n, #n);						\
+}									\
+__declspec(allocate(".CRT$XCU")) void (*wininit_##n##_)(void) = wininit_##n; \
+__pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 
 #pragma intrinsic(_InterlockedCompareExchangePointer)
 
 #define MT_lock_init(l, n)					\
 	do {							\
-		assert((l)->lock == NULL);			\
-		(l)->lock = CreateMutex(NULL, 0, NULL);		\
+		InitializeCriticalSection(&(l)->lock);		\
 		strcpy_len((l)->name, (n), sizeof((l)->name));	\
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
-static bool inline
-MT_lock_try(MT_Lock *l)
-{
-	if (l->lock == NULL) {
-		HANDLE p = CreateMutex(NULL, 0, NULL);
-		if (_InterlockedCompareExchangePointer(
-			    &l->lock, p, NULL) != NULL)
-			CloseHandle(p);
-	}
-	return WaitForSingleObject(l->lock, 0) == WAIT_OBJECT_0;
-}
+#define MT_lock_try(l)	TryEnterCriticalSection(&(l)->lock)
 
-#define MT_lock_set(l)							\
-	do {								\
-		_DBG_LOCK_COUNT_0(l);					\
-		if (!MT_lock_try(l)) {					\
-			_DBG_LOCK_CONTENTION(l);			\
-			MT_thread_setlockwait(l);			\
-			do						\
-				_DBG_LOCK_SLEEP(l);			\
-			while (WaitForSingleObject(			\
-				       (l)->lock, INFINITE) != WAIT_OBJECT_0); \
-			MT_thread_setlockwait(NULL);			\
-		}							\
-		_DBG_LOCK_LOCKER(l);					\
-		_DBG_LOCK_COUNT_2(l);					\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (!MT_lock_try(l)) {				\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			EnterCriticalSection(&(l)->lock);	\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 
-#define MT_lock_unset(l)			\
-	do {					\
-		assert((l)->lock);		\
-		_DBG_LOCK_UNLOCKER(l);		\
-		ReleaseMutex((l)->lock);	\
+#define MT_lock_unset(l)				\
+	do {						\
+		_DBG_LOCK_UNLOCKER(l);			\
+		LeaveCriticalSection(&(l)->lock);	\
 	} while (0)
 
-#define MT_lock_destroy(l)			\
-	do {					\
-		assert((l)->lock);		\
-		_DBG_LOCK_DESTROY(l);		\
-		CloseHandle((l)->lock);		\
-		(l)->lock = NULL;		\
+#define MT_lock_destroy(l)				\
+	do {						\
+		_DBG_LOCK_DESTROY(l);			\
+		DeleteCriticalSection(&(l)->lock);	\
 	} while (0)
 
 #else
@@ -377,9 +372,9 @@ typedef struct MT_Lock {
 } MT_Lock;
 
 #ifdef LOCK_STATS
-#define MT_LOCK_INITIALIZER(n)	{ .lock = PTHREAD_MUTEX_INITIALIZER, .name = n, .next = (struct MT_Lock *) -1, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = PTHREAD_MUTEX_INITIALIZER, .name = #n, .next = (struct MT_Lock *) -1, }
 #else
-#define MT_LOCK_INITIALIZER(n)	{ .lock = PTHREAD_MUTEX_INITIALIZER, .name = n, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = PTHREAD_MUTEX_INITIALIZER, .name = #n, }
 #endif
 
 #define MT_lock_init(l, n)					\
@@ -442,9 +437,9 @@ typedef struct MT_Lock {
 } MT_Lock;
 
 #ifdef LOCK_STATS
-#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .next = (struct MT_Lock *) -1, .name = n, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .next = (struct MT_Lock *) -1, .name = #n, }
 #else
-#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .name = n, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .name = #n, }
 #endif
 
 #define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)

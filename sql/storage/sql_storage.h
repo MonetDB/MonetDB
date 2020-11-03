@@ -361,7 +361,7 @@ extern sql_schema *sql_trans_create_schema(sql_trans *tr, const char *name, sqli
 extern sql_schema *sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);
 
-extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
+sql_export sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);

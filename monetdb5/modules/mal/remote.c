@@ -70,7 +70,6 @@
 #ifdef HAVE_MAPI
 
 
-
 #include "mal_exception.h"
 #include "mal_interpreter.h"
 #include "mal_function.h" /* for printFunction */
@@ -1038,7 +1037,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 		/* call our remote helper to do this more efficiently */
 		mnstr_printf(sout,
-				"%s := remote.batload(:%s, " BUNFMT ");\n",
+				"%s := remote.batload(nil:%s, " BUNFMT ");\n",
 				ident, tail, (bid == 0 ? 0 : BATcount(b)));
 		mnstr_flush(sout, MNSTR_FLUSH_DATA);
 		GDKfree(tail);
@@ -1138,7 +1137,7 @@ static str RMTput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
  * The implementation is based on serialisation of the block into a string
  * followed by remote parsing.
  */
-static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, const char *fcn)
+static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, const char *mod, const char *fcn)
 {
 	str tmp, qry, msg;
 	connection c;
@@ -1160,48 +1159,90 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-	/* check remote definition */
-	snprintf(buf, BUFSIZ, "inspect.getSignature(\"%s\",\"%s\");", mod, fcn);
-	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);
-	msg = RMTquery(&mhdl, "remote.register", c->mconn, buf);
-	if (msg == MAL_SUCCEED) {
+	/* get a free, typed identifier for the remote host */
+	char ident[BUFSIZ];
+	tmp = RMTgetId(ident, sym->def, getInstrPtr(sym->def, 0), 0);
+	if (tmp != MAL_SUCCEED) {
 		MT_lock_unset(&c->lock);
-		throw(MAL, "remote.register",
-				"function already exists at the remote site: %s.%s",
-				mod, fcn);
-	} else {
-		/* we basically hope/assume this is a "doesn't exist" error */
-		freeException(msg);
+		return tmp;
 	}
-	if (mhdl)
-		mapi_close_handle(mhdl);
+
+	/* check remote definition */
+	snprintf(buf, BUFSIZ, "b:bit:=inspect.getExistence(\"%s\",\"%s\");\nio.print(b);", mod, ident);
+	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, buf);
+	if ((msg = RMTquery(&mhdl, "remote.register", c->mconn, buf)) != MAL_SUCCEED){
+		MT_lock_unset(&c->lock);
+		return msg;
+	}
+
+	char* result;
+	if ( mapi_get_field_count(mhdl) && mapi_fetch_row(mhdl) && (result = mapi_fetch_field(mhdl, 0))) {
+		if (strcmp(result, "false") != 0)
+			msg = createException(MAL, "remote.register",
+					"function already exists at the remote site: %s.%s",
+					mod, fcn);
+	}
+	else
+		msg = createException(MAL, "remote.register", OPERATION_FAILED);
+
+	mapi_close_handle(mhdl);
+
+	if (msg) {
+		MT_lock_unset(&c->lock);
+		return msg;
+	}
+
+	*fcn_id = GDKstrdup(ident);
+	if (*fcn_id == NULL) {
+		MT_lock_unset(&c->lock);
+		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
+	}
+
+	Symbol prg;
+	if ((prg = newFunction(putName(mod), putName(*fcn_id), FUNCTIONsymbol)) == NULL) {
+		MT_lock_unset(&c->lock);
+		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
+	}
+
+	// We only need the Symbol not the inner program stub. So we clear it.
+	freeMalBlk(prg->def);
+	prg->def = NULL;
+
+	if ((prg->def = copyMalBlk(sym->def)) == NULL) {
+		freeSymbol(prg);
+		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
+	}
+	setFunctionId(getInstrPtr(prg->def, 0), putName(*fcn_id));
 
 	/* make sure the program is error free */
-	msg = chkProgram(cntxt->usermodule, sym->def);
-	if ( msg == MAL_SUCCEED || sym->def->errors) {
+	msg = chkProgram(cntxt->usermodule, prg->def);
+	if ( msg != MAL_SUCCEED || prg->def->errors) {
 		MT_lock_unset(&c->lock);
 		throw(MAL, "remote.register",
 				"function '%s.%s' contains syntax or type errors",
-				mod, fcn);
+				mod, *fcn_id);
 	}
 
-	qry = mal2str(sym->def, 0, sym->def->stop);
+	qry = mal2str(prg->def, 0, prg->def->stop);
 	TRC_DEBUG(MAL_REMOTE, "Remote register: %s - %s\n", c->name, qry);
 	msg = RMTquery(&mhdl, "remote.register", c->mconn, qry);
 	GDKfree(qry);
 	if (mhdl)
 		mapi_close_handle(mhdl);
 
+	freeSymbol(prg);
+
 	MT_lock_unset(&c->lock);
 	return msg;
 }
 
 static str RMTregister(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+	char **fcn_id = getArgReference_str(stk, pci, 0);
 	const char *conn = *getArgReference_str(stk, pci, 1);
 	const char *mod = *getArgReference_str(stk, pci, 2);
 	const char *fcn = *getArgReference_str(stk, pci, 3);
 	(void)mb;
-	return RMTregisterInternal(cntxt, conn, mod, fcn);
+	return RMTregisterInternal(cntxt, fcn_id, conn, mod, fcn);
 }
 
 /**
@@ -1223,21 +1264,25 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	(void)cntxt;
 	(void)mb;
+	bool no_return_arguments = 0;
 
 	columnar_result_callback* rcb = NULL;
 	ValRecord *v = &(stk)->stk[(pci)->argv[4]];
 	if (pci->retc == 1 && (pci->argc >= 4) && (v->vtype == TYPE_ptr) ) {
 		rcb = (columnar_result_callback*) v->val.pval;
-		i = 1; //There is only one (void) return argument.
 	}
-	else {
-		for (i = 0; i < pci->retc; i++) {
+
+	for (i = 0; i < pci->retc; i++) {
+		if (stk->stk[pci->argv[i]].vtype == TYPE_str) {
 			tmp = *getArgReference_str(stk, pci, i);
 			if (tmp == NULL || strcmp(tmp, (str)str_nil) == 0)
 				throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT
 						": return value %d is NULL or nil", i);
 		}
+		else
+			no_return_arguments = 1;
 	}
+
 	conn = *getArgReference_str(stk, pci, i++);
 	if (conn == NULL || strcmp(conn, (str)str_nil) == 0)
 		throw(ILLARG, "remote.exec", ILLEGAL_ARGUMENT ": connection name is NULL or nil");
@@ -1254,19 +1299,19 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-	if(!rcb && pci->argc - pci->retc < 3) /* conn, mod, func, ... */
+	if(!no_return_arguments && pci->argc - pci->retc < 3) /* conn, mod, func, ... */
 		throw(MAL, "remote.exec", ILLEGAL_ARGUMENT  " MAL instruction misses arguments");
 
 	len = 0;
 	/* count how big a buffer we need */
 	len += 2 * (pci->retc > 1);
-	if (!rcb)
+	if (!no_return_arguments)
 		for (i = 0; i < pci->retc; i++) {
 			len += 2 * (i > 0);
 			len += strlen(*getArgReference_str(stk, pci, i));
 		}
 
-	const int arg_index = rcb?4:3;
+	const int arg_index = rcb ? 4 : 3;
 
 	len += strlen(mod) + strlen(func) + 6;
 	for (i = arg_index; i < pci->argc - pci->retc; i++) {
@@ -1282,7 +1327,7 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 
 	if (pci->retc > 1)
 		qbuf[len++] = '(';
-	if (!rcb)
+	if (!no_return_arguments)
 		for (i = 0; i < pci->retc; i++)
 			len += snprintf(&qbuf[len], buflen - len, "%s%s",
 					(i > 0 ? ", " : ""), *getArgReference_str(stk, pci, i));
@@ -1291,7 +1336,7 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 		qbuf[len++] = ')';
 
 	/* build the function invocation string in qbuf */
-	if (!rcb && pci->retc > 0) {
+	if (!no_return_arguments && pci->retc > 0) {
 		len += snprintf(&qbuf[len], buflen - len, " := %s.%s(", mod, func);
 	}
 	else {
@@ -1615,12 +1660,13 @@ mel_func remote_init_funcs[] = {
  command("remote", "disconnect", RMTdisconnect, false, "disconnects the connection pointed to by handle (received from a call to connect()", args(1,2, arg("",void),arg("conn",str))),
  pattern("remote", "get", RMTget, false, "retrieves a copy of remote object ident", args(1,3, argany("",0),arg("conn",str),arg("ident",str))),
  pattern("remote", "put", RMTput, false, "copies object to the remote site and returns its identifier", args(1,3, arg("",str),arg("conn",str),argany("object",0))),
- pattern("remote", "register", RMTregister, false, "register <mod>.<fcn> at the remote site", args(1,4, arg("",void),arg("conn",str),arg("mod",str),arg("fcn",str))),
+ pattern("remote", "register", RMTregister, false, "register <mod>.<fcn> at the remote site", args(1,4, arg("",str),arg("conn",str),arg("mod",str),arg("fcn",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> and returns the handle to its result", args(1,4, arg("",str),arg("conn",str),arg("mod",str),arg("func",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> and returns the handle to its result", args(1,4, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, arg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result", args(1,5, vararg("",str),arg("conn",str),arg("mod",str),arg("func",str),vararg("",str))),
  pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and applying function pointer rcb as callback to handle any results.", args(0,5, arg("conn",str),arg("mod",str),arg("func",str),arg("rcb",ptr), vararg("",str))),
+ pattern("remote", "exec", RMTexec, false, "remotely executes <mod>.<func> using the argument list of remote objects and ignoring results.", args(0,4, arg("conn",str),arg("mod",str),arg("func",str), vararg("",str))),
  command("remote", "isalive", RMTisalive, false, "check if conn is still valid and connected", args(1,2, arg("",int),arg("conn",str))),
  pattern("remote", "batload", RMTbatload, false, "create a BAT of the given type and size, and load values from the input stream", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("remote", "batbincopy", RMTbincopyto, false, "dump BAT b in binary form to the stream", args(1,2, arg("",void),batargany("b",0))),
