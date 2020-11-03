@@ -284,7 +284,7 @@ gdk_export int MT_join_thread(MT_Id t);
 
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 typedef struct MT_Lock {
-	HANDLE lock;
+	CRITICAL_SECTION lock;
 	char name[MT_NAME_LEN];
 #ifdef LOCK_STATS
 	size_t count;
@@ -324,48 +324,36 @@ __pragma(comment(linker, "/include:" _LOCK_PREF_ "wininit_" #n "_"))
 
 #define MT_lock_init(l, n)					\
 	do {							\
-		assert((l)->lock == NULL);			\
-		(l)->lock = CreateMutex(NULL, 0, NULL);		\
+		InitializeCriticalSection(&(l)->lock);		\
 		strcpy_len((l)->name, (n), sizeof((l)->name));	\
 		_DBG_LOCK_INIT(l);				\
 	} while (0)
 
-static bool inline
-MT_lock_try(MT_Lock *l)
-{
-	assert(l->lock != NULL);
-	return WaitForSingleObject(l->lock, 0) == WAIT_OBJECT_0;
-}
+#define MT_lock_try(l)	TryEnterCriticalSection(&(l)->lock)
 
-#define MT_lock_set(l)							\
-	do {								\
-		_DBG_LOCK_COUNT_0(l);					\
-		if (!MT_lock_try(l)) {					\
-			_DBG_LOCK_CONTENTION(l);			\
-			MT_thread_setlockwait(l);			\
-			do						\
-				_DBG_LOCK_SLEEP(l);			\
-			while (WaitForSingleObject(			\
-				       (l)->lock, INFINITE) != WAIT_OBJECT_0); \
-			MT_thread_setlockwait(NULL);			\
-		}							\
-		_DBG_LOCK_LOCKER(l);					\
-		_DBG_LOCK_COUNT_2(l);					\
+#define MT_lock_set(l)						\
+	do {							\
+		_DBG_LOCK_COUNT_0(l);				\
+		if (!MT_lock_try(l)) {				\
+			_DBG_LOCK_CONTENTION(l);		\
+			MT_thread_setlockwait(l);		\
+			EnterCriticalSection(&(l)->lock);	\
+			MT_thread_setlockwait(NULL);		\
+		}						\
+		_DBG_LOCK_LOCKER(l);				\
+		_DBG_LOCK_COUNT_2(l);				\
 	} while (0)
 
-#define MT_lock_unset(l)			\
-	do {					\
-		assert((l)->lock);		\
-		_DBG_LOCK_UNLOCKER(l);		\
-		ReleaseMutex((l)->lock);	\
+#define MT_lock_unset(l)				\
+	do {						\
+		_DBG_LOCK_UNLOCKER(l);			\
+		LeaveCriticalSection(&(l)->lock);	\
 	} while (0)
 
-#define MT_lock_destroy(l)			\
-	do {					\
-		assert((l)->lock);		\
-		_DBG_LOCK_DESTROY(l);		\
-		CloseHandle((l)->lock);		\
-		(l)->lock = NULL;		\
+#define MT_lock_destroy(l)				\
+	do {						\
+		_DBG_LOCK_DESTROY(l);			\
+		DeleteCriticalSection(&(l)->lock);	\
 	} while (0)
 
 #else
