@@ -205,7 +205,7 @@ extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int p
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 
 extern int mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
-extern sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
+sql_export sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
 extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, const char *type, int digits);
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
