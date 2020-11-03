@@ -42,7 +42,7 @@
 #define WLC_ROLLBACK 50
 #define WLC_ERROR 60
 
-MT_Lock     wlr_lock = MT_LOCK_INITIALIZER("wlr_lock");
+MT_Lock     wlr_lock = MT_LOCK_INITIALIZER(wlr_lock);
 
 /* The current status of the replica processing.
  * It is based on the assumption that at most one replica thread is running
