@@ -67,7 +67,7 @@ static const char *FunctionBasePath(void)
 	return basepath;
 }
 
-static MT_Lock pyapiLock = MT_LOCK_INITIALIZER("pyapiLock");
+static MT_Lock pyapiLock = MT_LOCK_INITIALIZER(pyapiLock);
 static bool pyapiInitialized = false;
 
 bool PYFUNCNAME(PyAPIInitialized)(void) {

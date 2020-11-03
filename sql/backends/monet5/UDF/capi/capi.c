@@ -61,7 +61,7 @@ typedef struct _cached_functions {
 #define FUNCTION_CACHE_SIZE 128
 
 static cached_functions *function_cache[FUNCTION_CACHE_SIZE];
-static MT_Lock cache_lock = MT_LOCK_INITIALIZER("cache_lock");
+static MT_Lock cache_lock = MT_LOCK_INITIALIZER(cache_lock);
 static int cudf_initialized = 0;
 
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,

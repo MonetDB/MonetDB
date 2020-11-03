@@ -16,7 +16,7 @@ static MT_Lock segs_lock = MT_LOCK_INITIALIZER("segs_lock");
 #define NR_TABLE_LOCKS 64
 static MT_Lock table_locks[NR_TABLE_LOCKS]; /* set of locks to protect table changes (claim) */
 
-static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
+static MT_Lock destroy_lock = MT_LOCK_INITIALIZER(destroy_lock);
 storage *tobe_destroyed_dbat = NULL;
 sql_delta *tobe_destroyed_delta = NULL;
 
@@ -2073,9 +2073,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					oc->data = timestamp_delta(o->data, oc->base.stime);
 				}
 				assert(oc->data);
-				if (tr_merge_delta(tr, oc->data) != LOG_OK)
-					ok = LOG_ERR;
-				cc->data = NULL;
+				if (cc->base.wtime) {
+					if (tr_merge_delta(tr, oc->data) != LOG_OK)
+						ok = LOG_ERR;
+					cc->data = NULL;
+				}
 			} else if (cc->data) {
 				oc->data = cc->data;
 				oc->base.allocated = 1;
@@ -2149,9 +2151,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						oi->data = timestamp_delta(o->data, oi->base.stime);
 					}
 					assert(oi->data);
-					if (tr_merge_delta(tr, oi->data) != LOG_OK)
-						ok = LOG_ERR;
-					ci->data = NULL;
+					if (ci->base.wtime) {
+						if (tr_merge_delta(tr, oi->data) != LOG_OK)
+							ok = LOG_ERR;
+						ci->data = NULL;
+					}
 				} else if (ci->data) {
 					oi->data = ci->data;
 					oi->base.allocated = 1;

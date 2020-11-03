@@ -250,7 +250,7 @@ static volatile MT_Id locked_by = 0;
 	} while (0)
 
 static int BBPunloadCnt = 0;
-static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER("GDKunloadLock");
+static MT_Lock GDKunloadLock = MT_LOCK_INITIALIZER(GDKunloadLock);
 
 void
 BBPlock(void)

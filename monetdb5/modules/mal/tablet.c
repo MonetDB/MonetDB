@@ -47,7 +47,7 @@
 /* We restrict the row length to be 32MB for the time being */
 #define MAXROWSIZE(X) (X > 32*1024*1024 ? X : 32*1024*1024)
 
-static MT_Lock errorlock = MT_LOCK_INITIALIZER("errorlock");
+static MT_Lock errorlock = MT_LOCK_INITIALIZER(errorlock);
 
 static BAT *
 void_bat_create(int adt, BUN nr)
