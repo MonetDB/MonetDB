@@ -96,7 +96,7 @@ getMemoryClaim(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int i, int flag)
  * The client context also keeps bounds on the memory claim/client.
  * Surpassing this bound may be a reason to not admit the instruction to proceed.
  */
-static MT_Lock admissionLock = MT_LOCK_INITIALIZER("admissionLock");
+static MT_Lock admissionLock = MT_LOCK_INITIALIZER(admissionLock);
 
 int
 MALadmission_claim(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, lng argclaim)

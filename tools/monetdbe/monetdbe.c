@@ -112,7 +112,7 @@ typedef struct {
 	cq *q;
 } monetdbe_stmt_internal;
 
-static MT_Lock embedded_lock = MT_LOCK_INITIALIZER("embedded_lock");
+static MT_Lock embedded_lock = MT_LOCK_INITIALIZER(embedded_lock);
 static bool monetdbe_embedded_initialized = false;
 static char *monetdbe_embedded_url = NULL;
 static int open_dbs = 0;

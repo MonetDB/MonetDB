@@ -245,7 +245,7 @@ MATHunary_FINITE(bit *res, const dbl *a)
 /* global pseudo random generator state */
 static random_state_engine mmath_rse;
 /* serialize access to state */
-static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER("mmath_rse_lock");
+static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER(mmath_rse_lock);
 
 static str
 MATHprelude(void *ret)

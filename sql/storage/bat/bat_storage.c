@@ -14,7 +14,7 @@
 
 #define SNAPSHOT_MINSIZE ((BUN) 1024*128)
 
-static MT_Lock destroy_lock = MT_LOCK_INITIALIZER("destroy_lock");
+static MT_Lock destroy_lock = MT_LOCK_INITIALIZER(destroy_lock);
 sql_dbat *tobe_destroyed_dbat = NULL;
 sql_delta *tobe_destroyed_delta = NULL;
 
