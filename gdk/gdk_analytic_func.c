@@ -11,13 +11,8 @@
 #include "gdk_analytic.h"
 #include "gdk_calc_private.h"
 
-#define SEGMENT_TREE_FANOUT 16
-#define NOTHING /* used for not used optional arguments for aggregate computation */
-
-/* segment_tree is the tree as an array, levels_offset contains the offsets in the tree where which level does start,
-   and nlevels contains the number of levels on the current segment tree */
-static gdk_return
-rebuild_segmentree(oid ncount, oid data_size, void **segment_tree, oid *tree_capacity, oid **levels_offset, oid *levels_capacity, oid *nlevels)
+gdk_return
+GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tree_capacity, oid **levels_offset, oid *levels_capacity, oid *nlevels)
 {
 	oid next_tree_size = ncount, counter = ncount, *new_levels_offset, next_levels = 1; /* there will be at least one level */
 	void *new_segment_tree;
@@ -49,75 +44,6 @@ rebuild_segmentree(oid ncount, oid data_size, void **segment_tree, oid *tree_cap
 	}
 	return GDK_SUCCEED;
 }
-
-/* segment_tree, levels_offset and nlevels must be already defined. ARG1, ARG2 and ARG3 are to be used by the aggregate */
-#define populate_segment_tree(CAST, COUNT, INIT_AGGREGATE, COMPUTE_LEVEL0, COMPUTE_LEVELN, ARG1, ARG2, ARG3) \
-	do {	\
-		CAST *ctree = (CAST *) segment_tree; \
-		CAST *prev_level_begin = ctree; \
-		oid level_size = COUNT, tree_offset = 0, current_level = 0; \
-	\
-		levels_offset[current_level++] = 0; /* first level is trivial */ \
-		for (oid pos = 0; pos < level_size; pos += SEGMENT_TREE_FANOUT) { \
-			oid end = MIN(level_size, pos + SEGMENT_TREE_FANOUT); \
-	\
-			for (oid x = pos; x < end; x++) { \
-				CAST computed; \
-				COMPUTE_LEVEL0(x, ARG1, ARG2, ARG3);	\
-				ctree[tree_offset++] = computed; \
-			} \
-		} \
-	\
- 		while (current_level < nlevels) { /* for the following levels we have to use the previous level results */  \
-		 	oid prev_tree_offset = tree_offset; \
-			levels_offset[current_level++] = tree_offset; \
-			for (oid pos = 0; pos < level_size; pos += SEGMENT_TREE_FANOUT) { \
-				oid begin = pos, end = MIN(level_size, pos + SEGMENT_TREE_FANOUT), width = end - begin; \
-				CAST computed; \
-	\
-				INIT_AGGREGATE(ARG1, ARG2, ARG3);	\
-				for (oid x = 0; x < width; x++) \
-					COMPUTE_LEVELN(prev_level_begin[x], ARG1, ARG2, ARG3);	\
-				ctree[tree_offset++] = computed; \
-				prev_level_begin += width; \
-			} \
-			level_size = tree_offset - prev_tree_offset; \
-		} \
-	} while (0)
-
-#define compute_on_segment_tree(CAST, START, END, INIT_AGGREGATE, COMPUTE, FINALIZE_AGGREGATE, ARG1, ARG2, ARG3)	\
-	do { /* taken from https://www.vldb.org/pvldb/vol8/p1058-leis.pdf */	\
-		oid begin = START, tend = END; \
-		CAST computed; \
-	\
-		INIT_AGGREGATE(ARG1, ARG2, ARG3);	\
-		for (oid level = 0; level < nlevels; level++) { \
-			CAST *tlevel = (CAST *) segment_tree + levels_offset[level]; \
-			oid parent_begin = begin / SEGMENT_TREE_FANOUT; \
-			oid parent_end = tend / SEGMENT_TREE_FANOUT; \
-	\
-			if (parent_begin == parent_end) { \
-				for (oid pos = begin; pos < tend; pos++) \
-					COMPUTE(tlevel[pos], ARG1, ARG2, ARG3);	\
-				break; \
-			} \
-			oid group_begin = parent_begin * SEGMENT_TREE_FANOUT; \
-			if (begin != group_begin) { \
-				oid limit = group_begin + SEGMENT_TREE_FANOUT; \
-				for (oid pos = begin; pos < limit; pos++) \
-					COMPUTE(tlevel[pos], ARG1, ARG2, ARG3);	\
-				parent_begin++; \
-			} \
-			oid group_end = parent_end * SEGMENT_TREE_FANOUT; \
-			if (tend != group_end) { \
-				for (oid pos = group_end; pos < tend; pos++) \
-					COMPUTE(tlevel[pos], ARG1, ARG2, ARG3);	\
-			} \
-			begin = parent_begin; \
-			tend = parent_end; \
-		} \
-		FINALIZE_AGGREGATE(ARG1, ARG2, ARG3); \
-	} while (0)
 
 #define NTILE_CALC(TPE, NEXT_VALUE, LNG_HGE, UPCAST, VALIDATION)	\
 	do {					\
@@ -890,7 +816,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 #define ANALYTICAL_MIN_MAX_CALC_FIXED_OTHERS(TPE, MIN_MAX)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(TPE), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(TPE, ncount, INIT_AGGREGATE_MIN_MAX_FIXED, COMPUTE_LEVEL0_MIN_MAX_FIXED, COMPUTE_LEVELN_MIN_MAX_FIXED, TPE, MIN_MAX, NOTHING); \
 		for (; k < i; k++) \
@@ -1002,7 +928,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 #define ANALYTICAL_MIN_MAX_CALC_VARSIZED_OTHERS(GT_LT)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(void*), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(void*), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVEL0_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, GT_LT, NOTHING, NOTHING); \
 		for (; k < i; k++) \
@@ -1225,7 +1151,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
 			oid ncount = i - k; \
-			if ((res = rebuild_segmentree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup; \
 			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_FIXED, COMPUTE_LEVELN_COUNT, TPE, NOTHING, NOTHING); \
 			for (; k < i; k++) \
@@ -1332,7 +1258,7 @@ ANALYTICAL_MIN_MAX(max, MAX, <)
 				rb[k] = (end[k] > start[k]) ? (lng)(end[k] - start[k]) : 0; \
 		} else {	\
 			oid ncount = i - k; \
-			if ((res = rebuild_segmentree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			if ((res = GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 				goto cleanup; \
 			populate_segment_tree(lng, ncount, INIT_AGGREGATE_COUNT, COMPUTE_LEVEL0_COUNT_OTHERS, COMPUTE_LEVELN_COUNT, NOTHING, NOTHING, NOTHING); \
 			for (; k < i; k++) \
@@ -1546,7 +1472,7 @@ cleanup:
 #define ANALYTICAL_SUM_IMP_NUM_OTHERS(TPE1, TPE2)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_SUM, COMPUTE_LEVEL0_SUM, COMPUTE_LEVELN_SUM_NUM, TPE1, TPE2, NOTHING); \
 		for (; k < i; k++) \
@@ -1881,7 +1807,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 #define ANALYTICAL_PROD_CALC_NUM_OTHERS(TPE1, TPE2, TPE3)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM, TPE1, TPE2, TPE3); \
 		for (; k < i; k++) \
@@ -1973,7 +1899,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT_OTHERS(TPE1, TPE2, REAL_IMP)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM_LIMIT, TPE1, TPE2, REAL_IMP); \
 		for (; k < i; k++) \
@@ -2077,7 +2003,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 #define ANALYTICAL_PROD_CALC_FP_OTHERS(TPE1, TPE2, ARG3) /* ARG3 is ignored here */ \
 	do { \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_FP, TPE1, TPE2, ARG3); \
 		for (; k < i; k++) \
@@ -2984,7 +2910,7 @@ typedef struct stdev_var_deltas {
 	do { \
 		TPE *bp = (TPE*)Tloc(b, 0); \
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(stdev_var_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(stdev_var_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(stdev_var_deltas, ncount, INIT_AGGREGATE_STDEV_VARIANCE, COMPUTE_LEVEL0_STDEV_VARIANCE, COMPUTE_LEVELN_STDEV_VARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++) \
@@ -3239,7 +3165,7 @@ typedef struct covariance_deltas {
 	do { \
 		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(covariance_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(covariance_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(covariance_deltas, ncount, INIT_AGGREGATE_COVARIANCE, COMPUTE_LEVEL0_COVARIANCE, COMPUTE_LEVELN_COVARIANCE, TPE, SAMPLE, OP); \
 		for (; k < i; k++) \
@@ -3479,7 +3405,7 @@ typedef struct correlation_deltas {
 	do { \
 		TPE *bp1 = (TPE*)Tloc(b1, 0), *bp2 = (TPE*)Tloc(b2, 0);	\
 		oid ncount = i - k; \
-		if ((res = rebuild_segmentree(ncount, sizeof(correlation_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(correlation_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
 		populate_segment_tree(correlation_deltas, ncount, INIT_AGGREGATE_CORRELATION, COMPUTE_LEVEL0_CORRELATION, COMPUTE_LEVELN_CORRELATION, TPE, SAMPLE, OP); \
 		for (; k < i; k++) \
