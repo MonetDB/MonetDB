@@ -1533,7 +1533,7 @@ cleanup:
 	do { \
 		if (!is_##TPE2##_nil(VAL)) {		\
 			if (is_##TPE2##_nil(computed))	\
-				computed = (TPE2) VAL;	\
+				computed = VAL;	\
 			else		\
 				ADD_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, goto calc_overflow); \
 		}	\
@@ -1855,21 +1855,38 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		} \
 	} while (0)
 
+#define INIT_AGGREGATE_PROD(NOTHING1, TPE2, NOTHING2) \
+	do { \
+		computed = TPE2##_nil; \
+	} while (0)
+#define COMPUTE_LEVEL0_PROD(X, TPE1, TPE2, NOTHING) \
+	do { \
+		TPE1 v = bp[j + X]; \
+		computed = is_##TPE1##_nil(v) ? TPE2##_nil : (TPE2) v; \
+	} while (0)
+#define COMPUTE_LEVELN_PROD_NUM(VAL, NOTHING, TPE2, TPE3) \
+	do { \
+		if (!is_##TPE2##_nil(VAL)) {		\
+			if (is_##TPE2##_nil(computed))	\
+				computed = VAL;	\
+			else				\
+				MUL4_WITH_CHECK(VAL, computed, TPE2, computed, GDK_##TPE2##_max, TPE3, goto calc_overflow); \
+		}				\
+	} while (0)
+#define FINALIZE_AGGREGATE_PROD(NOTHING1, TPE2, NOTHING2) \
+	do { \
+		rb[k] = computed;	\
+		has_nils |= is_##TPE2##_nil(computed); \
+	} while (0)
 #define ANALYTICAL_PROD_CALC_NUM_OTHERS(TPE1, TPE2, TPE3)	\
-	do {								\
-		TPE2 curval = TPE2##_nil;			\
-		for (; k < i; k++) {				\
-			TPE1 *bs = bp + start[k], *be = bp + end[k];				\
-			for (; bs < be; bs++) {				\
-				TPE1 v = *bs;				\
-				PROD_NUM(TPE1, TPE2, TPE3, v); \
-			}						\
-			rb[k] = curval;					\
-			if (is_##TPE2##_nil(curval))			\
-				has_nils = true;			\
-			else						\
-				curval = TPE2##_nil;	/* For the next iteration */	\
-		}							\
+	do { \
+		oid ncount = i - k; \
+		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM, TPE1, TPE2, TPE3); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_PROD, COMPUTE_LEVELN_PROD_NUM, FINALIZE_AGGREGATE_PROD, TPE1, TPE2, TPE3); \
+		j = k; \
 	} while (0)
 
 /* product on integers while checking for overflows on the output  */
@@ -1944,21 +1961,24 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		} \
 	} while (0)
 
+#define COMPUTE_LEVELN_PROD_NUM_LIMIT(VAL, NOTHING, TPE2, REAL_IMP) \
+	do { \
+		if (!is_##TPE2##_nil(VAL)) {		\
+			if (is_##TPE2##_nil(computed))	\
+				computed = VAL;	\
+			else				\
+				REAL_IMP(VAL, computed, computed, GDK_##TPE2##_max, goto calc_overflow); \
+		}				\
+	} while (0)
 #define ANALYTICAL_PROD_CALC_NUM_LIMIT_OTHERS(TPE1, TPE2, REAL_IMP)	\
-	do {								\
-		TPE2 curval = TPE2##_nil;			\
-		for (; k < i; k++) {				\
-			TPE1 *bs = bp + start[k], *be = bp + end[k];				\
-			for (; bs < be; bs++) {				\
-				TPE1 v = *bs;				\
-				PROD_NUM_LIMIT(TPE1, TPE2, REAL_IMP, v); \
-			}						\
-			rb[k] = curval;					\
-			if (is_##TPE2##_nil(curval))			\
-				has_nils = true;			\
-			else						\
-				curval = TPE2##_nil;	/* For the next iteration */	\
-		}							\
+	do { \
+		oid ncount = i - k; \
+		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_NUM_LIMIT, TPE1, TPE2, REAL_IMP); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_PROD, COMPUTE_LEVELN_PROD_NUM_LIMIT, FINALIZE_AGGREGATE_PROD, TPE1, TPE2, REAL_IMP); \
+		j = k; \
 	} while (0)
 
 /* product on floating-points */
@@ -2039,21 +2059,30 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 		} \
 	} while (0)
 
-#define ANALYTICAL_PROD_CALC_FP_OTHERS(TPE1, TPE2, ARG3)	/* ARG3 is ignored here */		\
-	do {								\
-		TPE2 curval = TPE2##_nil;			\
-		for (; k < i; k++) {				\
-			TPE1 *bs = bp + start[k], *be = bp + end[k];	\
-			for (; bs < be; bs++) {				\
-				TPE1 v = *bs;				\
-				PROD_FP(TPE1, TPE2, v); \
-			}						\
-			rb[k] = curval;					\
-			if (is_##TPE2##_nil(curval))			\
-				has_nils = true;			\
-			else						\
-				curval = TPE2##_nil;	/* For the next iteration */	\
-		}							\
+#define COMPUTE_LEVELN_PROD_FP(VAL, NOTHING1, TPE2, NOTHING2) \
+	do { \
+		if (!is_##TPE2##_nil(VAL)) {		\
+			if (is_##TPE2##_nil(computed)) {	\
+				computed = VAL;	\
+			} else if (ABSOLUTE(computed) > 1 && GDK_##TPE2##_max / ABSOLUTE(VAL) < ABSOLUTE(computed)) { \
+				if (abort_on_error)	\
+					goto calc_overflow; \
+				computed = TPE2##_nil;	\
+				nils++;			\
+			} else {			\
+				computed *= VAL;		\
+			}			\
+		}			\
+	} while (0)
+#define ANALYTICAL_PROD_CALC_FP_OTHERS(TPE1, TPE2, ARG3) /* ARG3 is ignored here */ \
+	do { \
+		oid ncount = i - k; \
+		if ((res = rebuild_segmentree(ncount, sizeof(TPE2), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+			goto cleanup; \
+		populate_segment_tree(TPE2, ncount, INIT_AGGREGATE_PROD, COMPUTE_LEVEL0_PROD, COMPUTE_LEVELN_PROD_FP, TPE1, TPE2, ARG3); \
+		for (; k < i; k++) \
+			compute_on_segment_tree(TPE2, start[k] - j, end[k] - j, INIT_AGGREGATE_PROD, COMPUTE_LEVELN_PROD_FP, FINALIZE_AGGREGATE_PROD, TPE1, TPE2, ARG3); \
+		j = k; \
 	} while (0)
 
 #define ANALYTICAL_PROD_CALC_NUM_PARTITIONS(TPE1, TPE2, TPE3_OR_REAL_IMP, IMP)		\
@@ -2211,10 +2240,13 @@ gdk_return
 GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
 	bool has_nils = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0, levels_capacity = 0;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	int abort_on_error = 1;
 	BUN nils = 0;
+	void *segment_tree = NULL;
+	gdk_return res = GDK_SUCCEED;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2239,12 +2271,16 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return GDK_SUCCEED;
-      nosupport:
-	GDKerror("42000!type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
-      calc_overflow:
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */
+calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
+	res = GDK_FAIL;
+cleanup:
+	GDKfree(segment_tree);
+	GDKfree(levels_offset);
+	return res;
+nosupport:
+	GDKerror("42000!type combination (prod(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
 }
 
