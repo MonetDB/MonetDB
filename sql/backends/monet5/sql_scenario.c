@@ -792,6 +792,8 @@ SQLreader(Client c)
 			go = msg == MAL_SUCCEED;
 			commit_done = true;
 		}
+		if (m->session->tr && m->session->tr->active)
+			c->idle = 0;
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
