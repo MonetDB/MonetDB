@@ -27,21 +27,14 @@ elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
       variablename GDAL_FOUND)
   endif()
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "30")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_SHP
-      variablename GDAL_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "31")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_SHP
-      variablename GDAL_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "32")
+  if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "32")
     assert_package_detected(
       detect TRUE
+      legacyvariable HAVE_SHP
+      variablename GDAL_FOUND)
+  elseif(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "30")
+    assert_package_detected(
+      detect FALSE
       legacyvariable HAVE_SHP
       variablename GDAL_FOUND)
   endif()

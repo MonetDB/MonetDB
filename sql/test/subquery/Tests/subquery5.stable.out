@@ -18,8 +18,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 #    (SELECT MIN(col1) WHERE SUM(col2) > 1),
 #    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
 #FROM another_T GROUP BY col2;
-% .%2,	.%4 # table_name
-% %2,	%4 # name
+% .%2,	.%5 # table_name
+% %2,	%5 # name
 % int,	bigint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -30,8 +30,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 #    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) OVER () AS BIGINT), 
 #    CAST(SUM((SELECT SUM(ColID) FROM tbl_ProductSales GROUP BY col2)) OVER () AS BIGINT)
 #FROM another_T;
-% .%10,	.%20 # table_name
-% %10,	%20 # name
+% .%11,	.%22 # table_name
+% %11,	%22 # name
 % bigint,	bigint # type
 % 4,	2 # length
 [ 1234,	40	]
@@ -49,8 +49,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ NULL	]
 #SELECT evilfunction(1);
-% .%5 # table_name
-% %5 # name
+% .%2 # table_name
+% %2 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -125,8 +125,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % 4 # length
 [ 2464	]
 #SELECT (SELECT CAST(SUM(col2 + 1) AS BIGINT) GROUP BY SUM(col2 + 1)) FROM another_t;
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 4 # length
 [ 2472	]
@@ -208,8 +208,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ NULL,	3	]
 [ NULL,	NULL	]
 #SELECT 1 FROM integers i1 RIGHT OUTER JOIN integers i2 ON NOT EXISTS(SELECT 1);
-% .%17 # table_name
-% %17 # name
+% .%5 # table_name
+% %5 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -217,8 +217,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ 1	]
 [ 1	]
 #SELECT (SELECT 1) IN (SELECT 2 UNION SELECT 3) FROM integers i1;
-% .%22 # table_name
-% %22 # name
+% .%16 # table_name
+% %16 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -226,26 +226,26 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MAX(i1.i) = 1) IN (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;
-% .%25 # table_name
-% %25 # name
+% .%12 # table_name
+% %12 # name
 % boolean # type
 % 5 # length
 [ NULL	]
 #SELECT (SELECT COVAR_POP(i1.i, 1)) IN (SELECT SUM(i1.i)) FROM integers i1;
-% .%20 # table_name
-% %20 # name
+% sys.%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ false	]
 #SELECT (SELECT 5) NOT IN (SELECT MIN(i1.i)) FROM integers i1;
-% .%17 # table_name
-% %17 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ true	]
 #SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1;
-% .%17 # table_name
-% %17 # name
+% .%5 # table_name
+% %5 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -265,8 +265,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % 1 # length
 [ NULL	]
 #SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i;
-% .%42 # table_name
-% %42 # name
+% .%23 # table_name
+% %23 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -275,21 +275,21 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ NULL	]
 #SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i 
 #HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1);
-% .%54 # table_name
-% %54 # name
+% .%46 # table_name
+% %46 # name
 % boolean # type
 % 5 # length
 [ true	]
 [ true	]
 #SELECT (VALUES (SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) FROM integers i1;
-% .%16 # table_name
-% %16 # name
+% .%15 # table_name
+% %15 # name
 % double # type
 % 24 # length
 [ 2	]
-#SELECT SUM(i1.i) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) > 0;
-% .%1 # table_name
-% %1 # name
+#SELECT CAST(SUM(i1.i) AS BIGINT) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) > 0;
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 6	]
@@ -299,8 +299,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 % int # type
 % 1 # length
 #SELECT (SELECT 6 EXCEPT (SELECT SUM(i1.i))) IN (SELECT 1) FROM integers i1; -- OPTmergetableImplementation: !ERROR: Mergetable bailout on group input reuse in group statement
-% .%24 # table_name
-% %24 # name
+% .%16 # table_name
+% %16 # name
 % boolean # type
 % 5 # length
 [ NULL	]
@@ -314,8 +314,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ false	]
 [ false	]
 #SELECT (col2) IN ((SELECT col2), MIN(col3)) FROM another_T GROUP BY col2;
-% .%20 # table_name
-% %20 # name
+% sys.%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ true	]

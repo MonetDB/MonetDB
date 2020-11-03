@@ -372,9 +372,6 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
-    'BITS32'               : "@BITS32_FALSE@",
-    'BITS64'               : "@BITS64_FALSE@",
-    'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
@@ -387,7 +384,6 @@ CONDITIONALS = {
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
-    'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
@@ -685,7 +681,7 @@ def try_open(path, mode) :
     return f
 ###  try_open(path, mode) #
 
-def CreateHtmlIndex (env, *body) :
+def CreateHtmlIndex (env, ssout, sserr, *body) :
     TSTDIR=env['TSTDIR']
     TSTTRGDIR=env['TSTTRGDIR']
 
@@ -706,9 +702,17 @@ def CreateHtmlIndex (env, *body) :
                                   'target': '%s_%s_body' % (DISTVER, TSTDIR),
                                   'class': 'black'},
                                  header)
-            tr = Element('tr', {'valign': 'top'},
-                         Element('th', {'class': 'header'},
-                                 header))
+            th = Element('th', {'class': 'header'}, header)
+            if os.path.exists('SingleServer.out.html'):
+                th.addchild(Element('br'))
+                th.addchildren(AddHref('SingleServer.out.html',
+                                       '%s_%s_body' % (DISTVER, TSTDIR),
+                                       'out', ssout))
+                th.addchild(Text(' | '))
+                th.addchildren(AddHref('SingleServer.err.html',
+                                       '%s_%s_body' % (DISTVER, TSTDIR),
+                                       'err', sserr))
+            tr = Element('tr', {'valign': 'top'}, th)
             tr.addchildren(body)
             hbody = Element('body',
                             {'bgcolor': white,
@@ -782,7 +786,7 @@ def CreateHtmlIndex (env, *body) :
         f.close()
         env['_%s_BODY_' % TSTDIR] = ["", 0]
         os.chdir(BACK)
-### CreateHtmlIndex (env, *body) #
+### CreateHtmlIndex (env, ssout, sserr, *body) #
 
 bugre = re.compile(r'\.(sf|bug)-(?P<bugno>[1-9]\d+)', re.I)
 
@@ -1206,6 +1210,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     elem = None
     FdOut = F_SKIP
     FdErr = F_SKIP
+    ssout = F_SKIP
+    sserr = F_SKIP
     if testdir == TSTSRCBASE:
         TSTDIR = os.curdir
     else:
@@ -1409,6 +1415,28 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
+                o = open(os.path.join(TSTTRGDIR, 'SingleServer.out.html'), 'w')
+                o.write('<html><head><title>{} standard output</title></head>'
+                        '<body><pre>\n'.format(TSTDIR))
+                e = F_OK
+                for line in open(os.path.join(TSTTRGDIR, 'SingleServer.out')):
+                    if line != '\n' and not line.startswith('#'):
+                        e = F_ERROR
+                        ssout = F_ERROR
+                    o.write(line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
+                o.write('</pre></body></html>\n')
+                o.close()
+                o = open(os.path.join(TSTTRGDIR, 'SingleServer.err.html'), 'w')
+                o.write('<html><head><title>{} standard error</title></head>'
+                        '<body><pre>\n'.format(TSTDIR))
+                e = F_OK
+                for line in open(os.path.join(TSTTRGDIR, 'SingleServer.err')):
+                    if line != '\n' and not line.startswith('#'):
+                        e = F_ERROR
+                        sserr = F_ERROR
+                    o.write(line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
+                o.write('</pre></body></html>\n')
+                o.close()
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -1418,8 +1446,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         if THISFILE == "Mtest.py":
             if not testweb:
                 body = body_bad + body_good
-                CreateHtmlIndex(env, *body)
-                elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
+                CreateHtmlIndex(env, ssout, sserr, *body)
+                elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1458,7 +1486,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         for TST,COND in testlist:
             td += ApproveOutput(env, TST)
 
-    return td, elem, max(FdOut, FdErr), interrupted
+    return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
@@ -3589,12 +3617,6 @@ else:
         if "A" <= MAJOR and MAJOR <= "Z":
             RELEASE = RELEASE.split(".", 1)[1]
 
-# this is for the wine/mingw setup
-if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
-    SYST = 'Windows'
-    HOST = "WINE"
-    RELEASE = "5.2"
-
 # see if we can use UNIX sockets
 try:
     server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -4108,14 +4130,13 @@ def main(argv) :
             CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
     if THISFILE == "Mtest.py": # env['MAPIPORT'] not available on Mapprove.py
-        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         try:
-            s.bind(('::1', int(env['MAPIPORT'])))
+            with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+                s.bind(('::1', int(env['MAPIPORT'])))
         except socket.error as err:
             CONDITIONALS['HAVE_IPV6'] = '' # False
         else:
             CONDITIONALS['HAVE_IPV6'] = '#' # True
-        s.close()
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
@@ -4528,7 +4549,7 @@ def main(argv) :
                         env['TSTDIR'] = ""
                         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
                         body = body_bad + body_good
-                        CreateHtmlIndex(env, *body)
+                        CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
@@ -4634,7 +4655,7 @@ VALUES (%s, '%s', '%s', '%s',
             env['TSTDIR'] = ""
             env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
             if not testweb:
-                CreateHtmlIndex(env, *body)
+                CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
 
             Failed = 0
             for f in Failure[1:-1]:

@@ -89,7 +89,7 @@ static struct worker {
 static Queue *todo = 0;	/* pending instructions */
 
 static ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
-static MT_Lock dataflowLock = MT_LOCK_INITIALIZER("dataflowLock");
+static MT_Lock dataflowLock = MT_LOCK_INITIALIZER(dataflowLock);
 static void stopMALdataflow(void);
 
 void
