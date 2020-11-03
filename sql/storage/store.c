@@ -21,7 +21,7 @@
 #define CATALOG_VERSION 52205
 int catalog_version = 0;
 
-static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
+static MT_Lock bs_lock = MT_LOCK_INITIALIZER(bs_lock);
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static sqlid *store_oids = NULL;
