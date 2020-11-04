@@ -2393,12 +2393,12 @@ avg_num_deltas(lng)
 
 #define INIT_AGGREGATE_AVG_NUM(TPE, NOTHING1, NOTHING2) \
 	do { \
-		computed = (avg_num_deltas##TPE) {.a = 0, .n = 0, .rr = 0}; \
+		computed = (avg_num_deltas##TPE) {0}; \
 	} while (0)
 #define COMPUTE_LEVEL0_AVG_NUM(X, TPE, NOTHING1, NOTHING2) \
 	do { \
 		TPE v = bp[j + X]; \
-		computed = is_##TPE##_nil(v) ? (avg_num_deltas##TPE){.a = 0, .n = 0, .rr = 0} : (avg_num_deltas##TPE) {.a = v, .n = 1, .rr = 0}; \
+		computed = is_##TPE##_nil(v) ? (avg_num_deltas##TPE){0} : (avg_num_deltas##TPE) {.a = v, .n = 1}; \
 	} while (0)
 #define COMPUTE_LEVELN_AVG_NUM(VAL, TPE, NOTHING1, NOTHING2) \
 	do { \
@@ -2497,12 +2497,12 @@ avg_fp_deltas(dbl)
 
 #define INIT_AGGREGATE_AVG_FP(TPE, NOTHING1, NOTHING2) \
 	do { \
-		computed = (avg_fp_deltas_##TPE) {.n = 0, .a = 0}; \
+		computed = (avg_fp_deltas_##TPE) {0}; \
 	} while (0)
 #define COMPUTE_LEVEL0_AVG_FP(X, TPE, NOTHING1, NOTHING2) \
 	do { \
 		TPE v = bp[j + X]; \
-		computed = is_##TPE##_nil(v) ? (avg_fp_deltas_##TPE) {.n = 0, .a = 0} : (avg_fp_deltas_##TPE) {.n = 1, .a = v}; \
+		computed = is_##TPE##_nil(v) ? (avg_fp_deltas_##TPE) {0} : (avg_fp_deltas_##TPE) {.n = 1, .a = v}; \
 	} while (0)
 #define COMPUTE_LEVELN_AVG_FP(VAL, TPE, NOTHING1, NOTHING2) \
 	do { \
@@ -2754,12 +2754,12 @@ avg_int_deltas(lng)
 
 #define INIT_AGGREGATE_AVG_INT(TPE, NOTHING1, NOTHING2) \
 	do { \
-		computed = (avg_int_deltas_##TPE) {.avg = 0, .rem = 0, .ncnt = 0}; \
+		computed = (avg_int_deltas_##TPE) {0}; \
 	} while (0)
 #define COMPUTE_LEVEL0_AVG_INT(X, TPE, NOTHING1, NOTHING2) \
 	do { \
 		TPE v = bp[j + X]; \
-		computed = is_##TPE##_nil(v) ? (avg_int_deltas_##TPE) {.avg = 0, .rem = 0, .ncnt = 0} : (avg_int_deltas_##TPE) {.avg = v, .rem = 0, .ncnt = 1}; \
+		computed = is_##TPE##_nil(v) ? (avg_int_deltas_##TPE) {0} : (avg_int_deltas_##TPE) {.avg = v, .ncnt = 1}; \
 	} while (0)
 #define COMPUTE_LEVELN_AVG_INT(VAL, TPE, NOTHING1, NOTHING2) \
 	do { \
@@ -2992,12 +2992,12 @@ typedef struct stdev_var_deltas {
 
 #define INIT_AGGREGATE_STDEV_VARIANCE(TPE, SAMPLE, OP) \
 	do { \
-		computed = (stdev_var_deltas) {.n = 0, .mean = 0, .m2 = 0, .delta = dbl_nil}; \
+		computed = (stdev_var_deltas) {.delta = dbl_nil}; \
 	} while (0)
 #define COMPUTE_LEVEL0_STDEV_VARIANCE(X, TPE, SAMPLE, OP) \
 	do { \
 		TPE v = bp[j + X]; \
-		computed = is_##TPE##_nil(v) ? (stdev_var_deltas) {.n = 0, .mean = 0, .m2 = 0, .delta = dbl_nil} : (stdev_var_deltas) {.n = 1, .mean = (dbl)v, .m2 = 0, .delta = (dbl)v}; \
+		computed = is_##TPE##_nil(v) ? (stdev_var_deltas) {.delta = dbl_nil} : (stdev_var_deltas) {.n = 1, .mean = (dbl)v, .delta = (dbl)v}; \
 	} while (0)
 #define COMPUTE_LEVELN_STDEV_VARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
@@ -3262,13 +3262,13 @@ typedef struct covariance_deltas {
 
 #define INIT_AGGREGATE_COVARIANCE(TPE, SAMPLE, OP) \
 	do { \
-		computed = (covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil}; \
+		computed = (covariance_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil}; \
 	} while (0)
 #define COMPUTE_LEVEL0_COVARIANCE(X, TPE, SAMPLE, OP) \
 	do { \
 		TPE v1 = bp1[j + X], v2 = bp2[j + X]; \
-		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (covariance_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .m2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil} \
-															: (covariance_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .m2 = 0, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
+		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (covariance_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil} \
+															: (covariance_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
 	} while (0)
 #define COMPUTE_LEVELN_COVARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
@@ -3484,13 +3484,13 @@ typedef struct correlation_deltas {
 
 #define INIT_AGGREGATE_CORRELATION(TPE, SAMPLE, OP) \
 	do { \
-		computed = (correlation_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil, .up = 0, .down1 = 0, .down2 = 0}; \
+		computed = (correlation_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil}; \
 	} while (0)
 #define COMPUTE_LEVEL0_CORRELATION(X, TPE, SAMPLE, OP) \
 	do { \
 		TPE v1 = bp1[j + X], v2 = bp2[j + X]; \
-		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (correlation_deltas) {.n = 0, .mean1 = 0, .mean2 = 0, .delta1 = dbl_nil, .delta2 = dbl_nil, .up = 0, .down1 = 0, .down2 = 0} \
-															: (correlation_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .delta1 = (dbl)v1, .delta2 = (dbl)v2, .up = 0, .down1 = 0, .down2 = 0}; \
+		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (correlation_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil} \
+															: (correlation_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
 	} while (0)
 #define COMPUTE_LEVELN_CORRELATION(VAL, TPE, SAMPLE, OP) \
 	do { \
