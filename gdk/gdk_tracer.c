@@ -23,7 +23,7 @@
 #define GENERATE_STRING(STRING) #STRING,
 
 static FILE *active_tracer;
-MT_Lock lock = MT_LOCK_INITIALIZER("GDKtracer_1");
+MT_Lock GDKtracer_lock = MT_LOCK_INITIALIZER(GDKtracer_lock);
 
 static char file_name[FILENAME_MAX];
 
@@ -145,11 +145,11 @@ set_level_for_layer(int layer, int lvl)
 	log_level_t level = (log_level_t) lvl;
 
 	// make sure we initialize before changing the component level
-	MT_lock_set(&lock);
+	MT_lock_set(&GDKtracer_lock);
 	if (file_name[0] == 0) {
 		_GDKtracer_init_basic_adptr();
 	}
-	MT_lock_unset(&lock);
+	MT_lock_unset(&GDKtracer_lock);
 
 	for (int i = 0; i < COMPONENTS_COUNT; i++) {
 		if (layer == MDB_ALL) {
@@ -257,7 +257,7 @@ GDKtracer_reinit_basic(int sig)
 		return;
 
 	// Make sure that GDKtracer is not trying to flush the buffer
-	MT_lock_set(&lock);
+	MT_lock_set(&GDKtracer_lock);
 
 	if (active_tracer) {
 		if (active_tracer != stderr)
@@ -268,7 +268,7 @@ GDKtracer_reinit_basic(int sig)
 	}
 	_GDKtracer_init_basic_adptr();
 
-	MT_lock_unset(&lock);
+	MT_lock_unset(&GDKtracer_lock);
 }
 
 
@@ -295,11 +295,11 @@ GDKtracer_set_component_level(const char *comp, const char *lvl)
 	}
 
 	// make sure we initialize before changing the component level
-	MT_lock_set(&lock);
+	MT_lock_set(&GDKtracer_lock);
 	if (file_name[0] == 0) {
 		_GDKtracer_init_basic_adptr();
 	}
-	MT_lock_unset(&lock);
+	MT_lock_unset(&GDKtracer_lock);
 
 	lvl_per_component[component] = level;
 
@@ -510,12 +510,12 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		if (active_tracer == NULL || active_tracer == stderr)
 			return;
 	}
-	MT_lock_set(&lock);
+	MT_lock_set(&GDKtracer_lock);
 	if (file_name[0] == 0) {
-		MT_lock_unset(&lock);
+		MT_lock_unset(&GDKtracer_lock);
 		return;
 	}
-	MT_lock_unset(&lock);
+	MT_lock_unset(&GDKtracer_lock);
 	if (syserr)
 		fprintf(active_tracer, "%s: %s\n", buffer, syserr);
 	else

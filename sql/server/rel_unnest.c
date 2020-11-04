@@ -898,8 +898,10 @@ push_up_project(mvc *sql, sql_rel *rel, list *ad)
 				}
 			}
 			/* remove old project */
-			rel->r = r->l;
-			r->l = NULL;
+			if (r->l) {
+				rel->r = r->l;
+				r->l = NULL;
+			}
 			rel_destroy(r);
 			return n;
 		}
@@ -1628,6 +1630,46 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
+#define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
+
+static sql_exp *
+exp_check_has_not_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel; (void)depth;
+	if (e && e->type == e_func) {
+		list *args = e->l;
+		sql_subfunc *f = e->f;
+
+		if (f && f->func && is_not_anyequal(f) && exps_have_rel_exp(args)) {
+			v->changes++;
+		}
+	}
+	return e;
+}
+
+static int
+exps_have_not_anyequal(mvc *sql, list *exps)
+{
+	visitor v = { .sql = sql };
+	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_check_has_not_anyequal, true);
+	return v.changes;
+}
+
+/* introduce extra selects for (not) anyequal + subquery */
+static sql_rel *
+not_anyequal_helper(visitor *v, sql_rel *rel)
+{
+	if (is_innerjoin(rel->op) && !list_empty(rel->exps) && exps_have_not_anyequal(v->sql, rel->exps)) {
+		sql_rel *nrel = rel_select(v->sql->sa, rel, NULL);
+		nrel->exps = rel->exps;
+		rel->exps = NULL;
+		rel = nrel;
+	}
+	return rel;
+}
+
 static sql_exp *
 exp_reset_card_and_freevar(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -2114,9 +2156,6 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	}
 	return e;
 }
-
-#define is_anyequal_func(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0 || strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
-#define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
 
 static sql_rel *
 rel_union_exps(mvc *sql, sql_exp **l, list *vals, int is_tuple)
@@ -3122,7 +3161,7 @@ static sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
 	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
-		((is_right(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) /*exps_have_rel_exp(rel->exps)*/)) {
+		((is_right(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->r)) || exps_have_freevar(v->sql, rel->exps) || exps_have_rel_exp(rel->exps))) {
 		sql_exp *f = exp_atom_bool(v->sql->sa, 0);
 		int nrcols = rel->nrcols;
 
@@ -3130,44 +3169,47 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 		nrcols += include_tid(rel->r);
 		rel->nrcols = nrcols;
 		if (is_left(rel->op)) {
+			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(rel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(v->sql->sa, nrel, f);
 			rel->op = op_join;
 			nrel = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, rel,  rel_projections(v->sql, rel, NULL, 1, 1)),
+					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
 			rel_set_exps(nrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			return nrel;
 		} else if (is_right(rel->op)) {
+			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(rel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(v->sql->sa, nrel, f);
 			rel->op = op_join;
 			nrel = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, rel,  rel_projections(v->sql, rel, NULL, 1, 1)),
+					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
 			rel_set_exps(nrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			return nrel;
 		} else if (is_full(rel->op)) {
+			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 			sql_rel *except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->l), rel_projections(v->sql, rel->l, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(rel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->l, NULL, 1, 1)), op_except);
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->l, NULL, 1, 1));
 			sql_rel *lrel = rel_crossproduct(v->sql->sa, except, rel_dup(rel->r),  op_left);
 			rel_join_add_exp(v->sql->sa, lrel, f);
 
 			except = rel_setop(v->sql->sa,
 					rel_project(v->sql->sa, rel_dup(rel->r), rel_projections(v->sql, rel->r, NULL, 1, 1)),
-					rel_project(v->sql->sa, rel_dup(rel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
+					rel_project(v->sql->sa, rel_dup(prel), rel_projections(v->sql, rel->r, NULL, 1, 1)), op_except);
 			rel_setop_set_exps(v->sql, except, rel_projections(v->sql, rel->r, NULL, 1, 1));
 			sql_rel *rrel = rel_crossproduct(v->sql->sa, rel_dup(rel->l), except, op_right);
 			rel_join_add_exp(v->sql->sa, rrel, f);
@@ -3178,7 +3220,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			rel->op = op_join;
 			lrel = rel_setop(v->sql->sa,
-					rel_project(v->sql->sa, rel,  rel_projections(v->sql, rel, NULL, 1, 1)),
+					rel_project(v->sql->sa, prel,  rel_projections(v->sql, rel, NULL, 1, 1)),
 					rel_project(v->sql->sa, lrel, rel_projections(v->sql, lrel, NULL, 1, 1)),
 					op_union);
 			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1));
@@ -3212,11 +3254,12 @@ rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 static sql_rel *
 rewrite_values(visitor *v, sql_rel *rel)
 {
+	int single = is_single(rel);
 	if (!is_simple_project(rel->op) || list_empty(rel->exps))
 		return rel;
 	sql_exp *e = rel->exps->h->data;
 
-	if (!is_values(e) || list_length(exp_get_values(e))<=1 || !rel_has_freevar(v->sql, rel))
+	if (!is_values(e) || list_length(exp_get_values(e))<=1 || (!exp_has_freevar(v->sql, e) && !exp_has_rel(e)))
 		return rel;
 
 	list *exps = sa_list(v->sql->sa);
@@ -3246,7 +3289,8 @@ rewrite_values(visitor *v, sql_rel *rel)
 			cur = nrel;
 		}
 		rel = cur;
-		set_single(rel);
+		if (single)
+			set_single(rel);
 	}
 	return rel;
 }
@@ -3276,16 +3320,17 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_aggregates);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank, false);
+	rel = rel_visitor_bottomup(&v, rel, &rewrite_values);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_outer2inner_union);
 
 	// remove empty project/groupby !
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
+	rel = rel_visitor_bottomup(&v, rel, &not_anyequal_helper);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
 	rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used, false);	/* reset used flag from ifthenelse re-writer, so it can be used again by the rel_dce optimizer */
 
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_values); /* must come before rewrite_exp_rel */
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	if (v.changes > 0)

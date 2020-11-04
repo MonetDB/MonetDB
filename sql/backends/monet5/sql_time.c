@@ -41,6 +41,10 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	(void) cntxt;
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -75,15 +79,29 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		daytime *restrict vals = (daytime*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			daytime next = vals[p];
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0; i < q; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				daytime next = vals[p];
 
-			if (is_daytime_nil(next)) {
-				ret[i] = daytime_nil;
-				nils = true;
-			} else {
-				ret[i] = daytime_2time_daytime_imp(next, shift, divider, multiplier);
+				if (is_daytime_nil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					ret[i] = daytime_2time_daytime_imp(next, shift, divider, multiplier);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q ; i++) {
+				oid p = (canditer_next(&ci) - off);
+				daytime next = vals[p];
+
+				if (is_daytime_nil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					ret[i] = daytime_2time_daytime_imp(next, shift, divider, multiplier);
+				}
 			}
 		}
 	} else {
@@ -143,6 +161,10 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #endif
 
 	(void) cntxt;
+	if (digits < 0 || (size_t) digits >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -176,15 +198,29 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		lng *restrict vals = (lng*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			lng next = vals[p];
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q ; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				lng next = vals[p];
 
-			if (is_lng_nil(next)) {
-				ret[i] = daytime_nil;
-				nils = true;
-			} else {
-				ret[i] = second_interval_2_daytime_imp(next, shift, divider, multiplier);
+				if (is_lng_nil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					ret[i] = second_interval_2_daytime_imp(next, shift, divider, multiplier);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q ; i++) {
+				oid p = (canditer_next(&ci) - off);
+				lng next = vals[p];
+
+				if (is_lng_nil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					ret[i] = second_interval_2_daytime_imp(next, shift, divider, multiplier);
+				}
 			}
 		}
 	} else {
@@ -271,6 +307,10 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	lng shift = 0, divider = 1, multiplier = 1;
 #endif
 
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -305,15 +345,29 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
-		for (BUN i = 0 ; i < q && !msg; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			str next = BUNtail(it, p);
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				str next = BUNtvar(it, p);
 
-			if (strNil(next)) {
-				ret[i] = daytime_nil;
-				nils = true;
-			} else {
-				msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				if (strNil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next(&ci) - off);
+				str next = BUNtvar(it, p);
+
+				if (strNil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				}
 			}
 		}
 	} else {
@@ -354,13 +408,7 @@ str_2time_daytimetz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_daytime(bat *res, const bat *bid, const int *digits)
-{
-	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, 0);
-}
-
-str
-batstr_2time_daytime_cand(bat *res, const bat *bid, const bat *s, const int *digits)
+batstr_2time_daytime(bat *res, const bat *bid, const bat *s, const int *digits)
 {
 	return str_2time_daytimetz_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str), *digits, 0);
 }
@@ -404,6 +452,10 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	(void) cntxt;
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -438,15 +490,29 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			timestamp next = vals[p];
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				timestamp next = vals[p];
 
-			if (is_timestamp_nil(next)) {
-				ret[i] = daytime_nil;
-				nils = true;
-			} else {
-				ret[i] = timestamp_2_daytime_imp(next, shift, divider, multiplier);
+				if (is_timestamp_nil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					ret[i] = timestamp_2_daytime_imp(next, shift, divider, multiplier);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next(&ci) - off);
+				timestamp next = vals[p];
+
+				if (is_timestamp_nil(next)) {
+					ret[i] = daytime_nil;
+					nils = true;
+				} else {
+					ret[i] = timestamp_2_daytime_imp(next, shift, divider, multiplier);
+				}
 			}
 		}
 	} else {
@@ -510,10 +576,18 @@ date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		date *restrict vals = (date*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			ret[i] = timestamp_fromdate(vals[p]);
-			nils |= is_timestamp_nil(ret[i]);
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				ret[i] = timestamp_fromdate(vals[p]);
+				nils |= is_timestamp_nil(ret[i]);
+			}
+		} else {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next(&ci) - off);
+				ret[i] = timestamp_fromdate(vals[p]);
+				nils |= is_timestamp_nil(ret[i]);
+			}
 		}
 	} else {
 		*ret = timestamp_fromdate(*(date*)getArgReference(stk, pci, 1));
@@ -570,6 +644,10 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 #endif
 
 	(void) cntxt;
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -604,15 +682,29 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		timestamp *restrict vals = (timestamp*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			timestamp next = vals[p];
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				timestamp next = vals[p];
 
-			if (is_timestamp_nil(next)) {
-				ret[i] = timestamp_nil;
-				nils = true;
-			} else {
-				ret[i] = timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
+				if (is_timestamp_nil(next)) {
+					ret[i] = timestamp_nil;
+					nils = true;
+				} else {
+					ret[i] = timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next(&ci) - off);
+				timestamp next = vals[p];
+
+				if (is_timestamp_nil(next)) {
+					ret[i] = timestamp_nil;
+					nils = true;
+				} else {
+					ret[i] = timestamp_2time_timestamp_imp(next, shift, divider, multiplier);
+				}
 			}
 		}
 	} else {
@@ -699,6 +791,10 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 	lng shift = 0, divider = 1, multiplier = 1;
 #endif
 
+	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -732,16 +828,30 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 
 	if (is_a_bat) {
 		oid off = b->hseqbase;
-		BATiter it = bat_iterator(b);
-		for (BUN i = 0 ; i < q && !msg; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			str next = BUNtail(it, p);
+		BATiter bi = bat_iterator(b);
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				str next = BUNtvar(bi, p);
 
-			if (strNil(next)) {
-				ret[i] = timestamp_nil;
-				nils = true;
-			} else {
-				msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				if (strNil(next)) {
+					ret[i] = timestamp_nil;
+					nils = true;
+				} else {
+					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next(&ci) - off);
+				str next = BUNtvar(bi, p);
+
+				if (strNil(next)) {
+					ret[i] = timestamp_nil;
+					nils = true;
+				} else {
+					msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				}
 			}
 		}
 	} else {
@@ -781,13 +891,7 @@ str_2time_timestamptz(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_timestamptz(bat *res, const bat *bid, const int *digits, int *tz)
-{
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, *tz);
-}
-
-str
-batstr_2time_timestamptz_cand(bat *res, const bat *bid, const bat *sid, const int *digits, int *tz)
+batstr_2time_timestamptz(bat *res, const bat *bid, const bat *sid, const int *digits, int *tz)
 {
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, *tz);
 }
@@ -801,13 +905,7 @@ str_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-batstr_2time_timestamp(bat *res, const bat *bid, const int *digits)
-{
-	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str), *digits, 0);
-}
-
-str
-batstr_2time_timestamp_cand(bat *res, const bat *bid, const bat *sid, const int *digits)
+batstr_2time_timestamp(bat *res, const bat *bid, const bat *sid, const int *digits)
 {
 	return str_2time_timestamptz_internal((ptr) res, (ptr) bid, sid, newBatType(TYPE_str), *digits, 0);
 }
@@ -862,15 +960,29 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		BATiter bi = bat_iterator(b);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			const str next = BUNtail(bi, p);
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				str next = BUNtvar(bi, p);
 
-			if (strNil(next)) {
-				ret[i] = int_nil;
-				nils = true;
-			} else {
-				msg = month_interval_str_imp(&(ret[i]), next, d, sk);
+				if (strNil(next)) {
+					ret[i] = int_nil;
+					nils = true;
+				} else {
+					msg = month_interval_str_imp(&(ret[i]), next, d, sk);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next(&ci) - off);
+				str next = BUNtvar(bi, p);
+
+				if (strNil(next)) {
+					ret[i] = int_nil;
+					nils = true;
+				} else {
+					msg = month_interval_str_imp(&(ret[i]), next, d, sk);
+				}
 			}
 		}
 	} else {
@@ -947,15 +1059,29 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		BATiter bi = bat_iterator(b);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			const str next = BUNtail(bi, p);
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				str next = BUNtvar(bi, p);
 
-			if (strNil(next)) {
-				ret[i] = lng_nil;
-				nils = true;
-			} else {
-				msg = second_interval_str_imp(&(ret[i]), next, d, sk);
+				if (strNil(next)) {
+					ret[i] = lng_nil;
+					nils = true;
+				} else {
+					msg = second_interval_str_imp(&(ret[i]), next, d, sk);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next(&ci) - off);
+				str next = BUNtvar(bi, p);
+
+				if (strNil(next)) {
+					ret[i] = lng_nil;
+					nils = true;
+				} else {
+					msg = second_interval_str_imp(&(ret[i]), next, d, sk);
+				}
 			}
 		}
 	} else {
@@ -985,42 +1111,55 @@ bailout:
 	return msg;
 }
 
-#define interval_loop(FUNC, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
+#define interval_loop(FUNC, TPE_IN, TPE_OUT, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
 		if (is_a_bat) { \
 			oid off = b->hseqbase; \
-			TPE *restrict vals = Tloc(b, 0); \
-			for (BUN i = 0 ; i < q && !msg ; i++) { \
-				BUN p = (BUN) (canditer_next(&ci) - off); \
-				FUNC(ret[i], vals[p], TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+			TPE_IN *restrict vals = Tloc(b, 0); \
+			if (ci.tpe == cand_dense) { \
+				for (BUN i = 0; i < q; i++) { \
+					oid p = (canditer_next_dense(&ci) - off); \
+					TPE_IN next = vals[p]; \
+					if (is_##TPE_IN##_nil(next)) { \
+						ret[i] = TPE_OUT##_nil; \
+						nils = true; \
+					} else { \
+						FUNC(ret[i], TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+					} \
+				} \
+			} else { \
+				for (BUN i = 0; i < q; i++) { \
+					oid p = (canditer_next(&ci) - off); \
+					TPE_IN next = vals[p]; \
+					if (is_##TPE_IN##_nil(next)) { \
+						ret[i] = TPE_OUT##_nil; \
+						nils = true; \
+					} else { \
+						FUNC(ret[i], TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+					} \
+				} \
 			} \
 		} else { \
-			TPE val = *(TPE*)getArgReference(stk, pci, 1); \
-			FUNC(*ret, val, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
+			TPE_IN next = *(TPE_IN*)getArgReference(stk, pci, 1); \
+			FUNC(*ret, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 		} \
 	} while(0)
 
-#define month_interval_convert(OUT, IN, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
+#define month_interval_convert(OUT, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
-		if (is_##TPE##_nil(IN)) { \
-			OUT = int_nil; \
-			nils = true; \
-		} else { \
-			TPE next = IN; \
-			int cast, r; \
-			CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
-			cast = (int) next; \
-			r = cast * multiplier; \
-			MUL_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
-			OUT = r; \
-		} \
+		int cast, r; \
+		CAST_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
+		cast = (int) next; \
+		r = cast * multiplier; \
+		MUL_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
+		OUT = r; \
 	} while (0)
 
-#define DO_NOTHING(TPE, FUNC_NAME, MAX_VALUE) ;
+#define DO_NOTHING(TPE_IN, FUNC_NAME, MAX_VALUE) ;
 
-#define CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE) \
+#define CAST_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE) \
 	do { \
-		if (next > (TPE) MAX_VALUE) { \
+		if (next > (TPE_IN) MAX_VALUE) { \
 			size_t len = 0; \
 			char *str_val = NULL; \
 			if (BATatoms[tpe].atomToStr(&str_val, &len, &next, false) < 0) { \
@@ -1033,7 +1172,7 @@ bailout:
 		} \
 	} while (0)
 
-#define MUL_OVERFLOW(TPE, FUNC_NAME, MAX_VALUE) /* MAX_VALUE is ignored on this macro */ \
+#define MUL_OVERFLOW(TPE_IN, FUNC_NAME, MAX_VALUE) /* TPE_IN and MAX_VALUE are ignored on this macro */ \
 	do { \
 		if (r < cast) { \
 			size_t len = 0; \
@@ -1097,20 +1236,20 @@ month_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	switch (tpe) {
 	case TYPE_bte:
-		interval_loop(month_interval_convert, bte, "month_interval", GDK_int_max, DO_NOTHING, DO_NOTHING);
+		interval_loop(month_interval_convert, bte, int, "month_interval", GDK_int_max, DO_NOTHING, DO_NOTHING);
 		break;
 	case TYPE_sht:
-		interval_loop(month_interval_convert, sht, "month_interval", GDK_int_max, DO_NOTHING, DO_NOTHING);
+		interval_loop(month_interval_convert, sht, int, "month_interval", GDK_int_max, DO_NOTHING, DO_NOTHING);
 		break;
 	case TYPE_int:
-		interval_loop(month_interval_convert, int, "month_interval", GDK_int_max, DO_NOTHING, MUL_OVERFLOW);
+		interval_loop(month_interval_convert, int, int, "month_interval", GDK_int_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_lng:
-		interval_loop(month_interval_convert, lng, "month_interval", GDK_int_max, CAST_VALIDATION, MUL_OVERFLOW);
+		interval_loop(month_interval_convert, lng, int, "month_interval", GDK_int_max, CAST_VALIDATION, MUL_OVERFLOW);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		interval_loop(month_interval_convert, hge, "month_interval", GDK_int_max, CAST_VALIDATION, MUL_OVERFLOW);
+		interval_loop(month_interval_convert, hge, int, "month_interval", GDK_int_max, CAST_VALIDATION, MUL_OVERFLOW);
 		break;
 #endif
 	default: {
@@ -1136,24 +1275,18 @@ bailout:
 	return msg;
 }
 
-#define second_interval_convert(OUT, IN, TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
+#define second_interval_convert(OUT, TPE_IN, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION) \
 	do { \
-		if (is_##TPE##_nil(IN)) { \
-			OUT = lng_nil; \
-			nils = true; \
-		} else { \
-			TPE next = IN; \
-			lng cast, r; \
-			CAST_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
-			cast = (lng) next; \
-			r = cast * multiplier; \
-			if (scale) { \
-				r += shift; \
-				r /= divider; \
-			} \
-			MUL_VALIDATION(TPE, FUNC_NAME, MAX_VALUE); \
-			OUT = r; \
+		lng cast, r; \
+		CAST_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
+		cast = (lng) next; \
+		r = cast * multiplier; \
+		if (scale) { \
+			r += shift; \
+			r /= divider; \
 		} \
+		MUL_VALIDATION(TPE_IN, FUNC_NAME, MAX_VALUE); \
+		OUT = r; \
 	} while (0)
 
 str
@@ -1175,6 +1308,10 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #endif
 
 	(void) cntxt;
+	if (scale < 0 || (size_t) scale >= sizeof(scales) / sizeof(scales[0])) {
+		msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(42000) "Digits out of bounds");
+		goto bailout;
+	}
 	is_a_bat = isaBatType(tpe);
 	if (is_a_bat) {
 		tpe = getBatType(tpe);
@@ -1224,20 +1361,20 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	switch (tpe) {
 	case TYPE_bte:
-		interval_loop(second_interval_convert, bte, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
+		interval_loop(second_interval_convert, bte, lng, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_sht:
-		interval_loop(second_interval_convert, sht, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
+		interval_loop(second_interval_convert, sht, lng, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_int:
-		interval_loop(second_interval_convert, int, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
+		interval_loop(second_interval_convert, int, lng, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 	case TYPE_lng:
-		interval_loop(second_interval_convert, lng, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
+		interval_loop(second_interval_convert, lng, lng, "sec_interval", GDK_lng_max, DO_NOTHING, MUL_OVERFLOW);
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		interval_loop(second_interval_convert, hge, "sec_interval", GDK_lng_max, CAST_VALIDATION, MUL_OVERFLOW);
+		interval_loop(second_interval_convert, hge, lng, "sec_interval", GDK_lng_max, CAST_VALIDATION, MUL_OVERFLOW);
 		break;
 #endif
 	default: {
@@ -1322,15 +1459,29 @@ second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		daytime *restrict vals = (daytime*) Tloc(b, 0);
-		for (BUN i = 0 ; i < q ; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			daytime next = vals[p];
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				daytime next = vals[p];
 
-			if (is_daytime_nil(next)) {
-				ret[i] = lng_nil;
-				nils = true;
-			} else {
-				ret[i] = (next / divider) * multiplier;
+				if (is_daytime_nil(next)) {
+					ret[i] = lng_nil;
+					nils = true;
+				} else {
+					ret[i] = (next / divider) * multiplier;
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q; i++) {
+				oid p = (canditer_next(&ci) - off);
+				daytime next = vals[p];
+
+				if (is_daytime_nil(next)) {
+					ret[i] = lng_nil;
+					nils = true;
+				} else {
+					ret[i] = (next / divider) * multiplier;
+				}
 			}
 		}
 	} else {
@@ -1429,15 +1580,29 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
-		for (BUN i = 0 ; i < q && !msg; i++) {
-			BUN p = (BUN) (canditer_next(&ci) - off);
-			str next = BUNtail(it, p);
+		if (ci.tpe == cand_dense) {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next_dense(&ci) - off);
+				str next = BUNtvar(it, p);
 
-			if (strNil(next)) {
-				ret[i] = date_nil;
-				nils = true;
-			} else {
-				msg = str_2_date_internal_imp(&(ret[i]), next);
+				if (strNil(next)) {
+					ret[i] = date_nil;
+					nils = true;
+				} else {
+					msg = str_2_date_internal_imp(&(ret[i]), next);
+				}
+			}
+		} else {
+			for (BUN i = 0 ; i < q && !msg; i++) {
+				oid p = (canditer_next(&ci) - off);
+				str next = BUNtvar(it, p);
+
+				if (strNil(next)) {
+					ret[i] = date_nil;
+					nils = true;
+				} else {
+					msg = str_2_date_internal_imp(&(ret[i]), next);
+				}
 			}
 		}
 	} else {
@@ -1467,13 +1632,7 @@ bailout:
 }
 
 str
-batstr_2_date(bat *res, const bat *bid)
-{
-	return str_2_date_internal((ptr) res, (ptr) bid, NULL, newBatType(TYPE_str));
-}
-
-str
-batstr_2_date_cand(bat *res, const bat *bid, const bat *s)
+batstr_2_date(bat *res, const bat *bid, const bat *s)
 {
 	return str_2_date_internal((ptr) res, (ptr) bid, s, newBatType(TYPE_str));
 }

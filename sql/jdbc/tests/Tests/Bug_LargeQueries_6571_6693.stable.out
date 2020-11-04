@@ -32,14 +32,14 @@ stdout of test 'Bug_LargeQueries_6571_6693` in directory 'sql/jdbc/tests` itself
 # 18:48:54 >  
 
 Created table: tbl6693 Inserting rows. 3 rows inserted
-Script size is 296607
+Script size is 27960
 First test repeat 10 times
 Iteration: 1 2 3 4 5 6 7 8 9 10 
 Completed first test
 Second test repeat 10 times
 Iteration: 1 2 3 4 5 6 7 8 9 10 
 Completed second test
-Script size is 112838
+Script size is 1092
 Third test repeat 3 times
 Iteration: 1 2 3 
 Completed third test

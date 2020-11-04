@@ -205,12 +205,15 @@ SQLall(ptr ret, const bat *bid)
 				}
 			}
 			s = ATOMlen(ATOMtype(b->ttype), p);
-			*(ptr *) ret = GDKmalloc(s);
-			if (*(ptr *) ret == NULL) {
-				BBPunfix(b->batCacheid);
-				throw(SQL, "sql.all", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			}
-			memcpy(*(ptr *)ret, p, s);
+			if (ATOMextern(b->ttype)) {
+				*(ptr *) ret = GDKmalloc(s);
+				if (*(ptr *) ret == NULL) {
+					BBPunfix(b->batCacheid);
+					throw(SQL, "sql.all", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				memcpy(*(ptr *)ret, p, s);
+			} else
+				memcpy(ret, p, s);
 		}
 		}
 	}

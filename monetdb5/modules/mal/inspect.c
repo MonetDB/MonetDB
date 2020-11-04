@@ -311,6 +311,22 @@ INSPECTgetDefinition(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
+INSPECTgetExistence(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) mb;
+
+	bit *ret = getArgReference_bit(stk,pci,0);
+	str *mod = getArgReference_str(stk,pci,1);
+	str *fcn = getArgReference_str(stk,pci,2);
+
+	Symbol s = findSymbol(cntxt->usermodule, getName(*mod), putName(*fcn));
+
+	*ret = (s != NULL);
+
+	return MAL_SUCCEED;
+}
+
+static str
 INSPECTgetSignature(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk,pci,0);
@@ -667,6 +683,7 @@ INSPECTtypeName(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 mel_func inspect_init_funcs[] = {
  pattern("inspect", "getDefinition", INSPECTgetDefinition, false, "Returns a string representation of a specific function.", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
+ pattern("inspect", "getExistence", INSPECTgetExistence, false, "Returns a boolean indicating existence of a definition of a specific function.", args(1,3, arg("",bit),arg("mod",str),arg("fcn",str))),
  pattern("inspect", "getSignature", INSPECTgetSignature, false, "Returns the function signature(s).", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
  pattern("inspect", "getComment", INSPECTgetComment, false, "Returns the function help information.", args(1,3, batarg("",str),arg("mod",str),arg("fcn",str))),
  pattern("inspect", "getSource", INSPECTgetSource, false, "Return the original input for a function.", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),

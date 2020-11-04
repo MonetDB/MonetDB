@@ -79,7 +79,7 @@ static BAT *QLOG_calls_result = 0;
 static BAT *QLOG_calls_cpuload = 0;
 static BAT *QLOG_calls_iowait = 0;
 
-static MT_Lock QLOGlock = MT_LOCK_INITIALIZER("QLOGlock");
+static MT_Lock QLOGlock = MT_LOCK_INITIALIZER(QLOGlock);
 
 str
 QLOGcatalog(BAT **r)

@@ -32,7 +32,7 @@ else()
   set(QXPYTHON_LIBDIR "${PYTHON3_LIBDIR}")
 endif()
 set(QXSOURCE "${CMAKE_SOURCE_DIR}")
-set(QXsysconfdir "${CMAKE_INSTALL_SYSCONFDIR}")
+set(QXsysconfdir "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 set(SOURCE "${CMAKE_SOURCE_DIR}")
 
 if (HAVE_CURL)
@@ -74,9 +74,9 @@ endif(HAVE_LIBZ)
 if (HAVE_NETCDF)
   set(HAVE_NETCDF_FALSE "#")
 endif(HAVE_NETCDF)
-if (HAVE_ODBC)
+if (ODBC_FOUND)
   set(HAVE_ODBC_FALSE "#")
-endif(HAVE_ODBC)
+endif(ODBC_FOUND)
 if (HAVE_PROJ)
   set(HAVE_PROJ_FALSE "#")
 endif(HAVE_PROJ)
@@ -119,6 +119,10 @@ configure_file(Mz.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
   @ONLY)
 
+configure_file(Msquash.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Msquash.py
+  @ONLY)
+
 configure_file(listexports.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
   @ONLY)
@@ -131,6 +135,7 @@ install(FILES
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
+  ${CMAKE_CURRENT_BINARY_DIR}/Msquash.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT pytesting)
