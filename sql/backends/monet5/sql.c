@@ -1611,7 +1611,7 @@ str
 mvc_append_column(sql_trans *t, sql_column *c, BAT *ins)
 {
 	int res = store_funcs.append_col(t, c, ins, TYPE_bat);
-	if (res != 0)
+	if (res != LOG_OK)
 		throw(SQL, "sql.append", SQLSTATE(42000) "Cannot append values");
 	return MAL_SUCCEED;
 }
@@ -1667,7 +1667,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tname = *getArgReference_str(stk, pci, 3);
 	const char *cname = *getArgReference_str(stk, pci, 4);
 	ptr ins = getArgReference(stk, pci, 5);
-	int tpe = getArgType(mb, pci, 5);
+	int tpe = getArgType(mb, pci, 5), err = 0;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -1702,12 +1702,15 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.append_col(m->session->tr, c, ins, tpe);
+		if (store_funcs.append_col(m->session->tr, c, ins, tpe) != LOG_OK)
+			err = 1;
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i)
-			store_funcs.append_idx(m->session->tr, i, ins, tpe);
+		if (i && store_funcs.append_idx(m->session->tr, i, ins, tpe) != LOG_OK)
+			err = 1;
 	}
+	if (err)
+		throw(SQL, "sql.append", SQLSTATE(42S02) "append failed");
 	if (b) {
 		BBPunfix(b->batCacheid);
 	}
@@ -1727,7 +1730,7 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat Tids = *getArgReference_bat(stk, pci, 5);
 	bat Upd = *getArgReference_bat(stk, pci, 6);
 	BAT *tids, *upd;
-	int tpe = getArgType(mb, pci, 6);
+	int tpe = getArgType(mb, pci, 6), err = 0;
 	sql_schema *s;
 	sql_table *t;
 	sql_column *c;
@@ -1769,14 +1772,17 @@ mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( tids && BATcount(tids) > 4096 && !tids->batTransient)
 		BATmsync(tids);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+		if (store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat) != LOG_OK)
+			err = 1;
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
-		if (i)
-			store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+		if (i && store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat) != LOG_OK)
+			err = 1;
 	}
 	BBPunfix(tids->batCacheid);
 	BBPunfix(upd->batCacheid);
+	if (err)
+		throw(SQL, "sql.update", SQLSTATE(42S02) "update failed");
 	return MAL_SUCCEED;
 }
 
@@ -1803,6 +1809,8 @@ mvc_clear_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t == NULL)
 		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "Table missing %s.%s", sname,tname);
 	*res = mvc_clear_table(m, t);
+	if (*res == BUN_NONE)
+		throw(SQL, "sql.clear_table", SQLSTATE(42S02) "clear failed");
 	return MAL_SUCCEED;
 }
 
@@ -1850,7 +1858,8 @@ mvc_delete_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
-	store_funcs.delete_tab(m->session->tr, t, b, tpe);
+	if (store_funcs.delete_tab(m->session->tr, t, b, tpe) != LOG_OK)
+		throw(SQL, "sql.delete", SQLSTATE(3F000) "delete failed");
 	if (b)
 		BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
@@ -4075,7 +4084,7 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	bat bid;
 	BAT *b, *del;
 	node *o;
-	int i, bids[2049];
+	int i, bids[2049], err = 0;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4140,17 +4149,21 @@ vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str (*func) (bat
 	}
 	BBPunfix(del->batCacheid);
 
-	mvc_clear_table(m, t);
+	if (mvc_clear_table(m, t) == BUN_NONE)
+		throw(SQL, name, SQLSTATE(42000) "vacumm: clear failed");
 	for (o = t->columns.set->h, i = 0; o; o = o->next, i++) {
 		sql_column *c = o->data;
 		BAT *ins = BATdescriptor(bids[i]);	/* use the insert bat */
 
 		if( ins){
-			store_funcs.append_col(tr, c, ins, TYPE_bat);
+			if (store_funcs.append_col(tr, c, ins, TYPE_bat) != LOG_OK)
+				err = 1;
 			BBPunfix(ins->batCacheid);
 		}
 		BBPrelease(bids[i]);
 	}
+	if (err)
+		throw(SQL, name, SQLSTATE(42000) "vacuum: reappend failed");
 	/* TODO indices */
 	return MAL_SUCCEED;
 }

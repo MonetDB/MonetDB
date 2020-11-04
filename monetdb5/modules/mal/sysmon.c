@@ -82,10 +82,14 @@ SYSMONstatistics(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 			}
 
-			tsn = timestamp_fromtime(USRstats[i].finished);
-			if (is_timestamp_nil(tsn)) {
-				msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert finish time");
-				goto bailout;
+			if (USRstats[i].finished == 0) {
+				tsn = timestamp_nil;
+			} else {
+				tsn = timestamp_fromtime(USRstats[i].finished);
+				if (is_timestamp_nil(tsn)) {
+					msg = createException(MAL, "SYSMONstatistics", SQLSTATE(22003) "failed to convert finish time");
+					goto bailout;
+				}
 			}
 			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED){
 				msg = createException(MAL, "SYSMONstatistics", "Failed to append 'finished'");
@@ -218,10 +222,14 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (BUNappend(started, &tsn, false) != GDK_SUCCEED)
 				goto bailout;
 
-			tsn = timestamp_fromtime(QRYqueue[i].finished);
-			if (is_timestamp_nil(tsn)) {
-				msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
-				goto bailout;
+			if (QRYqueue[i].finished == 0) {
+				tsn = timestamp_nil;
+			} else {
+				tsn = timestamp_fromtime(QRYqueue[i].finished);
+				if (is_timestamp_nil(tsn)) {
+					msg = createException(MAL, "SYSMONqueue", SQLSTATE(22003) "cannot convert time");
+					goto bailout;
+				}
 			}
 			if (BUNappend(finished, &tsn, false) != GDK_SUCCEED)
 				goto bailout;

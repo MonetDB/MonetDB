@@ -337,7 +337,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 #define bitswitch(ISDENSE, TEST, TYPE)					\
 	do {								\
 		assert(imprints);					\
-		*algo = "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
+		*algo = parent ? "parent imprints select " #TEST " (canditer_next" #ISDENSE ")" : "imprints select " #TEST " (canditer_next" #ISDENSE ")"; \
 		switch (imprints->bits) {				\
 		case 8:  checkMINMAX(8, TYPE); impsmask(ISDENSE,TEST,8); break; \
 		case 16: checkMINMAX(16, TYPE); impsmask(ISDENSE,TEST,16); break; \
@@ -457,6 +457,7 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	BUN p;								\
 	BUN pr_off = 0;							\
 	Imprints *imprints;						\
+	bat parent = 0;							\
 	(void) li;							\
 	(void) hi;							\
 	(void) lval;							\
@@ -465,11 +466,11 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
-	if (use_imprints && VIEWtparent(b)) {				\
-		BAT *parent = BBPdescriptor(VIEWtparent(b));		\
-		assert(parent);						\
-		basesrc = (const TYPE *) Tloc(parent, 0);		\
-		imprints = parent->timprints;				\
+	if (use_imprints && (parent = VIEWtparent(b))) {		\
+		BAT *pbat = BBPdescriptor(parent);			\
+		assert(pbat);						\
+		basesrc = (const TYPE *) Tloc(pbat, 0);			\
+		imprints = pbat->timprints;				\
 		pr_off = (BUN) (src - basesrc);				\
 	} else {							\
 		imprints = b->timprints;				\
@@ -1347,6 +1348,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * trevstorted then use the order index.  And there is no cand
 	 * list or if there is one, it is dense.
 	 * TODO: we do not support anti-select with order index */
+	bool poidx = false;
 	if (!anti &&
 	    !(hash && (phash || b->thash)) &&
 	    !(b->tsorted || b->trevsorted) &&
@@ -1365,6 +1367,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		if ((ORDERfnd(b, th) - ORDERfnd(b, tl)) < b->batCount/3) {
 			use_orderidx = true;
 			if (view) {
+				poidx = true; /* using parent oidx */
 				vwo = (lng) ((view->theap.base - b->theap.base) >> b->tshift);
 				vwl = b->hseqbase + (oid) vwo + ci.seq - view->hseqbase;
 				vwh = vwl + canditer_last(&ci) - ci.seq;
@@ -1448,7 +1451,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			assert(use_orderidx);
-			algo = "select: orderidx";
+			algo = poidx ? "select: parent orderidx" : "select: orderidx";
 			if (lval) {
 				if (li)
 					low = ORDERfndfirst(b, tl);

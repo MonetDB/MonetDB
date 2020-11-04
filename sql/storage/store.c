@@ -21,7 +21,7 @@
 #define CATALOG_VERSION 52205
 int catalog_version = 0;
 
-static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
+static MT_Lock bs_lock = MT_LOCK_INITIALIZER(bs_lock);
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static sqlid *store_oids = NULL;
@@ -37,6 +37,7 @@ store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
+int store_debug = 0;
 
 store_functions store_funcs;
 table_functions table_funcs;
@@ -2074,6 +2075,7 @@ store_init(sql_allocator *pa, int debug, store_type store, int readonly, int sin
 
 	store_readonly = readonly;
 	store_singleuser = singleuser;
+	store_debug = debug;
 
 	MT_lock_set(&bs_lock);
 
@@ -6509,28 +6511,34 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 {
 	node *n = t->columns.set->h;
 	sql_column *c = n->data;
-	BUN sz = 0;
+	BUN sz = 0, nsz = 0;
 
 	t->cleared = 1;
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.wtime = tr->wstime;
 
-	sz += store_funcs.clear_col(tr, c);
-	sz -= store_funcs.clear_del(tr, t);
+	if ((nsz = store_funcs.clear_col(tr, c)) == BUN_NONE)
+		return BUN_NONE;
+	sz += nsz;
+	if ((nsz = store_funcs.clear_del(tr, t)) == BUN_NONE)
+		return BUN_NONE;
+	sz -= nsz;
 
 	for (n = n->next; n; n = n->next) {
 		c = n->data;
 		c->base.wtime = tr->wstime;
 
-		(void)store_funcs.clear_col(tr, c);
+		if (store_funcs.clear_col(tr, c) == BUN_NONE)
+			return BUN_NONE;
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *ci = n->data;
 
 			ci->base.wtime = tr->wstime;
-			if (isTable(ci->t) && idx_has_column(ci->type))
-				(void)store_funcs.clear_idx(tr, ci);
+			if (isTable(ci->t) && idx_has_column(ci->type) &&
+				store_funcs.clear_idx(tr, ci) == BUN_NONE)
+				return BUN_NONE;
 		}
 	}
 	return sz;
@@ -7607,7 +7615,7 @@ sql_trans_begin(sql_session *s)
 	int snr = tr->schema_number;
 
 	/* add wait when flush is realy needed */
-	while (ATOMIC_GET(&flusher.flush_now)) {
+	while ((store_debug&16)==16 && ATOMIC_GET(&flusher.flush_now)) {
 		MT_lock_unset(&bs_lock);
 		MT_sleep_ms(sleeptime);
 		MT_lock_set(&bs_lock);
