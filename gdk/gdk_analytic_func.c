@@ -2992,16 +2992,16 @@ typedef struct stdev_var_deltas {
 
 #define INIT_AGGREGATE_STDEV_VARIANCE(TPE, SAMPLE, OP) \
 	do { \
-		computed = (stdev_var_deltas) {.delta = dbl_nil}; \
+		computed = (stdev_var_deltas) {0}; \
 	} while (0)
 #define COMPUTE_LEVEL0_STDEV_VARIANCE(X, TPE, SAMPLE, OP) \
 	do { \
 		TPE v = bp[j + X]; \
-		computed = is_##TPE##_nil(v) ? (stdev_var_deltas) {.delta = dbl_nil} : (stdev_var_deltas) {.n = 1, .mean = (dbl)v, .delta = (dbl)v}; \
+		computed = is_##TPE##_nil(v) ? (stdev_var_deltas) {0} : (stdev_var_deltas) {.n = 1, .mean = (dbl)v, .delta = (dbl)v}; \
 	} while (0)
 #define COMPUTE_LEVELN_STDEV_VARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (!is_dbl_nil(VAL.delta)) {		\
+		if (VAL.n > 0) {		\
 			computed.n++; \
 			computed.delta = VAL.delta - computed.mean;		\
 			computed.mean += computed.delta / computed.n;		\
@@ -3262,17 +3262,17 @@ typedef struct covariance_deltas {
 
 #define INIT_AGGREGATE_COVARIANCE(TPE, SAMPLE, OP) \
 	do { \
-		computed = (covariance_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil}; \
+		computed = (covariance_deltas) {0}; \
 	} while (0)
 #define COMPUTE_LEVEL0_COVARIANCE(X, TPE, SAMPLE, OP) \
 	do { \
 		TPE v1 = bp1[j + X], v2 = bp2[j + X]; \
-		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (covariance_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil} \
+		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (covariance_deltas) {0} \
 															: (covariance_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
 	} while (0)
 #define COMPUTE_LEVELN_COVARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (!is_dbl_nil(VAL.delta1)) {	/* only has to check one of the sides */	\
+		if (VAL.n > 0) {	/* only has to check one of the sides */	\
 			computed.n++; \
 			computed.delta1 = VAL.delta1 - computed.mean1;		\
 			computed.mean1 += computed.delta1 / computed.n;		\
@@ -3484,17 +3484,17 @@ typedef struct correlation_deltas {
 
 #define INIT_AGGREGATE_CORRELATION(TPE, SAMPLE, OP) \
 	do { \
-		computed = (correlation_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil}; \
+		computed = (correlation_deltas) {0}; \
 	} while (0)
 #define COMPUTE_LEVEL0_CORRELATION(X, TPE, SAMPLE, OP) \
 	do { \
 		TPE v1 = bp1[j + X], v2 = bp2[j + X]; \
-		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (correlation_deltas) {.delta1 = dbl_nil, .delta2 = dbl_nil} \
+		computed = is_##TPE##_nil(v1) || is_##TPE##_nil(v2) ? (correlation_deltas) {0} \
 															: (correlation_deltas) {.n = 1, .mean1 = (dbl)v1, .mean2 = (dbl)v2, .delta1 = (dbl)v1, .delta2 = (dbl)v2}; \
 	} while (0)
 #define COMPUTE_LEVELN_CORRELATION(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (!is_dbl_nil(VAL.delta1)) {	/* only has to check one of the sides */	\
+		if (VAL.n > 0) {	/* only has to check one of the sides */	\
 			computed.n++; \
 			computed.delta1 = VAL.delta1 - computed.mean1;		\
 			computed.mean1 += computed.delta1 / computed.n;		\
