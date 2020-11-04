@@ -630,7 +630,7 @@ static gdk_return GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
-static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER("mallocsuccesslk");
+static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER(mallocsuccesslock);
 #endif
 #endif
 
@@ -1157,9 +1157,9 @@ GDKexit(int status)
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-MT_Lock GDKnameLock = MT_LOCK_INITIALIZER("GDKnameLock");
-MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER("GDKthreadLock");
-MT_Lock GDKtmLock = MT_LOCK_INITIALIZER("GDKtmLock");
+MT_Lock GDKnameLock = MT_LOCK_INITIALIZER(GDKnameLock);
+MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
+MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
 
 /*
  * @+ Concurrency control

@@ -1015,7 +1015,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		else if (exps) {
 			unsigned nrcols = 0;
 
-			if (sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0))
+			if (sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0 || strcmp(sql_func_mod(f->func), "mtime") == 0
+						|| (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
 				push_cands = 1;
 			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
@@ -2177,11 +2178,11 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 							left_reference = right_reference = 1;
 						}
 					} else {
-						if (l->card != CARD_ATOM) {
+						if (l->card != CARD_ATOM || !exp_is_atom(l)) {
 							left_reference += rel_find_exp(rel->l, l) != NULL;
 							right_reference += rel_find_exp(rel->r, l) != NULL;
 						}
-						if (r->card != CARD_ATOM) {
+						if (r->card != CARD_ATOM || !exp_is_atom(r)) {
 							left_reference += rel_find_exp(rel->l, r) != NULL;
 							right_reference += rel_find_exp(rel->r, r) != NULL;
 						}
@@ -2192,7 +2193,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 					for (node *n = l->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
-						if (ee->card != CARD_ATOM) {
+						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
 							left_reference += rel_find_exp(rel->l, ee) != NULL;
 							right_reference += rel_find_exp(rel->r, ee) != NULL;
 						}
@@ -2200,7 +2201,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 					for (node *n = r->h ; n ; n = n->next) {
 						sql_exp *ee = n->data;
 
-						if (ee->card != CARD_ATOM) {
+						if (ee->card != CARD_ATOM || !exp_is_atom(ee)) {
 							left_reference += rel_find_exp(rel->l, ee) != NULL;
 							right_reference += rel_find_exp(rel->r, ee) != NULL;
 						}
@@ -2728,7 +2729,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	/* We did a full join, thats too much.
 	   Reduce this using difference and intersect */
-	c = stmt_mirror(be, left->op4.lval->h->data);
+	c = stmt_mirror(be, bin_first_column(be, left));
 	if (rel->op == op_anti) {
 		join = stmt_tdiff(be, c, jl, lcand);
 	} else {

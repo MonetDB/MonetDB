@@ -38,4 +38,5 @@ set_target_properties(opt_sql_append
 
 install(TARGETS
   opt_sql_append
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT server)

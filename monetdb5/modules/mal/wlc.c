@@ -164,7 +164,7 @@
 #include "wlc.h"
 #include "gdk_time.h"
 
-MT_Lock     wlc_lock = MT_LOCK_INITIALIZER("wlc_lock");
+MT_Lock     wlc_lock = MT_LOCK_INITIALIZER(wlc_lock);
 
 static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
 static stream *wlc_fd = 0;

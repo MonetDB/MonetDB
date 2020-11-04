@@ -205,7 +205,7 @@ extern sql_table *mvc_create_view(mvc *c, sql_schema *s, const char *name, int p
 extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int persistence, const char *loc);
 
 extern int mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
-extern sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
+sql_export sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
 extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, const char *type, int digits);
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
@@ -284,6 +284,8 @@ extern void sqlvar_set_number(sql_var *var, hge v);
 extern lng val_get_number(ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, lng v);
 #endif
+
+#define get_string_global_var(m, val) (sqlvar_get_string(find_global_var(m, mvc_bind_schema(m, "sys"), val)))
 
 extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);

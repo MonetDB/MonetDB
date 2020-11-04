@@ -360,7 +360,7 @@ static bool RAPIEnabled(void) {
 }
 
 // The R-environment should be single threaded, calling for some protective measures.
-static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
+static MT_Lock rapiLock = MT_LOCK_INITIALIZER(rapiLock);
 static bool rapiInitialized = false;
 #if 0
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",

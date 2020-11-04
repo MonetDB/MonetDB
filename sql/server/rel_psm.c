@@ -876,7 +876,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (replace) {
 			sql_func *func = sf->func;
 			if (!mvc_schema_privs(sql, s))
-				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: access denied for %s to schema '%s'", F, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 			if (mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE OR REPLACE %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
 			if (!func->s)
@@ -910,7 +910,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	list_destroy(type_list);
 	if (create && !mvc_schema_privs(sql, s)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s' in schema '%s'", F,
-						 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+						 get_string_global_var(sql, "current_user"), s->base.name);
 	} else {
 		char *q = QUERY(sql->scanner);
 		list *l = NULL;
@@ -1156,7 +1156,7 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 	if (sname && !(s = mvc_bind_schema(sql, sname)) && !if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: insufficient privileges for user '%s' in schema '%s'", F, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: insufficient privileges for user '%s' in schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 
 	if (s)
 		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
@@ -1185,7 +1185,7 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such schema '%s'", F, sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 
 	list_func = schema_bind_func(sql, s, name, type);
 	if (!list_func)
@@ -1269,7 +1269,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 
 	if (create && !mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 	if (create) {
 		if (!(t = find_table_on_scope(sql, &ss, sname, tname)))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
@@ -1416,7 +1416,7 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 	}
 
 	if (!mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), ss->base.name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ss->base.name);
 	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
 }
 
@@ -1514,7 +1514,7 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if ((t = find_table_on_scope(sql, &s, sname, tname)))
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 
