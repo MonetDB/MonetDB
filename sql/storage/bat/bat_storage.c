@@ -12,7 +12,7 @@
 #include "sql_string.h"
 #include "gdk_atoms.h"
 
-static MT_Lock segs_lock = MT_LOCK_INITIALIZER("segs_lock");
+static MT_Lock segs_lock = MT_LOCK_INITIALIZER(segs_lock);
 #define NR_TABLE_LOCKS 64
 static MT_Lock table_locks[NR_TABLE_LOCKS]; /* set of locks to protect table changes (claim) */
 
