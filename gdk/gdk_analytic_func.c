@@ -3272,7 +3272,7 @@ typedef struct covariance_deltas {
 	} while (0)
 #define COMPUTE_LEVELN_COVARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (VAL.n > 0) {	/* only has to check one of the sides */	\
+		if (VAL.n > 0) {	\
 			computed.n++; \
 			computed.delta1 = VAL.delta1 - computed.mean1;		\
 			computed.mean1 += computed.delta1 / computed.n;		\
@@ -3494,7 +3494,7 @@ typedef struct correlation_deltas {
 	} while (0)
 #define COMPUTE_LEVELN_CORRELATION(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (VAL.n > 0) {	/* only has to check one of the sides */	\
+		if (VAL.n > 0) {	\
 			computed.n++; \
 			computed.delta1 = VAL.delta1 - computed.mean1;		\
 			computed.mean1 += computed.delta1 / computed.n;		\
