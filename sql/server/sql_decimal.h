@@ -14,12 +14,13 @@
 #include "gdk.h"
 
 #ifdef HAVE_HGE
-extern hge decimal_from_str(char *dec, char **end);
-extern char * decimal_to_str(hge v, sql_subtype *t);
+#define DEC_TPE hge
 #else
-extern lng decimal_from_str(char *dec, char **end);
-extern char * decimal_to_str(lng v, sql_subtype *t);
+#define DEC_TPE lng
 #endif
+
+extern DEC_TPE decimal_from_str(char *dec, int* digits, int* scale, int* has_errors);
+extern char * decimal_to_str(DEC_TPE v, sql_subtype *t);
 
 #endif /* _SQL_DECIMAL_H */
 
