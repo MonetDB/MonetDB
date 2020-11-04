@@ -65,7 +65,7 @@ static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
-static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
+static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
 static void
 monet5_freecode(int clientid, char *name)
@@ -798,6 +798,8 @@ SQLreader(Client c)
 			go = msg == MAL_SUCCEED;
 			commit_done = true;
 		}
+		if (m->session->tr && m->session->tr->active)
+			c->idle = 0;
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
