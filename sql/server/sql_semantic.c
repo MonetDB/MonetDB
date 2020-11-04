@@ -101,52 +101,6 @@ tmp_schema(mvc *sql)
 	return mvc_bind_schema(sql, "tmp");
 }
 
-#define search_object_on_path(CALL, EXTRA, ERROR_CODE) \
-	do { \
-		sql_schema *found = NULL; \
- \
-		assert(objstr); \
-		if (sname) { /* user has explicitly typed the schema, so either the object is there or we return error */ \
-			if (!(found = mvc_bind_schema(sql, sname))) \
-				return sql_error(sql, 02, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
-			CALL; \
-		} else { \
-			char *p, *sp, *search_path_copy; \
- \
-			if (*s) { \
-				found = *s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
-				CALL; \
-			} \
-			EXTRA; \
-			if (!res && !sql->search_path_has_tmp) { /* if 'tmp' is not in the search path, search it before all others */ \
-				found = mvc_bind_schema(sql, "tmp"); \
-				CALL; \
-			} \
-			if (!res) { /* then current session's schema */ \
-				found = cur_schema(sql); \
-				CALL; \
-			} \
-			if (!res && !sql->search_path_has_sys) { /* if 'sys' is not in the current path search it next */ \
-				found = mvc_bind_schema(sql, "sys"); \
-				CALL; \
-			} \
-			if (!res) { \
-				/* object not found yet, look inside search path */ \
-				search_path_copy = sa_strdup(sql->ta, sql->search_path); \
-				p = strtok_r(search_path_copy, ",", &sp); \
-				while (p && !res) { \
-					found = mvc_bind_schema(sql, p); \
-					if (found) \
-						CALL; \
-					p = strtok_r(NULL, ",", &sp); \
-				} \
-			} \
-		} \
-		if (!res) \
-			return sql_error(sql, 02, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
-		*s = found; \
-	} while (0)
-
 #define table_extra \
 	do { \
 		if (!res && strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
