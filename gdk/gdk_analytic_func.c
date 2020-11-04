@@ -2385,23 +2385,25 @@ calc_done##TPE##IMP: \
 		} \
 	} while (0)
 
-typedef struct avg_num_deltas {lng n; LNG_HGE sum;} avg_num_deltas; /* TODO add overflow check */
+#define avg_num_deltas(TPE) typedef struct avg_num_deltas##TPE { TPE a; lng n; lng rr;} avg_num_deltas##TPE;
+avg_num_deltas(bte)
+avg_num_deltas(sht)
+avg_num_deltas(int)
+avg_num_deltas(lng)
 
 #define INIT_AGGREGATE_AVG_NUM(TPE, NOTHING1, NOTHING2) \
 	do { \
-		computed = (avg_num_deltas) {.n = 0, .sum = 0}; \
+		computed = (avg_num_deltas##TPE) {.a = 0, .n = 0, .rr = 0}; \
 	} while (0)
 #define COMPUTE_LEVEL0_AVG_NUM(X, TPE, NOTHING1, NOTHING2) \
 	do { \
 		TPE v = bp[j + X]; \
-		computed = is_##TPE##_nil(v) ? (avg_num_deltas) {.n = 0, .sum = 0} : (avg_num_deltas) {.n = 1, .sum = (LNG_HGE)v}; \
+		computed = is_##TPE##_nil(v) ? (avg_num_deltas##TPE){.a = 0, .n = 0, .rr = 0} : (avg_num_deltas##TPE) {.a = v, .n = 1, .rr = 0}; \
 	} while (0)
 #define COMPUTE_LEVELN_AVG_NUM(VAL, TPE, NOTHING1, NOTHING2) \
 	do { \
-		if (VAL.n > 0) { \
-			ADD_WITH_CHECK(VAL.sum, computed.sum, LNG_HGE, computed.sum, GDK_LNG_HGE_max, goto calc_overflow); \
-			computed.n++; \
-		}		\
+		if (VAL.n > 0) \
+			AVERAGE_ITER(TPE, VAL.a, computed.a, computed.rr, computed.n);	\
 	} while (0)
 #define FINALIZE_AGGREGATE_AVG_NUM(TPE, NOTHING1, NOTHING2) \
 	do { \
@@ -2409,17 +2411,17 @@ typedef struct avg_num_deltas {lng n; LNG_HGE sum;} avg_num_deltas; /* TODO add 
 			rb[k] = dbl_nil;	\
 			has_nils = true; \
 		} else { \
-			rb[k] = ((dbl) computed.sum) / computed.n;	\
+			rb[k] = computed.a + (dbl) computed.rr / computed.n;	\
 		} \
 	} while (0)
 #define ANALYTICAL_AVG_IMP_NUM_OTHERS(TPE, IMP)	\
 	do { \
 		oid ncount = i - k; \
-		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_num_deltas), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
+		if ((res = GDKrebuild_segment_tree(ncount, sizeof(avg_num_deltas##TPE), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
-		populate_segment_tree(avg_num_deltas, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, TPE, NOTHING, NOTHING); \
+		populate_segment_tree(avg_num_deltas##TPE, ncount, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVEL0_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, TPE, NOTHING, NOTHING); \
 		for (; k < i; k++) \
-			compute_on_segment_tree(avg_num_deltas, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, FINALIZE_AGGREGATE_AVG_NUM, TPE, NOTHING, NOTHING); \
+			compute_on_segment_tree(avg_num_deltas##TPE, start[k] - j, end[k] - j, INIT_AGGREGATE_AVG_NUM, COMPUTE_LEVELN_AVG_NUM, FINALIZE_AGGREGATE_AVG_NUM, TPE, NOTHING, NOTHING); \
 		j = k; \
 	} while (0)
 
@@ -2546,6 +2548,7 @@ avg##TPE##IMP: \
 	} while (0)
 
 #ifdef HAVE_HGE
+avg_num_deltas(hge)
 #define ANALYTICAL_AVG_LIMIT(IMP) \
 	case TYPE_hge: \
 		ANALYTICAL_AVG_PARTITIONS(hge, IMP, ANALYTICAL_AVG_IMP_NUM_##IMP); \
@@ -2624,10 +2627,6 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	goto cleanup;
-calc_overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	res = GDK_FAIL;
 cleanup:
 	GDKfree(segment_tree);
 	GDKfree(levels_offset);
