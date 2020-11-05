@@ -119,8 +119,8 @@ configure_file(Mz.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
   @ONLY)
 
-configure_file(Msquash.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/Msquash.py
+configure_file(Mconvert.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Mconvert.py
   @ONLY)
 
 configure_file(listexports.py.in
@@ -135,7 +135,7 @@ install(FILES
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
-  ${CMAKE_CURRENT_BINARY_DIR}/Msquash.py
+  ${CMAKE_CURRENT_BINARY_DIR}/Mconvert.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT pytesting)
