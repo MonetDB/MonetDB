@@ -39,6 +39,7 @@ Converted folders progress:
 - sql/test/analytics/Tests      pass
 - sql/test/scanner/Tests      	pass
 - sql/test/quantiles/Tests    	pass
+- sql/test/mapi/Tests    	pass
 - sql/test/json/Tests           pass
 - sql/test/Tests                pass
 - sql/test/ADT2006              pass
