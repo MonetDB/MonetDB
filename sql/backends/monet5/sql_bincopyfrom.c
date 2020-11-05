@@ -480,7 +480,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 		bailout("COPY BINARY FROM not implemented for '%s'", method);
 
 	// Create the BAT
-	bat = COLnew(0, rec->gdk_type, nrows, TRANSIENT);
+	bat = COLnew(0, rec->gdk_type, nrows, PERSISTENT);
 	if (bat == NULL)
 		bailout("%s", GDK_EXCEPTION);
 
