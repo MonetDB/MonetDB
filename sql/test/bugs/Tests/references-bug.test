@@ -1,0 +1,18 @@
+statement ok
+create table content (id integer primary key)
+
+statement ok
+create table test_ref (id integer primary key, contentid integer references content)
+
+statement ok
+create table test_foreign (id integer primary key, contentid integer, foreign key(contentid) references content)
+
+statement ok
+drop table test_foreign
+
+statement ok
+drop table test_ref
+
+statement ok
+drop table content
+

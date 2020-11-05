@@ -1,0 +1,12 @@
+query II rowsort
+SELECT 1, 2
+----
+1
+2
+
+query II rowsort
+SELECT * FROM (SELECT 1, 2) AS t
+----
+1
+2
+

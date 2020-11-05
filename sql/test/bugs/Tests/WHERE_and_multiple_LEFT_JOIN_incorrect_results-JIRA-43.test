@@ -1,0 +1,28 @@
+statement ok
+CREATE TABLE foo (fooid INTEGER, fooval VARCHAR(8))
+
+statement ok
+CREATE TABLE bar (fooid INTEGER, barint INTEGER)
+
+statement ok
+INSERT INTO foo VALUES (1, 'A')
+
+statement ok
+INSERT INTO bar VALUES (1, 111), (1, 222)
+
+query ITIIII rowsort
+SELECT * FROM foo AS f LEFT JOIN bar AS b1 ON f.fooid = b1.fooid LEFT JOIN bar AS b2 ON f.fooid = b2.fooid WHERE b1.barint > b2.barint
+----
+1
+A
+1
+222
+1
+111
+
+statement ok
+DROP TABLE foo
+
+statement ok
+DROP TABLE bar
+

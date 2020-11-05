@@ -1,0 +1,21 @@
+statement ok
+CREATE TABLE test (x VARCHAR(10))
+
+statement ok
+INSERT INTO test VALUES ('a')
+
+statement ok
+INSERT INTO test VALUES ('b')
+
+query T rowsort
+SELECT * FROM test WHERE x = 'a'
+----
+a
+
+query T rowsort
+SELECT * FROM test WHERE x = 'a' AND x = 'b'
+----
+
+statement ok
+drop table test
+

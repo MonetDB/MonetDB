@@ -1,0 +1,28 @@
+statement ok
+create table div_zero_bug (grp int, value int)
+
+statement ok
+insert into div_zero_bug values( NULL, 1)
+
+statement ok
+insert into div_zero_bug values( NULL, 1)
+
+statement ok
+insert into div_zero_bug values( 0, NULL)
+
+statement ok
+insert into div_zero_bug values( 1, NULL)
+
+query IR rowsort
+select grp, avg(value) from div_zero_bug group by grp
+----
+0
+NULL
+1
+NULL
+NULL
+1.000
+
+statement ok
+drop table div_zero_bug
+

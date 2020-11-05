@@ -1,0 +1,85 @@
+statement ok
+CREATE TABLE mytest(a HUGEINT, b HUGEINT, c HUGEINT, d HUGEINT, e HUGEINT)
+
+statement ok
+INSERT INTO mytest VALUES (1234567890987654321, 10000000000, NULL, NULL, NULL)
+
+query T rowsort
+explain UPDATE mytest SET a = 1234567890987654321
+----
+41 values hashing to 1c084d228b7b2124b93eb0427491dda0
+
+query T rowsort
+explain UPDATE mytest SET b = 10000000000
+----
+41 values hashing to 88f71d6252adaf84f68dd1f9d52ce321
+
+query T rowsort
+explain UPDATE mytest SET c = a * b
+----
+43 values hashing to 7e215ac0e5f6dc086d0c5e744494aa1e
+
+query T rowsort
+explain UPDATE mytest SET d = c * b
+----
+43 values hashing to 2c0ddf982d5fe5bea549c9f97fa04d6e
+
+query T rowsort
+explain UPDATE mytest SET e = d + a
+----
+43 values hashing to 9e2989edc560d0df97c5a8cc52aa5955
+
+statement ok
+        UPDATE mytest SET a = 1234567890987654321
+
+statement ok
+        UPDATE mytest SET b = 10000000000
+
+statement ok
+        UPDATE mytest SET c = a * b
+
+statement ok
+        UPDATE mytest SET d = c * b
+
+statement ok
+        UPDATE mytest SET e = d + a
+
+query IIIII rowsort
+SELECT a, b, c, d, e from mytest
+----
+1234567890987654321
+10000000000
+12345678909876543210000000000
+123456789098765432100000000000000000000
+123456789098765432101234567890987654321
+
+statement ok
+DROP TABLE mytest
+
+query I rowsort
+SELECT 123456789098765432101234567890987654321
+----
+123456789098765432101234567890987654321
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE sql_int128 (i HUGEINT)
+
+query T rowsort
+explain INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
+----
+34 values hashing to a8230839e57945f6864ae7638d25f0b5
+
+statement ok
+        INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
+
+query I rowsort
+SELECT * FROM sql_int128
+----
+123456789098765432101234567890987654321
+
+statement ok
+ROLLBACK
+

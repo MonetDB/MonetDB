@@ -1,0 +1,41 @@
+statement ok
+create table p1409824 ( id int, name string, val int)
+
+statement ok
+insert into p1409824 values (1, 'name1', 2)
+
+statement ok
+insert into p1409824 values (1, 'name4', 4)
+
+statement ok
+insert into p1409824 values (71, 'name7', 74)
+
+query ITI rowsort
+select * from p1409824 where 0 = 1 or name = 'name4'
+----
+1
+name4
+4
+
+query ITI rowsort
+select * from p1409824 where name = 'name4' or 0 = 1
+----
+1
+name4
+4
+
+query TT rowsort
+select * from env() as env where 0 = 1 or name = 'sql_debug'
+----
+sql_debug
+0
+
+query TT rowsort
+select * from env() as env where name = 'sql_debug' or 0 = 1
+----
+sql_debug
+0
+
+statement ok
+drop table p1409824
+

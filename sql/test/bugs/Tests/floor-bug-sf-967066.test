@@ -1,0 +1,5 @@
+query R rowsort
+select floor(3.5)
+----
+3.000
+

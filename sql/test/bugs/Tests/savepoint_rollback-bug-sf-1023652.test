@@ -1,0 +1,52 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE trimtest (
+	str varchar(20)
+)
+
+statement ok
+SAVEPOINT monetsp1
+
+statement ok
+INSERT INTO trimtest VALUES ('string1')
+
+statement ok
+INSERT INTO trimtest VALUES ('  string2')
+
+statement ok
+INSERT INTO trimtest VALUES ('string3  ')
+
+statement ok
+INSERT INTO trimtest VALUES ('  string4  ')
+
+query T rowsort
+SELECT * FROM trimtest
+----
+  string2
+  string4  
+string1
+string3  
+
+statement ok
+UPDATE trimtest SET str = trim(str)
+
+query T rowsort
+SELECT * FROM trimtest
+----
+string1
+string2
+string3
+string4
+
+statement ok
+ROLLBACK TO SAVEPOINT monetsp1
+
+query T rowsort
+SELECT * FROM trimtest
+----
+
+statement ok
+ROLLBACK
+

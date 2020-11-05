@@ -1,0 +1,80 @@
+statement ok
+create table tst( a0 int unique, a1 int)
+
+statement ok
+insert into tst values(1,1)
+
+statement ok
+insert into tst values(2,2)
+
+statement ok
+insert into tst values(3,3)
+
+statement ok
+insert into tst values(4,4)
+
+query II rowsort
+select * from tst
+----
+1
+1
+2
+2
+3
+3
+4
+4
+
+query II rowsort
+select * from tst where a1>=0 and a1 <=3
+----
+1
+1
+2
+2
+3
+3
+
+statement ok
+create table tst2( b0 int unique, b1 int)
+
+statement ok
+insert into tst2 values(1,1)
+
+statement ok
+insert into tst2 values(2,2)
+
+statement ok
+insert into tst2 values(3,3)
+
+statement ok
+insert into tst2 values(4,4)
+
+query II rowsort
+select * from tst2
+----
+1
+1
+2
+2
+3
+3
+4
+4
+
+query II rowsort
+select * from tst2 where b1>=0 and b1 <=3
+----
+1
+1
+2
+2
+3
+3
+
+statement ok
+drop table tst
+
+statement ok
+drop table tst2
+

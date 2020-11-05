@@ -1,0 +1,12 @@
+statement error
+ROLLBACK
+
+statement error
+COMMIT
+
+statement error
+SAVEPOINT failingsavepoint
+
+statement error
+RELEASE SAVEPOINT failingsavepoint
+

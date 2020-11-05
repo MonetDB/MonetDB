@@ -1,0 +1,20 @@
+query I rowsort
+select extract( year from interval '1' year)
+----
+1
+
+query I rowsort
+select extract( day from interval '1' day )
+----
+1
+
+query I rowsort
+select extract( day from interval '1 01' day to hour)
+----
+1
+
+query I rowsort
+select extract( hour from interval '1 01' day to hour)
+----
+1
+

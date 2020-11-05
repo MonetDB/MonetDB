@@ -1,0 +1,33 @@
+statement ok
+CREATE TABLE tst123 (col1 INT) 
+
+statement ok
+INSERT INTO tst123 VALUES (10) 
+
+statement ok
+INSERT INTO tst123 VALUES (20) 
+
+statement ok
+INSERT INTO tst123 VALUES (30) 
+
+statement ok
+INSERT INTO tst123 VALUES (NULL) 
+
+statement ok
+INSERT INTO tst123 VALUES (NULL) 
+
+query I rowsort
+SELECT * FROM tst123 WHERE col1 <> 10 
+----
+20
+30
+
+query I rowsort
+SELECT * FROM tst123 WHERE col1 NOT IN (10) 
+----
+20
+30
+
+statement ok
+DROP TABLE tst123 
+
