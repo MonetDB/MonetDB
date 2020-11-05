@@ -19,3 +19,5 @@ bincopy_timestamps_on_client
 bincopy_timestamps_on_server
 bincopy_partial_on_client
 bincopy_partial_on_server
+bincopy_inconsistent_length_on_client
+bincopy_inconsistent_length_on_server

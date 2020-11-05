@@ -415,9 +415,13 @@ find_type_rec(str name)
 
 
 static str
-load_column(struct type_rec *rec, BAT *bat, stream *s, lng rows_estimate, int *eof_reached)
+load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, lng rows_estimate, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
+	BUN orig_count, new_count;
+	lng rows_added;
+
+	orig_count = BATcount(bat);
 
 	if (rec->loader != NULL) {
 		msg = rec->loader(bat, s, eof_reached);
@@ -429,6 +433,12 @@ load_column(struct type_rec *rec, BAT *bat, stream *s, lng rows_estimate, int *e
 		*eof_reached = 0;
 		bailout("invalid loader configuration for '%s'", rec->method);
 	}
+
+	new_count = BATcount(bat);
+	rows_added = new_count - orig_count;
+
+	if (msg == MAL_SUCCEED && rows_estimate != 0 && rows_estimate != rows_added)
+		bailout("inconsistent row count in %s: expected %ld, got %ld", name, rows_estimate, rows_added);
 
 	end:
 		return msg;
@@ -544,7 +554,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 	}
 
 	// Do the work
-	msg = load_column(rec, bat, s, nrows, &eof_reached);
+	msg = load_column(rec, path, bat, s, nrows, &eof_reached);
 	if (eof_reached != 0 && eof_reached != 1) {
 		if (msg)
 			bailout("internal error in sql.importColumn: eof_reached not set (%s). Earlier error: %s", method, msg);
