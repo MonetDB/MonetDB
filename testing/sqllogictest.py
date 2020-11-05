@@ -30,6 +30,25 @@ skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 class SQLLogicSyntaxError(Exception):
     pass
 
+def is_copyfrom_stmt(stmt:[str]=[]):
+    try:
+        index = stmt.index('<COPY_INTO_DATA>')
+        return True
+    except ValueError:
+        pass
+    return False
+
+def prepare_copyfrom_stmt(stmt:[str]=[]):
+    try:
+        index = stmt.index('<COPY_INTO_DATA>')
+        head = stmt[:index]
+        tail = stmt[index+1:]
+        head = '\n'.join(head) + ';'
+        tail='\n'.join(tail)
+        return head + '\n' + tail, head
+    except ValueError:
+        return stmt
+
 class SQLLogic:
     def __init__(self, report=None, out=sys.stdout):
         self.dbh = None
@@ -72,7 +91,7 @@ class SQLLogic:
         for row in self.crs.fetchall():
             self.crs.execute('drop table "%s" cascade' % row[0])
 
-    def exec_statement(self, statement, expectok):
+    def exec_statement(self, statement, expectok, err_stmt=None):
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return
@@ -84,7 +103,7 @@ class SQLLogic:
         else:
             if expectok:
                 return
-        self.query_error(statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't")
+        self.query_error(err_stmt or statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't")
 
     def convertresult(self, query, columns, data):
         ndata = []
@@ -242,7 +261,11 @@ class SQLLogic:
                         break
                     statement.append(line.rstrip('\n'))
                 if not skipping:
-                    self.exec_statement('\n'.join(statement), expectok)
+                    if is_copyfrom_stmt(statement):
+                        stmt, stmt_less_data = prepare_copyfrom_stmt(statement)
+                        self.exec_statement(stmt, expectok, err_stmt=stmt_less_data)
+                    else:
+                        self.exec_statement('\n'.join(statement), expectok)
             elif line[0] == 'query':
                 columns = line[1]
                 if len(line) > 2:

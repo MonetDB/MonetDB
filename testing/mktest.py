@@ -51,6 +51,10 @@ else:
                         port=opts.port)
     crs = MapiCursor(dbh)
 
+query = []
+is_copy_into_stmt = False
+regex = re.compile('copy.*from.*stdin.*', re.I)
+
 def convertresult(columns, data):
     ndata = []
     for row in data:
@@ -81,83 +85,112 @@ def convertresult(columns, data):
         ndata.append(tuple(nrow))
     return ndata
 
-query = []
+def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
+    try:
+        crs.execute(query)
+    except pymonetdb.DatabaseError:
+        print('statement error')
+        if copy_into_stmt:
+            print(copy_into_stmt)
+            print('<COPY_INTO_DATA>')
+            print('\n'.join(copy_into_data))
+        else:
+            print(query)
+        print('')
+    except pymonetdb.Error:
+        print('exception raised on query "{}"'.format(query), file=sys.stderr)
+        sys.exit(1)
+    else:
+        if crs.description is None:
+            print('statement ok')
+            if copy_into_stmt:
+                print(copy_into_stmt)
+                print('<COPY_INTO_DATA>')
+                print('\n'.join(copy_into_data))
+            else:
+                print(query)
+            print('')
+        else:
+            args = ''
+            for arg in crs.description:
+                if arg.type_code.endswith('int'):
+                    args += 'I'
+                elif arg.type_code in ('real', 'double', 'decimal'):
+                    args += 'R'
+                else:
+                    args += 'T'
+            sorting = opts.sort
+            print('query {} {}'.format(args, sorting))
+            print(query)
+            print('----')
+            data = crs.fetchall()
+            if opts.results:
+                for row in data:
+                    sep=''
+                    for col in row:
+                        if col is None:
+                            print(sep, 'NULL', sep='', end='', file=opts.results)
+                        else:
+                            print(sep, col, sep='', end='', file=opts.results)
+                        sep = '|'
+                    print('', file=opts.results)
+            data = convertresult(args, data)
+            nvalues = len(args) * len(data)
+            if sorting == 'valuesort':
+                ndata = []
+                for row in data:
+                    for col in row:
+                        ndata.append(col)
+                ndata.sort()
+                data = [ndata]
+            elif sorting == 'rowsort':
+                data.sort()
+            if nvalues < opts.hashlimit:
+                for row in data:
+                    for col in row:
+                        print(col)
+            else:
+                m = hashlib.md5()
+                for row in data:
+                    for col in row:
+                        m.update(bytes(col, encoding='ascii'))
+                        m.update(b'\n')
+                h = m.hexdigest()
+                print('{} values hashing to {}'.format(len(args) * crs.rowcount, h))
+            print('')
+
+def process_cpy_into_stmt(query):
+    copy_into_stmt = query[0].rstrip(';')
+    copy_into_data = query[1:]
+    query = '\n'.join(query)
+    to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
+
 while True:
     line = sys.stdin.readline()
     if not line:
         break
     line = line.rstrip()
     if not line or line.lstrip().startswith('--') or line.lstrip().startswith('#'):
+        if is_copy_into_stmt and len(query) > 0:
+            process_cpy_into_stmt(query)
+            is_copy_into_stmt = False
+            query = []
         continue
     if '--' in line:
         line = line[:line.index('--')].rstrip()
     if line.endswith(';'):
+        tmp = ([] + query)
+        tmp.append(line)
+        stmt = '\n'.join(tmp)
+        if regex.match(stmt):
+            is_copy_into_stmt = True
+            query.append(line)
+            continue
         stripped = line.rstrip(';')
         if stripped !='':
             query.append(stripped)
         query = '\n'.join(query)
-        try:
-            crs.execute(query)
-        except pymonetdb.DatabaseError:
-            print('statement error')
-            print(query)
-            print('')
-        except pymonetdb.Error:
-            print('exception raised on query "{}"'.format(query), file=sys.stderr)
-            sys.exit(1)
-        else:
-            if crs.description is None:
-                print('statement ok')
-                print(query)
-                print('')
-            else:
-                args = ''
-                for arg in crs.description:
-                    if arg.type_code.endswith('int'):
-                        args += 'I'
-                    elif arg.type_code in ('real', 'double', 'decimal'):
-                        args += 'R'
-                    else:
-                        args += 'T'
-                sorting = opts.sort
-                print('query {} {}'.format(args, sorting))
-                print(query)
-                print('----')
-                data = crs.fetchall()
-                if opts.results:
-                    for row in data:
-                        sep=''
-                        for col in row:
-                            if col is None:
-                                print(sep, 'NULL', sep='', end='', file=opts.results)
-                            else:
-                                print(sep, col, sep='', end='', file=opts.results)
-                            sep = '|'
-                        print('', file=opts.results)
-                data = convertresult(args, data)
-                nvalues = len(args) * len(data)
-                if sorting == 'valuesort':
-                    ndata = []
-                    for row in data:
-                        for col in row:
-                            ndata.append(col)
-                    ndata.sort()
-                    data = [ndata]
-                elif sorting == 'rowsort':
-                    data.sort()
-                if nvalues < opts.hashlimit:
-                    for row in data:
-                        for col in row:
-                            print(col)
-                else:
-                    m = hashlib.md5()
-                    for row in data:
-                        for col in row:
-                            m.update(bytes(col, encoding='ascii'))
-                            m.update(b'\n')
-                    h = m.hexdigest()
-                    print('{} values hashing to {}'.format(len(args) * crs.rowcount, h))
-                print('')
+        to_sqllogic_test(query)
         query = []
     else:
         query.append(line)

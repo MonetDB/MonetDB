@@ -220,6 +220,7 @@ typedef PVOID volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_GET(var)		(*(var))
 #define ATOMIC_PTR_SET(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
 #define ATOMIC_PTR_XCG(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
+#pragma intrinsic(_InterlockedCompareExchangePointer)
 static inline bool
 ATOMIC_PTR_CAS(ATOMIC_PTR_TYPE *var, void **exp, void *des)
 {

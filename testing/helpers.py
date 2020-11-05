@@ -113,6 +113,9 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         if os.path.isfile(test_path + '.timeout'):
             with open(test_path + '.timeout', 'r') as f:
                 test['timeout'] = int(f.read().strip())
+        if os.path.isfile(test_path + '.options5'):
+            with open(test_path + '.options5', 'r') as f:
+                test['options5'] = f.read().split()
         for ext, _, call, server in lookup:
             if os.path.isfile(test_path + ext):
                 test['ext'] = ext
