@@ -83,6 +83,18 @@ gen_bools(FILE *f, long nrecs)
 }
 
 static void
+gen_floats(FILE *f, long nrecs)
+{
+	// Assume for now that the raw bits are portable enough
+
+	for (long i = 0; i < nrecs; i++) {
+		float fl = (float)i;
+		fl += 0.5;
+		fwrite(&fl, sizeof(fl), 1, f);
+	}
+}
+
+static void
 gen_strings(FILE *f, long nrecs)
 {
 	for (long i = 0; i < nrecs; i++) {
@@ -146,6 +158,7 @@ static struct gen generators[] = {
 	{ "more_ints", gen_more_ints },
 	{ "null_ints", gen_null_ints },
 	{ "bools", gen_bools },
+	{ "floats", gen_floats },
 	//
 	{ "strings", gen_strings },
 	{ "large_strings", gen_large_strings },

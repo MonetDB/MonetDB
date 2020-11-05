@@ -151,6 +151,16 @@ convert_hge(void *start, void *end)
 #endif
 
 static str
+convert_flt(void *start, void *end)
+{
+	assert(sizeof(float) == sizeof(uint32_t));
+	for (uint32_t *p = start; p < (uint32_t*)end; p++)
+		COPY_BINARY_CONVERT32(*p);
+
+	return MAL_SUCCEED;
+}
+
+static str
 BATattach_fixed_width(BAT *bat, stream *s, str (*convert)(void*,void*,void*,void*), size_t record_size, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
@@ -390,6 +400,7 @@ static struct type_rec {
 	{ "sht", TYPE_sht, .convert_in_place=convert_sht, },
 	{ "int", TYPE_int, .convert_in_place=convert_int, },
 	{ "lng", TYPE_lng, .convert_in_place=convert_lng, },
+	{ "flt", TYPE_flt, .convert_in_place=convert_flt, },
 	//
 #ifdef HAVE_HGE
 	{ "hge", TYPE_hge, .convert_in_place=convert_hge, },
