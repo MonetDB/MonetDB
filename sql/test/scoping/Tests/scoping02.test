@@ -1,0 +1,150 @@
+statement ok
+CREATE TABLE atest (a int)
+
+statement ok
+INSERT INTO atest VALUES (1)
+
+statement error
+CREATE OR REPLACE FUNCTION iambroken() RETURNS TABLE(a int)
+BEGIN
+	DECLARE TABLE atest (a int)
+
+statement error
+	INSERT INTO x VALUES (2)
+
+statement error
+	RETURN x
+
+statement error
+END
+
+query I rowsort
+SELECT a FROM atest
+----
+1
+
+statement error
+SELECT a FROM iambroken()
+
+statement error
+CREATE OR REPLACE FUNCTION iambroken() RETURNS TABLE(a int)
+BEGIN
+	DECLARE TABLE sys.atest (a int)
+
+statement error
+	RETURN SELECT a FROM x
+
+statement error
+END
+
+statement error
+CREATE OR REPLACE FUNCTION iambroken() RETURNS TABLE(a int)
+BEGIN
+	DECLARE sys.atest int
+
+statement error
+	RETURN x
+
+statement error
+END
+
+statement ok
+DROP TABLE atest
+
+statement ok
+CREATE TABLE sys.mytable (a int)
+
+statement ok
+INSERT INTO sys.mytable VALUES (1)
+
+statement error
+CREATE OR REPLACE FUNCTION scoping01(i INT) RETURNS INT
+BEGIN
+	DECLARE TABLE mytable (a int)
+
+statement ok
+	INSERT INTO mytable VALUES (2)
+
+statement error
+	IF i = 1 THEN
+		RETURN SELECT a FROM sys.mytable
+
+statement error
+	ELSE
+		RETURN SELECT a FROM mytable
+
+statement error
+	END IF
+
+statement error
+END
+
+statement error
+SELECT scoping01(vals) FROM (VALUES (1), (2)) AS vals(vals)
+
+statement error
+DROP FUNCTION scoping01(INT)
+
+statement ok
+DROP TABLE sys.mytable
+
+statement error
+CREATE OR REPLACE FUNCTION iambroken() RETURNS INT
+BEGIN
+	DECLARE TABLE mytable (a int)
+
+statement error
+	RETURN SELECT a FROM sys.mytable
+
+statement error
+END
+
+statement error
+CREATE OR REPLACE FUNCTION scoping02(i INT) RETURNS INT
+BEGIN
+	IF i = 1 THEN
+		DECLARE i int
+
+statement error
+		RETURN i
+
+statement error
+	END IF
+
+statement error
+	RETURN i
+
+statement error
+END
+
+statement error
+SELECT scoping02(vals) FROM (VALUES (1), (2)) AS vals(vals)
+
+statement error
+DROP FUNCTION scoping02(INT)
+
+statement ok
+CREATE TABLE "sys" ("current_schema" string)
+
+statement ok
+INSERT INTO "sys" VALUES ('astring')
+
+query T rowsort
+SELECT "sys"."current_schema" FROM "sys"
+----
+astring
+
+statement ok
+DROP TABLE "sys"
+
+query TTTT rowsort
+SELECT * from sys.var() where "name" not in ('debug', 'cache', 'last_id', 'current_timezone')
+----
+20 values hashing to ce99aa6299a9b0969c7f4f34826a6fc9
+
+statement error
+set "current_schema" = null
+
+statement error
+set "sys"."current_timezone" = null
+
