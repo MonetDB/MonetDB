@@ -1,9 +1,8 @@
-one
-#create
-#check0
-##load
-#inserts
-#check1
+create
+check0
+#load
+inserts
+check1
 #01
 #02
 #03
