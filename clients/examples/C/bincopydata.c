@@ -74,6 +74,15 @@ gen_null_ints(FILE *f, long nrecs)
 }
 
 static void
+gen_bools(FILE *f, long nrecs)
+{
+	for (long i = 0; i < nrecs; i++) {
+		char b = i % 2;
+		fwrite(&b, sizeof(b), 1, f);
+	}
+}
+
+static void
 gen_strings(FILE *f, long nrecs)
 {
 	for (long i = 0; i < nrecs; i++) {
@@ -136,6 +145,8 @@ static struct gen generators[] = {
 	{ "ints", gen_ints },
 	{ "more_ints", gen_more_ints },
 	{ "null_ints", gen_null_ints },
+	{ "bools", gen_bools },
+	//
 	{ "strings", gen_strings },
 	{ "large_strings", gen_large_strings },
 	{ "broken_strings", gen_broken_strings },

@@ -101,6 +101,18 @@ convert_bte(void *start, void *end)
 }
 
 static str
+convert_bit(void *start, void *end)
+{
+	unsigned char *e = end;
+	for (unsigned char *p = start; p < e; p++) {
+		int b = *p;
+		if (b > 1)
+			throw(SQL, "convert_bit", SQLSTATE(22003) "invalid boolean byte value: %d", b);
+	}
+	return MAL_SUCCEED;
+}
+
+static str
 convert_sht(void *start, void *end)
 {
 	for (sht *p = start; p < (sht*)end; p++)
@@ -373,6 +385,7 @@ static struct type_rec {
 	size_t record_size;
 	str (*convert_in_place)(void *start, void *end);
 } type_recs[] = {
+	{ "bit", TYPE_bit, .convert_in_place=convert_bit, },
 	{ "bte", TYPE_bte, .convert_in_place=convert_bte, },
 	{ "sht", TYPE_sht, .convert_in_place=convert_sht, },
 	{ "int", TYPE_int, .convert_in_place=convert_int, },

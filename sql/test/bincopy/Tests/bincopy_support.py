@@ -183,3 +183,9 @@ CREATE TABLE foo(id INT NOT NULL, i INT, j INT NULL);
 COPY BINARY INTO foo(id, i) FROM @ints@, @more_ints@ @ON@;
 SELECT COUNT(id) FROM foo WHERE i = id + 1 AND j IS NULL;
 """
+
+BOOLS = """
+CREATE TABLE foo(id INT NOT NULL, b BOOL);
+COPY BINARY INTO foo(id, b) FROM @ints@, @bools@ @ON@;
+SELECT COUNT(id) FROM foo WHERE b = (id % 2 <> 0);
+"""
