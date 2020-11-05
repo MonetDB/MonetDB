@@ -88,7 +88,7 @@ def convertresult(columns, data):
 def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
     try:
         crs.execute(query)
-    except pymonetdb.DatabaseError:
+    except pymonetdb.DatabaseError as e:
         print('statement error')
         if copy_into_stmt:
             print(copy_into_stmt)
@@ -159,9 +159,25 @@ def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
                 print('{} values hashing to {}'.format(len(args) * crs.rowcount, h))
             print('')
 
+def monet_escape(data):
+    """
+    returns an escaped string
+    """
+    data = str(data).replace("\\", "\\\\")
+    data = data.replace("\'", "\\\'")
+    return "%s" % str(data)
+
 def process_cpy_into_stmt(query):
-    copy_into_stmt = query[0].rstrip(';')
-    copy_into_data = query[1:]
+    index = 0
+    for i, n in enumerate(query):
+        if n.strip().endswith(';'):
+            index = i
+            break
+    index+=1
+    copy_into_stmt = '\n'.join(query[:index]).rstrip(';')
+    rest_ = query[index:]
+    # escape stuff
+    copy_into_data = list(map(lambda x: monet_escape(x), rest_))
     query = '\n'.join(query)
     to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
 
@@ -176,7 +192,8 @@ while True:
             is_copy_into_stmt = False
             query = []
         continue
-    if '--' in line:
+    # when copyfrom stmt from stdin skip because data may contain --
+    if '--' in line and not is_copy_into_stmt:
         line = line[:line.index('--')].rstrip()
     if line.endswith(';'):
         tmp = ([] + query)
