@@ -153,9 +153,19 @@ convert_hge(void *start, void *end)
 static str
 convert_flt(void *start, void *end)
 {
-	assert(sizeof(float) == sizeof(uint32_t));
+	assert(sizeof(flt) == sizeof(uint32_t));
 	for (uint32_t *p = start; p < (uint32_t*)end; p++)
 		COPY_BINARY_CONVERT32(*p);
+
+	return MAL_SUCCEED;
+}
+
+static str
+convert_dbl(void *start, void *end)
+{
+	assert(sizeof(dbl) == sizeof(uint64_t));
+	for (uint64_t *p = start; p < (uint64_t*)end; p++)
+		COPY_BINARY_CONVERT64(*p);
 
 	return MAL_SUCCEED;
 }
@@ -401,6 +411,7 @@ static struct type_rec {
 	{ "int", TYPE_int, .convert_in_place=convert_int, },
 	{ "lng", TYPE_lng, .convert_in_place=convert_lng, },
 	{ "flt", TYPE_flt, .convert_in_place=convert_flt, },
+	{ "dbl", TYPE_dbl, .convert_in_place=convert_dbl, },
 	//
 #ifdef HAVE_HGE
 	{ "hge", TYPE_hge, .convert_in_place=convert_hge, },

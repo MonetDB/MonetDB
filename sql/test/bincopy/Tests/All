@@ -23,3 +23,5 @@ bincopy_inconsistent_length_on_client
 bincopy_inconsistent_length_on_server
 bincopy_floats_on_client
 bincopy_floats_on_server
+bincopy_doubles_on_client
+bincopy_doubles_on_server

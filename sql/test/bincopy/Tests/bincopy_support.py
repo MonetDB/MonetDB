@@ -202,3 +202,9 @@ CREATE TABLE foo(id INT NOT NULL, r REAL);
 COPY BINARY INTO foo(id, r) FROM @ints@, @floats@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = r;
 """
+
+DOUBLES = """
+CREATE TABLE foo(id INT NOT NULL, d DOUBLE);
+COPY BINARY INTO foo(id, d) FROM @ints@, @doubles@ @ON@;
+SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = d;
+"""
