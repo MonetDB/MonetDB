@@ -1,0 +1,18 @@
+statement ok
+create schema xyz
+
+statement ok
+create procedure xyz.p() begin declare x integer; set x = 1; end
+
+statement ok
+call xyz.p()
+
+statement error
+call p()
+
+statement ok
+drop procedure xyz.p
+
+statement ok
+drop schema xyz
+

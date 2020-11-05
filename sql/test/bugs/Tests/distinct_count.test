@@ -1,0 +1,20 @@
+statement ok
+create table tabool(id int, b boolean)
+
+statement ok
+insert into tabool values(1,true)
+
+statement ok
+insert into tabool values(1,true)
+
+statement ok
+insert into tabool values(2,false)
+
+query I rowsort
+select distinct count(*) from tabool
+----
+3
+
+statement ok
+drop table tabool
+

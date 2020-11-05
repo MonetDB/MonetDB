@@ -1,0 +1,60 @@
+statement ok
+CREATE TABLE h (a int, b int)
+
+statement ok
+INSERT INTO h VALUES (0, 10)
+
+statement ok
+INSERT INTO h VALUES (10, 20)
+
+statement ok
+INSERT INTO h VALUES (20, 30)
+
+statement ok
+CREATE TABLE d (x int)
+
+statement ok
+INSERT INTO d VALUES (5)
+
+statement ok
+INSERT INTO d VALUES (6)
+
+statement ok
+INSERT INTO d VALUES (11)
+
+query III rowsort
+SELECT h.a, h.b, COUNT(*)
+FROM   h
+INNER JOIN d
+ON    (h.a <= d.x AND d.x < h.b)
+GROUP BY h.a, h.b
+ORDER BY a, b
+----
+0
+10
+2
+10
+20
+1
+
+query III rowsort
+SELECT h.a, h.b, COUNT(*)
+FROM   h
+INNER JOIN d
+ON    (d.x BETWEEN h.a AND h.b)
+GROUP BY h.a, h.b
+ORDER BY a, b
+----
+0
+10
+2
+10
+20
+1
+
+statement ok
+drop table h
+
+statement ok
+drop table d
+

@@ -1,0 +1,15 @@
+statement ok
+create table t_not_null(a int)
+
+statement ok
+alter table t_not_null add foo int not null
+
+statement ok
+insert into t_not_null values (1,1)
+
+statement error
+insert into t_not_null (a) values (1)
+
+statement ok
+drop table t_not_null
+

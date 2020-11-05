@@ -1,0 +1,48 @@
+statement ok
+START TRANSACTION
+
+statement ok
+SAVEPOINT MonetSP0
+
+statement ok
+CREATE TABLE table_Test_Csavepoints ( id int, PRIMARY KEY (id) )
+
+statement ok
+SAVEPOINT MonetSP1
+
+query I rowsort
+SELECT id FROM table_Test_Csavepoints
+----
+
+statement ok
+INSERT INTO table_Test_Csavepoints VALUES (1)
+
+statement ok
+INSERT INTO table_Test_Csavepoints VALUES (2)
+
+statement ok
+INSERT INTO table_Test_Csavepoints VALUES (3)
+
+statement ok
+SAVEPOINT MonetSP2
+
+query I rowsort
+SELECT id FROM table_Test_Csavepoints
+----
+1
+2
+3
+
+statement ok
+RELEASE SAVEPOINT MonetSP0
+
+query I rowsort
+SELECT id FROM table_Test_Csavepoints
+----
+1
+2
+3
+
+statement ok
+ROLLBACK
+

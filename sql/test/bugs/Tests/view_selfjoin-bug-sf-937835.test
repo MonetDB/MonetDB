@@ -1,0 +1,41 @@
+statement ok
+create table test (id int, s varchar(255))
+
+statement ok
+insert into test values(1, 'a')
+
+statement ok
+insert into test values(2, 'b')
+
+statement ok
+insert into test values(3, 'c')
+
+query II rowsort
+select a.id, b.id from test a,test b where a.id < b.id
+----
+1
+2
+1
+3
+2
+3
+
+statement ok
+create view test2 as select * from test
+
+query II rowsort
+select a.id, b.id from test2 a,test2 b where a.id < b.id
+----
+1
+2
+1
+3
+2
+3
+
+statement ok
+drop view test2
+
+statement ok
+drop table test
+

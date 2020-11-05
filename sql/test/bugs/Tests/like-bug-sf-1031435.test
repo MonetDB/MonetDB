@@ -1,0 +1,34 @@
+statement ok
+start transaction
+
+statement ok
+create table like_test (str varchar(10))
+
+statement ok
+insert into like_test values('')
+
+statement ok
+insert into like_test values('t')
+
+statement ok
+insert into like_test values('ts')
+
+statement ok
+insert into like_test values('tsz')
+
+query T rowsort
+select * from like_test
+----
+(empty)
+t
+ts
+tsz
+
+query T rowsort
+select * from like_test where str like 't_'
+----
+ts
+
+statement ok
+rollback
+

@@ -1,0 +1,65 @@
+statement ok
+create table t1019529 (name varchar(1024))
+
+statement ok
+insert into t1019529 values ('niels'), ('fabian'), ('martin')
+
+query T rowsort
+select name from t1019529 where name='doesnotexist'
+----
+
+query I rowsort
+select 1 from t1019529 where name='doesnotexist'
+----
+
+query I rowsort
+select 1 from t1019529
+----
+1
+1
+1
+
+query I rowsort
+select 1 from t1019529 where 0=1
+----
+
+query I rowsort
+select 1 from t1019529 where 1=1
+----
+1
+1
+1
+
+query I rowsort
+select 1 where 0=1
+----
+
+query I rowsort
+select 1 where 1=1
+----
+1
+
+query II rowsort
+select 1, count(*) from t1019529
+----
+1
+3
+
+statement error
+select name, count(*) from t1019529
+
+query II rowsort
+select 1, count(*) from t1019529 where 0=1
+----
+1
+0
+
+query II rowsort
+select 1, count(*) where 0=1
+----
+1
+0
+
+statement ok
+drop table t1019529
+
