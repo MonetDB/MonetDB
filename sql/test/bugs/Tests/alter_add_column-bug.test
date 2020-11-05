@@ -1,0 +1,21 @@
+statement ok
+create schema myschema
+
+statement ok
+create table myschema.collection_info( test_col varchar(100))
+
+statement error
+ALTER TABLE "myschema"."COLLECTION_INFO" ADD COLUMN test_col1  varchar(256)
+
+statement ok
+ALTER TABLE myschema.COLLECTION_INFO ADD COLUMN test_col2 varchar(256)
+
+statement ok
+ALTER TABLE "myschema"."collection_info" ADD COLUMN test_col3  varchar(256)
+
+statement ok
+ALTER TABLE myschema.collection_info ADD COLUMN test_col4  varchar(256)
+
+statement ok
+drop table myschema.collection_info
+

@@ -1,0 +1,32 @@
+statement ok
+start transaction
+
+statement ok
+create table unique_test (
+	id int unique
+)
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+statement ok
+insert into unique_test values (1)
+
+statement error
+insert into unique_test values (1)
+
+statement ok
+rollback
+
+statement ok
+insert into unique_test values (1)
+
+statement error
+insert into unique_test values (1)
+
+statement ok
+drop table unique_test
+

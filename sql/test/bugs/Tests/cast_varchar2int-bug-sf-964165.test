@@ -1,0 +1,23 @@
+statement ok
+create table t2 (x varchar(10))
+
+statement ok
+insert into t2 values ('1')
+
+statement ok
+insert into t2 values ('2')
+
+query I rowsort
+select cast(x as integer) from t2
+----
+1
+2
+
+query I rowsort
+select cast('1' as integer)
+----
+1
+
+statement ok
+drop table t2
+

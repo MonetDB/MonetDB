@@ -1,0 +1,65 @@
+statement ok
+CREATE TABLE test_pk (
+y INTEGER,
+x INTEGER,
+PRIMARY KEY(x, y)
+)
+
+statement ok
+INSERT INTO test_pk values( 2,3 )
+
+statement ok
+INSERT INTO test_pk values( 2,4 )
+
+query II rowsort
+SELECT * from test_pk
+----
+2
+3
+2
+4
+
+statement error
+INSERT INTO test_pk values( 2,4 )
+
+query II rowsort
+SELECT * from test_pk
+----
+2
+3
+2
+4
+
+statement ok
+UPDATE test_pk SET y = 1
+
+query II rowsort
+SELECT * from test_pk
+----
+1
+3
+1
+4
+
+statement error
+UPDATE test_pk SET x = 1
+
+query II rowsort
+SELECT * from test_pk
+----
+1
+3
+1
+4
+
+query II rowsort
+SELECT * from test_pk
+----
+1
+3
+1
+4
+
+statement ok
+DROP table test_pk
+

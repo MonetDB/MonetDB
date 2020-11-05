@@ -1,0 +1,24 @@
+statement ok
+CREATE TABLE foo (bar int)
+
+statement ok
+CREATE TABLE foo1 (bar int)
+
+query I rowsort
+SELECT bar FROM foo WHERE bar NOT IN (SELECT bar FROM foo1)
+----
+
+query T rowsort
+SELECT CURDATE() FROM foo
+----
+
+query T rowsort
+SELECT CURDATE() FROM foo WHERE bar NOT IN (SELECT bar FROM foo1)
+----
+
+statement ok
+drop table foo1
+
+statement ok
+drop table foo
+

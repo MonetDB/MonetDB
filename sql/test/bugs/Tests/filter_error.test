@@ -1,0 +1,23 @@
+statement error
+create table test1(id int, geom Geometry)
+
+statement ok
+create table test2(x double, y double, z double)
+
+statement error
+create table papoints AS (
+	SELECT a.id, x, y, z, geom FROM test1 a, test2 b
+	WHERE [a.geom] IntersectsXYZ [x, y, z,28992]) WITH DATA
+
+statement error
+create table papoints AS (
+	SELECT a.type, a.id, x, y, z, geom FROM test1 a
+       LEFT JOIN test2 b ON ([a.geom] IntersectsXYZ [x, y, z,28992])
+) WITH DATA
+
+statement error
+drop table test1
+
+statement ok
+drop table test2
+

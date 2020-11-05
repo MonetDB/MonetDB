@@ -1,0 +1,52 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE x (i integer)
+
+statement ok
+INSERT INTO x VALUES (1)
+
+statement ok
+CREATE TABLE y (i integer)
+
+statement ok
+INSERT INTO y VALUES (1)
+
+query II rowsort
+SELECT * FROM
+	x a INNER JOIN y ON (a.i = y.i)
+----
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE x (i integer)
+
+statement ok
+INSERT INTO x VALUES (1)
+
+statement ok
+CREATE VIEW xview AS SELECT * FROM x
+
+statement ok
+CREATE TABLE y (i integer)
+
+statement ok
+INSERT INTO y VALUES (1)
+
+query I rowsort
+SELECT a.i FROM
+	xview a INNER JOIN y ON (a.i = y.i)
+----
+1
+
+statement ok
+ROLLBACK
+

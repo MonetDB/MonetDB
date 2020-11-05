@@ -1,0 +1,24 @@
+statement ok
+create table x (f float)
+
+statement ok
+insert into x values (3.14)
+
+query R rowsort
+select f/f from x
+----
+1.000
+
+query I rowsort
+select cast(3.14/3.14 as integer)
+----
+1
+
+query I rowsort
+select cast(f/f as integer) from x
+----
+1
+
+statement ok
+drop table x
+

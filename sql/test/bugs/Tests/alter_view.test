@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE t1(id int, name varchar(1024), age int, PRIMARY KEY(id))
+
+statement ok
+CREATE VIEW v1 as select id, age from t1 where name like 'monet%'
+
+statement error
+ALTER TABLE v1 ADD PRIMARY KEY(age)
+
+statement ok
+drop view v1
+
+statement ok
+drop table t1
+

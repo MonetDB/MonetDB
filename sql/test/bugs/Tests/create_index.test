@@ -1,0 +1,16 @@
+statement ok
+CREATE TABLE tx ( c1 int )
+
+statement ok
+CREATE INDEX "tx_index" ON "sys"."tx" ("c1")
+
+query I rowsort
+select * from tx
+----
+
+statement ok
+drop index tx_index
+
+statement ok
+drop table tx
+

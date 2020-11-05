@@ -1,0 +1,21 @@
+statement ok
+START TRANSACTION
+
+statement ok
+SAVEPOINT a1
+
+statement ok
+SAVEPOINT a2
+
+statement ok
+SAVEPOINT a3
+
+statement ok
+RELEASE SAVEPOINT a1
+
+statement error
+ROLLBACK TO SAVEPOINT a2
+
+statement ok
+ROLLBACK
+

@@ -1,0 +1,14 @@
+statement ok
+create table float2dec (col float)
+
+statement ok
+insert into float2dec values (74.95)
+
+query R rowsort
+select CAST(AVG(col) as decimal(4,2)) from float2dec
+----
+74.950
+
+statement ok
+drop table float2dec
+

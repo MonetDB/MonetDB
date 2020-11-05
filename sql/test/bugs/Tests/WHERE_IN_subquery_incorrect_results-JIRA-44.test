@@ -1,0 +1,22 @@
+statement ok
+CREATE TABLE foo (fooid INTEGER)
+
+statement ok
+CREATE TABLE bar (fooid INTEGER, barval VARCHAR(8))
+
+statement ok
+INSERT INTO foo VALUES (1)
+
+query IIT rowsort
+SELECT * FROM foo AS f LEFT JOIN bar AS B ON (f.fooid = b.fooid) WHERE (f.fooid) IN (SELECT 1)
+----
+1
+NULL
+NULL
+
+statement ok
+DROP TABLE foo
+
+statement ok
+DROP TABLE bar
+

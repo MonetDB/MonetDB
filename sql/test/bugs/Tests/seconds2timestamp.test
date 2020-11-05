@@ -1,0 +1,48 @@
+statement ok
+SET TIME ZONE INTERVAL '+00:00' HOUR TO MINUTE
+
+query T rowsort
+select epoch (1087488000)
+----
+2004-06-17 16:00:00
+
+query I rowsort
+select epoch (timestamp '2004-06-17 16:00:00.000000')
+----
+1087488000
+
+query I rowsort
+select abs(epoch(timestamp '2008-02-16 14:00:00'))
+----
+1203170400
+
+statement ok
+CREATE TABLE "sys"."t10"("time1" int, "time2" timestamp(7))
+
+statement ok
+insert into t10 values(1202900916, timestamp '2008-02-13 11:08:06.000000')
+
+query IT rowsort
+select * from t10
+----
+1202900916
+2008-02-13 11:08:06
+
+query T rowsort
+select epoch(1203170400)
+----
+2008-02-16 14:00:00
+
+query T rowsort
+select epoch(time1) from t10
+----
+2008-02-13 11:08:36
+
+query I rowsort
+select epoch(time2) from t10
+----
+1202900886
+
+statement ok
+drop table t10
+
