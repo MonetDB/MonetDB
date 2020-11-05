@@ -1,0 +1,8 @@
+query TII rowsort
+select s.name,char_length(s.name), count(*) from schemas s, tables t
+	where t.name IN ('args', 'columns', 'functions', 'idxs',
+		'objects', 'keys', 'modules', 'sequences')
+	group by s.name having count(*) > char_length(s.name)
+----
+24 values hashing to 86ec0e44f93d69849733b003fdbd54cc
+

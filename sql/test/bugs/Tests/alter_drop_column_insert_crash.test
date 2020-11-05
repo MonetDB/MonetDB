@@ -1,0 +1,66 @@
+statement ok
+CREATE TABLE test01 ( col1 INT, col2 INT ) 
+
+statement ok
+INSERT INTO test01 VALUES (1,2) 
+
+statement ok
+INSERT INTO test01 VALUES (3,4) 
+
+statement ok
+INSERT INTO test01 VALUES (5,6) 
+
+query II rowsort
+select * from test01
+----
+1
+2
+3
+4
+5
+6
+
+statement ok
+ALTER TABLE test01 ADD COLUMN col3 INT 
+
+query III rowsort
+select * from test01
+----
+1
+2
+NULL
+3
+4
+NULL
+5
+6
+NULL
+
+statement ok
+INSERT INTO test01 VALUES (1,2,3) 
+
+statement ok
+INSERT INTO test01 VALUES (3,4,5) 
+
+statement ok
+INSERT INTO test01 VALUES (5,6,7) 
+
+query III rowsort
+select * from test01
+----
+18 values hashing to 1e6dace7b40f0182b78610e12f60ea9f
+
+statement ok
+ALTER TABLE test01 DROP COLUMN col2 
+
+statement ok
+INSERT INTO test01 VALUES (7,8) 
+
+query II rowsort
+select * from test01
+----
+14 values hashing to ea6990fcec984e3a42aed8207822c627
+
+statement ok
+DROP   TABLE test01 
+

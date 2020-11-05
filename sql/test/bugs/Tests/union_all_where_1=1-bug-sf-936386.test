@@ -1,0 +1,19 @@
+query T rowsort
+SELECT * FROM (
+	SELECT 'a' AS TABLE_CAT
+	UNION ALL
+	SELECT 'a' AS TABLE_CAT
+	UNION ALL
+	SELECT 'a' AS TABLE_CAT
+	UNION ALL
+	SELECT 'a' AS TABLE_CAT
+	UNION ALL
+	SELECT 'a' AS TABLE_CAT
+) AS tables WHERE 1=1
+----
+a
+a
+a
+a
+a
+

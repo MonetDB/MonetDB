@@ -1,0 +1,26 @@
+statement ok
+create table t978045 (name varchar(1024))
+
+statement ok
+insert into t978045 values ('niels'),('fabian'),('martin')
+
+query T rowsort
+select name from t978045 union select name from t978045
+----
+fabian
+martin
+niels
+
+query T rowsort
+select name from t978045 union all select name from t978045
+----
+fabian
+fabian
+martin
+martin
+niels
+niels
+
+statement ok
+drop table t978045
+

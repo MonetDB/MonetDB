@@ -1,0 +1,295 @@
+query T rowsort
+select 'hello world' where 1 in (1)
+----
+hello world
+
+query T rowsort
+select 'hello world' where 1 in (0)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (1)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (0)
+----
+hello world
+
+query T rowsort
+select 'hello world' where NULL in (NULL)
+----
+
+query T rowsort
+select 'hello world' where NULL in (0)
+----
+
+query T rowsort
+select 'hello world' where NULL not in (NULL)
+----
+
+query T rowsort
+select 'hello world' where NULL not in (0)
+----
+
+query T rowsort
+select 'hello world' where 1 in (1,5)
+----
+hello world
+
+query T rowsort
+select 'hello world' where 1 in (0,5)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (1,5)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (0,5)
+----
+hello world
+
+query T rowsort
+select 'hello world' where NULL in (NULL,5)
+----
+
+query T rowsort
+select 'hello world' where NULL in (0,5)
+----
+
+query T rowsort
+select 'hello world' where NULL not in (NULL,5)
+----
+
+query T rowsort
+select 'hello world' where NULL not in (0,5)
+----
+
+query T rowsort
+select 'hello world' where 1 in (4,1,5)
+----
+hello world
+
+query T rowsort
+select 'hello world' where 1 in (4,0,5)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (4,1,5)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (4,0,5)
+----
+hello world
+
+query T rowsort
+select 'hello world' where 1 in (select 1)
+----
+hello world
+
+query T rowsort
+select 'hello world' where 1 in (select 0)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (select 1)
+----
+
+query T rowsort
+select 'hello world' where 1 not in (select 0)
+----
+hello world
+
+query T rowsort
+select 'hello world' where (1,1) in (select 1,1)
+----
+hello world
+
+query T rowsort
+select 'hello world' where (1,1) in (select 1,5)
+----
+
+query T rowsort
+select 'hello world' where (1,1) not in (select 1,1)
+----
+
+query T rowsort
+select 'hello world' where (1,1) not in (select 1,5)
+----
+hello world
+
+statement ok
+create table in_table( in_col int, colid int, helloworld varchar(20))
+
+statement ok
+insert into in_table values (1, 10, 'hello'), (2, 12,  'world'), (3, 14, E'\n')
+
+query T rowsort
+select helloworld from in_table where 1 in (1)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where 1 in (0)
+----
+
+query T rowsort
+select helloworld from in_table where 1 not in (1)
+----
+
+query T rowsort
+select helloworld from in_table where 1 not in (0)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where NULL in (NULL)
+----
+
+query T rowsort
+select helloworld from in_table where NULL in (0)
+----
+
+query T rowsort
+select helloworld from in_table where NULL not in (NULL)
+----
+
+query T rowsort
+select helloworld from in_table where NULL not in (0)
+----
+
+query T rowsort
+select helloworld from in_table where 1 in (in_col)
+----
+hello
+
+query T rowsort
+select helloworld from in_table where 0 in (in_col)
+----
+
+query T rowsort
+select helloworld from in_table where 1 not in (in_col)
+----
+@
+world
+
+query T rowsort
+select helloworld from in_table where 0 not in (in_col)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where 1 in (in_col,1,in_col)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where 0 in (in_col,1,in_col)
+----
+
+query T rowsort
+select helloworld from in_table where 1 not in (in_col,1,in_col)
+----
+
+query T rowsort
+select helloworld from in_table where 0 not in (in_col,1,in_col)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where 1 in (in_col,1,in_col,colid)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where 0 in (in_col,1,in_col,colid)
+----
+
+query T rowsort
+select helloworld from in_table where 1 not in (in_col,1,in_col,colid)
+----
+
+query T rowsort
+select helloworld from in_table where 0 not in (in_col,1,in_col,colid)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where in_col in (1)
+----
+hello
+
+query T rowsort
+select helloworld from in_table where in_col in (0)
+----
+
+query T rowsort
+select helloworld from in_table where in_col not in (1)
+----
+@
+world
+
+query T rowsort
+select helloworld from in_table where in_col not in (0)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where in_col in (1,5)
+----
+hello
+
+query T rowsort
+select helloworld from in_table where in_col in (0,5)
+----
+
+query T rowsort
+select helloworld from in_table where in_col not in (1,5)
+----
+@
+world
+
+query T rowsort
+select helloworld from in_table where in_col not in (0,5)
+----
+@
+hello
+world
+
+query T rowsort
+select helloworld from in_table where NULL in (in_col)
+----
+
+query T rowsort
+select helloworld from in_table where NULL not in (in_col)
+----
+
+query T rowsort
+select helloworld from in_table where in_col in (NULL)
+----
+
+query T rowsort
+select helloworld from in_table where in_col not in (NULL)
+----
+
+statement ok
+drop table in_table
+

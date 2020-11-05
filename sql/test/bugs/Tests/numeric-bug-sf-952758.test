@@ -1,0 +1,12 @@
+statement ok
+create table ntest(num numeric(8,2))
+
+statement ok
+drop table ntest
+
+statement ok
+create table ntest(num numeric(8))
+
+statement ok
+drop table ntest
+

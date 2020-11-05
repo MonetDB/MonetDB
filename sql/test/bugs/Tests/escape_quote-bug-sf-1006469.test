@@ -1,0 +1,14 @@
+query I rowsort
+select char_length('''')
+----
+1
+
+statement ok
+create table test3 (s varchar(1))
+
+statement ok
+insert into test3 values ('''')
+
+statement ok
+drop table test3
+

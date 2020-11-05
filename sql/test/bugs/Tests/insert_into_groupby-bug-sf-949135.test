@@ -1,0 +1,46 @@
+statement ok
+CREATE TABLE a (S varchar(255) PRIMARY KEY)
+
+statement ok
+CREATE TABLE b (S varchar(255) PRIMARY KEY)
+
+statement ok
+INSERT INTO a VALUES ('hallo')
+
+statement ok
+INSERT INTO b SELECT S FROM a GROUP BY S
+
+query T rowsort
+select * from a
+----
+hallo
+
+query T rowsort
+select * from b
+----
+hallo
+
+statement ok
+drop table a
+
+statement ok
+drop table b
+
+statement ok
+CREATE TABLE a (S varchar(255) PRIMARY KEY)
+
+statement ok
+CREATE TABLE b (S varchar(255) PRIMARY KEY)
+
+statement ok
+INSERT INTO a VALUES ('hallo')
+
+statement ok
+INSERT INTO b SELECT S FROM a
+
+statement ok
+drop table a
+
+statement ok
+drop table b
+

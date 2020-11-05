@@ -1,0 +1,22 @@
+statement ok
+create table "\t" (id int)
+
+statement ok
+drop table "\t"
+
+statement ok
+create table " " (id int)
+
+statement ok
+drop table " "
+
+statement ok
+create table x ("\t" int)
+
+query I rowsort
+select * from x
+----
+
+statement ok
+drop table "x"
+

@@ -1,0 +1,11 @@
+statement error
+SELECT * FROM (VALUES (0, Promo0), (1, Promo1)) AS "t" 
+
+query IT rowsort
+SELECT * FROM (VALUES (0, 'Promo0'), (1, 'Promo1')) AS "t" 
+----
+0
+Promo0
+1
+Promo1
+

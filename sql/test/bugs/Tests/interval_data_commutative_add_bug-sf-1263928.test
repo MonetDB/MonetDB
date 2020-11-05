@@ -1,0 +1,10 @@
+query T rowsort
+select date '2005-08-19' + interval '1' day
+----
+2005-08-20
+
+query T rowsort
+select interval '1' day + date '2005-08-19'
+----
+2005-08-20
+

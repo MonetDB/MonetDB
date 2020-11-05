@@ -1,0 +1,55 @@
+query I rowsort
+SELECT count(*)
+----
+1
+
+query I rowsort
+SELECT count(1)
+----
+1
+
+query I rowsort
+SELECT count(NULL)
+----
+0
+
+query R rowsort
+SELECT avg(1)
+----
+1.000
+
+query R rowsort
+SELECT avg(cast (NULL as int))
+----
+NULL
+
+query I rowsort
+SELECT cast( sum(1) as bigint)
+----
+1
+
+query I rowsort
+SELECT cast( sum(cast (NULL as int)) as bigint)
+----
+NULL
+
+query I rowsort
+SELECT max(1)
+----
+1
+
+query I rowsort
+SELECT max(cast (NULL as int))
+----
+NULL
+
+query I rowsort
+SELECT min(1)
+----
+1
+
+query I rowsort
+SELECT min(cast (NULL as int))
+----
+NULL
+

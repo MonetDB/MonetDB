@@ -1,0 +1,74 @@
+statement ok
+CREATE TABLE query_users (
+        user_id INT NOT NULL AUTO_INCREMENT,
+        user_name VARCHAR(20),
+        PRIMARY KEY (user_id)
+)
+
+statement ok
+INSERT INTO query_users (user_id, user_name) VALUES (1, 'john')
+
+statement ok
+INSERT INTO query_users (user_id, user_name) VALUES (2, 'jack')
+
+statement ok
+INSERT INTO query_users (user_id, user_name) VALUES (3, 'ed')
+
+statement ok
+INSERT INTO query_users (user_id, user_name) VALUES (4, 'wendy')
+
+statement ok
+INSERT INTO query_users (user_id, user_name) VALUES (5, 'laura')
+
+statement ok
+INSERT INTO query_users (user_id, user_name) VALUES (6, 'ralph')
+
+statement ok
+INSERT INTO query_users (user_id, user_name) VALUES (7, 'fido')
+
+query IT rowsort
+select * from query_users
+----
+14 values hashing to 6f1dd5f5aa3835ce5d3f1a19d2631a5b
+
+query IT rowsort
+SELECT query_users.user_id, query_users.user_name
+FROM query_users ORDER BY query_users.user_id
+LIMIT 3 OFFSET 2
+----
+3
+ed
+4
+wendy
+5
+laura
+
+query IT rowsort
+SELECT query_users.user_id, query_users.user_name
+FROM query_users LIMIT 3 OFFSET 2
+----
+3
+ed
+4
+wendy
+5
+laura
+
+query IT rowsort
+select * from query_users OFFSET 2
+----
+10 values hashing to c5e74fd16be6b65a9fce3eca1d4de60e
+
+query IT rowsort
+select * from query_users order by user_name
+----
+14 values hashing to 6f1dd5f5aa3835ce5d3f1a19d2631a5b
+
+query IT rowsort
+select * from query_users order BY user_name OFFSET 2
+----
+10 values hashing to 27844e9dae94812ae87787508cfdd97a
+
+statement ok
+drop table query_users
+

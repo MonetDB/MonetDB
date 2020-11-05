@@ -1,0 +1,48 @@
+statement ok
+start transaction
+
+statement ok
+create table a (id int primary key)
+
+statement ok
+create table b (id int references a(id))
+
+statement ok
+drop table b
+
+statement ok
+drop table a
+
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+create table a (id int primary key)
+
+statement ok
+create table b (id int references a(id))
+
+statement error
+drop table a
+
+statement error
+drop table b
+
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+create table tmp (i integer unique not null, b integer references tmp(i))
+
+statement ok
+drop table tmp
+
+statement ok
+rollback
+

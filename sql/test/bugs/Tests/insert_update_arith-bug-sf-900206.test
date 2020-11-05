@@ -1,0 +1,57 @@
+statement ok
+create table RKB( head int unique, tail int)
+
+statement ok
+create table RKA( head int unique, tail int)
+
+statement ok
+create table tapestry( a0 int unique, a1 int)
+
+statement ok
+insert into RKA values(0,0)
+
+statement ok
+insert into RKA values(1,360)
+
+statement ok
+insert into RKA values(1023,864)
+
+statement ok
+insert into RKB select head+0, tail+0 from RKA
+
+statement ok
+update RKB set tail=(tail*37) % 1024
+
+statement ok
+update RKB set tail=(tail*7) % 1024
+
+statement ok
+insert into tapestry select R0.head, R0.tail from RKB R0
+
+statement ok
+create table _tmp( a0 int unique, a1 int)
+
+statement ok
+insert into _tmp select * from tapestry where a1>=0 and a1 <=1
+
+statement ok
+delete from _tmp
+
+statement ok
+insert into _tmp select * from tapestry where a1>=0 and a1 <=1
+
+statement ok
+delete from _tmp
+
+statement ok
+drop table _tmp
+
+statement ok
+drop table RKA
+
+statement ok
+drop table RKB
+
+statement ok
+drop table tapestry
+
