@@ -262,7 +262,7 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 	QRYqueue[qhead].mb = mb;
 	QRYqueue[qhead].tag = qtag++;
 	QRYqueue[qhead].stk = stk;				// for status pause 'p'/running '0'/ quiting 'q'
-	QRYqueue[qhead].finished =
+	QRYqueue[qhead].finished = 0;
 	QRYqueue[qhead].start = time(0);
 	q = isaSQLquery(mb);
 	QRYqueue[qhead].query = q? GDKstrdup(q):0;

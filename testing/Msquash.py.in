@@ -543,6 +543,9 @@ def find_test_dirs(thisdir) :
 ### find_test_dirs(thisdir) #
 
 def PerformDir(env, testdir) :
+    oneserver = testdir.get('single_server', False)
+    options = testdir.get('server_options', [])
+    testlist = testdir.get('tests', [])
 
     TSTDIR = testdir.get('realpath')[len(TSTSRCBASE + os.sep):-len(os.sep + TSTSUFF)]
     TSTSRCDIR = testdir.get('realpath')
@@ -555,7 +558,6 @@ def PerformDir(env, testdir) :
     env['TSTSRCDIR'] = TSTSRCDIR
     env['UTSTSRCDIR'] = 'file://' + url(TSTSRCDIR)
     env['TSTTRGDIR'] = TSTTRGDIR
-    # TODO see if this will work
     if TSTDIR == os.curdir:
         env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
     else:
@@ -568,42 +570,123 @@ def PerformDir(env, testdir) :
     if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
         env['TSTDATAPATH'] = TSTDATAPATH
         os.environ['TSTDATAPATH'] = TSTDATAPATH
-    #--------------------------------------------
 
-    one_or_more_inputs = False
-    fix = {}
+    if 'GDK_DBFARM' in env:
+        LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
+        if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
+            try:
+                shutil.rmtree(LogDBdir)
+            except:
+                raise SystemExit("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
+        if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
+            try:
+                os.makedirs(LogDBdir)
+            except:
+                raise SystemExit("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
+        if initdb:
+            import zipfile
+            try:
+                z = zipfile.ZipFile(initdb)
+            except IOError:
+                raise SystemExit("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+            try:
+                z.extractall(LogDBdir)
+            except:
+                raise SystemExit("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+            z.close()
+            if not oneserver:
+                pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                pSrvr.LaunchIt()
+                pSrvr.terminate()
+    if not os.path.exists(TSTTRGDIR):
+        #TODO: set mode to umask
+        os.makedirs(TSTTRGDIR)
+
+    pSrvr = None
     BACK = os.getcwd()
-    for t in testdir.get('tests', []):
-        if t.get('call') != 'sql':
-            raise SystemExit('ERROR: {} only sql tests can be squashed!'.format(t.get('name')))
+    for t in testlist:
+        fix = {}
+        CALL = t.get('call')
+        if CALL not in ['sql', 'mal']:
+            continue
+        test_name = t.get('test_name')
+        options += t.get('options5', [])
         fn = t.get('test_path') + t.get('tail')
-        if t.get('is_input', False):
-            one_or_more_inputs = True
-            with open(fn, 'r') as f:
-                for l in f:
-                    expanded = expandvars(l, env)
-                    print(expanded)
-                    if expanded != l:
-                        fix[expanded] = l
-            continue
-        if t.get('is_src_link', False):
-            with open(fn, 'r') as f:
-                fpath = expandvars(f.readline().strip(), env)
-                if os.path.isfile(fpath):
-                    with open(fpath, 'r') as f:
-                        print(f.read())
+        try:
+            with open('/tmp/sqllogic.in', 'w') as fout:
+                if t.get('is_input', False):
+                    with open(fn, 'r') as f:
+                        for l in f:
+                            expanded = expandvars(l, env)
+                            print(expanded, file=fout)
+                            if expanded != l:
+                                fix[expanded] = l
+                elif t.get('is_src_link', False):
+                    with open(fn, 'r') as f:
+                        fpath = expandvars(f.readline().strip(), env)
+                        if os.path.isfile(fpath):
+                            with open(fpath, 'r') as f:
+                                print(f.read(), file=fout)
+                        else:
+                            os.chdir(TSTSRCDIR)
+                            with open(fpath, 'r') as f:
+                                print(f.read(), file=fout)
+                            os.chdir(BACK)
                 else:
-                    os.chdir(TSTSRCDIR)
-                    with open(fpath, 'r') as f:
-                        print(f.read())
-                    os.chdir(BACK)
-            continue
-        with open(fn, 'r') as f:
-            print(f.read())
-    if one_or_more_inputs:
-        print('-- WARNING expanded variables needs to be converted back')
-        for k in fix:
-            print('--', key,':', fix[key])
+                    with open(fn, 'r') as f:
+                        print(f.read(), file=fout)
+            pSrvr = create_mserver5(
+                    LogDBdir,
+                    env=env,
+                    outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
+                    errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
+                    options=options)
+            pSrvr.LaunchIt()
+            with open('/tmp/sqllogic.in', 'r') as fin:
+                cmd = ['mktest.py', '--database', TSTDB, '--port', str(pSrvr.port), '--language', CALL]
+                with process.Popen(cmd, stdin=fin, stdout=process.PIPE, text=True) as proc:
+                    print(proc.stdout.read())
+                    if len(fix.keys()) > 0:
+                        print('-- WARNING expanded variables needs to be converted back')
+                        for k in fix:
+                            print('--', key,':', fix[key])
+        finally:
+            if pSrvr is not None:
+                pSrvr.terminate()
+                pSrvr = None
+
+    #--------------------------------------------
+    #for t in testdir.get('tests', []):
+    #    if t.get('call') != 'sql':
+    #        raise SystemExit('ERROR: {} only sql tests can be squashed!'.format(t.get('name')))
+    #    fn = t.get('test_path') + t.get('tail')
+    #    if t.get('is_input', False):
+    #        one_or_more_inputs = True
+    #        with open(fn, 'r') as f:
+    #            for l in f:
+    #                expanded = expandvars(l, env)
+    #                print(expanded)
+    #                if expanded != l:
+    #                    fix[expanded] = l
+    #        continue
+    #    if t.get('is_src_link', False):
+    #        with open(fn, 'r') as f:
+    #            fpath = expandvars(f.readline().strip(), env)
+    #            if os.path.isfile(fpath):
+    #                with open(fpath, 'r') as f:
+    #                    print(f.read())
+    #            else:
+    #                os.chdir(TSTSRCDIR)
+    #                with open(fpath, 'r') as f:
+    #                    print(f.read())
+    #                os.chdir(BACK)
+    #        continue
+    #    with open(fn, 'r') as f:
+    #        print(f.read())
+    #if one_or_more_inputs:
+    #    print('-- WARNING expanded variables needs to be converted back')
+    #    for k in fix:
+    #        print('--', key,':', fix[key])
 
 ### PerformDir(env, testdir) #
 
