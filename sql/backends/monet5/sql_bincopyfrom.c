@@ -28,8 +28,8 @@ BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, void (*fixup)(void*,v
 {
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
-	size_t asz = (size_t) ATOMsize(tt);
-	size_t chunk_size = 1<<20;
+	const size_t asz = (size_t) ATOMsize(tt);
+	const size_t chunk_size = 1<<20;
 
 	bool eof = false;
 	while (!eof) {
@@ -249,7 +249,8 @@ convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end
 static void
 convert_line_endings(char *text)
 {
-	// read- and write pointers
+	// Read- and write positions.
+	// We always have w <= r, or it wouldn't be safe.
 	const char *r = text;
 	char *w = text;
 	while (*r) {
@@ -325,7 +326,33 @@ end:
 }
 
 
+// Dispatcher table for imports. We dispatch on a string value instead of for
+// example the underlying gdktype so we have freedom to some day implement for
+// example both zero-terminated strings and newline-terminated strings.
+//
+// An entry must fill one field of the following three: 'loader',
+// 'convert_fixed_width', or 'convert_in_place'.
 
+// A 'loader' has complete freedom. It is handed a BAT and a stream and it can
+// then do whatever it wants. We use it to read strings and json and other
+// variable-width data.
+//
+// If an entry has has 'convert_in_place' this means the external and internal
+// forms have the same size and are probably identical. In this case, the data
+// is loaded directly into the bat heap and then the 'convert_in_place' function
+// is called once for the whole to perform any necessary tweaking of the data.
+// We use this for example for the integer types, on little-endian platforms no
+// tweaking is necessary and on big-endian platforms we byteswap the data.
+//
+// Finally, if an entry has 'convert_fixed_width' it means the internal and
+// external forms are both fixed width but different. The data is loaded into
+// intermediate buffers first and the conversion function copies the data from
+// an array of incoming data in the buffer to an array of internal
+// representations in the BAT.
+//
+// A note about the function signatures: we use start/end pointers instead of
+// start/size pairs because this way there can be no confusion about whether
+// the given size is a byte count or an item count.
 static struct type_rec {
 	char *method;
 	int gdk_type;
@@ -348,7 +375,6 @@ static struct type_rec {
 	{ "date", TYPE_date, .convert_fixed_width=convert_date, .record_size=sizeof(copy_binary_date), },
 	{ "daytime", TYPE_daytime, .convert_fixed_width=convert_time, .record_size=sizeof(copy_binary_time), },
 	{ "timestamp", TYPE_timestamp, .convert_fixed_width=convert_timestamp, .record_size=sizeof(copy_binary_timestamp), },
-
 };
 
 
@@ -367,15 +393,10 @@ static str
 load_column(struct type_rec *rec, BAT *bat, stream *s, lng rows_estimate, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
-	(void)rec;
-	(void)bat;
-	(void)s;
-	(void)eof_reached;
 
 	if (rec->loader != NULL) {
 		msg = rec->loader(bat, s, eof_reached);
 	} else if (rec->convert_in_place != NULL) {
-		// These types can be read directly into the BAT
 		msg = BATattach_as_bytes(bat, s, rows_estimate, rec->convert_in_place, eof_reached);
 	} else if (rec->convert_fixed_width != NULL) {
 		msg = BATattach_fixed_width(bat, s, rec->convert_fixed_width, rec->record_size, eof_reached);
@@ -505,6 +526,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 		else
 			bailout("internal error in sql.importColumn: eof_reached not set (%s)", method);
 	}
+
 	// Fall through into the end block which will clean things up
 end:
 	if (do_finish_mapi) {
@@ -514,12 +536,11 @@ end:
 	}
 
 	if (stream_to_close)
-
 		close_stream(stream_to_close);
 
 	// Manage the return values and `bat`.
 	if (msg == MAL_SUCCEED) {
-		BBPkeepref(bat->batCacheid); // should I call this?
+		BBPkeepref(bat->batCacheid);
 		*ret = bat->batCacheid;
 		*retcnt = BATcount(bat);
 	} else {
@@ -538,6 +559,8 @@ end:
 str
 mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	// Entry point for sql.importColumn.
+	// Does the argument/return handling, the work is done by importColumn.
 	(void)mb;
 
 	assert(pci->retc == 2);
@@ -558,6 +581,8 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 str
 mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	// At some point we should remove all traces of importTable.
+	// Until then, an error message.
 	(void)cntxt;
 	(void)mb;
 	(void)stk;

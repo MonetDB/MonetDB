@@ -79,7 +79,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 	// loaded the first one.
 	//
 	// Both ON SERVER and ON CLIENT, the prototype column is also used when emitting the
-	// columns with a nil path.
+	// columns with a nil path, by projecting nil values over it.
 	int prototype_idx = -1;
 	int prototype_type = TYPE_any;
 	for (int i = 0; i < old->retc; i++) {
@@ -124,7 +124,13 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count
 {
 	int var = getArg(old, idx);
 	int var_type = getVarType(mb, var);
-	str var_type_name = ATOMname(getBatType(var_type));
+
+	// The sql.importColumn operator takes a 'method' string to determine how to
+	// load the data. This leaves the door open to have multiple loaders for the
+	// same backend type, for example nul- and newline terminated strings.
+	// For the time being we just use the name of the storage type as the method
+	// name.
+	str method = ATOMname(getBatType(var_type));
 
 	int onclient = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
 
@@ -137,7 +143,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count
 		setReturnArgument(p, old->argv[idx]);
 		int new_count_var = newTmpVariable(mb, TYPE_lng);
 		pushReturn(mb, p, new_count_var);
-		pushStr(mb, p, var_type_name);
+		pushStr(mb, p, method);
 		pushStr(mb, p, path);
 		pushInt(mb, p, onclient);
 		if (count_var < 0)
