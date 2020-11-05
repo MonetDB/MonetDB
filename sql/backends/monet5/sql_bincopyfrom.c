@@ -24,7 +24,7 @@
 
 
 static str
-BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, void (*fixup)(void*,void*), int *eof_seen)
+BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, str (*fixup)(void*,void*), int *eof_seen)
 {
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
@@ -66,7 +66,9 @@ BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, void (*fixup)(void*,v
 			}
 			cur += (size_t) nread;
 		}
-		fixup(start, end);
+		msg = fixup(start, end);
+		if (msg != NULL)
+			goto end;
 		bat->batCount += (end - start) / asz;
 	}
 
@@ -89,40 +91,50 @@ end:
 	return msg;
 }
 
-static
-void convert_bte(void *start, void *end)
+static str
+convert_bte(void *start, void *end)
 {
 	(void)start;
 	(void)end;
+
+	return MAL_SUCCEED;
 }
 
-static
-void convert_sht(void *start, void *end)
+static str
+convert_sht(void *start, void *end)
 {
 	for (sht *p = start; p < (sht*)end; p++)
 		COPY_BINARY_CONVERT16(*p);
+
+	return MAL_SUCCEED;
 }
 
-static
-void convert_int(void *start, void *end)
+static str
+convert_int(void *start, void *end)
 {
 	for (int *p = start; p < (int*)end; p++)
 		COPY_BINARY_CONVERT32(*p);
+
+	return MAL_SUCCEED;
 }
 
-static
-void convert_lng(void *start, void *end)
+static str
+convert_lng(void *start, void *end)
 {
 	for (lng *p = start; p < (lng*)end; p++)
 		COPY_BINARY_CONVERT64(*p);
+
+	return MAL_SUCCEED;
 }
 
 #ifdef HAVE_HGE
-static
-void convert_hge(void *start, void *end)
+static str
+convert_hge(void *start, void *end)
 {
 	for (hge *p = start; p < (hge*)end; p++)
 		COPY_BINARY_CONVERT128(*p);
+
+	return MAL_SUCCEED;
 }
 #endif
 
@@ -359,7 +371,7 @@ static struct type_rec {
 	str (*loader)(BAT *bat, stream *s, int *eof_reached);
 	str (*convert_fixed_width)(void *dst_start, void *dst_end, void *src_start, void *src_end);
 	size_t record_size;
-	void (*convert_in_place)(void *start, void *end);
+	str (*convert_in_place)(void *start, void *end);
 } type_recs[] = {
 	{ "bte", TYPE_bte, .convert_in_place=convert_bte, },
 	{ "sht", TYPE_sht, .convert_in_place=convert_sht, },
