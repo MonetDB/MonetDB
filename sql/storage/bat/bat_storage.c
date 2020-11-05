@@ -2024,7 +2024,7 @@ static BUN
 clear_col(sql_trans *tr, sql_column *c)
 {
 	if (bind_col_data(tr, c) == LOG_ERR)
-		return 0;
+		return BUN_NONE;
 	c->t->s->base.wtime = c->t->base.wtime = c->base.wtime = tr->wstime;
 	if (c->data)
 		return clear_delta(tr, c->data);
@@ -2037,7 +2037,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if (bind_idx_data(tr, i) == LOG_ERR)
-		return 0;
+		return BUN_NONE;
 	i->t->s->base.wtime = i->t->base.wtime = i->base.wtime = tr->wstime;
 	if (i->data)
 		return clear_delta(tr, i->data);
@@ -2076,7 +2076,7 @@ clear_del(sql_trans *tr, sql_table *t)
 {
 
 	if (bind_del_data(tr, t) == LOG_ERR)
-		return 0;
+		return BUN_NONE;
 	t->s->base.wtime = t->base.wtime = tr->wstime;
 	return clear_dbat(tr, t->data);
 }
@@ -2771,9 +2771,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 					oc->data = timestamp_delta(o->data, oc->base.stime);
 				}
 				assert(oc->data);
-				if (tr_merge_delta(tr, oc->data, oc->unique == 1) != LOG_OK)
-					ok = LOG_ERR;
-				cc->data = NULL;
+				if (cc->base.wtime) {
+					if (tr_merge_delta(tr, oc->data, oc->unique == 1) != LOG_OK)
+						ok = LOG_ERR;
+					cc->data = NULL;
+				}
 			} else if (cc->data) {
 				tr_handle_snapshot(tr, cc->data);
 				oc->data = cc->data;
@@ -2852,9 +2854,11 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 						oi->data = timestamp_delta(o->data, oi->base.stime);
 					}
 					assert(oi->data);
-					if (tr_merge_delta(tr, oi->data, 0) != LOG_OK)
-						ok = LOG_ERR;
-					ci->data = NULL;
+					if (ci->base.wtime) {
+						if (tr_merge_delta(tr, oi->data, 0) != LOG_OK)
+							ok = LOG_ERR;
+						ci->data = NULL;
+					}
 				} else if (ci->data) {
 					tr_handle_snapshot(tr, ci->data);
 					oi->data = ci->data;

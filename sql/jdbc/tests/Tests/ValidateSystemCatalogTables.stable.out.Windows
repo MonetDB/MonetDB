@@ -1,4 +1,4 @@
-stdout of test 'ValidateSystemCatalogTables` in directory 'sql/test/sys-schema` itself:
+stdout of test 'ValidateSystemCatalogTables` in directory 'sql/jdbc/tests` itself:
 
 
 # 16:25:09 >  
@@ -16,7 +16,7 @@ Checking     45 columns      in schema sys for Primary Key Not Null violations.
 Checking     30 tables/keys  in schema sys for Unique Constraint violations.
 Checking     95 foreign keys in schema sys for Foreign Key referential integrity violations.
 Checking    169 columns      in schema sys for Not Null violations.
-Checking    153 columns      in schema sys for Max Character Length violations.
+Checking    145 columns      in schema sys for Max Character Length violations.
 Checking      6 tables/keys  in schema tmp for Primary Key uniqueness violations.
 Checking      6 columns      in schema tmp for Primary Key Not Null violations.
 Checking      7 tables/keys  in schema tmp for Unique Constraint violations.
@@ -28,7 +28,7 @@ Checking     10 keys         in schema sys for Primary Key uniqueness violations
 Checking      7 keys         in schema sys for Unique Constraint violations.
 Checking      0 foreign keys in schema sys for Foreign Key referential integrity violations.
 Checking     29 columns      in schema sys for Not Null violations.
-Checking    153 columns      in schema sys for Max Character Length violations.
+Checking    145 columns      in schema sys for Max Character Length violations.
 \vsi tmp
 Checking      0 keys         in schema tmp for Primary Key uniqueness violations.
 Checking      0 keys         in schema tmp for Unique Constraint violations.
