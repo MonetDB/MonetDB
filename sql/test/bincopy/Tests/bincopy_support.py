@@ -224,3 +224,41 @@ CREATE TABLE foo(id INT NOT NULL, d DOUBLE);
 COPY BINARY INTO foo(id, d) FROM @ints@, @doubles@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = d;
 """
+
+INTEGER_TYPES = """
+CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
+COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@,@bigints@;
+
+WITH
+enlarged AS ( -- first go to the largest type
+    SELECT
+        t, s, i, b,
+        CAST(t AS BIGINT) AS tt,
+        CAST(s AS BIGINT) AS ss,
+        CAST(i AS BIGINT) AS ii,
+        b AS bb
+    FROM foo
+),
+denulled AS ( -- 0x80, 0x8000 etc have been interpreted as NULL, fix this
+    SELECT
+        t, s, i, b,
+        COALESCE(tt,        -128) AS tt,
+        COALESCE(ss,      -32768) AS ss,
+        COALESCE(ii, -2147483648) AS ii,
+        bb
+    FROM enlarged
+),
+verified AS (
+    SELECT
+        t, s, i, b,
+        (tt - ss) %        256 = 0 AS t_s,
+        (ss - ii) %      65536 = 0 AS s_i,
+        (ii - bb) % 2147483648 = 0 AS i_b
+    FROM denulled
+)
+SELECT t_s, s_i, i_b, COUNT(*)
+FROM verified
+GROUP BY t_s, s_i, i_b
+ORDER BY t_s, s_i, i_b
+;
+"""

@@ -41,6 +41,33 @@ croak(int status, const char *ctx, ...)
 
 
 static void
+gen_tinyints(FILE *f, long nrecs)
+{
+	for (long i = 0; i < nrecs; i++) {
+		uint8_t v = (uint8_t)i;
+		fwrite(&v, sizeof(v), 1, f);
+	}
+}
+
+static void
+gen_smallints(FILE *f, long nrecs)
+{
+	for (long i = 0; i < nrecs; i++) {
+		uint16_t v = (uint16_t)i;
+		fwrite(&v, sizeof(v), 1, f);
+	}
+}
+
+static void
+gen_bigints(FILE *f, long nrecs)
+{
+	for (long i = 0; i < nrecs; i++) {
+		uint64_t v = (uint64_t)i;
+		fwrite(&v, sizeof(v), 1, f);
+	}
+}
+
+static void
 gen_ints(FILE *f, long nrecs)
 {
 	assert((uintmax_t)nrecs <= (uintmax_t) UINT32_MAX);
@@ -172,6 +199,9 @@ static struct gen generators[] = {
 	{ "bools", gen_bools },
 	{ "floats", gen_floats },
 	{ "doubles", gen_doubles },
+	{ "tinyints", gen_tinyints },
+	{ "smallints", gen_smallints },
+	{ "bigints", gen_bigints },
 	//
 	{ "strings", gen_strings },
 	{ "large_strings", gen_large_strings },

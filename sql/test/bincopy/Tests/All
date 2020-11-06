@@ -25,3 +25,5 @@ bincopy_floats_on_client
 bincopy_floats_on_server
 bincopy_doubles_on_client
 bincopy_doubles_on_server
+bincopy_integer_types_on_client
+bincopy_integer_types_on_server
