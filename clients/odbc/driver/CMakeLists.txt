@@ -103,7 +103,7 @@ target_sources(MonetODBC
   SQLTables.c
   SQLTransact.c
   driver.rc
-  ODBC.syms)
+  ODBC.def)
 
 target_include_directories(MonetODBC
   PRIVATE
