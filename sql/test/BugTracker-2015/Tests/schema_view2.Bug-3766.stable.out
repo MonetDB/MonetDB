@@ -71,12 +71,12 @@ stdout of test 'schema_view2.Bug-3766` in directory 'sql/test/BugTracker-2015` i
 % i # name
 % int # type
 % 1 # length
-#select * from sys._tables where name like '%v1%';
-% sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables,	sys._tables # table_name
-% id,	name,	schema_id,	query,	type,	system,	commit_action,	access # name
-% int,	varchar,	int,	varchar,	smallint,	boolean,	smallint,	smallint # type
-% 4,	2,	4,	43,	1,	5,	1,	1 # length
-[ 9229,	"v1",	9226,	"create view tst.v1 (i) as select * from t1;",	1,	false,	0,	0	]
+#select "name" from sys._tables where name like '%v1%';
+% sys._tables # table_name
+% name # name
+% varchar # type
+% 2 # length
+[ "v1"	]
 #drop view tst.v1;
 #drop schema tst;
 #drop table t1;
