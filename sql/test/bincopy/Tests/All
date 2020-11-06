@@ -27,3 +27,5 @@ bincopy_doubles_on_client
 bincopy_doubles_on_server
 bincopy_integer_types_on_client
 bincopy_integer_types_on_server
+bincopy_huge_ints_on_client
+bincopy_huge_ints_on_server

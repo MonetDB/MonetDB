@@ -67,6 +67,17 @@ gen_bigints(FILE *f, long nrecs)
 	}
 }
 
+#ifdef HAVE_HGE
+static void
+gen_hugeints(FILE *f, long nrecs)
+{
+	for (long i = 0; i < nrecs; i++) {
+		uhge v = (uhge)i;
+		fwrite(&v, sizeof(v), 1, f);
+	}
+}
+#endif
+
 static void
 gen_ints(FILE *f, long nrecs)
 {
@@ -202,6 +213,9 @@ static struct gen generators[] = {
 	{ "tinyints", gen_tinyints },
 	{ "smallints", gen_smallints },
 	{ "bigints", gen_bigints },
+#ifdef HAVE_HGE
+	{ "hugeints", gen_hugeints },
+#endif
 	//
 	{ "strings", gen_strings },
 	{ "large_strings", gen_large_strings },

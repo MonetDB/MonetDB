@@ -227,7 +227,7 @@ SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = d;
 
 INTEGER_TYPES = """
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
-COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@,@bigints@;
+COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@, @bigints@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -260,5 +260,38 @@ SELECT t_s, s_i, i_b, COUNT(*)
 FROM verified
 GROUP BY t_s, s_i, i_b
 ORDER BY t_s, s_i, i_b
+;
+"""
+
+HUGE_INTS = """
+CREATE TABLE foo(b BIGINT, h HUGEINT);
+COPY BINARY INTO foo FROM @bigints@, @hugeints@;
+
+WITH
+enlarged AS (
+    SELECT
+        b, h,
+        CAST(b AS HUGEINT) AS bb,
+        h AS hh
+    FROM foo
+),
+denulled AS (
+    SELECT
+        b, h,
+        COALESCE(bb, -9223372036854775808) AS bb,
+        hh
+    FROM enlarged
+),
+verified AS (
+    SELECT
+        b, h,
+        bb, hh,
+        (bb - hh) % 9223372036854775808 = 0 AS b_h
+    FROM denulled
+)
+SELECT b_h, COUNT(*)
+FROM verified
+GROUP BY b_h
+ORDER BY b_h
 ;
 """
