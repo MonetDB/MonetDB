@@ -973,14 +973,13 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 static sql_exp *
 rel_exp_variable_on_scope(mvc *sql, const char *sname, const char *vname)
 {
-	sql_schema *s = NULL;
 	sql_subtype *tpe;
 	sql_var *var = NULL;
 	sql_arg *a = NULL;
 	int level = 1;
 
 	(void) tpe;
-	if (find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SELECT")) {
+	if (find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SELECT")) {
 		if (var) /* if variable is known from the stack or a global var */
 			return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
 		if (a) /* if variable is a parameter */
@@ -3840,22 +3839,21 @@ rel_next_value_for( mvc *sql, symbol *se )
 {
 	char *sname = qname_schema(se->data.lval);
 	char *seqname = qname_schema_object(se->data.lval);
-	sql_schema *s = NULL;
+	sql_sequence *seq = NULL;
 	sql_subtype t;
 	sql_subfunc *f;
 
 	if (!stack_find_rel_view(sql, seqname)) {
-		if (!find_sequence_on_scope(sql, &s, sname, seqname, "NEXT VALUE FOR"))
+		if (!(seq = find_sequence_on_scope(sql, sname, seqname, "NEXT VALUE FOR")))
 			return NULL;
-		if (!mvc_schema_privs(sql, s))
-			return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+		if (!mvc_schema_privs(sql, seq->s))
+			return sql_error(sql, 02, SQLSTATE(42000) "NEXT VALUE FOR: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), seq->s->base.name);
 	}
 	sql_find_subtype(&t, "varchar", 0, 0);
 	f = sql_bind_func(sql, "sys", "next_value_for", &t, &t, F_FUNC);
 	assert(f);
-	if (!s) /* sequence found in the stack. use session's schema? */
-		s = cur_schema(sql);
-	return exp_binop(sql->sa, exp_atom_str(sql->sa, s->base.name, &t), exp_atom_str(sql->sa, seqname, &t), f);
+	/* sequence found in the stack. use session's schema? */
+	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : cur_schema(sql)->base.name, &t), exp_atom_str(sql->sa, seqname, &t), f);
 }
 
 /* some users like to use aliases already in the groupby */

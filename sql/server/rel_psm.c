@@ -73,11 +73,10 @@ psm_set_exp(sql_query *query, dnode *n)
 		exp_kind ek = {type_value, card_value, FALSE};
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
-		sql_schema *s = NULL;
 		sql_var *var = NULL;
 		sql_arg *a = NULL;
 
-		if (!find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SET"))
+		if (!find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SET"))
 			return NULL;
 		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm, ek)))
 			return NULL;
@@ -110,11 +109,10 @@ psm_set_exp(sql_query *query, dnode *n)
 			const char *sname = qname_schema(nqname);
 			const char *vname = qname_schema_object(nqname);
 			sql_exp *v = n->data;
-			sql_schema *s = NULL;
 			sql_var *var = NULL;
 			sql_arg *a = NULL;
 
-			if (!find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SET"))
+			if (!find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SET"))
 				return NULL;
 
 			v = exp_ref(sql, v);
@@ -561,14 +559,13 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		dlist *qname = n->data.lval;
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
-		sql_schema *s = NULL;
 		sql_exp *v = m->data;
 		int level;
 		sql_var *var;
 		sql_subtype *tpe;
 		sql_arg *a = NULL;
 
-		if (!find_variable_on_scope(sql, &s, sname, vname, &var, &a, &tpe, &level, "SELECT INTO"))
+		if (!find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SELECT INTO"))
 			return NULL;
 
 		v = exp_ref(sql, v);
@@ -1379,9 +1376,9 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 {
 	const char *sname = qname_schema(qname);
 	const char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
+	sql_trigger *tr = NULL;
 
-	if (!find_trigger_on_scope(sql, &s, sname, tname, "DROP TRIGGER")) {
+	if (!(tr = find_trigger_on_scope(sql, sname, tname, "DROP TRIGGER"))) {
 		if (if_exists) {
 			sql->errstr[0] = '\0'; /* reset trigger not found error */
 			sql->session->status = 0;
@@ -1389,9 +1386,9 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 		}
 		return NULL;
 	}
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	return rel_drop_trigger(sql, s->base.name, tname, if_exists);
+	if (!mvc_schema_privs(sql, tr->t->s))
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), tr->t->s->base.name);
+	return rel_drop_trigger(sql, tr->t->s->base.name, tname, if_exists);
 }
 
 static sql_rel *
