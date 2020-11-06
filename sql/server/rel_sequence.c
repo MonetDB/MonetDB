@@ -90,7 +90,7 @@ rel_create_seq(
 	sql_schema *s = cur_schema(sql);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
@@ -282,7 +282,7 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 	}
 	if (val && val->card > CARD_ATOM) {
-		sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val), NULL, F_AGGR);
+		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(val), NULL, F_AGGR);
 		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
 	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);

@@ -964,9 +964,9 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 
 	p = PRIV_EXECUTE;
-	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
+	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION);
 	table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
-	f = sql_bind_func_(m->sa, s, "var", NULL, F_UNION);
+	f = sql_bind_func_(m, s->base.name, "var", NULL, F_UNION);
 	table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 
 	/* owned by the users anyway

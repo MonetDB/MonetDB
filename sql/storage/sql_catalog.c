@@ -355,31 +355,6 @@ find_sql_func(sql_schema *s, const char *tname)
 	return _cs_find_name(&s->funcs, tname);
 }
 
-list *
-find_all_sql_func(sql_schema *s, const char *name, sql_ftype type)
-{
-	list *l = s->funcs.set, *res = NULL;
-	node *n = NULL;
-
-	if (l) {
-		for (n = l->h; n; n = n->next) {
-			sql_base *b = n->data;
-			sql_func *f = n->data;
-
-			/* check if names match */
-			if (f->type == type && name[0] == b->name[0] && strcmp(name, b->name) == 0) {
-				if (!res)
-					res = list_create((fdestroy)NULL);
-				if (!res) {
-					return NULL;
-				}
-				list_append(res, f);
-			}
-		}
-	}
-	return res;
-}
-
 sql_func *
 sql_trans_bind_func(sql_trans *tr, const char *name)
 {

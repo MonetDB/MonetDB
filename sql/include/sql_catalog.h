@@ -370,7 +370,7 @@ typedef enum sql_ftype {
 #define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
 #define IS_LOADER(f)   ((f)->type == F_LOADER)
 
-#define FUNC_TYPE_STR(type) \
+#define FUNC_TYPE_STR(type, F, fn) \
 	switch (type) { \
 		case F_FUNC: \
 			F = "FUNCTION"; \
@@ -390,7 +390,7 @@ typedef enum sql_ftype {
 			break; \
 		case F_UNION: \
 			F = "UNION FUNCTION"; \
-			fn = "union function"; \
+			fn = "table returning function"; \
 			break; \
 		case F_ANALYTIC: \
 			F = "WINDOW FUNCTION"; \
@@ -750,7 +750,6 @@ extern node *find_sql_type_node(sql_schema *s, sqlid id);
 extern sql_type *sql_trans_find_type(sql_trans *tr, sqlid id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
-extern list *find_all_sql_func(sql_schema * s, const char *tname, sql_ftype type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern node *find_sql_func_node(sql_schema *s, sqlid id);

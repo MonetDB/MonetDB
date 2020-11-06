@@ -6369,9 +6369,9 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	if (sql->errstr[0] == '\0' || error_code == 5)
+	if (sql->errstr[0] == '\0' || error_code == 5 || error_code == ERR_NOTFOUND)
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->session->status || error_code == 5)
+	if (!sql->session->status || error_code == 5 || error_code == ERR_NOTFOUND)
 		sql->session->status = -error_code;
 	va_end (ap);
 	return NULL;

@@ -1497,7 +1497,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
-	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
+	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC));
 	set_intern(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
 	*exp = exp_label(sql->sa, e, ++sql->label);
@@ -1621,7 +1621,7 @@ rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 			if (!has_label(e))
 				exp_label(sql->sa, e, ++sql->label);
 			sql_subtype *t = exp_subtype(e); /* parameters don't have a type defined, for those use 'void' one */
-			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", t ? t : sql_bind_localtype("void"), NULL, F_AGGR);
 
 			e = exp_ref(sql, e);
 			e = exp_aggr1(sql->sa, e, zero_or_one, 0, 0, CARD_ATOM, has_nil(e));

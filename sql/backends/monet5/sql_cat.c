@@ -738,7 +738,7 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	sql_schema *s = cur_schema(sql);
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR(type)
+	FUNC_TYPE_STR(type, F, fn)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname))) {
 		if (fid == -2) /* if exists option */
@@ -760,18 +760,18 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	} else if (fid == -2) { /* if exists option */
 		return MAL_SUCCEED;
 	} else { /* fid == -1 */
-		node *n = NULL;
-		list *list_func = schema_bind_func(sql, s, name, type);
+		list *list_func = sql_find_funcs_by_name(sql, s->base.name, name, type);
 		int res;
 
-		for (n = list_func->h; n; n = n->next) {
-			sql_func *func = n->data;
+		if (list_func)
+			for (node *n = list_func->h; n; n = n->next) {
+				sql_func *func = n->data;
 
-			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
-				list_destroy(list_func);
-				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
+				if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
+					list_destroy(list_func);
+					throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
+				}
 			}
-		}
 		res = mvc_drop_all_func(sql, s, list_func, action);
 		list_destroy(list_func);
 		if (res)
@@ -788,7 +788,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 	int clientid = sql->clientid;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR(f->type)
+	FUNC_TYPE_STR(f->type, F, fn)
 
 	(void) fname;
 	(void) fn;

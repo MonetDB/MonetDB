@@ -332,9 +332,16 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		sql_kc *kc;
 
 		assert(n->next->next->next->type == type_int);
-		if (!(rt = find_table_or_view_on_scope(sql, &rs, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t))))
-			return res;
-		if (name && mvc_bind_key(sql, ss, name)) {
+		rt = find_table_or_view_on_scope(sql, &rs, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
+		/* self referenced table */
+		if (!rt && t->s == rs && strcmp(t->base.name, rtname) == 0) {
+			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->session->status = 0;
+			rt = t;
+		}
+		if (!rt) {
+			return SQL_ERR;
+		} else if (name && mvc_bind_key(sql, ss, name)) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
@@ -531,7 +538,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			sql_kc *kc = fnms->data;
 
 			if (!cs) {
-				sql_error(sql, 02, SQLSTATE(42S22) "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
+				sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT FOREIGN KEY: no such column '%s' in table '%s'\n", nm, t->base.name);
 				return SQL_ERR;
 			}
 			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
@@ -578,7 +585,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_column *c = mvc_bind_column(sql, t, nm);
 
 			if (!c) {
-				sql_error(sql, 02, SQLSTATE(42S22) "CONSTRAINT %s: no such column '%s' for table '%s'",
+				sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CONSTRAINT %s: no such column '%s' for table '%s'",
 						kt == pkey ? "PRIMARY KEY" : "UNIQUE",
 						nm, t->base.name);
 				return SQL_ERR;
@@ -744,7 +751,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		dlist *olist = n->next->data.lval;
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		} else {
 			return column_options(query, olist, ss, t, c, isDeclared);
@@ -759,7 +766,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_column *c = mvc_bind_column(sql, t, cname);
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		r = symbol2string(sql, sym, 0, &err);
@@ -778,7 +785,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_column *c = mvc_bind_column(sql, t, cname);
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		mvc_storage(sql, c, storage_type);
@@ -793,7 +800,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		int null = (s->token != SQL_NOT_NULL);
 
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		mvc_null(sql, c, null);
@@ -803,7 +810,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		char *cname = s->data.sval;
 		sql_column *c = mvc_bind_column(sql, t, cname);
 		if (!c) {
-			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		mvc_drop_default(sql,c);
@@ -840,7 +847,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 		assert(l->h->next->type == type_int);
 		if (col == NULL) {
-			sql_error(sql, 02, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
 		if (cs_size(&t->columns) <= 1) {
@@ -964,7 +971,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 	sql_schema *s = cur_schema(sql);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "%s TABLE: no such schema '%s'", action, sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s TABLE: no such schema '%s'", action, sname);
 
 	if ((temp != SQL_PERSIST && tt == tt_table && commit_action == CA_COMMIT) || temp == SQL_DECLARE)
 		commit_action = CA_DELETE;
@@ -1080,7 +1087,7 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 	(void) check;		/* Stefan: unused!? */
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
 
@@ -1223,7 +1230,7 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 	sql_schema *s = cur_schema(sql);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TYPE: no such schema '%s'", sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TYPE: no such schema '%s'", sname);
 	if (schema_bind_type(sql, s, name) != NULL)
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TYPE: name '%s' already in use", name);
 	if (!mvc_schema_privs(sql, s))
@@ -1297,7 +1304,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 	sqlid auth_id = sql->role_id;
 
 	if (auth && (auth_id = sql_find_auth(sql, auth)) < 0)
-		return sql_error(sql, 02, SQLSTATE(28000) "CREATE SCHEMA: no such authorization '%s'", auth);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(28000) "CREATE SCHEMA: no such authorization '%s'", auth);
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", get_string_global_var(sql, "current_user"));
 	if (!name)
@@ -1413,7 +1420,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		char *ntname = qname_schema_object(nqname);
 
 		if (!(pt = find_table_or_view_on_scope(sql, &spt, nsname, ntname, "ALTER TABLE", false)))
-			return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
 		if (isView(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
 								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
@@ -1770,23 +1777,18 @@ rel_grant_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int grant
 }
 
 static sql_rel *
-rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typelist, sql_ftype type, dlist *grantees, int grant, int grantor)
+rel_grant_func(mvc *sql, dlist *privs, dlist *qname, dlist *typelist, sql_ftype type, dlist *grantees, int grant, int grantor)
 {
-	sql_rel *res = NULL;
 	dnode *gn;
+	sql_rel *res = NULL;
 	char *sname = qname_schema(qname);
 	char *fname = qname_schema_object(qname);
-	sql_schema *s = cur;
-	sql_func *func = NULL;
+	sql_func *func = resolve_func(sql, sname, fname, typelist, type, "GRANT", 0);
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-	func = resolve_func(sql, s, fname, typelist, type, "GRANT", 0);
 	if (!func)
 		return NULL;
 	if (!func->s)
 		return sql_error(sql, 02, SQLSTATE(42000) "Cannot GRANT EXECUTE on system function '%s'", fname);
-
 	for (gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
 		char *grantee = gn->data.sval;
@@ -1795,7 +1797,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 			grantee = "public";
 
 		if (!privs) {
-			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_grant_func))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_grant_func))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1806,7 +1808,7 @@ rel_grant_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typ
 
 			if (op->token != SQL_EXECUTE)
 				return sql_error(sql, 02, SQLSTATE(42000) "Can only GRANT 'EXECUTE' on function '%s'", fname);
-			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_grant_func))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_grant_func))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1834,7 +1836,7 @@ rel_grant_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int gr
 		dlist *typelist = r->h->next->data.lval;
 		sql_ftype type = (sql_ftype) r->h->next->next->data.i_val;
 
-		return rel_grant_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
+		return rel_grant_func(sql, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
 	default:
 		return sql_error(sql, 02, SQLSTATE(M0M03) "Grant: unknown token %d", (int) token);
@@ -1940,18 +1942,14 @@ rel_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int gran
 }
 
 static sql_rel *
-rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *typelist, sql_ftype type, dlist *grantees, int grant, int grantor)
+rel_revoke_func(mvc *sql, dlist *privs, dlist *qname, dlist *typelist, sql_ftype type, dlist *grantees, int grant, int grantor)
 {
 	dnode *gn;
 	sql_rel *res = NULL;
 	char *sname = qname_schema(qname);
 	char *fname = qname_schema_object(qname);
-	sql_func *func = NULL;
-	sql_schema *s = cur;
+	sql_func *func = resolve_func(sql, sname, fname, typelist, type, "REVOKE", 0);
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
-	func = resolve_func(sql, s, fname, typelist, type, "REVOKE", 0);
 	if (!func)
 		return NULL;
 	if (!func->s)
@@ -1964,7 +1962,7 @@ rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *ty
 			grantee = "public";
 
 		if (!privs) {
-			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_revoke_func))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_revoke_func))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1975,8 +1973,7 @@ rel_revoke_func(mvc *sql, sql_schema *cur, dlist *privs, dlist *qname, dlist *ty
 
 			if (op->token != SQL_EXECUTE)
 				return sql_error(sql, 02, SQLSTATE(42000) "Can only REVOKE EXECUTE on function name %s", fname);
-
-			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_revoke_func))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, ddl_revoke_func))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -2004,7 +2001,7 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 		dlist *typelist = r->h->next->data.lval;
 		sql_ftype type = (sql_ftype) r->h->next->next->data.i_val;
 
-		return rel_revoke_func(sql, cur, obj_privs, qname, typelist, type, grantees, grant, grantor);
+		return rel_revoke_func(sql, obj_privs, qname, typelist, type, grantees, grant, grantor);
 	}
 	default:
 		return sql_error(sql, 02, SQLSTATE(M0M03) "Revoke: unknown token %d", (int) token);
@@ -2045,7 +2042,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
 
 		if (!c)
-			return sql_error(sql, 02, SQLSTATE(42S22) "CREATE INDEX: no such column '%s'", n->data.sval);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "CREATE INDEX: no such column '%s'", n->data.sval);
 		mvc_create_ic(sql, i, c);
 	}
 
@@ -2112,7 +2109,7 @@ rel_find_designated_schema(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	assert(sym->type == type_string);
 	sname = sym->data.sval;
 	if (!(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, SQLSTATE(3F000) "COMMENT ON: no such schema: %s", sname);
+		sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "COMMENT ON: no such schema: %s", sname);
 		return 0;
 	}
 
@@ -2142,7 +2139,7 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return t->base.id;
 	}
 
-	sql_error(sql, 02, SQLSTATE(42S02) "COMMENT ON: no such %s: %s%s%s",
+	sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "COMMENT ON: no such %s: %s%s%s",
 		want_table ? "table" : "view",
 		s ? s->base.name: "", s ? "." : "", tname);
 	return 0;
@@ -2180,7 +2177,7 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return 0;
 	}
 	if (!(c = mvc_bind_column(sql, t, cname))) {
-		sql_error(sql, 02, SQLSTATE(42S12) "COMMENT ON: no such column: %s.%s", tname, cname);
+		sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S12) "COMMENT ON: no such column: %s.%s", tname, cname);
 		return 0;
 	}
 	*schema_out = s;
@@ -2209,8 +2206,6 @@ rel_find_designated_index(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return idx->base.id;
 	}
 
-	sql_error(sql, 02, SQLSTATE(42S12) "COMMENT ON: no such index: %s.%s",
-		s->base.name, iname);
 	return 0;
 }
 
@@ -2249,7 +2244,6 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	dlist *qname;
 	dlist *typelist;
 	sql_ftype func_type;
-	sql_schema *s = cur_schema(sql);
 	char *fname, *sname;
 	sql_func *func;
 
@@ -2261,28 +2255,17 @@ rel_find_designated_routine(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	typelist = designator->h->next->data.lval;
 	func_type = (sql_ftype) designator->h->next->next->data.i_val;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, 02, SQLSTATE(3F000) "COMMENT ON: no such schema: %s", sname);
-		return 0;
-	}
-
 	fname = qname_schema_object(qname);
-	func = resolve_func(sql, s, fname, typelist, func_type, "COMMENT", 0);
-	if (!func && func_type == F_FUNC) {
-		// functions returning a table have a special type
-		func = resolve_func(sql, s, fname, typelist, F_UNION, "COMMENT", 0);
-	}
+	func = resolve_func(sql, sname, fname, typelist, func_type, "COMMENT", 0);
 	if (func && func->s && isTempSchema(func->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
 	}
 	if (func) {
-		*schema_out = s;
+		*schema_out = func->s ? func->s : mvc_bind_schema(sql, "sys");
 		return func->base.id;
 	}
 
-	if (sql->errstr[0] == '\0')
-		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON: no such routine: %s.%s", s->base.name, fname);
 	return 0;
 }
 
@@ -2375,7 +2358,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	if (!(s = mvc_bind_schema(sql, old_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
 	}
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
@@ -2471,7 +2454,7 @@ rel_rename_column(mvc *sql, char *schema_name, char *table_name, char *old_name,
 	if (isView(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename column '%s': '%s' is a view", old_name, table_name);
 	if (!(col = mvc_bind_column(sql, t, old_name)))
-		return sql_error(sql, 02, SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "ALTER TABLE: no such column '%s' in table '%s'", old_name, table_name);
 	if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: cannot rename column '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
@@ -2525,7 +2508,7 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 	if (ot->members.set || ot->triggers.set)
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
-		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
 	if (!mvc_schema_privs(sql, ns))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for '%s' to schema '%s'", get_string_global_var(sql, "current_user"), new_schema);
 	if (isTempSchema(ns))

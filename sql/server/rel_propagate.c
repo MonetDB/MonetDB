@@ -167,14 +167,14 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp = NULL, *anti_le, *e1, *e2, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
-	anti_nils = rel_unop_(sql, anti_rel, anti_le, NULL, "isnull", card_value);
+	anti_nils = rel_unop_(sql, anti_rel, anti_le, "sys", "isnull", card_value);
 	set_has_no_nil(anti_nils);
 	if (pmin && pmax) {
 		if (all_ranges) { /*if holds all values in range, don't generate the range comparison */
@@ -227,14 +227,14 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
 	sql_exp *exception, *aggr, *anti_exp, *anti_le, *anti_nils;
-	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 	sql_subtype tpe;
 
 	find_partition_type(&tpe, mt);
 
 	anti_le = rel_generate_anti_expression(sql, &anti_rel, mt, pt);
-	anti_nils = rel_unop_(sql, anti_rel, anti_le, NULL, "isnull", card_value);
+	anti_nils = rel_unop_(sql, anti_rel, anti_le, "sys", "isnull", card_value);
 
 	set_has_no_nil(anti_nils);
 	if (list_length(anti_exps) > 0) {
@@ -630,7 +630,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 				sql_column *c = mvc_bind_column(sql, sub, cname);
 
 				if (!c)
-					return sql_error(sql, 02, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", sub->base.name, cname);
+					return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "UPDATE: no such column '%s.%s'\n", sub->base.name, cname);
 				if (!(e = update_check_column(sql, sub, c, e, rel, c->base.name, "UPDATE")))
 					return NULL;
 			}
@@ -667,7 +667,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	sql_rel *new_table = NULL, *sel = NULL, *anti_rel = NULL;
 	sql_exp *anti_exp = NULL, *anti_le = NULL, *anti_nils = NULL, *accum = NULL, *aggr = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 
 	if (isPartitionedByColumnTable(t)) {
@@ -714,7 +714,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				found_all_range_values |= (pt->with_nills != 1);
 				found_nils |= is_bit_nil(pt->with_nills);
 				if (pt->with_nills == false) { /* full range without nils */
-					sql_exp *nils = rel_unop_(sql, dup, le, NULL, "isnull", card_value);
+					sql_exp *nils = rel_unop_(sql, dup, le, "sys", "isnull", card_value);
 
 					set_has_no_nil(nils);
 					nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 0), cmp_equal);
@@ -722,7 +722,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				}
 			}
 			if (pt->with_nills == true) { /* handle the nulls case */
-				sql_exp *nils = rel_unop_(sql, dup, le, NULL, "isnull", card_value);
+				sql_exp *nils = rel_unop_(sql, dup, le, "sys", "isnull", card_value);
 
 				set_has_no_nil(nils);
 				nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
@@ -758,7 +758,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				assert(pt->with_nills);
 			}
 			if (pt->with_nills) { /* handle the nulls case */
-				sql_exp *nils = rel_unop_(sql, dup, le, NULL, "isnull", card_value);
+				sql_exp *nils = rel_unop_(sql, dup, le, "sys", "isnull", card_value);
 
 				set_has_no_nil(nils);
 				nils = exp_compare(sql->sa, nils, exp_atom_bool(sql->sa, 1), cmp_equal);
@@ -810,13 +810,13 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		}
 		if (!found_nils) {
 			assert(anti_exp);
-			anti_nils = rel_unop_(sql, NULL, anti_le, NULL, "isnull", card_value);
+			anti_nils = rel_unop_(sql, NULL, anti_le, "sys", "isnull", card_value);
 			set_has_no_nil(anti_nils);
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 			anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
 							list_append(new_exp_list(sql->sa), anti_nils), 0);
 		} else if (!anti_exp) {
-			anti_nils = rel_unop_(sql, NULL, exp_copy(sql, anti_le), NULL, "isnull", card_value);
+			anti_nils = rel_unop_(sql, NULL, exp_copy(sql, anti_le), "sys", "isnull", card_value);
 			set_has_no_nil(anti_nils);
 			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 		}
@@ -917,7 +917,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
-	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 	bool found_nils = false, found_all_range_values = false;
 
@@ -933,7 +933,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 			if (atomcmp(pt->part.range.maxvalue, nil) == 0) {
 				found_all_range_values = pt->with_nills != 1;
 				if (pt->with_nills == true) {
-					anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
+					anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), "sys", "isnull", card_value);
 					set_has_no_nil(anti_nils);
 					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 				}
@@ -955,7 +955,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 			}
 		}
 		if (!pt->with_nills) { /* handle the nulls case */
-			anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
+			anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), "sys", "isnull", card_value);
 			set_has_no_nil(anti_nils);
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 			if (anti_exp)
@@ -974,7 +974,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 			anti_exp = exp_in(sql->sa, exp_copy(sql, anti_le), anti_exps, cmp_notin);
 
 			if (!pt->with_nills) { /* handle the nulls case */
-				anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
+				anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), "sys", "isnull", card_value);
 				set_has_no_nil(anti_nils);
 				anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), anti_exp),
@@ -982,7 +982,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 			}
 		} else {
 			assert(pt->with_nills);
-			anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), NULL, "isnull", card_value);
+			anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), "sys", "isnull", card_value);
 			set_has_no_nil(anti_nils);
 			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 		}
