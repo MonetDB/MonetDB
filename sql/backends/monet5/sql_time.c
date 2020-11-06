@@ -317,7 +317,7 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
-		for (BUN i = 0 ; i < q && !msg; i++) {
+		for (BUN i = 0 ; i < q; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			str next = BUNtail(it, p);
 
@@ -326,6 +326,8 @@ str_2time_daytimetz_internal(ptr out, ptr in, const bat *sid, int tpe, int digit
 				nils = true;
 			} else {
 				msg = str_2time_daytimetz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				if (msg != MAL_SUCCEED)
+					goto bailout;
 			}
 		}
 	} else {
@@ -757,7 +759,7 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
-		for (BUN i = 0 ; i < q && !msg; i++) {
+		for (BUN i = 0 ; i < q; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			str next = BUNtail(it, p);
 
@@ -766,6 +768,8 @@ str_2time_timestamptz_internal(ptr out, ptr in, const bat *sid, int tpe, int dig
 				nils = true;
 			} else {
 				msg = str_2time_timestamptz_internal_imp(&(ret[i]), next, fromstr_func, shift, divider, multiplier);
+				if (msg != MAL_SUCCEED)
+					goto bailout;
 			}
 		}
 	} else {
@@ -895,6 +899,8 @@ month_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				msg = month_interval_str_imp(&(ret[i]), next, d, sk);
+				if (msg != MAL_SUCCEED)
+					goto bailout;
 			}
 		}
 	} else {
@@ -980,6 +986,8 @@ second_interval_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				msg = second_interval_str_imp(&(ret[i]), next, d, sk);
+				if (msg != MAL_SUCCEED)
+					goto bailout;
 			}
 		}
 	} else {
@@ -1014,7 +1022,7 @@ bailout:
 		if (is_a_bat) { \
 			oid off = b->hseqbase; \
 			TPE *restrict vals = Tloc(b, 0); \
-			for (BUN i = 0 ; i < q && !msg ; i++) { \
+			for (BUN i = 0 ; i < q && msg == MAL_SUCCEED ; i++) { \
 				BUN p = (BUN) (canditer_next(&ci) - off); \
 				FUNC(ret[i], vals[p], TPE, FUNC_NAME, MAX_VALUE, CAST_VALIDATION, MUL_VALIDATION); \
 			} \
@@ -1457,7 +1465,7 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 	if (is_a_bat) {
 		oid off = b->hseqbase;
 		BATiter it = bat_iterator(b);
-		for (BUN i = 0 ; i < q && !msg; i++) {
+		for (BUN i = 0 ; i < q; i++) {
 			BUN p = (BUN) (canditer_next(&ci) - off);
 			str next = BUNtail(it, p);
 
@@ -1466,6 +1474,8 @@ str_2_date_internal(ptr out, ptr in, const bat *sid, int tpe)
 				nils = true;
 			} else {
 				msg = str_2_date_internal_imp(&(ret[i]), next);
+				if (msg != MAL_SUCCEED)
+					goto bailout;
 			}
 		}
 	} else {
