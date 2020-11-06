@@ -146,8 +146,8 @@ tmp_schema(mvc *sql)
 
 #define table_extra \
 	do { \
-		if (s && *s) { \
-			found = *s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
+		if (s) { \
+			found = s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
 			res = mvc_bind_table(sql, found, name); \
 		} \
 		if (!res && strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
@@ -155,14 +155,12 @@ tmp_schema(mvc *sql)
 	} while (0)
 
 sql_table *
-find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error, bool isView)
+find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *name, const char *error, bool isView)
 {
 	const char *objstr = isView ? "view" : "table";
 	sql_table *res = NULL;
 
 	search_object_on_path(res = mvc_bind_table(sql, found, name), DO_NOTHING, table_extra, SQLSTATE(42S02));
-	if (res && s)
-		*s = res->s;
 	return res;
 }
 

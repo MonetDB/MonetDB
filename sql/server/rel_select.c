@@ -887,7 +887,6 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		dlist *name = tableref->data.lval->h->data.lval;
 		sql_rel *temp_table = NULL;
 		char *sname = qname_schema(name);
-		sql_schema *s = NULL;
 		int allowed = 1;
 
 		tname = qname_schema_object(name);
@@ -898,7 +897,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (!sname)
 			temp_table = stack_find_rel_view(sql, tname);
 		if (!temp_table)
-			t = find_table_or_view_on_scope(sql, &s, sname, tname, "SELECT", false);
+			t = find_table_or_view_on_scope(sql, NULL, sname, tname, "SELECT", false);
 		if (!t && !temp_table)
 			return NULL;
 		if (!temp_table && !table_privs(sql, t, PRIV_SELECT))
@@ -930,7 +929,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 			}
 			if (allowed)
 				return temp_table;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s'", get_string_global_var(sql, "current_user"), tname);
 		} else if (isView(t)) {
 			/* instantiate base view */
 			node *n,*m;
@@ -964,7 +963,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				rel = rel_reduce_on_column_privileges(sql, rel, t);
 			if (allowed && rel)
 				return rel;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
+			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
 		}
 		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
@@ -972,7 +971,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 		if (!allowed) {
 			res = rel_reduce_on_column_privileges(sql, res, t);
 			if (!res)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
+				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
 		}
 		if (tableref->data.lval->h->next->data.sym && tableref->data.lval->h->next->data.sym->data.lval->h->next->data.lval) { /* AS with column aliases */
 			res = rel_table_optname(sql, res, tableref->data.lval->h->next->data.sym, refs);

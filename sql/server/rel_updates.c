@@ -600,11 +600,10 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *r = NULL;
 
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "INSERT INTO", false);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "INSERT INTO", false);
 	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL)
 		return NULL;
 	r = insert_generate_inserts(query, t, columns, val_or_q, "INSERT INTO");
@@ -1064,10 +1063,9 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "UPDATE", false);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "UPDATE", false);
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
 		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : tname), *res = bt;
 
@@ -1140,10 +1138,9 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "DELETE FROM", false);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DELETE FROM", false);
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
 		sql_rel *r = rel_basetable(sql, t, alias ? alias : tname);
 
@@ -1170,10 +1167,9 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 {
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "TRUNCATE", false);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "TRUNCATE", false);
 	if (update_allowed(sql, t, tname, "TRUNCATE", "truncate", 2) != NULL)
 		return rel_truncate(sql->sa, rel_basetable(sql, t, tname), restart_sequences, drop_action);
 	return NULL;
@@ -1220,7 +1216,7 @@ validate_merge_update_delete(mvc *sql, sql_table *t, str alias, sql_rel *joined_
 			 (upd_token == SQL_DELETE) ? "DELETE" : "UPDATE",
 			 join_rel_name ? " '" : "", join_rel_name ? join_rel_name : "", join_rel_name ? "'" : "",
 			 alias ? "relation" : "table",
-			 alias ? alias : t->s->base.name, alias ? "" : ".", alias ? "" : t->base.name);
+			 alias ? alias : t->s ? t->s->base.name : "", alias ? "" : ".", alias ? "" : t->base.name);
 	ex = exp_exception(sql->sa, ex, buf);
 
 	res = rel_exception(sql->sa, groupby, NULL, list_append(new_exp_list(sql->sa), ex));
@@ -1232,7 +1228,6 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL;
 	int processed = 0;
@@ -1240,10 +1235,11 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	assert(tref && search_cond && merge_list);
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "MERGE", false)))
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "MERGE", false)))
 		return NULL;
 	if (!table_privs(sql, t, PRIV_SELECT))
-		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
+		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table %s%s%s'%s'",
+						 get_string_global_var(sql, "current_user"), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
@@ -1457,7 +1453,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	sql_rel *rel = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL, *nt = NULL;
 	const char *tsep = seps->h->data.sval;
 	const char *rsep = seps->h->next->data.sval;
@@ -1475,7 +1470,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				"COPY INTO: record separator contains '\\r\\n' but "
 				"in the input stream, '\\r\\n' is being normalized into '\\n'");
 
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "COPY INTO", false);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
 	/* Only the MONETDB user is allowed copy into with
@@ -1520,7 +1515,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		int has_formats = 0;
 		dnode *n;
 
-		nt = mvc_create_table(sql, s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0);
+		nt = mvc_create_table(sql, t->s, tname, tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT, -1, 0);
 		for (n = headers->h; n; n = n->next) {
 			dnode *dn = n->data.lval->h;
 			char *cname = dn->data.sval;
@@ -1659,7 +1654,6 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	dnode *dn;
 	node *n;
@@ -1676,7 +1670,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
 
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "COPY INTO", false);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
 	if (files == NULL)
@@ -1732,7 +1726,6 @@ static sql_rel *
 copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = NULL;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
@@ -1742,7 +1735,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!copy_allowed(sql, 1))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
 				"binary COPY INTO requires database administrator rights");
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "COPY INTO", false);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
@@ -1755,7 +1748,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = sname ? sa_strdup(sql->sa, sname) : NULL;
+	loader->sname = t->s ? sa_strdup(sql->sa, t->s->base.name) : NULL;
 	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
 	loader->coltypes = table_column_types(sql->sa, t);
 	loader->colnames = table_column_names_and_defaults(sql->sa, t);

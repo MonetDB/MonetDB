@@ -130,14 +130,13 @@ char *
 sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, sqlid grantor)
 {
 	sql_trans *tr = sql->session->tr;
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "GRANT", false)))
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "GRANT", false)))
 		throw(SQL,"sql.grant_table", "%s", sql->errstr);
 
 	allowed = schema_privs(grantor, t->s);
@@ -269,14 +268,13 @@ sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gr
 char *
 sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, sqlid grantor)
 {
-	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "REVOKE", false)))
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "REVOKE", false)))
 		throw(SQL,"sql.revoke_table","%s", sql->errstr);
 
 	allowed = schema_privs(grantor, t->s);

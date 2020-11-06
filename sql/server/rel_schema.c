@@ -324,7 +324,6 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		char *rsname = qname_schema(n->data.lval);
 		char *rtname = qname_schema_object(n->data.lval);
 		int ref_actions = n->next->next->next->data.i_val;
-		sql_schema *rs = ss;
 		sql_table *rt;
 		sql_fkey *fk;
 		list *cols;
@@ -332,9 +331,9 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		sql_kc *kc;
 
 		assert(n->next->next->next->type == type_int);
-		rt = find_table_or_view_on_scope(sql, &rs, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
+		rt = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
 		/* self referenced table */
-		if (!rt && t->s == rs && strcmp(t->base.name, rtname) == 0) {
+		if (!rt && t->s == ss && strcmp(t->base.name, rtname) == 0) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
 			sql->session->status = 0;
 			rt = t;
@@ -486,12 +485,11 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	dnode *n = s->data.lval->h;
 	char *rsname = qname_schema(n->data.lval);
 	char *rtname = qname_schema_object(n->data.lval);
-	sql_schema *fs = ss;
 	sql_table *ft = NULL;
 
-	ft = find_table_or_view_on_scope(sql, &fs, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
+	ft = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
 	/* self referenced table */
-	if (!ft && t->s == fs && strcmp(t->base.name, rtname) == 0) {
+	if (!ft && t->s == ss && strcmp(t->base.name, rtname) == 0) {
 		sql->errstr[0] = '\0'; /* reset table not found error */
 		sql->session->status = 0;
 		ft = t;
@@ -819,13 +817,11 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	{
 		char *sname = qname_schema(s->data.lval);
 		char *name = qname_schema_object(s->data.lval);
-		sql_schema *os = ss;
 		sql_table *ot = NULL;
-		node *n;
 
-		if (!(ot = find_table_or_view_on_scope(sql, &os, sname, name, action, isView(t))))
+		if (!(ot = find_table_or_view_on_scope(sql, ss, sname, name, action, isView(t))))
 			return SQL_ERR;
-		for (n = ot->columns.set->h; n; n = n->next) {
+		for (node *n = ot->columns.set->h; n; n = n->next) {
 			sql_column *oc = n->data;
 
 			if (!isView(t) && oc->base.name && oc->base.name[0] == '%') {
@@ -1346,10 +1342,9 @@ sql_drop_table(sql_query *query, dlist *qname, int nr, int if_exists)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "DROP TABLE", false))) {
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DROP TABLE", false))) {
 		if (if_exists) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
 			sql->session->status = 0;
@@ -1358,7 +1353,7 @@ sql_drop_table(sql_query *query, dlist *qname, int nr, int if_exists)
 		return NULL;
 	}
 
-	return rel_drop(sql->sa, ddl_drop_table, s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, nr, if_exists);
 }
 
 static sql_rel *
@@ -1367,10 +1362,9 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "DROP VIEW", true))) {
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DROP VIEW", true))) {
 		if (if_exists) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
 			sql->session->status = 0;
@@ -1379,7 +1373,7 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 		return NULL;
 	}
 
-	return rel_drop(sql->sa, ddl_drop_view, s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, nr, if_exists);
 }
 
 static sql_rel *
@@ -1388,12 +1382,11 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
-	sql_schema *s = NULL;
 	sql_table *t = NULL, *nt = NULL;
 	sql_rel *res = NULL, *r;
 	sql_exp **updates, *e;
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "ALTER TABLE", false))) {
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "ALTER TABLE", false))) {
 		if (if_exists) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
 			sql->session->status = 0;
@@ -1401,26 +1394,25 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		}
 		return NULL;
 	}
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (isDeclaredTable(t))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: can't alter declared table '%s'", tname);
 	if (isTempSchema(t->s))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: can't alter temporary table '%s'", tname);
+	if (!mvc_schema_privs(sql, t->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 
 	assert(te);
 	if (t->persistence != SQL_DECLARED_TABLE)
-		sname = s->base.name;
+		sname = t->s->base.name;
 
 	if ((te->token == SQL_TABLE || te->token == SQL_DROP_TABLE)) {
 		dlist *nqname = te->data.lval->h->data.lval;
-		sql_schema *spt = s;
 		sql_table *pt = NULL;
 		char *nsname = qname_schema(nqname);
 		char *ntname = qname_schema_object(nqname);
 
-		if (!(pt = find_table_or_view_on_scope(sql, &spt, nsname, ntname, "ALTER TABLE", false)))
-			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ntname, spt->base.name);
+		if (!(pt = find_table_or_view_on_scope(sql, t->s, nsname, ntname, "ALTER TABLE", false)))
+			return NULL;
 		if (isView(pt))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
 								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
@@ -1430,7 +1422,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		if (isTempSchema(pt->s))
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
 								TABLE_TYPE_DESCRIPTION(t->type, t->properties));
-		nsname = spt->base.name;
+		nsname = pt->s->base.name;
 		if (strcmp(sname, nsname) != 0)
 			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be "
 								"part of schema '%s'", sname, tname, sname);
@@ -1450,7 +1442,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			}
 			if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
 				return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
-								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
+								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 
 			if (extra->token == SQL_MERGE_PARTITION) { /* partition to hold null values only */
 				dlist* ll = extra->data.lval;
@@ -1510,7 +1502,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	}
 
 	nt = dup_sql_table(sql->sa, t);
-	if (!nt || (table_element(query, te, s, nt, 1, t->persistence == SQL_DECLARED_TABLE, "ALTER TABLE") == SQL_ERR))
+	if (!nt || (table_element(query, te, t->s, nt, 1, t->persistence == SQL_DECLARED_TABLE, "ALTER TABLE") == SQL_ERR))
 		return NULL;
 
 	if (te->token == SQL_DROP_CONSTRAINT) {
@@ -1709,16 +1701,15 @@ rel_grant_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 static sql_rel *
 rel_grant_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
 {
-	sql_schema *s = NULL;
 	sql_rel *res = NULL;
-	dnode *gn;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
+	sql_table *t = NULL;
 
-	if (!find_table_or_view_on_scope(sql, &s, sname, tname, "GRANT", false))
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "GRANT", false)))
 		return NULL;
-	for (gn = grantees->h; gn; gn = gn->next) {
+	for (dnode *gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
 		char *grantee = gn->data.sval;
 
@@ -1726,7 +1717,7 @@ rel_grant_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int grant
 			grantee = "public";
 
 		if (!privs) {
-			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, all, NULL, grant, grantor, ddl_grant))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, all, NULL, grant, grantor, ddl_grant))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1762,12 +1753,12 @@ rel_grant_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int grant
 
 				for (cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
-					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, cname, grant, grantor, ddl_grant))) == NULL) {
+					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, cname, grant, grantor, ddl_grant))) == NULL) {
 						rel_destroy(res);
 						return NULL;
 					}
 				}
-			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, NULL, grant, grantor, ddl_grant))) == NULL) {
+			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, NULL, grant, grantor, ddl_grant))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1874,16 +1865,15 @@ rel_revoke_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int 
 static sql_rel *
 rel_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int grant, int grantor)
 {
-	sql_schema *s = NULL;
-	dnode *gn;
 	sql_rel *res = NULL;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
+	sql_table *t = NULL;
 
-	if (!find_table_or_view_on_scope(sql, &s, sname, tname, "REVOKE", false))
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "REVOKE", false)))
 		return NULL;
-	for (gn = grantees->h; gn; gn = gn->next) {
+	for (dnode *gn = grantees->h; gn; gn = gn->next) {
 		dnode *opn;
 		char *grantee = gn->data.sval;
 
@@ -1891,7 +1881,7 @@ rel_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int gran
 			grantee = "public";
 
 		if (!privs) {
-			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, all, NULL, grant, grantor, ddl_revoke))) == NULL) {
+			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, all, NULL, grant, grantor, ddl_revoke))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -1927,12 +1917,12 @@ rel_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees, int gran
 
 				for (cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
-					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, cname, grant, grantor, ddl_revoke))) == NULL) {
+					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, cname, grant, grantor, ddl_revoke))) == NULL) {
 						rel_destroy(res);
 						return NULL;
 					}
 				}
-			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, s->base.name, tname, grantee, priv, NULL, grant, grantor, ddl_revoke))) == NULL) {
+			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, NULL, grant, grantor, ddl_revoke))) == NULL) {
 				rel_destroy(res);
 				return NULL;
 			}
@@ -2012,7 +2002,6 @@ rel_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int g
 static sql_rel *
 rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *column_list)
 {
-	sql_schema *s = NULL;
 	sql_table *t = NULL, *nt;
 	sql_rel *r, *res;
 	sql_exp **updates, *e;
@@ -2021,18 +2010,18 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "CREATE INDEX", false)))
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "CREATE INDEX", false)))
 		return NULL;
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if ((i = mvc_bind_idx(sql, s, iname)))
+	if (!mvc_schema_privs(sql, t->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
+	if ((i = mvc_bind_idx(sql, t->s, iname)))
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
 	if (isView(t) || isMergeTable(t) || isRemote(t))
 		return sql_error(sql, 02, SQLSTATE(42S02) "CREATE INDEX: cannot create index on %s '%s'", isView(t)?"view":isMergeTable(t)?"merge table":"remote table", tname);
 	nt = dup_sql_table(sql->sa, t);
 
 	if (t->persistence != SQL_DECLARED_TABLE)
-		sname = s->base.name;
+		sname = t->s->base.name;
 	if (t->s && !nt->s)
 		nt->s = t->s;
 
@@ -2120,7 +2109,6 @@ rel_find_designated_schema(mvc *sql, symbol *sym, sql_schema **schema_out) {
 static sqlid
 rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	dlist *qname;
-	sql_schema *s = NULL;
 	char *sname, *tname;
 	sql_table *t;
 	int want_table = sym->token == SQL_TABLE;
@@ -2129,13 +2117,13 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	qname = sym->data.lval;
 	sname = qname_schema(qname);
 	tname = qname_schema_object(qname);
-	t = find_table_or_view_on_scope(sql, &s, sname, tname, "COMMENT ON", !want_table);
+	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COMMENT ON", !want_table);
 	if (t && t->s && isTempSchema(t->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
 	}
 	if (t && !want_table == !isKindOfTable(t)) {	/* comparing booleans can be tricky */
-		*schema_out = s;
+		*schema_out = t->s;
 		return t->base.id;
 	}
 
@@ -2148,7 +2136,6 @@ static sqlid
 rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	char *sname, *tname, *cname;
 	dlist *colname;
-	sql_schema *s = NULL;
 	sql_table *t;
 	sql_column *c;
 
@@ -2168,7 +2155,7 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		assert(colname->h->next->next->type == type_string);
 		cname = colname->h->next->next->data.sval;
 	}
-	if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "COMMENT ON", false))) {
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COMMENT ON", false))) {
 		return 0;
 	}
 	if (t && t->s && isTempSchema(t->s)) {
@@ -2180,7 +2167,7 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 				  sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname, cname);
 		return 0;
 	}
-	*schema_out = s;
+	*schema_out = t->s;
 	return c->base.id;
 }
 
@@ -2382,14 +2369,13 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 static sql_rel *
 rel_rename_table(mvc *sql, char *schema_name, char *old_name, char *new_name, int if_exists)
 {
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_rel *rel;
 	list *exps;
 
 	assert(old_name && new_name);
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, schema_name, old_name, "ALTER TABLE", false))) {
+	if (!(t = find_table_or_view_on_scope(sql, NULL, schema_name, old_name, "ALTER TABLE", false))) {
 		if (if_exists) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
 			sql->session->status = 0;
@@ -2399,8 +2385,8 @@ rel_rename_table(mvc *sql, char *schema_name, char *old_name, char *new_name, in
 	}
 	if (isDeclaredTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a declared table");
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+	if (!mvc_schema_privs(sql, t->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	if (t->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a system table");
 	if (isView(t))
@@ -2409,13 +2395,13 @@ rel_rename_table(mvc *sql, char *schema_name, char *old_name, char *new_name, in
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to rename table '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: invalid new table name");
-	if (mvc_bind_table(sql, s, new_name))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, s->base.name);
+	if (mvc_bind_table(sql, t->s, new_name))
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER TABLE: there is a table named '%s' in schema '%s'", new_name, t->s->base.name);
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
-	append(exps, exp_atom_clob(sql->sa, s->base.name));
-	append(exps, exp_atom_clob(sql->sa, s->base.name));
+	append(exps, exp_atom_clob(sql->sa, t->s->base.name));
+	append(exps, exp_atom_clob(sql->sa, t->s->base.name));
 	append(exps, exp_atom_clob(sql->sa, old_name));
 	append(exps, exp_atom_clob(sql->sa, new_name));
 	rel->op = op_ddl;
@@ -2427,7 +2413,6 @@ rel_rename_table(mvc *sql, char *schema_name, char *old_name, char *new_name, in
 static sql_rel *
 rel_rename_column(mvc *sql, char *schema_name, char *table_name, char *old_name, char *new_name, int if_exists)
 {
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	sql_column *col;
 	sql_rel *rel;
@@ -2435,7 +2420,7 @@ rel_rename_column(mvc *sql, char *schema_name, char *table_name, char *old_name,
 
 	assert(table_name && old_name && new_name);
 
-	if (!(t = find_table_or_view_on_scope(sql, &s, schema_name, table_name, "ALTER TABLE", false))) {
+	if (!(t = find_table_or_view_on_scope(sql, NULL, schema_name, table_name, "ALTER TABLE", false))) {
 		if (if_exists) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
 			sql->session->status = 0;
@@ -2445,8 +2430,8 @@ rel_rename_column(mvc *sql, char *schema_name, char *table_name, char *old_name,
 	}
 	if (isDeclaredTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a declared table");
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+	if (!mvc_schema_privs(sql, t->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	if (t->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot rename a column in a system table");
 	if (isView(t))
@@ -2462,7 +2447,7 @@ rel_rename_column(mvc *sql, char *schema_name, char *table_name, char *old_name,
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
-	append(exps, exp_atom_clob(sql->sa, s->base.name));
+	append(exps, exp_atom_clob(sql->sa, t->s->base.name));
 	append(exps, exp_atom_clob(sql->sa, table_name));
 	append(exps, exp_atom_clob(sql->sa, old_name));
 	append(exps, exp_atom_clob(sql->sa, new_name));
@@ -2476,14 +2461,14 @@ static sql_rel *
 rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_schema, int if_exists)
 {
 	mvc *sql = query->sql;
-	sql_schema *os = NULL, *ns = NULL;
+	sql_schema *ns = NULL;
 	sql_table *ot = NULL;
 	sql_rel *rel;
 	list *exps;
 
 	assert(tname && new_schema);
 
-	if (!(ot = find_table_or_view_on_scope(sql, &os, old_schema, tname, "ALTER TABLE", false))) {
+	if (!(ot = find_table_or_view_on_scope(sql, NULL, old_schema, tname, "ALTER TABLE", false))) {
 		if (if_exists) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
 			sql->session->status = 0;
@@ -2493,11 +2478,11 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 	}
 	if (isDeclaredTable(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
-	if (!mvc_schema_privs(sql, os))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), os->base.name);
+	if (!mvc_schema_privs(sql, ot->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ot->s->base.name);
 	if (ot->system)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot set schema of a system table");
-	if (isTempSchema(os))
+	if (isTempSchema(ot->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
@@ -2516,7 +2501,7 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 
 	rel = rel_create(sql->sa);
 	exps = new_exp_list(sql->sa);
-	append(exps, exp_atom_clob(sql->sa, os->base.name));
+	append(exps, exp_atom_clob(sql->sa, ot->s->base.name));
 	append(exps, exp_atom_clob(sql->sa, new_schema));
 	append(exps, exp_atom_clob(sql->sa, tname));
 	append(exps, exp_atom_clob(sql->sa, tname));
