@@ -61,7 +61,6 @@ decimal_from_str(char *dec, int* digits, int* scale, int* has_errors)
 	if (*dec == '.') {  // case: (+|-).456
 fractional_sep_first_opp:
 		dec++;
-		_digits++; // add one to digits for single implicit preceding 0, e.g. (+|-)0.456
 		goto trailing_digits;
 	}
 
@@ -71,10 +70,17 @@ fractional_sep_first_opp:
 		goto end_state;
 	}
 	while (*dec == '0'){
-		// skip leading zeros in preceding digits.
+		// skip leading zeros in preceding digits, e.g. '0004563.1234' => '4563.1234'
 		dec++;
-		if (*dec == '.')
+		if (*dec == '.') {
+			if (dec[1] == 0) { // special case: '(0...0)0.'. We give this expression precision (1,0).
+				_digits = 1;
+				dec++;
+				goto end_state;
+			}
+
 			goto fractional_sep_first_opp;
+		}
 	}
 	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
 		if (res > max0 || (res == max0 && *dec - '0' > max1))

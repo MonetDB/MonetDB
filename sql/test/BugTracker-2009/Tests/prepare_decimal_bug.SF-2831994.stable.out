@@ -38,7 +38,7 @@ stdout of test 'prepare_decimal_bug.SF-2831994` in directory 'sql/test/BugTracke
 % sys.test2831994,	sys.test2831994,	sys.test2831994 # table_name
 % id,	value,	value2 # name
 % bigint,	decimal,	decimal # type
-% 1,	7,	7 # length
+% 1,	8,	8 # length
 [ 3,	0.00000,	2.34000	]
 
 # 19:40:00 >  

@@ -88,7 +88,7 @@ stdout of test 'mergequery` in directory 'sql/test/mergetables` itself:
 % mal # name
 % clob # type
 % 142 # length
-function user.s22_0():void;
+function user.s24_0():void;
     X_3:void := querylog.define("explain insert into answ\nselect * from complete where x>=1.0 and x <=2.0;":str, "default_pipe":str, 68:int);
 barrier X_247:bit := language.dataflow();
     X_81:bat[:dbl] := bat.new(nil:dbl);
@@ -169,7 +169,7 @@ exit X_247:bit;
     X_99:int := sql.append(X_96:int, "sys":str, "answ":str, "z":str, X_90:bat[:dbl]);
     X_101:lng := aggr.count(X_90:bat[:dbl]);
     sql.affectedRows(X_99:int, X_101:lng);
-end user.s22_0;
+end user.s24_0;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
 #costmodel            actions= 1 time=1 usec 
@@ -207,7 +207,7 @@ end user.s22_0;
 % mal # name
 % clob # type
 % 164 # length
-function user.s24_0():void;
+function user.s26_0():void;
     X_5:void := querylog.define("explain insert into answ\nselect * from complete\nwhere x between 0 and 2 and y between 0 and 2;":str, "default_pipe":str, 78:int);
 barrier X_262:bit := language.dataflow();
     X_92:bat[:dbl] := bat.new(nil:dbl);
@@ -298,9 +298,9 @@ exit X_262:bit;
     X_110:int := sql.append(X_107:int, "sys":str, "answ":str, "z":str, X_101:bat[:dbl]);
     X_112:lng := aggr.count(X_101:bat[:dbl]);
     sql.affectedRows(X_110:int, X_112:lng);
-end user.s24_0;
-#inline               actions= 0 time=1 usec 
-#remap                actions= 0 time=2 usec 
+end user.s26_0;
+#inline               actions= 0 time=2 usec 
+#remap                actions= 0 time=3 usec 
 #costmodel            actions= 1 time=2 usec 
 #coercion             actions= 0 time=2 usec 
 #aliases              actions= 8 time=10 usec 
