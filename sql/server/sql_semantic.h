@@ -23,7 +23,7 @@ sql_export sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
 
 /* Search function for SQL objects with scoping rules. For tables an optional schema can be provided with search priority */
-extern sql_table *find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname, const char *error, bool isView);
+extern sql_table *find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *tname, const char *error, bool isView);
 extern sql_sequence *find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char *error);
 extern sql_idx *find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *error);
 extern sql_type *find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *error);

@@ -36,7 +36,7 @@ ERROR = !ALTER TABLE: table 'sys.t1' isn't part of MERGE TABLE 'sys.m'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = alter table m drop table t1;
-ERROR = !ALTER TABLE: no such table 't1' in schema 'sys'
+ERROR = !ALTER TABLE: no such table 't1'
 CODE  = 42S02
 
 # 12:42:18 >  

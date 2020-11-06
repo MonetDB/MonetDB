@@ -424,14 +424,11 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		dlist *l = return_sym->data.lval;
 		const char *sname = qname_schema(l);
 		const char *tname = qname_schema_object(l);
-		sql_schema *s = NULL;
 		sql_table *t = NULL;
 
-		if (!(t = find_table_or_view_on_scope(sql, &s, sname, tname, "RETURN", false)))
+		if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "RETURN", false)))
 			return NULL;
-
 		if (isDeclaredTable(t)) {
-			assert(!s);
 			rel = rel_table(sql, ddl_create_table, cur_schema(sql)->base.name, t, SQL_DECLARED_TABLE);
 		} else {
 			rel = rel_basetable(sql, t, t->base.name);
@@ -1417,10 +1414,13 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	append(tl, exp_subtype(sample_exp));
 
 	if (sname && tname) {
-		sql_schema *s = NULL;
-		if (!find_table_or_view_on_scope(sql, &s, sname, tname, "ANALYZE", false))
+		sql_table *t = NULL;
+
+		if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "ANALYZE", false)))
 			return NULL;
-		sname = s->base.name;
+		if (isDeclaredTable(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "Cannot analyze a declared table");
+		sname = t->s->base.name;
 	}
 	/* call analyze( [schema, [ table ]], opt_sample_size, opt_minmax ) */
 	if (sname) {
@@ -1444,13 +1444,11 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 		call = exp_op(sql->sa, exps, f);
 		append(analyze_calls, call);
 	} else {
-		dnode *n;
-
 		if (!sname || !tname)
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
 		if (!(f = sql_bind_func_(sql, "sys", analyzeType, tl, F_PROC)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
-		for( n = columns->h; n; n = n->next) {
+		for(dnode *n = columns->h; n; n = n->next) {
 			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
 			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
@@ -1468,17 +1466,17 @@ static sql_rel*
 create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 {
 	mvc *sql = query->sql;
-	sql_schema *s = NULL;
+	sql_schema *s = cur_schema(sql);
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_subfunc *loader = NULL;
 	sql_rel *rel = NULL;
 	sql_table *t = NULL;
 
-	if ((t = find_table_or_view_on_scope(sql, &s, sname, tname, "CREATE TABLE FROM LOADER", false)))
+	if (sname && !(s = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
+	if ((t = mvc_bind_table(sql, s, tname)))
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
-	sql->errstr[0] = '\0'; /* reset table not found error */
-	sql->session->status = 0;
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 
@@ -1486,7 +1484,7 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = sname ? sa_strdup(sql->sa, sname) : NULL;
+	loader->sname = s ? sa_strdup(sql->sa, s->base.name) : NULL;
 	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
 
 	return rel;
