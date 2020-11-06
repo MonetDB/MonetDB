@@ -71,8 +71,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       stddev_samp(aa) over (partition by bb order by bb asc),
 #       stddev_samp(aa) over (partition by bb order by bb desc),
 #       stddev_samp(aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -89,8 +89,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       stddev_samp(cc) over (partition by bb order by bb asc),
 #       stddev_samp(cc) over (partition by bb order by bb desc),
 #       stddev_samp(cc) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -107,8 +107,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       stddev_pop(aa) over (partition by bb order by bb asc),
 #       stddev_pop(aa) over (partition by bb order by bb desc),
 #       stddev_pop(aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -125,8 +125,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       stddev_pop(cc) over (partition by bb order by bb asc),
 #       stddev_pop(cc) over (partition by bb order by bb desc),
 #       stddev_pop(cc) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -143,8 +143,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       var_samp(aa) over (partition by bb order by bb asc),
 #       var_samp(aa) over (partition by bb order by bb desc),
 #       var_samp(aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -161,8 +161,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       var_samp(cc) over (partition by bb order by bb asc),
 #       var_samp(cc) over (partition by bb order by bb desc),
 #       var_samp(cc) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -179,8 +179,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       var_pop(aa) over (partition by bb order by bb asc),
 #       var_pop(aa) over (partition by bb order by bb desc),
 #       var_pop(aa) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -197,8 +197,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       var_pop(cc) over (partition by bb order by bb asc),
 #       var_pop(cc) over (partition by bb order by bb desc),
 #       var_pop(cc) over (order by bb desc) from analytics;
-% sys.%3,	sys.%6,	sys.%11,	sys.%14 # table_name
-% %3,	%6,	%11,	%14 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]
@@ -215,8 +215,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       stddev_pop(aa) over (),
 #       var_samp(aa) over (),
 #       var_pop(aa) over () from analytics;
-% sys.,	sys.,	sys.,	sys. # table_name
-% %1,	%2,	%3,	%4 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34 # table_name
+% %7,	%16,	%25,	%34 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ 4.200340122,	3.929058411,	17.64285714,	15.4375	]
@@ -233,8 +233,8 @@ stdout of test 'analytics14` in directory 'sql/test/analytics` itself:
 #       stddev_pop(NULL) over (),
 #       var_samp(NULL) over (),
 #       var_pop(NULL) over () from analytics;
-% .,	.,	.,	. # table_name
-% %11,	%12,	%13,	%14 # name
+% .%11,	.%22,	.%33,	.%44 # table_name
+% %11,	%22,	%33,	%44 # name
 % double,	double,	double,	double # type
 % 24,	24,	24,	24 # length
 [ NULL,	NULL,	NULL,	NULL	]

@@ -35,7 +35,7 @@ stderr of test 'rename10` in directory 'sql/test/rename` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-8569/.s.monetdb.37484
 QUERY = select "a" from "SB"."t1"; --error
-ERROR = !SELECT: no such table 't1'
+ERROR = !SELECT: no such table 'SB'.'t1'
 CODE  = 42S02
 
 # 14:45:03 >  

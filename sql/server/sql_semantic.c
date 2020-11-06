@@ -202,7 +202,7 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 	const char *objstr = "trigger";
 	sql_trigger *res = NULL;
 
-	search_object_on_path(res = mvc_bind_trigger(sql, found, name), DO_NOTHING, ;, SQLSTATE(42000));
+	search_object_on_path(res = mvc_bind_trigger(sql, found, name), DO_NOTHING, ;, SQLSTATE(3F000));
 	return res;
 }
 

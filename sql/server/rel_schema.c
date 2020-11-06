@@ -2109,7 +2109,7 @@ rel_find_designated_schema(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	assert(sym->type == type_string);
 	sname = sym->data.sval;
 	if (!(s = mvc_bind_schema(sql, sname))) {
-		sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "COMMENT ON: no such schema: %s", sname);
+		sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "COMMENT ON: no such schema: '%s'", sname);
 		return 0;
 	}
 
@@ -2139,9 +2139,8 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return t->base.id;
 	}
 
-	sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "COMMENT ON: no such %s: %s%s%s",
-		want_table ? "table" : "view",
-		s ? s->base.name: "", s ? "." : "", tname);
+	sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "COMMENT ON: no such %s: %s%s%s'%s'",
+			  want_table ? "table" : "view", sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
 	return 0;
 }
 
@@ -2177,7 +2176,8 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		return 0;
 	}
 	if (!(c = mvc_bind_column(sql, t, cname))) {
-		sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S12) "COMMENT ON: no such column: %s.%s", tname, cname);
+		sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S12) "COMMENT ON: no such column: %s%s%s'%s'.'%s'",
+				  sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname, cname);
 		return 0;
 	}
 	*schema_out = s;
