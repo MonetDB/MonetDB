@@ -1,52 +1,37 @@
 #include "bincopydata.h"
 
-struct lfsr
-{
-	uint32_t bits;
+// reproducible rng so we can rerun tests with the same data
+// used to fail.
+// Based on https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+struct rng {
+	uint32_t state;
 };
 
-static struct lfsr
+
+#define rng_next(rng) ((rng)->state = (uint64_t)(rng)->state * 48271 % 0x7fffffff)
+
+static struct rng
 my_favorite_lfsr(void)
 {
-	return (struct lfsr){42};
+	return (struct rng) { .state = 42 };
 }
-
-static uint32_t
-lfsr_bit(struct lfsr *lfsr)
-{
-	const uint32_t mask = 0xB400;
-	uint32_t bit = lfsr->bits & 1;
-	lfsr->bits >>= 1;
-	lfsr->bits ^= mask & (-bit);
-	return bit;
-}
-
-static uint32_t
-lfsr_bits(struct lfsr *lfsr, int n)
-{
-	uint32_t value = 0;
-	for (int i = 0; i < n; i++)
-		value = (value << 1) | lfsr_bit(lfsr);
-	return value;
-}
-
 
 static copy_binary_timestamp
-random_timestamp(struct lfsr *lfsr)
+random_timestamp(struct rng *rng)
 {
 	// the % trick gives a little skew but we don't care
 	copy_binary_timestamp ts = {
 		.time = {
-			.ms = lfsr_bits(lfsr, 32) % 1000000,
-			.seconds = lfsr_bits(lfsr, 16) % 60, // 61 ??
-			.minutes = lfsr_bits(lfsr, 16) % 60,
-			.hours = lfsr_bits(lfsr, 8) % 24,
+			.ms = rng_next(rng) % 1000000,
+			.seconds = rng_next(rng) % 60, // 61 ??
+			.minutes = rng_next(rng) % 60,
+			.hours = rng_next(rng) % 24,
 			.padding = 0,
 		},
 		.date = {
 			.day = 0, // determine later
-			.month = 1 + lfsr_bits(lfsr, 8) % 12,
-			.year = 2030 - (int16_t)lfsr_bits(lfsr, 6),
+			.month = 1 + rng_next(rng) % 12,
+			.year = 2030 - (int16_t)rng_next(rng),
 		},
 	};
 
@@ -64,7 +49,7 @@ random_timestamp(struct lfsr *lfsr)
 	);
 	if (leap_year)
 		days = 29;
-	ts.date.day = 1 + lfsr_bits(lfsr, 8) % days;
+	ts.date.day = 1 + rng_next(rng) % days;
 
 	return ts;
 }
@@ -116,10 +101,10 @@ void fix_endian(copy_binary_timestamp *ts)
 void
 gen_timestamps(FILE *f, long nrecs)
 {
-	struct lfsr lfsr = my_favorite_lfsr();
+	struct rng rng = my_favorite_lfsr();
 
 	for (long i = 0; i < nrecs; i++) {
-		copy_binary_timestamp ts = random_timestamp(&lfsr);
+		copy_binary_timestamp ts = random_timestamp(&rng);
 		fix_endian(&ts);
 		fwrite(&ts, sizeof(ts), 1, f);
 	}
@@ -129,10 +114,10 @@ gen_timestamps(FILE *f, long nrecs)
 	void name \
 		(FILE *f, long nrecs) \
 	{ \
-		struct lfsr lfsr = my_favorite_lfsr(); \
+		struct rng rng = my_favorite_lfsr(); \
 	\
 		for (long i = 0; i < nrecs; i++) { \
-			copy_binary_timestamp ts = random_timestamp(&lfsr); \
+			copy_binary_timestamp ts = random_timestamp(&rng); \
 			fix_endian(&ts); \
 			fwrite(&ts.fld, sizeof(ts.fld), 1, f); \
 		} \

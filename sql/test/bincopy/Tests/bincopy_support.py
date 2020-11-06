@@ -3,6 +3,7 @@ import array
 import codecs
 import os
 import re
+import subprocess
 import sys
 
 try:
@@ -15,33 +16,48 @@ NRECS = 1_000_000
 # location generated test data files.
 BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
-def make_fill_in(side):
-    if side.lower() == 'client':
-        on_side = 'ON CLIENT'
-    elif side.lower() == 'server':
-        on_side = 'ON SERVER'
-    else:
-        raise Exception("'side' should be client or server")
+class DataMaker:
+    def __init__(self, side):
+        self.side_clause = 'ON ' + side.upper()
+        self.work_list = []
 
-    def fill_in(match):
+    def substitute_match(self, match):
         var = match.group(1)
         if var == 'ON':
-            return on_side
+            return self.side_clause
         base = f'bincopy_{var}.bin'
         dst_filename = os.path.join(BINCOPY_FILES, base)
         tmp_filename = os.path.join(BINCOPY_FILES, 'tmp_' + base)
         if not os.path.isfile(dst_filename):
-            import subprocess
-            subprocess.run(["bincopydata", var, str(NRECS), tmp_filename])
-            os.rename(tmp_filename, dst_filename)
+            cmd = ["bincopydata", var, str(NRECS), tmp_filename]
+            self.work_list.append( (cmd, tmp_filename, dst_filename))
         return f"R'{dst_filename}'"
 
-    return fill_in
+    def generate_files(self):
+        processes = []
+        # start the generators
+        for cmd, tmp, dst in self.work_list:
+            proc = subprocess.Popen(cmd)
+            processes.append((proc, cmd, tmp, dst))
+        # wait for them to complete
+        for proc, cmd, tmp, dst in processes:
+            returncode = proc.wait()
+            if returncode != 0:
+                raise Exception(f"Command '{' '.join(cmd)}' exited with status {returncode}")
+
+            os.rename(tmp, dst)
+
+
 
 def run_test(side, code):
-    code = re.sub(r'@(\w+)@', make_fill_in(side), code)
+    # generate the query
+    data_maker = DataMaker(side)
+    code = re.sub(r'@(\w+)@', data_maker.substitute_match, code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;"
     open(os.path.join(BINCOPY_FILES, 'test.sql'), "w").write(code)
+
+    # generate the required data files
+    data_maker.generate_files()
 
     with process.client('sql',
                     stdin=process.PIPE, input=code,
