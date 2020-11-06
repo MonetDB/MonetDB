@@ -19,7 +19,7 @@ BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 class DataMaker:
     def __init__(self, side):
         self.side_clause = 'ON ' + side.upper()
-        self.work_list = []
+        self.work_list = set()
 
     def substitute_match(self, match):
         var = match.group(1)
@@ -29,8 +29,8 @@ class DataMaker:
         dst_filename = os.path.join(BINCOPY_FILES, base)
         tmp_filename = os.path.join(BINCOPY_FILES, 'tmp_' + base)
         if not os.path.isfile(dst_filename):
-            cmd = ["bincopydata", var, str(NRECS), tmp_filename]
-            self.work_list.append( (cmd, tmp_filename, dst_filename))
+            cmd = ("bincopydata", var, str(NRECS), tmp_filename)
+            self.work_list.add( (cmd, tmp_filename, dst_filename))
         return f"R'{dst_filename}'"
 
     def generate_files(self):
