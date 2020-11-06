@@ -295,3 +295,56 @@ GROUP BY b_h
 ORDER BY b_h
 ;
 """
+
+DECIMALS = """
+-- 1..2 TINYINT
+-- 3..4 SMALLINT
+-- 5..9 INT
+-- 10..18 BIGINT
+-- 18.. HUGEINT
+CREATE TABLE foo(
+    i1 TINYINT,
+    d1_1 DECIMAL(1, 1),
+    d2_1 DECIMAL(2, 1),
+    i2 SMALLINT,
+    d3_2 DECIMAL(3, 2),
+    d4_2 DECIMAL(4, 2),
+    i4 INT,
+    d5_2 DECIMAL(5, 2),
+    d9_2 DECIMAL(9, 2),
+    i8 BIGINT,
+    d10_2 DECIMAL(10, 2),
+    d18_2 DECIMAL(18, 2)
+);
+COPY BINARY INTO foo FROM
+    -- bte: i1, d1_1, d2_1
+    @tinyints@, @tinyints@, @tinyints@,
+    -- sht: i2, d3_2, d4_2
+    @smallints@, @smallints@, @smallints@,
+    -- int: i4, d5_2, d9_2
+    @ints@, @ints@, @ints@,
+    -- lng: i8, d10_2, d18_2
+    @bigints@, @bigints@, @bigints@
+    @ON@;
+WITH verified AS (
+    SELECT
+        (d1_1 IS NULL OR 10 * d1_1 = i1) AS d1_1_ok,
+        (d2_1 IS NULL OR 10 * d2_1 = i1) AS d2_1_ok,
+        --
+        (d3_2 IS NULL OR 100 * d3_2 = i2) AS d3_2_ok,
+        (d4_2 IS NULL OR 100 * d4_2 = i2) AS d4_2_ok,
+        --
+        (d5_2 IS NULL OR 100 * d5_2 = i4) AS d5_2_ok,
+        (d9_2 IS NULL OR 100 * d9_2 = i4) AS d9_2_ok,
+        --
+        (d10_2 IS NULL OR 100 * d10_2 = i8) AS d10_2_ok,
+        (d18_2 IS NULL OR 100 * d18_2 = i8) AS d18_2_ok
+    FROM foo
+)
+SELECT
+    d1_1_ok, d2_1_ok, d3_2_ok, d4_2_ok, d5_2_ok, d9_2_ok, d10_2_ok, d18_2_ok,
+    COUNT(*)
+FROM verified
+GROUP BY d1_1_ok, d2_1_ok, d3_2_ok, d4_2_ok, d5_2_ok, d9_2_ok, d10_2_ok, d18_2_ok
+;
+"""
