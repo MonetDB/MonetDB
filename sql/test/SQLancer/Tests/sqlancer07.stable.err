@@ -54,7 +54,7 @@ ERROR = !overflow in conversion to DECIMAL(18,18).
 CODE  = 22003
 MAPI  = (monetdb) /var/tmp/mtest-20193/.s.monetdb.38814
 QUERY = PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
-ERROR = !SELECT: no such binary operator 'sql_mul(bigint,month_interval)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_mul'(bigint,month_interval)
 CODE  = 42000
 
 # 10:16:14 >  
