@@ -22,58 +22,25 @@ typedef struct exp_kind_t {
 sql_export sql_schema *cur_schema(mvc *sql);
 extern sql_schema *tmp_schema(mvc *sql);
 
-/* as we don't have OOP in C, I prefer a single macro with the search path algorithm, than passing function pointers */
-#define search_object_on_path(CALL, EXTRA, ERROR_CODE) \
-	do { \
-		sql_schema *found = NULL; \
- \
-		assert(objstr); \
-		if (sname) { /* user has explicitly typed the schema, so either the object is there or we return error */ \
-			if (!(found = mvc_bind_schema(sql, sname))) \
-				return sql_error(sql, 02, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
-			CALL; \
-		} else { \
-			char *p, *sp, *search_path_copy; \
- \
-			if (*s) { \
-				found = *s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
-				CALL; \
-			} \
-			EXTRA; \
-			if (!res && !sql->search_path_has_tmp) { /* if 'tmp' is not in the search path, search it before all others */ \
-				found = mvc_bind_schema(sql, "tmp"); \
-				CALL; \
-			} \
-			if (!res) { /* then current session's schema */ \
-				found = cur_schema(sql); \
-				CALL; \
-			} \
-			if (!res && !sql->search_path_has_sys) { /* if 'sys' is not in the current path search it next */ \
-				found = mvc_bind_schema(sql, "sys"); \
-				CALL; \
-			} \
-			if (!res) { \
-				/* object not found yet, look inside search path */ \
-				search_path_copy = sa_strdup(sql->ta, sql->search_path); \
-				p = strtok_r(search_path_copy, ",", &sp); \
-				while (p && !res) { \
-					if ((found = mvc_bind_schema(sql, p))) \
-						CALL; \
-					p = strtok_r(NULL, ",", &sp); \
-				} \
-			} \
-		} \
-		if (!res) \
-			return sql_error(sql, 02, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
-		*s = found; \
-	} while (0)
-
+/* Search function for SQL objects with scoping rules */
 extern sql_table *find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *tname, const char *error, bool isView);
 extern sql_sequence *find_sequence_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
 extern sql_idx *find_idx_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
 extern sql_type *find_type_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
 extern sql_trigger *find_trigger_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error);
 extern bool find_variable_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error);
+
+/* these functions find functions according to scoping rules */
+sql_export sql_subfunc *sql_find_func(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type, sql_subfunc *prev);
+extern sql_subfunc *sql_bind_member(mvc *sql, const char *sname, const char *fname, sql_subtype *tp, sql_ftype type, int nrargs, sql_subfunc *prev);
+extern sql_subfunc *sql_bind_func(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_ftype type);
+extern sql_subfunc *sql_bind_func3(mvc *sql, const char *sname, const char *fname, sql_subtype *tp1, sql_subtype *tp2, sql_subtype *tp3, sql_ftype type);
+extern sql_subfunc *sql_bind_func_result(mvc *sql, const char *sname, const char *fname, sql_ftype type, sql_subtype *res, int nargs, ...);
+extern sql_subfunc *sql_bind_func_(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type);
+extern sql_subfunc *sql_resolve_function_with_undefined_parameters(mvc *sql, const char *sname, const char *fname, list *ops, sql_ftype type);
+
+extern list *sql_find_funcs(mvc *sql, const char *sname, const char *fname, int nrargs, sql_ftype type);
+extern list *sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type);
 
 extern char *qname_schema(dlist *qname);
 extern char *qname_schema_object(dlist *qname);

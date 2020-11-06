@@ -1606,7 +1606,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		args = new_exp_list(v->sql->sa);
 		srel = r->l;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql->sa, v->sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -1619,7 +1619,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 
 		srel = r->r;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql->sa, v->sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -1827,7 +1827,7 @@ sum_limit_offset(mvc *sql, sql_rel *rel)
 	if (list_length(rel->exps) == 1 && rel->exps->h->data)
 		return list_append(sa_list(sql->sa), rel->exps->h->data);
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
+	sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, lng, 2, lng, lng);
 	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
 }
 
@@ -2872,7 +2872,7 @@ find_func( mvc *sql, char *name, list *exps )
 
 	for(n = exps->h; n; n = n->next)
 		append(l, exp_subtype(n->data));
-	return sql_bind_func_(sql->sa, sql->session->schema, name, l, F_FUNC);
+	return sql_bind_func_(sql, "sys", name, l, F_FUNC);
 }
 
 static sql_exp *
@@ -2986,7 +2986,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			else if (exp_is_atom(le)) {
 				l->h->data = re;
 				l->h->next->data = le;
-				e->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(re), exp_subtype(le), F_FUNC);
+				e->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(re), exp_subtype(le), F_FUNC);
 				exp_sum_scales(e->f, re, le);
 				(*changes)++;
 				return e;
@@ -2996,7 +2996,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				/* pow */
 				list *l;
 				sql_exp *ne;
-				sql_subfunc *pow = sql_bind_func(sql->sa, sql->session->schema, "power", exp_subtype(le), exp_subtype(re), F_FUNC);
+				sql_subfunc *pow = sql_bind_func(sql, "sys", "power", exp_subtype(le), exp_subtype(re), F_FUNC);
 				assert(pow);
 				if (exp_subtype(le)->type->localtype == TYPE_flt)
 					re = exp_atom_flt(sql->sa, 2);
@@ -3038,12 +3038,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						append(l, lre);
 						append(l, re);
 						le->l = l;
-						le->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(lre), exp_subtype(re), F_FUNC);
+						le->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lre), exp_subtype(re), F_FUNC);
 						exp_sum_scales(le->f, lre, re);
 						l = e->l;
 						l->h->data = lle;
 						l->h->next->data = le;
-						e->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
+						e->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
 						exp_sum_scales(e->f, lle, le);
 						if (subtype_cmp(&et, exp_subtype(e)) != 0)
 							e = exp_convert(sql->sa, e, exp_subtype(e), &et);
@@ -3849,8 +3849,8 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->f && re->f && /* merge ranges */
 				   le->flag == re->flag && le->flag <= cmp_lt) {
-				sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
-				sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
+				sql_subfunc *min = sql_bind_func(sql, "sys", "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
+				sql_subfunc *max = sql_bind_func(sql, "sys", "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
 				sql_exp *mine, *maxe;
 
 				if (!min || !max)
@@ -4177,7 +4177,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			if (oa->type == e_aggr) {
 				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subfunc *a = sql_bind_func(v->sql->sa, v->sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 				assert(a);
 				/* union of aggr result may have nils
@@ -5977,7 +5977,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			sql_exp *v;
 			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subfunc *a = sql_bind_func(v->sql->sa, v->sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 			append(aggrs, e);
 			if (!exp_name(e))
@@ -8677,7 +8677,7 @@ exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de,
 {
 	sql_subtype *rt = sql_bind_localtype(de==1?"bte":de==2?"sht":"int");
 	sql_exp *u = exp_atom_bool(sql->sa, unique);
-	sql_subfunc *f = sql_bind_func_result(sql->sa, mvc_bind_schema(sql,"sys"), "index", F_FUNC, rt, 2, exp_subtype(e), exp_subtype(u));
+	sql_subfunc *f = sql_bind_func_result(sql, "sys", "index", F_FUNC, rt, 2, exp_subtype(e), exp_subtype(u));
 
 	e = exp_binop(sql->sa, e, u, f);
 	exp_setname(sql->sa, e, tname, cname);
@@ -8687,7 +8687,7 @@ exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de,
 static sql_exp *
 exp_stringscol(mvc *sql, sql_exp *e, const char *tname, const char *cname)
 {
-	sql_subfunc *f = sql_bind_func(sql->sa, mvc_bind_schema(sql,"sys"), "strings", exp_subtype(e), NULL, F_FUNC);
+	sql_subfunc *f = sql_bind_func(sql, "sys", "strings", exp_subtype(e), NULL, F_FUNC);
 
 	e = exp_unop(sql->sa, e, f);
 	exp_setname(sql->sa, e, tname, cname);

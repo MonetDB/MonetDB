@@ -961,18 +961,6 @@ mvc_bind_func(mvc *sql, const char *name)
 	return t;
 }
 
-list *
-schema_bind_func(mvc *sql, sql_schema * s, const char *name, sql_ftype type)
-{
-	list *func_list = find_all_sql_func(s, name, type);
-
-	(void) sql;
-	if (!func_list)
-		return NULL;
-	TRC_DEBUG(SQL_TRANS, "Schema bind function: %s\n", name);
-	return func_list;
-}
-
 sql_schema *
 mvc_bind_schema(mvc *m, const char *sname)
 {
