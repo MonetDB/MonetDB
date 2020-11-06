@@ -4552,7 +4552,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	} else if (l->h->next->type == type_string) {
 		const char* window_alias = l->h->next->data.sval;
 		if ((window_specification = frame_get_window_def(sql, window_alias, &pos)) == NULL)
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window '%s' not found", window_alias);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: window '%s' not found", window_alias);
 		frame_set_var_visited(sql, pos);
 	} else {
 		assert(0);
@@ -4752,7 +4752,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				df = bind_func(sql, "sys", "diff", exp_subtype(e), NULL, F_ANALYTIC);
 			}
 			if (!df)
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: function 'diff' not found");
+				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: function 'diff' not found");
 			append(args, e);
 			oe = exp_op(sql->sa, args, df);
 		}
@@ -4777,7 +4777,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		wf = find_func(sql, sname, aname, list_length(types), F_ANALYTIC, NULL);
 		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
 			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: window function %s%s%s'%s'(%s) not found",
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: window function %s%s%s'%s'(%s) not found",
 							 sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, arg_list ? arg_list : "");
 		}
 	}
