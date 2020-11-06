@@ -488,6 +488,25 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 	return nexps;
 }
 
+static char *
+nary_function_arg_types_2str(mvc *sql, list* types, int N)
+{
+	char *arg_list = NULL;
+	int i = 0;
+
+	for (node *n = types->h; n && i < N; n = n->next) {
+		char *tpe = sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+
+		if (arg_list) {
+			arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
+		} else {
+			arg_list = tpe;
+		}
+		i++;
+	}
+	return arg_list;
+}
+
 sql_exp *
 find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type)
 {
@@ -500,8 +519,11 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
-		if (!(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type)))
-			return NULL;
+		if (!(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type))) {
+			char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such %s function %s%s%s'%s'(%s)",
+							 type == F_UNION ? "table returning" : "loader", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
+		}
 		len = list_length(ff);
 		if (len > 1) {
 			int i, score = 0;
@@ -525,8 +547,9 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 			return NULL;
 		return exp_op(sql->sa, exps, f);
 	}
-	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such %s function %s%s%s'%s'", type == F_UNION ? "table returning" : "loader", 
-					 sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname);
+	char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
+	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such %s function %s%s%s'%s'(%s)",
+					 type == F_UNION ? "table returning" : "loader", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
 }
 
 static sql_rel *
@@ -1698,7 +1721,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 }
 
 static sql_exp*
-_rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps, int nargs, exp_kind ek)
+_rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps, exp_kind ek)
 {
 	sql_subfunc *f = NULL;
 	int table_func = (ek.card == card_relation);
@@ -1711,8 +1734,11 @@ _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps,
 
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
-		if (!(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type)))
-			return NULL;
+		if (!(ff = sql_find_funcs(sql, sname, fname, list_length(tl), type))) {
+			char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator %s%s%s'%s'(%s)",
+							 sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
+		}
 		len = list_length(ff);
 		if (len > 1) {
 			int i, score = 0;
@@ -1736,7 +1762,9 @@ _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps,
 			return NULL;
 		return exp_op(sql->sa, exps, f);
 	}
-	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator %s%s%s'%s'(%d)", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, nargs);
+	char *arg_list = list_length(tl) ? nary_function_arg_types_2str(sql, tl, list_length(tl)) : NULL;
+	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator %s%s%s'%s'(%s)",
+					 sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
 }
 
 static sql_exp *
@@ -2139,7 +2167,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			append(tl, exp_subtype(e));
 		}
 		/* find the predicate filter function */
-		return _rel_nop(sql, sname, fname, tl, rel ? *rel : NULL, exps, list_length(exps), ek);
+		return _rel_nop(sql, sname, fname, tl, rel ? *rel : NULL, exps, ek);
 	}
 	case SQL_COMPARE:
 	{
@@ -3103,7 +3131,7 @@ static sql_exp *
 rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 {
 	mvc *sql = query->sql;
-	int nr_args = 0, err = 0, err_status = 0;
+	int nr_args = 0, err = 0;
 	dnode *l = se->data.lval->h;
 	dnode *ops = l->next->next->data.lval?l->next->next->data.lval->h:NULL;
 	list *exps = sa_list(sql->sa), *tl = sa_list(sql->sa);
@@ -3115,7 +3143,8 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
 			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
 			if (!e) {
-				err = 1;
+				err = sql->session->status;
+				strcpy(buf, sql->errstr);
 				continue;
 			}
 			append(exps, e);
@@ -3144,7 +3173,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 					e = exp_check_type(sql, ntp, NULL, e, type_equal);
 					if (!e) {
-						err_status = sql->session->status;
+						err = sql->session->status;
 						strcpy(buf, sql->errstr);
 						break;
 					}
@@ -3171,14 +3200,14 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		sql->errstr[0] = '\0';
 		return _rel_aggr(query, rel, l->next->data.i_val, sname, fname, l->next->next->data.lval->h, fs);
 	}
-	if (err_status) {
-		sql->session->status = err_status;
+	if (err) {
+		sql->session->status = err;
 		strcpy(sql->errstr, buf);
 		return NULL;
 	}
 	sql->session->status = 0; /* if the function was not found clean the error */
 	sql->errstr[0] = '\0';
-	return _rel_nop(sql, sname, fname, tl, rel ? *rel : NULL, exps, nr_args, ek);
+	return _rel_nop(sql, sname, fname, tl, rel ? *rel : NULL, exps, ek);
 }
 
 static sql_exp *
@@ -4495,25 +4524,6 @@ get_window_clauses(mvc *sql, char* ident, symbol **partition_by_clause, symbol *
 	return window_specification; /* return something to say there were no errors */
 }
 
-static char*
-window_function_arg_types_2str(mvc *sql, list* types, int N)
-{
-	char *arg_list = NULL;
-	int i = 0;
-
-	for (node *n = types->h; n && i < N; n = n->next) {
-		char *tpe = sql_subtype_string(sql->ta, (sql_subtype *) n->data);
-
-		if (arg_list) {
-			arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
-		} else {
-			arg_list = tpe;
-		}
-		i++;
-	}
-	return arg_list;
-}
-
 /*
  * select x, y, rank_op() over (partition by x order by y) as, ...
                 aggr_op(z) over (partition by y order by x) as, ...
@@ -4776,7 +4786,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 		sql->errstr[0] = '\0';
 		wf = find_func(sql, sname, aname, list_length(types), F_ANALYTIC, NULL);
 		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
-			char *arg_list = nfargs ? window_function_arg_types_2str(sql, types, nfargs) : NULL;
+			char *arg_list = nfargs ? nary_function_arg_types_2str(sql, types, nfargs) : NULL;
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: window function %s%s%s'%s'(%s) not found",
 							 sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, arg_list ? arg_list : "");
 		}
