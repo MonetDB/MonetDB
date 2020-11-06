@@ -116,10 +116,6 @@ tmp_schema(mvc *sql)
 		} else { \
 			char *p, *sp, *search_path_copy; \
  \
-			if (s && *s) { \
-				found = *s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
-				CALL; \
-			} \
 			EXTRA; \
 			if (!res && !sql->search_path_has_tmp) { /* if 'tmp' is not in the search path, search it before all others */ \
 				found = mvc_bind_schema(sql, "tmp"); \
@@ -146,12 +142,14 @@ tmp_schema(mvc *sql)
 		} \
 		if (!res) \
 			return sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
-		if (s) \
-			*s = found; \
 	} while (0)
 
 #define table_extra \
 	do { \
+		if (s && *s) { \
+			found = *s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
+			res = mvc_bind_table(sql, found, name); \
+		} \
 		if (!res && strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
 			return res; \
 	} while (0)
@@ -163,11 +161,13 @@ find_table_or_view_on_scope(mvc *sql, sql_schema **s, const char *sname, const c
 	sql_table *res = NULL;
 
 	search_object_on_path(res = mvc_bind_table(sql, found, name), DO_NOTHING, table_extra, SQLSTATE(42S02));
+	if (res && s)
+		*s = res->s;
 	return res;
 }
 
 sql_sequence *
-find_sequence_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
 	const char *objstr = "sequence";
 	sql_sequence *res = NULL;
@@ -177,7 +177,7 @@ find_sequence_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *
 }
 
 sql_idx *
-find_idx_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
 	const char *objstr = "index";
 	sql_idx *res = NULL;
@@ -187,7 +187,7 @@ find_idx_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name,
 }
 
 sql_type *
-find_type_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
 	const char *objstr = "type";
 	sql_type *res = NULL;
@@ -197,7 +197,7 @@ find_type_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name
 }
 
 sql_trigger *
-find_trigger_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, const char *error)
+find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
 	const char *objstr = "trigger";
 	sql_trigger *res = NULL;
@@ -235,7 +235,7 @@ find_trigger_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *n
 	} while (0)
 
 bool
-find_variable_on_scope(mvc *sql, sql_schema **s, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error)
+find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error)
 {
 	const char *objstr = "variable";
 	bool res = false;
@@ -354,7 +354,6 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
 	sql_subfunc *res = NULL;
-	sql_schema **s = NULL; /* not used */
 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
@@ -425,7 +424,6 @@ sql_bind_member(mvc *sql, const char *sname, const char *name, sql_subtype *tp, 
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
 	sql_subfunc *res = NULL;
-	sql_schema **s = NULL; /* not used */
 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
@@ -493,7 +491,6 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
 	sql_subfunc *res = NULL;
-	sql_schema **s = NULL; /* not used */
 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
@@ -533,7 +530,6 @@ sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype ty
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
 	sql_subfunc *res = NULL;
-	sql_schema **s = NULL; /* not used */
 	list *ops = sa_list(sql->sa);
 	va_list valist;
 
@@ -592,7 +588,6 @@ sql_resolve_function_with_undefined_parameters(mvc *sql, const char *sname, cons
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
 	sql_subfunc *res = NULL;
-	sql_schema **s = NULL; /* not used */
 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
@@ -653,7 +648,6 @@ sql_find_funcs(mvc *sql, const char *sname, const char *name, int nrargs, sql_ft
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
 	list *res = NULL;
-	sql_schema **s = NULL; /* not used */
 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
@@ -712,7 +706,6 @@ sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype 
 	char *F = NULL, *objstr = NULL;
 	const char *error = "CATALOG";
 	list *res = NULL;
-	sql_schema **s = NULL; /* not used */
 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */

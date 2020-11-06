@@ -1213,13 +1213,13 @@ rel_drop_type(mvc *sql, dlist *qname, int drop_action)
 {
 	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
-	sql_schema *s = NULL;
+	sql_type *t = NULL;
 
-	if (!find_type_on_scope(sql, &s, sname, name, "DROP TYPE"))
+	if (!(t = find_type_on_scope(sql, sname, name, "DROP TYPE")))
 		return NULL;
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	return rel_schema2(sql->sa, ddl_drop_type, s->base.name, name, drop_action);
+	if (!mvc_schema_privs(sql, t->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
+	return rel_schema2(sql->sa, ddl_drop_type, t->s->base.name, name, drop_action);
 }
 
 static sql_rel *
@@ -2187,7 +2187,6 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 static sqlid
 rel_find_designated_index(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	dlist *qname;
-	sql_schema *s = NULL;
 	char *iname, *sname;
 	sql_idx *idx;
 
@@ -2195,14 +2194,14 @@ rel_find_designated_index(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	qname = sym->data.lval;
 	sname = qname_schema(qname);
 	iname = qname_schema_object(qname);
-	if (!(idx = find_idx_on_scope(sql, &s, sname, iname, "COMMENT ON")))
+	if (!(idx = find_idx_on_scope(sql, sname, iname, "COMMENT ON")))
 		return 0;
 	if (idx && idx->t->s && isTempSchema(idx->t->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
 	}
 	if (idx) {
-		*schema_out = s;
+		*schema_out = idx->t->s;
 		return idx->base.id;
 	}
 
@@ -2214,7 +2213,6 @@ rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	(void)sql;
 	(void)sym;
 	dlist *qname;
-	sql_schema *s = NULL;
 	char *seqname, *sname;
 	sql_sequence *seq;
 
@@ -2223,13 +2221,13 @@ rel_find_designated_sequence(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	sname = qname_schema(qname);
 	seqname = qname_schema_object(qname);
 
-	seq = find_sequence_on_scope(sql, &s, sname, seqname, "COMMENT ON");
+	seq = find_sequence_on_scope(sql, sname, seqname, "COMMENT ON");
 	if (seq && seq->s && isTempSchema(seq->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
 	}
 	if (seq) {
-		*schema_out = s;
+		*schema_out = seq->s;
 		return seq->base.id;
 	}
 
@@ -2696,11 +2694,11 @@ rel_schemas(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 		char *sname = qname_schema(l);
 		char *iname = qname_schema_object(l);
-		sql_schema *s = NULL;
-		
-		if (!find_idx_on_scope(sql, &s, sname, iname, "DROP INDEX"))
+		sql_idx *idx = NULL;
+
+		if (!(idx = find_idx_on_scope(sql, sname, iname, "DROP INDEX")))
 			return NULL;
-		ret = rel_schema2(sql->sa, ddl_drop_index, s->base.name, iname, 0);
+		ret = rel_schema2(sql->sa, ddl_drop_index, idx->t->s->base.name, iname, 0);
 	} 	break;
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;

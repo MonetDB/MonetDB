@@ -245,21 +245,20 @@ rel_alter_seq(
 	char *sname = qname_schema(qname);
 	char *name = qname_schema_object(qname);
 	sql_sequence *seq;
-	sql_schema *s = NULL;
 	int start_type = start_list->h->data.i_val;
 	sql_rel *r = NULL;
 	sql_exp *val = NULL;
 
 	assert(start_list->h->type == type_int);
 	(void) tpe;
-	if (!(seq = find_sequence_on_scope(sql, &s, sname, name, "ALTER SEQUENCE")))
+	if (!(seq = find_sequence_on_scope(sql, sname, name, "ALTER SEQUENCE")))
 		return NULL;
-	if (!mvc_schema_privs(sql, s))
+	if (!mvc_schema_privs(sql, seq->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), seq->s->base.name);
 
 	/* first alter the known values */
-	seq = create_sql_sequence(sql->sa, s, name, seq->start, min, max, inc, cache, (bit) cycle);
+	seq = create_sql_sequence(sql->sa, seq->s, name, seq->start, min, max, inc, cache, (bit) cycle);
 
 	/* restart may be a query, i.e. we create a statement
 	   restart(ssname,seqname,value) */
@@ -285,7 +284,7 @@ rel_alter_seq(
 		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(val), NULL, F_AGGR);
 		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
-	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);
+	return rel_seq(sql->sa, ddl_alter_seq, seq->s->base.name, seq, r, val);
 }
 
 static sql_rel *
@@ -401,11 +400,11 @@ rel_sequences(sql_query *query, symbol *s)
 			dlist *l = s->data.lval;
 			char *sname = qname_schema(l->h->data.lval);
 			char *seqname = qname_schema_object(l->h->data.lval);
-			sql_schema *s = NULL;
+			sql_sequence *seq = NULL;
 
-			if (!find_sequence_on_scope(sql, &s, sname, seqname, "DROP SEQUENCE"))
+			if (!(seq = find_sequence_on_scope(sql, sname, seqname, "DROP SEQUENCE")))
 				return NULL;
-			res = rel_drop_seq(sql->sa, s->base.name, seqname);
+			res = rel_drop_seq(sql->sa, seq->s->base.name, seqname);
 		}
 		break;
 		default:
