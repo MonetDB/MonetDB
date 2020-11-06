@@ -1210,11 +1210,15 @@ rel_column_ref(sql_query *query, sql_rel **rel, symbol *column_r, int f)
 			}
 		}
 		if (!exp) { /* If no column was found, try a global variable */
-			sql_schema *s = mvc_bind_schema(sql, tname); /* search schema with table name, ugh */
 			sql_var *var = NULL;
+			sql_subtype *tpe = NULL;
+			int level = 0;
+			sql_arg *a = NULL;
 
-			if (s && (var = find_global_var(sql, s, cname)))
+			if (find_variable_on_scope(sql, tname, cname, &var, &a, &tpe, &level, "SELECT")) { /* search schema with table name, ugh */
+				assert(level == 0);
 				exp = exp_param_or_declared(sql->sa, sa_strdup(sql->sa, var->sname), sa_strdup(sql->sa, var->name), &(var->var.tpe), 0);
+			}
 		}
 
 		if (!exp)
