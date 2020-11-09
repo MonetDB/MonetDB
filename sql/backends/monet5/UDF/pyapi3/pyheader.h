@@ -75,7 +75,6 @@
 #define PyInt_FromLong PyLong_FromLong
 #define PyInt_Check PyLong_Check
 #define PythonUnicodeType Py_UNICODE
-#define PYFUNCNAME(name) PYAPI3##name
 
 #define utf8string_minlength 256
 
