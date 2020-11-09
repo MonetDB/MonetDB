@@ -30,20 +30,20 @@ stderr of test 'analytics06` in directory 'sql/test/analytics` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-20542/.s.monetdb.37407
 QUERY = select max(aa) over (partition by bb rows 'something' preceding) from testing; --error
-ERROR = !PRECEDING offset must be of a countable SQL type
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-20542/.s.monetdb.37407
+ERROR = !conversion of string 'something' to type lng failed.
+CODE  = 22018
+MAPI  = (monetdb) /var/tmp/mtest-90981/.s.monetdb.31127
 QUERY = select max(distinct aa) over (partition by bb) from testing; --error
 ERROR = !SELECT: DISTINCT clause is not implemented for window functions
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-4473/.s.monetdb.34569
 QUERY = select count(cc * cc) over (partition by cc * cc rows between cc * cc preceding and cc * cc preceding) from testing; --error, null value in bound frame input
-ERROR = !All values on PRECEDING boundary must be non-null for ROWS frame
-CODE  = HY005
-MAPI  = (monetdb) /var/tmp/mtest-5397/.s.monetdb.36956
+ERROR = !row frame bound must be non negative and non null.
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-167562/.s.monetdb.33992
 QUERY = select count(aa) over (partition by bb rows between cc - 500 preceding and cc - 500 preceding) from testing; --error, negative value in bound frame input
-ERROR = !All values on PRECEDING boundary must be non-negative
-CODE  = HY005
+ERROR = !row frame bound must be non negative and non null.
+CODE  = 42000
 
 # 15:51:44 >  
 # 15:51:44 >  "Done."

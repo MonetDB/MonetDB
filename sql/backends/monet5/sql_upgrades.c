@@ -2554,14 +2554,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	/* if there are 6 'lpad' functions of the same name in the catalog: ((1 or 2 string inputs) * (char or varchar or clob)), then upgrade */
+	/* if the keyword STREAM is in the list of keywords, upgrade */
 	pos += snprintf(buf + pos, bufsize - pos,
-					"select id from sys.functions where name = 'lpad' and mod = 'str' and func = 'lpad' and system = true;\n");
+					"select keyword from sys.keywords where keyword = 'STREAM';\n");
 	assert(pos < bufsize);
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
 		goto bailout;
 	if ((b = BATdescriptor(output->cols[0].b))) {
-		if (BATcount(b) == 6) {
+		if (BATcount(b) == 1) {
 			if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 				goto bailout;
 			*systabfixed = true;
@@ -2582,7 +2582,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			printf("Running database upgrade commands:\n%s\n", buf);
 			if ((err = SQLstatementIntern(c, buf, "update", true, false, NULL)) != MAL_SUCCEED)
 				goto bailout;
-		
+
 			pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 					"ALTER TABLE sys.keywords SET READ ONLY;\n"
 					"ALTER TABLE sys.table_types SET READ ONLY;\n");

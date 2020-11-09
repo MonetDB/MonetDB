@@ -129,7 +129,7 @@ UPDATE FLOAT8_TBL
 
 SELECT '' AS bad, f.f1 * '1e200' from FLOAT8_TBL f;
 
-SELECT '' AS bad, f.f1 ^ '1e200' from FLOAT8_TBL f;
+SELECT '' AS bad, f.f1 ^ '3' from FLOAT8_TBL f;
 
 --SELECT '' AS bad, log(f.f1) from FLOAT8_TBL f where f.f1 = '0.0' ;
 
