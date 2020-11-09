@@ -366,3 +366,11 @@ FROM foo
 GROUP BY d19_ok, d38_ok
 ;
 """
+
+URLS = """
+-- currently every string is accepted as a url
+-- so we just load an existing strings file
+CREATE TABLE foo(u URL);
+COPY BINARY INTO foo FROM @strings@ @ON@;
+SELECT COUNT(*) FROM foo;
+"""

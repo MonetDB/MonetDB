@@ -418,6 +418,7 @@ static struct type_rec {
 #endif
 	//
 	{ "str", "str", .loader=load_zero_terminated_text },
+	{ "url", "url", .loader=load_zero_terminated_text },
 	//
 	{ "date", "date", .convert_fixed_width=convert_date, .record_size=sizeof(copy_binary_date), },
 	{ "daytime", "daytime", .convert_fixed_width=convert_time, .record_size=sizeof(copy_binary_time), },
