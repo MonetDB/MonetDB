@@ -1,0 +1,42 @@
+statement error
+CREATE TABLE A (
+a varchar(10)
+)
+
+statement error
+INSERT INTO A VALUES ('a1')
+
+statement error
+INSERT INTO A VALUES ('a2')
+
+statement ok
+CREATE TABLE B (
+a varchar(10)
+)
+
+statement ok
+INSERT INTO B VALUES ('a1')
+
+statement ok
+INSERT INTO B VALUES ('a2')
+
+statement ok
+INSERT INTO B VALUES ('a3')
+
+query I rowsort
+SELECT COUNT(*)
+FROM A
+WHERE NOT (A.a =
+(SELECT B.a
+FROM B
+WHERE a > 'a4' ))
+----
+0
+
+statement ok
+drop table B
+
+statement ok
+drop table A
+
+

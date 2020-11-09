@@ -1,0 +1,6 @@
+query I rowsort
+select (select 1)
+----
+1
+
+
