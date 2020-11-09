@@ -399,29 +399,29 @@ end:
 // the given size is a byte count or an item count.
 static struct type_rec {
 	char *method;
-	int gdk_type;
+	char *gdk_type;
 	str (*loader)(BAT *bat, stream *s, int *eof_reached);
 	str (*convert_fixed_width)(void *dst_start, void *dst_end, void *src_start, void *src_end);
 	size_t record_size;
 	str (*convert_in_place)(void *start, void *end);
 } type_recs[] = {
-	{ "bit", TYPE_bit, .convert_in_place=convert_bit, },
-	{ "bte", TYPE_bte, .convert_in_place=convert_bte, },
-	{ "sht", TYPE_sht, .convert_in_place=convert_sht, },
-	{ "int", TYPE_int, .convert_in_place=convert_int, },
-	{ "lng", TYPE_lng, .convert_in_place=convert_lng, },
-	{ "flt", TYPE_flt, .convert_in_place=convert_flt, },
-	{ "dbl", TYPE_dbl, .convert_in_place=convert_dbl, },
+	{ "bit", "bit", .convert_in_place=convert_bit, },
+	{ "bte", "bte", .convert_in_place=convert_bte, },
+	{ "sht", "sht", .convert_in_place=convert_sht, },
+	{ "int", "int", .convert_in_place=convert_int, },
+	{ "lng", "lng", .convert_in_place=convert_lng, },
+	{ "flt", "flt", .convert_in_place=convert_flt, },
+	{ "dbl", "dbl", .convert_in_place=convert_dbl, },
 	//
 #ifdef HAVE_HGE
-	{ "hge", TYPE_hge, .convert_in_place=convert_hge, },
+	{ "hge", "hge", .convert_in_place=convert_hge, },
 #endif
 	//
-	{ "str", TYPE_str, .loader=load_zero_terminated_text },
+	{ "str", "str", .loader=load_zero_terminated_text },
 	//
-	{ "date", TYPE_date, .convert_fixed_width=convert_date, .record_size=sizeof(copy_binary_date), },
-	{ "daytime", TYPE_daytime, .convert_fixed_width=convert_time, .record_size=sizeof(copy_binary_time), },
-	{ "timestamp", TYPE_timestamp, .convert_fixed_width=convert_timestamp, .record_size=sizeof(copy_binary_timestamp), },
+	{ "date", "date", .convert_fixed_width=convert_date, .record_size=sizeof(copy_binary_date), },
+	{ "daytime", "daytime", .convert_fixed_width=convert_time, .record_size=sizeof(copy_binary_time), },
+	{ "timestamp", "timestamp", .convert_fixed_width=convert_timestamp, .record_size=sizeof(copy_binary_timestamp), },
 };
 
 
@@ -540,6 +540,7 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 
 	// These are managed by the end: block.
 	str msg = MAL_SUCCEED;
+	int gdk_type;
 	BAT *bat = NULL;
 	stream *stream_to_close = NULL;
 	bool do_finish_mapi = false;
@@ -558,7 +559,10 @@ importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int oncli
 		bailout("COPY BINARY FROM not implemented for '%s'", method);
 
 	// Create the BAT
-	bat = COLnew(0, rec->gdk_type, nrows, PERSISTENT);
+	gdk_type = ATOMindex(rec->gdk_type);
+	if (gdk_type < 0)
+		bailout("cannot load %s as %s: unknown atom type %s", path, method, rec->gdk_type);
+	bat = COLnew(0, gdk_type, nrows, PERSISTENT);
 	if (bat == NULL)
 		bailout("%s", GDK_EXCEPTION);
 
