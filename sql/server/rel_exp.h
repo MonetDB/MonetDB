@@ -66,6 +66,7 @@ extern sql_exp * exp_atom_bte(sql_allocator *sa, bte i);
 extern sql_exp * exp_atom_sht(sql_allocator *sa, sht i);
 extern sql_exp * exp_atom_int(sql_allocator *sa, int i);
 sql_export sql_exp * exp_atom_lng(sql_allocator *sa, lng l);
+extern sql_exp *exp_atom_oid(sql_allocator *sa, oid i);
 #ifdef HAVE_HGE
 extern sql_exp * exp_atom_hge(sql_allocator *sa, hge l);
 #endif

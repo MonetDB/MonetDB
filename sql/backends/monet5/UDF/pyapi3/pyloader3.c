@@ -44,7 +44,7 @@ pyapi_list_length(list *l)
 }
 
 str
-PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
     sql_func * sqlfun;
     sql_subfunc * sqlmorefun;
     str exprStr;
@@ -68,7 +68,7 @@ PYFUNCNAME(PyAPIevalLoader)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 	char *loader_additional_args[] = {"_emit", "_conn"};
 
-    if (!PYFUNCNAME(PyAPIInitialized())) {
+    if (!PYAPI3PyAPIInitialized()) {
         throw(MAL, "pyapi3.eval",
               SQLSTATE(PY000) "Embedded Python is enabled but an error was thrown during initialization.");
     }

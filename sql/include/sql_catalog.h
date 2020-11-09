@@ -104,7 +104,10 @@ typedef enum sql_dependency {
 				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING
 				             AND INTERVAL '1' MONTH FOLLOWING */
 #define FRAME_GROUPS 2
-#define FRAME_ALL 3 /* special case of FRAME_RANGE, cover the entire partition */
+#define FRAME_UNBOUNDED_TILL_CURRENT_ROW 3
+#define FRAME_CURRENT_ROW_TILL_UNBOUNDED 4
+#define FRAME_ALL 5
+#define FRAME_CURRENT_ROW 6
 
 /* the following list of macros are used by SQLwindow_bound function */
 #define BOUND_FIRST_HALF_PRECEDING  0

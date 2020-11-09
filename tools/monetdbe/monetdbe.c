@@ -16,7 +16,6 @@
 #include "mal_backend.h"
 #include "mal_builder.h"
 #include "opt_prelude.h"
-#include "mtime.h"
 #include "blob.h"
 #include "sql_mvc.h"
 #include "sql_catalog.h"
