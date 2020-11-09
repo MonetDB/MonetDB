@@ -91,20 +91,28 @@ candmask_lobit(uint32_t x)
 static inline uint32_t __attribute__((__const__))
 candmask_pop(uint32_t x)
 {
-#ifdef __GNUC__
+#if defined(__GNUC__)
 	return (uint32_t) __builtin_popcount(x);
-#else
-#ifdef _MSC_VER
+#elif defined(_MSC_VER)
 	return (uint32_t) __popcnt((unsigned int) (x));
 #else
-	/* divide and conquer implementation */
+	/* divide and conquer implementation (the two versions are
+	 * essentially equivalent, but the first version is written a
+	 * bit smarter) */
+#if 1
+	x -= (x >> 1) & ~0U/3 /* 0x55555555 */; /* 3-1=2; 2-1=1; 1-0=1; 0-0=0 */
+	x = (x & ~0U/5) + ((x >> 2) & ~0U/5) /* 0x33333333 */;
+	x = (x + (x >> 4)) & ~0UL/0x11 /* 0x0F0F0F0F */;
+	x = (x + (x >> 8)) & ~0UL/0x101 /* 0x00FF00FF */;
+	x = (x + (x >> 16)) & 0xFFFF /* ~0UL/0x10001 */;
+#else
 	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
 	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
 	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
 	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
 	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
-	return x;
 #endif
+	return x;
 #endif
 }
 
