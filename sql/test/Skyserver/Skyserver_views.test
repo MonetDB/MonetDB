@@ -1,0 +1,320 @@
+statement ok
+CREATE VIEW SpecObj
+AS
+SELECT *
+    FROM specObjAll
+    WHERE sciencePrimary = 1
+
+statement ok
+CREATE VIEW SpecLine
+AS
+SELECT *
+    FROM specLineAll
+    WHERE category=2
+
+statement ok
+CREATE VIEW SpecPhoto
+AS
+SELECT *
+    FROM SpecPhotoAll
+    WHERE sciencePrimary = 1 and mode=1
+
+statement ok
+CREATE VIEW Tile
+AS
+SELECT *
+    FROM TileAll
+    WHERE untiled = 0
+
+statement ok
+CREATE VIEW TilingBoundary
+AS
+SELECT *
+    FROM TilingGeometry
+    WHERE isMask = 0
+
+statement ok
+CREATE VIEW TilingMask
+AS
+SELECT *
+    FROM TilingGeometry
+    WHERE isMask = 1
+
+statement ok
+CREATE VIEW TiledTarget
+AS
+SELECT *
+    FROM TiledTargetAll
+    WHERE untiled = 0
+
+statement error
+CREATE VIEW Columns
+AS
+SELECT *
+    FROM DBColumns
+
+statement ok
+CREATE VIEW Run
+AS
+SELECT segmentID, run, rerun, field0, nFields
+    FROM Segment
+    WHERE camcol=1
+
+statement ok
+CREATE VIEW PhotoSecondary
+AS
+SELECT * FROM PhotoObjAll
+    WHERE mode=2
+
+statement ok
+CREATE VIEW PhotoFamily
+AS
+SELECT * FROM PhotoObjAll
+    WHERE mode=3
+
+statement ok
+CREATE VIEW PhotoObj
+AS
+SELECT * FROM PhotoObjAll
+	WHERE mode in (1,2)
+
+statement ok
+CREATE VIEW PhotoPrimary
+AS
+SELECT * FROM PhotoObjAll
+    WHERE mode=1
+
+statement ok
+CREATE VIEW PhotoAux
+AS
+SELECT * FROM PhotoAuxAll
+	WHERE mode in (1,2)
+
+statement ok
+CREATE VIEW PhotoStatus
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='PhotoStatus'
+
+statement ok
+CREATE VIEW PrimTarget
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='PrimTarget'
+
+statement ok
+CREATE VIEW SecTarget
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='SecTarget'
+
+statement ok
+CREATE VIEW InsideMask
+AS
+SELECT name,
+	cast(value as smallint) as value,
+	description
+    FROM DataConstants
+    WHERE field='InsideMask'
+
+statement ok
+CREATE VIEW SpecZWarning
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='SpecZWarning'
+
+statement ok
+CREATE VIEW ImageMask
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='ImageMask'
+
+statement ok
+CREATE VIEW TiMask
+AS
+SELECT name,
+        cast(value as int) as value,
+        description
+    FROM DataConstants
+    WHERE field='TiMask'
+
+statement ok
+CREATE VIEW PhotoMode
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field = 'PhotoMode'
+
+statement ok
+CREATE VIEW PhotoType
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='PhotoType'
+
+statement ok
+CREATE VIEW MaskType
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='MaskType'
+
+statement ok
+CREATE VIEW FieldQuality
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='FieldQuality'
+
+statement ok
+CREATE VIEW PspStatus
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='PspStatus'
+
+statement ok
+CREATE VIEW FramesStatus
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='FramesStatus'
+
+statement ok
+CREATE VIEW SpecClass
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='SpecClass'
+
+statement ok
+CREATE VIEW SpecLineNames
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='SpecLineNames'
+
+statement ok
+CREATE VIEW SpecZStatus
+AS
+SELECT name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='SpecZStatus'
+
+statement ok
+CREATE VIEW HoleType
+AS
+SELECT name,
+        cast(value as int) as value,
+        description
+    FROM DataConstants
+    WHERE field='HoleType'
+
+statement ok
+CREATE VIEW ObjType
+AS
+SELECT name,
+        cast(value as int) as value,
+        description
+    FROM DataConstants
+    WHERE field='ObjType'
+
+statement ok
+CREATE VIEW ProgramType
+AS
+SELECT name,
+        cast(value as int) as value,
+        description
+    FROM DataConstants
+    WHERE field='ProgramType'
+
+statement ok
+CREATE VIEW CoordType
+AS
+SELECT name,
+        cast(value as int) as value,
+        description
+    FROM DataConstants
+    WHERE field='CoordType'
+
+statement ok
+CREATE VIEW FieldMask
+AS
+SELECT
+	name,
+	cast(value as int) as value,
+	description
+    FROM DataConstants
+    WHERE field='FieldMask'
+
+statement ok
+CREATE VIEW PhotoFlags
+AS
+SELECT
+	name,
+	value,
+	description
+    FROM DataConstants
+    WHERE field='PhotoFlags'
+
+statement ok
+CREATE VIEW Star
+AS
+SELECT *
+    FROM PhotoPrimary
+    WHERE type = 6
+
+statement ok
+CREATE VIEW Galaxy
+AS
+SELECT *
+    FROM PhotoPrimary
+    WHERE type = 3
+
+statement ok
+CREATE VIEW Sky
+AS
+SELECT *
+    FROM PhotoPrimary
+    WHERE type = 8
+
+statement ok
+CREATE VIEW Unknown
+AS
+SELECT *
+    FROM PhotoPrimary
+    WHERE type not in (3,6,8)
+
