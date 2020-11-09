@@ -565,12 +565,10 @@ exp_value(mvc *sql, sql_exp *e)
 		return e->l;
 	} else if (e->r) { /* param (ie not set) */
 		sql_var_name *vname = (sql_var_name*) e->r;
-		sql_schema *s = cur_schema(sql);
 		sql_var *var;
 
-		if (vname->sname && !(s = mvc_bind_schema(sql, vname->sname)))
-			return NULL;
-		if (e->flag == 0 && (var = find_global_var(sql, s, vname->name))) /* global variable */
+		assert(e->flag != 0 || vname->sname); /* global variables must have a schema */
+		if (e->flag == 0 && (var = find_global_var(sql, mvc_bind_schema(sql, vname->sname), vname->name))) /* global variable */
 			return &(var->var);
 		return NULL;
 	}

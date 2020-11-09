@@ -1107,9 +1107,6 @@ rel_create_view(sql_query *query, dlist *qname, dlist *column_spec, symbol *ast,
 			} else {
 				return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
 			}
-		} else {
-			sql->errstr[0] = '\0'; /* reset table not found error */
-			sql->session->status = 0;
 		}
 	}
 	if (ast) {
@@ -1647,23 +1644,20 @@ rel_func_priv(sql_allocator *sa, char *sname, int func, char *grantee, int privs
 }
 
 static sql_rel *
-rel_grant_or_revoke_global(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor, ddl_statement action)
+rel_grant_or_revoke_global(mvc *sql, dlist *privs, dlist *grantees, int grant, int grantor, ddl_statement action)
 {
 	sql_rel *res = NULL;
-	char *sname = cur->base.name;
-	dnode *gn;
+	char *sname = cur_schema(sql)->base.name;
 
 	if (!privs)
 		return NULL;
-	sname = cur->base.name;
-	for (gn = grantees->h; gn; gn = gn->next) {
-		dnode *opn;
+	for (dnode *gn = grantees->h; gn; gn = gn->next) {
 		char *grantee = gn->data.sval;
 
 		if (!grantee)
 			grantee = "public";
 
-		for (opn = privs->h; opn; opn = opn->next) {
+		for (dnode *opn = privs->h; opn; opn = opn->next) {
 			int priv = opn->data.i_val;
 
 			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, NULL, grantee, priv, NULL, grant, grantor, action))) == NULL) {
@@ -1687,7 +1681,6 @@ rel_grant_or_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees,
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, err, false)))
 		return NULL;
 	for (dnode *gn = grantees->h; gn; gn = gn->next) {
-		dnode *opn;
 		char *grantee = gn->data.sval;
 
 		if (!grantee)
@@ -1700,7 +1693,7 @@ rel_grant_or_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees,
 			}
 			continue;
 		}
-		for (opn = privs->h; opn; opn = opn->next) {
+		for (dnode *opn = privs->h; opn; opn = opn->next) {
 			symbol *op = opn->data.sym;
 			int priv = PRIV_SELECT;
 
@@ -1782,7 +1775,7 @@ rel_grant_or_revoke_func(mvc *sql, dlist *privs, dlist *qname, dlist *typelist, 
 }
 
 static sql_rel *
-rel_grant_or_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grantees, int grant, int grantor, ddl_statement action)
+rel_grant_or_revoke_privs(mvc *sql, dlist *privs, dlist *grantees, int grant, int grantor, ddl_statement action)
 {
 	dlist *obj_privs = privs->h->data.lval;
 	symbol *obj = privs->h->next->data.sym;
@@ -1791,7 +1784,7 @@ rel_grant_or_revoke_privs(mvc *sql, sql_schema *cur, dlist *privs, dlist *grante
 
 	switch (token) {
 	case SQL_GRANT:
-		return rel_grant_or_revoke_global(sql, cur, obj_privs, grantees, grant, grantor, action);
+		return rel_grant_or_revoke_global(sql, obj_privs, grantees, grant, grantor, action);
 	case SQL_TABLE:
 	case SQL_NAME:
 		return rel_grant_or_revoke_table(sql, obj_privs, obj->data.lval, grantees, grant, grantor, action, err);
@@ -2456,7 +2449,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_grant_or_revoke_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
+		ret = rel_grant_or_revoke_privs(sql, l->h->data.lval,	/* privileges */
 				  l->h->next->data.lval,	/* grantees */
 				  l->h->next->next->data.i_val,	/* grant ? */
 				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_grant);
@@ -2468,7 +2461,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
-		ret = rel_grant_or_revoke_privs(sql, cur_schema(sql), l->h->data.lval,	/* privileges */
+		ret = rel_grant_or_revoke_privs(sql, l->h->data.lval,	/* privileges */
 				   l->h->next->data.lval,	/* grantees */
 				   l->h->next->next->data.i_val,	/* grant ? */
 				   l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_revoke);

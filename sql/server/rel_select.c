@@ -3885,7 +3885,7 @@ rel_next_value_for( mvc *sql, symbol *se )
 	f = sql_bind_func(sql, "sys", "next_value_for", &t, &t, F_FUNC);
 	assert(f);
 	/* sequence found in the stack. use session's schema? */
-	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : cur_schema(sql)->base.name, &t), exp_atom_str(sql->sa, seqname, &t), f);
+	return exp_binop(sql->sa, exp_atom_str(sql->sa, seq && seq->s ? seq->s->base.name : "sys", &t), exp_atom_str(sql->sa, seqname, &t), f);
 }
 
 /* some users like to use aliases already in the groupby */
