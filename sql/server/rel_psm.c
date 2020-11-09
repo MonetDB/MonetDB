@@ -1037,7 +1037,7 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 }
 
 sql_func *
-resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql_ftype type, char *op, int if_exists)
+resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql_ftype type, const char *op, int if_exists)
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
