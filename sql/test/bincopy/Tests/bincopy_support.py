@@ -383,3 +383,12 @@ WHERE (i % 100 = 99 AND j IS NULL)
 OR (i % 100 <> 99 AND j IS NOT NULL)
 ;
 """
+
+UUIDS = """
+CREATE TABLE foo(t CHAR(16), u UUID);
+COPY BINARY INTO foo FROM @text_uuids@, @binary_uuids@ @ON@;
+SELECT COUNT(*) FROM foo
+WHERE t = CAST(u AS TEXT)
+OR    u IS NULL
+;
+"""

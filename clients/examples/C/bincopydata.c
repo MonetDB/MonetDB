@@ -249,6 +249,9 @@ static struct gen generators[] = {
 
 	{ "json_objects", gen_json },
 
+	{ "binary_uuids", gen_bin_uuids },
+	{ "text_uuids", gen_text_uuids },
+
 	{ NULL, NULL },
 };
 

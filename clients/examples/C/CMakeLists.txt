@@ -49,6 +49,7 @@ if(TESTING)
     bincopydata.c
     bincopydata.h
     bincopytemporaldata.c
+    bincopyuuid.c
   )
 
   target_link_libraries(bincopydata

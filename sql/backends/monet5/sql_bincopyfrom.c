@@ -151,6 +151,15 @@ convert_hge(void *start, void *end)
 #endif
 
 static str
+convert_uuid(void *start, void *end)
+{
+	size_t nbytes = (char*)end - (char*)start;
+	(void)nbytes; assert(nbytes % 16 == 0);
+
+	return MAL_SUCCEED;
+}
+
+static str
 convert_flt(void *start, void *end)
 {
 	assert(sizeof(flt) == sizeof(uint32_t));
@@ -420,6 +429,7 @@ static struct type_rec {
 	{ "str", "str", .loader=load_zero_terminated_text },
 	{ "url", "url", .loader=load_zero_terminated_text },
 	{ "json", "json", .loader=load_zero_terminated_text },
+	{ "uuid", "uuid", .convert_in_place=convert_uuid, },
 	//
 	{ "date", "date", .convert_fixed_width=convert_date, .record_size=sizeof(copy_binary_date), },
 	{ "daytime", "daytime", .convert_fixed_width=convert_time, .record_size=sizeof(copy_binary_time), },

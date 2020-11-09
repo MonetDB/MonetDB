@@ -1,21 +1,5 @@
 #include "bincopydata.h"
 
-// reproducible rng so we can rerun tests with the same data
-// used to fail.
-// Based on https://en.wikipedia.org/wiki/Lehmer_random_number_generator
-struct rng {
-	uint32_t state;
-};
-
-
-#define rng_next(rng) ((rng)->state = (uint64_t)(rng)->state * 48271 % 0x7fffffff)
-
-static struct rng
-my_favorite_lfsr(void)
-{
-	return (struct rng) { .state = 42 };
-}
-
 static copy_binary_timestamp
 random_timestamp(struct rng *rng)
 {
@@ -101,7 +85,7 @@ void fix_endian(copy_binary_timestamp *ts)
 void
 gen_timestamps(FILE *f, long nrecs)
 {
-	struct rng rng = my_favorite_lfsr();
+	struct rng rng = my_favorite_rng();
 
 	for (long i = 0; i < nrecs; i++) {
 		copy_binary_timestamp ts = random_timestamp(&rng);
@@ -114,7 +98,7 @@ gen_timestamps(FILE *f, long nrecs)
 	void name \
 		(FILE *f, long nrecs) \
 	{ \
-		struct rng rng = my_favorite_lfsr(); \
+		struct rng rng = my_favorite_rng(); \
 	\
 		for (long i = 0; i < nrecs; i++) { \
 			copy_binary_timestamp ts = random_timestamp(&rng); \

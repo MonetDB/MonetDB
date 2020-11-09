@@ -37,3 +37,5 @@ bincopy_urls_on_client
 bincopy_urls_on_server
 bincopy_json_objects_on_client
 bincopy_json_objects_on_server
+bincopy_uuids_on_client
+bincopy_uuids_on_server
