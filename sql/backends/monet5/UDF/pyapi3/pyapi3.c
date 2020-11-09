@@ -70,7 +70,7 @@ static const char *FunctionBasePath(void)
 static MT_Lock pyapiLock = MT_LOCK_INITIALIZER("pyapiLock");
 static bool pyapiInitialized = false;
 
-bool PYFUNCNAME(PyAPIInitialized)(void) {
+bool PYAPI3PyAPIInitialized(void) {
 	return pyapiInitialized;
 }
 
@@ -90,22 +90,22 @@ static str
 PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bool grouped, bool mapped);
 
 str
-PYFUNCNAME(PyAPIevalStd)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYAPI3PyAPIevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, false, false);
 }
 
 str
-PYFUNCNAME(PyAPIevalStdMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYAPI3PyAPIevalStdMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, false, true);
 }
 
 str
-PYFUNCNAME(PyAPIevalAggr)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYAPI3PyAPIevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, true, false);
 }
 
 str
-PYFUNCNAME(PyAPIevalAggrMap)(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+PYAPI3PyAPIevalAggrMap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return PyAPIeval(cntxt, mb, stk, pci, true, true);
 }
 
@@ -1320,7 +1320,7 @@ wrapup:
 }
 
 str
-PYFUNCNAME(PyAPIprelude)(void *ret) {
+PYAPI3PyAPIprelude(void *ret) {
 	(void) ret;
 	MT_lock_set(&pyapiLock);
 	if (!pyapiInitialized) {
