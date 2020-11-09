@@ -43,3 +43,4 @@ select (select count(*) over w window w as ())
 statement ok
 drop table analytics
 
+

@@ -68,8 +68,8 @@ stdout of test 'analytics06` in directory 'sql/test/analytics` itself:
 [ 10	]
 #start transaction;
 #select count(aa) over (partition by bb), cast(75 + count(aa) over (partition by bb) as bigint) from testing where bb <> 1;
-% sys.%4,	sys.%1 # table_name
-% %4,	%1 # name
+% sys.%2,	sys.%1 # table_name
+% %2,	%1 # name
 % bigint,	bigint # type
 % 1,	2 # length
 [ 2,	77	]
@@ -84,8 +84,8 @@ stdout of test 'analytics06` in directory 'sql/test/analytics` itself:
 #       count(aa) over (partition by bb rows between dd preceding and current row),
 #       count(aa) over (partition by bb rows between dd preceding and dd following),
 #       count(aa) over (partition by bb rows between dd + 1 preceding and dd preceding) from relation;
-% sys.relation,	sys.relation,	sys.relation,	sys.%5,	sys.%10,	sys.%13 # table_name
-% aa,	bb,	dd,	%5,	%10,	%13 # name
+% sys.relation,	sys.relation,	sys.relation,	sys.%1,	sys.%2,	sys.%3 # table_name
+% aa,	bb,	dd,	%1,	%2,	%3 # name
 % int,	int,	int,	bigint,	bigint,	bigint # type
 % 2,	1,	1,	1,	1,	1 # length
 [ NULL,	0,	3,	0,	2,	0	]
@@ -97,8 +97,8 @@ stdout of test 'analytics06` in directory 'sql/test/analytics` itself:
 [ NULL,	4,	7,	0,	0,	0	]
 #select first_value(aa) over (partition by bb rows between 2 preceding and 1 following),
 #       last_value(aa) over (partition by bb rows between 1 preceding and 1 following) from testing;
-% sys.%3,	sys.%6 # table_name
-% %3,	%6 # name
+% sys.%1,	sys.%2 # table_name
+% %1,	%2 # name
 % int,	int # type
 % 2,	1 # length
 [ NULL,	3	]

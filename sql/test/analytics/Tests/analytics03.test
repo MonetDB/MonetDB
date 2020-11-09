@@ -1,0 +1,197 @@
+statement ok
+create table rowsvsrangevsgroups (aa int, bb int, cc real)
+
+statement ok
+start transaction
+
+statement ok
+insert into rowsvsrangevsgroups values (1,1,1), (2,1,2), (3,1,3), (1,2,1), (1,2,1), (1,2,1), (2,2,2), (3,2,3), (4,2,4), (2,2,2)
+
+query IIIIIIII rowsort
+select cast(sum(aa) over (rows unbounded preceding) as bigint),
+       cast(sum(aa) over (range unbounded preceding) as bigint),
+       cast(sum(aa) over (order by aa rows unbounded preceding) as bigint),
+       cast(sum(aa) over (order by aa range unbounded preceding) as bigint),
+       cast(sum(aa) over (order by aa groups unbounded preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb range unbounded preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb groups unbounded preceding) as bigint) from rowsvsrangevsgroups
+----
+80 values hashing to 7efdf251dd4a4a9694a3c132c06b260f
+
+query IIIIIIRR rowsort
+select cast(sum(aa) over (order by aa range between unbounded preceding and current row) as bigint),
+       cast(sum(cc) over (order by aa range between unbounded preceding and current row) as bigint),
+       count(*) over (order by aa range between unbounded preceding and current row),
+       count(aa) over (order by aa range between unbounded preceding and current row),
+       min(aa) over (order by aa range between unbounded preceding and current row),
+       max(aa) over (order by aa range between unbounded preceding and current row),
+       avg(aa) over (order by aa range between unbounded preceding and current row),
+       avg(cc) over (order by aa range between unbounded preceding and current row) from rowsvsrangevsgroups
+----
+80 values hashing to 547bed50f2e421f8fa721179f38eedbf
+
+query IIIIIIRR rowsort
+select cast(sum(aa) over (order by aa groups between unbounded preceding and current row) as bigint),
+       cast(sum(cc) over (order by aa groups between unbounded preceding and current row) as bigint),
+       count(*) over (order by aa groups between unbounded preceding and current row),
+       count(aa) over (order by aa groups between unbounded preceding and current row),
+       min(aa) over (order by aa groups between unbounded preceding and current row),
+       max(aa) over (order by aa groups between unbounded preceding and current row),
+       avg(aa) over (order by aa groups between unbounded preceding and current row),
+       avg(cc) over (order by aa groups between unbounded preceding and current row) from rowsvsrangevsgroups
+----
+80 values hashing to 547bed50f2e421f8fa721179f38eedbf
+
+query IR rowsort
+select cast(sum(aa) over (order by aa groups between 1 preceding and current row) as bigint),
+       avg(cc) over (order by aa groups between 1 preceding and current row) from rowsvsrangevsgroups
+----
+20 values hashing to d80f0658fa4df99687b91cd9f1f7b3af
+
+statement ok
+delete from rowsvsrangevsgroups where aa = 2
+
+query IIIIIIRR rowsort
+select cast(sum(aa) over (order by aa range between unbounded preceding and current row) as bigint),
+       cast(sum(cc) over (order by aa range between unbounded preceding and current row) as bigint),
+       count(*) over (order by aa range between unbounded preceding and current row),
+       count(aa) over (order by aa range between unbounded preceding and current row),
+       min(aa) over (order by aa range between unbounded preceding and current row),
+       max(aa) over (order by aa range between unbounded preceding and current row),
+       avg(aa) over (order by aa range between unbounded preceding and current row),
+       avg(cc) over (order by aa range between unbounded preceding and current row) from rowsvsrangevsgroups
+----
+56 values hashing to 60503b2e98446756e8c3ade553dd786d
+
+query IIIIIIRR rowsort
+select cast(sum(aa) over (order by aa groups between unbounded preceding and current row) as bigint),
+       cast(sum(cc) over (order by aa groups between unbounded preceding and current row) as bigint),
+       count(*) over (order by aa groups between unbounded preceding and current row),
+       count(aa) over (order by aa groups between unbounded preceding and current row),
+       min(aa) over (order by aa groups between unbounded preceding and current row),
+       max(aa) over (order by aa groups between unbounded preceding and current row),
+       avg(aa) over (order by aa groups between unbounded preceding and current row),
+       avg(cc) over (order by aa groups between unbounded preceding and current row) from rowsvsrangevsgroups
+----
+56 values hashing to 60503b2e98446756e8c3ade553dd786d
+
+query IR rowsort
+select cast(sum(aa) over (order by aa groups between 1 preceding and current row) as bigint),
+       avg(cc) over (order by aa groups between 1 preceding and current row) from rowsvsrangevsgroups
+----
+14 values hashing to 9b3a2415927f2f0797a3230de64afc73
+
+statement ok
+create table stressme (aa varchar(64), bb int)
+
+statement ok
+insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4)
+
+query IIIIIIII rowsort
+select count(aa) over (rows between current row and unbounded following),
+       count(aa) over (range between current row and unbounded following),
+       count(aa) over (order by bb rows between current row and unbounded following),
+       count(aa) over (order by bb range between current row and unbounded following),
+       count(aa) over (order by bb groups between current row and unbounded following),
+       count(aa) over (partition by bb order by bb rows unbounded preceding),
+       count(aa) over (partition by bb order by bb range unbounded preceding),
+       count(aa) over (partition by bb order by bb groups unbounded preceding) from stressme
+----
+72 values hashing to d0e11af40445d87d48259788de9feafa
+
+query TTTTTTTT rowsort
+select min(aa) over (rows between current row and unbounded following),
+       min(aa) over (range between current row and unbounded following),
+       min(aa) over (order by bb rows between current row and unbounded following),
+       min(aa) over (order by bb range between current row and unbounded following),
+       min(aa) over (order by bb groups between current row and unbounded following),
+       min(aa) over (partition by bb order by bb rows unbounded preceding),
+       min(aa) over (partition by bb order by bb range unbounded preceding),
+       min(aa) over (partition by bb order by bb groups unbounded preceding) from stressme
+----
+72 values hashing to 54a79c4661f4a1391ae5d90ce39d926f
+
+query TTTTTTTT rowsort
+select max(aa) over (rows between current row and unbounded following),
+       max(aa) over (range between current row and unbounded following),
+       max(aa) over (order by bb rows between current row and unbounded following),
+       max(aa) over (order by bb range between current row and unbounded following),
+       max(aa) over (order by bb groups between current row and unbounded following),
+       max(aa) over (partition by bb order by bb rows unbounded preceding),
+       max(aa) over (partition by bb order by bb range unbounded preceding),
+       max(aa) over (partition by bb order by bb groups unbounded preceding) from stressme
+----
+72 values hashing to a6bf220a41759a9a45300caef67c1ff8
+
+query TI rowsort
+select max(aa) over (order by bb groups between 1 preceding and current row),
+       count(aa) over (order by bb groups between 1 preceding and current row) from stressme
+----
+18 values hashing to 5bbda31e89d1f9ad3686c3671a839a19
+
+statement ok
+delete from stressme where bb = 2
+
+query TI rowsort
+select max(aa) over (order by bb groups between 1 preceding and current row),
+       count(aa) over (order by bb groups between 1 preceding and current row) from stressme
+----
+14 values hashing to 56dd3e8ee54edec42726f51f96c29cbf
+
+statement ok
+create table overflowme (aa int, bb int)
+
+statement ok
+insert into overflowme values (2147483644, 1), (2147483645, 2), (2147483646, 1), (2147483644, 2), (2147483645, 1), (2147483646, 2)
+
+query RRRRRR rowsort
+select floor(avg(aa) over (rows between current row and unbounded following)),
+       floor(avg(aa) over (range between current row and unbounded following)),
+       floor(avg(aa) over (order by bb rows between current row and unbounded following)),
+       floor(avg(aa) over (order by bb range between current row and unbounded following)),
+       floor(avg(aa) over (partition by bb order by bb rows unbounded preceding)),
+       floor(avg(aa) over (partition by bb order by bb range unbounded preceding)) from overflowme
+----
+36 values hashing to 7c359a3e1da071adb2195aa371dc52a1
+
+statement ok
+rollback
+
+statement error
+select count(*) over (rows between NULL preceding and unbounded following) from rowsvsrangevsgroups
+
+statement error
+select count(*) over (rows between unbounded preceding and -1 following) from rowsvsrangevsgroups
+
+statement error
+select count(*) over (range between 1 preceding and unbounded following) from rowsvsrangevsgroups
+
+statement error
+select count(*) over (range between unbounded preceding and 1 following) from rowsvsrangevsgroups
+
+statement error
+select count(*) over (groups between 1 preceding and 1 following) from rowsvsrangevsgroups
+
+statement error
+select count(*) over (groups between current row and unbounded following) from rowsvsrangevsgroups
+
+query I rowsort
+select min(1) over (partition by 1 order by 1 range between 1 preceding and 1 following)
+----
+1
+
+query T rowsort
+select min('a') over (partition by 1 order by 1 range between 1 preceding and 1 following)
+----
+a
+
+query T rowsort
+select min(time '10:10:00') over (partition by 1 order by 1 range between 1 preceding and 1 following)
+----
+10:10:00
+
+statement ok
+drop table rowsvsrangevsgroups
+
+
