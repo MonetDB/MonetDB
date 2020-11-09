@@ -534,6 +534,12 @@ SELECT i, CAST((SELECT SUM(i) OVER (ORDER BY i) FROM integers WHERE i1.i=i) AS B
 --3	3
 --NULL	NULL
 
+SELECT i, CAST((SELECT SUM(i) OVER (ORDER BY i range between 1 preceding and 2 following) FROM integers WHERE i1.i=i) AS BIGINT) FROM integers i1 ORDER BY i;
+--1	1
+--2	2
+--3	3
+--NULL	NULL
+
 SELECT i, (SELECT SUM(s1.i) OVER (ORDER BY s1.i) FROM integers s1, integers s2 WHERE i1.i=s1.i LIMIT 1) FROM integers i1 ORDER BY i; --error
 
 SELECT i, CAST((SELECT (SELECT 42+i1.i)+42+i1.i) AS BIGINT) AS j FROM integers i1 ORDER BY i;

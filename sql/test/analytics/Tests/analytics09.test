@@ -296,3 +296,4 @@ select sum(avg(aa) over ()) from analytics
 statement ok
 drop table analytics
 
+

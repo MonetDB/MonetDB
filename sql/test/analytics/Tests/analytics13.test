@@ -349,3 +349,4 @@ DROP TABLE tbl_ProductSales
 statement ok
 DROP TABLE another_T
 
+

@@ -42,3 +42,4 @@ select first_value(aa) over (w1 order by bb),
 statement ok
 drop table analytics
 
+

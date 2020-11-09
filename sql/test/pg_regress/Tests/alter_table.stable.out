@@ -113,22 +113,23 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 #CREATE TABLE tmp (regtable int);
 #CREATE TEMP TABLE tmp (tmptable int);
 #SELECT * FROM tmp;
-% tmp.tmp # table_name
-% tmptable # name
-% int # type
-% 1 # length
-#SELECT * FROM tmp_new;
-% sys.tmp_new # table_name
+% sys.tmp # table_name
 % regtable # name
 % int # type
 % 1 # length
-#SELECT * FROM tmp;		-- should fail
-% tmp.tmp # table_name
+#SELECT * FROM tmp_new;
+% tmp.tmp_new # table_name
 % tmptable # name
 % int # type
 % 1 # length
+#ALTER TABLE tmp RENAME TO tmp_new2;
 #SELECT * FROM tmp_new;
-% sys.tmp_new # table_name
+% tmp.tmp_new # table_name
+% tmptable # name
+% int # type
+% 1 # length
+#SELECT * FROM tmp_new2;
+% sys.tmp_new2 # table_name
 % regtable # name
 % int # type
 % 1 # length
@@ -578,13 +579,13 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 #insert into altinhoid values (1);
 [ 1	]
 #select oid > 0, * from altwithoid;
-% sys.%2,	sys.altwithoid,	sys.altwithoid # table_name
-% %2,	oid,	col # name
+% sys.%1,	sys.altwithoid,	sys.altwithoid # table_name
+% %1,	oid,	col # name
 % boolean,	oid,	int # type
 % 5,	3,	1 # length
 #select oid > 0, * from altwithoid; -- fails
-% sys.%2,	sys.altwithoid,	sys.altwithoid # table_name
-% %2,	oid,	col # name
+% sys.%1,	sys.altwithoid,	sys.altwithoid # table_name
+% %1,	oid,	col # name
 % boolean,	oid,	int # type
 % 5,	3,	1 # length
 #select * from altwithoid;

@@ -450,3 +450,4 @@ ORDER BY AVG(TotalSales)
 statement ok
 DROP TABLE tbl_ProductSales
 
+

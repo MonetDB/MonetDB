@@ -51,6 +51,24 @@ select cast(sum(aa) over (partition by bb order by bb rows between 3 preceding a
 ----
 70 values hashing to ef0a1b1f9f2b4b1a30fc50bc6854c087
 
+query I rowsort
+select min(aa) over (order by bb range between current row and unbounded following) from analytics
+----
+10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+
+query I rowsort
+select min(aa) over (order by bb range between current row and unbounded following) from analytics where false
+----
+
+query I rowsort
+select min(aa) over (partition by bb order by bb range between current row and unbounded following) from analytics
+----
+10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+
+query I rowsort
+select min(aa) over (partition by bb order by bb range between current row and unbounded following) from analytics where false
+----
+
 statement ok
 rollback
 
@@ -104,4 +122,5 @@ select count(distinct aa) over (rows between 1 preceding and current row) from a
 
 statement ok
 drop table analytics
+
 

@@ -1,0 +1,748 @@
+statement ok
+create table analytics (aa int, bb int, cc bigint)
+
+statement ok
+start transaction
+
+statement ok
+insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL, 2, NULL), (3, 2, 3), (4, 1, 4), (6, 3, 6), (8, 2, 8), (NULL, 4, NULL)
+
+statement ok
+create table stressme (aa varchar(64), bb int)
+
+statement ok
+insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4)
+
+query I rowsort
+select cast(sum(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics
+----
+10 values hashing to 00351fb7efcb991ffb65f7132d581c0f
+
+query I rowsort
+select cast(sum(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics
+----
+10 values hashing to e80edb276be6df606cec0895fb737a3a
+
+query I rowsort
+select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics
+----
+10 values hashing to 755adcbd60b36c3b2da5e9cdc83637fb
+
+query I rowsort
+select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics
+----
+10 values hashing to 64767ba5dbf00e099a825829b6c5d86f
+
+query I rowsort
+select cast(prod(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics
+----
+10 values hashing to 8b48e2ae2930b0ae92ac3d23b80593d4
+
+query I rowsort
+select cast(prod(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics
+----
+10 values hashing to 50f218ab9da961227a2225019535c6be
+
+query I rowsort
+select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics
+----
+10 values hashing to 94b9d5a77c91959186ec6ccea02e3ade
+
+query I rowsort
+select cast(prod(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) as bigint) from analytics
+----
+10 values hashing to f30d3a0955d8d39f6808830c8d46e80f
+
+query R rowsort
+select avg(aa) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to c927db4ca9999752900a782957ccab32
+
+query R rowsort
+select avg(aa) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 46549deb2dc04d534c70d01b283cc381
+
+query R rowsort
+select avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 96bba1adfc72b58270f9bb225ee20cbc
+
+query R rowsort
+select avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+
+query I rowsort
+select min(aa) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 17e52df4bf9455fa72fdbfa322a24049
+
+query I rowsort
+select min(aa) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 1128e1318225d9973410d7a73612918a
+
+query I rowsort
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 06a4687235c31351aba081dc929cab12
+
+query I rowsort
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+
+query I rowsort
+select max(aa) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 3b6a4902190223e4920bd426205b05d5
+
+query I rowsort
+select max(aa) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to e2766387ae22535d1568db2be6ff4784
+
+query I rowsort
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 5a98076c455ad823df3fd61d28d5cf8c
+
+query I rowsort
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to a799d3a13af3a512e4d0ad901620451d
+
+query I rowsort
+select min(bb) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 957f34bd4f6530b19d41aade9e48d932
+
+query I rowsort
+select min(bb) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+
+query I rowsort
+select min(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 54697bf57ed23745baffa3ed44db8764
+
+query I rowsort
+select min(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 54697bf57ed23745baffa3ed44db8764
+
+query I rowsort
+select max(bb) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 90ff56c8c1970d75c605786f646252aa
+
+query I rowsort
+select max(bb) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to b307f6cb619d5267d91940ade1f5aea2
+
+query I rowsort
+select max(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 4f1e70f17e0591c506e32f87331cb192
+
+query I rowsort
+select max(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to a6744bdc066e831cdc5cdce8789ab565
+
+query I rowsort
+select count(*) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 17222c0338cffc33dd3d6370f449eece
+
+query I rowsort
+select count(*) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 96c5332ccab21a140a39574f26997499
+
+query I rowsort
+select count(*) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 54697bf57ed23745baffa3ed44db8764
+
+query I rowsort
+select count(*) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to ceb4d49eae17ad9b1862f33ad9f28eb5
+
+query I rowsort
+select count(aa) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to fad4410cb46a6c840623c4bc544a5291
+
+query I rowsort
+select count(aa) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to c72bb4fd42f83996040f5e4cf49d44e7
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 1566d7047952a602ecd3eebfb44bd2e4
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+
+query I rowsort
+select count(bb) over (rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to 17222c0338cffc33dd3d6370f449eece
+
+query I rowsort
+select count(bb) over (rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 96c5332ccab21a140a39574f26997499
+
+query I rowsort
+select count(bb) over (partition by aa order by aa rows between 5 preceding and 0 following) from analytics
+----
+10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+
+query I rowsort
+select count(bb) over (partition by aa order by aa rows between 5 preceding and 2 following) from analytics
+----
+10 values hashing to 8d5be5f45b8cd328cf57f549aa6bc420
+
+query I rowsort
+select count(*) over (rows between unbounded preceding and unbounded following) from analytics
+----
+10 values hashing to f0a3840a195eccb7ed635061681049ca
+
+query I rowsort
+select count(*) over (partition by bb order by bb rows between unbounded preceding and unbounded following) from analytics
+----
+10 values hashing to ceb4d49eae17ad9b1862f33ad9f28eb5
+
+query I rowsort
+select count(aa) over (rows between unbounded preceding and unbounded following) from analytics
+----
+10 values hashing to 07db7b3b1a6ac90f2996f9763db648c9
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows between unbounded preceding and unbounded following) from analytics
+----
+10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+
+query I rowsort
+select count(bb) over (rows between unbounded preceding and unbounded following) from analytics
+----
+10 values hashing to f0a3840a195eccb7ed635061681049ca
+
+query I rowsort
+select count(bb) over (partition by aa order by aa rows between unbounded preceding and unbounded following) from analytics
+----
+10 values hashing to 8d5be5f45b8cd328cf57f549aa6bc420
+
+query I rowsort
+select count(*) over (rows unbounded preceding)
+----
+1
+
+query I rowsort
+select count(*) over (rows 200 preceding)
+----
+1
+
+query I rowsort
+select count(*) over (rows between 5 preceding and 0 following)
+----
+1
+
+query I rowsort
+select min(aa) over (rows unbounded preceding) from analytics
+----
+10 values hashing to ed09ac86f5e36daa8969f61365c6c176
+
+query I rowsort
+select min(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+----
+10 values hashing to 06a4687235c31351aba081dc929cab12
+
+query I rowsort
+select max(aa) over (rows unbounded preceding) from analytics
+----
+10 values hashing to f16f7876558d4bacfdad4993a413a74c
+
+query I rowsort
+select max(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+----
+10 values hashing to 5a98076c455ad823df3fd61d28d5cf8c
+
+query I rowsort
+select cast(sum(aa) over (rows unbounded preceding) as bigint) from analytics
+----
+10 values hashing to 9975c91047b3fbee5fedf67fde5cebda
+
+query I rowsort
+select cast(sum(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics
+----
+10 values hashing to 755adcbd60b36c3b2da5e9cdc83637fb
+
+query I rowsort
+select cast(prod(aa) over (rows unbounded preceding) as bigint) from analytics
+----
+10 values hashing to d305aa084fe89f69892a7dcbbe38dd50
+
+query I rowsort
+select cast(prod(aa) over (partition by bb order by bb rows unbounded preceding) as bigint) from analytics
+----
+10 values hashing to 94b9d5a77c91959186ec6ccea02e3ade
+
+query R rowsort
+select avg(aa) over (rows unbounded preceding) from analytics
+----
+10 values hashing to 413b6166817e43a6c97fc62ec71a99fc
+
+query R rowsort
+select avg(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+----
+10 values hashing to 96bba1adfc72b58270f9bb225ee20cbc
+
+query I rowsort
+select count(*) over (rows unbounded preceding) from analytics
+----
+10 values hashing to ff2650590d3f27ea6644b5573ccc37ba
+
+query I rowsort
+select count(*) over (partition by bb order by bb rows unbounded preceding) from analytics
+----
+10 values hashing to 54697bf57ed23745baffa3ed44db8764
+
+query I rowsort
+select count(aa) over (rows unbounded preceding) from analytics
+----
+10 values hashing to e6d1d39634209599b8548510049e9ec9
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows unbounded preceding) from analytics
+----
+10 values hashing to 1566d7047952a602ecd3eebfb44bd2e4
+
+query I rowsort
+select min(aa) over (rows 2 preceding) from analytics
+----
+10 values hashing to edcacf420036187099f0c8c2679b90ba
+
+query I rowsort
+select min(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+----
+10 values hashing to 06a4687235c31351aba081dc929cab12
+
+query I rowsort
+select max(aa) over (rows 2 preceding) from analytics
+----
+10 values hashing to d489a984a29aa59cc3d0a597d5f33ce1
+
+query I rowsort
+select max(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+----
+10 values hashing to 5a98076c455ad823df3fd61d28d5cf8c
+
+query I rowsort
+select cast(sum(aa) over (rows 2 preceding) as bigint) from analytics
+----
+10 values hashing to 38a68ddcc716f631353aa8a2d5e67717
+
+query I rowsort
+select cast(sum(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics
+----
+10 values hashing to 755adcbd60b36c3b2da5e9cdc83637fb
+
+query I rowsort
+select cast(prod(aa) over (rows 2 preceding) as bigint) from analytics
+----
+10 values hashing to 8b11d598fab4e617f02e30a83ef343c6
+
+query I rowsort
+select cast(prod(aa) over (partition by bb order by bb rows 2 preceding) as bigint) from analytics
+----
+10 values hashing to 94b9d5a77c91959186ec6ccea02e3ade
+
+query R rowsort
+select avg(aa) over (rows 2 preceding) from analytics
+----
+10 values hashing to 2f1b2a48d6495913a7d2559ed99a4d96
+
+query R rowsort
+select avg(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+----
+10 values hashing to 96bba1adfc72b58270f9bb225ee20cbc
+
+query I rowsort
+select count(*) over (rows 2 preceding) from analytics
+----
+10 values hashing to ba13b217b1da67125900d83dda626e9a
+
+query I rowsort
+select count(*) over (partition by bb order by bb rows 2 preceding) from analytics
+----
+10 values hashing to 54697bf57ed23745baffa3ed44db8764
+
+query I rowsort
+select count(aa) over (rows 2 preceding) from analytics
+----
+10 values hashing to 18713ae7cd508d28bbb2bc18b86a0ce1
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+----
+10 values hashing to 1566d7047952a602ecd3eebfb44bd2e4
+
+query R rowsort
+select avg(bb) over (rows between 5 preceding and 0 following) from stressme
+----
+1.000
+1.000
+1.000
+1.250
+1.400
+1.667
+2.000
+2.333
+2.833
+
+query R rowsort
+select avg(bb) over (rows between 5 preceding and 2 following) from stressme
+----
+1.000
+1.250
+1.400
+1.667
+1.857
+2.000
+2.375
+2.571
+2.833
+
+query R rowsort
+select avg(bb) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme
+----
+1.000
+1.000
+1.000
+2.000
+2.000
+3.000
+3.000
+3.000
+4.000
+
+query R rowsort
+select avg(bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme
+----
+1.000
+1.000
+1.000
+2.000
+2.000
+3.000
+3.000
+3.000
+4.000
+
+query T rowsort
+select min(aa) over (rows between 5 preceding and 0 following) from stressme
+----
+another
+another
+another
+another
+another
+another
+check
+check
+one
+
+query T rowsort
+select min(aa) over (rows between 5 preceding and 2 following) from stressme
+----
+another
+another
+another
+another
+another
+another
+another
+check
+check
+
+query T rowsort
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme
+----
+NULL
+NULL
+another
+another
+check
+check
+check
+ok
+one
+
+query T rowsort
+select min(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme
+----
+NULL
+another
+another
+another
+check
+check
+check
+ok
+ok
+
+query T rowsort
+select max(aa) over (rows between 5 preceding and 0 following) from stressme
+----
+one
+one
+please
+stress
+stress
+stress
+stress
+stress
+stress
+
+query T rowsort
+select max(aa) over (rows between 5 preceding and 2 following) from stressme
+----
+please
+stress
+stress
+stress
+stress
+stress
+stress
+stress
+stress
+
+query T rowsort
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme
+----
+NULL
+NULL
+check
+me
+ok
+one
+one
+please
+stress
+
+query T rowsort
+select max(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme
+----
+NULL
+ok
+ok
+please
+please
+please
+stress
+stress
+stress
+
+query I rowsort
+select count(aa) over (rows between 5 preceding and 0 following) from stressme
+----
+1
+2
+3
+3
+4
+4
+5
+5
+5
+
+query I rowsort
+select count(aa) over (rows between 5 preceding and 2 following) from stressme
+----
+3
+3
+4
+4
+5
+5
+6
+6
+7
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) from stressme
+----
+0
+0
+1
+1
+1
+2
+2
+3
+3
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from stressme
+----
+0
+1
+1
+3
+3
+3
+3
+3
+3
+
+query I rowsort
+select count(aa) over (rows between unbounded preceding and unbounded following) from stressme
+----
+7
+7
+7
+7
+7
+7
+7
+7
+7
+
+query I rowsort
+select count(aa) over (partition by bb order by bb rows between unbounded preceding and unbounded following) from stressme
+----
+0
+1
+1
+3
+3
+3
+3
+3
+3
+
+statement ok
+create table debugme (aa real, bb int)
+
+statement ok
+insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
+
+query R rowsort
+select sum(aa) over (rows between 2 preceding and 0 following) from debugme
+----
+10 values hashing to 57e7f6a2381a95b4b9917ff4029847b8
+
+query R rowsort
+select sum(aa) over (rows between 2 preceding and 2 following) from debugme
+----
+10 values hashing to f7f74ce73ffea40882d568ca9e38684f
+
+query R rowsort
+select sum(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
+----
+10 values hashing to c763addeb46d207561067066195fa1f3
+
+query R rowsort
+select sum(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme
+----
+10 values hashing to 2b636616b455a323d1f756b6d9434d13
+
+query R rowsort
+select prod(aa) over (rows between 2 preceding and 0 following) from debugme
+----
+10 values hashing to 5eba9fb47eb66d97b16700c35415450b
+
+query R rowsort
+select prod(aa) over (rows between 2 preceding and 2 following) from debugme
+----
+10 values hashing to e55c88e734db7ef72d18ba04770cdfa1
+
+query R rowsort
+select prod(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
+----
+10 values hashing to 4063ca3d0274cbeca78af5ac7fe184d4
+
+query R rowsort
+select prod(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme
+----
+10 values hashing to 18f7ad7aec91b4a3b3f164e1d1ac491f
+
+query R rowsort
+select avg(aa) over (rows between 2 preceding and 0 following) from debugme
+----
+10 values hashing to 2f1b2a48d6495913a7d2559ed99a4d96
+
+query R rowsort
+select avg(aa) over (rows between 2 preceding and 2 following) from debugme
+----
+10 values hashing to 0003ee7b6615a88e7a5b365ece539049
+
+query R rowsort
+select avg(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from debugme
+----
+10 values hashing to 96bba1adfc72b58270f9bb225ee20cbc
+
+query R rowsort
+select avg(aa) over (partition by bb order by bb rows between 2 preceding and 2 following) from debugme
+----
+10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+
+statement ok
+create table overflowme (a int)
+
+statement ok
+insert into overflowme values (2147483644), (2147483645), (2147483646)
+
+query R rowsort
+select floor(avg(a) over (rows between 2 preceding and 0 following)) from overflowme
+----
+2147483644.000
+2147483644.000
+2147483645.000
+
+query R rowsort
+select floor(avg(a) over (rows between 2 preceding and 2 following)) from overflowme
+----
+2147483645.000
+2147483645.000
+2147483645.000
+
+statement ok
+rollback
+
+statement error
+select rank() over (rows unbounded preceding) from analytics
+
+statement error
+select dense_rank() over (rows 200 preceding) from analytics
+
+statement error
+select ntile(1) over (rows 200 preceding) from analytics
+
+statement error
+select lead(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from analytics
+
+statement error
+select sum(1) over (order by x range between 2 preceding and 3 following) from (values ('a'), ('x')) x(x)
+
+statement error
+select last_value() over () from analytics
+
+statement error
+prepare select count(*) over (partition by ?) from analytics
+
+statement ok
+drop table analytics
+
+

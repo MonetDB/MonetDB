@@ -19,13 +19,10 @@ target_sources(atoms
   uuid.c uuid.h
   json.c
   mtime.c
-  mtime_analytic.c
   inet.c
   identifier.c
   xml.c xml.h
-  batxml.c
-  PUBLIC
-  ${CMAKE_CURRENT_SOURCE_DIR}/mtime.h)
+  batxml.c)
 
 target_include_directories(atoms
   PRIVATE
@@ -50,5 +47,4 @@ target_compile_definitions(atoms
 
 set_target_properties(atoms
   PROPERTIES
-  POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/mtime.h)
+  POSITION_INDEPENDENT_CODE ON)
