@@ -301,7 +301,6 @@ DECIMALS = """
 -- 3..4 SMALLINT
 -- 5..9 INT
 -- 10..18 BIGINT
--- 18.. HUGEINT
 CREATE TABLE foo(
     i1 TINYINT,
     d1_1 DECIMAL(1, 1),
@@ -346,5 +345,24 @@ SELECT
     COUNT(*)
 FROM verified
 GROUP BY d1_1_ok, d2_1_ok, d3_2_ok, d4_2_ok, d5_2_ok, d9_2_ok, d10_2_ok, d18_2_ok
+;
+"""
+
+HUGE_DECIMALS = """
+-- 19..38 HUGEINT
+CREATE TABLE foo(
+    i HUGEINT,
+    d19_2 DECIMAL(19, 2),
+    d38_2 DECIMAL(38, 2)
+);
+COPY BINARY INTO foo FROM
+    @hugeints@, @hugeints@, @hugeints@
+    @ON@;
+SELECT
+    (100 * d19_2 = i) AS d19_ok,
+    (100 * d38_2 = i) AS d38_ok,
+    COUNT(*)
+FROM foo
+GROUP BY d19_ok, d38_ok
 ;
 """
