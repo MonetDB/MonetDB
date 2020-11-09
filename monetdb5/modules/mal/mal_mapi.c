@@ -207,7 +207,7 @@ doChallenge(void *data)
 
 		comp = COMPRESSION_NONE;
 		if (strstr(buf, "COMPRESSION_SNAPPY")) {
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_SNAPPY
 			comp = COMPRESSION_SNAPPY;
 #else
 			errmsg = "!server does not support Snappy compression.\n";
@@ -831,7 +831,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	TRC_DEBUG(MAL_SERVER, "Ready to accept connections on: %s:%d\n", host, port);
 
 	if (socks[0] != INVALID_SOCKET || socks[1] != INVALID_SOCKET) {
-		if (!GDKinmemory() && (buf = msab_marchConnection(host, port)) != NULL)
+		if (!GDKinmemory(0) && (buf = msab_marchConnection(host, port)) != NULL)
 			free(buf);
 		else
 			/* announce that we're now reachable */
@@ -840,7 +840,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 	}
 #ifdef HAVE_SYS_UN_H
 	if (socks[2] != INVALID_SOCKET) {
-		if (!GDKinmemory() && (buf = msab_marchConnection(usockfile, 0)) != NULL)
+		if (!GDKinmemory(0) && (buf = msab_marchConnection(usockfile, 0)) != NULL)
 			free(buf);
 		else
 			/* announce that we're now reachable */

@@ -6,8 +6,9 @@
 
 Name: monetdb5
 Description: MonetDB5
+URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
-Requires: monetdb-gdk monetdb-stream @PKG_LIBXML2@
+Requires.private: monetdb-gdk = @MONETDB_VERSION@ monetdb-stream = @MONETDB_VERSION@ @PKG_LIBXML2@ @PKG_CRYPTO@ @PKG_PCRE@
 
-Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lmonetdb5 @PKG_CRYPTO@ @PKG_PCRE@
+Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lmonetdb5
 Cflags: -I@CMAKE_INSTALL_FULL_INCLUDEDIR@/monetdb

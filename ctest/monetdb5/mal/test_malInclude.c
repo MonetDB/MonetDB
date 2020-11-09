@@ -17,7 +17,7 @@ main(void)
 {
     gdk_return gdk_res;
 
-    gdk_res = GDKinit(NULL, 0, 1);
+    gdk_res = GDKinit(NULL, 0, true);
     if (gdk_res == GDK_FAIL) {
 	createException(MAL, "embedded.monetdb_startup", "GDKinit() failed");
     	return 1;

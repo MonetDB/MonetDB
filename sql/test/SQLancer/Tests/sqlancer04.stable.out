@@ -29,6 +29,12 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % double # type
 % 24 # length
 #ROLLBACK;
+#SELECT covar_samp(1, - (COALESCE(1, 2)||5));
+% .%1 # table_name
+% %1 # name
+% double # type
+% 24 # length
+[ NULL	]
 #START TRANSACTION;
 #CREATE TABLE "sys"."t0"("c0" DATE, "c1" DATE, "c2" INTERVAL SECOND NOT NULL,"c3" TIME NOT NULL);
 #ROLLBACK;

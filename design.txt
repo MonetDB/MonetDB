@@ -1,0 +1,113 @@
+Creating a table returning SQL function
+
+    rel_semantic
+    |
+    |-> create_funct
+    |-> rel_psm
+        |->rel_ceate_func
+            |->mvc_create_func (just to have an initialized unregistered sql_func object.)
+            |->rel_create_function (this function add the necessary flags (ddl_create_function) so that CREATE statement is compiled into a DDL msql program and a pointer to the previous object)
+
+    Engine
+        |->SQLcreate_function
+            |
+            |->create_func
+                |->mvc_create_func now adding it to the session transaction.
+                |->calls sql_parse with the m_deps flag on the original SQL CREATE FUNCTION query to find the table/column/argument dependencies and add them to the system catalogue. The query is somehow stored together with the function.
+
+
+
+
+calling a SQL function (SELECT * from bbp();)
+
+    First the outer statements are transormed into nested relational plans
+
+    the BBP() is recognized as a function cal rel2bin_table;
+
+    the will end up in a call to stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
+    which will end up in backend_create_subfunc => backend_create_func => backend_create_sql_func finally ending up in rel_parse with the m_instantiate flag
+
+    We end up with relational subplan  which is equivalent to a call to the table returning function
+
+    So backend_create_sql_func will not only parse and optimize the query and its outcoming relational plan, but it will also compile it into a MAL program/function through backend_dumpstmt.
+
+
+    So the outer query is compiled into a MAL program that looks like this
+
+    | function user.main():void;                                                      |
+    |     X_1:void := querylog.define("explain select * from bbp();":str, "default_pi |
+    : pe":str, 10:int);                                                               :
+    | barrier X_69:bit := language.dataflow();                                        |
+    |     X_8:bat[:str] := bat.pack(".%1":str, ".%1":str);                            |
+    |     X_9:bat[:str] := bat.pack("id":str, "name":str);                            |
+    |     X_10:bat[:str] := bat.pack("int":str, "clob":str);                          |
+    |     X_11:bat[:int] := bat.pack(32:int, 0:int);                                  |
+    |     X_12:bat[:int] := bat.pack(0:int, 0:int);                                   |
+    |     (X_5:bat[:int], X_6:bat[:str]) := user.bbp();                               |
+    | exit X_69:bit;                                                                  |
+    |     sql.resultSet(X_8:bat[:str], X_9:bat[:str], X_10:bat[:str], X_11:bat[:int], |
+    :  X_12:bat[:int], X_5:bat[:int], X_6:bat[:str]);                                 :
+    | end user.main;
+
+
+    Downside is that the user.bbp() function is compiled and optimized separately from the rest of the query
+
+monetdbe_append(foo, EB1, ..., EBN)
+
+do sql_table* t = create_sql_table(..., .., tt_table, 0, SQL_DECLARED_TABLE, CA_COMMIT)
+then loop over monetdbe_column monetdbe_columns* {EB1, EBN}
+    convert EBi -> Bi
+    RBi = RMTput Bi
+    Add RBi to a list of remote BAT identifier ri_list.
+    sql_subtype tpe = getsqltype(Bi|EBi)
+    mvc_create_column(sql, t, columns[i].name, &tpe)
+
+voila a initialized sql_table* t object plust ri_list of remote BAT identifier.
+
+now pass t to sql_gencode.h:backend_create_remote_import(backend*be, sql_table*t)
+
+Which should have all information necessary to create the following function:
+
+local maken
+function user.%temp(X1, ..., XN)
+    m:=sql.mvc();
+    sql.append(m, "foo", "column1", X1);
+    .
+    .
+    .
+    sql.append(m, "foo", "columnn", Xn);
+    c := aggr.count(Xn);
+    sql.affectedRows(m, c);
+end
+
+function user.%temp2()
+    remote.put()
+
+Register this function and remotely execute it:
+remote.register(conn, user, %temp)
+remote.exec(conn, user, %temp, RB1, ..., RBN)
+
+Now in case of a SQL REMOTE INSERT INTO statement:
+
+INSERT INTO R(foo) SELECT * FROM BAR; // ALLEEN AUTOMCOMMIT
+
+REL_INSERT(R(foo), REL(SELECT * FROM BAR))
+
+
+SELECT * FROM BAR
+VALUES () ())
+
+    B1, ..., BN
+
+REL_INSERT(R(foo)
+
+function user.%temp(X1, ..., XN)
+    m:=sql.mvc();
+    sql.append(m, "foo", "column1", X1);
+    .
+    .
+    .
+    sql.append(m, "foo", "columnn", Xn);
+    c := aggr.count(Xn);
+    sql.affectedRows(m, c);
+end

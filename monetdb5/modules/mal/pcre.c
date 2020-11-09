@@ -1522,6 +1522,7 @@ pcre_like_build(
 	int errcode;
 
 	*res = (regex_t) {0};
+	(void) count;
 #endif
 
 	if (caseignore) {
@@ -1608,14 +1609,14 @@ pcre_clean(
 		pcre_free(*re);
 	if (*ex)
 		pcre_free_study(*ex);
+	*re = NULL;
 	*ex = NULL;
 #else
 	regex_t *re, void *ex) {
-	if (*re)
-		regfree(*re);
+	regfree(re);
+	*re = (regex_t) {0};
 	(void) ex;
 #endif
-	*re = NULL;
 }
 
 static str
@@ -1634,7 +1635,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 	pcre_extra *ex = NULL;
 #else
 	regex_t re = (regex_t) {0};
-	int64_t ex = 0;
+	void *ex = NULL;
 #endif
 	struct RE *re_simple = NULL;
 	uint32_t *wpat = NULL;
@@ -1685,7 +1686,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 			} else if (allnulls) {
 				ret[p] = bit_nil;
 			} else {
-				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 0)) != MAL_SUCCEED)
+				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 1)) != MAL_SUCCEED)
 					goto bailout;
 				if ((msg = pcre_like_apply(&(ret[p]), next_input, re, ex, ppat, anti)) != MAL_SUCCEED)
 					goto bailout;
@@ -1872,8 +1873,8 @@ pcre_likeselect(BAT **bnp, BAT *b, BAT *s, const char *pat, bool caseignore, boo
 	pcre *re = NULL;
 	pcre_extra *ex = NULL;
 #else
-	regex_t re;
-	int64_t ex = 0;
+	regex_t re = (regex_t) {0};
+	void *ex = NULL;
 #endif
 	BATiter bi = bat_iterator(b);
 	BAT *bn;
@@ -2158,7 +2159,6 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 						} \
 					} else { \
 						int retval; \
-						assert(pcrere); \
 						PCRE_EXEC;  \
 						if (PCRE_COND) \
 							continue; \
@@ -2196,10 +2196,8 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 					lastl = lo; \
 					nl++; \
 				} \
-				if (re) \
-					re_like_clean(&re, &wpat); \
-				if (pcrere) \
-					pcre_clean(&pcrere, &pcreex); \
+				re_like_clean(&re, &wpat); \
+				pcre_clean(&pcrere, &pcreex); \
 			} \
 			if (r2) { \
 				if (nl > 1) { \
@@ -2233,8 +2231,8 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 	pcre *pcrere = NULL;
 	pcre_extra *pcreex = NULL;
 #else
-	regex_t pcrere;
-	int64_t pcreex = 0;
+	regex_t pcrere = (regex_t) {0};
+	void *pcreex = NULL;
 #endif
 
 	TRC_DEBUG(ALGO,
@@ -2328,13 +2326,9 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 	return MAL_SUCCEED;
 
 bailout:
-	if (pcrepat)
-		GDKfree(pcrepat);
-	if (re)
-		re_like_clean(&re, &wpat);
-	if (pcrere)
-		pcre_clean(&pcrere, &pcreex);
-
+	GDKfree(pcrepat);
+	re_like_clean(&re, &wpat);
+	pcre_clean(&pcrere, &pcreex);
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }

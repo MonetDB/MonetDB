@@ -102,6 +102,9 @@ joinparamcheck(BAT *l, BAT *r1, BAT *r2, BAT *sl, BAT *sr, const char *func)
 	return GDK_SUCCEED;
 }
 
+#define INCRSIZELOG	(8 + (SIZEOF_OID / 2))
+#define INCRSIZE	(1 << INCRSIZELOG)
+
 /* Create the result bats for a join, returns the absolute maximum
  * number of outputs that could possibly be generated. */
 static BUN
@@ -153,8 +156,8 @@ joininitresults(BAT **r1p, BAT **r2p, BUN lcnt, BUN rcnt, bool lkey, bool rkey,
 		maxsize = BUN_MAX;
 	}
 	size = estimate == BUN_NONE ? lcnt < rcnt ? lcnt : rcnt : estimate;
-	if (size < 1024)
-		size = 1024;
+	if (size < INCRSIZE)
+		size = INCRSIZE;
 	if (size > maxsize)
 		size = maxsize;
 	if ((rkey | semi | only_misses) & nil_on_miss) {
@@ -221,14 +224,17 @@ maybeextend(BAT *restrict r1, BAT *restrict r2,
 	    BUN cnt, BUN lcur, BUN lcnt, BUN maxsize)
 {
 	if (BATcount(r1) + cnt > BATcapacity(r1)) {
-		/* make some extra space by extrapolating how much
-		 * more we need (fraction of l we've seen so far is
-		 * used to estimate a new size but with a shallow
-		 * slope so that a skewed join doesn't overwhelm) */
+		/* make some extra space by extrapolating how much more
+		 * we need (fraction of l we've seen so far is used to
+		 * estimate a new size but with a shallow slope so that
+		 * a skewed join doesn't overwhelm, whilst making sure
+		 * there is somewhat significant progress) */
 		BUN newcap = (BUN) (lcnt / (lcnt / 4.0 + lcur * .75) * (BATcount(r1) + cnt));
+		newcap = (newcap + INCRSIZE - 1) & ~(((BUN) 1 << INCRSIZELOG) - 1);
 		if (newcap < cnt + BATcount(r1))
-			newcap = cnt + BATcount(r1) + 1024;
-		if (newcap > maxsize)
+			newcap = cnt + BATcount(r1) + INCRSIZE;
+		/* if close to maxsize, then just use maxsize */
+		if (newcap + INCRSIZE > maxsize)
 			newcap = maxsize;
 		/* make sure heap.free is set properly before
 		 * extending */
@@ -2518,7 +2524,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
-	MT_thread_setalgorithm(__func__);
 	int t = ATOMbasetype(r->ttype);
 	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
 		t = TYPE_void;
@@ -2552,6 +2557,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rh = canditer_last(rci) + 1 - r->hseqbase;
 	if (phash) {
 		/* there is a hash on the parent which we should use */
+		MT_thread_setalgorithm(swapped ? "hashjoin using parent hash (swapped)" : "hashjoin using parent hash");
 		BAT *b = BBPdescriptor(VIEWtparent(r));
 		TRC_DEBUG(ALGO, "%s(%s): using "
 			  "parent(" ALGOBATFMT ") for hash%s\n",
@@ -2565,6 +2571,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		r = b;
 	} else if (hash) {
 		/* there is a hash on r which we should use */
+		MT_thread_setalgorithm(swapped ? "hashjoin using existing hash (swapped)" : "hashjoin using existing hash");
 		hsh = r->thash;
 		TRC_DEBUG(ALGO, ALGOBATFMT ": using "
 			  "existing hash%s\n",
@@ -2575,6 +2582,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		 * candidate list */
 		char ext[32];
 		assert(rci->s);
+		MT_thread_setalgorithm(swapped ? "hashjoin using candidate hash (swapped)" : "hashjoin using candidate hash");
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
 			  "hash for candidate list " ALGOBATFMT "%s%s\n",
 			  ALGOBATPAR(r), ALGOBATPAR(rci->s),
@@ -2589,6 +2597,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		hash_cand = true;
 	} else {
 		/* we need to create a hash on r */
+		MT_thread_setalgorithm(swapped ? "hashjoin using new hash (swapped)" : "hashjoin using new hash");
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
@@ -3274,7 +3283,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
+		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory(r->theap.farmid))
 #endif
 			rcost += rci.ncand * 2.0;
 	} else {
@@ -3323,7 +3332,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 #ifdef PERSISTENTHASH
 			/* only count the cost of creating the hash
 			 * for non-persistent bats */
-			if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
+			if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory(l->theap.farmid))
 #endif
 				lcost += lci.ncand * 2.0;
 		} else {
@@ -3389,6 +3398,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 						 false);
 					r2->tsorted = false;
 					r2->trevsorted = false;
+					r2->tseqbase = oid_nil;
 					*r2p = r2;
 				} else {
 					GDKqsort(r1->theap.base, NULL, NULL,
@@ -3644,7 +3654,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
+		if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory(l->theap.farmid))
 #endif
 			lcost += lci.ncand * 2.0;
 	} else {
@@ -3689,7 +3699,7 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
-		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
+		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory(r->theap.farmid))
 #endif
 			rcost += rci.ncand * 2.0;
 	} else {

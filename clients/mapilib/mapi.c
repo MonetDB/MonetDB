@@ -880,6 +880,7 @@ struct MapiStruct {
 	bool connected;
 	bool trace;		/* Trace Mapi interaction */
 	bool auto_commit;
+	bool columnar_protocol;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -1369,6 +1370,13 @@ mapi_get_autocommit(Mapi mid)
 {
 	mapi_check0(mid);
 	return mid->auto_commit;
+}
+
+bool
+mapi_get_columnar_protocol(Mapi mid)
+{
+	mapi_check0(mid);
+	return mid->columnar_protocol;
 }
 
 static int64_t
@@ -1972,7 +1980,7 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 	char *query;
 
 	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init(0) < 0)
+		if (mnstr_init(false) < 0)
 			return NULL;
 	}
 
@@ -2094,7 +2102,7 @@ mapi_mapi(const char *host, int port, const char *username,
 	Mapi mid;
 
 	if (!ATOMIC_TAS(&mapi_initialized)) {
-		if (mnstr_init(0) < 0)
+		if (mnstr_init(false) < 0)
 			return NULL;
 	}
 
@@ -3630,6 +3638,18 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 		return mapi_Xcommand(mid, "auto_commit", "1");
 	else
 		return mapi_Xcommand(mid, "auto_commit", "0");
+}
+
+MapiMsg
+mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol)
+{
+	if (mid->columnar_protocol == columnar_protocol)
+		return MOK;
+	mid->columnar_protocol = columnar_protocol;
+	if (columnar_protocol)
+		return mapi_Xcommand(mid, "columnar_protocol", "1");
+	else
+		return mapi_Xcommand(mid, "columnar_protocol", "0");
 }
 
 MapiMsg

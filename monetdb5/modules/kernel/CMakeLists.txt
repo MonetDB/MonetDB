@@ -35,7 +35,7 @@ target_include_directories(kernel
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 target_include_directories(microbenchmark
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -67,9 +67,11 @@ set_target_properties(microbenchmark
   PROPERTIES
   OUTPUT_NAME _microbenchmark)
 
-install(TARGETS microbenchmark
+install(TARGETS 
+  microbenchmark
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT microbenchmark)
 install(FILES
   microbenchmark.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT microbenchmark)

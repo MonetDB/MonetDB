@@ -105,7 +105,10 @@ typedef enum sql_dependency {
 				   RANGE BETWEEN INTERVAL '1' MONTH PRECEDING
 				             AND INTERVAL '1' MONTH FOLLOWING */
 #define FRAME_GROUPS 2
-#define FRAME_ALL 3 /* special case of FRAME_RANGE, cover the entire partition */
+#define FRAME_UNBOUNDED_TILL_CURRENT_ROW 3
+#define FRAME_CURRENT_ROW_TILL_UNBOUNDED 4
+#define FRAME_ALL 5
+#define FRAME_CURRENT_ROW 6
 
 /* the following list of macros are used by SQLwindow_bound function */
 #define BOUND_FIRST_HALF_PRECEDING  0
@@ -144,7 +147,7 @@ typedef enum temp_t {
 	SQL_GLOBAL_TEMP = 2,
 	SQL_DECLARED_TABLE = 3,	/* variable inside a stored procedure */
 	SQL_MERGE_TABLE = 4,
-	SQL_STREAM = 5,
+	/* SQL_STREAM = 5, stream tables are not used anymore */
 	SQL_REMOTE = 6,
 	SQL_REPLICA_TABLE = 7
 } temp_t;
@@ -578,14 +581,14 @@ typedef enum table_types {
 	tt_table = 0, 		/* table */
 	tt_view = 1, 		/* view */
 	tt_merge_table = 3,	/* multiple tables form one table */
-	tt_stream = 4,		/* stream */
+	/* tt_stream = 4, stream tables are not used anymore */
 	tt_remote = 5,		/* stored on a remote server */
 	tt_replica_table = 6	/* multiple replica of the same table */
 } table_types;
 
 #define TABLE_TYPE_DESCRIPTION(tt,properties)                                                                       \
 (tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table && !properties)?"MERGE TABLE":                \
-(tt == tt_stream)?"STREAM TABLE":(tt == tt_remote)?"REMOTE TABLE":                                                  \
+(tt == tt_remote)?"REMOTE TABLE":                                                  \
 (tt == tt_merge_table && (properties & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
 (tt == tt_merge_table && (properties & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
 
@@ -597,7 +600,6 @@ typedef enum table_types {
 #define isPartitionedByColumnTable(x)     ((x)->type==tt_merge_table && ((x)->properties & PARTITION_COLUMN) == PARTITION_COLUMN)
 #define isPartitionedByExpressionTable(x) ((x)->type==tt_merge_table && ((x)->properties & PARTITION_EXPRESSION) == PARTITION_EXPRESSION)
 #define isMergeTable(x)                   ((x)->type==tt_merge_table)
-#define isStream(x)                       ((x)->type==tt_stream)
 #define isRemote(x)                       ((x)->type==tt_remote)
 #define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))

@@ -10,9 +10,12 @@ add_executable(test_malEmbeddedBoot test_malEmbeddedBoot.c)
 target_link_libraries(test_malEmbeddedBoot
   PRIVATE
   monetdb_config_header
-  mcrypt
-  bat
   mal
+  mcrypt
+  msabaoth
+  mutils
+  stream
+  bat
   ${CMAKE_DL_LIBS}
   Threads::Threads)
 target_compile_definitions(test_malEmbeddedBoot PRIVATE LIBMONETDB5)
@@ -22,9 +25,12 @@ add_executable(test_malInclude test_malInclude.c)
 target_link_libraries(test_malInclude
   PRIVATE
   monetdb_config_header
-  mcrypt
-  bat
   mal
+  mcrypt
+  msabaoth
+  mutils
+  stream
+  bat
   ${CMAKE_DL_LIBS}
   Threads::Threads)
 target_compile_definitions(test_malInclude PRIVATE LIBMONETDB5)

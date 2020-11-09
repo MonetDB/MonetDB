@@ -11,7 +11,11 @@ CREATE STREAM TABLE "ttt"."strt" (
         CONSTRAINT "strt_id_pkey" PRIMARY KEY ("id")
 );
 
-select * from "ttt"."strt";
+CREATE merge TABLE "ttt"."strt" (
+        "id" INTEGER       NOT NULL,
+        "nm" VARCHAR(123)  NOT NULL,
+        CONSTRAINT "strt_id_pkey" PRIMARY KEY ("id")
+);
 
 analyze "ttt"."strt";
 -- Error: Table 'strt' is not persistent   SQLState:  42S02

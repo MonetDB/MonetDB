@@ -6,8 +6,10 @@
 
 Name: monetdb-gdk
 Description: MonetDB GDK libary
+URL: https://www.monetdb.org/
 Version: @MONETDB_VERSION@
-Requires: monetdb-stream
+Requires.private: monetdb-stream = @MONETDB_VERSION@
 
-Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lbat -lm @CMAKE_THREAD_LIBS_INIT@ -l@CMAKE_DL_LIBS@
+Libs: -L@CMAKE_INSTALL_FULL_LIBDIR@ -lbat
+Libs.private: -lm @CMAKE_THREAD_LIBS_INIT@ -l@CMAKE_DL_LIBS@
 Cflags: -I@CMAKE_INSTALL_FULL_INCLUDEDIR@/monetdb

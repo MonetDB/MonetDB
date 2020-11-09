@@ -200,3 +200,32 @@ rollback;
 
 select * from (select 1 as c0, 2 as c0) as sub;
 	-- 1 2
+
+select cast(interval '3' second as clob);
+	-- 3.000
+
+select cast(13121 as varchar(2147483647)) || cast(231231 as varchar(2147483647)); --error, too big
+
+select date_to_str(date '2010-01-10','%y/%m/%d');
+
+select date_to_str(a,'%y/%m/%d') from (values (date '2012-02-11'), (date '2012-02-12'),(date '2012-02-13')) as a(a);
+
+select x as z, 2 from (select 1) as x(x) order by z, z;
+	-- 1 2
+
+select x as z, 2 from (select 1) as x(x) group by z, z;
+	-- 1 2
+
+plan select x as z, 2 from (select 1) as x(x) group by z, z;
+
+select x as z, y as z from (select 1, 2) as x(x,y) group by z;
+	-- error 'z' identifier is ambiguous
+
+select x as z, y as z from (select 1, 2) as x(x,y) order by z;
+	-- error 'z' identifier is ambiguous
+
+select 1, null except select 1, null;
+	-- empty
+
+select 1, null intersect select 1, null;
+	-- 1 NULL

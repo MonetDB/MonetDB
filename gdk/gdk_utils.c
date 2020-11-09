@@ -630,7 +630,7 @@ static gdk_return GDKlockHome(int farmid);
 
 #ifndef STATIC_CODE_ANALYSIS
 #ifndef NDEBUG
-static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER("mallocsuccesslk");
+static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER(mallocsuccesslock);
 #endif
 #endif
 
@@ -732,7 +732,7 @@ GDKgetdebug(void)
 	return debug;
 }
 
-static bool Mbedded = 1;
+static bool Mbedded = true;
 bool
 GDKembedded(void)
 {
@@ -740,7 +740,7 @@ GDKembedded(void)
 }
 
 gdk_return
-GDKinit(opt *set, int setlen, int embedded)
+GDKinit(opt *set, int setlen, bool embedded)
 {
 	static bool first = true;
 	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
@@ -807,8 +807,9 @@ GDKinit(opt *set, int setlen, int embedded)
 		/* BBP was locked by BBPexit() */
 		BBPunlock();
 	}
+	GDKtracer_init();
 	errno = 0;
-	if (!GDKinmemory() && !GDKenvironment(dbpath))
+	if (!GDKinmemory(0) && !GDKenvironment(dbpath))
 		return GDK_FAIL;
 
 	MT_init_posix();
@@ -940,7 +941,7 @@ GDKinit(opt *set, int setlen, int embedded)
 	if (GDKnr_threads == 0)
 		GDKnr_threads = MT_check_nr_cores();
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
 			(p = strrchr(p, DIR_SEP)) != NULL) {
 			if (GDKsetenv("gdk_dbname", p + 1) != GDK_SUCCEED) {
@@ -956,8 +957,8 @@ GDKinit(opt *set, int setlen, int embedded)
 			}
 #endif
 		}
-	} else {
-		if (GDKsetenv("gdk_dbname", ":inmemory") != GDK_SUCCEED) {
+	} else if (GDKgetenv("gdk_dbname") == NULL) {
+		if (GDKsetenv("gdk_dbname", ":memory:") != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "GDKsetenv gdk_dbname failed");
 			return GDK_FAIL;
 		}
@@ -1135,7 +1136,7 @@ GDKreset(int status)
 void
 GDKexit(int status)
 {
-	if (!GDKinmemory() && GET_GDKLOCK(PERSISTENT) == NULL) {
+	if (!GDKinmemory(0) && GET_GDKLOCK(PERSISTENT) == NULL) {
 		/* stop GDKtracer */
 		GDKtracer_stop();
 
@@ -1156,9 +1157,9 @@ GDKexit(int status)
 
 batlock_t GDKbatLock[BBP_BATMASK + 1];
 bbplock_t GDKbbpLock[BBP_THREADMASK + 1];
-MT_Lock GDKnameLock = MT_LOCK_INITIALIZER("GDKnameLock");
-MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER("GDKthreadLock");
-MT_Lock GDKtmLock = MT_LOCK_INITIALIZER("GDKtmLock");
+MT_Lock GDKnameLock = MT_LOCK_INITIALIZER(GDKnameLock);
+MT_Lock GDKthreadLock = MT_LOCK_INITIALIZER(GDKthreadLock);
+MT_Lock GDKtmLock = MT_LOCK_INITIALIZER(GDKtmLock);
 
 /*
  * @+ Concurrency control

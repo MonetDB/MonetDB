@@ -838,7 +838,11 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 	if (BATtvoid(b1) && BATtvoid(b2) && ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		TPE res;
 
-		if (is_oid_nil(b1->tseqbase) || is_oid_nil(b2->tseqbase))
+		if ((is_oid_nil(b1->tseqbase) || is_oid_nil(b2->tseqbase))
+#ifdef NIL_MATCHES_FLAG
+                        && !nil_matches
+#endif
+		   )
 			res = TPE_nil;
 		else
 			res = OP(b1->tseqbase + ci1.seq, b2->tseqbase + ci2.seq);

@@ -44,6 +44,7 @@ verbose = False
 quiet = False
 
 initdb = None
+single_in_memory = False
 
 global_timeout = 0
 start_time = time.time()
@@ -371,9 +372,6 @@ CONDITIONALS = {
     # from configure.ag:
     # These should cover all AM_CONDITIONALS defined in configure.ag, i.e.,
     # `grep AM_CONDITIONAL configure.ag | sed 's|^AM_CONDITIONAL(\([^,]*\),.*$|\1|' | sort -u`
-    'BITS32'               : "@BITS32_FALSE@",
-    'BITS64'               : "@BITS64_FALSE@",
-    'CROSS_COMPILING'      : "@CROSS_COMPILING_FALSE@",
     'HAVE_CURL'            : "@HAVE_CURL_FALSE@",
     'HAVE_FITS'            : "@HAVE_FITS_FALSE@",
     'HAVE_GEOM'            : "@HAVE_GEOM_FALSE@",
@@ -386,7 +384,6 @@ CONDITIONALS = {
     'HAVE_LIBR'            : "@HAVE_LIBR_FALSE@",
     'HAVE_LIBXML'          : "@HAVE_LIBXML_FALSE@",
     'HAVE_LIBZ'            : "@HAVE_LIBZ_FALSE@",
-    'HAVE_MAL_DEBUGGER'    : "@HAVE_MAL_DEBUGGER_FALSE@",
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
@@ -684,7 +681,7 @@ def try_open(path, mode) :
     return f
 ###  try_open(path, mode) #
 
-def CreateHtmlIndex (env, *body) :
+def CreateHtmlIndex (env, ssout, sserr, *body) :
     TSTDIR=env['TSTDIR']
     TSTTRGDIR=env['TSTTRGDIR']
 
@@ -705,9 +702,17 @@ def CreateHtmlIndex (env, *body) :
                                   'target': '%s_%s_body' % (DISTVER, TSTDIR),
                                   'class': 'black'},
                                  header)
-            tr = Element('tr', {'valign': 'top'},
-                         Element('th', {'class': 'header'},
-                                 header))
+            th = Element('th', {'class': 'header'}, header)
+            if os.path.exists('SingleServer.out.html'):
+                th.addchild(Element('br'))
+                th.addchildren(AddHref('SingleServer.out.html',
+                                       '%s_%s_body' % (DISTVER, TSTDIR),
+                                       'out', ssout))
+                th.addchild(Text(' | '))
+                th.addchildren(AddHref('SingleServer.err.html',
+                                       '%s_%s_body' % (DISTVER, TSTDIR),
+                                       'err', sserr))
+            tr = Element('tr', {'valign': 'top'}, th)
             tr.addchildren(body)
             hbody = Element('body',
                             {'bgcolor': white,
@@ -781,7 +786,7 @@ def CreateHtmlIndex (env, *body) :
         f.close()
         env['_%s_BODY_' % TSTDIR] = ["", 0]
         os.chdir(BACK)
-### CreateHtmlIndex (env, *body) #
+### CreateHtmlIndex (env, ssout, sserr, *body) #
 
 bugre = re.compile(r'\.(sf|bug)-(?P<bugno>[1-9]\d+)', re.I)
 
@@ -1205,6 +1210,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
     elem = None
     FdOut = F_SKIP
     FdErr = F_SKIP
+    ssout = F_SKIP
+    sserr = F_SKIP
     if testdir == TSTSRCBASE:
         TSTDIR = os.curdir
     else:
@@ -1351,11 +1358,29 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                 for TST,COND in testlist:
                     if oneserver and (pSrvr is None or pSrvr.poll() is not None):
                         # restart server
-                        pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options,
+                        inmem = single_in_memory
+                        for o in options:
+                            if o.startswith('embedded'):
+                                inmem = False
+                                break
+                        if inmem:
+                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--set', 'gdk_dbname=%s' % TSTDB, '--in-memory'] + options
+                            pollfile = None
+                        else:
+                            cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir] + options
+                            pollfile = os.path.join(LogDBdir, '.started')
+                        if env.get('MULTIFARM'):
+                            cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                            shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                                          ignore_errors = True)
+                            os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                        elif env.get('TRANS_INMEM'):
+                            cmd.append('--dbextra=:memory:')
+                        pSrvr = ServerClass(cmd,
                                             open(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
                                             open(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
                                             0,
-                                            os.path.join(LogDBdir, '.started'),
+                                            pollfile,
                                             int(env['MAPIPORT']))
                         os.chdir(TSTTRGDIR)
                         pSrvr.LaunchIt()
@@ -1390,6 +1415,28 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
+                o = open(os.path.join(TSTTRGDIR, 'SingleServer.out.html'), 'w')
+                o.write('<html><head><title>{} standard output</title></head>'
+                        '<body><pre>\n'.format(TSTDIR))
+                e = F_OK
+                for line in open(os.path.join(TSTTRGDIR, 'SingleServer.out')):
+                    if line != '\n' and not line.startswith('#'):
+                        e = F_ERROR
+                        ssout = F_ERROR
+                    o.write(line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
+                o.write('</pre></body></html>\n')
+                o.close()
+                o = open(os.path.join(TSTTRGDIR, 'SingleServer.err.html'), 'w')
+                o.write('<html><head><title>{} standard error</title></head>'
+                        '<body><pre>\n'.format(TSTDIR))
+                e = F_OK
+                for line in open(os.path.join(TSTTRGDIR, 'SingleServer.err')):
+                    if line != '\n' and not line.startswith('#'):
+                        e = F_ERROR
+                        sserr = F_ERROR
+                    o.write(line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
+                o.write('</pre></body></html>\n')
+                o.close()
         TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdOut, FdErr, None))
         if testweb:
             os.chdir(TSTTRGDIR)
@@ -1399,8 +1446,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         if THISFILE == "Mtest.py":
             if not testweb:
                 body = body_bad + body_good
-                CreateHtmlIndex(env, *body)
-                elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut,FdErr))
+                CreateHtmlIndex(env, ssout, sserr, *body)
+                elem = AddSubToHtmlIndex(env, TSTDIR, max(FdOut, FdErr, ssout, sserr))
 
         # remove extra files created by tests
         for f in listdir(TSTTRGDIR):
@@ -1439,7 +1486,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         for TST,COND in testlist:
             td += ApproveOutput(env, TST)
 
-    return td, elem, max(FdOut, FdErr), interrupted
+    return td, elem, max(FdOut, FdErr, ssout, sserr), interrupted
 ### PerformDir(env, testdir, testlist, BusyPorts) #
 
 def ApproveOutput (env, TST) :
@@ -1729,6 +1776,8 @@ def GetBitsAndModsAndThreads(env) :
         shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+    elif env.get('TRANS_INMEM'):
+        cmd.append('--dbextra=:memory:')
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
@@ -3059,7 +3108,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         else:
             s = '%-*s ' % (length, TST)
         STDOUT.write('%s%s' % (prompt(), s))
-        if isatty:
+        if isatty and TIMEOUT > 0:
             s = '(<=%d,%d,%d)' % (TIMEOUT, CTIMEOUT, STIMEOUT)
             STDOUT.write(s + '\b' * len(s))
 
@@ -3106,6 +3155,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                 shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'),
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
+            elif env.get('TRANS_INMEM'):
+                Srvr.append('--dbextra=:memory:')
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -3147,6 +3198,13 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             Srvr.extend(['--set', 'embedded_c=true'])
 
             if PSRVR is None:
+                if env.get('MULTIFARM'):
+                    Srvr.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                    shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
+                                  ignore_errors = True)
+                    os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
+                elif env.get('TRANS_INMEM'):
+                    Srvr.append('--dbextra=:memory:')
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
             if savepath is not None:
@@ -3193,7 +3251,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                         break
             elif CALL == "sqltest":
                 import MonetDBtesting.sqllogictest as sqllogictest
-                sql = sqllogictest.SQLLogic(ClntErr)
+                sql = sqllogictest.SQLLogic(out=ClntErr)
                 try:
                     sql.connect(hostname='localhost',
                                 port=int(env['MAPIPORT']),
@@ -3559,12 +3617,6 @@ else:
         if "A" <= MAJOR and MAJOR <= "Z":
             RELEASE = RELEASE.split(".", 1)[1]
 
-# this is for the wine/mingw setup
-if sys.platform == 'linux2' and CONDITIONALS['CROSS_COMPILING']:
-    SYST = 'Windows'
-    HOST = "WINE"
-    RELEASE = "5.2"
-
 # see if we can use UNIX sockets
 try:
     server = socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM)
@@ -3673,6 +3725,17 @@ URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 par = {}
 dft = {}
 
+class OrAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        super(OrAction, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        # if first time, override (default) value, otherwise bitwise OR values
+        if '__seen_option_' + self.dest in namespace:
+            setattr(namespace, self.dest, getattr(namespace, self.dest) | values)
+        else:
+            setattr(namespace, self.dest, values)
+        setattr(namespace, '__seen_option_' + self.dest, True)
+
 def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
@@ -3745,7 +3808,7 @@ def main(argv) :
         parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="use <num> lines of context during diff (default: -C1)")
         parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)")
         parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
-        parser.add_argument('--debug', '-d', action='store', dest='debug', metavar='<sec>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5 (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
+        parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
         parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
         parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
         parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
@@ -3762,6 +3825,7 @@ def main(argv) :
         parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
         parser.add_argument('--releaserun', action='store_true', dest='releaserun', help='run tests as if for a release test')
         parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
+        parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
         parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
         parser.add_argument('--jenkins', action='store_true', dest='jenkins', help='special handling for Jenkins')
         parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
@@ -3769,6 +3833,7 @@ def main(argv) :
         parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
         parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
         parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
+        parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     elif THISFILE == 'Mapprove.py':
         f = _configure(os.path.join('@QXprefix@',dftTSTPREF,'.Mapprove.rc'))
         v = ReadMapproveRc(f)
@@ -3840,6 +3905,11 @@ def main(argv) :
         a = opts.multifarm
         if a:
             env['MULTIFARM'] = 'True'
+        a = opts.inmemory
+        if a:
+            env['TRANS_INMEM'] = 'True'
+        if opts.multifarm and opts.inmemory:
+            ErrXit("Cannot have both --multifarm and --transient-inmemory")
         jenkins = opts.jenkins
         addreqs = opts.addreqs
         a = opts.global_timeout
@@ -3850,6 +3920,8 @@ def main(argv) :
             env['TSTDATAPATH'] = a
         global initdb
         initdb = opts.initdb
+        global single_in_memory
+        single_in_memory = opts.single_in_memory
     if THISFILE == 'Mapprove.py':
         a = opts.ext
         if a is None:
@@ -4069,14 +4141,13 @@ def main(argv) :
             CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
     if THISFILE == "Mtest.py": # env['MAPIPORT'] not available on Mapprove.py
-        s = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
         try:
-            s.bind(('::1', int(env['MAPIPORT'])))
+            with socket.socket(socket.AF_INET6, socket.SOCK_STREAM) as s:
+                s.bind(('::1', int(env['MAPIPORT'])))
         except socket.error as err:
             CONDITIONALS['HAVE_IPV6'] = '' # False
         else:
             CONDITIONALS['HAVE_IPV6'] = '#' # True
-        s.close()
 
     # read '.Mapprove.rc'
     if THISFILE == 'Mapprove.py':
@@ -4416,13 +4487,6 @@ def main(argv) :
             env['TST_SINGLE'] = ""
             env['TST_THREADS'] = ""
             env['TST_ARCH'] = ""
-            cmd = splitcommand(env['exe']['mserver5'][1])
-            cmd.append('--dbpath=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF))
-            if env.get('MULTIFARM'):
-                cmd.append('--dbextra=%s' % os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
-                shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'),
-                              ignore_errors = True)
-                os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
             if GetBitsAndModsAndThreads(env):
                 sys.exit(1)
             STDERR.flush()
@@ -4496,7 +4560,7 @@ def main(argv) :
                         env['TSTDIR'] = ""
                         env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
                         body = body_bad + body_good
-                        CreateHtmlIndex(env, *body)
+                        CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
         except KeyboardInterrupt:
             # if we get interrupted between directories, we still want output
             pass
@@ -4602,7 +4666,7 @@ VALUES (%s, '%s', '%s', '%s',
             env['TSTDIR'] = ""
             env['TSTTRGDIR'] = os.path.join(TSTTRGBASE, TSTPREF)
             if not testweb:
-                CreateHtmlIndex(env, *body)
+                CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
 
             Failed = 0
             for f in Failure[1:-1]:

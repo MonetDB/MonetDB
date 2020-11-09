@@ -21,7 +21,7 @@
 #define CATALOG_VERSION 52205
 int catalog_version = 0;
 
-static MT_Lock bs_lock = MT_LOCK_INITIALIZER("bs_lock");
+static MT_Lock bs_lock = MT_LOCK_INITIALIZER(bs_lock);
 static sqlid store_oid = 0;
 static sqlid prev_oid = 0;
 static sqlid *store_oids = NULL;
@@ -37,6 +37,7 @@ store_type active_store_type = store_bat;
 int store_readonly = 0;
 int store_singleuser = 0;
 int store_initialized = 0;
+int store_debug = 0;
 
 store_functions store_funcs = { NULL };
 table_functions table_funcs = { NULL };
@@ -849,8 +850,6 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->persistence = SQL_PERSIST;
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 	t->cleared = 0;
@@ -2076,6 +2075,7 @@ store_init(sql_allocator *pa, int debug, store_type store, int readonly, int sin
 
 	store_readonly = readonly;
 	store_singleuser = singleuser;
+	store_debug = debug;
 
 	MT_lock_set(&bs_lock);
 
@@ -2199,10 +2199,13 @@ flusher_should_run(void)
 	char *reason_to = NULL, *reason_not_to = NULL;
 	int changes;
 
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
+
 	if (flusher.countdown_ms <= 0)
 		reason_to = "timer expired";
 
-	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 1000000;
+	int many_changes = GDKdebug & FORCEMITOMASK ? 100 : 100000;
 	if ((changes = logger_funcs.changes()) >= many_changes)
 		reason_to = "many changes";
 	else if (changes == 0)
@@ -2330,7 +2333,8 @@ store_apply_deltas(bool not_locked)
 void
 store_flush_log(void)
 {
-	ATOMIC_SET(&flusher.flush_now, 1);
+	if (logger_funcs.changes() >= 1000000)
+		ATOMIC_SET(&flusher.flush_now, 1);
 }
 
 /* Call while holding bs_lock */
@@ -2822,7 +2826,7 @@ store_hot_snapshot(str tarfile)
 	}
 	tar_stream = open_wstream(tmppath);
 	if (!tar_stream) {
-		GDKerror("Failed to open %s for writing: %s", tmppath, mnstr_peek_error(NULL));
+		GDKerror("%s", mnstr_peek_error(NULL));
 		goto end;
 	}
 	do_remove = 1;
@@ -5502,9 +5506,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sql_trans_drop_dependencies(tr, t->base.id);
 	sql_trans_drop_obj_priv(tr, t->base.id);
 
-	if (isKindOfTable(t) || isView(t))
-		if (sys_drop_columns(tr, t, drop_action))
-			return -1;
+	if (sys_drop_columns(tr, t, drop_action))
+		return -1;
 
 	if (isGlobal(t))
 		tr->schema_updates ++;
@@ -6283,7 +6286,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	/* temps all belong to a special tmp schema and only views/remote
 	   have a query */
 	assert( (isTable(t) ||
-		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || isStream(t) || (isRemote(t) && !sql));
+		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || (isRemote(t) && !sql));
 
 	t->query = sql ? sa_strdup(tr->sa, sql) : NULL;
 	t->s = s;
@@ -6291,8 +6294,6 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (sz < 0)
 		t->sz = COLSIZE;
 	cs_add(&s->tables, t, TR_NEW);
-	if (isStream(t))
-		t->persistence = SQL_STREAM;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
 
@@ -6510,28 +6511,34 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 {
 	node *n = t->columns.set->h;
 	sql_column *c = n->data;
-	BUN sz = 0;
+	BUN sz = 0, nsz = 0;
 
 	t->cleared = 1;
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.wtime = tr->wstime;
 
-	sz += store_funcs.clear_col(tr, c);
-	sz -= store_funcs.clear_del(tr, t);
+	if ((nsz = store_funcs.clear_col(tr, c)) == BUN_NONE)
+		return BUN_NONE;
+	sz += nsz;
+	if ((nsz = store_funcs.clear_del(tr, t)) == BUN_NONE)
+		return BUN_NONE;
+	sz -= nsz;
 
 	for (n = n->next; n; n = n->next) {
 		c = n->data;
 		c->base.wtime = tr->wstime;
 
-		(void)store_funcs.clear_col(tr, c);
+		if (store_funcs.clear_col(tr, c) == BUN_NONE)
+			return BUN_NONE;
 	}
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *ci = n->data;
 
 			ci->base.wtime = tr->wstime;
-			if (isTable(ci->t) && idx_has_column(ci->type))
-				(void)store_funcs.clear_idx(tr, ci);
+			if (isTable(ci->t) && idx_has_column(ci->type) &&
+				store_funcs.clear_idx(tr, ci) == BUN_NONE)
+				return BUN_NONE;
 		}
 	}
 	return sz;
@@ -6659,9 +6666,8 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	if (isKindOfTable(t))
-		if (sys_drop_column(tr, col, drop_action))
-			return -1;
+	if (sys_drop_column(tr, col, drop_action))
+		return -1;
 
 	col->base.wtime = t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	cs_del(&t->columns, n, col->base.flags);
@@ -7603,8 +7609,17 @@ sql_session_reset(sql_session *s, int ac)
 int
 sql_trans_begin(sql_session *s)
 {
+	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
+
 	sql_trans *tr = s->tr;
 	int snr = tr->schema_number;
+
+	/* add wait when flush is realy needed */
+	while ((store_debug&16)==16 && ATOMIC_GET(&flusher.flush_now)) {
+		MT_lock_unset(&bs_lock);
+		MT_sleep_ms(sleeptime);
+		MT_lock_set(&bs_lock);
+	}
 
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %d\n", snr);
 	if (tr->parent && tr->parent == gtrans &&

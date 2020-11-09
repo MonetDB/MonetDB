@@ -49,7 +49,7 @@ static str monetdb_query(Client c, str query) {
 	res_table* res = NULL;
 	int i;
 	retval = SQLstatementIntern(c,
-		&query,
+		query,
 		"name",
 		1, 0, &res);
 	SQLautocommit(m);
@@ -111,11 +111,11 @@ static str monetdb_initialize(void) {
 	setlen = mo_builtin_settings(&set);
 	setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_dbpath", dbdir);
 
-	if (BBPaddfarm(dbdir, (1 << PERSISTENT) | (1 << TRANSIENT), false) != GDK_SUCCEED) {
+	if (BBPaddfarm(dbdir, (1U << PERSISTENT) | (1U << TRANSIENT), false) != GDK_SUCCEED) {
 		retval = GDKstrdup("BBPaddfarm failed");
 		goto cleanup;
 	}
-	if (GDKinit(set, setlen, 1) != GDK_SUCCEED) {
+	if (GDKinit(set, setlen, true) != GDK_SUCCEED) {
 		retval = GDKstrdup("GDKinit() failed");
 		goto cleanup;
 	}

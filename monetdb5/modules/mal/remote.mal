@@ -18,12 +18,18 @@ command resolve(pattern:str):bat[:str]
 address RMTresolve
 comment "resolve a pattern against Merovingian and return the URIs";
 
-command connect(uri:str, user:str, passwd:str):str
+pattern connect(uri:str, user:str, passwd:str):str
 address RMTconnect
 comment "returns a newly created connection for uri, using user name and password";
-command connect(uri:str, user:str, passwd:str, scen:str):str
-address RMTconnectScen
+
+pattern connect(uri:str, user:str, passwd:str, scen:str):str
+address RMTconnect
 comment "returns a newly created connection for uri, using user name, password and scenario";
+
+pattern connect(uri:str, user:str, passwd:str, scen:str, columnar:bit):str
+address RMTconnect
+comment "returns a newly created connection for uri, using user name, password, scenario and protocol";
+
 pattern connect(table:str, schen:str):str
 address RMTconnectTable
 comment "return a newly created connection for a table. username and password should be in the vault";
@@ -56,6 +62,9 @@ comment "remotely executes <mod>.<func> using the argument list of remote object
 pattern exec(conn:str, mod:str, func:str, :str...):str...
 address RMTexec
 comment "remotely executes <mod>.<func> using the argument list of remote objects and returns the handle to its result";
+pattern exec(conn:str, mod:str, func:str, rcb:ptr,:str...):void
+address RMTexec
+comment "remotely executes <mod>.<func> using the argument list of remote objects and applying function pointer rcb as result handling callback.";
 command isalive(conn:str):int
 address RMTisalive
 comment "check if conn is still valid and connected";

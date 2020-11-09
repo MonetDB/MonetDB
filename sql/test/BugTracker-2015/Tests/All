@@ -74,7 +74,7 @@ fractional_precision_limitation.Bug-3808
 not-like-without-wildcard.Bug-3811
 HAVE_LIBZ?copy_into.Bug-3813
 select-tilde-arg.Bug-3814
-KNOWNFAIL?timestamp_convert.Bug-3815
+timestamp_convert.Bug-3815
 crash_timestamp_convert.Bug-3816
 crash_in_reduce_groupby.Bug-3818
 duplicate-constraint.Bug-3820

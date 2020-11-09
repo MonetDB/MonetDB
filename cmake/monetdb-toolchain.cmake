@@ -55,6 +55,8 @@ function(monetdb_default_toolchain)
       MT_checkCompilerFlag("-Wduplicated-branches")
       MT_checkCompilerFlag("-Wrestrict")
       MT_checkCompilerFlag("-Wnested-externs")
+      MT_checkCompilerFlag("-Wmissing-noreturn")
+      MT_checkCompilerFlag("-Wuninitialized")
 
       # since we use values of type "int8_t" as subscript,
       # and int8_t may be defined as plain "char", we cannot

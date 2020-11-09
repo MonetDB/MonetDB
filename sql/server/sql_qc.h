@@ -42,7 +42,7 @@ extern qc *qc_create(sql_allocator *sa, int clientid, int seqnr);
 extern void qc_clean(qc *cache);
 extern void qc_destroy(qc *cache);
 sql_export cq *qc_find(qc *cache, int id);
-extern cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *codedstr, int no_mitosis);
+sql_export cq *qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, mapi_query_t type, char *codedstr, int no_mitosis);
 sql_export void qc_delete(qc *cache, cq *q);
 extern int qc_size(qc *cache);
 

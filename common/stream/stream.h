@@ -76,7 +76,7 @@ typedef __int128_t hge;
 typedef struct stream stream;
 
 /* some os specific initialization */
-stream_export int mnstr_init(int embedded);
+stream_export int mnstr_init(bool embedded);
 
 
 typedef enum mnstr_error_kind {
@@ -233,7 +233,8 @@ stream_export void set_prompting(stream *block_stream, const char *prompt, strea
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused
 	PROTOCOL_9 = 1, // mal_mapi.c, mal_client.c;
-	PROTOCOL_10 = 2 // mal_mapi.c, sql_result.c
+	PROTOCOL_10 = 2, // mal_mapi.c, sql_result.c
+	PROTOCOL_COLUMNAR = 3 // sql_result.c
 } protocol_version;
 
 typedef enum {

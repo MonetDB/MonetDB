@@ -169,7 +169,7 @@ loadLibrary(str filename, int flag)
 
 	is_mod = (strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0);
 
-	if (!lastfile && strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0) { /* first load reference too local functions */
+	if (lastfile == 0 && strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0) { /* first load reference to local functions */
 		str msg = loadLibrary("monetdb5", flag);
 		if (msg != MAL_SUCCEED)
 			return msg;
@@ -485,7 +485,7 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 int
 malLibraryEnabled(str name)
 {
-	if (strcmp(name, "pyapi3") == 0) {
+	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
 		const char *val = GDKgetenv("embedded_py");
 		return val && (strcmp(val, "3") == 0 ||
 					   strcasecmp(val, "true") == 0 ||
@@ -502,20 +502,25 @@ malLibraryEnabled(str name)
 	return true;
 }
 
-#define HOW_TO_ENABLE_ERROR(LANGUAGE, OPTION) \
-	if (malLibraryEnabled(name)) \
-		return "Embedded " LANGUAGE " has not been installed. Please install it first, then start server with --set " OPTION; \
-	return "Embedded " LANGUAGE " has not been enabled. Start server with --set " OPTION;
+#define HOW_TO_ENABLE_ERROR(LANGUAGE, OPTION)						\
+	do {															\
+		if (malLibraryEnabled(name))								\
+			return "Embedded " LANGUAGE " has not been installed. "	\
+				"Please install it first, then start server with "	\
+				"--set " OPTION;									\
+		return "Embedded " LANGUAGE " has not been enabled. "		\
+			"Start server with --set " OPTION;						\
+	} while (0)
 
 char *
 malLibraryHowToEnable(str name)
 {
-	if (strcmp(name, "pyapi3") == 0) {
-		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3")
+	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
+		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3");
 	} else if (strcmp(name, "rapi") == 0) {
-		HOW_TO_ENABLE_ERROR("R", "embedded_r=true")
+		HOW_TO_ENABLE_ERROR("R", "embedded_r=true");
 	} else if (strcmp(name, "capi") == 0) {
-		HOW_TO_ENABLE_ERROR("C/C++", "embedded_c=true")
+		HOW_TO_ENABLE_ERROR("C/C++", "embedded_c=true");
 	}
 	return "";
 }

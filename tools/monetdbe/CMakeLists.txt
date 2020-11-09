@@ -5,12 +5,15 @@
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(monetdbe_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/monetdbe.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/monetdbe.h>)
 
 add_library(monetdbe SHARED)
+
+add_compile_definitions(COMPILING_MONETDBE)
 
 target_sources(monetdbe
   PRIVATE
@@ -22,8 +25,17 @@ target_sources(monetdbe
 
 target_include_directories(monetdbe
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:sql,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sql,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlinclude,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlserver,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>  
+  ${CMAKE_SOURCE_DIR}/clients/mapiclient
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
@@ -45,15 +57,13 @@ target_link_libraries(monetdbe
   matomic
   moptions
   mutils
-  mcrypt
+  mapi
+  stream
   bat
   monetdb5
   sql
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
-  ${CMAKE_DL_LIBS}
-  $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
-  $<$<NOT:$<PLATFORM_ID:Windows>>:$<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>>
   Threads::Threads)
 
 if (NOT WIN32)
@@ -79,6 +89,7 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_LIBDIR}
   PUBLIC_HEADER
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  COMPONENT server
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 install(EXPORT monetdbeTargets

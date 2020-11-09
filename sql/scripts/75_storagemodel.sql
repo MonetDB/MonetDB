@@ -220,7 +220,7 @@ begin
 	if tpe = 'smallint'
 		then return 2 * count;
 	end if;
-	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')
 		then return 4 * count;
 	end if;
 	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')
@@ -275,7 +275,7 @@ begin
 	if tpe = 'smallint'
 		then return cast(0.4 * count as bigint);
 	end if;
-	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'month_interval')
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')
 		then return cast(0.8 * count as bigint);
 	end if;
 	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')

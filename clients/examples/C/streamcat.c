@@ -92,7 +92,7 @@ croak(int status, const char *msg, ...)
 int
 main(int argc, char *argv[])
 {
-	if (mnstr_init(0) < 0)
+	if (mnstr_init(false) < 0)
 		croak(2, "Could not initialize streams library");
 
 	if (argc < 2)
@@ -191,8 +191,10 @@ int cmd_read(char *argv[])
 		}
 		if (wrapper != NULL)
 			s = wrapper(s, parms);
-		if (s == NULL)
-			croak(2, "Wrapper %s did not return a stream", wrapper_name);
+		if (s == NULL || mnstr_errnr(s)) {
+			char *msg = mnstr_error(s);
+			croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
+		}
 	}
 
 	if (out == NULL) {
@@ -300,8 +302,10 @@ int cmd_write(char *argv[])
 		}
 		if (wrapper != NULL)
 			s = wrapper(s, parms);
-		if (s == NULL)
-			croak(2, "Wrapper %s did not return a stream", wrapper_name);
+		if (s == NULL || mnstr_errnr(s)) {
+			char *msg = mnstr_error(s);
+			croak(2, "Opener %s failed: %s", opener_name, msg ? msg : "<no error message>");
+		}
 	}
 
 	if (in == NULL) {

@@ -245,7 +245,7 @@ MATHunary_FINITE(bit *res, const dbl *a)
 /* global pseudo random generator state */
 static random_state_engine mmath_rse;
 /* serialize access to state */
-static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER("mmath_rse_lock");
+static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER(mmath_rse_lock);
 
 static str
 MATHprelude(void *ret)
@@ -346,8 +346,8 @@ mel_func mmath_init_funcs[] = {
  command("mmath", "exp", MATHunary_EXPdbl, false, "The exp(x) function returns the value of e (the base of \nnatural logarithms) raised to the power of x.", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "log", MATHunary_LOGflt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "log", MATHunary_LOGdbl, false, "The log(x) function returns the natural logarithm of x.", args(1,2, arg("",dbl),arg("x",dbl))),
- command("mmath", "log", MATHbinary_LOGflt, false, "The log(x) function returns the logarithm of x in the given base.", args(1,3, arg("",flt),arg("x",flt),arg("base",flt))),
- command("mmath", "log", MATHbinary_LOGdbl, false, "The log(x) function returns the logarithm of x in the given base.", args(1,3, arg("",dbl),arg("x",dbl),arg("base",dbl))),
+ command("mmath", "log2arg", MATHbinary_LOGflt, false, "The log(x) function returns the logarithm of x in the given base.", args(1,3, arg("",flt),arg("x",flt),arg("base",flt))),
+ command("mmath", "log2arg", MATHbinary_LOGdbl, false, "The log(x) function returns the logarithm of x in the given base.", args(1,3, arg("",dbl),arg("x",dbl),arg("base",dbl))),
  command("mmath", "log10", MATHunary_LOG10flt, false, "", args(1,2, arg("",flt),arg("x",flt))),
  command("mmath", "log10", MATHunary_LOG10dbl, false, "The log10(x) function returns the base-10 logarithm of x.", args(1,2, arg("",dbl),arg("x",dbl))),
  command("mmath", "log2", MATHunary_LOG2flt, false, "", args(1,2, arg("",flt),arg("x",flt))),

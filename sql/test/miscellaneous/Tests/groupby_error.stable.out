@@ -191,8 +191,8 @@ project (
 % 2 # length
 [ 64	]
 #SELECT 11 FROM tab1 AS cor0 LEFT JOIN tab0 ON 80 = 70;
-% .%4 # table_name
-% %4 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 2 # length
 [ 11	]
@@ -223,8 +223,8 @@ project (
 % bigint # type
 % 1 # length
 #SELECT + 2 FROM tab0 AS cor0 WHERE NOT - 29 IS NULL OR NOT NULL IS NULL AND NOT NULL BETWEEN + col1 - + 60 AND + 37 * + col1 + + col0;
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 [ 2	]
@@ -305,7 +305,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "boolean",	1,	0,	"",	"%5",	"%5"	]
+[ "boolean",	1,	0,	"",	"%4",	"%4"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #prepare select col0 = ALL (select ? from tab0) from tab0 t1;
 #prepare select col0 = ALL (select ? from tab0) from tab0 t1;
@@ -313,7 +313,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	2,	2 # length
-[ "boolean",	1,	0,	"",	"%5",	"%5"	]
+[ "boolean",	1,	0,	"",	"%4",	"%4"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where 1 between ? and ?;
 #prepare select 1 from tab0 where 1 between ? and ?;
@@ -321,7 +321,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between 1 and ?;
@@ -330,7 +330,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select 1 from tab0 where ? between ? and 1;
@@ -339,7 +339,7 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	1,	1,	0,	2,	2 # length
-[ "tinyint",	1,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
 #prepare select EXISTS (SELECT ? FROM tab0) from tab0;
@@ -392,17 +392,17 @@ project (
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	2,	1,	0,	3,	3 # length
-[ "tinyint",	1,	0,	"",	"%11",	"%11"	]
+[ "tinyint",	1,	0,	"",	"%10",	"%10"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 [ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #SELECT 1 FROM tab0 where CASE WHEN 64 IN ( col0 ) THEN true END;
-% .%5 # table_name
-% %5 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #SELECT 1 FROM tab0 GROUP BY col0 HAVING CASE WHEN 64 IN ( col0 ) THEN TRUE END;
-% .%5 # table_name
-% %5 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #SELECT + col2 + + col0 AS col0 FROM tab0 AS cor0 GROUP BY col1, col2, col0 HAVING NULL IN ( + ( - - ( CASE WHEN 64 IN ( col0 * - col2 + + col1 ) THEN - 98 END ) ) * - 13 );
@@ -551,6 +551,61 @@ project (
 % decimal # type
 % 15 # length
 [ 42.0	]
+#ROLLBACK;
+#START TRANSACTION;
+#create table tab1 ("myk" int, "part" int, "tet" int);
+#create table tab2 ("myk" int, "ups" varchar(32));
+#insert into tab1 values (1,1,1), (2,2,2);
+[ 2	]
+#insert into tab2 values (1, 'a'), (1, 'b');
+[ 2	]
+#PLAN select
+#  myalias0."part" as "part",
+#  myalias0."tet" as "tet",
+#  count(*) as mycount,
+#  myalias0."tet" as track
+#from
+#  tab1 myalias0
+#  left join tab2 myalias1
+#  on myalias0."part" = myalias1."myk"
+#group by
+#  myalias0."part",
+#  track,
+#  myalias0."tet",
+#  myalias1."ups";
+% .plan # table_name
+% rel # name
+% clob # type
+% 138 # length
+project (
+| group by (
+| | left outer join (
+| | | table(sys.tab1) [ "tab1"."part" as "myalias0"."part", "tab1"."tet" as "myalias0"."tet" ] COUNT ,
+| | | table(sys.tab2) [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" as "myalias1"."ups" ] COUNT 
+| | ) [ "myalias0"."part" = "myalias1"."myk" ]
+| ) [ "myalias0"."part", "myalias0"."tet" as "track", "myalias1"."ups" ] [ "myalias0"."part", "track", sys.count() NOT NULL as "%1"."%1" ]
+) [ "myalias0"."part", "track" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
+#select
+#  myalias0."part" as "part",
+#  myalias0."tet" as "tet",
+#  count(*) as mycount,
+#  myalias0."tet" as track
+#from
+#  tab1 myalias0
+#  left join tab2 myalias1
+#  on myalias0."part" = myalias1."myk"
+#group by
+#  myalias0."part",
+#  track,
+#  myalias0."tet",
+#  myalias1."ups";
+% .,	.,	.,	. # table_name
+% part,	tet,	mycount,	track # name
+% int,	int,	bigint,	int # type
+% 1,	1,	1,	1 # length
+[ 1,	1,	1,	1	]
+[ 1,	1,	1,	1	]
+[ 2,	2,	1,	2	]
 #ROLLBACK;
 
 # 10:56:47 >  

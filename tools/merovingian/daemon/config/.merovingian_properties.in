@@ -13,4 +13,4 @@
 
 
 logfile=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/log/monetdb/merovingian.log
-pidfile=@CMAKE_INSTALL_FULL_LOCALSTATEDIR@/run/monetdb/merovingian.pid
+pidfile=@CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb/merovingian.pid

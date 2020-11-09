@@ -40,7 +40,7 @@
 static bool embeddedinitialized = false;
 
 str
-malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout)
+malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiontimeout, int with_mapi_server)
 {
 	Client c;
 	str msg = MAL_SUCCEED;
@@ -56,7 +56,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		FILE *secretf;
 		size_t len;
 
-		if (GDKinmemory() || GDKgetenv("monet_vault_key") == NULL) {
+		if (GDKinmemory(0) || GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
@@ -120,7 +120,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		return msg;
 	}
 	char *modules[3] = { "embedded", "sql" };
-	if ((msg = malIncludeModules(c, modules, 0, 1)) != MAL_SUCCEED) {
+	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
 	}
@@ -160,7 +160,7 @@ malEmbeddedReset(void) //remove extra modules and set to non-initialized again
 	setHeartbeat(-1);
 	stopProfiler(0);
 	AUTHreset();
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
             	str err = 0;
 
 		if ((err = msab_wildRetreat()) != NULL) {

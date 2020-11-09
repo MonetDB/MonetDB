@@ -360,7 +360,7 @@ static bool RAPIEnabled(void) {
 }
 
 // The R-environment should be single threaded, calling for some protective measures.
-static MT_Lock rapiLock = MT_LOCK_INITIALIZER("rapiLock");
+static MT_Lock rapiLock = MT_LOCK_INITIALIZER(rapiLock);
 static bool rapiInitialized = false;
 #if 0
 static char* rtypenames[] = { "NIL", "SYM", "LIST", "CLO", "ENV", "PROM",
@@ -808,7 +808,7 @@ void *
 RAPIloopback(void *query) {
 	res_table* output = NULL;
 	char* querystr = (char*)CHAR(STRING_ELT(query, 0));
-	char* err = SQLstatementIntern(rapiClient, &querystr, "name", 1, 0, &output);
+	char* err = SQLstatementIntern(rapiClient, querystr, "name", 1, 0, &output);
 
 	if (err) { // there was an error
 		return ScalarString(RSTR(err));

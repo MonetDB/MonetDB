@@ -20,8 +20,8 @@
 
 static char *DriverName = "MonetDB ODBC Driver";
 static char *DataSourceName = "MonetDB";
-static char *DriverDLL = "libMonetODBC" DLL;
-static char *DriverDLLs = "libMonetODBCs" DLL;
+static char *DriverDLL = "MonetODBC" DLL;
+static char *DriverDLLs = "MonetODBCs" DLL;
 
 /* General error handler for installer functions */
 

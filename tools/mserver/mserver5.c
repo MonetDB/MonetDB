@@ -219,7 +219,7 @@ absolute_path(str s)
 #define BSIZE 8192
 
 static int
-monet_init(opt *set, int setlen, int embedded)
+monet_init(opt *set, int setlen, bool embedded)
 {
 	/* determine Monet's kernel settings */
 	if (GDKinit(set, setlen, embedded) != GDK_SUCCEED)
@@ -270,6 +270,7 @@ main(int argc, char **av)
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	bool inmemory = false;
+	bool readpwdxit = false;
 	static struct option long_options[] = {
 		{ "config", required_argument, NULL, 'c' },
 		{ "dbextra", required_argument, NULL, 0 },
@@ -293,6 +294,8 @@ main(int argc, char **av)
 		{ "properties", no_argument, NULL, 0 },
 		{ "threads", no_argument, NULL, 0 },
 		{ "transactions", no_argument, NULL, 0 },
+
+		{ "read-password-initialize-and-exit", no_argument, NULL, 0 },
 
 		{ NULL, 0, NULL, 0 }
 	};
@@ -428,6 +431,10 @@ main(int argc, char **av)
 				grpdebug |= GRPtransactions;
 				break;
 			}
+			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
+				readpwdxit = true;
+				break;
+			}
 			usage(prog, -1);
 			/* not reached */
 		case 'c':
@@ -480,12 +487,16 @@ main(int argc, char **av)
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog, -1);
 
-	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	if (debug)
 		mo_print_options(set, setlen);
 
 	if (dbpath && inmemory) {
 		fprintf(stderr, "!ERROR: both dbpath and in-memory must not be set at the same time\n");
+		exit(1);
+	}
+
+	if (inmemory && readpwdxit) {
+		fprintf(stderr, "!ERROR: cannot have both in-memory and read-password-initialize-and-exit\n");
 		exit(1);
 	}
 
@@ -497,13 +508,13 @@ main(int argc, char **av)
 		}
 	}
 	if (inmemory) {
-		if (BBPaddfarm(NULL, (1 << PERSISTENT) | (1 << TRANSIENT), true) != GDK_SUCCEED) {
+		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
 		}
 	} else {
-		if (BBPaddfarm(dbpath, 1 << PERSISTENT, true) != GDK_SUCCEED ||
-		    BBPaddfarm(dbextra ? dbextra : dbpath, 1 << TRANSIENT, true) != GDK_SUCCEED) {
+		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED ||
+		    BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT, true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}
@@ -523,12 +534,13 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
-	if (monet_init(set, setlen, 0) == 0) {
+	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
 			fprintf(stderr, "%s\n", GDKerrbuf);
 		exit(1);
 	}
+	GDKsetdebug(debug | grpdebug);  /* add the algorithm tracers */
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED ||
@@ -599,7 +611,7 @@ main(int argc, char **av)
 		}
 	}
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		/* configure sabaoth to use the right dbpath and active database */
 		msab_dbpathinit(GDKgetenv("gdk_dbpath"));
 		/* wipe out all cruft, if left over */
@@ -645,7 +657,7 @@ main(int argc, char **av)
 #endif
 #endif
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		str lang = "mal";
 		/* we inited mal before, so publish its existence */
 		if ((err = msab_marchScenario(lang)) != NULL) {
@@ -663,7 +675,7 @@ main(int argc, char **av)
 		FILE *secretf;
 		size_t len;
 
-		if (GDKinmemory() || GDKgetenv("monet_vault_key") == NULL) {
+		if (GDKinmemory(0) || GDKgetenv("monet_vault_key") == NULL) {
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
@@ -689,13 +701,32 @@ main(int argc, char **av)
 			}
 			fclose(secretf);
 		}
-		if ((err = AUTHunlockVault(secretp)) != MAL_SUCCEED) {
+		if ((err = AUTHunlockVault(secret)) != MAL_SUCCEED) {
 			/* don't show this as a crash */
-			if (!GDKinmemory())
+			if (!GDKinmemory(0))
 				msab_registerStop();
 			fprintf(stderr, "%s\n", err);
 			freeException(err);
 			exit(1);
+		}
+		if (readpwdxit) {
+			if (fgets(secret, (int) sizeof(secret), stdin) == NULL) {
+				fprintf(stderr, "!ERROR: no password read\n");
+				exit(1);
+			}
+			if ((secretp = strchr(secret, '\n')) == NULL) {
+				fprintf(stderr, "!ERROR: password too long\n");
+				exit(1);
+			}
+			*secretp = '\0';
+			err = AUTHinitTables(secret);
+			msab_registerStop();
+			if (err != MAL_SUCCEED) {
+				fprintf(stderr, "%s\n", err);
+				freeException(err);
+				exit(1);
+			}
+			exit(0);
 		}
 	}
 
@@ -733,14 +764,14 @@ main(int argc, char **av)
 
 	if (mal_init(modules, 0)) {
 		/* don't show this as a crash */
-		if (!GDKinmemory())
+		if (!GDKinmemory(0))
 			msab_registerStop();
 		return 1;
 	}
 
 	emergencyBreakpoint();
 
-	if (!GDKinmemory()) {
+	if (!GDKinmemory(0)) {
 		char *secret = NULL;
 		if ((err = msab_pickSecret(&secret)) != NULL || (err = msab_registerStarted()) != NULL) {
 			/* throw the error at the user, but don't die */

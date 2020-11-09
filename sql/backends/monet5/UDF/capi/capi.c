@@ -61,7 +61,7 @@ typedef struct _cached_functions {
 #define FUNCTION_CACHE_SIZE 128
 
 static cached_functions *function_cache[FUNCTION_CACHE_SIZE];
-static MT_Lock cache_lock = MT_LOCK_INITIALIZER("cache_lock");
+static MT_Lock cache_lock = MT_LOCK_INITIALIZER(cache_lock);
 static int cudf_initialized = 0;
 
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
@@ -686,6 +686,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		// include some standard C headers first
 		ATTEMPT_TO_WRITE_TO_FILE(f, "#include <stdio.h>\n");
 		ATTEMPT_TO_WRITE_TO_FILE(f, "#include <stdlib.h>\n");
+		ATTEMPT_TO_WRITE_TO_FILE(f, "#include <string.h>\n");
 		// we include "cheader.h", but not directly to avoid having to deal with
 		// headers, etc...
 		// Instead it is embedded in a string (loaded from "cheader.text.h")

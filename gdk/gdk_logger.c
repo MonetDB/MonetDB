@@ -770,10 +770,10 @@ la_bat_destroy(logger *lg, logaction *la)
 #ifndef NDEBUG
 			assert(BBP_desc(bid)->batRole == PERSISTENT);
 			assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+			assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1U << PERSISTENT));
 			if (BBP_desc(bid)->tvheap) {
 				assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
-				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
+				assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1U << PERSISTENT));
 			}
 #endif
 			if (BUNappend(lg->dsnapshots, &pos, false) != GDK_SUCCEED)
@@ -888,10 +888,10 @@ la_bat_use(logger *lg, logaction *la)
 #ifndef NDEBUG
 	assert(b->batRole == PERSISTENT);
 	assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
-	assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+	assert(BBPfarms[b->theap.farmid].roles & (1U << PERSISTENT));
 	if (b->tvheap) {
 		assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
-		assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
+		assert(BBPfarms[b->tvheap->farmid].roles & (1U << PERSISTENT));
 	}
 #endif
 	if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
@@ -2319,7 +2319,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	logger *lg;
 	char filename[FILENAME_MAX];
 
-	if (!GDKinmemory() && MT_path_absolute(logdir)) {
+	if (!GDKinmemory(0) && MT_path_absolute(logdir)) {
 		TRC_CRITICAL(GDK, "logdir must be relative path\n");
 		return NULL;
 	}
@@ -2330,7 +2330,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		return NULL;
 	}
 
-	lg->inmemory = GDKinmemory();
+	lg->inmemory = GDKinmemory(0);
 	lg->debug = debug;
 
 	lg->changes = 0;
@@ -2673,10 +2673,10 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 #ifndef NDEBUG
 		assert(b->batRole == PERSISTENT);
 		assert(0 <= b->theap.farmid && b->theap.farmid < MAXFARMS);
-		assert(BBPfarms[b->theap.farmid].roles & (1 << PERSISTENT));
+		assert(BBPfarms[b->theap.farmid].roles & (1U << PERSISTENT));
 		if (b->tvheap) {
 			assert(0 <= b->tvheap->farmid && b->tvheap->farmid < MAXFARMS);
-			assert(BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
+			assert(BBPfarms[b->tvheap->farmid].roles & (1U << PERSISTENT));
 		}
 #endif
 		l.nr = b->batCacheid;
@@ -2702,7 +2702,7 @@ log_bat_persists(logger *lg, BAT *b, const char *name, char tpe, oid id)
 		assert(b->batRole == PERSISTENT);
 		assert(b->theap.farmid == 0);
 		assert(b->tvheap == NULL ||
-		       BBPfarms[b->tvheap->farmid].roles & (1 << PERSISTENT));
+		       BBPfarms[b->tvheap->farmid].roles & (1U << PERSISTENT));
 		if ((p = log_find(lg->snapshots_bid, lg->dsnapshots, b->batCacheid)) != BUN_NONE &&
 		    p >= lg->snapshots_tid->batInserted) {
 			if (BUNinplace(lg->snapshots_tid, p, &lg->tid, false) != GDK_SUCCEED)
@@ -2756,10 +2756,10 @@ log_bat_transient(logger *lg, const char *name, char tpe, oid id)
 #ifndef NDEBUG
 		assert(BBP_desc(bid)->batRole == PERSISTENT);
 		assert(0 <= BBP_desc(bid)->theap.farmid && BBP_desc(bid)->theap.farmid < MAXFARMS);
-		assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1 << PERSISTENT));
+		assert(BBPfarms[BBP_desc(bid)->theap.farmid].roles & (1U << PERSISTENT));
 		if (BBP_desc(bid)->tvheap) {
 			assert(0 <= BBP_desc(bid)->tvheap->farmid && BBP_desc(bid)->tvheap->farmid < MAXFARMS);
-			assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1 << PERSISTENT));
+			assert(BBPfarms[BBP_desc(bid)->tvheap->farmid].roles & (1U << PERSISTENT));
 		}
 #endif
 		//	if (lg->tid == tid)

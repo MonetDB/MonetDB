@@ -36,10 +36,7 @@ target_link_libraries(monetdbd
   mcrypt
   stream
   mapi
-  bat
   msabaoth
-  mal
-  ${CMAKE_DL_LIBS}
   Threads::Threads)
 
 install(TARGETS
@@ -59,6 +56,10 @@ configure_file(monetdbd.1.in
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.1
   @ONLY)
 
+configure_file(${CMAKE_SOURCE_DIR}/buildtools/conf/monetdbd.conf.in
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.conf
+  @ONLY)
+
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.1
   DESTINATION ${CMAKE_INSTALL_MANDIR}/man1
@@ -66,12 +67,12 @@ install(FILES
 
 install(DIRECTORY
   DESTINATION
-  ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tmpfiles.d
+	${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d
   COMPONENT sql)
 
 install(FILES
-  ${CMAKE_SOURCE_DIR}/buildtools/conf/monetdbd.conf
-  DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/tmpfiles.d
+  ${CMAKE_CURRENT_BINARY_DIR}/monetdbd.conf
+  DESTINATION ${CMAKE_INSTALL_SYSCONFDIR}/tmpfiles.d
   COMPONENT sql)
 
 add_subdirectory(config)

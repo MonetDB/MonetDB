@@ -162,7 +162,7 @@ command space(l:int):str
 address STRspace;
 
 command prelude() :void
-address strPrelude;
+address STRprelude;
 
-command STRepilogue() :void
-address strEpilogue;
+command epilogue() :void
+address STRepilogue;

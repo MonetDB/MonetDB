@@ -12,16 +12,6 @@
 
 #include "sql.h"
 
-#ifdef WIN32
-#ifndef LIBSQL
-#define sql5_export extern __declspec(dllimport)
-#else
-#define sql5_export extern __declspec(dllexport)
-#endif
-#else
-#define sql5_export extern
-#endif
-
 sql5_export str sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str sql_drop_statistics(mvc *m, sql_table *t);
 

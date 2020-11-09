@@ -274,6 +274,7 @@ str seriesRef;
 str setAccessRef;
 str setVariableRef;
 str setWriteModeRef;
+str set_protocolRef;
 str singleRef;
 str sinkRef;
 str sliceRef;
@@ -585,6 +586,7 @@ void optimizerInit(void)
 	setAccessRef = putName("setAccess");
 	setVariableRef = putName("setVariable");
 	setWriteModeRef= putName("setWriteMode");
+	set_protocolRef= putName("set_protocol");
 	singleRef = putName("single");
 	sinkRef = putName("sink");
 	sliceRef = putName("slice");

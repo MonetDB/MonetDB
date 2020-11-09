@@ -24,10 +24,10 @@ main(void)
 	// second argument is a string for the db directory or NULL for in-memory mode
 	if (monetdbe_open(&mdbe, "monetdb://localhost:5000/sf1?user=monetdb&password=monetdb", NULL))
 		expected_error("Failed to open database")
-	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
+	/*if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
 		error(err)
 	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (42, 'Hello'), (NULL, 'World')", NULL, NULL)) != NULL)
-		error(err)
+		error(err)*/
 	if ((err = monetdbe_query(mdbe, "SELECT x, y FROM test; ", &result, NULL)) != NULL)
 		error(err)
 
@@ -49,7 +49,7 @@ main(void)
 				}
 				case monetdbe_str: {
 					monetdbe_column_str * col = (monetdbe_column_str *) rcol;
-					if (col->is_null(col->data[r])) {
+					if (col->is_null(col->data+r)) {
 						printf("NULL");
 					} else {
 						printf("%s", (char*) col->data[r]);

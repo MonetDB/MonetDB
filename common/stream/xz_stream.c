@@ -115,6 +115,7 @@ xz_stream(stream *inner, int preset)
 	if (xz == NULL || state == NULL) {
 		free(xz);
 		free(state);
+		mnstr_set_open_error(inner->name, errno, "couldn't initialize xz stream");
 		return NULL;
 	}
 

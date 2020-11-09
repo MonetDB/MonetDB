@@ -561,8 +561,10 @@ JSONglue(str res, str r, char sep)
 	size_t len, l;
 	str n;
 
-	if (r == 0 || *r == 0)
+	if (r == 0 || *r == 0) {
+		GDKfree(r);
 		return res;
+	}
 	len = strlen(r);
 	if (res == 0)
 		return r;
@@ -1617,14 +1619,14 @@ JSONkeyArray(json *ret, json *js)
 	CHECK_JSON(jt);
 	if (jt->elm[0].kind == JSON_OBJECT) {
 		for (i = jt->elm[0].next; i; i = jt->elm[i].next) {
-			r = GDKzalloc(jt->elm[i].valuelen + 3);
-			if (r == NULL) {
-				JSONfree(jt);
-				goto memfail;
-			}
-			if (jt->elm[i].valuelen)
+			if (jt->elm[i].valuelen) {
+				r = GDKzalloc(jt->elm[i].valuelen + 3);
+				if (r == NULL) {
+					JSONfree(jt);
+					goto memfail;
+				}
 				strncpy(r, jt->elm[i].value - 1, jt->elm[i].valuelen + 2);
-			else {
+			} else {
 				r = GDKstrdup("\"\"");
 				if(r == NULL) {
 					JSONfree(jt);
@@ -2359,18 +2361,18 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		freeg = 1;
 		if (t2->ttype == TYPE_void) {
 			map = NULL;
-			mapoff = t2->tseqbase;
 		} else {
 			map = (const oid *) Tloc(t2, 0);
+			mapoff = t2->tseqbase;
 		}
 		if (g && BATtdense(g)) {
 			for (p = 0, q = BATcount(g); p < q; p++) {
 				switch (b->ttype) {
 				case TYPE_str:
-					v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] : p + mapoff));
+					v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] - mapoff : p));
 					break;
 				case TYPE_dbl:
-					val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] : p + mapoff));
+					val = (const double *) BUNtloc(bi, (map ? (BUN) map[p] - mapoff : p));
 					if (!is_dbl_nil(*val)) {
 						snprintf(temp, sizeof(temp), "%f", *val);
 						v = (const char *) temp;

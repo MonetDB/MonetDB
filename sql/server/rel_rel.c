@@ -269,18 +269,22 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 	case op_groupby:
 	case op_project:
 	case op_table:
-	case op_basetable:
-		if (rel->exps && exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname))
-			return rel;
-		if (rel->r && is_groupby(rel->op) && exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname))
-			return rel;
+	case op_basetable: {
+		sql_exp *found = NULL;
+
+		if (rel->exps)
+			found = exps_bind_column(rel->exps, cname, &ambiguous, &multi, no_tname);
+		if (!found && rel->r && is_groupby(rel->op))
+			found = exps_bind_column(rel->r, cname, &ambiguous, &multi, no_tname);
 		if (ambiguous || multi)
 			return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
+		if (found)
+			return rel;
 		if (is_processed(rel))
 			return NULL;
 		if (rel->l && !(is_base(rel->op)))
 			return rel_bind_column_(sql, exp_has_nil, rel->l, cname, no_tname);
-		break;
+		} break;
 	case op_semi:
 	case op_anti:
 
@@ -862,11 +866,9 @@ rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps )
 		list *gexps = sa_list(sql->sa);
 
 		for (en = groupbyexps->h; en; en = en->next) {
-			sql_exp *e = en->data, *ne;
+			sql_exp *e = en->data;
 
-			if ((ne=exps_find_exp(gexps, e)) == NULL ||
-			    strcmp(exp_relname(e),exp_relname(ne)) != 0 ||
-			    strcmp(exp_name(e),exp_name(ne)) != 0  )
+			if (!exps_any_match_same_or_no_alias(gexps, e))
 				append(gexps, e);
 		}
 		groupbyexps = gexps;
@@ -1014,12 +1016,13 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		return exps;
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {
-			node *en;
 			list *r = rel->r;
-			int label = ++sql->label;
+			int label = 0;
 
+			if (!settname)
+				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
-			for (en = r->h; en; en = en->next) {
+			for (node *en = r->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				if (basecol && !is_basecol(e))
@@ -1042,11 +1045,12 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_except:
 	case op_inter:
 		if (rel->exps) {
-			node *en;
-			int label = ++sql->label;
+			int label = 0;
 
+			if (!settname)
+				label = ++sql->label;
 			exps = new_exp_list(sql->sa);
-			for (en = rel->exps->h; en; en = en->next) {
+			for (node *en = rel->exps->h; en; en = en->next) {
 				sql_exp *e = en->data;
 
 				if (basecol && !is_basecol(e))
@@ -1064,9 +1068,11 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 		rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol);
 		exps = sa_list(sql->sa);
 		if (lexps && rexps && exps) {
-			node *en, *ren;
-			int label = ++sql->label;
-			for (en = lexps->h, ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
+			int label = 0;
+
+			if (!settname)
+				label = ++sql->label;
+			for (node *en = lexps->h, *ren = rexps->h; en && ren; en = en->next, ren = ren->next) {
 				sql_exp *e = en->data;
 				e->card = rel->card;
 				if (!settname) /* noname use alias */
