@@ -169,7 +169,7 @@ loadLibrary(str filename, int flag)
 
 	is_mod = (strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0);
 
-	if (!lastfile && strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0) { /* first load reference too local functions */
+	if (lastfile == 0 && strcmp(filename, "monetdb5") != 0 && strcmp(filename, "embedded") != 0) { /* first load reference to local functions */
 		str msg = loadLibrary("monetdb5", flag);
 		if (msg != MAL_SUCCEED)
 			return msg;
