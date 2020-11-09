@@ -1,0 +1,15 @@
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER USER "skyserver" SET SCHEMA "sys"
+
+statement ok
+DROP SCHEMA skyserver CASCADE
+
+statement ok
+DROP USER skyserver
+
+statement ok
+COMMIT
+
