@@ -57,6 +57,23 @@ select stddev_samp(NULL) over (),
        var_samp(NULL) over (),
        var_pop(NULL) over () from analytics;
 
+
+select stddev_samp(aa) over (rows between 5 preceding and 0 following),
+       stddev_samp(aa) over (rows between 5 preceding and 2 following),
+       stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select stddev_samp(aa) over (rows 2 preceding),
+       stddev_samp(aa) over (partition by bb order by bb rows 2 preceding) from analytics;
+
+select var_pop(aa) over (order by bb groups between 5 preceding and 0 following),
+       var_pop(aa) over (order by bb groups between 5 preceding and 2 following),
+       var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics;
+
+select var_pop(aa) over (order by bb groups 2 preceding),
+       var_pop(aa) over (partition by bb order by bb groups 2 preceding) from analytics;
+
 rollback;
 
 create table stressme (aa varchar(64), bb int);

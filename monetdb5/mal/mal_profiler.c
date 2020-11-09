@@ -321,69 +321,73 @@ This information can be used to determine memory footprint and variable life tim
  * We should use an OS define to react to the maximal cores
  */
 
+#define MAXCPU		256
+#define LASTCPU		(MAXCPU - 1)
 static struct{
 	lng user, nice, system, idle, iowait;
 	double load;
-} corestat[256];
+} corestat[MAXCPU];
 
 static int
 getCPULoad(char cpuload[BUFSIZ]){
     int cpu, len = 0, i;
 	lng user, nice, system, idle, iowait;
 	size_t n;
-    char buf[BUFSIZ+1], *s;
+    char buf[512], *s;
 	static FILE *proc= NULL;
 	lng newload;
 
-	if (proc == NULL || ferror(proc))
-		proc = fopen("/proc/stat","r");
-	else rewind(proc);
 	if (proc == NULL) {
-		/* unexpected */
-		return -1;
-	}
-	/* read complete file to avoid concurrent write issues */
-	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0)
-		return -1;
-	buf[n] = 0;
-	for (s= buf; *s; s++) {
-		if (strncmp(s,"cpu",3)== 0){
-			s +=3;
+		proc = fopen("/proc/stat", "r");
+		if (proc == NULL) {
+			/* unexpected */
+			return -1;
+		}
+	} else
+		rewind(proc);
+
+	while (fgets(buf, (int) sizeof(buf), proc) != NULL) {
+		n = strlen(buf);
+		if (strncmp(buf, "cpu", 3) == 0) {
+			s = buf + 3;
 			if (*s == ' ') {
-				s++;
-				cpu = 255; // the cpu totals stored here
+				cpu = LASTCPU; // the cpu totals stored here
 			}  else {
 				cpu = atoi(s);
-				if (cpu < 0 || cpu > 255)
-					cpu = 255;
+				if (cpu < 0 || cpu > LASTCPU)
+					cpu = LASTCPU;
 			}
-			s= strchr(s,' ');
+			s = strchr(s,' ');
 			if (s == NULL)		/* unexpected format of file */
 				break;
-
-			while( *s && isspace((unsigned char)*s)) s++;
-			i= sscanf(s,LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
-			if ( i != 5 )
-				goto skip;
-			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-			if ( newload)
-				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
-			corestat[cpu].user = user;
-			corestat[cpu].nice = nice;
-			corestat[cpu].system = system;
-			corestat[cpu].idle = idle;
-			corestat[cpu].iowait = iowait;
+			while (*s && isspace((unsigned char)*s))
+				s++;
+			i= sscanf(s, LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
+			if (i == 5) {
+				newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+				if (newload)
+					corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
+				corestat[cpu].user = user;
+				corestat[cpu].nice = nice;
+				corestat[cpu].system = system;
+				corestat[cpu].idle = idle;
+				corestat[cpu].iowait = iowait;
+			}
 		}
-	  skip:
-		while (*s && *s != '\n')
-			s++;
-	}
 
-	if(cpuload == 0)
+		while (buf[n - 1] != '\n') {
+			if (fgets(buf, (int) sizeof(buf), proc) == NULL)
+				goto exitloop;
+			n = strlen(buf);
+		}
+	}
+  exitloop:
+
+	if (cpuload == NULL)
 		return 0;
 	// identify core processing
 	len += snprintf(cpuload, BUFSIZ, "[");
-	for (cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
+	for (cpu = 0; cpuload && cpu < LASTCPU && corestat[cpu].user; cpu++) {
 		len +=snprintf(cpuload + len, BUFSIZ - len, "%s%.2f", (cpu?",":""), corestat[cpu].load);
 	}
 	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
@@ -791,12 +795,12 @@ getDiskSpace(void)
 
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
-	(void) getCPULoad(0);
-	*user = corestat[255].user;
-	*nice = corestat[255].nice;
-	*sys = corestat[255].system;
-	*idle = corestat[255].idle;
-	*iowait = corestat[255].iowait;
+	(void) getCPULoad(NULL);
+	*user = corestat[LASTCPU].user;
+	*nice = corestat[LASTCPU].nice;
+	*sys = corestat[LASTCPU].system;
+	*idle = corestat[LASTCPU].idle;
+	*iowait = corestat[LASTCPU].iowait;
 }
 
 /* the heartbeat process produces a ping event once every X milliseconds */
