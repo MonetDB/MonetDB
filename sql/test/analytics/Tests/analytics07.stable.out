@@ -43,8 +43,8 @@ stdout of test 'analytics07` in directory 'sql/test/analytics` itself:
 #       count(*) over (order by aa range between interval '1' month preceding and current row),
 #       count(*) over (order by aa range between current row and interval '30000' second following),
 #       count(*) over (order by aa range between unbounded preceding and unbounded following) from testintervals;
-% sys.%10,	sys.%20,	sys.%30,	sys.%40,	sys.%50,	sys.%60 # table_name
-% %10,	%20,	%30,	%40,	%50,	%60 # name
+% sys.%3,	sys.%6,	sys.%11,	sys.%20,	sys.%27,	sys.%32 # table_name
+% %3,	%6,	%11,	%20,	%27,	%32 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 [ 1,	1,	7,	1,	1,	7	]
@@ -59,8 +59,8 @@ stdout of test 'analytics07` in directory 'sql/test/analytics` itself:
 #       count(*) over (order by aa range between interval '2' month preceding and interval '1' month following),
 #       count(*) over (order by aa range between interval '0' second preceding and interval '0' second following),
 #       count(*) over (order by aa range between interval '2629800' second preceding and interval '2629800' second following),
-% sys.%10,	sys.%20,	sys.%30,	sys.%40,	sys.%50,	sys.%60 # table_name
-% %10,	%20,	%30,	%40,	%50,	%60 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%43,	sys.%46 # table_name
+% %7,	%16,	%25,	%34,	%43,	%46 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 [ 1,	1,	1,	1,	1,	1	]
@@ -75,8 +75,8 @@ stdout of test 'analytics07` in directory 'sql/test/analytics` itself:
 #       count(*) over (order by aa desc range between interval '2' month preceding and interval '1' month following),
 #       count(*) over (order by aa desc range between interval '0' second preceding and interval '0' second following),
 #       count(*) over (order by aa desc range between interval '2629800' second preceding and interval '2629800' second following),
-% sys.%10,	sys.%20,	sys.%30,	sys.%40,	sys.%50,	sys.%60 # table_name
-% %10,	%20,	%30,	%40,	%50,	%60 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%43,	sys.%46 # table_name
+% %7,	%16,	%25,	%34,	%43,	%46 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 [ 1,	1,	1,	1,	1,	1	]
@@ -91,8 +91,8 @@ stdout of test 'analytics07` in directory 'sql/test/analytics` itself:
 #       count(*) over (order by aa range between interval '2' month preceding and interval '1' month following),
 #       count(*) over (order by aa range between interval '0' second preceding and interval '0' second following),
 #       count(*) over (order by aa range between interval '2629800' second preceding and interval '2629800' second following),
-% sys.%10,	sys.%20,	sys.%30,	sys.%40,	sys.%50,	sys.%60 # table_name
-% %10,	%20,	%30,	%40,	%50,	%60 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%43,	sys.%46 # table_name
+% %7,	%16,	%25,	%34,	%43,	%46 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 [ 1,	1,	1,	1,	1,	1	]
@@ -107,8 +107,8 @@ stdout of test 'analytics07` in directory 'sql/test/analytics` itself:
 #       count(*) over (order by aa desc range between interval '2' month preceding and interval '1' month following),
 #       count(*) over (order by aa desc range between interval '0' second preceding and interval '0' second following),
 #       count(*) over (order by aa desc range between interval '2629800' second preceding and interval '2629800' second following),
-% sys.%10,	sys.%20,	sys.%30,	sys.%40,	sys.%50,	sys.%60 # table_name
-% %10,	%20,	%30,	%40,	%50,	%60 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%34,	sys.%43,	sys.%46 # table_name
+% %7,	%16,	%25,	%34,	%43,	%46 # name
 % bigint,	bigint,	bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1,	1,	1 # length
 [ 1,	1,	1,	1,	1,	1	]
@@ -122,8 +122,8 @@ stdout of test 'analytics07` in directory 'sql/test/analytics` itself:
 #       count(*) over (order by aa range between interval '3' hour preceding and interval '3' hour following),
 #       count(*) over (order by aa range between interval '60' minute preceding and interval '60' minute following),
 #       count(*) over (order by aa range between current row and current row) from testintervals3;
-% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
-% %10,	%20,	%30,	%40 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%30 # table_name
+% %7,	%16,	%25,	%30 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1 # length
 [ 1,	2,	1,	1	]
@@ -137,8 +137,8 @@ stdout of test 'analytics07` in directory 'sql/test/analytics` itself:
 #       count(*) over (order by aa desc range between interval '3' hour preceding and interval '3' hour following),
 #       count(*) over (order by aa desc range between interval '60' minute preceding and interval '60' minute following),
 #       count(*) over (order by aa desc range between current row and current row) from testintervals3;
-% sys.%10,	sys.%20,	sys.%30,	sys.%40 # table_name
-% %10,	%20,	%30,	%40 # name
+% sys.%7,	sys.%16,	sys.%25,	sys.%30 # table_name
+% %7,	%16,	%25,	%30 # name
 % bigint,	bigint,	bigint,	bigint # type
 % 1,	1,	1,	1 # length
 [ 1,	2,	2,	1	]

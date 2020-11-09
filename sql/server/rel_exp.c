@@ -465,6 +465,19 @@ exp_atom_lng(sql_allocator *sa, lng i)
 	return exp_atom(sa, atom_int(sa, &it, i ));
 }
 
+sql_exp *
+exp_atom_oid(sql_allocator *sa, oid i)
+{
+	sql_subtype it;
+
+#if SIZEOF_OID == SIZEOF_INT
+	sql_find_subtype(&it, "oid", 31, 0);
+#else
+	sql_find_subtype(&it, "oid", 63, 0);
+#endif
+	return exp_atom(sa, atom_int(sa, &it, i ));
+}
+
 #ifdef HAVE_HGE
 sql_exp *
 exp_atom_hge(sql_allocator *sa, hge i)

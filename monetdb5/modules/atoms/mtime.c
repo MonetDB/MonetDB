@@ -31,7 +31,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_time.h"
-#include "mtime.h"
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "mal_exception.h"

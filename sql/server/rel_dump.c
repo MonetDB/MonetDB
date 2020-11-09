@@ -1051,11 +1051,18 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				sql->errstr[0] = '\0';
 				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
 			}
-			if (!f && list_length(ops) > 1) {
+			if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
 				sql->session->status = 0; /* if the function was not found clean the error */
 				sql->errstr[0] = '\0';
 				list_remove_node(ops, ops->t);
-				list_remove_node(ops, ops->t); /* some window functions require don't include the bounds on their definition, ugh */
+				list_remove_node(ops, ops->t);
+				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+			}
+			if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
+				sql->session->status = 0; /* if the function was not found clean the error */
+				sql->errstr[0] = '\0';
+				for (int i = 0 ; i < 3 ; i++)
+					list_remove_node(ops, ops->t);
 				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
 			}
 
