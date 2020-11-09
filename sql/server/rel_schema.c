@@ -1928,6 +1928,10 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	sname = qname_schema(qname);
 	tname = qname_schema_object(qname);
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COMMENT ON", !want_table);
+	if (t && isDeclaredTable(t)) {
+		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON declared table not allowed");
+		return 0;
+	}
 	if (t && t->s && isTempSchema(t->s)) {
 		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON tmp object not allowed");
 		return 0;
@@ -1965,7 +1969,10 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 		assert(colname->h->next->next->type == type_string);
 		cname = colname->h->next->next->data.sval;
 	}
-	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COMMENT ON", false))) {
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COMMENT ON", false)))
+		return 0;
+	if (t && isDeclaredTable(t)) {
+		sql_error(sql, 02, SQLSTATE(42000) "COMMENT ON declared table not allowed");
 		return 0;
 	}
 	if (t && t->s && isTempSchema(t->s)) {
