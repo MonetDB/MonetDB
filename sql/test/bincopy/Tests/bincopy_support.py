@@ -374,3 +374,12 @@ CREATE TABLE foo(u URL);
 COPY BINARY INTO foo FROM @strings@ @ON@;
 SELECT COUNT(*) FROM foo;
 """
+
+JSON_OBJECTS = """
+CREATE TABLE foo(i INT, j JSON);
+COPY BINARY INTO foo FROM @ints@, @json_objects@ @ON@;
+SELECT COUNT(*) FROM foo
+WHERE (i % 100 = 99 AND j IS NULL)
+OR (i % 100 <> 99 AND j IS NOT NULL)
+;
+"""

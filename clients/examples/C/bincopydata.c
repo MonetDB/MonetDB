@@ -203,6 +203,19 @@ gen_null_strings(FILE *f, long nrecs)
 	}
 }
 
+static void
+gen_json(FILE *f, long nrecs)
+{
+	for (long i = 0; i < nrecs; i++) {
+		if (i % 100 == 99) {
+			fputc('\x80', f);
+		} else {
+			fprintf(f, "{\"id\": %ld, \"msg\":\n\"int%ld\"}", i, i);
+		}
+		fputc('\0', f);
+	}
+}
+
 static struct gen generators[] = {
 	{ "ints", gen_ints },
 	{ "more_ints", gen_more_ints },
@@ -233,6 +246,8 @@ static struct gen generators[] = {
 	{ "timestamp_days", gen_timestamp_days },
 	{ "timestamp_months", gen_timestamp_months },
 	{ "timestamp_years", gen_timestamp_years },
+
+	{ "json_objects", gen_json },
 
 	{ NULL, NULL },
 };
