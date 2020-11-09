@@ -37,6 +37,8 @@ Converted folders progress:
 - monetdb5/modules/mal		pass
 - sql/test/null/Tests           pass
 - sql/test/analytics/Tests      pass
+- sql/test/snodgrass/Tests      pass
+- sql/test/Skyserver/Tests      pass
 - sql/test/scanner/Tests      	pass
 - sql/test/quantiles/Tests    	pass
 - sql/test/mapi/Tests    	pass
