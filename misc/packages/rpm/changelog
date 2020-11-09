@@ -1,3 +1,238 @@
+* Tue Oct 13 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.5-20201013
+- Rebuilt.
+
+* Mon Oct 12 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.5-20201013
+- clients: mclient and msqldump now also look in $XDG_CONFIG_HOME for the monetdb
+  configuration file.
+
+* Fri Oct 09 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.3-20201009
+- Rebuilt.
+
+* Tue Oct 06 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.1-20201006
+- Rebuilt.
+- BZ#3553: All schema access to ubiquitous functions
+- BZ#3815: Incorrect results when expression contains implicit
+  float/integer conversions
+- BZ#6415: Date arithmetic types are inconsistent
+- BZ#6814: provide native implementations for scalar functions
+  sys.degrees(rad) and sys.radians(deg)
+- BZ#6843: function sys.getcontent(url) always returns "Feature not
+  supported"
+- BZ#6857: remove not implemented aggregate function json.output(js json)
+- BZ#6870: Missing bulk operators
+- BZ#6910: SQLancer query: 'bat.append' undefined
+- BZ#6930: SQLancer crash on join with coalesce
+- BZ#6931: Allow EDITOR to be used for the current command in mclient
+- BZ#6935: Wrong result when dividing interval by literal float
+- BZ#6937: Lost the microsecond precisions
+- BZ#6938: Segmentation fault in MalOptimizer
+- BZ#6939: Error in optimizer multiplex when selecting
+  profiler.getlimit() or wlc.clock() or wlc.tick() or wlr.clock()
+  or wlr.tick()
+- BZ#6941: SELECT queries on remote table fail when using LIKE in WHERE
+  conditions
+- BZ#6943: JSON parser is too permissive
+- BZ#6948: msqldump with Empty BLOBs cannot be imported
+- BZ#6949: Loosing timing precision
+- BZ#6950: redundant/replicated code line in gdk/gdk_hash.c
+- BZ#6951: Use a different naming scheme for MAL blocks
+- BZ#6954: FILTER functions no longer find their implementation
+- BZ#6955: ROUND(DECIMAL, PRECISION) gives incorrect result with
+  non-scalar precision parameter
+- BZ#6960: implementation of log(arg1,arg2) function is not compliant
+  with the SQL standard, arguments are switched
+- BZ#6962: "SELECT * FROM ids LIMIT 1" produces: exp_bin: !ERROR: Could
+  not find %173.id
+- BZ#6964: Table returning function: Cannot access column descriptor
+- BZ#6965: Crash when using distinct on the result of a table returning
+  function
+- BZ#6974: Oct2020-branch cannot attach and load FITS files
+- BZ#6976: Oct2020: default dbfarm cannot be started
+- BZ#6978: Oct2020: d shows empty result in schema created by include
+  sql script
+- BZ#6979: timestamp add integer
+- BZ#6980: Oct2020: wrong mel definition for str.epilogue
+
+* Mon Aug 31 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.39.1-20201006
+- sql: Made general logarithm function log(x,base) compliant with the SQL
+  standard, by swapping the input parameters.
+  Instead of log(x,base), now is log(base,x).
+
+* Thu Aug 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.1-20201006
+- monetdb5: The settings for specifying how mserver5 should listen to "The
+  Internet" have been overhauled.  See the manual for details.  In
+  brief, mapi_autosense, mapi_ipv6 and mapi_open are gone.  If
+  mapi_listenaddr equals "localhost" or "all", we listen to both IPv4
+  and IPv6 (if available), if "127.0.0.1" or "0.0.0.0", we listen to
+  IPv4 only, if "::1" or "::" we listen to IPv6 only.  The first of
+  each pair is loopback interface only, the second is all interfaces.
+  If mapi_listenaddr is "none", then no IP port is opened, you need to
+  use a UNIX domain socket.  If mapi_port is 0, we let the operating
+  system choose a free port (like mapi_autosense).  Default behavior
+  has not changed.
+
+* Mon Aug 10 2020 Ying Zhang <y.zhang@cwi.nl> - 11.39.1-20201006
+- MonetDB: Finished a first version of the new monitoring function
+  user_statistics(), which is only intended for the DBAs.
+  For each database user who has logged in during the current mserver5
+  session, it returns
+  "username": login name of the database user,
+  "querycount": the number of queries this user has executed since his/her
+      first login,
+  "totalticks": the total execution time (in microsecond) of the queries ran
+      by this user,
+  "maxquery": the query with the longest execution time (if two queries have
+      the same execution time, the newer overwrites the older),
+  "maxticks": the execution time of the 'maxquery' (in microsecond),
+  "started": the start timestamp of the 'maxquery',
+  "finished": the finish timestamp of the 'maxquery'.
+
+* Thu Jul 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.39.1-20201006
+- sql: Removed compatibility between interval types and other numeric types in
+  favor for a more strict SQL standard compliance. This means operations
+  between temporal types and other numeric types such as INT and
+  DECIMAL are no longer possible, instead use interval types.
+  e.g. SELECT date '2020-01-01' + 1; now gives the error. Instead do:
+  SELECT date '2020-01-01' + interval '1' day; if 1 was meant to be a
+  day interval.
+  Setting an interval variable such as the session's current timezone
+  with a number e.g. SET current_timezone = 1; is no longer possible.
+  Instead do SET current_timezone = interval '1' hour;
+  Casting between interval and other numeric types is no longer possible
+  as well, because they are not compatible.
+- sql: Because of incompatibilities this change may create, if a user intends
+  to convert a numeric value to an interval, the multiplication function
+  can be used in the form: <numeric value> * interval '1' <interval length>
+  e.g. 10 * interval '1' second = interval '10' second.
+  As for the other way around, the 'EPOCH' option was added to the extract
+  syntax. This option returns the number of milliseconds since the UNIX
+  epoch 1970-01-01 00:00:00 UTC for date, timestamp and time values (it
+  can be negative). Meanwhile, for day and second intervals, it returns the
+  total number of milliseconds in the interval. As a side note, the 'EPOCH'
+  option is not available for month intervals, because this conversion is
+  not transparent for this type.
+
+* Thu Jul 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.39.1-20201006
+- sql: Removed obsolete json.output(json) function.
+
+* Thu Jul 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.39.1-20201006
+- sql: Removed obsolete sys.getContent(url) function.
+
+* Thu Jul 23 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.1-20201006
+- MonetDB: Removed support for LiDAR data, that is the SQL procedures
+  sys.lidarattach, sys.lidarload, and sys.lidarexport.
+
+* Thu Jul 23 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com> - 11.39.1-20201006
+- sql: Removed '@' syntax used to refer into a variable in a query. It
+  was a non-standard method, which was replaced by a schema addition to
+  variables. Variables in the global scope now have schema. All default
+  global variables are set under schema "sys". However variables
+  inside PSM don't have a schema, because there are no transaction
+  semantics inside PSM at the moment.
+- sql: Removed declared variables and tables from the global scope. They were
+  transaction agnostic and incompatible with the SQL standard, i.e. they
+  are valid exclusively under PSM (e.g. functions, procedures and
+  triggers).
+- sql: Scoping semantics were added for both variables and tables. Variables
+  with the same name at a query are now resolved under the following
+  precedence rules:
+    1. Tables, Views and CTEs at the FROM clause.
+    2. Variable declared in the body of function/procedure, i.e. local
+       variable.
+    3. Function/procedure parameter.
+    4. Variable from the global scope.
+  Tables with the same name now have the following precedence rules at a
+  SQL query:
+    1. Table declared in the body of function/procedure, ie local table.
+    2. Temporary table.
+    3. Table from the current session schema.
+  This means the query: SELECT * FROM "keys"; will list keys from
+  temporary tables instead of persisted ones, because "keys" table
+  is available for both "sys" and "tmp" schemas.
+- sql: The table returning function "var" was extended with more details
+  about globally declared variables, namely their schema, type and
+  current value.
+
+* Thu Jul 23 2020 Martin Kersten <mk@cwi.nl> - 11.39.1-20201006
+- MonetDB: The sys.queue() has been turned into a circular buffer to allow for
+  inspection of both active, paused and recently executed queries.
+
+* Thu Jul 23 2020 Martin Kersten <mk@cwi.nl> - 11.39.1-20201006
+- sql: Extended the system monitor with a table-returning function
+  user_statistics() which keeps some statistics for each SQL user, e.g. the
+  user's query count, total time spent, and maximal query seen.
+
+* Thu Jul 23 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.11-20200723
+- Rebuilt.
+- BZ#6917: Decimal parsing fails
+- BZ#6932: Syntax error while parsing JSON numbers with exponent
+- BZ#6934: sys.isauuid() returns wrong answer for some invalid uuid
+  strings
+
+* Mon Jul 20 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.9-20200720
+- Rebuilt.
+- BZ#6844: sys.getUser('https://me:pw@www.monetdb.org/Doc') does not
+  return the user: me
+- BZ#6845: the url sys.get...(url) functions do not allow null as
+  a parameter
+- BZ#6858: json.keyarray(json '{ "":0 }') fails with error: Could not
+  allocate space
+- BZ#6859: only first character of the separator string in json.text(js
+  json, sep string) is used
+- BZ#6873: sys.hot_snapshot() creates incomplete snapshots if the
+  write-ahead log is very large
+- BZ#6876: tar files created by sys.hot_snapshot() produce warnings on
+  some implementations of tar
+- BZ#6877: MonetDB produces malformed LZ4 files
+- BZ#6878: SQL Connection Error when running SELECT queries containing
+  AND command
+- BZ#6880: Left fuzzy queries are much slower than other fuzzy queries.
+- BZ#6882: cgroups limits no longer respected?
+- BZ#6883: SQLancer crash on delete query
+- BZ#6884: SQLancer generates query with unclear error message
+- BZ#6885: SQLancer causes assertion error on UTF8_strlen
+- BZ#6886: SQLancer alter table add unique gives strange error message
+- BZ#6887: SQLancer crash on complex query
+- BZ#6888: SQLancer crash on cross join on view
+- BZ#6889: SQLancer crash on long query
+- BZ#6892: SQLancer crash on query with HAVING
+- BZ#6893: SQLancer inner join reporting GDK error
+- BZ#6894: SQLancer crash on rtrim function
+- BZ#6895: SQLancer causing 'algebra.select' undefined error
+- BZ#6896: SQLancer algebra.select' undefined 2
+- BZ#6897: SQLancer distinct aggregate with error on group by constant
+- BZ#6898: SQLancer crash on join query
+- BZ#6899: SQLancer TLP query with wrong results
+- BZ#6900: SQLancer generated SIGFPE
+- BZ#6901: SQLancer TLP query with wrong results 2
+- BZ#6902: SQLancer query: batcalc.between undefined
+- BZ#6903: SQLancer calc.abs undefined
+- BZ#6904: SQLancer aggr.subavg undefined
+- BZ#6905: SQLancer TLP query with wrong results 3
+- BZ#6906: SQLancer crash on complex join
+- BZ#6907: SQLancer algebra.select undefined
+- BZ#6908: SQLancer inputs not the same size
+- BZ#6909: SQLancer query with wrong results
+- BZ#6911: SQLancer query: 'calc.bit' undefined
+- BZ#6918: SQLancer query compilation error
+- BZ#6919: SQLancer insert function doesn't handle utf-8 strings
+- BZ#6920: SQLancer project_bte: does not match always
+- BZ#6922: Timestamp columns not migrated to new format
+- BZ#6923: Imprints data files for timestamp BAT not migrated to the
+  new format
+- BZ#6924: SQLancer query copy on unique pair of columns fails and
+  complex query with GDK error
+- BZ#6925: Count string rows in union of string tables leaks (RSS) memory
+- BZ#6926: SQLancer query with wrong results
+- BZ#6927: SQLancer inputs not the same size
+- BZ#6928: SQLancer crash on coalesce
+- BZ#6929: SQLancer calc.date undefined
+
+* Tue Jun  9 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.9-20200720
+- gdk: Hash buckets come in variable widths.  But if a BAT grows long enough so
+  that the BAT indexes that are stored in the buckets don't fit anymore,
+  the buckets need to be widened.  This is now fixed.
+
 * Fri May 29 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.37.7-20200529
 - Rebuilt.
 
@@ -381,7 +616,6 @@
 - BZ#6779: Using Windows Messages translation for errno error codes.
 - BZ#6780: Wrong value of the rank function
 - BZ#6781: Insert after index creation crash
-- BZ#6782: JDBC IsValid(int) does not reset lastquerytimeout on server
 - BZ#6783: AVG changes scale of its results
 - BZ#6784: function sys.isauuid(string) should return false if string
   value cannot be converted to a UUID

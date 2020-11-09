@@ -1,0 +1,3 @@
+# this file is for systemd
+# monetdbd needs a directory in /run that is owned by monetdb:monetdb
+d @CMAKE_INSTALL_FULL_RUNSTATEDIR@/monetdb 0775 monetdb monetdb -

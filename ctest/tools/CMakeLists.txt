@@ -6,5 +6,4 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
-#add_subdirectory(embedded)
 add_subdirectory(monetdbe)

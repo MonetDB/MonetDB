@@ -94,7 +94,6 @@
 #cmakedefine HAVE_SYS_TIMES_H 1
 #cmakedefine HAVE_SYS_UIO_H 1
 #cmakedefine HAVE_SYS_UN_H 1
-#cmakedefine HAVE_SYS_UTIME_H 1
 #cmakedefine HAVE_SYS_WAIT_H 1
 #cmakedefine HAVE_TERMIOS_H 1
 #cmakedefine HAVE_UNISTD_H 1
@@ -214,23 +213,7 @@
 
 #cmakedefine BINDIR "@BINDIR@"
 #cmakedefine LIBDIR "@LIBDIR@"
-#cmakedefine DATADIR "@DATADIR@"
-#cmakedefine DATA_DIR "@DATA_DIR@"
 #cmakedefine LOCALSTATEDIR "@LOCALSTATEDIR@"
-// #cmakedefine QXLOCALSTATEDIR
-// #cmakedefine MONETDB_PREFIX
-#cmakedefine DATAROOTDIR "@DATAROOTDIR@"
-#cmakedefine BIN_DIR "@BIN_DIR@"
-#cmakedefine INCLUDEDIR "@INCLUDEDIR@"
-#cmakedefine INFODIR "@INFODIR@"
-#cmakedefine LIB_DIR "@LIB_DIR@"
-#cmakedefine LIBEXECDIR "@LIBEXECDIR@"
-#cmakedefine LOCALSTATE_DIR "@LOCALSTATE_DIR@"
-//#cmakedefine MANDIR "@MANDIR@"
-#cmakedefine SYSCONFDIR "@SYSCONFDIR@"
-#cmakedefine LOGDIR "@LOGDIR@"
-#cmakedefine PKGCONFIGDIR "@PKGCONFIGDIR@"
-#cmakedefine RUNDIR "@RUNDIR@"
 
 // End Section: monetdb macro variables
 
@@ -239,6 +222,7 @@
 #define PACKAGE_VERSION "@MONETDB_VERSION@"
 #define PACKAGE_NAME "MonetDB"
 #define PACKAGE_STRING PACKAGE_NAME " " PACKAGE_VERSION
+#cmakedefine MONETDB_RELEASE "@MONETDB_RELEASE@"
 
 /* Host identifier */
 #cmakedefine HOST "@HOST@"
@@ -283,8 +267,10 @@
 #cmakedefine SIZEOF_SHORT @SIZEOF_SHORT@
 #cmakedefine SIZEOF_INT @SIZEOF_INT@
 #cmakedefine SIZEOF_LONG @SIZEOF_LONG@
+#cmakedefine SIZEOF_LONG_INT @SIZEOF_LONG_INT@
 #cmakedefine SIZEOF_DOUBLE @SIZEOF_DOUBLE@
 #cmakedefine SIZEOF_WCHAR_T @SIZEOF_WCHAR_T@
+#define HAVE_LONG_LONG 1	/* for ODBC include files */
 
 #ifdef _MSC_VER
 #ifdef _WIN64

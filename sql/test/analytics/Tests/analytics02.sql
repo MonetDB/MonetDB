@@ -6,12 +6,6 @@ insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL
 create table stressme (aa varchar(64), bb int);
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4);
 
-prepare select count(*) over (rows ? preceding) from analytics;
-exec **(2);
-
-prepare select max(aa) over (rows between 5 preceding and ? following) from stressme;
-exec **(2);
-
 select cast(sum(aa) over (rows between 5 preceding and 0 following) as bigint) from analytics;
 select cast(sum(aa) over (rows between 5 preceding and 2 following) as bigint) from analytics;
 select cast(sum(aa) over (partition by bb order by bb rows between 5 preceding and 0 following) as bigint) from analytics;
@@ -162,6 +156,9 @@ select rank() over (rows unbounded preceding) from analytics; --error
 select dense_rank() over (rows 200 preceding) from analytics; --error
 select ntile(1) over (rows 200 preceding) from analytics; --error
 select lead(aa) over (partition by bb order by bb rows between 2 preceding and 0 following) from analytics; --error
+select sum(1) over (order by x range between 2 preceding and 3 following) from (values ('a'), ('x')) x(x); --error
+
+select last_value() over () from analytics; --error, function not found
 
 prepare select count(*) over (partition by ?) from analytics; --error
 

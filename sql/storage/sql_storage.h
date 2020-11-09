@@ -116,7 +116,7 @@ typedef struct table_functions {
 	rids_diff_fptr rids_diff;
 } table_functions;
 
-sqlstore_export table_functions table_funcs;
+sql_export table_functions table_funcs;
 
 /* delta table setup (ie readonly col + ins + upd + del)
 -- binds for column,idx (rdonly, inserts, updates) and delets
@@ -313,7 +313,7 @@ typedef struct store_functions {
 	cleanup_fptr cleanup;
 } store_functions;
 
-sqlstore_export store_functions store_funcs;
+sql_export store_functions store_funcs;
 
 typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
 
@@ -371,7 +371,7 @@ typedef struct logger_functions {
 	log_find_table_value_fptr log_find_table_value;
 } logger_functions;
 
-sqlstore_export logger_functions logger_funcs;
+sql_export logger_functions logger_funcs;
 
 /* we need to add an interface for result_tables later */
 
@@ -424,7 +424,7 @@ extern sql_schema *sql_trans_create_schema(sql_trans *tr, const char *name, sqli
 extern sql_schema *sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);
 
-extern sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
+sql_export sql_table *sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system, int persistence, int commit_action, int sz, bit properties);
 
 extern int sql_trans_set_partition_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt);

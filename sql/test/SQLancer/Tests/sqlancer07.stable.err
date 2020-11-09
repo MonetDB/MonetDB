@@ -1,0 +1,63 @@
+stderr of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
+
+
+# 10:16:14 >  
+# 10:16:14 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-52758" "--port=31957"
+# 10:16:14 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-1050883/.s.monetdb.36353
+QUERY = PREPARE SELECT DISTINCT (SELECT DISTINCT r'|m<v' FROM t1 WHERE ((t1.c0)<(?)) GROUP BY t1.c2, ?), ?, t1.c2 FROM t1 WHERE CAST(? AS BOOLEAN) LIMIT 2103332269785059850;
+ERROR = !Could not determine type for argument number 2
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-81449/.s.monetdb.32416
+QUERY = SELECT t0.c0 BETWEEN SYMMETRIC (SELECT t0.c0 FROM t0) AND t0.c0 FROM t0;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-81449/.s.monetdb.32416
+QUERY = SELECT CAST(NOT ((t0.c0) NOT BETWEEN SYMMETRIC ((SELECT DISTINCT t0.c0 FROM t0, t1)) AND (t0.c0)) AS INT) FROM t0;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-240512/.s.monetdb.37779
+QUERY = select 1 from t0, t1 inner join t0 on true;
+ERROR = !SELECT: relation name "t0" specified more than once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-195720/.s.monetdb.38351
+QUERY = INSERT INTO t1(c0) VALUES((0.6548429615298178*0.3050008736497528)/(0.5061323979270875)); --error, scale too large
+ERROR = !Scale (34) overflows type
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-57059/.s.monetdb.30988
+QUERY = INSERT INTO t1(c0) VALUES(((((COALESCE(0.6548429615298178, 0.20317629894456002))*(COALESCE(0.3050008736497528, 0.2277902039419617))))/(0.5061323979270875))); --error, scale too large
+ERROR = !Scale (34) overflows type
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-23025/.s.monetdb.36001
+QUERY = SELECT 1 FROM t2, t0 WHERE (SELECT 1 UNION SELECT 2) > 0;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-23025/.s.monetdb.36001
+QUERY = SELECT 1 FROM t2, t0, t1 WHERE (SELECT 1 UNION SELECT 2) > 0;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-23025/.s.monetdb.36001
+QUERY = SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE (SELECT 1 UNION SELECT 2) > 0;
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-363846/.s.monetdb.39501
+QUERY = PREPARE SELECT (SELECT ? FROM (select 1) as v1(c0));
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-377843/.s.monetdb.38453
+QUERY = PREPARE SELECT ?, CASE 'weHtU' WHEN (values (?)) THEN 'G' END;
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-446274/.s.monetdb.33895
+QUERY = PREPARE SELECT DISTINCT ?, CAST(CASE least(?, r'weHtU') WHEN ? THEN ? WHEN ? THEN ? WHEN (VALUES (?)) THEN r'G' ELSE ? END AS DATE) WHERE (?) IS NOT NULL LIMIT 519007555986016405;
+ERROR = !Cannot have a parameter (?) for IS NOT NULL operator
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-17349/.s.monetdb.38601
+QUERY = SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;
+ERROR = !overflow in conversion to DECIMAL(18,18).
+CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-20193/.s.monetdb.38814
+QUERY = PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
+ERROR = !SELECT: no such binary operator 'sql_mul(bigint,month_interval)'
+CODE  = 42000
+
+# 10:16:14 >  
+# 10:16:14 >  "Done."
+# 10:16:14 >  
+

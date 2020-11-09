@@ -682,7 +682,7 @@ CONTINUE CURRENT CURSOR FOUND GOTO GO LANGUAGE
 SQLCODE SQLERROR UNDER WHENEVER
 */
 
-%token TEMP TEMPORARY STREAM MERGE REMOTE REPLICA
+%token TEMP TEMPORARY MERGE REMOTE REPLICA
 %token<sval> ASC DESC AUTHORIZATION
 %token CHECK CONSTRAINT CREATE COMMENT NULLS FIRST LAST
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
@@ -698,7 +698,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 
 %token ALTER ADD TABLE COLUMN TO UNIQUE VALUES VIEW WHERE WITH
 %token<sval> sqlDATE TIME TIMESTAMP INTERVAL
-%token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND ZONE
+%token CENTURY DECADE YEAR QUARTER DOW DOY MONTH WEEK DAY HOUR MINUTE SECOND EPOCH ZONE
 %token LIMIT OFFSET SAMPLE SEED
 
 %token CASE WHEN THEN ELSE NULLIF COALESCE IF ELSEIF WHILE DO
@@ -1512,19 +1512,6 @@ table_def:
       append_symbol(l, $6);
       $$ = _symbol_create_list( SQL_CREATE_TABLE_LOADER, l);
     }
- |  STREAM TABLE if_not_exists qname table_content_source 
-	{ int commit_action = CA_COMMIT, tpe = SQL_STREAM;
-	  dlist *l = L();
-
-	  append_int(l, tpe);
-	  append_list(l, $4);
-	  append_symbol(l, $5);
-	  append_int(l, commit_action);
-	  append_string(l, NULL);
-	  append_list(l, NULL);
-	  append_int(l, $3);
-	  append_symbol(l, NULL); /* only used for merge table */
-	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  MERGE TABLE if_not_exists qname table_content_source opt_partition_by
 	{ int commit_action = CA_COMMIT, tpe = SQL_MERGE_TABLE;
 	  dlist *l = L();
@@ -4476,6 +4463,7 @@ extract_datetime_field:
  /* |  DAY OF WEEK		{ $$ = idow; } */
  |  DOY			{ $$ = idoy; }
  /* |  DAY OF YEAR		{ $$ = idoy; } */
+ |  EPOCH		{ $$ = iepoch; }
  ;
 
 start_field:
@@ -4523,6 +4511,8 @@ interval_type:
 			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
 				sql_find_subtype(&$$, "month_interval", d, 0);
+			} else if (d == 4) {
+				sql_find_subtype(&$$, "day_interval", d, 0);
 			} else {
 				sql_find_subtype(&$$, "sec_interval", d, 0);
 			}
@@ -4893,6 +4883,8 @@ interval_expression:
 			int d = inttype2digits(sk, ek);
 			if (tpe == 0){
 				r=sql_find_subtype(&t, "month_interval", d, 0);
+			} else if (d == 4) {
+				r=sql_find_subtype(&t, "day_interval", d, 0);
 			} else {
 				r=sql_find_subtype(&t, "sec_interval", d, 0);
 			}
@@ -5416,6 +5408,7 @@ non_reserved_word:
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
+| EPOCH		{ $$ = sa_strdup(SA, "epoch"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
 | SQL_EXPLAIN	{ $$ = sa_strdup(SA, "explain"); }

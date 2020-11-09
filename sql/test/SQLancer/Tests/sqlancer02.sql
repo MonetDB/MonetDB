@@ -237,3 +237,33 @@ SELECT COUNT(*) FROM v0 LEFT OUTER JOIN t0 ON COALESCE(v0.c1, v0.c2) BETWEEN v0.
 SELECT ALL max(ALL v0.c3) FROM v0 LEFT OUTER JOIN t0 ON (- (((v0.c2)-(COALESCE(v0.c2, v0.c1))))) NOT  BETWEEN SYMMETRIC (v0.c2) AND (t0.c0);
 	-- 1970-01-16 13:47:20
 ROLLBACK;
+
+SELECT CASE 1 WHEN 1 THEN 'rr' WHEN ln(-2) THEN 'a' END FROM (values (1),(2)) as t0(c0);
+	-- rr
+	-- rr
+SELECT CASE 1 WHEN 3 THEN 'rr' WHEN ln(c0) THEN 'a' END FROM (values (1.2),(2.3)) as t0(c0);
+	-- NULL
+	-- NULL
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"));
+COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"1970-01-07 15:47:59.000000"
+"1970-01-01 01:00:00.000000"
+"1970-01-15 16:36:07.000000"
+"1970-01-01 13:45:44.000000"
+
+CREATE TABLE "sys"."t2" ("tc2" BOOLEAN NOT NULL,CONSTRAINT "t2_tc2_pkey" PRIMARY KEY ("tc2"),CONSTRAINT "t2_tc2_unique" UNIQUE ("tc2"));
+COPY 2 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+false
+true
+
+SELECT substr(ltrim('1Yc',''), CAST(t2.tc2 AS INT), "second"(CAST(t0.tc0 AS TIMESTAMP))) FROM t2, t0;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("c0" INTEGER NOT NULL);
+INSERT INTO "t2" VALUES (59), (-3), (5), (0), (1), (-6);
+
+UPDATE t2 SET c0 = 5 WHERE least(((3)=(round(0.55, t2.c0))), true);
+ROLLBACK;

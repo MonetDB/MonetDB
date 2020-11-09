@@ -49,11 +49,11 @@
 
 #define MAX_SQL_MODULES 128
 static int sql_modules = 0;
-static str sql_module_name[MAX_SQL_MODULES] = {0};
-static unsigned char *sql_module_code[MAX_SQL_MODULES] = {0};
+static const char *sql_module_name[MAX_SQL_MODULES] = {0};
+static const unsigned char *sql_module_code[MAX_SQL_MODULES] = {0};
 
 void
-sql_register(str name, unsigned char *code)
+sql_register(const char *name, const unsigned char *code)
 {
 	assert (sql_modules < MAX_SQL_MODULES);
 	sql_module_name[sql_modules] = name;
@@ -65,7 +65,7 @@ static int SQLinitialized = 0;
 static int SQLnewcatalog = 0;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
-static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER("sql_contextLock");
+static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
 static void
 monet5_freecode(int clientid, char *name)
@@ -152,7 +152,7 @@ SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		fprintf(stdout, "# MonetDB/SQL module loaded\n");
 		fflush(stdout);		/* make merovingian see this *now* */
 	}
-	if (GDKinmemory() || GDKembedded()) {
+	if (GDKinmemory(0) || GDKembedded()) {
 		s->name = "sql";
 		ms->name = "msql";
 		return MAL_SUCCEED;
@@ -198,7 +198,7 @@ SQLepilogue(void *ret)
 	(void) SQLexit(NULL);
 	/* this function is never called, but for the style of it, we clean
 	 * up our own mess */
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		res = msab_retreatScenario(m);
 		if (!res)
 			res = msab_retreatScenario(s);
@@ -260,6 +260,7 @@ SQLprepareClient(Client c, int login)
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
+	MT_lock_unset(&sql_contextLock);
 	if (login) {
 		str schema = monet5_user_set_def_schema(m, c->user);
 		if (!schema) {
@@ -270,6 +271,7 @@ SQLprepareClient(Client c, int login)
 	}
 
 bailout:
+	MT_lock_set(&sql_contextLock);
 	/* expect SQL text first */
 	if (be)
 		be->language = 'S';
@@ -335,6 +337,10 @@ SQLinit(Client c)
 	backend *be = NULL;
 	mvc *m = NULL;
 	sql_allocator *sa = NULL;
+	const char *opt_pipe;
+
+	if ((opt_pipe = GDKgetenv("sql_optimizer")) && !isOptimizerPipe(opt_pipe))
+		throw(SQL, "sql.init", SQLSTATE(42000) "invalid sql optimizer pipeline %s", opt_pipe);
 
 	MT_lock_set(&sql_contextLock);
 
@@ -360,7 +366,7 @@ SQLinit(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory() ? store_mem : store_bat, readonly, single_user)) < 0) {
+	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) < 0) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
@@ -421,9 +427,9 @@ SQLinit(Client c)
 		maybeupgrade = 0;
 
 		for (int i = 0; i < sql_modules && !msg; i++) {
-			char *createdb_inline = (char*)sql_module_code[i];
+			const char *createdb_inline = (const char*)sql_module_code[i];
 
-			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
@@ -431,7 +437,7 @@ SQLinit(Client c)
 		}
 		/* 99_system.sql */
 		if (!msg) {
-			char *createdb_inline = " \
+			const char *createdb_inline = " \
 				create trigger system_update_schemas after update on sys.schemas for each statement call sys_update_schemas(); \
 				create trigger system_update_tables after update on sys._tables for each statement call sys_update_tables(); \
 				update sys.functions set system = true; \
@@ -442,7 +448,7 @@ SQLinit(Client c)
 				UPDATE sys.types     SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
 				UPDATE sys.functions SET schema_id = (SELECT id FROM sys.schemas WHERE name = 'sys') WHERE schema_id = 0 AND schema_id NOT IN (SELECT id from sys.schemas); \
 				";
-			msg = SQLstatementIntern(c, &createdb_inline, "sql.init", TRUE, FALSE, NULL);
+			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
 				sa_destroy(m->sa);
 			m->sa = NULL;
@@ -497,7 +503,7 @@ SQLinit(Client c)
 	if (msg != MAL_SUCCEED)
 		return msg;
 
-	if (GDKinmemory())
+	if (GDKinmemory(0))
 		return MAL_SUCCEED;
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED, "logmanager")) == 0) {
@@ -600,7 +606,7 @@ SQLinitClient(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
-	msg = SQLprepareClient(c, !GDKembedded());
+	msg = SQLprepareClient(c, true);
 	MT_lock_unset(&sql_contextLock);
 	return msg;
 }
@@ -649,14 +655,20 @@ SQLexitClient(Client c)
 str
 SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	str *expr = getArgReference_str(stk, pci, 1);
-	bit output = TRUE;
+	const char *expr = *getArgReference_str(stk, pci, 1);
 
 	(void) mb;
-	if (pci->argc == 3)
-		output = *getArgReference_bit(stk, pci, 2);
 
-	return SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, output, NULL);
+	protocol_version backup = cntxt->protocol;
+
+	if (pci->argc == 3 && *getArgReference_bit(stk, pci, 2))
+		cntxt->protocol = PROTOCOL_COLUMNAR;
+
+	str msg = SQLstatementIntern(cntxt, expr, "SQLstatement", TRUE, TRUE, NULL);
+
+	cntxt->protocol = backup;
+
+	return msg;
 }
 
 str
@@ -668,7 +680,7 @@ SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	*ret = NULL;
-	if ((msg = SQLstatementIntern(cntxt, expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
+	if ((msg = SQLstatementIntern(cntxt, *expr, "SQLcompile", FALSE, FALSE, NULL)) != MAL_SUCCEED)
 		return msg;
 	if ((*ret = _STRDUP("SQLcompile")) == NULL)
 		throw(SQL,"sql.compile",SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -688,7 +700,6 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bstream *bfd;
 	str *name = getArgReference_str(stk, pci, 1);
 	str msg = MAL_SUCCEED, fullname;
-	str *expr;
 	mvc *m;
 	size_t sz;
 
@@ -714,8 +725,7 @@ SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sql.include", SQLSTATE(42000) "could not read %s\n", *name);
 	}
 
-	expr = &bfd->buf;
-	msg = SQLstatementIntern(cntxt, expr, "sql.include", TRUE, FALSE, NULL);
+	msg = SQLstatementIntern(cntxt, bfd->buf, "sql.include", TRUE, FALSE, NULL);
 	bstream_destroy(bfd);
 	m = ((backend *) cntxt->sqlcontext)->mvc;
 	if (m->sa)
@@ -788,6 +798,8 @@ SQLreader(Client c)
 			go = msg == MAL_SUCCEED;
 			commit_done = true;
 		}
+		if (m->session->tr && m->session->tr->active)
+			c->idle = 0;
 
 		if (go && in->pos >= in->len) {
 			ssize_t rd;
@@ -980,6 +992,15 @@ SQLparser(Client c)
 				goto finalize;
 			return MAL_SUCCEED;
 		}
+		static const char* columnar_protocol = "columnar_protocol ";
+		if (strncmp(in->buf + in->pos, columnar_protocol, strlen(columnar_protocol)) == 0) {
+			v = (int) strtol(in->buf + in->pos + strlen(columnar_protocol), NULL, 10);
+
+			c->protocol = v?PROTOCOL_COLUMNAR:PROTOCOL_9;
+
+			in->pos = in->len;	/* HACK: should use parsed length */
+			return MAL_SUCCEED;
+		}
 		if (strncmp(in->buf + in->pos, "reply_size ", 11) == 0) {
 			v = (int) strtol(in->buf + in->pos + 11, NULL, 10);
 			if (v < -1) {
@@ -1143,7 +1164,7 @@ SQLparser(Client c)
 			assert(m->emode == m_prepare);
 			/* For prepared queries, return a table with result set structure*/
 			/* optimize the code block and rename it */
-			err = mvc_export_prepare(m, c->fdout, be->q, "");
+			err = mvc_export_prepare(be, c->fdout, "");
 		}
 
 		if (!err) {

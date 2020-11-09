@@ -24,7 +24,7 @@ decimal_from_str(char *dec, char **end)
 	lng res = 0;
 	const lng max0 = GDK_lng_max / 10, max1 = GDK_lng_max % 10;
 #endif
-	int neg = 0;
+	int neg = 0, seen_dot = 0;
 
 	while(isspace((unsigned char) *dec))
 		dec++;
@@ -40,6 +40,10 @@ decimal_from_str(char *dec, char **end)
 				break;
 			res *= 10;
 			res += *dec - '0';
+		} else if (seen_dot) {
+			break; /* dot cannot appear twice */
+		} else {
+			seen_dot = 1;
 		}
 	}
 	while(isspace((unsigned char) *dec))
@@ -85,3 +89,23 @@ decimal_to_str(sql_allocator *sa, lng v, sql_subtype *t)
 	return sa_strdup(sa, buf+cur+1);
 }
 
+#ifdef HAVE_HGE
+extern hge
+#else
+extern lng
+#endif
+scale2value(int scale)
+{
+#ifdef HAVE_HGE
+	hge val = 1;
+#else
+	lng val = 1;
+#endif
+
+	if (scale < 0)
+		scale = -scale;
+	for (; scale; scale--) {
+		val = val * 10;
+	}
+	return val;
+}

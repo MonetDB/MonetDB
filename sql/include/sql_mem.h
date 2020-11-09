@@ -16,22 +16,13 @@
 #define SQL_ERR 0
 
 #ifdef WIN32
-#if defined(LIBSQLSERVER) || defined(LIBSQLCOMMON) || defined(LIBBATSTORE) || defined(LIBSTORE) || defined(LIBSQL)
+#ifdef LIBSQL
 #define sql_export extern __declspec(dllexport)
-#define sqlcommon_export extern __declspec(dllexport)
-#define sqlbat_export extern __declspec(dllexport)
-#define sqlstore_export extern __declspec(dllexport)
 #else
 #define sql_export extern __declspec(dllimport)
-#define sqlcommon_export extern __declspec(dllimport)
-#define sqlbat_export extern __declspec(dllimport)
-#define sqlstore_export extern __declspec(dllimport)
 #endif
 #else
 #define sql_export extern
-#define sqlcommon_export extern
-#define sqlbat_export extern
-#define sqlstore_export extern
 #endif
 
 #define MNEW( type ) (type*)GDKmalloc(sizeof(type) )
@@ -65,7 +56,7 @@ typedef struct sql_allocator {
 sql_export sql_allocator *sa_create( sql_allocator *pa );
 sql_export sql_allocator *sa_reset( sql_allocator *sa );
 extern void *sa_alloc( sql_allocator *sa,  size_t sz );
-extern void *sa_zalloc( sql_allocator *sa,  size_t sz );
+sql_export void *sa_zalloc( sql_allocator *sa,  size_t sz );
 extern void *sa_realloc( sql_allocator *sa,  void *ptr, size_t sz, size_t osz );
 extern void sa_destroy( sql_allocator *sa );
 extern char *sa_strndup( sql_allocator *sa, const char *s, size_t l);

@@ -273,6 +273,7 @@ mal_export  str seriesRef;
 mal_export  str setAccessRef;
 mal_export  str setVariableRef;
 mal_export  str setWriteModeRef;
+mal_export  str set_protocolRef;
 mal_export  str singleRef;
 mal_export  str sinkRef;
 mal_export  str sliceRef;

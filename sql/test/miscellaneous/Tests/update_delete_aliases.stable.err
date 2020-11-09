@@ -34,7 +34,7 @@ ERROR = !SELECT: no such column 'updateme.b'
 CODE  = 42S22
 MAPI  = (monetdb) /var/tmp/mtest-19826/.s.monetdb.37046
 QUERY = update updateme as other set a=4 from other where other.a=1; --error
-ERROR = !UPDATE: multiple references into table 'other'
+ERROR = !SELECT: relation name "other" specified more than once
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-19826/.s.monetdb.37046
 QUERY = delete from updateme where other.b=2; --error

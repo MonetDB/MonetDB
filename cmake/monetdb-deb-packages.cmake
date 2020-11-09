@@ -8,7 +8,7 @@
 
 set(CPACK_DEBIAN_PACKAGE_MAINTAINER "MonetDB BV <info@monetdb.org>")
 set(CPACK_DEB_COMPONENT_INSTALL ON)
-set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS ON)
+set(CPACK_DEBIAN_PACKAGE_GENERATE_SHLIBS OFF)
 set(CPACK_DEBIAN_FILE_NAME DEB-DEFAULT)
 set(CPACK_DEBIAN_PACKAGE_SECTION "misc")
 set(CPACK_DEBIAN_PACKAGE_SOURCE "monetdb")
@@ -61,7 +61,7 @@ set(CPACK_COMPONENT_STREAMDEV_DESCRIPTION "MonetDB stream library development fi
  accelerators.  It also has an SQL front end.
  .
  This package contains the files to develop with the
- libmonetdb-stream13 library.")
+ libmonetdb-stream${STREAM_VERSION_MAJOR} library.")
 
 set(CPACK_DEBIAN_CLIENT_PACKAGE_NAME "libmonetdb-client${MAPI_VERSION_MAJOR}")
 set(CPACK_DEBIAN_CLIENT_PACKAGE_DEPENDS "\\\${shlibs:Depends}, \\\${misc:Depends}")
@@ -82,7 +82,7 @@ set(CPACK_COMPONENT_CLIENTDEV_DESCRIPTION "MonetDB client/server interface libra
  automatic index management, extensibility of data types and search
  accelerators.  It also has an SQL front end.
  .
- This package contains the files to develop with the libmonetdb-client12
+ This package contains the files to develop with the libmonetdb-client${MAPI_VERSION_MAJOR}
  library.")
 
 set(CPACK_DEBIAN_MCLIENT_PACKAGE_NAME "monetdb-client")
@@ -171,18 +171,6 @@ set(CPACK_DEBIAN_SERVER_PACKAGE_CONTROL_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/debian/monetdb5-server.postinst
 )
 
-set(CPACK_DEBIAN_HUGEINT_PACKAGE_NAME "monetdb5-server-hugeint")
-set(CPACK_DEBIAN_HUGEINT_PACKAGE_DEPENDS "monetdb5-server (= \\\${source:Version})")
-set(CPACK_DEBIAN_HUGEINT_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_COMPONENT_HUGEINT_DESCRIPTION "MonetDB - 128-bit integer support for MonetDB5-server
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL front end.
- .
- This package provides HUGEINT (128-bit integer) support for the
- MonetDB5-server component.")
-
 set(CPACK_DEBIAN_SERVERDEV_PACKAGE_NAME "monetdb5-server-dev")
 set(CPACK_DEBIAN_SERVERDEV_PACKAGE_DEPENDS "\\\${shlibs:Depends}, \\\${misc:Depends},
  monetdb5-server (= \\\${source:Version}), libmonetdb-dev (= \\\${source:Version})")
@@ -200,8 +188,6 @@ set(CPACK_DEBIAN_SQL_PACKAGE_DEPENDS
   "\\\${shlibs:Depends}"
   "\\\${misc:Depends}"
   "monetdb5-server (= \\\${source:Version})")
-set(CPACK_DEBIAN_SQL_PACKAGE_RECOMMENDS
-  "monetdb5-sql-hugeint (= \\\${source:Version}) [amd64]")
 set(CPACK_DEBIAN_SQL_PACKAGE_SUGGEST "monetdb-client (= \\\${source:Version})")
 set(CPACK_COMPONENT_SQL_DESCRIPTION "MonetDB SQL support for monetdb5
  MonetDB is a database management system that is developed from a
@@ -217,20 +203,6 @@ set(CPACK_DEBIAN_SQL_PACKAGE_CONTROL_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/debian/monetdb5-sql.manpages
   ${CMAKE_CURRENT_SOURCE_DIR}/debian/monetdb5-sql.postinst
   )
-
-set(CPACK_DEBIAN_SQLINT128_PACKAGE_NAME "monetdb5-sql-hugeint")
-set(CPACK_DEBIAN_SQLINT128_PACKAGE_DEPENDS
-  "monetdb5-sql (= \\\${source:Version})"
-  "monetdb5-server-hugeint (= \\\${source:Version})")
-set(CPACK_DEBIAN_SQLINT128_PACKAGE_ARCHITECTURE "amd64")
-set(CPACK_COMPONENT_SQLINT128_DESCRIPTION "MonetDB5 128 bit integer (hugeint) support for SQL
- MonetDB is a database management system that is developed from a
- main-memory perspective with use of a fully decomposed storage model,
- automatic index management, extensibility of data types and search
- accelerators.  It also has an SQL front end.
- .
- This package provides HUGEINT (128-bit integer) support for the SQL
- front end of MonetDB.")
 
 set(CPACK_DEBIAN_PYAPI3_PACKAGE_NAME "monetdb-python3")
 set(CPACK_DEBIAN_PYAPI3_PACKAGE_DEPENDS

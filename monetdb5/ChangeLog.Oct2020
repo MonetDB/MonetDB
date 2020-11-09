@@ -1,20 +1,3 @@
 # ChangeLog file for MonetDB5
 # This file is updated with Maddlog
 
-* Thu Aug 20 2020 Sjoerd Mullender <sjoerd@acm.org>
-- The settings for specifying how mserver5 should listen to "The
-  Internet" have been overhauled.  See the manual for details.  In
-  brief, mapi_autosense, mapi_ipv6 and mapi_open are gone.  If
-  mapi_listenaddr equals "localhost" or "all", we listen to both IPv4
-  and IPv6 (if available), if "127.0.0.1" or "0.0.0.0", we listen to
-  IPv4 only, if "::1" or "::" we listen to IPv6 only.  The first of
-  each pair is loopback interface only, the second is all interfaces.
-  If mapi_listenaddr is "none", then no IP port is opened, you need to
-  use a UNIX domain socket.  If mapi_port is 0, we let the operating
-  system choose a free port (like mapi_autosense).  Default behavior
-  has not changed.
-
-* Mon Aug 31 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
-- Made general logarithm function log(x,base) compliant with the SQL 
-  standard, by swapping the input parameters.
-  Instead of log(x,base), now is log(base,x).

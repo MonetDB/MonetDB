@@ -44,4 +44,21 @@ select avg(aa) over (),
 select avg(CAST(NULL as interval second)) over (),
        avg(CAST(NULL as interval month)) over () from analytics;
 
+select avg(aa) over (order by bb rows between 5 preceding and 0 following),
+       avg(aa) over (order by bb rows between 5 preceding and 2 following),
+       avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select avg(aa) over (order by bb rows 2 preceding),
+       avg(aa) over (partition by bb order by bb rows 2 preceding),
+       avg(aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics;
+
+select avg(bb) over (order by bb groups between 5 preceding and 0 following),
+       avg(bb) over (order by bb groups between 5 preceding and 2 following),
+       avg(bb) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       avg(bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics;
+
+select avg(bb) over (order by bb groups 2 preceding),
+       avg(bb) over (partition by bb order by bb groups 2 preceding) from analytics;
+
 rollback;

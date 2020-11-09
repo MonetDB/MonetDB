@@ -7,7 +7,7 @@
 #]]
 
 add_library(MonetODBC
-  SHARED)
+  MODULE)
 
 target_sources(MonetODBC
   PRIVATE
@@ -103,23 +103,25 @@ target_sources(MonetODBC
   SQLTables.c
   SQLTransact.c
   driver.rc
-  ODBC.syms)
+  ODBC.def)
 
 target_include_directories(MonetODBC
+  PRIVATE
+  $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
+  $<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIRS}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 target_compile_definitions(MonetODBC
-  PRIVATE 
+  PRIVATE
   LIBMONETODBCS)
 
 target_link_libraries(MonetODBC
   PRIVATE
   monetdb_config_header
   mutils
-  mapi
-  ODBC::ODBC)
+  mapi)
 
 install(TARGETS
   MonetODBC

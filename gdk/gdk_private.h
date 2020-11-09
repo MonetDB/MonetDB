@@ -168,6 +168,8 @@ gdk_return GDKssort_rev(void *restrict h, void *restrict t, const void *restrict
 gdk_return GDKssort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
+void GDKtracer_init(void)
+	__attribute__((__visibility__("hidden")));
 gdk_return GDKunlink(int farmid, const char *dir, const char *nme, const char *extension)
 	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
@@ -328,7 +330,7 @@ typedef char long_str[IDLENGTH];	/* standard GDK static string */
 #define MAXFARMS       32
 
 extern struct BBPfarm_t {
-	unsigned int roles;	/* bitmask of allowed roles */
+	uint32_t roles;		/* bitmask of allowed roles */
 	const char *dirname;	/* farm directory */
 	FILE *lock_file;
 } BBPfarms[MAXFARMS];

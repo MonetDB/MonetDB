@@ -60,17 +60,51 @@ static struct rusage prevUsage;
 #define LOGLEN 8192
 #define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
 
+/*
+ * We use a buffer (`logbuffer`) where we incrementally create the output JSON object. Initially we allocate LOGLEN (8K)
+ * bytes and we keep the capacity of the buffer (`logcap`) and the length of the current string (`loglen`).
+ *
+ * We use the `logadd` macro to add data to our buffer (usually key-value pairs). This macro offers an interface similar
+ * to printf.
+ *
+ * The first snprintf bellow happens in a statically allocated buffer that might be much smaller than logcap. We do not
+ * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
+ *
+ * There are three cases:
+ *
+ * 1. The new string fits in the current buffer -> we just update the buffer
+ *
+ * 2. The new string does not fit in the current buffer, but is smaller than the capacity of the buffer -> we output the
+ * current contents of the buffer and start at the beginnig.
+ *
+ * 3. The new string exceeds the current capacity of the buffer -> we output the current contents and reallocate the
+ * buffer. The new capacity is 1.5 times the length of the new string.
+ */
 #define logadd(...)														\
 	do {																\
 		char tmp_buff[LOGLEN];											\
-		int tmp_len = 0;												\
+		size_t tmp_len = 0;												\
 		tmp_len = snprintf(tmp_buff, LOGLEN, __VA_ARGS__);				\
-		if (loglen + tmp_len < LOGLEN)									\
-			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
-		else {															\
+		if (loglen + tmp_len < logcap)									\
+			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
+		else if (tmp_len < logcap) {									\
 			logjsonInternal(logbuffer);									\
 			lognew();													\
-			loglen += snprintf(logbase+loglen, LOGLEN - loglen, __VA_ARGS__); \
+			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
+		}																\
+		else {															\
+			char *alloc_buff;											\
+			logjsonInternal(logbuffer);									\
+			logcap = tmp_len + tmp_len/2;								\
+			alloc_buff = (char *)realloc(logbuffer, logcap);			\
+			if (alloc_buff == NULL) {									\
+				TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n"); \
+				free(logbuffer);										\
+				return;													\
+			}															\
+			logbuffer = alloc_buff;										\
+			lognew();													\
+			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
 		}																\
 	} while (0)
 
@@ -87,27 +121,6 @@ static void logjsonInternal(char *logbuffer)
 		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
 	MT_lock_unset(&mal_profileLock);
-}
-
-static char *
-truncate_string(char *inp)
-{
-	size_t len;
-	char *ret;
-	size_t ret_len = LOGLEN/2;
-	size_t padding = 64;
-
-	len = strlen(inp);
-	ret = (char *)GDKmalloc(ret_len + 1);
-	if (ret == NULL) {
-		return NULL;
-	}
-
-	snprintf(ret, ret_len + 1, "%.*s...<truncated>...%.*s",
-			 (int) (ret_len/2), inp, (int) (ret_len/2 - padding),
-			 inp + (len - ret_len/2 + padding));
-
-	return ret;
 }
 
 /* JSON rendering method of performance data.
@@ -127,8 +140,8 @@ EXAMPLE:
 static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	char logbuffer[LOGLEN], *logbase;
-	size_t loglen;
+	char *logbuffer = NULL, *logbase;
+	size_t loglen, logcap = LOGLEN;
 	str c;
 	str stmtq;
 	lng usec;
@@ -149,6 +162,12 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
  */
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
+
+	logbuffer = (char *)malloc(logcap);
+	if (logbuffer == NULL) {
+		TRC_ERROR(MAL_SERVER, "Profiler JSON buffer allocation failure\n");
+		return;
+	}
 
 	usec= pci->clock;
 	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
@@ -175,7 +194,7 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 		logadd(",\"barrier\":\"%s\"", operatorName(pci->barrier));
 	if( pci->token < FCNcall || pci->token > PATcall)
 		logadd(",\"operator\":\"%s\"", operatorName(pci->token));
-    	if (!GDKinmemory() && !GDKembedded()) {
+    	if (!GDKinmemory(0) && !GDKembedded()) {
 			char *uuid = NULL;
 			str c;
 			if ((c = msab_getUUID(&uuid)) == NULL) {
@@ -275,17 +294,11 @@ This information can be used to determine memory footprint and variable life tim
 					logadd(",\"count\":"BUNFMT, cnt);
 					logadd(",\"size\":" LLFMT, total);
 				} else{
-					char *truncated = NULL;
 					tname = getTypeName(tpe);
 					logadd(",\"type\":\"%s\"", tname);
 					logadd(",\"const\":%d", isVarConstant(mb, getArg(pci,j)));
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
-					if (stmtq != NULL && strlen(stmtq) > LOGLEN/2) {
-						truncated = truncate_string(stmtq);
-						GDKfree(stmtq);
-						stmtq = truncated;
-					}
 					if (stmtq)
 						logadd(",\"value\":\"%s\"", stmtq);
 					GDKfree(cv);
@@ -302,75 +315,80 @@ This information can be used to determine memory footprint and variable life tim
 		}
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
+	free(logbuffer);
 }
 
 /* the OS details on cpu load are read from /proc/stat
  * We should use an OS define to react to the maximal cores
  */
 
+#define MAXCPU		256
+#define LASTCPU		(MAXCPU - 1)
 static struct{
 	lng user, nice, system, idle, iowait;
 	double load;
-} corestat[256];
+} corestat[MAXCPU];
 
 static int
 getCPULoad(char cpuload[BUFSIZ]){
     int cpu, len = 0, i;
 	lng user, nice, system, idle, iowait;
 	size_t n;
-    char buf[BUFSIZ+1], *s;
+    char buf[512], *s;
 	static FILE *proc= NULL;
 	lng newload;
 
-	if (proc == NULL || ferror(proc))
-		proc = fopen("/proc/stat","r");
-	else rewind(proc);
 	if (proc == NULL) {
-		/* unexpected */
-		return -1;
-	}
-	/* read complete file to avoid concurrent write issues */
-	if ((n = fread(buf, 1, BUFSIZ,proc)) == 0)
-		return -1;
-	buf[n] = 0;
-	for (s= buf; *s; s++) {
-		if (strncmp(s,"cpu",3)== 0){
-			s +=3;
+		proc = fopen("/proc/stat", "r");
+		if (proc == NULL) {
+			/* unexpected */
+			return -1;
+		}
+	} else
+		rewind(proc);
+
+	while (fgets(buf, (int) sizeof(buf), proc) != NULL) {
+		n = strlen(buf);
+		if (strncmp(buf, "cpu", 3) == 0) {
+			s = buf + 3;
 			if (*s == ' ') {
-				s++;
-				cpu = 255; // the cpu totals stored here
+				cpu = LASTCPU; // the cpu totals stored here
 			}  else {
 				cpu = atoi(s);
-				if (cpu < 0 || cpu > 255)
-					cpu = 255;
+				if (cpu < 0 || cpu > LASTCPU)
+					cpu = LASTCPU;
 			}
-			s= strchr(s,' ');
+			s = strchr(s,' ');
 			if (s == NULL)		/* unexpected format of file */
 				break;
-
-			while( *s && isspace((unsigned char)*s)) s++;
-			i= sscanf(s,LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
-			if ( i != 5 )
-				goto skip;
-			newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
-			if ( newload)
-				corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
-			corestat[cpu].user = user;
-			corestat[cpu].nice = nice;
-			corestat[cpu].system = system;
-			corestat[cpu].idle = idle;
-			corestat[cpu].iowait = iowait;
+			while (*s && isspace((unsigned char)*s))
+				s++;
+			i= sscanf(s, LLSCN" "LLSCN" "LLSCN" "LLSCN" "LLSCN,  &user, &nice, &system, &idle, &iowait);
+			if (i == 5) {
+				newload = (user - corestat[cpu].user + nice - corestat[cpu].nice + system - corestat[cpu].system);
+				if (newload)
+					corestat[cpu].load = (double) newload / (newload + idle - corestat[cpu].idle + iowait - corestat[cpu].iowait);
+				corestat[cpu].user = user;
+				corestat[cpu].nice = nice;
+				corestat[cpu].system = system;
+				corestat[cpu].idle = idle;
+				corestat[cpu].iowait = iowait;
+			}
 		}
-	  skip:
-		while (*s && *s != '\n')
-			s++;
-	}
 
-	if(cpuload == 0)
+		while (buf[n - 1] != '\n') {
+			if (fgets(buf, (int) sizeof(buf), proc) == NULL)
+				goto exitloop;
+			n = strlen(buf);
+		}
+	}
+  exitloop:
+
+	if (cpuload == NULL)
 		return 0;
 	// identify core processing
 	len += snprintf(cpuload, BUFSIZ, "[");
-	for (cpu = 0; cpuload && cpu < 255 && corestat[cpu].user; cpu++) {
+	for (cpu = 0; cpuload && cpu < LASTCPU && corestat[cpu].user; cpu++) {
 		len +=snprintf(cpuload + len, BUFSIZ - len, "%s%.2f", (cpu?",":""), corestat[cpu].load);
 	}
 	(void) snprintf(cpuload + len, BUFSIZ - len, "]");
@@ -381,8 +399,8 @@ void
 profilerHeartbeatEvent(char *alter)
 {
 	char cpuload[BUFSIZ];
-	char logbuffer[LOGLEN], *logbase;
-	int loglen;
+	char *logbuffer = NULL, *logbase;
+	size_t loglen, logcap = LOGLEN;
 	lng usec;
 	uint64_t microseconds;
 
@@ -395,9 +413,15 @@ profilerHeartbeatEvent(char *alter)
 	if (getCPULoad(cpuload))
 		return;
 
+	logbuffer = (char *)malloc(logcap);
+	if (logbuffer == NULL) {
+		TRC_ERROR(MAL_SERVER, "Profiler JSON buffer allocation failure\n");
+		return;
+	}
+
 	lognew();
 	logadd("{"); // fill in later with the event counter
-	if (!GDKinmemory() && !GDKembedded()) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		char *uuid = NULL, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
 			logadd("\"session\":\"%s\",", uuid);
@@ -426,6 +450,7 @@ profilerHeartbeatEvent(char *alter)
 	logadd("\"cpuload\":%s",cpuload);
 	logadd("}\n"); // end marker
 	logjsonInternal(logbuffer);
+	free(logbuffer);
 }
 
 void
@@ -771,12 +796,12 @@ getDiskSpace(void)
 
 void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
-	(void) getCPULoad(0);
-	*user = corestat[255].user;
-	*nice = corestat[255].nice;
-	*sys = corestat[255].system;
-	*idle = corestat[255].idle;
-	*iowait = corestat[255].iowait;
+	(void) getCPULoad(NULL);
+	*user = corestat[LASTCPU].user;
+	*nice = corestat[LASTCPU].nice;
+	*sys = corestat[LASTCPU].system;
+	*idle = corestat[LASTCPU].idle;
+	*iowait = corestat[LASTCPU].iowait;
 }
 
 /* the heartbeat process produces a ping event once every X milliseconds */

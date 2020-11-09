@@ -15,12 +15,12 @@ else()
 endif()
 # Look for the library.
 find_library(UUID_LIBRARIES NAMES uuid) # Linux requires a separate library for UUID
-if(UUID_LIBRARIES)
-  set(CMAKE_REQUIRED_LIBRARIES "${CMAKE_REQUIRED_LIBRARIES};${UUID_LIBRARIES}")
-else()
+if(NOT UUID_LIBRARIES)
   set(UUID_LIBRARIES "" CACHE INTERNAL "uuid libraries path")
 endif()
 # Find uuid_generate symbol, which we require and some platforms don't have it
+set(CMAKE_REQUIRED_LIBRARIES ${UUID_LIBRARIES})
+set(CMAKE_REQUIRED_INCLUDES ${UUID_INCLUDE_DIR})
 check_symbol_exists("uuid_generate" "uuid/uuid.h" HAVE_UUID_GENERATE)
 cmake_pop_check_state()
 

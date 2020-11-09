@@ -18,7 +18,13 @@ target_link_libraries(example2
   PRIVATE
     monetdb_config_header
     monetdbe)
-#add_test(run_example2 example2)
+add_test(run_example2 example2)
+
+add_executable(example_proxy example_proxy.c)
+target_link_libraries(example_proxy
+  PRIVATE
+    monetdb_config_header
+    monetdbe)
 
 add_executable(example_temporal example_temporal.c)
 target_link_libraries(example_temporal
@@ -55,12 +61,14 @@ target_link_libraries(example_append_raw
     monetdbe)
 add_test(run_example_append_raw example_append_raw)
 
+if(NOT WIN32)
 add_executable(example_backup example_backup.c)
 target_link_libraries(example_backup
   PRIVATE
     monetdb_config_header
     monetdbe)
 add_test(run_example_backup example_backup)
+endif()
 
 add_executable(example_connections example_connections.c)
 target_link_libraries(example_connections

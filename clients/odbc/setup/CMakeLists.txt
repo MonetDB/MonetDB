@@ -7,27 +7,28 @@
 #]]
 
 add_library(MonetODBCs
-  SHARED)
+  MODULE)
 
 target_sources(MonetODBCs
   PRIVATE
-  drvcfg.c 
+  drvcfg.c
   drvcfg.h)
 
 target_include_directories(MonetODBCs
+  PRIVATE
+  $<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIRS}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
-target_compile_definitions(MonetODBCs 
-  PRIVATE 
+target_compile_definitions(MonetODBCs
+  PRIVATE
   LIBMONETODBCS)
 
 target_link_libraries(MonetODBCs
   PRIVATE
   monetdb_config_header
-  mutils
-  ODBC::ODBC)
+  mutils)
 
 install(TARGETS
   MonetODBCs

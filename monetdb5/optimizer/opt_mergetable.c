@@ -59,15 +59,6 @@ is_a_mat(int idx, matlist_t *ml)
 }
 
 static int
-was_a_mat(int idx, matlist_t *ml){
-	int i;
-	for(i =0; i<ml->top; i++)
-		if (ml->v[i].mv == idx)
-			return i;
-	return -1;
-}
-
-static int
 nr_of_mats(InstrPtr p, matlist_t *ml)
 {
 	int j,cnt=0;
@@ -82,7 +73,7 @@ nr_of_bats(MalBlkPtr mb, InstrPtr p)
 {
 	int j,cnt=0;
 	for(j=p->retc; j<p->argc; j++)
-		if (isaBatType(getArgType(mb,p,j)))
+		if (isaBatType(getArgType(mb,p,j)) && !isVarConstant(mb, getArg(p,j)))
 			cnt++;
 	return cnt;
 }
@@ -92,7 +83,7 @@ nr_of_nilbats(MalBlkPtr mb, InstrPtr p)
 {
 	int j,cnt=0;
 	for(j=p->retc; j<p->argc; j++)
-		if (getArgType(mb,p,j) == TYPE_bat)
+		if (getArgType(mb,p,j) == TYPE_bat || (isaBatType(getArgType(mb, p, j)) && isVarConstant(mb, getArg(p,j)) && getVarConstant(mb, getArg(p,j)).val.bval == bat_nil))
 			cnt++;
 	return cnt;
 }
@@ -650,7 +641,7 @@ mat_apply4(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int e, 
 }
 
 static int
-mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
+mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 {
 	int tpe = getArgType(mb,p, 0), k, j;
 	InstrPtr r = newInstruction(mb, matRef, packRef);
@@ -665,6 +656,9 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 	assert(m>=0 || n>=0);
 	if (m >= 0 && n >= 0) {
 		int nr = 1;
+
+		assert(o < 0 || mat[m].mi->argc == mat[o].mi->argc);
+
 		for(k=1; k<mat[m].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
 			InstrPtr s = newInstruction(mb, matRef, packRef);
@@ -700,6 +694,8 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 			getArg(q,0) = newTmpVariable(mb, tpe);
 			getArg(q,1) = getArg(mat[m].mi,k);
 			getArg(q,2) = getArg(s,0);
+			if (o >= 0)
+				getArg(q,3) = getArg(mat[o].mi, k);
 			if(setPartnr(ml, getArg(mat[m].mi,k), getArg(q,0), nr)) {
 				freeInstruction(q);
 				freeInstruction(r);
@@ -712,6 +708,8 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		}
 	} else {
 		assert(m >= 0);
+		assert(o < 0 || mat[m].mi->argc == mat[o].mi->argc);
+
 		for(k=1; k<mat[m].mi->argc; k++) {
 			InstrPtr q = copyInstruction(p);
 			if(!q) {
@@ -721,6 +719,8 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 
 			getArg(q,0) = newTmpVariable(mb, tpe);
 			getArg(q,1) = getArg(mat[m].mi, k);
+			if (o >= 0)
+				getArg(q,3) = getArg(mat[o].mi, k);
 			pushInstruction(mb,q);
 
 			if(setPartnr(ml, getArg(q, 2), getArg(q,0), k)) {
@@ -1945,7 +1945,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	InstrPtr *old;
 	matlist_t ml;
 	int oldtop, fm, fn, fo, fe, i, k, m, n, o, e, slimit, bailout = 0;
-	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars;
+	int size=0, match, actions=0, distinct_topn = 0, /*topn_res = 0,*/ groupdone = 0, *vars, maxvars;
 	char buf[256], *group_input;
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
@@ -1956,6 +1956,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	oldtop= mb->stop;
 
 	vars = (int*) GDKmalloc(sizeof(int)* mb->vtop);
+	maxvars = mb->vtop;
 	group_input = (char*) GDKzalloc(sizeof(char)* mb->vtop);
 	if (vars == NULL || group_input == NULL){
 		if (vars)
@@ -2027,7 +2028,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		/* not idea how to detect this yet */
 			//distinct_topn = 1;
 	}
-	GDKfree(vars);
 	GDKfree(group_input);
 
 	ml.horigin = 0;
@@ -2302,7 +2302,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		     getFunctionId(p) == intersectRef) &&
 		   (m=is_a_mat(getArg(p,1), &ml)) >= 0) {
 		   	n=is_a_mat(getArg(p,2), &ml);
-			if(mat_setop(mb, p, &ml, m, n)) {
+			o=is_a_mat(getArg(p,3), &ml);
+			if(mat_setop(mb, p, &ml, m, n, o)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
@@ -2357,11 +2358,10 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		/* select on insert, should use last tid only */
-		if (/* DISABLES CODE */ (0))
 		if (match == 1 && fm == 2 && isSelect(p) && p->retc == 1 &&
 		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
 		   !ml.v[m].packed && /* not packed yet */
-		   was_a_mat(getArg(p,fm-1), &ml) < 0){ /* not previously packed */
+		   (getArg(p,fm-1) > maxvars || getModuleId(old[vars[getArg(p,fm-1)]]) == sqlRef)){
 			if((r = copyInstruction(p)) == NULL) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
@@ -2478,6 +2478,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			freeInstruction(ml.v[i].mi);
 	}
 cleanup:
+	if (vars) GDKfree(vars);
 	if (ml.v) GDKfree(ml.v);
 	if (ml.horigin) GDKfree(ml.horigin);
 	if (ml.torigin) GDKfree(ml.torigin);

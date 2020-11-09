@@ -80,7 +80,7 @@ BATcheckorderidx(BAT *b)
 	/* we don't need the lock just to read the value b->torderidx */
 	if (b->torderidx == (Heap *) 1) {
 		/* but when we want to change it, we need the lock */
-		assert(!GDKinmemory());
+		assert(!GDKinmemory(b->theap.farmid));
 		MT_lock_set(&b->batIdxLock);
 		if (b->torderidx == (Heap *) 1) {
 			Heap *hp;
@@ -140,7 +140,7 @@ createOIDXheap(BAT *b, bool stable)
 	oid *restrict mv;
 	const char *nme;
 
-	nme = GDKinmemory() ? ":inmemory" : BBP_physical(b->batCacheid);
+	nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	if ((m = GDKzalloc(sizeof(Heap))) == NULL ||
 	    (m->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) < 0 ||
 	    strconcat_len(m->filename, sizeof(m->filename),
@@ -166,7 +166,7 @@ persistOIDX(BAT *b)
 	if ((BBP_status(b->batCacheid) & BBPEXISTING) &&
 	    b->batInserted == b->batCount &&
 	    !b->theap.dirty &&
-	    !GDKinmemory()) {
+	    !GDKinmemory(b->theap.farmid)) {
 		MT_Id tid;
 		BBPfix(b->batCacheid);
 		char name[MT_NAME_LEN];
@@ -502,7 +502,7 @@ OIDXfree(BAT *b)
 
 		MT_lock_set(&b->batIdxLock);
 		if ((hp = b->torderidx) != NULL && hp != (Heap *) 1) {
-			if (GDKinmemory()) {
+			if (GDKinmemory(b->theap.farmid)) {
 				b->torderidx = NULL;
 				HEAPfree(hp, true);
 			} else {

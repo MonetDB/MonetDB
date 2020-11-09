@@ -52,7 +52,6 @@ CREATE OR REPLACE View object_stats as SELECT "object", CAST(COUNT(*) AS BIGINT)
 CREATE   MERGE TABLE mt    (id int primary key, nm varchar(123) NOT NULL);
 CREATE  REMOTE TABLE remt  (id int primary key, nm varchar(123) NOT NULL) ON 'mapi:monetdb://localhost:42001/mdb3';
 CREATE REPLICA TABLE replt (id int primary key, nm varchar(123) NOT NULL);
-CREATE  STREAM TABLE strt  (id int primary key, nm varchar(123) NOT NULL);
 
 CREATE GLOBAL TEMP TABLE gtmpt (id int primary key, nm varchar(123) NOT NULL) ON COMMIT PRESERVE ROWS;
 

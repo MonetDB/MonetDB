@@ -30,7 +30,7 @@ compress_stream_data(bs2 *s)
 {
 	assert(s->comp != COMPRESSION_NONE);
 	if (s->comp == COMPRESSION_SNAPPY) {
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_SNAPPY
 		size_t compressed_length = s->compbufsiz;
 		snappy_status ret;
 		if ((ret = snappy_compress(s->buf, s->nr, s->compbuf, &compressed_length)) != SNAPPY_OK) {
@@ -63,7 +63,7 @@ decompress_stream_data(bs2 *s)
 {
 	assert(s->comp != COMPRESSION_NONE);
 	if (s->comp == COMPRESSION_SNAPPY) {
-#ifdef HAVE_LIBSNAPPY
+#ifdef HAVE_SNAPPY
 		snappy_status ret;
 		size_t uncompressed_length = s->bufsiz;
 		if ((ret = snappy_uncompress(s->compbuf, s->itotal, s->buf, &uncompressed_length)) != SNAPPY_OK) {
@@ -96,7 +96,7 @@ compression_size_bound(bs2 *s)
 	if (s->comp == COMPRESSION_NONE) {
 		return 0;
 	} else if (s->comp == COMPRESSION_SNAPPY) {
-#ifndef HAVE_LIBSNAPPY
+#ifndef HAVE_SNAPPY
 		return -1;
 #else
 		return snappy_max_compressed_length(s->bufsiz);

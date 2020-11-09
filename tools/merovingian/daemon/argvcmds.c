@@ -42,11 +42,11 @@ command_help(int argc, char *argv[])
 		printf("  created, or a directory that is writable that already exists.\n");
 	} else if (strcmp(argv[1], "start") == 0) {
 		printf("usage: monetdbd start [-n] <dbfarm>\n");
-		printf("  Starts the monetdbd deamon for the given dbfarm.\n");
+		printf("  Starts the monetdbd daemon for the given dbfarm.\n");
 		printf("  When -n is given, monetdbd will not fork into the background.\n");
 	} else if (strcmp(argv[1], "stop") == 0) {
 		printf("usage: monetdbd stop <dbfarm>\n");
-		printf("  Stops a running monetdbd deamon for the given dbfarm.\n");
+		printf("  Stops a running monetdbd daemon for the given dbfarm.\n");
 	} else if (strcmp(argv[1], "set") == 0) {
 		printf("usage: monetdbd set property=value <dbfarm>\n");
 		printf("  Sets property to value for the given dbfarm.\n");

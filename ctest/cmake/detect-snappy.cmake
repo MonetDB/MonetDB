@@ -24,19 +24,7 @@ if (${LINUX_DISTRO} STREQUAL "debian")
       variablename SNAPPY_FOUND)
   endif()
 elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
-  if(${LINUX_DISTRO_VERSION} STREQUAL "18")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_SNAPPY
-      variablename SNAPPY_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "19")
-    assert_package_detected(
-      detect FALSE
-      legacyvariable HAVE_SNAPPY
-      variablename SNAPPY_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "20")
+  if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "18")
     assert_package_detected(
       detect FALSE
       legacyvariable HAVE_SNAPPY
@@ -49,15 +37,9 @@ elseif(${LINUX_DISTRO} STREQUAL "fedora")
       legacyvariable HAVE_SNAPPY
       variablename SNAPPY_FOUND)
   endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "31")
+  if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "31")
     assert_package_detected(
       detect TRUE
-      legacyvariable HAVE_SNAPPY
-      variablename SNAPPY_FOUND)
-  endif()
-  if(${LINUX_DISTRO_VERSION} STREQUAL "32")
-    assert_package_detected(
-      detect FALSE
       legacyvariable HAVE_SNAPPY
       variablename SNAPPY_FOUND)
   endif()

@@ -13,6 +13,37 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+
+// TODO get rid of this ugly work around: Properly factor out mapi cals from dump.c
+#ifdef COMPILING_MONETDBE
+
+#define Mapi monetdbe_Mapi
+#define MapiHdl monetdbe_MapiHdl
+#define MapiHdl monetdbe_MapiHdl
+#define MapiMsg monetdbe_MapiMsg
+
+#define mapi_error monetdbe_mapi_error
+#define mapi_query monetdbe_mapi_query
+#define mapi_error monetdbe_mapi_error
+#define mapi_close_handle monetdbe_mapi_close_handle
+#define mapi_fetch_row monetdbe_mapi_fetch_row
+#define mapi_fetch_field monetdbe_mapi_fetch_field
+#define mapi_get_type monetdbe_mapi_get_type
+#define mapi_seek_row monetdbe_mapi_seek_row
+#define mapi_get_row_count monetdbe_mapi_get_row_count
+#define mapi_rows_affected monetdbe_mapi_rows_affected
+#define mapi_get_field_count monetdbe_mapi_get_field_count
+#define mapi_result_error monetdbe_mapi_result_error
+#define mapi_get_len monetdbe_mapi_get_len
+#define mapi_explain monetdbe_mapi_explain
+#define mapi_explain_query monetdbe_mapi_explain_query
+#define mapi_explain_result monetdbe_mapi_explain_result
+
+#include "monetdbe_mapi.h"
+#else
+#include "mapi.h"
+#endif
+
 #include "msqldump.h"
 
 static const char *
@@ -776,7 +807,7 @@ dump_type(Mapi mid, stream *toConsole, const char *c_type, const char *c_type_di
 			space = mnstr_printf(toConsole, "INTERVAL MONTH");
 		else
 			fprintf(stderr, "Internal error: unrecognized month interval %s\n", c_type_digits);
-	} else if (strcmp(c_type, "sec_interval") == 0) {
+	} else if (strlen(c_type) > 4 && strcmp(c_type+3, "_interval") == 0) {
 		if (strcmp(c_type_digits, "4") == 0)
 			space = mnstr_printf(toConsole, "INTERVAL DAY");
 		else if (strcmp(c_type_digits, "5") == 0)
@@ -1284,7 +1315,7 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		/* the table is a real table */
 		mnstr_printf(toConsole, "CREATE %sTABLE ",
 			    type == 3 ? "MERGE " :
-			    type == 4 ? "STREAM " :
+			    /*type == 4 ? "STREAM " : */
 			    type == 5 ? "REMOTE " :
 			    type == 6 ? "REPLICA " :
 			    "");
@@ -1777,7 +1808,7 @@ dump_table_data(Mapi mid, const char *schema, const char *tname, stream *toConso
 				mnstr_printf(toConsole, "NULL");
 			else if (useInserts) {
 				const char *tp = mapi_get_type(hdl, i);
-				if (strcmp(tp, "sec_interval") == 0) {
+				if (strlen(tp) > 4 && strcmp(tp+3, "_interval") == 0) {
 					const char *p = strchr(s, '.');
 					if (p == NULL)
 						p = s + strlen(s);

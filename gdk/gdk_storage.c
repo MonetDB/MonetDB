@@ -56,8 +56,8 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	size_t pathlen;
 	char *path;
 
-	if (GDKinmemory())
-		return GDKstrdup(":inmemory");
+	if (GDKinmemory(farmid))
+		return GDKstrdup(":memory:");
 
 	assert(dir == NULL || *dir != DIR_SEP);
 	assert(farmid == NOFARM ||
@@ -102,8 +102,11 @@ GDKcreatedir(const char *dir)
 	DIR *dirp;
 
 	TRC_DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
-	assert(!GDKinmemory());
-	assert(MT_path_absolute(dir));
+	assert(!GDKinmemory(0));
+	if (!MT_path_absolute(dir)) {
+		GDKerror("directory '%s' is not absolute\n", dir);
+		return GDK_FAIL;
+	}
 	if (strlen(dir) >= FILENAME_MAX) {
 		GDKerror("directory name too long\n");
 		return GDK_FAIL;
@@ -144,7 +147,7 @@ GDKremovedir(int farmid, const char *dirname)
 	struct dirent *dent;
 	int ret;
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(farmid));
 	if ((dirnamestr = GDKfilepath(farmid, NULL, dirname, NULL)) == NULL)
 		return GDK_FAIL;
 
@@ -197,7 +200,7 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 	char *path = NULL;
 	int fd, flags = O_CLOEXEC;
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(farmid));
 	if (nme == NULL || *nme == 0) {
 		GDKerror("no name specified\n");
 		errno = EFAULT;
@@ -346,7 +349,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 	int rt = 0;
 	int t0 = GDKms();
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(0));
 #ifdef STATIC_CODE_ANALYSIS
 	if (fd < 0)		/* in real life, if fd < 0, fstat will fail */
 		return GDK_FAIL;
@@ -403,7 +406,7 @@ GDKextend(const char *fn, size_t size)
 	int fd, flags = O_RDWR;
 	gdk_return rt = GDK_FAIL;
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(0));
 #ifdef O_BINARY
 	/* On Windows, open() fails if the file is bigger than 2^32
 	 * bytes without O_BINARY. */
@@ -435,7 +438,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 
 	TRC_DEBUG(IO_, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(farmid));
 	if (mode == STORE_MMAP) {
 		if (dosync && size && !(GDKdebug & NOSYNCMASK))
 			err = MT_msync(buf, size);
@@ -521,7 +524,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 {
 	char *ret = NULL;
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(farmid));
 	assert(size <= *maxsize);
 	assert(farmid != NOFARM || ext == NULL);
 	TRC_DEBUG(IO_, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
@@ -688,7 +691,7 @@ void
 BATmsync(BAT *b)
 {
 	/* we don't sync views or if we're told not to */
-	if (GDKinmemory() || isVIEW(b) || (GDKdebug & NOSYNCMASK))
+	if (GDKinmemory(b->theap.farmid) || isVIEW(b) || (GDKdebug & NOSYNCMASK))
 		return;
 	/* we don't sync transients */
 	if (b->theap.farmid != 0 ||
@@ -763,7 +766,7 @@ BATsave(BAT *bd)
 	BAT *b = bd;
 	bool dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(b->theap.farmid));
 	BATcheck(b, GDK_FAIL);
 
 	assert(b->batCacheid > 0);
@@ -821,7 +824,7 @@ BATload_intern(bat bid, bool lock)
 	const char *nme;
 	BAT *b;
 
-	assert(!GDKinmemory());
+	assert(!GDKinmemory(0));
 	assert(bid > 0);
 
 	nme = BBP_physical(bid);
@@ -830,6 +833,7 @@ BATload_intern(bat bid, bool lock)
 	if (b == NULL) {
 		return NULL;
 	}
+	assert(!GDKinmemory(b->theap.farmid));
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
@@ -901,6 +905,7 @@ BATdelete(BAT *b)
 	HASHdestroy(b);
 	IMPSdestroy(b);
 	OIDXdestroy(b);
+	PROPdestroy(b);
 	if (b->batCopiedtodisk || (b->theap.storage != STORE_MEM)) {
 		if (b->ttype != TYPE_void &&
 		    HEAPdelete(&b->theap, o, "tail") != GDK_SUCCEED &&

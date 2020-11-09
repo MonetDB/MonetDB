@@ -29,8 +29,8 @@
 
 /* export MAL wrapper functions */
 
-udf_export char * UDFreverse(char **ret, const char **arg);
-udf_export char * UDFBATreverse(bat *ret, const bat *arg);
+udf_export str UDFreverse(str *ret, const str *arg);
+udf_export str UDFBATreverse(bat *ret, const bat *arg);
 
 /* using C macro for convenient type-expansion */
 #define UDFfuse_scalar_decl(in,out) \

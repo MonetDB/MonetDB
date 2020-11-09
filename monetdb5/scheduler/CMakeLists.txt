@@ -12,8 +12,8 @@ target_sources(run_adder
   run_adder.c)
 target_include_directories(run_adder
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -30,7 +30,8 @@ install(TARGETS run_adder
   COMPONENT run_adder)
 install(FILES
   run_adder.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_adder)
 
 add_library(run_isolate MODULE)
 target_sources(run_isolate
@@ -38,15 +39,14 @@ target_sources(run_isolate
   run_isolate.c)
 target_include_directories(run_isolate
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 target_link_libraries(run_isolate
   PRIVATE
   monetdb_config_header
-  bat
   monetdb5)
 set_target_properties(run_isolate
   PROPERTIES
@@ -56,7 +56,8 @@ install(TARGETS run_isolate
   COMPONENT run_isolate)
 install(FILES
   run_isolate.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_isolate)
 
 add_library(run_memo MODULE)
 target_sources(run_memo
@@ -64,8 +65,8 @@ target_sources(run_memo
   run_memo.c)
 target_include_directories(run_memo
   PRIVATE
-  $<TARGET_PROPERTY:mal,INCLUDE_DIRECTORIES>
-  $<TARGET_PROPERTY:optimizer,INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -82,4 +83,5 @@ install(TARGETS run_memo
   COMPONENT run_memo)
 install(FILES
   run_memo.mal
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5)
+  DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
+  COMPONENT run_memo)
