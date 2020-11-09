@@ -1,0 +1,98 @@
+query T rowsort
+SELECT INTERVAL '0-0' YEAR TO MONTH = INTERVAL  +'0-0' YEAR TO MONTH
+----
+True
+
+query T rowsort
+SELECT INTERVAL '0-0' YEAR TO MONTH = INTERVAL  -'0-0' YEAR TO MONTH
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL  +'3-4' YEAR TO MONTH
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL  '+3-4' YEAR TO MONTH
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL +'+3-4' YEAR TO MONTH
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL -'-3-4' YEAR TO MONTH
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3-4' YEAR TO MONTH = INTERVAL   '3-4' YEAR TO MONTH
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3-7' YEAR TO MONTH = INTERVAL '43' MONTH
+----
+True
+
+statement error
+SELECT INTERVAL '3-7' YEAR TO MONTH = INTERVAL '23' DAY
+
+query T rowsort
+SELECT INTERVAL '3' DAY + INTERVAL '4' DAY = INTERVAL '7' DAY
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3' DAY + INTERVAL '4' HOUR = INTERVAL '3 4' DAY TO HOUR
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3' DAY + INTERVAL '8 4' DAY TO HOUR = INTERVAL '11 4' DAY TO HOUR
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3' DAY - INTERVAL '4' DAY = INTERVAL -'1' DAY
+----
+True
+
+query T rowsort
+SELECT INTERVAL '3' DAY - INTERVAL -'8 4' DAY TO HOUR = INTERVAL '11 4' DAY TO HOUR
+----
+True
+
+query T rowsort
+SELECT INTERVAL '4' DAY * 3 = INTERVAL '12' DAY
+----
+True
+
+query T rowsort
+SELECT 3 * INTERVAL '4' DAY = INTERVAL '12' DAY
+----
+True
+
+query T rowsort
+SELECT INTERVAL '12:30' HOUR TO MINUTE * 3 = INTERVAL '37:30' HOUR TO MINUTE
+----
+True
+
+query T rowsort
+SELECT INTERVAL '4' DAY / 2 = INTERVAL '2' DAY
+----
+True
+
+query T rowsort
+SELECT - INTERVAL '4' DAY = INTERVAL -'4' DAY
+----
+True
+
+query T rowsort
+SELECT + INTERVAL '4' DAY = INTERVAL '4' DAY
+----
+True
+
