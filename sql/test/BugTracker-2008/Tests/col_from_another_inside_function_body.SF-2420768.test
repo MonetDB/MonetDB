@@ -1,0 +1,13 @@
+statement error
+CREATE FUNCTION fDocColumns(tabname varchar(400))
+RETURNS TABLE (enum varchar(64))
+BEGIN
+    RETURN TABLE( select t.name from sys.tables t where name='romulo')
+
+statement error
+END
+
+statement error
+drop function fDocColumns
+
+
