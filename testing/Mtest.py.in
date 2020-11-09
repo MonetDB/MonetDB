@@ -3707,6 +3707,17 @@ URLPREFIX = 'http://dev.monetdb.org/hg/MonetDB/file/'
 par = {}
 dft = {}
 
+class OrAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        super(OrAction, self).__init__(option_strings, dest, **kwargs)
+    def __call__(self, parser, namespace, values, option_string=None):
+        # if first time, override (default) value, otherwise bitwise OR values
+        if '__seen_option_' + self.dest in namespace:
+            setattr(namespace, self.dest, getattr(namespace, self.dest) | values)
+        else:
+            setattr(namespace, self.dest, values)
+        setattr(namespace, '__seen_option_' + self.dest, True)
+
 def main(argv) :
     #TODO:
     #signal.signal(signal.SIGALRM, AlarmHandler)
@@ -3779,7 +3790,7 @@ def main(argv) :
         parser.add_argument('-C', action='store', dest='context', metavar='<num>', type=int, default=1, help="use <num> lines of context during diff (default: -C1)")
         parser.add_argument('-A', action='store', dest='accuracy', metavar='<num>', type=int, default=1, help="accuracy for diff: 0=lines, 1=words, 2=chars (default: -A1)")
         parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help="timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)")
-        parser.add_argument('--debug', '-d', action='store', dest='debug', metavar='<sec>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5 (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
+        parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
         parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help="number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores" % TSTTHREADS)
         parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
         parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=_configure(os.path.join('@QXlocalstatedir@','MonetDB')), metavar='<directory>', help="override default location of database directory")
