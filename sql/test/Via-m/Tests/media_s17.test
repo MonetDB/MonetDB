@@ -1,0 +1,7 @@
+statement error
+select * from media
+
+statement error
+select * from media_description
+
+

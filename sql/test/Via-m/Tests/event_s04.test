@@ -1,0 +1,7 @@
+statement error
+select * from event
+
+statement error
+select * from event_metadata
+
+
