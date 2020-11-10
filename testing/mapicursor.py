@@ -31,6 +31,7 @@ mapping = {
     'str': strip,
     'int': int,
     'lng': int,
+    'hge': int,
     'oid': py_oid,
     'flt': float,
     'dbl': float,
