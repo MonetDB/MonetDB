@@ -216,7 +216,7 @@ while True:
     # when copyfrom stmt from stdin skip because data may contain --
     if '--' in line and not is_copyfrom_stmt('\n'.join(query)):
         line = line[:line.index('--')].rstrip()
-    if (inpsm and line.endswith('end;')) or (not inpsm and line.endswith(';')):
+    if (inpsm and (line.endswith('end;') or line.endswith('END;'))) or (not inpsm and line.endswith(';')):
         inpsm = False
         tmp = ([] + query)
         tmp.append(line)
