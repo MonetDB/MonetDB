@@ -1,19 +1,12 @@
 statement error
-	true:= 23
+	true:= 23;
 
 statement error
-	false:= 24
+	false:= 24;
 
 statement ok
-barrier barrier:= true
-
-statement ok
-	b:= true
-
-statement ok
-	b:= false
-
-statement ok
-exit barrier
-
+barrier barrier:= true;
+	b:= true;
+	b:= false;
+exit barrier;
 

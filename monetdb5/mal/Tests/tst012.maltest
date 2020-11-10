@@ -1,0 +1,35 @@
+statement T rowset
+	i:=0;
+barrier j:=i<3;
+	io.print(i);
+	i:=i+1;
+	redo j:= i<3;
+exit	j;
+----
+0
+1
+2
+
+query T rowsort
+	io.print("first loop done");
+----
+"first loop done"
+
+statement T rowset
+	i:=0;
+barrier j:=i<3;
+	io.print(i);
+	i:=i+1;
+	redo j:= i<3;
+exit	j;
+----
+0
+1
+2
+
+query T rowsort
+	io.print("second loop done");
+----
+"second loop done"
+
+
