@@ -1,0 +1,28 @@
+statement T nosort
+	b:= true;
+barrier	b;
+	io.printf("1 Correctly entered barrier\n");
+exit	b;
+----
+1 Correctly entered barrier
+
+statement T nosort
+	b:= false;
+barrier b;
+	io.printf("1 Incorrectly entered barrier\n");
+exit	b;
+	i:= 1;
+barrier	c:= i==1;
+	io.printf("2 Correctly entered barrier\n");
+exit	c;
+----
+2 Correctly entered barrier
+
+statement T nosort
+barrier c:= i==0;
+	io.printf("2 Incorrectly entered barrier\n");
+exit	c;
+---
+2 Incorrectly entered barrier
+
+

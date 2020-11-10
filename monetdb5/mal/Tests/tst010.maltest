@@ -1,80 +1,37 @@
-statement ok
-function foo()
-
-statement ok
-barrier	L:= 1
-
 statement error
-	leave Z;	# not known in block
-	redo L
+function foo();
+barrier	L:= 1;
+	leave Z;
+	redo L;
+exit 	L;
+	redo L;
+	leave X;
+	redo A;
+barrier X:=1;
+	leave L;
+	leave X;
+	redo L;
+exit	X;
+barrier A:=1;
+	barrier B:= 1;
+		redo A;
+	exit	B;
+	barrier C:=1;
+		leave A;
+	exit 	C;
+	exit	B;
+	exit	F;
+	barrier D:=1;
+		leave D;
+		redo  D;
+	exit	D;
+	barrier D:=2;
+	exit	D;
+exit	A;
+barrier  unfinished:= 1;
+	f:=1;
+end;
 
-statement ok
-exit 	L
-
-statement error
-	redo L;		# outside block
-	leave X;	# outside block
-	redo A;		# outside block
-barrier X:=1
-
-statement error
-	leave L;	# outside block
-	leave X
-
-statement error
-	redo L;		# outside block
-exit	X
-
-statement ok
-barrier A:=1
-
-statement ok
-	barrier B:= 1
-
-statement ok
-		redo A
-
-statement ok
-	exit	B
-
-statement ok
-	barrier C:=1
-
-statement ok
-		leave A
-
-statement ok
-	exit 	C
-
-statement error
-	exit	B;	# out of order
-	exit	F;	# unknown
-	barrier D:=1
-
-statement ok
-		leave D
-
-statement error
-		redo  D;  # dead code
-	exit	D
-
-statement error
-	barrier D:=2;		# duplicate block
-	exit	D
-
-statement error
-exit	A
-
-statement ok
-barrier  unfinished:= 1
-
-statement ok
-	f:=1
-
-statement ok
-end
-
-statement error
-end foo
+end foo;
 
 
