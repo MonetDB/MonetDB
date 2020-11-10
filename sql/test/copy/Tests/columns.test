@@ -1,0 +1,37 @@
+statement ok
+create table tbl (i int, s string, d decimal(5, 2))
+
+statement error
+copy 3 records into tbl (i, d) from stdin delimiters ',',E'\n'
+<COPY_INTO_DATA>
+1,2.0
+2,2.1
+3,2.2
+select * from tbl;
+drop table tbl;
+
+statement error
+create table tbl (i int, s string, d decimal(5, 2))
+
+statement ok
+copy 3 records into tbl (i, d) from stdin delimiters ',',E'\n'
+<COPY_INTO_DATA>
+1,"test",2.0
+2,"test1",2.1
+3,"test",2.2
+select * from tbl;
+drop table tbl;
+
+statement ok
+create table tbl (i int, s string, d decimal(5, 2))
+
+statement ok
+copy 3 records into tbl (i, d) from stdin (i, d) delimiters ',',E'\n'
+<COPY_INTO_DATA>
+1,2.0
+2,2.1
+3,2.2
+select * from tbl;
+drop table tbl;
+
+
