@@ -97,7 +97,7 @@ class SQLLogic:
             return
         try:
             self.crs.execute(statement)
-        except pymonetdb.DatabaseError:
+        except pymonetdb.Error:
             if not expectok:
                 return
         else:
@@ -156,7 +156,7 @@ class SQLLogic:
         err = False
         try:
             self.crs.execute(query)
-        except pymonetdb.DatabaseError as e:
+        except pymonetdb.Error as e:
             self.query_error(query, 'query failed', e.args[0])
             return False
         if len(self.crs.description) != len(columns):

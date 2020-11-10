@@ -1,0 +1,7 @@
+statement error
+function foo()
+a:=b;	#b not yet defined
+b:=c;	#c undefined
+end foo
+
+
