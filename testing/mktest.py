@@ -111,7 +111,7 @@ def convertresult(columns, data):
 def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
     try:
         crs.execute(query)
-    except pymonetdb.Error as e:
+    except (pymonetdb.Error, ValueError) as e:
         print('statement error')
         if copy_into_stmt:
             print(copy_into_stmt)
