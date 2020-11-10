@@ -1,0 +1,19 @@
+statement ok
+CREATE ROLE my_role
+
+statement ok
+CREATE SCHEMA my_schema AUTHORIZATION my_role
+
+statement ok
+CREATE USER my_user with password 'p1' name 'User with role' schema "my_schema"
+
+statement error
+GRANT my_owner to my_user
+
+statement ok
+GRANT my_role to my_user
+
+statement ok
+CREATE USER my_user2 with password 'p2' name 'User without role' schema "my_schema"
+
+
