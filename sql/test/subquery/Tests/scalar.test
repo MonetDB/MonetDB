@@ -1,0 +1,133 @@
+query I rowsort
+SELECT 1+(SELECT 1)
+----
+2
+
+query T rowsort
+SELECT 1=(SELECT 1)
+----
+True
+
+query T rowsort
+SELECT 1<>(SELECT 1)
+----
+False
+
+query T rowsort
+SELECT 1=(SELECT NULL)
+----
+NULL
+
+query T rowsort
+SELECT NULL=(SELECT 1)
+----
+NULL
+
+query T rowsort
+SELECT EXISTS(SELECT 1)
+----
+True
+
+statement ok
+DROP TABLE IF EXISTS integers
+
+statement ok
+CREATE TABLE integers(i INTEGER)
+
+statement ok
+INSERT INTO integers VALUES (1), (2), (3), (NULL)
+
+query T rowsort
+SELECT EXISTS(SELECT 1) FROM integers
+----
+True
+True
+True
+True
+
+query T rowsort
+SELECT EXISTS(SELECT * FROM integers)
+----
+True
+
+query T rowsort
+SELECT EXISTS(SELECT * FROM integers WHERE i IS NULL)
+----
+True
+
+statement ok
+DROP TABLE integers
+
+query T rowsort
+SELECT 1 IN (SELECT 1)
+----
+True
+
+query T rowsort
+SELECT NULL IN (SELECT 1)
+----
+NULL
+
+query T rowsort
+SELECT 1 IN (SELECT NULL)
+----
+NULL
+
+query T rowsort
+SELECT 1 IN (SELECT 2)
+----
+False
+
+statement ok
+CREATE TABLE integers(i INTEGER)
+
+statement ok
+INSERT INTO integers VALUES (1), (2), (3)
+
+query T rowsort
+SELECT 4 IN (SELECT * FROM integers)
+----
+False
+
+query T rowsort
+SELECT 1 IN (SELECT * FROM integers)
+----
+True
+
+query T rowsort
+SELECT 1 IN (SELECT * FROM integers) FROM integers
+----
+True
+True
+True
+
+statement ok
+INSERT INTO integers VALUES (NULL)
+
+query T rowsort
+SELECT 4 IN (SELECT * FROM integers)
+----
+NULL
+
+query T rowsort
+SELECT 1 IN (SELECT * FROM integers)
+----
+True
+
+query I rowsort
+SELECT * FROM integers WHERE (4 IN (SELECT * FROM integers)) IS NULL ORDER BY 1
+----
+1
+2
+3
+NULL
+
+query I rowsort
+SELECT * FROM integers WHERE (i IN (SELECT * FROM integers)) IS NULL ORDER BY 1
+----
+NULL
+
+statement ok
+DROP TABLE integers
+
+
