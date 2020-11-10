@@ -1,0 +1,88 @@
+query TI rowsort
+SELECT 'dimension_01', ST_Dimension('POLYHEDRALSURFACE(((0 0,0 0,0 1,0 0)))')
+----
+dimension_01
+2
+
+statement error
+SELECT 'dimension_02', ST_Dimension('GEOMETRYCOLLECTION(POLYHEDRALSURFACE(((0 0,0 0,0 1,0 0))))')
+
+query TI rowsort
+SELECT 'dimension_03', ST_Dimension('POLYHEDRALSURFACE(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0)))')
+----
+dimension_03
+2
+
+statement error
+SELECT 'dimension_04', ST_Dimension('GEOMETRYCOLLECTION(POLYHEDRALSURFACE(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0))))')
+
+query TI rowsort
+SELECT 'dimension_05', ST_Dimension('POLYHEDRALSURFACE(((0 0 0 0,0 0 1 0,0 1 0 2,0 0 0 0)),((0 0 0 0,0 1 0 0,1 0 0 4,0 0 0 0)),((0 0 0 0,1 0 0 0,0 0 1 6,0 0 0 0)),((1 0 0 0,0 1 0 0,0 0 1 0,1 0 0 0)))')
+----
+dimension_05
+2
+
+statement error
+SELECT 'dimension_06', ST_Dimension('GEOMETRYCOLLECTION(POLYHEDRALSURFACE(((0 0 0 0,0 0 1 0,0 1 0 2,0 0 0 0)),((0 0 0 0,0 1 0 0,1 0 0 4,0 0 0 0)),((0 0 0 0,1 0 0 0,0 0 1 6,0 0 0 0)),((1 0 0 0,0 1 0 0,0 0 1 0,1 0 0 0))))')
+
+query TI rowsort
+SELECT 'dimension_07', ST_Dimension('POLYHEDRALSURFACE(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,0 1 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0)))')
+----
+dimension_07
+2
+
+query TI rowsort
+SELECT 'dimension_08', ST_Dimension('POLYHEDRALSURFACE(((0 0 0,1 0 0,1 0 0,0 0 0)),((0 0 1,1 0 1,1 0 1,0 0 1)),((0 0 2,1 0 2,1 0 2,0 0 2)),((0 0 3,1 0 3,1 0 3,0 0 3)))')
+----
+dimension_08
+2
+
+query TI rowsort
+SELECT 'numpatches_01', ST_NumPatches('POLYHEDRALSURFACE EMPTY')
+----
+numpatches_01
+0
+
+query TI rowsort
+SELECT 'numpatches_02', ST_NumPatches('POLYHEDRALSURFACE(((0 0,0 0,0 1,0 0)))')
+----
+numpatches_02
+1
+
+query TI rowsort
+SELECT 'numpatches_03', ST_NumPatches('POLYHEDRALSURFACE(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0)))')
+----
+numpatches_03
+4
+
+query TT rowsort
+SELECT 'patchN_01', ST_patchN('POLYHEDRALSURFACE EMPTY', 1)
+----
+patchN_01
+NULL
+
+query TT rowsort
+SELECT 'patchN_02', ST_patchN('POLYHEDRALSURFACE(((0 0,0 0,0 1,0 0)))', 1)
+----
+patchN_02
+NULL
+
+query TT rowsort
+SELECT 'patchN_03', ST_patchN('POLYHEDRALSURFACE(((0 0,0 0,0 1,0 0)))', 0)
+----
+patchN_03
+NULL
+
+query TT rowsort
+SELECT 'patchN_04', ST_patchN('POLYHEDRALSURFACE(((0 0,0 0,0 1,0 0)))', 2)
+----
+patchN_04
+NULL
+
+query TT rowsort
+SELECT 'patchN_05', ST_patchN('POLYHEDRALSURFACE(((0 0 0,0 0 1,0 1 0,0 0 0)),((0 0 0,0 1 0,1 0 0,0 0 0)),((0 0 0,1 0 0,0 0 1,0 0 0)),((1 0 0,0 1 0,0 0 1,1 0 0)))', 2)
+----
+patchN_05
+POLYGON Z ((0 0 0, 0 1 0, 1 0 0, 0 0 0))
+
+
