@@ -14,6 +14,11 @@ def get_tests_from_all_file(fpath:str):
             r = l.strip()
             # ignore comments
             if r and r[0] != '#':
+                comment=None
+                if '#' in r:
+                    comment=r[r.index('#'):]
+                    r = r[:r.index('#')]
+                    r = r.strip()
                 # break cond from file name
                 if '?' in r:
                     cond, test = r.split('?')
@@ -22,7 +27,7 @@ def get_tests_from_all_file(fpath:str):
                 else:
                     cond = None
                     test = r.strip()
-                res.append((cond, test))
+                res.append((cond, test, comment))
     return res
 
 def process_test_dir(dir_path:str, ctx={}, **kwargs):
@@ -53,11 +58,12 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         tests = filtered
     test_index = []
     test_lookup = {}
-    for cond, test_name in tests:
+    for cond, test_name, comment in tests:
         test_path = os.path.join(real_dir_path, test_name)
         test = {
             'test_name': test_name,
             'test_path': test_path,
+            'comment': comment,
             'cond': cond}
         lookup  = (
             # file extention  EXT        CALL      SERVER
