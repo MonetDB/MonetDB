@@ -54,11 +54,11 @@ else:
 query = []
 
 def is_psm_stmt(stmt:str):
-    rgx = re.compile('(create|create\s+or\s+replace)\s+(function|procedure)', re.I)
+    rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure)', re.I)
     return rgx.match(stmt) is not None
 
 def is_complete_psm_stmt(stmt:str):
-    rgx = re.compile('(create|create\s+or\s+replace)\s+(function|procedure)[\S\s]*(end;|external\s+name\s+.*;)$', re.I)
+    rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure)[\S\s]*(end;|external\s+name\s+.*;)$', re.I)
     return rgx.match(stmt) is not None
 
 def is_copyfrom_stmt(stmt:str):
@@ -99,7 +99,7 @@ def convertresult(columns, data):
 def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
     try:
         crs.execute(query)
-    except pymonetdb.DatabaseError as e:
+    except pymonetdb.Error as e:
         print('statement error')
         if copy_into_stmt:
             print(copy_into_stmt)
@@ -108,9 +108,6 @@ def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
         else:
             print(query)
         print('')
-    except pymonetdb.Error:
-        print('exception raised on query "{}"'.format(query), file=sys.stderr)
-        sys.exit(1)
     else:
         if crs.description is None:
             print('statement ok')
@@ -194,6 +191,7 @@ def process_copyfrom_stmt(query):
 
 
 incomment = False
+inpsm = False
 while True:
     line = sys.stdin.readline()
     if not line:
@@ -213,12 +211,13 @@ while True:
         if len(query) > 0:
             if is_copyfrom_stmt('\n'.join(query)):
                 process_copyfrom_stmt(query)
-            query = []
+                query = []
         continue
     # when copyfrom stmt from stdin skip because data may contain --
     if '--' in line and not is_copyfrom_stmt('\n'.join(query)):
         line = line[:line.index('--')].rstrip()
-    if line.endswith(';'):
+    if (inpsm and line.endswith('end;')) or (not inpsm and line.endswith(';')):
+        inpsm = False
         tmp = ([] + query)
         tmp.append(line)
         stmt = '\n'.join(tmp)
@@ -232,6 +231,7 @@ while True:
                 query = []
             else:
                 query.append(line)
+                inpsm = True
             continue
         stripped = line.rstrip(';')
         query.append(stripped)
