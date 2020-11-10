@@ -1,0 +1,34 @@
+statement ok
+set optimizer = 'sequential_pipe'
+
+query T rowsort
+   plan select count(*) from v1
+----
+) [ "%1"."%1" NOT NULL ]
+project (
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+| group by (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+
+query T rowsort
+   plan select id       from v1 order by id
+----
+) [ "v1"."id" NOT NULL HASHCOL  ] [ "v1"."id" ASC NOT NULL HASHCOL  ]
+project (
+| ) [ "fk"."id" NOT NULL HASHCOL  as "v1"."id" ]
+| project (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+
+query T rowsort
+   plan select id , v1  from v1 order by id
+----
+) [ "v1"."id" NOT NULL HASHCOL , "v1"."v1" ] [ "v1"."id" ASC NOT NULL HASHCOL  ]
+project (
+| ) [ "fk"."id" NOT NULL HASHCOL  as "v1"."id", "pk1"."v1" as "v1"."v1" ]
+| project (
+| | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
+| | left outer join (
+| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
+| | | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT 
+
+

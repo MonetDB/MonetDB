@@ -39,17 +39,21 @@ $ Mz.py sql/test/Tests
 
 Converted folders progress:
 ---------------------------
-- monetdb5/modules/atoms	    pass
-- monetdb5/modules/mal		    pass
+- monetdb5/modules/atoms	pass
+- monetdb5/modules/mal		pass
 - sql/test/null/Tests           pass
 - sql/test/analytics/Tests      pass
 - sql/test/snodgrass/Tests      pass
 - sql/test/Skyserver/Tests      pass
 - sql/test/scanner/Tests      	pass
 - sql/test/quantiles/Tests    	pass
-- sql/test/mapi/Tests    	    pass
+- sql/test/Dependencies/Tests   pass
+- sql/test/DropCascade/Tests   	pass
+- sql/test/FeatureRequests/Tests   	pass
+- sql/test/Dump/Tests   	pass
+- sql/test/mapi/Tests    	pass
 - sql/test/scoping/Tests    	pass
-- sql/test/bugs/Tests    	    pass
+- sql/test/bugs/Tests    	pass
 - sql/test/json/Tests           pass
 - sql/test/Tests                pass
 - sql/test/ADT2006              pass

@@ -1,0 +1,16 @@
+statement error
+drop table "test"
+
+statement error
+drop sequence "test_seq"
+
+statement error
+drop table "typestest"
+
+statement error
+drop table keytest2
+
+statement error
+drop table keytest1
+
+
