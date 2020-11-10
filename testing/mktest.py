@@ -193,11 +193,22 @@ def process_copyfrom_stmt(query):
     to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
 
 
+incomment = False
 while True:
     line = sys.stdin.readline()
     if not line:
         break
     line = line.rstrip()
+    if incomment:
+        if '*/' in line:
+            line = line[line.find('*/') + 2:]
+            incomment = False
+        else:
+            continue
+    line = re.sub('/\*.*?\*/', ' ', line)
+    if '/*' in line:
+        line = line[:line.find('/*')]
+        incomment = True
     if not line or line.lstrip().startswith('--') or line.lstrip().startswith('#'):
         if len(query) > 0:
             if is_copyfrom_stmt('\n'.join(query)):
