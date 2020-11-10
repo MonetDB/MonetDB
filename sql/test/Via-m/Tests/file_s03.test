@@ -1,0 +1,10 @@
+statement error
+select * from video_sets
+
+statement error
+select * from video_set
+
+statement error
+select * from file
+
+
