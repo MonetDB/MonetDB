@@ -99,7 +99,7 @@ def convertresult(columns, data):
 def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
     try:
         crs.execute(query)
-    except pymonetdb.DatabaseError as e:
+    except pymonetdb.Error as e:
         print('statement error')
         if copy_into_stmt:
             print(copy_into_stmt)
@@ -108,9 +108,6 @@ def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
         else:
             print(query)
         print('')
-    except pymonetdb.Error:
-        print('exception raised on query "{}"'.format(query), file=sys.stderr)
-        sys.exit(1)
     else:
         if crs.description is None:
             print('statement ok')
