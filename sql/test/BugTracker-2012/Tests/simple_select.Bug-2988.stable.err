@@ -1,0 +1,41 @@
+stderr of test 'simple_select.Bug-2988` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 21:37:59 >  
+# 21:37:59 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36012" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 21:37:59 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 36012
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
+# cmdline opt 	mal_listing = 0
+
+# 21:38:00 >  
+# 21:38:00 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=36012"
+# 21:38:00 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-27483/.s.monetdb.35395
+QUERY = select 1, (select 1 as y, 2 as z) as x;
+ERROR = !SELECT: subquery must return only one column
+CODE  = 42000
+
+# 21:38:00 >  
+# 21:38:00 >  "Done."
+# 21:38:00 >  
+

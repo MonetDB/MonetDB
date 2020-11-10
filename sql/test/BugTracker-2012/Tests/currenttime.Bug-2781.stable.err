@@ -1,0 +1,32 @@
+stderr of test 'currenttime.Bug-2781` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 14:00:10 >  
+# 14:00:10 >  "/usr/bin/python" "currenttime.Bug-2781.py" "currenttime.Bug-2781"
+# 14:00:10 >  
+
+#mserver
+#client
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /export/scratch2/duc/work/BugsDay/MonetDB/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /export/scratch2/duc/work/BugsDay/MonetDB/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32575
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
+
+# 14:00:10 >  
+# 14:00:10 >  "Done."
+# 14:00:10 >  
+

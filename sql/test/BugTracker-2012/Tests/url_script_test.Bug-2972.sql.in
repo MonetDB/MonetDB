@@ -1,0 +1,50 @@
+start transaction;
+
+create table t2972(u url);
+insert into t2972 values('http://www.cwi.nl/~mk/vision2011.pdf');
+insert into t2972 values('http://www.monetdb.com?x=2');
+insert into t2972 values('http://www.monetdb.org:8080/Documentation/Manuals/SQLreference/Datamanipulation');
+
+
+select getAnchor(u) from t2972;
+
+select getBasename(u) from t2972;
+
+select getContext(u) from t2972;
+
+select getDomain(u) from t2972;
+
+select getExtension(u) from t2972;
+
+select getFile(u) from t2972;
+
+select getHost(u) from t2972;
+
+select getPort(u) from t2972;
+
+select getQuery(u) from t2972;
+
+select getUser(u) from t2972;
+
+select getRobotURL(u) from t2972;
+
+select isaURL(u) from t2972;
+
+select isaURL('http://www.monetdb.org');
+select isaURL('http://www.monetdb.org');
+select isaURL('htp:///www.monetdb.org');
+
+select newurl('https','www.monetdb.org',8080,'blah');
+select newurl('https','localhost','boe');
+
+drop table t2972;
+
+create table t2972(u url);
+
+insert into t2972 values ('$UTSTSRCDIR/url_script_test.Bug-2972.txt');
+
+select getContent(u) from t2972;
+
+drop table t2972;
+
+rollback;
