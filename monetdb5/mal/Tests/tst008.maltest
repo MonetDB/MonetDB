@@ -1,16 +1,8 @@
-statement ok
-function foo()
-
-statement ok
-i:=32
-
 statement error
-io.printi
-
-statement ok
-io.print(i)
-
-statement error
-end foo
+function foo();
+	i:=32;
+	io.printi;
+	io.print(i);
+end foo;
 
 
