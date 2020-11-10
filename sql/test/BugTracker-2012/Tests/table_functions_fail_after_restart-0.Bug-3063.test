@@ -1,0 +1,4 @@
+statement ok
+CREATE schema ft
+
+

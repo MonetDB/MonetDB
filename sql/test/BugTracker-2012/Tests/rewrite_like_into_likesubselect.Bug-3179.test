@@ -1,0 +1,78 @@
+statement ok
+set optimizer='sequential_pipe'
+
+statement ok
+start transaction
+
+query T rowsort
+explain select name,func from functions where name like '%optimizers%'
+----
+49 values hashing to f9ba69146d0a00099898228164028fc0
+
+query T rowsort
+explain select name,func from functions where name not like '%optimizers%'
+----
+49 values hashing to 16e4e1db1131417cac945731ad9b7d06
+
+query T rowsort
+explain select name,func from functions where name ilike '%optimizers%'
+----
+49 values hashing to 163ee57a2eca1a458cb98a6e7da2040f
+
+query T rowsort
+explain select name,func from functions where name not ilike '%optimizers%'
+----
+49 values hashing to d39de55c36730c80836898d943741006
+
+statement ok
+create function contains(str string, substr string)
+returns boolean
+begin
+	  return str like '%'||substr||'%';
+end
+
+statement ok
+create function not_contains(str string, substr string)
+returns boolean
+begin
+	  return str not like '%'||substr||'%';
+end
+
+statement ok
+create function icontains(str string, substr string)
+returns boolean
+begin
+	  return str ilike '%'||substr||'%';
+end
+
+statement ok
+create function not_icontains(str string, substr string)
+returns boolean
+begin
+	  return str not ilike '%'||substr||'%';
+end
+
+query T rowsort
+explain select name,func from functions where contains(name, 'optimizers')
+----
+48 values hashing to e2f658ba9568846fc9a8f40420eea5f7
+
+query T rowsort
+explain select name,func from functions where not_contains(name, 'optimizers')
+----
+48 values hashing to 8acc1f1ef01a4a7dd91b9af78813e9eb
+
+query T rowsort
+explain select name,func from functions where icontains(name, 'optimizers')
+----
+48 values hashing to c6170e19c9bbf0258af3838503e407ef
+
+query T rowsort
+explain select name,func from functions where not_icontains(name, 'optimizers')
+----
+48 values hashing to 5c1e42b98270b1e1d9d5d1744f14188a
+
+statement ok
+rollback
+
+

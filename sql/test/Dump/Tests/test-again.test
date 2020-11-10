@@ -1,0 +1,10 @@
+statement error
+insert into test (id) values (5)
+
+statement error
+insert into test (id) values (6)
+
+statement error
+select * from test
+
+

@@ -1,0 +1,19 @@
+statement ok
+create table t1234205 (name varchar(1024))
+
+statement ok
+insert into t1234205 values ('niels'),('fabian'),('martin')
+
+statement error
+prepare select name from t1234205 where name like ?
+
+statement error
+exec ** ('%')
+
+statement error
+prepare select name from t1234205 where name like 'n%'
+
+statement error
+exec ** ()
+
+

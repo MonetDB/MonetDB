@@ -1,0 +1,24 @@
+statement ok
+set optimizer = 'sequential_pipe'
+
+query T rowsort
+explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2
+----
+33 values hashing to a387e5e79cc2cc62ebd73b8c52a4767c
+
+query T rowsort
+explain select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
+----
+42 values hashing to c7f0e0cd0cc3fa68b00eca8e2dc9108f
+
+query T rowsort
+explain select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
+----
+63 values hashing to 67f3656d4e539a4d3ae36d08cb48e826
+
+query T rowsort
+explain select id , v2  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
+----
+82 values hashing to 7bd8e34c44320ed98ce95d605d134af4
+
+
