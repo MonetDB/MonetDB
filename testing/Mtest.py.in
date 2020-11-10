@@ -2046,6 +2046,8 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
     else:
         tests = (
             # file extention  EXT        CALL      SERVER
+            ('.test',         '.test',   'sqltest','SQL'),
+            ('.maltest',      '.maltest','maltest','SQL'),
             ('.py',           '.py',     'python', ''),
             ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
             ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
@@ -2055,7 +2057,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             ('.sql',          '.sql',    'sql',    'SQL'),
             ('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
             ('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
-            ('.test',         '.test',   'sqltest','SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
             #TODO:
@@ -2343,8 +2344,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         TestErr.close()
 
         t0 = time.time()
-        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
-
+        tres, issqllogictest = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
@@ -2492,12 +2492,18 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
-            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                        '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
-                        titlefmt % ('err', 'err'),
-                        '%s%s.FILTERED' % (TST, STABLEout),
-                        '%s.test.out.FILTERED' % TST,
-                        '%s.out.diff.html' % TST])
+            if issqllogictest:
+                cmd.extend([titlefmt % ('err', 'err'),
+                            os.devnull,
+                            os.devnull,
+                            '%s.out.diff.html' % TST])
+            else:
+                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
+                            titlefmt % ('err', 'err'),
+                            '%s%s.FILTERED' % (TST, STABLEout),
+                            '%s.test.out.FILTERED' % TST,
+                            '%s.out.diff.html' % TST])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -2561,12 +2567,26 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
-            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                        '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
-                        titlefmt % ('out', 'out'),
-                        '%s%s.FILTERED' % (TST, STABLEerr),
-                        '%s.test.err.FILTERED' % TST,
-                        '%s.err.diff.html' % TST])
+            if issqllogictest:
+                if tres:
+                    cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                                titlefmt % ('out', 'out'),
+                                os.devnull,
+                                '%s.test.err' % TST,
+                                '%s.err.diff.html' % TST])
+                else:
+                    cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                                titlefmt % ('out', 'out'),
+                                os.devnull,
+                                os.devnull,
+                                '%s.err.diff.html' % TST])
+            else:
+                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
+                            titlefmt % ('out', 'out'),
+                            '%s%s.FILTERED' % (TST, STABLEerr),
+                            '%s.test.err.FILTERED' % TST,
+                            '%s.err.diff.html' % TST])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -3126,6 +3146,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
 
     returncode = None
     pSrvr = PSRVR
+    issqllogictest = False
+    logicerror = False
     try:
         if SERVER in ["MAL", "SQL"]:
             SrvrOutFile = TST+".server.out"
@@ -3249,17 +3271,24 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
-            elif CALL == "sqltest":
+            elif CALL == "sqltest" or CALL == "maltest":
+                issqllogictest = True
                 import MonetDBtesting.sqllogictest as sqllogictest
                 sql = sqllogictest.SQLLogic(out=ClntErr)
+                if CALL == 'sqltest':
+                    lang = 'sql'
+                else:
+                    lang = 'mal'
                 try:
                     sql.connect(hostname='localhost',
                                 port=int(env['MAPIPORT']),
-                                database=TSTDB)
+                                database=TSTDB,
+                                language=lang)
                 except:
                     returncode = 'error'
                 else:
-                    sql.drop()
+                    if os.path.exists(TST+'.drop'):
+                        sql.drop()
                     try:
                         sql.parse(TST+EXT)
                     except sqllogictest.SQLLogicSyntaxError:
@@ -3338,9 +3367,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     n = q.name
                     q.close()
                 q = openutf8(n,'r')
-                TestErr.write(q.read())
+                data = q.read()
+                TestErr.write(data)
                 TestErr.flush()
                 q.close()
+                if issqllogictest and n.endswith('.client.err') and data:
+                    logicerror = True
+                else:
+                    logicerror = False
         else:
             TestOut = try_open(TestOutFile, 'a')
             TestErr = try_open(TestErrFile, 'a')
@@ -3360,12 +3394,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             raise KeyboardInterrupt
         for err in ('timeout', 'segfault', 'abort', 'signal', 'error'):
             if returncode == err:
-                return err
-        return returncode       # remaining error (shouldn't get here)
+                return err, issqllogictest
+        return returncode, issqllogictest       # remaining error (shouldn't get here)
 
     if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail
-        return None
+        if logicerror:
+            return 'logicerror', issqllogictest
+        return None, issqllogictest
 
     # Try to detect segfaults and the like
     # Try to detect aborts due to too deep recursion
@@ -3381,9 +3417,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             if os.path.isfile(f):
                 for l in openutf8(f):
                     if TO.search(l):
-                        return msg
+                        return msg, issqllogictest
 
-    return None
+    return None, issqllogictest
 
 ### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
 
