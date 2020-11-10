@@ -179,14 +179,6 @@ def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
                 print('{} values hashing to {}'.format(len(args) * crs.rowcount, h))
             print('')
 
-def monet_escape(data):
-    """
-    returns an escaped string
-    """
-    data = str(data).replace("\\", "\\\\")
-    data = data.replace("\'", "\\\'")
-    return "%s" % str(data)
-
 def process_copyfrom_stmt(query):
     index = 0
     for i, n in enumerate(query):
@@ -195,9 +187,7 @@ def process_copyfrom_stmt(query):
             break
     index+=1
     copy_into_stmt = '\n'.join(query[:index]).rstrip(';')
-    rest_ = query[index:]
-    # escape stuff
-    copy_into_data = list(map(lambda x: monet_escape(x), rest_))
+    copy_into_data = query[index:]
     query = '\n'.join(query)
     to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
 
