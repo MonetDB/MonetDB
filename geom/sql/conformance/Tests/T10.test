@@ -1,0 +1,6 @@
+query I rowsort
+SELECT ST_SRID(boundary) FROM named_places WHERE name = 'Goose Island'
+----
+101
+
+
