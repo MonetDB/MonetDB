@@ -1,0 +1,15 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table t(i int)
+
+statement ok
+insert into t values(null)
+
+query I rowsort
+select * from t
+----
+NULL
+
+

@@ -1,0 +1,12 @@
+statement error
+select 'a'+1
+
+statement error
+select 1-'a'
+
+query I rowsort
+select true+1
+----
+2
+
+
