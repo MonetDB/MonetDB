@@ -50,6 +50,7 @@ Converted folders progress:
 - sql/test/Dependencies/Tests   pass
 - sql/test/DropCascade/Tests   	pass
 - sql/test/FeatureRequests/Tests   	pass
+- sql/test/Dump/Tests   	pass
 - sql/test/mapi/Tests    	pass
 - sql/test/scoping/Tests    	pass
 - sql/test/bugs/Tests    	pass
