@@ -651,13 +651,13 @@ def PerformDir(env, testdir, auto=False) :
                             if len(fix.keys()) > 0:
                                 print('-- WARNING expanded variables needs to be converted back', file=fout)
                                 for k in fix:
-                                    print('--', key,':', fix[key], file=fout)
+                                    print('--', k,':', fix[k], file=fout)
                     else:
                         print(proc.stdout.read())
                         if len(fix.keys()) > 0:
                             print('-- WARNING expanded variables needs to be converted back')
                             for k in fix:
-                                print('--', key,':', fix[key])
+                                print('--', k,':', fix[k])
         finally:
             if pSrvr is not None:
                 pSrvr.terminate()
