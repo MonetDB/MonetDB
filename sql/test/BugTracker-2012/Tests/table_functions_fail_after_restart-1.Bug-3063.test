@@ -1,0 +1,10 @@
+statement error
+select * from ft.func() as ftf
+
+statement error
+drop function ft.func
+
+statement ok
+drop schema ft
+
+
