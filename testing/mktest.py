@@ -54,12 +54,24 @@ else:
 query = []
 
 def is_psm_stmt(stmt:str):
-    rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure)', re.I)
-    return rgx.match(stmt) is not None
+    if opts.language == 'sql':
+        rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure)', re.I)
+        return rgx.match(stmt) is not None
+    else:
+        return re.match(r'\s*function\s', stmt) is not None
+
+def is_psm_stmt_end(stmt:str):
+    if opts.language == 'sql':
+        return re.search(r'end;$', stmt, re.I) is not None
+    else:
+        return re.match(r'\s*end(\s+\w+)?\s*;', stmt) is not None
 
 def is_complete_psm_stmt(stmt:str):
-    rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure)[\S\s]*(end;|external\s+name\s+.*;)$', re.I)
-    return rgx.match(stmt) is not None
+    if opts.language == 'sql':
+        rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure)[\S\s]*(end;|external\s+name\s+.*;)$', re.I)
+        return rgx.match(stmt) is not None
+    else:
+        return re.match(r'\s*function\s.*\bend(\s+\w+)?\s*;', stmt, re.DOTALL) is not None
 
 def is_copyfrom_stmt(stmt:str):
     # TODO fix need stronger regex
@@ -167,14 +179,6 @@ def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
                 print('{} values hashing to {}'.format(len(args) * crs.rowcount, h))
             print('')
 
-def monet_escape(data):
-    """
-    returns an escaped string
-    """
-    data = str(data).replace("\\", "\\\\")
-    data = data.replace("\'", "\\\'")
-    return "%s" % str(data)
-
 def process_copyfrom_stmt(query):
     index = 0
     for i, n in enumerate(query):
@@ -183,9 +187,7 @@ def process_copyfrom_stmt(query):
             break
     index+=1
     copy_into_stmt = '\n'.join(query[:index]).rstrip(';')
-    rest_ = query[index:]
-    # escape stuff
-    copy_into_data = list(map(lambda x: monet_escape(x), rest_))
+    copy_into_data = query[index:]
     query = '\n'.join(query)
     to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
 
@@ -214,9 +216,12 @@ while True:
                 query = []
         continue
     # when copyfrom stmt from stdin skip because data may contain --
-    if '--' in line and not is_copyfrom_stmt('\n'.join(query)):
+    if opts.language == 'sql' and '--' in line and not is_copyfrom_stmt('\n'.join(query)):
         line = line[:line.index('--')].rstrip()
-    if (inpsm and (line.endswith('end;') or line.endswith('END;'))) or (not inpsm and line.endswith(';')):
+    res = re.match('[^\'"]*((\'[^\']*\'|"[^"]*")[^\'"]*)*#', line)
+    if res is not None:
+        line = res.group(0)[:-1].rstrip()
+    if (inpsm and is_psm_stmt_end(line)) or (not inpsm and line.endswith(';')):
         inpsm = False
         tmp = ([] + query)
         tmp.append(line)

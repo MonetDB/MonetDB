@@ -646,7 +646,11 @@ def PerformDir(env, testdir, auto=False) :
                 cmd = ['mktest.py', '--database', TSTDB, '--port', str(pSrvr.port), '--language', CALL]
                 with process.Popen(cmd, stdin=fin, stdout=process.PIPE, text=True) as proc:
                     if auto:
-                        with open(t.get('test_path') + '.test', 'w') as fout:
+                        if CALL == 'sql':
+                            ext = '.test'
+                        else:
+                            ext = '.maltest'
+                        with open(t.get('test_path') + ext, 'w') as fout:
                             print(proc.stdout.read(), file=fout)
                             if len(fix.keys()) > 0:
                                 print('-- WARNING expanded variables needs to be converted back', file=fout)

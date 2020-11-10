@@ -9,10 +9,11 @@ function f();
     run_isolate.isolation();
     io.print("done\n");
     mdb.List();
-end f;
+end f
 
-query T rowsort 
-	f(); 
+query T rowsort
+f()
 ----
 end user.f;@#[7] (0)  
+
 
