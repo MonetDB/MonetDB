@@ -1,0 +1,72 @@
+statement ok
+create table tbl (i int, s string, d decimal(5, 2))
+
+statement error
+copy 3 records into tbl (i, d) from stdin using delimiters ',',E'\n'
+<COPY_INTO_DATA>
+1,2.0
+2,2.1
+3,2.2
+
+
+query ITT nosort
+select * from tbl;
+----
+
+statement ok
+drop table tbl;
+
+statement ok
+create table tbl (i int, s string, d decimal(5, 2))
+
+statement ok
+copy 3 records into tbl (i, d) from stdin using delimiters ',',E'\n'
+<COPY_INTO_DATA>
+1,"test",2.0
+2,"test1",2.1
+3,"test",2.2
+
+
+query ITT nosort
+select * from tbl;
+----
+1
+NULL
+2.00
+2
+NULL
+2.10
+3
+NULL
+2.20
+
+statement ok
+drop table tbl;
+
+statement ok
+create table tbl (i int, s string, d decimal(5, 2))
+
+statement ok
+copy 3 records into tbl (i, d) from stdin (i, d) using delimiters ',',E'\n'
+<COPY_INTO_DATA>
+1,2.0
+2,2.1
+3,2.2
+
+query ITT nosort
+select * from tbl;
+----
+1
+NULL
+2.00
+2
+NULL
+2.10
+3
+NULL
+2.20
+
+statement ok
+drop table tbl;
+
+

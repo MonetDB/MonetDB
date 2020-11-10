@@ -1,0 +1,56 @@
+statement error
+\set VERBOSITY terse
+SELECT 't0', ST_OffsetCurve('POINT(0 0)', 10)
+
+statement error
+SELECT 't0', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0)', 42), 0))
+
+statement error
+SELECT 't1', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0)', 42), 10))
+
+statement error
+SELECT 't2', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0)', 42), -10))
+
+statement error
+SELECT 't3', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(10 0, 0 0)', 42), 10))
+
+statement error
+SELECT 't4', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(10 0, 0 0)', 42), -10))
+
+statement error
+SELECT 't5', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 10 10)', 42), -10),1))
+
+statement error
+SELECT 't5b', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 10 10)', 42), 10))
+
+statement error
+SELECT 't6', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 10 10)', 42), -10,'quad_segs=2'),1))
+
+statement error
+SELECT 't7', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 10 10)', 42), -10,'join=bevel'))
+
+statement error
+SELECT 't8', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 10 10)', 42), -10,'quad_segs=2 join=mitre'),1))
+
+statement error
+SELECT 't9', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 5 10)', 42), -10,'quad_segs=2 join=mitre mitre_limit=1'),1))
+
+statement error
+SELECT 't10', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 5 10)', 42), 2, 'quad_segs=2 join=mitre mitre_limit=1'),1))
+
+statement error
+SELECT 't10b', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0, 10 0, 5 10)', 42), 2,'quad_segs=2 join=miter miter_limit=1'),1))
+
+statement error
+SELECT 't11', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(36 38,38 35,41 34,42 33,45 32,47 28,50 28,52 32,57 33)'), 2,'join=mitre'),0.2))
+
+statement error
+SELECT 't12', ST_AsEWKT(ST_SnapToGrid(ST_OffsetCurve(ST_GeomFromText('LINESTRING(36 38,38 35,41 34,42 33,45 32,47 28,50 28,52 32,57 33)'), -2,'join=mitre'),0.2))
+
+statement error
+SELECT 't13', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0,0 20, 10 20, 10 10, 0 10)'), 2,'join=mitre'))
+
+statement error
+SELECT 't14', ST_AsEWKT(ST_OffsetCurve(ST_GeomFromText('LINESTRING(0 0,0 20, 10 20, 10 10, 0 10)'), -2,''))
+
+

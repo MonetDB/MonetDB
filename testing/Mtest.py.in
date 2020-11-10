@@ -2292,14 +2292,15 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         ACCURACYerr = par['ACCURACY']
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
         outmissing = errmissing = False
-        if not os.path.isfile(TST+STABLEout):
-            openutf8(TST+STABLEout,"w").close()
-            ACCURACYout = 0
-            outmissing = True
-        if not os.path.isfile(TST+STABLEerr):
-            openutf8(TST+STABLEerr,"w").close()
-            ACCURACYerr = 0
-            errmissing = True
+        if CALL not in ('sqltest', 'maltest'):
+            if not os.path.isfile(TST+STABLEout):
+                openutf8(TST+STABLEout,"w").close()
+                ACCURACYout = 0
+                outmissing = True
+            if not os.path.isfile(TST+STABLEerr):
+                openutf8(TST+STABLEerr,"w").close()
+                ACCURACYerr = 0
+                errmissing = True
         if (outmissing or errmissing) and not CONDITIONALS['KNOWNFAIL']:
             # no stable output, so known to fail
             reason = "as conditional 'KNOWNFAIL' does not hold."
@@ -2433,10 +2434,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         except IOError as err:
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
 
-        Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
-        Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
-        Mfilter.mFilter(TST+".test.out",par['IGNORE'])
-        Mfilter.mFilter(TST+".test.err",par['IGNORE'])
+        if not issqllogictest:
+            Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
+            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
+            Mfilter.mFilter(TST+".test.out",par['IGNORE'])
+            Mfilter.mFilter(TST+".test.err",par['IGNORE'])
 
         if REV:
             d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
@@ -2477,7 +2479,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         if tres is not None:
             # test program exited with error => expect major differences!
             ACCURACYout = -1
-        else:
+        elif not issqllogictest:
             szs = os.stat("%s%s.FILTERED" % (TST, STABLEout)).st_size
             szt = os.stat("%s.test.out.FILTERED" % TST).st_size
             if szt < szs*0.5 or szt > szs*1.5:
@@ -2553,7 +2555,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         if tres is not None:
             # test program exited with error => expect major differences!
             ACCURACYerr = -1
-        else:
+        elif not issqllogictest:
             szs = os.stat("%s%s.FILTERED" % (TST, STABLEerr)).st_size
             szt = os.stat("%s.test.err.FILTERED" % TST).st_size
             if szt < szs*0.5 or szt > szs*1.5:

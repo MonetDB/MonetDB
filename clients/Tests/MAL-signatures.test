@@ -1,6 +1,6 @@
 query TTTTT rowsort
 select * from sys.malfunctions() order by module, "function", address, signature, comment
 ----
-64110 values hashing to 2c8d260ec221c669a3c878cf04340222
+65490 values hashing to ca0241b9eab8bb582f3f93a7fd008dd8
 
 

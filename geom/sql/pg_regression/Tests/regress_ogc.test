@@ -1,0 +1,501 @@
+statement error
+SELECT 'buffer', ST_astext(ST_SnapToGrid(ST_buffer('POINT(0 0)', 1, 2), 1.0e-6))
+
+query TT rowsort
+SELECT 'geomunion', ST_astext(ST_union('POINT(0 0)', 'POINT(1 1)'))
+----
+geomunion
+MULTIPOINT (0 0, 1 1)
+
+query TT rowsort
+SELECT 'convexhull', ST_asewkt(ST_convexhull('POLYGON((0 0, 10 0, 10 10, 0 10, 0 0),(2 2, 2 4, 4 4, 4 2, 2 2))'))
+----
+convexhull
+SRID:0;POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0))
+
+statement error
+SELECT 'relate', ST_relate('POINT(0 0)', 'LINESTRING(0 0, 1 1)')
+
+query TT rowsort
+SELECT 'relate', ST_relate('POINT(0 0)', 'LINESTRING(0 0, 1 1)', 'F0FFFF*02')
+----
+relate
+True
+
+query TT rowsort
+SELECT 'relate', ST_relate('POINT(0 0)', 'LINESTRING(0 0, 1 1)', 'F0FFF0*02')
+----
+relate
+False
+
+query TT rowsort
+SELECT 'disjoint', ST_disjoint('POINT(0 0)', 'LINESTRING(0 0, 1 1)')
+----
+disjoint
+False
+
+query TT rowsort
+SELECT 'touches', ST_touches('LINESTRING(0 10, 0 -10)', 'LINESTRING(0 0, 1 1)')
+----
+touches
+True
+
+query TT rowsort
+SELECT 'intersects', ST_intersects('LINESTRING(0 10, 0 -10)', 'LINESTRING(0 0, 1 1)')
+----
+intersects
+True
+
+query TT rowsort
+SELECT 'crosses', ST_crosses('LINESTRING(0 10, 0 -10)', 'LINESTRING(0 0, 1 1)')
+----
+crosses
+False
+
+query TT rowsort
+SELECT 'crosses', ST_crosses('LINESTRING(0 10, 0 -10)', 'LINESTRING(-4 0, 1 1)')
+----
+crosses
+True
+
+query TT rowsort
+SELECT 'within100', ST_within('POINT(5 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+within100
+True
+
+query TT rowsort
+SELECT 'within101', ST_within('POINT(0 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+within101
+False
+
+query TT rowsort
+SELECT 'within102', ST_within('POINT(-1 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+within102
+False
+
+query TT rowsort
+SELECT 'within103', ST_within('POINT(0 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+within103
+False
+
+query TT rowsort
+SELECT 'within104', ST_within('POINT(0 12)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+within104
+False
+
+query TT rowsort
+SELECT 'within105', ST_within(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+within105
+True
+
+query TT rowsort
+SELECT 'within106', ST_within(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+within106
+True
+
+query TT rowsort
+SELECT 'disjoint100', ST_disjoint('POINT(5 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint100
+False
+
+query TT rowsort
+SELECT 'disjoint101', ST_disjoint('POINT(0 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint101
+False
+
+query TT rowsort
+SELECT 'disjoint102', ST_disjoint('POINT(-1 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint102
+True
+
+query TT rowsort
+SELECT 'disjoint103', ST_disjoint('POINT(0 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint103
+False
+
+query TT rowsort
+SELECT 'disjoint104', ST_disjoint('POINT(0 12)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint104
+True
+
+query TT rowsort
+SELECT 'disjoint105', ST_disjoint(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+disjoint105
+False
+
+query TT rowsort
+SELECT 'disjoint106', ST_disjoint(ST_GeomFromText('POINT(521543 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+disjoint106
+True
+
+query TT rowsort
+SELECT 'disjoint150', ST_disjoint('POINT(5 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint150
+False
+
+query TT rowsort
+SELECT 'disjoint151', ST_disjoint('POINT(0 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint151
+False
+
+query TT rowsort
+SELECT 'disjoint152', ST_disjoint('POINT(-1 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint152
+True
+
+query TT rowsort
+SELECT 'disjoint153', ST_disjoint('POINT(0 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint153
+False
+
+query TT rowsort
+SELECT 'disjoint154', ST_disjoint('POINT(0 12)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+disjoint154
+True
+
+query TT rowsort
+SELECT 'disjoint155', ST_disjoint(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+disjoint155
+False
+
+query TT rowsort
+SELECT 'disjoint156', ST_disjoint(ST_GeomFromText('POINT(521543 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+disjoint156
+True
+
+query TT rowsort
+SELECT 'intersects100', ST_intersects('POINT(5 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects100
+True
+
+query TT rowsort
+SELECT 'intersects101', ST_intersects('POINT(0 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects101
+True
+
+query TT rowsort
+SELECT 'intersects102', ST_intersects('POINT(-1 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects102
+False
+
+query TT rowsort
+SELECT 'intersects103', ST_intersects('POINT(0 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects103
+True
+
+query TT rowsort
+SELECT 'intersects104', ST_intersects('POINT(0 12)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects104
+False
+
+query TT rowsort
+SELECT 'intersects105', ST_intersects(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+intersects105
+True
+
+query TT rowsort
+SELECT 'intersects106', ST_intersects(ST_GeomFromText('POINT(521543 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+intersects106
+False
+
+query TT rowsort
+SELECT 'intersects150', ST_intersects('POINT(5 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects150
+True
+
+query TT rowsort
+SELECT 'intersects151', ST_intersects('POINT(0 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects151
+True
+
+query TT rowsort
+SELECT 'intersects152', ST_intersects('POINT(-1 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects152
+False
+
+query TT rowsort
+SELECT 'intersects153', ST_intersects('POINT(0 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects153
+True
+
+query TT rowsort
+SELECT 'intersects154', ST_intersects('POINT(0 12)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+intersects154
+False
+
+query TT rowsort
+SELECT 'intersects155', ST_intersects(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+intersects155
+True
+
+query TT rowsort
+SELECT 'intersects156', ST_intersects(ST_GeomFromText('POINT(521543 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
+----
+intersects156
+False
+
+query TT rowsort
+SELECT 'contains100', ST_contains('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(5 5)')
+----
+contains100
+True
+
+query TT rowsort
+SELECT 'contains101', ST_contains('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 0)')
+----
+contains101
+True
+
+query TT rowsort
+SELECT 'contains102', ST_contains('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(-1 0)')
+----
+contains102
+True
+
+query TT rowsort
+SELECT 'contains103', ST_contains('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 5)')
+----
+contains103
+True
+
+query TT rowsort
+SELECT 'contains104', ST_contains('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 12)')
+----
+contains104
+True
+
+query TT rowsort
+SELECT 'contains105', ST_contains(ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631), ST_GeomFromText('POINT(521513 5377804)', 32631))
+----
+contains105
+True
+
+query TT rowsort
+SELECT 'contains106', ST_contains(ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631), ST_GeomFromText('POINT(521513 5377804)', 32631))
+----
+contains106
+True
+
+statement error
+select 'within119', ST_within('LINESTRING(-1 -1, -1 101, 101 101, 101 -1)','BOX3D(0 0, 100 100)')
+
+statement error
+select 'within120', ST_within('LINESTRING(-1 -1, -1 100, 101 100, 101 -1)','BOX3D(0 0, 100 100)')
+
+query TT rowsort
+SELECT 'contains110', ST_Contains('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'LINESTRING(1 10, 9 10, 9 8)')
+----
+contains110
+True
+
+query TT rowsort
+SELECT 'contains111', ST_Contains('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'LINESTRING(1 10, 10 10, 10 8)')
+----
+contains111
+True
+
+query TT rowsort
+SELECT 'within130', ST_Within('LINESTRING(1 10, 9 10, 9 8)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+within130
+True
+
+query TT rowsort
+SELECT 'within131', ST_Within('LINESTRING(1 10, 10 10, 10 8)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+within131
+False
+
+query TT rowsort
+SELECT 'overlaps', ST_overlaps('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))','POINT(5 5)')
+----
+overlaps
+True
+
+query TT rowsort
+SELECT 'isvalid', ST_isvalid('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
+----
+isvalid
+True
+
+query TT rowsort
+SELECT 'isvalid', ST_isvalid('POLYGON((0 0, 0 10, 10 10, -5 10, 10 0, 0 0))')
+----
+isvalid
+False
+
+query TT rowsort
+SELECT 'isvalid', ST_isvalid('GEOMETRYCOLLECTION EMPTY')
+----
+isvalid
+True
+
+query TT rowsort
+SELECT 'intersection', ST_astext(ST_intersection('LINESTRING(0 10, 0 -10)', 'LINESTRING(0 0, 1 1)'))
+----
+intersection
+POINT (0 0)
+
+query TT rowsort
+SELECT 'difference', ST_astext(ST_difference('LINESTRING(0 10, 0 -10)', 'LINESTRING(0 2, 0 -2)'))
+----
+difference
+MULTILINESTRING ((0 10, 0 2), (0 -2, 0 -10))
+
+query TT rowsort
+SELECT 'boundary', ST_astext(ST_boundary('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0),(2 2, 2 4, 4 4, 4 2, 2 2))'))
+----
+boundary
+MULTILINESTRING ((0 0, 0 10, 10 10, 10 0, 0 0), (2 2, 2 4, 4 4, 4 2, 2 2))
+
+query TT rowsort
+SELECT 'symdifference', ST_astext(ST_symdifference('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0),(2 2, 2 4, 4 4, 4 2, 2 2))', 'LINESTRING(0 0, 20 20)'))
+----
+symdifference
+GEOMETRYCOLLECTION (LINESTRING (2 2, 4 4), LINESTRING (10 10, 20 20), POLYGON ((0 0, 0 10, 10 10, 10 0, 0 0), (4 4, 2 4, 2 2, 4 2, 4 4)))
+
+query TT rowsort
+SELECT 'issimple', ST_issimple('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0),(2 2, 2 4, 4 4, 4 2, 2 2))')
+----
+issimple
+True
+
+query TT rowsort
+SELECT 'equals', ST_equals('LINESTRING(0 0, 1 1)', 'LINESTRING(1 1, 0 0)')
+----
+equals
+True
+
+statement error
+WITH inp AS ( SELECT
+ 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0),(2 2, 2 4, 4 4, 4 2, 2 2))' as g )
+SELECT 'pointonsurface', ST_Contains(g, ST_pointonsurface(g)) from inp
+
+query TT rowsort
+SELECT 'centroid', ST_astext(ST_centroid('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0),(2 2, 2 4, 4 4, 4 2, 2 2))'))
+----
+centroid
+POINT (5.083333333333333 5.083333333333333)
+
+query TT rowsort
+SELECT 'exteriorring', ST_astext(ST_exteriorring(ST_PolygonFromText('POLYGON((52 18,66 23,73 9,48 6,52 18),(59 18,67 18,67 13,59 13,59 18))')))
+----
+exteriorring
+LINESTRING (52 18, 66 23, 73 9, 48 6, 52 18)
+
+statement error
+SELECT 'polygonize_garray', ST_astext(ST_polygonize('{0102000000020000000000000000000000000000000000000000000000000024400000000000000000:0102000000020000000000000000002440000000000000000000000000000000000000000000000000:0102000000020000000000000000002440000000000000244000000000000000000000000000000000:0102000000020000000000000000002440000000000000244000000000000024400000000000000000:0102000000020000000000000000002440000000000000244000000000000000000000000000002440:0102000000020000000000000000000000000000000000244000000000000000000000000000002440:0102000000020000000000000000000000000000000000244000000000000024400000000000002440:0102000000020000000000000000000000000000000000244000000000000000000000000000000000:0102000000020000000000000000000000000000000000244000000000000024400000000000000000}'))
+
+statement error
+SELECT 'polygonize_garray', ST_astext(ST_geometryn(ST_polygonize('{LINESTRING(0 0, 10 0):LINESTRING(10 0, 10 10):LINESTRING(10 10, 0 10):LINESTRING(0 10, 0 0)}'), 1))
+
+statement error
+select 'linemerge149', ST_asewkt(ST_linemerge('GEOMETRYCOLLECTION(LINESTRING(0 0, 1 1), LINESTRING(4 4, 1 1), LINESTRING(-5 -5, 0 0))'))
+
+query TT rowsort
+select 'intersects', ST_intersects(
+   ST_polygonfromtext('POLYGON((0.0 0.0,1.0 0.0,1.0 1.0,1.0 0.0,0.0 0.0))'),
+      ST_polygonfromtext('POLYGON((0.0 2.0,1.0 2.0,1.0 3.0,0.0 3.0,0.0 2.0))')
+      )
+----
+intersects
+False
+
+query TT rowsort
+select 'ST_GeometryN', ST_asewkt(ST_GeometryN('LINESTRING(0 0, 1 1)', 1))
+----
+ST_GeometryN
+NULL
+
+query TI rowsort
+select 'ST_NumGeometries', ST_NumGeometries(ST_GeomFromText('LINESTRING(0 0, 1 1)'))
+----
+ST_NumGeometries
+1
+
+query TT rowsort
+select 'ST_Union1', ST_AsText(ST_Union('POLYGON((0 0, 0 1, 1 1, 1 0, 0 0))', 'POLYGON((0.5 0.5, 1.5 0.5, 1.5 1.5, 0.5 1.5, 0.5 0.5))'))
+----
+ST_Union1
+POLYGON ((0 0, 0 1, 0.5 1, 0.5 1.5, 1.5 1.5, 1.5 0.5, 1 0.5, 1 0, 0 0))
+
+query TT rowsort
+select 'ST_StartPoint1',ST_AsText(ST_StartPoint('LINESTRING(0 0, 1 1, 2 2)'))
+----
+ST_StartPoint1
+POINT (0 0)
+
+query TT rowsort
+select 'ST_EndPoint1', ST_AsText(ST_Endpoint('LINESTRING(0 0, 1 1, 2 2)'))
+----
+ST_EndPoint1
+POINT (2 2)
+
+query TT rowsort
+select 'ST_PointN1', ST_AsText(ST_PointN('LINESTRING(0 0, 1 1, 2 2)',2))
+----
+ST_PointN1
+POINT (2 2)
+
+statement error
+select 'ST_PointN2', ST_AsText(ST_PointN('LINESTRING(0 0, 1 1, 2 2)',3))
+
+statement error
+select 'ST_PointN3',  ST_AsText(ST_PointN('LINESTRING(0 0, 1 1, 2 2)',4))
+
+query TT rowsort
+select 'ST_PointN4', ST_AsText(ST_PointN('LINESTRING(0 0, 1 1, 2 2)',0))
+----
+ST_PointN4
+POINT (0 0)
+
+query TT rowsort
+select 'ST_PointN5', ST_AsText(ST_PointN('LINESTRING(0 0, 1 1, 2 2)',1))
+----
+ST_PointN5
+POINT (1 1)
+
+statement error
+select 'ST_PointN6', ST_AsText(ST_PointN('POLYGON((0 0, 1 1, 0 1, 0 0))',1))
+
+query TT rowsort
+select 'ST_Buffer(empty)', ST_AsText(ST_Buffer('POLYGON EMPTY', 0.5))
+----
+ST_Buffer(empty)
+POLYGON EMPTY
+
+

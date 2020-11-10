@@ -1,0 +1,26 @@
+statement error
+\set VERBOSITY terse
+SET client_min_messages TO warning
+
+statement ok
+DELETE FROM spatial_ref_sys WHERE srid = 4326
+
+statement ok
+INSERT INTO spatial_ref_sys ( srid, proj4text ) VALUES( 4326, '+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs')
+
+statement error
+CREATE TABLE test_pt(gid SERIAL PRIMARY KEY, geom geometry)
+
+statement error
+INSERT INTO test_pt(geom) VALUES(ST_GeomFromEWKT('SRID=4326;POINT M(1 2 3)'))
+
+statement error
+SELECT populate_geometry_columns('test_pt'::regclass)
+
+statement error
+SELECT 'The result: ' || DropGeometryTable('test_pt')
+
+statement error
+SELECT 'Unexistant: ' || DropGeometryTable('unexistent')
+
+

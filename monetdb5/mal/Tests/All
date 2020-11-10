@@ -10,80 +10,80 @@ tst008
 tst009
 tst010
 tst011
-# tst012
-# tst013
-# tst014
-# tst015
-# tst016
-# tst018
-# tst019
-# tst020
-# tst021
-# tst022
-# tst023
-# tst024
-# tst025
-# tst026
-# tst027
-# tst028
-# tst029
-# tst030
-# tst031
-# tst032
-# tst033
-# tst034
-# tst035
-# tst036
-# tst037
-# tst038
-# tst039
-# tst041
-# tst042
-# tst043
-# tst044
-# tst045
-# tst046
-# tst047
-# tst048
-# tst049
-# tst050
-# tst051
-# tst052
-# tst053
-# tst054
-# tst055
-# tst056
-# tst057
-# tst058
-# tst059
-# tst060
-# tst061
-# tst070
-# tst071
-# tst072
-# tst074
-# tst075
-# tst077
-# tst100
-# tst1000
-# tst1002
-# tst1004
-# tst101
-# tst1012
-# tst102
-# tst103
-# tst107
-# tst108
-# tst109
-# tst110
-# tst111
-# tst112
-# tst113
-# tst114
-# tst117
-# tst115
-# tst116
-# tst1150
+tst012
+tst013
+tst017
+tst014
+tst015
+tst016
+tst018
+tst019
+tst020
+tst021
+tst022
+#tst023
+#tst024
+#tst025
+#tst026
+#tst027
+#tst028
+#tst029
+#tst030
+#tst031
+#tst032
+#tst033
+#tst034
+#tst035
+#tst036
+#tst037
+#tst038
+#tst039
+#tst041
+#tst042
+#tst043
+#tst044
+#tst045
+#tst046
+#tst047
+#tst048
+#tst049
+#tst050
+#tst051
+#tst052
+#tst053
+#tst054
+#tst055
+#tst056
+#tst057
+#tst058
+#tst059
+#tst060
+#tst061
+#tst070
+#tst071
+#tst072
+#tst074
+#tst075
+## tst077
+#tst100
+#tst1000
+#tst1004
+#tst101
+#tst1012
+#tst102
+#tst103
+#tst107
+#tst108
+#tst109
+#tst110
+#tst111
+#tst112
+#tst113
+#tst114
+#tst117
+#tst115
+#tst116
+#tst1150
 # #tst120	files are not located in module and paths are runtime dependent
 # #tst1200
 # #tst1204

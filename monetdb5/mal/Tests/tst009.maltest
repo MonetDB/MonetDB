@@ -1,13 +1,20 @@
-statement error
-language.call("io.print(1);")
+statement T rowsort
+language.call("io.print(1);");
+----
+1
 
-statement error
-language.call("io.print(\"hello\");")
+statement T rowsort
+language.call("io.print(\"hello\");");
+----
+hello
 
-statement error
-language.call("s:=\"goodbye\";io.print(s);")
+statement T rowsort
+language.call("s:=\"goodbye\";io.print(s);");
+----
+"goodbye" 
 
-statement error
-language.call("language.call(\"io.print(\\\\\"hello\\\\\");\");")
-
+statement T rowsort
+language.call("language.call(\"io.print(\\\\\"hello\\\\\");\");");
+----
+hello
 

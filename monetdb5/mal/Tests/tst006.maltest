@@ -1,42 +1,19 @@
 statement ok
-function foo()
+function foo();
+	r:=0;
+barrier	l:= r < 1;
+	io.print(l);
+	io.print(r);
+	r:= r+1;
+	l:= false;
+	redo l;
+exit	l;
+end foo;
 
-statement ok
-	r:=0
-
-statement ok
-barrier	l:= r < 1
-
-statement ok
-	io.print(l)
-
-statement ok
-	io.print(r)
-
-statement ok
-	r:= r+1
-
-statement ok
-	l:= false
-
-statement ok
-	redo l
-
-statement ok
-exit	l
-
-statement ok
-end foo
-
-query T rowsort
-mdb.List("user","foo")
+query T nosort
+user.foo();
 ----
-end user.foo;@#[9] (0)  
-
-query T rowsort
-user.foo()
-----
-0
 true
+0
 
 

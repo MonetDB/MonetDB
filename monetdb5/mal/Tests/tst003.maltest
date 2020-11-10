@@ -1,7 +1,7 @@
 statement error
-function foo()
-a:=b;	#b not yet defined
-b:=c;	#c undefined
+function foo();
+	a:=b;
+	b:=c;
 end foo
 
 

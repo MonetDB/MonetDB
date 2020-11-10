@@ -1,0 +1,15 @@
+statement ok
+start transaction
+
+statement ok
+create table foo (s string)
+
+statement ok
+copy 1 records into foo from stdin using delimiters ',',E'\n','"'
+<COPY_INTO_DATA>
+"quote: "" another: "" third: """
+select * from foo;
+drop table foo;
+rollback;
+
+

@@ -1,79 +1,34 @@
 statement ok
-function foo()
+function foo();
+	i:= 1;
+	j:= 2;
+barrier v:=i;
+	io.print("entered");
+	io.print(v);
+	redo v:= iterator.next(-1,0);
+exit 	v;
+	io.print("doubles");
+	i:= 1;
+barrier (v,w):=(i,j);
+	io.print("entered2");
+	io.print(v);
+	v:= v-1;
+	barrier b:= v == 0;
+		leave (v,w);
+	exit b;
+	redo (v,w):= (v,w);
+exit 	(v,w);
+	io.print("finished");
+end foo;
 
-statement ok
-	i:= 1
-
-statement ok
-	j:= 2
-
-statement ok
-barrier v:=i
-
-statement ok
-	io.print("entered")
-
-statement ok
-	io.print(v)
-
-statement ok
-	redo v:= iterator.next(-1,0)
-
-statement ok
-exit 	v
-
-statement ok
-	io.print("doubles")
-
-statement ok
-	i:= 1
-
-statement ok
-barrier (v,w):=(i,j)
-
-statement ok
-	io.print("entered2")
-
-statement ok
-	io.print(v)
-
-statement ok
-	v:= v-1
-
-statement ok
-	barrier b:= v == 0
-
-statement ok
-		leave (v,w)
-
-statement ok
-	exit b
-
-statement ok
-	redo (v,w):= (v,w)
-
-statement ok
-exit 	(v,w)
-
-statement ok
-	io.print("finished")
-
-statement ok
-end foo
-
-query T rowsort
-mdb.List("user","foo")
+query T nosort
+user.foo();
 ----
-end user.foo;@#[20] (0)  
-
-query T rowsort
-user.foo()
-----
-"doubles"
 "entered"
+1
+"doubles"
 "entered2"
+1
 "finished"
-1
-1
 
 
