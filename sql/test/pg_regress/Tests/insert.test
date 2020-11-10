@@ -1,0 +1,44 @@
+statement ok
+create table inserttest (col1 integer, col2 integer NOT NULL, col3 text default 'testing')
+
+statement error
+insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT, DEFAULT)
+
+statement ok
+insert into inserttest (col2, col3) values (3, 'DEFAULT')
+
+statement ok
+insert into inserttest (col1, col2, col3) values (NULL, 5, 'DEFAULT')
+
+statement ok
+insert into inserttest values (NULL, 5, 'test')
+
+statement ok
+insert into inserttest (col1, col2) values (NULL, 7)
+
+query IIT rowsort
+select * from inserttest
+----
+12 values hashing to e2cdd029dcd73f0eeebf992392c88c18
+
+statement error
+insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT)
+
+statement error
+insert into inserttest (col1, col2, col3) values (1, 2)
+
+statement error
+insert into inserttest (col1) values (1, 2)
+
+statement error
+insert into inserttest (col1) values (DEFAULT, DEFAULT)
+
+query IIT rowsort
+select * from inserttest
+----
+12 values hashing to e2cdd029dcd73f0eeebf992392c88c18
+
+statement ok
+drop table inserttest
+
+
