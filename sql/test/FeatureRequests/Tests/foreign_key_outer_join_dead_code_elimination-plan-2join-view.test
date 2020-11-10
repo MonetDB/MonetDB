@@ -1,0 +1,27 @@
+statement ok
+set optimizer = 'sequential_pipe'
+
+query T rowsort
+   plan select count(*) from v2
+----
+) [ "%1"."%1" NOT NULL ]
+project (
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+| group by (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+
+query T rowsort
+   plan select id       from v2 order by id
+----
+) [ "v2"."id" NOT NULL HASHCOL  ] [ "v2"."id" ASC NOT NULL HASHCOL  ]
+project (
+| ) [ "fk"."id" NOT NULL HASHCOL  as "v2"."id" ]
+| project (
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+
+query T rowsort
+   plan select id , v2  from v2 order by id
+----
+11 values hashing to d1cceab88d17744967b97182786f83df
+
+
