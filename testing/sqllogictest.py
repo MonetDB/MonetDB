@@ -239,6 +239,8 @@ class SQLLogic:
             line = self.readline()
             if not line:
                 break
+            if line[0] == '#': # skip mal comments
+                break
             line = line.split()
             if not line:
                 continue
