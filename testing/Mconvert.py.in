@@ -650,6 +650,8 @@ def PerformDir(env, testdir, auto=False) :
                             print(proc.stdout.read(), file=fout)
                             if len(fix.keys()) > 0:
                                 print('-- WARNING expanded variables needs to be converted back', file=fout)
+                                # print to stdout to make it obvious
+                                print('-- WARNING expanded variables needs to be converted back in {}'.format(t.get('test_path') + '.test'))
                                 for k in fix:
                                     print('--', k,':', fix[k], file=fout)
                     else:
