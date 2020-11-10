@@ -87,6 +87,34 @@ select stddev_samp(NULL) over (),
 ----
 40 values hashing to c592fdbc473c6ef69c4747110455fb4a
 
+query RRRR rowsort
+select stddev_samp(aa) over (rows between 5 preceding and 0 following),
+       stddev_samp(aa) over (rows between 5 preceding and 2 following),
+       stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+40 values hashing to 686c7f0c967067713b4beff601fd7d38
+
+query RR rowsort
+select stddev_samp(aa) over (rows 2 preceding),
+       stddev_samp(aa) over (partition by bb order by bb rows 2 preceding) from analytics
+----
+20 values hashing to 3e5dbce9d522dde198b1ff6bcd82e61b
+
+query RRRR rowsort
+select var_pop(aa) over (order by bb groups between 5 preceding and 0 following),
+       var_pop(aa) over (order by bb groups between 5 preceding and 2 following),
+       var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
+----
+40 values hashing to cca36b3805fa87c9086c047264f9eec1
+
+query RR rowsort
+select var_pop(aa) over (order by bb groups 2 preceding),
+       var_pop(aa) over (partition by bb order by bb groups 2 preceding) from analytics
+----
+20 values hashing to 2e19f1c1046b599333d6f0d88170fdae
+
 statement ok
 rollback
 
@@ -107,4 +135,5 @@ select stddev_samp(*) over (partition by bb) from stressme
 
 statement ok
 drop table stressme
+
 

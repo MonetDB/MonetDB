@@ -337,3 +337,4 @@ SELECT CORR(c0,c0) OVER () FROM t0
 statement ok
 DROP TABLE T0
 
+

@@ -13,7 +13,7 @@ target_sources(MonetODBCs
   PRIVATE
   setup.c
   setup.rc
-  setup.syms
+  setup.def
   resource.h)
 
 target_include_directories(MonetODBCs

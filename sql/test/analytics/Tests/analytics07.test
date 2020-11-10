@@ -107,3 +107,4 @@ drop table testintervals2
 statement ok
 drop table testintervals3
 
+
