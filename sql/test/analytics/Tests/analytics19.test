@@ -15,7 +15,7 @@ select avg(aa) over (partition by bb),
        avg(aa) over (partition by bb order by bb desc),
        avg(aa) over (order by bb desc) from analytics
 ----
-40 values hashing to 3487f2dce1e9fa3346df26cc8735125d
+40 values hashing to 18b5076b6c343e848630ce33f01c4601
 
 query TTTT rowsort
 select avg(bb) over (partition by bb),
@@ -23,7 +23,7 @@ select avg(bb) over (partition by bb),
        avg(bb) over (partition by bb order by bb desc),
        avg(bb) over (order by bb desc) from analytics
 ----
-40 values hashing to 14f6cc69a7904b1fe01d52980576bb69
+40 values hashing to a9d69a13eac933f406c500081613c5f2
 
 query TTTT rowsort
 select avg(aa) over (partition by aa),
@@ -31,7 +31,7 @@ select avg(aa) over (partition by aa),
        avg(aa) over (partition by aa order by aa desc),
        avg(aa) over (order by aa desc) from analytics
 ----
-40 values hashing to 309076af448805f468ced9fe990f8b31
+40 values hashing to 4c893f65ab72c6774be8a7da3cda8a2c
 
 query TTTT rowsort
 select avg(bb) over (partition by aa),
@@ -39,7 +39,7 @@ select avg(bb) over (partition by aa),
        avg(bb) over (partition by aa order by aa desc),
        avg(bb) over (order by aa desc) from analytics
 ----
-40 values hashing to 14f6cc69a7904b1fe01d52980576bb69
+40 values hashing to bbd70cf92a51295dd4c9c521ea9d641c
 
 query TTTT rowsort
 select avg(interval '1' second) over (partition by bb),
@@ -47,7 +47,7 @@ select avg(interval '1' second) over (partition by bb),
        avg(interval '1' month) over (partition by bb order by bb desc),
        avg(interval '1' month) over (order by bb desc) from analytics
 ----
-40 values hashing to e59fabe490b25331eefb69c00792cd89
+40 values hashing to edf1310da399e0a4c669f031016f6d38
 
 query TTTT rowsort
 select avg(interval '-1' second) over (partition by bb),
@@ -55,7 +55,7 @@ select avg(interval '-1' second) over (partition by bb),
        avg(interval '-100' month) over (partition by bb order by bb desc),
        avg(interval '-100' month) over (order by bb desc) from analytics
 ----
-40 values hashing to 6ba28b4044378de0de384c7cfd0bec92
+40 values hashing to 73cea73e54338a04cab990265785293b
 
 query TTTTTT rowsort
 select avg(aa) over (),
@@ -65,7 +65,7 @@ select avg(aa) over (),
        avg(interval '1' second) over (),
        avg(interval '1' month) over () from analytics
 ----
-60 values hashing to 8f2e4635e7be6949ed37cb88e3b34e1c
+60 values hashing to 240f459963993769c5f94790b990efed
 
 query TT rowsort
 select avg(CAST(NULL as interval second)) over (),
@@ -73,6 +73,36 @@ select avg(CAST(NULL as interval second)) over (),
 ----
 20 values hashing to 902615685c027333162cc9ece5d11dfa
 
+query TTTT rowsort
+select avg(aa) over (order by bb rows between 5 preceding and 0 following),
+       avg(aa) over (order by bb rows between 5 preceding and 2 following),
+       avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+40 values hashing to 71471ebcd5e12613845f6dd4cd052c25
+
+query TTT rowsort
+select avg(aa) over (order by bb rows 2 preceding),
+       avg(aa) over (partition by bb order by bb rows 2 preceding),
+       avg(aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics
+----
+30 values hashing to 33ab88f7ed7c81f3c41ad79f49366665
+
+query TTTT rowsort
+select avg(bb) over (order by bb groups between 5 preceding and 0 following),
+       avg(bb) over (order by bb groups between 5 preceding and 2 following),
+       avg(bb) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       avg(bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
+----
+40 values hashing to a130c5753081064b77cc7b37b28a47d8
+
+query TT rowsort
+select avg(bb) over (order by bb groups 2 preceding),
+       avg(bb) over (partition by bb order by bb groups 2 preceding) from analytics
+----
+20 values hashing to 9a2722989b77b6641644f473ac87ca09
+
 statement ok
 rollback
+
 

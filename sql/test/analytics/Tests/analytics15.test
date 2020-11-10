@@ -223,6 +223,64 @@ select covar_pop(1,1) over (), covar_samp(1,1) over (), corr(1,1) over (), covar
 ----
 60 values hashing to f90e3786a569c718547b210867a1ce8d
 
+query RRRR rowsort
+select covar_samp(aa, 1) over (rows between 5 preceding and 0 following),
+       covar_samp(aa, aa) over (rows between 5 preceding and 2 following),
+       covar_samp(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       covar_samp(aa, bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+40 values hashing to 62a71f56370d98df036bf5ca87835d2e
+
+query RR rowsort
+select covar_samp(bb, aa) over (rows 2 preceding),
+       covar_samp(10, bb) over (partition by bb order by bb rows 2 preceding) from analytics
+----
+20 values hashing to 61e170015e0f8edbd3468cddeab17272
+
+query RRRR rowsort
+select covar_pop(aa, 1) over (order by bb groups between 5 preceding and 0 following),
+       covar_pop(aa, aa) over (order by bb groups between 5 preceding and 2 following),
+       covar_pop(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       covar_pop(aa, bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
+----
+40 values hashing to b43b6b39753caa1514872514ec58d2b9
+
+query RR rowsort
+select covar_pop(bb, aa) over (order by bb groups 2 preceding),
+       covar_pop(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics
+----
+20 values hashing to 0fc949646f546ae191aff4ace1fbec82
+
+query RRRR rowsort
+select corr(aa, 1) over (order by bb rows between 5 preceding and 0 following),
+       corr(aa, aa) over (order by bb rows between 5 preceding and 2 following),
+       corr(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       corr(aa, bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
+----
+40 values hashing to 0e479996924876117b0f00ceb669177d
+
+query RRR rowsort
+select corr(bb, aa) over (order by bb rows 2 preceding),
+       corr(10, bb) over (partition by bb order by bb rows 2 preceding),
+       corr(bb, aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics
+----
+30 values hashing to 5c86007a51ce33f936333b3b9b4468a6
+
+query RRRR rowsort
+select corr(aa, 1) over (order by bb groups between 5 preceding and 0 following),
+       corr(aa, aa) over (order by bb groups between 5 preceding and 2 following),
+       corr(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       corr(aa, bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
+----
+40 values hashing to 0e479996924876117b0f00ceb669177d
+
+query RR rowsort
+select corr(bb, aa) over (order by bb groups 2 preceding),
+       corr(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics
+----
+20 values hashing to 707c87e8ef82722c4e8b2fb9b78f46c9
+
 statement ok
 rollback
+
 

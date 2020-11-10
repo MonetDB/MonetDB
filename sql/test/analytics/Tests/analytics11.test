@@ -327,3 +327,4 @@ DROP TABLE tbl_X
 statement ok
 DROP TABLE another_T
 
+

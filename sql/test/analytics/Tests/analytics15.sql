@@ -142,4 +142,38 @@ select covar_pop(1,1) over (), covar_samp(1,1) over (), corr(1,1) over (), covar
 
 select covar_pop(1,1) over (), covar_samp(1,1) over (), corr(1,1) over (), covar_pop(1,null) over (), covar_samp(1,null) over (), corr(1,null) over () from analytics;
 
+
+select covar_samp(aa, 1) over (rows between 5 preceding and 0 following),
+       covar_samp(aa, aa) over (rows between 5 preceding and 2 following),
+       covar_samp(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       covar_samp(aa, bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select covar_samp(bb, aa) over (rows 2 preceding),
+       covar_samp(10, bb) over (partition by bb order by bb rows 2 preceding) from analytics;
+
+select covar_pop(aa, 1) over (order by bb groups between 5 preceding and 0 following),
+       covar_pop(aa, aa) over (order by bb groups between 5 preceding and 2 following),
+       covar_pop(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       covar_pop(aa, bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics;
+
+select covar_pop(bb, aa) over (order by bb groups 2 preceding),
+       covar_pop(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics;
+
+select corr(aa, 1) over (order by bb rows between 5 preceding and 0 following),
+       corr(aa, aa) over (order by bb rows between 5 preceding and 2 following),
+       corr(aa, -100) over (partition by bb order by bb rows between 5 preceding and 0 following),
+       corr(aa, bb) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics;
+
+select corr(bb, aa) over (order by bb rows 2 preceding),
+       corr(10, bb) over (partition by bb order by bb rows 2 preceding),
+       corr(bb, aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics;
+
+select corr(aa, 1) over (order by bb groups between 5 preceding and 0 following),
+       corr(aa, aa) over (order by bb groups between 5 preceding and 2 following),
+       corr(aa, -100) over (partition by bb order by bb groups between 5 preceding and 0 following),
+       corr(aa, bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics;
+
+select corr(bb, aa) over (order by bb groups 2 preceding),
+       corr(10, bb) over (partition by bb order by bb groups 2 preceding) from analytics;
+
 rollback;

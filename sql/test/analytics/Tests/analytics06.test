@@ -63,3 +63,4 @@ select count(aa) over (partition by bb rows between cc - 500 preceding and cc - 
 statement ok
 drop table testing
 
+

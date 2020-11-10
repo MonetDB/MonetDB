@@ -91,3 +91,4 @@ select a, listagg(a) over (),
 statement ok
 rollback
 
+
