@@ -1,13 +1,11 @@
-statement error
+statement ok
 CREATE FUNCTION fDocColumns(tabname varchar(400))
 RETURNS TABLE (enum varchar(64))
 BEGIN
-    RETURN TABLE( select t.name from sys.tables t where name='romulo')
-
-statement error
+    RETURN TABLE( select t.name from sys.tables t where name='romulo');
 END
 
-statement error
+statement ok
 drop function fDocColumns
 
 
