@@ -612,6 +612,21 @@ def PerformDir(env, testdir, auto=False) :
         test_name = t.get('test_name')
         options += t.get('options5', [])
         fn = t.get('test_path') + t.get('tail')
+        if verbose:
+            print('converting {}'.format(test_name), file=sys.stderr)
+        cond = t.get('cond', None)
+        if (cond != None and "HAVE_LIBR" in cond) and CONDITIONALS['HAVE_LIBR'] and CONDITIONALS['NOT_WIN32']:
+            options.extend(['--set', 'embedded_r=yes'])
+        if (cond != None and "HAVE_LIBPY3" in cond) and CONDITIONALS['HAVE_LIBPY3']:
+            options.extend(['--set', 'embedded_py=3'])
+        options.extend(['--set', 'embedded_c=true'])
+        try:
+            f = openutf8(os.path.join(os.path.dirname(t.get('test_path')), 'SingleServer'))
+        except IOError:
+            pass
+        else:
+            options.extend(f.read().split())
+            f.close()
         try:
             with open('/tmp/sqllogic.in', 'w') as fout:
                 if t.get('is_input', False):
@@ -1621,7 +1636,7 @@ def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, optio
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=:inmemory')
+        cmd.append('--dbextra=:memory:')
     return ServerClass(cmd,
                 outfile,
                 errfile,

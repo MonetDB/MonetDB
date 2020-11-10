@@ -1,16 +1,24 @@
 ###
 # SET a non-GRANTed ROLE for a USER (not possible).
 ###
-
 import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+import pymonetdb
 
-with process.client('sql', user = 'my_user2', passwd = 'p2',
-                    stdin = open(os.path.join(os.getenv('RELSRCDIR'), os.pardir, 'role.sql')),
-                    stdout = process.PIPE, stderr = process.PIPE) as clt:
-    out, err = clt.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+db=os.getenv("TSTDB")
+port=int(os.getenv("MAPIPORT"))
+client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user2', password='p2')
+cursor = client.cursor()
+
+# exceptions will output
+error = False
+try:
+    cursor.execute("SET ROLE my_role")
+except:
+    error = True
+    pass
+
+if not error:
+    print("should have received an exception: !Role (my_role) missing")
+
+cursor.close()
+client.close()
