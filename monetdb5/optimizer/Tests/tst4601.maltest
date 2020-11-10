@@ -1,0 +1,33 @@
+statement ok
+function welcome(lim:int):int;
+    i:= 0;
+barrier j:= i<lim;
+    io.print("Welcome");
+    i:= i+1;
+    redo j:= i<lim;
+exit j;
+    return i;
+end welcome
+
+statement ok
+optimizer.macro("user","welcome")
+
+#mdb.List("user","welcome")
+
+query T rowsort
+io.print("test expansion")
+----
+"test expansion"
+
+query T rowsort
+a:=user.welcome(2)
+----
+"Welcome"
+"Welcome"
+
+query T rowsort
+io.print(a)
+----
+2
+
+
