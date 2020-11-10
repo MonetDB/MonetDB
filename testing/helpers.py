@@ -48,8 +48,8 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         # ensure all test name exist in All file
         lookup = {}
         filtered = []
-        for cond, tn in tests:
-            lookup[tn] = cond, tn
+        for cond, tn, comment in tests:
+            lookup[tn] = cond, tn, comment
         for tn in test_names:
             if tn in lookup:
                 filtered.append(lookup[tn])

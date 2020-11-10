@@ -1718,8 +1718,9 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
             msg = "Connection refused"
             print(e, file=f)
         else:
-            #if not has_reqtests:
-            #    sql.drop()
+            # if not required by any other test clean up
+            if not is_reqtest:
+                sql.drop()
             try:
                 sql.parse(Test)
             except sqllogictest.SQLLogicSyntaxError as e:

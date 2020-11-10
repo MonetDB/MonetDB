@@ -667,7 +667,7 @@ def PerformDir(env, testdir) :
         if os.path.islink(ff):
             continue
         for pat in [
-                    'times.lst', 
+                    'times.lst',
                     '*.server.err', '*.server.out',
                     '*.test.err', '*.test.out',
                     'SingleServer.out', 'SingleServer.err']:
@@ -682,7 +682,7 @@ def PerformDir(env, testdir) :
             pass
     env['passed'] = int(env.get('passed', 0)) + len(oktests)
     env['skipped'] = int(env.get('skipped', 0)) + skipped
-    env['failed'] = int(env.get('failed', 0)) + failed 
+    env['failed'] = int(env.get('failed', 0)) + failed
     return td, FdErr
 ### PerformDir(env, testdir) #
 
@@ -1021,7 +1021,7 @@ def RunTest(env, test, oktests, pSrvr):
     reason = None               # reason for skipping (if any)
     links = []                  # symlinks we make
     threads = None              # set if we override number of threads
-    
+
     EXT = test.get('ext')
     CALL = test.get('call')
     SERVER = test.get('server')
@@ -1038,7 +1038,7 @@ def RunTest(env, test, oktests, pSrvr):
     passwd = None
     BUSY_PORTS = env.get('BUSY_PORTS', [])
     test_counter = env.get('test_counter', 1)
-    
+
     # print progress
     progress(test_counter, env.get('test_count'), os.path.join(TSTDIR, TST + EXT))
 
@@ -1208,7 +1208,7 @@ def RunTest(env, test, oktests, pSrvr):
 
         t1 = time.time()
         TX = t1 - t0
-    
+
         if exit_code > F_OK:
             print()
             print('========================================')
@@ -1218,7 +1218,7 @@ def RunTest(env, test, oktests, pSrvr):
             with open(TestErrFile, 'r') as f:
                 print(f.read())
             print()
-            
+
     env['test_counter'] = test_counter + 1
     return TX, exit_code, reason, links
 ### RunTest(env, TST, BUSY_PORTS, COND, oktests) #
@@ -1492,7 +1492,7 @@ class ServerClass:
     def __init__(self, cmd, outfile, errfile, timeout, pollfile, port):
         self.proc = None
         self.timer = None
-        self.outfile = outfile 
+        self.outfile = outfile
         self.errfile = errfile
         self.code = None
         self.started = False
@@ -1696,19 +1696,20 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
         except Exception as e:
             exit_code = F_SOCK
             msg = "Connection refused"
-            print(e, file=f) 
+            print(e, file=f)
         else:
-            #if not has_reqtests:
-            #    sql.drop()
+            # if not required by any other test clean up
+            if not is_reqtest:
+                sql.drop()
             try:
                 sql.parse(Test)
             except sqllogictest.SQLLogicSyntaxError as e:
-                print(e, file=f) 
+                print(e, file=f)
                 exit_code = F_SKIP
                 msg = 'sqllogic syntax error'
             except BrokenPipeError as e:
                 # server timeout
-                print(e, file=f) 
+                print(e, file=f)
                 exit_code = F_SOCK
                 msg = "Broken pipe"
             sql.close()
@@ -1723,7 +1724,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
     return exit_code or F_OK, msg
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, PSRVR) :
-    
+
     TSTDB = env['TSTDB']
     exe = env['exe']
 
@@ -1768,7 +1769,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
-            
+
             if SERVER == "MAL":
                 lang="mal"
             if SERVER == "SQL":
@@ -2786,7 +2787,7 @@ def main(argv) :
         if busy:
             Warn("Skipping MAPI tests as MAPIPORT=%s is not available on %s (Error #%d: '%s')!" % (env['MAPIPORT'],host,Serrno,Serrstr))
             BUSY_PORTS.append('MAPI')
-        
+
         env['BUSY_PORTS'] = BUSY_PORTS
         env['SYST'] = os.environ['SYST']
         env['RELEASE'] = os.environ['RELEASE']
@@ -2799,9 +2800,9 @@ def main(argv) :
         except ValueError as e:
             raise SystemExit(e)
 
-        test_count = test_ctx.get('test_count', 0) 
+        test_count = test_ctx.get('test_count', 0)
         env['test_count'] = test_count
-        
+
         t_ = 0
         interupted = False
         try:
@@ -2849,7 +2850,7 @@ def main(argv) :
             print()
             print('failed={}, skipped={}'.format(failed, skipped))
             print('Ran {} test in {:7.3f}'.format(test_count - skipped, t_))
-    
+
     finally:
         # cleanup the place where we put our UNIX sockets
         try:
