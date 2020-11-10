@@ -1,0 +1,74 @@
+statement ok
+b:= bat.new(:int)
+
+statement ok
+bat.append(b,1804289383)
+
+statement ok
+bat.append(b,846930886)
+
+statement ok
+bat.append(b,1681692777)
+
+statement ok
+bat.append(b,1714636915)
+
+statement ok
+bat.append(b,1957747793)
+
+statement ok
+bat.append(b,424238335)
+
+statement ok
+bat.append(b,719885386)
+
+statement ok
+bat.append(b,1649760492)
+
+statement ok
+bat.append(b,596516649)
+
+statement ok
+bat.append(b,1189641421)
+
+query TI rowsort
+io.print(b)
+----
+20 values hashing to 1ed9b179123b79c37c343b9e5b25722f
+
+statement ok
+(t:bat[:dbl], s:bat[:dbl]) := rapi.eval(nil:ptr,"someval2 <- Re(fft(arg1)); print(someval2); return(data.frame(someval2,someval2));",b);
+
+query TTT nosort
+io.print(t,s)
+----
+@
+12585340037.0
+12585340037.0
+@
+525771362.9083645
+525771362.9083645
+@
+-879667492.3235922
+-879667492.3235922
+@
+2456894287.5916357
+2456894287.5916357
+@
+158316768.82359338
+158316768.82359338
+@
+934923939.0
+934923939.0
+@
+158316768.82359338
+158316768.82359338
+@
+2456894287.591635
+2456894287.591635
+@
+-879667492.3235922
+-879667492.3235922
+@
+525771362.90836453
+525771362.90836453

@@ -1,0 +1,82 @@
+statement ok
+function foo()
+
+statement ok
+	b:= bat.new(:int)
+
+statement ok
+barrier	H := true
+
+statement ok
+	T:= 1
+
+statement ok
+redo 	H
+
+statement ok
+exit	H
+
+statement ok
+barrier (h,t) := iterator.new(b)
+
+statement ok
+	(h,t):= iterator.next(b)
+
+statement ok
+redo	(h,t)
+
+statement ok
+exit	(h,t)
+
+statement ok
+	entry:= true
+
+statement ok
+barrier M:= entry_or_exit
+
+statement ok
+	entry:= false
+
+statement ok
+redo	M
+
+statement ok
+exit	M
+
+statement ok
+	i:= 1
+
+statement ok
+barrier N:= i<10
+
+statement ok
+	i:=i+1
+
+statement ok
+redo	N
+
+statement ok
+exit	N
+
+statement ok
+barrier	FT:= false
+
+statement ok
+exit	FT
+
+statement ok
+barrier	FTE:= false
+
+statement ok
+exit	FTE
+
+statement ok
+barrier FS:= calc.not(FTE)
+
+statement ok
+exit	FS
+
+statement error
+end foo
+
+

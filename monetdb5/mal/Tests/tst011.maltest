@@ -1,0 +1,23 @@
+statement ok
+barrier k:=12
+
+statement ok
+	io.print(k)
+
+statement ok
+	leave k
+
+statement ok
+	io.print("not possible")
+
+query T rowsort
+exit 	k:=11
+----
+12
+
+query T rowsort
+	io.print(k)
+----
+11
+
+

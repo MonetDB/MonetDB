@@ -1,0 +1,79 @@
+statement ok
+function foo()
+
+statement ok
+	i:= 1
+
+statement ok
+	j:= 2
+
+statement ok
+barrier v:=i
+
+statement ok
+	io.print("entered")
+
+statement ok
+	io.print(v)
+
+statement ok
+	redo v:= iterator.next(-1,0)
+
+statement ok
+exit 	v
+
+statement ok
+	io.print("doubles")
+
+statement ok
+	i:= 1
+
+statement ok
+barrier (v,w):=(i,j)
+
+statement ok
+	io.print("entered2")
+
+statement ok
+	io.print(v)
+
+statement ok
+	v:= v-1
+
+statement ok
+	barrier b:= v == 0
+
+statement ok
+		leave (v,w)
+
+statement ok
+	exit b
+
+statement ok
+	redo (v,w):= (v,w)
+
+statement ok
+exit 	(v,w)
+
+statement ok
+	io.print("finished")
+
+statement ok
+end foo
+
+query T rowsort
+mdb.List("user","foo")
+----
+end user.foo;@#[20] (0)  
+
+query T rowsort
+user.foo()
+----
+"doubles"
+"entered"
+"entered2"
+"finished"
+1
+1
+
+

@@ -1,0 +1,42 @@
+statement ok
+function foo()
+
+statement ok
+	r:=0
+
+statement ok
+barrier	l:= r < 1
+
+statement ok
+	io.print(l)
+
+statement ok
+	io.print(r)
+
+statement ok
+	r:= r+1
+
+statement ok
+	l:= false
+
+statement ok
+	redo l
+
+statement ok
+exit	l
+
+statement ok
+end foo
+
+query T rowsort
+mdb.List("user","foo")
+----
+end user.foo;@#[9] (0)  
+
+query T rowsort
+user.foo()
+----
+0
+true
+
+
