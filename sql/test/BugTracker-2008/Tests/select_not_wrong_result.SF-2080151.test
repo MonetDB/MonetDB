@@ -1,12 +1,12 @@
-statement error
+statement ok
 CREATE TABLE A (
 a varchar(10)
 )
 
-statement error
+statement ok
 INSERT INTO A VALUES ('a1')
 
-statement error
+statement ok
 INSERT INTO A VALUES ('a2')
 
 statement ok
