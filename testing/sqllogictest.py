@@ -89,7 +89,11 @@ class SQLLogic:
     def drop(self):
         self.crs.execute('select name from tables where not system')
         for row in self.crs.fetchall():
-            self.crs.execute('drop table "%s" cascade' % row[0])
+            try:
+                self.crs.execute('drop table "%s" cascade' % row[0])
+            except pymonetdb.Error:
+                # perhaps already dropped because of the cascade
+                pass
 
     def exec_statement(self, statement, expectok, err_stmt=None):
         if skipidx.search(statement) is not None:
