@@ -1,0 +1,12 @@
+statement ok
+START TRANSACTION
+
+query T rowsort
+select 5 not between 4 and 6
+----
+False
+
+statement ok
+rollback
+
+
