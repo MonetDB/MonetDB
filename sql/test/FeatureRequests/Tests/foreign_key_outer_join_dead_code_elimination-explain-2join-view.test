@@ -1,0 +1,19 @@
+statement ok
+set optimizer = 'sequential_pipe'
+
+query T rowsort
+explain select count(*) from v2
+----
+33 values hashing to 9c5697a13616420740f746ca8f5d1753
+
+query T rowsort
+explain select id       from v2 order by id
+----
+42 values hashing to e6e9828574b555eede23db112b16f9a7
+
+query T rowsort
+explain select id , v2  from v2 order by id
+----
+82 values hashing to ebe48e39bbb9d84a18461b4fd0531d94
+
+
