@@ -52,8 +52,19 @@ else:
     crs = MapiCursor(dbh)
 
 query = []
-is_copy_into_stmt = False
-regex = re.compile('copy.*from.*stdin.*', re.I)
+
+def is_psm_stmt(stmt:str):
+    rgx = re.compile('(create|create\s+or\s+replace)\s+(function|procedure)', re.I)
+    return rgx.match(stmt) is not None
+
+def is_complete_psm_stmt(stmt:str):
+    rgx = re.compile('(create|create\s+or\s+replace)\s+(function|procedure)[\S\s]*(end;|external\s+name\s+.*;)$', re.I)
+    return rgx.match(stmt) is not None
+
+def is_copyfrom_stmt(stmt:str):
+    # TODO fix need stronger regex
+    rgx = re.compile('copy.*from.*stdin.*', re.I)
+    return rgx.match(stmt) is not None
 
 def convertresult(columns, data):
     ndata = []
@@ -167,7 +178,7 @@ def monet_escape(data):
     data = data.replace("\'", "\\\'")
     return "%s" % str(data)
 
-def process_cpy_into_stmt(query):
+def process_copyfrom_stmt(query):
     index = 0
     for i, n in enumerate(query):
         if n.strip().endswith(';'):
@@ -181,31 +192,38 @@ def process_cpy_into_stmt(query):
     query = '\n'.join(query)
     to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
 
+
 while True:
     line = sys.stdin.readline()
     if not line:
         break
     line = line.rstrip()
     if not line or line.lstrip().startswith('--') or line.lstrip().startswith('#'):
-        if is_copy_into_stmt and len(query) > 0:
-            process_cpy_into_stmt(query)
-            is_copy_into_stmt = False
+        if len(query) > 0:
+            if is_copyfrom_stmt('\n'.join(query)):
+                process_copyfrom_stmt(query)
             query = []
         continue
     # when copyfrom stmt from stdin skip because data may contain --
-    if '--' in line and not is_copy_into_stmt:
+    if '--' in line and not is_copyfrom_stmt('\n'.join(query)):
         line = line[:line.index('--')].rstrip()
     if line.endswith(';'):
         tmp = ([] + query)
         tmp.append(line)
         stmt = '\n'.join(tmp)
-        if regex.match(stmt):
-            is_copy_into_stmt = True
+        if is_copyfrom_stmt(stmt):
             query.append(line)
             continue
+        if is_psm_stmt(stmt):
+            if is_complete_psm_stmt(stmt):
+                stmt = stmt.rstrip(';')
+                to_sqllogic_test(stmt)
+                query = []
+            else:
+                query.append(line)
+            continue
         stripped = line.rstrip(';')
-        if stripped !='':
-            query.append(stripped)
+        query.append(stripped)
         query = '\n'.join(query)
         to_sqllogic_test(query)
         query = []
