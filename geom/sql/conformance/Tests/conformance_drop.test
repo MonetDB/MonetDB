@@ -1,0 +1,34 @@
+statement ok
+DROP TABLE map_neatlines
+
+statement ok
+DROP TABLE named_places
+
+statement ok
+DROP TABLE ponds
+
+statement ok
+DROP TABLE buildings
+
+statement ok
+DROP TABLE streams
+
+statement ok
+DROP TABLE bridges
+
+statement ok
+DROP TABLE forests
+
+statement ok
+DROP TABLE divided_routes
+
+statement ok
+DROP TABLE road_segments
+
+statement ok
+DROP TABLE lakes
+
+statement ok
+DELETE FROM spatial_ref_sys WHERE srid=101
+
+
