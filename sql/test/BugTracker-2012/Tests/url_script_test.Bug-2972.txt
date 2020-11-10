@@ -1,0 +1,3 @@
+This file is read by the url_script_test.Bug-2972 test.
+If you change this, you likely want to change the stable output of the
+test as well.

@@ -1,0 +1,31 @@
+query T rowsort
+select 16 and 16
+----
+True
+
+query T rowsort
+select cast(16 as smallint) and cast(16 as smallint)
+----
+True
+
+query T rowsort
+select bit_and(cast(16 as smallint), cast(16 as smallint)) = cast(16 as smallint)
+----
+True
+
+query I rowsort
+select bit_and(16,16) 
+----
+16
+
+query T rowsort
+select 16 and cast(16 as int)
+----
+True
+
+query I rowsort
+select bit_and(16,cast(16 as int)) 
+----
+16
+
+

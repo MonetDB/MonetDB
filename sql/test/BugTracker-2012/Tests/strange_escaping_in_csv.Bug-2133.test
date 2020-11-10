@@ -1,0 +1,75 @@
+statement error
+\f csv
+select 'bla'
+
+query T rowsort
+select '"'||'bla'
+----
+"bla
+
+query T rowsort
+select '"bla"' '"blah"'
+----
+"bla""blah"
+
+query T rowsort
+select 'blah''s nork'
+----
+blah's nork
+
+query T rowsort
+select E'blah\'nork'
+----
+blah'nork
+
+query T rowsort
+select E'blah\,blah'
+----
+blah,blah
+
+query T rowsort
+select E'blah \tthe \n black'
+----
+blah @the @ black
+
+query T rowsort
+select E'blah \t the \\n black'
+----
+blah @ the \n black
+
+query T rowsort
+select E'blah\\blah'
+----
+blah\blah
+
+query T rowsort
+select E'\n'
+----
+@
+
+query T rowsort
+select E'\t'
+----
+@
+
+query T rowsort
+select E'\\n'
+----
+\n
+
+query T rowsort
+select E'\\t'
+----
+\t
+
+query T rowsort
+select E'\"blah\"'
+----
+"blah"
+
+query T rowsort
+select '"blah"'
+----
+"blah"
+
+

@@ -1,0 +1,36 @@
+stderr of test 'overflow-in-list.Bug-3189` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 10:44:34 >  
+# 10:44:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/home/sjoerd/Monet-stable/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=32889" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 10:44:34 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /home/sjoerd/Monet-stable/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /home/sjoerd/Monet-stable/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 32889
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
+# cmdline opt 	mal_listing = 0
+
+# 10:44:35 >  
+# 10:44:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=localhost" "--port=32889"
+# 10:44:35 >  
+
+
+# 10:44:35 >  
+# 10:44:35 >  "Done."
+# 10:44:35 >  
+

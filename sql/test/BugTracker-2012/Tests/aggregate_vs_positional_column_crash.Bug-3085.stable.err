@@ -1,0 +1,37 @@
+stderr of test 'aggregate_vs_positional_column_crash.Bug-3085` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 21:48:51 >  
+# 21:48:51 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=39026" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 21:48:51 >  
+
+# builtin opt 	gdk_dbname = demo
+# builtin opt 	gdk_dbfarm = /home/niels/scratch/rc-clean/Linux-x86_64/var/monetdb5/dbfarm
+# builtin opt 	gdk_debug = 0
+# builtin opt 	gdk_alloc_map = no
+# builtin opt 	gdk_vmtrim = yes
+# builtin opt 	monet_prompt = >
+# builtin opt 	monet_daemon = no
+# builtin opt 	mapi_port = 50000
+# builtin opt 	mapi_open = false
+# builtin opt 	mapi_autosense = false
+# builtin opt 	sql_optimizer = default_pipe
+# builtin opt 	sql_debug = 0
+# cmdline opt 	gdk_nr_threads = 0
+# cmdline opt 	gdk_dbfarm = /home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB
+# cmdline opt 	mapi_open = true
+# cmdline opt 	mapi_port = 39026
+# cmdline opt 	monet_prompt = 
+# cmdline opt 	mal_listing = 2
+# cmdline opt 	gdk_dbname = mTests_test_BugTracker-2012
+# cmdline opt 	mal_listing = 0
+
+# 21:48:51 >  
+# 21:48:51 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=niels" "--port=39026"
+# 21:48:51 >  
+
+
+# 21:48:51 >  
+# 21:48:51 >  "Done."
+# 21:48:51 >  
+
