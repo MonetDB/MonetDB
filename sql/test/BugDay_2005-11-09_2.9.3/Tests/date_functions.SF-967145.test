@@ -1,0 +1,7 @@
+statement error
+select current_date - current_date
+
+statement error
+select current_date() - current_date()
+
+
