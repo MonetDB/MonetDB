@@ -1,0 +1,61 @@
+statement ok
+DROP TABLE "point"
+
+statement ok
+DROP TABLE "pointz"
+
+statement ok
+DROP TABLE "pointzm"
+
+statement ok
+DROP TABLE "multipoint"
+
+statement ok
+DROP TABLE "multipointz"
+
+statement ok
+DROP TABLE "multipointzm"
+
+statement ok
+DROP TABLE "arc"
+
+statement ok
+DROP TABLE "arcz"
+
+statement ok
+DROP TABLE "arczm"
+
+statement ok
+DROP TABLE "polygon"
+
+statement ok
+DROP TABLE "polygonz"
+
+statement ok
+DROP TABLE "polygonzm"
+
+statement ok
+DROP TABLE "tstpolygon"
+
+statement ok
+DROP TABLE "tsipolygon"
+
+statement ok
+DROP TABLE "tstipolygon"
+
+statement ok
+DROP TABLE "notranspoint"
+
+statement ok
+DROP TABLE "notreallymultipoint"
+
+statement ok
+DROP TABLE "multitosinglepoint"
+
+statement ok
+DROP TABLE "reprojectpts"
+
+statement ok
+DROP TABLE "reprojectptsgeog"
+
+

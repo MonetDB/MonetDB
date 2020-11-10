@@ -1,0 +1,37 @@
+statement error
+SELECT ST_SetPoint('LINESTRING(0 0, 1 1, 2 2)', 3, 'POINT(9 9)')
+
+statement error
+SELECT ST_SetPoint('LINESTRING(0 0, 1 1, 2 2)', -1, 'POINT(9 9)')
+
+statement error
+SELECT ST_SetPoint('MULTIPOINT(0 0, 1 1, 2 2)', 3, 'POINT(9 9)')
+
+statement error
+SELECT ST_SetPoint('LINESTRING(0 0, 1 1, 2 2)', -1, 'MULTIPOINT(9 9, 0 0)')
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(-1 -1 -1, 1 1 1, 2 2 2)', 0, 'POINT(90 91 92)'))
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(0 0 0, 1 1 1, 2 2 2)', 1, 'POINT(90 91 92)'))
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(0 0 0, 1 1 1, 2 2 2)', 2, 'POINT(90 91 92 93)'))
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(0 0 0, 1 1 1, 2 2 2)', 1, 'POINT(90 91 92 93)'))
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(0 0 0 0, 1 1 1 1, 2 2 2 2, 4 4 4 4)', 3, 'POINT(90 91)'))
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(0 0 0 0, 1 1 1 1, 2 2 2 2, 4 4 4 4)', 2, 'POINT(90 91 92)'))
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(0 0 0 0, 1 1 1 1, 2 2 2 2, 4 4 4 4)', 1, 'POINT(90 91 92)'))
+
+statement error
+SELECT ST_asewkt(ST_SetPoint('LINESTRING(0 0 0 0, 1 1 1 1, 2 2 2 2, 4 4 4 4)', 0, 'POINT(90 91 92 93)'))
+
+
