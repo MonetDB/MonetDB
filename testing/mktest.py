@@ -95,6 +95,8 @@ def is_complete_stmt(query, line:str):
     else:
         if re.match(r'\s*function\s', stmt) is not None:
             return re.match(r'\s*function\s.*\bend(\s+\w+)?\s*;', stmt, re.DOTALL) is not None
+        if re.match(r'\s*barrier\s', stmt) is not None:
+            return re.match(r'\s*barrier\s.*\bexit\s\(\w+(,\w)+\)\s*;', stmt, re.DOTALL) is not None
     return re.match(r'[^;]*;', stmt) is not None
 
 def is_copyfrom_stmt(stmt:str):
@@ -256,7 +258,11 @@ while True:
         if res is not None:
             line = res.group(0)[:-1].rstrip()
     if is_complete_stmt(query, line):
-        query.append(line.rstrip(';'))
+        if opts.language == 'sql':
+            l = line.rstrip(';')
+        else:
+            l = line
+        query.append(l)
         to_sqllogic_test('\n'.join(query))
         query = []
     else:
