@@ -1,0 +1,20 @@
+statement ok
+function tst():void;
+	z:= inspect.getSize();
+	io.printf("#size %d\n",z);
+end tst;
+
+query T rowsort
+user.tst();
+----
+#size 1012
+
+statement ok
+l:= inspect.getSize();
+
+query T rowsort
+io.printf("#size %d\n",l);
+----
+#size 608
+
+

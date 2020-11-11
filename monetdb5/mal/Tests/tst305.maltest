@@ -1,15 +1,16 @@
-
-# Exceptions can be explicitly raised in a function
-# which requires the exception identifier to be defined.
-
+statement ok
 function myException();
 raise	IllegalAccess:="new exception";
 	io.print("should have left function ");
 end myException;
 
+statement ok
 function foo();
 	user.myException();
 	io.print("should not come here");
 end foo;
 
+statement error
 user.foo();
+
+
