@@ -30,11 +30,11 @@ z:=algebra.projection(s,b)
 query TI rowsort
 io.print(z)
 ----
-@
 0
-@
+0
 1
-@
+1
+2
 2
 
 statement ok
@@ -62,9 +62,9 @@ z:=algebra.projection(s,b)
 query TI rowsort
 io.print(z)
 ----
-@
 0
-@
+0
+1
 1
 
 statement ok
@@ -84,9 +84,9 @@ z:=algebra.projection(s,b)
 query TI rowsort
 io.print(z)
 ----
-@
+0
 1
-@
+1
 2
 
 statement ok
@@ -98,7 +98,7 @@ z:=algebra.projection(s,b)
 query TI rowsort
 io.print(z)
 ----
-@
+0
 1
 
 

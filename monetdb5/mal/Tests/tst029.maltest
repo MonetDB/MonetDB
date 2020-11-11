@@ -1,31 +1,23 @@
 statement ok
 b:= bat.new(:str)
 
-statement ok
-bat.append(b, "io.print(1);");
+statement error
+bat.append(b, "io.print(1);")
 
-statement ok
-bat.append(b, "io.print(\"hello\");");
+statement error
+bat.append(b, "io.print(\"hello\");")
 
-statement ok
-bat.append(b,"s:=\"goodbye\";io.print(s);");
+statement error
+bat.append(b,"s:=\"goodbye\";io.print(s);")
 
-query TT nosort
+query TT rowsort
 io.print(b)
 ----
-@
-io.print(1);
-@
-io.print("hello");
-@
-s:="goodbye";io.print(s);
 
-statement ok
+statement error
 s:= algebra.fetch(b,2@0)
 
-statement T nosort
+statement error
 io.printf("%s\n",s)
-----
-goodbye
 
 
