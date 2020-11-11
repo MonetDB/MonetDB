@@ -1,0 +1,168 @@
+statement ok
+CREATE MERGE TABLE updateme (a int, b varchar(32)) PARTITION BY RANGE ON (a)
+
+statement ok
+CREATE TABLE subt1 (a int, b varchar(32))
+
+statement ok
+CREATE TABLE subt2 (a int, b varchar(32))
+
+statement ok
+ALTER TABLE updateme ADD TABLE subt2 AS PARTITION FROM '201' TO '300'
+
+statement error
+ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '1' TO '100'
+
+statement ok
+ALTER TABLE updateme ADD TABLE subt1 AS PARTITION FROM '1' TO '100'
+
+query TTT rowsort
+SELECT minimum, maximum, with_nulls FROM range_partitions
+----
+1
+100
+False
+201
+300
+False
+
+statement ok
+INSERT INTO updateme VALUES (1, 'first')
+
+statement ok
+INSERT INTO subt1 VALUES (1, 'first')
+
+query IT rowsort
+SELECT a, b FROM updateme
+----
+1
+first
+1
+first
+
+query IT rowsort
+SELECT a, b FROM subt1
+----
+1
+first
+1
+first
+
+query IT rowsort
+SELECT a, b FROM subt2
+----
+
+statement error
+ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
+
+statement ok
+DELETE FROM updateme
+
+statement ok
+ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
+
+query TTT rowsort
+SELECT minimum, maximum, with_nulls FROM range_partitions
+----
+-100
+0
+False
+201
+300
+False
+
+statement error
+INSERT INTO updateme VALUES (1, 'ups')
+
+statement error
+INSERT INTO subt1 VALUES (1, 'ups')
+
+statement ok
+INSERT INTO updateme VALUES (-1, 'second'), (201, 'other table')
+
+statement ok
+INSERT INTO subt1 VALUES (-1, 'second')
+
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-1' TO '200'
+
+query TTT rowsort
+SELECT minimum, maximum, with_nulls FROM range_partitions
+----
+-1
+200
+False
+201
+300
+False
+
+statement ok
+INSERT INTO updateme VALUES (199, 'third')
+
+statement ok
+ROLLBACK
+
+query TTT rowsort
+SELECT minimum, maximum, with_nulls FROM range_partitions
+----
+-100
+0
+False
+201
+300
+False
+
+statement error
+INSERT INTO updateme VALUES (150, 'fourth')
+
+statement error
+INSERT INTO subt1 VALUES (150, 'fourth')
+
+statement ok
+INSERT INTO updateme VALUES (-50, 'fifth')
+
+statement ok
+INSERT INTO subt1 VALUES (-50, 'fifth')
+
+query IT rowsort
+SELECT a, b FROM updateme
+----
+10 values hashing to c21d7c4df5e34e9604a6b896ef19b443
+
+query IT rowsort
+SELECT a, b FROM subt1
+----
+-1
+second
+-1
+second
+-50
+fifth
+-50
+fifth
+
+query IT rowsort
+SELECT a, b FROM subt2
+----
+201
+other table
+
+statement ok
+ALTER TABLE updateme DROP TABLE subt1
+
+statement ok
+ALTER TABLE updateme DROP TABLE subt2
+
+statement ok
+DROP TABLE subt1
+
+statement ok
+DROP TABLE subt2
+
+statement ok
+DROP TABLE updateme
+
+
