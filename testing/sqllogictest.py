@@ -56,9 +56,11 @@ class SQLLogic:
         self.out = out
         self.res = None
         self.rpt = report
+        self.language = 'sql'
 
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo', language='sql'):
+        self.language = language
         if language == 'sql':
             self.dbh = pymonetdb.connect(username=username,
                                      password=password,
@@ -87,6 +89,8 @@ class SQLLogic:
             self.dbh = None
 
     def drop(self):
+        if self.language != 'sql':
+            return
         self.crs.execute('select name from tables where not system')
         for row in self.crs.fetchall():
             try:
