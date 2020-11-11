@@ -8,16 +8,16 @@ barrier l:= r == 0;
 	leave l;
 	redo l;
 exit	l;
-end pl;
+end pl
 
 statement ok
-a:= "hello";
+a:= "hello"
 
 statement ok
-z:= user.pl(a);
+z:= user.pl(a)
 
 query T rowsort
-io.print("done");
+io.print("done")
 ----
 "done"
 
