@@ -19,10 +19,10 @@ bat.append(h,"curly dark brown")
 query TT rowsort
 io.print(b)
 ----
-@
-Annie Chapman
-@
+0
 Mary Ann Walker
+1
+Annie Chapman
 
 statement ok
 bs:= batxml.xml(b)
@@ -39,8 +39,9 @@ as:= batxml.str(aa)
 query TT rowsort
 io.print(as)
 ----
-@
-<?xml version="1.0" standalone="no"?><name>Annie Chapman</name>
-@
+0
 <?xml version="1.0" standalone="no"?><name>Mary Ann Walker</name>
+1
+<?xml version="1.0" standalone="no"?><name>Annie Chapman</name>
+
 

@@ -43,7 +43,7 @@ f:bat[:json]:= mal.manifold("json","filter",j,"$.f1")
 query TT rowsort
 io.print(f)
 ----
-12 values hashing to fd78d13be95ccc7816e9693783476088
+12 values hashing to 8570ccbe5c2e2dff248990ab96f0aa32
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,"$.f2")
@@ -51,7 +51,7 @@ f:bat[:json]:= mal.manifold("json","filter",j,"$.f2")
 query TT rowsort
 io.print(f)
 ----
-12 values hashing to ebd7276f62f6b5b030a621c61bd1bb49
+12 values hashing to 21a48ee7ca95e3a4104996b060500b11
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,"$.f1[0]")
@@ -59,7 +59,7 @@ f:bat[:json]:= mal.manifold("json","filter",j,"$.f1[0]")
 query TT rowsort
 io.print(f)
 ----
-12 values hashing to 627b752b31e489ade806d5da885eb399
+12 values hashing to 5034e67a23e0256393c30c993c64fb3d
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,"$..f12")
@@ -67,7 +67,7 @@ f:bat[:json]:= mal.manifold("json","filter",j,"$..f12")
 query TT rowsort
 io.print(f)
 ----
-12 values hashing to 7b7c2f88e014b47fd7d7df60161423d6
+12 values hashing to b943974a645cf7e11709b8267d766b0c
 
 query T rowsort
 io.printf("#next batch\n")
@@ -104,4 +104,5 @@ f:bat[:json]:= mal.manifold("json","filter",i,3)
 query TT rowsort
 io.print(f)
 ----
+
 

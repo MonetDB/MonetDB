@@ -30,17 +30,13 @@ io.print(i4)
 ----
 192.168.0.3/24
 
-statement error
-i5 := inet.new("/0")
-
-statement ok
-catch ParseException:str
-
-statement ok
-io.printf("Caught parse exception\n")
-
-statement ok
-exit ParseException
+query T nosort
+i5 := inet.new("/0");
+catch ParseException:str;
+io.printf("Caught parse exception\n");
+exit ParseException;
+----
+Caught parse exception
 
 query T rowsort
 io.print(i5)
@@ -110,4 +106,5 @@ query T rowsort
 io.print(e)
 ----
 true
+
 

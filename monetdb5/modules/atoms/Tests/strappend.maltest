@@ -49,5 +49,6 @@ statement ok
 query TTT rowsort
 io.print(b,g)
 ----
-36 values hashing to 2da433cf5fb00cb07f3c94fbbffd47b2
+36 values hashing to 20208714d9b7f2cac82fb78afea7e05d
+
 

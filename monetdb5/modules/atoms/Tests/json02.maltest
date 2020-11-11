@@ -7,7 +7,7 @@ f:= json.keys(b)
 query TT rowsort
 io.print(f)
 ----
-@
+0
 f1
 
 statement ok
@@ -16,7 +16,7 @@ ff:= json.values(b)
 query TT rowsort
 io.print(ff)
 ----
-@
+0
 1
 
 statement ok
@@ -28,9 +28,9 @@ f:= json.keys(b)
 query TT rowsort
 io.print(f)
 ----
-@
+0
 f1
-@
+1
 f2
 
 statement ok
@@ -39,9 +39,9 @@ ff:= json.values(b)
 query TT rowsort
 io.print(ff)
 ----
-@
+0
 1
-@
+1
 2
 
 statement ok
@@ -53,12 +53,12 @@ f:= json.keys(b)
 query TT rowsort
 io.print(f)
 ----
-@
+0
 f1
-@
-f1
-@
+1
 f2
+2
+f1
 
 statement ok
 ff:= json.values(b)
@@ -66,11 +66,11 @@ ff:= json.values(b)
 query TT rowsort
 io.print(ff)
 ----
-@
+0
 1
-@
+1
 2
-@
+2
 3
 
 statement ok
@@ -82,9 +82,9 @@ f:= json.keys(b)
 query TT rowsort
 io.print(f)
 ----
-@
+0
 f1
-@
+1
 f2
 
 statement ok
@@ -93,10 +93,10 @@ ff:= json.values(b)
 query TT rowsort
 io.print(ff)
 ----
-@
-[2,3,4]
-@
+0
 {"f12":3}
+1
+[2,3,4]
 
 statement ok
 i:= json.length(b)
@@ -149,11 +149,11 @@ ff:= json.values(b)
 query TT rowsort
 io.print(ff)
 ----
-@
-"f2"
-@
+0
 1
-@
+1
+"f2"
+2
 2
 
 statement ok
@@ -173,7 +173,7 @@ ff:= json.values(b)
 query TT rowsort
 io.print(ff)
 ----
-10 values hashing to db4fa8f27217647418a53fa765853592
+10 values hashing to 4773210d63177d2ad4e6e3f46b02ce29
 
 statement ok
 i:= json.length(b)
@@ -200,8 +200,9 @@ ff:= json.values(b)
 query TT rowsort
 io.print(ff)
 ----
-@
+0
 "\/"
-@
+1
 2
+
 
