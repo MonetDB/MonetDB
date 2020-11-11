@@ -1,0 +1,103 @@
+statement ok
+CREATE MERGE TABLE listparts (a int, b varchar(32)) PARTITION BY RANGE ON (a)
+
+statement ok
+CREATE TABLE subtable1 (a int, b varchar(32))
+
+statement ok
+CREATE TABLE subtable2 (a int, b varchar(32))
+
+statement ok
+INSERT INTO subtable1 VALUES (NULL, 'hello')
+
+statement ok
+INSERT INTO subtable2 VALUES (102, 'hello')
+
+statement ok
+ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 10 TO 100 WITH NULL VALUES
+
+statement error
+ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM NULL TO 110
+
+statement error
+ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 101 TO NULL
+
+statement error
+ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM NULL TO NULL
+
+statement error
+ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 101 TO 110 WITH NULL VALUES
+
+statement ok
+ALTER TABLE listparts ADD TABLE subtable2 AS PARTITION FROM 101 TO 110
+
+statement ok
+ALTER TABLE listparts DROP TABLE subtable1
+
+statement error
+ALTER TABLE listparts DROP TABLE subtable1
+
+statement error
+ALTER TABLE listparts ADD TABLE subtable1 AS PARTITION FROM 10 TO 100
+
+statement ok
+ALTER TABLE listparts DROP TABLE subtable2
+
+statement ok
+DROP TABLE listparts
+
+statement ok
+DROP TABLE subtable1
+
+statement ok
+DROP TABLE subtable2
+
+statement ok
+CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE ON (b)
+
+statement ok
+CREATE TABLE othersub1 (a int, b varchar(32))
+
+statement ok
+CREATE TABLE othersub2 (a int, b varchar(32))
+
+statement ok
+INSERT INTO othersub1 VALUES (1, NULL)
+
+statement ok
+ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'a' TO 'string' WITH NULL VALUES
+
+statement error
+ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM NULL TO 'nono'
+
+statement error
+ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'nono' TO NULL
+
+statement error
+ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM NULL TO NULL
+
+statement error
+ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'nono' TO 'wrong' WITH NULL VALUES
+
+statement ok
+ALTER TABLE anothertest ADD TABLE othersub2 AS PARTITION FROM 't' TO 'u'
+
+statement ok
+ALTER TABLE anothertest DROP TABLE othersub1
+
+statement error
+ALTER TABLE anothertest ADD TABLE othersub1 AS PARTITION FROM 'a' TO 'string'
+
+statement ok
+ALTER TABLE anothertest DROP TABLE othersub2
+
+statement ok
+DROP TABLE anothertest
+
+statement ok
+DROP TABLE othersub1
+
+statement ok
+DROP TABLE othersub2
+
+
