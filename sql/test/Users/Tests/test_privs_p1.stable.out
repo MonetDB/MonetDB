@@ -19,24 +19,7 @@ stdout of test 'test_privs_p1` in directory 'sql/test/Users` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-
-# 13:35:20 >  
-# 13:35:20 >  "/usr/bin/python2" "test_privs_p1.SQL.py" "test_privs_p1"
-# 13:35:20 >  
-
-#select * from test;
-% my_schema.test,	my_schema.test # table_name
-% i,	b # name
-% int,	bigint # type
-% 1,	1 # length
-#insert into test values(1,1);
-[ 1	]
-#update test set b = 2;
-[ 1	]
-#delete from test;
-[ 1	]
-
-# 13:35:21 >  
-# 13:35:21 >  "Done."
-# 13:35:21 >  
+# 14:14:40 >  
+# 14:14:40 >  "Done."
+# 14:14:40 >  
 
