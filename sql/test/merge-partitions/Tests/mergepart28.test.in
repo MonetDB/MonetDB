@@ -16,15 +16,13 @@ COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USI
 statement ok
 ALTER TABLE ratings ADD TABLE subt2 AS PARTITION FROM 1925 TO 1950
 
-statement error
+statement ok
 COPY 1347 RECORDS INTO ratings FROM E'$QTSTDATAPATH/netflix_data/movies.csv' USING DELIMITERS ',',E'\n','"'
 
-statement error
+statement ok
 CREATE LOADER tryaloader() LANGUAGE PYTHON {
-    _emit.emit({'movie_id': 1, 'release_year': 1926, 'title': 'A horror movie'})
-
-statement error
-}
+    _emit.emit({'movie_id': 1, 'release_year': 1926, 'title': 'A horror movie'});
+};
 
 statement error
 COPY LOADER INTO ratings FROM tryaloader()
@@ -32,17 +30,17 @@ COPY LOADER INTO ratings FROM tryaloader()
 query I rowsort
 SELECT COUNT(*) FROM ratings
 ----
-0
+1347
 
 query I rowsort
 SELECT COUNT(*) FROM subt1
 ----
-0
+1322
 
 query I rowsort
 SELECT COUNT(*) FROM subt2
 ----
-0
+25
 
 statement ok
 ALTER TABLE ratings DROP TABLE subt1
@@ -59,7 +57,7 @@ DROP TABLE subt2
 statement ok
 DROP TABLE ratings
 
-statement error
+statement ok
 DROP LOADER tryaloader
 
 
