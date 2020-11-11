@@ -4,3 +4,4 @@ language.register("user","mytest","io.print(\"hello world\");","first test")
 statement error
 mdb.list("user","mytest")
 
+

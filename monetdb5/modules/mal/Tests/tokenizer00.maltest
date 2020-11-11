@@ -71,7 +71,7 @@ d:bat[:oid] := tokenizer.getIndex()
 query TT rowsort
 io.print(d)
 ----
-22 values hashing to 9470a002ce5426b6991f347c773a6be3
+22 values hashing to 838f4c3374169047ef1bd1b41199a551
 
 statement ok
 level0:bat[:str] := tokenizer.getLevel(0)
@@ -88,28 +88,28 @@ level3:bat[:str] := tokenizer.getLevel(3)
 query TT rowsort
 io.print(level0)
 ----
-@
-ftp:
-@
+0
 http:
+1
+ftp:
 
 query TT rowsort
 io.print(level1)
 ----
-@
+0
 (empty)
-@
+1
 (empty)
 
 query TT rowsort
 io.print(level2)
 ----
-10 values hashing to fdea139e691b3dd9e7725d5e96c3d866
+10 values hashing to fead9045c1d61ce1dd2a95b1c08794e7
 
 query TT rowsort
 io.print(level3)
 ----
-12 values hashing to f5bc5b38cb9d33608b3bddfb2d56ebe7
+12 values hashing to 3c077dca9960fa9a48382145d11908b6
 
 statement ok
 cnt:bat[:lng] := tokenizer.getCount()
@@ -117,13 +117,13 @@ cnt:bat[:lng] := tokenizer.getCount()
 query TT rowsort
 io.print(cnt)
 ----
-@
+0
 2
-@
+1
 2
-@
+2
 5
-@
+3
 6
 
 statement ok
@@ -132,15 +132,16 @@ cnt:bat[:lng] := tokenizer.getCardinality()
 query TT rowsort
 io.print(cnt)
 ----
-@
+0
+2
 1
-@
+1
 2
-@
-2
-@
 5
+3
+2
 
 statement ok
 tokenizer.close()
+
 

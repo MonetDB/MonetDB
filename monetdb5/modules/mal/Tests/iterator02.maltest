@@ -45,7 +45,7 @@ query T rowsort
 query TT rowsort
 	io.print(t)
 ----
-12 values hashing to eeffda7e4a5f3c5ba4a6ea660cd8c45b
+12 values hashing to 34dfc41d181f20f48b4be98b0cd6ddc1
 
 statement ok
 	rb:= bat.new(:url)
@@ -80,5 +80,6 @@ exit h
 query TT rowsort
 	io.print(rb)
 ----
-12 values hashing to eeffda7e4a5f3c5ba4a6ea660cd8c45b
+12 values hashing to 34dfc41d181f20f48b4be98b0cd6ddc1
+
 
