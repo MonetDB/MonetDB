@@ -101,6 +101,8 @@ def convertresult(columns, data):
             elif columns[i] == 'T':
                 if row[i] == '':
                     nrow.append('(empty)')
+                elif row[i] == b'':
+                    nrow.append('(empty)')
                 else:
                     nval = []
                     if isinstance(row[i], bytes):
