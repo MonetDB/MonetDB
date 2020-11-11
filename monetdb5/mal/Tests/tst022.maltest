@@ -12,6 +12,6 @@ barrier b:= j>0;
 exit b;
 barrier b:= j<=0
 	io.printf("wrong entered fourth\n");
-exit b
+exit b;
 ----
 ok entered first
