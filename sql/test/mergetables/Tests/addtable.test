@@ -1,0 +1,27 @@
+statement ok
+create table tmp1(i int)
+
+statement ok
+insert into tmp1 values(1)
+
+statement ok
+create table tmp2(i int)
+
+statement ok
+insert into tmp2 values(2)
+
+statement error
+alter table tmp1 add table tmp2
+
+query I rowsort
+select * from tmp1
+----
+1
+
+statement ok
+drop table tmp1
+
+statement ok
+drop table tmp2
+
+
