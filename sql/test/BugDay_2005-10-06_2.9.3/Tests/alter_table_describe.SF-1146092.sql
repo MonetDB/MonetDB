@@ -107,18 +107,31 @@ ALTER TABLE "sysinf" ADD FOREIGN KEY ("memory_id")
 ALTER TABLE "sysinf" ADD FOREIGN KEY ("disk_id")
 	REFERENCES "disk" ("disk_id");
 
-\d experiment
-\d tapestry_user
-\d config
-\d tapestry_table
-\d result
-\d target
-\d sysinf
-\d platform
-\d cpu
-\d memory
-\d disk
-\d query_walk
+select "name", "query", "type", "remark" from describe_table('sys', 'experiment');
+select "name", "query", "type", "remark" from describe_table('sys', 'tapestry_user');
+select "name", "query", "type", "remark" from describe_table('sys', 'config');
+select "name", "query", "type", "remark" from describe_table('sys', 'tapestry_table');
+select "name", "query", "type", "remark" from describe_table('sys', 'result');
+select "name", "query", "type", "remark" from describe_table('sys', 'target');
+select "name", "query", "type", "remark" from describe_table('sys', 'sysinf');
+select "name", "query", "type", "remark" from describe_table('sys', 'platform');
+select "name", "query", "type", "remark" from describe_table('sys', 'cpu');
+select "name", "query", "type", "remark" from describe_table('sys', 'memory');
+select "name", "query", "type", "remark" from describe_table('sys', 'disk');
+select "name", "query", "type", "remark" from describe_table('sys', 'query_walk');
+
+select * from describe_columns('sys', 'experiment');
+select * from describe_columns('sys', 'tapestry_user');
+select * from describe_columns('sys', 'config');
+select * from describe_columns('sys', 'tapestry_table');
+select * from describe_columns('sys', 'result');
+select * from describe_columns('sys', 'target');
+select * from describe_columns('sys', 'sysinf');
+select * from describe_columns('sys', 'platform');
+select * from describe_columns('sys', 'cpu');
+select * from describe_columns('sys', 'memory');
+select * from describe_columns('sys', 'disk');
+select * from describe_columns('sys', 'query_walk');
 
 DROP TABLE "query_walk" CASCADE;
 DROP TABLE "disk" CASCADE;
