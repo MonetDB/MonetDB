@@ -1,0 +1,31 @@
+statement ok
+CREATE TABLE test_num_data (id integer, val numeric(18,10))
+
+statement ok
+INSERT INTO test_num_data VALUES (1, '-0.0')
+
+statement ok
+INSERT INTO test_num_data VALUES (2, '-34338492.215397047')
+
+query IR rowsort
+SELECT * FROM test_num_data
+----
+1
+0.000
+2
+-34338492.215
+
+query IIR rowsort
+SELECT t1.id, t2.id, t1.val * t2.val FROM test_num_data t1, test_num_data t2
+----
+12 values hashing to 073df87369c313dd2319d6d48a99ddd6
+
+query IIR rowsort
+SELECT t1.id, t2.id, round(t1.val * t2.val, 30) FROM test_num_data t1, test_num_data t2
+----
+12 values hashing to 073df87369c313dd2319d6d48a99ddd6
+
+statement ok
+drop table test_num_data
+
+

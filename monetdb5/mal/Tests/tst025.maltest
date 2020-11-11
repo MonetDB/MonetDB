@@ -1,0 +1,41 @@
+statement ok
+b:= bat.new(:int)
+
+statement ok
+bat.append(b, 5140046)
+
+statement ok
+bat.append(b, 5442033)
+
+statement ok
+bat.append(b, 5645862)
+
+query TI rowsort
+io.print(b)
+----
+@
+5140046
+@
+5442033
+@
+5645862
+
+statement ok
+bat.delete(b,1@0)
+
+query TI rowsort
+io.print(b)
+----
+@
+5140046
+@
+5645862
+
+statement ok
+bat.delete(b)
+
+query TI rowsort
+io.print(b)
+----
+
+

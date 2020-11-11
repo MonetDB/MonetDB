@@ -1,0 +1,31 @@
+statement ok
+set optimizer='sequential_pipe'
+
+query T rowsort
+explain select replace(a1,a2,a3), id
+from (
+  select name as a1, 'a' as a2, 'A' as a3, id as id
+  from sys.functions
+) as x
+----
+46 values hashing to b1b43d015764c7ab8dd21051d4ecbf5e
+
+query T rowsort
+explain select replace(a1,a2,a3), id
+from (
+  select name as a1, 'a' as a2, 'A' as a3, id + 1 as id
+  from sys.functions
+) as x
+----
+50 values hashing to 0418e13d49636b28908672f22735eb41
+
+query T rowsort
+explain select replace(a1,a2,a3), id
+from (
+  select name as a1, 'a' as a2, 'A' as a3, abs(id) as id
+  from sys.functions
+) as x
+----
+49 values hashing to 9927eede6c673bbc29e81ede86ff4c5c
+
+
