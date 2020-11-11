@@ -1,0 +1,71 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE pyloader05table(s STRING)
+
+statement error
+CREATE LOADER pyloader05() LANGUAGE PYTHON {
+    _emit.emit({'s': 33})
+
+statement error
+    _emit.emit({'s': 42.0})
+
+statement error
+    _emit.emit({'s': 'hello'})
+
+statement error
+    _emit.emit({'s': u'\u00D6'})
+
+statement error
+    _emit.emit({'s': [33, 'hello']})
+
+statement error
+    _emit.emit({'s': [42.0, 33]})
+
+statement error
+    _emit.emit({'s': numpy.array(['hello', 'hello', 'hello'])})
+
+statement error
+    _emit.emit({'s': [u'\u00D6', 'hello', 33]})
+
+statement error
+    _emit.emit({'s': numpy.array([u'\u00D6', 'hello', 33])})
+
+statement error
+    _emit.emit({'s': numpy.arange(3).astype(numpy.float32)})
+
+statement error
+    _emit.emit({'s': numpy.arange(3).astype(numpy.float64)})
+
+statement error
+    _emit.emit({'s': numpy.arange(3).astype(numpy.int8)})
+
+statement error
+    _emit.emit({'s': numpy.arange(3).astype(numpy.int16)})
+
+statement error
+    _emit.emit({'s': numpy.arange(3).astype(numpy.int32)})
+
+statement error
+    _emit.emit({'s': numpy.arange(3).astype(numpy.int64)})
+
+statement error
+}
+
+statement error
+COPY LOADER INTO pyloader05table FROM pyloader05()
+
+statement error
+SELECT * FROM pyloader05table
+
+statement error
+DROP TABLE pyloader05table
+
+statement error
+DROP LOADER pyloader05
+
+statement ok
+ROLLBACK
+
+
