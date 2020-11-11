@@ -1,0 +1,62 @@
+statement ok
+CREATE TABLE part1 ( x double, y double, z double)
+
+statement ok
+COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+0.0 0.0 0.0
+1.0 0.0 0.0
+0.0 1.0 0.0
+1.0 1.0 0.0
+
+statement ok
+CREATE TABLE part2 ( x double, y double, z double)
+
+statement ok
+COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+2.0 0.0 0.0
+3.0 0.0 0.0
+2.0 1.0 0.0
+3.0 1.0 0.0
+
+statement ok
+CREATE MERGE TABLE complete ( x double, y double, z double)
+
+statement ok
+ALTER TABLE complete ADD TABLE part1
+
+statement ok
+ALTER TABLE complete ADD TABLE part2
+
+query RRR rowsort
+SELECT * FROM COMPLETE
+----
+24 values hashing to 8f130e4c6c1b2a3e43a48914d6248638
+
+statement error
+DROP TABLE part1
+
+query RRR rowsort
+SELECT * FROM COMPLETE
+----
+24 values hashing to 8f130e4c6c1b2a3e43a48914d6248638
+
+statement error
+DROP TABLE part2
+
+query RRR rowsort
+SELECT * FROM COMPLETE
+----
+24 values hashing to 8f130e4c6c1b2a3e43a48914d6248638
+
+statement ok
+DROP TABLE complete
+
+statement ok
+DROP TABLE part2
+
+statement ok
+DROP TABLE part1
+
+

@@ -1,0 +1,55 @@
+statement ok
+CREATE TABLE partk1 ( x double, y double, z double)
+
+statement ok
+ALTER TABLE partk1 ADD PRIMARY KEY (x,y,z)
+
+statement ok
+COPY 4 RECORDS INTO partk1 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+0.0 0.0 0.0
+1.0 0.0 0.0
+0.0 1.0 0.0
+1.0 1.0 0.0
+
+statement ok
+CREATE TABLE partk2 ( x double, y double, z double)
+
+statement ok
+ALTER TABLE partk2 ADD PRIMARY KEY (x,y,z)
+
+statement ok
+COPY 4 RECORDS INTO partk2 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+2.0 0.0 0.0
+3.0 0.0 0.0
+2.0 1.0 0.0
+3.0 1.0 0.0
+
+statement ok
+CREATE MERGE TABLE complete ( x double, y double, z double)
+
+statement ok
+ALTER TABLE complete ADD PRIMARY KEY (x,y,z)
+
+statement ok
+ALTER TABLE complete ADD TABLE partk1
+
+statement ok
+ALTER TABLE complete ADD TABLE partk2
+
+query RRR rowsort
+SELECT * FROM COMPLETE
+----
+24 values hashing to 8f130e4c6c1b2a3e43a48914d6248638
+
+statement ok
+DROP TABLE complete
+
+statement ok
+DROP TABLE partk1
+
+statement ok
+DROP TABLE partk2
+
+

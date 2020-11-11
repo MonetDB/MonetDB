@@ -1,4 +1,3 @@
-# parsing operations with multi-assignments
 function swap(x:bat[:int],y:bat[:int]) (a:str,b:bat[:int]);
         a:="done"; 
         return (a,x);
@@ -14,6 +13,5 @@ function foo();
 	io.print(y);
 end foo;
 
-mdb.List("user","foo");
 user.foo();
 
