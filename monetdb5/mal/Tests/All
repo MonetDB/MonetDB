@@ -103,39 +103,39 @@ tst171
 tst180
 tst190
 tst191
-# tst192
-# tst193
-# tst194
-# tst195
-# tst196
-# tst200
-# tst201
-# tst202
-# tst210
-# tst220
-# tst230
-# tst231
-# tst232
-# tst233
-# tst234
-# tst235
-# tst237
-# tst250
-# tst2500
-# tst2501
-# tst2502
-# tst2503
-# tst2504
-# tst2505
-# tst2510
-# tst251
-# tst252
-# tst255
-# tst2550
-# tst256
-# tst2570
-# tst272
-# tst275
+tst192
+tst193
+tst194
+tst195
+tst196
+tst200
+tst201
+tst202
+tst210
+tst220
+tst230
+tst231
+tst232
+tst233
+tst234
+tst235
+tst237
+tst250	#incorrect, misses last answer
+tst2500
+tst2501
+tst2502
+tst2503
+tst2504
+tst2505
+tst2510
+tst251	# incorrect, misses last answer
+tst252
+tst255
+tst2550
+tst256
+tst2570
+tst272
+tst275	# incorrect hash
 # tst280
 # tst281
 # tst292
