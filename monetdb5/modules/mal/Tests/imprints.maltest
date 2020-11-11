@@ -69,8 +69,10 @@ t1:= alarm.usec()
 statement ok
 d0:= t1-t0
 
-statement ok
-io.printf("#imprint create %d\n",d0)
+#query T rowsort
+#io.printf("#imprint create %d\n",d0)
+#----
+##imprint create 125282
 
 statement ok
 l:= bat.imprintsize(b)
@@ -93,4 +95,5 @@ query T rowsort
 io.printf("#imprint percentage overhead %4.2f\n",f)
 ----
 #imprint percentage overhead 12.50
+
 

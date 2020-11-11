@@ -24,8 +24,9 @@ io.import(z,"namebat")
 query TT rowsort
 io.print(z)
 ----
-@
+0
 tmpdocs
-@
+1
 tmpterms
+
 

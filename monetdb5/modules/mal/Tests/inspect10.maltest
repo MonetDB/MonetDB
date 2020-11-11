@@ -1,19 +1,9 @@
 statement ok
-function dummy(i:int)
-
-statement ok
-	io.print(i)
-
-statement ok
-	b:= mdb.getDefinition()
-
-statement ok
-	io.print(b)
-
-statement ok
-	mdb.list()
-
-statement ok
+function dummy(i:int);
+	io.print(i);
+	b:= mdb.getDefinition();
+	io.print(b);
+	mdb.list();
 end dummy
 
 query T rowsort
@@ -32,11 +22,12 @@ l:= inspect.getSignature("user","dummy")
 query TT rowsort
 io.print(l)
 ----
-@
+0
 (i:int):void;
 
 query T rowsort
 mdb.list("user","dummy")
 ----
 end user.dummy;
+
 
