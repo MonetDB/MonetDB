@@ -91,7 +91,7 @@ statement ok
 query TT rowsort
 	io.print(answer)
 ----
-@
+0
 3
 
 
