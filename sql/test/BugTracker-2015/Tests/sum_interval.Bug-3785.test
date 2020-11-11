@@ -1,0 +1,18 @@
+statement ok
+create table foo (a timestamp,b timestamp)
+
+statement ok
+insert into foo values ('2000-1-1','2001-1-1')
+
+query T rowsort
+select sum(b-a) from foo
+----
+1622400.00
+
+statement ok
+drop table foo
+
+statement error
+select sum(i) from (select interval '1' day) x(i)
+
+

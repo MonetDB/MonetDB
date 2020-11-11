@@ -611,6 +611,7 @@ def PerformDir(env, testdir, auto=False) :
             continue
         test_name = t.get('test_name')
         options += t.get('options5', [])
+        is_reqtest = t.get('is_reqtest', False)
         fn = t.get('test_path') + t.get('tail')
         if verbose:
             print('converting {}'.format(test_name), file=sys.stderr)
@@ -650,13 +651,14 @@ def PerformDir(env, testdir, auto=False) :
                 else:
                     with open(fn, 'r') as f:
                         print(f.read(), file=fout)
-            pSrvr = create_mserver5(
-                    LogDBdir,
-                    env=env,
-                    outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
-                    errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
-                    options=options)
-            pSrvr.LaunchIt()
+            if pSrvr is None:
+                pSrvr = create_mserver5(
+                        LogDBdir,
+                        env=env,
+                        outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
+                        errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
+                        options=options)
+                pSrvr.LaunchIt()
             with open('/tmp/sqllogic.in', 'r') as fin:
                 cmd = ['mktest.py', '--database', TSTDB, '--port', str(pSrvr.port), '--language', CALL]
                 with process.Popen(cmd, stdin=fin, stdout=process.PIPE, text=True) as proc:

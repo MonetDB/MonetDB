@@ -1,0 +1,26 @@
+statement ok
+CREATE TABLE t1 (i int)
+
+statement ok
+CREATE MERGE TABLE mt1 (t int)
+
+statement ok
+ALTER TABLE mt1 ADD TABLE t1
+
+statement ok
+CREATE REMOTE  TABLE rt1 (t int)  on 'mapi:monetdb://localhost:50000/test'
+
+statement error
+\d
+\d mt1
+\d rt1
+\D
+DROP TABLE rt1
+
+statement ok
+DROP TABLE mt1
+
+statement ok
+DROP TABLE t1
+
+

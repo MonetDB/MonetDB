@@ -133,13 +133,20 @@ class SQLLogic:
                 elif columns[i] == 'T':
                     if row[i] == '':
                         nrow.append('(empty)')
+                    elif row[i] == b'':
+                        nrow.append('(empty)')
                     else:
                         nval = []
-                        for c in str(row[i]):
-                            if ' ' <= c <= '~':
+                        if isinstance(row[i], bytes):
+                            for c in row[i]:
+                                c = '%02X' % c
                                 nval.append(c)
-                            else:
-                                nval.append('@')
+                        else:
+                            for c in str(row[i]):
+                                if ' ' <= c <= '~':
+                                    nval.append(c)
+                                else:
+                                    nval.append('@')
                         nrow.append(''.join(nval))
                 elif columns[i] == 'R':
                     nrow.append('%.3f' % row[i])
