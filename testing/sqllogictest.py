@@ -131,7 +131,7 @@ class SQLLogic:
                     else:
                         nrow.append('%d' % row[i])
                 elif columns[i] == 'T':
-                    if not row[i]:
+                    if row[i] == '' or row[i] == b'':
                         nrow.append('(empty)')
                     else:
                         nval = []
