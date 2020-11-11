@@ -32,25 +32,20 @@ class TestCase:
         if not isinstance(openers, list):
             openers = [openers]
 
-        print()
-        print(f"Test: {test}")
-
         cmd = ['streamcat', 'read', filename, *openers]
         results = subprocess.run(
             cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if results.returncode != 0 or results.stderr:
-            print(
-                f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
+            print(f"TEST {test} FAILED: streamcat {cmd} returned with exit code {results.returncode}:\n{results.stderr or ''}")
             return False
 
         output = results.stdout or b""
         complaint = self.expected.verify(output)
 
         if complaint:
-            print(f"\tFAIL: {complaint}")
+            print(f"TEST {test} FAILED: {complaint}")
             return False
         else:
-            print(f"\tOK")
             os.remove(filename)
             return True
 
@@ -111,7 +106,8 @@ def all_tests(filename_filter):
     for t in gen_tests():
         if not filename_filter(t.name):
             continue
-        failures += t.run()
+        good = t.run()
+        failures += not good
 
     return failures
 
