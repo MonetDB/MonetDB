@@ -20,3 +20,4 @@ barrier (h,t):= iterator.new(b);
 	io.printf("%d\n",t);
 	redo (h,t):= iterator.next(b);
 exit (h,t);
+
