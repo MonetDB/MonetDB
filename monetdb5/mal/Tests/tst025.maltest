@@ -13,11 +13,11 @@ bat.append(b, 5645862)
 query TI rowsort
 io.print(b)
 ----
-@
+0
 5140046
-@
+1
 5442033
-@
+2
 5645862
 
 statement ok
@@ -26,9 +26,9 @@ bat.delete(b,1@0)
 query TI rowsort
 io.print(b)
 ----
-@
+0
 5140046
-@
+1
 5645862
 
 statement ok
