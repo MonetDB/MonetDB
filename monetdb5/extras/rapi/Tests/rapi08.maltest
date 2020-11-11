@@ -55,13 +55,13 @@ ti_dv:bat[:int] := algebra.projection(ti,dv)
 query TT rowsort
 io.print(grp)
 ----
-@
 0
-@
 0
-@
 1
-@
+0
+2
+1
+3
 1
 
 statement ok
@@ -70,8 +70,8 @@ res:bat[:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_
 query TI nosort
 io.print(res)
 ----
-@
+0
 63
-@
+1
 31
 

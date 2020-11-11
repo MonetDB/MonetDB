@@ -1,0 +1,7 @@
+statement error
+i:= 1 + 1 + 1
+
+statement error
+j:= 1 + + 1
+
+

@@ -32,21 +32,17 @@ class TestCase:
         if not isinstance(openers, list):
             openers = [openers]
 
-        print()
-        print(f"Test: {test}")
-
         if os.path.exists(filename):
             os.remove(filename)
 
         cmd = ['streamcat', 'write', filename, *openers]
         results = subprocess.run(cmd, input=doc.content, stderr=subprocess.PIPE)
         if results.returncode != 0 or results.stderr:
-            print(
-                f"\tFAIL: streamcat returned with exit code {results.returncode}:\n{results.stderr or ''}")
+            print(f"TEST {test} FAILED: streamcat {cmd} returned with exit code {results.returncode}:\n{results.stderr or ''}")
             return False
 
         if not os.path.exists(filename):
-            print(f"\tFAIL: test failed to create file '{filename}'")
+            print(f"TEST {test} FAILED: test failed to create file '{filename}'")
             return False
 
         # Trial run to rule out i/o errors
@@ -55,16 +51,15 @@ class TestCase:
         try:
             output = self.tf.read()  # should decompress it
         except Exception as e:
-            print(f"Test {test} failed on file {filename}: {e}")
+            print(f"TEST {test} FAILED reading on file {filename}: {e}")
             return False
 
         complaint = self.expected.verify(output)
 
         if complaint:
-            print(f"\tFAIL: {complaint}")
+            print(f"TEST {test} FAILED: {complaint}")
             return False
         else:
-            print(f"\tOK")
             os.remove(filename)
             return True
 
@@ -113,7 +108,8 @@ def all_tests(filename_filter):
     for t in gen_tests():
         if not filename_filter(t.name):
             continue
-        failures += t.run()
+        good = t.run()
+        failures += not good
 
     return failures
 

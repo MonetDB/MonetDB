@@ -34,7 +34,7 @@ bat.append(b,1189641421)
 query TI rowsort
 io.print(b)
 ----
-20 values hashing to 1ed9b179123b79c37c343b9e5b25722f
+20 values hashing to 74a3c631a4c9ac875a281da7c6d5441c
 
 statement ok
 r:bat[:dbl] := rapi.eval(nil:ptr,"print(arg1);someval <- Re(fft(arg1)); print(someval); return(someval);",b);
@@ -42,23 +42,23 @@ r:bat[:dbl] := rapi.eval(nil:ptr,"print(arg1);someval <- Re(fft(arg1)); print(so
 query TI rowsort
 io.print(r)
 ----
-@
--879667492
-@
--879667492
-@
+0
 12585340037
-@
-158316768
-@
-158316768
-@
-2456894287
-@
-2456894287
-@
+1
 525771362
-@
-525771362
-@
+2
+-879667492
+3
+2456894287
+4
+158316768
+5
 934923939
+6
+158316768
+7
+2456894287
+8
+-879667492
+9
+525771362

@@ -97,17 +97,17 @@ NULL
 query TT rowsort
 io.print(b)
 ----
-@
-False
-@
-NULL
-@
+0
 True
+1
+False
+2
+NULL
 
 query TTT rowsort
 io.print(bl,br)
 ----
-27 values hashing to 853880e6fa2fbf13f702f92cfe784d2f
+27 values hashing to 36b57b9dc23503517dd7177eb0f4a95d
 
 statement error
 o := calc.or(t,t); bo := bat.append(bo,o)
@@ -174,4 +174,5 @@ aa := batcalc.and(bl,br)
 
 statement error
 io.print(bl,br, ba, aa)
+
 

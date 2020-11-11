@@ -4,7 +4,7 @@ r1:bat[:int] := rapi.eval(nil:ptr,"loopback_query(\"select cast(42 as integer);\
 query TI nosort
 io.print(r1)
 ----
-@
+0
 42
 
 statement ok
@@ -13,7 +13,7 @@ r2:bat[:str] := rapi.eval(nil:ptr,"loopback_query(\"select 'a' as str union all 
 query TT nosort
 io.print(r2)
 ----
-@
+0
 a
-@
+1
 b

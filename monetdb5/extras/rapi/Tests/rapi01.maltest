@@ -34,29 +34,27 @@ bat.append(b,1189641421)
 query TI rowsort
 io.print(b)
 ----
-20 values hashing to 1ed9b179123b79c37c343b9e5b25722f
+20 values hashing to 74a3c631a4c9ac875a281da7c6d5441c
 
 statement error
-r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b)
 
 statement error
-r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b)
 
 statement error
-r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b)
 
 statement error
-r:bat[:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b)
 
 statement error
-r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b)
 
 statement error
-r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b);
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b)
 
-query T rowsort
+statement error
 io.print(r)
-----
-NULL
 
 
