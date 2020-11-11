@@ -16,8 +16,8 @@ err := bat.append(b,n0);
 err := bat.append(b,81);
 io.print(b);
 barrier (h,t):= iterator.new(b);
-	io.printf("%d,",h);
-	io.printf("%d\n",t);
+ 	io.printf("%d,",h); 
+  	io.printf("%d:",t); 
 	redo (h,t):= iterator.next(b);
+  	io.printf("\n"); 
 exit (h,t);
-
