@@ -69,8 +69,10 @@ fractional_sep_first_opp:
 		}
 	}
 	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
-		if (res > max0 || (res == max0 && *dec - '0' > max1))
-			break;
+		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
+			*has_errors = 1;
+			return 0;
+		}
 		res *= 10;
 		res += *dec - '0';
 		_digits++;
@@ -86,8 +88,10 @@ trailing_digits:
 	if (!isdigit((unsigned char) *dec))
 		goto trailing_whitespace;
 	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
-		if (res > max0 || (res == max0 && *dec - '0' > max1))
-			break;
+		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
+			*has_errors = 1;
+			return 0;
+		}
 		res *= 10;
 		res += *dec - '0';
 		_scale++;

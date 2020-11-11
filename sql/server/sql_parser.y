@@ -4717,21 +4717,17 @@ literal:
 
 			DEC_TPE value = decimal_from_str(s, &digits, &scale, &has_errors);
 
-			if (has_errors) {
-				char *msg = sql_message(SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
-
-				yyerror(m, msg);
-				_DELETE(msg);
-				$$ = NULL;
-				YYABORT;
-			}
-
-			if (digits <= MAX_DEC_DIGITS) {
+			if (!has_errors) {
+				// The float-like value seems to fit in decimal storage
 				double val = strtod($1,NULL);
 				sql_find_subtype(&t, "decimal", digits, scale );
 				$$ = _newAtomNode( atom_dec(SA, &t, value, val));
 			}
 			else {
+				/*
+				 * The float-like value either doesn't fit in integer decimal storage
+				 * or it is not a valid float representation.
+				 */
 				char *p = $1;
 				double val;
 
