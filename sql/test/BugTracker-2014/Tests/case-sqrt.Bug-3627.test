@@ -1,0 +1,45 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE t1 (id SERIAL, colint INT)
+
+statement ok
+INSERT INTO t1 (colint) VALUES (-2),(-1),(0),(1),(2)
+
+query IIR rowsort
+SELECT t0.id
+      ,t0.colint
+      ,SQRT(t0.colint_sq)
+  FROM (SELECT id
+              ,colint
+              ,CASE WHEN colint < 0
+                    THEN -1 * colint
+                    ELSE colint
+               END AS colint_sq
+          FROM t1
+       ) t0
+
+----
+15 values hashing to f12c1f7f14718285c289a2537f92118c
+
+query IIR rowsort
+SELECT t0.id
+      ,t0.colint
+      ,t0.sqrt_colint
+  FROM (SELECT id
+              ,colint
+              ,CASE WHEN colint < 0
+                    THEN SQRT(-1 * colint)
+                    ELSE SQRT(colint)
+               END AS sqrt_colint
+          FROM t1
+       ) t0
+
+----
+15 values hashing to f12c1f7f14718285c289a2537f92118c
+
+statement ok
+ROLLBACK
+
+
