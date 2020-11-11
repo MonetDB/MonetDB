@@ -1,0 +1,21 @@
+statement ok
+create table x (n int, s varchar(10))
+
+statement ok
+insert into x (n,s) values (1, 'one')
+
+statement ok
+insert into x (n,s) values (2, 'two')
+
+statement ok
+insert into x (n,s) values (3, 'three')
+
+query ITITITIIIIT rowsort
+select * from tables, x limit 10
+----
+110 values hashing to c3f43cf8d27b7912a24b1c87a5eee1c1
+
+statement ok
+drop table x cascade
+
+

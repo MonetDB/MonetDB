@@ -1,0 +1,19 @@
+statement error
+\d
+\d triggers
+\d args
+create table node_tags (id integer)
+
+statement error
+select * from node_tags
+
+statement error
+insert into node_tags values (1)
+
+statement error
+select * from node_tags
+
+statement error
+drop table node_tags
+
+

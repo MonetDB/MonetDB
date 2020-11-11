@@ -1,0 +1,4 @@
+statement error
+select (select 1) * (select vettecrash from tables)
+
+
