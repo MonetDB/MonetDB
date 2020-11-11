@@ -1,0 +1,30 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION capi01(inp INTEGER) RETURNS TABLE (i INTEGER, d DOUBLE)
+language C
+{
+#include <math.h>
+    size_t j;
+    size_t count = inp.data[0];
+    i->initialize(i, count);
+    d->initialize(d, count);
+    for(j = 0; j < count; j++) {
+        i->data[j] = j;
+        d->data[j] = round(j > 0 ? 42.0 / j : 42.0);
+    }
+};
+
+query II rowsort
+SELECT i,d FROM capi01(42) AS R
+----
+84 values hashing to 5bb395f601dde2dc995b28f19ffe7d50
+
+statement ok
+DROP FUNCTION capi01
+
+statement ok
+ROLLBACK
+
+

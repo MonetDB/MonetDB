@@ -10,16 +10,7 @@ stdout of test 'table` in directory 'sql/test/Users` itself:
 # Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
 # Visit http://monetdb.cwi.nl/ for further information.
 
-
-
-
-# 15:42:20 >  
-# 15:42:20 >  Mtimeout -timeout 60 ./table.SQL table 
-# 15:42:20 >  
-
-[ 1	]
-
-# 15:42:20 >  
-# 15:42:20 >  Done.
-# 15:42:20 >  
+# 12:54:23 >  
+# 12:54:23 >  "Done."
+# 12:54:23 >  
 

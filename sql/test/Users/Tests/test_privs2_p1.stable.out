@@ -19,63 +19,7 @@ stdout of test 'test_privs2_p1` in directory 'sql/test/Users` itself:
 # MonetDB/JAQL module loaded
 # MonetDB/SQL module loaded
 
-
-# 15:54:46 >  
-# 15:54:46 >  "/usr/bin/python2" "test_privs2_p1.SQL.py" "test_privs2_p1"
-# 15:54:46 >  
-
-#SELECT * FROM version;
-% my_schema.version,	my_schema.version # table_name
-% name,	i # name
-% varchar,	int # type
-% 5,	1 # length
-[ "test1",	1	]
-#insert into version (name ,i) values ('test2' ,2) ;
-[ 1	]
-#SELECT insertversion('test3', 3);
-% .%4 # table_name
-% %4 # name
-% int # type
-% 1 # length
-[ 1	]
-#SELECT * FROM version;
-% my_schema.version,	my_schema.version # table_name
-% name,	i # name
-% varchar,	int # type
-% 5,	1 # length
-[ "test1",	1	]
-[ "test2",	2	]
-[ "test3",	3	]
-#SELECT updateversion('test1', 4);
-% .%2 # table_name
-% %2 # name
-% int # type
-% 1 # length
-[ 1	]
-#SELECT * FROM version;
-% my_schema.version,	my_schema.version # table_name
-% name,	i # name
-% varchar,	int # type
-% 5,	1 # length
-[ "test1",	4	]
-[ "test2",	2	]
-[ "test3",	3	]
-#SELECT deleteversion(4);
-% .%2 # table_name
-% %2 # name
-% int # type
-% 1 # length
-[ 1	]
-#SELECT * FROM version;
-% my_schema.version,	my_schema.version # table_name
-% name,	i # name
-% varchar,	int # type
-% 5,	1 # length
-[ "test1",	4	]
-[ "test2",	2	]
-[ "test3",	3	]
-
-# 15:54:46 >  
-# 15:54:46 >  "Done."
-# 15:54:46 >  
+# 15:25:07 >  
+# 15:25:07 >  "Done."
+# 15:25:07 >  
 
