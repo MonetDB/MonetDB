@@ -28,6 +28,7 @@ set(include_sql_files
   25_debug
   26_sysmon
   27_rejects
+  30_describe
   39_analytics
   40_json
   41_md5sum
