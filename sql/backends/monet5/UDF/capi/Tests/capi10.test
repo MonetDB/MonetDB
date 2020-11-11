@@ -34,3 +34,5 @@ DROP FUNCTION capi10
 
 statement ok
 ROLLBACK
+
+

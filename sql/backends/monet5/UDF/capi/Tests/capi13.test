@@ -3,6 +3,7 @@ START TRANSACTION
 
 statement ok
 CREATE AGGREGATE capi13(inp INTEGER) RETURNS BIGINT LANGUAGE C {
+#include <string.h>
 	// initialize one aggregate per group
 	result->initialize(result, aggr_group.count);
 	// zero initialize the sums
@@ -40,3 +41,5 @@ DROP TABLE vals
 
 statement ok
 ROLLBACK
+
+
