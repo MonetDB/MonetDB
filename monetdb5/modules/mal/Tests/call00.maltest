@@ -1,22 +1,10 @@
 statement ok
-function tst(i:int,s:str):bit
-
-statement ok
-	j:= i+1
-
-statement ok
-	io.print(j)
-
-statement ok
-	format:= "hello %s\n"
-
-statement ok
-	io.printf(format,s)
-
-statement ok
-	return tst:=true
-
-statement ok
+function tst(i:int,s:str):bit;
+	j:= i+1;
+	io.print(j);
+	format:= "hello %s\n";
+	io.printf(format,s);
+	return tst:=true;
 end tst
 
 statement ok
@@ -25,7 +13,7 @@ d:= inspect.getSignature("user","tst")
 query TT rowsort
 io.print(d)
 ----
-@
+0
 (i:int, s:str):bit;
 
 query T rowsort
@@ -50,8 +38,9 @@ d:= inspect.getSignature("user","tst")
 query TT rowsort
 io.print(d)
 ----
-@
+0
 (i:int, s:str):bit;
-@
+1
 (i:int, s:str):bit;
+
 

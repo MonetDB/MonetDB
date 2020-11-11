@@ -51,7 +51,7 @@ query T rowsort
 query TT rowsort
 	io.print(t)
 ----
-14 values hashing to cc78f07158a9b8cf11962a8981a68464
+14 values hashing to ecaee0a9c2bf7041f5dd31a7826a383f
 
 query T rowsort
 	io.print("start loop")
@@ -77,4 +77,5 @@ exit h
 "http://www.edgeonline.com/"
 "http://www.educ.uva.nl/schoolweb/rocloka.htm"
 "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"
+
 

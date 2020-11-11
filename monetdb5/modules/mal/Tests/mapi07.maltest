@@ -52,3 +52,4 @@ mapi.disconnect(mid)
 statement ok
 optimizer.remoteQueries()
 
+

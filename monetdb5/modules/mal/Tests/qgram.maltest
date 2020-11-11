@@ -4,7 +4,7 @@ b := txtsim.str2qgrams("hello world")
 query TT rowsort
 io.print(b)
 ----
-24 values hashing to 56823886bfeff6e0ba6626fc837b98a8
+24 values hashing to 4e4fe242f51e847bbf1dc66c6b7f7152
 
 statement ok
 b := txtsim.str2qgrams("hällö wørłð")
@@ -12,5 +12,6 @@ b := txtsim.str2qgrams("hällö wørłð")
 query TT rowsort
 io.print(b)
 ----
-24 values hashing to 782297e5335d0529815f8bbc825265a1
+24 values hashing to a37932e1075361ece310c84b70de9b60
+
 

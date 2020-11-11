@@ -47,3 +47,4 @@ io.printf("bit mix %d %d\n",b,ib)
 ----
 bit mix 1 nil
 
+
