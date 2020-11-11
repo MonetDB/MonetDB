@@ -25,7 +25,7 @@ INSERT INTO blobs VALUES (BLOB '00FFFF00'), (NULL), (BLOB '')
 query T rowsort
 SELECT capi10(i) FROM blobs
 ----
-
+(empty)
 00FFFF00
 NULL
 
