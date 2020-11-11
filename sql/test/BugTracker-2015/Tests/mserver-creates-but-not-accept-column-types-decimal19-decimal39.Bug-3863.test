@@ -5,10 +5,27 @@ statement ok
 INSERT INTO bar VALUES ('A', 123, 456)
 
 statement ok
-CREATE TABLE foo AS SELECT SUM(ct + ct2) / 100.0 AS eur FROM bar GROUP BY name WITH DATA
+CREATE TABLE foo AS SELECT cast(SUM(ct + ct2) as bigint) / 100.0 AS eur FROM bar GROUP BY name WITH DATA
 
-statement ok
-\d foo
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'foo')
+----
+foo
+NULL
+TABLE
+NULL
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'foo')
+----
+eur
+decimal
+23
+3
+True
+NULL
+0
+NULL
 
 statement ok
 DROP TABLE foo
