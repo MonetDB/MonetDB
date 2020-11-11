@@ -28,9 +28,9 @@ statement ok
 query TIT nosort
 io.print(r,s)
 ----
-@
+0
 1
 -0.011904761904761904
-@
+1
 2
 0.011904761904761904

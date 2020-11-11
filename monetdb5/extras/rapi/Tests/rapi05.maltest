@@ -70,13 +70,13 @@ statement ok
 query TIT rowsort
 io.print(r,s)
 ----
-@
+0
 1
 1714636915.0
-@
+1
 2
 1649760492.0
-@
+2
 3
 596516649.0
 
