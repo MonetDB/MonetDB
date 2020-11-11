@@ -1,0 +1,11 @@
+query I rowsort
+select coalesce(0, false)
+----
+0
+
+query T rowsort
+select coalesce(null, false)
+----
+False
+
+

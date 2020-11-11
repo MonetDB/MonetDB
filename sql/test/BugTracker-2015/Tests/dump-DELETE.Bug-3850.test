@@ -1,0 +1,13 @@
+statement ok
+create table t3850 (
+    s varchar(1)
+)
+
+statement ok
+insert into t3850 values (code(127))
+
+statement error
+\D
+drop table t3850
+
+
