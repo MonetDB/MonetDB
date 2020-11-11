@@ -29,5 +29,5 @@ set time zone local
 query T rowsort
 select current_timezone
 ----
-.00
+0:00:00
 

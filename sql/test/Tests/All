@@ -8,8 +8,8 @@ bincopycollist-prepare
 bincopycollist
 
 example
-example-queries
-example-drop
+#example-queries
+#example-drop
 #example-rangeselect
 ##
 #example
