@@ -6,6 +6,10 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 #]]
 
+if (${HAVE_ODBCINST})
+  add_compile_definitions(HAVE_SQLGETPRIVATEPROFILESTRING)
+endif()
+
 add_library(MonetODBC
   MODULE)
 
@@ -109,6 +113,7 @@ target_include_directories(MonetODBC
   PRIVATE
   $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
   $<$<BOOL:${ODBC_FOUND}>:${ODBC_INCLUDE_DIRS}>
+  $<$<BOOL:${ODBCinst_FOUND}>:${ODBCINST_INCLUDE_DIRS}>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
@@ -121,7 +126,8 @@ target_link_libraries(MonetODBC
   PRIVATE
   monetdb_config_header
   mutils
-  mapi)
+  mapi
+  ${ODBCINST_LIBRARIES})
 
 install(TARGETS
   MonetODBC
