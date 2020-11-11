@@ -96,7 +96,7 @@ def is_complete_stmt(query, line:str):
         if re.match(r'\s*function\s', stmt) is not None:
             return re.match(r'\s*function\s.*\bend(\s+\w+)?\s*;', stmt, re.DOTALL) is not None
         if re.match(r'\s*barrier\s', stmt) is not None:
-            return re.match(r'\s*barrier\s.*\bexit\s\(\w+(,\w)+\)\s*;', stmt, re.DOTALL) is not None
+            return re.match(r'\s*barrier\s.*\bexit\s\(\w+(,\w+)+\)\s*;', stmt, re.DOTALL) is not None
     return re.match(r'[^;]*;', stmt) is not None
 
 def is_copyfrom_stmt(stmt:str):
