@@ -27,7 +27,7 @@ def py_oid(data):
 
 mapping = {
     'none': no_convert,
-    'void': strip,
+    'void': py_oid,
     'str': strip,
     'int': int,
     'lng': int,
@@ -42,7 +42,7 @@ mapping = {
     'url': strip,
     'uuid': uuid.UUID,
     'json': json.loads,
-    'color': strip,
+    'color': no_convert,
 }
 
 def convert(data, type_code):

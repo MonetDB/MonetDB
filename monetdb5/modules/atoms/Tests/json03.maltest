@@ -7,7 +7,7 @@ statement ok
 query TTT rowsort
 io.print(k,v)
 ----
-12 values hashing to 7eabb8655978c02c82fad04352bfdfc4
+12 values hashing to 913a0bcee15b7f48acf0be80a7ba3d92
 
 statement ok
 jsn:= json.fold(k,v)
@@ -23,7 +23,7 @@ statement ok
 query TTTT rowsort
 io.print(o,l,w)
 ----
-16 values hashing to 0617c28ca3c49c67d8445c751a9e0f1b
+16 values hashing to 822830013db6f4c97f5f27082fd37d4f
 
 statement ok
 jsm:= json.fold(o,l,w)
@@ -47,7 +47,7 @@ statement ok
 query TTT rowsort
 io.print(k,v)
 ----
-15 values hashing to 5cac1b7371af107a0ce969a0fa7b9356
+15 values hashing to 645f321ead728611dff209aa675ad1b5
 
 statement ok
 jsn:= json.fold(k,v)
@@ -63,7 +63,7 @@ statement ok
 query TTTT rowsort
 io.print(o,l,w)
 ----
-20 values hashing to b11466acaf819ae81847899784af069c
+20 values hashing to fc6ad02223c7c77e23d71dfddfd44d8c
 
 statement ok
 jsm:= json.fold(o,l,w)
@@ -151,4 +151,5 @@ query T rowsort
 io.print(jsn)
 ----
 "[\"a\":1,\"b\":22,\"c\":333,, \"a\":2,\"c\":3,, \"b\":4]"
+
 
