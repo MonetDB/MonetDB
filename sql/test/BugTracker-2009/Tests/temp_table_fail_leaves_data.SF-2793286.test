@@ -1,0 +1,8 @@
+statement ok
+create temporary table testpk (hello int, primary key(hello))
+
+statement error
+\d testpk
+create temporary table testpk (hello int, primary key(hello))
+
+
