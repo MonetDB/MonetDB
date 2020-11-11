@@ -3,14 +3,32 @@
 ###
 
 import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+import pymonetdb
 
-with process.client('sql', user='my_user', passwd='p1',
-                    stdin=open(os.path.join(os.getenv('RELSRCDIR'), os.pardir, 'test_privs.sql')),
-                    stdout=process.PIPE, stderr=process.PIPE) as clt:
-    out, err = clt.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+db=os.getenv("TSTDB")
+port=int(os.getenv("MAPIPORT"))
+client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user', password='p1')
+cursor = client.cursor()
+
+def error(msg):
+    print(msg)
+    sys.exit(-1)
+
+nr=cursor.execute("select * from test")
+if nr != 0:
+    error("expected empty result")
+
+rowaffected=cursor.execute("insert into test values(1,1)")
+if rowaffected != 1:
+    error("expected single insert")
+
+rowaffected=cursor.execute("update test set b = 2")
+if rowaffected != 1:
+    error("expected single update")
+
+rowaffected=cursor.execute("delete from test")
+if rowaffected != 1:
+    error("expected single delete")
+
+cursor.close()
+client.close()

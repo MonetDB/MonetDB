@@ -1,8 +1,7 @@
+statement ok
+START TRANSACTION
 
-# test CPP UDFs
-
-START TRANSACTION;
-
+statement ok
 CREATE FUNCTION capi06(inp INTEGER) RETURNS INTEGER LANGUAGE CPP {
 #include <vector>
 #include <algorithm>
@@ -16,11 +15,22 @@ CREATE FUNCTION capi06(inp INTEGER) RETURNS INTEGER LANGUAGE CPP {
     for(i = 0; i < inp.count; i++) {
         result->data[i] = elements[i];
     }
-};
+}
 
-CREATE TABLE integers(i INTEGER);
-INSERT INTO integers VALUES (3), (4), (1), (2), (5);
+statement ok
+CREATE TABLE integers(i INTEGER)
 
-SELECT capi06(i) FROM integers;
+statement ok
+INSERT INTO integers VALUES (3), (4), (1), (2), (5)
 
-ROLLBACK;
+query I rowsort
+SELECT capi06(i) FROM integers
+----
+1
+2
+3
+4
+5
+
+statement ok
+ROLLBACK
