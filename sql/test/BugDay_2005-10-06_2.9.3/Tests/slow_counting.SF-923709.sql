@@ -13,3 +13,9 @@ end;
 select gen_insert(17);	-- previous call was 25
 
 select count(*) from slow_count;
+
+select count(*) from slow_count;
+
+drop function gen_insert;
+
+drop table slow_count;
