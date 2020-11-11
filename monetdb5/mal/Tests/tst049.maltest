@@ -1,0 +1,274 @@
+statement ok
+b:= bat.new(:str)
+
+statement ok
+bat.append(b,"")
+
+statement ok
+bat.append(b,"t")
+
+statement ok
+bat.append(b,"ts")
+
+statement ok
+bat.append(b,"tsz")
+
+statement ok
+bat.append(b,"a math assignment")
+
+statement ok
+bat.append(b,"pathfined is fun!")
+
+statement ok
+bat.append(b,"123123123")
+
+statement ok
+bat.append(b,"123123456123")
+
+statement ok
+bat.append(b,"199993456123")
+
+statement ok
+bat.append(b,"123456123456")
+
+statement ok
+bat.append(b,"123454321")
+
+query TT rowsort
+io.print(b)
+----
+22 values hashing to 0769bdcd07d13874be60725f04c4afd8
+
+statement ok
+i:= str.like("hello","hello")
+
+query T rowsort
+io.print(i)
+----
+true
+
+statement ok
+i:= str.like("hello","hell")
+
+query T rowsort
+io.print(i)
+----
+false
+
+statement ok
+i:= str.like("hello","h_llo")
+
+query T rowsort
+io.print(i)
+----
+true
+
+statement ok
+i:= str.like("hello","%llo")
+
+query T rowsort
+io.print(i)
+----
+true
+
+statement ok
+i:= str.like("hello","%___")
+
+query T rowsort
+io.print(i)
+----
+true
+
+statement ok
+i:= str.like("hello","hxllo")
+
+query T rowsort
+io.print(i)
+----
+false
+
+statement ok
+i:= str.like("tr","t_")
+
+query T rowsort
+io.print(i)
+----
+true
+
+statement ok
+i:= str.like("trx","t_")
+
+query T rowsort
+io.print(i)
+----
+false
+
+statement ok
+z:= batalgebra.like(b,"t_")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to e1151f7762c5e18ae348f71761a0d3ad
+
+statement ok
+z:= mal.manifold("str","like",b,"%math%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 2ea0253d0964382307a7459c421d5224
+
+statement ok
+z:= mal.manifold("str","like",b,"%m_th_a%t")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 2ea0253d0964382307a7459c421d5224
+
+statement ok
+z:= mal.manifold("str","like",b,"%at%_!")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to e96788e9020550b6a5a6c4c86afa9be0
+
+statement ok
+z:= mal.manifold("str","like",b,"1%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 47f8dc58fce9507b1c8b3f9cd1a147db
+
+statement ok
+z:= mal.manifold("str","like",b,"3%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 54d58497b4352c3e5467655bab2f47e7
+
+statement ok
+z:= mal.manifold("str","like",b,"%1")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 332d958c9699bab1fefd32cf0032876a
+
+statement ok
+z:= mal.manifold("str","like",b,"%3")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to f098c8933c1f70e822401b1b2e4dd297
+
+statement ok
+z:= mal.manifold("str","like",b,"%1%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 47f8dc58fce9507b1c8b3f9cd1a147db
+
+statement ok
+z:= mal.manifold("str","like",b,"%12%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 47f8dc58fce9507b1c8b3f9cd1a147db
+
+statement ok
+z:= mal.manifold("str","like",b,"%13%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 54d58497b4352c3e5467655bab2f47e7
+
+statement ok
+z:= mal.manifold("str","like",b,"%454%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 332d958c9699bab1fefd32cf0032876a
+
+statement ok
+z:= mal.manifold("str","like",b,"%2%2%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 1696506389d7cd10e0ba5e86c0f255ef
+
+statement ok
+z:= mal.manifold("str","like",b,"_2_3%123")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 54d58497b4352c3e5467655bab2f47e7
+
+statement ok
+z:= mal.manifold("str","like",b,"_123%3")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 54d58497b4352c3e5467655bab2f47e7
+
+statement ok
+z:= mal.manifold("str","like",b,"%1_3456%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 984bc7b9af9d56abe969d97bfbb28912
+
+statement ok
+z:= mal.manifold("str","like",b,"_3456%")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 54d58497b4352c3e5467655bab2f47e7
+
+statement ok
+z:= mal.manifold("str","like",b,"%23")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to f098c8933c1f70e822401b1b2e4dd297
+
+statement ok
+z:= mal.manifold("str","like3",b,"%","?")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 6c02bfd922b395cb4f88289b3ebf6110
+
+statement ok
+z:= mal.manifold("str","like3",b,"?%","?")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 54d58497b4352c3e5467655bab2f47e7
+
+statement ok
+z:= mal.manifold("str","like3",b,".%",".")
+
+query TT rowsort
+io.print(z)
+----
+22 values hashing to 54d58497b4352c3e5467655bab2f47e7
+
+
