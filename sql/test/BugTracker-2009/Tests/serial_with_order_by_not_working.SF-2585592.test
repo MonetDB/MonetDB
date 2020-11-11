@@ -1,0 +1,45 @@
+statement ok
+create table t1_2585592 (num int, age int)
+
+statement ok
+create table t2_2585592 (id serial, num int, age int)
+
+statement ok
+insert into t1_2585592 values(1,3)
+
+statement ok
+insert into t1_2585592 values(1,4)
+
+statement ok
+insert into t1_2585592 values(3,3)
+
+statement ok
+insert into t1_2585592 values(6,3)
+
+statement ok
+insert into t1_2585592 values(2,3)
+
+statement ok
+insert into t1_2585592 values(2,2)
+
+statement ok
+insert into t1_2585592 values(5,1)
+
+statement ok
+insert into t1_2585592 values(1,1)
+
+statement ok
+insert into t2_2585592(num, age) select num, age from t1_2585592 order by num, age
+
+query III rowsort
+select * from t2_2585592
+----
+24 values hashing to f42df9d9bd900e38d6fad1fe062d284d
+
+statement ok
+drop table t1_2585592
+
+statement ok
+drop table t2_2585592
+
+

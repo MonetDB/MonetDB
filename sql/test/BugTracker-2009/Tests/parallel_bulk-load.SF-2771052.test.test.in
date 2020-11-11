@@ -1,0 +1,98 @@
+statement ok
+create table i0 (a integer)
+
+statement ok
+create table i1 (a integer)
+
+statement ok
+create table i2 (a integer)
+
+statement ok
+create table i3 (a integer)
+
+statement ok
+create table i4 (a integer)
+
+statement ok
+create table i5 (a integer)
+
+statement ok
+create table i6 (a integer)
+
+statement ok
+create table i7 (a integer)
+
+statement ok
+create table i8 (a integer)
+
+statement ok
+copy 1 records into i0 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 10 records into i1 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 100 records into i2 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 1000 records into i3 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 10000 records into i4 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 100000 records into i5 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 1000000 records into i6 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 10000000 records into i7 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+statement ok
+copy 100000000 records into i8 from E'$QTSTTRGDIR/parallel_bulk-load.SF-2771052.csv'
+
+query I rowsort
+select count(*) from i0
+----
+1
+
+query I rowsort
+select count(*) from i1
+----
+10
+
+query I rowsort
+select count(*) from i2
+----
+100
+
+query I rowsort
+select count(*) from i3
+----
+1000
+
+query I rowsort
+select count(*) from i4
+----
+10000
+
+query I rowsort
+select count(*) from i5
+----
+100000
+
+query I rowsort
+select count(*) from i6
+----
+1000000
+
+query I rowsort
+select count(*) from i7
+----
+10000000
+
+query I rowsort
+select count(*) from i8
+----
+100000000

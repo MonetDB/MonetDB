@@ -16,11 +16,11 @@ z:= batmmath.sqrt(b)
 query TT rowsort
 io.print(z)
 ----
-@
-4.0
-@
+0
 5.196152422706632
-@
+1
+4.0
+2
 NULL
 
 statement ok
@@ -29,11 +29,11 @@ zz:= batmmath.cbrt(b)
 query TT rowsort
 io.print(zz)
 ----
-@
-2.519842099789747
-@
+0
 3.0000000000000004
-@
+1
+2.519842099789747
+2
 NULL
 
 statement ok
@@ -54,11 +54,11 @@ zf:= batmmath.sqrt(f)
 query TT rowsort
 io.print(zf)
 ----
-@
-4.0
-@
+0
 5.196152
-@
+1
+4.0
+2
 NULL
 
 statement ok
@@ -67,10 +67,11 @@ zzf:= batmmath.cbrt(f)
 query TT rowsort
 io.print(zzf)
 ----
-@
-2.5198421
-@
+0
 3.0
-@
+1
+2.5198421
+2
 NULL
+
 

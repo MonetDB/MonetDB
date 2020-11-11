@@ -1,0 +1,40 @@
+statement ok
+create merge table smalltable(i integer, j integer)
+
+statement error
+alter table smalltable add table unknowntable
+
+statement ok
+drop table smalltable
+
+statement ok
+create schema mys
+
+statement ok
+set schema mys
+
+statement ok
+create merge table mys.smalltable(i integer, j integer)
+
+statement ok
+create table mys.part (i integer, j integer)
+
+statement ok
+insert into mys.part values(1,2)
+
+statement error
+alter table mys.smalltable add table part1
+
+statement error
+alter table mys.smalltable add table mys.part1
+
+statement error
+select * from mys.smalltable
+
+statement ok
+drop table mys.smalltable
+
+statement ok
+drop table mys.part
+
+

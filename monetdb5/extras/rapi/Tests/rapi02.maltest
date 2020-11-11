@@ -22,14 +22,14 @@ rbit:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbit)
 query TT rowsort
 io.print(rbit)
 ----
-@
-0.0
-@
-0.0
-@
+0
 2.0
-@
+1
+0.0
+2
 2.0
+3
+0.0
 
 statement ok
 bbte:= bat.new(:bte)
@@ -55,12 +55,12 @@ rbte:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bbte)
 query TT rowsort
 io.print(rbte)
 ----
-@
-0.0
-@
-0.0
-@
+0
 126.0
+1
+0.0
+2
+0.0
 
 statement ok
 bsht:= bat.new(:sht)
@@ -86,13 +86,13 @@ rsht:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bsht)
 query TT rowsort
 io.print(rsht)
 ----
-@
--3316.0
-@
+0
 3400.0
-@
+1
 42.0
-@
+2
+-3316.0
+3
 42.0
 
 statement ok
@@ -119,14 +119,14 @@ rint:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bint)
 query TT rowsort
 io.print(rint)
 ----
-@
-122596606.0
-@
-122596606.0
-@
+0
 6047549961.0
-@
+1
+122596606.0
+2
 924414359.0
+3
+122596606.0
 
 statement ok
 blng:= bat.new(:lng)
@@ -149,14 +149,14 @@ rlng:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",blng)
 query TT rowsort
 io.print(rlng)
 ----
-@
-122596606.0
-@
-122596606.0
-@
+0
 6047549961.0
-@
+1
+122596606.0
+2
 924414359.0
+3
+122596606.0
 
 statement ok
 bhge:= bat.new(:hge)
@@ -179,14 +179,14 @@ rhge:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bhge)
 query TT rowsort
 io.print(rhge)
 ----
-@
-122596606.0
-@
-122596606.0
-@
+0
 6047549961.0
-@
+1
+122596606.0
+2
 924414359.0
+3
+122596606.0
 
 statement ok
 into:int := rapi.eval(nil:ptr, "42L")
@@ -217,13 +217,13 @@ rflt:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bflt)
 query TT rowsort
 io.print(rflt)
 ----
-@
--1697424.094449997
-@
+0
 1733543.5173664093
-@
+1
 18026.077604293823
-@
+2
+-1697424.094449997
+3
 18026.077604293823
 
 statement ok
@@ -250,14 +250,14 @@ rdbl:bat[:dbl] := rapi.eval(nil:ptr,"Re(fft(na.omit(arg1)))",bdbl)
 query TT rowsort
 io.print(rdbl)
 ----
-@
--16797855.6270886
-@
-12259.660600000003
-@
-12259.660600000003
-@
+0
 17495052.059088595
+1
+12259.660600000003
+2
+-16797855.6270886
+3
+12259.660600000003
 
 statement ok
 bstr:= bat.new(:str)
@@ -280,13 +280,13 @@ rstr:bat[:int] := rapi.eval(nil:ptr,"nchar(arg1)",bstr)
 query TI rowsort
 io.print(rstr)
 ----
-@
 0
-@
-20
-@
 4
-@
+1
+20
+2
+0
+3
 NULL
 
 statement ok
@@ -321,7 +321,7 @@ rintbi:bat[:int] := rapi.eval(nil:ptr,"arg1",binto)
 query TI rowsort
 io.print(rintbi)
 ----
-10 values hashing to 5577cd3a0d11bace6f4113a47f903a5e
+10 values hashing to 6c7f4ce859dd017751ac9ccda018a866
 
 statement ok
 rintbi2:bat[:int] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
@@ -329,7 +329,7 @@ rintbi2:bat[:int] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
 query TI rowsort
 io.print(rintbi2)
 ----
-10 values hashing to 5577cd3a0d11bace6f4113a47f903a5e
+10 values hashing to 6c7f4ce859dd017751ac9ccda018a866
 
 statement ok
 rintbl:bat[:lng] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
@@ -337,7 +337,7 @@ rintbl:bat[:lng] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
 query TT rowsort
 io.print(rintbl)
 ----
-10 values hashing to 5577cd3a0d11bace6f4113a47f903a5e
+10 values hashing to 6c7f4ce859dd017751ac9ccda018a866
 
 statement ok
 rintbh:bat[:hge] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
@@ -345,7 +345,7 @@ rintbh:bat[:hge] := rapi.eval(nil:ptr,"as.integer(arg1)",binto)
 query TT rowsort
 io.print(rintbh)
 ----
-10 values hashing to 5577cd3a0d11bace6f4113a47f903a5e
+10 values hashing to 6c7f4ce859dd017751ac9ccda018a866
 
 statement ok
 rintbd:bat[:dbl] := rapi.eval(nil:ptr,"as.numeric(arg1)",binto)
@@ -353,7 +353,7 @@ rintbd:bat[:dbl] := rapi.eval(nil:ptr,"as.numeric(arg1)",binto)
 query TT rowsort
 io.print(rintbd)
 ----
-10 values hashing to 07eb62b6853bc517cf8f6d9e5d161759
+10 values hashing to 166c60842bd9355bbcc6865ad7bcbb44
 
 statement ok
 rintbs:bat[:str] := rapi.eval(nil:ptr,"as.character(arg1)",binto)
@@ -361,7 +361,7 @@ rintbs:bat[:str] := rapi.eval(nil:ptr,"as.character(arg1)",binto)
 query TT rowsort
 io.print(rintbs)
 ----
-10 values hashing to 5577cd3a0d11bace6f4113a47f903a5e
+10 values hashing to 6c7f4ce859dd017751ac9ccda018a866
 
 statement ok
 rintbf:bat[:str] := rapi.eval(nil:ptr,"as.factor(arg1)",binto)
@@ -369,6 +369,6 @@ rintbf:bat[:str] := rapi.eval(nil:ptr,"as.factor(arg1)",binto)
 query TT rowsort
 io.print(rintbf)
 ----
-10 values hashing to 5577cd3a0d11bace6f4113a47f903a5e
+10 values hashing to 6c7f4ce859dd017751ac9ccda018a866
 
 

@@ -58,9 +58,16 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nil
+query TI rowsort
+io.print(z)
+----
+0
+NULL
+
+query T rowsort
 io.print("nil")
+----
+"nil"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, false)
@@ -71,9 +78,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, false)
@@ -84,9 +97,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, false)
@@ -97,9 +116,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, true, true)
@@ -110,9 +135,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, true)
@@ -123,9 +154,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, true)
@@ -136,9 +172,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, true)
@@ -149,9 +190,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, false)
@@ -162,9 +208,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, false)
@@ -175,9 +227,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, false)
@@ -188,9 +246,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, false)
@@ -201,9 +265,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, true)
@@ -214,9 +284,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, true)
@@ -227,9 +310,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, true)
@@ -240,9 +336,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, true)
@@ -253,9 +355,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, false)
@@ -266,9 +374,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, false)
@@ -279,9 +393,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, false)
@@ -292,9 +419,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, false)
@@ -305,9 +438,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, true)
@@ -318,9 +464,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, true)
@@ -331,9 +483,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, true)
@@ -344,9 +502,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, true)
@@ -357,9 +521,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, false)
@@ -370,9 +540,16 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4
+query TI rowsort
+io.print(z)
+----
+0
+4
+
+query T rowsort
 io.print("4")
+----
+"4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, false)
@@ -383,9 +560,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, false)
@@ -396,9 +578,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, false)
@@ -409,9 +596,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, true)
@@ -422,9 +614,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+18 values hashing to 77c81caf1610a2a4eaaae724ef5c21f2
+
+query T rowsort
 io.print("0,1,2,3,5,6,7,8,9")
+----
+"0,1,2,3,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, true)
@@ -435,9 +633,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, true)
@@ -448,9 +652,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, true)
@@ -461,9 +671,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, false)
@@ -474,9 +690,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6,7
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 4c97fdbd99eb178647ab79bf1b9a41ed
+
+query T rowsort
 io.print("3,4,5,6,7")
+----
+"3,4,5,6,7"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, false)
@@ -487,9 +709,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+3
+1
+4
+2
+5
+3
+6
+
+query T rowsort
 io.print("3,4,5,6")
+----
+"3,4,5,6"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, false)
@@ -500,9 +735,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+3
+7
+
+query T rowsort
 io.print("4,5,6,7")
+----
+"4,5,6,7"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, false)
@@ -513,9 +761,20 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+
+query T rowsort
 io.print("4,5,6")
+----
+"4,5,6"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, true)
@@ -526,9 +785,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to ef0f08f8711640fb66706cb49bfe8f40
+
+query T rowsort
 io.print("0,1,2,8,9")
+----
+"0,1,2,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, true)
@@ -539,9 +804,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to e4d8e3af4d18be506621c5043cb944b7
+
+query T rowsort
 io.print("0,1,2,7,8,9")
+----
+"0,1,2,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, true)
@@ -552,9 +823,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to cbd69edbd4601950df58250aae3bd437
+
+query T rowsort
 io.print("0,1,2,3,8,9")
+----
+"0,1,2,3,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, true)
@@ -565,9 +842,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,7,8,9
+query TI rowsort
+io.print(z)
+----
+14 values hashing to bf80bb8196ac50e7198f576002d8ae6d
+
+query T rowsort
 io.print("0,1,2,3,7,8,9")
+----
+"0,1,2,3,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, false)
@@ -578,9 +861,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, false)
@@ -591,9 +879,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, false)
@@ -604,9 +897,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, false)
@@ -617,9 +915,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, true)
@@ -630,9 +933,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, true)
@@ -643,9 +952,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, true)
@@ -656,9 +971,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, true)
@@ -669,9 +990,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 bat.orderidx(b,3)
@@ -682,7 +1009,7 @@ o := bat.getorderidx(b)
 query TT rowsort
 io.print(o)
 ----
-22 values hashing to 672e607113a8e624dad57d2b66a73858
+22 values hashing to 7b0e9ff26fcb7a8854b1c93633b932cc
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, true, false)
@@ -693,9 +1020,16 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nil
+query TI rowsort
+io.print(z)
+----
+0
+NULL
+
+query T rowsort
 io.print("nil")
+----
+"nil"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, false)
@@ -706,9 +1040,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, false)
@@ -719,9 +1059,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, false)
@@ -732,9 +1078,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, true, true)
@@ -745,9 +1097,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, true, false, true)
@@ -758,9 +1116,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, true, true)
@@ -771,9 +1134,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, nil:int, false, false, true)
@@ -784,9 +1152,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, false)
@@ -797,9 +1170,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, false)
@@ -810,9 +1189,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, false)
@@ -823,9 +1208,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, false)
@@ -836,9 +1227,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, true, true)
@@ -849,9 +1246,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, true, false, true)
@@ -862,9 +1272,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, true, true)
@@ -875,9 +1298,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, nil:int, false, false, true)
@@ -888,9 +1317,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, false)
@@ -901,9 +1336,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, false)
@@ -914,9 +1355,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, false)
@@ -927,9 +1381,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, false)
@@ -940,9 +1400,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, true, true)
@@ -953,9 +1426,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, true, false, true)
@@ -966,9 +1445,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, true, true)
@@ -979,9 +1464,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], nil:int, 4, false, false, true)
@@ -992,9 +1483,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, false)
@@ -1005,9 +1502,16 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4
+query TI rowsort
+io.print(z)
+----
+0
+4
+
+query T rowsort
 io.print("4")
+----
+"4"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, false)
@@ -1018,9 +1522,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, false)
@@ -1031,9 +1540,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, false)
@@ -1044,9 +1558,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, true, true)
@@ -1057,9 +1576,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+18 values hashing to 77c81caf1610a2a4eaaae724ef5c21f2
+
+query T rowsort
 io.print("0,1,2,3,5,6,7,8,9")
+----
+"0,1,2,3,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, true, false, true)
@@ -1070,9 +1595,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, true, true)
@@ -1083,9 +1614,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 4, 4, false, false, true)
@@ -1096,9 +1633,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, false)
@@ -1109,9 +1652,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6,7
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 4c97fdbd99eb178647ab79bf1b9a41ed
+
+query T rowsort
 io.print("3,4,5,6,7")
+----
+"3,4,5,6,7"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, false)
@@ -1122,9 +1671,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+3
+1
+4
+2
+5
+3
+6
+
+query T rowsort
 io.print("3,4,5,6")
+----
+"3,4,5,6"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, false)
@@ -1135,9 +1697,22 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+3
+7
+
+query T rowsort
 io.print("4,5,6,7")
+----
+"4,5,6,7"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, false)
@@ -1148,9 +1723,20 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+
+query T rowsort
 io.print("4,5,6")
+----
+"4,5,6"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, true, true)
@@ -1161,9 +1747,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to ef0f08f8711640fb66706cb49bfe8f40
+
+query T rowsort
 io.print("0,1,2,8,9")
+----
+"0,1,2,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, true, false, true)
@@ -1174,9 +1766,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to e4d8e3af4d18be506621c5043cb944b7
+
+query T rowsort
 io.print("0,1,2,7,8,9")
+----
+"0,1,2,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, true, true)
@@ -1187,9 +1785,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to cbd69edbd4601950df58250aae3bd437
+
+query T rowsort
 io.print("0,1,2,3,8,9")
+----
+"0,1,2,3,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 3, 7, false, false, true)
@@ -1200,9 +1804,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,7,8,9
+query TI rowsort
+io.print(z)
+----
+14 values hashing to bf80bb8196ac50e7198f576002d8ae6d
+
+query T rowsort
 io.print("0,1,2,3,7,8,9")
+----
+"0,1,2,3,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, false)
@@ -1213,9 +1823,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, false)
@@ -1226,9 +1841,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, false)
@@ -1239,9 +1859,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, false)
@@ -1252,9 +1877,14 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, true, true)
@@ -1265,9 +1895,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, true, false, true)
@@ -1278,9 +1914,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, true, true)
@@ -1291,9 +1933,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(b, nil:bat[:oid], 7, 3, false, false, true)
@@ -1304,9 +1952,15 @@ z := algebra.projection(x, b)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, true, false)
@@ -1317,9 +1971,16 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nil
+query TI rowsort
+io.print(z)
+----
+0
+NULL
+
+query T rowsort
 io.print("nil")
+----
+"nil"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, false, false)
@@ -1330,9 +1991,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, true, false)
@@ -1343,9 +2010,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, false, false)
@@ -1356,9 +2029,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, true, true)
@@ -1369,9 +2048,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, true, false, true)
@@ -1382,9 +2067,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, true, true)
@@ -1395,9 +2085,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, nil:int, false, false, true)
@@ -1408,9 +2103,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, true, false)
@@ -1421,9 +2121,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, false, false)
@@ -1434,9 +2140,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, true, false)
@@ -1447,9 +2159,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, false, false)
@@ -1460,9 +2178,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, true, true)
@@ -1473,9 +2197,22 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, true, false, true)
@@ -1486,9 +2223,22 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, true, true)
@@ -1499,9 +2249,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, nil:int, false, false, true)
@@ -1512,9 +2268,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, true, false)
@@ -1525,9 +2287,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, false, false)
@@ -1538,9 +2306,22 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, true, false)
@@ -1551,9 +2332,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, false, false)
@@ -1564,9 +2351,22 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, true, true)
@@ -1577,9 +2377,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, true, false, true)
@@ -1590,9 +2396,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, true, true)
@@ -1603,9 +2415,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], nil:int, 4, false, false, true)
@@ -1616,9 +2434,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, true, true, false)
@@ -1629,9 +2453,16 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4
+query TI rowsort
+io.print(z)
+----
+0
+4
+
+query T rowsort
 io.print("4")
+----
+"4"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, true, false, false)
@@ -1642,9 +2473,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, false, true, false)
@@ -1655,9 +2491,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, false, false, false)
@@ -1668,9 +2509,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, true, true, true)
@@ -1681,9 +2527,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+18 values hashing to 77c81caf1610a2a4eaaae724ef5c21f2
+
+query T rowsort
 io.print("0,1,2,3,5,6,7,8,9")
+----
+"0,1,2,3,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, true, false, true)
@@ -1694,9 +2546,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, false, true, true)
@@ -1707,9 +2565,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 4, 4, false, false, true)
@@ -1720,9 +2584,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, true, true, false)
@@ -1733,9 +2603,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6,7
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 4c97fdbd99eb178647ab79bf1b9a41ed
+
+query T rowsort
 io.print("3,4,5,6,7")
+----
+"3,4,5,6,7"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, true, false, false)
@@ -1746,9 +2622,22 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+3
+1
+4
+2
+5
+3
+6
+
+query T rowsort
 io.print("3,4,5,6")
+----
+"3,4,5,6"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, false, true, false)
@@ -1759,9 +2648,22 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+3
+7
+
+query T rowsort
 io.print("4,5,6,7")
+----
+"4,5,6,7"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, false, false, false)
@@ -1772,9 +2674,20 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+
+query T rowsort
 io.print("4,5,6")
+----
+"4,5,6"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, true, true, true)
@@ -1785,9 +2698,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to ef0f08f8711640fb66706cb49bfe8f40
+
+query T rowsort
 io.print("0,1,2,8,9")
+----
+"0,1,2,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, true, false, true)
@@ -1798,9 +2717,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to e4d8e3af4d18be506621c5043cb944b7
+
+query T rowsort
 io.print("0,1,2,7,8,9")
+----
+"0,1,2,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, false, true, true)
@@ -1811,9 +2736,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to cbd69edbd4601950df58250aae3bd437
+
+query T rowsort
 io.print("0,1,2,3,8,9")
+----
+"0,1,2,3,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 3, 7, false, false, true)
@@ -1824,9 +2755,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,7,8,9
+query TI rowsort
+io.print(z)
+----
+14 values hashing to bf80bb8196ac50e7198f576002d8ae6d
+
+query T rowsort
 io.print("0,1,2,3,7,8,9")
+----
+"0,1,2,3,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, true, true, false)
@@ -1837,9 +2774,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, true, false, false)
@@ -1850,9 +2792,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, false, true, false)
@@ -1863,9 +2810,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, false, false, false)
@@ -1876,9 +2828,14 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, true, true, true)
@@ -1889,9 +2846,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, true, false, true)
@@ -1902,9 +2865,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, false, true, true)
@@ -1915,9 +2884,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(s, nil:bat[:oid], 7, 3, false, false, true)
@@ -1928,9 +2903,15 @@ z := algebra.projection(x, s)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, true, false)
@@ -1941,9 +2922,16 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nil
+query TI rowsort
+io.print(z)
+----
+0
+NULL
+
+query T rowsort
 io.print("nil")
+----
+"nil"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, false, false)
@@ -1954,9 +2942,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, true, false)
@@ -1967,9 +2961,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, false, false)
@@ -1980,9 +2980,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, true, true)
@@ -1993,9 +2999,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, true, false, true)
@@ -2006,9 +3018,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, true, true)
@@ -2019,9 +3036,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, nil:int, false, false, true)
@@ -2032,9 +3054,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, true, false)
@@ -2045,9 +3072,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, false, false)
@@ -2058,9 +3091,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, true, false)
@@ -2071,9 +3110,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, false, false)
@@ -2084,9 +3129,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, true, true)
@@ -2097,9 +3148,22 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, true, false, true)
@@ -2110,9 +3174,22 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, true, true)
@@ -2123,9 +3200,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, nil:int, false, false, true)
@@ -2136,9 +3219,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, true, false)
@@ -2149,9 +3238,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, false, false)
@@ -2162,9 +3257,22 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, true, false)
@@ -2175,9 +3283,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 10783e4baac3230097302eb075e66765
+
+query T rowsort
 io.print("0,1,2,3,4")
+----
+"0,1,2,3,4"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, false, false)
@@ -2188,9 +3302,22 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3
+query TI rowsort
+io.print(z)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+query T rowsort
 io.print("0,1,2,3")
+----
+"0,1,2,3"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, true, true)
@@ -2201,9 +3328,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, true, false, true)
@@ -2214,9 +3347,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, true, true)
@@ -2227,9 +3366,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 2f317843c2553ff2cbd05fcb73edcc4e
+
+query T rowsort
 io.print("5,6,7,8,9")
+----
+"5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], nil:int, 4, false, false, true)
@@ -2240,9 +3385,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to 9933f327ba2f7c3dffde51351363baac
+
+query T rowsort
 io.print("4,5,6,7,8,9")
+----
+"4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, true, true, false)
@@ -2253,9 +3404,16 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4
+query TI rowsort
+io.print(z)
+----
+0
+4
+
+query T rowsort
 io.print("4")
+----
+"4"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, true, false, false)
@@ -2266,9 +3424,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, false, true, false)
@@ -2279,9 +3442,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, false, false, false)
@@ -2292,9 +3460,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, true, true, true)
@@ -2305,9 +3478,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+18 values hashing to 77c81caf1610a2a4eaaae724ef5c21f2
+
+query T rowsort
 io.print("0,1,2,3,5,6,7,8,9")
+----
+"0,1,2,3,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, true, false, true)
@@ -2318,9 +3497,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, false, true, true)
@@ -2331,9 +3516,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 4, 4, false, false, true)
@@ -2344,9 +3535,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, true, true, false)
@@ -2357,9 +3554,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6,7
+query TI rowsort
+io.print(z)
+----
+10 values hashing to 4c97fdbd99eb178647ab79bf1b9a41ed
+
+query T rowsort
 io.print("3,4,5,6,7")
+----
+"3,4,5,6,7"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, true, false, false)
@@ -2370,9 +3573,22 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 3,4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+3
+1
+4
+2
+5
+3
+6
+
+query T rowsort
 io.print("3,4,5,6")
+----
+"3,4,5,6"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, false, true, false)
@@ -2383,9 +3599,22 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6,7
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+3
+7
+
+query T rowsort
 io.print("4,5,6,7")
+----
+"4,5,6,7"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, false, false, false)
@@ -2396,9 +3625,20 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 4,5,6
+query TI rowsort
+io.print(z)
+----
+0
+4
+1
+5
+2
+6
+
+query T rowsort
 io.print("4,5,6")
+----
+"4,5,6"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, true, true, true)
@@ -2409,9 +3649,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,8,9
+query TI rowsort
+io.print(z)
+----
+10 values hashing to ef0f08f8711640fb66706cb49bfe8f40
+
+query T rowsort
 io.print("0,1,2,8,9")
+----
+"0,1,2,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, true, false, true)
@@ -2422,9 +3668,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,7,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to e4d8e3af4d18be506621c5043cb944b7
+
+query T rowsort
 io.print("0,1,2,7,8,9")
+----
+"0,1,2,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, false, true, true)
@@ -2435,9 +3687,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,8,9
+query TI rowsort
+io.print(z)
+----
+12 values hashing to cbd69edbd4601950df58250aae3bd437
+
+query T rowsort
 io.print("0,1,2,3,8,9")
+----
+"0,1,2,3,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 3, 7, false, false, true)
@@ -2448,9 +3706,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,7,8,9
+query TI rowsort
+io.print(z)
+----
+14 values hashing to bf80bb8196ac50e7198f576002d8ae6d
+
+query T rowsort
 io.print("0,1,2,3,7,8,9")
+----
+"0,1,2,3,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, true, true, false)
@@ -2461,9 +3725,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, true, false, false)
@@ -2474,9 +3743,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, false, true, false)
@@ -2487,9 +3761,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, false, false, false)
@@ -2500,9 +3779,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # nothing
+query TI rowsort
+io.print(z)
+----
+
+query T rowsort
 io.print("nothing")
+----
+"nothing"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, true, true, true)
@@ -2513,9 +3797,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, true, false, true)
@@ -2526,9 +3816,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, false, true, true)
@@ -2539,9 +3835,15 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
 
 statement ok
 x := algebra.select(r, nil:bat[:oid], 7, 3, false, false, true)
@@ -2552,7 +3854,14 @@ z := algebra.projection(x, r)
 statement ok
 z := algebra.sort(z, false, false, true)
 
-statement error
-io.print(z);                    # 0,1,2,3,4,5,6,7,8,9
+query TI rowsort
+io.print(z)
+----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
+query T rowsort
 io.print("0,1,2,3,4,5,6,7,8,9")
+----
+"0,1,2,3,4,5,6,7,8,9"
+
 

@@ -1,0 +1,41 @@
+query ITTT rowsort
+select 1, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+----
+1
+monetdb
+running
+select 1, username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
+
+query ITTT rowsort
+select 2, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+----
+2
+monetdb
+finished
+select 1, username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
+2
+monetdb
+running
+select 2, username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
+
+query ITTT rowsort
+select 3, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+----
+12 values hashing to 962bb2096560cc9ff56bdefd0b66ed6c
+
+query ITTT rowsort
+select 4, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+----
+12 values hashing to db2a6ae1cb459cefbb3215f294bab458
+
+query ITTT rowsort
+select 5, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+----
+12 values hashing to 8213498f529162d543515bfb42e53b31
+
+query ITTT rowsort
+select 6, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+----
+12 values hashing to 69defb8d21f7e8f1d786832d6b837ce2
+
+

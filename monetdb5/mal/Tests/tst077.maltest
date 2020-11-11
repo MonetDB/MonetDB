@@ -15,11 +15,6 @@ function foo();
 	io.print(y);
 end foo
 
-query T rowsort
-mdb.List("user","foo")
-----
-end user.foo;@#[8] (0)  
-
 query TI rowsort
 user.foo()
 ----

@@ -1,0 +1,40 @@
+statement ok
+start transaction
+
+statement ok
+create table pce (i int, s string)
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+statement error
+prepare insert into pce (i,s) values (?,?)
+
+statement error
+exec **(1,'test 1')
+
+statement error
+select * from pce
+
+statement error
+commit
+
+statement ok
+start transaction
+
+statement error
+exec **(2,'test 2')
+
+statement error
+select * from pce
+
+statement error
+commit
+
+statement ok
+drop table pce
+
+
