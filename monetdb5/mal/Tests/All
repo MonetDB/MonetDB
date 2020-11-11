@@ -83,26 +83,26 @@ tst114
 tst117
 tst115
 tst116
-#tst1150
+tst1150
 # #tst120	files are not located in module and paths are runtime dependent
 # #tst1200
 # #tst1204
-# tst120a
-# tst120b
-# tst130
-# tst1500
-# tst1502
-# tst1503
-# tst1504
-# tst1505
-# tst1506
-# tst161
-# tst163
-# tst1604
-# tst171
-# tst180
-# tst190
-# tst191
+tst120a
+tst120b
+tst130
+tst1500
+# tst1502 Mconvert chokes on print(xs)
+tst1503
+tst1504		# Incorrect last print statement
+tst1505
+tst1506
+tst161
+tst163
+tst1604
+tst171
+tst180
+tst190
+tst191
 # tst192
 # tst193
 # tst194
