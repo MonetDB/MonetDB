@@ -44,3 +44,5 @@ DROP TABLE vals
 
 statement ok
 ROLLBACK
+
+

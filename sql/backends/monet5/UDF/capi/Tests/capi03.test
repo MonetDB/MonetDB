@@ -25,7 +25,6 @@ START TRANSACTION
 
 statement ok
 CREATE FUNCTION capi03(inp INTEGER) RETURNS INTEGER LANGUAGE C {
-    
 }
 
 statement ok
@@ -59,3 +58,5 @@ SELECT capi03(i) FROM integers
 
 statement ok
 ROLLBACK
+
+
