@@ -12,7 +12,7 @@ statement ok
 query TTT rowsort
 io.print(k,v)
 ----
-15 values hashing to 5cac1b7371af107a0ce969a0fa7b9356
+15 values hashing to 645f321ead728611dff209aa675ad1b5
 
 statement ok
 jsn:= json.fold(k,v)
@@ -28,7 +28,7 @@ statement ok
 query TTTT rowsort
 io.print(o,l,w)
 ----
-20 values hashing to b11466acaf819ae81847899784af069c
+20 values hashing to fc6ad02223c7c77e23d71dfddfd44d8c
 
 statement ok
 barrier (i,j):= iterator.new(w)
@@ -62,12 +62,12 @@ statement ok
 query TT rowsort
 io.print(l2)
 ----
-@
+0
 1
-@
-[2,false]
-@
+1
 true
+2
+[2,false]
 
 statement ok
 (l0,l1,l2) := json.unfold(js)
@@ -75,13 +75,14 @@ statement ok
 query TTT rowsort
 io.print(l0,l2)
 ----
-@
+0
 0
 1
-@
+1
 1
 true
-@
+2
 2
 [2,false]
+
 
