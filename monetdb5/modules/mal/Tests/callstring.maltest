@@ -1,33 +1,23 @@
 statement ok
-function f1()
-
-statement ok
-	io.print("hello")
-
-statement ok
+function f1();
+	io.print("hello");
 end f1
 
 statement ok
-function f2()
-
-statement ok
-	io.print("world")
-
-statement ok
+function f2();
+	io.print("world");
 end f2
 
 statement ok
-function q()
-
-statement error
-	language.call("user.f1();")
-
-statement error
-	language.call("user.f2();")
-
-statement error
+function q();
+	language.call("user.f1();");
+	language.call("user.f2();");
 end q
 
-statement error
+query T rowsort
 q()
+----
+"hello"
+"world"
+
 

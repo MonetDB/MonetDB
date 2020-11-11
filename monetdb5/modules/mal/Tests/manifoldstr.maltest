@@ -55,8 +55,10 @@ t1:= alarm.usec()
 statement ok
 d0:= t1-t0
 
-statement ok
-io.printf("#mal.manifold(str,toUpper) %d\n",d0)
+#query T rowsort
+#io.printf("#mal.manifold(str,toUpper) %d\n",d0)
+#----
+##mal.manifold(str,toUpper) 46357
 
 statement ok
 t0:= alarm.usec()
@@ -88,6 +90,9 @@ t1:= alarm.usec()
 statement ok
 d0:= t1-t0
 
-statement ok
-io.printf("#mal.multiplex(str,toUpper) %d\n",d0)
+#query T rowsort
+#io.printf("#mal.multiplex(str,toUpper) %d\n",d0)
+#----
+##mal.multiplex(str,toUpper) 183589
+
 

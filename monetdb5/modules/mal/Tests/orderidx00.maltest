@@ -37,7 +37,7 @@ bat.append(bv,58690783 )
 query TI rowsort
 io.print(bv)
 ----
-20 values hashing to ce33b451dc3107b0a14802a72c02a204
+20 values hashing to 0a90958a5f39bc70be3ba0dc3a938556
 
 statement ok
 bat.orderidx(bv,3)
@@ -48,7 +48,7 @@ ord := bat.getorderidx(bv)
 query TT rowsort
 io.print(ord)
 ----
-20 values hashing to e2172d93610a6a03dcf6b767f3a34371
+20 values hashing to 3cb93d8caeadc97ad36636b562cc1831
 
 statement ok
 seq := algebra.projection(ord,bv)
@@ -56,7 +56,7 @@ seq := algebra.projection(ord,bv)
 query TI rowsort
 io.print(seq)
 ----
-20 values hashing to ce33b451dc3107b0a14802a72c02a204
+20 values hashing to 00603b75348bece0a499f25e4924d19d
 
 statement ok
 (k,l):= algebra.sort(bv,0:bit,0:bit,1:bit)
@@ -64,5 +64,6 @@ statement ok
 query TIT rowsort
 io.print(k,l)
 ----
-30 values hashing to 77437592cd7c3ad93f5d9c0f4c4ffe1d
+30 values hashing to 140cbc195e9ae5d323ca265d176d3d01
+
 
