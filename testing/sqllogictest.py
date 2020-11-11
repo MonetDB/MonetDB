@@ -105,13 +105,15 @@ class SQLLogic:
             return
         try:
             self.crs.execute(statement)
-        except (pymonetdb.Error, ValueError):
+        except (pymonetdb.Error, ValueError) as e:
             if not expectok:
                 return
+            msg = e.args[0]
         else:
             if expectok:
                 return
-        self.query_error(err_stmt or statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't")
+            msg = None
+        self.query_error(err_stmt or statement, expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't", msg)
 
     def convertresult(self, query, columns, data):
         ndata = []
