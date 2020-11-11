@@ -55,7 +55,7 @@ query = []
 
 def is_psm_stmt(stmt:str):
     if opts.language == 'sql':
-        rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure|trigger)', re.I)
+        rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure|aggregate|filter|window|loader|trigger)\b', re.I)
         return rgx.match(stmt) is not None
     else:
         return re.match(r'\s*function\s', stmt) is not None
@@ -68,8 +68,14 @@ def is_psm_stmt_end(stmt:str):
 
 def is_complete_psm_stmt(stmt:str):
     if opts.language == 'sql':
-        rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure|trigger)[\S\s]*(end;|external\s+name\s+.*;)$', re.I)
-        return rgx.match(stmt) is not None
+        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b.*?\bend\b\s*;', stmt, re.DOTALL|re.IGNORECASE) is not None:
+            return True
+        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b', stmt, re.IGNORECASE) is not None:
+            # we need an "end"
+            return False
+        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*;', stmt, re.IGNORECASE) is not None:
+            return True
+        return False
     else:
         return re.match(r'\s*function\s.*\bend(\s+\w+)?\s*;', stmt, re.DOTALL) is not None
 
