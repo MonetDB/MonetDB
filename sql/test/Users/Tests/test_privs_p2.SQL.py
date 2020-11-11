@@ -3,14 +3,42 @@
 ###
 
 import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+import pymonetdb
 
-with process.client('sql', user='my_user2', passwd='p2',
-                    stdin=open(os.path.join(os.getenv('RELSRCDIR'), os.pardir, 'test_privs.sql')),
-                    stdout=process.PIPE, stderr=process.PIPE) as clt:
-    out, err = clt.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+
+db=os.getenv("TSTDB")
+port=int(os.getenv("MAPIPORT"))
+client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user2', password='p2')
+cursor = client.cursor()
+
+err=0
+try:
+    nr=cursor.execute("select * from test")
+except:
+    err=1
+    pass
+
+try:
+    rowaffected=cursor.execute("insert into test values(1,1)")
+except:
+    err=err+2
+    pass
+
+try:
+    rowaffected=cursor.execute("update test set b = 2")
+except:
+    err=err+4
+    pass
+
+try:
+    rowaffected=cursor.execute("delete from test")
+except:
+    err=err+8
+    pass
+
+if err != 15:
+    print("User should have no access too this table\n")
+    sys.exit(-1)
+
+cursor.close()
+client.close()

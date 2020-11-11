@@ -5,11 +5,14 @@
 import os, sys
 import pymonetdb
 
-
 db=os.getenv("TSTDB")
 port=int(os.getenv("MAPIPORT"))
 client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user', password='p1')
 cursor = client.cursor()
+
+def error(msg):
+    print(msg)
+    sys.exit(-1)
 
 nr=cursor.execute("select * from test")
 if nr != 0:
