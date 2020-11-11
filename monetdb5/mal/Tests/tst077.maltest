@@ -1,0 +1,26 @@
+statement ok
+function swap(x:bat[:int],y:bat[:int]) (a:str,b:bat[:int]);
+        a:="done";
+        return (a,x);
+end swap
+
+statement ok
+function foo();
+	X:= bat.new(:int);
+	bat.append(X,1);
+	Y:= bat.new(:int);
+	bat.append(Y,2);
+	(x,y):= user.swap(X,Y);
+	io.print(x);
+	io.print(y);
+end foo
+
+query T rowsort
+mdb.List("user","foo")
+----
+end user.foo;@#[8] (0)  
+
+query TI rowsort
+user.foo()
+----
+
