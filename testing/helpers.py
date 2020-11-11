@@ -80,6 +80,7 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             #('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
             ('.R',            '.R',      'R',      'SQL'),
             ('.rb',           '.rb',     'ruby',   'SQL'),
+            ('.SQL.sh',       '.SQL.sh',    'other',   ''),
         )
         # required tests that needs to run before this test
         # TODO enforce order at the end

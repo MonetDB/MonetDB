@@ -1,0 +1,26 @@
+statement ok
+create table part (p_partkey integer not null, p_name varchar(55) not null, p_mfgr char(25) not null, p_brand char(10) not null, p_type varchar(25) not null, p_size integer not null, p_container char(10) not null, p_retailprice decimal(12,2) not null, p_comment varchar(23) not null)
+
+statement error
+copy 5 records into part from stdin
+<COPY_INTO_DATA>
+1|goldenrod lavender spring chocolate lace|Manufacturer#1|Brand
+2|maroon sky cream royal snow|Manufacturer#1|Brand
+3|brown blue puff midnight black|Manufacturer#4|Brand
+4|orange goldenrod peach misty seashell|Manufacturer#3|Brand
+5|midnight linen almond tomato plum|Manufacturer#3|Brand
+
+query R rowsort
+select sys.median(cast (p_retailprice as double)) from part
+----
+NULL
+
+query R rowsort
+select sys.median(p_retailprice) from part
+----
+NULL
+
+statement ok
+drop table part
+
+

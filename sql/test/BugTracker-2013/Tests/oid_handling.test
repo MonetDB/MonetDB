@@ -1,0 +1,19 @@
+statement ok
+create table oidtable( o oid)
+
+statement ok
+insert into oidtable values( 123@0)
+
+statement ok
+insert into oidtable values (234)
+
+query T rowsort
+select * from oidtable where o in (123@0,234)
+----
+123@0
+234@0
+
+statement ok
+drop table oidtable
+
+

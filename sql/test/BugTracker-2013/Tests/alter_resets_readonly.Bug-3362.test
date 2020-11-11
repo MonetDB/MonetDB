@@ -1,0 +1,26 @@
+statement ok
+create table x(a int)
+
+statement ok
+insert into x values (1),(2),(3)
+
+statement ok
+alter table x set read only
+
+query T rowsort
+select (access = 1) from sys.tables where name='x'
+----
+True
+
+statement ok
+alter table x add primary key (a)
+
+query T rowsort
+select (access = 1) from sys.tables where name='x'
+----
+True
+
+statement ok
+drop table x
+
+

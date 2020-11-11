@@ -1,0 +1,44 @@
+statement ok
+CREATE TABLE ints ( val int )
+
+statement error
+prepare INSERT INTO ints VALUES ( ? - 20 )
+
+statement error
+exec **(1)
+
+statement error
+exec **(10)
+
+statement error
+exec **(100)
+
+statement error
+exec **(1000)
+
+statement error
+exec **(10000)
+
+statement error
+exec **(100000)
+
+statement error
+exec **(1000000)
+
+statement error
+exec **(10000000)
+
+statement error
+exec **(100000000)
+
+statement error
+exec **(1000000000)
+
+query I rowsort
+select * from ints
+----
+
+statement ok
+drop table ints
+
+
