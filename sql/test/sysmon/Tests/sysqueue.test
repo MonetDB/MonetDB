@@ -1,0 +1,33 @@
+query TTT rowsort
+select username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+----
+monetdb
+running
+select username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
+
+query I rowsort
+select count(*) from sys.queue()
+----
+2
+
+query I rowsort
+select count(*) from sys.queue()
+----
+3
+
+query I rowsort
+select count(*) from sys.queue()
+----
+3
+
+query I rowsort
+select count(*) from sys.queue()
+----
+3
+
+query I rowsort
+select count(*) from sys.queue() where query = 'select count(*) from sys.queue();'
+----
+0
+
+
