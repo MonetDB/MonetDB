@@ -1,10 +1,9 @@
-statement ok
+# parsing operations with multi-assignments
 function swap(x:bat[:int],y:bat[:int]) (a:str,b:bat[:int]);
-        a:="done";
+        a:="done"; 
         return (a,x);
-end swap
+end swap;
 
-statement ok
 function foo();
 	X:= bat.new(:int);
 	bat.append(X,1);
@@ -13,9 +12,7 @@ function foo();
 	(x,y):= user.swap(X,Y);
 	io.print(x);
 	io.print(y);
-end foo
+end foo;
 
-query TI rowsort
-user.foo()
-----
+user.foo();
 
