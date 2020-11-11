@@ -25,9 +25,9 @@ INSERT INTO blobs VALUES (BLOB '00FFFF00'), (NULL), (BLOB '')
 query T rowsort
 SELECT capi10(i) FROM blobs
 ----
+
+00FFFF00
 NULL
-b''
-b'\x00\xff\xff\x00'
 
 statement ok
 DROP FUNCTION capi10
