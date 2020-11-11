@@ -1699,7 +1699,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
             print(e, file=f)
         else:
             # if not required by any other test clean up
-            if not is_reqtest:
+            if not (is_reqtest or has_reqtests):
                 sql.drop()
             try:
                 sql.parse(Test)

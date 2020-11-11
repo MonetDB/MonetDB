@@ -1,0 +1,19 @@
+statement ok
+CREATE TABLE bar (name CHAR(8), ct INTEGER, ct2 INTEGER)
+
+statement ok
+INSERT INTO bar VALUES ('A', 123, 456)
+
+statement ok
+CREATE TABLE foo AS SELECT SUM(ct + ct2) / 100.0 AS eur FROM bar GROUP BY name WITH DATA
+
+statement ok
+\d foo
+
+statement ok
+DROP TABLE foo
+
+statement ok
+DROP TABLE bar
+
+
