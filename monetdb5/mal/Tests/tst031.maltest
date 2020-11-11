@@ -13,11 +13,11 @@ bat.append(b,2)
 query TI rowsort
 io.print(b)
 ----
-@
 0
-@
+0
 1
-@
+1
+2
 2
 
 query T rowsort
@@ -40,11 +40,11 @@ bat.append(c,2)
 query TI rowsort
 io.print(c)
 ----
-@
 0
-@
+0
 1
-@
+1
+2
 2
 
 statement ok
@@ -56,12 +56,12 @@ bat.replace(c,k,3)
 query TI rowsort
 io.print(c)
 ----
-@
 0
-@
-2
-@
+0
+1
 3
+2
+2
 
 statement ok
 bat.delete(c,2@0)
@@ -69,9 +69,9 @@ bat.delete(c,2@0)
 query TI rowsort
 io.print(c)
 ----
-@
 0
-@
+0
+1
 3
 
 query T rowsort
@@ -94,11 +94,11 @@ bat.append(d,2)
 query TI rowsort
 io.print(d)
 ----
-@
 0
-@
+0
 1
-@
+1
+2
 2
 
 statement ok
@@ -110,12 +110,12 @@ bat.replace(d,k,3)
 query TI rowsort
 io.print(d)
 ----
-@
 0
-@
-2
-@
+0
+1
 3
+2
+2
 
 statement ok
 bat.delete(d,2@0)
@@ -123,9 +123,9 @@ bat.delete(d,2@0)
 query TI rowsort
 io.print(d)
 ----
-@
 0
-@
+0
+1
 3
 
 query T rowsort
@@ -145,9 +145,9 @@ bat.append(e,6@0)
 query TT rowsort
 io.print(e)
 ----
-@
+0
 5
-@
+1
 6
 
 query T rowsort
@@ -167,9 +167,9 @@ bat.append(f,nil:oid)
 query TT rowsort
 io.print(f)
 ----
-@
+0
 NULL
-@
+1
 NULL
 
 
