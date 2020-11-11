@@ -10,42 +10,121 @@
 
 #include "sql_decimal.h"
 
-#ifdef HAVE_HGE
-hge
-#else
-lng
-#endif
-decimal_from_str(char *dec, char **end)
-{
-#ifdef HAVE_HGE
-	hge res = 0;
-	const hge max0 = GDK_hge_max / 10, max1 = GDK_hge_max % 10;
-#else
-	lng res = 0;
-	const lng max0 = GDK_lng_max / 10, max1 = GDK_lng_max % 10;
-#endif
-	int neg = 0;
+static inline
+void parse_digits(DEC_TPE* res, char **dec, int* digits) {
 
+	char*	_dec	= *dec;
+	DEC_TPE _res	= *res;
+	int _digits		= *digits;
+
+	
+
+	*res	= _res;
+	*dec	= _dec;
+	*digits = _digits;
+}
+
+DEC_TPE
+decimal_from_str(char *dec, int* digits, int* scale, int* has_errors)
+{
+
+#ifdef HAVE_HGE
+    const hge max0 = GDK_hge_max / 10, max1 = GDK_hge_max % 10;
+#else
+    const lng max0 = GDK_lng_max / 10, max1 = GDK_lng_max % 10;
+#endif
+
+	assert(digits);
+	assert(scale);
+	assert(has_errors);
+
+	DEC_TPE res = 0;
+	*has_errors = 0;
+
+	int _digits	= 0;
+	int _scale	= 0;
+
+// preceding whitespace:
+	int neg = 0;
 	while(isspace((unsigned char) *dec))
 		dec++;
+
+// optional sign:
 	if (*dec == '-') {
 		neg = 1;
 		dec++;
 	} else if (*dec == '+') {
 		dec++;
 	}
-	for (; *dec && (isdigit((unsigned char) *dec) || *dec == '.'); dec++) {
-		if (*dec != '.') {
-			if (res > max0 || (res == max0 && *dec - '0' > max1))
-				break;
-			res *= 10;
-			res += *dec - '0';
+
+// optional fractional separator first opportunity
+	if (*dec == '.') {  // case: (+|-).456
+fractional_sep_first_opp:
+		dec++;
+		goto trailing_digits;
+	}
+
+// preceding_digits:
+	if (!isdigit((unsigned char) *dec)) {
+		*has_errors = 1;
+		goto end_state;
+	}
+	while (*dec == '0'){
+		// skip leading zeros in preceding digits, e.g. '0004563.1234' => '4563.1234'
+		dec++;
+		if (*dec == '.') {
+			if (dec[1] == 0) { // special case: '(0...0)0.'. We give this expression precision (1,0).
+				_digits = 1;
+				dec++;
+				goto end_state;
+			}
+
+			goto fractional_sep_first_opp;
 		}
 	}
+	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
+		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
+			*has_errors = 1;
+			return 0;
+		}
+		res *= 10;
+		res += *dec - '0';
+		_digits++;
+	}
+
+// optional fractional separator second opportunity
+	if (*dec == '.')	// case: (+|-)123.(456)
+		dec++;
+	else					// case:  (+|-)123
+		goto trailing_whitespace;
+
+trailing_digits:
+	if (!isdigit((unsigned char) *dec))
+		goto trailing_whitespace;
+	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
+		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
+			*has_errors = 1;
+			return 0;
+		}
+		res *= 10;
+		res += *dec - '0';
+		_scale++;
+	}
+	_digits += _scale;
+
+trailing_whitespace:
 	while(isspace((unsigned char) *dec))
 		dec++;
-	if (end)
-		*end = dec;
+
+end_state:
+	/* When the string cannot be parsed up to and including the null terminator,
+	 * the string is an invalid decimal representation. */
+	if (*dec != 0)
+		*has_errors = 1;
+
+	*digits = _digits;
+	*scale = _scale;
+
 	if (neg)
 		return -res;
 	else

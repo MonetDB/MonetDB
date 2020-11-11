@@ -35,7 +35,7 @@ stdout of test 'number_4_4.Bug-3543` in directory 'sql/test/BugTracker-2014` its
 % sys.fract_only,	sys.fract_only # table_name
 % id,	val # name
 % int,	decimal # type
-% 1,	6 # length
+% 1,	7 # length
 [ 1,	-0.9999	]
 [ 2,	0.9999	]
 [ 3,	0.9999	]
@@ -43,7 +43,7 @@ stdout of test 'number_4_4.Bug-3543` in directory 'sql/test/BugTracker-2014` its
 % sys.fract_only,	sys.fract_only # table_name
 % id,	val # name
 % int,	decimal # type
-% 1,	6 # length
+% 1,	7 # length
 [ 1,	-0.9999	]
 [ 2,	0.9999	]
 [ 3,	0.9999	]
@@ -51,7 +51,7 @@ stdout of test 'number_4_4.Bug-3543` in directory 'sql/test/BugTracker-2014` its
 % sys.fract_only,	sys.fract_only # table_name
 % id,	val # name
 % int,	decimal # type
-% 1,	6 # length
+% 1,	7 # length
 [ 1,	-0.9999	]
 [ 2,	0.9999	]
 [ 3,	0.9999	]
@@ -59,7 +59,7 @@ stdout of test 'number_4_4.Bug-3543` in directory 'sql/test/BugTracker-2014` its
 % sys.fract_only,	sys.fract_only # table_name
 % id,	val # name
 % int,	decimal # type
-% 1,	6 # length
+% 1,	7 # length
 [ 1,	-0.9999	]
 [ 2,	0.9999	]
 [ 3,	0.9999	]

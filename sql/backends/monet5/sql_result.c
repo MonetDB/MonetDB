@@ -2031,6 +2031,8 @@ get_print_width(int mtype, sql_class eclass, int digits, int scale, int tz, bat 
 		count = 1 + digits;
 		if (scale > 0)
 			count += 1;
+		if (scale == digits) // for preceding 0, e.g. 0.
+			count += 1;
 		return count;
 	} else if (eclass == EC_DATE) {
 		return 10;
