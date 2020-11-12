@@ -1,6 +1,4 @@
-statement error
--- And a new run after 234K queries
--- !42S02!SELECT: no such table 'querylog_calls'
+query I rowsort
 select
   8 as c0
 from
@@ -37,5 +35,6 @@ where cast(coalesce(cast(coalesce(ref_101.table_id,
       ref_121.number) as int),
     ref_68.table_id) as int) is NULL
 limit 164
+----
 
 
