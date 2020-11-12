@@ -51,4 +51,46 @@ CREATE INDEX "chg_record_end_date" ON "sys"."chg" ("record_end_date")
 statement ok
 CREATE INDEX "chg_t_expd_tm" ON "sys"."chg" ("t_expd_tm")
 
+statement ok
+CREATE FUNCTION Get_r(in_cur_1 text, in_cur_2 text, in_chg_date timestamp)
+RETURNS NUMERIC(13,6) 
+  RETURN
+  (
+    SELECT (case when MAX(n_chg_rte) is not null then MAX(n_chg_rte) else 0 end)
+  FROM chg
+      WHERE c_cur_no_1 = (case when in_cur_1 is not null then '01' else 'xx' end)
+          AND   c_cur_no_2 = (case when in_cur_2 is null then '01' else (case when LENGTH(trim(in_cur_2))=2 then trim(in_cur_2) else 'xx' end) end)
+          AND   (case when in_chg_date is null then now() else in_chg_date end) BETWEEN t_effc_tm AND t_expd_tm
+          AND BUSINESS_END_DATE='9999-12-31'
+  )
+
+query I
+select count(*) from test_fn where get_r(c1, '01', '2015-08-31 23:59:59')>1.0
+----
+0
+
+statement ok
+alter table sys.chg drop constraint chg_pk_chg_rate_pkey
+
+statement ok
+drop index "chg_c_cur_no_1"
+
+statement ok
+drop index "chg_c_cur_no_2"
+
+statement ok
+drop index "chg_record_end_date"
+
+statement ok
+drop index "chg_t_expd_tm"
+
+statement ok
+drop function get_r
+
+statement ok
+drop table sys.test_fn
+
+statement ok
+drop table sys.chg
+
 

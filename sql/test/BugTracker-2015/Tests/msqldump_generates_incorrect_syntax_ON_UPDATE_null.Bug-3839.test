@@ -7,11 +7,13 @@ CREATE TABLE foo (id INTEGER, barname CHAR(8))
 statement ok
 ALTER TABLE foo ADD CONSTRAINT "fname" FOREIGN KEY ("barname") REFERENCES bar ("name") ON DELETE CASCADE
 
-statement error
+statement ok
 \D
+
+statement ok
 DROP TABLE foo
 
-statement error
+statement ok
 DROP TABLE bar
 
 

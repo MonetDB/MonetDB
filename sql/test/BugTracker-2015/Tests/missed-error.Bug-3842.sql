@@ -41,20 +41,10 @@ CREATE INDEX "chg_t_expd_tm" ON "sys"."chg" ("t_expd_tm");
 
 CREATE FUNCTION Get_r(in_cur_1 text, in_cur_2 text, in_chg_date timestamp)
 RETURNS NUMERIC(13,6) 
-
---  v_chg_date  timestamp;
-
---  case when in_chg_date is not null then now() else in_chg_date end
-
---  case when in_cur_1 is not null then '1' else 'xx' end
-
---  case when in_cur_2 is null then '01' else 'xx' end
-
   RETURN
   (
     SELECT (case when MAX(n_chg_rte) is not null then MAX(n_chg_rte) else 0 end)
   FROM chg
---    WHERE BUSINESS_END_DATE='99991231';
       WHERE c_cur_no_1 = (case when in_cur_1 is not null then '01' else 'xx' end)
           AND   c_cur_no_2 = (case when in_cur_2 is null then '01' else (case when LENGTH(trim(in_cur_2))=2 then trim(in_cur_2) else 'xx' end) end)
           AND   (case when in_chg_date is null then now() else in_chg_date end) BETWEEN t_effc_tm AND t_expd_tm

@@ -6,8 +6,10 @@ create table t3850 (
 statement ok
 insert into t3850 values (code(127))
 
-statement error
+statement ok
 \D
+
+statement ok
 drop table t3850
 
 
