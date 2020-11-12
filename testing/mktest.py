@@ -239,6 +239,11 @@ def main():
             res = re.match('[^\'"]*((\'[^\']*\'|"[^"]*")[^\'"]*)*#', line)
             if res is not None:
                 line = res.group(0)[:-1].rstrip()
+            res = re.match('[^\'"]*((\'[^\']*\'|"[^"]*")[^\'"]*)*--', line)
+            if res is not None:
+                line = res.group(0)[:-2].rstrip()
+            if not line:
+                continue
         if is_complete_stmt(query, line):
             if opts.language == 'sql':
                 l = line.rstrip(';')
