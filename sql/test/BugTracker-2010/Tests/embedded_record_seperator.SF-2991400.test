@@ -1,0 +1,16 @@
+statement ok
+create table ers (c varchar(3))
+
+statement ok
+COPY 1 RECORDS INTO ers FROM STDIN USING DELIMITERS '|',':','"' NULL AS ''
+
+statement error
+"a:c":
+COPY 1 RECORDS INTO ers FROM STDIN USING DELIMITERS '|',E'\n','"' NULL AS ''
+
+statement error
+"a
+c"
+drop table ers
+
+

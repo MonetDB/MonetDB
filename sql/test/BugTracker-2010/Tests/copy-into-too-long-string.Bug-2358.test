@@ -1,0 +1,12 @@
+statement ok
+create table t (c varchar(3))
+
+statement ok
+COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
+','"' NULL AS ''
+
+statement error
+"abcd"
+drop table t
+
+
