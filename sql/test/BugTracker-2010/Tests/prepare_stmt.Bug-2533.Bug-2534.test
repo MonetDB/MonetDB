@@ -1,0 +1,10 @@
+statement error
+prepare select count(*) from _tables having count(*) = ?
+
+statement error
+exec **(1)
+
+statement error
+exec **(2.3)
+
+

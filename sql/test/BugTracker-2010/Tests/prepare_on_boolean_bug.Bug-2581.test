@@ -1,0 +1,10 @@
+statement ok
+create table skycrash (id serial, boom boolean)
+
+statement error
+prepare select * from skycrash where boom = ? and boom = ?
+
+statement ok
+drop table skycrash
+
+

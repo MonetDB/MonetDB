@@ -27,10 +27,10 @@ copy 3 records into t_int from stdin USING DELIMITERS ',',E'\n','"' NULL AS '';
 select * from t_int;
 delete from t_int;
 
-copy 5 records into t_int from stdin delimiters ',',E'\n' NULL as '';
+copy 5 records into t_int from stdin DELIMITERS ',',E'\n','"' NULL as '';
 1
 nil
-
+""
 null
 abc
 

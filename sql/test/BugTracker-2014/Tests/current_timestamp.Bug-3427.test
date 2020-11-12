@@ -23,8 +23,8 @@ select i, tn, td - t, tc - t from x
 ----
 0
 NULL
-.00
-.00
+0:00:00
+0:00:00
 
 statement ok
 insert into x(i,t) values(0,now())
@@ -57,8 +57,8 @@ select i, tn, td - t, tc - t from x
 ----
 0
 NULL
-.00
-.00
+0:00:00
+0:00:00
 
 statement ok
 insert into x(i,t) values(0,now())

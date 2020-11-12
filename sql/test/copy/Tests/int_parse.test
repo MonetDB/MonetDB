@@ -44,15 +44,17 @@ statement ok
 delete from t_int
 
 statement error
-copy 5 records into t_int from stdin delimiters ',',E'\n' NULL as ''
+copy 5 records into t_int from stdin DELIMITERS ',',E'\n','"' NULL as ''
 <COPY_INTO_DATA>
 1
 nil
-
-statement error
+""
 null
 abc
+
+query I rowsort
 select * from t_int
+----
 
 statement ok
 delete from t_int
