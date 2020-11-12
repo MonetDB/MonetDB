@@ -14,8 +14,8 @@ CREATE TABLE tbl_bug2575 (
 );
 
 copy 2 records into tbl_bug2575 from stdin using delimiters E'\t',E'\n','';
-10001160000	29	.v.
-10001690001	0	co\xC3
+10001160000\t29\t.v.
+10001690001\t0\tco\xC3
 
 DROP TABLE tbl_bug2575;
 """
