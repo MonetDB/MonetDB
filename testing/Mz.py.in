@@ -2793,6 +2793,7 @@ def main(argv) :
         fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
         fl = openutf8(fn+"lst","w")
         Failure = [[] for i in FAILURES]
+        SKIPPED_TESTS = []
         for TSTDIR, TST, tt, ms, FtErr, reason in TIMES:
             fl.write('%s:\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
                                                 tt,
@@ -2800,6 +2801,8 @@ def main(argv) :
                                                 reason or ''))
             if TST != '':
                 Failure[FtErr].append(os.path.join(TSTDIR,TST))
+            if FtErr == F_SKIP:
+                SKIPPED_TESTS.append((TSTDIR, TST, reason))
 
         fl.write(":\t%7.3f\t\n" % t_)
         fl.close()
@@ -2822,6 +2825,9 @@ def main(argv) :
             print()
             print('failed={}, skipped={}'.format(failed, skipped))
             print('Ran {} test in {:7.3f}'.format(test_count - skipped, t_))
+            for TSTDIR, TST, reason in SKIPPED_TESTS:
+                prpurple('SKIP\t')
+                print('{} {} {}'.format(TSTDIR, TST, reason))
 
     finally:
         # cleanup the place where we put our UNIX sockets
