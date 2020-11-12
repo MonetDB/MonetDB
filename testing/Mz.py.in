@@ -32,6 +32,8 @@ import struct
 import signal
 import fnmatch
 import glob
+# check for pymonetdb early: it is essential for our work
+import pymonetdb
 
 try:
     import winreg               # Python 3 on Windows
@@ -404,6 +406,7 @@ CONDITIONALS = {
     'HAVE_NETCDF'          : "@HAVE_NETCDF_FALSE@",
     'HAVE_ODBC'            : "@HAVE_ODBC_FALSE@",
     'HAVE_PROJ'            : "@HAVE_PROJ_FALSE@",
+    'HAVE_PYMONETDB'       : "True",
     'HAVE_SHP'             : "@HAVE_SHP_FALSE@",
     'NATIVE_WIN32'         : "@NATIVE_WIN32_FALSE@",
     'NOT_WIN32'            : "@NOT_WIN32_FALSE@",
@@ -422,8 +425,6 @@ CONDITIONALS = {
     'HAVE_LIBSCIPY3'       : "",
     'HAVE_PERL'            : "",
     'HAVE_PHP'             : "",
-    'HAVE_PYMONETDB'       : "", # default PYTHON can import pymonetdb
-    'HAVE_PY3MONETDB'      : "", # PYTHON3 exists and can import pymonetdb
     'HAVE_PYTHON_LZ4'      : "", # module lz4 is available
     'HAVE_RUBY'            : "",
     'HAVE_DATA_PATH'       : "",
@@ -1104,10 +1105,6 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as %s is not available." % env['SQLCLIENT'].split(None, 1)[0]
     elif EXT == ".sql" and  not env['exe']['SQL_Dump'][0]:
         reason = "as %s is not available." % env['SQLDUMP'].split(None, 1)[0]
-    elif EXT == ".test" and not CONDITIONALS['HAVE_PYMONETDB']:
-        reason = "as pymonetdb is not available."
-    elif EXT == ".maltest" and not CONDITIONALS['HAVE_PYMONETDB']:
-        reason = "as pymonetdb is not available."
     elif SERVER in ["MAL", "SQL"] and not env['exe']['mserver5'][0]:
         reason = "as %s is not available." % env['MSERVER'].split(None, 1)[0]
     elif EXT == ".malS" and not env['exe']['mserver5'][0]:
@@ -2466,31 +2463,6 @@ def main(argv) :
         if proc.returncode == 0 and pyout:
             python_version = pyout.strip()
             os.environ['PYTHON' + python_version] = 'python'
-    if python_version == '3':
-        py3list = ['python']
-    else:
-        py3list = []
-    for py3 in py3list + ['python3', 'python3.7', 'python3.6', 'python3.5', 'python3.4']:
-        if CheckExec(py3):
-            try:
-                proc = process.Popen([py3, '-c', 'import pymonetdb'],
-                                     stdout=process.PIPE, stderr=process.PIPE,
-                                     text=True)
-                pyout, pyerr = proc.communicate()
-                if proc.returncode == 0:
-                    CONDITIONALS['HAVE_PY3MONETDB'] = '#'
-                    os.environ['PYTHON3'] = py3
-                    break
-            except OSError:
-                pass
-    else:
-        CONDITIONALS['HAVE_PY3MONETDB'] = '' # no pymonetdb for python3
-    try:
-        import pymonetdb
-    except ImportError:
-        print('Python available, but pymonetdb package not available')
-    else:
-        CONDITIONALS['HAVE_PYMONETDB'] = '#'
     try:
         import lz4
     except ImportError:
@@ -2871,4 +2843,3 @@ if __name__ == "__main__":
 #       END
 #############################################################################
 # vim: set ts=4 sw=4 expandtab:
-
