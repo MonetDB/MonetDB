@@ -19,12 +19,12 @@ True
 query T rowsort
 select btime - timestamp '1975-JAN-01' from time_table
 ----
-89302400.00
+2191 days, 0:00:00
 
 query T rowsort
 select btime - atime from time_table
 ----
-47068800.00
+4017 days, 0:00:00
 
 statement ok
 drop table time_table

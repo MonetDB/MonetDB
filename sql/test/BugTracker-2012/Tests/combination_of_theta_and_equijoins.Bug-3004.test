@@ -36,7 +36,6 @@ FROM
         ) AS "s"
 WHERE "sv" <= "er"
   AND "ea" = "sa"
-
 ----
 Simon
 1
@@ -63,7 +62,6 @@ FROM
         ) AS "s"
 WHERE "ea" = "sa"
   AND "sv" <= "er"
-
 ----
 Simon
 1
@@ -89,7 +87,6 @@ FROM
         ) AS "s"
 WHERE ("sv" <= "er") = true
   AND ("ea" = "sa") = true
-
 ----
 Simon
 1
