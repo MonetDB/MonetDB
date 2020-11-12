@@ -1,8 +1,0 @@
-statement ok
-create table tf (a int)
-
-statement error
-\D
-drop table tf
-
-
