@@ -19,7 +19,6 @@ SELECT t0.id
                END AS colint_sq
           FROM t1
        ) t0
-
 ----
 15 values hashing to f12c1f7f14718285c289a2537f92118c
 
@@ -35,7 +34,6 @@ SELECT t0.id
                END AS sqrt_colint
           FROM t1
        ) t0
-
 ----
 15 values hashing to f12c1f7f14718285c289a2537f92118c
 

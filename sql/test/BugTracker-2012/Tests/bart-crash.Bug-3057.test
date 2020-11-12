@@ -73,7 +73,6 @@ select t.xtrsrc_id
                         AND r.wm_ra + alpha(r.wm_decl, im0.bmaj)
        ) t
  where t.dist > t.dist_lim
-
 ----
 1
 
@@ -92,7 +91,6 @@ SELECT r.xtrsrc_id
    AND x.ra BETWEEN r.wm_ra - alpha(r.wm_decl, im0.bmaj)
                 AND r.wm_ra + alpha(r.wm_decl, im0.bmaj)
    AND r.x * x.x + r.y * x.y + r.z * x.z > COS(RADIANS(im0.bmaj))
-
 ----
 1
 

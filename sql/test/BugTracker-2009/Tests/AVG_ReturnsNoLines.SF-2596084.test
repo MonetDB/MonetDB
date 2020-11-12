@@ -81,7 +81,6 @@ FROM
   FROM x
 ) pass1
 , x
-
 ----
 3
 2.000
@@ -95,7 +94,6 @@ FROM
   FROM x
 ) agg
 , x
-
 ----
 3
 2.000

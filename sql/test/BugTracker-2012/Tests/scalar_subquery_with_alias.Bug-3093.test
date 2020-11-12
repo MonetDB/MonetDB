@@ -15,7 +15,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        ) AS c2
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 
 query II rowsort
@@ -28,7 +27,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        )
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 
 query II rowsort
@@ -41,7 +39,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        ) AS c2
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 
 query II rowsort
@@ -54,7 +51,6 @@ SELECT (SELECT COUNT(b.id) AS cnt2
        ) AS c1
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 
 query II rowsort
@@ -67,7 +63,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        ) AS c2
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 
 statement ok
@@ -99,7 +94,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        ) AS c2
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 3
 0
@@ -118,7 +112,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        )
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 3
 0
@@ -137,7 +130,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        ) AS c2
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 3
 0
@@ -156,7 +148,6 @@ SELECT (SELECT COUNT(b.id) AS cnt2
        ) AS c1
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 0
 3
@@ -175,7 +166,6 @@ SELECT (SELECT COUNT(id) AS cnt1
        ) AS c2
   FROM test1 a
   ORDER BY 1, 2
-
 ----
 3
 0
