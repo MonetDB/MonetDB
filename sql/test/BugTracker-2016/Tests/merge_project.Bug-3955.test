@@ -10,19 +10,19 @@ INSERT INTO input_double VALUES ('latitude',52.0,1.0)
 statement ok
 INSERT INTO input_double VALUES ('longitude',5.1,1.0)
 
-statement error
+statement ok
 CREATE TABLE v(a1 int, a2 point, prob double)
 
-statement error
+statement ok
 insert into v values(0,'point(50 4)',1)
 
-statement error
+statement ok
 insert into v values(1,'point(51 5)',1)
 
-statement error
+statement ok
 insert into v values(2,'point(52 6)',1)
 
-statement error
+statement ok
 CREATE VIEW p AS
 SELECT ST_Point(a1,a2) AS a1, prob AS prob
 FROM (
@@ -32,7 +32,7 @@ FROM (
 	    (SELECT a2, prob FROM input_double WHERE a1 = 'longitude') AS tmp_3
 ) AS tmp
 
-statement error
+statement ok
 CREATE VIEW r AS
 SELECT a1 AS a1, ST_Distance(a2,a3) AS prob
 FROM (
@@ -40,7 +40,9 @@ FROM (
 	  FROM v,p
 ) AS tmp
 
-statement error
+query T rowsort
 plan select * from r
+----
+19 values hashing to 34e4530a5e36a740703a9f08d5e5eb31
 
 
