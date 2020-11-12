@@ -226,14 +226,14 @@ class SQLLogic:
         except (pymonetdb.Error, ValueError) as e:
             self.query_error(query, 'query failed', e.args[0])
             return False
+        data = self.crs.fetchall()
         if self.crs.description:
             if len(self.crs.description) != len(columns):
-                self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
+                self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)), data=data)
                 return False
         if self.crs.rowcount * len(columns) != nresult:
-            self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
+            self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)), data=data)
             return False
-        data = self.crs.fetchall()
         if self.res is not None:
             for row in data:
                 sep=''
@@ -258,7 +258,7 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                         err = True
                     i += 1
                 m.update(bytes(col, encoding='ascii'))
