@@ -58,6 +58,30 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         tests = filtered
     test_index = []
     test_lookup = {}
+    lookup  = [
+        # file extention  EXT        CALL      SERVER
+        ('.py',           '.py',     'python', ''),
+        ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
+        ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
+        ('.maltest',      '.maltest','maltest','MAL'),
+        ('.malC',         '.malC',   'mal',    'MAL'),
+        #('_s00.malC',     '.malC',   'malXs',  'MAL'),
+        #('_p00.malC',     '.malC',   'malXp',  'MAL'),
+        ('.test',         '.test',   'sqltest','SQL'),
+        ('.sql',          '.sql',    'sql',    'SQL'),
+        #('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
+        #('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
+        ('.R',            '.R',      'R',      'SQL'),
+        ('.rb',           '.rb',     'ruby',   'SQL'),
+    ]
+    if os.name == 'nt':
+        lookup.append(('.MAL.bat', '.MAL.bat', 'other', ''))
+        lookup.append(('.SQL.bat', '.SQL.bat', 'other', ''))
+        lookup.append(('.bat', '.bat', 'other', ''))
+    else:
+        lookup.append(('.MAL.sh', '.MAL.sh', 'other', ''))
+        lookup.append(('.SQL.sh', '.SQL.sh', 'other', ''))
+        lookup.append(('.sh', '.sh', 'other', ''))
     for cond, test_name, comment in tests:
         test_path = os.path.join(real_dir_path, test_name)
         test = {
@@ -65,25 +89,6 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
             'test_path': test_path,
             'comment': comment,
             'cond': cond}
-        lookup  = (
-            # file extention  EXT        CALL      SERVER
-            ('.py',           '.py',     'python', ''),
-            ('.MAL.py',       '.MAL.py', 'python', 'MAL'),
-            ('.SQL.py',       '.SQL.py', 'python', 'SQL'),
-            ('.maltest',      '.maltest','maltest','MAL'),
-            ('.malC',         '.malC',   'mal',    'MAL'),
-            #('_s00.malC',     '.malC',   'malXs',  'MAL'),
-            #('_p00.malC',     '.malC',   'malXp',  'MAL'),
-            ('.test',         '.test',   'sqltest','SQL'),
-            ('.sql',          '.sql',    'sql',    'SQL'),
-            #('_s00.sql',      '.sql',    'sqlXs',  'SQL'),
-            #('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
-            ('.R',            '.R',      'R',      'SQL'),
-            ('.rb',           '.rb',     'ruby',   'SQL'),
-            ('.MAL.sh',       '.MAL.sh', 'other',   'MAL'),
-            ('.SQL.sh',       '.SQL.sh', 'other',   'SQL'),
-            ('.sh',           '.sh',     'other',      ''),
-        )
         # required tests that needs to run before this test
         # TODO enforce order at the end
         if os.path.isfile(test_path + '.reqtests'):
