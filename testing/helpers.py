@@ -11,9 +11,12 @@ def get_tests_from_all_file(fpath:str):
     res = []
     with open(fpath, 'r') as f:
         for l in f:
-            r = l.strip()
             # ignore comments
-            if r and r[0] != '#':
+            if '#' in l:
+                # get rid of comment anywhere on line
+                l = l[:l.index('#')]
+            r = l.strip()
+            if r:
                 comment=None
                 if '#' in r:
                     comment=r[r.index('#'):]
