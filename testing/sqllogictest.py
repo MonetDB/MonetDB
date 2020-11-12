@@ -15,8 +15,13 @@
 #       nosort: do not sort
 #       rowsort: sort rows
 #       valuesort: sort individual values
+#       python some.python.function: run data through function (MonetDB extension)
 # hash-threshold number
 # halt
+
+# The python function that can be used instead of the various sort
+# options should be a simple function that gets a list of lists as
+# input and should produce a list of lists as output.
 
 import pymonetdb
 from MonetDBtesting.mapicursor import MapiCursor
@@ -24,6 +29,7 @@ import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
+import importlib
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -181,7 +187,7 @@ class SQLLogic:
                     sep = '|'
                 print('', file=self.out)
 
-    def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected) -> bool:
+    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected) -> bool:
         err = False
         try:
             self.crs.execute(query)
@@ -225,6 +231,33 @@ class SQLLogic:
                     i += 1
                 m.update(bytes(col, encoding='ascii'))
                 m.update(b'\n')
+        elif sorting == 'python':
+            if '.' in pyscript:
+                [mod, fnc] = pyscript.rsplit('.', 1)
+                try:
+                    pymod = importlib.import_module(mod)
+                    pyfnc = getattr(pymod, fnc)
+                except ModuleNotFoundError:
+                    self.query_error(query, 'cannot import filter function module')
+                    err = True
+                except AttributeError:
+                    self.query_error(query, 'cannot find filter function')
+                    err = True
+            elif re.match(r'[_a-zA-Z][_a-zA-Z0-9]*$', pyscript) is None:
+                self.query_error(query, 'filter function is not an identifier')
+                err = True
+            else:
+                try:
+                    pyfnc = eval(pyscript)
+                except NameError:
+                    self.query_error(query, 'cannot find filter function')
+                    err = True
+            if not err:
+                try:
+                    data = pyfnc(data)
+                except:
+                    self.query_error(query, 'filter function failed')
+                    err = True
         else:
             if sorting == 'rowsort':
                 data.sort()
@@ -300,9 +333,14 @@ class SQLLogic:
                         self.exec_statement('\n'.join(statement), expectok)
             elif line[0] == 'query':
                 columns = line[1]
+                pyscript = None
                 if len(line) > 2:
                     sorting = line[2]  # nosort,rowsort,valuesort
-                    if len(line) > 3:
+                    if sorting == 'python':
+                        pyscript = line[3]
+                        if len(line) > 4:
+                            hashlabel = line[4]
+                    elif len(line) > 3:
                         hashlabel = line[3]
                 else:
                     sorting = 'nosort'
@@ -331,7 +369,7 @@ class SQLLogic:
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
-                    self.exec_query('\n'.join(query), columns, sorting, hashlabel, nresult, hash, expected)
+                    self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected)
 
 if __name__ == '__main__':
     import argparse
