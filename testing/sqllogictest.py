@@ -188,9 +188,10 @@ class SQLLogic:
         except (pymonetdb.Error, ValueError) as e:
             self.query_error(query, 'query failed', e.args[0])
             return False
-        if len(self.crs.description) != len(columns):
-            self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
-            return False
+        if self.crs.description:
+            if len(self.crs.description) != len(columns):
+                self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
+                return False
         if self.crs.rowcount * len(columns) != nresult:
             self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
             return False
