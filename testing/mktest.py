@@ -14,42 +14,9 @@ import re
 import sys
 import argparse
 
-parser = argparse.ArgumentParser(description='Create a Sqllogictest')
-parser.add_argument('--host', action='store', default='localhost',
-                    help='hostname where the server runs')
-parser.add_argument('--port', action='store', type=int, default=50000,
-                    help='port the server listens on')
-parser.add_argument('--database', action='store', default='demo',
-                    help='name of the database')
-parser.add_argument('--language', action='store', default='sql',
-                    help='language to connect to the database')
-parser.add_argument('--sort', action='store', default='rowsort',
-                    choices=['nosort','rowsort','valuesort'],
-                    help='how to sort the values')
-parser.add_argument('--hashlimit', action='store', type=int, default=10,
-                    help='hash limit')
-parser.add_argument('--results', action='store', type=argparse.FileType('w'),
-                    help='file to store results of queries')
-opts = parser.parse_args()
-
-if opts.language == 'sql':
-    dbh = pymonetdb.connect(username='monetdb',
-                        password='monetdb',
-                        hostname=opts.host,
-                        port=opts.port,
-                        database=opts.database,
-                        autocommit=True)
-    crs = dbh.cursor()
-else:
-    dbh = malmapi.Connection()
-    dbh.connect(
-                        database=opts.database,
-                        username='monetdb',
-                        password='monetdb',
-                        language='mal',
-                        hostname=opts.host,
-                        port=opts.port)
-    crs = MapiCursor(dbh)
+def is_copyfrom_stmt(stmt:str):
+    # TODO fix need stronger regex
+    return re.match(r'copy\b[^;]*?\bfrom\s+stdin\b', stmt, re.IGNORECASE) is not None
 
 def is_complete_stmt(query, line:str):
     stmt = query + [line]
@@ -99,11 +66,6 @@ def is_complete_stmt(query, line:str):
             return re.match(r'\s*barrier\s.*\bexit\s\(\w+(,\w+)+\)\s*;', stmt, re.DOTALL) is not None
     return re.match(r'[^;]*;', stmt) is not None
 
-def is_copyfrom_stmt(stmt:str):
-    # TODO fix need stronger regex
-    rgx = re.compile('copy.*from.*stdin.*', re.I)
-    return rgx.match(stmt) is not None
-
 def convertresult(columns, data):
     ndata = []
     for row in data:
@@ -139,27 +101,26 @@ def convertresult(columns, data):
         ndata.append(tuple(nrow))
     return ndata
 
-def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
+def to_sqllogic_test(query, copy_into_data=None):
     try:
-        crs.execute(query)
+        q = query
+        if copy_into_data is not None:
+            q += ';\n' + '\n'.join(copy_into_data)
+        crs.execute(q)
     except (pymonetdb.Error, ValueError) as e:
         print('statement error')
-        if copy_into_stmt:
-            print(copy_into_stmt)
+        print(query)
+        if copy_into_data is not None:
             print('<COPY_INTO_DATA>')
             print('\n'.join(copy_into_data))
-        else:
-            print(query)
         print('')
     else:
         if crs.description is None:
             print('statement ok')
-            if copy_into_stmt:
-                print(copy_into_stmt)
+            print(query)
+            if copy_into_data is not None:
                 print('<COPY_INTO_DATA>')
                 print('\n'.join(copy_into_data))
-            else:
-                print(query)
             print('')
         else:
             args = ''
@@ -210,60 +171,93 @@ def to_sqllogic_test(query, copy_into_stmt=None, copy_into_data=[]):
                 print('{} values hashing to {}'.format(len(args) * crs.rowcount, h))
             print('')
 
-def process_copyfrom_stmt(query):
-    index = 0
-    for i, n in enumerate(query):
-        if n.strip().endswith(';'):
-            index = i
-            break
-    index+=1
-    copy_into_stmt = '\n'.join(query[:index]).rstrip(';')
-    copy_into_data = query[index:]
-    query = '\n'.join(query)
-    to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
+opts = None
+dbh = None
+crs = None
+def main():
+    parser = argparse.ArgumentParser(description='Create a Sqllogictest')
+    parser.add_argument('--host', action='store', default='localhost',
+                        help='hostname where the server runs')
+    parser.add_argument('--port', action='store', type=int, default=50000,
+                        help='port the server listens on')
+    parser.add_argument('--database', action='store', default='demo',
+                        help='name of the database')
+    parser.add_argument('--language', action='store', default='sql',
+                        help='language to connect to the database')
+    parser.add_argument('--sort', action='store', default='rowsort',
+                        choices=['nosort','rowsort','valuesort'],
+                        help='how to sort the values')
+    parser.add_argument('--hashlimit', action='store', type=int, default=10,
+                        help='hash limit')
+    parser.add_argument('--results', action='store', type=argparse.FileType('w'),
+                        help='file to store results of queries')
+    global opts
+    opts = parser.parse_args()
 
-
-query = []
-incomment = False
-while True:
-    line = sys.stdin.readline()
-    if not line:
-        break
-    if incomment:
-        if '*/' in line:
-            line = line[line.find('*/') + 2:]
-            incomment = False
-        else:
-            continue
-    line = re.sub('/\*.*?\*/', ' ', line)
-    if '/*' in line:
-        line = line[:line.find('/*')]
-        incomment = True
-    line = line.rstrip()
-    if not line:
-        continue
-    if (opts.language == 'sql' and line.lstrip().startswith('--')) or line.lstrip().startswith('#'):
-        if query:
-            if opts.language == 'sql' and is_copyfrom_stmt('\n'.join(query)):
-                process_copyfrom_stmt(query)
-                query = []
-            else:
-                query.append(line)
-        continue
-    # when copyfrom stmt from stdin skip because data may contain --
-    if opts.language == 'sql' and '--' in line and not is_copyfrom_stmt('\n'.join(query)):
-        line = line[:line.index('--')].rstrip()
-    if not query:
-        res = re.match('[^\'"]*((\'[^\']*\'|"[^"]*")[^\'"]*)*#', line)
-        if res is not None:
-            line = res.group(0)[:-1].rstrip()
-    if is_complete_stmt(query, line):
-        if opts.language == 'sql':
-            l = line.rstrip(';')
-        else:
-            l = line
-        query.append(l)
-        to_sqllogic_test('\n'.join(query))
-        query = []
+    global dbh
+    global crs
+    if opts.language == 'sql':
+        dbh = pymonetdb.connect(username='monetdb',
+                            password='monetdb',
+                            hostname=opts.host,
+                            port=opts.port,
+                            database=opts.database,
+                            autocommit=True)
+        crs = dbh.cursor()
     else:
-        query.append(line)
+        dbh = malmapi.Connection()
+        dbh.connect(
+                            database=opts.database,
+                            username='monetdb',
+                            password='monetdb',
+                            language='mal',
+                            hostname=opts.host,
+                            port=opts.port)
+        crs = MapiCursor(dbh)
+
+    query = []
+    incomment = False
+    incopy = False
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            break
+        if incomment:
+            if '*/' in line:
+                line = line[line.find('*/') + 2:]
+                incomment = False
+            else:
+                continue
+        line = re.sub('/\*.*?\*/', ' ', line)
+        if '/*' in line:
+            line = line[:line.find('/*')]
+            incomment = True
+        line = line.rstrip()
+        if not line:
+            continue
+        if not query:
+            res = re.match('[^\'"]*((\'[^\']*\'|"[^"]*")[^\'"]*)*#', line)
+            if res is not None:
+                line = res.group(0)[:-1].rstrip()
+        if is_complete_stmt(query, line):
+            if opts.language == 'sql':
+                l = line.rstrip(';')
+            else:
+                l = line
+            query.append(l)
+            data = None
+            stmt = '\n'.join(query)
+            if is_copyfrom_stmt('\n'.join(query)):
+                data = []
+                while True:
+                    line = sys.stdin.readline()
+                    if not line or line == '\n':
+                        break
+                    data.append(line.rstrip('\n'))
+            to_sqllogic_test(stmt, data)
+            query = []
+        else:
+            query.append(line)
+
+if __name__ == '__main__':
+    main()
