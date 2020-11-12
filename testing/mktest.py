@@ -102,11 +102,14 @@ def convertresult(columns, data):
     return ndata
 
 def to_sqllogic_test(query, copy_into_data=None):
+    data = []
     try:
         q = query
         if copy_into_data is not None:
             q += ';\n' + '\n'.join(copy_into_data)
         crs.execute(q)
+        if crs.description:
+            data = crs.fetchall()
     except (pymonetdb.Error, ValueError) as e:
         print('statement error')
         print(query)
@@ -135,7 +138,6 @@ def to_sqllogic_test(query, copy_into_data=None):
             print('query {} {}'.format(args, sorting))
             print(query)
             print('----')
-            data = crs.fetchall()
             if opts.results:
                 for row in data:
                     sep=''
