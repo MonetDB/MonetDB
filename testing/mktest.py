@@ -51,23 +51,38 @@ else:
                         port=opts.port)
     crs = MapiCursor(dbh)
 
-query = []
-
-def is_psm_stmt(stmt:str):
+def is_complete_stmt(query, line:str):
+    stmt = query + [line]
+    stmt = '\n'.join(stmt)
     if opts.language == 'sql':
-        rgx = re.compile(r'(create|create\s+or\s+replace)\s+(function|procedure|aggregate|filter|window|loader|trigger)\b', re.I)
-        return rgx.match(stmt) is not None
-    else:
-        return re.match(r'\s*function\s', stmt) is not None
-
-def is_psm_stmt_end(stmt:str):
-    if opts.language == 'sql':
-        return re.search(r'end;$', stmt, re.I) is not None
-    else:
-        return re.match(r'\s*end(\s+\w+)?\s*;', stmt) is not None
-
-def is_complete_psm_stmt(stmt:str):
-    if opts.language == 'sql':
+        res = re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader)\b[^;]*\blanguage\s+\S+\s*\{', stmt, re.IGNORECASE)
+        if res is not None:
+            q = None
+            skip = False
+            n = 0
+            hash = False
+            for c in stmt:
+                if skip:
+                    skip = False
+                elif hash:
+                    if c == '\n':
+                        hash = False
+                elif c == q:
+                    q = None
+                elif q is not None:
+                    if c == '\\':
+                        skip = True
+                elif c == "'" or c == '"':
+                    q = c
+                elif c == '{':
+                    n += 1
+                elif c == '}':
+                    n -= 1
+                elif c == ';' and n == 0:
+                    return True
+                elif c == '#':
+                    hash = True
+            return False
         if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b.*?\bend\b\s*;', stmt, re.DOTALL|re.IGNORECASE) is not None:
             return True
         if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b', stmt, re.IGNORECASE) is not None:
@@ -75,9 +90,14 @@ def is_complete_psm_stmt(stmt:str):
             return False
         if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*;', stmt, re.IGNORECASE) is not None:
             return True
-        return False
+        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b', stmt, re.IGNORECASE) is not None:
+            return False
     else:
-        return re.match(r'\s*function\s.*\bend(\s+\w+)?\s*;', stmt, re.DOTALL) is not None
+        if re.match(r'\s*function\s', stmt) is not None:
+            return re.match(r'\s*function\s.*\bend(\s+\w+)?\s*;', stmt, re.DOTALL) is not None
+        if re.match(r'\s*barrier\s', stmt) is not None:
+            return re.match(r'\s*barrier\s.*\bexit\s\(\w+(,\w+)+\)\s*;', stmt, re.DOTALL) is not None
+    return re.match(r'[^;]*;', stmt) is not None
 
 def is_copyfrom_stmt(stmt:str):
     # TODO fix need stronger regex
@@ -99,9 +119,7 @@ def convertresult(columns, data):
                 else:
                     nrow.append('%d' % row[i])
             elif columns[i] == 'T':
-                if row[i] == '':
-                    nrow.append('(empty)')
-                elif row[i] == b'':
+                if row[i] == '' or row[i] == b'':
                     nrow.append('(empty)')
                 else:
                     nval = []
@@ -205,13 +223,12 @@ def process_copyfrom_stmt(query):
     to_sqllogic_test(query, copy_into_stmt=copy_into_stmt, copy_into_data=copy_into_data)
 
 
+query = []
 incomment = False
-inpsm = False
 while True:
     line = sys.stdin.readline()
     if not line:
         break
-    line = line.rstrip()
     if incomment:
         if '*/' in line:
             line = line[line.find('*/') + 2:]
@@ -222,39 +239,31 @@ while True:
     if '/*' in line:
         line = line[:line.find('/*')]
         incomment = True
-    if not line or line.lstrip().startswith('--') or line.lstrip().startswith('#'):
-        if len(query) > 0:
-            if is_copyfrom_stmt('\n'.join(query)):
+    line = line.rstrip()
+    if not line:
+        continue
+    if (opts.language == 'sql' and line.lstrip().startswith('--')) or line.lstrip().startswith('#'):
+        if query:
+            if opts.language == 'sql' and is_copyfrom_stmt('\n'.join(query)):
                 process_copyfrom_stmt(query)
                 query = []
+            else:
+                query.append(line)
         continue
     # when copyfrom stmt from stdin skip because data may contain --
     if opts.language == 'sql' and '--' in line and not is_copyfrom_stmt('\n'.join(query)):
         line = line[:line.index('--')].rstrip()
-    res = re.match('[^\'"]*((\'[^\']*\'|"[^"]*")[^\'"]*)*#', line)
-    if res is not None:
-        line = res.group(0)[:-1].rstrip()
-    if (inpsm and is_psm_stmt_end(line)) or (not inpsm and line.endswith(';')):
-        inpsm = False
-        tmp = ([] + query)
-        tmp.append(line)
-        stmt = '\n'.join(tmp)
-        if is_copyfrom_stmt(stmt):
-            query.append(line)
-            continue
-        if is_psm_stmt(stmt):
-            if is_complete_psm_stmt(stmt):
-                stmt = stmt.rstrip(';')
-                to_sqllogic_test(stmt)
-                query = []
-            else:
-                query.append(line)
-                inpsm = True
-            continue
-        stripped = line.rstrip(';')
-        query.append(stripped)
-        query = '\n'.join(query)
-        to_sqllogic_test(query)
+    if not query:
+        res = re.match('[^\'"]*((\'[^\']*\'|"[^"]*")[^\'"]*)*#', line)
+        if res is not None:
+            line = res.group(0)[:-1].rstrip()
+    if is_complete_stmt(query, line):
+        if opts.language == 'sql':
+            l = line.rstrip(';')
+        else:
+            l = line
+        query.append(l)
+        to_sqllogic_test('\n'.join(query))
         query = []
     else:
         query.append(line)

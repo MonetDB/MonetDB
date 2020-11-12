@@ -1,0 +1,18 @@
+statement ok
+function foo():str;
+raise	IllegalAccess := "an exception";
+	return foo := "should not come here\n";
+catch	IllegalAccess;
+	return foo := "caught an exception\n";
+raise	IllegalAccess:= "a second exception raised";
+	return foo:= "should not come here either\n";
+exit	IllegalAccess;
+	return foo:="should not be done";
+end;
+
+
+statement T nosort
+msg := user.foo();
+io.print(msg);
+----
+caught an exception

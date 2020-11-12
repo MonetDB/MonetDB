@@ -26,3 +26,5 @@ DROP FUNCTION capi16
 
 statement ok
 ROLLBACK
+
+

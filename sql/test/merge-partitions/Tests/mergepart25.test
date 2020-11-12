@@ -1,0 +1,81 @@
+statement ok
+CREATE FUNCTION casttoint(b clob) RETURNS INT BEGIN RETURN cast(b as int); END
+
+statement ok
+CREATE MERGE TABLE testmeplease (a int, b varchar(32)) PARTITION BY RANGE USING ( casttoint(b) )
+
+statement ok
+CREATE TABLE sub1 (a int, b varchar(32))
+
+statement error
+UPDATE testmeplease SET a = a + 1 WHERE a = 1
+
+statement error
+UPDATE testmeplease SET b = 'I should fail'
+
+statement ok
+ALTER TABLE testmeplease ADD TABLE sub1 AS PARTITION FROM -100 TO 100
+
+statement ok
+UPDATE testmeplease SET a = 99 WHERE a = 2
+
+statement error
+UPDATE testmeplease SET b = 'I should fail again'
+
+statement ok
+INSERT INTO testmeplease VALUES (1, '1'), (2, '2'), (3, '3')
+
+statement error
+INSERT INTO testmeplease VALUES (1, 'cannot cast me')
+
+statement error
+INSERT INTO sub1 VALUES (1, 'cannot cast me')
+
+statement ok
+UPDATE testmeplease SET a = 150 WHERE a = 3
+
+statement error
+UPDATE testmeplease SET b = 'Cannot update me' WHERE a = 3
+
+statement error
+UPDATE sub1 SET b = 'Cannot update me'
+
+statement error
+UPDATE sub1 SET a = 30, b = '30' WHERE a = 1
+
+statement ok
+UPDATE sub1 SET a = 50 WHERE a = 1
+
+query IT rowsort
+SELECT a, b FROM testmeplease
+----
+150
+3
+2
+2
+50
+1
+
+query IT rowsort
+SELECT a, b FROM sub1
+----
+150
+3
+2
+2
+50
+1
+
+statement ok
+ALTER TABLE testmeplease DROP TABLE sub1
+
+statement ok
+DROP TABLE sub1
+
+statement ok
+DROP TABLE testmeplease
+
+statement ok
+DROP FUNCTION casttoint
+
+

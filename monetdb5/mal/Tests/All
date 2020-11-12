@@ -103,111 +103,101 @@ tst171
 tst180
 tst190
 tst191
-# tst192
-# tst193
-# tst194
-# tst195
-# tst196
-# tst200
-# tst201
-# tst202
-# tst210
-# tst220
-# tst230
-# tst231
-# tst232
-# tst233
-# tst234
-# tst235
-# tst237
-# tst250
-# tst2500
-# tst2501
-# tst2502
-# tst2503
-# tst2504
-# tst2505
-# tst2510
-# tst251
-# tst252
-# tst255
-# tst2550
-# tst256
-# tst2570
-# tst272
-# tst275
-# tst280
-# tst281
-# tst292
-# tst285
-# tst300
-# tst301
-# tst302
-# tst303
-# tst304
-# tst305
-# #tst3050
-# tst307
-# tst308
-# tst400
-# tst401
-# tst500
-# tst501
-# tst560
-# tst611
-# tst620
-# tst660
-# tst661
-# tst662
-# tst670
-# tst700
-# tst710
-# tst750
-# tst755
-# tst760
-# tst770
-# tst780
-# tst802
-# tst804
-# tst810
-# tst819
-# tst830
-# tst840
-# tst850
-# tst866
-# tst870
-# tst880
-# tst890
-# tst900
-# tst901
-# tst902
-# #tst903 old test to study the overhead in MAL interpretation, see also mal/Tests/performance
-# tst904
-# tst905
-# tst906
-# tst907
-# tst908
-# 
-# tst911
-# tst912
-# tst913
-# tst914
-# tst960
-# 
-# #tests for garbage collection of strings
-# tst920
-# tst901a
+tst192
+tst193
+tst194
+tst195
+tst196
+tst200
+tst201
+tst202
+tst210
+tst220
+tst230
+tst231
+tst232
+tst233
+tst234
+tst235
+tst237
+tst250
+tst2500
+tst2501
+tst2502
+tst2503
+tst2504
+tst2505
+tst2510
+tst251
+tst252
+tst255
+tst2550
+tst256
+tst2570
+tst272
+#tst275	# incorrect hash
+tst280
+tst281
+tst292
+tst285
+tst300
+tst301
+tst302
+tst303
+tst304
+tst305
+tst307
+tst308
+tst400
+tst401
+tst500
+tst501
+tst560
+tst611
+tst620
+tst660
+tst661
+tst662
+tst670
+tst700
+tst710
+tst750
+tst755
+tst760
+tst770
+tst780
+tst802
+tst804
+tst810
+tst819
+tst830
+tst840
+#tst850  # spurious error
+tst866
+#tst870  io.print in functions
+tst880
+tst890
+tst900
+tst901
+tst902
+tst904
+tst905
+tst906
+#tst907 crash Mconvert
+#tst908 crash Mconvert
+# tst911 handle comment in MAL result set
+tst912
+tst913
+# tst914 Mconvert parsing error, non-finished function block
+tst960
+tst920
+#tst901a improper compilation
 # #tst901b
-# 
-# parseErrors
-# 
-# dataflow01
-# dataflow03
-# flowchk
-# 
-# dynamicload
-# pithole
-# malids
-# 
+# dataflow01 Incorrect compilation
+dataflow03
+flowchk
+dynamicload
+pithole
+malids
 # # Tracer
 # # tracer00 Output is call dependent

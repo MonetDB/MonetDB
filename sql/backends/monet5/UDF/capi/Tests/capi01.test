@@ -14,12 +14,12 @@ language C
         i->data[j] = j;
         d->data[j] = round(j > 0 ? 42.0 / j : 42.0);
     }
-};
+}
 
-query II rowsort
+query IR rowsort
 SELECT i,d FROM capi01(42) AS R
 ----
-84 values hashing to 5bb395f601dde2dc995b28f19ffe7d50
+84 values hashing to 521e7bcb7e89afd2b94fc0c2e54a3e48
 
 statement ok
 DROP FUNCTION capi01

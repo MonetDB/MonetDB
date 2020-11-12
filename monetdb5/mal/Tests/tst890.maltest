@@ -1,0 +1,22 @@
+statement ok
+function foo();
+	b:= bat.new(:int);
+	bat.setName(b,"b");
+	bat.append(b,1);
+	c:=batcalc.+(b,2,nil:bat);
+	c:=batcalc.+(b,3,nil:bat);
+	c:=batcalc.+(b,4,nil:bat);
+	c:=batcalc.+(b,5,nil:bat);
+	c:=batcalc.+(b,6,nil:bat);
+	c:=batcalc.+(b,7,nil:bat);
+	c:=batcalc.+(b,8,nil:bat);
+	io.print(c);
+end;
+
+query TI rowsort
+user.foo();
+----
+0
+9
+
+
