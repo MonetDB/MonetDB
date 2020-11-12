@@ -1,9 +1,4 @@
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
-
-import sys, time, pymonetdb, os
+import pymonetdb, os
 
 def connect(autocommit):
     return pymonetdb.connect(database = os.getenv('TSTDB'),
