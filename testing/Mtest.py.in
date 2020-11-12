@@ -3288,7 +3288,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                 except:
                     returncode = 'error'
                 else:
-                    if os.path.exists(TST+'.drop'):
+                    if not os.path.exists(TST+'.reqtests'):
                         sql.drop()
                     try:
                         sql.parse(TST+EXT)
