@@ -1,0 +1,74 @@
+statement ok
+b:= bat.new(:int)
+
+query T rowsort
+io.printf("#~BeginVariableOutput~#\n")
+----
+#~BeginVariableOutput~#
+
+statement ok
+(bk,bv):= bat.info(b)
+
+query TTT rowsort
+io.print(bk,bv)
+----
+114 values hashing to bf0ca3c1080e71cd256e46e2c1408056
+
+query T rowsort
+io.printf("#~EndVariableOutput~#\n")
+----
+#~EndVariableOutput~#
+
+statement ok
+profiler.start()
+
+statement ok
+err := bat.append(b,15)
+
+statement ok
+err := bat.append(b,4)
+
+statement ok
+n0  := calc.int(nil)
+
+statement ok
+err := bat.append(b,n0)
+
+statement ok
+err := bat.append(b,16)
+
+statement ok
+err := bat.append(b,25)
+
+statement ok
+err := bat.append(b,36)
+
+statement ok
+err := bat.append(b,49)
+
+statement ok
+err := bat.append(b,64)
+
+statement ok
+err := bat.append(b,n0)
+
+statement ok
+err := bat.append(b,n0)
+
+statement ok
+err := bat.append(b,81)
+
+query TI rowsort
+io.print(b)
+----
+22 values hashing to 5073ad3da80766b5c9d6b77a1f9168f1
+
+query TIII rowsort
+io.print(b,b,b)
+----
+44 values hashing to 323166d817385a925ce8491550ae07e8
+
+statement ok
+profiler.stop()
+
+

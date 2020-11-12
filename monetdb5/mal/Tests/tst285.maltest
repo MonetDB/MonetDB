@@ -1,0 +1,19 @@
+statement ok
+b:= bat.new(:str)
+
+statement ok
+bat.append(b,"hello")
+
+statement ok
+bat.append(b,"goodbye")
+
+statement ok
+z0:= algebra.likeselect(b,nil:bat[:oid],"%hel%",false)
+
+query TT rowsort
+io.print(z0)
+----
+0
+0
+
+

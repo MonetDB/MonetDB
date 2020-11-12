@@ -1,54 +1,62 @@
 stdout of test 'type_dump_test.SF-989257` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 12:41:41 >  
-# 12:41:41 >  Mtimeout -timeout 300 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 12:41:41 >  
+# 16:39:15 >  
+# 16:39:15 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-178400" "--port=31650"
+# 16:39:15 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
+#CREATE TABLE voyages (
+#	number mediumint,
+#	number_sup character(1),
+#	trip mediumint,
+#	trip_sup character(1),
+#	boatname varchar(50),
+#	master varchar(50),
+#	tonnage mediumint,
+#	type_of_boat varchar(30),
+#	built varchar(15),
+#	bought varchar(15),
+#	hired varchar(15),
+#	yard character(1),
+#	chamber character(1),
+#	departure_date varchar(15),
+#	departure_harbour varchar(30),
+#	cape_arrival varchar(15),
+#	cape_departure varchar(15),
+#	arrival_date varchar(15),
+#	arrival_harbour varchar(30),
+#	next_voyage mediumint,
+#	particulars varchar(507)
+#select c.name, c.type, c.type_digits, c.type_scale, c."null", c."default", c.number from sys._columns c, sys._tables t, sys.schemas s
+#where c.table_id = t.id and t.name = 'voyages' and t.schema_id = s.id and s.name = 'sys' order by c.number;
+% sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c # table_name
+% name,	type,	type_digits,	type_scale,	null,	default,	number # name
+% varchar,	varchar,	int,	int,	boolean,	varchar,	int # type
+% 17,	7,	3,	1,	5,	0,	2 # length
+[ "number",	"int",	32,	0,	true,	NULL,	0	]
+[ "number_sup",	"char",	1,	0,	true,	NULL,	1	]
+[ "trip",	"int",	32,	0,	true,	NULL,	2	]
+[ "trip_sup",	"char",	1,	0,	true,	NULL,	3	]
+[ "boatname",	"varchar",	50,	0,	true,	NULL,	4	]
+[ "master",	"varchar",	50,	0,	true,	NULL,	5	]
+[ "tonnage",	"int",	32,	0,	true,	NULL,	6	]
+[ "type_of_boat",	"varchar",	30,	0,	true,	NULL,	7	]
+[ "built",	"varchar",	15,	0,	true,	NULL,	8	]
+[ "bought",	"varchar",	15,	0,	true,	NULL,	9	]
+[ "hired",	"varchar",	15,	0,	true,	NULL,	10	]
+[ "yard",	"char",	1,	0,	true,	NULL,	11	]
+[ "chamber",	"char",	1,	0,	true,	NULL,	12	]
+[ "departure_date",	"varchar",	15,	0,	true,	NULL,	13	]
+[ "departure_harbour",	"varchar",	30,	0,	true,	NULL,	14	]
+[ "cape_arrival",	"varchar",	15,	0,	true,	NULL,	15	]
+[ "cape_departure",	"varchar",	15,	0,	true,	NULL,	16	]
+[ "arrival_date",	"varchar",	15,	0,	true,	NULL,	17	]
+[ "arrival_harbour",	"varchar",	30,	0,	true,	NULL,	18	]
+[ "next_voyage",	"int",	32,	0,	true,	NULL,	19	]
+[ "particulars",	"varchar",	507,	0,	true,	NULL,	20	]
+#drop table voyages;
 
-
-
-
-# 12:41:41 >  
-# 12:41:41 >  Mtimeout -timeout 180 ./type_dump_test.SF-989257.SQL type_dump_test.SF-989257 
-# 12:41:41 >  
-
-
-# 12:41:41 >  
-# 12:41:41 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 45579 -f ../../../../../../../../../net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/sql/src/test/BugDay_2005-10-06_2.9.3/Tests/type_dump_test.SF-989257-src.sql
-# 12:41:41 >  
-
-Operation successful
-CREATE TABLE "sys"."voyages" (
-	"number"            INTEGER,
-	"number_sup"        CHAR(1),
-	"trip"              INTEGER,
-	"trip_sup"          CHAR(1),
-	"boatname"          VARCHAR(50),
-	"master"            VARCHAR(50),
-	"tonnage"           INTEGER,
-	"type_of_boat"      VARCHAR(30),
-	"built"             VARCHAR(15),
-	"bought"            VARCHAR(15),
-	"hired"             VARCHAR(15),
-	"yard"              CHAR(1),
-	"chamber"           CHAR(1),
-	"departure_date"    VARCHAR(15),
-	"departure_harbour" VARCHAR(30),
-	"cape_arrival"      VARCHAR(15),
-	"cape_departure"    VARCHAR(15),
-	"arrival_date"      VARCHAR(15),
-	"arrival_harbour"   VARCHAR(30),
-	"next_voyage"       INTEGER,
-	"particulars"       VARCHAR(507)
-);
-Operation successful
-
-# 12:41:42 >  
-# 12:41:42 >  Done.
-# 12:41:42 >  
+# 16:39:15 >  
+# 16:39:15 >  "Done."
+# 16:39:15 >  
 

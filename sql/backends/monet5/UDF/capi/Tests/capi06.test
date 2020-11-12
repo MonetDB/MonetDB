@@ -34,3 +34,5 @@ SELECT capi06(i) FROM integers
 
 statement ok
 ROLLBACK
+
+

@@ -105,13 +105,15 @@ class SQLLogic:
             return
         try:
             self.crs.execute(statement)
-        except (pymonetdb.Error, ValueError):
+        except (pymonetdb.Error, ValueError) as e:
             if not expectok:
                 return
+            msg = e.args[0]
         else:
             if expectok:
                 return
-        self.query_error(err_stmt or statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't")
+            msg = None
+        self.query_error(err_stmt or statement, expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't", msg)
 
     def convertresult(self, query, columns, data):
         ndata = []
@@ -131,9 +133,7 @@ class SQLLogic:
                     else:
                         nrow.append('%d' % row[i])
                 elif columns[i] == 'T':
-                    if row[i] == '':
-                        nrow.append('(empty)')
-                    elif row[i] == b'':
+                    if row[i] == '' or row[i] == b'':
                         nrow.append('(empty)')
                     else:
                         nval = []
@@ -155,7 +155,7 @@ class SQLLogic:
             ndata.append(tuple(nrow))
         return ndata
 
-    def query_error(self, query, message, exception=None):
+    def query_error(self, query, message, exception=None, data=None):
         if self.rpt:
             print(self.rpt, file=self.out)
         print(message, file=self.out)
@@ -166,6 +166,20 @@ class SQLLogic:
         print("query text:", file=self.out)
         print(query, file=self.out)
         print('', file=self.out)
+        if data is not None:
+            if len(data) < 100:
+                print('query result:', file=self.out)
+            else:
+                print('truncated query result:', file=self.out)
+            for row in data[:100]:
+                sep=''
+                for col in row:
+                    if col is None:
+                        print(sep, 'NULL', sep='', end='', file=self.out)
+                    else:
+                        print(sep, col, sep='', end='', file=self.out)
+                    sep = '|'
+                print('', file=self.out)
 
     def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected) -> bool:
         err = False
@@ -225,10 +239,10 @@ class SQLLogic:
         h = m.hexdigest()
         if not err:
             if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
-                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1])
+                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1], data=data)
                 err = True
             elif hash is not None and h != hash:
-                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash))
+                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash), data=data)
                 err = True
         if hashlabel is not None and hashlabel not in self.hashes:
             if hash is not None:

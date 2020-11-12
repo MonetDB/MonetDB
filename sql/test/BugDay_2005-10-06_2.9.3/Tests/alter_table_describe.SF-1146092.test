@@ -1,0 +1,331 @@
+statement ok
+CREATE TABLE "experiment" (
+	"exp_id"    int PRIMARY KEY,
+	"user_id"   int,
+	"config_id" int,
+	"table_id"  int,
+	"result_id" int
+)
+
+statement ok
+CREATE TABLE "tapestry_user" (
+	"user_id"    int PRIMARY KEY,
+	"name"       varchar(25),
+	"email"      varchar(50),
+	"createdate" date,
+	"passwd"     varchar(50)
+)
+
+statement ok
+CREATE TABLE "config" (
+	"config_id" int PRIMARY KEY,
+	"name"      varchar(25),
+	"target_id" int,
+	"sysinf_id" int
+)
+
+statement ok
+CREATE TABLE "tapestry_table" (
+	"table_id" int PRIMARY KEY,
+	"nrrows"   int,
+	"nrcols"   int,
+	"seed"     int,
+	"fast"     int
+)
+
+statement ok
+CREATE TABLE "result" (
+	"result_id"   int PRIMARY KEY,
+	"type"        varchar(10),
+	"description" varchar(256)
+)
+
+statement ok
+CREATE TABLE "target" (
+	"target_id"  int PRIMARY KEY,
+	"name"       varchar(50),
+	"permission" varchar(10),
+	"comment"    varchar(256)
+)
+
+statement ok
+CREATE TABLE "sysinf" (
+	"sysinf_id"   int PRIMARY KEY,
+	"platform_id" int,
+	"cpu_id"      int,
+	"memory_id"   int,
+	"disk_id"     int
+)
+
+statement ok
+CREATE TABLE "platform" (
+	"platform_id" int PRIMARY KEY,
+	"name"        varchar(50),
+	"comment"     varchar(256)
+)
+
+statement ok
+CREATE TABLE "cpu" (
+	"cpu_id" int PRIMARY KEY,
+	"type"   varchar(50)
+)
+
+statement ok
+CREATE TABLE "memory" (
+	"memory_id" int PRIMARY KEY,
+	"type"      varchar(50),
+	"size"      int
+)
+
+statement ok
+CREATE TABLE "disk" (
+	"disk_id" int PRIMARY KEY,
+	"type"    varchar(50),
+	"size"    int
+)
+
+statement ok
+CREATE TABLE "query_walk" (
+	"walk_id"   int PRIMARY KEY,
+	"begin_x"   int,
+	"begin_y"   int,
+	"nr_runs"   int,
+	"nr_steps"  int,
+	"step_size" int,
+	"end_x"     int,
+	"end_y"     int
+)
+
+statement ok
+ALTER TABLE "experiment" ADD FOREIGN KEY ("user_id")
+	REFERENCES "tapestry_user" ("user_id")
+
+statement ok
+ALTER TABLE "experiment" ADD FOREIGN KEY ("config_id")
+	REFERENCES "config" ("config_id")
+
+statement ok
+ALTER TABLE "experiment" ADD FOREIGN KEY ("table_id")
+	REFERENCES "tapestry_table" ("table_id")
+
+statement ok
+ALTER TABLE "experiment" ADD FOREIGN KEY ("result_id")
+	REFERENCES "result" ("result_id")
+
+statement ok
+ALTER TABLE "config" ADD FOREIGN KEY ("target_id")
+	REFERENCES "target" ("target_id")
+
+statement ok
+ALTER TABLE "config" ADD FOREIGN KEY ("sysinf_id")
+	REFERENCES "sysinf" ("sysinf_id")
+
+statement ok
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("platform_id")
+	REFERENCES "platform" ("platform_id")
+
+statement ok
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("cpu_id")
+	REFERENCES "cpu" ("cpu_id")
+
+statement ok
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("memory_id")
+	REFERENCES "memory" ("memory_id")
+
+statement ok
+ALTER TABLE "sysinf" ADD FOREIGN KEY ("disk_id")
+	REFERENCES "disk" ("disk_id")
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'experiment')
+----
+experiment
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'tapestry_user')
+----
+tapestry_user
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'config')
+----
+config
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'tapestry_table')
+----
+tapestry_table
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'result')
+----
+result
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'target')
+----
+target
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'sysinf')
+----
+sysinf
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'platform')
+----
+platform
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'cpu')
+----
+cpu
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'memory')
+----
+memory
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'disk')
+----
+disk
+NULL
+TABLE
+NULL
+
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'query_walk')
+----
+query_walk
+NULL
+TABLE
+NULL
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'experiment')
+----
+40 values hashing to bea23c56e3d8d22963c579aa4490daf9
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'tapestry_user')
+----
+40 values hashing to dfac9ddacc7118748521d591e46430c5
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'config')
+----
+32 values hashing to 9c737b509370f5645b3c7003bf7e7afe
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'tapestry_table')
+----
+40 values hashing to f9f681842f9420505c7ea535176d16fc
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'result')
+----
+24 values hashing to 26790385b7c58a4e65ee77e0d09a9374
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'target')
+----
+32 values hashing to 80c681348a26a0b3f0580f07b61ec13b
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'sysinf')
+----
+40 values hashing to 995d392cec51ecf95553e6b7b810738e
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'platform')
+----
+24 values hashing to ae4fb6621853667b6c5d3d8889355f5c
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'cpu')
+----
+16 values hashing to e9c01edca119e954b6d632deffb72977
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'memory')
+----
+24 values hashing to d1110c834259b5ca5186cc6d8a01b6d2
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'disk')
+----
+24 values hashing to 018d0e4efbbe629e90a779c72664cdaa
+
+query TTIITTIT rowsort
+select * from describe_columns('sys', 'query_walk')
+----
+64 values hashing to b4eede27f0c8cb909e47b22369b9e959
+
+statement ok
+DROP TABLE "query_walk" CASCADE
+
+statement ok
+DROP TABLE "disk" CASCADE
+
+statement ok
+DROP TABLE "memory" CASCADE
+
+statement ok
+DROP TABLE "cpu" CASCADE
+
+statement ok
+DROP TABLE "platform" CASCADE
+
+statement ok
+DROP TABLE "sysinf" CASCADE
+
+statement ok
+DROP TABLE "target" CASCADE
+
+statement ok
+DROP TABLE "result" CASCADE
+
+statement ok
+DROP TABLE "tapestry_table" CASCADE
+
+statement ok
+DROP TABLE "config" CASCADE
+
+statement ok
+DROP TABLE "tapestry_user" CASCADE
+
+statement ok
+DROP TABLE "experiment" CASCADE
+
+
