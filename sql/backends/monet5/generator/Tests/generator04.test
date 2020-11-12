@@ -21,4 +21,5 @@ select * from generate_series(
 	timestamp '2008-03-01 00:00',
 	timestamp '2008-03-04 12:00')
 
-
+statement ok
+set optimizer = 'default_pipe'

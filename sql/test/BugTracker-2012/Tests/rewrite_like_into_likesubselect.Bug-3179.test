@@ -75,4 +75,6 @@ explain select name,func from functions where not_icontains(name, 'optimizers')
 statement ok
 rollback
 
+statement ok
+set optimizer = 'default_pipe'
 

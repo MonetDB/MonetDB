@@ -21,4 +21,7 @@ project (
 | project (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
 
+statement ok
+set optimizer = 'default_pipe'
+
 

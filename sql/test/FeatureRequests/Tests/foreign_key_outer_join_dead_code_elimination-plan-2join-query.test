@@ -154,4 +154,7 @@ project (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
 | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT 
 
+statement ok
+set optimizer = 'default_pipe'
+
 

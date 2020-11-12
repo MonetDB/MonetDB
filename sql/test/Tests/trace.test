@@ -30,3 +30,7 @@ SELECT COUNT(*) FROM tracelog()
 statement ok
 DROP TABLE mytypes
 
+statement ok
+set optimizer='default_pipe'
+
+

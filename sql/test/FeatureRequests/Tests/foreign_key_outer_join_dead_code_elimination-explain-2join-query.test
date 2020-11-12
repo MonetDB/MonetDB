@@ -21,4 +21,7 @@ explain select id , v2  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left out
 ----
 82 values hashing to 7bd8e34c44320ed98ce95d605d134af4
 
+statement ok
+set optimizer = 'default_pipe'
+
 

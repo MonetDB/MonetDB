@@ -16,4 +16,7 @@ explain select id , v2  from v2 order by id
 ----
 82 values hashing to ebe48e39bbb9d84a18461b4fd0531d94
 
+statement ok
+set optimizer = 'default_pipe'
+
 

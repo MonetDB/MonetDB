@@ -183,4 +183,15 @@ sequential_pipe
 8
 2000
 
+query ITTIIII rowsort
+call setoptimizer(0, 'default_pipe')
+----
+0
+monetdb
+sequential_pipe
+1000
+60
+8
+2000
+
 

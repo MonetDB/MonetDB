@@ -11,4 +11,7 @@ explain select id       from v0 order by id
 ----
 42 values hashing to ad366b478737e2186b1297432183bc93
 
+statement ok
+set optimizer = 'default_pipe'
+
 

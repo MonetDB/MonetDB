@@ -79,4 +79,7 @@ DROP VIEW BOX_TBL_VW
 statement ok
 DROP TABLE BOX_TBL
 
+statement ok
+set optimizer = 'default_pipe'
+
 

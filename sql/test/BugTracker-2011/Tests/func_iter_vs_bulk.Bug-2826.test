@@ -20,4 +20,6 @@ drop function func_2826
 statement ok
 drop table tab_2826
 
+statement ok
+set optimizer = 'default_pipe'
 

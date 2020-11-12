@@ -65,3 +65,5 @@ select fuse(e,f) from udf_fuse;
 drop procedure profiler.starttrace();
 drop procedure profiler.stoptrace();
 drop table udf_fuse;
+
+set optimizer = 'default_pipe';

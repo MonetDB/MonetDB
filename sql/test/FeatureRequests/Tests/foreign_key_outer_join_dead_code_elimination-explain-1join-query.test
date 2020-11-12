@@ -21,4 +21,7 @@ explain select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by
 ----
 63 values hashing to 8713d369c52dddc32548eff26ab1be57
 
+statement ok
+set optimizer = 'default_pipe'
+
 
