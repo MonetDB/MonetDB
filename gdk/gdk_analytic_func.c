@@ -2402,7 +2402,7 @@ avg_num_deltas(lng)
 	} while (0)
 #define COMPUTE_LEVELN_AVG_NUM(VAL, TPE, NOTHING1, NOTHING2) \
 	do { \
-		if (VAL.n > 0) \
+		if (VAL.n) \
 			AVERAGE_ITER(TPE, VAL.a, computed.a, computed.rr, computed.n);	\
 	} while (0)
 #define FINALIZE_AGGREGATE_AVG_NUM(TPE, NOTHING1, NOTHING2) \
@@ -2506,7 +2506,7 @@ avg_fp_deltas(dbl)
 	} while (0)
 #define COMPUTE_LEVELN_AVG_FP(VAL, TPE, NOTHING1, NOTHING2) \
 	do { \
-		if (VAL.n > 0) \
+		if (VAL.n) \
 			AVERAGE_ITER_FLOAT(TPE, VAL.a, computed.a, computed.n); \
 	} while (0)
 #define FINALIZE_AGGREGATE_AVG_FP(TPE, NOTHING1, NOTHING2) \
@@ -2763,7 +2763,7 @@ avg_int_deltas(lng)
 	} while (0)
 #define COMPUTE_LEVELN_AVG_INT(VAL, TPE, NOTHING1, NOTHING2) \
 	do { \
-		if (VAL.ncnt > 0)	\
+		if (VAL.ncnt)	\
 			AVERAGE_ITER(TPE, VAL.avg, computed.avg, computed.rem, computed.ncnt); \
 	} while (0)
 #define FINALIZE_AGGREGATE_AVG_INT(TPE, NOTHING1, NOTHING2) \
@@ -3001,7 +3001,7 @@ typedef struct stdev_var_deltas {
 	} while (0)
 #define COMPUTE_LEVELN_STDEV_VARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (VAL.n > 0) {		\
+		if (VAL.n) {		\
 			computed.n++; \
 			computed.delta = VAL.delta - computed.mean;		\
 			computed.mean += computed.delta / computed.n;		\
@@ -3272,7 +3272,7 @@ typedef struct covariance_deltas {
 	} while (0)
 #define COMPUTE_LEVELN_COVARIANCE(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (VAL.n > 0) {	\
+		if (VAL.n) {	\
 			computed.n++; \
 			computed.delta1 = VAL.delta1 - computed.mean1;		\
 			computed.mean1 += computed.delta1 / computed.n;		\
@@ -3494,7 +3494,7 @@ typedef struct correlation_deltas {
 	} while (0)
 #define COMPUTE_LEVELN_CORRELATION(VAL, TPE, SAMPLE, OP) \
 	do { \
-		if (VAL.n > 0) {	\
+		if (VAL.n) {	\
 			computed.n++; \
 			computed.delta1 = VAL.delta1 - computed.mean1;		\
 			computed.mean1 += computed.delta1 / computed.n;		\
