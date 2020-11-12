@@ -4,7 +4,7 @@ Test if server doesn't crash when remote and local table definitions do not matc
 Current result is an mal error (compilation failed)
 """
 
-import os, sys, socket, glob, pymonetdb, threading, time, codecs, tempfile
+import os, socket, pymonetdb, threading, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
