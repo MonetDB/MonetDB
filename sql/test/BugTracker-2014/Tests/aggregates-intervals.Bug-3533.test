@@ -8,11 +8,11 @@ query ITTTTT rowsort
 SELECT count(f1), sum(f1), avg(f1), median(f1), max(f1), min(f1) FROM INTERVAL_TBL
 ----
 4
-0.00
-.50
-.00
-.00
-.00
+0:00:10
+0:00:02
+0:00:02
+0:00:04
+0:00:01
 
 statement ok
 CREATE TABLE INTERVAL_TBL2 (f1 interval month)
@@ -24,11 +24,11 @@ query ITTTTT rowsort
 SELECT count(f1), sum(f1), avg(f1), median(f1), max(f1), min(f1) FROM INTERVAL_TBL2
 ----
 4
-(empty)
-(empty)
-(empty)
-(empty)
-(empty)
+10
+3
+2
+4
+1
 
 statement error
 SELECT median_avg(f1) from INTERVAL_TBL

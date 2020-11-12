@@ -1,31 +1,119 @@
 statement ok
-set optimizer='sequential_pipe'
+set optimizer = 'sequential_pipe'
 
-query T rowsort
-explain select replace(a1,a2,a3), id
+statement ok
+create procedure profiler.starttrace() external name profiler."starttrace"
+
+statement ok
+create procedure profiler.stoptrace() external name profiler.stoptrace
+
+statement ok
+call profiler."starttrace"()
+
+query TI rowsort
+select replace(a1,a2,a3), id
 from (
   select name as a1, 'a' as a2, 'A' as a3, id as id
-  from sys.functions
+  from (values (1, '1'), (2, '2')) as x(id, name)
 ) as x
 ----
-46 values hashing to b1b43d015764c7ab8dd21051d4ecbf5e
+1
+1
+2
+2
 
-query T rowsort
-explain select replace(a1,a2,a3), id
+query TI rowsort
+call profiler.stoptrace()
+----
+1
+1
+2
+2
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
+----
+1
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% str.replace%'
+----
+0
+
+query I rowsort
+call profiler."starttrace"()
+----
+0
+
+query TI rowsort
+select replace(a1,a2,a3), id
 from (
   select name as a1, 'a' as a2, 'A' as a3, id + 1 as id
-  from sys.functions
+  from (values (1, '1'), (2, '2')) as x(id, name)
 ) as x
 ----
-50 values hashing to 0418e13d49636b28908672f22735eb41
+1
+2
+2
+3
 
-query T rowsort
-explain select replace(a1,a2,a3), id
+query TI rowsort
+call profiler.stoptrace()
+----
+1
+2
+2
+3
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
+----
+1
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% str.replace%'
+----
+0
+
+query I rowsort
+call profiler."starttrace"()
+----
+0
+
+query TI rowsort
+select replace(a1,a2,a3), id
 from (
   select name as a1, 'a' as a2, 'A' as a3, abs(id) as id
-  from sys.functions
+ from (values (1, '1'), (2, '2')) as x(id, name)
 ) as x
 ----
-49 values hashing to 9927eede6c673bbc29e81ede86ff4c5c
+1
+1
+2
+2
+
+query TI rowsort
+call profiler.stoptrace()
+----
+1
+1
+2
+2
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
+----
+1
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% str.replace%'
+----
+0
+
+statement ok
+drop procedure profiler.starttrace()
+
+statement ok
+drop procedure profiler.stoptrace()
 
 
