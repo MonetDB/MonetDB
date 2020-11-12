@@ -12,21 +12,27 @@ cursor1.execute('CREATE GLOBAL TEMPORARY TABLE close_d (qaid int, value_ float) 
 
 cursor1.execute('INSERT INTO tmp.close_d VALUES (1,1);')
 cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')
-print(cursor2.fetchall())
+if cursor2.fetchall() != []:
+    sys.stderr.write("No rows should have been fetched")
 cursor1.execute('SELECT qaid, value_ FROM tmp.close_d;')
-print(cursor1.fetchall())
+if cursor1.fetchall() != [(1, 1.0)]:
+    sys.stderr.write("Just row (1, 1.0) expected")
 
 cursor2.execute('INSERT INTO tmp.close_d VALUES (2,2);')
 cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')
-print(cursor2.fetchall())
+if cursor2.fetchall() != [(2, 2.0)]:
+    sys.stderr.write("Just row (2, 2.0) expected")
+
 cursor1.execute('SELECT qaid, value_ FROM tmp.close_d;')
-print(cursor1.fetchall())
+if cursor1.fetchall() != [(1, 1.0)]:
+    sys.stderr.write("Just row (1, 1.0) expected")
 
 cursor1.execute('DROP TABLE tmp.close_d;')
 try:
     cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')  # error, tmp.close_d doesn't exist anymore
 except pymonetdb.OperationalError as e:
-    sys.stderr.write(str(e))
+    if "no such table 'close_d'" not in str(e):
+        sys.stderr.write(str(e))
 
 cursor1.close()
 cursor2.close()
