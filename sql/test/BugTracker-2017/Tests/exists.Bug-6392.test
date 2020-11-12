@@ -1,0 +1,12 @@
+statement ok
+CREATE TABLE foo(i INT)
+
+query T rowsort
+SELECT EXISTS (SELECT i FROM foo WHERE FALSE)
+----
+False
+
+statement ok
+DROP table foo
+
+

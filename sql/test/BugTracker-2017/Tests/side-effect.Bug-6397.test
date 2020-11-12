@@ -1,0 +1,46 @@
+statement error
+-- this query gives inconsistent answers when run multiple times.
+CREATE FUNCTION my_generate_series(start INT, finish INT)
+RETURNS TABLE (value INT)
+BEGIN
+    DECLARE TABLE tmp_generate_series(value INT)
+
+statement error
+    DECLARE i INT
+
+statement error
+    SET i = start
+
+statement error
+    WHILE (i <= finish) DO
+        INSERT INTO tmp_generate_series VALUES(i)
+
+statement error
+        SET i = i + 1
+
+statement error
+    END WHILE
+
+statement error
+    RETURN tmp_generate_series
+
+statement error
+END
+
+statement error
+explain select count(*) from my_generate_series(1,5) as t1,
+my_generate_series(1,100) as t2
+
+statement error
+select count(*) from my_generate_series(1,5) as t1,
+my_generate_series(1,100) as t2
+
+statement error
+select count(*) from my_generate_series(1,5) as t1,
+my_generate_series(1,100) as t2
+
+statement error
+select count(*) from my_generate_series(1,5) as t1,
+my_generate_series(1,100) as t2
+
+

@@ -1,0 +1,46 @@
+statement ok
+DELETE FROM sys.statistics
+
+statement ok
+-- fill sys.statistics
+ANALYZE sys.statistics
+
+query TIIIIITT rowsort
+SELECT   "type", width,   "sample", "count", "unique", nils,     sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
+----
+88 values hashing to fa7a56aab06b99577844b9b68431ab23
+
+query TIIIIITT rowsort
+-- update the values of: sample, count, unique, nils, minval, maxval, sorted, revsorted of sys.statistics
+ANALYZE sys.statistics
+----
+88 values hashing to fa7a56aab06b99577844b9b68431ab23
+
+query TIIIIITT rowsort
+SELECT   "type", width,   "sample", "count", "unique", nils,     sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
+----
+88 values hashing to e19d7ecd15ac7c1ead9005b72feb9b3c
+
+query TIIIIITT rowsort
+-- ALTER TABLE sys.statistics SET READ ONLY
+----
+88 values hashing to e19d7ecd15ac7c1ead9005b72feb9b3c
+
+statement ok
+CREATE ORDERED INDEX stat_oidx ON sys.statistics (width)
+
+query TIIIIITT rowsort
+SELECT   "type", width,   "sample", "count", "unique", nils,     sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
+----
+88 values hashing to e19d7ecd15ac7c1ead9005b72feb9b3c
+
+query TIIIIITT rowsort
+-- now mserver5 is crashed !!
+-- ALTER TABLE sys.statistics SET READ WRITE
+----
+88 values hashing to e19d7ecd15ac7c1ead9005b72feb9b3c
+
+statement ok
+DELETE FROM sys.statistics
+
+
