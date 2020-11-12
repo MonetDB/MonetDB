@@ -1,0 +1,22 @@
+statement ok
+start transaction
+
+statement ok
+create table tmp(i decimal(8))
+
+query T rowsort
+explain select count(*) from tmp where i = 20160222
+----
+34 values hashing to 04aa6fc9e72229b042f6366b50a8195d
+
+query T rowsort
+explain select count(*) from tmp where i = '20160222'
+----
+34 values hashing to ac585eeec0aa85e1202e9ca867a3bf3b
+
+query T rowsort
+explain select count(*) from tmp where i = 201602221
+----
+42 values hashing to a685a3f96f83b12c5b3e7d048a662e7c
+
+

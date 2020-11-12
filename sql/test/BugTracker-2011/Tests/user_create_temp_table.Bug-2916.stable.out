@@ -22,9 +22,6 @@ stdout of test 'user_create_temp_table.Bug-2916` in directory 'sql/test/BugTrack
 # 12:25:25 >  "/usr/bin/python" "user_create_temp_table.Bug-2916.SQL.py" "user_create_temp_table.Bug-2916"
 # 12:25:25 >  
 
-#CREATE USER "testuser" WITH PASSWORD 'password' NAME 'Test User' SCHEMA "sys";
-#CREATE LOCAL TEMPORARY TABLE TempTable (i int); 
-#DROP USER "testuser"
 
 # 12:25:26 >  
 # 12:25:26 >  "Done."
