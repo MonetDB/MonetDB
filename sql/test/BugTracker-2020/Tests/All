@@ -3,7 +3,7 @@ ifthenelse-crash.Bug-6815
 alter-table-add-column.Bug-6816
 analyze-stream-table.Bug-6817
 select-where-in-rtrim-crash.Bug-6818
-NOT_WIN32&HAVE_LIBR&HAVE_LIBPY3?functions-not-persist.Bug-6819
+NOT_WIN32&HAVE_LIBR&HAVE_LIBPY3&HAVE_PYMONETDB?functions-not-persist.Bug-6819
 cume-dist-wrong-results.Bug-6827
 window-order-by-extract.Bug-6828
 ntile-wrong-results.Bug-6829
