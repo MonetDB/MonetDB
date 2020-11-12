@@ -138,7 +138,7 @@ Colnr 5.
 6.	java.lang.Double is an instance of java.lang.Double
 6.	java.lang.Boolean is an instance of java.lang.Boolean
 6.	java.lang.String is an instance of java.lang.String
-6.	nl.cwi.monetdb.jdbc.MonetClob is an instance of java.sql.Clob
+6.	org.monetdb.jdbc.MonetClob is an instance of java.sql.Clob
 
 # 09:09:21 >  
 # 09:09:21 >  Done.
