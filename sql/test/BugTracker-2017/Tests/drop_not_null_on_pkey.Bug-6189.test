@@ -1,0 +1,53 @@
+statement ok
+CREATE TABLE "PKeyNotNull" (
+	"PK_COL1" varchar(4) NOT NULL,
+	"PK_COL2" varchar(4) NOT NULL,
+	"DataCol" int DEFAULT NULL,
+	PRIMARY KEY ("PK_COL1","PK_COL2") )
+
+statement error
+\d "PKeyNotNull"
+INSERT INTO "PKeyNotNull" values ('C12', NULL, 1)
+
+statement error
+-- Error: INSERT INTO: NOT NULL constraint violated for column PKeyNotNull.PK_COL2
+ALTER TABLE "PKeyNotNull" ALTER "PK_COL2" SET NULL
+
+statement error
+-- this is allowed but should NOT be allowed
+INSERT INTO "PKeyNotNull" values ('C12', NULL, 2)
+
+query TTI rowsort
+SELECT * FROM "PKeyNotNull"
+----
+
+statement ok
+DROP TABLE "PKeyNotNull"
+
+statement ok
+CREATE TABLE "PKeyImplicitNotNull" (
+	"PK_COL1" varchar(4) NULL,
+	"PK_COL2" varchar(4) NULL,
+	"DataCol" int DEFAULT NULL,
+	PRIMARY KEY ("PK_COL1","PK_COL2") )
+
+statement error
+\d "PKeyImplicitNotNull"
+INSERT INTO "PKeyImplicitNotNull" values ('C12', NULL, 1)
+
+statement error
+-- Error: INSERT INTO: NOT NULL constraint violated for column PKeyImplicitNotNull.PK_COL2
+ALTER TABLE "PKeyImplicitNotNull" ALTER "PK_COL2" SET NULL
+
+statement error
+-- this is allowed but should NOT be allowed
+INSERT INTO "PKeyImplicitNotNull" values ('C12', NULL, 2)
+
+query TTI rowsort
+SELECT * FROM "PKeyImplicitNotNull"
+----
+
+statement ok
+DROP TABLE "PKeyImplicitNotNull"
+
+
