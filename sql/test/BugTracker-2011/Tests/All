@@ -49,7 +49,7 @@ device-self-ref-fk
 missing_refine_reverse.Bug-2898
 rand-with-seed.Bug-2900
 HAVE_PYMONETDB?python-connections-Bug.2901
-many-connects-cache.Bug-2904
+HAVE_PYMONETDB?many-connects-cache.Bug-2904
 alter-table-set-read-only.bug-2906
 predicate.Bug-2908
 interrupted-initialization.Bug-2875
@@ -59,7 +59,7 @@ Multiplication_and_cast.Bug-2923
 like_or.Bug-2924
 alter_table_add_column.Bug-2919
 update_with_count.Bug-2928
-user_create_temp_table.Bug-2916
+HAVE_PYMONETDB?user_create_temp_table.Bug-2916
 exists-select.Bug-2933
 jena-optional-1-test.Bug-2915
 and-power.Bug-3013

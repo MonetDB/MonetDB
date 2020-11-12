@@ -1,0 +1,54 @@
+statement ok
+start transaction
+
+statement ok
+create table t2239 (
+       station136 smallint
+)
+
+statement ok
+copy 3 records into t2239 from stdin
+
+statement error
+1537
+1228
+1214
+select station136,
+       cast(((CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END) +
+        (CASE WHEN station136 is NULL THEN 0 ELSE station136 END)) as bigint)
+from t2239 order by station136
+
+statement ok
+rollback
+
+
