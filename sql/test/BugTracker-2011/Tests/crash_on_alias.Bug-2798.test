@@ -1,0 +1,71 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE dbg (a INT, b INT)
+
+statement ok
+INSERT INTO dbg (a,b) VALUES (10,10)
+
+query T rowsort
+plan
+SELECT a as d, MIN(b), (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
+----
+) [ "d", "%1"."%1", sys.sql_mul(sys.sql_div("%1"."%1", tinyint "2" as "%2"."%2"), tinyint "2") as "f" ]
+project (
+| ) [ "dbg"."a" as "d" ] [ "d", sys.min no nil ("dbg"."b") as "%1"."%1" ]
+| group by (
+| | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
+
+statement ok
+set optimizer = 'sequential_pipe'
+
+statement ok
+set optimizer = 'default_pipe'
+
+query III rowsort
+SELECT a as d, MIN(b), (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
+----
+10
+10
+10
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE dbg (a INT, b INT)
+
+statement ok
+INSERT INTO dbg (a,b) VALUES (10,10)
+
+query T rowsort
+plan
+SELECT a as d, MIN(b) as e, (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
+----
+) [ "d", "%1"."%1" as "e", sys.sql_mul(sys.sql_div("%1"."%1", tinyint "2" as "%2"."%2"), tinyint "2") as "f" ]
+project (
+| ) [ "dbg"."a" as "d" ] [ "d", sys.min no nil ("dbg"."b") as "%1"."%1" ]
+| group by (
+| | table(sys.dbg) [ "dbg"."a", "dbg"."b" ] COUNT 
+
+statement ok
+set optimizer = 'sequential_pipe'
+
+statement ok
+set optimizer = 'default_pipe'
+
+query III rowsort
+SELECT a as d, MIN(b) as e, (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
+----
+10
+10
+10
+
+statement ok
+ROLLBACK
+
+
