@@ -1,0 +1,19 @@
+statement ok
+create table t_2599 (a int, b int)
+
+statement error
+prepare select * from t_2599 where a>1+?
+
+statement error
+prepare select * from t_2599 where a>2*?+1
+
+statement error
+prepare select * from t_2599 where a>?+1
+
+statement error
+prepare select * from t_2599 where a>1+?*2
+
+statement ok
+drop table t_2599
+
+
