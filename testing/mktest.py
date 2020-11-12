@@ -22,7 +22,7 @@ def is_complete_stmt(query, line:str):
     stmt = query + [line]
     stmt = '\n'.join(stmt)
     if opts.language == 'sql':
-        res = re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader)\b[^;]*\blanguage\s+\S+\s*\{', stmt, re.IGNORECASE)
+        res = re.match(r'create(\s+or\s+replace)?\s+(function|procedure|aggregate|filter|window|loader)\b[^;]*\blanguage\s+\S+\s*\{', stmt, re.IGNORECASE)
         if res is not None:
             q = None
             skip = False
@@ -50,14 +50,14 @@ def is_complete_stmt(query, line:str):
                 elif c == '#':
                     hash = True
             return False
-        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b.*?\bend\b\s*;', stmt, re.DOTALL|re.IGNORECASE) is not None:
+        if re.match(r'create(\s+or\s+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b.*?\bend\b\s*;', stmt, re.DOTALL|re.IGNORECASE) is not None:
             return True
-        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b', stmt, re.IGNORECASE) is not None:
+        if re.match(r'create(\s+or\s+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*\bbegin\b', stmt, re.IGNORECASE) is not None:
             # we need an "end"
             return False
-        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*;', stmt, re.IGNORECASE) is not None:
+        if re.match(r'create(\s+or\s+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b[^;]*;', stmt, re.IGNORECASE) is not None:
             return True
-        if re.match(r'create(\s+or\d+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b', stmt, re.IGNORECASE) is not None:
+        if re.match(r'create(\s+or\s+replace)?\s+(function|procedure|aggregate|filter|window|loader|trigger)\b', stmt, re.IGNORECASE) is not None:
             return False
     else:
         if re.match(r'\s*function\s', stmt) is not None:
