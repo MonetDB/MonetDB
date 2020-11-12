@@ -97,12 +97,44 @@ class SQLLogic:
     def drop(self):
         if self.language != 'sql':
             return
-        self.crs.execute('select name from tables where not system')
+        self.crs.execute('select s.name, t.name, tt.table_type_name from sys.tables t, sys.schemas s, sys.table_types tt where not t.system and t.schema_id = s.id and t.type = tt.table_type_id')
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop table "%s" cascade' % row[0])
+                self.crs.execute('drop {} "{}"."{}" cascade'.format(row[2], row[0], row[1]))
             except pymonetdb.Error:
                 # perhaps already dropped because of the cascade
+                pass
+        self.crs.execute('select s.name, f.name, ft.function_type_keyword from functions f, schemas s, function_types ft where not f.system and f.schema_id = s.id and f.type = ft.function_type_id')
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop all {} "{}"."{}"'.format(row[2], row[0], row[1]))
+            except pymonetdb.Error:
+                # perhaps already dropped
+                pass
+        self.crs.execute('select s.name, q.name from sys.sequences q, schemas s where q.schema_id = s.id')
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop sequence "{}"."{}"'.format(row[0], row[1]))
+            except pymonetdb.Error:
+                # perhaps already dropped
+                pass
+        self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('alter user "{}" SET SCHEMA "sys"'.format(row[0]))
+            except pymonetdb.Error:
+                pass
+        self.crs.execute('select name from sys.schemas where not system')
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop schema "{}" cascade'.format(row[0]))
+            except pymonetdb.Error:
+                pass
+        self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop user "{}"'.format(row[0]))
+            except pymonetdb.Error:
                 pass
 
     def exec_statement(self, statement, expectok, err_stmt=None):
