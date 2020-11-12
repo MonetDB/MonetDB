@@ -7,7 +7,7 @@ insert into foo values ('2000-1-1','2001-1-1')
 query T rowsort
 select sum(b-a) from foo
 ----
-1622400.00
+366 days, 0:00:00
 
 statement ok
 drop table foo
