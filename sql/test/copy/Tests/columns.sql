@@ -4,6 +4,7 @@ copy 3 records into tbl (i, d) from stdin delimiters ',',E'\n';
 1,2.0
 2,2.1
 3,2.2
+
 select * from tbl;
 drop table tbl;
 
@@ -13,6 +14,7 @@ copy 3 records into tbl (i, d) from stdin delimiters ',',E'\n';
 1,"test",2.0
 2,"test1",2.1
 3,"test",2.2
+
 select * from tbl;
 drop table tbl;
 
@@ -22,5 +24,6 @@ copy 3 records into tbl (i, d) from stdin (i, d) delimiters ',',E'\n';
 1,2.0
 2,2.1
 3,2.2
+
 select * from tbl;
 drop table tbl;
