@@ -21,7 +21,6 @@ def query(conn, sql):
     return r
 
 def run(conn, sql):
-    print(sql)
     r = conn.execute(sql)
 
 # boring setup and schema creation stuff:
@@ -40,9 +39,11 @@ try:
     run(c1, 'commit')
     print("shouldn't get here")
 except pymonetdb.IntegrityError:
-    print("commit failed")
     pass
 
 run(c1, 'insert into foo_2017 values (4),(5),(6)') # SIGABRT here
 run(c1, 'drop view bar')
 run(c1, 'drop table foo_2017')
+
+c1.close()
+c2.close()

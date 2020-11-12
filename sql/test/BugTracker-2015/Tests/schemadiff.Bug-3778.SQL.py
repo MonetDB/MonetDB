@@ -101,7 +101,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
             try:
                 c.execute("select * from " + shardtable + workers[0]['tpf'] )
             except pymonetdb.OperationalError as e:
-                print(e)
+                if 'Parameter 1 has wrong SQL type, expected int, but got bigint instead' not in str(e):
+                   print(str(e))
             else:
                 print(str(c.fetchall()))
 
