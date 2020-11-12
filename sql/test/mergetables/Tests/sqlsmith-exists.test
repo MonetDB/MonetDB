@@ -1242,7 +1242,6 @@ SELECT
                 )
             )
         )
-
 ----
 
 query IIIII rowsort

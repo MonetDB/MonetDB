@@ -23,7 +23,6 @@ WHEN somecol IS NULL THEN 'NULL FOUND'
 ELSE 'big'
 END AS "NewColumnName"
 FROM sometable
-
 ----
 0
 small
@@ -42,7 +41,6 @@ WHEN somecol > 6 AND somecol < 9 THEN '78'
 ELSE 'big'
 END AS "NewColumnName"
 FROM sometable
-
 ----
 0
 small

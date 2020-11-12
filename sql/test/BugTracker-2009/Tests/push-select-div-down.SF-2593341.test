@@ -27,7 +27,6 @@ FROM (
 ) as Sub
 WHERE y2/y2 < 0
 GROUP BY x2
-
 ----
 
 statement ok

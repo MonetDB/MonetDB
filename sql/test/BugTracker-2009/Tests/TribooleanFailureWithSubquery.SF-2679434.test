@@ -7,7 +7,6 @@ FROM (
     ) sub
   WHERE b IN ('y')
 ) sub2
-
 ----
 NULL
 
@@ -21,7 +20,6 @@ FROM (
   WHERE b IN ('y')
 ) sub2
 HAVING SUM(a) IS NULL
-
 ----
 NULL
 
@@ -35,7 +33,6 @@ FROM (
   WHERE b IN ('y')
 ) sub2
 HAVING SUM(a) IS NOT NULL
-
 ----
 
 query I rowsort
@@ -48,7 +45,6 @@ FROM (
   WHERE b IN ('y')
 ) sub2
 HAVING SUM(a) > 0
-
 ----
 
 query IT rowsort
@@ -64,7 +60,6 @@ FROM (
   ) sub2
 ) sub3
 WHERE suma > 0
-
 ----
 
 query IT rowsort
@@ -80,7 +75,6 @@ FROM (
   ) sub2
 ) sub3
 WHERE mynull > 0
-
 ----
 
 query IT rowsort
@@ -89,7 +83,6 @@ FROM (
   SELECT 1 AS a, NULL AS b
 ) sub
 WHERE b>0
-
 ----
 
 query IT rowsort
@@ -98,7 +91,6 @@ FROM (
   SELECT 1 AS a, NULL AS b
 ) sub
 WHERE NOT b<=0
-
 ----
 
 statement ok
@@ -176,7 +168,6 @@ SELECT
 , a OR b  AS "a_OR_b"
 , a AND b AS "a_AND_b"
 FROM dummy
-
 ----
 99 values hashing to 322b702ce7de2998dd023b14d004e763
 
