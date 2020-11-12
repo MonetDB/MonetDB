@@ -27,4 +27,5 @@ select ST_X(g) from geoms order by id
 statement ok
 DROP TABLE geoms
 
-
+statement ok
+set optimizer = 'default_pipe'

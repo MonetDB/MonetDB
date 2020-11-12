@@ -247,4 +247,5 @@ drop procedure profiler.stoptrace()
 statement ok
 drop table udf_fuse
 
-
+statement ok
+set optimizer = 'default_pipe'

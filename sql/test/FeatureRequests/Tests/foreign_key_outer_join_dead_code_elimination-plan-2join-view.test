@@ -24,4 +24,7 @@ query T rowsort
 ----
 11 values hashing to d1cceab88d17744967b97182786f83df
 
+statement ok
+set optimizer = 'default_pipe'
+
 

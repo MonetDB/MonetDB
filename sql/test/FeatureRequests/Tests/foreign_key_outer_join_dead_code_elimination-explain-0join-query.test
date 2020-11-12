@@ -11,4 +11,7 @@ explain select id       from fk order by id
 ----
 42 values hashing to eed7142bd8ac537c1d687e17ee3d6bc8
 
+statement ok
+set optimizer = 'default_pipe'
+
 

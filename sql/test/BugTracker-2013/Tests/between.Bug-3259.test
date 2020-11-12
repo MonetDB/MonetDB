@@ -31,4 +31,6 @@ WHERE t2.pre between t1.pre and t1.pre + t1.size
 statement ok
 ROLLBACK
 
+statement ok
+set optimizer = 'default_pipe'
 

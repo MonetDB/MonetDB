@@ -8,3 +8,4 @@ select * from t2564;
 --explain select count(*) from t2564 group by c1, c2, c3;
 select count(*) from t2564 group by c1, c2, c3;
 drop table t2564;
+set optimizer='default_pipe';

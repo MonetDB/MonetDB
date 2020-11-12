@@ -38,3 +38,5 @@ select count(*) from sys.tracelog() where stmt like '% str.replace%'; -- don't u
 
 drop procedure profiler.starttrace();
 drop procedure profiler.stoptrace();
+
+set optimizer = 'default_pipe';

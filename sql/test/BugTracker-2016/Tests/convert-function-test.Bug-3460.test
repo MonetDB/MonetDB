@@ -5923,4 +5923,7 @@ SELECT v, cast(v as timestamp with time zone) from T_timestamptz
 statement ok
 DROP TABLE T_timestamptz
 
+statement ok
+set optimizer = 'default_pipe'
+
 

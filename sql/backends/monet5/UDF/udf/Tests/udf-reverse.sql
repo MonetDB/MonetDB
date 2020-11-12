@@ -34,3 +34,5 @@ drop procedure profiler.starttrace();
 drop procedure profiler.stoptrace();
 
 drop table udf_reverse;
+
+set optimizer = 'default_pipe';

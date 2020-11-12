@@ -1952,4 +1952,7 @@ DROP TABLE num_exp_power_10_ln
 statement ok
 DROP TABLE num_result
 
+statement ok
+set optimizer = 'default_pipe'
+
 
