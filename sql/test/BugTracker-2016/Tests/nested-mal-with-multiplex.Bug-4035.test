@@ -1,5 +1,5 @@
-statement error
-CREATE FUNCTION geographic_to_cartesian(lat FLOAT, lon FLOAT) RETURNS POINT  
+statement ok
+CREATE FUNCTION geographic_to_cartesian(lat FLOAT, lon FLOAT) RETURNS POINT
 BEGIN
     DECLARE deg_to_rad FLOAT, lat_rad FLOAT, lon_rad FLOAT, aux1 FLOAT, aux2 FLOAT;
     SET deg_to_rad = pi() / 180;
@@ -13,13 +13,14 @@ END
 statement ok
 CREATE TABLE test_table (lat FLOAT, lon FLOAT)
 
-statement error
+query T rowsort
 SELECT geographic_to_cartesian(lat, lon) AS calc_point FROM test_table
+----
 
 statement ok
 DROP TABLE test_table
 
-statement error
+statement ok
 DROP FUNCTION geographic_to_cartesian
 
 
