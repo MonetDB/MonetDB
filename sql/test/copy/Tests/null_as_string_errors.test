@@ -87,11 +87,13 @@ call sys.clearrejects()
 line 1 field d 'decimal(5,2)' expected in 'NULL'
 2,two,NULL@
 
-query IITT rowsort
-copy 1 records into null_as_string from stdin delimiters ',',E'\n' best effort;
+statement ok
+copy 1 records into null_as_string from stdin delimiters ',',E'\n' best effort
+<COPY_INTO_DATA>
 ,,
-select * from sys.rejects;
-call sys.clearrejects();
+
+query IITT rowsort
+select * from sys.rejects
 ----
 1
 1
@@ -99,10 +101,20 @@ line 1 field i 'int' expected in ''
 ,,@
 
 query IITT rowsort
-copy 1 records into null_as_string from stdin delimiters ',',E'\n' best effort;
+call sys.clearrejects()
+----
+1
+1
+line 1 field i 'int' expected in ''
+,,@
+
+statement ok
+copy 1 records into null_as_string from stdin delimiters ',',E'\n' best effort
+<COPY_INTO_DATA>
 ,zero,0
-select * from sys.rejects;
-call sys.clearrejects();
+
+query IITT rowsort
+select * from sys.rejects
 ----
 1
 1
@@ -110,10 +122,24 @@ line 1 field i 'int' expected in ''
 ,zero,0@
 
 query IITT rowsort
-copy 1 records into null_as_string from stdin delimiters ',',E'\n' best effort;
+call sys.clearrejects()
+----
+1
+1
+line 1 field i 'int' expected in ''
+,zero,0@
+
+statement ok
+copy 1 records into null_as_string from stdin delimiters ',',E'\n' best effort
+<COPY_INTO_DATA>
 1,,1
-select * from sys.rejects;
-call sys.clearrejects();
+
+query IITT rowsort
+select * from sys.rejects
+----
+
+query IITT rowsort
+call sys.clearrejects()
 ----
 
 statement ok

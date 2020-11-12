@@ -1,23 +1,8 @@
 statement ok
 b:= bat.new(:int)
 
-query T rowsort
-io.printf("#~BeginVariableOutput~#\n")
-----
-#~BeginVariableOutput~#
-
 statement ok
 (bk,bv):= bat.info(b)
-
-query TTT rowsort
-io.print(bk,bv)
-----
-114 values hashing to bf0ca3c1080e71cd256e46e2c1408056
-
-query T rowsort
-io.printf("#~EndVariableOutput~#\n")
-----
-#~EndVariableOutput~#
 
 statement ok
 profiler.start()
