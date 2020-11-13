@@ -1,7 +1,9 @@
-statement error
+query T
 select current_date - current_date
+----
+1 day
 
-statement error
+query T
 select current_date() - current_date()
-
-
+----
+1 day

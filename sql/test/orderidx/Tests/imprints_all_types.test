@@ -92,14 +92,18 @@ insert into all_types values (false, -10, -10000, -1000000,
 	'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype',
 	'76236890-f4e2-4d4f-a02b-ec7a02c3cb50')
 
-statement error
+query I
 select * from all_types
+----
+1
 
 statement ok
 insert into all_types select * from all_types
 
-statement error
+query I
 select * from all_types
+----
+1
 
 query TIITIIT rowsort
 select name, schema_id, type, system, commit_action, access, query from sys._tables where name = 'all_types'
@@ -400,8 +404,10 @@ select "iM" from all_types order by "iM" ASC
 3
 3
 
-statement error
+query I
 select "id" from all_types order by "id" ASC
+----
+1
 
 query T rowsort
 select "idh" from all_types order by "idh" ASC
@@ -787,8 +793,10 @@ select "iM" from all_types order by "iM" DESC
 3
 3
 
-statement error
+query I
 select "id" from all_types order by "id" DESC
+----
+1
 
 query T rowsort
 select "idh" from all_types order by "idh" DESC
@@ -1041,8 +1049,10 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-statement error
+query I
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10
+----
+1
 
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
