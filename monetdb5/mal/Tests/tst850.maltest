@@ -1,13 +1,23 @@
-# The likeselect operation
-
+statement ok
 function foo();
 	t:= bat.new(:str);
 	bat.append(t,"#hello world");
 	bat.append(t,"#sleep well");
-
 	b:bat[:bit]:= mal.multiplex("str","startsWith",t,"#");
-
 	io.print(t, b);
 end;
+
+statement ok
 optimizer.multiplex("user","foo");
+
+query TTT rowsort
 user.foo();
+----
+0
+#hello world
+True
+1
+#sleep well
+True
+
+
