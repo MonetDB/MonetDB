@@ -1,12 +1,11 @@
-import sys
+import sys, os, pymonetdb
 
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+db = os.getenv("TSTDB")
+port = int(os.getenv("MAPIPORT"))
 
-with process.client(lang = 'sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-    out, err = c.communicate('''\
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True)
+cur1 = client1.cursor()
+cur1.execute('''
 CREATE LOADER json_loader() LANGUAGE PYTHON {
     import json
     _emit.emit(json.loads('{"col1": ["apple", "peer"], "col2": ["orange", "banana nananana"]}'))
@@ -14,18 +13,12 @@ CREATE LOADER json_loader() LANGUAGE PYTHON {
 CREATE TABLE tbl FROM LOADER json_loader();
 SELECT * FROM tbl;
 ''')
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+if cur1.fetchall() != [('apple','orange'),('peer','banana nananana')]:
+    sys.stderr.write('Expected result: [(\'apple\',\'orange\'),(\'peer\',\'banana nananana\')]')
 
-with process.client(lang = 'sqldump', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-    out, err = c.communicate()
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-with process.client(lang = 'sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-    out, err = c.communicate('''\
+cur1.execute('''
 DROP TABLE tbl;
 DROP LOADER json_loader;
 ''')
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+cur1.close()
+client1.close()
