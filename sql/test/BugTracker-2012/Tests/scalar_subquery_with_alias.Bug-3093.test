@@ -1,5 +1,4 @@
 statement ok
- 
 CREATE TABLE test1 ( id INT, name VARCHAR(20))
 
 statement ok
@@ -72,7 +71,6 @@ statement ok
 DROP TABLE test2
 
 statement ok
- 
 CREATE TABLE test1 ( id INT, name VARCHAR(20))
 
 statement ok
