@@ -1,0 +1,104 @@
+statement ok
+start transaction
+
+statement ok
+create sequence myseq as int
+
+statement ok
+create sequence myotherseq as int
+
+query TTI rowsort
+select 'sys', seq.name, next_value_for('sys', seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
+----
+sys
+myotherseq
+1
+sys
+myseq
+1
+sys
+seq_7392
+1
+
+query TTI rowsort
+select s.name, 'myseq', next_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
+----
+sys
+myseq
+2
+sys
+myseq
+3
+sys
+myseq
+4
+
+query TTI rowsort
+select s.name, seq.name, next_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
+----
+sys
+myotherseq
+2
+sys
+myseq
+5
+sys
+seq_7392
+2
+
+query TTI rowsort
+select 'sys', seq.name, get_value_for('sys', seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
+----
+sys
+myotherseq
+3
+sys
+myseq
+6
+sys
+seq_7392
+3
+
+query TTI rowsort
+select s.name, 'myseq', get_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
+----
+sys
+myseq
+6
+sys
+myseq
+6
+sys
+myseq
+6
+
+query TTI rowsort
+select s.name, seq.name, get_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
+----
+sys
+myotherseq
+3
+sys
+myseq
+6
+sys
+seq_7392
+3
+
+query TTI rowsort
+select s.name, seq.name, "restart"(s.name, seq.name, 1) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
+----
+sys
+myotherseq
+1
+sys
+myseq
+1
+sys
+seq_7392
+1
+
+statement ok
+rollback
+
+
