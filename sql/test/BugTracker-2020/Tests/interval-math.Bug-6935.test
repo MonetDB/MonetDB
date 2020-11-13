@@ -158,8 +158,10 @@ SELECT INTERVAL '5' SECOND / cast(1.0 as double)
 ----
 0:00:05
 
-statement error
+query T rowsort
 SELECT INTERVAL '-100' DAY / cast(23.34 as real)
+----
+1 day
 
 query T rowsort
 SELECT INTERVAL '32' MINUTE / cast(45.5677 as real)
