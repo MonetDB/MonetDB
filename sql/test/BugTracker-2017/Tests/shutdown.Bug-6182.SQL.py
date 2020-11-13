@@ -23,8 +23,6 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as c:
             out, err = c.communicate('call sys.shutdown(10);')
-            sys.stdout.write(out)
             sys.stderr.write(err)
         out, err = srv.communicate()
-        sys.stdout.write(out)
         sys.stderr.write(err)
