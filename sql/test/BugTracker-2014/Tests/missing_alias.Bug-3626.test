@@ -13,4 +13,5 @@ select cast(b as smallint), (i > 0 and b) from test2
 1
 True
 
-
+statement ok
+rollback

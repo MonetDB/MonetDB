@@ -20,3 +20,5 @@ from t1023056
 1
 1
 
+statement ok
+rollback

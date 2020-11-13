@@ -26,4 +26,5 @@ insert into t2 values (1)
 statement error
 insert into t3 (b) values (1)
 
-
+statement ok
+rollback

@@ -10,3 +10,5 @@ select
 	else 0 
 end )) 
 from t1023056;
+
+rollback;

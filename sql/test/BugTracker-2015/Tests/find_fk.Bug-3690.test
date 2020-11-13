@@ -62,4 +62,5 @@ select count(*) from output_1427369057457
 ----
 0
 
-
+statement ok
+rollback

@@ -193,4 +193,5 @@ WHERE tables.schema_id = schemas.id
 ----
 60 values hashing to 9253025445c88dd08740238d62f8580c
 
-
+statement ok
+rollback

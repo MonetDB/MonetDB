@@ -12,4 +12,5 @@ select * from t
 ----
 NULL
 
-
+statement ok
+rollback

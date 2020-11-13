@@ -45,4 +45,5 @@ plan select * from r
 ----
 19 values hashing to 34e4530a5e36a740703a9f08d5e5eb31
 
-
+statement ok
+rollback

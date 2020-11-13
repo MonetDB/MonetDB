@@ -18,3 +18,5 @@ select x from (select name as x from "t951206" where "isloco" = true) as t
 ----
 fabian
 
+statement ok
+rollback

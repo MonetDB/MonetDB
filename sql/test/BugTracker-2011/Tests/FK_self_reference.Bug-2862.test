@@ -31,4 +31,5 @@ NULL
 23
 2
 
-
+statement ok
+rollback

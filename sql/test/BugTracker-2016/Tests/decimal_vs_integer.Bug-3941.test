@@ -19,4 +19,5 @@ explain select count(*) from tmp where i = 201602221
 ----
 42 values hashing to a685a3f96f83b12c5b3e7d048a662e7c
 
-
+statement ok
+rollback
