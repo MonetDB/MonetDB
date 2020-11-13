@@ -183,4 +183,5 @@ if(CMAKE_SUMMARY)
   monetdb_cmake_summary()
 endif()
 
+
 # vim: set ts=2:sw=2:et
