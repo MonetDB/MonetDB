@@ -1,7 +1,8 @@
 # the multiplex code blocks.
 
 function perftst( b:bat[:any_2],div:any_2):void;
-	io.print("perftst"); io.print(div);
+	#io.print("perftst"); 
+	#io.print(div);
 	reduce:= batcalc./(b,div,nil:bat);
 	io.print(reduce);
 end perftst;
@@ -14,5 +15,6 @@ barrier i:= 0:lng;
 exit i;
 user.perftst(b,1:lng);
 end;
-mdb.List("user","foo");
+
+#mdb.List("user","foo");
 user.foo();
