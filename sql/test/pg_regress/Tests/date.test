@@ -275,14 +275,17 @@ SELECT f1, sql_sub(f1, cast(12 as interval month)) FROM DATE_TBL
 statement error
 SELECT f1, sql_sub(f1, cast(-18 as interval month)) FROM DATE_TBL
 
-statement error
+query T rowsort
 SELECT f1, sql_sub(f1, cast('2001-12-12' as date)) FROM DATE_TBL
+----
+32 values hashing to 418df9efc27b77e5b5c1877834dd6fb8
 
-statement error
+query T rowsort
 SELECT f1, sql_sub(cast('2001-12-12' as date), f1) FROM DATE_TBL
+----
+32 values hashing to 418df9efc27b77e5b5c1877834dd6fb8
 
 query T rowsort
- 
 SELECT date 'January 8, 1999'
 ----
 1999-01-08
@@ -740,9 +743,10 @@ SELECT date '1999 08 01'
 ----
 1999-08-01
 
-statement error
- 
+query T rowsort
 SELECT f1 - date '2000-01-01' AS "Days From 2K" FROM DATE_TBL
+----
+16 values hashing to 418df9efc27b77e5b5c1877834dd6fb8
 
 statement error
 SELECT f1 - date 'epoch' AS "Days From Epoch" FROM DATE_TBL

@@ -10,8 +10,15 @@ INSERT INTO foo VALUES ('2016-01-01', '2016-01-01')
 statement ok
 INSERT INTO foo VALUES ('2016-01-01', '2016-01-31')
 
-statement error
+query TT
 SELECT (dat2-dat1), (dat2-dat1) < interval '10' day FROM foo
+----
+1 day
+True
+00:00:00
+True
+1 day
+False
 
 statement ok
 DROP TABLE foo
