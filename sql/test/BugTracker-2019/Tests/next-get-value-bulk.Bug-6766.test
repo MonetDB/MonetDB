@@ -16,9 +16,6 @@ myotherseq
 sys
 myseq
 1
-sys
-seq_7392
-1
 
 query TTI rowsort
 select s.name, 'myseq', next_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
@@ -29,9 +26,6 @@ myseq
 sys
 myseq
 3
-sys
-myseq
-4
 
 query TTI rowsort
 select s.name, seq.name, next_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
@@ -41,10 +35,7 @@ myotherseq
 2
 sys
 myseq
-5
-sys
-seq_7392
-2
+4
 
 query TTI rowsort
 select 'sys', seq.name, get_value_for('sys', seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
@@ -54,23 +45,17 @@ myotherseq
 3
 sys
 myseq
-6
-sys
-seq_7392
-3
+5
 
 query TTI rowsort
 select s.name, 'myseq', get_value_for(s.name, 'myseq') from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
 ----
 sys
 myseq
-6
+5
 sys
 myseq
-6
-sys
-myseq
-6
+5
 
 query TTI rowsort
 select s.name, seq.name, get_value_for(s.name, seq.name) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
@@ -80,10 +65,7 @@ myotherseq
 3
 sys
 myseq
-6
-sys
-seq_7392
-3
+5
 
 query TTI rowsort
 select s.name, seq.name, "restart"(s.name, seq.name, 1) from sys.sequences seq, sys.schemas s where s.id = seq.schema_id order by s.name, seq.name
@@ -93,9 +75,6 @@ myotherseq
 1
 sys
 myseq
-1
-sys
-seq_7392
 1
 
 statement ok
