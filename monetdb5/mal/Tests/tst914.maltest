@@ -1,1 +1,5 @@
+statement ok
+function foo();
 
+statement error
+io.printi;
