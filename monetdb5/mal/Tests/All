@@ -185,10 +185,10 @@ tst905
 tst906
 tst907
 tst908
-# tst911 handle comment in MAL result set
+#tst911 micro benchmark, should move ..
 tst912
 tst913
-# tst914 Mconvert parsing error, non-finished function block
+tst914
 tst960
 tst920
 #tst901a improper compilation
