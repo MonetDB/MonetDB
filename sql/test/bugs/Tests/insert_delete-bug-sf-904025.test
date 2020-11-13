@@ -13,8 +13,7 @@ CREATE TABLE "sys"."tbls" (
 
 statement ok
 COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-
-statement error
+<COPY_INTO_DATA>
 2001	"schemas"	2000	NULL	0	true	0	false	0
 2007	"types"	2000	NULL	0	true	0	false	0
 2016	"functions"	2000	NULL	0	true	0	false	0
@@ -41,7 +40,7 @@ statement error
 5219	"user_role"	2000	NULL	0	true	0	false	0
 5222	"auths"	2000	NULL	0	true	0	false	0
 5226	"privileges"	2000	NULL	0	true	0	false	0
-5399	"querylog_catalog"	2000	"
+5399	"querylog_catalog"	2000	"-- create table views for convenience\ncreate view sys.querylog_catalog as select * from sys.querylog_catalog();"	1	true	0	false	0
 5411	"querylog_calls"	2000	"create view sys.querylog_calls as select * from sys.querylog_calls();"	1	true	0	false	0
 5429	"querylog_history"	2000	"create view sys.querylog_history as\nselect qd.*, ql.""start"",ql.""stop"", ql.arguments, ql.tuples, ql.run, ql.ship, ql.cpu, ql.space, ql.io \nfrom sys.querylog_catalog() qd, sys.querylog_calls() ql\nwhere qd.id = ql.id and qd.owner = user;"	1	true	0	false	0
 5466	"tracelog"	2000	"create view sys.tracelog as select * from sys.tracelog();"	1	true	0	false	0
@@ -52,38 +51,49 @@ statement error
 6368	"storage"	2000	"create view sys.storage as select * from sys.storage();"	1	true	0	false	0
 6380	"storagemodelinput"	2000	NULL	0	true	0	false	0
 6428	"storagemodel"	2000	"create view sys.storagemodel as select * from sys.storagemodel();"	1	true	0	false	0
-6438	"tablestoragemodel"	2000	"
+6438	"tablestoragemodel"	2000	"-- A summary of the table storage requirement is is available as a table view.\n-- The auxiliary denotes the maximum space if all non-sorted columns\n-- would be augmented with a hash (rare situation)\ncreate view sys.tablestoragemodel\nas select ""schema"",""table"",max(count) as ""count"",\n\tsum(columnsize) as columnsize,\n\tsum(heapsize) as heapsize,\n\tsum(hashes) as hashes,\n\tsum(""imprints"") as ""imprints"",\n\tsum(case when sorted = false then 8 * count else 0 end) as auxiliary\nfrom sys.storagemodel() group by ""schema"",""table"";"	1	true	0	false	0
 6453	"statistics"	2000	NULL	0	true	0	false	0
 6616	"systemfunctions"	2000	NULL	0	true	0	false	0
+
+statement ok
 create table tmp(name string, id int)
 
-statement error
+statement ok
 insert into tmp select name, id from tbls where "type" = 0
 
-statement error
+query I rowsort
 select count(*) from tmp
+----
+26
 
-statement error
+statement ok
 delete from tmp
 
-statement error
+query I rowsort
 select count(*) from tmp
+----
+0
 
-statement error
+statement ok
 insert into tmp select name, id from tbls where "type" = 0
 
-statement error
+query I rowsort
 select count(*) from tmp
+----
+26
 
-statement error
+statement ok
 delete from tmp
 
-statement error
+query I rowsort
 select count(*) from tmp
+----
+0
 
-statement error
+statement ok
 drop table tmp
 
 statement ok
 drop table tbls
+
 

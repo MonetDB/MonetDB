@@ -18,3 +18,4 @@ WHERE ( r - i < (0.08 + 0.42 * (g - r - 0.96)) or g - r > 2.26 )
 statement ok
 drop table dbl_sht_cast_bug
 
+

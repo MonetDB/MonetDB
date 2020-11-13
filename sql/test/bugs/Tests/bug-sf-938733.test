@@ -10,3 +10,4 @@ drop table fk2
 statement ok
 drop table pk2
 
+

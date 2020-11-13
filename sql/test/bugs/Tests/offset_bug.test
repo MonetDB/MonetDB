@@ -72,3 +72,4 @@ select * from query_users order BY user_name OFFSET 2
 statement ok
 drop table query_users
 
+

@@ -12,31 +12,23 @@ CREATE TABLE "sys"."entrants" (
     CONSTRAINT "entrants_id_pkey" PRIMARY KEY ("id")
 )
 
-statement ok
+query ITI rowsort
 COPY 3 RECORDS INTO "entrants" FROM stdin USING DELIMITERS E'\t', E'\n', '"'
+<COPY_INTO_DATA>
+3
+Java Lover
+2
 
-statement error
-3	"Java Lover"	2
-2	"Ruby Guru"	1
-1	"Ruby Developer"	1
-COMMIT
-
-statement error
-SELECT * FROM "entrants"    ORDER BY id ASC
-
-statement error
-SELECT * FROM "entrants"    ORDER BY id ASC LIMIT 2 OFFSET 2
-
-statement error
+statement ok
 drop table entrants
 
-statement error
+statement ok
 START TRANSACTION
 
-statement error
+statement ok
 CREATE SEQUENCE "seq_3901" AS INTEGER
 
-statement error
+statement ok
 CREATE TABLE "sys"."developers" (
     "id" int NOT NULL DEFAULT next value for "sys"."seq_3901",
     "name" varchar(100),
@@ -46,10 +38,9 @@ CREATE TABLE "sys"."developers" (
     CONSTRAINT "developers_id_pkey" PRIMARY KEY ("id")
 )
 
-statement error
+statement ok
 COPY 11 RECORDS INTO "developers" FROM stdin USING DELIMITERS E'\t', E'\n', '"'
-
-statement error
+<COPY_INTO_DATA>
 5	"fixture_5"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
 6	"fixture_6"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
 7	"fixture_7"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
@@ -61,14 +52,25 @@ statement error
 3	"fixture_3"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
 1	"David"	80000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
 4	"fixture_4"	100000	2008-06-10 19:13:40.000000	2008-06-10 19:13:40.000000
+
+statement ok
 COMMIT
 
-statement error
+query ITITT rowsort
 SELECT * FROM "developers"   WHERE (salary = 100000)  ORDER BY id DESC
+----
+40 values hashing to 0f2179c5efd6200c5d40a2e5d3c5a354
 
-statement error
+query ITITT rowsort
 SELECT * FROM "developers"   WHERE (salary = 100000)  ORDER BY id DESC LIMIT 3 OFFSET 7
+----
+3
+fixture_3
+100000
+2008-06-10 19:13:40
+2008-06-10 19:13:40
 
-statement error
+statement ok
 drop table developers
+
 

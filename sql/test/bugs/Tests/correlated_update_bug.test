@@ -10,6 +10,7 @@ CREATE TABLE t1
   ,c7 DOUBLE NOT NULL
   )
 
+
 statement ok
 CREATE TABLE t2
   (id INT NOT NULL
@@ -22,6 +23,7 @@ CREATE TABLE t2
   ,c7 DOUBLE NOT NULL
   )
 
+
 statement ok
 INSERT INTO t1
 VALUES
@@ -31,6 +33,7 @@ VALUES
   (4,4.0,5.0,6.0,7.0,8.0,9.0,1.0),
   (5,5.0,6.0,7.0,8.0,9.0,1.0,2.0)
 
+
 statement ok
 INSERT INTO t2
 VALUES
@@ -39,6 +42,7 @@ VALUES
   (3,13.0,14.0,15.0,16.0,17.0,18.0,19.0),
   (4,14.0,15.0,16.0,17.0,18.0,19.0,11.0),
   (5,15.0,16.0,17.0,18.0,19.0,11.0,12.0)
+
 
 query IRRRRRRR rowsort
 SELECT * FROM t1
@@ -85,6 +89,7 @@ UPDATE t1
                 WHERE t2.id = t1.id
               )
 
+
 query IRRRRRRR rowsort
 SELECT * FROM t1
 ----
@@ -95,4 +100,5 @@ DROP TABLE t1
 
 statement ok
 DROP TABLE t2
+
 

@@ -212,3 +212,4 @@ drop table ljb3
 statement ok
 drop table ljb1
 
+

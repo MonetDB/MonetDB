@@ -46,3 +46,4 @@ drop table tmp
 statement ok
 rollback
 
+

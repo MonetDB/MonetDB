@@ -10,3 +10,4 @@ SELECT * FROM (SELECT 1, 2) AS t
 1
 2
 
+

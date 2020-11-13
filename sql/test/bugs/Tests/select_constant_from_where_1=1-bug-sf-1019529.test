@@ -63,3 +63,4 @@ select 1, count(*) where 0=1
 statement ok
 drop table t1019529
 
+

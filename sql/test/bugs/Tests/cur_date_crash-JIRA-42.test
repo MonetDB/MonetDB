@@ -22,3 +22,4 @@ drop table foo1
 statement ok
 drop table foo
 
+

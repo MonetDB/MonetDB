@@ -63,3 +63,4 @@ SELECT * from test_pk
 statement ok
 DROP table test_pk
 
+

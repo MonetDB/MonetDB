@@ -16,3 +16,4 @@ drop table test_ref
 statement ok
 drop table content
 
+

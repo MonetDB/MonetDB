@@ -19,3 +19,4 @@ SELECT * FROM test WHERE x = 'a' AND x = 'b'
 statement ok
 drop table test
 
+

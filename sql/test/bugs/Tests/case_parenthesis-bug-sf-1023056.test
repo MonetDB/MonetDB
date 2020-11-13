@@ -22,3 +22,5 @@ from t1023056
 
 statement ok
 rollback
+
+

@@ -55,3 +55,4 @@ drop table RKB
 statement ok
 drop table tapestry
 
+

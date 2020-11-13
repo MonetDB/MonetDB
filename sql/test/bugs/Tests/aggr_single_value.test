@@ -53,3 +53,4 @@ SELECT min(cast (NULL as int))
 ----
 NULL
 
+

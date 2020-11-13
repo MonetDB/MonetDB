@@ -3,3 +3,4 @@ select cast(true as smallint)
 ----
 1
 
+

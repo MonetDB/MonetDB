@@ -34,3 +34,4 @@ drop view metadata
 statement ok
 drop table _metadata
 
+

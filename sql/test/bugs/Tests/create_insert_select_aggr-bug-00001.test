@@ -157,3 +157,4 @@ select name, 1, 2, 3  from sys._tables
 	where name in ('s4', 'r', 'foo', 'ff')
 ----
 
+

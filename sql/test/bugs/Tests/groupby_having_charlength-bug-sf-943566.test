@@ -4,5 +4,6 @@ select s.name,char_length(s.name), count(*) from schemas s, tables t
 		'objects', 'keys', 'modules', 'sequences')
 	group by s.name having count(*) > char_length(s.name)
 ----
-24 values hashing to 86ec0e44f93d69849733b003fdbd54cc
+21 values hashing to 467fbaeac2251000f135ba2073611605
+
 

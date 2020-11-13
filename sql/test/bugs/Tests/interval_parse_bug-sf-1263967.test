@@ -1,5 +1,6 @@
 query T rowsort
 select interval '-1-2' year to month
 ----
-1
+-14
+
 

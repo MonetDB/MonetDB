@@ -42,3 +42,4 @@ query T rowsort
 select name from tables where "type" = 10 and "system" = true group by name having 1=0
 ----
 
+

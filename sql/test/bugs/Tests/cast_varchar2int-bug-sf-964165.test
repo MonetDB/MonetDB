@@ -21,3 +21,4 @@ select cast('1' as integer)
 statement ok
 drop table t2
 
+

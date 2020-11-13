@@ -12,3 +12,4 @@ select CAST(AVG(col) as decimal(4,2)) from float2dec
 statement ok
 drop table float2dec
 
+
