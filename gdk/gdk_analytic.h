@@ -50,7 +50,7 @@ gdk_export gdk_return GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1,
 
 /* segment_tree is the tree as an array, levels_offset contains the offsets in the tree where which level does start,
    and nlevels contains the number of levels on the current segment tree */
-gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tree_capacity, oid **levels_offset, oid *levels_capacity, oid *nlevels);
+gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, void **segment_tree, oid *tree_capacity, oid **levels_offset, oid *nlevels);
 
 /* segment_tree, levels_offset and nlevels must be already defined. ARG1, ARG2 and ARG3 are to be used by the aggregate */
 #define populate_segment_tree(CAST, COUNT, INIT_AGGREGATE, COMPUTE_LEVEL0, COMPUTE_LEVELN, ARG1, ARG2, ARG3) \
