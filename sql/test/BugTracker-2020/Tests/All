@@ -30,3 +30,4 @@ KNOWNFAIL?wrong-key-error.Bug-6983
 window-function-order.Bug-6997
 semijoin.Bug-7001
 drop-stream-table.Bug-7005
+deallocate-id.Bug-7010
