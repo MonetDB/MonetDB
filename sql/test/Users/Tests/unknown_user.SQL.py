@@ -7,8 +7,7 @@ import pymonetdb
 
 import logging
 
-logger = logging.Logger(__name__)
-logger.setLevel(100); # switch off logging
+logging.basicConfig(level=logging.FATAL)
 
 error = False
 db=os.getenv("TSTDB")
