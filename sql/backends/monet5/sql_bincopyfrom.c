@@ -472,7 +472,10 @@ load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, lng row
 	rows_added = new_count - orig_count;
 
 	if (msg == MAL_SUCCEED && rows_estimate != 0 && rows_estimate != rows_added)
-		bailout("inconsistent row count in %s: expected %ld, got %ld", name, rows_estimate, rows_added);
+		bailout(
+			"inconsistent row count in %s: expected "LLFMT", got "BUNFMT,
+			name,
+			rows_estimate, rows_added);
 
 	end:
 		return msg;
