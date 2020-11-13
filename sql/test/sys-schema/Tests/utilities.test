@@ -76,8 +76,14 @@ SELECT table_id('hsfdjkhksf does not exist')
 ----
 NULL
 
-statement error
-\dftv
+query T rowsort
+select name from sys.functions where not system
+----
+schema_id
+table_id
+table_id
+
+statement ok
 DROP ALL function table_id
 
 statement ok

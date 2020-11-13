@@ -1,29 +1,65 @@
 statement ok
 create table a_6329 (x int, y int not null)
 
-statement error
-\d a_6329
+query TTT nosort
+select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'a_6329' and s.name = 'sys' order by c.number
+----
+x
+int
+True
+y
+int
+False
+
+statement ok
 create table b_6329 as select * from a_6329 with no data
 
-statement error
-\d b_6329
+query TTT nosort
+select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'b_6329' and s.name = 'sys' order by c.number
+----
+x
+int
+True
+y
+int
+True
+
+statement ok
 DROP TABLE a_6329
 
-statement error
+statement ok
 DROP TABLE b_6329
 
 statement ok
 create table a_pk_6329 (x int PRIMARY KEY, y int not null)
 
-statement error
-\d a_pk_6329
+query TTT nosort
+select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'a_pk_6329' and s.name = 'sys' order by c.number
+----
+x
+int
+False
+y
+int
+False
+
+statement ok
 create table b_pk_6329 as select * from a_pk_6329 with data
 
-statement error
-\d b_pk_6329
+query TTT nosort
+select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'b_pk_6329' and s.name = 'sys' order by c.number
+----
+x
+int
+True
+y
+int
+True
+
+statement ok
 DROP TABLE a_pk_6329
 
-statement error
+statement ok
 DROP TABLE b_pk_6329
 
 
