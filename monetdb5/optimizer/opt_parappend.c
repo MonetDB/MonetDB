@@ -60,7 +60,7 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (p->modname == sqlRef && p->fcnname == appendRef && isaBatType(getArgType(mb, p, 5))) {
 			msg = transform(&state, cntxt, mb, p);
 		} else {
-			if (mayhaveSideEffects(cntxt, mb, p, false)) {
+			if (p->barrier != 0 || mayhaveSideEffects(cntxt, mb, p, false)) {
 				flush_finish_stmt(&state, mb);
 			}
 			pushInstruction(mb, p);
@@ -230,6 +230,11 @@ can_swap_prep_with(Client cntxt, MalBlkPtr mb, InstrPtr prep, InstrPtr other)
 {
 	if (mayhaveSideEffects(cntxt, mb, other, false)) {
 		// probably not safe to pull it across a side effect, and chainflow wouldn't benefit anyway
+		return false;
+	}
+
+	if (other->barrier != 0) {
+		// be wary of control flow
 		return false;
 	}
 
