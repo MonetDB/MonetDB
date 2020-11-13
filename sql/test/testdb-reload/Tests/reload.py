@@ -8,6 +8,10 @@ try:
     from MonetDBtesting import process
 except ImportError:
     import process
+try:
+    from MonetDBtesting import sqllogictest
+except ImportError:
+    import sqllogictest
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
@@ -31,16 +35,16 @@ if os.path.exists(os.path.join(dbfarm, tstdb2)):
 
 # start the first server
 with process.server(stdin=process.PIPE,
-                        stdout=process.PIPE,
-                        stderr=process.PIPE) as s1:
+                    stdout=process.PIPE,
+                    stderr=process.PIPE,
+                    mapiport=os.environ.get('MAPIPORT', '50000')) as s1:
     # load data into the first server's database
-    with process.client(lang='sql',
-                        server=s1,
-                        args=[os.path.join(tstsrcdir, os.pardir, os.pardir, 'testdb', 'Tests', 'load.sql')],
-                        stdin=process.PIPE,
-                        stdout=process.DEVNULL,
-                        stderr=process.DEVNULL) as c1:
-        c1out, c1err = c1.communicate()
+    with sqllogictest.SQLLogic(out=open(os.devnull, 'w')) as sql:
+        sql.connect(hostname='localhost',
+                    port=s1.dbport,
+                    database=s1.dbname)
+        sql.parse(os.path.join(tstsrcdir, os.pardir, os.pardir,
+                               'testdb', 'Tests', 'load.test'))
     # start the second server
     with process.server(dbname=tstdb2,
                         mapiport=port2,
