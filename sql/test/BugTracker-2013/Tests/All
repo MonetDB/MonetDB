@@ -12,7 +12,7 @@ stddev-group.Bug-3257
 #oid_handling
 between.Bug-3259
 correlated_select.Bug-3250
-empty-strings.Bug-3261
+HAVE_PYMONETDB?empty-strings.Bug-3261
 groupby_on_value_view.Bug-3264
 copy-into-decimal.Bug-3265
 aggregates-typing-issues.Bug-3277
@@ -24,7 +24,7 @@ db_users.Bug-3287
 create_table_with_func.Bug-3286
 add_boolean.Bug-3289
 prepare-smallint.Bug-3297
-psm_functions_and_accessrights.Bug-3300
+HAVE_PYMONETDB?psm_functions_and_accessrights.Bug-3300
 decimal-cast.Bug-3310
 hashed_exp.Bug-3313
 mitosis-floor.Bug-3330
