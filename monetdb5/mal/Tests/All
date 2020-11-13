@@ -193,7 +193,7 @@ tst960
 tst920
 tst901a
 # #tst901b
-# dataflow01 Incorrect compilation
+dataflow01
 dataflow03
 flowchk
 dynamicload
