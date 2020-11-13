@@ -1683,35 +1683,36 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
     exit_code = None
     msg = None
     with open(TestErr, 'w') as f:
-        sql = sqllogictest.SQLLogic(out=f)
+        res = None
         if TestOut:
-            sql.res = openutf8(TestOut, 'w')
-        try:
-            sql.connect(hostname='localhost',
-                        port=int(env['MAPIPORT']),
-                        database=env['TSTDB'], language='sql' if lsql else 'mal')
-        except Exception as e:
-            exit_code = F_SOCK
-            msg = "Connection refused"
-            print(e, file=f)
-        else:
-            # if not required by any other test clean up
-            if not (is_reqtest or has_reqtests):
-                sql.drop()
+            res = openutf8(TestOut, 'w')
+        with sqllogictest.SQLLogic(out=f) as sql:
+            sql.res = res
             try:
-                sql.parse(Test)
-            except sqllogictest.SQLLogicSyntaxError as e:
-                print(e, file=f)
-                exit_code = F_SKIP
-                msg = 'sqllogic syntax error'
-            except BrokenPipeError as e:
-                # server timeout
-                print(e, file=f)
+                sql.connect(hostname='localhost',
+                            port=int(env['MAPIPORT']),
+                            database=env['TSTDB'], language='sql' if lsql else 'mal')
+            except Exception as e:
                 exit_code = F_SOCK
-                msg = "Broken pipe"
-            sql.close()
-            if sql.res:
-                sql.res.close()
+                msg = "Connection refused"
+                print(e, file=f)
+            else:
+                # if not required by any other test clean up
+                if not (is_reqtest or has_reqtests):
+                    sql.drop()
+                try:
+                    sql.parse(Test)
+                except sqllogictest.SQLLogicSyntaxError as e:
+                    print(e, file=f)
+                    exit_code = F_SKIP
+                    msg = 'sqllogic syntax error'
+                except BrokenPipeError as e:
+                    # server timeout
+                    print(e, file=f)
+                    exit_code = F_SOCK
+                    msg = "Broken pipe"
+        if res:
+            res.close()
     is_dirty = os.path.getsize(TestErr) > 0
     # clean up if all okay
     if not is_dirty:
