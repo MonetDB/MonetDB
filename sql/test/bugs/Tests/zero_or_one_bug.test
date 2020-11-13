@@ -46,7 +46,6 @@ SELECT
       COALESCE(id1,0),
       (SELECT col2 FROM my_table2 WHERE col2 = col1a)
 FROM  my_table1 x
-
 ----
 18 values hashing to ab5ea26a452f4140bc5f13d11426ad2b
 
@@ -55,7 +54,6 @@ SELECT
       COALESCE(id1,0),
       (SELECT col2 FROM my_table2 WHERE col2 = col1a) AS my_col1
 FROM  my_table1 x
-
 ----
 18 values hashing to ab5ea26a452f4140bc5f13d11426ad2b
 

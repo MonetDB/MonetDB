@@ -75,7 +75,7 @@ HAVE_GEOM?regression_load4D
 
 HAVE_GEOM?regress_ogc_cover
 
-HAVE_GEOM?regress_ogc_prep #Unknown Functions: st_containsproperly
+#HAVE_GEOM?regress_ogc_prep #Unknown Functions: st_containsproperly
 
 #HAVE_GEOM?regress_bdpoly #Unknown Functions: st_buildarea, ST_BdMPolyFromText
 
