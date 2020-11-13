@@ -14,18 +14,21 @@ cur = cli.cursor()
 try:
     cur.execute("explain select * from storagemodel();")
     sys.stderr.write("This query: explain select * from storagemodel(); was supposed to fail")
-except pymonetdb.DatabaseError:
-    pass
+except pymonetdb.DatabaseError as e:
+    if 'no such table returning function \'storagemodel\'' not in str(e):
+        sys.stderr.write(str(e))
 try:
     cur.execute("select * from storagemodel();")
     sys.stderr.write("This query: select * from storagemodel(); was supposed to fail")
-except pymonetdb.DatabaseError:
-    pass
+except pymonetdb.DatabaseError as e:
+    if 'no such table returning function \'storagemodel\'' not in str(e):
+        sys.stderr.write(str(e))
 try:
     cur.execute("select * from storagemodel();")
     sys.stderr.write("This query: select * from storagemodel(); was supposed to fail")
-except pymonetdb.DatabaseError:
-    pass
+except pymonetdb.DatabaseError as e:
+    if 'no such table returning function \'storagemodel\'' not in str(e):
+        sys.stderr.write(str(e))
 cur.close()
 cli.close()
 
