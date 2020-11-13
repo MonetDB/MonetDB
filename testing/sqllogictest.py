@@ -303,7 +303,7 @@ class SQLLogic:
                 for col in row:
                     if expected is not None:
                         if col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='ascii'))
