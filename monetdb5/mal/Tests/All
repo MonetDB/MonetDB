@@ -191,7 +191,7 @@ tst913
 tst914
 tst960
 tst920
-#tst901a improper compilation
+tst901a
 # #tst901b
 # dataflow01 Incorrect compilation
 dataflow03
