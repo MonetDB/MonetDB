@@ -52,7 +52,7 @@ HAVE_PYMONETDB?python-connections-Bug.2901
 HAVE_PYMONETDB?many-connects-cache.Bug-2904
 alter-table-set-read-only.bug-2906
 predicate.Bug-2908
-interrupted-initialization.Bug-2875
+HAVE_PYMONETDB?interrupted-initialization.Bug-2875
 case-overflow.Bug-2239
 sqltables.Bug-2921
 Multiplication_and_cast.Bug-2923
