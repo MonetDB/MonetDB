@@ -1,8 +1,10 @@
 statement ok
 CREATE TABLE my_table1 (
+--
      id1    INT NOT NULL,
      col1a  VARCHAR(10),
      col1b  VARCHAR(1)
+--
 ) 
 
 statement ok
@@ -34,6 +36,7 @@ INSERT INTO my_table1 VALUES (9, 'i', '')
 
 statement ok
 CREATE TABLE my_table2 (
+--
      id2    INT NOT NULL,
      col2   VARCHAR(10)
 ) 
@@ -43,6 +46,7 @@ SELECT
       COALESCE(id1,0),
       (SELECT col2 FROM my_table2 WHERE col2 = col1a)
 FROM  my_table1 x
+
 ----
 18 values hashing to ab5ea26a452f4140bc5f13d11426ad2b
 
@@ -51,6 +55,7 @@ SELECT
       COALESCE(id1,0),
       (SELECT col2 FROM my_table2 WHERE col2 = col1a) AS my_col1
 FROM  my_table1 x
+
 ----
 18 values hashing to ab5ea26a452f4140bc5f13d11426ad2b
 
@@ -59,4 +64,5 @@ DROP   TABLE my_table1
 
 statement ok
 DROP   TABLE my_table2 
+
 

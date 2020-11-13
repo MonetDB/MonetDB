@@ -58,3 +58,4 @@ drop table h
 statement ok
 drop table d
 
+

@@ -12,3 +12,4 @@ insert into test3 values ('''')
 statement ok
 drop table test3
 
+

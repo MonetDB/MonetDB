@@ -1,23 +1,26 @@
 statement ok
 CREATE TABLE my_table6 (
+--
    my_id         INT,
    col1          VARCHAR(10),
    col2          VARCHAR(10),
    col3          VARCHAR(10)
+--
 ) 
 
 statement ok
 CREATE TABLE my_table7 (
+--
    my_id         INT,
    col1          VARCHAR(10),
    col2          VARCHAR(10),
    col3          VARCHAR(10)
+--
 ) 
 
 statement ok
 COPY 9 RECORDS INTO my_table6 FROM STDIN DELIMITERS '|',E'\n','' 
-
-statement error
+<COPY_INTO_DATA>
 10|aa||aaa
 20|ab|NULL|aab
 30|ac||aac
@@ -27,11 +30,15 @@ statement error
 70|ag|NULL|aag
 80|ah||aah
 90|ai|NULL|aai
+
+statement ok
 INSERT INTO my_table7 (
+--
           my_id,
           col1,
           col2,
           col3
+--
 )
 SELECT
           my_id,
@@ -41,13 +48,16 @@ SELECT
 FROM
           my_table6
 
+
 query ITTT rowsort
 select * from my_table7
 ----
+36 values hashing to 0ba3a6e8732a9b19923d0e5c3e51f465
 
 statement ok
 DROP   TABLE my_table6 
 
 statement ok
 DROP   TABLE my_table7 
+
 

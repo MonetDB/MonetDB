@@ -49,3 +49,4 @@ WHERE  col1 IS NOT NULL
 statement ok
 DROP TABLE test456 
 
+

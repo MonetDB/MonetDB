@@ -20,3 +20,4 @@ select * from x
 statement ok
 drop table "x"
 
+

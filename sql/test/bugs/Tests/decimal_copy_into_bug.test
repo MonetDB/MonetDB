@@ -8,12 +8,15 @@ CREATE TABLE bulk (
 
 statement ok
 COPY 3 RECORDS INTO bulk from stdin USING DELIMITERS '|', E'\n'
-
-statement error
+<COPY_INTO_DATA>
 1001|NULL|231231234|1001
 1001|NULL|231231234|1001
 1002|1234|1231231235|1002
+
+query RRRR rowsort
 select * from bulk
+----
+12 values hashing to f01a9c0eb6c2721cb94fd8d98ce22663
 
 statement ok
 drop table bulk
@@ -28,13 +31,17 @@ CREATE TABLE bulk (
 
 statement ok
 COPY 3 RECORDS INTO bulk from stdin USING DELIMITERS '|', E'\n'
-
-statement error
+<COPY_INTO_DATA>
 1001|NULL|231231234|1001
 1001|NULL|231231234|1001
 1002|1234|1231231235|1002
+
+query IIII rowsort
 select * from bulk
+----
+12 values hashing to 6aa601a0feddf1b3838c84fa2ca65e0d
 
 statement ok
 drop table bulk
+
 

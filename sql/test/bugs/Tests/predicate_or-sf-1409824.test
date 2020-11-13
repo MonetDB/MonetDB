@@ -39,3 +39,4 @@ sql_debug
 statement ok
 drop table p1409824
 
+

@@ -27,3 +27,4 @@ True
 statement ok
 drop table nntest
 
+

@@ -10,54 +10,28 @@ INSERT INTO tbl VALUES ('2015-01-01','2015-01-01','Z','0000')
 statement ok
 INSERT INTO tbl1 VALUES ('2015-01-01','Z','0000',false,'')
 
-statement error
+statement ok
 CREATE FUNCTION mydateformat(d date)
 RETURNS CHAR(10)
 BEGIN
-	DECLARE outdate varchar(10)
-
-statement error
-	DECLARE dt int
-
-statement error
-	DECLARE dm int
-
-statement error
-	SET dt = EXTRACT(DAY FROM d)
-
-statement error
+	DECLARE outdate varchar(10);
+	DECLARE dt int;
+	DECLARE dm int;
+	SET dt = EXTRACT(DAY FROM d);
 	IF (dt < 10 )
-		THEN SET outdate = '0' || dt || '-'
-
-statement error
-	ELSE SET outdate = dt || '-'
-
-statement error
-	END IF
-
-statement error
-	SET dm = EXTRACT(MONTH FROM d)
-
-statement error
+		THEN SET outdate = '0' || dt || '-';
+	ELSE SET outdate = dt || '-';
+	END IF;
+	SET dm = EXTRACT(MONTH FROM d);
 	IF (dm < 10 )
-		THEN SET outdate = outdate || '0' || dm || '-'
-
-statement error
-	ELSE SET outdate = outdate || dm || '-'
-
-statement error
-	END IF
-
-statement error
-	SET outdate = outdate || EXTRACT(YEAR FROM d)
-
-statement error
-	RETURN outdate
-
-statement error
+		THEN SET outdate = outdate || '0' || dm || '-';
+	ELSE SET outdate = outdate || dm || '-';
+	END IF;
+	SET outdate = outdate || EXTRACT(YEAR FROM d);
+	RETURN outdate;
 END
 
-statement error
+statement ok
 UPDATE tbl1
 SET (col5,col6) = (
 	SELECT true ,'overwriten by col6 with tbl.col3 (' || tbl.col3 || ') and tbl.col1 (' || mydateformat(tbl.col1) || ') and tbl.col2 (' || mydateformat(tbl.col2) || ')'
@@ -72,10 +46,10 @@ SELECT * FROM tbl1
 2015-01-01
 Z
 0000
-False
-(empty)
+True
+overwriten by col6 with tbl.col3 (Z) and tbl.col1 (01-01-2015) and tbl.col2 (01-01-2015)
 
-statement error
+statement ok
 DROP FUNCTION mydateformat
 
 statement ok
@@ -83,4 +57,5 @@ DROP TABLE tbl1
 
 statement ok
 DROP TABLE tbl
+
 

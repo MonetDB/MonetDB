@@ -10,3 +10,4 @@ create table ntest(num numeric(8))
 statement ok
 drop table ntest
 
+

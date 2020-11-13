@@ -47,3 +47,4 @@ Volkers
 statement ok
 DROP TABLE trimtest
 
+

@@ -26,3 +26,4 @@ NULL
 statement ok
 drop table div_zero_bug
 
+

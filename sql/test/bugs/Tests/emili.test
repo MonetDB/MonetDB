@@ -20,63 +20,42 @@ create table area(
 		ip int,
 		location varchar(16) )
 
-statement error
+statement ok
 CREATE PROCEDURE enrich1()
 BEGIN
      INSERT INTO sensors(ip, location, kind,value)
-         SELECT ip, substring(location,0,3), kind, value FROM istream
-
-statement error
+         SELECT ip, substring(location,0,3), kind, value FROM istream;
      IF TRUE
      THEN
-         INSERT INTO area SELECT ip, substring(location,0,3) FROM istream
-
-statement error
-     END IF
-
-statement error
+         INSERT INTO area SELECT ip, substring(location,0,3) FROM istream;
+     END IF;
 END
 
-statement error
+statement ok
 CREATE PROCEDURE enrich2()
 BEGIN
      INSERT INTO sensors(ip, location, kind,value)
-         SELECT ip, substring(location,0,3), kind, value FROM istream
-
-statement error
+         SELECT ip, substring(location,0,3), kind, value FROM istream;
      IF (SELECT count(*) FROM area ) = 0
      THEN
-         INSERT INTO area SELECT ip, substring(location,0,3) FROM istream
-
-statement error
-     END IF
-
-statement error
+         INSERT INTO area SELECT ip, substring(location,0,3) FROM istream;
+     END IF;
 END
 
-statement error
+statement ok
 CREATE PROCEDURE enrich3()
 BEGIN
-     DECLARE cnt INTEGER
-
-statement error
-     SET cnt = (SELECT count(*) FROM area ) 
-
-statement error
+     DECLARE cnt INTEGER;
+     SET cnt = (SELECT count(*) FROM area ) ;
      INSERT INTO sensors(ip, location, kind,value)
-         SELECT ip, substring(location,0,3), kind, value FROM istream
-
-statement error
+         SELECT ip, substring(location,0,3), kind, value FROM istream;
      IF cnt = 0
      THEN
-         INSERT INTO area SELECT ip, substring(location,0,3) FROM istream
-
-statement error
-     END IF
-
-statement error
+         INSERT INTO area SELECT ip, substring(location,0,3) FROM istream;
+     END IF;
 END
 
 statement ok
 rollback
+
 

@@ -27,3 +27,4 @@ select cast(i<2 as integer)+1 from a
 statement ok
 drop table a
 
+

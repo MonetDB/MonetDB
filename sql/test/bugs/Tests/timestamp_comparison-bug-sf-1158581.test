@@ -31,3 +31,4 @@ select max(low), max( CAST (low as timestamp(0))) from datetest
 statement ok
 ROLLBACK
 
+

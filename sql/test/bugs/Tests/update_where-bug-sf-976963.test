@@ -26,3 +26,5 @@ a
 b
 3
 
+statement ok
+drop table test_update

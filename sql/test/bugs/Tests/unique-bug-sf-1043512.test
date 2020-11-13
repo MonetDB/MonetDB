@@ -30,3 +30,4 @@ insert into unique_test values (1)
 statement ok
 drop table unique_test
 
+
