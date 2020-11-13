@@ -135,7 +135,7 @@ tst2550
 tst256
 tst2570
 tst272
-tst275	# incorrect hash
+#tst275	# incorrect hash
 tst280
 tst281
 tst292
@@ -172,7 +172,7 @@ tst810
 tst819
 tst830
 tst840
-#tst850  # spurious error
+tst850
 tst866
 #tst870  io.print in functions
 tst880
