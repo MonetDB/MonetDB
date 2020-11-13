@@ -1,10 +1,4 @@
-import os
-import socket
-import sys
-import tempfile
-import threading
-
-import pymonetdb
+import os, socket, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -31,25 +25,23 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as node1_proc:
         node1_conn = pymonetdb.connect(database='node1', port=node1_port, autocommit=True)
-        node1_cur = node1_conn.cursor();
+        node1_cur = node1_conn.cursor()
 
-        print("# node1: CREATE TABLE tbl (id INT, name TEXT)")
         node1_cur.execute("CREATE TABLE tbl (id INT, name TEXT)")
-        print("# node1: INSERT INTO tbl VALUES (1, '1')")
-        node1_cur.execute("INSERT INTO tbl VALUES (1, '1')")
-        print("# node1: INSERT INTO tbl VALUES (2, '2')")
-        node1_cur.execute("INSERT INTO tbl VALUES (2, '2')")
-        print("# node1: INSERT INTO tbl (id) VALUES (3)")
+        node1_cur.execute("INSERT INTO tbl VALUES (1, '1'), (2, '2')")
         node1_cur.execute("INSERT INTO tbl (id) VALUES (3)")
-        print("# node1: SELECT * FROM tbl")
         node1_cur.execute("SELECT * FROM tbl")
-        print(node1_cur.fetchall())
-        print("# node1: SELECT * FROM tbl WHERE NAME IS NULL")
+        if node1_cur.fetchall() != [(1, '1'), (2, '2'), (3, None)]:
+            sys.stderr.write("[(1, '1'), (2, '2'), (3, None)] expected")
         node1_cur.execute("SELECT * FROM tbl WHERE NAME IS NULL")
-        print(node1_cur.fetchall())
-        print("# node1: SELECT * FROM tbl")
+        if node1_cur.fetchall() != [(3, None)]:
+            sys.stderr.write("[(3, None)] expected")
         node1_cur.execute("SELECT * FROM tbl")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [(1, '1'), (2, '2'), (3, None)]:
+            sys.stderr.write("[(1, '1'), (2, '2'), (3, None)] expected")
+
+        node1_cur.close()
+        node1_conn.close()
 
         node2_port = freeport()
         with process.server(mapiport=node2_port, dbname='node2',
@@ -57,25 +49,25 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as node2_proc:
             node2_conn = pymonetdb.connect(database='node2', port=node2_port, autocommit=True)
-            node2_cur = node2_conn.cursor();
+            node2_cur = node2_conn.cursor()
 
-            print("# node2: CREATE REMOTE TABLE tbl (id INT, name TEXT) on 'mapi:monetdb://localhost:{}/node1/sys/tbl'".format(node1_port))
             node2_cur.execute("CREATE REMOTE TABLE tbl (id INT, name TEXT) on 'mapi:monetdb://localhost:{}/node1/sys/tbl'".format(node1_port))
-            print("# node2: SELECT * FROM tbl")
             node2_cur.execute("SELECT * FROM tbl")
-            print(node2_cur.fetchall())
-            print("# node2: SELECT * FROM tbl WHERE NAME IS NULL")
+            if node2_cur.fetchall() != [(1, '1'), (2, '2'), (3, None)]:
+                sys.stderr.write("[(1, '1'), (2, '2'), (3, None)] expected")
             node2_cur.execute("SELECT * FROM tbl WHERE NAME IS NULL")
-            print(node2_cur.fetchall())
-            print("# node2: SELECT * FROM tbl")
+            if node2_cur.fetchall() != [(3, None)]:
+                sys.stderr.write("[(3, None)] expected")
             node2_cur.execute("SELECT * FROM tbl")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [(1, '1'), (2, '2'), (3, None)]:
+                sys.stderr.write("[(1, '1'), (2, '2'), (3, None)] expected")
+
+            node2_cur.close()
+            node2_conn.close()
 
             # cleanup: shutdown the monetdb servers and remove tempdir
             out, err = node1_proc.communicate()
-            sys.stdout.write(out)
             sys.stderr.write(err)
 
             out, err = node2_proc.communicate()
-            sys.stdout.write(out)
             sys.stderr.write(err)
