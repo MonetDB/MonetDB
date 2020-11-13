@@ -3275,29 +3275,28 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             elif CALL == "sqltest" or CALL == "maltest":
                 issqllogictest = True
                 import MonetDBtesting.sqllogictest as sqllogictest
-                sql = sqllogictest.SQLLogic(out=ClntErr)
-                if CALL == 'sqltest':
-                    lang = 'sql'
-                else:
-                    lang = 'mal'
-                try:
-                    sql.connect(hostname='localhost',
-                                port=int(env['MAPIPORT']),
-                                database=TSTDB,
-                                language=lang)
-                except:
-                    returncode = 'error'
-                else:
-                    if not os.path.exists(TST+'.reqtests'):
-                        sql.drop()
+                with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                    if CALL == 'sqltest':
+                        lang = 'sql'
+                    else:
+                        lang = 'mal'
                     try:
-                        sql.parse(TST+EXT)
-                    except sqllogictest.SQLLogicSyntaxError:
-                        pass
-                    except BrokenPipeError:
-                        # server timeout
-                        pass
-                    sql.close()
+                        sql.connect(hostname='localhost',
+                                    port=int(env['MAPIPORT']),
+                                    database=TSTDB,
+                                    language=lang)
+                    except:
+                        returncode = 'error'
+                    else:
+                        if not os.path.exists(TST+'.reqtests'):
+                            sql.drop()
+                        try:
+                            sql.parse(TST+EXT)
+                        except sqllogictest.SQLLogicSyntaxError:
+                            pass
+                        except BrokenPipeError:
+                            # server timeout
+                            pass
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":

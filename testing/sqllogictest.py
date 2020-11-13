@@ -64,6 +64,12 @@ class SQLLogic:
         self.rpt = report
         self.language = 'sql'
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database='demo', language='sql'):
         self.language = language
