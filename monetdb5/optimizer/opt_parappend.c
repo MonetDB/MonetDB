@@ -234,11 +234,13 @@ can_swap_prep_with(Client cntxt, MalBlkPtr mb, InstrPtr prep, InstrPtr other)
 	}
 
 	int chain_var = getArg(prep, prep->retc);
-	for (int i = 0; i < other->retc; i++)
-		if (chain_var == getArg(other, i)) {
+	for (int i = 0; i < other->retc; i++) {
+		int other_ret = getArg(other, i);
+		if (chain_var == other_ret) {
 			// it defines the chain var we use, we must not violate causality
-			break;
+			return false;
 		}
+	}
 
 	return true; // okay
 }
