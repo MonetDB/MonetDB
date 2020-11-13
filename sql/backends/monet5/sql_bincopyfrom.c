@@ -69,7 +69,8 @@ BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, str (*fixup)(void*,vo
 		msg = fixup(start, end);
 		if (msg != NULL)
 			goto end;
-		bat->batCount += (end - start) / asz;
+		BUN actualCount = validCount + (end - start) / asz;
+		BATsetcount(bat, actualCount);
 	}
 
 	BATsetcount(bat, bat->batCount);
