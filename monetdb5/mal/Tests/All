@@ -192,12 +192,12 @@ tst914
 tst960
 tst920
 tst901a
-# #tst901b
+# #tst901b micro benchmark of optimizers
 dataflow01
 dataflow03
 flowchk
 dynamicload
 pithole
 malids
-# # Tracer
+# Tracer
 # # tracer00 Output is call dependent
