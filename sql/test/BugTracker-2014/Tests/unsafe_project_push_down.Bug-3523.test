@@ -13,4 +13,5 @@ select id-row_number() over (order by id) from (select id from foo union all sel
 40
 41
 
-
+statement ok
+rollback

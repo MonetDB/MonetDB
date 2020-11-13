@@ -57,4 +57,5 @@ SELECT f1 FROM BOOLTBL1 WHERE NOT f1 = TRUE
 ----
 False
 
-
+statement ok
+rollback

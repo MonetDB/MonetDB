@@ -86,3 +86,5 @@ exec **(
 );
 
 select count(*) from mytable;
+
+rollback;

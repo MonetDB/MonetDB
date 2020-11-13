@@ -33,4 +33,5 @@ select test(null)
 ----
 NULL
 
-
+statement ok
+rollback

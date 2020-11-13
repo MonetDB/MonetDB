@@ -18,4 +18,5 @@ select a,sum(b)>count(*)*.5 from foo3633 group by a
 1
 True
 
-
+statement ok
+rollback

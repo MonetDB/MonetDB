@@ -11,3 +11,4 @@ SELECT test(true), test(false), test(null);
 select test(true);
 select test(false);
 select test(null);
+rollback;

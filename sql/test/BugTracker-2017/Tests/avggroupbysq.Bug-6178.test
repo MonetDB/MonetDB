@@ -57,4 +57,5 @@ SELECT * FROM ( SELECT tailnum , MIN( arr_delay ) FROM x GROUP BY tailnum ) AS x
 N907MQ
 191
 
-
+statement ok
+rollback

@@ -37,4 +37,5 @@ bbb
 statement ok
 drop function test_002
 
-
+statement ok
+rollback

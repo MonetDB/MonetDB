@@ -10,4 +10,5 @@ SELECT COUNT( DISTINCT my_id ) AS unique_enrollees , QUANTILE( my_double , 0.25 
 0
 NULL
 
-
+statement ok
+rollback

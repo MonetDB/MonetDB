@@ -302,4 +302,5 @@ WHERE t1.id=source.a1 AND t2.id=source.a2 AND       source.groupnum <= 5
 ORDER BY source.prob DESC, a1
 ----
 
-
+statement ok
+rollback

@@ -23,4 +23,5 @@ select count(*) from c
 ----
 2
 
-
+statement ok
+rollback

@@ -22,4 +22,5 @@ select * from t where i is null
 ----
 NULL
 
-
+statement ok
+rollback

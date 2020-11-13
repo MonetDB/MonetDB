@@ -18,4 +18,5 @@ select * from m
 3
 4
 
-
+statement ok
+rollback
