@@ -1,13 +1,16 @@
+statement ok
 function one(base:int):int;
 	#io.print(base);
 	return base;
 end one;
 
+statement ok
 function three(base:int,x:int,y:int):int;
 	#io.print(base);
 	return base;
 end three;
 
+statement ok
 function pow(base:int,raise:int):int;
         mg_a := calc.dbl(base);
         ng_a := calc.dbl(raise);
@@ -16,14 +19,13 @@ function pow(base:int,raise:int):int;
         return pg_a;
 end pow;
 
+statement ok
 function foo():bat[:int];
 k:= user.one(1);
 l:= user.three(1,2,3);
 p:= user.pow(1,2);
-
 b:= bat.new(:int);
 bat.append(b,1);
-
 io.printf("[ do multiplex three test, ");
 z:bat[:int]:=mal.multiplex("user","three",b,2,3);
 io.printf("do multiplex one test, ");
@@ -33,7 +35,18 @@ z:bat[:int]:=mal.multiplex("user","pow",b,2);
 return z;
 end;
 
+statement ok
 optimizer.multiplex("user","foo");
 
+query T rowsort
 z := user.foo();
+----
+do multiplex three test, do multiplex one test, do multiplex pow test
+
+query TI rowsort
 io.print(z);
+----
+0
+2
+
+
