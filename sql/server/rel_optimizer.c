@@ -5114,11 +5114,17 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 			rel->exps = jexps;
 		if (lexps) {
 			l = rel->l = rel_select(v->sql->sa, rel->l, NULL);
+			if (l->exps)
+				list_merge(lexps, l->exps, NULL);
+
 			l->exps = lexps;
 			v->changes = 1;
 		}
 		if (rexps) {
 			r = rel->r = rel_select(v->sql->sa, rel->r, NULL);
+			if (r->exps)
+				list_merge(rexps, r->exps, NULL);
+
 			r->exps = rexps;
 			v->changes = 1;
 		}
