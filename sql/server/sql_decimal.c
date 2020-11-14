@@ -10,20 +10,6 @@
 
 #include "sql_decimal.h"
 
-static inline
-void parse_digits(DEC_TPE* res, char **dec, int* digits) {
-
-	char*	_dec	= *dec;
-	DEC_TPE _res	= *res;
-	int _digits		= *digits;
-
-	
-
-	*res	= _res;
-	*dec	= _dec;
-	*digits = _digits;
-}
-
 DEC_TPE
 decimal_from_str(char *dec, int* digits, int* scale, int* has_errors)
 {
