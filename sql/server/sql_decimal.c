@@ -14,6 +14,7 @@
 DEC_TPE
 decimal_from_str(char *dec, int* digits, int* scale, int* has_errors)
 {
+
 #ifdef HAVE_HGE
     const hge max0 = GDK_hge_max / 10, max1 = GDK_hge_max % 10;
 #else
