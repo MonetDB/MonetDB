@@ -2738,7 +2738,6 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int ca
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
-				//f = NULL;
 		}
 	}
 	if (f && check_card(card, f)) {
@@ -3206,6 +3205,55 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, ek);
 }
 
+typedef struct aggr_input {
+	sql_query *query;
+	int groupby;
+	char *err;
+} aggr_input;
+
+static sql_exp *
+exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	aggr_input *ai = v->data;
+	(void)rel; (void)depth;
+
+	int vf = is_freevar(e);
+	if (!v->changes && vf && vf < ai->groupby) { /* check need with outer query */
+		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
+
+		/* problem freevar have cardinality CARD_ATOM */
+		if (sq->card <= CARD_AGGR && exp_card(e) != CARD_AGGR && is_alias(e->type)) {
+			if (!exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) {
+				v->changes = 1;
+				ai->err = SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query";
+			}
+		}
+	} else if (!v->changes && vf && vf == ai->groupby) {
+		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
+
+		/* problem freevar have cardinality CARD_ATOM */
+		if (sq->card <= CARD_AGGR && is_alias(e->type)) {
+			if (exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) { /* aggregate */
+				v->changes = 1;
+				ai->err = SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested";
+			}
+		}
+	}
+	return e;
+}
+
+static char *
+exps_valid(sql_query *query, list *exps, int groupby)
+{
+	aggr_input ai = { .query = query, .groupby = groupby };
+	visitor v = { .sql = query->sql, .data = &ai };
+
+	exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_valid, true);
+	if (v.changes)
+		return ai.err;
+	return NULL;
+}
+
 static sql_exp *
 _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
 {
@@ -3253,7 +3301,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
 		int i, all_aggr = query_has_outer(query);
-		bool found_nested_aggr = false, arguments_correlated = true, all_const = true;
+		bool arguments_correlated = true, all_const = true;
 		list *ungrouped_cols = NULL;
 
 		all_freevar = 1;
@@ -3282,13 +3330,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
-			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
+			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &ungrouped_cols);
 			all_freevar &= (arguments_correlated && found_one_freevar) || (is_atom(e->type)?all_freevar:0); /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
 			all_const &= is_atom(e->type);
 			list_append(exps, e);
 		}
-		if (all_aggr || ((arguments_correlated || all_freevar) && found_nested_aggr))
-			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 		if (all_const)
 			all_freevar = 0;
 		if (!all_freevar) {
@@ -3339,17 +3385,25 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (all_freevar) { /* case 2, ie use outer */
 		int card;
 		sql_exp *exp = NULL;
-		/* find proper relation, base on freevar (stack hight) */
+		/* find proper groupby relation */
 		for (node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (all_freevar<is_freevar(e))
-				all_freevar = is_freevar(e);
+			int vf = exp_freevar_offset(sql, e);
+			if (vf > (int)all_freevar)
+				all_freevar = vf;
 			exp = e;
 		}
 		int sql_state = query_fetch_outer_state(query,all_freevar-1);
 		res = groupby = query_fetch_outer(query, all_freevar-1);
 		card = query_outer_used_card(query, all_freevar-1);
+		/* given groupby validate all input expressions */
+		char *err;
+		if ((err = exps_valid(query, exps, all_freevar)) != NULL) {
+			strcpy(sql->errstr, err);
+			sql->session->status = -ERR_GROUPBY;
+			return NULL;
+		}
 		if (exp && !is_groupby_col(res, exp)) {
 			if (is_sql_groupby(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
