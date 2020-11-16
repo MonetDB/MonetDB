@@ -19,7 +19,7 @@ typedef struct parstate {
 	InstrPtr finish_stmt;
 } parstate;
 
-static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable);
+static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable, int *actions);
 static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old);
 static void flush_finish_stmt(parstate *state, MalBlkPtr mb);
 static void pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr instr);
@@ -29,6 +29,8 @@ str
 OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
+	lng usec = GDKusec();
+	int actions = 0;
 	InstrPtr *old_mb_stmt = NULL;
 	parstate state = { NULL };
 
@@ -58,7 +60,7 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (int i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
 		if (p->modname == sqlRef && p->fcnname == appendRef && isaBatType(getArgType(mb, p, 5))) {
-			msg = transform(&state, cntxt, mb, p);
+			msg = transform(&state, cntxt, mb, p, &actions);
 		} else {
 			if (p->barrier != 0 || mayhaveSideEffects(cntxt, mb, p, false)) {
 				flush_finish_stmt(&state, mb);
@@ -73,11 +75,31 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 end:
 	if (old_mb_stmt)
 		GDKfree(old_mb_stmt);
+
+    /* Defense line against incorrect plans */
+    if (actions > 0 && msg == MAL_SUCCEED) {
+	    if (!msg)
+        	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	    if (!msg)
+        	msg = chkFlow(mb);
+	    if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	char buf[256];
+    snprintf(buf, sizeof(buf), "%-20s actions=%2d time=" LLFMT " usec", "parappend" ,actions, usec);
+   	newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
+
+
+
 	return msg;
 }
 
 static str
-transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
+transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, int *actions)
 {
 	// take the old instruction apart
 	assert(old->retc == 1);
@@ -104,6 +126,7 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
 		return MAL_SUCCEED;
 	}
 
+	*actions += 1;
 
 	int cookie_var = setup_append_prep(state, cntxt, mb, old);
 

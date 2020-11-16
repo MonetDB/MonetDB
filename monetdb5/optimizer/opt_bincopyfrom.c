@@ -22,8 +22,9 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 {
 	str msg = MAL_SUCCEED;
 	InstrPtr *old_mb_stmt = NULL;
-	(void)cntxt;
-	(void)mb;
+	lng usec = GDKusec();
+	int actions = 0;
+
 	(void)stk;
 	(void)pci;
 
@@ -51,6 +52,7 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		InstrPtr p = old_mb_stmt[i];
 		if (p->modname == sqlRef && p->fcnname == importTableRef) {
 			msg = transform(mb, p);
+			actions++;
 		} else {
 			pushInstruction(mb, p);
 		}
@@ -61,6 +63,24 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 end:
 	if (old_mb_stmt)
 		GDKfree(old_mb_stmt);
+
+    /* Defense line against incorrect plans */
+    if (actions > 0 && msg == MAL_SUCCEED) {
+	    if (!msg)
+        	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	    if (!msg)
+        	msg = chkFlow(mb);
+	    if (!msg)
+        	msg = chkDeclarations(mb);
+    }
+    /* keep all actions taken as a post block comment */
+	usec = GDKusec()- usec;
+	char buf[256];
+    snprintf(buf, sizeof(buf), "%-20s actions=%2d time=" LLFMT " usec","bincopyfrom",actions, usec);
+   	newComment(mb,buf);
+	if( actions > 0)
+		addtoMalBlkHistory(mb);
+
 	return msg;
 }
 
