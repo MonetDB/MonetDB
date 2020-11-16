@@ -5,18 +5,18 @@ query I rowsort
 SELECT - col0 AS col1 FROM tab0 AS cor0 WHERE NOT + col0 IS NOT NULL GROUP BY col1, col0 HAVING NOT - col1 + + AVG ( DISTINCT col0 ) IS NULL
 ----
 
-query T rowsort
+query T nosort
 PLAN SELECT - col0 AS col1 FROM tab0 AS cor0 WHERE NOT + col0 IS NOT NULL GROUP BY col1, col0 HAVING NOT - col1 + + AVG ( DISTINCT col0 ) IS NULL
 ----
-) [ sys.sql_neg("cor0"."col0") as "col1" ]
 project (
-| ) [ sys.sql_add(double[sys.sql_neg("cor0"."col1")], "%1"."%1") ! * = double "NULL" ]
 | select (
-| | ) [ "cor0"."col1", "cor0"."col0" ] [ "cor0"."col1", "cor0"."col0", sys.avg no nil ("cor0"."col0") as "%1"."%1" ]
 | | group by (
-| | | ) [ "cor0"."col0" * = int "NULL" ]
 | | | select (
 | | | | table(sys.tab0) [ "tab0"."col0" as "cor0"."col0", "tab0"."col1" as "cor0"."col1" ] COUNT 
+| | | ) [ "cor0"."col0" * = int "NULL" ]
+| | ) [ "cor0"."col1", "cor0"."col0" ] [ "cor0"."col1", "cor0"."col0", sys.avg no nil ("cor0"."col0") as "%1"."%1" ]
+| ) [ sys.sql_add(double[sys.sql_neg("cor0"."col1")], "%1"."%1") ! * = double "NULL" ]
+) [ sys.sql_neg("cor0"."col0") as "col1" ]
 
 statement ok
 DROP TABLE tab0
