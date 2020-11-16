@@ -39,13 +39,13 @@ stdout of test 'str_to_time.Bug-6791` in directory 'sql/test/BugTracker-2019` it
 % 277 # length
 function user.main():void;
     X_1:void := querylog.define("explain select str_to_date(\\'23-09-1987\\', \\'%d-%m-%Y\\') as \"date\",\n str_to_time(\\'11:40\\', \\'%H:%M\\') as \"time\",\n str_to_timestamp(\\'23-09-1987 11:40\\', \\'%d-%m-%Y %H:%M\\') as \"timestamp\";":str, "default_pipe":str, 19:int);
-barrier X_90:bit := language.dataflow();
+barrier X_92:bit := language.dataflow();
     X_23:bat[:str] := bat.pack(".":str, ".":str, ".":str);
     X_24:bat[:str] := bat.pack("date":str, "time":str, "timestamp":str);
     X_25:bat[:str] := bat.pack("date":str, "timetz":str, "timestamptz":str);
     X_26:bat[:int] := bat.pack(0:int, 1:int, 7:int);
     X_27:bat[:int] := bat.pack(0:int, 0:int, 0:int);
-exit X_90:bit;
+exit X_92:bit;
     sql.resultSet(X_23:bat[:str], X_24:bat[:str], X_25:bat[:str], X_26:bat[:int], X_27:bat[:int], "1987-09-23":date, "11:40:00.000000":daytime, "1987-09-23 11:40:00.000000":timestamp);
 end user.main;
 # optimizer.mitosis()
