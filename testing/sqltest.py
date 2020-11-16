@@ -88,9 +88,28 @@ class SQLTestResult(object):
                 self.query_error = e
         return self
 
-    def fail(self, msg):
+    def fail(self, msg, data=None):
         self.assertion_errors.append(AssertionError(msg))
-        self.test_case.err(msg)
+        err_file = self.test_case.err_file
+        print(msg, file=err_file)
+        if data is not None:
+            if len(data) < 100:
+                print('query result:', file=err_file)
+            else:
+                print('truncated query result:', file=err_file)
+            for row in data[:100]:
+                sep=''
+                for col in row:
+                    if col is None:
+                        print(sep, 'NULL', sep='', end='', file=err_file)
+                    else:
+                        print(sep, col, sep='', end='', file=err_file)
+                    sep = '|'
+                print('', file=err_file)
+
+
+    def transform_data(self):
+        pass
 
     def assertFail(self):
         if self.query_error is None:
@@ -123,12 +142,12 @@ class SQLTestResult(object):
             pass
         if type(val) is type(received):
             if val != received:
-                msg = '{} \n expected "{}", received "{}" in row={}, col={}!'.format(self.query, val, received, row, col)
-                self.fail(msg)
+                msg = '{}\nexpected "{}", received "{}" in row={}, col={}!'.format(self.query, val, received, row, col)
+                self.fail(msg, data=self.data)
         else:
             # handle type mismatch
-            msg = '{}\n expected type {} and value "{}", received type {} and value "{}" in row={}, col={}!'.format(self.query, type(val), str(val), type(received), str(received), row, col)
-            self.fail(msg)
+            msg = '{}\nexpected type {} and value "{}", received type {} and value "{}" in row={}, col={}!'.format(self.query, type(val), str(val), type(received), str(received), row, col)
+            self.fail(msg, data=self.data)
         return self
 
 class SQLTestCase():
