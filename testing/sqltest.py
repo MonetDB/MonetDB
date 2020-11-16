@@ -72,36 +72,21 @@ class SQLTestResult(object):
     def __init__(self, test_case):
         self.test_case = test_case
 
-    def run_stmt(self, stmt):
-        # ensure run only once
-        if self.query is None:
-            self.query = stmt
-            try:
-                with self.test_case.conn_ctx as ctx:
-                    ctx.crs.execute(stmt)
-                    self.rowcount = ctx.crs.rowcount
-                    self.rows = ctx.crs._rows
-            except (pymonetdb.Error, ValueError) as e:
-                self.query_error = e
-        return self
-
-    def run_query(self, query):
+    def run(self, query:str):
+        # ensure runs only once
         if self.query is None:
             self.query = query
             try:
                 with self.test_case.conn_ctx as ctx:
                     ctx.crs.execute(query)
-                    self.data = ctx.crs.fetchall()
-                    self.description = ctx.crs.description
                     self.rowcount = ctx.crs.rowcount
-                    # maybe not needed
                     self.rows = ctx.crs._rows
+                    if ctx.crs.description:
+                        self.data = ctx.crs.fetchall()
+                        self.description = ctx.crs.description
             except (pymonetdb.Error, ValueError) as e:
                 self.query_error = e
         return self
-
-    def run(self, query:str):
-        pass
 
     def fail(self, msg):
         self.assertion_errors.append(AssertionError(msg))
@@ -132,16 +117,17 @@ class SQLTestResult(object):
         received = None
         row = int(row)
         col = int(col)
-        if self.data[row]:
-            if self.data[row][col]:
-                received = self.data[row][col]
-        if type(val) is type(recieved):
-            if val != recived:
-                msg = "{} \n expected {}, received {}".format(self.query, val, received)
+        try:
+            received = self.data[row][col]
+        except IndexError:
+            pass
+        if type(val) is type(received):
+            if val != received:
+                msg = '{} \n expected "{}", received "{}" in row={}, col={}!'.format(self.query, val, received, row, col)
                 self.fail(msg)
         else:
             # handle type mismatch
-            msg = "{}\n expeted type {} and {}, received type {} and {} in row={}, col={} !".format(self.query, type(val), val, type(received), received, row, col)
+            msg = '{}\n expected type {} and value "{}", received type {} and value "{}" in row={}, col={}!'.format(self.query, type(val), str(val), type(received), str(received), row, col)
             self.fail(msg)
         return self
 
@@ -192,22 +178,9 @@ class SQLTestCase():
     def conn_ctx(self):
         return self._conn_ctx or self.default_conn_ctx()
 
-    def exec_statement(self, stmt:str):
-        res = SQLTestResult(self)
-        res.run_stmt(stmt)
-        self.test_results.append(res)
-        return res
-
-    def exec_query(self, query:str):
-        res = SQLTestResult(self)
-        res.run_query(query)
-        self.test_results.append(res)
-        return res
-
     def execute(self, query:str):
-        # maybe single call here
         res = SQLTestResult(self)
-        res.run_query(query)
+        res.run(query)
         self.test_results.append(res)
         return res
 
