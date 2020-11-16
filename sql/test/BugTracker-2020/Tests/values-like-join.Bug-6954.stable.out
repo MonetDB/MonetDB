@@ -23,7 +23,7 @@ project (
 % 197 # length
 function user.main():void;
     X_1:void := querylog.define("explain select 1 from (values (\\'one\\'), (\\'two\\')) as l(s), (values (\\'three\\'), (\\'four\\')) as r(s) where l.s like r.s;":str, "default_pipe":str, 23:int);
-barrier X_92:bit := language.dataflow();
+barrier X_94:bit := language.dataflow();
     X_33:bat[:str] := bat.pack(".%7":str);
     X_34:bat[:str] := bat.pack("%7":str);
     X_35:bat[:str] := bat.pack("tinyint":str);
@@ -37,7 +37,7 @@ barrier X_92:bit := language.dataflow();
     X_27:bat[:str] := algebra.projection(X_21:bat[:oid], X_11:bat[:str]);
     X_31:bat[:bte] := algebra.project(X_27:bat[:str], 1:bte);
     language.pass(X_11:bat[:str]);
-exit X_92:bit;
+exit X_94:bit;
     sql.resultSet(X_33:bat[:str], X_34:bat[:str], X_35:bat[:str], X_36:bat[:int], X_37:bat[:int], X_31:bat[:bte]);
 end user.main;
 #inline               actions= 0 time=0 usec 
