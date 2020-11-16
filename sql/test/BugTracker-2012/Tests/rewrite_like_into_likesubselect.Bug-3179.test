@@ -7,22 +7,22 @@ start transaction
 query T rowsort
 explain select name,func from functions where name like '%optimizers%'
 ----
-49 values hashing to 7bf4ea35185281fd500ceb5ede3ecfd1
+49 values hashing to d713c0c3af0828e8fea5d727bab227d1
 
 query T rowsort
 explain select name,func from functions where name not like '%optimizers%'
 ----
-49 values hashing to fc7c03cc3738e8a40ff5b3c542e1853c
+49 values hashing to b2c935a91fc22ef6a2f353e3d1ea3b5d
 
 query T rowsort
 explain select name,func from functions where name ilike '%optimizers%'
 ----
-49 values hashing to 2b629fd721ba3eba09b5fc3ff5792a27
+49 values hashing to 0e429e45d28d24ed3ded17df94b9d0ae
 
 query T rowsort
 explain select name,func from functions where name not ilike '%optimizers%'
 ----
-49 values hashing to b0f4b80d97d5d7d564f01d3e09b0ef53
+49 values hashing to 135bf4644cf0bf17ee26c24b633860b6
 
 statement ok
 create function contains(str string, substr string)
@@ -55,26 +55,27 @@ end
 query T rowsort
 explain select name,func from functions where contains(name, 'optimizers')
 ----
-48 values hashing to 32ef3ccf4ef60d2df29fea7d4b0a27d4
+48 values hashing to fabc9441a4652a3a1c9106c7e0c3fa1b
 
 query T rowsort
 explain select name,func from functions where not_contains(name, 'optimizers')
 ----
-48 values hashing to 00b1293e5516e19ab02424dfcd84bc5f
+48 values hashing to 522a2218258c852bbf35544c697c7bd6
 
 query T rowsort
 explain select name,func from functions where icontains(name, 'optimizers')
 ----
-48 values hashing to 96658d6349c67858d627a6cac4c467e5
+48 values hashing to ec801ff82084d51f74d37b043498f705
 
 query T rowsort
 explain select name,func from functions where not_icontains(name, 'optimizers')
 ----
-48 values hashing to 36c0131cc3e60aabd188ed7bd9bdf97a
+48 values hashing to 493330f083173a86623617b4e6527ce3
 
 statement ok
 rollback
 
 statement ok
-set optimizer = 'default_pipe'
+set optimizer='default_pipe'
+
 

@@ -45,4 +45,40 @@ t4:= 0:lng;
 statement ok
 c := 0:lng;
 
+statement ok
+barrier go:= language.dataflow();
+	t1:= qry(s,1,100);
+	t2:= qry(s,101,1000);
+	t3:= qry(s,1001,10000);
+	t4:= qry(s,10001,100000);
+	c1:= t1+t3;
+	c2:= t2+t4;
+	c:= c1+c2;
+exit go;
+
+query T rowsort
+io.print(c);
+----
+100000
+
+query T rowsort
+io.print(t1);
+----
+100
+
+query T rowsort
+io.print(t2);
+----
+900
+
+query T rowsort
+io.print(t3);
+----
+9000
+
+query T rowsort
+io.print(t4);
+----
+90000
+
 

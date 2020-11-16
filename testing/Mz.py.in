@@ -555,136 +555,141 @@ def PerformDir(env, testdir) :
 
     TSTDB = TSTPREF + "_" + TSTDIR.replace(os.sep, '_')
 
-    env['TSTDB']     = TSTDB
-    env['TSTDIR']    = TSTDIR
-    env['TSTSRCDIR'] = TSTSRCDIR
-    env['UTSTSRCDIR'] = 'file://' + url(TSTSRCDIR)
-    env['TSTTRGDIR'] = TSTTRGDIR
-    # TODO see if this will work
-    if TSTDIR == os.curdir:
-        env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
-    else:
-        env['RELSRCDIR'] = os.path.join(* [os.pardir] * (len(TSTDIR.split(os.sep)) + 1) + [env['RELSRCBASE'], TSTDIR, TSTSUFF])
-    os.environ['TSTDB']     = TSTDB
-    os.environ['TSTDIR']    = TSTDIR
-    os.environ['TSTSRCDIR'] = TSTSRCDIR
-    os.environ['TSTTRGDIR'] = TSTTRGDIR
-    os.environ['RELSRCDIR'] = env['RELSRCDIR']
-    if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
-        env['TSTDATAPATH'] = TSTDATAPATH
-        os.environ['TSTDATAPATH'] = TSTDATAPATH
-
-    if 'GDK_DBFARM' in env:
-        LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
-        if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
-            try:
-                shutil.rmtree(LogDBdir)
-            except:
-                Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                return td, FdErr
-        if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
-            try:
-                os.makedirs(LogDBdir)
-            except:
-                Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
-                return td, FdErr
-        if initdb:
-            import zipfile
-            try:
-                z = zipfile.ZipFile(initdb)
-            except IOError:
-                Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                return td, FdErr
-            try:
-                z.extractall(LogDBdir)
-            except:
-                Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
-                return td, FdErr
-            z.close()
-            if not oneserver:
-                pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
-                pSrvr.LaunchIt()
-                pSrvr.terminate()
-    if not os.path.exists(TSTTRGDIR):
-        #TODO: set mode to umask
-        os.makedirs(TSTTRGDIR)
-
-    oneserver = testdir.get('single_server', False)
-    options = testdir.get('server_options', [])
-    testlist = testdir.get('tests', [])
-
-    oktests = []
-    alllinks = []
-    pSrvr = None
-
     try:
-        for test in testlist:
-            test_name = test.get('test_name')
-            if oneserver and (pSrvr is None or pSrvr.poll() is not None):
-                # restart server
-                pSrvr = create_mserver5(
-                        LogDBdir,
-                        env=env,
-                        outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
-                        errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
-                        options=options)
-                os.chdir(TSTTRGDIR)
-                pSrvr.LaunchIt()
-            if global_timeout and start_time + global_timeout < time.time():
-                if not testweb:
-                    print('\nGlobal testing timeout reached\n')
-                    break
-                tt, FtErr, reason = 0, F_SKIP, "as the global timeout has been reached"
-            else:
-                tt, FtErr, reason, links = RunTest(env, test, oktests, pSrvr)
-                alllinks.extend(links)
-            if tt:
-                t = "%7.3f" % tt
-            else:
-                t = '-.---'
-            TIMES.append((TSTDIR, test_name, t, tt, FtErr, reason))
-            td += tt
-            FdErr = max(FdErr,FtErr)
-            if FtErr ==  F_OK:
-                oktests.append(test_name)
-            if FtErr == F_SKIP:
-                skipped += 1
-            if FtErr > F_OK:
-                failed += 1
-    finally:
-        if pSrvr is not None:
-            pSrvr.terminate()
-            pSrvr = None
+        sys.path.insert(0, TSTSRCDIR)
 
-    TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdErr, None))
-    if testweb:
-        os.chdir(TSTTRGDIR)
-        for f in alllinks:
-            remove(f)
-
-    # remove extra files created by tests
-    for f in listdir(TSTTRGDIR):
-        ff = os.path.join(TSTTRGDIR, f)
-        if os.path.islink(ff):
-            continue
-        for pat in [
-                    'times.lst',
-                    '*.server.err', '*.server.out',
-                    '*.test.err', '*.test.out',
-                    'SingleServer.out', 'SingleServer.err']:
-            if fnmatch.fnmatch(f, pat):
-                break
+        env['TSTDB']     = TSTDB
+        env['TSTDIR']    = TSTDIR
+        env['TSTSRCDIR'] = TSTSRCDIR
+        env['UTSTSRCDIR'] = 'file://' + url(TSTSRCDIR)
+        env['TSTTRGDIR'] = TSTTRGDIR
+        # TODO see if this will work
+        if TSTDIR == os.curdir:
+            env['RELSRCDIR'] = os.path.join(os.pardir, env['RELSRCBASE'], TSTSUFF)
         else:
-            remove(ff)
-    if testweb:
+            env['RELSRCDIR'] = os.path.join(* [os.pardir] * (len(TSTDIR.split(os.sep)) + 1) + [env['RELSRCBASE'], TSTDIR, TSTSUFF])
+        os.environ['TSTDB']     = TSTDB
+        os.environ['TSTDIR']    = TSTDIR
+        os.environ['TSTSRCDIR'] = TSTSRCDIR
+        os.environ['TSTTRGDIR'] = TSTTRGDIR
+        os.environ['RELSRCDIR'] = env['RELSRCDIR']
+        if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
+            env['TSTDATAPATH'] = TSTDATAPATH
+            os.environ['TSTDATAPATH'] = TSTDATAPATH
+
+        if 'GDK_DBFARM' in env:
+            LogDBdir = os.path.join(env['GDK_DBFARM'],TSTDB)
+            if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
+                try:
+                    shutil.rmtree(LogDBdir)
+                except:
+                    Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
+                    return td, FdErr
+            if os.path.isabs(LogDBdir) and not os.path.exists(LogDBdir):
+                try:
+                    os.makedirs(LogDBdir)
+                except:
+                    Warn("creating database '%s` failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
+                    return td, FdErr
+            if initdb:
+                import zipfile
+                try:
+                    z = zipfile.ZipFile(initdb)
+                except IOError:
+                    Warn("initial database '%s` cannot be opened; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+                    return td, FdErr
+                try:
+                    z.extractall(LogDBdir)
+                except:
+                    Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
+                    return td, FdErr
+                z.close()
+                if not oneserver:
+                    pSrvr = ServerClass(splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % LogDBdir], open(os.devnull, 'w'), open(os.devnull, 'w'), par['TIMEOUT'], os.path.join(LogDBdir, '.started'), int(env['MAPIPORT']))
+                    pSrvr.LaunchIt()
+                    pSrvr.terminate()
+        if not os.path.exists(TSTTRGDIR):
+            #TODO: set mode to umask
+            os.makedirs(TSTTRGDIR)
+
+        oneserver = testdir.get('single_server', False)
+        options = testdir.get('server_options', [])
+        testlist = testdir.get('tests', [])
+
+        oktests = []
+        alllinks = []
+        pSrvr = None
+
         try:
-            os.removedirs(TSTTRGDIR)
-        except:
-            pass
-    env['passed'] = int(env.get('passed', 0)) + len(oktests)
-    env['skipped'] = int(env.get('skipped', 0)) + skipped
-    env['failed'] = int(env.get('failed', 0)) + failed
-    return td, FdErr
+            for test in testlist:
+                test_name = test.get('test_name')
+                if oneserver and (pSrvr is None or pSrvr.poll() is not None):
+                    # restart server
+                    pSrvr = create_mserver5(
+                            LogDBdir,
+                            env=env,
+                            outfile=os.path.join(TSTTRGDIR, 'SingleServer.out'),
+                            errfile=os.path.join(TSTTRGDIR, 'SingleServer.err'),
+                            options=options)
+                    os.chdir(TSTTRGDIR)
+                    pSrvr.LaunchIt()
+                if global_timeout and start_time + global_timeout < time.time():
+                    if not testweb:
+                        print('\nGlobal testing timeout reached\n')
+                        break
+                    tt, FtErr, reason = 0, F_SKIP, "as the global timeout has been reached"
+                else:
+                    tt, FtErr, reason, links = RunTest(env, test, oktests, pSrvr)
+                    alllinks.extend(links)
+                if tt:
+                    t = "%7.3f" % tt
+                else:
+                    t = '-.---'
+                TIMES.append((TSTDIR, test_name, t, tt, FtErr, reason))
+                td += tt
+                FdErr = max(FdErr,FtErr)
+                if FtErr ==  F_OK:
+                    oktests.append(test_name)
+                if FtErr == F_SKIP:
+                    skipped += 1
+                if FtErr > F_OK:
+                    failed += 1
+        finally:
+            if pSrvr is not None:
+                pSrvr.terminate()
+                pSrvr = None
+
+        TIMES.append((TSTDIR, '', "%7.3f" % td, td, FdErr, None))
+        if testweb:
+            os.chdir(TSTTRGDIR)
+            for f in alllinks:
+                remove(f)
+
+        # remove extra files created by tests
+        for f in listdir(TSTTRGDIR):
+            ff = os.path.join(TSTTRGDIR, f)
+            if os.path.islink(ff):
+                continue
+            for pat in [
+                        'times.lst',
+                        '*.server.err', '*.server.out',
+                        '*.test.err', '*.test.out',
+                        'SingleServer.out', 'SingleServer.err']:
+                if fnmatch.fnmatch(f, pat):
+                    break
+            else:
+                remove(ff)
+        if testweb:
+            try:
+                os.removedirs(TSTTRGDIR)
+            except:
+                pass
+        env['passed'] = int(env.get('passed', 0)) + len(oktests)
+        env['skipped'] = int(env.get('skipped', 0)) + skipped
+        env['failed'] = int(env.get('failed', 0)) + failed
+        return td, FdErr
+    finally:
+        del sys.path[0]
 ### PerformDir(env, testdir) #
 
 

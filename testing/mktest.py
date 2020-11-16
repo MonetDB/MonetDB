@@ -63,7 +63,7 @@ def is_complete_stmt(query, line:str):
         if re.match(r'\s*function\s', stmt) is not None:
             return re.match(r'\s*function\s.*\bend(\s+\w+)?\s*;', stmt, re.DOTALL) is not None
         if re.match(r'\s*barrier\s', stmt) is not None:
-            return re.match(r'\s*barrier\s.*\bexit\s\(\w+(,\w+)+\)\s*;', stmt, re.DOTALL) is not None
+            return re.match(r'\s*barrier\s.*\bexit\s(\w+|\(\w+(,\w+)+\)\s*);', stmt, re.DOTALL) is not None
     return re.match(r'[^;]*;', stmt) is not None
 
 def convertresult(columns, data):
@@ -189,7 +189,7 @@ def main():
     parser.add_argument('--sort', action='store', default='rowsort',
                         choices=['nosort','rowsort','valuesort'],
                         help='how to sort the values')
-    parser.add_argument('--hashlimit', action='store', type=int, default=10,
+    parser.add_argument('--hashlimit', action='store', type=int, default=100,
                         help='hash limit')
     parser.add_argument('--results', action='store', type=argparse.FileType('w'),
                         help='file to store results of queries')

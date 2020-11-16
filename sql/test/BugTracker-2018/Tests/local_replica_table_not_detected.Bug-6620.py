@@ -1,10 +1,4 @@
-import os
-import socket
-import sys
-import tempfile
-import threading
-
-import pymonetdb
+import os, socket, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -20,14 +14,6 @@ def freeport():
     sock.close()
     return port
 
-def query(conn, sql):
-    print(sql)
-    cur = conn.cursor()
-    cur.execute(sql)
-    r = cur.fetchall()
-    cur.close()
-    return r
-
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'node1'))
     os.mkdir(os.path.join(farm_dir, 'node2'))
@@ -39,16 +25,14 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as prc1:
         conn1 = pymonetdb.connect(database='node1', port=prt1, autocommit=True)
+        cur1 = conn1.cursor()
+        cur1.execute("create table s1 (i int)")
+        cur1.execute("insert into s1 values (23), (42)")
+        cur1.execute("create table t1 (s varchar(10))")
+        cur1.execute("insert into t1 values ('abc'), ('efg')")
 
-        q = "create table s1 (i int)"
-        print(q); conn1.execute(q)
-        q = "insert into s1 values (23), (42)"
-        print(q); conn1.execute(q)
-        q = "create table t1 (s varchar(10))"
-        print(q); conn1.execute(q)
-        q = "insert into t1 values ('abc'), ('efg')"
-        print(q); conn1.execute(q)
-
+        cur1.close()
+        conn1.close()
         # node2 is the master
         prt2 = freeport()
         prc2 = None
@@ -57,45 +41,36 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             stdin=process.PIPE, stdout=process.PIPE,
                             stderr=process.PIPE) as prc2:
             conn2 = pymonetdb.connect(database='node2', port=prt2, autocommit=True)
+            cur2 = conn2.cursor()
+            cur2.execute("create table s2 (i int)")
+            cur2.execute("insert into s2 values (23), (42)")
+            cur2.execute("create table t2 (s varchar(10))")
+            cur2.execute("insert into t2 values ('foo'), ('bar')")
 
-            q = "create table s2 (i int)"
-            print(q); conn2.execute(q)
-            q = "insert into s2 values (23), (42)"
-            print(q); conn2.execute(q)
-            q = "create table t2 (s varchar(10))"
-            print(q); conn2.execute(q)
-            q = "insert into t2 values ('foo'), ('bar')"
-            print(q); conn2.execute(q)
+            cur2.execute("create remote table s1 (i int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
+            cur2.execute("create remote table t1 (s varchar(10)) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
 
-            q = "create remote table s1 (i int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';"
-            print("#"+q); conn2.execute(q)
-            q = "create remote table t1 (s varchar(10)) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';"
-            print("#"+q); conn2.execute(q)
+            cur2.execute("create replica table repS(i int)")
+            cur2.execute("alter table repS add table s1")
+            cur2.execute("alter table repS add table s2")
+            cur2.execute("create merge table mrgT (s varchar(10))")
+            cur2.execute("alter table mrgT add table t1")
+            cur2.execute("alter table mrgT add table t2")
 
-            q = "create replica table repS(i int)"
-            print(q); conn2.execute(q)
-            q = "alter table repS add table s1"
-            print(q); conn2.execute(q)
-            q = "alter table repS add table s2"
-            print(q); conn2.execute(q)
-            q = "create merge table mrgT (s varchar(10))"
-            print(q); conn2.execute(q)
-            q = "alter table mrgT add table t1"
-            print(q); conn2.execute(q)
-            q = "alter table mrgT add table t2"
-            print(q); conn2.execute(q)
+            cur2.execute("plan select * from repS")
+            for r in cur2.fetchall():
+               if 'remote' in ''.join(r).lower():
+                   sys.stderr.write('No REMOTE properties expected')
 
-            res = query(conn2, "plan select * from repS")
-            for r in res:
-                print('\n'.join(r))
+            cur2.execute("plan select * from repS, mrgT")
+            for r in cur2.fetchall():
+               if 'remote(sys.s1)' in ''.join(r).lower():
+                   sys.stderr.write('remote(sys.s1) not expected')
 
-            res = query(conn2, "plan select * from repS, mrgT")
-            for r in res:
-                print('\n'.join(r))
+            cur2.close()
+            conn2.close()
             out, err = prc2.communicate()
-            sys.stdout.write(out)
             sys.stderr.write(err)
         # cleanup: shutdown the monetdb servers and remove tempdir
         out, err = prc1.communicate()
-        sys.stdout.write(out)
         sys.stderr.write(err)

@@ -78,6 +78,30 @@ MAPI  = (monetdb) /var/tmp/mtest-429967/.s.monetdb.36971
 QUERY = select ntile(i) over (), count(*) from integers;
 ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
+QUERY = select (select i2.i in (select sum(i1.i + i2.i)) from integers i2) from integers i1;
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
+QUERY = select (select i2.i in (select sum(i1.i + i2.i)) from integers i2) from integers i1 group by i1.i;
+ERROR = !SELECT: cannot use non GROUP BY column in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
+QUERY = select (select i2.i in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1;
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
+QUERY = select (select i2.i in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1 group by i1.i;
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
+QUERY = select (select sum(i2.i) in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1 group by i1.i;
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
+QUERY = select (select sum(i1.i + i2.i) in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1 group by i1.i;
+ERROR = !GDK reported error: mergejoin: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
+QUERY = select (select sum(i1.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1;
+ERROR = !SELECT: subquery uses ungrouped column from outer query
+CODE  = 42000
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."
