@@ -1,0 +1,174 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE part1 ( x double, y double, z double)
+
+statement ok
+COPY 4 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+0.0 0.0 0.0
+1.0 0.0 0.0 
+0.0 1.0 0.0 
+1.0 1.0 0.0 
+
+statement ok
+CREATE TABLE part2 ( x double, y double, z double)
+
+statement ok
+COPY 4 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+2.0 0.0 0.0
+3.0 0.0 0.0 
+2.0 1.0 0.0 
+3.0 1.0 0.0 
+
+statement ok
+CREATE MERGE TABLE complete ( x double, y double, z double)
+
+statement ok
+ALTER TABLE complete ADD TABLE part1
+
+statement ok
+ALTER TABLE complete ADD TABLE part2
+
+query RRR rowsort
+SELECT * FROM COMPLETE
+----
+24 values hashing to 8f130e4c6c1b2a3e43a48914d6248638
+
+statement ok
+alter table part1 set read only
+
+statement ok
+alter table part2 set read only
+
+statement ok
+analyze sys.part1 (x,y,z) minmax
+
+statement ok
+analyze sys.part2 (x,y,z) minmax
+
+query RRR rowsort
+SELECT * FROM complete where x>=0.0 AND x <=1.0
+----
+12 values hashing to 3b6980dc48c09291f03d3afd6e9d8e61
+
+query RRR rowsort
+SELECT * FROM complete where x>=2.0 AND x <=3.0
+----
+12 values hashing to 10ce97483635bd79429c525f1117b002
+
+query T rowsort
+PLAN SELECT * FROM complete where x = 0.0
+----
+) [ "complete"."x", "complete"."y", "complete"."z" ]
+project (
+| ) [ "complete"."x" = double(53,1) "0" ]
+| select (
+| | table(sys.part1) [ "complete"."x", "complete"."y", "complete"."z" ] COUNT 
+
+query RRR rowsort
+SELECT * FROM complete where x = 0.0
+----
+0.000
+0.000
+0.000
+0.000
+1.000
+0.000
+
+query T rowsort
+PLAN SELECT * FROM complete where x = 3.0
+----
+) [ "complete"."x", "complete"."y", "complete"."z" ]
+project (
+| ) [ "complete"."x" = double(53,1) "3" ]
+| select (
+| | table(sys.part2) [ "complete"."x", "complete"."y", "complete"."z" ] COUNT 
+
+query RRR rowsort
+SELECT * FROM complete where x = 3.0
+----
+3.000
+0.000
+0.000
+3.000
+1.000
+0.000
+
+query T rowsort
+PLAN SELECT * FROM complete where x >= 1.0 AND x < 2.0
+----
+) [ "complete"."x", "complete"."y", "complete"."z" ]
+project (
+| ) [ double(53,1) "1" <= "complete"."x" < double(53,1) "2" BETWEEN  ]
+| select (
+| | table(sys.part1) [ "complete"."x", "complete"."y", "complete"."z" ] COUNT 
+
+query RRR rowsort
+SELECT * FROM complete where x >= 1.0 AND x < 2.0
+----
+1.000
+0.000
+0.000
+1.000
+1.000
+0.000
+
+query T rowsort
+PLAN SELECT * FROM complete where x > 1.0 AND x <= 2.0
+----
+) [ "complete"."x", "complete"."y", "complete"."z" ]
+project (
+| ) [ double(53,1) "1" < "complete"."x" <= double(53,1) "2" BETWEEN  ]
+| select (
+| | table(sys.part2) [ "complete"."x", "complete"."y", "complete"."z" ] COUNT 
+
+query RRR rowsort
+SELECT * FROM complete where x > 1.0 AND x <= 2.0
+----
+2.000
+0.000
+0.000
+2.000
+1.000
+0.000
+
+query T rowsort
+PLAN SELECT * FROM complete where x > 1.0 AND x < 2.0
+----
+) [ double "NULL" as "complete"."x", double "NULL" as "complete"."y", double "NULL" as "complete"."z" ]
+project (
+| ) [ boolean "false" ]
+| select (
+| |  [ boolean "true" ]
+
+query RRR rowsort
+SELECT * FROM complete where x > 1.0 AND x < 2.0
+----
+
+query T rowsort
+PLAN SELECT * FROM complete where x >= 1.0 AND x <= 2.0
+----
+12 values hashing to 3962f58904fdf0c1ca6acb8a4f69f761
+
+query RRR rowsort
+SELECT * FROM complete where x >= 1.0 AND x <= 2.0
+----
+12 values hashing to 19ea7cdb36e521974206b7c240f5766e
+
+query T rowsort
+PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
+----
+12 values hashing to 72e202e250c0fa58b3461614b62f88f4
+
+query RRR rowsort
+SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
+----
+18 values hashing to 7991743d9b030b03e873bc2ca4e6a6c1
+
+statement ok
+ROLLBACK
+
+
