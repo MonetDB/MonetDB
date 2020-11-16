@@ -1,3 +1,5 @@
+import sys
+
 try:
     from MonetDBtesting import process
 except ImportError:

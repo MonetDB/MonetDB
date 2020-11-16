@@ -1,8 +1,4 @@
-import os
-import socket
-import sys
-import tempfile
-import pymonetdb
+import os, socket, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -43,11 +39,13 @@ with tempfile.TemporaryDirectory() as farm_dir:
             try:
                 cur2.execute("select col2 from tab1;")  # col2 doesn't exist
             except pymonetdb.OperationalError as e:
-                sys.stderr.write(str(e))
+                if 'Identifier tab1.col2 doesn\'t exist' not in str(e):
+                    sys.stderr.write(str(e))
             try:
                 cur2.execute("select col1 from tab2;")  # col1 is not a floating point column
             except pymonetdb.OperationalError as e:
-                sys.stderr.write(str(e))
+                if 'Parameter 1 has wrong SQL type, expected double, but got tinyint instead' not in str(e):
+                    sys.stderr.write(str(e))
             cur2.execute("drop table tab1;")
             cur2.execute("drop table tab2;")
 
@@ -61,15 +59,14 @@ with tempfile.TemporaryDirectory() as farm_dir:
             try:
                 cur2.execute("select * from m2;")  # Infinite loop while resolving the children of m2
             except pymonetdb.OperationalError as e:
-                sys.stderr.write(str(e))
+                if 'Merge tables not supported under remote connections' not in str(e):
+                    sys.stderr.write(str(e))
 
             cur1.close()
             conn1.close()
             cur2.close()
             conn2.close()
             out, err = prc2.communicate()
-            sys.stdout.write(out)
             sys.stderr.write(err)
         out, err = prc1.communicate()
-        sys.stdout.write(out)
         sys.stderr.write(err)

@@ -10,7 +10,7 @@
 # onlyif <system>
 
 # statement (ok|error)
-# query (I|T|R)+ (nosort|rowsort|valuesort)? [arg]
+# query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
 #       I: integer; T: text (string); R: real (decimal)
 #       nosort: do not sort
 #       rowsort: sort rows
@@ -237,7 +237,7 @@ class SQLLogic:
             if len(self.crs.description) != len(columns):
                 self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)), data=data)
                 return False
-        if self.crs.rowcount * len(columns) != nresult:
+        if sorting != 'python' and self.crs.rowcount * len(columns) != nresult:
             self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)), data=data)
             return False
         if self.res is not None:
@@ -296,6 +296,21 @@ class SQLLogic:
                 except:
                     self.query_error(query, 'filter function failed')
                     err = True
+            ncols = 1
+            if (len(data)):
+                ncols = len(data[0])
+            if len(data)*ncols != nresult:
+                self.query_error(query, 'received {} rows, expected {} rows'.format(len(data)*ncols, nresult), data=data)
+                return False
+            for row in data:
+                for col in row:
+                    if expected is not None:
+                        if col != expected[i]:
+                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                            err = True
+                        i += 1
+                    m.update(bytes(col, encoding='ascii'))
+                    m.update(b'\n')
         else:
             if sorting == 'rowsort':
                 data.sort()

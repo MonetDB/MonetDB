@@ -1,6 +1,7 @@
 statement ok
 function perftst( b:bat[:any_2],div:any_2):void;
-	io.print("perftst"); io.print(div);
+	#io.print("perftst");
+	#io.print(div);
 	reduce:= batcalc./(b,div,nil:bat);
 	io.print(reduce);
 end perftst;
@@ -15,12 +16,9 @@ exit i;
 user.perftst(b,1:lng);
 end;
 
-query T rowsort
-mdb.List("user","foo");
-----
-end user.foo;@#[7] (0)  
-
 query TT rowsort
 user.foo();
 ----
+20 values hashing to df64c71718164c8be268303ff6d71109
+
 

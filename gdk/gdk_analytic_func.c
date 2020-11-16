@@ -1004,7 +1004,7 @@ minmaxvarsized##IMP: \
 gdk_return								\
 GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)		\
 {									\
-	bool has_nils = false;						\
+	bool has_nils = false, last = false; \
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL, \
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;	\
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL; 	\
@@ -1013,7 +1013,6 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
-	bool last = false ; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {		\
@@ -1352,11 +1351,10 @@ GDKanalyticalcount(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_ni
 	const void *restrict nil = ATOMnilptr(tpe);
 	int (*cmp) (const void *, const void *) = ATOMcompare(tpe);
 	const void *restrict bheap = Tloc(b, 0);
-	bool count_all = !ignore_nils || b->tnonil;
+	bool count_all = !ignore_nils || b->tnonil, last = false;
 	BATiter bpi = bat_iterator(b);
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -1659,43 +1657,17 @@ sum##TPE1##TPE2##IMP: \
 		}		\
 	} while (0)
 
-static gdk_return /* This is a workaround for a MSVC compiler bug at build engine version 16.7.0+b89cb5fde Will test again after the next release */
-GDKanalyticalsumothers(BAT *r, BAT *p, bit *np, BAT *b, oid *restrict start, oid *restrict end, int tp1, int tp2)
+gdk_return
+GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
-	bool has_nils = false;
-	oid i = 0, j = 0, k = 0, cnt = BATcount(b), *levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+	bool has_nils = false, last = false;
+	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
+		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
+	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	int abort_on_error = 1;
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	bool last = false;
-
-	ANALYTICAL_SUM_BRANCHES(OTHERS);
-
-	BATsetcount(r, cnt);
-	r->tnonil = !has_nils;
-	r->tnil = has_nils;
-	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */
-calc_overflow:
-	GDKerror("22003!overflow in calculation.\n");
-	res = GDK_FAIL;
-cleanup:
-	GDKfree(segment_tree);
-	return res;
-nosupport:
-	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
-}
-
-gdk_return
-GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
-{
-	bool has_nils = false;
-	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL;
-	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
-	int abort_on_error = 1;
-	BUN nils = 0;
-	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -1712,7 +1684,7 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 			ANALYTICAL_SUM_BRANCHES(CURRENT_ROW);
 		} break;
 		default: {
-			return GDKanalyticalsumothers(r, p, np, b, start, end, tp1, tp2);
+			ANALYTICAL_SUM_BRANCHES(OTHERS);
 		}
 		}
 	}
@@ -1720,15 +1692,19 @@ GDKanalyticalsum(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp
 	BATsetcount(r, cnt);
 	r->tnonil = !has_nils;
 	r->tnil = has_nils;
-	return GDK_SUCCEED;
-      bailout:
+	goto cleanup; /* all these gotos seem confusing but it cleans up the ending of the operator */
+bailout:
 	GDKerror("42000!error while calculating floating-point sum\n");
-	return GDK_FAIL;
-      nosupport:
-	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
-	return GDK_FAIL;
-      calc_overflow:
+	res = GDK_FAIL;
+	goto cleanup; 
+calc_overflow:
 	GDKerror("22003!overflow in calculation.\n");
+	res = GDK_FAIL;
+cleanup:
+	GDKfree(segment_tree);
+	return res;
+nosupport:
+	GDKerror("42000!type combination (sum(%s)->%s) not supported.\n", ATOMname(tp1), ATOMname(tp2));
 	return GDK_FAIL;
 }
 
@@ -2193,7 +2169,7 @@ prod##TPE1##TPE2##IMP: \
 gdk_return
 GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
 {
-	bool has_nils = false;
+	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
@@ -2201,7 +2177,6 @@ GDKanalyticalprod(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int t
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -2580,7 +2555,7 @@ avg_num_deltas(hge)
 gdk_return
 GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
-	bool has_nils = false;
+	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	lng n = 0, rr = 0;
@@ -2590,7 +2565,6 @@ GDKanalyticalavg(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int fr
 	BUN nils = 0;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	bool last = false;
 #ifdef HAVE_HGE
 	hge sum = 0;
 #else
@@ -2831,14 +2805,13 @@ avg_int_deltas(hge)
 gdk_return
 GDKanalyticalavginteger(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
 {
-	bool has_nils = false;
+	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	lng rem = 0, ncnt = 0;
 	bit *np = p ? Tloc(p, 0) : NULL, *op = o ? Tloc(o, 0) : NULL;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {
@@ -3081,7 +3054,7 @@ statistics##TPE##IMP: \
 gdk_return \
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
-	bool has_nils = false;	\
+	bool has_nils = false, last = false;	\
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,	\
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0; \
 	lng n = 0;	\
@@ -3089,7 +3062,6 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, in
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean = 0, m2 = 0, delta; \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
-	bool last = false; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {	\
@@ -3288,7 +3260,7 @@ typedef struct covariance_deltas {
 gdk_return \
 GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type) \
 { \
-	bool has_nils = false;	\
+	bool has_nils = false, last = false; \
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,	\
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0; \
 	lng n = 0;	\
@@ -3296,7 +3268,6 @@ GDKanalytical_##NAME(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, i
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, m2 = 0, delta1, delta2; \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
-	bool last = false; \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {	\
@@ -3527,7 +3498,7 @@ typedef struct correlation_deltas {
 gdk_return
 GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
 {
-	bool has_nils = false;
+	bool has_nils = false, last = false;
 	oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(b1), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
 		*levels_offset = NULL, tree_capacity = 0, nlevels = 0;
 	lng n = 0;
@@ -3535,7 +3506,6 @@ GDKanalytical_correlation(BAT *r, BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT 
 	dbl *restrict rb = (dbl *) Tloc(r, 0), mean1 = 0, mean2 = 0, up = 0, down1 = 0, down2 = 0, delta1, delta2, aux, rr;
 	void *segment_tree = NULL;
 	gdk_return res = GDK_SUCCEED;
-	bool last = false;
 
 	if (cnt > 0) {
 		switch (frame_type) {

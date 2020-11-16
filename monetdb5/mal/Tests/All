@@ -184,20 +184,20 @@ tst904
 tst905
 tst906
 tst907
-#tst908 crash Mconvert
-# tst911 handle comment in MAL result set
+tst908
+#tst911 micro benchmark, should move ..
 tst912
 tst913
-# tst914 Mconvert parsing error, non-finished function block
+tst914
 tst960
 tst920
-#tst901a improper compilation
-# #tst901b
-# dataflow01 Incorrect compilation
+tst901a
+# #tst901b micro benchmark of optimizers
+dataflow01
 dataflow03
 flowchk
 dynamicload
 pithole
 malids
-# # Tracer
+# Tracer
 # # tracer00 Output is call dependent
