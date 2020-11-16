@@ -28,13 +28,13 @@ set(include_sql_files
   25_debug
   26_sysmon
   27_rejects
-  30_describe
   39_analytics
   40_json
   41_md5sum
   45_uuid
   46_profiler
   51_sys_schema_extension
+  52_describe
   58_hot_snapshot
   60_wlcr
   61_wlcr
