@@ -189,7 +189,7 @@ def main():
     parser.add_argument('--sort', action='store', default='rowsort',
                         choices=['nosort','rowsort','valuesort'],
                         help='how to sort the values')
-    parser.add_argument('--hashlimit', action='store', type=int, default=10,
+    parser.add_argument('--hashlimit', action='store', type=int, default=100,
                         help='hash limit')
     parser.add_argument('--results', action='store', type=argparse.FileType('w'),
                         help='file to store results of queries')
