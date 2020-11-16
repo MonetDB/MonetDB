@@ -1,8 +1,8 @@
 statement ok
 create table cm_tmp(i int)
 
-query T rowsort
-plan copy into cm_tmp from '/file1','/file2'
+query T nosort
+PLAN copy into cm_tmp from '/file1','/file2'
 ----
 )
 insert(

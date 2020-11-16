@@ -38,8 +38,8 @@ select * from sorted
 ----
 16 values hashing to 2cdd4950dea01e559cbfccc9f0aafd12
 
-query T rowsort
-plan select a,b from sorted group by a,b
+query T nosort
+PLAN select a,b from sorted group by a,b
 ----
 ) [ "sorted"."a", "sorted"."b" ]
 project (
@@ -47,8 +47,8 @@ project (
 | group by (
 | | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
 
-query T rowsort
-plan select a,b from sorted group by b,a
+query T nosort
+PLAN select a,b from sorted group by b,a
 ----
 ) [ "sorted"."a", "sorted"."b" ]
 project (
