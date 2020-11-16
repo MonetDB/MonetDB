@@ -117,6 +117,7 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
 	state->finish_stmt = pushArgument(mb, state->finish_stmt, ret_cookie);
 	// fprintf(stderr, "TRIGGER\n");
 
+	freeInstruction(old);
 	return MAL_SUCCEED;
 }
 
