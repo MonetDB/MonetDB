@@ -38,23 +38,23 @@ select * from sorted
 ----
 16 values hashing to 2cdd4950dea01e559cbfccc9f0aafd12
 
-query T rowsort
-plan select a,b from sorted group by a,b
+query T nosort
+PLAN select a,b from sorted group by a,b
 ----
-) [ "sorted"."a", "sorted"."b" ]
 project (
+| group by (
+| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
 | ) [ "sorted"."a", "sorted"."b" ] [ "sorted"."a", "sorted"."b" ]
-| group by (
-| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
-
-query T rowsort
-plan select a,b from sorted group by b,a
-----
 ) [ "sorted"."a", "sorted"."b" ]
+
+query T nosort
+PLAN select a,b from sorted group by b,a
+----
 project (
-| ) [ "sorted"."b", "sorted"."a" ] [ "sorted"."b", "sorted"."a" ]
 | group by (
 | | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
+| ) [ "sorted"."b", "sorted"."a" ] [ "sorted"."b", "sorted"."a" ]
+) [ "sorted"."a", "sorted"."b" ]
 
 statement ok
 drop table unsorted

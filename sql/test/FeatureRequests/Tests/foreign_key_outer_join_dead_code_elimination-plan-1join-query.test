@@ -1,149 +1,149 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-query T rowsort
+query T nosort
    plan select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1
 ----
-) [ "%1"."%1" NOT NULL ]
 project (
-| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
-query T rowsort
+query T nosort
    plan select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
 | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | left outer join (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
 | | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT 
+| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | left outer join (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
 | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT 
+| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select count(*) from pk1 right outer join fk on fk.fk1 = pk1.pk1
 ----
-) [ "%1"."%1" NOT NULL ]
 project (
-| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
-query T rowsort
+query T nosort
    plan select id       from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
 | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v1  from pk1 right outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | right outer join (
-| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT 
 | | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT ,
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT 
+| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v2  from pk2 right outer join fk on fk.fk2 = pk2.pk2 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | right outer join (
-| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
 | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT ,
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
+| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select count(*) from pk1 full outer join fk on fk.fk1 = pk1.pk1
 ----
-) [ "%1"."%1" NOT NULL ]
 project (
-| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
-query T rowsort
+query T nosort
    plan select id       from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" HASHCOL  ] [ "fk"."id" ASC HASHCOL  ]
 project (
 | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+) [ "fk"."id" HASHCOL  ] [ "fk"."id" ASC HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v1  from pk1 full outer join fk on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | full outer join (
-| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT 
 | | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT ,
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT 
+| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
+) [ "fk"."id" HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v2  from pk2 full outer join fk on fk.fk2 = pk2.pk2 order by id
 ----
-) [ "fk"."id" HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | full outer join (
-| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
 | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT ,
+| | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT 
+| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
+) [ "fk"."id" HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select count(*) from pk1 join fk on fk.fk1 = pk1.pk1
 ----
-) [ "%1"."%1" NOT NULL ]
 project (
-| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
 | group by (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
-query T rowsort
+query T nosort
    plan select id       from pk1 join fk on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
 | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL  ] COUNT 
+) [ "fk"."id" NOT NULL HASHCOL  ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v1  from pk1 join fk on fk.fk1 = pk1.pk1 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | join (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
 | | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT 
+| ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk1"."v1" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
-query T rowsort
+query T nosort
    plan select id , v2  from pk2 join fk on fk.fk2 = pk2.pk2 order by id
 ----
-) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 project (
-| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
 | join (
 | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk2_fkey" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ] COUNT ,
 | | table(sys.pk2) [ "pk2"."v2", "pk2"."%TID%" NOT NULL ] COUNT 
+| ) [ "fk"."%fk_fk2_fkey" NOT NULL = "pk2"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk2_fkey ]
+) [ "fk"."id" NOT NULL HASHCOL , "pk2"."v2" ] [ "fk"."id" ASC NOT NULL HASHCOL  ]
 
 statement ok
 set optimizer = 'default_pipe'

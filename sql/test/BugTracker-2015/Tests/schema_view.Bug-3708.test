@@ -51,22 +51,22 @@ set schema s1
 statement ok
 create view s4 as select * from s3
 
-query T rowsort
-plan select * from s1.s4
+query T nosort
+PLAN select * from s1.s4
 ----
-) [ "s3"."x" as "s4"."x" ]
 project (
 | table(s1.s3) [ "s3"."x" ] COUNT 
+) [ "s3"."x" as "s4"."x" ]
 
 statement ok
 set schema s2
 
-query T rowsort
-plan select * from s1.s4
+query T nosort
+PLAN select * from s1.s4
 ----
-) [ "s3"."x" as "s4"."x" ]
 project (
 | table(s1.s3) [ "s3"."x" ] COUNT 
+) [ "s3"."x" as "s4"."x" ]
 
 statement ok
 set schema sys
