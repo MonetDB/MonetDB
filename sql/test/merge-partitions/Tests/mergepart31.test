@@ -157,11 +157,111 @@ project (
 | select (
 | |  [ boolean "true" ]
 
+query T rowsort
+plan select 1 from splitted where stamp > TIMESTAMP '2020-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
+----
+) [ tinyint "1" ]
+project (
+| ) [ timestamp(7) "2020-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
+| select (
+| | table(sys.third_decade) [ "splitted"."stamp" ] COUNT 
+
+query T rowsort
+plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
+----
+12 values hashing to 72d7507e7d12f402b333d6dc1e51e58c
+
+query T rowsort
+plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
+----
+) [ tinyint "1" ]
+project (
+| ) [ timestamp(7) "2010-01-01 00:00:00.000000" < "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
+| select (
+| | table(sys.second_decade) [ "splitted"."stamp" ] COUNT 
+
+query T rowsort
+plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'
+----
+) [ tinyint "1" ]
+project (
+| ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
+| select (
+| | table(sys.second_decade) [ "splitted"."stamp" ] COUNT 
+
+query T rowsort
+plan select 1 from splitted where stamp > TIMESTAMP '2001-01-02 00:00:00' and stamp < TIMESTAMP '2015-01-01 00:00:00'
+----
+12 values hashing to c29b7331b26c384cd72d3e4b966ea3c2
+
+query T rowsort
+plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2010-01-01 00:00:00'
+----
+) [ tinyint "1" ]
+project (
+| ) [ boolean "false" ]
+| select (
+| |  [ boolean "true" ]
+
+query T rowsort
+plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2010-01-01 00:00:00'
+----
+12 values hashing to 551700cb417d52bcc2ea397abfdf1452
+
+query T rowsort
+plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'
+----
+19 values hashing to 28e40a9f6da6ce8a27a58d449adaea87
+
+statement ok
+CREATE TABLE fourth_decade (stamp TIMESTAMP, val INT)
+
+statement ok
+ALTER TABLE splitted ADD TABLE fourth_decade AS PARTITION FROM RANGE MINVALUE TO TIMESTAMP '2000-01-01 00:00:00'
+
+statement ok
+INSERT INTO splitted VALUES (TIMESTAMP '1999-01-01 00:00:00', 7)
+
+query T rowsort
+plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
+----
+) [ tinyint "1" ]
+project (
+| ) [ timestamp(7) "2000-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2001-01-01 00:00:00.000000" BETWEEN  ]
+| select (
+| | table(sys.first_decade) [ "splitted"."stamp" ] COUNT 
+
+query T rowsort
+plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'
+----
+12 values hashing to a9b9c455c94b91e080ed32e6bc75dd4b
+
+query T rowsort
+plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
+----
+) [ tinyint "1" ]
+project (
+| ) [ "splitted"."stamp" = timestamp(7) "2010-01-01 00:00:00.000000" ]
+| select (
+| | table(sys.second_decade) [ "splitted"."stamp" ] COUNT 
+
+query T rowsort
+plan select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'
+----
+) [ tinyint "1" ]
+project (
+| ) [ "splitted"."stamp" = timestamp(7) "2000-01-01 00:00:00.000000" ]
+| select (
+| | table(sys.first_decade) [ "splitted"."stamp" ] COUNT 
+
 statement ok
 ALTER TABLE splitted DROP TABLE second_decade
 
 statement ok
 ALTER TABLE splitted DROP TABLE third_decade
+
+statement ok
+ALTER TABLE splitted DROP TABLE fourth_decade
 
 query T rowsort
 plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'
