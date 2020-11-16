@@ -116,6 +116,8 @@ transform(MalBlkPtr mb, InstrPtr old)
 			row_count_var = new_row_count_var; // chain the importColumn statements
 	}
 
+	freeInstruction(old);
+
 	return MAL_SUCCEED;
 }
 
