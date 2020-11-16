@@ -60,10 +60,23 @@ select * from t2606b
 32
 33
 
-query T rowsort
-plan   select * from t2606a   union   select * from t2606b   order by a
+query T nosort
+PLAN   select * from t2606a   union   select * from t2606b   order by a
 ----
-14 values hashing to daeac8965118e8392b779bd3907f99f1
+project (
+| distinct union (
+| | project (
+| | | group by (
+| | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | group by (
+| | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
        select * from t2606a   union   select * from t2606b   order by a
@@ -78,10 +91,23 @@ query I rowsort
 32
 33
 
-query T rowsort
-plan ( select * from t2606a   union   select * from t2606b ) order by a
+query T nosort
+PLAN ( select * from t2606a   union   select * from t2606b ) order by a
 ----
-14 values hashing to daeac8965118e8392b779bd3907f99f1
+project (
+| distinct union (
+| | project (
+| | | group by (
+| | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | group by (
+| | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
      ( select * from t2606a   union   select * from t2606b ) order by a
@@ -96,10 +122,23 @@ query I rowsort
 32
 33
 
-query T rowsort
-plan ( select * from t2606a ) union ( select * from t2606b ) order by a
+query T nosort
+PLAN ( select * from t2606a ) union ( select * from t2606b ) order by a
 ----
-14 values hashing to daeac8965118e8392b779bd3907f99f1
+project (
+| distinct union (
+| | project (
+| | | group by (
+| | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | group by (
+| | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
      ( select * from t2606a ) union ( select * from t2606b ) order by a
@@ -114,10 +153,19 @@ query I rowsort
 32
 33
 
-query T rowsort
-plan   select * from t2606a   except   select * from t2606b   order by a
+query T nosort
+PLAN   select * from t2606a   except   select * from t2606b   order by a
 ----
-10 values hashing to ce8dbba93922ade12cff307efa6ea298
+project (
+| distinct except (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
        select * from t2606a   except   select * from t2606b   order by a
@@ -126,10 +174,19 @@ query I rowsort
 12
 13
 
-query T rowsort
-plan ( select * from t2606a   except   select * from t2606b ) order by a
+query T nosort
+PLAN ( select * from t2606a   except   select * from t2606b ) order by a
 ----
-10 values hashing to ce8dbba93922ade12cff307efa6ea298
+project (
+| distinct except (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
      ( select * from t2606a   except   select * from t2606b ) order by a
@@ -138,10 +195,19 @@ query I rowsort
 12
 13
 
-query T rowsort
-plan ( select * from t2606a ) except ( select * from t2606b ) order by a
+query T nosort
+PLAN ( select * from t2606a ) except ( select * from t2606b ) order by a
 ----
-10 values hashing to ce8dbba93922ade12cff307efa6ea298
+project (
+| distinct except (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
      ( select * from t2606a ) except ( select * from t2606b ) order by a
@@ -150,10 +216,19 @@ query I rowsort
 12
 13
 
-query T rowsort
-plan   select * from t2606a   intersect   select * from t2606b   order by a
+query T nosort
+PLAN   select * from t2606a   intersect   select * from t2606b   order by a
 ----
-10 values hashing to 63ad92b1bdf7d574a4182454b4743d4c
+project (
+| distinct intersect (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
        select * from t2606a   intersect   select * from t2606b   order by a
@@ -162,10 +237,19 @@ query I rowsort
 22
 23
 
-query T rowsort
-plan ( select * from t2606a   intersect   select * from t2606b ) order by a
+query T nosort
+PLAN ( select * from t2606a   intersect   select * from t2606b ) order by a
 ----
-10 values hashing to 63ad92b1bdf7d574a4182454b4743d4c
+project (
+| distinct intersect (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
      ( select * from t2606a   intersect   select * from t2606b ) order by a
@@ -174,10 +258,19 @@ query I rowsort
 22
 23
 
-query T rowsort
-plan ( select * from t2606a ) intersect ( select * from t2606b ) order by a
+query T nosort
+PLAN ( select * from t2606a ) intersect ( select * from t2606b ) order by a
 ----
-10 values hashing to 63ad92b1bdf7d574a4182454b4743d4c
+project (
+| distinct intersect (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "%5"."a" ]
+) [ "%5"."a" ] [ "%5"."a" ASC ]
 
 query I rowsort
      ( select * from t2606a ) intersect ( select * from t2606b ) order by a
@@ -186,10 +279,23 @@ query I rowsort
 22
 23
 
-query T rowsort
-plan select * from (select * from t2606a union select * from t2606b) as t order by a
+query T nosort
+PLAN select * from (select * from t2606a union select * from t2606b) as t order by a
 ----
-14 values hashing to 505a9f7a11606a1ebb11b32ffb0b8885
+project (
+| distinct union (
+| | project (
+| | | group by (
+| | | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | | ) [ "t2606a"."a" ] [ "t2606a"."a" ]
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | group by (
+| | | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | | ) [ "t2606b"."a" ] [ "t2606b"."a" ]
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "t"."a" ]
+) [ "t"."a" ] [ "t"."a" ASC ]
 
 query I rowsort
      select * from (select * from t2606a union select * from t2606b) as t order by a
@@ -204,10 +310,19 @@ query I rowsort
 32
 33
 
-query T rowsort
-plan select * from (select * from t2606a except select * from t2606b) as t order by a
+query T nosort
+PLAN select * from (select * from t2606a except select * from t2606b) as t order by a
 ----
-10 values hashing to ad52b2acba9062d16c5fe7bf78e2c78f
+project (
+| distinct except (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "t"."a" ]
+) [ "t"."a" ] [ "t"."a" ASC ]
 
 query I rowsort
      select * from (select * from t2606a except select * from t2606b) as t order by a
@@ -216,10 +331,19 @@ query I rowsort
 12
 13
 
-query T rowsort
-plan select * from (select * from t2606a intersect select * from t2606b) as t order by a
+query T nosort
+PLAN select * from (select * from t2606a intersect select * from t2606b) as t order by a
 ----
-10 values hashing to 51b0458644ce540d9a91beb880f56519
+project (
+| distinct intersect (
+| | project (
+| | | table(sys.t2606a) [ "t2606a"."a" ] COUNT 
+| | ) [ "t2606a"."a" as "%1"."a" ],
+| | project (
+| | | table(sys.t2606b) [ "t2606b"."a" ] COUNT 
+| | ) [ "t2606b"."a" as "%2"."a" ]
+| ) [ "%1"."a" as "t"."a" ]
+) [ "t"."a" ] [ "t"."a" ASC ]
 
 query I rowsort
      select * from (select * from t2606a intersect select * from t2606b) as t order by a

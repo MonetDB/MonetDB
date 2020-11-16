@@ -36,16 +36,16 @@ select count(*) from mt where i >= 5 and i < 100
 ----
 2
 
-query T rowsort
-plan select count(*) from mt where i >= 5 and i < 100
+query T nosort
+PLAN select count(*) from mt where i >= 5 and i < 100
 ----
-) [ "%1"."%1" NOT NULL ]
 project (
-| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
 | group by (
-| | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
 | | select (
 | | | table(sys.sub2) [ "mt"."i" ] COUNT 
+| | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
 statement ok
 alter table sub1 set read write
@@ -64,10 +64,25 @@ select count(*) from mt where i >= 5 and i < 100
 ----
 4
 
-query T rowsort
-plan select count(*) from mt where i >= 5 and i < 100
+query T nosort
+PLAN select count(*) from mt where i >= 5 and i < 100
 ----
-16 values hashing to 260dbb3b58a298ec9fac706651919100
+project (
+| group by (
+| | union (
+| | | group by (
+| | | | select (
+| | | | | table(sys.sub1) [ "sub1"."i" as "mt"."i" ] COUNT 
+| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | ) [  ] [ sys.count() NOT NULL as "%1"."%1" ],
+| | | group by (
+| | | | select (
+| | | | | table(sys.sub2) [ "sub2"."i" as "mt"."i" ] COUNT 
+| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+| | ) [ "%1"."%1" ]
+| ) [  ] [ sys.sum no nil ("%1"."%1") as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
 statement ok
 drop table mt
