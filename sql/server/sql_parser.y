@@ -4717,7 +4717,7 @@ literal:
 
 			DEC_TPE value = decimal_from_str(s, &digits, &scale, &has_errors);
 
-			if (!has_errors) {
+			if (!has_errors && digits <= MAX_DEC_DIGITS) {
 				// The float-like value seems to fit in decimal storage
 				double val = strtod($1,NULL);
 				sql_find_subtype(&t, "decimal", digits, scale );
