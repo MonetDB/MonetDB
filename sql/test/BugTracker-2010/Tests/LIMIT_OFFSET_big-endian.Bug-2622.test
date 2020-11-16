@@ -16,141 +16,364 @@ insert into oblo values (2)
 statement ok
 insert into oblo values (1)
 
-query T rowsort
+query T nosort
    PLAN select * from oblo
 ----
-) [ "oblo"."a" ]
 project (
 | table(sys.oblo) [ "oblo"."a" ] COUNT 
+) [ "oblo"."a" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo OFFSET 2
 ----
-) [ "oblo"."a" ]
 project (
-| ) [ bigint "NULL", bigint "2" ]
 | top N (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ bigint "NULL", bigint "2" ]
+) [ "oblo"."a" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo LIMIT 2
 ----
-) [ "oblo"."a" ]
 project (
-| ) [ bigint "2" ]
 | top N (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ bigint "2" ]
+) [ "oblo"."a" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo LIMIT 1 OFFSET 2
 ----
-) [ "oblo"."a" ]
 project (
-| ) [ bigint "1", bigint "2" ]
 | top N (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ bigint "1", bigint "2" ]
+) [ "oblo"."a" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo LIMIT 2 OFFSET 1
 ----
-) [ "oblo"."a" ]
 project (
-| ) [ bigint "2", bigint "1" ]
 | top N (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ bigint "2", bigint "1" ]
+) [ "oblo"."a" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo ORDER BY a
 ----
-) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 project (
 | table(sys.oblo) [ "oblo"."a" ] COUNT 
+) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo ORDER BY a OFFSET 2
 ----
-) [ bigint "NULL", bigint "2" ]
 top N (
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 | project (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+) [ bigint "NULL", bigint "2" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 2
 ----
-) [ bigint "2" ]
 top N (
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 | project (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+) [ bigint "2" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
-) [ bigint "2", bigint "1" ]
 top N (
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 | project (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+) [ bigint "2", bigint "1" ]
 
-query T rowsort
+query T nosort
    PLAN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
-) [ bigint "1", bigint "2" ]
 top N (
-| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 | project (
 | | table(sys.oblo) [ "oblo"."a" ] COUNT 
+| ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
+) [ bigint "1", bigint "2" ]
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo
 ----
-26 values hashing to ebcde96c710ce41a3a41e01df44dad83
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo OFFSET 2
 ----
-32 values hashing to c27a53ca10ccfd0d9bd0589e43640f9e
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+2
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2
 ----
-32 values hashing to 37b78da4384c09dfa3e3f871d7945069
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+2
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo LIMIT 1 OFFSET 2
 ----
-32 values hashing to 63cef56a1a0d902f6e1bec7df8282e34
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+2
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2 OFFSET 1
 ----
-32 values hashing to b6e71196b356f95f360c63af5f9eecb7
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+2
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a
 ----
-30 values hashing to 358130ac394d5760d2b95cc2e203d111
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+2
+algebra.sort
+3
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a OFFSET 2
 ----
-36 values hashing to 1f15a9fa6f4a60b07a0dd1740b12241f
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+3
+algebra.sort
+3
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2
 ----
-41 values hashing to e5ef5f97772d2182310e7adc85ca11af
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+4
+algebra.firstn
+1
+algebra.sort
+3
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
-43 values hashing to bdd35ee192377448c950df5dd511365c
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+4
+algebra.firstn
+1
+algebra.sort
+3
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
 
-query T rowsort
+query T python explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
-43 values hashing to 90b778c279e8652c5422448d85843c85
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+sql.emptybind
+4
+sql.bind
+1
+sql.delta
+1
+algebra.projection
+4
+algebra.firstn
+1
+algebra.sort
+3
+algebra.subslice
+1
+bat.pack
+5
+sql.resultSet
+1
+
 
 query I rowsort
         select * from oblo
