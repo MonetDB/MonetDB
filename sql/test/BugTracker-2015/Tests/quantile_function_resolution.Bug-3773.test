@@ -7,24 +7,24 @@ create table x (y decimal(10,4))
 query T nosort
 PLAN select quantile(y, 0.0) from x
 ----
-) [ "%1"."%1" ]
 project (
-| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2") as "%1"."%1" ]
 | group by (
-| | ) [ "x"."y", double "0" as "%2"."%2" ]
 | | project (
 | | | table(sys.x) [ "x"."y" ] COUNT 
+| | ) [ "x"."y", double "0" as "%2"."%2" ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2") as "%1"."%1" ]
+) [ "%1"."%1" ]
 
 query T nosort
 PLAN select quantile(y, 0) from x
 ----
-) [ "%1"."%1" ]
 project (
-| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2") as "%1"."%1" ]
 | group by (
-| | ) [ "x"."y", double "0" as "%2"."%2" ]
 | | project (
 | | | table(sys.x) [ "x"."y" ] COUNT 
+| | ) [ "x"."y", double "0" as "%2"."%2" ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2") as "%1"."%1" ]
+) [ "%1"."%1" ]
 
 statement ok
 rollback
