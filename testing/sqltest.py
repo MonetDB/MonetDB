@@ -3,7 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 # Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
-
+import os
+import sys
 import unittest
 import pymonetdb
 
@@ -12,8 +13,14 @@ MAPIPORT=int(os.getenv("MAPIPORT"))
 
 class PyMonetDBConnectionContext(object):
     def __init__(self,
-            username='monetdb', password='monetbd',
+            username='monetdb', password='monetdb',
             hostname='localhost', port=MAPIPORT, database=TSTDB, language='sql'):
+        self.username = username
+        self.password = password
+        self.hostname = hostname
+        self.port = port
+        self.database = database
+        self.language = language
         self.dbh = None
         self.crs = None
         self.language = language
@@ -54,7 +61,7 @@ class PyMonetDBConnectionContext(object):
 class SQLTestResult(object):
     """Holder of sql execution information. Managed by SQLTestCase."""
     query = None
-    assert_errors = [] # holds assertion errors
+    assertion_errors = [] # holds assertion errors
     query_error = None
     data = []
     rows = []
@@ -71,7 +78,7 @@ class SQLTestResult(object):
             self.query = stmt
             try:
                 with self.test_case.conn_ctx as ctx:
-                    ctx.crs.execute(query)
+                    ctx.crs.execute(stmt)
                     self.rowcount = ctx.crs.rowcount
                     self.rows = ctx.crs._rows
             except (pymonetdb.Error, ValueError) as e:
@@ -93,22 +100,29 @@ class SQLTestResult(object):
                 self.query_error = e
         return self
 
+    def run(self, query:str):
+        pass
+
+    def fail(self, msg):
+        self.assertion_errors.append(AssertionError(msg))
+        self.test_case.err(msg)
+
     def assertFail(self):
         if self.query_error is None:
-            msg = "{}\n was expected to fail but didn't!".format(self.query)
-            self.test_case.err(msg)
+            msg = "{}\nwas expected to fail but didn't\n{}!".format(self.query, str(self.query_error))
+            self.fail(msg)
         return self
 
-    def assertSucceed(self)
+    def assertSucceed(self):
         if self.query_error is not None:
-            msg = "{}\n was expected to succeed but didn't!".format(self.query)
-            self.test_case.err(msg)
+            msg = "{}\nwas expected to succeed but didn't\n{}!".format(self.query, str(self.query_error))
+            self.fail(msg)
         return self
 
     def assertRowCount(self, rowcount):
         if self.rowcount != int(rowcount):
-            msg = "{}\n received {} rows, expected {} rows".format(self.query, self.rowcount, rowcount)
-            self.test_case.err(msg)
+            msg = "{}\nreceived {} rows, expected {} rows".format(self.query, self.rowcount, rowcount)
+            self.fail(msg)
         return self
 
     def assertResultHashTo(self, hash_value):
@@ -124,17 +138,17 @@ class SQLTestResult(object):
         if type(val) is type(recieved):
             if val != recived:
                 msg = "{} \n expected {}, received {}".format(self.query, val, received)
-                self.test_case.err(msg)
+                self.fail(msg)
         else:
             # handle type mismatch
             msg = "{}\n expeted type {} and {}, received type {} and {} in row={}, col={} !".format(self.query, type(val), val, type(received), received, row, col)
-            self.test_case.err(msg)
+            self.fail(msg)
         return self
 
 class SQLTestCase():
-    def __init__(self, out=sys.stdout, err=sys.stderr):
-        self.out = out
-        self.err = err
+    def __init__(self, out_file=sys.stdout, err_file=sys.stderr):
+        self.out_file = out_file
+        self.err_file = err_file
         self.test_results = []
         self._conn_ctx = None
 
@@ -142,22 +156,25 @@ class SQLTestCase():
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self._conn_ctx = None
         self.exit()
 
     def exit(self):
+        self._conn_ctx = None
         for res in self.test_results:
-            if len(res.errors) > 0:
+            if len(res.assertion_errors) > 0:
                 raise SystemExit(1)
 
     def out(self, data):
-        print(data, file=self.out)
+        print(data, file=self.out_file)
+        print('', file=self.out_file)
 
     def err(self, msg):
-        print(msg, file=self.err)
+        print(msg, file=self.err_file)
+        print('', file=self.err_file)
+
 
     def connect(self,
-            username='monetdb', password='monetbd',
+            username='monetdb', password='monetdb',
             hostname='localhost', port=MAPIPORT, database=TSTDB, language='sql'):
             self._conn_ctx = PyMonetDBConnectionContext(
                                  username=username,
@@ -172,7 +189,7 @@ class SQLTestCase():
         return PyMonetDBConnectionContext()
 
     @property
-    def conn_ctx():
+    def conn_ctx(self):
         return self._conn_ctx or self.default_conn_ctx()
 
     def exec_statement(self, stmt:str):
@@ -182,6 +199,13 @@ class SQLTestCase():
         return res
 
     def exec_query(self, query:str):
+        res = SQLTestResult(self)
+        res.run_query(query)
+        self.test_results.append(res)
+        return res
+
+    def execute(self, query:str):
+        # maybe single call here
         res = SQLTestResult(self)
         res.run_query(query)
         self.test_results.append(res)
