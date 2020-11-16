@@ -34,67 +34,67 @@ create table dummyme (a int primary key, b int)
 statement ok
 insert into dummyme values (1,1), (2,1), (3,1)
 
-query T rowsort
+query T nosort
 /* eliminated */
 plan select count(distinct a) from dummyme
 ----
-) [ "%1"."%1" NOT NULL ]
 project (
-| ) [  ] [ sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
 | group by (
 | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-
-query T rowsort
-plan select count(distinct a) from dummyme group by b
-----
+| ) [  ] [ sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
+
+query T nosort
+PLAN select count(distinct a) from dummyme group by b
+----
 project (
-| ) [ "dummyme"."b" ] [ sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
 | group by (
 | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
+| ) [ "dummyme"."b" ] [ sys.count no nil ("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
-query T rowsort
+query T nosort
 /* not eliminated */
 plan select count(distinct b) from dummyme
 ----
-) [ "%1"."%1" ]
 project (
-| ) [  ] [ sys.count unique  no nil ("dummyme"."b") as "%1"."%1" ]
 | group by (
 | | table(sys.dummyme) [ "dummyme"."b" ] COUNT 
-
-query T rowsort
-plan select count(distinct a + 1) from dummyme
-----
+| ) [  ] [ sys.count unique  no nil ("dummyme"."b") as "%1"."%1" ]
 ) [ "%1"."%1" ]
+
+query T nosort
+PLAN select count(distinct a + 1) from dummyme
+----
 project (
-| ) [  ] [ sys.count unique  no nil ("%2"."%2") as "%1"."%1" ]
 | group by (
-| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", sys.sql_add("%3"."%3" NOT NULL, bigint "1") as "%2"."%2" ]
 | | project (
 | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-
-query T rowsort
-plan select count(distinct a + b) from dummyme
-----
-) [ "%1"."%1" ]
-project (
+| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", sys.sql_add("%3"."%3" NOT NULL, bigint "1") as "%2"."%2" ]
 | ) [  ] [ sys.count unique  no nil ("%2"."%2") as "%1"."%1" ]
+) [ "%1"."%1" ]
+
+query T nosort
+PLAN select count(distinct a + b) from dummyme
+----
+project (
 | group by (
-| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", bigint["dummyme"."b"] as "%4"."%4", sys.sql_add("%3"."%3" NOT NULL, "%4"."%4") as "%2"."%2" ]
 | | project (
 | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL , "dummyme"."b" ] COUNT 
+| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", bigint["dummyme"."b"] as "%4"."%4", sys.sql_add("%3"."%3" NOT NULL, "%4"."%4") as "%2"."%2" ]
+| ) [  ] [ sys.count unique  no nil ("%2"."%2") as "%1"."%1" ]
+) [ "%1"."%1" ]
 
-query T rowsort
-plan select count(distinct abs(a)) from dummyme
+query T nosort
+PLAN select count(distinct abs(a)) from dummyme
 ----
-) [ "%1"."%1" NOT NULL ]
 project (
-| ) [  ] [ sys.count unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
 | group by (
-| | ) [ sys.abs("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%2"."%2" ]
 | | project (
 | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
+| | ) [ sys.abs("dummyme"."a" NOT NULL HASHCOL ) NOT NULL as "%2"."%2" ]
+| ) [  ] [ sys.count unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
 
 statement ok
 ROLLBACK

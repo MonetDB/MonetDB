@@ -1124,18 +1124,18 @@ FROM myorders
 1
 2.000
 
-query T rowsort
+query T nosort
 PLAN SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM myorders
 ----
-) [ "%4"."%4" ]
 project (
-| ) [ "%1"."%1" NOT NULL, sys.diff("myorders"."o_custkey" NOT NULL) as "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", sys.min("myorders"."o_totalprice" NOT NULL, "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", int "0", sys.window_bound("%2"."%2", "%3"."%3", int "0", int "0", int "0", bigint "9223372036854775807"), sys.window_bound("%2"."%2", "%3"."%3", int "0", int "5", int "0", bigint "0")) as "%4"."%4" ]
 | project (
-| | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" ASC NOT NULL, "%1"."%1" ASC NOT NULL ]
 | | project (
-| | | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, sys.month("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | | project (
 | | | | table(sys.myorders) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ] COUNT 
+| | | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, sys.month("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
+| | ) [ "myorders"."o_custkey" NOT NULL, "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "myorders"."o_custkey" ASC NOT NULL, "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, sys.diff("myorders"."o_custkey" NOT NULL) as "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", sys.min("myorders"."o_totalprice" NOT NULL, "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", int "0", sys.window_bound("%2"."%2", "%3"."%3", int "0", int "0", int "0", bigint "9223372036854775807"), sys.window_bound("%2"."%2", "%3"."%3", int "0", int "5", int "0", bigint "0")) as "%4"."%4" ]
+) [ "%4"."%4" ]
 
 query R rowsort
 SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FROM o_orderdate) ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) FROM myorders
@@ -1143,18 +1143,18 @@ SELECT MIN(o_totalprice) OVER (PARTITION BY o_custkey ORDER BY EXTRACT(MONTH FRO
 1.000
 2.000
 
-query T rowsort
+query T nosort
 PLAN SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) FROM myorders
 ----
-) [ "%3"."%3" ]
 project (
-| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.max("myorders"."o_totalprice" NOT NULL, "%2"."%2", sys.diff("%1"."%1" NOT NULL), int "1", sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "0", int "0", int "2"), sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "5", int "0", int "0")) as "%3"."%3" ]
 | project (
-| | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
 | | project (
-| | | ) [ "myorders"."o_totalprice" NOT NULL, sys.day("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | | project (
 | | | | table(sys.myorders) [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ] COUNT 
+| | | ) [ "myorders"."o_totalprice" NOT NULL, sys.day("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
+| | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.max("myorders"."o_totalprice" NOT NULL, "%2"."%2", sys.diff("%1"."%1" NOT NULL), int "1", sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "0", int "0", int "2"), sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "5", int "0", int "0")) as "%3"."%3" ]
+) [ "%3"."%3" ]
 
 query R rowsort
 SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) FROM myorders
@@ -1162,18 +1162,18 @@ SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETW
 1.000
 2.000
 
-query T rowsort
+query T nosort
 PLAN SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING) FROM myorders
 ----
-) [ "%4"."%4" ]
 project (
-| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", sys.count("myorders"."o_totalprice" NOT NULL, boolean "true", "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", int "2", sys.window_bound("%3"."%3", int "2", int "0", int "0", tinyint "2"), sys.window_bound("%3"."%3", int "2", int "3", int "0", bigint "9223372036854775807")) as "%4"."%4" ]
 | project (
-| | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
 | | project (
-| | | ) [ "myorders"."o_totalprice" NOT NULL, sys.year("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | | project (
 | | | | table(sys.myorders) [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ] COUNT 
+| | | ) [ "myorders"."o_totalprice" NOT NULL, sys.year("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
+| | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
+| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", sys.count("myorders"."o_totalprice" NOT NULL, boolean "true", "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", int "2", sys.window_bound("%3"."%3", int "2", int "0", int "0", tinyint "2"), sys.window_bound("%3"."%3", int "2", int "3", int "0", bigint "9223372036854775807")) as "%4"."%4" ]
+) [ "%4"."%4" ]
 
 query I rowsort
 SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING) FROM myorders

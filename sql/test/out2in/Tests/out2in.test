@@ -13,70 +13,79 @@ CREATE TABLE bar (i INT, j INT)
 statement ok
 INSERT INTO bar VALUES (30, 300), (20, 200), (50, 500), (40, 400)
 
-query T rowsort
+query T nosort
 PLAN SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.i IS NOT NULL
 ----
-) [ "foo"."i", "bar"."i" ]
 project (
-| ) [ "foo"."i" = "bar"."i" ]
 | join (
-| | ) [ "bar"."i" ! * = int "NULL" ]
-| | select (
 | | table(sys.foo) [ "foo"."i" ] COUNT ,
+| | select (
 | | | table(sys.bar) [ "bar"."i" ] COUNT 
+| | ) [ "bar"."i" ! * = int "NULL" ]
+| ) [ "foo"."i" = "bar"."i" ]
+) [ "foo"."i", "bar"."i" ]
 
-query T rowsort
+query T nosort
 PLAN SELECT foo.i, bar.i FROM foo LEFT JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
 ----
-) [ "foo"."i", "bar"."i" ]
 project (
-| ) [ "foo"."i" = "bar"."i" ]
 | join (
-| | ) [ "bar"."j" ! * = int "NULL" ]
-| | select (
 | | table(sys.foo) [ "foo"."i" ] COUNT ,
+| | select (
 | | | table(sys.bar) [ "bar"."i", "bar"."j" ] COUNT 
+| | ) [ "bar"."j" ! * = int "NULL" ]
+| ) [ "foo"."i" = "bar"."i" ]
+) [ "foo"."i", "bar"."i" ]
 
-query T rowsort
+query T nosort
 PLAN SELECT foo.i, bar.i FROM foo RIGHT JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
 ----
-) [ "foo"."i", "bar"."i" ]
 project (
-| ) [ "foo"."i" = "bar"."i" ]
 | join (
-| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
 | | select (
-| | table(sys.bar) [ "bar"."i" ] COUNT 
 | | | table(sys.foo) [ "foo"."i" ] COUNT 
+| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
+| | table(sys.bar) [ "bar"."i" ] COUNT 
+| ) [ "foo"."i" = "bar"."i" ]
+) [ "foo"."i", "bar"."i" ]
 
-query T rowsort
+query T nosort
 PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i))
 ----
-) [ "foo"."i", "bar"."i" ]
 project (
-| ) [ "foo"."i" = "bar"."i" ]
 | left outer join (
-| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
 | | select (
-| | table(sys.bar) [ "bar"."i" ] COUNT 
 | | | table(sys.foo) [ "foo"."i" ] COUNT 
+| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
+| | table(sys.bar) [ "bar"."i" ] COUNT 
+| ) [ "foo"."i" = "bar"."i" ]
+) [ "foo"."i", "bar"."i" ]
 
-query T rowsort
+query T nosort
 PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE bar.j IS NOT NULL
 ----
-) [ "foo"."i", "bar"."i" ]
 project (
-| ) [ "foo"."i" = "bar"."i" ]
 | right outer join (
-| | ) [ "bar"."j" ! * = int "NULL" ]
-| | select (
 | | table(sys.foo) [ "foo"."i" ] COUNT ,
+| | select (
 | | | table(sys.bar) [ "bar"."i", "bar"."j" ] COUNT 
+| | ) [ "bar"."j" ! * = int "NULL" ]
+| ) [ "foo"."i" = "bar"."i" ]
+) [ "foo"."i", "bar"."i" ]
 
-query T rowsort
+query T nosort
 PLAN SELECT foo.i, bar.i FROM foo FULL OUTER JOIN bar ON foo.i = bar.i WHERE (2*foo.i > 20 OR (400 < foo.i*2 AND foo.i+foo.i = foo.i)) AND bar.j IS NOT NULL
 ----
-10 values hashing to 0e5273a5e73c79d726058d730540981b
+project (
+| join (
+| | select (
+| | | table(sys.foo) [ "foo"."i" ] COUNT 
+| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
+| | select (
+| | | table(sys.bar) [ "bar"."i", "bar"."j" ] COUNT 
+| | ) [ "bar"."j" ! * = int "NULL" ]
+| ) [ "foo"."i" = "bar"."i" ]
+) [ "foo"."i", "bar"."i" ]
 
 statement ok
 ROLLBACK
