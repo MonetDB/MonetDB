@@ -4710,37 +4710,36 @@ literal:
 		}
  |  INTNUM
 		{ char *s = sa_strdup(SA, $1);
-		  char *dot = strchr(s, '.');
-		  int digits = _strlen(s) - 1;
-		  int scale = digits - (int) (dot-s);
-		  sql_subtype t;
+			int digits;
+			int scale;
+			int has_errors;
+			sql_subtype t;
 
-		  if (digits <= 0)
-			digits = 1;
-		  if (digits <= MAX_DEC_DIGITS) {
-#ifdef HAVE_HGE
-		  	hge value = decimal_from_str(s, NULL);
-#else
-		  	lng value = decimal_from_str(s, NULL);
-#endif
+			DEC_TPE value = decimal_from_str(s, &digits, &scale, &has_errors);
 
-		  	if (*s == '+' || *s == '-')
-				digits --;
-		  	sql_find_subtype(&t, "decimal", digits, scale );
-		  	$$ = _newAtomNode( atom_dec(SA, &t, value));
-		   } else {
-			char *p = $1;
-			double val;
-
-			errno = 0;
-			val = strtod($1,&p);
-			if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
-				sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
-				$$ = NULL;
-				YYABORT;
+			if (!has_errors && digits <= MAX_DEC_DIGITS) {
+				// The float-like value seems to fit in decimal storage
+				sql_find_subtype(&t, "decimal", digits, scale );
+				$$ = _newAtomNode( atom_dec(SA, &t, value));
 			}
-		  	sql_find_subtype(&t, "double", 51, 0 );
-		  	$$ = _newAtomNode(atom_float(SA, &t, val));
+			else {
+				/*
+				* The float-like value either doesn't fit in integer decimal storage
+				* or it is not a valid float representation.
+				*/
+				char *p = $1;
+				double val;
+
+				errno = 0;
+				val = strtod($1,&p);
+				if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
+					sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
+					$$ = NULL;
+					YYABORT;
+				} else {
+					sql_find_subtype(&t, "double", 51, 0 );
+					$$ = _newAtomNode(atom_float(SA, &t, val));
+				}
 		   }
 		}
  |  APPROXNUM

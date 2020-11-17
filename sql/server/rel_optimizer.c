@@ -6406,7 +6406,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			   Check if they can be pushed up, ie are they not
 			   changing or introducing any columns used
 			   by the upper operator. */
-
+ 
 			exps = new_exp_list(v->sql->sa);
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
