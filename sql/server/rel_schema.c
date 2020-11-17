@@ -1848,7 +1848,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 }
 
 static sql_rel *
-rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema)
+rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *fullname, char *schema, char *schema_path)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1859,6 +1859,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 	append(exps, exp_atom_clob(sa, passwd));
 	append(exps, exp_atom_int(sa, enc));
 	append(exps, exp_atom_clob(sa, schema));
+	append(exps, exp_atom_clob(sa, schema_path));
 	append(exps, exp_atom_clob(sa, fullname));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1871,7 +1872,7 @@ rel_create_user(sql_allocator *sa, char *user, char *passwd, int enc, char *full
 }
 
 static sql_rel *
-rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *oldpasswd)
+rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1882,6 +1883,7 @@ rel_alter_user(sql_allocator *sa, char *user, char *passwd, int enc, char *schem
 	append(exps, exp_atom_clob(sa, passwd));
 	append(exps, exp_atom_int(sa, enc));
 	append(exps, exp_atom_clob(sa, schema));
+	append(exps, exp_atom_clob(sa, schema_path));
 	append(exps, exp_atom_clob(sa, oldpasswd));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -2500,9 +2502,10 @@ rel_schemas(sql_query *query, symbol *s)
 
 		ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
 				  l->h->next->data.sval,	/* password */
-				  l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				  l->h->next->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 				  l->h->next->next->data.sval,	/* fullname */
-				  l->h->next->next->next->data.sval);	/* dschema */
+				  l->h->next->next->next->data.sval,	/* dschema */
+				  l->h->next->next->next->next->data.sval);	/* schema path */
 	} 	break;
 	case SQL_DROP_USER:
 		ret = rel_schema2(sql->sa, ddl_drop_user, s->data.sval, NULL, 0);
@@ -2513,9 +2516,10 @@ rel_schemas(sql_query *query, symbol *s)
 
 		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
 			     a->data.sval,	/* passwd */
-			     a->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+			     a->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
 			     a->next->data.sval,	/* schema */
-			     a->next->next->next->data.sval /* old passwd */
+				 a->next->next->data.sval, /* schema path */
+			     a->next->next->next->next->data.sval /* old passwd */
 		    );
 	} 	break;
 	case SQL_RENAME_USER: {

@@ -82,8 +82,10 @@ monet5_drop_user(ptr _mvc, str user)
 	return TRUE;
 }
 
+#define default_schema_path "\"sys\"" /* "sys" will be the default schema path */
+
 static str
-monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, sqlid grantorid)
+monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid)
 {
 	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
@@ -94,6 +96,11 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
 	Client c = MCgetClient(m->clientid);
+
+	if (schema_path && strNil(schema_path))
+		throw(MAL, "sql.create_user", SQLSTATE(42000) "Schema path cannot be NULL");
+	if (!schema_path)
+		schema_path = default_schema_path;
 
 	if (!enc) {
 		pwd = mcrypt_BackendSum(passwd, strlen(passwd));
@@ -114,7 +121,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	user_id = store_next_oid();
 	db_user_info = find_sql_table(s, "db_user_info");
 	auths = find_sql_table(s, "auths");
-	table_funcs.table_insert(m->session->tr, db_user_info, user, fullname, &schema_id);
+	table_funcs.table_insert(m->session->tr, db_user_info, user, fullname, &schema_id, schema_path);
 	table_funcs.table_insert(m->session->tr, auths, &user_id, user, &grantorid);
 	return NULL;
 }
@@ -204,7 +211,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	sql_table *t, *uinfo;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
-	str monetdbuser = "monetdb";
 	list *res, *ops;
 
 	/* create the authorisation related tables */
@@ -212,6 +218,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
+	mvc_create_column_(m, t, "schema_path", "varchar", 2048);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -225,9 +232,9 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 
 	t = mvc_init_create_view(m, s, "users",
 			    "SELECT u.\"name\" AS \"name\", "
-			    "ui.\"fullname\", ui.\"default_schema\" "
-			    "FROM db_users() AS u LEFT JOIN "
-			    "\"sys\".\"db_user_info\" AS ui "
+			    "ui.\"fullname\", ui.\"default_schema\", "
+				"ui.\"schema_path\" FROM db_users() AS u "
+				"LEFT JOIN \"sys\".\"db_user_info\" AS ui "
 			    "ON u.\"name\" = ui.\"name\";");
 	if (!t) {
 		TRC_CRITICAL(SQL_TRANS, "Failed to create 'users' view\n");
@@ -237,11 +244,12 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
+	mvc_create_column_(m, t, "schema_path", "varchar", 2048);
 
 	schema_id = sql_find_schema(m, "sys");
 	assert(schema_id >= 0);
 
-	table_funcs.table_insert(m->session->tr, uinfo, monetdbuser, "MonetDB Admin", &schema_id);
+	table_funcs.table_insert(m->session->tr, uinfo, "monetdb", "MonetDB Admin", &schema_id, default_schema_path);
 }
 
 static int
@@ -261,7 +269,7 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd)
+monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str schema_path, str oldpasswd)
 {
 	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
@@ -338,18 +346,33 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 	}
 
 	if (schema_id) {
-		oid rid;
 		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 		sql_table *info = find_sql_table(sys, "db_user_info");
 		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *users_schema = find_sql_column(info, "default_schema");
 
 		/* FIXME: we don't really check against the backend here */
-		rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
+		oid rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
 		if (is_oid_nil(rid))
 			return FALSE;
-
 		table_funcs.column_update_value(m->session->tr, users_schema, rid, &schema_id);
+	}
+
+	if (schema_path) {
+		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+		sql_table *info = find_sql_table(sys, "db_user_info");
+		sql_column *users_name = find_sql_column(info, "name");
+		sql_column *sp = find_sql_column(info, "schema_path");
+
+		if (strNil(schema_path)) {
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: schema path cannot be NULL");
+			return (FALSE);
+		}
+
+		oid rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
+		if (is_oid_nil(rid))
+			return FALSE;
+		table_funcs.column_update_value(m->session->tr, sp, rid, schema_path);
 	}
 
 	return TRUE;

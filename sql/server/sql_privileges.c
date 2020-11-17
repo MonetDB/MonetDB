@@ -736,7 +736,7 @@ mvc_set_schema(mvc *m, char *schema)
 }
 
 char *
-sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema)
+sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path)
 {
 	char *err;
 	sqlid schema_id = 0;
@@ -748,7 +748,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
 	if ((schema_id = sql_find_schema(sql, schema)) < 0)
 		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
-	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, sql->user_id)) != NULL)
+	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
 	{
 		/* strip off MAL exception decorations */
 		char *r;
@@ -851,7 +851,7 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *oldpasswd)
+sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd)
 {
 	sqlid schema_id = 0;
 	/* we may be called from MAL (nil) */
@@ -865,7 +865,7 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 		throw(SQL,"sql.alter_user", SQLSTATE(M1M05) "Insufficient privileges to change user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
-	if (backend_alter_user(sql, user, passwd, enc, schema_id, oldpasswd) == FALSE)
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;
 }

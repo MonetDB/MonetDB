@@ -2332,7 +2332,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		"SELECT ui.name, "
 		       "ui.fullname, "
 		       "password_hash(ui.name), "
-		       "s.name "
+		       "s.name, "
+			   "ui.schema_path "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
 		"WHERE ui.default_schema = s.id "
@@ -2665,6 +2666,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			const char *fullname = mapi_fetch_field(hdl, 1);
 			const char *pwhash = mapi_fetch_field(hdl, 2);
 			const char *sname = mapi_fetch_field(hdl, 3);
+			const char *spath = mapi_fetch_field(hdl, 4);
 
 			mnstr_printf(toConsole, "CREATE USER ");
 			dquoted_print(toConsole, uname, " ");
@@ -2673,7 +2675,8 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			mnstr_printf(toConsole, " NAME ");
 			squoted_print(toConsole, fullname, '\'', false);
 			mnstr_printf(toConsole, " SCHEMA ");
-			dquoted_print(toConsole, describe ? sname : "sys", ";\n");
+			dquoted_print(toConsole, describe ? sname : "sys", " ");
+			mnstr_printf(toConsole, "SCHEMA PATH %s;\n", spath);
 		}
 		if (mapi_error(mid))
 			goto bailout;
