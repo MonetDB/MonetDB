@@ -184,6 +184,10 @@ def main():
                         help='port the server listens on')
     parser.add_argument('--database', action='store', default='demo',
                         help='name of the database')
+    parser.add_argument('--user', action='store', default='monetdb',
+                        help='user')
+    parser.add_argument('--password', action='store', default='monetdb',
+                        help='password')
     parser.add_argument('--language', action='store', default='sql',
                         help='language to connect to the database')
     parser.add_argument('--sort', action='store', default='rowsort',
@@ -199,8 +203,8 @@ def main():
     global dbh
     global crs
     if opts.language == 'sql':
-        dbh = pymonetdb.connect(username='monetdb',
-                            password='monetdb',
+        dbh = pymonetdb.connect(username=opts.user,
+                            password=opts.password,
                             hostname=opts.host,
                             port=opts.port,
                             database=opts.database,
@@ -210,8 +214,8 @@ def main():
         dbh = malmapi.Connection()
         dbh.connect(
                             database=opts.database,
-                            username='monetdb',
-                            password='monetdb',
+                            username=opts.user,
+                            password=opts.password,
                             language='mal',
                             hostname=opts.host,
                             port=opts.port)
