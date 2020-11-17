@@ -11,6 +11,37 @@ import pymonetdb
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=int(os.getenv("MAPIPORT"))
 
+def equals(a, b) -> bool:
+    if type(a) is type(b):
+        return a==b
+    return False
+
+def sequence_match(left=[], right=[], index=0):
+    right = right[index:]
+    ll = len(left)
+    rl = len(right)
+    if ll > rl:
+        return False
+    if ll == 0 and rl > 0:
+        return False
+    for i in range(ll):
+        if not equals(left[i], right[i]):
+            return False
+    return True
+
+def piped_representation(data=[]):
+    def mapfn(next):
+        if type(next) is tuple:
+            res=[]
+            for v in next:
+                res.append(str(v))
+            return '|'.join(res)
+        else:
+            raise TypeError('ERROR: expecting list of tuples!')
+    res = list(map(mapfn, data))
+    return '\n'.join(res)
+
+
 class PyMonetDBConnectionContext(object):
     def __init__(self,
             username='monetdb', password='monetdb',
@@ -89,8 +120,11 @@ class SQLTestResult(object):
         return self
 
     def fail(self, msg, data=None):
-        self.assertion_errors.append(AssertionError(msg))
         err_file = self.test_case.err_file
+        if len(self.assertion_errors) == 0:
+            print(self.query, file=err_file)
+            print('----', file=err_file)
+        self.assertion_errors.append(AssertionError(msg))
         print(msg, file=err_file)
         if data is not None:
             if len(data) < 100:
@@ -107,25 +141,21 @@ class SQLTestResult(object):
                     sep = '|'
                 print('', file=err_file)
 
-
-    def transform_data(self):
-        pass
-
     def assertFail(self):
         if self.query_error is None:
-            msg = "{}\nwas expected to fail but didn't\n{}!".format(self.query, str(self.query_error))
+            msg = "was expected to fail but didn't\n{}!".format(str(self.query_error))
             self.fail(msg)
         return self
 
     def assertSucceed(self):
         if self.query_error is not None:
-            msg = "{}\nwas expected to succeed but didn't\n{}!".format(self.query, str(self.query_error))
+            msg = "was expected to succeed but didn't\n{}!".format(str(self.query_error))
             self.fail(msg)
         return self
 
     def assertRowCount(self, rowcount):
         if self.rowcount != int(rowcount):
-            msg = "{}\nreceived {} rows, expected {} rows".format(self.query, self.rowcount, rowcount)
+            msg = "received {} rows, expected {} rows".format(self.rowcount, rowcount)
             self.fail(msg)
         return self
 
@@ -142,16 +172,31 @@ class SQLTestResult(object):
             pass
         if type(val) is type(received):
             if val != received:
-                msg = '{}\nexpected "{}", received "{}" in row={}, col={}!'.format(self.query, val, received, row, col)
+                msg = 'expected "{}", received "{}" in row={}, col={}!'.format(val, received, row, col)
                 self.fail(msg, data=self.data)
         else:
             # handle type mismatch
-            msg = '{}\nexpected type {} and value "{}", received type {} and value "{}" in row={}, col={}!'.format(self.query, type(val), str(val), type(received), str(received), row, col)
+            msg = 'expected type {} and value "{}", received type {} and value "{}" in row={}, col={}!'.format(type(val), str(val), type(received), str(received), row, col)
             self.fail(msg, data=self.data)
         return self
 
-    def assertDataResultMatch(self, data=[]):
-        raise NotImplementedError()
+    def assertDataResultMatch(self, data=[], index=None):
+        def mapfn(next):
+            if type(next) is list:
+                return tuple(next)
+            return next
+        data = list(map(mapfn, data))
+        if index is None:
+            if len(data) > 0:
+                first = data[0]
+                for i, v in enumerate(self.data):
+                    if first == v:
+                        index = i
+                        break
+        if not sequence_match(data, self.data, index):
+            msg = '{}\nwas expected to match query result starting at index={}, but it didn\'t!'.format(piped_representation(data), index)
+            self.fail(msg, data=self.data)
+        return self
 
 
 class SQLTestCase():
