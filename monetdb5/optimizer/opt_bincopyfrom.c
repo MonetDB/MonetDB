@@ -42,13 +42,14 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 		return MAL_SUCCEED;
 
 	old_mb_stmt = mb->stmt;
-	int old_stop = mb->stop;
+	size_t old_ssize = mb->ssize;
+	size_t old_stop = mb->stop;
 	if (newMalBlkStmt(mb, mb->stop + getInstrPtr(mb, found_at)->argc) < 0) {
 		msg = createException(MAL, "optimizer.bincopyfrom", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto end;
 	}
 
-	for (int i = 0; i < old_stop; i++) {
+	for (size_t i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
 		if (p->modname == sqlRef && p->fcnname == importTableRef) {
 			msg = transform(mb, p);
@@ -61,8 +62,12 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	}
 
 end:
-	if (old_mb_stmt)
+	if (old_mb_stmt) {
+		for (size_t i = old_stop; i < old_ssize; i++)
+			if (old_mb_stmt[i])
+				freeInstruction(old_mb_stmt[i]);
 		GDKfree(old_mb_stmt);
+	}
 
     /* Defense line against incorrect plans */
     if (actions > 0 && msg == MAL_SUCCEED) {
