@@ -450,11 +450,11 @@ find_type_rec(str name)
 
 
 static str
-load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, lng rows_estimate, int *eof_reached)
+load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, BUN rows_estimate, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
 	BUN orig_count, new_count;
-	lng rows_added;
+	BUN rows_added;
 
 	orig_count = BATcount(bat);
 
@@ -549,7 +549,7 @@ finish_mapi_file_upload(backend *be, bool eof_reached)
 /* Import a single file into a new BAT.
  */
 static str
-importColumn(backend *be, bat *ret, lng *retcnt, str method, str path, int onclient,  lng nrows)
+importColumn(backend *be, bat *ret, BUN *retcnt, str method, str path, int onclient,  BUN nrows)
 {
 	// In this function we create the BAT and open the file, and tidy
 	// up when things go wrong. The actual work happens in load_column().
@@ -642,13 +642,13 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	assert(pci->retc == 2);
 	bat *ret = getArgReference_bat(stk, pci, 0);
-	lng *retcnt = getArgReference_lng(stk, pci, 1);
+	BUN *retcnt = getArgReference_oid(stk, pci, 1);
 
 	assert(pci->argc == 6);
 	str method = *getArgReference_str(stk, pci, 2);
 	str path = *getArgReference_str(stk, pci, 3);
 	int onclient = *getArgReference_int(stk, pci, 4);
-	lng nrows = *getArgReference_lng(stk, pci, 5);
+	BUN nrows = *getArgReference_oid(stk, pci, 5);
 
 	backend *be = cntxt->sqlcontext;
 

@@ -168,13 +168,13 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count
 	if (!strNil(path)) {
 		InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
 		setReturnArgument(p, old->argv[idx]);
-		int new_count_var = newTmpVariable(mb, TYPE_lng);
+		int new_count_var = newTmpVariable(mb, TYPE_oid);
 		pushReturn(mb, p, new_count_var);
 		pushStr(mb, p, method);
 		pushStr(mb, p, path);
 		pushInt(mb, p, onclient);
 		if (count_var < 0)
-			pushLng(mb, p, 0);
+			pushOid(mb, p, 0);
 		else
 			p = pushArgument(mb, p, count_var);
 		return new_count_var;
