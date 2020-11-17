@@ -4719,30 +4719,27 @@ literal:
 
 			if (!has_errors && digits <= MAX_DEC_DIGITS) {
 				// The float-like value seems to fit in decimal storage
-				double val = strtod($1,NULL);
 				sql_find_subtype(&t, "decimal", digits, scale );
-				$$ = _newAtomNode( atom_dec(SA, &t, value, val));
+				$$ = _newAtomNode( atom_dec(SA, &t, value));
 			}
 			else {
 				/*
-				 * The float-like value either doesn't fit in integer decimal storage
-				 * or it is not a valid float representation.
-				 */
+				* The float-like value either doesn't fit in integer decimal storage
+				* or it is not a valid float representation.
+				*/
 				char *p = $1;
 				double val;
 
 				errno = 0;
 				val = strtod($1,&p);
 				if (p == $1 || is_dbl_nil(val) || (errno == ERANGE && (val < -1 || val > 1))) {
-				sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
-
-					yyerror(m, msg);
-					_DELETE(msg);
+					sqlformaterror(m, SQLSTATE(22003) "Double value too large or not a number (%s)", $1);
 					$$ = NULL;
 					YYABORT;
+				} else {
+					sql_find_subtype(&t, "double", 51, 0 );
+					$$ = _newAtomNode(atom_float(SA, &t, val));
 				}
-				sql_find_subtype(&t, "double", 51, 0 );
-				$$ = _newAtomNode(atom_float(SA, &t, val));
 		   }
 		}
  |  APPROXNUM
