@@ -312,7 +312,7 @@ invoke_editor(int cnt, int key) {
 	char editor_command[BUFFER_SIZE];
 	char *read_buff = NULL;
 	char *editor = NULL;
-	FILE *fp;
+	FILE *fp = NULL;
 	size_t content_len;
 	size_t read_bytes, idx;
 #ifdef WIN32
