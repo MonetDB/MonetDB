@@ -783,14 +783,18 @@ BATsave(BAT *bd)
 	/* copy the descriptor to a local variable in order to let our
 	 * messing in the BAT descriptor not affect other threads that
 	 * only read it. */
+	MT_lock_set(&bd->theaplock);
 	bs = *b;
 	b = &bs;
 	hs = *bd->theap;
+	HEAPincref(&hs);
 	b->theap = &hs;
 	if (b->tvheap) {
 		vhs = *bd->tvheap;
+		HEAPincref(&vhs);
 		b->tvheap = &vhs;
 	}
+	MT_lock_unset(&bd->theaplock);
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
@@ -806,6 +810,9 @@ BATsave(BAT *bd)
 	if (b->thash && b->thash != (Hash *) 1)
 		BAThashsave(b, dosync);
 
+	HEAPdecref(b->theap, false);
+	if (b->tvheap)
+		HEAPdecref(b->tvheap, false);
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
