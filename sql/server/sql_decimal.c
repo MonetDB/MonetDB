@@ -60,12 +60,7 @@ fractional_sep_first_opp:
 		// skip leading zeros in preceding digits, e.g. '0004563.1234' => '4563.1234'
 		dec++;
 		if (*dec == '.') {
-			if (dec[1] == 0) { // special case: '(0...0)0.'. We give this expression precision (1,0).
-				_digits = 1;
-				dec++;
-				goto end_state;
-			}
-
+			_digits = 1; // case: 0.xyz the zero. the single preceding zero counts for one digit by convention.
 			goto fractional_sep_first_opp;
 		}
 	}

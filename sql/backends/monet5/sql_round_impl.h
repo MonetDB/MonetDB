@@ -309,15 +309,13 @@ nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
 static inline str
 str_2dec_body(TYPE *res, const str val, const int d, const int sc)
 {
-	char *s;
+	char *s = val;
 	int digits;
 	int scale;
 	BIG value;
 
 	if (d < 0 || d >= (int) (sizeof(scales) / sizeof(scales[0])))
-		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", val, d, sc);
-
-	s = val;
+		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
 
 	int has_errors;
 	value = 0;
@@ -326,7 +324,7 @@ str_2dec_body(TYPE *res, const str val, const int d, const int sc)
 
 	value = decimal_from_str(s, &digits, &scale, &has_errors);
 	if (has_errors)
-		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", val, d, sc);
+		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
 
 	// handle situations where the de facto scale is different from the formal scale.
 	if (scale < sc) {
