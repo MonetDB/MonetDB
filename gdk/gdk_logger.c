@@ -1281,6 +1281,7 @@ bm_subcommit(logger *lg)
 	gdk_return res;
 	const log_bid *bids;
 	const BUN *cnts = NULL;
+	int cleanup = (lg->saved_tid == lg->tid && BATcount(lg->dcatalog) > 10 );
 
 	if (n == NULL)
 		return GDK_FAIL;
@@ -1294,7 +1295,7 @@ bm_subcommit(logger *lg)
 		bat col = bids[p];
 		oid pos = p;
 
-		if (BUNfnd(dcatalog, &pos) != BUN_NONE)
+		if (!cleanup && BUNfnd(dcatalog, &pos) != BUN_NONE)
 			continue;
 		if (lg->debug & 1)
 			fprintf(stderr, "#commit new %s (%d)\n", BBPname(col), col);
@@ -1307,11 +1308,26 @@ bm_subcommit(logger *lg)
 	n[i++] = catalog_bid->batCacheid;
 	sizes[i] = lg->cnt;
 	n[i++] = catalog_id->batCacheid;
-	sizes[i] = BATcount(dcatalog); /* todo ! */
+	sizes[i] = BATcount(dcatalog);
 	n[i++] = dcatalog->batCacheid;
 
-	if (BATcount(dcatalog) > 1024) {
-		BAT *bids, *tids, *oids;
+	if (cleanup) {
+		BAT *bids, *tids, *oids, *cnts;
+
+		oid *poss = Tloc(dcatalog, 0);
+		const log_bid *bid = (const log_bid *) Tloc(catalog_bid, 0);
+		BATloop(dcatalog, p, q) {
+			oid pos = poss[p];
+			BAT *lb;
+	
+			BBPrelease(bid[pos]);
+			if ((lb = BATdescriptor(bid[pos])) == NULL ||
+		    	    BATmode(lb, true/*transient*/) != GDK_SUCCEED) {
+				logbat_destroy(lb);
+				return GDK_FAIL;
+			}
+			logbat_destroy(lb);
+		}
 
 		tids = bm_tids(catalog_bid, dcatalog);
 		if (tids == NULL) {
@@ -1321,21 +1337,25 @@ bm_subcommit(logger *lg)
 		}
 		bids = logbat_new(TYPE_int, BATcount(tids), PERSISTENT);
 		oids = logbat_new(TYPE_int, BATcount(tids), PERSISTENT);
+		cnts = logbat_new(TYPE_lng, BATcount(tids), TRANSIENT);
 
-		if (bids == NULL || oids == NULL) {
+		if (bids == NULL || oids == NULL || cnts == NULL) {
 			logbat_destroy(tids);
 			logbat_destroy(bids);
 			logbat_destroy(oids);
+			logbat_destroy(cnts);
 			GDKfree(n);
 			GDKfree(sizes);
 			return GDK_FAIL;
 		}
 
 		if (BATappend(bids, catalog_bid, tids, true) != GDK_SUCCEED ||
-		    BATappend(oids, catalog_id, tids, true) != GDK_SUCCEED) {
+		    BATappend(oids, catalog_id, tids, true) != GDK_SUCCEED ||
+		    BATappend(cnts, lg->catalog_cnt, tids, true) != GDK_SUCCEED) {
 			logbat_destroy(tids);
 			logbat_destroy(bids);
 			logbat_destroy(oids);
+			logbat_destroy(cnts);
 			GDKfree(n);
 			GDKfree(sizes);
 			return GDK_FAIL;
@@ -1358,6 +1378,9 @@ bm_subcommit(logger *lg)
 
 		lg->catalog_bid = catalog_bid = bids;
 		lg->catalog_id = catalog_id = oids;
+
+		BBPunfix(lg->catalog_cnt->batCacheid);
+		lg->catalog_cnt = cnts;
 	}
 	if (lg->seqs_id) {
 		sizes[i] = BATcount(lg->seqs_id);
