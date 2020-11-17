@@ -47,8 +47,37 @@ plan select 1 from splitted where stamp is null; --only third child passes
 
 plan select 1 from splitted where stamp is null and stamp < TIMESTAMP '2008-01-01 00:00:00'; --all children pruned
 
+plan select 1 from splitted where stamp > TIMESTAMP '2020-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'; --only third child passes
+
+plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'; --third child pruned
+
+plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'; --only second child passes
+
+plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'; --only second child passes
+
+plan select 1 from splitted where stamp > TIMESTAMP '2001-01-02 00:00:00' and stamp < TIMESTAMP '2015-01-01 00:00:00'; --third child pruned
+
+plan select 1 from splitted where stamp > TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2010-01-01 00:00:00'; --all children pruned
+
+plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2010-01-01 00:00:00'; --third child pruned
+
+plan select 1 from splitted where stamp > TIMESTAMP '2009-01-01 00:00:00' and stamp <= TIMESTAMP '2020-01-01 00:00:00'; --nothing gets pruned
+
+CREATE TABLE fourth_decade (stamp TIMESTAMP, val INT);
+ALTER TABLE splitted ADD TABLE fourth_decade AS PARTITION FROM RANGE MINVALUE TO TIMESTAMP '2000-01-01 00:00:00';
+INSERT INTO splitted VALUES (TIMESTAMP '1999-01-01 00:00:00', 7);
+
+plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'; --only first child passes
+
+plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'; --second and third children pruned
+
+plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'; --only second child passes
+
+plan select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'; --only first child passes
+
 ALTER TABLE splitted DROP TABLE second_decade;
 ALTER TABLE splitted DROP TABLE third_decade;
+ALTER TABLE splitted DROP TABLE fourth_decade;
 
 plan select 1 from splitted where stamp = TIMESTAMP '2010-01-01 00:00:00'; --all children pruned
 

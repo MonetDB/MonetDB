@@ -2348,3 +2348,25 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	/* problems are passed via changes */
 	return (v.changes==0);
 }
+
+
+
+static sql_exp *
+_exp_freevar_offset(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel; (void)depth;
+	/* visitor will handle recursion, ie only need to check columns here */
+	int vf = is_freevar(e);
+	if (v->changes < vf)
+		v->changes=vf;
+	return e;
+}
+
+int
+exp_freevar_offset(mvc *sql, sql_exp *e)
+{
+	visitor v = { .sql = sql };
+	exp_visitor(&v, NULL, e, 0, &_exp_freevar_offset, true, true);
+	/* freevar offset is passed via changes */
+	return (v.changes);
+}
