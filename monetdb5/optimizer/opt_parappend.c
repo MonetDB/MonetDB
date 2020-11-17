@@ -23,6 +23,7 @@ static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr impor
 static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old);
 static void flush_finish_stmt(parstate *state, MalBlkPtr mb);
 static void pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr instr);
+static bool needs_chain_var(parstate *state, InstrPtr instr);
 
 
 str
@@ -63,7 +64,7 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 		if (p->modname == sqlRef && p->fcnname == appendRef && isaBatType(getArgType(mb, p, 5))) {
 			msg = transform(&state, cntxt, mb, p, &actions);
 		} else {
-			if (p->barrier != 0 || mayhaveSideEffects(cntxt, mb, p, false)) {
+			if (p->barrier != 0 || mayhaveSideEffects(cntxt, mb, p, false) || needs_chain_var(&state, p)) {
 				flush_finish_stmt(&state, mb);
 			}
 			pushInstruction(mb, p);
@@ -279,6 +280,23 @@ can_swap_prep_with(Client cntxt, MalBlkPtr mb, InstrPtr prep, InstrPtr other)
 	}
 
 	return true; // okay
+}
+
+static bool
+needs_chain_var(parstate *state, InstrPtr instr)
+{
+	if (state->finish_stmt == NULL)
+		return false;
+
+	int chain_var = getArg(state->finish_stmt, 0);
+
+	for (int i = 0; i < instr->argc; i++) {
+		int var = getArg(instr, i);
+		if (var == chain_var)
+			return true;
+	}
+
+	return false;
 }
 
 static void
