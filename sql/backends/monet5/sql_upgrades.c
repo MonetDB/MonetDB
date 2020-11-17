@@ -2531,7 +2531,7 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 		pos += snprintf(buf + pos, bufsize - pos,
 			"create function sys.uuid(d int) returns uuid\n"
 			" external name uuid.\"new\";\n"
-			"GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;");
+			"GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;\n");
 
 		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 		assert(pos < bufsize);
