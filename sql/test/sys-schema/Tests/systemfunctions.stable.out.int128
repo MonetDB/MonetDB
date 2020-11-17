@@ -4063,6 +4063,8 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"user_statistics",	5,	"bigint",	""	]
 [ "sys",	"user_statistics",	6,	"clob",	""	]
 [ "sys",	"uuid",	0,	"uuid",	"create function sys.uuid()\nreturns uuid external name uuid.\"new\";"	]
+[ "sys",	"uuid",	0,	"uuid",	"create function sys.uuid(d int)\nreturns uuid external name uuid.\"new\";"	]
+[ "sys",	"uuid",	1,	"int",	""	]
 [ "sys",	"vacuum",	0,	"clob",	"create procedure vacuum(sys string, tab string)\nexternal name sql.vacuum;"	]
 [ "sys",	"vacuum",	1,	"clob",	""	]
 [ "sys",	"var",	0,	"char",	"create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";"	]

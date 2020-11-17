@@ -54,11 +54,11 @@ stdout of test 'Test_PSsqldata` in directory 'sql/jdbc/tests` itself:
 1.
 	type          12
 	typename      inet
-	classname     nl.cwi.monetdb.jdbc.types.INET
+	classname     org.monetdb.jdbc.types.INET
 2.
 	type          12
 	typename      url
-	classname     nl.cwi.monetdb.jdbc.types.URL
+	classname     org.monetdb.jdbc.types.URL
 1.	172.5.5.5/24
 	172.5.5.5/24
 	/172.5.5.5
