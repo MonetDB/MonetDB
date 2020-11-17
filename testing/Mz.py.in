@@ -1621,10 +1621,10 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
         TestIn = process.PIPE
     else:
         TestInput = None
-    TestOut.write(Prompt(cmd))
-    TestOut.flush()
-    TestErr.write(Prompt(cmd))
-    TestErr.flush()
+    #TestOut.write(Prompt(cmd))
+    #TestOut.flush()
+    #TestErr.write(Prompt(cmd))
+    #TestErr.flush()
     if procdebug:
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
     setpgrp = True
