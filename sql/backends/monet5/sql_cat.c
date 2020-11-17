@@ -1352,10 +1352,11 @@ SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *passwd = *getArgReference_str(stk, pci, 2);
 	int enc = *getArgReference_int(stk, pci, 3);
 	char *schema = SaveArgReference(stk, pci, 4);
-	char *fullname = SaveArgReference(stk, pci, 5);
+	char *schema_path = SaveArgReference(stk, pci, 5);
+	char *fullname = SaveArgReference(stk, pci, 6);
 
 	initcontext();
-	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema);
+	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema, schema_path);
 	return msg;
 }
 
@@ -1378,10 +1379,11 @@ SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *passwd = SaveArgReference(stk, pci, 2);
 	int enc = *getArgReference_int(stk, pci, 3);
 	char *schema = SaveArgReference(stk, pci, 4);
-	char *oldpasswd = SaveArgReference(stk, pci, 5);
+	char *schema_path = SaveArgReference(stk, pci, 5);
+	char *oldpasswd = SaveArgReference(stk, pci, 6);
 
 	initcontext();
-	msg = sql_alter_user(sql, sname, passwd, enc, schema, oldpasswd);
+	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd);
 
 	return msg;
 }
