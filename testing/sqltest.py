@@ -150,6 +150,10 @@ class SQLTestResult(object):
             self.fail(msg, data=self.data)
         return self
 
+    def assertDataResultMatch(self, data=[]):
+        raise NotImplementedError()
+
+
 class SQLTestCase():
     def __init__(self, out_file=sys.stdout, err_file=sys.stderr):
         self.out_file = out_file
