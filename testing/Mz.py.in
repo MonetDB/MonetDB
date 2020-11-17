@@ -1736,16 +1736,16 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         MAPIsockets[0].close()
         MAPIsockets[1].close()
 
+    SrvrOutFile = TST+".server.out"
+    SrvrErrFile = TST+".server.err"
+    ClntOutFile = TST+".client.out"
+    ClntErrFile = TST+".client.err"
     returncode = None
     pSrvr = PSRVR
     try:
         if SERVER in ["MAL", "SQL"]:
-            SrvrOutFile = TST+".server.out"
-            SrvrErrFile = TST+".server.err"
             SrvrOut = openutf8(SrvrOutFile,"w")
             SrvrErr = openutf8(SrvrErrFile,"w")
-            ClntOutFile = TST+".client.out"
-            ClntErrFile = TST+".client.err"
             ClntOut = openutf8(ClntOutFile,"w")
             ClntErr = openutf8(ClntErrFile,"w")
 
@@ -1939,6 +1939,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
         else:
             TestOut = try_open(TestOutFile, 'a')
             TestErr = try_open(TestErrFile, 'a')
+
+
+    # clean up empty files
+    for f in [SrvrOutFile, SrvrErrFile, ClntOutFile, ClntErrFile]:
+        if os.path.getsize(f) > 0:
+            continue
+        else:
+            os.remove(f)
 
     if returncode is None and pSrvr is not None:
         returncode = pSrvr.code # can still be None
