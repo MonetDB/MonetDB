@@ -2676,7 +2676,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			squoted_print(toConsole, fullname, '\'', false);
 			mnstr_printf(toConsole, " SCHEMA ");
 			dquoted_print(toConsole, describe ? sname : "sys", " ");
-			mnstr_printf(toConsole, "SCHEMA PATH %s;\n", spath);
+			mnstr_printf(toConsole, "SCHEMA PATH '%s';\n", spath);
 		}
 		if (mapi_error(mid))
 			goto bailout;
