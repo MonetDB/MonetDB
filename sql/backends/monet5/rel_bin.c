@@ -997,6 +997,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		stmt *rows = NULL, *isel = sel;
 		int nrcands = 0, push_cands = 0;
 
+		if (sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0 || strcmp(sql_func_mod(f->func), "mtime") == 0
+					|| (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
+			push_cands = 1;
+
 		if (f->func->side_effect && left && left->nrcols > 0) {
 			sql_subfunc *f1 = NULL;
 			/* we cannot assume all SQL functions with no arguments have a correspondent with one argument, so attempt to find it. 'rand' function is the exception */
@@ -1005,6 +1009,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					f = f1;
 				list_append(l, stmt_const(be, bin_first_column(be, left),
 										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
+				nrcands++; /* increment cands */
 			} else if (exps_card(exps) < CARD_MULTI) {
 				rows = bin_first_column(be, left);
 			}
@@ -1014,12 +1019,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		assert(!e->r);
 		if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "star") == 0)
 			return left->op4.lval->h->data;
-		else if (exps) {
+		else if (!list_empty(exps)) {
 			unsigned nrcols = 0;
 
-			if (sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0 || strcmp(sql_func_mod(f->func), "mtime") == 0
-						|| (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
-				push_cands = 1;
 			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
 			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "coalesce") == 0)
@@ -1047,18 +1049,18 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (push_cands && es->nrcols)
 					nrcands++;
 			}
-			if (push_cands) {
-				int i;
-				for (i=0, en = l->h; i<nrcands && en; en = en->next) {
-					stmt *s = en->data;
-					/* if handled use bat nil */
-					if (s->nrcols) { /* only for cols not values */
-						i++;
-						if (s->cand && s->cand == isel)
-							list_append(l, NULL);
-						else
-							list_append(l,sel);
-					}
+		}
+		if (push_cands) {
+			int i;
+			for (i=0, en = l->h; i<nrcands && en; en = en->next) {
+				stmt *s = en->data;
+				/* if handled use bat nil */
+				if (s->nrcols) { /* only for cols not values */
+					i++;
+					if (s->cand && s->cand == isel)
+						list_append(l, NULL);
+					else
+						list_append(l,sel);
 				}
 			}
 		}

@@ -43,8 +43,8 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE "sys"."t0" ("c0" BOOLEAN NOT NULL,"c1" BIGINT,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
 #create view v0(c0, c1, c2) as (select all 2.020551048E9, 0.16688174, 0.3732000026221729 from t0 where t0.c0) with check option;
 #SELECT sql_min(sql_max(NULL, ''), '') FROM v0 LEFT OUTER JOIN t0 ON true;
-% .%12 # table_name
-% %12 # name
+% .%1 # table_name
+% %1 # name
 % char # type
 % 0 # length
 #SELECT sql_min(sql_max(NULL, ''), '');
@@ -55,8 +55,8 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 [ NULL	]
 #SELECT ALL length(upper(MIN(ALL CAST(((trim(CAST(r'' AS STRING(659)), CAST(r'o3%+i]抔DCöf▟nßOpNbybಜ7' AS STRING)))||(sql_min(sql_max(NULL, r''), splitpart(r'x', r',7+.', t0.c1)))) AS STRING(151))))), 0.4179268710155164 
 #FROM v0 LEFT OUTER JOIN t0 ON NOT (t0.c0) WHERE t0.c0 GROUP BY 0.3584962, CAST(t0.c1 AS STRING(601)), t0.c1;
-% .%25,	.%26 # table_name
-% %25,	%26 # name
+% .%12,	.%13 # table_name
+% %12,	%13 # name
 % int,	decimal # type
 % 1,	19 # length
 #ROLLBACK;
@@ -388,15 +388,15 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #"Xh{%LTF"	false
 [ 2	]
 #SELECT 1 FROM t0 CROSS JOIN t1 WHERE (t1.c1 AND (t0.c0 > t0.c0)) IS NULL;
-% .%4 # table_name
-% %4 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 #SELECT cast(SUM(agg0) as decimal(10,2)) FROM (SELECT ALL SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE ((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0)))) 
 #UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE NOT (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) 
 #UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) IS NULL) as asdf;
-% .%25 # table_name
-% %25 # name
+% .%17 # table_name
+% %17 # name
 % decimal # type
 % 12 # length
 [ 9.70	]
@@ -411,8 +411,8 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #0.916
 [ 5	]
 #select coalesce(1 = true, false);
-% .%2 # table_name
-% %2 # name
+% .%3 # table_name
+% %3 # name
 % boolean # type
 % 5 # length
 [ true	]
@@ -673,15 +673,15 @@ stdout of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 #NULL
 [ 7	]
 #SELECT CASE TIMESTAMP '1970-01-02 23:16:17' WHEN DATE '1970-01-12' THEN 1 END;
-% .%2 # table_name
-% %2 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 [ NULL	]
 #SELECT TIME '08:16:10' FROM t1 JOIN t0 ON (t1.c0) NOT BETWEEN SYMMETRIC (t1.c0) AND (charindex(CAST(TIME '04:39:29' AS STRING), CASE COALESCE (TIMESTAMP '1970-01-02 23:16:17', TIMESTAMP '1970-01-02 23:07:33') 
 #WHEN COALESCE (DATE '1970-01-12', DATE '1970-01-02', DATE '1970-01-02') THEN COALESCE (r'/6望', r'hr?r3QDF*OD%6癰if}䃒5') END, t0.c0)) GROUP BY t1.c0;
-% .%4 # table_name
-% %4 # name
+% .%2 # table_name
+% %2 # name
 % time # type
 % 8 # length
 #ROLLBACK;
