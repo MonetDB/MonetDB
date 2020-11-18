@@ -1884,7 +1884,7 @@ INSERT INTO num_input_test(n1) VALUES ('NaN ')
 statement error
 INSERT INTO num_input_test(n1) VALUES ('        nan')
 
-statement ok
+statement error
 INSERT INTO num_input_test(n1) VALUES ('     ')
 
 statement error
@@ -1902,7 +1902,7 @@ INSERT INTO num_input_test(n1) VALUES ('5 . 0')
 statement error
 INSERT INTO num_input_test(n1) VALUES ('5. 0   ')
 
-statement ok
+statement error
 INSERT INTO num_input_test(n1) VALUES ('')
 
 statement error
@@ -1913,8 +1913,6 @@ SELECT * FROM num_input_test
 ----
 -555.500
 -93853.000
-0.000
-0.000
 123.000
 3245874.000
 555.500
