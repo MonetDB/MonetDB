@@ -7,26 +7,26 @@ from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
     # use default connection
-    tc.execute("CREATE SCHEMA newSchema").assertSucceed()
+    tc.execute("CREATE SCHEMA newSchema").assertSucceeded()
     tc.execute(\
             """select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id""")\
-            .assertSucceed()\
+            .assertSucceeded()\
             .assertValue(0, 0, 'monetdb')\
             .assertValue(1, 0, '.snapshot')
-    tc.execute("CREATE USER user1 with password '1' name '1st user' schema newSchema").assertSucceed()
-    tc.execute("CREATE USER user2 with password '2' name '2nd user' schema newSchema").assertSucceed()
-    tc.execute("CREATE USER user3 with password '3' name '3rd user' schema newSchema").assertSucceed()
-    tc.execute("CREATE USER user4 with password '4' name '4th user' schema newSchema").assertSucceed()
+    tc.execute("CREATE USER user1 with password '1' name '1st user' schema newSchema").assertSucceeded()
+    tc.execute("CREATE USER user2 with password '2' name '2nd user' schema newSchema").assertSucceeded()
+    tc.execute("CREATE USER user3 with password '3' name '3rd user' schema newSchema").assertSucceeded()
+    tc.execute("CREATE USER user4 with password '4' name '4th user' schema newSchema").assertSucceeded()
     res = tc.execute("""select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id""")
     res.assertValue(2, 0, 'user1')
     res.assertValue(3, 0, 'user2')
     res.assertValue(4, 0, 'user3')
     res.assertValue(5, 0, 'user4')
-    tc.execute("DROP USER user1").assertSucceed()
-    tc.execute("DROP USER user2").assertSucceed()
-    tc.execute("DROP USER user3").assertSucceed()
-    tc.execute("DROP USER user4").assertSucceed()
-    tc.execute("""select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id""").assertSucceed().assertRowCount(2)
+    tc.execute("DROP USER user1").assertSucceeded()
+    tc.execute("DROP USER user2").assertSucceeded()
+    tc.execute("DROP USER user3").assertSucceeded()
+    tc.execute("DROP USER user4").assertSucceeded()
+    tc.execute("""select u.name, u.fullname, s.name from "sys"."users" u left outer join "sys"."schemas" s on u.default_schema = s.id""").assertSucceeded().assertRowCount(2)
 
 
 
