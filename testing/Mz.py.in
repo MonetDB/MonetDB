@@ -1943,10 +1943,11 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
 
     # clean up empty files
     for f in [SrvrOutFile, SrvrErrFile, ClntOutFile, ClntErrFile]:
-        if os.path.getsize(f) > 0:
-            continue
-        else:
-            os.remove(f)
+        if os.path.exists(f):
+            if os.path.getsize(f) > 0:
+                continue
+            else:
+                os.remove(f)
 
     if returncode is None and pSrvr is not None:
         returncode = pSrvr.code # can still be None
