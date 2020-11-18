@@ -153,6 +153,7 @@ if(PYTHON3_LIBDIR)
     malmapi.py
     helpers.py
     sqltest.py
+    utils.py
     DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)
 endif()
