@@ -30,6 +30,7 @@ import hashlib
 import re
 import sys
 import importlib
+import MonetDBtesting.utils as utils
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
@@ -143,16 +144,29 @@ class SQLLogic:
             except pymonetdb.Error:
                 pass
 
-    def exec_statement(self, statement, expectok, err_stmt=None):
+    def exec_statement(self, statement, expectok, err_stmt=None, expected_err_code=None, expected_err_msg=None):
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return
         try:
             self.crs.execute(statement)
         except (pymonetdb.Error, ValueError) as e:
-            if not expectok:
-                return
             msg = e.args[0]
+            if not expectok:
+                if expected_err_code or expected_err_msg:
+                    # check whether failed as expected
+                    err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
+                    if expected_err_code:
+                        if expected_err_code == err_code_received:
+                            return
+                    if expected_err_msg:
+                        if expected_err_msg.lower() == err_msg_received.lower():
+                            return
+                    msg = "statement was expected to fail with" \
+                            + (" error code {}".format(expected_err_code) if expected_err_code else '')\
+                            + (", error message {}".format(expected_err_msg) if expected_err_msg else '')
+                    self.query_error(err_stmt or statement, msg, str(e))
+                return
         else:
             if expectok:
                 return
@@ -370,7 +384,11 @@ class SQLLogic:
             if line[0] == 'hash-threshold':
                 pass
             elif line[0] == 'statement':
+                expected_err_code = None
+                expected_err_msg = None
                 expectok = line[1] == 'ok'
+                if len(line) > 2:
+                    expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(line[2])
                 statement = []
                 self.qline = self.line + 1
                 while True:
@@ -381,9 +399,9 @@ class SQLLogic:
                 if not skipping:
                     if is_copyfrom_stmt(statement):
                         stmt, stmt_less_data = prepare_copyfrom_stmt(statement)
-                        self.exec_statement(stmt, expectok, err_stmt=stmt_less_data)
+                        self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg)
                     else:
-                        self.exec_statement('\n'.join(statement), expectok)
+                        self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg)
             elif line[0] == 'query':
                 columns = line[1]
                 pyscript = None
