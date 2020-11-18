@@ -141,13 +141,13 @@ class SQLTestResult(object):
                     sep = '|'
                 print('', file=err_file)
 
-    def assertFail(self):
+    def assertFailed(self):
         if self.query_error is None:
             msg = "was expected to fail but didn't\n{}!".format(str(self.query_error))
             self.fail(msg)
         return self
 
-    def assertSucceed(self):
+    def assertSucceeded(self):
         if self.query_error is not None:
             msg = "was expected to succeed but didn't\n{}!".format(str(self.query_error))
             self.fail(msg)
