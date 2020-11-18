@@ -65,6 +65,7 @@ default_with_cast.SF-1334486
 predicate_or-sf-1409824
 alter_view
 simple_view
+do_not_push_down_join_filter
 float2dec
 not
 references-bug

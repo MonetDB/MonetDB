@@ -381,7 +381,7 @@ list_check_prop_all(list *l, prop_check_func f)
 {
 	int res = 1;
 	if (l)
-		for (node *n = l->h; n; n = n->next)
+		for (node *n = l->h; n && res; n = n->next)
 			res &= f(n->data);
 	return res;
 }
