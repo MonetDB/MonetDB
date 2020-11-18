@@ -24,4 +24,3 @@ extern char * decimal_to_str(sql_allocator *sa, DEC_TPE v, sql_subtype *t);
 DEC_TPE scale2value(int scale);
 
 #endif /* _SQL_DECIMAL_H */
-
