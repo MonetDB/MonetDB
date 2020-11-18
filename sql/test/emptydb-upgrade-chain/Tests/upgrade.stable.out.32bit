@@ -3623,6 +3623,14 @@ insert into sys.functions values (960, 'sys_update_tables', 'update_tables', 'sq
 set schema "sys";
 
 Running database upgrade commands:
+set schema sys;
+create function sys.uuid(d int) returns uuid
+ external name uuid."new";
+GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;
+update sys.functions set system = true where system <> true and name = 'uuid' and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
+set schema "sys";
+
+Running database upgrade commands:
 set schema "sys";
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords where keyword = 'STREAM';
@@ -3635,6 +3643,14 @@ Running database upgrade commands:
 set schema "sys";
 ALTER TABLE sys.keywords SET READ ONLY;
 ALTER TABLE sys.table_types SET READ ONLY;
+set schema "sys";
+
+Running database upgrade commands:
+set schema sys;
+create function sys.uuid(d int) returns uuid
+ external name uuid."new";
+GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;
+update sys.functions set system = true where system <> true and name = 'uuid' and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
 set schema "sys";
 
 # MonetDB/SQL module loaded

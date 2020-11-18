@@ -7,11 +7,10 @@
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"
 #include <fenv.h>
+#include "mmath_private.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
-#include "mmath_private.h"
 
 static str
 CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
@@ -414,6 +413,60 @@ degreesf(float x)
 	return (float) (x * (180.0 / M_PI));
 }
 
+static str
+CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	int *restrict vals;
+	str msg = MAL_SUCCEED;
+	struct canditer ci = {0};
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BBPquickdesc(*bid, false))) {
+		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid && !is_bat_nil(*sid) && !(bs = BATdescriptor(*sid))) {
+		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci, b, bs);
+	if (!(bn = COLnew(ci.hseq, TYPE_int, q, TRANSIENT))) {
+		msg = createException(MAL, "batmmath.rand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	vals = Tloc(bn, 0);
+#ifdef STATIC_CODE_ANALYSIS
+	for (BUN i = 0; i < q; i++)
+		vals[i] = 0;
+#else
+	MT_lock_set(&mmath_rse_lock);
+	for (BUN i = 0; i < q; i++)
+		vals[i] = (int) (next(mmath_rse) >> 33);
+	MT_lock_unset(&mmath_rse_lock);
+#endif
+
+bailout:
+	if (bs)
+		BBPunfix(bs->batCacheid);
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = false;
+		bn->tnonil = true;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	return msg;
+}
+
 scienceImpl(acos)
 scienceImpl(asin)
 scienceImpl(atan)
@@ -566,6 +619,8 @@ mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",dbl),arg("x",dbl),batarg("y",dbl),batarg("s",oid))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,3, batarg("",flt),arg("x",flt),batarg("y",flt))),
  pattern("batmmath", "pow", CMDscience_bat_pow, false, "", args(1,4, batarg("",flt),arg("x",flt),batarg("y",flt),batarg("s",oid))),
+ pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,2, batarg("",int),batarg("v",int))),
+ pattern("batmmath", "rand", CMDscience_bat_randintarg, true, "", args(1,3, batarg("",int),batarg("v",int),batarg("s",oid))),
  { .imp=NULL }
 };
 #include "mal_import.h"

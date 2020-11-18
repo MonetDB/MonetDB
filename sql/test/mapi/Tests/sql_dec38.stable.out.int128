@@ -31,7 +31,7 @@ stdout of test 'sql_dec38` in directory 'sql/test/mapi` itself:
 % sys.sql_dec38,	sys.sql_dec38,	sys.sql_dec38 # table_name
 % d38_0,	d38_19,	d38_38 # name
 % decimal,	decimal,	decimal # type
-% 39,	40,	40 # length
+% 39,	40,	41 # length
 [ 12345678901234567899876543210987654321,	1234567890123456789.9876543210987654321,	0.12345678901234567899876543210987654321	]
 
 # 23:45:59 >  
