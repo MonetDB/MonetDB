@@ -4322,6 +4322,7 @@ drop function pcre_replace(string, string, string, string);
 [ "type used by function",	"inet",	"inet",	"sys",	"setmasklen",	"TYPE"	]
 [ "type used by function",	"inet",	"inet",	"sys",	"text",	"TYPE"	]
 [ "type used by function",	"uuid",	"uuid",	"sys",	"uuid",	"TYPE"	]
+[ "type used by function",	"uuid",	"uuid",	"sys",	"uuid",	"TYPE"	]
 #select 'sys.idxs', t.name, i.name, it.index_type_name from sys.idxs i left outer join sys._tables t on t.id = i.table_id left outer join sys.index_types as it on i.type = it.index_type_id order by t.name, i.name;
 % .%1,	.t,	.i,	.it # table_name
 % %1,	name,	name,	index_type_name # name
@@ -4809,6 +4810,7 @@ drop function pcre_replace(string, string, string, string);
 [ "grant on function",	"timestamp_to_str",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"tojsonarray",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"tojsonarray",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"uuid",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"uuid",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"valuearray",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"var",	"public",	"EXECUTE",	NULL,	0	]
