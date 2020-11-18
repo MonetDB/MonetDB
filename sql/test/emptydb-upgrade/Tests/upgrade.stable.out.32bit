@@ -3688,6 +3688,14 @@ insert into sys.functions values (962, 'sys_update_schemas', 'update_schemas', '
 insert into sys.functions values (963, 'sys_update_tables', 'update_tables', 'sql', 0, 2, false, false, false, 2000, true, true);
 set schema "sys";
 
+Running database upgrade commands:
+set schema sys;
+create function sys.uuid(d int) returns uuid
+ external name uuid."new";
+GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;
+update sys.functions set system = true where system <> true and name = 'uuid' and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
+set schema "sys";
+
 # MonetDB/SQL module loaded
 
 # 16:02:52 >  
