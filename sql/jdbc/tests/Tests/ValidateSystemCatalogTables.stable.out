@@ -24,7 +24,7 @@ Checking     13 foreign keys in schema tmp for Foreign Key referential integrity
 Checking     35 columns      in schema tmp for Not Null violations.
 Checking     14 columns      in schema tmp for Max Character Length violations.
 \vsi sys
-Checking     10 keys         in schema sys for Primary Key uniqueness violations.
+Checking     11 keys         in schema sys for Primary Key uniqueness violations.
 Checking      7 keys         in schema sys for Unique Constraint violations.
 Checking      0 foreign keys in schema sys for Foreign Key referential integrity violations.
 Checking     29 columns      in schema sys for Not Null violations.
