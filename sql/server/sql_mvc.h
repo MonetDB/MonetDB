@@ -122,8 +122,8 @@ typedef struct mvc {
 	struct symbol *sym;
 
 	int8_t use_views:1,
-		   search_path_has_sys:1, /* speed up objcect lookup */
-		   search_path_has_tmp:1;
+		   schema_path_has_sys:1, /* speed up objcect lookup */
+		   schema_path_has_tmp:1;
 	struct qc *qc;
 	int clientid;		/* id of the owner */
 
@@ -145,7 +145,7 @@ typedef struct mvc {
 	/* during query needed flags */
 	unsigned int label;	/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
-	list *search_path; /* schema search path for object lookup */
+	list *schema_path; /* schema search path for object lookup */
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);

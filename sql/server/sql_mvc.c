@@ -828,20 +828,20 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->label = 0;
 	m->cascade_action = NULL;
 
-	if (!(m->search_path = list_create((fdestroy)GDKfree))) {
+	if (!(m->schema_path = list_create((fdestroy)GDKfree))) {
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
 		return NULL;
 	}
-	if (!(sys_str = _STRDUP("sys")) || !list_append(m->search_path, sys_str)) {
+	if (!(sys_str = _STRDUP("sys")) || !list_append(m->schema_path, sys_str)) {
 		_DELETE(sys_str);
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
-		list_destroy(m->search_path);
+		list_destroy(m->schema_path);
 		return NULL;
 	}
-	m->search_path_has_sys = 1;
-	m->search_path_has_tmp = 0;
+	m->schema_path_has_sys = 1;
+	m->schema_path_has_tmp = 0;
 
 	store_lock();
 	m->session = sql_session_create(1 /*autocommit on*/);
@@ -849,7 +849,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	if (!m->session) {
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
-		list_destroy(m->search_path);
+		list_destroy(m->schema_path);
 		return NULL;
 	}
 
@@ -934,7 +934,7 @@ mvc_destroy(mvc *m)
 	store_unlock();
 
 	list_destroy(m->global_vars);
-	list_destroy(m->search_path);
+	list_destroy(m->schema_path);
 	stack_pop_until(m, 0);
 
 	if (m->scanner.log) /* close and destroy stream */
