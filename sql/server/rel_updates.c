@@ -1911,9 +1911,9 @@ rel_updates(sql_query *query, symbol *s)
 {
 	mvc *sql = query->sql;
 	sql_rel *ret = NULL;
-	bool old = sql->use_views;
+	uint8_t old = sql->use_views;
 
-	sql->use_views = true;
+	sql->use_views = 1;
 	switch (s->token) {
 	case SQL_COPYFROM:
 	{

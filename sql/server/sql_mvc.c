@@ -803,7 +803,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->topframes = 0;
 	m->frame = 0;
 
-	m->use_views = false;
+	m->use_views = 0;
 	if (!m->frames) {
 		qc_destroy(m->qc);
 		return NULL;
@@ -827,9 +827,9 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->label = 0;
 	m->cascade_action = NULL;
 
-	m->search_path = "sys"; //for now this will be static :)
-	m->search_path_has_sys = true;
-	m->search_path_has_tmp = false;
+	m->search_path = list_append(sa_list(m->pa), sa_strdup(m->pa, "sys"));
+	m->search_path_has_sys = 1;
+	m->search_path_has_tmp = 0;
 
 	store_lock();
 	m->session = sql_session_create(1 /*autocommit on*/);
