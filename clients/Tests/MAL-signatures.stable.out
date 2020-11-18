@@ -6115,6 +6115,8 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batmmath",	"radians",	"pattern batmmath.radians(X_1:bat[:dbl], X_2:bat[:oid]):bat[:dbl] ",	"CMDscience_bat_radians;",	""	]
 [ "batmmath",	"radians",	"pattern batmmath.radians(X_1:bat[:flt]):bat[:flt] ",	"CMDscience_bat_radians;",	""	]
 [ "batmmath",	"radians",	"pattern batmmath.radians(X_1:bat[:flt], X_2:bat[:oid]):bat[:flt] ",	"CMDscience_bat_radians;",	""	]
+[ "batmmath",	"rand",	"unsafe pattern batmmath.rand(X_1:bat[:int]):bat[:int] ",	"CMDscience_bat_randintarg;",	""	]
+[ "batmmath",	"rand",	"unsafe pattern batmmath.rand(X_1:bat[:int], X_2:bat[:oid]):bat[:int] ",	"CMDscience_bat_randintarg;",	""	]
 [ "batmmath",	"sin",	"pattern batmmath.sin(X_1:bat[:dbl]):bat[:dbl] ",	"CMDscience_bat_sin;",	""	]
 [ "batmmath",	"sin",	"pattern batmmath.sin(X_1:bat[:dbl], X_2:bat[:oid]):bat[:dbl] ",	"CMDscience_bat_sin;",	""	]
 [ "batmmath",	"sin",	"pattern batmmath.sin(X_1:bat[:flt]):bat[:flt] ",	"CMDscience_bat_sin;",	""	]
