@@ -72,15 +72,24 @@ try:
     cur1.execute('ALTER USER myuser SCHEMA PATH \'"sc1\';')
     sys.stderr.write("Exception expected")
 except pymonetdb.DatabaseError as e:
-    if " A schema path cannot end inside inside a schema name" not in str(e):
+    if "A schema path cannot end inside inside a schema name" not in str(e):
         sys.stderr.write("Error: \"A schema path cannot end inside inside a schema name\" expected")
 try:
-    cur1.execute('ALTER USER myuser SCHEMA PATH \'"sc1\';')
+    cur1.execute('ALTER USER myuser SCHEMA PATH \'""\';')
     sys.stderr.write("Exception expected")
 except pymonetdb.DatabaseError as e:
-    if " A schema path cannot end inside inside a schema name" not in str(e):
-        sys.stderr.write("Error: \"A schema path cannot end inside inside a schema name\" expected")
+    if "A schema name cannot be empty" not in str(e):
+        sys.stderr.write("Error: \"A schema name cannot be empty\" expected")
+try:
+    mylongname = 'a' * 1023
+    cur1.execute('ALTER USER myuser SCHEMA PATH \'"%s"\';' % mylongname) # not allowed
+    sys.stderr.write("Exception expected")
+except pymonetdb.DatabaseError as e:
+    if "A schema has up to 1023 characters" not in str(e):
+        sys.stderr.write("Error: \"A schema has up to 1023 characters\" expected")
 
+mylongname = 'a' * 1022
+cur1.execute('ALTER USER myuser SCHEMA PATH \'"%s"\';' % mylongname) # allowed
 cur1.execute('''
 START TRANSACTION;
 DROP USER myuser;
