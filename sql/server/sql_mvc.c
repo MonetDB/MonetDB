@@ -777,6 +777,7 @@ mvc *
 mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 {
 	mvc *m;
+	str sys_str = NULL;
 
 	assert(pa);
  	m = SA_ZNEW(pa, mvc);
@@ -827,7 +828,18 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->label = 0;
 	m->cascade_action = NULL;
 
-	m->search_path = list_append(sa_list(m->pa), sa_strdup(m->pa, "sys"));
+	if (!(m->search_path = list_create((fdestroy)GDKfree))) {
+		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
+		return NULL;
+	}
+	if (!(sys_str = _STRDUP("sys")) || !list_append(m->search_path, sys_str)) {
+		_DELETE(sys_str);
+		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
+		list_destroy(m->search_path);
+		return NULL;
+	}
 	m->search_path_has_sys = 1;
 	m->search_path_has_tmp = 0;
 
@@ -837,6 +849,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	if (!m->session) {
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
+		list_destroy(m->search_path);
 		return NULL;
 	}
 
@@ -921,6 +934,7 @@ mvc_destroy(mvc *m)
 	store_unlock();
 
 	list_destroy(m->global_vars);
+	list_destroy(m->search_path);
 	stack_pop_until(m, 0);
 
 	if (m->scanner.log) /* close and destroy stream */

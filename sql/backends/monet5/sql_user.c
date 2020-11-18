@@ -89,8 +89,12 @@ parse_schema_path_str(mvc *m, str schema_path, bool build)
 					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
 
 				if (build) {
+					char *val = NULL;
 					next_schema[bp++] = '\0';
-					list_append(l, sa_strdup(m->pa, next_schema));
+					if (!(val = _STRDUP(next_schema)) || !list_append(l, val)) {
+						_DELETE(val);
+						throw(SQL, "sql.schema_path", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
 					if (strcmp(next_schema, "sys") == 0)
 						m->search_path_has_sys = 1;
 					else if (strcmp(next_schema, "tmp") == 0)
@@ -259,7 +263,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
-	mvc_create_column_(m, t, "schema_path", "varchar", 2048);
+	mvc_create_column_(m, t, "schema_path", "clob", 0);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -285,7 +289,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
-	mvc_create_column_(m, t, "schema_path", "varchar", 2048);
+	mvc_create_column_(m, t, "schema_path", "clob", 0);
 
 	schema_id = sql_find_schema(m, "sys");
 	assert(schema_id >= 0);
