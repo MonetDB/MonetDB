@@ -33,25 +33,25 @@ stdout of test 'decimal2` in directory 'sql/test` itself:
 % .%2 # table_name
 % %2 # name
 % decimal # type
-% 4 # length
+% 5 # length
 [ 0.01	]
 #select .1;
 % .%2 # table_name
 % %2 # name
 % decimal # type
-% 3 # length
+% 4 # length
 [ 0.1	]
 #select .10;
 % .%2 # table_name
 % %2 # name
 % decimal # type
-% 4 # length
+% 5 # length
 [ 0.10	]
 #select 01.0;
 % .%2 # table_name
 % %2 # name
 % decimal # type
-% 5 # length
+% 4 # length
 [ 1.0	]
 #select 10.0;
 % .%2 # table_name

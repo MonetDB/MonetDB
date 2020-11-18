@@ -1219,7 +1219,7 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 % sys.fract_only,	sys.fract_only # table_name
 % id,	val # name
 % int,	decimal # type
-% 1,	6 # length
+% 1,	7 # length
 [ 1,	0.0000	]
 [ 2,	0.1000	]
 [ 4,	-0.9999	]
@@ -1280,10 +1280,6 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 [ 1	]
 #INSERT INTO num_input_test(n1) VALUES ('-555.50');
 [ 1	]
-#INSERT INTO num_input_test(n1) VALUES ('     ');
-[ 1	]
-#INSERT INTO num_input_test(n1) VALUES ('');
-[ 1	]
 #SELECT * FROM num_input_test;
 % sys.num_input_test # table_name
 % n1 # name
@@ -1294,8 +1290,6 @@ stdout of test 'numeric` in directory 'sql/test/pg_regress` itself:
 [ -93853.000	]
 [ 555.500	]
 [ -555.500	]
-[ 0.000	]
-[ 0.000	]
 #DROP TABLE num_input_test;
 #DROP TABLE num_data;
 #DROP TABLE num_exp_add;

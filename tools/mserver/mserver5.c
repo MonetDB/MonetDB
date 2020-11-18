@@ -771,18 +771,10 @@ main(int argc, char **av)
 
 	emergencyBreakpoint();
 
-	if (!GDKinmemory(0)) {
-		char *secret = NULL;
-		if ((err = msab_pickSecret(&secret)) != NULL || (err = msab_registerStarted()) != NULL) {
-			/* throw the error at the user, but don't die */
-			fprintf(stderr, "!%s\n", err);
-			free(err);
-		}
-		if (secret) {
-			if (GDKsetenv("master_password", secret) != GDK_SUCCEED)
-				fprintf(stderr, "GSKsetenv failed\n");
-			free(secret);
-		}
+	if (!GDKinmemory(0) && (err = msab_registerStarted()) != NULL) {
+		/* throw the error at the user, but don't die */
+		fprintf(stderr, "!%s\n", err);
+		free(err);
 	}
 
 #ifdef SIGHUP

@@ -401,8 +401,10 @@ VIEWreset(BAT *b)
 		b->batCapacity = cnt;
 
 		/* insert all of v in b, and quit */
-		if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED)
+		if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED) {
+			GDKerror("appending view failed");
 			goto bailout;
+		}
 		BBPreclaim(v);
 	}
 	return GDK_SUCCEED;
