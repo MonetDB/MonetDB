@@ -1274,8 +1274,8 @@ user_schema:
  ;
 
 user_schema_path:
-	SET SCHEMA PATH string	{ $$ = $4; }
- |  /* empty */				{ $$ = NULL; }
+	SCHEMA PATH string	{ $$ = $3; }
+ |  /* empty */			{ $$ = NULL; }
  ;
 
 alter_table_element:

@@ -83,7 +83,7 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER USER SET [ENCRYPTED | UNENCRYPTED] PASSWORD string USING OLD PASSWORD string\n"
 	 "ALTER USER ident WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string\n"
 	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SET SCHEMA ident\n"
-	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SET SCHEMA PATH string",
+	 "ALTER USER ident [WITH [ENCRYPTED | UNENCRYPTED] PASSWORD string] SCHEMA PATH string",
 	 "ident",
 	 "See also https://www.monetdb.org/Documentation/SQLreference/Users"},
 	{"ANALYZE",
