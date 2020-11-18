@@ -153,6 +153,13 @@ BuildRequires: python3-numpy
 %endif
 %if %{with rintegration}
 BuildRequires: pkgconfig(libR)
+%if (0%{?fedora} == 32)
+# work around a packaging bug on Fedora 32 (18 Nov 2020)
+# problem is things like:
+# file /etc/texlive/web2c/updmap.cfg conflicts between attempted installs of texlive-tetex-7:20190410-12.fc32.noarch and texlive-texlive-scripts-7:20200327-16.fc32.noarch
+# texlive-tetex is obsoleted by texlive-obsolete
+BuildRequires: texlive-obsolete
+%endif
 %endif
 # if we were to compile with cmocka support (-DWITH_CMOCKA=ON):
 # BuildRequires: pkgconfig(cmocka)
