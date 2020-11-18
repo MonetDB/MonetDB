@@ -240,12 +240,10 @@ MATHunary_FINITE(bit *res, const dbl *a)
 	return MAL_SUCCEED;
 }
 
-#include "xoshiro256starstar.h"
-
 /* global pseudo random generator state */
-static random_state_engine mmath_rse;
+random_state_engine mmath_rse;
 /* serialize access to state */
-static MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER(mmath_rse_lock);
+MT_Lock mmath_rse_lock = MT_LOCK_INITIALIZER(mmath_rse_lock);
 
 static str
 MATHprelude(void *ret)
