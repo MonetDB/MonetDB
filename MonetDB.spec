@@ -97,7 +97,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Oct2020/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Oct2020-SP1/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -873,6 +873,22 @@ fi
 %postun -p /sbin/ldconfig
 
 %changelog
+* Wed Nov 18 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.7-20201118
+- Rebuilt.
+- BZ#6890: Add support of xz/lzma (de)compression on MS Windows
+- BZ#6891: Add support of lz4 (de)compression on MS Windows
+- BZ#6971: Parsing table returning function on remote server fails
+- BZ#6981: Oct2020: PREPARE DDL statement silently fails
+- BZ#6983: monetdb allows to use non-existing optimizer pipe
+- BZ#6998: MAL profiler buffer limitations
+- BZ#7001: crossproduct generated for a simple (semi-)join
+- BZ#7003: Segfault on large chain of constant decimal multiplication
+- BZ#7005: Dropping a STREAM TABLE does not remove the associated column
+  info from sys._columns
+- BZ#7010: deallocate <id> results in all prepared statements being
+  deallocated (not error-related)
+- BZ#7011: uuid() called only once when used in projection list
+
 * Tue Oct 13 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.5-20201013
 - Rebuilt.
 
