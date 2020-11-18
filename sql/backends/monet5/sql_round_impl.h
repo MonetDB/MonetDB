@@ -561,31 +561,23 @@ static inline str
 str_2dec_body(TYPE *res, const str val, const int d, const int sc)
 {
 	char *s = val;
-	char *dot, *end;
 	int digits;
 	int scale;
 	BIG value;
 
-	dot = strchr(s, '.');
-	if (dot != NULL) {
-		s = strip_extra_zeros(s);
-		digits = _strlen(s) - 1;
-		scale = _strlen(dot + 1);
-	} else {
-		digits = _strlen(s);
-		scale = 0;
-	}
-	end = NULL;
+	if (d < 0 || d >= (int) (sizeof(scales) / sizeof(scales[0])))
+		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
+
+	int has_errors;
 	value = 0;
 
-	if (digits < 0)
-		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
-	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0]))
+	// s = strip_extra_zeros(s);
+
+	value = decimal_from_str(s, &digits, &scale, &has_errors);
+	if (has_errors)
 		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
 
-	value = decimal_from_str(s, &end);
-	if (*s == '+' || *s == '-')
-		digits--;
+	// handle situations where the de facto scale is different from the formal scale.
 	if (scale < sc) {
 		/* the current scale is too small, increase it by adding 0's */
 		int dff = sc - scale;	/* CANNOT be 0! */
@@ -615,7 +607,7 @@ str_2dec_body(TYPE *res, const str val, const int d, const int sc)
 		if (value >= scales[d] || value <= -scales[d])
 			throw(SQL, STRING(TYPE), SQLSTATE(42000) "Rounding of decimal (%s) doesn't fit format (%d.%d)", s, d, sc);
 	}
-	if (value <= -scales[d] || value >= scales[d]  || *end)
+	if (value <= -scales[d] || value >= scales[d])
 		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
 	*res = (TYPE) value;
 	return MAL_SUCCEED;
