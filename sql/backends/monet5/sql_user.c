@@ -57,24 +57,94 @@ monet5_drop_user(ptr _mvc, str user)
 	return TRUE;
 }
 
+#define outside_str 1
+#define inside_str 2
 #define default_schema_path "\"sys\"" /* "sys" will be the default schema path */
+
+static str
+parse_schema_path_str(mvc *m, str schema_path, bool build)
+{
+	list *l = m->search_path;
+	char next_schema[1024]; /* needs one extra character for null terminator */
+	size_t len = strlen(schema_path), status = outside_str, bp = 0;
+
+	if (strNil(schema_path))
+		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot be NULL");
+
+	if (build)
+		while (l->t) /* if building, empty search_path list */
+			(void) list_remove_node(l, l->t);
+
+	for (size_t i = 0 ; i < len; i++) {
+		char next = schema_path[i];
+
+		if (next == '"') {
+			if (status == inside_str && schema_path[i + 1] == '"') {
+				next_schema[bp++] = '"';
+				i++; /* has to advance two positions */
+			} else if (status == inside_str) {
+				if (bp == 0)
+					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema name cannot be empty");
+				if (bp == 1023)
+					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+
+				if (build) {
+					next_schema[bp++] = '\0';
+					list_append(l, sa_strdup(m->pa, next_schema));
+					if (strcmp(next_schema, "sys") == 0)
+						m->search_path_has_sys = 1;
+					else if (strcmp(next_schema, "tmp") == 0)
+						m->search_path_has_tmp = 1;
+				}
+
+				bp = 0;
+				status = outside_str;
+			} else {
+				assert(status == outside_str);
+				status = inside_str;
+			}
+		} else if (next == ',') {
+			if (status == outside_str && schema_path[i + 1] == '"') {
+				status = inside_str;
+				i++; /* has to advance two positions */
+			} else if (status == inside_str) {
+				if (bp == 1023)
+					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+				next_schema[bp++] = ','; /* used inside a schema name */
+			} else if (status == outside_str) {
+				throw(SQL, "sql.schema_path", SQLSTATE(42000) "The '\"' character is expected after the comma separator");
+			}
+		} else if (status == inside_str) {
+			if (bp == 1023)
+				throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+			if (bp == 0 && next == '%')
+				throw(SQL, "sql.schema_path", SQLSTATE(42000) "The character '%%' is not allowed as the first schema character");
+			next_schema[bp++] = next;
+		} else {
+			assert(status == outside_str);
+			throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema in the path must be within '\"'");
+		}
+	}
+	if (status == inside_str)
+		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot end inside inside a schema name");
+	return MAL_SUCCEED;
+}
 
 static str
 monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid)
 {
 	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
-	str ret;
+	str ret, pwd;
 	sqlid user_id;
-	str pwd;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
 	Client c = MCgetClient(m->clientid);
 
-	if (schema_path && strNil(schema_path))
-		throw(MAL, "sql.create_user", SQLSTATE(42000) "Schema path cannot be NULL");
 	if (!schema_path)
 		schema_path = default_schema_path;
+	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED)
+		return ret;
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd))))
@@ -335,8 +405,9 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *sp = find_sql_column(info, "schema_path");
 
-		if (strNil(schema_path)) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: schema path cannot be NULL");
+		if ((err = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
+			(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
+			freeException(err);
 			return (FALSE);
 		}
 
@@ -483,22 +554,18 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_table *user_info = NULL;
 	sql_column *users_name = NULL;
 	sql_column *users_schema = NULL;
+	sql_column *users_schema_path = NULL;
 	sql_table *schemas = NULL;
 	sql_column *schemas_name = NULL;
 	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
 	sql_column *auths_name = NULL;
-	str other;
-
+	str path_err = NULL, other = NULL, schema = NULL, schema_path = NULL, username = NULL, err = NULL;
 	void *p = 0;
-
-	str schema = NULL;
-	str username = NULL;
-	str err = NULL;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
 
-	if ((err = AUTHresolveUser(&username, user)) !=MAL_SUCCEED) {
+	if ((err = AUTHresolveUser(&username, user)) != MAL_SUCCEED) {
 		freeException(err);
 		return (NULL);	/* don't reveal that the user doesn't exist */
 	}
@@ -512,6 +579,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	user_info = find_sql_table(sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
 	users_schema = find_sql_column(user_info, "default_schema");
+	users_schema_path = find_sql_column(user_info, "schema_path");
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
 	if (is_oid_nil(rid)) {
@@ -521,10 +589,13 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return NULL;
 	}
 	p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
-
 	assert(p);
 	schema_id = *(sqlid *) p;
 	_DELETE(p);
+
+	p = table_funcs.column_find_value(m->session->tr, users_schema_path, rid);
+	assert(p);
+	schema_path = (str) p;
 
 	schemas = find_sql_table(sys, "schemas");
 	schemas_name = find_sql_column(schemas, "name");
@@ -550,12 +621,14 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 
-	if (!schema || !mvc_set_schema(m, schema)) {
+	if (!schema || !mvc_set_schema(m, schema) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
 		if (m->session->tr->active) {
 			if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 				freeException(other);
 		}
 		GDKfree(username);
+		_DELETE(schema_path);
+		freeException(path_err);
 		return NULL;
 	}
 	/* reset the user and schema names */
@@ -565,6 +638,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 	GDKfree(username);
+	_DELETE(schema_path);
 	if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
 		freeException(other);
 		return NULL;

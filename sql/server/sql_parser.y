@@ -1274,7 +1274,7 @@ user_schema:
  ;
 
 user_schema_path:
-	SET SCHEMA PATH ident	{ $$ = $4; }
+	SET SCHEMA PATH string	{ $$ = $4; }
  |  /* empty */				{ $$ = NULL; }
  ;
 
@@ -1470,7 +1470,7 @@ CREATE [ UNIQUE ] INDEX index_name
 */
 
 opt_user_schema_path:
-   SCHEMA PATH ident { $$ = $3; }
+   SCHEMA PATH string { $$ = $3; }
  |					 { $$ = NULL; }
 
 role_def:

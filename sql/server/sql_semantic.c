@@ -115,7 +115,7 @@ tmp_schema(mvc *sql)
 			CALL; \
 		} else { \
 			sql_schema *cur = cur_schema(sql); \
-			char *p, *sp, *search_path_copy, *session_schema = cur->base.name; \
+			char *session_schema = cur->base.name; \
  \
 			EXTRA; \
 			if (!res && !sql->search_path_has_tmp && strcmp(session_schema, "tmp") != 0) { /* if 'tmp' is not in the search path, search it before all others */ \
@@ -128,12 +128,10 @@ tmp_schema(mvc *sql)
 			} \
 			if (!res) { \
 				/* object not found yet, look inside search path */ \
-				search_path_copy = sa_strdup(sql->ta, sql->search_path); \
-				p = strtok_r(search_path_copy, ",", &sp); \
-				while (p && !res) { \
+				for (node *n = sql->search_path->h ; n && !res ; n = n->next) { \
+					str p = (str) n->data; \
 					if (strcmp(session_schema, p) != 0 && (next = mvc_bind_schema(sql, p))) \
 						CALL; \
-					p = strtok_r(NULL, ",", &sp); \
 				} \
 			} \
 			if (!res && !sql->search_path_has_sys && strcmp(session_schema, "sys") != 0) { /* if 'sys' is not in the current path search it next */ \
