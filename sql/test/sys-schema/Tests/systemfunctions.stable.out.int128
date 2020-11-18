@@ -4058,6 +4058,8 @@ stdout of test 'systemfunctions` in directory 'sql/test/sys-schema` itself:
 [ "sys",	"user_statistics",	5,	"bigint",	""	]
 [ "sys",	"user_statistics",	6,	"clob",	""	]
 [ "sys",	"uuid",	0,	"uuid",	"create function sys.uuid()\nreturns uuid external name uuid.\"new\";"	]
+[ "sys",	"uuid",	0,	"uuid",	"create function sys.uuid(d int)\nreturns uuid external name uuid.\"new\";"	]
+[ "sys",	"uuid",	1,	"int",	""	]
 [ "sys",	"var",	0,	"char",	"create function \"sys\".\"var\"() returns table(\"schema\" string, \"name\" string, \"type\" string, \"value\" string) external name \"sql\".\"sql_variables\";"	]
 [ "sys",	"var",	1,	"char",	""	]
 [ "sys",	"var",	2,	"char",	""	]
