@@ -13,6 +13,7 @@
 #include "monetdb_config.h"
 #include "mal_builder.h"
 #include "opt_parappend.h"
+#include "wlc.h"
 
 typedef struct parstate {
 	InstrPtr prep_stmt;
@@ -35,10 +36,11 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	InstrPtr *old_mb_stmt = NULL;
 	parstate state = { NULL };
 
-	(void)cntxt;
-	(void)mb;
 	(void)stk;
 	(void)pci;
+
+	if (WLCused())
+		return MAL_SUCCEED;
 
 	int found_at = -1;
 	for (int i = 0; i < mb->stop; i++) {
