@@ -42,9 +42,9 @@ null    tmp     objects SYSTEM TABLE    null    null    null    null    null    
 null    tmp     triggers        SYSTEM TABLE    null    null    null    null    null    null    
 Resultset with 7 columns
 TYPE_CAT	TYPE_SCHEM	TYPE_NAME	CLASS_NAME	DATA_TYPE	REMARKS	BASE_TYPE	
-null	sys	inet	nl.cwi.monetdb.jdbc.types.INET	2000	inet	null	
+null	sys	inet	org.monetdb.jdbc.types.INET	2000	inet	null	
 null	sys	json	java.lang.String	2000	json	null	
-null	sys	url	nl.cwi.monetdb.jdbc.types.URL	2000	url	null	
+null	sys	url	org.monetdb.jdbc.types.URL	2000	url	null	
 null	sys	uuid	java.lang.String	2000	uuid	null	
 Resultset with 7 columns
 TYPE_CAT	TYPE_SCHEM	TYPE_NAME	CLASS_NAME	DATA_TYPE	REMARKS	BASE_TYPE	

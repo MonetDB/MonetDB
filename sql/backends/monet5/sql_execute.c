@@ -686,7 +686,7 @@ SQLengineIntern(Client c, backend *be)
 		return MAL_SUCCEED;
 	}
 
-	if (m->emode == m_prepare)
+	if (m->emode == m_deallocate || m->emode == m_prepare)
 		goto cleanup_engine;
 
 	be->language = 'D';
@@ -701,7 +701,7 @@ SQLengineIntern(Client c, backend *be)
 		msg = SQLrun(c,m);
 
 cleanup_engine:
-	if (m->emode != m_prepare && m->type == Q_SCHEMA && m->qc != NULL)
+	if (m->emode != m_deallocate && m->emode != m_prepare && m->type == Q_SCHEMA && m->qc != NULL)
 		qc_clean(m->qc);
 	if (msg) {
 		/* don't print exception decoration, just the message */

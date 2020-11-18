@@ -4970,11 +4970,17 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 			rel->exps = jexps;
 		if (lexps) {
 			l = rel->l = rel_select(v->sql->sa, rel->l, NULL);
+			if (l->exps)
+				list_merge(lexps, l->exps, NULL);
+
 			l->exps = lexps;
 			v->changes = 1;
 		}
 		if (rexps) {
 			r = rel->r = rel_select(v->sql->sa, rel->r, NULL);
+			if (r->exps)
+				list_merge(rexps, r->exps, NULL);
+
 			r->exps = rexps;
 			v->changes = 1;
 		}
@@ -5507,8 +5513,9 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			}
 			return rel;
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_set(l->op) || is_select(l->op)
-				|| is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)) {
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) ||
+					((v->parent && is_project(v->parent->op)) && (is_set(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op))) ||
+					is_topn(l->op) || is_sample(l->op)) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
@@ -6347,7 +6354,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			   Check if they can be pushed up, ie are they not
 			   changing or introducing any columns used
 			   by the upper operator. */
-
+ 
 			exps = new_exp_list(v->sql->sa);
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -8931,8 +8938,13 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 														if (!next->semantics && ((lval && lval->isnull) || (hval && hval->isnull))) {
 															skip = 1; /* NULL values don't match, skip them */
 														} else if (!next->semantics) {
-															if (next->flag == cmp_equal || hval != lval) {
-																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, false, false) != 0 : exp_range_overlap(cmin, cmax, lval, hval, false, false) == 0;
+															if (next->flag == cmp_equal) {
+																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, false, false) != 0 :
+																					 exp_range_overlap(cmin, cmax, lval, hval, false, false) == 0;
+															} else if (hval != lval) { /* range case */
+																comp_type lower = range2lcompare(next->flag), higher = range2rcompare(next->flag);
+																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) != 0 :
+																					 exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) == 0;
 															} else {
 																switch (next->flag) {
 																	case cmp_gt:
@@ -8985,7 +8997,8 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 															/* otherwise it holds all values in the range, cannot be pruned */
 														} else if (rmin->isnull) { /* MINVALUE to limit */
 															if (lval) {
-																if (hval != lval) { /* For the between case */
+																if (hval != lval) { /* range case */
+																	/* There's need to call range2lcompare, because the partition's upper limit is always exclusive */
 																	skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
 																} else {
 																	switch (next->flag) { /* upper limit always exclusive */
@@ -9011,8 +9024,15 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 															}
 														} else if (rmax->isnull) { /* limit to MAXVALUE */
 															if (lval) {
-																if (hval != lval) { /* For the between case */
-																	skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
+																if (hval != lval) { /* range case */
+																	comp_type higher = range2rcompare(next->flag);
+																	if (higher == cmp_lt) {
+																		skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) < 0 : VALcmp(&(rmin->data), &(hval->data)) >= 0;
+																	} else if (higher == cmp_lte) {
+																		skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
+																	} else {
+																		assert(0);
+																	}
 																} else {
 																	switch (next->flag) {
 																		case cmp_lt:
@@ -9039,8 +9059,13 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 															}
 														} else { /* limit1 to limit2 (general case), limit2 is exclusive */
 															if (lval) {
-																if (next->flag == cmp_equal || hval != lval) {
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, true) != 0 : exp_range_overlap(rmin, rmax, lval, hval, false, true) == 0;
+																if (next->flag == cmp_equal) {
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, true) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, false, true) == 0;
+																} else if (hval != lval) { /* For the between case */
+																	comp_type higher = range2rcompare(next->flag);
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) == 0;
 																} else {
 																	switch (next->flag) {
 																		case cmp_gt:
