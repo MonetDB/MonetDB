@@ -2549,10 +2549,12 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 static str
 sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixed)
 {
-	size_t bufsize = 1024, pos = 0;
+	size_t bufsize = 2048, pos = 0;
 	char *buf = NULL, *err = NULL;
 	res_table *output = NULL;
 	BAT *b = NULL;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_table *t;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2577,6 +2579,33 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"DELETE FROM sys.keywords where keyword = 'STREAM';\n"
 					"ALTER TABLE sys.table_types SET READ WRITE;\n"
 					"DELETE FROM sys.table_types where table_type_id = 4;\n");
+
+			/* scoping2 branch changes, the 'users' view has to be re-created because of the 'schema_path' addition on 'db_user_info' table
+			   However 'dependency_schemas_on_users' has a dependency on 'users', so it has to be re-created as well */
+			t = mvc_bind_table(sql, s, "users");
+			t->system = 0;	/* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "dependency_schemas_on_users");
+			t->system = 0;	/* make it non-system else the drop view will fail */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"DROP VIEW sys.dependency_schemas_on_users;\n"
+					"DROP VIEW sys.users;\n"
+
+					"ALTER TABLE sys.db_user_info ADD COLUMN schema_path CLOB;\n"
+					"UPDATE sys.db_user_info SET schema_path = '\"sys\"';\n"
+
+					"CREATE VIEW sys.users AS\n"
+					"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\"\n"
+					" FROM db_users() AS u\n"
+					" LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\";\n"
+					"GRANT SELECT ON sys.users TO PUBLIC;\n"
+					"CREATE VIEW sys.dependency_schemas_on_users AS\n"
+					" SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type\n"
+					" FROM sys.users AS u, sys.schemas AS s\n"
+					" WHERE u.default_schema = s.id\n"
+					" ORDER BY s.name, u.name;\n"
+					"GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;\n"
+					"update sys._tables set system = true where system <> true and name in ('users','dependency_schemas_on_users')"
+					" and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) tt_view);
 
 			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
