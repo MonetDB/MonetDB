@@ -227,3 +227,9 @@ select 1, null except select 1, null;
 
 select 1, null intersect select 1, null;
 	-- 1 NULL
+
+start transaction;
+create function "😀"() returns int return 1;
+select "😀"();
+	-- 1
+rollback;
