@@ -64,7 +64,7 @@ monet5_drop_user(ptr _mvc, str user)
 static str
 parse_schema_path_str(mvc *m, str schema_path, bool build)
 {
-	list *l = m->search_path;
+	list *l = m->schema_path;
 	char next_schema[1024]; /* needs one extra character for null terminator */
 	size_t len = strlen(schema_path), status = outside_str, bp = 0;
 
@@ -72,7 +72,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build)
 		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot be NULL");
 
 	if (build)
-		while (l->t) /* if building, empty search_path list */
+		while (l->t) /* if building, empty schema_path list */
 			(void) list_remove_node(l, l->t);
 
 	for (size_t i = 0 ; i < len; i++) {
@@ -96,9 +96,9 @@ parse_schema_path_str(mvc *m, str schema_path, bool build)
 						throw(SQL, "sql.schema_path", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					if (strcmp(next_schema, "sys") == 0)
-						m->search_path_has_sys = 1;
+						m->schema_path_has_sys = 1;
 					else if (strcmp(next_schema, "tmp") == 0)
-						m->search_path_has_tmp = 1;
+						m->schema_path_has_tmp = 1;
 				}
 
 				bp = 0;
