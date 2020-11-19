@@ -1,0 +1,66 @@
+query T rowsort
+select remark from comments where id in (select id from sys._tables where name = 'abc_6639')
+----
+
+statement ok
+create table abc_6639 (nr int)
+
+statement ok
+comment on table abc_6639 is 'abc_rem'
+
+query T rowsort
+select remark from comments where id in (select id from sys._tables where name = 'abc_6639')
+----
+abc_rem
+
+statement error
+\dt abc_6639
+comment on table abc_6639 is null
+
+query T rowsort
+select remark from comments where id in (select id from sys._tables where name = 'abc_6639')
+----
+abc_rem
+
+statement error
+\dt abc_6639
+-- show that the comment column id and remark are both set to NOT NULL
+select number, name, type, type_digits, "null" from sys._columns where table_id in (select id from sys._tables where name = 'comments' and system)
+
+statement error
+\dt comments
+comment on table abc_6639 is ''
+
+query T rowsort
+select remark from comments where id in (select id from sys._tables where name = 'abc_6639')
+----
+abc_rem
+
+statement error
+\dt abc_6639
+comment on table abc_6639 is null
+
+query T rowsort
+select remark from comments where id in (select id from sys._tables where name = 'abc_6639')
+----
+abc_rem
+
+statement error
+\dt abc_6639
+comment on table abc_6639 is 'abc_rem2'
+
+query T rowsort
+select remark from comments where id in (select id from sys._tables where name = 'abc_6639')
+----
+abc_rem
+
+statement error
+\dt abc_6639
+drop table abc_6639
+
+query T rowsort
+select remark from comments where id in (select id from sys._tables where name = 'abc_6639')
+----
+abc_rem
+
+

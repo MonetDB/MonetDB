@@ -1,0 +1,32 @@
+statement ok
+create procedure test() begin create table x (i int); insert into x values (1), (2); end
+
+statement error
+create procedure test() begin create table x as select name from sys.functions with data; end
+
+statement ok
+call test()
+
+statement error
+select i from x limit 1
+
+statement error
+\d x
+\df test
+drop procedure test
+
+statement error
+create procedure test() begin create table x as select name from sys.functions with data; end
+
+statement ok
+call test()
+
+statement error
+select name from x limit 1
+
+statement error
+\d x
+\df test
+drop procedure test
+
+
