@@ -5416,15 +5416,16 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 static void
 sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
 {
-	node *n;
-
 	if (cs_size(&t->members)) {
-		for (n = t->members.set->h; n; ) {
+		for (node *n = t->members.set->h; n; ) {
 			sql_part *pt = n->data;
-			sql_table *tt = find_sql_table_id(t->s, pt->base.id);
 
 			n = n->next;
-			sql_trans_del_table(tr, t, tt, drop_action);
+			if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) &&
+				tr->dropped && list_find_id(tr->dropped, pt->base.id))
+				continue;
+
+			sql_trans_del_table(tr, t, find_sql_table_id(t->s, pt->base.id), drop_action);
 		}
 	}
 }
