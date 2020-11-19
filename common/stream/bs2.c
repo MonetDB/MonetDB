@@ -594,6 +594,7 @@ bs2_update_timeout(stream *ss)
 	if ((s = ss->stream_data.p) != NULL && s->s) {
 		s->s->timeout = ss->timeout;
 		s->s->timeout_func = ss->timeout_func;
+		s->s->timeout_data = ss->timeout_data;
 		if (s->s->update_timeout)
 			s->s->update_timeout(s->s);
 	}

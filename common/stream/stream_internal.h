@@ -152,7 +152,8 @@ struct stream {
 	bool isutf8;		/* known to be UTF-8 due to BOM */
 	bool binary;		/* text/binary */
 	unsigned int timeout;	/* timeout in ms */
-	bool (*timeout_func)(void); /* callback function: NULL/true -> return */
+	bool (*timeout_func)(void *); /* callback function: NULL/true -> return */
+	void *timeout_data;	/* data for the above */
 	union {
 		void *p;
 		int i;
