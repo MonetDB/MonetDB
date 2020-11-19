@@ -149,6 +149,7 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     malcheck.py
     sqllogictest.py
+    explain.py
     mapicursor.py
     malmapi.py
     helpers.py
