@@ -232,4 +232,10 @@ start transaction;
 create function "😀"() returns int return 1;
 select "😀"();
 	-- 1
+create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2;
+select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"();
+	-- 2
+create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3;
+select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"();
+	-- 3
 rollback;
