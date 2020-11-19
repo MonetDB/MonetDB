@@ -232,6 +232,13 @@ start transaction;
 create function "😀"() returns int return 1;
 select "😀"();
 	-- 1
+CREATE FUNCTION ups() RETURNS INT
+BEGIN
+	DECLARE "nononononononononononononononononononononononononononononononono" int;
+	RETURN "nononononononononononononononononononononononononononononononono";
+END;
+select ups();
+	-- NULL
 create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2;
 select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"();
 	-- 2
