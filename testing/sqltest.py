@@ -7,6 +7,7 @@ import os
 import sys
 import unittest
 import pymonetdb
+import MonetDBtesting.utils as utils
 
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=int(os.getenv("MAPIPORT"))
@@ -91,17 +92,17 @@ class PyMonetDBConnectionContext(object):
 
 class SQLTestResult(object):
     """Holder of sql execution information. Managed by SQLTestCase."""
-    query = None
-    assertion_errors = [] # holds assertion errors
-    query_error = None
-    data = []
-    rows = []
-    rowcount = -1
-    description = None
     test_case = None
 
     def __init__(self, test_case):
         self.test_case = test_case
+        self.query = None
+        self.assertion_errors = [] # holds assertion errors
+        self.query_error = None
+        self.data = []
+        self.rows = []
+        self.rowcount = -1
+        self.description = None
 
     def run(self, query:str):
         # ensure runs only once
@@ -140,16 +141,23 @@ class SQLTestResult(object):
                         print(sep, col, sep='', end='', file=err_file)
                     sep = '|'
                 print('', file=err_file)
+            print('', file=err_file)
 
-    def assertFailed(self):
+    def assertFailed(self, err_code=None):
         if self.query_error is None:
-            msg = "was expected to fail but didn't\n{}!".format(str(self.query_error))
+            msg = "expected to fail but didn't\n{}".format(str(self.query_error))
             self.fail(msg)
+        else:
+            if err_code:
+                err_code_received, err_msg_received = utils.parse_mapi_err_msg(self.query_error.args[0])
+                if err_code_received != err_code:
+                    msg = "expected to fail with error code {} but failed with error code {}".format(err_code, err_code_received)
+                    self.fail(msg)
         return self
 
     def assertSucceeded(self):
         if self.query_error is not None:
-            msg = "was expected to succeed but didn't\n{}!".format(str(self.query_error))
+            msg = "expected to succeed but didn't\n{}".format(str(self.query_error))
             self.fail(msg)
         return self
 
@@ -172,11 +180,11 @@ class SQLTestResult(object):
             pass
         if type(val) is type(received):
             if val != received:
-                msg = 'expected "{}", received "{}" in row={}, col={}!'.format(val, received, row, col)
+                msg = 'expected "{}", received "{}" in row={}, col={}'.format(val, received, row, col)
                 self.fail(msg, data=self.data)
         else:
             # handle type mismatch
-            msg = 'expected type {} and value "{}", received type {} and value "{}" in row={}, col={}!'.format(type(val), str(val), type(received), str(received), row, col)
+            msg = 'expected type {} and value "{}", received type {} and value "{}" in row={}, col={}'.format(type(val), str(val), type(received), str(received), row, col)
             self.fail(msg, data=self.data)
         return self
 
@@ -194,7 +202,7 @@ class SQLTestResult(object):
                         index = i
                         break
         if not sequence_match(data, self.data, index):
-            msg = '{}\nwas expected to match query result starting at index={}, but it didn\'t!'.format(piped_representation(data), index)
+            msg = '{}\nexpected to match query result starting at index={}, but it didn\'t'.format(piped_representation(data), index)
             self.fail(msg, data=self.data)
         return self
 
