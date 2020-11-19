@@ -15,7 +15,7 @@
 #include "opt_bincopyfrom.h"
 
 static str transform(MalBlkPtr mb, InstrPtr importTable);
-static int extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count_var);
+static int extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_bat_var, int count_var);
 
 str
 OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -58,7 +58,7 @@ OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 			pushInstruction(mb, p);
 		}
 		if (msg != MAL_SUCCEED)
-			return msg;
+			goto end;
 	}
 
 end:
@@ -107,6 +107,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 	// columns with a nil path, by projecting nil values over it.
 	int prototype_idx = -1;
 	int prototype_type = TYPE_any;
+	str prototype_path = NULL;
 	for (int i = 0; i < old->retc; i++) {
 		int var = getArg(old, i);
 		int var_type = getVarType(mb, var);
@@ -120,12 +121,13 @@ transform(MalBlkPtr mb, InstrPtr old)
 		// this is the best so far
 		prototype_idx = i;
 		prototype_type = tail_type;
+		prototype_path = (str)getVarValue(mb, path_var);
 	}
 	if (prototype_idx < 0)
 		return createException(MAL, "optimizer.bincopyfrom", SQLSTATE(42000) "all paths are nil");
 
 	// Always emit the prototype column first
-	int prototype_count_var = extract_column(mb, old, prototype_idx, -1, -1);
+	int prototype_count_var = extract_column(mb, old, prototype_idx, NULL, -1, -1);
 	assert(mb->stop > 0);
 	int prototype_bat_var = getArg(getInstrPtr(mb, mb->stop - 1), 0);
 	assert(prototype_count_var == getArg(getInstrPtr(mb, mb->stop - 1), 1));
@@ -136,7 +138,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 	for (int i = 0; i < old->retc; i++) {
 		if (i == prototype_idx)
 			continue;
-		int new_row_count_var = extract_column(mb, old, i, prototype_bat_var, row_count_var);
+		int new_row_count_var = extract_column(mb, old, i, prototype_path, prototype_bat_var, row_count_var);
 		if (onclient)
 			row_count_var = new_row_count_var; // chain the importColumn statements
 	}
@@ -147,7 +149,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 }
 
 static int
-extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count_var)
+extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_bat_var, int count_var)
 {
 	int var = getArg(old, idx);
 	int var_type = getVarType(mb, var);
@@ -166,19 +168,30 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, int proto_bat_var, int count
 	str path = (str)getVarValue(mb, path_var);
 
 	if (!strNil(path)) {
-		InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
-		setReturnArgument(p, old->argv[idx]);
-		int new_count_var = newTmpVariable(mb, TYPE_oid);
-		pushReturn(mb, p, new_count_var);
-		pushStr(mb, p, method);
-		pushStr(mb, p, path);
-		pushInt(mb, p, onclient);
-		if (count_var < 0)
-			pushOid(mb, p, 0);
-		else
-			p = pushArgument(mb, p, count_var);
-		return new_count_var;
+		if (proto_path != NULL && strcmp(proto_path, path) == 0) {
+			// we can reuse the prototype var
+			InstrPtr p = newInstructionArgs(mb, NULL, NULL, 2);
+			p = pushArgument(mb, p, proto_bat_var);
+			setReturnArgument(p, old->argv[idx]);
+			pushInstruction(mb, p);
+			return count_var;
+		} else {
+			// we emit a new importColumn call
+			InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
+			setReturnArgument(p, old->argv[idx]);
+			int new_count_var = newTmpVariable(mb, TYPE_oid);
+			pushReturn(mb, p, new_count_var);
+			pushStr(mb, p, method);
+			pushStr(mb, p, path);
+			pushInt(mb, p, onclient);
+			if (count_var < 0)
+				pushOid(mb, p, 0);
+			else
+				p = pushArgument(mb, p, count_var);
+			return new_count_var;
+		}
 	} else {
+		// create an empty column by projecting the prototype
 		InstrPtr p = newFcnCall(mb, algebraRef, projectRef);
 		setReturnArgument(p, old->argv[idx]);
 		p = pushArgument(mb, p, proto_bat_var);
