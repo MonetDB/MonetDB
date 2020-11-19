@@ -72,7 +72,7 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			pushInstruction(mb, p);
 		}
 		if (msg != MAL_SUCCEED)
-			return msg;
+			goto end;
 	}
 	assert(state.prep_stmt == NULL);
 
@@ -125,6 +125,7 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, int *action
 
 	if (!sname_constant || !tname_constant || !cname_constant) {
 		// cannot transform this
+		flush_finish_stmt(state, mb);
 		pushInstruction(mb, old);
 		return MAL_SUCCEED;
 	}
@@ -132,6 +133,7 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, int *action
 	const char *cname = getVarConstant(mb, cname_var).val.sval;
 	if (cname[0] == '%') {
 		// don't touch indices
+		flush_finish_stmt(state, mb);
 		pushInstruction(mb, old);
 		return MAL_SUCCEED;
 	}
@@ -168,44 +170,46 @@ setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
 
 	// check if the state refers to a sql.append_prep statement that can be
 	// reused.
-	InstrPtr prep_stmt = NULL;
+	InstrPtr prep_stmt = state->prep_stmt;
 	do {
-		if (state->prep_stmt == NULL)
+		if (prep_stmt == NULL)
 			break;
 
-		InstrPtr prev = state->prep_stmt;
-
-		int existing_sname_var = getArg(prev, prev->retc + 1);
-		int existing_tname_var = getArg(prev, prev->retc + 2);
+		int existing_sname_var = getArg(prep_stmt, prep_stmt->retc + 1);
+		int existing_tname_var = getArg(prep_stmt, prep_stmt->retc + 2);
 
 		const char *existing_sname = getVarConstant(mb, existing_sname_var).val.sval;
 		const char *incoming_sname = getVarConstant(mb, sname_var).val.sval;
-		if (strcmp(existing_sname, incoming_sname) != 0)
+		if (strcmp(existing_sname, incoming_sname) != 0) {
+			prep_stmt = NULL;
 			break;
+		}
 
 		const char *existing_tname = getVarConstant(mb, existing_tname_var).val.sval;
 		const char *incoming_tname = getVarConstant(mb, tname_var).val.sval;
-		if (strcmp(existing_tname, incoming_tname) != 0)
+		if (strcmp(existing_tname, incoming_tname) != 0) {
+			prep_stmt = NULL;
 			break;
+		}
 
 		const char *incoming_cname = getVarConstant(mb, cname_var).val.sval;
-		int existing_cols = prev->retc - 1;
-		for (int i = prev->argc - existing_cols; i < prev->argc; i++) {
-			int var = getArg(prev, i);
+		int existing_cols = prep_stmt->retc - 1;
+		for (int i = prep_stmt->argc - existing_cols; i < prep_stmt->argc; i++) {
+			int var = getArg(prep_stmt, i);
 			const char *existing_cname = getVarConstant(mb, var).val.sval;
 			if (strcmp(existing_cname, incoming_cname) == 0) {
 				// We're not prepared for the complications that may arise
 				// when there are multiple appends to the same column.
-				// In particular we would have to track down where the previous
+				// In particular we would have to track down where the prep_stmtious
 				// cookie is used and make sure we execute the next append
 				// after that use.
 				// This is unlikely to occur in practice, so instead we just start over.
+				prep_stmt = NULL;
 				break;
 			}
 		}
 
 		// It seems there is no objection to reusing the existing sql.append_prep.
-		prep_stmt = prev;
 	} while (0);
 
 	int cookie_var = newTmpVariable(mb, TYPE_ptr);
