@@ -144,12 +144,12 @@ class SQLLogic:
             except pymonetdb.Error:
                 pass
 
-    def exec_statement(self, statement, expectok, err_stmt=None, expected_err_code=None, expected_err_msg=None):
+    def exec_statement(self, statement, expectok, err_stmt=None, expected_err_code=None, expected_err_msg=None, expected_rowcount=None):
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return
         try:
-            self.crs.execute(statement)
+            affected_rowcount = self.crs.execute(statement)
         except (pymonetdb.Error, ValueError) as e:
             msg = e.args[0]
             if not expectok:
@@ -169,6 +169,9 @@ class SQLLogic:
                 return
         else:
             if expectok:
+                if expected_rowcount:
+                    if expected_rowcount != affected_rowcount:
+                        self.query_error(err_stmt or statement, "statement was expecting to succeed with {} rows but received {} rows!".format(expected_rowcount, affected_rowcount))
                 return
             msg = None
         self.query_error(err_stmt or statement, expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't", msg)
@@ -386,9 +389,14 @@ class SQLLogic:
             elif line[0] == 'statement':
                 expected_err_code = None
                 expected_err_msg = None
+                expected_rowcount = None
                 expectok = line[1] == 'ok'
                 if len(line) > 2:
-                    expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(line[2])
+                    if expectok:
+                        if line[2] == 'rowcount':
+                            expected_rowcount = int(line[3])
+                    else:
+                        expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(line[2])
                 statement = []
                 self.qline = self.line + 1
                 while True:
@@ -399,9 +407,9 @@ class SQLLogic:
                 if not skipping:
                     if is_copyfrom_stmt(statement):
                         stmt, stmt_less_data = prepare_copyfrom_stmt(statement)
-                        self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg)
+                        self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount)
                     else:
-                        self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg)
+                        self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount)
             elif line[0] == 'query':
                 columns = line[1]
                 pyscript = None
