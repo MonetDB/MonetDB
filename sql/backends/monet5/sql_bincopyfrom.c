@@ -474,7 +474,7 @@ load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, BUN row
 
 	if (msg == MAL_SUCCEED && rows_estimate != 0 && rows_estimate != rows_added)
 		bailout(
-			"inconsistent row count in %s: expected "LLFMT", got "BUNFMT,
+			"inconsistent row count in %s: expected "BUNFMT", got "BUNFMT,
 			name,
 			rows_estimate, rows_added);
 
