@@ -10,7 +10,7 @@ import pymonetdb
 import MonetDBtesting.utils as utils
 
 TSTDB=os.getenv("TSTDB")
-MAPIPORT=int(os.getenv("MAPIPORT"))
+MAPIPORT=os.getenv("MAPIPORT")
 
 def equals(a, b) -> bool:
     if type(a) is type(b):
@@ -121,6 +121,7 @@ class SQLTestResult(object):
         return self
 
     def fail(self, msg, data=None):
+        """ logs errors to test case err file"""
         err_file = self.test_case.err_file
         if len(self.assertion_errors) == 0:
             print(self.query, file=err_file)
@@ -144,6 +145,7 @@ class SQLTestResult(object):
             print('', file=err_file)
 
     def assertFailed(self, err_code=None):
+        """assert on query failed with optional err_code if provided"""
         if self.query_error is None:
             msg = "expected to fail but didn't\n{}".format(str(self.query_error))
             self.fail(msg)
@@ -156,6 +158,7 @@ class SQLTestResult(object):
         return self
 
     def assertSucceeded(self):
+        """assert on query succeeded"""
         if self.query_error is not None:
             msg = "expected to succeed but didn't\n{}".format(str(self.query_error))
             self.fail(msg)
@@ -171,6 +174,7 @@ class SQLTestResult(object):
         raise NotImplementedError()
 
     def assertValue(self, row, col, val):
+        """assert on a value matched against row, col in the result"""
         received = None
         row = int(row)
         col = int(col)
@@ -189,6 +193,9 @@ class SQLTestResult(object):
         return self
 
     def assertDataResultMatch(self, data=[], index=None):
+        """Assert on a match of a subset of the result. When index is provided it
+        starts comparig from that row index onward.
+        """
         def mapfn(next):
             if type(next) is list:
                 return tuple(next)
