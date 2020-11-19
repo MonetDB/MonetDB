@@ -21,7 +21,11 @@
 
 # The python function that can be used instead of the various sort
 # options should be a simple function that gets a list of lists as
-# input and should produce a list of lists as output.
+# input and should produce a list of lists as output.  If the name
+# contains a period, the last part is the name of the function and
+# everything up to the last period is the module.  If the module
+# starts with a period, it is searched in the MonetDBtesting module
+# (where this file is also).
 
 import pymonetdb
 from MonetDBtesting.mapicursor import MapiCursor
@@ -290,14 +294,19 @@ class SQLLogic:
             if '.' in pyscript:
                 [mod, fnc] = pyscript.rsplit('.', 1)
                 try:
-                    pymod = importlib.import_module('MonetDBtesting.' + mod)
-                    pyfnc = getattr(pymod, fnc)
+                    if mod.startswith('.'):
+                        pymod = importlib.import_module(mod, 'MonetDBtesting')
+                    else:
+                        pymod = importlib.import_module(mod)
                 except ModuleNotFoundError:
                     self.query_error(query, 'cannot import filter function module')
                     err = True
-                except AttributeError:
-                    self.query_error(query, 'cannot find filter function')
-                    err = True
+                else:
+                    try:
+                        pyfnc = getattr(pymod, fnc)
+                    except AttributeError:
+                        self.query_error(query, 'cannot find filter function')
+                        err = True
             elif re.match(r'[_a-zA-Z][_a-zA-Z0-9]*$', pyscript) is None:
                 self.query_error(query, 'filter function is not an identifier')
                 err = True

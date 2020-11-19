@@ -14,7 +14,7 @@ select def from optimizers() where name = optimizer
 ----
 optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 explain copy into ttt from '/tmp/xyz'
 ----
 user.main
@@ -64,7 +64,7 @@ optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions()
 statement ok
 rollback
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 explain copy into ttt from '/tmp/xyz'
 ----
 user.main
