@@ -591,7 +591,7 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1, *dup = NULL;
 
 		if (!update_allowed(sql, sub, sub->base.name, is_delete(rel->op) ? "DELETE": "TRUNCATE",
@@ -625,7 +625,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
 
@@ -691,7 +691,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1 = NULL, *dup = NULL;
 		sql_exp *le = NULL;
 

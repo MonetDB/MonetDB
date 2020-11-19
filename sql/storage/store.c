@@ -1162,7 +1162,7 @@ set_members(changeset *ts)
 				if (t->members.set)
 				for (m = t->members.set->h; m; m = m->next) {
 					sql_part *p = m->data;
-					sql_table *pt = find_sql_table(t->s, p->base.name);
+					sql_table *pt = find_sql_table_id(t->s, p->base.id);
 
 					pt->p = t;
 				}
@@ -3185,7 +3185,7 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 	sql_table *sysic = find_sql_table(syss, "objects");
 	sql_part *npt = SA_ZNEW(tr->sa, sql_part);
 
-	base_init(tr->sa, &npt->base, pt->base.id, TR_NEW, npt->base.name);
+	base_init(tr->sa, &npt->base, pt->base.id, TR_NEW, pt->base.name);
 
 	if (isRangePartitionTable(t) || isListPartitionTable(t))
 		dup_sql_type(tr, t->s, &(pt->tpe), &(npt->tpe));
@@ -3303,7 +3303,7 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 {
 	sql_allocator *sa = (newFlagSet(flags))?tr->parent->sa:tr->sa;
 	sql_part *p = SA_ZNEW(sa, sql_part);
-	sql_table *pt = find_sql_table(mt->s, op->base.name);
+	sql_table *pt = find_sql_table_id(mt->s, op->base.id);
 
 	base_init(sa, &p->base, op->base.id, tr_flag(&op->base, flags), op->base.name);
 	if (isRangePartitionTable(mt) || isListPartitionTable(mt))
@@ -4151,7 +4151,7 @@ rollforward_create_part(sql_trans *tr, sql_part *p, int mode)
 	(void) tr;
 	if (mode == R_APPLY) {
 		sql_table *mt = p->t;
-		sql_table *pt = find_sql_table(mt->s, p->base.name);
+		sql_table *pt = find_sql_table_id(mt->s, p->base.id);
 
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		if (pt)
@@ -5421,7 +5421,7 @@ sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
 	if (cs_size(&t->members)) {
 		for (n = t->members.set->h; n; ) {
 			sql_part *pt = n->data;
-			sql_table *tt = find_sql_table(t->s, pt->base.name);
+			sql_table *tt = find_sql_table_id(t->s, pt->base.id);
 
 			n = n->next;
 			sql_trans_del_table(tr, t, tt, drop_action);
