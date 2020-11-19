@@ -27,14 +27,20 @@ language P
     return(groups)
 }
 
-statement error
+query I rowsort
 SELECT cluster FROM (SELECT MIN(x) AS minx, MAX(x) AS maxx, kmeans(x,5) AS cluster FROM xdata
     GROUP BY cluster) as cdata ORDER BY cluster
+----
+1
+2
+3
+4
+5
 
-statement error
+statement ok
 DROP FUNCTION kmeans
 
-statement error
+statement ok
 DROP TABLE xdata
 
 statement ok
