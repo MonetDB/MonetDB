@@ -24,7 +24,7 @@
 
 
 static str
-BATattach_as_bytes(BAT *bat, stream *s, lng rows_estimate, str (*fixup)(void*,void*), int *eof_seen)
+BATattach_as_bytes(BAT *bat, stream *s, BUN rows_estimate, str (*fixup)(void*,void*), int *eof_seen)
 {
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
