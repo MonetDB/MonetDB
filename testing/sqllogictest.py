@@ -290,7 +290,7 @@ class SQLLogic:
             if '.' in pyscript:
                 [mod, fnc] = pyscript.rsplit('.', 1)
                 try:
-                    pymod = importlib.import_module(mod)
+                    pymod = importlib.import_module('MonetDBtesting.' + mod)
                     pyfnc = getattr(pymod, fnc)
                 except ModuleNotFoundError:
                     self.query_error(query, 'cannot import filter function module')
