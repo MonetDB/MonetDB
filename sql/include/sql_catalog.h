@@ -732,7 +732,7 @@ extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
-extern sql_part *find_sql_part(sql_table *t, const char *tname);
+extern sql_part *find_sql_part_id(sql_table *t, sqlid id);
 
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, sqlid id);
