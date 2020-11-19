@@ -2622,8 +2622,10 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
 	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
-	if (ot->members.set || ot->triggers.set)
-		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
+	if (!list_empty(ot->members.set))
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' while it has children", tname);
+	if (!list_empty(ot->triggers.set))
+		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' while it has triggers", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
 	if (!mvc_schema_privs(sql, ns))

@@ -1716,8 +1716,10 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
 		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
-		if (t->members.set || t->triggers.set)
-			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
+		if (!list_empty(t->members.set))
+			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' while it has children", otable_name);
+		if (!list_empty(t->triggers.set))
+			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' while it has triggers", otable_name);
 		if (!(s = mvc_bind_schema(sql, nschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", nschema_name);
 		if (!mvc_schema_privs(sql, s))
