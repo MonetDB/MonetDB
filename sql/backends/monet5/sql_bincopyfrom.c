@@ -36,7 +36,10 @@ BATattach_as_bytes(BAT *bat, stream *s, BUN rows_estimate, str (*fixup)(void*,vo
 		assert(chunk_size % asz == 0);
 		size_t n;
 		if (rows_estimate > 0) {
-			n = rows_estimate;
+			// Set n to estimate+1 so it will read once, get n - 1 and know it's at EOF.
+			// Otherwise, it will read n, get n, then enlarge the heap, read again,
+			// and only then know it's at eof.
+			n = rows_estimate + 1;
 			rows_estimate = 0;
 		} else {
 			n = chunk_size / asz;
