@@ -9,7 +9,7 @@
 # skipif <system>
 # onlyif <system>
 
-# statement (ok|error)
+# statement (ok|ok rowcount|error) [arg]
 # query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
 #       I: integer; T: text (string); R: real (decimal)
 #       nosort: do not sort
