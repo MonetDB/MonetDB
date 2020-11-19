@@ -102,7 +102,7 @@ top N (
 | ) [ "oblo"."a" ] [ "oblo"."a" ASC ]
 ) [ bigint "1", bigint "2" ]
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo
 ----
 user.main
@@ -126,7 +126,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo OFFSET 2
 ----
 user.main
@@ -152,7 +152,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2
 ----
 user.main
@@ -178,7 +178,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 1 OFFSET 2
 ----
 user.main
@@ -204,7 +204,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2 OFFSET 1
 ----
 user.main
@@ -230,7 +230,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a
 ----
 user.main
@@ -256,7 +256,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a OFFSET 2
 ----
 user.main
@@ -284,7 +284,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2
 ----
 user.main
@@ -314,7 +314,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
 user.main
@@ -344,7 +344,7 @@ bat.pack
 sql.resultSet
 1
 
-query T python explain.function_histogram
+query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
 user.main
