@@ -1,0 +1,46 @@
+statement ok
+start transaction
+
+statement ok
+create table onet (a text, b text, c text)
+
+statement ok
+insert into onet values ('a', 'b', 'c')
+
+statement ok
+create function get_onet(d text) returns table (aa text, bb text, cc text) return table(select * from onet where a = d)
+
+statement error
+prepare select * from get_onet(?)
+
+statement error
+exec **('a')
+
+statement error
+prepare select * from get_onet(?) tt where tt.aa = ?
+
+statement error
+exec **('a', 'b')
+
+statement error
+prepare with something as (select a from onet where a = ?) select * from get_onet(?), something
+
+statement error
+exec **('a', 'a')
+
+statement error
+drop function get_onet
+
+statement error
+drop table onet
+
+statement error
+CREATE FUNCTION twoargs(input1 INT, input2 CLOB) RETURNS TABLE (outt CLOB) BEGIN RETURN TABLE(SELECT input1 || input2); END
+
+statement error
+prepare select 1 from twoargs(?,?)
+
+statement ok
+rollback
+
+
