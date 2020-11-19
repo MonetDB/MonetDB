@@ -35,6 +35,7 @@ struct logger {
 	BAT *catalog_bid;	/* int bid column */
 	BAT *catalog_id;	/* object identifier is unique */
 	BAT *catalog_cnt;	/* count of ondisk buns (transient) */
+	BAT *catalog_lid;	/* last tid, after which it gets released/destroyed */
 	BAT *dcatalog;		/* deleted from catalog table */
 	BUN cnt;		/* number of persistent bats, incremented on log flushing */
 	BUN deleted;		/* number of destroyed persistent bats, needed for catalog vacuum */

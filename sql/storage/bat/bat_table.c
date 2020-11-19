@@ -20,6 +20,33 @@ _delta_cands(sql_trans *tr, sql_table *t)
 	BAT *tids = NULL;
 
 	if ((dcnt=store_funcs.count_del(tr, t, 0)) > 0 || store_funcs.count_del(tr, t, 2) > 0) {
+#if 0
+		BAT *d = store_funcs.bind_del(tr, t, RDONLY);
+
+		if (d && store_funcs.count_del(tr, t, 2) > 0) {
+		    BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
+			BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
+			BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
+
+			bat_destroy(d);
+			d = nd;
+	    	if (!ui || !uv || !d || BATreplace(d, ui, uv, true) != GDK_SUCCEED) {
+				bat_destroy(d);
+				bat_destroy(ui);
+				bat_destroy(uv);
+				return NULL;
+			}
+			bat_destroy(ui);
+			bat_destroy(uv);
+		}
+		if (!d)
+			return NULL;
+		/* true == deleted, need not deleted  */
+		tids = BATmaskedcands(0, d, false);
+		bat_destroy(d);
+		if(tids == NULL)
+			return NULL;
+#else
 		BAT *d;
 
 		if ((d = store_funcs.bind_del(tr, t, RDONLY)) != NULL) {
@@ -54,6 +81,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 		} else {
 			return NULL;
 		}
+#endif
 	}
 	if (tids == NULL)
 		tids = BATdense(0, 0, (BUN) nr);

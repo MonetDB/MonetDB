@@ -810,14 +810,17 @@ BATsave(BAT *bd)
 	if (b->thash && b->thash != (Hash *) 1)
 		BAThashsave(b, dosync);
 
+	MT_lock_set(&bd->theaplock);
 	HEAPdecref(b->theap, false);
 	if (b->tvheap)
 		HEAPdecref(b->tvheap, false);
 	if (err == GDK_SUCCEED) {
 		bd->batCopiedtodisk = true;
 		DESCclean(bd);
+		MT_lock_unset(&bd->theaplock);
 		return GDK_SUCCEED;
 	}
+	MT_lock_unset(&bd->theaplock);
 	return err;
 }
 

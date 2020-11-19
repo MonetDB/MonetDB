@@ -1493,7 +1493,7 @@ destroy_idx(sql_trans *tr, sql_idx *i)
 	(void)tr;
 	if (i->data && i->base.allocated) {
 		i->base.allocated = 0;
-       		ok = destroy_bat(i->data);
+       	ok = destroy_bat(i->data);
 	}
 	i->data = NULL;
 	return ok;
@@ -2198,6 +2198,21 @@ tr_log_cs( sql_trans *tr, column_storage *cs, segment *segs, int cleared, sqlid 
 	assert(tr->parent == gtrans);
 	if (cleared && log_bat_clear(bat_logger, id) != GDK_SUCCEED)
 		return LOG_ERR;
+
+	if (cleared) {
+		assert(cs->ucnt == 0);
+		BAT *ins = temp_descriptor(cs->bid);
+		if (isEbat(ins)) {
+			temp_destroy(cs->bid);
+			cs->bid = temp_copy(ins->batCacheid, false);
+			bat_destroy(ins);
+			ins = temp_descriptor(cs->bid);
+		}
+		bat_set_access(ins, BAT_READ);
+		ok = log_bat_persists(bat_logger, ins, id);
+		bat_destroy(ins);
+		return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	}
 
 	for (; segs; segs=segs->next) {
 		if (segs->owner == tr) {
