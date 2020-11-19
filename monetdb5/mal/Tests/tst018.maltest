@@ -1,4 +1,4 @@
-statement T nosort
+query T nosort
 i:= 23;
 i:= nil;
 io.print(i);
@@ -9,8 +9,7 @@ s:= "hello";
 s:= nil;
 io.print(s);
 ----
-nil
-nil
-nil
-
+NULL
+NULL
+NULL
 

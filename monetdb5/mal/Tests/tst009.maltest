@@ -1,20 +1,20 @@
-statement T rowsort
+query T nosort
 language.call("io.print(1);");
 ----
 1
 
-statement T rowsort
+query T nosort
 language.call("io.print(\"hello\");");
 ----
-hello
+"hello"
 
-statement T rowsort
+query T nosort
 language.call("s:=\"goodbye\";io.print(s);");
 ----
-"goodbye" 
+"goodbye"
 
-statement T rowsort
+query T nosort
 language.call("language.call(\"io.print(\\\\\"hello\\\\\");\");");
 ----
-hello
+"hello"
 

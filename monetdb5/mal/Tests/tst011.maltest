@@ -1,9 +1,10 @@
-statement T nosort
+query T nosort
 barrier k:=12;
 	io.print(k);
 	leave k;
 	io.print("not possible");
 exit 	k:=11;
+	io.print(k);
 ----
 12
 11

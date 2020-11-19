@@ -1,4 +1,4 @@
-statement T nosort
+query T nosort
 	i:=1;
 barrier b:= i>0;
 	io.printf("ok entered first\n");
@@ -10,7 +10,7 @@ exit b;
 barrier b:= j>0;
 	io.printf("wrong entered third\n");
 exit b;
-barrier b:= j<=0
+barrier b:= j<=0;
 	io.printf("wrong entered fourth\n");
 exit b;
 ----
