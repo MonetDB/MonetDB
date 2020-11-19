@@ -5983,7 +5983,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p->t = mt;
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
-		p = find_sql_part(mt, pt->base.name);
+		p = find_sql_part_id(mt, pt->base.id);
 	}
 
 	/* add range partition values */
@@ -6059,7 +6059,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
 		rids *rs;
-		p = find_sql_part(mt, pt->base.name);
+		p = find_sql_part_id(mt, pt->base.id);
 
 		rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
 		for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {

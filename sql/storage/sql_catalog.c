@@ -221,9 +221,11 @@ find_sql_column(sql_table *t, const char *cname)
 }
 
 sql_part *
-find_sql_part(sql_table *t, const char *tname)
+find_sql_part_id(sql_table *t, sqlid id)
 {
-	return _cs_find_name(&t->members, tname);
+	node *n = cs_find_id(&t->members, id);
+
+	return n ? n->data : NULL;
 }
 
 sql_table *
