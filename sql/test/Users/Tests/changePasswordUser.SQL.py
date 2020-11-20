@@ -6,11 +6,16 @@
 from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
-    tc.connect(username="april", password="april")
+    tc.connect(username="monetdb", password="monetdb")
     tc.execute("ALTER USER april  WITH UNENCRYPTED PASSWORD 'april2';").assertSucceeded()
-    tc.execute("select 'password april';").assertSucceeded()
-    tc.execute("select 'password april2'; ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3'; ALTER USER SET UNENCRYPTED PASSWORD 'april' USING OLD PASSWORD 'april2';").assertSucceeded()
-    tc.execute("select 'password april2 (wrong!!!)';").assertSucceeded()
+    tc.connect(username="april", password="april")
+    tc.execute("select 'password april';").assertFailed()
+    tc.connect(username="april", password="april2")
+    tc.execute("select 'password april2';").assertSucceeded()
+    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';").assertFailed()
+    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april' USING OLD PASSWORD 'april2';").assertSucceeded()
+    tc.execute("select 'password april2 (wrong!!!)';").assertFailed()
+    tc.connect(username="april", password="april")
     tc.execute("select 'password change successfully';").assertSucceeded()
 
 # import os, sys
@@ -19,7 +24,7 @@ with SQLTestCase() as tc:
 # except ImportError:
 #     import process
 
-# def sql_test_SqSqSqlllclient(user, passwd, input):
+# def sql_test_client(user, passwd, input):
 #     with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
 #                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
 #                         input=input, port=int(os.getenv("MAPIPORT"))) as c:
