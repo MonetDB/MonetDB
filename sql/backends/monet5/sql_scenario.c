@@ -795,7 +795,8 @@ SQLreader(Client c)
 		/* auto_commit on end of statement */
 		if (language != 'D' && m->scanner.mode == LINE_N && !commit_done) {
 			msg = SQLautocommit(m);
-			go = msg == MAL_SUCCEED;
+			if (msg)
+				break;
 			commit_done = true;
 		}
 		if (m->session->tr && m->session->tr->active)
@@ -819,7 +820,8 @@ SQLreader(Client c)
 				   and start a transaction on the start of a new statement (s A;B; case) */
 				if (language != 'D' && !(m->emod & mod_debug) && !commit_done) {
 					msg = SQLautocommit(m);
-					go = msg == MAL_SUCCEED;
+					if (msg)
+						break;
 					commit_done = true;
 				}
 

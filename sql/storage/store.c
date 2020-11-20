@@ -1175,7 +1175,7 @@ set_members(changeset *ts)
 				if (t->members.set)
 				for (m = t->members.set->h; m; m = m->next) {
 					sql_part *p = m->data;
-					sql_table *pt = find_sql_table(t->s, p->base.name);
+					sql_table *pt = find_sql_table_id(t->s, p->base.id);
 
 					pt->p = t;
 				}
@@ -3229,7 +3229,7 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 	sql_table *sysic = find_sql_table(syss, "objects");
 	sql_part *npt = SA_ZNEW(tr->sa, sql_part);
 
-	base_init(tr->sa, &npt->base, pt->base.id, TR_NEW, npt->base.name);
+	base_init(tr->sa, &npt->base, pt->base.id, TR_NEW, pt->base.name);
 
 	if (isRangePartitionTable(t) || isListPartitionTable(t))
 		dup_sql_type(tr, t->s, &(pt->tpe), &(npt->tpe));
@@ -3347,7 +3347,7 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 {
 	sql_allocator *sa = (newFlagSet(flags))?tr->parent->sa:tr->sa;
 	sql_part *p = SA_ZNEW(sa, sql_part);
-	sql_table *pt = find_sql_table(mt->s, op->base.name);
+	sql_table *pt = find_sql_table_id(mt->s, op->base.id);
 
 	base_init(sa, &p->base, op->base.id, tr_flag(&op->base, flags), op->base.name);
 	if (isRangePartitionTable(mt) || isListPartitionTable(mt))
@@ -4198,7 +4198,7 @@ rollforward_create_part(sql_trans *tr, sql_part *p, int mode)
 	(void) tr;
 	if (mode == R_APPLY) {
 		sql_table *mt = p->t;
-		sql_table *pt = find_sql_table(mt->s, p->base.name);
+		sql_table *pt = find_sql_table_id(mt->s, p->base.id);
 
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		if (pt)
@@ -4213,7 +4213,7 @@ rollforward_drop_part(sql_trans *tr, sql_part *p, int mode)
 	(void) tr;
 	if (mode == R_APPLY) {
 		sql_table *mt = p->t;
-		sql_table *pt = find_sql_table(mt->s, p->base.name);
+		sql_table *pt = find_sql_table_id(mt->s, p->base.id);
 
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		if (pt)
@@ -4461,7 +4461,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 		ft->cleared = 0;
 		tt->access = ft->access;
 		if (ft->p) {
-			tt->p = find_sql_table(tt->s, ft->p->base.name);
+			tt->p = find_sql_table_id(tt->s, ft->p->base.id);
 			assert(isMergeTable(tt->p) || isReplicaTable(tt->p));
 		} else
 			tt->p = NULL;
@@ -4763,7 +4763,7 @@ reset_type(sql_trans *tr, sql_type *ft, sql_type *pft)
 		ft->localtype = pft->localtype;
 		ft->digits = pft->digits;
 		ft->scale = pft->scale;
-		ft->s = find_sql_schema(tr, pft->s->base.name);
+		ft->s = find_sql_schema_id(tr, pft->s->base.id);
 	}
 	return LOG_OK;
 }
@@ -4788,7 +4788,7 @@ reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
 		ff->fix_scale = pff->fix_scale;
 		ff->system = pff->system;
 		ff->semantics = pff->semantics;
-		ff->s = find_sql_schema(tr, pff->s->base.name);
+		ff->s = find_sql_schema_id(tr, pff->s->base.id);
 		ff->sa = tr->sa;
 	}
 	return LOG_OK;
@@ -4845,9 +4845,9 @@ reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 
 		if (pft->t) {
 			sql_table *mt = pft->t;
-			sql_schema *s = find_sql_schema(tr, mt->s->base.name);
+			sql_schema *s = find_sql_schema_id(tr, mt->s->base.id);
 			if (s) {
-				sql_table *fmt = find_sql_table(s, mt->base.name);
+				sql_table *fmt = find_sql_table_id(s, mt->base.id);
 				assert(isMergeTable(fmt) || isReplicaTable(fmt));
 				ft->t = fmt;
 			}
@@ -4886,7 +4886,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->cleared = 0;
 		ft->access = pft->access;
 		if (pft->p) {
-			ft->p = find_sql_table(ft->s, pft->p->base.name);
+			ft->p = find_sql_table_id(ft->s, pft->p->base.id);
 			//Check if this assert can be removed definitely.
 			//the parent (merge or replica table) maybe created later!
 			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
@@ -5045,7 +5045,7 @@ sql_trans_validate(sql_trans *tr)
 			if (isTempSchema(s))
 				continue;
 
- 			os = find_sql_schema(tr->parent, s->base.name);
+ 			os = find_sql_schema_id(tr->parent, s->base.id);
 			if (os && (s->base.wtime != 0 || s->base.rtime != 0)) {
 				if (!validate_tables(s, os))
 					return false;
@@ -5462,15 +5462,16 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 static void
 sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
 {
-	node *n;
-
 	if (cs_size(&t->members)) {
-		for (n = t->members.set->h; n; ) {
+		for (node *n = t->members.set->h; n; ) {
 			sql_part *pt = n->data;
-			sql_table *tt = find_sql_table(t->s, pt->base.name);
 
 			n = n->next;
-			sql_trans_del_table(tr, t, tt, drop_action);
+			if ((drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) &&
+				tr->dropped && list_find_id(tr->dropped, pt->base.id))
+				continue;
+
+			sql_trans_del_table(tr, t, find_sql_table_id(t->s, pt->base.id), drop_action);
 		}
 	}
 }
@@ -6028,7 +6029,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p->t = mt;
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
-		p = find_sql_part(mt, pt->base.name);
+		p = find_sql_part_id(mt, pt->base.id);
 	}
 
 	/* add range partition values */
@@ -6104,7 +6105,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
 		rids *rs;
-		p = find_sql_part(mt, pt->base.name);
+		p = find_sql_part_id(mt, pt->base.id);
 
 		rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
 		for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
@@ -6239,7 +6240,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
-	node *n = cs_find_name(&mt->members, pt->base.name);
+	node *n = cs_find_id(&mt->members, pt->base.id);
 	oid obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
 	sql_part *p = (sql_part*) n->data;
 

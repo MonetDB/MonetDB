@@ -3678,8 +3678,9 @@ main(int argc, char **argv)
 					s = open_rastream(arg);
 			}
 			if (s == NULL) {
-				fprintf(stderr, "%s: cannot open: %s", arg, mnstr_peek_error(NULL));
+				fprintf(stderr, "%s: cannot open: %s\n", arg, mnstr_peek_error(NULL));
 				c |= 1;
+				optind++;
 				continue;
 			}
 			// doFile closes 's'.
