@@ -6242,7 +6242,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 {
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
-	node *n = cs_find_name(&mt->members, pt->base.name);
+	node *n = cs_find_id(&mt->members, pt->base.id);
 	oid obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
 	sql_part *p = (sql_part*) n->data;
 
