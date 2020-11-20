@@ -664,6 +664,7 @@ MapiHdl mapi_send(Mapi mid, const char *cmd) __attribute__((__nonnull__(1)));
 MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit) __attribute__((__nonnull__(1)));
 MapiMsg mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol) __attribute__((__nonnull__(1)));
 MapiMsg mapi_set_size_header(Mapi mid, bool value) __attribute__((__nonnull__(1)));
+MapiMsg mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data) __attribute__((__nonnull__(1)));
 void mapi_setfilecallback(Mapi mid, char *(*getfunc)(void *priv, const char *filename, bool binary, uint64_t offset, size_t *size), char *(*putfunc)(void *priv, const char *filename, const void *data, size_t size), void *priv) __attribute__((__nonnull__(1)));
 int mapi_split_line(MapiHdl hdl) __attribute__((__nonnull__(1)));
 
@@ -1783,7 +1784,7 @@ int mnstr_readStr(stream *restrict s, char *restrict val);
 ssize_t mnstr_read_block(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt);
 ssize_t mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt);
 void mnstr_set_bigendian(stream *s, bool bigendian);
-void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void));
+void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void *), void *data);
 ssize_t mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt);
 int mnstr_writeBte(stream *s, int8_t val);
 int mnstr_writeBteArray(stream *restrict s, const int8_t *restrict val, size_t cnt);

@@ -268,7 +268,7 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 {
 	mvc *sql = query->sql;
 	for (sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
-		sql_part *spt = find_sql_part(it, prev->base.name);
+		sql_part *spt = find_sql_part_id(it, prev->base.id);
 		if (spt) {
 			if (isRangePartitionTable(it)) {
 				int tpe = spt->tpe.type->localtype;
@@ -581,7 +581,7 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1, *dup = NULL;
 
 		if (!update_allowed(sql, sub, sub->base.name, is_delete(rel->op) ? "DELETE": "TRUNCATE",
@@ -615,7 +615,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
 
@@ -681,7 +681,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 
 	for (node *n = t->members.set->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1 = NULL, *dup = NULL;
 		sql_exp *le = NULL;
 
@@ -912,7 +912,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 {
 	mvc *sql = query->sql;
 	sql_table *upper = t->p; //is part of a partition table and not been used yet
-	sql_part *pt = find_sql_part(upper, t->base.name);
+	sql_part *pt = find_sql_part_id(upper, t->base.id);
 	sql_rel *anti_dup = rel_create_common_relation(sql, rel, upper), *left = rel->l;
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;

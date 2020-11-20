@@ -868,6 +868,15 @@ else
 fi
 %endif
 
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# fix up some paths (/var/run -> /run)
+# needed because CMAKE_INSTALL_RUNSTATEDIR refers to /var/run
+sed -i 's|/var/run|/run|' \
+    %{buildroot}%{_tmpfilesdir}/monetdbd.conf \
+    %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_properties \
+    %{buildroot}%{_unitdir}/monetdbd.service
+%endif
+
 %post -p /sbin/ldconfig
 
 %postun -p /sbin/ldconfig
