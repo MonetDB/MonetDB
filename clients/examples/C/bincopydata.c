@@ -54,6 +54,7 @@ gen_smallints(FILE *f, long nrecs)
 {
 	for (long i = 0; i < nrecs; i++) {
 		uint16_t v = (uint16_t)i;
+		COPY_BINARY_CONVERT16(v);
 		fwrite(&v, sizeof(v), 1, f);
 	}
 }
@@ -63,6 +64,7 @@ gen_bigints(FILE *f, long nrecs)
 {
 	for (long i = 0; i < nrecs; i++) {
 		uint64_t v = (uint64_t)i;
+		COPY_BINARY_CONVERT64(v);
 		fwrite(&v, sizeof(v), 1, f);
 	}
 }
@@ -73,6 +75,7 @@ gen_hugeints(FILE *f, long nrecs)
 {
 	for (long i = 0; i < nrecs; i++) {
 		uhge v = (uhge)i;
+		COPY_BINARY_CONVERT128(v);
 		fwrite(&v, sizeof(v), 1, f);
 	}
 }
@@ -84,7 +87,9 @@ gen_ints(FILE *f, long nrecs)
 	assert((uintmax_t)nrecs <= (uintmax_t) UINT32_MAX);
 	uint32_t n = (uint32_t) nrecs;
 	for (uint32_t i = 0; i < n; i++) {
-		fwrite(&i, sizeof(i), 1, f);
+		uint32_t v = i;
+		COPY_BINARY_CONVERT32(v);
+		fwrite(&v, sizeof(v), 1, f);
 	}
 }
 
@@ -94,8 +99,9 @@ gen_more_ints(FILE *f, long nrecs)
 	assert((uintmax_t)nrecs <= (uintmax_t) UINT32_MAX);
 	uint32_t n = (uint32_t) nrecs;
 	for (uint32_t i = 0; i < n; i++) {
-		uint32_t j = i + 1;
-		fwrite(&j, sizeof(i), 1, f);
+		uint32_t v = i + 1;
+		COPY_BINARY_CONVERT32(v);
+		fwrite(&v, sizeof(v), 1, f);
 	}
 }
 
@@ -106,8 +112,9 @@ gen_null_ints(FILE *f, long nrecs)
 	uint32_t n = (uint32_t) nrecs;
 	uint32_t nil = 0x80000000;
 	for (uint32_t i = 0; i < n; i++) {
-		uint32_t j = i % 2 == 0 ? nil : i;
-		fwrite(&j, sizeof(i), 1, f);
+		uint32_t v = i % 2 == 0 ? nil : i;
+		COPY_BINARY_CONVERT32(v);
+		fwrite(&v, sizeof(v), 1, f);
 	}
 }
 

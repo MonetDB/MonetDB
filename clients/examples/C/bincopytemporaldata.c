@@ -38,50 +38,6 @@ random_timestamp(struct rng *rng)
 	return ts;
 }
 
-void fix_endian(copy_binary_timestamp *p);
-void fix_endian2(int16_t *p);
-void fix_endian4(uint32_t *p);
-
-#ifdef WORDS_BIGENDIAN
-void fix_endian2(int16_t *p) {
-	char *bytes = (char*) p;
-
-	char b0 = bytes[0];
-	char b1 = bytes[1];
-
-	bytes[0] = b1;
-	bytes[1] = b0;
-}
-
-void fix_endian4(uint32_t *p) {
-	char *bytes = (char*) p;
-
-	char b0 = bytes[0];
-	char b1 = bytes[1];
-	char b2 = bytes[2];
-	char b3 = bytes[3];
-
-	bytes[0] = b3;
-	bytes[1] = b2;
-	bytes[2] = b1;
-	bytes[3] = b0;
-}
-#else
-void fix_endian2(int16_t *p) {
-	(void)p;
-}
-
-void fix_endian4(uint32_t *p) {
-	(void)p;
-}
-#endif
-
-void fix_endian(copy_binary_timestamp *ts)
-{
-	fix_endian2(&ts->date.year);
-	fix_endian4(&ts->time.ms);
-}
-
 void
 gen_timestamps(FILE *f, long nrecs)
 {
@@ -89,7 +45,7 @@ gen_timestamps(FILE *f, long nrecs)
 
 	for (long i = 0; i < nrecs; i++) {
 		copy_binary_timestamp ts = random_timestamp(&rng);
-		fix_endian(&ts);
+		COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(ts);
 		fwrite(&ts, sizeof(ts), 1, f);
 	}
 }
@@ -102,7 +58,7 @@ gen_timestamps(FILE *f, long nrecs)
 	\
 		for (long i = 0; i < nrecs; i++) { \
 			copy_binary_timestamp ts = random_timestamp(&rng); \
-			fix_endian(&ts); \
+			COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(ts); \
 			fwrite(&ts.fld, sizeof(ts.fld), 1, f); \
 		} \
 	}
