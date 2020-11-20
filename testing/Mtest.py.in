@@ -3296,7 +3296,10 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                         returncode = 'error'
                     else:
                         if not os.path.exists(TST+'.reqtests'):
-                            sql.drop()
+                            try:
+                                sql.drop()
+                            except:
+                                pass
                         try:
                             sql.parse(TST+EXT)
                         except sqllogictest.SQLLogicSyntaxError:

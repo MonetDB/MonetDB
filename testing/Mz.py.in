@@ -1706,7 +1706,10 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
             else:
                 # if not required by any other test clean up
                 if not (is_reqtest or has_reqtests):
-                    sql.drop()
+                    try:
+                        sql.drop()
+                    except pymonetdb.Error as e:
+                        print(e, file=f)
                 try:
                     sql.parse(Test)
                 except sqllogictest.SQLLogicSyntaxError as e:
