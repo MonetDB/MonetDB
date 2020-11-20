@@ -10,34 +10,34 @@ insert into onet values ('a', 'b', 'c')
 statement ok
 create function get_onet(d text) returns table (aa text, bb text, cc text) return table(select * from onet where a = d)
 
-statement error
+statement ok
 prepare select * from get_onet(?)
 
-statement error
+statement ok
 exec **('a')
 
-statement error
+statement ok
 prepare select * from get_onet(?) tt where tt.aa = ?
 
-statement error
+statement ok
 exec **('a', 'b')
 
-statement error
+statement ok
 prepare with something as (select a from onet where a = ?) select * from get_onet(?), something
 
-statement error
+statement ok
 exec **('a', 'a')
 
-statement error
+statement ok
 drop function get_onet
 
-statement error
+statement ok
 drop table onet
 
-statement error
+statement ok
 CREATE FUNCTION twoargs(input1 INT, input2 CLOB) RETURNS TABLE (outt CLOB) BEGIN RETURN TABLE(SELECT input1 || input2); END
 
-statement error
+statement ok
 prepare select 1 from twoargs(?,?)
 
 statement ok
