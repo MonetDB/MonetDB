@@ -163,8 +163,8 @@ static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
 	bool addnl = false;
-	const char *s = mb ? getModName(mb) : "unknown";
-	const char *fcn = mb ? getFcnName(mb) : "unknown";
+	const char *s = mb && getInstrPtr(mb,0) ? getModName(mb) : "unknown";
+	const char *fcn = mb && getInstrPtr(mb,0) ? getFcnName(mb) : "unknown";
 	size_t msglen;
 
 	if (prev) {

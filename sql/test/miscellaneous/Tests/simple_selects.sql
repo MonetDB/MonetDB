@@ -229,3 +229,22 @@ select 1, null except select 1, null;
 
 select 1, null intersect select 1, null;
 	-- 1 NULL
+
+start transaction;
+create function "😀"() returns int return 1;
+select "😀"();
+	-- 1
+CREATE FUNCTION ups() RETURNS INT
+BEGIN
+	DECLARE "nononononononononononononononononononononononononononononononono" int;
+	RETURN "nononononononononononononononononononononononononononononononono";
+END;
+select ups();
+	-- NULL
+create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2;
+select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"();
+	-- 2
+create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3;
+select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"();
+	-- 3
+rollback;
