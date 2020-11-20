@@ -971,14 +971,14 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 	}
 	if (schema_name) {
 		if (!(s = mvc_bind_schema(m, schema_name))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Could not find schema %s", schema_name);
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_get_columns", "Could not find schema '%s'", schema_name);
 			goto cleanup;
 		}
 	} else {
 		s = cur_schema(m);
 	}
 	if (!(t = mvc_bind_table(m, s, table_name))) {
-		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Could not find table %s", table_name);
+		mdbe->msg = createException(SQL, "monetdbe.monetdbe_get_columns", "No such table '%s' in schema '%s'", table_name, s->base.name);
 		goto cleanup;
 	}
 
@@ -1075,7 +1075,6 @@ GENERATE_BASE_HEADERS(monetdbe_data_timestamp, timestamp);
 char*
 monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count)
 {
-
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	mvc *m = NULL;
 	sql_schema *s = NULL;
@@ -1093,10 +1092,6 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		goto cleanup;
 
-	if (schema == NULL) {
-		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "schema parameter is NULL");
-		goto cleanup;
-	}
 	if (table == NULL) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "table parameter is NULL");
 		goto cleanup;
@@ -1112,7 +1107,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 
 	if (schema) {
 		if (!(s = mvc_bind_schema(m, schema))) {
-			mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "Schema missing %s", schema);
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Could not find schema '%s'", schema);
 			goto cleanup;
 		}
 	} else {
@@ -1120,7 +1115,7 @@ monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, 
 	}
 
 	if (!(t = mvc_bind_table(m, s, table))) {
-		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Table missing %s.%s", schema, table);
+		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "No such table '%s' in schema '%s'", table, s->base.name);
 		goto cleanup;
 	}
 
