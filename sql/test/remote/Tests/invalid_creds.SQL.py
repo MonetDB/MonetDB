@@ -120,17 +120,17 @@ with tempfile.TemporaryDirectory() as TMPDIR:
             # Run the queries
             try:
                 c.execute("SELECT COUNT(*) FROM ratings0")
-                print("{} rows in remote table".format(c.fetchall()[0][0]))
+                sys.stderr.write("Exception expected")
             except pymonetdb.OperationalError as e1:
-                print("OperationalError:", file=sys.stderr)
-                print("# " + e1.args[0], file=sys.stderr)
+                if "invalid credentials for user 'invaliduser'" not in str(e1):
+                    sys.stderr.write("Exception: invalid credentials for user 'invaliduser' expected")
 
             try:
                 c.execute("SELECT COUNT(*) FROM ratings")
-                print("{} rows in merge table".format(c.fetchall()[0][0]))
+                sys.stderr.write("Exception expected")
             except pymonetdb.OperationalError as e2:
-                print("OperationalError:", file=sys.stderr)
-                print("# " + e2.args[0], file=sys.stderr)
+                if "invalid credentials for user 'invaliduser'" not in str(e2):
+                    sys.stderr.write("Exception: invalid credentials for user 'invaliduser' expected")
             for wrec in workers:
                 wrec['proc'].communicate()
             supervisorproc.communicate()

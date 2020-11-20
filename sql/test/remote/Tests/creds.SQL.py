@@ -2,6 +2,7 @@ import os
 import tempfile
 import threading
 import socket
+import sys
 
 import pymonetdb
 
@@ -121,10 +122,12 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
             # Run the queries
             c.execute("SELECT COUNT(*) FROM ratings0")
-            print("{} rows in remote table".format(c.fetchall()[0][0]))
+            if c.fetchall()[0][0] != 1000:
+                sys.stderr.write("1000 rows in remote table expected")
 
             c.execute("SELECT COUNT(*) FROM ratings")
-            print("{} rows in merge table".format(c.fetchall()[0][0]))
+            if c.fetchall()[0][0] != 2000:
+                sys.stderr.write("2000 rows in merge table expected")
             for wrec in workers:
                 wrec['proc'].communicate()
             supervisorproc.communicate()
