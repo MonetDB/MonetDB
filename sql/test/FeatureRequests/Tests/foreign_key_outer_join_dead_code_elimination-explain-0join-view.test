@@ -1,15 +1,43 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-query T rowsort
+query T python .explain.function_histogram
 explain select count(*) from v0
 ----
-33 values hashing to d26c3310403e203ec9f7f2e5900dfd62
+user.main
+2
+querylog.define
+1
+sql.mvc
+1
+sql.tid
+1
+aggr.count
+1
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select id       from v0 order by id
 ----
-42 values hashing to ad366b478737e2186b1297432183bc93
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.tid
+1
+sql.bind
+1
+algebra.projection
+2
+algebra.sort
+2
+sql.resultSet
+1
 
 statement ok
 set optimizer = 'default_pipe'

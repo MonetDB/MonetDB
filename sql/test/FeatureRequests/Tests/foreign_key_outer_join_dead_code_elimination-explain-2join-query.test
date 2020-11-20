@@ -1,25 +1,123 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-query T rowsort
+query T python .explain.function_histogram
 explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2
 ----
-33 values hashing to a387e5e79cc2cc62ebd73b8c52a4767c
+user.main
+2
+pk2.pk2
+1
+sql.mvc
+1
+sql.tid
+1
+aggr.count
+1
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-42 values hashing to c7f0e0cd0cc3fa68b00eca8e2dc9108f
+user.main
+2
+pk2.pk2
+1
+bat.pack
+5
+sql.mvc
+1
+sql.tid
+1
+sql.bind
+1
+algebra.projection
+2
+algebra.sort
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-63 values hashing to 67f3656d4e539a4d3ae36d08cb48e826
+user.main
+2
+pk2.pk2
+1
+bat.new
+2
+sql.mvc
+1
+sql.tid
+2
+sql.bind_idxbat
+3
+sql.delta
+1
+algebra.projection
+6
+algebra.join
+1
+sql.bind
+2
+bat.mirror
+1
+algebra.difference
+1
+bat.append
+4
+algebra.projectionpath
+1
+algebra.project
+1
+bat.pack
+5
+algebra.sort
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select id , v2  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-82 values hashing to 7bd8e34c44320ed98ce95d605d134af4
+user.main
+2
+pk2.pk2
+1
+bat.new
+4
+sql.mvc
+1
+sql.tid
+3
+sql.bind_idxbat
+6
+sql.delta
+2
+algebra.projection
+11
+algebra.join
+2
+sql.bind
+2
+bat.mirror
+2
+algebra.difference
+2
+bat.append
+8
+algebra.projectionpath
+1
+algebra.project
+1
+bat.pack
+5
+algebra.sort
+2
+sql.resultSet
+1
 
 statement ok
 set optimizer = 'default_pipe'

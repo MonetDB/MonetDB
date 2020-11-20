@@ -1,25 +1,123 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-query T rowsort
+query T python .explain.function_histogram
 explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1
 ----
-33 values hashing to 74ce1297cc1a5913f3fb22a8a8720c32
+user.main
+2
+pk1.pk1
+1
+sql.mvc
+1
+sql.tid
+1
+aggr.count
+1
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
-42 values hashing to 00e9f66b6f11a684bec02ca14c36119e
+user.main
+2
+pk1.pk1
+1
+bat.pack
+5
+sql.mvc
+1
+sql.tid
+1
+sql.bind
+1
+algebra.projection
+2
+algebra.sort
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
-63 values hashing to 6ca65f21b0a79c3f62e615903b8a01f2
+user.main
+2
+pk1.pk1
+1
+bat.new
+2
+sql.mvc
+1
+sql.tid
+2
+sql.bind_idxbat
+3
+sql.delta
+1
+algebra.projection
+6
+algebra.join
+1
+sql.bind
+2
+bat.mirror
+1
+algebra.difference
+1
+bat.append
+4
+algebra.projectionpath
+1
+algebra.project
+1
+bat.pack
+5
+algebra.sort
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-63 values hashing to 8713d369c52dddc32548eff26ab1be57
+user.main
+2
+pk2.pk2
+1
+bat.new
+2
+sql.mvc
+1
+sql.tid
+2
+sql.bind_idxbat
+3
+sql.delta
+1
+algebra.projection
+6
+algebra.join
+1
+sql.bind
+2
+bat.mirror
+1
+algebra.difference
+1
+bat.append
+4
+algebra.projectionpath
+1
+algebra.project
+1
+bat.pack
+5
+algebra.sort
+2
+sql.resultSet
+1
 
 statement ok
 set optimizer = 'default_pipe'
