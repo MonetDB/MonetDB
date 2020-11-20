@@ -995,12 +995,11 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 static sql_exp *
 rel_exp_variable_on_scope(mvc *sql, const char *sname, const char *vname)
 {
-	sql_subtype *tpe;
+	sql_subtype *tpe = NULL;
 	sql_var *var = NULL;
 	sql_arg *a = NULL;
 	int level = 1;
 
-	(void) tpe;
 	if (find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SELECT")) {
 		if (var) /* if variable is known from the stack or a global var */
 			return exp_param_or_declared(sql->sa, var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, var->name), &(var->var.tpe), level);
