@@ -429,7 +429,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "RETURN", false)))
 			return NULL;
 		if (isDeclaredTable(t)) {
-			rel = rel_table(sql, ddl_create_table, cur_schema(sql)->base.name, t, SQL_DECLARED_TABLE);
+			rel = rel_table(sql, ddl_create_table, "sys", t, SQL_DECLARED_TABLE);
 		} else {
 			rel = rel_basetable(sql, t, t->base.name);
 			for (node *n = rel->exps->h ; n ; n = n->next) {
