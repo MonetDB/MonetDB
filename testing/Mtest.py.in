@@ -3286,7 +3286,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     else:
                         lang = 'mal'
                     try:
-                        sql.connect(hostname='localhost',
+                        sql.connect(username=user or 'monetdb',
+                                    password=passwd or 'monetdb',
+                                    hostname='localhost',
                                     port=int(env['MAPIPORT']),
                                     database=TSTDB,
                                     language=lang)
