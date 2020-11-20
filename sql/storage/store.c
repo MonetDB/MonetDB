@@ -4166,7 +4166,7 @@ rollforward_drop_part(sql_trans *tr, sql_part *p, int mode)
 	(void) tr;
 	if (mode == R_APPLY) {
 		sql_table *mt = p->t;
-		sql_table *pt = find_sql_table(mt->s, p->base.name);
+		sql_table *pt = find_sql_table_id(mt->s, p->base.id);
 
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		if (pt)
@@ -4414,7 +4414,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 		ft->cleared = 0;
 		tt->access = ft->access;
 		if (ft->p) {
-			tt->p = find_sql_table(tt->s, ft->p->base.name);
+			tt->p = find_sql_table_id(tt->s, ft->p->base.id);
 			assert(isMergeTable(tt->p) || isReplicaTable(tt->p));
 		} else
 			tt->p = NULL;
@@ -4718,7 +4718,7 @@ reset_type(sql_trans *tr, sql_type *ft, sql_type *pft)
 		ft->localtype = pft->localtype;
 		ft->digits = pft->digits;
 		ft->scale = pft->scale;
-		ft->s = find_sql_schema(tr, pft->s->base.name);
+		ft->s = find_sql_schema_id(tr, pft->s->base.id);
 	}
 	return LOG_OK;
 }
@@ -4743,7 +4743,7 @@ reset_func(sql_trans *tr, sql_func *ff, sql_func *pff)
 		ff->fix_scale = pff->fix_scale;
 		ff->system = pff->system;
 		ff->ops = pff->ops;
-		ff->s = find_sql_schema(tr, pff->s->base.name);
+		ff->s = find_sql_schema_id(tr, pff->s->base.id);
 		ff->sa = tr->sa;
 	}
 	return LOG_OK;
@@ -4800,9 +4800,9 @@ reset_part(sql_trans *tr, sql_part *ft, sql_part *pft)
 
 		if (pft->t) {
 			sql_table *mt = pft->t;
-			sql_schema *s = find_sql_schema(tr, mt->s->base.name);
+			sql_schema *s = find_sql_schema_id(tr, mt->s->base.id);
 			if (s) {
-				sql_table *fmt = find_sql_table(s, mt->base.name);
+				sql_table *fmt = find_sql_table_id(s, mt->base.id);
 				assert(isMergeTable(fmt) || isReplicaTable(fmt));
 				ft->t = fmt;
 			}
@@ -4841,7 +4841,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 		ft->cleared = 0;
 		ft->access = pft->access;
 		if (pft->p) {
-			ft->p = find_sql_table(ft->s, pft->p->base.name);
+			ft->p = find_sql_table_id(ft->s, pft->p->base.id);
 			//the parent (merge or replica table) maybe created later!
 			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
 		} else
@@ -4999,7 +4999,7 @@ sql_trans_validate(sql_trans *tr)
 			if (isTempSchema(s))
 				continue;
 
- 			os = find_sql_schema(tr->parent, s->base.name);
+ 			os = find_sql_schema_id(tr->parent, s->base.id);
 			if (os && (s->base.wtime != 0 || s->base.rtime != 0)) {
 				if (!validate_tables(s, os))
 					return false;
