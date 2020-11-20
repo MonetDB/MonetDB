@@ -12,7 +12,7 @@ def function_histogram(tab):
     histo = {}
     for row in tab:
         if row[0].find('usec') < 0:
-            g = re.match('.*\s(\w+\.\w+).*;', row[0])
+            g = re.match('.*\s([a-zA-Z_]\w*\.[a-zA-Z_]\w*).*;', row[0])
             if g:
                 f = g.groups(1)[0]
                 if f in histo:
