@@ -611,6 +611,7 @@ msab_pickSecret(char **generated_secret)
 	if (generated_secret)
 	// do not return an error, just continue without a secret
 		*generated_secret = NULL;
+	free(secret);
 	return NULL;
 #endif
 #endif
@@ -629,6 +630,7 @@ msab_pickSecret(char **generated_secret)
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				pathbuf, strerror(errno));
+		free(secret);
 		return strdup(err);
 	}
 	if ((f = fdopen(fd, "w")) == NULL) {
@@ -637,6 +639,7 @@ msab_pickSecret(char **generated_secret)
 				pathbuf, strerror(errno));
 		close(fd);
 		(void)remove(pathbuf);
+		free(secret);
 		return strdup(err);
 	}
 	if (fwrite(secret, 1, SECRET_LENGTH, f) < SECRET_LENGTH || fclose(f) < 0) {
@@ -645,11 +648,14 @@ msab_pickSecret(char **generated_secret)
 				strerror(errno));
 		fclose(f);
 		(void)remove(pathbuf);
+		free(secret);
 		return strdup(err);
 	}
 
 	if (generated_secret)
 		*generated_secret = (char*)secret;
+	else
+		free(secret);
 	return NULL;
 #endif
 }
