@@ -1443,12 +1443,53 @@ cleanup_get_columns_result(size_t column_count, char ** column_names, int *colum
 		column_types = NULL;
 }
 
+static char *
+escape_identifier(const char *s) /* Escapes a SQL identifier string, ie the " and \ characters */
+{
+	char *ret = NULL, *q;
+	const char *p = s;
+
+	/* At most we will need 2*strlen(s) + 1 characters */
+	if (!(ret = (char *)GDKmalloc(2*strlen(s) + 1)))
+		return NULL;
+
+	for (q = ret; *p; p++, q++) {
+		*q = *p;
+		if (*p == '"')
+			*(++q) = '"';
+		else if (*p == '\\')
+			*(++q) = '\\';
+	}
+
+	*q = '\0';
+	return ret;
+}
+
 static char*
 monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema_name, const char *table_name, size_t *column_count,
 					char ***column_names, int **column_types)
 {
-	char buf[140];
-	snprintf(buf, 140, "SELECT * FROM %s.%s WHERE FALSE;", schema_name, table_name);
+	char buf[1024], *escaped_schema_name = NULL, *escaped_table_name = NULL;
+
+	if (schema_name && !(escaped_schema_name = escape_identifier(schema_name))) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL);
+		return mdbe->msg;
+	}
+	if (!(escaped_table_name = escape_identifier(table_name))) {
+		GDKfree(escaped_schema_name);
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", MAL_MALLOC_FAIL);
+		return mdbe->msg;
+	}
+
+	int len = snprintf(buf, 1024, "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
+					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "", 
+					   escaped_schema_name ? escaped_schema_name : "\".", escaped_table_name);
+	GDKfree(escaped_schema_name);
+	GDKfree(escaped_table_name);
+	if (len == -1 || len >= 1024) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_get_columns", "Schema and table path is too large");
+		return mdbe->msg;
+	}
 
 	monetdbe_result* result = NULL;
 
@@ -1721,7 +1762,7 @@ append_create_remote_append_mal_program(
 		a = newFcnCall(mb, sqlRef, appendRef);
 		setArgType(mb, a, 0, TYPE_int);
 		a = pushArgument(mb, a, mvc_id);
-		a = pushStr(mb, a, schema);
+		a = pushStr(mb, a, schema ? schema : "sys"); /* TODO this should be better */
 		a = pushStr(mb, a, table);
 		a = pushStr(mb, a, cnames[i]);
 		a = pushArgument(mb, a, idx);
@@ -1770,10 +1811,6 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 
-	if (schema == NULL) {
-		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "schema parameter is NULL");
-		goto cleanup;
-	}
 	if (table == NULL) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", "table parameter is NULL");
 		goto cleanup;
