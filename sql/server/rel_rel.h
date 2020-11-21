@@ -91,14 +91,14 @@ extern void rel_join_add_exp(sql_allocator *sa, sql_rel *rel, sql_exp *e);
 extern sql_exp *rel_groupby_add_aggr(mvc *sql, sql_rel *rel, sql_exp *e);
 
 extern sql_rel *rel_select(sql_allocator *sa, sql_rel *l, sql_exp *e);
-sql_export sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
+extern sql_rel *rel_basetable(mvc *sql, sql_table *t, const char *tname);
 extern sql_rel *rel_groupby(mvc *sql, sql_rel *l, list *groupbyexps );
 sql_export sql_rel *rel_project(sql_allocator *sa, sql_rel *l, list *e);
 extern sql_rel *rel_project_exp(sql_allocator *sa, sql_exp *e);
 extern sql_rel *rel_exception(sql_allocator *sa, sql_rel *l, sql_rel *r, list *exps);
 
 extern sql_rel *rel_relational_func(sql_allocator *sa, sql_rel *l, list *exps);
-sql_export sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
+extern sql_rel *rel_table_func(sql_allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind);
 
 extern list *_rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern, int basecol);
 extern list *rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname , int intern);
