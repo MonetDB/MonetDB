@@ -62,20 +62,24 @@ monet5_drop_user(ptr _mvc, str user)
 #define default_schema_path "\"sys\"" /* "sys" will be the default schema path */
 
 static str
-parse_schema_path_str(mvc *m, str schema_path, bool build)
+parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for both building and validating the schema path */
 {
 	list *l = m->schema_path;
 	char next_schema[1024]; /* needs one extra character for null terminator */
-	size_t len = strlen(schema_path), status = outside_str, bp = 0;
+	int status = outside_str;
+	size_t bp = 0;
 
 	if (strNil(schema_path))
 		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot be NULL");
 
-	if (build)
+	if (build) {
 		while (l->t) /* if building, empty schema_path list */
 			(void) list_remove_node(l, l->t);
+		m->schema_path_has_sys = 0;
+		m->schema_path_has_tmp = 0;
+	}
 
-	for (size_t i = 0 ; i < len; i++) {
+	for (size_t i = 0; schema_path[i]; i++) {
 		char next = schema_path[i];
 
 		if (next == '"') {
