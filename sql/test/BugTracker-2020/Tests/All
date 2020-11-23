@@ -32,3 +32,4 @@ semijoin.Bug-7001
 decimal-multiplication.Bug-7003
 drop-stream-table.Bug-7005
 deallocate-id.Bug-7010
+values-groupby.Bug-7013
