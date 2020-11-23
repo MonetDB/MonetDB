@@ -231,8 +231,17 @@ select 1, null intersect select 1, null;
 start transaction;
 create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end;
 select ups();
+	-- 2
+create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; end;
+select ups();
+	-- 1
+create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; end;
+select ups();
+	-- 3
 create or replace function ups() returns int begin if 1 > 1 then return 1; end if; end; --error, return missing
 rollback;
+
+create or replace function ups() returns int begin declare a int; while 1 = 1 do set a = 2; end while; end; --error, return missing
 
 start transaction;
 create function "😀"() returns int return 1;

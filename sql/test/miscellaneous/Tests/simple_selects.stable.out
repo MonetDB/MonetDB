@@ -436,6 +436,29 @@ project (
 % 1,	0 # length
 [ 1,	NULL	]
 #start transaction;
+#create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end;
+#select ups();
+% .%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 2	]
+#create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; end;
+#select ups();
+% .%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 1	]
+#create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; end;
+#select ups();
+% .%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 3	]
+#rollback;
+#start transaction;
 #create function "😀"() returns int return 1;
 #select "😀"();
 % .%2 # table_name
