@@ -22,6 +22,7 @@ PushArgument(MalBlkPtr mb, InstrPtr p, int arg, int pos)
 	return p;
 }
 
+#if 0
 static InstrPtr
 PushNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 {
@@ -34,6 +35,7 @@ PushNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
 	getArg(p, pos) = arg;
 	return p;
 }
+#endif
 
 static InstrPtr
 ReplaceWithNil(MalBlkPtr mb, InstrPtr p, int pos, int tpe)
@@ -74,6 +76,7 @@ subselect_add( subselect_t *subselects, int tid, int subselect )
 	return i;
 }
 
+#if 0
 static int
 subselect_find_tids( subselect_t *subselects, int subselect)
 {
@@ -99,6 +102,7 @@ subselect_find_subselect( subselect_t *subselects, int tid)
 	}
 	return -1;
 }
+#endif
 
 static int
 lastbat_arg(MalBlkPtr mb, InstrPtr p)
@@ -298,7 +302,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 	}
 
-	if (/* DISABLES CODE */ (0) && subselects.nr) {
+	if (nr_likes || subselects.nr) {
 		if (newMalBlkStmt(mb, mb->ssize) <0 ) {
 			GDKfree(vars);
 			goto wrapup;
@@ -309,12 +313,16 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		for (i = 1; i < limit; i++) {
 			p = old[i];
 
-			/* rewrite batalgebra.like + select -> likeselect */
-			if (getModuleId(p) == algebraRef && p->retc == 1 && getFunctionId(p) == selectRef) {
+			/* rewrite batalgebra.like + [theta]select -> likeselect */
+			if (getModuleId(p) == algebraRef && p->retc == 1 &&
+					(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)) {
 				int var = getArg(p, 1);
 				InstrPtr q = mb->stmt[vars[var]]; /* BEWARE: the optimizer may not add or remove statements ! */
 
-				if (isLikeOp(q)) { /* TODO check if getArg(p, 3) value == TRUE */
+				if (isLikeOp(q) &&
+						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
+						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) /* escape is a value */
+						) {
 					InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid));
 					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
@@ -340,6 +348,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			/* inject table ids into subselect
 		  	 * s = subselect(c, C1..) => subselect(c, t, C1..)
 		 	 */
+#if 0
 			if (isSelect(p) && p->retc == 1) {
 				int tid = 0;
 
@@ -445,6 +454,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 					}
 				}
 			}
+#endif
 			pushInstruction(mb,p);
 		}
 		for (; i<limit; i++)
