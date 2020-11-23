@@ -228,6 +228,26 @@ exp_or(sql_allocator *sa, list *l, list *r, int anti)
 	return e;
 }
 
+static int /* if the quantifier has to be upcasted, ignore the upper conversion for the cardinalilty */
+quantifier_has_rel(sql_exp *e)
+{
+	if (!e)
+		return 0;
+	switch(e->type){
+	case e_convert:
+		return quantifier_has_rel(e->l);
+	case e_psm:
+		return exp_is_rel(e);
+	case e_atom:
+	case e_column:
+	case e_func:
+	case e_aggr:
+	case e_cmp:
+		return 0;
+	}
+	return 0;
+}
+
 sql_exp *
 exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 {
@@ -241,7 +261,7 @@ exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 	for (node *n = r->h; n ; n = n->next) {
 		sql_exp *next = n->data;
 
-		if (!exp_is_rel(next) && exps_card < next->card)
+		if (!quantifier_has_rel(next) && exps_card < next->card)
 			exps_card = next->card;
 	}
 	e->card = MAX(l->card, exps_card);
@@ -276,10 +296,10 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 			for (node *n = ((list*)vals->f)->h ; n ; n = n->next) {
 				sql_exp *next = n->data;
 
-				if (!exp_is_rel(next) && exps_card < next->card)
+				if (!quantifier_has_rel(next) && exps_card < next->card)
 					exps_card = next->card;
 			}
-		} else if (!exp_is_rel(vals))
+		} else if (!quantifier_has_rel(vals))
 			exps_card = vals->card;
 
 		e->card = MAX(le->card, exps_card);
@@ -300,7 +320,7 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 	if (e) {
 		e->flag = quantifier;
 		/* At ANY and ALL operators, the cardinality on the right side is ignored if it is a sub-relation */
-		e->card = quantifier && exp_is_rel(re) ? le->card : MAX(le->card, re->card);
+		e->card = quantifier && quantifier_has_rel(re) ? le->card : MAX(le->card, re->card);
 		if (!has_nil(le) && !has_nil(re))
 			set_has_no_nil(e);
 	}

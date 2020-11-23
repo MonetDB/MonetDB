@@ -22,6 +22,8 @@ BEGIN
 
 	IF f1() < 0
 		THEN RETURN 2;
+	ELSE
+		RETURN 3;
 	END IF;
 
 END;
@@ -31,6 +33,8 @@ RETURNS int
 BEGIN
 	IF f1() < 0
 		THEN RETURN 1;
+	ELSE
+		RETURN 2;
 	END IF;
 END;
 
