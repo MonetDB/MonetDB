@@ -28,3 +28,16 @@ BEGIN
 			AND s.name = schemaName
 		ORDER BY c.number;
 END;
+
+create function describe_function(schemaName string, functionName string)
+	returns table(id integer, name string, type string, language string, remark string)
+BEGIN
+    return SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark
+        FROM sys.functions f 
+        JOIN sys.schemas s ON f.schema_id = s.id
+        JOIN sys.function_types ft ON f.type = ft.function_type_id
+        LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id
+        LEFT OUTER JOIN sys.comments c ON f.id = c.id
+        WHERE f.name=functionName AND s.name = schemaName;
+END;
+
