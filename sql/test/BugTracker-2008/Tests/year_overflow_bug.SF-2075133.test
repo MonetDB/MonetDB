@@ -4,7 +4,8 @@ CREATE TABLE A (a DATE)
 statement ok
 INSERT INTO A VALUES ( DATE '9999-01-01' + INTERVAL '1-00' YEAR TO MONTH)
 
-statement error  # This currently is a limitation of pymonetdb
+query T nosort
+-- This currently is a limitation of pymonetdb
 select * from A
 ----
 10000-01-01
