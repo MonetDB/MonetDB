@@ -269,8 +269,9 @@ UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
 	bn->tnonil = true;
 	bn->tnil = false;
 	BATsetcount(bn, n);
-	bn->tsorted = n < 2;
-	bn->tkey = n < 2;
+	bn->tsorted = n <= 1;
+	bn->trevsorted = n <= 1;
+	bn->tkey = n <= 1;
 
 bailout:
 	if (b)
