@@ -14,9 +14,9 @@ query TTTT rowsort
 select "name", "query", "type", "remark" from describe_table('sys', 'x')
 ----
 
--- TODO FIX ME
 statement ok
-\df test
+select "name", "type", "language", "remark" from describe_function('sys', 'test')
+----
 
 statement ok
 drop procedure test
@@ -34,9 +34,9 @@ query TTTT rowsort
 select "name", "query", "type", "remark" from describe_table('sys', 'x')
 ----
 
--- TODO FIX ME
 statement ok
-\df test
+select "name", "type", "language", "remark" from describe_function('sys', 'test')
+----
 
 statement ok
 drop procedure test
