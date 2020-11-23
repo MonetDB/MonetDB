@@ -5088,6 +5088,12 @@ exp_has_rank(sql_exp *e)
 		/* fall through */
 	case e_aggr:
 		return exps_has_rank(e->l);
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_has_rank(e->l) || exps_has_rank(e->r);
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_has_rank(e->l) || exps_has_rank(e->r);
+		return exp_has_rank(e->l) || exp_has_rank(e->r) || (e->f && exp_has_rank(e->f));
 	default:
 		return 0;
 	}
