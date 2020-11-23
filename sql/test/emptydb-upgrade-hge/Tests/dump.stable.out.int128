@@ -28,10 +28,7 @@ stdout of test 'dump` in directory 'sql/test/emptydb-upgrade-hge` itself:
 # 16:42:46 >  "/usr/bin/python2" "dump.SQL.py" "dump"
 # 16:42:46 >  
 
-START TRANSACTION;
-COMMIT;
-
-# 16:42:46 >  
-# 16:42:46 >  "Done."
-# 16:42:46 >  
+# 17:29:23 >  
+# 17:29:23 >  "Done."
+# 17:29:23 >  
 
