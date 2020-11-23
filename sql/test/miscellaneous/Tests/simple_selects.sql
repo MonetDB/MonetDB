@@ -229,6 +229,12 @@ select 1, null intersect select 1, null;
 	-- 1 NULL
 
 start transaction;
+create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end;
+select ups();
+create or replace function ups() returns int begin if 1 > 1 then return 1; end if; end; --error, return missing
+rollback;
+
+start transaction;
 create function "😀"() returns int return 1;
 select "😀"();
 	-- 1
