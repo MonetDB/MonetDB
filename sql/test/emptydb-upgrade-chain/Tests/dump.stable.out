@@ -28,10 +28,7 @@ stdout of test 'dump` in directory 'sql/test/emptydb-upgrade-chain` itself:
 # 16:42:35 >  "/usr/bin/python2" "dump.SQL.py" "dump"
 # 16:42:35 >  
 
-START TRANSACTION;
-COMMIT;
-
-# 16:42:35 >  
-# 16:42:35 >  "Done."
-# 16:42:35 >  
+# 17:28:59 >  
+# 17:28:59 >  "Done."
+# 17:28:59 >  
 
