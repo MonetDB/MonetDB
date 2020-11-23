@@ -771,7 +771,6 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
-	unsigned int card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 
 	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
@@ -803,7 +802,9 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 			}
 		}
 	}
+
 	/* loop to check types and cardinality */
+	unsigned int card = exps->h && list_length(((sql_exp*)exps->h->data)->f) > 1 ? CARD_MULTI : CARD_ATOM;
 	for (m = exps->h; m; m = m->next) {
 		sql_exp *e = m->data;
 
