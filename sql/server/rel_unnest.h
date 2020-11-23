@@ -16,7 +16,7 @@
 extern int exp_has_freevar(mvc *sql, sql_exp *e);
 extern int exps_have_freevar(mvc *sql, list *exps);
 extern int rel_has_freevar(mvc *sql, sql_rel *r);
-extern void exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool *found_one_freevar, bool *found_aggr, list **ungrouped_cols);
+extern void exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool *found_one_freevar, list **ungrouped_cols);
 extern void exps_set_freevar(mvc *sql, list *exps, sql_rel *r);
 extern void rel_bind_var(mvc *sql, sql_rel *rel, sql_exp *e);
 

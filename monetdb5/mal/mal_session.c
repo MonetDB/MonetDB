@@ -162,6 +162,13 @@ exit_streams( bstream *fin, stream *fout )
 
 const char* mal_enableflag = "mal_for_all";
 
+static bool
+is_exiting(void *data)
+{
+	(void) data;
+	return GDKexiting();
+}
+
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
@@ -368,7 +375,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	c->protocol = protocol;
 	c->blocksize = blocksize;
 
-	mnstr_settimeout(c->fdin->s, 50, GDKexiting);
+	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
 	msg = MSserveClient(c);
 	if (msg != MAL_SUCCEED) {
 		mnstr_printf(fout, "!could not serve client\n");

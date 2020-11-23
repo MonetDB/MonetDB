@@ -441,6 +441,15 @@ project (
 % tinyint,	char # type
 % 1,	0 # length
 [ 1,	NULL	]
+#start transaction;
+#create function "😀"() returns int return 1;
+#select "😀"();
+% .%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 1	]
+#rollback;
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."

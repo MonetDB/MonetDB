@@ -28,8 +28,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 #     WHERE ctr1.ctr_state = ctr2.ctr_state)
 #  AND col1 = ColID
 #  AND ctr1.ctr_customer_sk = TotalSales;
-% .%45 # table_name
-% %45 # name
+% .%5 # table_name
+% %5 # name
 % tinyint # type
 % 1 # length
 #SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t;
@@ -169,8 +169,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 [ 222	]
 [ 2222	]
 #SELECT (SELECT 1) > ANY(SELECT 1);
-% .%10 # table_name
-% %10 # name
+% .%7 # table_name
+% %7 # name
 % boolean # type
 % 5 # length
 [ false	]
@@ -242,8 +242,8 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 #	RETURN n;
 #END;
 #SELECT debugme6();
-% .%6 # table_name
-% %6 # name
+% .%4 # table_name
+% %4 # name
 % int # type
 % 1 # length
 [ NULL	]
@@ -326,6 +326,66 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % char,	char,	char,	char,	char,	int # type
 % 0,	0,	3,	3,	3,	3 # length
 [ NULL,	NULL,	"bug",	"oth",	"bug",	500	]
+#select (select sum(i1.i + i2.i) in (select sum(i1.i + i2.i)) from integers i2) from integers i1;
+% .%4 # table_name
+% %4 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ NULL	]
+#select (select sum(i1.i + i2.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1;
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ NULL	]
+#select (select sum(i2.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ NULL	]
+#select (select sum(i1.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1 group by i1.i;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ NULL	]
+#select (select sum(i1.i) < (select sum(sum(i1.i) + i2.i)) from integers i2) from integers i1;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ true	]
+#select (select exists (select sum(i1.i + i2.i)) from integers i2) from integers i1;
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+#select (select not exists (select sum(i1.i + i2.i)) from integers i2) from integers i1 group by i1.i;
+% .%2 # table_name
+% %2 # name
+% boolean # type
+% 5 # length
+[ false	]
+[ false	]
+[ false	]
+[ false	]
 #DROP TABLE tbl_ProductSales;
 #DROP TABLE another_T;
 #DROP TABLE integers;

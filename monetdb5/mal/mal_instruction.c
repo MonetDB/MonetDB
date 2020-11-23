@@ -1273,7 +1273,7 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 		size_t namelen = strlen(name);
 		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
 			/* set the MAL block to erroneous and simply return without doing anything */
-			mb->errors = createMalException(mb,0, TYPE,  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			/* mb->errors already set */
 			return NULL;
 		}
 	}

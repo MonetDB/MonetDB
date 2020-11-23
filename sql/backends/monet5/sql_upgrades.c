@@ -2515,30 +2515,30 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 {
 	size_t bufsize = 1024, pos = 0;
 	char *buf = NULL, *err = NULL;
-	res_table *output = NULL;
-	BAT *b = NULL;
 
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (!sql_bind_func(sql->sa, mvc_bind_schema(sql, "sys"), "uuid", sql_bind_localtype("int"), NULL, F_FUNC)) {
+		if ((buf = GDKmalloc(bufsize)) == NULL)
+			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	/* if there are 4 'log' functions of the same name in the catalog: ((base 'e' or any base) * (flt or dbl)), then upgrade */
-	pos += snprintf(buf + pos, bufsize - pos,
-					"select id from sys.functions where name = 'log' and mod = 'mmath' and func = 'log' and system = true;\n");
-	assert(pos < bufsize);
-	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
-		goto bailout;
-	if ((b = BATdescriptor(output->cols[0].b))) {
-		if (BATcount(b) == 4) {
-			if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
-				goto bailout;
-			*systabfixed = true;
+		if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL) {
+			GDKfree(buf);
+			return err;
 		}
+		*systabfixed = true;
+
+		pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
+		/* 45_uuid.sql */
+		pos += snprintf(buf + pos, bufsize - pos,
+			"create function sys.uuid(d int) returns uuid\n"
+			" external name uuid.\"new\";\n"
+			"GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;\n"
+			"update sys.functions set system = true where system <> true and name = 'uuid' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) F_FUNC);
+
+		pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
+		assert(pos < bufsize);
+		printf("Running database upgrade commands:\n%s\n", buf);
+		err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 	}
-bailout:
-	if (b)
-		BBPunfix(b->batCacheid);
-	if (output)
-		res_table_destroy(output);
 	GDKfree(buf);
 	return err;		/* usually MAL_SUCCEED */
 }
@@ -2554,14 +2554,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	/* if there are 6 'lpad' functions of the same name in the catalog: ((1 or 2 string inputs) * (char or varchar or clob)), then upgrade */
+	/* if the keyword STREAM is in the list of keywords, upgrade */
 	pos += snprintf(buf + pos, bufsize - pos,
-					"select id from sys.functions where name = 'lpad' and mod = 'str' and func = 'lpad' and system = true;\n");
+					"select keyword from sys.keywords where keyword = 'STREAM';\n");
 	assert(pos < bufsize);
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output)))
 		goto bailout;
 	if ((b = BATdescriptor(output->cols[0].b))) {
-		if (BATcount(b) == 6) {
+		if (BATcount(b) == 1) {
 			if (!*systabfixed && (err = sql_fix_system_tables(c, sql, prev_schema)) != NULL)
 				goto bailout;
 			*systabfixed = true;
@@ -2582,7 +2582,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 			printf("Running database upgrade commands:\n%s\n", buf);
 			if ((err = SQLstatementIntern(c, buf, "update", true, false, NULL)) != MAL_SUCCEED)
 				goto bailout;
-		
+
 			pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 					"ALTER TABLE sys.keywords SET READ ONLY;\n"
 					"ALTER TABLE sys.table_types SET READ ONLY;\n");
