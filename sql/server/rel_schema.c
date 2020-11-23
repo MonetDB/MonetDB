@@ -331,7 +331,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		sql_kc *kc;
 
 		assert(n->next->next->next->type == type_int);
-		rt = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
+		rt = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", false);
 		/* self referenced table */
 		if (!rt && t->s == ss && strcmp(t->base.name, rtname) == 0) {
 			sql->errstr[0] = '\0'; /* reset table not found error */
@@ -487,7 +487,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	char *rtname = qname_schema_object(n->data.lval);
 	sql_table *ft = NULL;
 
-	ft = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", isView(t));
+	ft = find_table_or_view_on_scope(sql, ss, rsname, rtname, "CONSTRAINT FOREIGN KEY", false);
 	/* self referenced table */
 	if (!ft && t->s == ss && strcmp(t->base.name, rtname) == 0) {
 		sql->errstr[0] = '\0'; /* reset table not found error */
@@ -819,7 +819,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		char *name = qname_schema_object(s->data.lval);
 		sql_table *ot = NULL;
 
-		if (!(ot = find_table_or_view_on_scope(sql, ss, sname, name, action, isView(t))))
+		if (!(ot = find_table_or_view_on_scope(sql, ss, sname, name, action, false)))
 			return SQL_ERR;
 		for (node *n = ot->columns.set->h; n; n = n->next) {
 			sql_column *oc = n->data;
