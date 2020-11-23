@@ -2845,9 +2845,10 @@ def main(argv) :
             print()
             print('failed={}, skipped={}'.format(failed, skipped))
             print('Ran {} test in {:7.3f}'.format(test_count - skipped, t_))
-            for TSTDIR, TST, reason in SKIPPED_TESTS:
-                prpurple('SKIP\t')
-                print('{} {} {}'.format(TSTDIR, TST, reason))
+            if verbose:
+                for TSTDIR, TST, reason in SKIPPED_TESTS:
+                    prpurple('SKIP\t')
+                    print('{} {} {}'.format(TSTDIR, TST, reason))
 
     finally:
         # cleanup the place where we put our UNIX sockets
