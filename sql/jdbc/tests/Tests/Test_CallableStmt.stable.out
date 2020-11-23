@@ -83,7 +83,7 @@ Called Prepared procedure (1): proc6402
 	scale     0
 	type      12
 	typename  url
-	classname nl.cwi.monetdb.jdbc.types.URL
+	classname org.monetdb.jdbc.types.URL
 	mode      1 (IN)
 Table tbl6402 has 7 columns:
 	tint	tdouble	tbool	tvarchar	tclob	turl	tclen

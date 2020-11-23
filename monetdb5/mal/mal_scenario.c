@@ -129,7 +129,7 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 };
 
 static str fillScenario(Client c, Scenario scen);
-static MT_Lock scenarioLock = MT_LOCK_INITIALIZER("scenarioLock");
+static MT_Lock scenarioLock = MT_LOCK_INITIALIZER(scenarioLock);
 
 
 /*
@@ -509,4 +509,3 @@ runScenario(Client c, int once)
 		mnstr_printf(c->fdout,"!%s\n",msg);
 	return msg;
 }
-

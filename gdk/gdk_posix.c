@@ -1048,7 +1048,7 @@ MT_sleep_ms(unsigned int ms)
 }
 
 #if !defined(HAVE_LOCALTIME_R) || !defined(HAVE_GMTIME_R) || !defined(HAVE_ASCTIME_R) || !defined(HAVE_CTIME_R)
-static MT_Lock timelock = MT_LOCK_INITIALIZER("timelock");
+static MT_Lock timelock = MT_LOCK_INITIALIZER(timelock);
 #endif
 
 #ifndef HAVE_LOCALTIME_R
@@ -1108,7 +1108,7 @@ ctime_r(const time_t *restrict t, char *restrict buf)
 #endif
 
 #ifndef HAVE_STRERROR_R
-static MT_Lock strerrlock = MT_LOCK_INITIALIZER("strerrlock");
+static MT_Lock strerrlock = MT_LOCK_INITIALIZER(strerrlock);
 
 int
 strerror_r(int errnum, char *buf, size_t buflen)

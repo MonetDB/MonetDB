@@ -61,22 +61,22 @@ BAT *
 getModules(void)
 {
 	BAT *b = COLnew(0, TYPE_str, 100, TRANSIENT);
-        int i;
-        Module s,n;
+	int i;
+	Module s,n;
 
-        for( i = 0; i< MODULE_HASH_SIZE; i++){
-                s = moduleIndex[i];
-                while(s){
+	for( i = 0; i< MODULE_HASH_SIZE; i++){
+		s = moduleIndex[i];
+		while(s){
 			if (BUNappend(b, s->name, FALSE) != GDK_SUCCEED) {
 				BBPreclaim(b);
 				return NULL;
 			}
-                        n = s->link;
-                        while(n)
-                                n = n->link;
-                        s = s->link;
-                }
-        }
+			n = s->link;
+			while(n)
+				n = n->link;
+			s = s->link;
+		}
+	}
 	return b;
 }
 
@@ -89,7 +89,7 @@ dumpModules(stream *out)
 	for( i = 0; i< MODULE_HASH_SIZE; i++){
 		s= moduleIndex[i];
 		while(s){
-			mnstr_printf(out,"[%d] module %s\n", i,  s->name);
+			mnstr_printf(out,"[%d] module %s\n", i, s->name);
 			n = s->link;
 			while(n){
 				if( n == s)

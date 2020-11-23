@@ -88,7 +88,7 @@ sql_tablename_generator(const char *text, int state)
 static char *
 sql_command_generator(const char *text, int state)
 {
-	static int idx, len;
+	static size_t idx, len;
 	const char *name;
 
 	if (!state) {
@@ -303,20 +303,43 @@ readline_show_error(const char *msg) {
 #define BUFFER_SIZE 1024
 #endif
 
+#ifdef WIN32
+#define unlink _unlink
+#endif
+
 static int
 invoke_editor(int cnt, int key) {
-	char template[] = "/tmp/mclient_temp_XXXXXX";
 	char editor_command[BUFFER_SIZE];
 	char *read_buff = NULL;
 	char *editor = NULL;
-	FILE *fp;
+	FILE *fp = NULL;
 	size_t content_len;
 	size_t read_bytes, idx;
+#ifdef WIN32
+	char *mytemp;
+	char template[] = "mclient_temp_XXXXXX";
+#else
+	int mytemp;
+	char template[] = "/tmp/mclient_temp_XXXXXX";
+#endif
 
 	(void) cnt;
 	(void) key;
 
-	if ((fp = fdopen(mkstemp(template), "r+")) == NULL) {
+#ifdef WIN32
+	if ((mytemp = _mktemp(template)) == NULL) {
+#else
+	if ((mytemp = mkstemp(template)) == 0) {
+#endif
+		readline_show_error("invoke_editor: Cannot create temp file\n");
+		goto bailout;
+	}
+
+#ifdef WIN32
+	if ((fp = fopen(mytemp, "r+")) == NULL) {
+#else
+	if ((fp = fdopen(mytemp, "r+")) == NULL) {
+#endif
 		// Notify the user that we cannot create temp file
 		readline_show_error("invoke_editor: Cannot create temp file\n");
 		goto bailout;
@@ -367,7 +390,7 @@ invoke_editor(int cnt, int key) {
 		}
 
 		rl_replace_line(read_buff, 0);
-		rl_point = idx + 1;  // place the point one character after the end of the string
+		rl_point = (int)(idx + 1);  // place the point one character after the end of the string
 
 		free(read_buff);
 	} else {

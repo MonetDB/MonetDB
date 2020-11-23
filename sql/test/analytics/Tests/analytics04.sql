@@ -35,6 +35,11 @@ select cast(sum(aa) over (partition by bb order by bb rows between 3 preceding a
        cast(sum(aa) over (partition by bb order by bb rows between 0 following and 0 following) as bigint),
        cast(sum(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) as bigint) from analytics;
 
+select min(aa) over (order by bb range between current row and unbounded following) from analytics;
+select min(aa) over (order by bb range between current row and unbounded following) from analytics where false;
+select min(aa) over (partition by bb order by bb range between current row and unbounded following) from analytics;
+select min(aa) over (partition by bb order by bb range between current row and unbounded following) from analytics where false;
+
 rollback;
 
 select count(*) over (order by bb range between 3 preceding and 2 preceding),

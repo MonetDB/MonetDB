@@ -102,6 +102,7 @@ endif()
 
 if(ODBC)
   find_package(ODBC)
+  find_package(ODBCinst)
 endif()
 
 if(RINTEGRATION)

@@ -3251,65 +3251,6 @@ rel_simplify_math(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-rel_push_down_bounds(visitor *v, sql_rel *rel)
-{
-	if (is_simple_project(rel->op) && rel->exps) {
-		list *exps = rel->exps;
-		node *n;
-
-		for (n = exps->h; n ; n = n->next) {
-			sql_exp *e = n->data;
-			int cnt;
-			sql_exp *b1, *b2;
-			sql_subfunc *f;
-			list *l;
-
-			if (e->type != e_func || ((sql_subfunc*)e->f)->func->type != F_ANALYTIC)
-				continue;
-
-			f = (sql_subfunc*) e->f;
-			l = (list*) e->l;
-			if (f->func->type != F_ANALYTIC || !strcmp(f->func->base.name, "diff") || !strcmp(f->func->base.name, "window_bound"))
-				continue;
-
-			/* Extract sql.diff calls into a lower projection and re-use them */
-			cnt = list_length(l);
-			assert(cnt >= 3); /* There will be at least 3 expressions in the parameters for the window function */
-			b1 = (sql_exp*) list_fetch(l, cnt - 2);
-			b2 = (sql_exp*) list_fetch(l, cnt - 1);
-
-			if (b1->type == e_func && b2->type == e_func) { /* if both are 'window_bound' calls, push down a diff call */
-				sql_subfunc *sf1 = (sql_subfunc*) b1->f, *sf2 = (sql_subfunc*) b2->f;
-
-				if (!strcmp(sf1->func->base.name, "window_bound") && !strcmp(sf2->func->base.name, "window_bound")) {
-					list *args1 = (list*) b1->l, *args2 = (list*) b2->l;
-					sql_exp *first1 = (sql_exp*) args1->h->data, *first2 = (sql_exp*) args2->h->data;
-
-					if (first1->type == e_func && exp_match_exp(first1, first2)) { /* push down only function calls to avoid infinite recursion */
-						rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rel->l, NULL, 1, 1));
-						first1 = rel_project_add_exp(v->sql, rel->l, first1);
-						args1->h->data = exp_ref(v->sql, first1);
-						args2->h->data = exp_ref(v->sql, first1);
-
-						if (list_length(args1) == 6 && list_length(args2) == 6) {
-							sql_exp *second1 = (sql_exp*) args1->h->next->data, *second2 = (sql_exp*) args2->h->next->data;
-
-							if (second1->type == e_func && exp_match_exp(second1, second2)) {
-								second1 = rel_project_add_exp(v->sql, rel->l, second1);
-								args1->h->next->data = exp_ref(v->sql, second1);
-								args2->h->next->data = exp_ref(v->sql, second1);
-							}
-						}
-
-						v->changes++;
-					}
-				}
-			}
-		}
-	}
-	return rel;
-}
 
 static sql_rel *
 rel_find_ref( sql_rel *r)
@@ -5029,11 +4970,17 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 			rel->exps = jexps;
 		if (lexps) {
 			l = rel->l = rel_select(v->sql->sa, rel->l, NULL);
+			if (l->exps)
+				list_merge(lexps, l->exps, NULL);
+
 			l->exps = lexps;
 			v->changes = 1;
 		}
 		if (rexps) {
 			r = rel->r = rel_select(v->sql->sa, rel->r, NULL);
+			if (r->exps)
+				list_merge(rexps, r->exps, NULL);
+
 			r->exps = rexps;
 			v->changes = 1;
 		}
@@ -5566,8 +5513,9 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			}
 			return rel;
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || is_set(l->op) || is_select(l->op)
-				|| is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)) {
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) ||
+					((v->parent && is_project(v->parent->op)) && (is_set(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op))) ||
+					is_topn(l->op) || is_sample(l->op)) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
@@ -6406,7 +6354,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			   Check if they can be pushed up, ie are they not
 			   changing or introducing any columns used
 			   by the upper operator. */
-
+ 
 			exps = new_exp_list(v->sql->sa);
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -8933,7 +8881,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 					for (node *nt = t->members.set->h; nt; nt = nt->next) {
 						sql_part *pd = nt->data;
-						sql_table *pt = find_sql_table(t->s, pd->base.name);
+						sql_table *pt = find_sql_table_id(t->s, pd->base.id);
 						sql_rel *prel = rel_basetable(v->sql, pt, tname), *bt = NULL;
 						int skip = 0;
 						list *exps = NULL;
@@ -8990,8 +8938,13 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 														if (!next->semantics && ((lval && lval->isnull) || (hval && hval->isnull))) {
 															skip = 1; /* NULL values don't match, skip them */
 														} else if (!next->semantics) {
-															if (next->flag == cmp_equal || hval != lval) {
-																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, false, false) != 0 : exp_range_overlap(cmin, cmax, lval, hval, false, false) == 0;
+															if (next->flag == cmp_equal) {
+																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, false, false) != 0 :
+																					 exp_range_overlap(cmin, cmax, lval, hval, false, false) == 0;
+															} else if (hval != lval) { /* range case */
+																comp_type lower = range2lcompare(next->flag), higher = range2rcompare(next->flag);
+																skip |= next->anti ? exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) != 0 :
+																					 exp_range_overlap(cmin, cmax, lval, hval, higher == cmp_lt, lower == cmp_gt) == 0;
 															} else {
 																switch (next->flag) {
 																	case cmp_gt:
@@ -9044,7 +8997,8 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 															/* otherwise it holds all values in the range, cannot be pruned */
 														} else if (rmin->isnull) { /* MINVALUE to limit */
 															if (lval) {
-																if (hval != lval) { /* For the between case */
+																if (hval != lval) { /* range case */
+																	/* There's need to call range2lcompare, because the partition's upper limit is always exclusive */
 																	skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
 																} else {
 																	switch (next->flag) { /* upper limit always exclusive */
@@ -9070,8 +9024,15 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 															}
 														} else if (rmax->isnull) { /* limit to MAXVALUE */
 															if (lval) {
-																if (hval != lval) { /* For the between case */
-																	skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
+																if (hval != lval) { /* range case */
+																	comp_type higher = range2rcompare(next->flag);
+																	if (higher == cmp_lt) {
+																		skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) < 0 : VALcmp(&(rmin->data), &(hval->data)) >= 0;
+																	} else if (higher == cmp_lte) {
+																		skip |= next->anti ? VALcmp(&(rmin->data), &(hval->data)) <= 0 : VALcmp(&(rmin->data), &(hval->data)) > 0;
+																	} else {
+																		assert(0);
+																	}
 																} else {
 																	switch (next->flag) {
 																		case cmp_lt:
@@ -9098,8 +9059,13 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 															}
 														} else { /* limit1 to limit2 (general case), limit2 is exclusive */
 															if (lval) {
-																if (next->flag == cmp_equal || hval != lval) {
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, true) != 0 : exp_range_overlap(rmin, rmax, lval, hval, false, true) == 0;
+																if (next->flag == cmp_equal) {
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, true) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, false, true) == 0;
+																} else if (hval != lval) { /* For the between case */
+																	comp_type higher = range2rcompare(next->flag);
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) == 0;
 																} else {
 																	switch (next->flag) {
 																		case cmp_gt:
@@ -9538,7 +9504,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 			if (value_based_opt)
 				rel = rel_visitor_bottomup(&v, rel, &rel_simplify_math);
 			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_aggregate_on_unique_values);
-			rel = rel_visitor_bottomup(&v, rel, &rel_push_down_bounds);
 			rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
 			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_project2groupby);
 		}
