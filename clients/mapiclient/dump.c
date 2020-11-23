@@ -3003,7 +3003,7 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 		if (sname != NULL && strcmp(schema, sname) != 0)
 			continue;
 		mnstr_printf(toConsole, "GRANT");
-		if (priv == 15) {
+		if (priv == 79) {
 			mnstr_printf(toConsole, " ALL PRIVILEGES");
 		} else {
 			const char *sep = "";
