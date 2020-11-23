@@ -4,25 +4,101 @@ set optimizer='sequential_pipe'
 statement ok
 start transaction
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where name like '%optimizers%'
 ----
-49 values hashing to d713c0c3af0828e8fea5d727bab227d1
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.likeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where name not like '%optimizers%'
 ----
-49 values hashing to b2c935a91fc22ef6a2f353e3d1ea3b5d
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.likeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where name ilike '%optimizers%'
 ----
-49 values hashing to 0e429e45d28d24ed3ded17df94b9d0ae
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.ilikeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where name not ilike '%optimizers%'
 ----
-49 values hashing to 135bf4644cf0bf17ee26c24b633860b6
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.ilikeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
 statement ok
 create function contains(str string, substr string)
@@ -52,25 +128,101 @@ begin
 	  return str not ilike '%'||substr||'%';
 end
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where contains(name, 'optimizers')
 ----
-48 values hashing to fabc9441a4652a3a1c9106c7e0c3fa1b
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.likeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where not_contains(name, 'optimizers')
 ----
-48 values hashing to 522a2218258c852bbf35544c697c7bd6
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.likeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where icontains(name, 'optimizers')
 ----
-48 values hashing to ec801ff82084d51f74d37b043498f705
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.likeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
-query T rowsort
+query T python .explain.function_histogram
 explain select name,func from functions where not_icontains(name, 'optimizers')
 ----
-48 values hashing to 493330f083173a86623617b4e6527ce3
+user.main
+2
+querylog.define
+1
+bat.pack
+5
+sql.mvc
+1
+sql.bind
+6
+sql.tid
+1
+algebra.likeselect
+3
+sql.subdelta
+1
+sql.projectdelta
+2
+sql.resultSet
+1
 
 statement ok
 rollback
