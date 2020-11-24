@@ -39,26 +39,30 @@ random_timestamp(struct rng *rng)
 }
 
 void
-gen_timestamps(FILE *f, long nrecs)
+gen_timestamps(FILE *f, bool byteswap, long nrecs)
 {
 	struct rng rng = my_favorite_rng();
 
 	for (long i = 0; i < nrecs; i++) {
 		copy_binary_timestamp ts = random_timestamp(&rng);
-		COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(ts);
+		if (byteswap) {
+			COPY_BINARY_CONVERT_TIMESTAMP(ts);
+		}
 		fwrite(&ts, sizeof(ts), 1, f);
 	}
 }
 
 #define GEN_TIMESTAMP_FIELD(name, fld) \
 	void name \
-		(FILE *f, long nrecs) \
+		(FILE *f, bool byteswap, long nrecs) \
 	{ \
 		struct rng rng = my_favorite_rng(); \
 	\
 		for (long i = 0; i < nrecs; i++) { \
 			copy_binary_timestamp ts = random_timestamp(&rng); \
-			COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(ts); \
+			if (byteswap) { \
+				COPY_BINARY_CONVERT_TIMESTAMP(ts); \
+			} \
 			fwrite(&ts.fld, sizeof(ts.fld), 1, f); \
 		} \
 	}

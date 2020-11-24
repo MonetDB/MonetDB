@@ -30,73 +30,75 @@ typedef struct {
 // MSVC doesn't recognize it but that's no problem because we will
 // not ever use it for big endian platforms.
 
-
-#define COPY_BINARY_BYTESWAP16(value) ( \
-      (((*(uint16_t*)&value) & 0xFF00u) >>  8u) | \
-      (((*(uint16_t*)&value) & 0x00FFu) <<  8u) \
-    )
+// First some macros that can be used a expressions:
+//    uint16_t swapped = COPY_BINARY_BYTESWAP16(value);
 
 
-#define COPY_BINARY_BYTESWAP32(value) ( \
-      (((*(uint32_t*)&value) & 0xFF000000u) >> 24u) | \
-      (((*(uint32_t*)&value) & 0x00FF0000u) >>  8u) | \
-      (((*(uint32_t*)&value) & 0x0000FF00u) <<  8u) | \
-      (((*(uint32_t*)&value) & 0x000000FFu) << 24u) \
-    )
+#ifdef _MSC_VER
 
+	#define COPY_BINARY_BYTESWAP16(value) _byteswap_ushort((uint16_t)value)
 
-#define COPY_BINARY_BYTESWAP64(value) ( \
-      (((*(uint64_t*)&value) & 0xFF00000000000000u) >> 56u) | \
-      (((*(uint64_t*)&value) & 0x00FF000000000000u) >> 40u) | \
-      (((*(uint64_t*)&value) & 0x0000FF0000000000u) >> 24u) | \
-      (((*(uint64_t*)&value) & 0x000000FF00000000u) >>  8u) | \
-      (((*(uint64_t*)&value) & 0x00000000FF000000u) <<  8u) | \
-      (((*(uint64_t*)&value) & 0x0000000000FF0000u) << 24u) | \
-      (((*(uint64_t*)&value) & 0x000000000000FF00u) << 40u) | \
-      (((*(uint64_t*)&value) & 0x00000000000000FFu) << 56u) \
-    )
+	#define COPY_BINARY_BYTESWAP32(value) _byteswap_ulong((uint32_t)value)
+
+	#define COPY_BINARY_BYTESWAP64(value) _byteswap_uint64((uint64_t)value)
+
+#else
+
+	#define COPY_BINARY_BYTESWAP16(value) ( \
+		(((*(uint16_t*)&value) & 0xFF00u) >>  8u) | \
+		(((*(uint16_t*)&value) & 0x00FFu) <<  8u) \
+		)
+
+	#define COPY_BINARY_BYTESWAP32(value) ( \
+		(((*(uint32_t*)&value) & 0xFF000000u) >> 24u) | \
+		(((*(uint32_t*)&value) & 0x00FF0000u) >>  8u) | \
+		(((*(uint32_t*)&value) & 0x0000FF00u) <<  8u) | \
+		(((*(uint32_t*)&value) & 0x000000FFu) << 24u) \
+		)
+
+	#define COPY_BINARY_BYTESWAP64(value) ( \
+		(((*(uint64_t*)&value) & 0xFF00000000000000u) >> 56u) | \
+		(((*(uint64_t*)&value) & 0x00FF000000000000u) >> 40u) | \
+		(((*(uint64_t*)&value) & 0x0000FF0000000000u) >> 24u) | \
+		(((*(uint64_t*)&value) & 0x000000FF00000000u) >>  8u) | \
+		(((*(uint64_t*)&value) & 0x00000000FF000000u) <<  8u) | \
+		(((*(uint64_t*)&value) & 0x0000000000FF0000u) << 24u) | \
+		(((*(uint64_t*)&value) & 0x000000000000FF00u) << 40u) | \
+		(((*(uint64_t*)&value) & 0x00000000000000FFu) << 56u) \
+		)
+
+#endif
 
 #define COPY_BINARY_BYTESWAP128(value) ( \
     ( (uhge)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[0]   )  << 64 ) \
     | ( (uhge)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[1]   )   ) \
 )
 
+// These macros are used to convert a value in-place.
+// This makes it possible to also convert timestamps.
 
-#ifdef WORDS_BIGENDIAN
-	#define COPY_BINARY_CONVERT16(lhs) \
-		do { (lhs) = COPY_BINARY_BYTESWAP16(lhs); } while (0)
-	#define COPY_BINARY_CONVERT32(lhs) \
-		do { (lhs) = COPY_BINARY_BYTESWAP32(lhs); } while (0)
-	#define COPY_BINARY_CONVERT64(lhs) \
-		do { (lhs) = COPY_BINARY_BYTESWAP64(lhs); } while (0)
-	#define COPY_BINARY_CONVERT128(lhs) \
-		do { (lhs) = COPY_BINARY_BYTESWAP128(lhs); } while (0)
-#else
-	// still refer to the fields to provoke error message when used incorrectly
-	#define COPY_BINARY_CONVERT16(lhs) \
-		do { (void)(lhs); } while (0)
-	#define COPY_BINARY_CONVERT32(lhs) \
-		do { (void)(lhs); } while (0)
-	#define COPY_BINARY_CONVERT64(lhs) \
-		do { (void)(lhs); } while (0)
-	#define COPY_BINARY_CONVERT128(lhs) \
-		do { (void)(lhs); } while (0)
-#endif
+#define COPY_BINARY_CONVERT16(lhs) \
+	do { (lhs) = COPY_BINARY_BYTESWAP16(lhs); } while (0)
 
-#define COPY_BINARY_CONVERT_DATE_ENDIAN(d) \
-	do { \
-		COPY_BINARY_CONVERT16((d).year); \
-	} while (0)
+#define COPY_BINARY_CONVERT32(lhs) \
+	do { (lhs) = COPY_BINARY_BYTESWAP32(lhs); } while (0)
 
-#define COPY_BINARY_CONVERT_TIME_ENDIAN(t) \
-	do { \
-		COPY_BINARY_CONVERT32((t).ms); \
-	} while (0)
+#define COPY_BINARY_CONVERT64(lhs) \
+	do { (lhs) = COPY_BINARY_BYTESWAP64(lhs); } while (0)
 
-#define COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(ts) \
+#define COPY_BINARY_CONVERT128(lhs) \
+	do { (lhs) = COPY_BINARY_BYTESWAP128(lhs); } while (0)
+
+#define COPY_BINARY_CONVERT_DATE(d) \
+	do { COPY_BINARY_CONVERT16((d).year); } while (0)
+
+#define COPY_BINARY_CONVERT_TIME(t) \
+	do { COPY_BINARY_CONVERT32((t).ms); } while (0)
+
+#define COPY_BINARY_CONVERT_TIMESTAMP(ts) \
     do { \
-        COPY_BINARY_CONVERT_DATE_ENDIAN((ts).date); \
-        COPY_BINARY_CONVERT_TIME_ENDIAN((ts).time); \
+        COPY_BINARY_CONVERT_DATE((ts).date); \
+        COPY_BINARY_CONVERT_TIME((ts).time); \
     } while (0)
 
 #endif
