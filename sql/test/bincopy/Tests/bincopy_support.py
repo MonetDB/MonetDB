@@ -22,14 +22,28 @@ class DataMaker:
         self.work_list = set()
 
     def substitute_match(self, match):
+        flags = []
+        ext = ''
         var = match.group(1)
         if var == 'ON':
             return self.side_clause
-        base = f'bincopy_{var}.bin'
+        elif var.startswith('le_'):
+            var = var[3:]
+            ext = '.le'
+            flags.append('--little-endian')
+        elif var.startswith('be_'):
+            var = var[3:]
+            ext = '.be'
+            flags.append('--big-endian')
+        elif var.startswith('ne_'):
+            var = var[3:]
+            ext = '.ne'
+            flags.append('--native-endian')
+        base = f'bincopy_{var}{ext}.bin'
         dst_filename = os.path.join(BINCOPY_FILES, base)
         tmp_filename = os.path.join(BINCOPY_FILES, 'tmp_' + base)
         if not os.path.isfile(dst_filename):
-            cmd = ("bincopydata", var, str(NRECS), tmp_filename)
+            cmd = ("bincopydata", *flags, var, str(NRECS), tmp_filename)
             self.work_list.add( (cmd, tmp_filename, dst_filename))
         return f"R'{dst_filename}'"
 
@@ -390,5 +404,43 @@ COPY BINARY INTO foo FROM @text_uuids@, @binary_uuids@ @ON@;
 SELECT COUNT(*) FROM foo
 WHERE t = CAST(u AS TEXT)
 OR    u IS NULL
+;
+"""
+
+LITTLE_ENDIANS = """
+CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
+COPY BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@;
+
+WITH
+enlarged AS ( -- first go to the largest type
+    SELECT
+        t, s, i, b,
+        CAST(t AS BIGINT) AS tt,
+        CAST(s AS BIGINT) AS ss,
+        CAST(i AS BIGINT) AS ii,
+        b AS bb
+    FROM foo
+),
+denulled AS ( -- 0x80, 0x8000 etc have been interpreted as NULL, fix this
+    SELECT
+        t, s, i, b,
+        COALESCE(tt,        -128) AS tt,
+        COALESCE(ss,      -32768) AS ss,
+        COALESCE(ii, -2147483648) AS ii,
+        bb
+    FROM enlarged
+),
+verified AS (
+    SELECT
+        t, s, i, b,
+        (tt - ss) %        256 = 0 AS t_s,
+        (ss - ii) %      65536 = 0 AS s_i,
+        (ii - bb) % 2147483648 = 0 AS i_b
+    FROM denulled
+)
+SELECT t_s, s_i, i_b, COUNT(*)
+FROM verified
+GROUP BY t_s, s_i, i_b
+ORDER BY t_s, s_i, i_b
 ;
 """
