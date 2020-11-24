@@ -334,7 +334,16 @@ main(int argc, char *argv[])
 	if (*end != '\0')
 		croak(1, "NRECS must be an integer, not '%s'", args[1]);
 
-	dest = fopen(args[2], "wb");
+	char *destfilename = args[2];
+	if (strcmp(destfilename, "-") == 0) {
+#ifdef _MSC_VER
+		_setmode(1, O_BINARY);
+#endif
+		dest = stdout;
+	} else {
+		dest = fopen(destfilename, "wb");
+	}
+
 	if (dest == NULL)
 		croak(2, "Cannot open '%s' for writing", args[2]);
 
