@@ -20,7 +20,22 @@ t2
 query T rowsort
 select name from sys.keys where name not in ('files_pkey_file_id', 'sq_pkey_sn_file_id', 'sq_fkey_file_id', 'rg_pkey_id_file_id', 'rg_fkey_file_id', 'pg_pkey_id_file_id', 'pg_fkey_file_id', 'spatial_ref_sys_srid_pkey', 'comments_id_pkey')
 ----
-16 values hashing to 280298940146bbe4f881b8e5f4419dc5
+dependency_types_dependency_type_id_pkey
+dependency_types_dependency_type_name_unique
+function_languages_language_id_pkey
+function_languages_language_name_unique
+function_types_function_type_id_pkey
+function_types_function_type_name_unique
+index_types_index_type_id_pkey
+index_types_index_type_name_unique
+key_types_key_type_id_pkey
+key_types_key_type_name_unique
+keywords_keyword_pkey
+privilege_codes_privilege_code_id_pkey
+privilege_codes_privilege_code_name_unique
+t2_id_pkey
+table_types_table_type_id_pkey
+table_types_table_type_name_unique
 
 statement ok
 drop table t1
