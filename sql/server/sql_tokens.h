@@ -184,4 +184,10 @@ typedef enum jt {
 	jt_full = 3
 } jt;
 
+typedef enum {
+	endian_big = 2,
+	endian_little = 1,
+	endian_native = 3,
+} endianness;
+
 #endif
