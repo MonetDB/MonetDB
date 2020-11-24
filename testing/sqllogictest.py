@@ -53,7 +53,13 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
     try:
         index = stmt.index('<COPY_INTO_DATA>')
         head = stmt[:index]
-        tail = stmt[index+1:]
+        # check for escape character (single period)
+        tail = []
+        for l in stmt[index+1:]:
+            if l.strip() == '.':
+                tail.append('')
+            else:
+                tail.append(l)
         head = '\n'.join(head) + ';'
         tail='\n'.join(tail)
         return head + '\n' + tail, head
