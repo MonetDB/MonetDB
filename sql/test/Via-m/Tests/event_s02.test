@@ -1,7 +1,8 @@
-statement error
+query ITTT nosort
 select * from event
+----
 
-statement error
+query ITTT nosort
 select * from event_metadata
-
+----
 

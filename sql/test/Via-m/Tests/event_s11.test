@@ -1,8 +1,10 @@
 statement error
 select add_event('event 4', 123456, 'artist2', 'location3', 'description3')
 
-statement error
+query I nosort
 select add_event('event 4', '2009-06-23', NULL, NULL, 'description3')
+----
+5
 
 statement error
 delete from event where event_name = 'event 2'
