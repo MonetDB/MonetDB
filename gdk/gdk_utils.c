@@ -1184,7 +1184,7 @@ GDKlockHome(int farmid)
 	assert(BBPfarms[farmid].dirname != NULL);
 	assert(BBPfarms[farmid].lock_file == NULL);
 
-	if(!(gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL))) {
+	if ((gdklockpath = GDKfilepath(farmid, NULL, GDKLOCK, NULL)) == NULL) {
 		return GDK_FAIL;
 	}
 
