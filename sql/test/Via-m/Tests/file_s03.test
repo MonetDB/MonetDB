@@ -1,10 +1,15 @@
-statement error
+query IIT nosort
 select * from video_sets
+----
+1
+21
+fabchannel2007
 
-statement error
+query III nosort
 select * from video_set
+----
 
-statement error
+query IITTTTITTII nosort
 select * from file
-
+----
 

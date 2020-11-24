@@ -1,4 +1,4 @@
-statement error
+query I nosort
 select add_file((select media_id
                  from   media
                  where  identifier = 'identifier1'),
@@ -11,5 +11,6 @@ select add_file((select media_id
                         'empty',
                         250,
                         250)
-
+----
+1
 

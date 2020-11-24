@@ -1,4 +1,4 @@
-statement error
+query I nosort
 select i_add_video_file_event('fabchannel2007',
                                        'event 4',
                                        'dummy description',
@@ -10,5 +10,6 @@ select i_add_video_file_event('fabchannel2007',
                                        125,
                                        'codec 1',
                                        2000)
-
+----
+4
 

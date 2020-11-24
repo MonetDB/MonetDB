@@ -1,7 +1,10 @@
-statement error
+query IIITITRI nosort
 select * from media
+----
 
-statement error
+query IT nosort
 select * from media_description
-
+----
+1
+dummy description
 

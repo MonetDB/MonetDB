@@ -1,10 +1,11 @@
-statement error
+query IIT nosort
 select * from video_sets
+----
 
-statement error
+query III nosort
 select * from video_set
+----
 
-statement error
+query IITTTTITTII nosort
 select * from file
-
-
+----
