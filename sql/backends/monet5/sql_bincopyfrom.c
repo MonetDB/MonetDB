@@ -647,14 +647,16 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	bat *ret = getArgReference_bat(stk, pci, 0);
 	BUN *retcnt = getArgReference_oid(stk, pci, 1);
 
-	assert(pci->argc == 6);
+	assert(pci->argc == 7);
 	str method = *getArgReference_str(stk, pci, 2);
-	str path = *getArgReference_str(stk, pci, 3);
-	int onclient = *getArgReference_int(stk, pci, 4);
-	BUN nrows = *getArgReference_oid(stk, pci, 5);
+	bit byteswap = *getArgReference_bit(stk, pci, 3);
+	str path = *getArgReference_str(stk, pci, 4);
+	int onclient = *getArgReference_int(stk, pci, 5);
+	BUN nrows = *getArgReference_oid(stk, pci, 6);
 
 	backend *be = cntxt->sqlcontext;
 
+	(void)byteswap;
 	return importColumn(be, ret, retcnt, method, path, onclient, nrows);
 }
 
