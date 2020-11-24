@@ -1,15 +1,15 @@
-statement error
+statement ok
 CREATE FUNCTION my_avg(total INT, cnt INT) RETURNS INT
 BEGIN
-    RETURN CASE WHEN cnt <> 0 THEN total / cnt ELSE -1 END
-
-statement error
+    RETURN CASE WHEN cnt <> 0 THEN total / cnt ELSE -1 END;
 END
 
-statement error
+query I nosort
 SELECT my_avg(0, 0)
+----
+-1
 
-statement error
+statement ok
 DROP FUNCTION my_avg
 
 
