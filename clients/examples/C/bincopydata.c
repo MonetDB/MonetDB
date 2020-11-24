@@ -149,7 +149,8 @@ gen_floats(FILE *f, bool byteswap, long nrecs)
 	for (long i = 0; i < nrecs; i++) {
 		float fl = (float)i;
 		fl += 0.5;
-		(void)byteswap;
+		if (byteswap)
+			COPY_BINARY_CONVERT32(fl);
 		fwrite(&fl, sizeof(fl), 1, f);
 	}
 }
@@ -162,7 +163,8 @@ gen_doubles(FILE *f, bool byteswap, long nrecs)
 	for (long i = 0; i < nrecs; i++) {
 		double fl = (double)i;
 		fl += 0.5;
-		(void)byteswap;
+		if (byteswap)
+			COPY_BINARY_CONVERT64(fl);
 		fwrite(&fl, sizeof(fl), 1, f);
 	}
 }
