@@ -409,6 +409,8 @@ AUTHinitTables(const char *passwd) {
 	}
 
 	if (!GDKinmemory()) {
+		free(master_password);
+		master_password = NULL;
 		msg = msab_pickSecret(&master_password);
 		if (msg != NULL)
 			return msg;
