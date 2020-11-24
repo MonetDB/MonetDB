@@ -103,7 +103,7 @@ CREATE TABLE "t1" ("c0" DECIMAL(18,3))
 statement ok
 CREATE TABLE "t2" ("c0" DECIMAL(18,3),"c2" DATE)
 
-statement error
+statement ok
 PREPARE (SELECT DISTINCT t0.c0, INTERVAL '1734780053' SECOND FROM t0, t1) UNION ALL (SELECT ?, ? FROM t2)
 
 statement ok
@@ -143,7 +143,7 @@ CREATE TABLE "t1" ("c1" TIMESTAMP,"c2" INTEGER)
 statement ok
 CREATE TABLE "t2" ("c0" DATE,"c1" TIMESTAMP,"c2" INTEGER)
 
-statement error
+statement ok
 PREPARE (SELECT ?, t1.c2 FROM t1, t0 WHERE (SELECT DISTINCT (t1.c2) BETWEEN ASYMMETRIC (?) AND (t1.c2) FROM t1 CROSS JOIN
 ((SELECT DISTINCT 6.9089063E7, TRUE FROM t2 WHERE TRUE) EXCEPT (SELECT ALL 0.4, FALSE FROM t2, t1 INNER JOIN t0 ON FALSE)) AS sub0 WHERE FALSE)) INTERSECT DISTINCT (SELECT DISTINCT 0.2, ? FROM t0, t2 WHERE ?)
 
@@ -356,7 +356,7 @@ SELECT 1 WHERE (SELECT 1 WHERE FALSE) IS NULL
 ----
 1
 
-statement error
+statement ok
 PREPARE SELECT 1 WHERE greatest(true, ?)
 
 statement error
@@ -702,10 +702,10 @@ SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) I
 ----
 False
 
-statement error
+statement ok
 PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0)
 
-statement error
+statement ok
 PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0)
 
 query T rowsort
