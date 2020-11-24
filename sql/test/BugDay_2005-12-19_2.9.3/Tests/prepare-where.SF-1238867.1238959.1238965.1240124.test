@@ -1,4 +1,4 @@
-statement error
+statement ok
 prepare select * from env() as env where 1 = ?
 
 statement error
@@ -7,7 +7,7 @@ prepare select * from env() as env where ? = ?
 statement error
 prepare select ? from env() as env
 
-statement error
+statement ok
 prepare select * from env() as env where name in (?)
 
 
