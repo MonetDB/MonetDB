@@ -8,18 +8,7 @@ stderr of test 'Skyserver_v6` in directory 'sql/test/Skyserver` itself:
 #warning: please don't forget to set your vault key!
 #(see /ufs/goncalve/scratch/MonetDB/stable/optimized/MonetDB5/etc/monetdb5.conf)
 
-# 16:41:17 >  
-# 16:41:17 >  /usr/bin/python Skyserver_v6.SQL.py Skyserver_v6 
-# 16:41:17 >  
-
-Create User
-tables
-views
-functions
-Cleanup
-Remove User
-
-# 16:41:20 >  
-# 16:41:20 >  Done.
-# 16:41:20 >  
+# 13:06:39 >  
+# 13:06:39 >  "Done."
+# 13:06:39 >  
 
