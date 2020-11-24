@@ -24,7 +24,7 @@
 
 
 static str
-BATattach_as_bytes(BAT *bat, stream *s, BUN rows_estimate, str (*fixup)(void*,void*), int *eof_seen)
+BATattach_as_bytes(BAT *bat, stream *s, bool byteswap, BUN rows_estimate, str (*fixup)(void*,void*,bool), int *eof_seen)
 {
 	str msg = MAL_SUCCEED;
 	int tt = BATttype(bat);
@@ -69,7 +69,7 @@ BATattach_as_bytes(BAT *bat, stream *s, BUN rows_estimate, str (*fixup)(void*,vo
 			}
 			cur += (size_t) nread;
 		}
-		msg = fixup(start, end);
+		msg = fixup(start, end, byteswap);
 		if (msg != NULL)
 			goto end;
 		BUN actualCount = validCount + (end - start) / asz;
@@ -96,17 +96,19 @@ end:
 }
 
 static str
-convert_bte(void *start, void *end)
+convert_bte(void *start, void *end, bool byteswap)
 {
 	(void)start;
 	(void)end;
+	(void)byteswap;
 
 	return MAL_SUCCEED;
 }
 
 static str
-convert_bit(void *start, void *end)
+convert_bit(void *start, void *end, bool byteswap)
 {
+	(void)byteswap;
 	unsigned char *e = end;
 	for (unsigned char *p = start; p < e; p++) {
 		int b = *p;
@@ -117,46 +119,51 @@ convert_bit(void *start, void *end)
 }
 
 static str
-convert_sht(void *start, void *end)
+convert_sht(void *start, void *end, bool byteswap)
 {
-	for (sht *p = start; p < (sht*)end; p++)
-		COPY_BINARY_CONVERT16(*p);
+	if (byteswap)
+		for (sht *p = start; p < (sht*)end; p++)
+			COPY_BINARY_CONVERT16(*p);
 
 	return MAL_SUCCEED;
 }
 
 static str
-convert_int(void *start, void *end)
+convert_int(void *start, void *end, bool byteswap)
 {
-	for (int *p = start; p < (int*)end; p++)
-		COPY_BINARY_CONVERT32(*p);
+	if (byteswap)
+		for (int *p = start; p < (int*)end; p++)
+			COPY_BINARY_CONVERT32(*p);
 
 	return MAL_SUCCEED;
 }
 
 static str
-convert_lng(void *start, void *end)
+convert_lng(void *start, void *end, bool byteswap)
 {
-	for (lng *p = start; p < (lng*)end; p++)
-		COPY_BINARY_CONVERT64(*p);
+	if (byteswap)
+		for (lng *p = start; p < (lng*)end; p++)
+			COPY_BINARY_CONVERT64(*p);
 
 	return MAL_SUCCEED;
 }
 
 #ifdef HAVE_HGE
 static str
-convert_hge(void *start, void *end)
+convert_hge(void *start, void *end, bool byteswap)
 {
-	for (hge *p = start; p < (hge*)end; p++)
-		COPY_BINARY_CONVERT128(*p);
+	if (byteswap)
+		for (hge *p = start; p < (hge*)end; p++)
+			COPY_BINARY_CONVERT128(*p);
 
 	return MAL_SUCCEED;
 }
 #endif
 
 static str
-convert_uuid(void *start, void *end)
+convert_uuid(void *start, void *end, bool byteswap)
 {
+	(void)byteswap;
 	size_t nbytes = (char*)end - (char*)start;
 	(void)nbytes; assert(nbytes % 16 == 0);
 
@@ -164,27 +171,31 @@ convert_uuid(void *start, void *end)
 }
 
 static str
-convert_flt(void *start, void *end)
+convert_flt(void *start, void *end, bool byteswap)
 {
+	// slightly dodgy pointer conversions here
 	assert(sizeof(flt) == sizeof(uint32_t));
-	for (uint32_t *p = start; p < (uint32_t*)end; p++)
-		COPY_BINARY_CONVERT32(*p);
+	if (byteswap)
+		for (union { uint32_t i; flt f; } *p = start; (void*)p < end; p++)
+			COPY_BINARY_CONVERT32(p->f);
 
 	return MAL_SUCCEED;
 }
 
 static str
-convert_dbl(void *start, void *end)
+convert_dbl(void *start, void *end, bool byteswap)
 {
+	// slightly dodgy pointer conversions here
 	assert(sizeof(dbl) == sizeof(uint64_t));
-	for (uint64_t *p = start; p < (uint64_t*)end; p++)
-		COPY_BINARY_CONVERT64(*p);
+	if (byteswap)
+		for (union { uint64_t i; dbl d; } *p = start; (void*)p < end; p++)
+			COPY_BINARY_CONVERT64(p->d);
 
 	return MAL_SUCCEED;
 }
 
 static str
-BATattach_fixed_width(BAT *bat, stream *s, str (*convert)(void*,void*,void*,void*), size_t record_size, int *eof_reached)
+BATattach_fixed_width(BAT *bat, stream *s, bool byteswap, str (*convert)(void*,void*,void*,void*,bool), size_t record_size, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
 	bstream *bs = NULL;
@@ -215,7 +226,8 @@ BATattach_fixed_width(BAT *bat, stream *s, str (*convert)(void*,void*,void*,void
 
 		msg = convert(
 			Tloc(bat, count), Tloc(bat, newCount),
-			&bs->buf[bs->pos], &bs->buf[bs->pos + extent]);
+			&bs->buf[bs->pos], &bs->buf[bs->pos + extent],
+			byteswap);
 		if (msg != MAL_SUCCEED)
 			goto end;
 		BATsetcount(bat, newCount);
@@ -247,7 +259,7 @@ end:
 
 
 static str
-convert_date(void *dst_start, void *dst_end, void *src_start, void *src_end)
+convert_date(void *dst_start, void *dst_end, void *src_start, void *src_end, bool byteswap)
 {
 	date *dst = (date*)dst_start;
 	date *dst_e = (date*)dst_end;
@@ -256,7 +268,8 @@ convert_date(void *dst_start, void *dst_end, void *src_start, void *src_end)
 	(void)dst_e; assert(dst_e - dst == src_e - src);
 
 	for (; src < src_e; src++) {
-		COPY_BINARY_CONVERT_DATE_ENDIAN(*src);
+		if (byteswap)
+			COPY_BINARY_CONVERT_DATE(*src);
 		date value = date_create(src->year, src->month, src->day);
 		*dst++ = value;
 	}
@@ -265,8 +278,9 @@ convert_date(void *dst_start, void *dst_end, void *src_start, void *src_end)
 }
 
 static str
-convert_time(void *dst_start, void *dst_end, void *src_start, void *src_end)
+convert_time(void *dst_start, void *dst_end, void *src_start, void *src_end, bool byteswap)
 {
+	(void)byteswap;
 	daytime *dst = (daytime*)dst_start;
 	daytime *dst_e = (daytime*)dst_end;
 	copy_binary_time *src = (copy_binary_time*)src_start;
@@ -274,7 +288,8 @@ convert_time(void *dst_start, void *dst_end, void *src_start, void *src_end)
 	(void)dst_e; assert(dst_e - dst == src_e - src);
 
 	for (; src < src_e; src++) {
-		COPY_BINARY_CONVERT_TIME_ENDIAN(*src);
+		if (byteswap)
+			COPY_BINARY_CONVERT_TIME(*src);
 		daytime value = daytime_create(src->hours, src->minutes, src->seconds, src->ms);
 		*dst++ = value;
 	}
@@ -283,8 +298,9 @@ convert_time(void *dst_start, void *dst_end, void *src_start, void *src_end)
 }
 
 static str
-convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end)
+convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end, bool byteswap)
 {
+	(void)byteswap;
 	timestamp *dst = (timestamp*)dst_start;
 	timestamp *dst_e = (timestamp*)dst_end;
 	copy_binary_timestamp *src = (copy_binary_timestamp*)src_start;
@@ -292,7 +308,8 @@ convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end
 	(void)dst_e; assert(dst_e - dst == src_e - src);
 
 	for (; src < src_e; src++) {
-		COPY_BINARY_CONVERT_TIMESTAMP_ENDIAN(*src);
+		if (byteswap)
+			COPY_BINARY_CONVERT_TIMESTAMP(*src);
 		date dt = date_create(src->date.year, src->date.month, src->date.day);
 		daytime tm = daytime_create(src->time.hours, src->time.minutes, src->time.seconds, src->time.ms);
 		timestamp value = timestamp_create(dt, tm);
@@ -414,9 +431,9 @@ static struct type_rec {
 	char *method;
 	char *gdk_type;
 	str (*loader)(BAT *bat, stream *s, int *eof_reached);
-	str (*convert_fixed_width)(void *dst_start, void *dst_end, void *src_start, void *src_end);
+	str (*convert_fixed_width)(void *dst_start, void *dst_end, void *src_start, void *src_end, bool byteswap);
 	size_t record_size;
-	str (*convert_in_place)(void *start, void *end);
+	str (*convert_in_place)(void *start, void *end, bool byteswap);
 } type_recs[] = {
 	{ "bit", "bit", .convert_in_place=convert_bit, },
 	{ "bte", "bte", .convert_in_place=convert_bte, },
@@ -453,7 +470,7 @@ find_type_rec(str name)
 
 
 static str
-load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, BUN rows_estimate, int *eof_reached)
+load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, bool byteswap, BUN rows_estimate, int *eof_reached)
 {
 	str msg = MAL_SUCCEED;
 	BUN orig_count, new_count;
@@ -464,9 +481,9 @@ load_column(struct type_rec *rec, const char *name, BAT *bat, stream *s, BUN row
 	if (rec->loader != NULL) {
 		msg = rec->loader(bat, s, eof_reached);
 	} else if (rec->convert_in_place != NULL) {
-		msg = BATattach_as_bytes(bat, s, rows_estimate, rec->convert_in_place, eof_reached);
+		msg = BATattach_as_bytes(bat, s, byteswap, rows_estimate, rec->convert_in_place, eof_reached);
 	} else if (rec->convert_fixed_width != NULL) {
-		msg = BATattach_fixed_width(bat, s, rec->convert_fixed_width, rec->record_size, eof_reached);
+		msg = BATattach_fixed_width(bat, s, byteswap, rec->convert_fixed_width, rec->record_size, eof_reached);
 	} else {
 		*eof_reached = 0;
 		bailout("invalid loader configuration for '%s'", rec->method);
@@ -552,7 +569,7 @@ finish_mapi_file_upload(backend *be, bool eof_reached)
 /* Import a single file into a new BAT.
  */
 static str
-importColumn(backend *be, bat *ret, BUN *retcnt, str method, str path, int onclient,  BUN nrows)
+importColumn(backend *be, bat *ret, BUN *retcnt, str method, bool byteswap, str path, int onclient,  BUN nrows)
 {
 	// In this function we create the BAT and open the file, and tidy
 	// up when things go wrong. The actual work happens in load_column().
@@ -599,7 +616,7 @@ importColumn(backend *be, bat *ret, BUN *retcnt, str method, str path, int oncli
 	}
 
 	// Do the work
-	msg = load_column(rec, path, bat, s, nrows, &eof_reached);
+	msg = load_column(rec, path, bat, s, byteswap, nrows, &eof_reached);
 	if (eof_reached != 0 && eof_reached != 1) {
 		if (msg)
 			bailout("internal error in sql.importColumn: eof_reached not set (%s). Earlier error: %s", method, msg);
@@ -656,8 +673,7 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	backend *be = cntxt->sqlcontext;
 
-	(void)byteswap;
-	return importColumn(be, ret, retcnt, method, path, onclient, nrows);
+	return importColumn(be, ret, retcnt, method, byteswap, path, onclient, nrows);
 }
 
 str
