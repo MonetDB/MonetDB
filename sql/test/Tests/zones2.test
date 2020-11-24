@@ -1,5 +1,0 @@
-query R rowsort
-select degrees(-0.1)
-----
--5.730
-
