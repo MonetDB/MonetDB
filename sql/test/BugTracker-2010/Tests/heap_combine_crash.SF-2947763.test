@@ -11,8 +11,7 @@ CREATE TABLE "temp_27_TERM" (
 
 statement ok
 COPY 2222 RECORDS INTO "temp_27_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-
-statement error
+<COPY_INTO_DATA>
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -2235,12 +2234,14 @@ statement error
 2219	"gen"	1
 2220	"du"	1
 2221	"gène"	1
+
+statement ok
 COMMIT
 
-statement error
+statement ok
 START TRANSACTION
 
-statement error
+statement ok
 CREATE TABLE "temp_20_TERM" (
 	"termid" int           NOT NULL,
 	"term"   varchar(1000),
@@ -2248,10 +2249,9 @@ CREATE TABLE "temp_20_TERM" (
 	CONSTRAINT "temp_20_TERM_termid_pkey" PRIMARY KEY ("termid")
 )
 
-statement error
+statement ok
 COPY 1621 RECORDS INTO "temp_20_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-
-statement error
+<COPY_INTO_DATA>
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -3873,12 +3873,14 @@ statement error
 1618	"5fluorouracil"	1
 1619	"deriv"	1
 1620	"dérivé"	1
+
+statement ok
 COMMIT
 
-statement error
+statement ok
 START TRANSACTION
 
-statement error
+statement ok
 CREATE TABLE "temp_26_TERM" (
 	"termid" int           NOT NULL,
 	"term"   varchar(1000),
@@ -3886,10 +3888,9 @@ CREATE TABLE "temp_26_TERM" (
 	CONSTRAINT "temp_26_TERM_termid_pkey" PRIMARY KEY ("termid")
 )
 
-statement error
+statement ok
 COPY 2503 RECORDS INTO "temp_26_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-
-statement error
+<COPY_INTO_DATA>
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -6393,12 +6394,14 @@ statement error
 2500	"mesur"	1
 2501	"vieilliss"	1
 2502	"protéin"	1
+
+statement ok
 COMMIT
 
-statement error
+statement ok
 START TRANSACTION
 
-statement error
+statement ok
 CREATE TABLE "temp_24_TERM" (
 	"termid" int           NOT NULL,
 	"term"   varchar(1000),
@@ -6406,10 +6409,9 @@ CREATE TABLE "temp_24_TERM" (
 	CONSTRAINT "temp_24_TERM_termid_pkey" PRIMARY KEY ("termid")
 )
 
-statement error
+statement ok
 COPY 956 RECORDS INTO "temp_24_TERM" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-
-statement error
+<COPY_INTO_DATA>
 0	"#STOPWORD#"	1
 1	"a"	1
 2	"about"	1
@@ -7366,42 +7368,44 @@ statement error
 953	"céramiqu"	1
 954	"sa"	1
 955	"fabric"	1
+
+statement ok
 COMMIT
 
-statement error
+statement ok
 START TRANSACTION
 
-statement error
+statement ok
 CREATE TEMP TABLE termDict_1 (idstr VARCHAR(1000))
 
-statement error
+statement ok
 INSERT INTO termDict_1 SELECT a.term as idstr FROM "temp_27_TERM" as a LEFT JOIN termDict_1 as b ON a.term=b.idstr WHERE isnull(b.idstr)
 
-statement error
+statement ok
 INSERT INTO termDict_1 SELECT a.term as idstr FROM "temp_20_TERM" as a LEFT JOIN termDict_1 as b ON a.term=b.idstr WHERE isnull(b.idstr)
 
-statement error
+statement ok
 INSERT INTO termDict_1 SELECT a.term as idstr FROM "temp_26_TERM" as a LEFT JOIN termDict_1 as b ON a.term=b.idstr WHERE isnull(b.idstr)
 
-statement error
+statement ok
 INSERT INTO termDict_1 SELECT a.term as idstr FROM "temp_24_TERM" as a LEFT JOIN termDict_1 as b ON a.term=b.idstr WHERE isnull(b.idstr)
 
-statement error
+statement ok
 COMMIT
 
-statement error
+statement ok
 DROP TABLE termDict_1
 
-statement error
+statement ok
 DROP TABLE "temp_24_TERM"
 
-statement error
+statement ok
 DROP TABLE "temp_26_TERM"
 
-statement error
+statement ok
 DROP TABLE "temp_20_TERM"
 
-statement error
+statement ok
 DROP TABLE "temp_27_TERM"
 
 
