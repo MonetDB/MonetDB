@@ -78,16 +78,16 @@ typedef struct {
 // This makes it possible to also convert timestamps.
 
 #define COPY_BINARY_CONVERT16(lhs) \
-	do { (lhs) = COPY_BINARY_BYTESWAP16(lhs); } while (0)
+	do { *(uint16_t*)&(lhs) = COPY_BINARY_BYTESWAP16(lhs); } while (0)
 
 #define COPY_BINARY_CONVERT32(lhs) \
-	do { (lhs) = COPY_BINARY_BYTESWAP32(lhs); } while (0)
+	do { *(uint32_t*)&(lhs) = COPY_BINARY_BYTESWAP32(lhs); } while (0)
 
 #define COPY_BINARY_CONVERT64(lhs) \
-	do { (lhs) = COPY_BINARY_BYTESWAP64(lhs); } while (0)
+	do { *(uint64_t*)&(lhs) = COPY_BINARY_BYTESWAP64(lhs); } while (0)
 
 #define COPY_BINARY_CONVERT128(lhs) \
-	do { (lhs) = COPY_BINARY_BYTESWAP128(lhs); } while (0)
+	do { *(uhge*)&(lhs) = COPY_BINARY_BYTESWAP128(lhs); } while (0)
 
 #define COPY_BINARY_CONVERT_DATE(d) \
 	do { COPY_BINARY_CONVERT16((d).year); } while (0)
