@@ -412,7 +412,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			sql_table *pt = find_sql_table_id(mt->s, next->base.id);
 			sql_part *err = NULL;
 
-			pt->p = mt;
 			assert(isMergeTable(mt) || isReplicaTable(mt));
 			if (isRangePartitionTable(mt) || isListPartitionTable(mt)) {
 				err = cs_add_with_validate(&mt->members, next, TR_NEW,

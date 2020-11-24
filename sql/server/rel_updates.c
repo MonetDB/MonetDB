@@ -917,8 +917,8 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		mt = t;
-	else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p)))
-		mt = t->p;
+	else if (isPartition(t))
+		mt = find_merge_table(sql->session->tr, t, NULL);
 
 	if (mt && isPartitionedByColumnTable(mt)) {
 		pcols = sa_list(sql->sa);
@@ -1773,8 +1773,11 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 		return NULL;
 	else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-	else if (t->p && (isPartitionedByColumnTable(t->p) || isPartitionedByExpressionTable(t->p)))
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
+	else if (isPartition(t)) {
+		sql_table *mt = find_merge_table(sql->session->tr, t, NULL);
+		if (mt && (isPartitionedByColumnTable(mt) || isPartitionedByExpressionTable(mt)))
+			return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
+	}
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
 	if (!rel || !loader)

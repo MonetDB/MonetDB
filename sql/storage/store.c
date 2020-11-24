@@ -1179,7 +1179,7 @@ set_members(changeset *ts)
 					sql_part *p = m->data;
 					sql_table *pt = find_sql_table_id(t->s, p->base.id);
 
-					pt->p = t;
+					pt->partition = 1;
 				}
 			}
 		}
@@ -1404,7 +1404,6 @@ load_trans(sql_trans* tr, sqlid id)
 	sql_column *sysschema_ids = find_sql_column(sysschema, "id");
 	rids *schemas = table_funcs.rids_select(tr, sysschema_ids, NULL, NULL);
 	oid rid;
-	node *n;
 
 	TRC_DEBUG(SQL_STORE, "Load transaction\n");
 
@@ -1416,7 +1415,7 @@ load_trans(sql_trans* tr, sqlid id)
 			cs_add(&tr->schemas, ns, 0);
 	}
 
-	for (n = tr->schemas.set->h; n; n = n->next) { /* Set table members */
+	for (node *n = tr->schemas.set->h; n; n = n->next) { /* Set table members */
 		sql_schema *s = n->data;
 
 		set_members(&s->tables);
@@ -1725,8 +1724,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 
 	nt->access = t->access;
 	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
-	assert(!t->p || isMergeTable(t->p) || isReplicaTable(t->p));
-	nt->p = t->p;
+	nt->partition = t->partition;
 
 	if (isPartitionedByExpressionTable(nt)) {
 		nt->part.pexp = SA_ZNEW(sa, sql_expression);
@@ -3360,7 +3358,7 @@ part_dup(sql_trans *tr, int flags, sql_part *op, sql_table *mt)
 	p->t = mt;
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 	if (pt) /* during loading we use set_members */
-		pt->p = mt;
+		pt->partition = 1;
 	if (newFlagSet(flags) && tr->parent == gtrans)
 		removeNewFlag(op);
 
@@ -3742,7 +3740,6 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 		if (tr->parent == gtrans)
 			os->tables.nelm = NULL;
 
-		// Set the ->p member for each sql_table that is a child of some other merge table.
 		set_members(&s->tables);
 	}
 	if (os->funcs.set) {
@@ -4204,7 +4201,7 @@ rollforward_create_part(sql_trans *tr, sql_part *p, int mode)
 
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		if (pt)
-			pt->p = mt;
+			pt->partition = 1;
 	}
 	return p;
 }
@@ -4219,7 +4216,7 @@ rollforward_drop_part(sql_trans *tr, sql_part *p, int mode)
 
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		if (pt)
-			pt->p = NULL;
+			pt->partition = 0;
 	}
 	return LOG_OK;
 }
@@ -4462,11 +4459,6 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	if (mode == R_APPLY && ok == LOG_OK) {
 		ft->cleared = 0;
 		tt->access = ft->access;
-		if (ft->p) {
-			tt->p = find_sql_table_id(tt->s, ft->p->base.id);
-			assert(isMergeTable(tt->p) || isReplicaTable(tt->p));
-		} else
-			tt->p = NULL;
 
 		if (strcmp(tt->base.name, ft->base.name) != 0) { /* apply possible renaming */
 			list_hash_delete(tt->s->tables.set, tt, NULL);
@@ -4887,13 +4879,6 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 
 		ft->cleared = 0;
 		ft->access = pft->access;
-		if (pft->p) {
-			ft->p = find_sql_table_id(ft->s, pft->p->base.id);
-			//Check if this assert can be removed definitely.
-			//the parent (merge or replica table) maybe created later!
-			//assert(isMergeTable(ft->p) || isReplicaTable(ft->p));
-		} else
-			ft->p = NULL;
 
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
 		if (strcmp(ft->base.name, pft->base.name) != 0) {
@@ -5957,7 +5942,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	/* merge table depends on part table */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	assert(isMergeTable(mt) || isReplicaTable(mt));
-	pt->p = mt;
+	pt->partition = 1;
 	p->t = mt;
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	cs_add(&mt->members, p, TR_NEW);
@@ -6027,7 +6012,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p = SA_ZNEW(tr->sa, sql_part);
 		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 		assert(isMergeTable(mt) || isReplicaTable(mt));
-		pt->p = mt;
+		pt->partition = 1;
 		p->t = mt;
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
@@ -6102,7 +6087,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p = SA_ZNEW(tr->sa, sql_part);
 		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 		assert(isMergeTable(mt) || isReplicaTable(mt));
-		pt->p = mt;
+		pt->partition = 1;
 		p->t = mt;
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
@@ -6265,7 +6250,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 
 	cs_del(&mt->members, n, p->base.flags);
-	pt->p = NULL;
+	pt->partition = 0;/* check other hierarchies? */
 	table_funcs.table_delete(tr, sysobj, obj_oid);
 
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;

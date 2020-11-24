@@ -601,7 +601,7 @@ typedef enum table_types {
 #define isRemote(x)                       ((x)->type==tt_remote)
 #define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)                    (isTable(x) && (x)->p)
+#define isPartition(x)                    ((x)->partition)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -659,7 +659,7 @@ typedef struct sql_table {
 	struct sql_schema *s;
 	struct sql_table *po;	/* the outer transactions table */
 
-	struct sql_table *p;	 /* The table is part of this merge table */
+	bit partition;	/* if this table is part of some hierachy of tables (could be multiple) */
 	union {
 		struct sql_column *pcol; /* If it is partitioned on a column */
 		struct sql_expression *pexp; /* If it is partitioned by an expression */
@@ -768,5 +768,8 @@ typedef struct {
 	char* name;
 	void* def;
 } sql_emit_col;
+
+extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
+extern sql_table *find_merge_table(sql_trans *tr, sql_table *pt, sql_table *mt);
 
 #endif /* SQL_CATALOG_H */

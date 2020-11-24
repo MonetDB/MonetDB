@@ -76,7 +76,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 }
 
 static char *
-rel_check_tables(sql_table *nt, sql_table *nnt, const char *errtable)
+rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 {
 	node *n, *m, *nn, *mm;
 
@@ -128,10 +128,8 @@ rel_check_tables(sql_table *nt, sql_table *nnt, const char *errtable)
 			}
 	}
 
-	for (sql_table *up = nt->p ; up ; up = up->p) {
-		if (!strcmp(up->s->base.name, nnt->s->base.name) && !strcmp(up->base.name, nnt->base.name))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table is a parent of the %s", errtable, errtable);
-	}
+	if (nested_mergetable(sql->session->tr, nt/*mergetable*/, nnt->s->base.name, nnt->base.name/*parts*/))
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table is a parent of the %s", errtable, errtable);
 	return MAL_SUCCEED;
 }
 
@@ -172,7 +170,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 	if (!n && update)
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	if ((msg = rel_check_tables(rmt, rpt, errtable)) != MAL_SUCCEED)
+	if ((msg = rel_check_tables(sql, rmt, rpt, errtable)) != MAL_SUCCEED)
 		return msg;
 
 	*mt = rmt;
@@ -215,7 +213,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 									"ALTER TABLE: cannot add range partition into a %s table",
 									(isListPartitionTable(mt))?"list partition":"merge");
 		goto finish;
-	} else if (!update && pt->p) {
+	} else if (!update && isPartition(pt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
@@ -315,8 +313,6 @@ finish:
 		GDKfree(conflict_err_min);
 	if (conflict_err_max)
 		GDKfree(conflict_err_max);
-	if (msg != MAL_SUCCEED)
-		pt->p = NULL;
 	return msg;
 }
 
@@ -340,7 +336,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 									"ALTER TABLE: cannot add value partition into a %s table",
 									(isRangePartitionTable(mt))?"range partition":"merge");
 		goto finish;
-	} else if (!update && pt->p) {
+	} else if (!update && isPartition(pt)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
@@ -394,8 +390,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
-	if (msg != MAL_SUCCEED)
-		pt->p = NULL;
 	return msg;
 }
 

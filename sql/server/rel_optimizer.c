@@ -41,7 +41,6 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 
 	switch (rel->op) {
 	case op_basetable: {
-		node *cn;
 		sql_table *t = rel->l;
 
 		if (rel->exps) {
@@ -61,12 +60,14 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			return rel->r;
 		if (rname && strcmp(t->base.name, rname) != 0)
 			return NULL;
+		node *cn;
+		sql_table *mt = rel->r;
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0) {
 				*bt = rel;
-				if (pnr < 0 || (c->t->p &&
-				    list_position(c->t->p->members.set, c->t) == pnr))
+				if (pnr < 0 || (mt &&
+					list_position(mt->members.set, c->t) == pnr))
 					return c;
 			}
 		}
@@ -75,8 +76,8 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			sql_idx *i = cn->data;
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
-				if (pnr < 0 || (i->t->p &&
-				    list_position(i->t->p->members.set, i->t) == pnr)) {
+				if (pnr < 0 || (mt &&
+					list_position(mt->members.set, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
 					return c->c;
 				}
@@ -4138,10 +4139,11 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 
 				if (find_prop(gbe->p, PROP_HASHCOL)) {
 					fcmp cmp = (fcmp)&kc_column_cmp;
-					sql_column *c = exp_find_column(rel->l, gbe, -2);
-
+					sql_rel *bt = NULL;
+					sql_column *c = exp_find_column_(rel, gbe, -2, &bt);
 					/* check if key is partition key */
-					if (c && c->t->p && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
+					sql_table *mt = (bt)?bt->r:NULL;
+					if (c && mt && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
 						v->changes++;
 						return rel_inplace_setop(rel, ul, ur, op_union,
 					       	       rel_projections(v->sql, rel, NULL, 1, 1));
@@ -4924,26 +4926,26 @@ static int
 rel_part_nr( sql_rel *rel, sql_exp *e )
 {
 	sql_column *c;
-	sql_table *pp;
+	sql_rel *bt;
 	assert(e->type == e_cmp);
 
-	c = exp_find_column(rel, e->l, -1);
+	c = exp_find_column_(rel, e->l, -1, &bt);
 	if (!c)
-		c = exp_find_column(rel, e->r, -1);
+		c = exp_find_column_(rel, e->r, -1, &bt);
 	if (!c && e->f)
-		c = exp_find_column(rel, e->f, -1);
-	if (!c)
+		c = exp_find_column_(rel, e->f, -1, &bt);
+	if (!c || !bt || !bt->r)
 		return -1;
-	pp = c->t;
-	if (pp->p)
-		return list_position(pp->p->members.set, pp);
-	return -1;
+	sql_table *pp = c->t;
+	sql_table *mt = bt->r;
+	return list_position(mt->members.set, pp);
 }
 
 static int
 rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 {
 	sql_column *c;
+	sql_rel *bt;
 	assert(e->type == e_cmp);
 
 	/*
@@ -4953,12 +4955,13 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	 * The union will never return proper column (from A2).
 	 * ie need different solution (probaly pass pnr).
 	 */
-	c = exp_find_column(rel, e->l, pnr);
+	c = exp_find_column_(rel, e->l, pnr, &bt);
 	if (!c)
-		c = exp_find_column(rel, e->r, pnr);
-	if (c) {
+		c = exp_find_column_(rel, e->r, pnr, &bt);
+	if (c && bt && bt->r) {
 		sql_table *pp = c->t;
-		if (pp->p && list_position(pp->p->members.set, pp) == pnr)
+		sql_table *mt = bt->r;
+		if (list_position(mt->members.set, pp) == pnr)
 			return 1;
 	}
 	/* for projects we may need to do a rename! */
@@ -6413,7 +6416,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			   Check if they can be pushed up, ie are they not
 			   changing or introducing any columns used
 			   by the upper operator. */
- 
+
 			exps = new_exp_list(v->sql->sa);
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -8845,6 +8848,7 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 			n = n->next;
 		}
 	}
+	p->r = mt;
 	return p;
 }
 
@@ -8948,7 +8952,6 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						/* do not include empty partitions */
 						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(v->sql->session->tr, pt->columns.set->h->data, 1))
 							continue;
-
 						prel = rel_rename_part(v->sql, prel, tname, t);
 
 						MT_lock_set(&prel->exps->ht_lock);

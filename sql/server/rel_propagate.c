@@ -64,8 +64,6 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 			list_append(l, help);
 		}
 		return rel_dup(rel->r);
-	} else {
-		assert(0);
 	}
 	return NULL;
 }
@@ -267,7 +265,11 @@ static sql_rel *
 propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel)
 {
 	mvc *sql = query->sql;
-	for (sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
+	sql_table *it;
+
+	for (sql_table *prev = mt ; prev ; prev = it) {
+		if (!isPartition(prev) || (it=find_merge_table(sql->session->tr, prev, NULL)) == NULL)
+			break;
 		sql_part *spt = find_sql_part_id(it, prev->base.id);
 		if (spt) {
 			if (isRangePartitionTable(it)) {
@@ -674,6 +676,8 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		anti_rel = rel_dup(rel->r);
 	} else if (isPartitionedByExpressionTable(t)) {
 		anti_rel = rel_create_common_relation(sql, rel, t);
+		if (!anti_rel)
+			return NULL;
 	} else {
 		assert(0);
 	}
@@ -911,9 +915,14 @@ static sql_rel*
 rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 {
 	mvc *sql = query->sql;
-	sql_table *upper = t->p; //is part of a partition table and not been used yet
+	//sql_table *upper = t->p; //is part of a partition table and not been used yet
+	sql_table *upper = find_merge_table(sql->session->tr, t, NULL);
+	if (!upper)
+		return NULL;
 	sql_part *pt = find_sql_part_id(upper, t->base.id);
 	sql_rel *anti_dup = rel_create_common_relation(sql, rel, upper), *left = rel->l;
+	if (!anti_dup)
+		return NULL;
 	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
@@ -1024,11 +1033,14 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 	if (l->op == op_basetable) {
 		sql_table *t = l->l;
 
-		if (t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
+		if (isPartition(t) && !find_prop(l->p, PROP_USED)) {
 			isSubtable = true;
 			if (is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-				rel = rel_subtable_insert(query, rel, t, changes);
-				propagate = rel->l;
+				sql_rel *nrel = rel_subtable_insert(query, rel, t, changes);
+				if (!nrel)
+					return rel;
+				rel = nrel;
+				propagate = nrel->l;
 			}
 		}
 		if (isMergeTable(t)) {

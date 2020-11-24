@@ -523,3 +523,48 @@ sql_values_part_validate_and_insert(void *v1, void *v2)
 	}
 	return NULL;
 }
+
+sql_table *
+find_merge_table(sql_trans *tr, sql_table *pt, sql_table *mt)
+{
+	for(node *n = tr->schemas.set->h; n; n=n->next) {
+		sql_schema *s = n->data;
+		if (mt && mt->s != s)
+			continue;
+		if (!s->tables.set)
+			continue;
+		for(node *m = s->tables.set->h; m; m=m->next) {
+			sql_table *t = m->data;
+
+			if (mt) {
+				if (mt == t)
+					mt = NULL;
+				continue;
+			}
+
+			if (t->members.set && !list_empty(t->members.set)) {
+				for(node *o = t->members.set->h; o; o = o->next) {
+					sql_part *p = o->data;
+
+					if (p->base.id == pt->base.id)
+						return t;
+				}
+			}
+		}
+	}
+	return NULL;
+}
+
+int
+nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *tname)
+{
+	if (strcmp(mt->s->base.name, sname) == 0 && strcmp(mt->base.name, tname) == 0)
+		return 1;
+	if (isPartition(mt)) {
+		for( sql_table *parent = find_merge_table(tr, mt, NULL); parent; parent = find_merge_table(tr, mt, parent)) {
+			if (nested_mergetable(tr, parent, sname, tname))
+				return 1;
+		}
+	}
+	return 0;
+}
