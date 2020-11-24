@@ -1502,7 +1502,6 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, NULL);
 	  append_int(l, $2);
-	  append_list(l, $5);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  TABLE if_not_exists qname FROM sqlLOADER func_ref
