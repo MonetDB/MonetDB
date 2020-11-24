@@ -18,7 +18,7 @@ SET Avar='Avar'
 
 statement error
 CREATE OR REPLACE FUNCTION foo(i string) RETURNS INT
-BEGIN DECLARE i string; set i ='1'; return i; END
+BEGIN DECLARE i string; set i ='1'; return i; END; --error, i re-declared
 
 statement ok
 CREATE OR REPLACE FUNCTION foo(gvar string) RETURNS INT
@@ -44,7 +44,7 @@ function i
 
 statement error
 CREATE OR REPLACE FUNCTION foo() RETURNS string
-BEGIN DECLARE i string; set i =gvar; return i; END
+BEGIN DECLARE i string; set i =gvar; return i; END; --error, gvar was declared on sys schema, so it doesn't exist here
 
 query I rowsort
 SELECT foo()
@@ -53,7 +53,7 @@ SELECT foo()
 
 statement error
 CREATE OR REPLACE FUNCTION Gvar() RETURNS string
-BEGIN DECLARE i string; set i =gvar; return i; END
+BEGIN DECLARE i string; set i =gvar; return i; END; --error, gvar was declared on sys schema, so it doesn't exist here
 
 query T rowsort
 SELECT Gvar()
@@ -80,7 +80,7 @@ function i
 
 statement error
 CREATE OR REPLACE FUNCTION foo() RETURNS string
-BEGIN DECLARE i string; set i = A.gvar; return i; END
+BEGIN DECLARE i string; set i = A.gvar; return i; END; --error, variable a.gvar doesn't exist
 
 query I rowsort
 SELECT foo()
@@ -89,7 +89,7 @@ SELECT foo()
 
 statement error
 CREATE OR REPLACE FUNCTION Gvar() RETURNS string
-BEGIN DECLARE i string; set i =A.gvar; return i; END
+BEGIN DECLARE i string; set i =A.gvar; return i; END; --error, variable a.gvar doesn't exist
 
 query T rowsort
 SELECT Gvar()
@@ -133,7 +133,7 @@ CALL avar()
 
 statement error
 CREATE OR REPLACE PROCEDURE avar()
-BEGIN SET SCHEMA A; set sys.avar = 'avar_assigned'; END
+BEGIN SET SCHEMA A; set sys.avar = 'avar_assigned'; END; --error, variable sys.avar doesn't exist
 
 statement error
 CALL avar()
@@ -143,4 +143,5 @@ SET SCHEMA "sys"
 
 statement ok
 DROP SCHEMA A CASCADE
+
 
