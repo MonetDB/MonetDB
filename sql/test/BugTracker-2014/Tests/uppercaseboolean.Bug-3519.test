@@ -13,7 +13,7 @@ insert into bug3519 values ('true'),('false')
 statement ok
 insert into bug3519 values (1),(0),(NULL),('1'),('0')
 
-statement error
+statement ok
 COPY 5 RECORDS INTO bug3519 FROM stdin NULL as ''
 <COPY_INTO_DATA>
 true
@@ -21,20 +21,58 @@ false
 1
 0
 
-statement error
+query T rowsort
 select * from bug3519
+----
+false
+false
+false
+false
+false
+false
+false
+true
+true
+true
+true
+true
+true
+true
+NULL
+NULL
 
-statement error
+statement ok
 insert into bug3519 values ('TRUE'),('FALSE')
 
-statement error
+statement ok
 COPY 2 RECORDS INTO bug3519 FROM stdin
 <COPY_INTO_DATA>
 TRUE
 FALSE
 
-statement error
+query T rowsort
 select * from bug3519
+----
+false
+false
+false
+false
+false
+false
+false
+false
+false
+true
+true
+true
+true
+true
+true
+true
+true
+true
+NULL
+NULL
 
 statement ok
 rollback

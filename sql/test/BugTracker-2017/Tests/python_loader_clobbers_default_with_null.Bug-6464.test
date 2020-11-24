@@ -1,13 +1,4 @@
 statement ok
--- Examples 1 & 2[ab] merely set the stage by demonstrating
--- (double-checking) the behaviour of standard COPY INTO and
--- INSERT INTO when skipping columns with defaults.
--- The problem/bug with COPY LOADER INTO is demonstrated in
--- Examples 3[ab].
--- Example 1: COPY INTO & INSERT INTO work fine / correctly:
---start transaction
-
-statement ok
 create table t (
 	a integer auto_increment primary key,
 	b integer generated always as identity (start with 2) unique,
@@ -22,79 +13,121 @@ statement ok
 copy 1 records into t (g) from stdin (g)
 <COPY_INTO_DATA>
 -7
-copy 1 records into t (g) from stdin (g);
+
+statement ok
+copy 1 records into t (g) from stdin (g)
+<COPY_INTO_DATA>
 NULL
-insert into t (g) values (NULL);
-insert into t (g) values (-7);
+
+statement ok
+insert into t (g) values (NULL)
+
+statement ok
+insert into t (g) values (-7)
 
 statement ok
 copy 1 records into t (f) from stdin (f)
 <COPY_INTO_DATA>
 -6
-copy 1 records into t (f) from stdin (f);
+
+statement ok
+copy 1 records into t (f) from stdin (f)
+<COPY_INTO_DATA>
 NULL
-insert into t (f) values (NULL);
-insert into t (f) values (-6);
+
+statement ok
+insert into t (f) values (NULL)
+
+statement ok
+insert into t (f) values (-6)
+
+statement ok
+copy 1 records into t (e) from stdin (e)
+<COPY_INTO_DATA>
+-5
 
 statement error
 copy 1 records into t (e) from stdin (e)
 <COPY_INTO_DATA>
--5
-copy 1 records into t (e) from stdin (e);
 NULL
-insert into t (e) values (NULL);
-insert into t (e) values (-5);
+
+statement error
+insert into t (e) values (NULL)
+
+statement ok
+insert into t (e) values (-5)
 
 statement ok
 copy 1 records into t (d) from stdin (d)
 <COPY_INTO_DATA>
 -4
-copy 1 records into t (d) from stdin (d);
+
+statement ok
+copy 1 records into t (d) from stdin (d)
+<COPY_INTO_DATA>
 NULL
-insert into t (d) values (NULL);
-insert into t (d) values (-4);
+
+statement ok
+insert into t (d) values (NULL)
+
+statement ok
+insert into t (d) values (-4)
+
+statement ok
+copy 1 records into t (c) from stdin (c)
+<COPY_INTO_DATA>
+-3
 
 statement error
 copy 1 records into t (c) from stdin (c)
 <COPY_INTO_DATA>
--3
-copy 1 records into t (c) from stdin (c);
 NULL
-insert into t (c) values (NULL);
-insert into t (c) values (-3);
 
 statement error
+insert into t (c) values (NULL)
+
+statement ok
+insert into t (c) values (-3)
+
+statement ok
 copy 1 records into t (b) from stdin (b)
 <COPY_INTO_DATA>
 -2
-copy 1 records into t (b) from stdin (b);
+
+statement ok
+copy 1 records into t (b) from stdin (b)
+<COPY_INTO_DATA>
 NULL
-insert into t (b) values (NULL);
-insert into t (b) values (-2);
+
+statement ok
+insert into t (b) values (NULL)
+
+statement error
+insert into t (b) values (-2)
+
+statement ok
+copy 1 records into t (a) from stdin (a)
+<COPY_INTO_DATA>
+-1
 
 statement error
 copy 1 records into t (a) from stdin (a)
 <COPY_INTO_DATA>
--1
-copy 1 records into t (a) from stdin (a);
 NULL
-insert into t (a) values (NULL);
-insert into t (a) values (-1);
+
+statement error
+insert into t (a) values (NULL)
+
+statement error
+insert into t (a) values (-1)
 
 query IIIIIII rowsort
 select * from t
 ----
-84 values hashing to b7c7726ea5c8ad7692cf606af8243a35
+140 values hashing to e1c44aeb60fd8b0f2ca04971ab325dd5
 
 statement ok
 drop table t
-
-statement ok
---rollback
-
-statement ok
--- Example 2a: INSERT INTO works fine / correctly:
---start transaction
 
 statement ok
 create table t (
@@ -140,13 +173,6 @@ statement ok
 drop table t
 
 statement ok
---rollback
-
-statement ok
--- Example 2b: COPY INTO works fine / correctly:
---start transaction
-
-statement ok
 create table t (
 	a integer auto_increment primary key,
 	b integer generated always as identity (start with 2) unique,
@@ -162,35 +188,56 @@ copy 2 records into t (a,b,c,d,e,f,g) from stdin (a,b,c,d,e,f,g)
 <COPY_INTO_DATA>
 -111|-112|-113|-114|-115|-116|-117
 -121|-122|-123|-124|-125|-126|-127
-copy 2 records into t (a,b,c,d,e,f) from stdin (a,b,c,d,e,f);
--211|-212|-213|-214|-215|-216
--221|-222|-223|-224|-225|-226
-copy 2 records into t (a,b,c,d,e,g) from stdin (a,b,c,d,e,g);
--311|-312|-313|-314|-315|-317
--321|-322|-323|-324|-325|-327
-copy 2 records into t (a,b,c,d,f,g) from stdin (a,b,c,d,f,g);
--411|-412|-413|-414|-416|-417
--421|-422|-423|-424|-426|-427
-copy 2 records into t (a,b,c,e,f,g) from stdin (a,b,c,e,f,g);
--511|-512|-513|-515|-516|-517
--521|-522|-523|-525|-526|-527
-copy 2 records into t (a,b,d,e,f,g) from stdin (a,b,d,e,f,g);
--611|-612|-614|-615|-616|-617
--621|-622|-624|-625|-626|-627
-copy 2 records into t (a,c,d,e,f,g) from stdin (a,c,d,e,f,g);
--711|-713|-714|-715|-716|-717
--721|-723|-724|-725|-726|-727
-copy 2 records into t (b,c,d,e,f,g) from stdin (b,c,d,e,f,g);
--812|-813|-814|-815|-816|-817
--822|-823|-824|-825|-826|-827
-select * from t;
-drop table t;
---rollback;
 
 statement ok
--- Example 3a: COPY LOADER INTO works INcorrectly,
---             i.e., replaces missing values/columsn with NULL rather than DEFAULT
---start transaction
+copy 2 records into t (a,b,c,d,e,f) from stdin (a,b,c,d,e,f)
+<COPY_INTO_DATA>
+-211|-212|-213|-214|-215|-216
+-221|-222|-223|-224|-225|-226
+
+statement ok
+copy 2 records into t (a,b,c,d,e,g) from stdin (a,b,c,d,e,g)
+<COPY_INTO_DATA>
+-311|-312|-313|-314|-315|-317
+-321|-322|-323|-324|-325|-327
+
+statement ok
+copy 2 records into t (a,b,c,d,f,g) from stdin (a,b,c,d,f,g)
+<COPY_INTO_DATA>
+-411|-412|-413|-414|-416|-417
+-421|-422|-423|-424|-426|-427
+
+statement ok
+copy 2 records into t (a,b,c,e,f,g) from stdin (a,b,c,e,f,g)
+<COPY_INTO_DATA>
+-511|-512|-513|-515|-516|-517
+-521|-522|-523|-525|-526|-527
+
+statement ok
+copy 2 records into t (a,b,d,e,f,g) from stdin (a,b,d,e,f,g)
+<COPY_INTO_DATA>
+-611|-612|-614|-615|-616|-617
+-621|-622|-624|-625|-626|-627
+
+statement ok
+copy 2 records into t (a,c,d,e,f,g) from stdin (a,c,d,e,f,g)
+<COPY_INTO_DATA>
+-711|-713|-714|-715|-716|-717
+-721|-723|-724|-725|-726|-727
+
+statement ok
+copy 2 records into t (b,c,d,e,f,g) from stdin (b,c,d,e,f,g)
+<COPY_INTO_DATA>
+-812|-813|-814|-815|-816|-817
+-822|-823|-824|-825|-826|-827
+
+query IIIIIII rowsort
+select * from t
+----
+112 values hashing to d82c83ddf1ff260710cf7f6e4b0b7e23
+
+statement ok
+drop table t
 
 statement ok
 CREATE LOADER myloader(x integer, y string) LANGUAGE PYTHON {
@@ -241,21 +288,26 @@ COPY LOADER INTO t FROM myloader(-80,'bcdefg')
 query IIIIIII rowsort
 select * from t
 ----
-14 values hashing to 93d418f428df5839cb56f2ae0054c83e
+-11
+-12
+-13
+-14
+-15
+-16
+-17
+-21
+-22
+-23
+-24
+-25
+-26
+NULL
 
 statement ok
 drop table t
 
 statement ok
 drop loader myloader
-
-statement ok
---rollback
-
-statement ok
--- Example 3b: COPY LOADER INTO works INcorrectly,
---             i.e., replaces missing values/columsn with NULL rather than DEFAULT
---start transaction
 
 statement ok
 CREATE LOADER myloader(x integer, y string) LANGUAGE PYTHON {
@@ -306,15 +358,39 @@ COPY LOADER INTO t FROM myloader(-800,'bcdefg')
 query IIIIIII rowsort
 select * from t
 ----
-28 values hashing to de3e7999fca6fb4fe47d66d44f61ce0d
+-111
+-112
+-113
+-114
+-115
+-116
+-117
+-121
+-122
+-123
+-124
+-125
+-126
+-127
+-211
+-212
+-213
+-214
+-215
+-216
+NULL
+-221
+-222
+-223
+-224
+-225
+-226
+NULL
 
 statement ok
 drop table t
 
 statement ok
 drop loader myloader
-
-statement ok
---rollback
 
 
