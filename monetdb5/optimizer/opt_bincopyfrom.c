@@ -15,7 +15,7 @@
 #include "opt_bincopyfrom.h"
 
 static str transform(MalBlkPtr mb, InstrPtr importTable);
-static int extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_bat_var, int count_var);
+static int extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_bat_var, int count_var, bool byteswap);
 
 str
 OPTbincopyfromImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -96,6 +96,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 	int onclient_arg = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
 	bool onserver = !onclient_arg;
 	bool onclient = !onserver;
+	bool byteswap = *(bit*)getVarValue(mb, getArg(old, old->retc + 3));
 
 	// In the following loop we pick a "prototype column".
 	// This is always a column with a non-nil path and will be the first column for
@@ -114,7 +115,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 		int tail_type = ATOMstorage(getBatType(var_type));
 		if (tail_type >= prototype_type)
 			continue;
-		int path_idx = old->retc + 3 + i;
+		int path_idx = old->retc + 4 + i;
 		int path_var = getArg(old, path_idx);
 		if (VALisnil(&getVarConstant(mb, path_var)))
 			continue;
@@ -127,7 +128,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 		return createException(MAL, "optimizer.bincopyfrom", SQLSTATE(42000) "all paths are nil");
 
 	// Always emit the prototype column first
-	int prototype_count_var = extract_column(mb, old, prototype_idx, NULL, -1, -1);
+	int prototype_count_var = extract_column(mb, old, prototype_idx, NULL, -1, -1, byteswap);
 	assert(mb->stop > 0);
 	int prototype_bat_var = getArg(getInstrPtr(mb, mb->stop - 1), 0);
 	assert(prototype_count_var == getArg(getInstrPtr(mb, mb->stop - 1), 1));
@@ -138,7 +139,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 	for (int i = 0; i < old->retc; i++) {
 		if (i == prototype_idx)
 			continue;
-		int new_row_count_var = extract_column(mb, old, i, prototype_path, prototype_bat_var, row_count_var);
+		int new_row_count_var = extract_column(mb, old, i, prototype_path, prototype_bat_var, row_count_var, byteswap);
 		if (onclient)
 			row_count_var = new_row_count_var; // chain the importColumn statements
 	}
@@ -149,7 +150,7 @@ transform(MalBlkPtr mb, InstrPtr old)
 }
 
 static int
-extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_bat_var, int count_var)
+extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_bat_var, int count_var, bool byteswap)
 {
 	int var = getArg(old, idx);
 	int var_type = getVarType(mb, var);
@@ -163,7 +164,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 
 	int onclient = *(int*)getVarValue(mb, getArg(old, old->retc + 2));
 
-	int path_idx = old->retc + 3 + idx;
+	int path_idx = old->retc + 4 + idx;
 	int path_var = getArg(old, path_idx);
 	str path = (str)getVarValue(mb, path_var);
 
@@ -182,6 +183,7 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 			int new_count_var = newTmpVariable(mb, TYPE_oid);
 			pushReturn(mb, p, new_count_var);
 			pushStr(mb, p, method);
+			pushBit(mb, p, byteswap);
 			pushStr(mb, p, path);
 			pushInt(mb, p, onclient);
 			if (count_var < 0)
