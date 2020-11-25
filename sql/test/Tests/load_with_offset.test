@@ -9,8 +9,7 @@ CREATE TABLE my_test (
 
 statement ok
 COPY 5 OFFSET 5 RECORDS INTO my_test FROM stdin USING DELIMITERS '|',E'\n' NULL as ''
-
-statement error
+<COPY_INTO_DATA>
 123|1||a|b
 553|0||a|b
 223|2||a|b
@@ -20,12 +19,39 @@ statement error
 590|0||a|b
 239|0||a|b
 445|28||a|b
+
+query IIITT rowsort
 select * from my_test
+----
+123
+0
+NULL
+a
+b
+239
+0
+NULL
+a
+b
+445
+28
+NULL
+a
+b
+590
+0
+NULL
+a
+b
+823
+3
+NULL
+a
+b
 
 statement ok
 COPY 9 RECORDS INTO my_test FROM stdin USING DELIMITERS '|',E'\n' NULL as ''
-
-statement error
+<COPY_INTO_DATA>
 123|1||a|b
 553|0||a|b
 223|2||a|b
@@ -35,8 +61,82 @@ statement error
 590|0||a|b
 239|0||a|b
 445|28||a|b
+
+query IIITT rowsort
 select * from my_test
+----
+123
+0
+NULL
+a
+b
+123
+0
+NULL
+a
+b
+123
+0
+NULL
+a
+b
+123
+1
+NULL
+a
+b
+223
+2
+NULL
+a
+b
+239
+0
+NULL
+a
+b
+239
+0
+NULL
+a
+b
+445
+28
+NULL
+a
+b
+445
+28
+NULL
+a
+b
+553
+0
+NULL
+a
+b
+590
+0
+NULL
+a
+b
+590
+0
+NULL
+a
+b
+823
+3
+NULL
+a
+b
+823
+3
+NULL
+a
+b
 
 statement ok
 DROP   TABLE my_test 
+
 
