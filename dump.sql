@@ -7,6 +7,20 @@ CREATE FUNCTION ENI (s STRING) RETURNS STRING BEGIN RETURN I(SQ(s)); END;
 
 CREATE FUNCTION comment_on(ob STRING, id STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, '\nCOMMENT ON ' || ob ||  ' ' || id || ' IS ' || SQ(r) || ';', ''); END;
 
+--TODO expand dump_column_definition functionality
+CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
+	RETURN
+		SELECT 
+			GROUP_CONCAT(DQ(c.name) || ' ' || c.type || ifthenelse(c."null" = 'false', ' NOT NULL ', ''), ', ')
+			--c.type_digits,
+			--c.type_scale,
+			--c.null,
+			--c.default,
+			--c.number
+		FROM sys._columns c 
+		WHERE c.table_id = tid;
+	END;
+
 CREATE FUNCTION dump_database(describe BOOLEAN)
 RETURNS STRING
 BEGIN
@@ -76,6 +90,7 @@ BEGIN
         SET grant_user_priviledges = '';
     END IF;
 
+
 	declare create_sequences STRING;
 	SET create_sequences  = (
 		SELECT GROUP_CONCAT('CREATE SEQUENCE ' || DQ(sch.name) || '.' || DQ(seq.name) || ' AS INTEGER;' || 
@@ -83,6 +98,33 @@ BEGIN
 		FROM sys.schemas sch,
 			sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id
 		WHERE sch.id = seq.schema_id);
+
+    IF create_sequences IS NULL THEN
+        SET create_sequences = '';
+    END IF;
+
+	declare create_tables STRING;
+    set create_tables = (
+		SELECT GROUP_CONCAT('CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || ';', '\n')
+		FROM sys.schemas s, table_types ts, sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id
+		WHERE t.type IN (0, 6)
+			AND t.system = FALSE
+			AND s.id = t.schema_id
+			AND ts.table_type_id = t.type
+			AND s.name <> 'tmp');
+
+    IF create_tables IS NULL THEN
+        SET create_tables = '';
+    END IF;
+
+	--TODO where are the parenthesis in the column definition.
+	--TODO COLUMN DEFINITIONS
+	--TODO COMMENTS ON TABLE
+	--TODO functions
+	--TODO REMOTE TABLE
+	--TODO PARTITION TABLE
+	--TODO CREATE INDEX + COMMENT
+	--TODO User Defined Types?
 
     RETURN 
         'START TRANSACTION;\n' ||
@@ -92,7 +134,7 @@ BEGIN
         alter_users || '\n' ||
         grant_user_priviledges || '\n' ||
         create_sequences || '\n' ||
-		--create_tables || '\n' ||
+		create_tables || '\n' ||
         'COMMIT;';
 
 END;
