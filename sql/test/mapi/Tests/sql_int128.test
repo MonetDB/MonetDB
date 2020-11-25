@@ -11,7 +11,7 @@ query T python .explain.function_histogram
 explain UPDATE mytest SET a = 1234567890987654321
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -35,7 +35,7 @@ query T python .explain.function_histogram
 explain UPDATE mytest SET b = 10000000000
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -59,7 +59,7 @@ query T python .explain.function_histogram
 explain UPDATE mytest SET c = a * b
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -81,7 +81,7 @@ query T python .explain.function_histogram
 explain UPDATE mytest SET d = c * b
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -103,7 +103,7 @@ query T python .explain.function_histogram
 explain UPDATE mytest SET e = d + a
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -163,7 +163,7 @@ query T python .explain.function_histogram
 explain INSERT INTO sql_int128 VALUES (123456789098765432101234567890987654321)
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
