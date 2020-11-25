@@ -1,4 +1,7 @@
 import os, socket, sys, tempfile
+
+from MonetDBtesting.sqltest import SQLTestCase
+
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -13,28 +16,7 @@ def freeport():
 
 def server_stop(s):
     out, err = s.communicate()
-    sys.stdout.write(out)
     sys.stderr.write(err)
-
-def client(input):
-    with process.client('sql', port=myport, dbname='db1', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
-        out, err = c.communicate(input)
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-script1 = '''\
-create table "something" (a int);\
-alter table "something" rename to "newname";\
-insert into "newname" values (1);\
-select "a" from "newname";
-'''
-
-script2 = '''\
-select "name" from sys.tables where "name" = 'newname';\
-insert into "newname" values (2);\
-select "a" from "newname";\
-drop table "newname";
-'''
 
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
@@ -44,11 +26,21 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin = process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        client(script1)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
+            tc.execute('create table "something" (a int);').assertSucceeded()
+            tc.execute('alter table "something" rename to "newname";').assertSucceeded()
+            tc.execute('insert into "newname" values (1);').assertSucceeded().assertRowCount(1)
+            tc.execute('select "a" from "newname";').assertSucceeded().assertDataResultMatch([(1,)])
         server_stop(s)
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        client(script2)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
+            tc.execute('select "name" from sys.tables where "name" = \'newname\';').assertSucceeded()
+            tc.execute('insert into "newname" values (2);').assertSucceeded().assertRowCount(1)
+            tc.execute('select "a" from "newname";').assertSucceeded().assertDataResultMatch([(1,),(2,)])
+            tc.execute('drop table "newname";').assertSucceeded()
         server_stop(s)
