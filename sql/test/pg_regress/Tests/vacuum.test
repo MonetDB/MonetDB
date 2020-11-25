@@ -71,10 +71,8 @@ select "schema", "table", "column", type, count, typewidth, columnsize, heapsize
 ----
 11 values hashing to cb42c97271c0549d5d22e21760173195
 
-query TTTTIIIIIIT rowsort
+statement ok
 call vacuum(current_schema, 'vactst')
-----
-11 values hashing to cb42c97271c0549d5d22e21760173195
 
 query TTTTIIIIIIT rowsort
 select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
@@ -173,10 +171,8 @@ select "schema", "table", "column", type, count, typewidth, columnsize, heapsize
 ----
 11 values hashing to 7fc5b1d0f53242d03fe8b11e960e3249
 
-query TTTTIIIIIIT rowsort
+statement ok
 call vacuum(current_schema, 'vactst')
-----
-11 values hashing to 7fc5b1d0f53242d03fe8b11e960e3249
 
 query TTTTIIIIIIT rowsort
 select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')

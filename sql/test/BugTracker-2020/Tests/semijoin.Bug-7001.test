@@ -18,11 +18,8 @@ select distinct name from t where r in (select n from i)
 prod
 sum
 
-query T rowsort
+statement ok
 call profiler.stoptrace()
-----
-prod
-sum
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%cross%'

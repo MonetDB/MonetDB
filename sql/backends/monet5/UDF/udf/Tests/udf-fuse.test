@@ -35,10 +35,8 @@ select fuse(1,2)
 ----
 258
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-258
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.fuse%'
@@ -55,20 +53,16 @@ select fuse(1,2)
 ----
 258
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-258
 
 query I rowsort
 select fuse(1000,2000)
 ----
 65538000
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-65538000
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.fuse%'
@@ -85,20 +79,16 @@ select fuse(1000,2000)
 ----
 65538000
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-65538000
 
 query I rowsort
 select fuse(1000000,2000000)
 ----
 4294967298000000
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-4294967298000000
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.fuse%'
@@ -115,10 +105,8 @@ select fuse(1000000,2000000)
 ----
 4294967298000000
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-4294967298000000
 
 query I rowsort
 select fuse(a,b) from udf_fuse
@@ -128,13 +116,8 @@ select fuse(a,b) from udf_fuse
 258
 772
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-1286
-1800
-258
-772
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.fuse%'
@@ -154,13 +137,8 @@ select fuse(a,b) from udf_fuse
 258
 772
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-1286
-1800
-258
-772
 
 query I rowsort
 select fuse(c,d) from udf_fuse
@@ -170,13 +148,8 @@ select fuse(c,d) from udf_fuse
 458760000
 65538000
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-196612000
-327686000
-458760000
-65538000
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.fuse%'
@@ -196,13 +169,8 @@ select fuse(c,d) from udf_fuse
 458760000
 65538000
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-196612000
-327686000
-458760000
-65538000
 
 query I rowsort
 select fuse(e,f) from udf_fuse
@@ -212,13 +180,8 @@ select fuse(e,f) from udf_fuse
 30064771080000000
 4294967298000000
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-12884901892000000
-21474836486000000
-30064771080000000
-4294967298000000
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.fuse%'

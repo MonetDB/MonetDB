@@ -18,9 +18,8 @@ query IITT rowsort
 select * from sys.rejects
 ----
 
-query IITT rowsort
+statement ok
 call sys.clearrejects()
-----
 
 statement ok
 delete from t_int
@@ -41,9 +40,8 @@ query IITT rowsort
 select * from sys.rejects
 ----
 
-query IITT rowsort
+statement ok
 call sys.clearrejects()
-----
 
 statement ok
 delete from t_int
@@ -69,13 +67,8 @@ select * from sys.rejects
 line 2 field i 'int' expected in '5.1'
 5.1@
 
-query IITT rowsort
+statement ok
 call sys.clearrejects()
-----
-2
-1
-line 2 field i 'int' expected in '5.1'
-5.1@
 
 statement ok
 delete from t_int
@@ -111,21 +104,8 @@ null@
 line 5 field i 'int' expected in 'abc'
 abc@
 
-query IITT rowsort
+statement ok
 call sys.clearrejects()
-----
-2
-1
-line 2 field i 'int' expected in 'nil'
-nil@
-4
-1
-line 4 field i 'int' expected in 'null'
-null@
-5
-1
-line 5 field i 'int' expected in 'abc'
-abc@
 
 statement ok
 delete from t_int

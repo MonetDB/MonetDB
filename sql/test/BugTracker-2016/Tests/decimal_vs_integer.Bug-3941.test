@@ -21,10 +21,8 @@ select count(*) from tmp where i = 20160222
 ----
 0
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-0
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.int%' or stmt like '%batcalc.lng%'
@@ -36,20 +34,16 @@ select count(*) from tmp where i = 20160222
 ----
 0
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-0
 
 query I rowsort
 select count(*) from tmp where i = '20160222'
 ----
 0
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-0
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.int%' or stmt like '%batcalc.lng%'
@@ -61,20 +55,16 @@ select count(*) from tmp where i = '20160222'
 ----
 0
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-0
 
 query I rowsort
 select count(*) from tmp where i = 201602221
 ----
 0
 
-query I rowsort
+statement ok
 call profiler.stoptrace()
-----
-0
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.int%'

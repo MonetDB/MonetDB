@@ -9,82 +9,26 @@ default_pipe
 0
 0
 
-query ITTIIII rowsort
+statement ok
 call setoptimizer('minimal_pipe')
-----
-0
-monetdb
-default_pipe
-0
-0
-0
-0
 
-query ITTIIII rowsort
+statement ok
 call setsessiontimeout(5000)
-----
-0
-monetdb
-default_pipe
-0
-0
-0
-0
 
-query ITTIIII rowsort
+statement ok
 call setquerytimeout(123)
-----
-0
-monetdb
-default_pipe
-0
-0
-0
-0
 
-query ITTIIII rowsort
+statement ok
 call setworkerlimit(12)
-----
-0
-monetdb
-default_pipe
-0
-0
-0
-0
 
-query ITTIIII rowsort
+statement ok
 call setmemorylimit(8000)
-----
-0
-monetdb
-default_pipe
-0
-0
-0
-0
 
-query ITTIIII rowsort
+statement ok
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
-----
-0
-monetdb
-minimal_pipe
-5000
-123
-12
-8000
 
-query ITTIIII rowsort
+statement ok
 call setoptimizer('')
-----
-0
-monetdb
-minimal_pipe
-5000
-123
-12
-8000
 
 statement error
 call setsessiontimeout(-1)
@@ -95,16 +39,8 @@ call setquerytimeout(-1)
 statement error
 call setworkerlimit( -1)
 
-query ITTIIII rowsort
+statement ok
 call setmemorylimit(10)
-----
-0
-monetdb
-minimal_pipe
-5000
-123
-12
-8000
 
 query ITTIIII rowsort
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
@@ -117,60 +53,20 @@ monetdb
 12
 10
 
-query ITTIIII rowsort
+statement ok
 call setoptimizer(0, 'sequential_pipe')
-----
-0
-monetdb
-(empty)
-5000
-123
-12
-10
 
-query ITTIIII rowsort
+statement ok
 call setsessiontimeout(0, 1000)
-----
-0
-monetdb
-(empty)
-5000
-123
-12
-10
 
-query ITTIIII rowsort
+statement ok
 call setquerytimeout(0, 60)
-----
-0
-monetdb
-(empty)
-5000
-123
-12
-10
 
-query ITTIIII rowsort
+statement ok
 call setworkerlimit(0,8)
-----
-0
-monetdb
-(empty)
-5000
-123
-12
-10
 
-query ITTIIII rowsort
+statement ok
 call setmemorylimit(2000)
-----
-0
-monetdb
-(empty)
-5000
-123
-12
-10
 
 query ITTIIII rowsort
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
@@ -183,15 +79,6 @@ sequential_pipe
 8
 2000
 
-query ITTIIII rowsort
+statement ok
 call setoptimizer(0, 'default_pipe')
-----
-0
-monetdb
-sequential_pipe
-1000
-60
-8
-2000
-
 
