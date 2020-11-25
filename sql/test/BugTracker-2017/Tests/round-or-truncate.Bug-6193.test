@@ -37,20 +37,22 @@ insert into testdec values (-0.12341)
 statement ok
 insert into testdec values (-0.12347)
 
-statement error
+statement ok
 prepare insert into testdec (testdec) values (?)
 
-statement error
+statement ok
 exec ** (-0.12341)
 
-statement error
+statement ok
 exec ** (-0.12347)
 
-query R rowsort
+query R nosort
 select * from testdec
 ----
--0.123
--0.123
+-0.1234
+-0.1235
+-0.1234
+-0.1235
 
 query I rowsort
 select cast(13.8 as int)
