@@ -4,7 +4,7 @@ Test if server doesn't crash when remote and local table definitions do not matc
 Current result is an mal error (compilation failed)
 """
 
-import os, socket, pymonetdb, threading, tempfile
+import os, sys, socket, pymonetdb, threading, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -100,6 +100,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
             try:
                 c.execute("select * from " + shardtable + workers[0]['tpf'] )
+                sys.stderr.write('Exception expected')
             except pymonetdb.OperationalError as e:
                 if 'Parameter 1 has wrong SQL type, expected int, but got bigint instead' not in str(e):
                    print(str(e))

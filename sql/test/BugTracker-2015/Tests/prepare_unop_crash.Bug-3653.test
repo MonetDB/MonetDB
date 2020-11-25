@@ -1,4 +1,4 @@
-statement error
+statement ok
 PREPARE SELECT id FROM tables WHERE name = LOWER(?)
 
 

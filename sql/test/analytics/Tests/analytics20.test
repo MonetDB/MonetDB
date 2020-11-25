@@ -13,4 +13,25 @@ create table stressme (aa varchar(64), bb int)
 statement ok
 insert into stressme values ('one', 1), ('another', 1), ('stress', 1), (NULL, 2), ('ok', 2), ('check', 3), ('me', 3), ('please', 3), (NULL, 4)
 
+statement ok
+prepare select count(*) over (rows ? preceding) from analytics
+
+statement ok
+exec **(2)
+
+statement ok
+prepare select max(aa) over (rows between 5 preceding and ? following) from stressme
+
+statement ok
+exec **(2)
+
+statement ok
+prepare select max(aa) over (order by bb range between ? preceding and 10 following) from stressme
+
+statement ok
+exec **(2)
+
+statement ok
+rollback
+
 

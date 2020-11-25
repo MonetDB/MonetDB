@@ -11,19 +11,19 @@ on source.id=target.id and source.timeid=target.timeid
 when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume)
 ----
 
-statement error
+statement ok
 exec **()
 
-statement error
+statement ok
 exec **()
 
-statement error
+statement ok
 prepare merge into test.share_daily_history as target
 using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
 on source.id=target.id and source.timeid=target.timeid
 when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume)
 
-statement error
+statement ok
 exec **(1,2,3,4,5,6)
 
 statement error
@@ -31,14 +31,14 @@ prepare select * from test.share_daily_history
 inner join (values('BHP',?,?,?,?,?,?)) as source(id,timeid,c1,c2,c3,c4,volume)
 on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid; --error
 
-statement error
+statement ok
 prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)
 on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid
 
 statement error
 exec **()
 
-statement error
+statement ok
 prepare select * from test.share_daily_history
 inner join (values('BHP')) as source(id)
 on source.id=share_daily_history.id
@@ -46,36 +46,36 @@ on source.id=share_daily_history.id
 statement error
 exec **(1)
 
-statement error
+statement ok
 prepare select * from test.share_daily_history
 inner join (values(?), ('BHP')) as source(id)
 on source.id=share_daily_history.id
 
-statement error
+statement ok
 exec **('a')
 
-statement error
+statement ok
 prepare select * from test.share_daily_history
 inner join (values('BHP'), (?)) as source(id)
 on source.id=share_daily_history.id
 
-statement error
+statement ok
 exec **('a')
 
-statement error
+statement ok
 prepare select * from test.share_daily_history
 inner join (values(?)) as source(id)
 on source.id=share_daily_history.id
 
-statement error
+statement ok
 exec **('a')
 
-statement error
+statement ok
 prepare select * from test.share_daily_history
 inner join (values(?),(?),(?)) as source(id)
 on source.id=share_daily_history.id
 
-statement error
+statement ok
 exec **('a','b','c')
 
 statement ok

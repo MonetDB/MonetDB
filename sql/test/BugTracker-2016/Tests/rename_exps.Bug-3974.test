@@ -1,7 +1,7 @@
 statement ok
 create table foo (a int, b int)
 
-statement error
+statement ok
 prepare select count(b) from (select a,b from foo union all select null,null from foo) t
 
 statement ok
