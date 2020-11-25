@@ -8,7 +8,11 @@ statement error
 COPY 1 RECORDS INTO whatgoodisadatabaseifyoucannotimport FROM STDIN USING DELIMITERS ' ', E'\n', ''
 <COPY_INTO_DATA>
 asdf\ 42
-SELECT * FROM whatgoodisadatabaseifyoucannotimport;
-ROLLBACK;
+
+statement error
+SELECT * FROM whatgoodisadatabaseifyoucannotimport
+
+statement ok
+ROLLBACK
 
 

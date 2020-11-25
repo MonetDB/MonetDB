@@ -21,7 +21,9 @@ statement ok
 COPY 1 RECORDS INTO "sys"."c__has_a" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 NULL	NULL	NULL	"SIMPLE"	4	"simpleclass"
-COMMIT;
+
+statement ok
+COMMIT
 
 query TITTIT rowsort
 select * from c__has_a where owner_table is null and property_table='SIMPLE' and property_id = 4
