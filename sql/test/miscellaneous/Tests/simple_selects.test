@@ -670,6 +670,42 @@ statement ok
 start transaction
 
 statement ok
+create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end
+
+query I rowsort
+select ups()
+----
+2
+
+statement ok
+create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; end
+
+query I rowsort
+select ups()
+----
+1
+
+statement ok
+create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; end
+
+query I rowsort
+select ups()
+----
+3
+
+statement error
+create or replace function ups() returns int begin if 1 > 1 then return 1; end if; end
+
+statement ok
+rollback
+
+statement error
+create or replace function ups() returns int begin declare a int; while 1 = 1 do set a = 2; end while; end
+
+statement ok
+start transaction
+
+statement ok
 create function "😀"() returns int return 1
 
 query I rowsort

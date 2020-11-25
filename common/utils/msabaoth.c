@@ -653,7 +653,7 @@ msab_pickSecret(char **generated_secret)
 	}
 
 	if (generated_secret)
-		*generated_secret = (char*)secret;
+		*generated_secret = secret;
 	else
 		free(secret);
 	return NULL;
@@ -681,39 +681,6 @@ msab_getMyStatus(sabdb** ret)
 
 #define MAINTENANCEFILE ".maintenance"
 
-#ifndef WIN32
-/* returns pid of the process holding the gdk lock, or 0 if that is not possible.
- * 'not possible' could be for a variety of reasons.
- */
-static pid_t
-MT_get_locking_pid(const char *filename)
-{
-#if !defined(HAVE_FCNTL) || !defined(HAVE_F_GETLK)
-	(void)filename;
-	return 0;
-#else
-	int fd;
-	struct flock fl = {
-		.l_type = F_WRLCK,
-		.l_whence = SEEK_SET,
-		.l_start = 4,
-		.l_len = 1,
-	};
-	pid_t pid = 0;
-
-	fd = open(filename, O_RDONLY | O_CLOEXEC, 0);
-	if (fd < 0)
-		return 0;
-
-	if (fcntl(fd, F_GETLK, &fl) == 0)
-		pid = fl.l_pid;
-
-	close(fd);
-	return pid;
-#endif
-}
-#endif
-
 static sabdb *
 msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 {
@@ -732,11 +699,9 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		return next;
 
 	sdb = malloc(sizeof(sabdb));
-	*sdb = (sabdb) { 0 };
-	sdb->uplog = NULL;
-	sdb->uri = NULL;
-	sdb->secret = NULL;
-	sdb->next = next;
+	*sdb = (sabdb) {
+		.next = next,
+	};
 
 	/* store the database name */
 	snprintf(buf, sizeof(buf), "%s/%s", pathbuf, dbname);
@@ -788,8 +753,13 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		sdb->state = SABdbInactive;
 	} else if (fd == -1) {
 #ifndef WIN32
-		/* file is locked, so mserver is running. can we find it? */
-		sdb->pid = MT_get_locking_pid(buf);
+		/* extract process ID from lock file */
+		if ((f = fopen(buf, "r")) != NULL) {
+			int pid;
+			if (fscanf(f, "USR=%*d PID=%d TIME=", &pid) == 1)
+				sdb->pid = pid;
+			fclose(f);
+		}
 #endif
 		/* see if the database has finished starting */
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);

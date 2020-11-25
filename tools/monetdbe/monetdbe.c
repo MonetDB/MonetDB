@@ -644,6 +644,7 @@ static bool urls_matches(const char* l, const char* r) {
 
 static int
 monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_options *opts) {
+	assert(opts);
 
 	monetdbe_remote* remote = opts->remote;
 	if (!remote) {
@@ -724,7 +725,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 	mdbe->msg = NULL;
 	mdbe->c = NULL;
 
-	bool is_remote = opts->remote != NULL;
+	bool is_remote = (opts && (opts->remote != NULL));
 	if (!monetdbe_embedded_initialized) {
 		/* When used as a remote mapi proxy,
 		 * it is still necessary to have an initialized monetdbe. E.g. for BAT life cycle management.
