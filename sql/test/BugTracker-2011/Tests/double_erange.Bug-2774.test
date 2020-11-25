@@ -123,12 +123,82 @@ insert into d2774 values (330,1e-330)
 query IR rowsort
 select * from f2774
 ----
-36 values hashing to 2580a73880058494c11dd3c3af9965f7
+300
+0.000
+302
+0.000
+304
+0.000
+306
+0.000
+307
+0.000
+308
+0.000
+310
+0.000
+312
+0.000
+314
+0.000
+316
+0.000
+318
+0.000
+320
+0.000
+322
+0.000
+323
+0.000
+324
+0.000
+326
+0.000
+328
+0.000
+330
+0.000
 
 query IR rowsort
 select * from d2774
 ----
-36 values hashing to 2580a73880058494c11dd3c3af9965f7
+300
+0.000
+302
+0.000
+304
+0.000
+306
+0.000
+307
+0.000
+308
+0.000
+310
+0.000
+312
+0.000
+314
+0.000
+316
+0.000
+318
+0.000
+320
+0.000
+322
+0.000
+323
+0.000
+324
+0.000
+326
+0.000
+328
+0.000
+330
+0.000
 
 statement ok
 delete from f2774
@@ -146,8 +216,7 @@ select * from d2774
 
 statement ok
 copy 18 records into f2774 from stdin using delimiters ',',E'\n'
-
-statement error
+<COPY_INTO_DATA>
 300,1e-300
 302,1e-302
 304,1e-304
@@ -166,9 +235,10 @@ statement error
 326,1e-326
 328,1e-328
 330,1e-330
+
+statement ok
 copy 18 records into d2774 from stdin using delimiters ',',E'\n'
-
-statement error
+<COPY_INTO_DATA>
 300,1e-300
 302,1e-302
 304,1e-304
@@ -187,11 +257,86 @@ statement error
 326,1e-326
 328,1e-328
 330,1e-330
+
+query IR rowsort
 select * from f2774
+----
+300
+0.000
+302
+0.000
+304
+0.000
+306
+0.000
+307
+0.000
+308
+0.000
+310
+0.000
+312
+0.000
+314
+0.000
+316
+0.000
+318
+0.000
+320
+0.000
+322
+0.000
+323
+0.000
+324
+0.000
+326
+0.000
+328
+0.000
+330
+0.000
 
 query IR rowsort
 select * from d2774
 ----
+300
+0.000
+302
+0.000
+304
+0.000
+306
+0.000
+307
+0.000
+308
+0.000
+310
+0.000
+312
+0.000
+314
+0.000
+316
+0.000
+318
+0.000
+320
+0.000
+322
+0.000
+323
+0.000
+324
+0.000
+326
+0.000
+328
+0.000
+330
+0.000
 
 statement ok
 delete from f2774
@@ -209,8 +354,7 @@ select * from d2774
 
 statement ok
 copy 9 records into f2774 from stdin using delimiters ',',E'\n'
-
-statement error
+<COPY_INTO_DATA>
 300,1e-300
 302,1e-302
 304,1e-304
@@ -220,9 +364,10 @@ statement error
 326,1e-326
 328,1e-328
 330,1e-330
+
+statement ok
 copy 9 records into d2774 from stdin using delimiters ',',E'\n'
-
-statement error
+<COPY_INTO_DATA>
 300,1e-300
 302,1e-302
 304,1e-304
@@ -232,11 +377,50 @@ statement error
 326,1e-326
 328,1e-328
 330,1e-330
+
+query IR rowsort
 select * from f2774
+----
+300
+0.000
+302
+0.000
+304
+0.000
+306
+0.000
+307
+0.000
+324
+0.000
+326
+0.000
+328
+0.000
+330
+0.000
 
 query IR rowsort
 select * from d2774
 ----
+300
+0.000
+302
+0.000
+304
+0.000
+306
+0.000
+307
+0.000
+324
+0.000
+326
+0.000
+328
+0.000
+330
+0.000
 
 statement ok
 drop table f2774
