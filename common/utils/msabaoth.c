@@ -653,7 +653,7 @@ msab_pickSecret(char **generated_secret)
 	}
 
 	if (generated_secret)
-		*generated_secret = (char*)secret;
+		*generated_secret = secret;
 	else
 		free(secret);
 	return NULL;

@@ -500,7 +500,6 @@ int yydebug=1;
 	table_element_list
 	table_exp
 	table_function_column_list
-	table_opt_storage
 	table_ref_commalist
 	trigger_procedure_statement_list
 	triggered_action
@@ -1496,13 +1495,8 @@ opt_encrypted:
  |  ENCRYPTED		{ $$ = SQL_PW_ENCRYPTED; }
  ;
 
-table_opt_storage:
-    /* empty */		 { $$ = NULL; }
- |  STORAGE ident string { $$ = append_string(append_string(L(), $2), $3); } 
- ;
-
 table_def:
-    TABLE if_not_exists qname table_content_source table_opt_storage
+    TABLE if_not_exists qname table_content_source
 	{ int commit_action = CA_COMMIT;
 	  dlist *l = L();
 
@@ -1513,7 +1507,6 @@ table_def:
 	  append_string(l, NULL);
 	  append_list(l, NULL);
 	  append_int(l, $2);
-	  append_list(l, $5);
 	  append_symbol(l, NULL); /* only used for merge table */
 	  $$ = _symbol_create_list( SQL_CREATE_TABLE, l ); }
  |  TABLE if_not_exists qname FROM sqlLOADER func_ref
