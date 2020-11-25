@@ -29,7 +29,8 @@ cursor.execute('''
 start transaction;
 create table utf8bom (city string,id integer);
 ''')
-cursor.execute("copy into utf8bom from r'%s' using delimiters ',',E'\\n','\"';" % os.path.join(TSTTRGDIR, 'utf8bom.csv'))
+if cursor.execute("copy into utf8bom from r'%s' using delimiters ',',E'\\n','\"';" % os.path.join(TSTTRGDIR, 'utf8bom.csv')) != 2:
+    sys.stderr.write("Expected 2 rows inserted")
 cursor.execute("select * from utf8bom order by id;")
 if cursor.fetchall() != [('Montréal', 1621), ('New York', 8392)]:
     sys.stderr.write("Expected [('Montréal', 1621), ('New York', 8392)]")

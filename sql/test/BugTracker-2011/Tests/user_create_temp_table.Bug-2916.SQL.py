@@ -13,6 +13,7 @@ client = pymonetdb.connect(database=db, port=port, autocommit=True, username='t'
 cursor = client.cursor()
 try:
     cursor.execute('CREATE GLOBAL TEMPORARY TABLE TempTable (i int)')
+    sys.stderr.write('Exception expected')
 except Exception as ex:
     if 'insufficient privileges for user \'t\' in schema \'tmp\'' not in ex.__str__():
         sys.stderr.write(ex.__str__())
