@@ -67,7 +67,7 @@ alter-sequence
 restart-sequence
 create_in_schema
 
-null-byte-hang
+HAVE_PYMONETDB?null-byte-hang
 orderby_limit
 orderby_non_selection_column
 
