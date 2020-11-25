@@ -6,8 +6,7 @@ CREATE TABLE "sys"."lit" (
 
 statement ok
 COPY 10000 RECORDS INTO "sys"."lit" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-
-statement error
+<COPY_INTO_DATA>
 21168.23	"N"
 45983.16	"N"
 13309.60	"N"
@@ -10008,104 +10007,124 @@ statement error
 26654.74	"N"
 61475.78	"N"
 47779.50	"A"
+
+query R rowsort
 select quantile(l_extendedprice,0.5) from lit
+----
+36724.500
 
 query R rowsort
 select median(l_extendedprice) from lit
 ----
-NULL
+36724.500
 
 query R rowsort
 select quantile(l_extendedprice,0.0) from lit
 ----
-NULL
+947.020
 
 query R rowsort
 select quantile(l_extendedprice,1.0) from lit
 ----
-NULL
+103149.000
 
 query RRR rowsort
 select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit
 ----
-NULL
-NULL
-NULL
+4200.320
+36724.500
+79584.120
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,-1.0) from lit
-----
-NULL
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,-1) from lit
-----
-NULL
 
 query R rowsort
 select quantile(l_extendedprice,1) from lit
 ----
-NULL
+103149.000
 
 query R rowsort
 select quantile(l_extendedprice,0) from lit
 ----
-NULL
+947.020
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,42) from lit
-----
-NULL
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,42.0) from lit
-----
-NULL
 
 query R rowsort
 select quantile(l_extendedprice,0.5) from lit group by l_returnflag
 ----
+35937.880
+36960.680
+37144.200
 
 query R rowsort
 select median(l_extendedprice) from lit group by l_returnflag
 ----
+35937.880
+36960.680
+37144.200
 
 query R rowsort
 select quantile(l_extendedprice,0.0) from lit group by l_returnflag
 ----
+1012.090
+1027.010
+947.020
 
 query R rowsort
 select quantile(l_extendedprice,1.0) from lit group by l_returnflag
 ----
+100248.500
+101896.500
+103149.000
 
 query RRR rowsort
 select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit  group by l_returnflag
 ----
+3889.960
+37144.200
+79010.100
+4204.470
+35937.880
+78572.760
+4424.440
+36960.680
+80045.910
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,-1.0) from lit group by l_returnflag
-----
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,-1) from lit group by l_returnflag
-----
 
 query R rowsort
 select quantile(l_extendedprice,1) from lit group by l_returnflag
 ----
+100248.500
+101896.500
+103149.000
 
 query R rowsort
 select quantile(l_extendedprice,0) from lit group by l_returnflag
 ----
+1012.090
+1027.010
+947.020
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,42) from lit group by l_returnflag
-----
 
-query R rowsort
+statement error
 select quantile(l_extendedprice,42.0) from lit group by l_returnflag
-----
 
 statement ok
 drop table lit
+
 
