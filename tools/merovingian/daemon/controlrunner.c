@@ -351,6 +351,7 @@ static void ctl_handle_client(
 				dpair dp;
 				/* we need to find the right dpair, that is we
 				 * sort of assume the control signal is right */
+				bool topdb_locked = true;
 				pthread_mutex_lock(&_mero_topdp_lock);
 				dp = _mero_topdp->next; /* don't need the console/log */
 				while (dp != NULL) {
@@ -363,6 +364,7 @@ static void ctl_handle_client(
 						}
 						if (strcmp(p, "stop") == 0) {
 							mtype type = dp->type;
+							topdb_locked = false;
 							pthread_mutex_unlock(&_mero_topdp_lock);
 							/* Try to shutdown the profiler before the DB.
 							 * If we are unable to shutdown the profiler, we
@@ -394,9 +396,9 @@ static void ctl_handle_client(
 					} else if (dp->type == MEROFUN && strcmp(dp->dbname, q) == 0) {
 						/* multiplexDestroy needs topdp lock to remove itself */
 						char *dbname = strdup(dp->dbname);
+						topdb_locked = false;
 						pthread_mutex_unlock(&_mero_topdp_lock);
 						multiplexDestroy(dbname);
-						pthread_mutex_lock(&_mero_topdp_lock);
 						free(dbname);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send_client("=");
@@ -405,7 +407,8 @@ static void ctl_handle_client(
 
 					dp = dp->next;
 				}
-				pthread_mutex_unlock(&_mero_topdp_lock);
+				if (topdb_locked)
+					pthread_mutex_unlock(&_mero_topdp_lock);
 				if (dp == NULL) {
 					Mfprintf(_mero_ctlerr, "%s: received stop signal for "
 							"non running database: %s\n", origin, q);
