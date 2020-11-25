@@ -147,7 +147,7 @@ class SQLTestResult(object):
     def assertFailed(self, err_code=None, err_message=None):
         """assert on query failed with optional err_code if provided"""
         if self.query_error is None:
-            msg = "expected to fail but didn't\n{}".format(str(self.query_error))
+            msg = "expected to fail but didn't"
             self.fail(msg)
         else:
             err_code_received, err_msg_received = utils.parse_mapi_err_msg(self.query_error.args[0])

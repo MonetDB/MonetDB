@@ -1,10 +1,10 @@
-statement error
+statement ok
 prepare select count(*) from _tables having count(*) = ?
 
-statement error
+statement ok
 exec **(1)
 
-statement error
+statement ok
 exec **(2.3)
 
 

@@ -10,8 +10,7 @@ CREATE TABLE "sys"."sensor_readings" (
 
 statement ok
 COPY 20 RECORDS INTO "sensor_readings" FROM STDIN USING DELIMITERS ',',E'\n'
-
-statement error
+<COPY_INTO_DATA>
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:10.000000,L318,temperature,27.56
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:12.000000,L318,temperature,27.5
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:13.000000,L318,temperature,27.56
@@ -32,6 +31,8 @@ statement error
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:31.000000,L318,temperature,27.5
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:33.000000,L318,temperature,27.5
 127.0.0.1,2010-08-25 14:56:12.000000,2010-07-15 13:56:34.000000,L318,temperature,27.5
+
+query TTRR rowsort
 SELECT location,
        CAST(SUBSTRING(emit_time, 0, 16) AS VARCHAR(16)) AS "time",
        MAX(CAST(value AS NUMERIC(5,2))) AS maxtemp,
@@ -41,6 +42,11 @@ WHERE type LIKE 'temperature'
   AND emit_time BETWEEN '2010-07-10' AND '2010-07-20'
 GROUP BY location,
          "time" HAVING MAX(CAST(value AS NUMERIC(5,2))) - MIN(CAST(value AS NUMERIC(5,2))) > 0.05
+----
+L318
+2010-07-15 13:56
+27.560
+27.500
 
 statement ok
 DROP TABLE "sys"."sensor_readings"

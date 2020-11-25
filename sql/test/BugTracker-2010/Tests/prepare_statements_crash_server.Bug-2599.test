@@ -1,16 +1,16 @@
 statement ok
 create table t_2599 (a int, b int)
 
-statement error
+statement ok
 prepare select * from t_2599 where a>1+?
 
-statement error
+statement ok
 prepare select * from t_2599 where a>2*?+1
 
-statement error
+statement ok
 prepare select * from t_2599 where a>?+1
 
-statement error
+statement ok
 prepare select * from t_2599 where a>1+?*2
 
 statement ok
