@@ -144,16 +144,24 @@ class SQLTestResult(object):
                 print('', file=err_file)
             print('', file=err_file)
 
-    def assertFailed(self, err_code=None):
+    def assertFailed(self, err_code=None, err_message=None):
         """assert on query failed with optional err_code if provided"""
         if self.query_error is None:
             msg = "expected to fail but didn't\n{}".format(str(self.query_error))
             self.fail(msg)
         else:
-            if err_code:
-                err_code_received, err_msg_received = utils.parse_mapi_err_msg(self.query_error.args[0])
+            err_code_received, err_msg_received = utils.parse_mapi_err_msg(self.query_error.args[0])
+            if err_code and err_message:
+                if err_code != err_code_received or err_message.lower() != err_msg_received.lower():
+                    msg = "expected to fail with error code {} and error message {} but failed with error code {} and error message {}".format(err_code, err_message, err_code_received, err_msg_received)
+                    self.fail(msg)
+            elif err_code and not err_message:
                 if err_code_received != err_code:
                     msg = "expected to fail with error code {} but failed with error code {}".format(err_code, err_code_received)
+                    self.fail(msg)
+            elif err_message and not err_code:
+                if err_message.lower() != err_msg_received.lower():
+                    msg = "expected to fail with error message {} but failed with error message {}".format(err_message, err_msg_received)
                     self.fail(msg)
         return self
 
