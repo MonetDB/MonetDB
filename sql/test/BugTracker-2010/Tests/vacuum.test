@@ -14,10 +14,8 @@ select * from vac1
 ----
 18 values hashing to e6a46c50bbc43408130880abcf0e7a45
 
-query IT rowsort
+statement ok
 call shrink('sys','vac1')
-----
-18 values hashing to e6a46c50bbc43408130880abcf0e7a45
 
 query IT rowsort
 select * from vac1
