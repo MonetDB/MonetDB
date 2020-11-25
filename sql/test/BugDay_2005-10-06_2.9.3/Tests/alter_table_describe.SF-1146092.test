@@ -232,65 +232,503 @@ NULL
 TABLE
 NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'experiment')
 ----
-40 values hashing to bea23c56e3d8d22963c579aa4490daf9
+config_id
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
+exp_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
+result_id
+int
+32
+0
+True
+NULL
+4
+INTEGER
+NULL
+table_id
+int
+32
+0
+True
+NULL
+3
+INTEGER
+NULL
+user_id
+int
+32
+0
+True
+NULL
+1
+INTEGER
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'tapestry_user')
 ----
-40 values hashing to dfac9ddacc7118748521d591e46430c5
+createdate
+date
+0
+0
+True
+NULL
+3
+DATE
+NULL
+email
+varchar
+50
+0
+True
+NULL
+2
+CHARACTER VARYING(50)
+NULL
+name
+varchar
+25
+0
+True
+NULL
+1
+CHARACTER VARYING(25)
+NULL
+passwd
+varchar
+50
+0
+True
+NULL
+4
+CHARACTER VARYING(50)
+NULL
+user_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'config')
 ----
-32 values hashing to 9c737b509370f5645b3c7003bf7e7afe
+config_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
+name
+varchar
+25
+0
+True
+NULL
+1
+CHARACTER VARYING(25)
+NULL
+sysinf_id
+int
+32
+0
+True
+NULL
+3
+INTEGER
+NULL
+target_id
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'tapestry_table')
 ----
-40 values hashing to f9f681842f9420505c7ea535176d16fc
+fast
+int
+32
+0
+True
+NULL
+4
+INTEGER
+NULL
+nrcols
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
+nrrows
+int
+32
+0
+True
+NULL
+1
+INTEGER
+NULL
+seed
+int
+32
+0
+True
+NULL
+3
+INTEGER
+NULL
+table_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'result')
 ----
-24 values hashing to 26790385b7c58a4e65ee77e0d09a9374
+description
+varchar
+256
+0
+True
+NULL
+2
+CHARACTER VARYING(256)
+NULL
+result_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
+type
+varchar
+10
+0
+True
+NULL
+1
+CHARACTER VARYING(10)
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'target')
 ----
-32 values hashing to 80c681348a26a0b3f0580f07b61ec13b
+comment
+varchar
+256
+0
+True
+NULL
+3
+CHARACTER VARYING(256)
+NULL
+name
+varchar
+50
+0
+True
+NULL
+1
+CHARACTER VARYING(50)
+NULL
+permission
+varchar
+10
+0
+True
+NULL
+2
+CHARACTER VARYING(10)
+NULL
+target_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'sysinf')
 ----
-40 values hashing to 995d392cec51ecf95553e6b7b810738e
+cpu_id
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
+disk_id
+int
+32
+0
+True
+NULL
+4
+INTEGER
+NULL
+memory_id
+int
+32
+0
+True
+NULL
+3
+INTEGER
+NULL
+platform_id
+int
+32
+0
+True
+NULL
+1
+INTEGER
+NULL
+sysinf_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'platform')
 ----
-24 values hashing to ae4fb6621853667b6c5d3d8889355f5c
+comment
+varchar
+256
+0
+True
+NULL
+2
+CHARACTER VARYING(256)
+NULL
+name
+varchar
+50
+0
+True
+NULL
+1
+CHARACTER VARYING(50)
+NULL
+platform_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'cpu')
 ----
-16 values hashing to e9c01edca119e954b6d632deffb72977
+cpu_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
+type
+varchar
+50
+0
+True
+NULL
+1
+CHARACTER VARYING(50)
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'memory')
 ----
-24 values hashing to d1110c834259b5ca5186cc6d8a01b6d2
+memory_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
+size
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
+type
+varchar
+50
+0
+True
+NULL
+1
+CHARACTER VARYING(50)
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'disk')
 ----
-24 values hashing to 018d0e4efbbe629e90a779c72664cdaa
+disk_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
+size
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
+type
+varchar
+50
+0
+True
+NULL
+1
+CHARACTER VARYING(50)
+NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'query_walk')
 ----
-64 values hashing to b4eede27f0c8cb909e47b22369b9e959
+begin_x
+int
+32
+0
+True
+NULL
+1
+INTEGER
+NULL
+begin_y
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
+end_x
+int
+32
+0
+True
+NULL
+6
+INTEGER
+NULL
+end_y
+int
+32
+0
+True
+NULL
+7
+INTEGER
+NULL
+nr_runs
+int
+32
+0
+True
+NULL
+3
+INTEGER
+NULL
+nr_steps
+int
+32
+0
+True
+NULL
+4
+INTEGER
+NULL
+step_size
+int
+32
+0
+True
+NULL
+5
+INTEGER
+NULL
+walk_id
+int
+32
+0
+False
+NULL
+0
+INTEGER
+NULL
 
 statement ok
 DROP TABLE "query_walk" CASCADE
