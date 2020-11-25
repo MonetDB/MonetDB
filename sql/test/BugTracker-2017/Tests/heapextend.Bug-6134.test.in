@@ -28,12 +28,9 @@ CREATE TABLE segment3 (id varchar(150), code varchar(150))
 statement ok
 CREATE TABLE segment4 (id varchar(150), code varchar(150))
 
-statement error
+statement ok
 COPY 431 RECORDS INTO category FROM STDIN DELIMITERS '|' , E'\n', '"'
 <COPY_INTO_DATA>
-
-
-statement error
 3273|"70"|"430"
 3274|"70"|"612"
 3275|"70"|"565"
@@ -465,17 +462,19 @@ statement error
 3270|"70"|"513"
 3271|"70"|"410"
 3272|"70"|"618"
-COPY 5 RECORDS INTO book FROM STDIN DELIMITERS '|' , E'\n', '"'
 
-statement error
+statement ok
+COPY 5 RECORDS INTO book FROM STDIN DELIMITERS '|' , E'\n', '"'
+<COPY_INTO_DATA>
 "G1KORP"
 "G2FIN"
 "G3PARV"
 "G4NEG"
 "MVE"
-COPY 22 RECORDS INTO fact FROM STDIN DELIMITERS '|' , E'\n', '"'
 
-statement error
+statement ok
+COPY 22 RECORDS INTO fact FROM STDIN DELIMITERS '|' , E'\n', '"'
+<COPY_INTO_DATA>
 "10"|"3480"|"7443"|"00000"|"MVE"|1001|2002|2016-02-16
 "10"|"3480"|"7443"|"00000"|"MVE"|1001|2002|2016-03-16
 "10"|"3480"|"7443"|"00000"|"MVE"|1001|2002|2016-04-16
@@ -498,9 +497,10 @@ statement error
 "10"|"1300"|"7422"|"00000"|"G2FIN"|1|3001|2016-11-16
 "10"|"3480"|"7443"|"00000"|"MVE"|1001|2002|2016-01-16
 "10"|"1300"|"7422"|"00000"|"G2FIN"|1|3001|2016-01-16
-COPY 729 RECORDS INTO location FROM STDIN DELIMITERS '|' , E'\n', '"'
 
-statement error
+statement ok
+COPY 729 RECORDS INTO location FROM STDIN DELIMITERS '|' , E'\n', '"'
+<COPY_INTO_DATA>
 12026|"(n/z)"
 3001|"(n/z)"
 10020|"0010093"
@@ -1230,13 +1230,15 @@ statement error
 2001|"(n/z)"
 11002|"0760258"
 11003|"0421262"
+
+statement ok
 COPY 1 RECORDS INTO segment1 FROM STDIN DELIMITERS '|' , E'\n', '"'
-
-statement error
+<COPY_INTO_DATA>
 "10"|"10"
-COPY 44 RECORDS INTO segment2 FROM STDIN DELIMITERS '|' , E'\n', '"'
 
-statement error
+statement ok
+COPY 44 RECORDS INTO segment2 FROM STDIN DELIMITERS '|' , E'\n', '"'
+<COPY_INTO_DATA>
 "0000"|"0000"
 "1000"|"1000"
 "1100"|"1100"
@@ -1281,9 +1283,10 @@ statement error
 "3613"|"3613"
 "3630"|"3630"
 "3640"|"3640"
-COPY 143 RECORDS INTO segment3 FROM STDIN DELIMITERS '|' , E'\n', '"'
 
-statement error
+statement ok
+COPY 143 RECORDS INTO segment3 FROM STDIN DELIMITERS '|' , E'\n', '"'
+<COPY_INTO_DATA>
 "7212"|"7212"
 "7213"|"7213"
 "7214"|"7214"
@@ -1427,9 +1430,10 @@ statement error
 "7422"|"7422"
 "7441"|"7441"
 "7561"|"7561"
-COPY 56 RECORDS INTO segment4 FROM STDIN DELIMITERS '|' , E'\n', '"'
 
-statement error
+statement ok
+COPY 56 RECORDS INTO segment4 FROM STDIN DELIMITERS '|' , E'\n', '"'
+<COPY_INTO_DATA>
 "00000"|"00000"
 "57001"|"57001"
 "57002"|"57002"
@@ -1486,10 +1490,11 @@ statement error
 "74405"|"74405"
 "74406"|"74406"
 "74404"|"74404"
+
+statement ok
 COPY 49998 RECORDS INTO all_dates FROM E'$QTSTSRCDIR/all_dates.csv.gz' DELIMITERS '|' , E'\n', '"'
 
-statement error
--- this works
+query TTTTTTTTT nosort
 SELECT loc.code
       ,cat.subcategory_code
       ,cat.category_code
@@ -1522,8 +1527,99 @@ SELECT loc.code
     AND ( cat.subcategory_code = 200 OR cat.subcategory_code = 301 OR cat.subcategory_code <= 290 )
     AND d.month_code BETWEEN '2016.01' AND '2016.10'
  ORDER BY d.d_date
+----
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-01-16
+2016.01
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-02-16
+2016.02
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-03-16
+2016.03
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-04-16
+2016.04
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-05-16
+2016.05
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-06-16
+2016.06
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-07-16
+2016.07
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-08-16
+2016.08
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-09-16
+2016.09
+(n/z)
+301
+30
+10
+1300
+7422
+00000
+2016-10-16
+2016.10
 
-statement error
+query TTTTTTTTT nosort
 SELECT loc.code
       ,cat.subcategory_code
       ,cat.category_code
@@ -1557,11 +1653,35 @@ SELECT loc.code
     AND ( s1.code = '03' OR cat.subcategory_code = 25 )
     AND d.month_code BETWEEN '2016.01' AND '2016.10'
  ORDER BY d.d_date
+----
 
-statement error
+query I nosort
 SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
-statement error
+query I nosort
 SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id AND ( s1.code = '03' OR loc.code = '0010094' )
 
 statement ok
