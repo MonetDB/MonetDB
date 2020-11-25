@@ -1,9 +1,9 @@
 stdout of test 'alter_table_describe.SF-1146092` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 16:42:02 >  
-# 16:42:02 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-179034" "--port=38242"
-# 16:42:02 >  
+# 15:20:40 >  
+# 15:20:40 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-144955" "--port=33791"
+# 15:20:40 >  
 
 #CREATE TABLE "experiment" (
 #	"exp_id"    int PRIMARY KEY,
@@ -172,115 +172,115 @@ stdout of test 'alter_table_describe.SF-1146092` in directory 'sql/test/BugDay_2
 % 10,	0,	5,	0 # length
 [ "query_walk",	NULL,	"TABLE",	NULL	]
 #select * from describe_columns('sys', 'experiment');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 9,	3,	2,	1,	5,	0,	1,	0 # length
-[ "exp_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "user_id",	"int",	32,	0,	true,	NULL,	1,	NULL	]
-[ "config_id",	"int",	32,	0,	true,	NULL,	2,	NULL	]
-[ "table_id",	"int",	32,	0,	true,	NULL,	3,	NULL	]
-[ "result_id",	"int",	32,	0,	true,	NULL,	4,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 9,	3,	2,	1,	5,	0,	1,	7,	0 # length
+[ "exp_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "user_id",	"int",	32,	0,	true,	NULL,	1,	"INTEGER",	NULL	]
+[ "config_id",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
+[ "table_id",	"int",	32,	0,	true,	NULL,	3,	"INTEGER",	NULL	]
+[ "result_id",	"int",	32,	0,	true,	NULL,	4,	"INTEGER",	NULL	]
 #select * from describe_columns('sys', 'tapestry_user');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 10,	7,	2,	1,	5,	0,	1,	0 # length
-[ "user_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "name",	"varchar",	25,	0,	true,	NULL,	1,	NULL	]
-[ "email",	"varchar",	50,	0,	true,	NULL,	2,	NULL	]
-[ "createdate",	"date",	0,	0,	true,	NULL,	3,	NULL	]
-[ "passwd",	"varchar",	50,	0,	true,	NULL,	4,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 10,	7,	2,	1,	5,	0,	1,	21,	0 # length
+[ "user_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "name",	"varchar",	25,	0,	true,	NULL,	1,	"CHARACTER VARYING(25)",	NULL	]
+[ "email",	"varchar",	50,	0,	true,	NULL,	2,	"CHARACTER VARYING(50)",	NULL	]
+[ "createdate",	"date",	0,	0,	true,	NULL,	3,	"DATE",	NULL	]
+[ "passwd",	"varchar",	50,	0,	true,	NULL,	4,	"CHARACTER VARYING(50)",	NULL	]
 #select * from describe_columns('sys', 'config');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 9,	7,	2,	1,	5,	0,	1,	0 # length
-[ "config_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "name",	"varchar",	25,	0,	true,	NULL,	1,	NULL	]
-[ "target_id",	"int",	32,	0,	true,	NULL,	2,	NULL	]
-[ "sysinf_id",	"int",	32,	0,	true,	NULL,	3,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 9,	7,	2,	1,	5,	0,	1,	21,	0 # length
+[ "config_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "name",	"varchar",	25,	0,	true,	NULL,	1,	"CHARACTER VARYING(25)",	NULL	]
+[ "target_id",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
+[ "sysinf_id",	"int",	32,	0,	true,	NULL,	3,	"INTEGER",	NULL	]
 #select * from describe_columns('sys', 'tapestry_table');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 8,	3,	2,	1,	5,	0,	1,	0 # length
-[ "table_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "nrrows",	"int",	32,	0,	true,	NULL,	1,	NULL	]
-[ "nrcols",	"int",	32,	0,	true,	NULL,	2,	NULL	]
-[ "seed",	"int",	32,	0,	true,	NULL,	3,	NULL	]
-[ "fast",	"int",	32,	0,	true,	NULL,	4,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 8,	3,	2,	1,	5,	0,	1,	7,	0 # length
+[ "table_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "nrrows",	"int",	32,	0,	true,	NULL,	1,	"INTEGER",	NULL	]
+[ "nrcols",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
+[ "seed",	"int",	32,	0,	true,	NULL,	3,	"INTEGER",	NULL	]
+[ "fast",	"int",	32,	0,	true,	NULL,	4,	"INTEGER",	NULL	]
 #select * from describe_columns('sys', 'result');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 11,	7,	3,	1,	5,	0,	1,	0 # length
-[ "result_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "type",	"varchar",	10,	0,	true,	NULL,	1,	NULL	]
-[ "description",	"varchar",	256,	0,	true,	NULL,	2,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 11,	7,	3,	1,	5,	0,	1,	22,	0 # length
+[ "result_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "type",	"varchar",	10,	0,	true,	NULL,	1,	"CHARACTER VARYING(10)",	NULL	]
+[ "description",	"varchar",	256,	0,	true,	NULL,	2,	"CHARACTER VARYING(256)",	NULL	]
 #select * from describe_columns('sys', 'target');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 10,	7,	3,	1,	5,	0,	1,	0 # length
-[ "target_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "name",	"varchar",	50,	0,	true,	NULL,	1,	NULL	]
-[ "permission",	"varchar",	10,	0,	true,	NULL,	2,	NULL	]
-[ "comment",	"varchar",	256,	0,	true,	NULL,	3,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 10,	7,	3,	1,	5,	0,	1,	22,	0 # length
+[ "target_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "name",	"varchar",	50,	0,	true,	NULL,	1,	"CHARACTER VARYING(50)",	NULL	]
+[ "permission",	"varchar",	10,	0,	true,	NULL,	2,	"CHARACTER VARYING(10)",	NULL	]
+[ "comment",	"varchar",	256,	0,	true,	NULL,	3,	"CHARACTER VARYING(256)",	NULL	]
 #select * from describe_columns('sys', 'sysinf');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 11,	3,	2,	1,	5,	0,	1,	0 # length
-[ "sysinf_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "platform_id",	"int",	32,	0,	true,	NULL,	1,	NULL	]
-[ "cpu_id",	"int",	32,	0,	true,	NULL,	2,	NULL	]
-[ "memory_id",	"int",	32,	0,	true,	NULL,	3,	NULL	]
-[ "disk_id",	"int",	32,	0,	true,	NULL,	4,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 11,	3,	2,	1,	5,	0,	1,	7,	0 # length
+[ "sysinf_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "platform_id",	"int",	32,	0,	true,	NULL,	1,	"INTEGER",	NULL	]
+[ "cpu_id",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
+[ "memory_id",	"int",	32,	0,	true,	NULL,	3,	"INTEGER",	NULL	]
+[ "disk_id",	"int",	32,	0,	true,	NULL,	4,	"INTEGER",	NULL	]
 #select * from describe_columns('sys', 'platform');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 11,	7,	3,	1,	5,	0,	1,	0 # length
-[ "platform_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "name",	"varchar",	50,	0,	true,	NULL,	1,	NULL	]
-[ "comment",	"varchar",	256,	0,	true,	NULL,	2,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 11,	7,	3,	1,	5,	0,	1,	22,	0 # length
+[ "platform_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "name",	"varchar",	50,	0,	true,	NULL,	1,	"CHARACTER VARYING(50)",	NULL	]
+[ "comment",	"varchar",	256,	0,	true,	NULL,	2,	"CHARACTER VARYING(256)",	NULL	]
 #select * from describe_columns('sys', 'cpu');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 6,	7,	2,	1,	5,	0,	1,	0 # length
-[ "cpu_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "type",	"varchar",	50,	0,	true,	NULL,	1,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 6,	7,	2,	1,	5,	0,	1,	21,	0 # length
+[ "cpu_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "type",	"varchar",	50,	0,	true,	NULL,	1,	"CHARACTER VARYING(50)",	NULL	]
 #select * from describe_columns('sys', 'memory');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 9,	7,	2,	1,	5,	0,	1,	0 # length
-[ "memory_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "type",	"varchar",	50,	0,	true,	NULL,	1,	NULL	]
-[ "size",	"int",	32,	0,	true,	NULL,	2,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 9,	7,	2,	1,	5,	0,	1,	21,	0 # length
+[ "memory_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "type",	"varchar",	50,	0,	true,	NULL,	1,	"CHARACTER VARYING(50)",	NULL	]
+[ "size",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
 #select * from describe_columns('sys', 'disk');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 7,	7,	2,	1,	5,	0,	1,	0 # length
-[ "disk_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "type",	"varchar",	50,	0,	true,	NULL,	1,	NULL	]
-[ "size",	"int",	32,	0,	true,	NULL,	2,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 7,	7,	2,	1,	5,	0,	1,	21,	0 # length
+[ "disk_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "type",	"varchar",	50,	0,	true,	NULL,	1,	"CHARACTER VARYING(50)",	NULL	]
+[ "size",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
 #select * from describe_columns('sys', 'query_walk');
-% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
-% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
-% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
-% 9,	3,	2,	1,	5,	0,	1,	0 # length
-[ "walk_id",	"int",	32,	0,	false,	NULL,	0,	NULL	]
-[ "begin_x",	"int",	32,	0,	true,	NULL,	1,	NULL	]
-[ "begin_y",	"int",	32,	0,	true,	NULL,	2,	NULL	]
-[ "nr_runs",	"int",	32,	0,	true,	NULL,	3,	NULL	]
-[ "nr_steps",	"int",	32,	0,	true,	NULL,	4,	NULL	]
-[ "step_size",	"int",	32,	0,	true,	NULL,	5,	NULL	]
-[ "end_x",	"int",	32,	0,	true,	NULL,	6,	NULL	]
-[ "end_y",	"int",	32,	0,	true,	NULL,	7,	NULL	]
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 9,	3,	2,	1,	5,	0,	1,	7,	0 # length
+[ "walk_id",	"int",	32,	0,	false,	NULL,	0,	"INTEGER",	NULL	]
+[ "begin_x",	"int",	32,	0,	true,	NULL,	1,	"INTEGER",	NULL	]
+[ "begin_y",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
+[ "nr_runs",	"int",	32,	0,	true,	NULL,	3,	"INTEGER",	NULL	]
+[ "nr_steps",	"int",	32,	0,	true,	NULL,	4,	"INTEGER",	NULL	]
+[ "step_size",	"int",	32,	0,	true,	NULL,	5,	"INTEGER",	NULL	]
+[ "end_x",	"int",	32,	0,	true,	NULL,	6,	"INTEGER",	NULL	]
+[ "end_y",	"int",	32,	0,	true,	NULL,	7,	"INTEGER",	NULL	]
 #DROP TABLE "query_walk" CASCADE;
 #DROP TABLE "disk" CASCADE;
 #DROP TABLE "memory" CASCADE;
@@ -294,7 +294,7 @@ stdout of test 'alter_table_describe.SF-1146092` in directory 'sql/test/BugDay_2
 #DROP TABLE "tapestry_user" CASCADE;
 #DROP TABLE "experiment" CASCADE;
 
-# 16:42:02 >  
-# 16:42:02 >  "Done."
-# 16:42:02 >  
+# 15:20:40 >  
+# 15:20:40 >  "Done."
+# 15:20:40 >  
 
