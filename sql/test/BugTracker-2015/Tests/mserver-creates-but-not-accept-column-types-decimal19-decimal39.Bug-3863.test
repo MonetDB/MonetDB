@@ -15,7 +15,7 @@ NULL
 TABLE
 NULL
 
-query TTIITTIT rowsort
+query TTIITTITT rowsort
 select * from describe_columns('sys', 'foo')
 ----
 eur
@@ -25,6 +25,7 @@ decimal
 True
 NULL
 0
+DECIMAL(23,3)
 NULL
 
 statement ok
