@@ -17,41 +17,41 @@ else()
   set(DEVELOPMENT FALSE)
 endif()
 
-option(TESTING 
+option(TESTING
   "Enable support for testing"
   ON)
 
-cmake_dependent_option(CINTEGRATION 
+cmake_dependent_option(CINTEGRATION
   "Enable support for C UDFs (default=ON)"
   ON
   "NOT WIN32"
   OFF)
 
-option(PY3INTEGRATION 
+option(PY3INTEGRATION
   "Enable support for Python 3 integration into MonetDB (default=ON)"
   ON)
 
-option(RINTEGRATION 
+option(RINTEGRATION
   "Enable support for R integration into MonetDB (default=ON)"
   ON)
 
-option(FITS 
+option(FITS
   "Enable support for FITS (default=ON)"
   ON)
 
 option(GEOM
   "Enable support for geom module (default=ON)"
-  ON) 
-
-option(INT128 
-  "Enable support for 128-bit integers (default=ON)"
-  ON) 
-
-option(NETCDF 
-  "Enable support for netcdf (default=ON)" 
   ON)
 
-option(ODBC 
+option(INT128
+  "Enable support for 128-bit integers (default=ON)"
+  ON)
+
+option(NETCDF
+  "Enable support for netcdf (default=ON)"
+  ON)
+
+option(ODBC
   "Compile the MonetDB ODBC driver (default=ON)"
   ON)
 
@@ -61,15 +61,19 @@ cmake_dependent_option(SHP
   "GEOM"
   OFF)
 
-option(SANITIZER 
+option(SANITIZER
   "Enable support for the GCC address sanitizer (default=OFF)"
   OFF)
 
-option(STRICT 
+option(STATIC_CODE_ANALYSIS
+  "configure for static code analysis (use only if you know what you are doing) (default=OFF)"
+  OFF)
+
+option(STRICT
   "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")
 
-option(ASSERT 
+option(ASSERT
   "Enable asserts (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")
 

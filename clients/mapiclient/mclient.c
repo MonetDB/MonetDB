@@ -2500,8 +2500,8 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 #endif
 					} else {
 						/* get all object names in current schema */
-						char *with_clause =
-							", describe_all_objects AS (\n"
+						const char *with_clause =
+							"with describe_all_objects AS (\n"
 							"  SELECT s.name AS sname,\n"
 							"      t.name,\n"
 							"      s.name || '.' || t.name AS fullname,\n"
@@ -2513,7 +2513,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							"      t.system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys._tables t\n"
-							"    LEFT OUTER JOIN comments c ON t.id = c.id\n"
+							"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
 							"    LEFT OUTER JOIN sys.schemas s ON t.schema_id = s.id\n"
 							"    LEFT OUTER JOIN sys.table_types tt ON t.type = tt.table_type_id\n"
 							"  UNION ALL\n"
@@ -2525,21 +2525,20 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							"      false AS system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys.sequences sq\n"
-							"    LEFT OUTER JOIN comments c ON sq.id = c.id\n"
+							"    LEFT OUTER JOIN sys.comments c ON sq.id = c.id\n"
 							"    LEFT OUTER JOIN sys.schemas s ON sq.schema_id = s.id\n"
 							"  UNION ALL\n"
 							"  SELECT DISTINCT s.name AS sname,\n" /* DISTINCT is needed to filter out duplicate overloaded function/procedure names */
 							"      f.name,\n"
 							"      s.name || '.' || f.name AS fullname,\n"
 							"      CAST(8 AS SMALLINT) AS ntype,\n"
-							"      (CASE WHEN sf.function_id IS NOT NULL THEN 'SYSTEM ' ELSE '' END) || function_type_keyword AS type,\n"
-							"      sf.function_id IS NOT NULL AS system,\n"
+							"      (CASE WHEN f.system THEN 'SYSTEM ' ELSE '' END) || function_type_keyword AS type,\n"
+							"      f.system AS system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys.functions f\n"
-							"    LEFT OUTER JOIN comments c ON f.id = c.id\n"
-							"    LEFT OUTER JOIN function_types ft ON f.type = ft.function_type_id\n"
+							"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+							"    LEFT OUTER JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
 							"    LEFT OUTER JOIN sys.schemas s ON f.schema_id = s.id\n"
-							"    LEFT OUTER JOIN sys.systemfunctions sf ON f.id = sf.function_id\n"
 							"  UNION ALL\n"
 							"  SELECT NULL AS sname,\n"
 							"      s.name,\n"
@@ -2549,11 +2548,10 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							"      s.system,\n"
 							"      c.remark AS remark\n"
 							"    FROM sys.schemas s\n"
-							"    LEFT OUTER JOIN comments c ON s.id = c.id\n"
+							"    LEFT OUTER JOIN sys.comments c ON s.id = c.id\n"
 							"  ORDER BY system, name, sname, ntype)\n"
 							;
-						const char *comments_clause = get_comments_clause(mid);
-						size_t len = strlen(comments_clause) + strlen(with_clause) + 400 + strlen(line);
+						size_t len = strlen(with_clause) + 400 + strlen(line);
 						char *query = malloc(len);
 						char *q = query, *endq = query + len;
 
@@ -2572,7 +2570,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						 * | "data.my*"      | no            | fullname LIKE 'data.my%'      |
 						 * | "*a.my*"        | no            | fullname LIKE '%a.my%'        |
 						 */
-						q += snprintf(q, endq - q, "%s%s", comments_clause, with_clause);
+						q += snprintf(q, endq - q, "%s", with_clause);
 						q += snprintf(q, endq - q, " SELECT type, fullname, remark FROM describe_all_objects WHERE (ntype & %u) > 0", x);
 						if (!wantsSystem) {
 							q += snprintf(q, endq - q, " AND NOT system");
