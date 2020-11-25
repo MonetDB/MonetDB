@@ -1,11 +1,11 @@
 START TRANSACTION;
 
 CREATE FUNCTION SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || s || ''' '; END;
-CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN ' "' || s || '"'; END; --TODO: Figure out why this breaks with the space
+CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; --TODO: Figure out why this breaks with the space
 CREATE FUNCTION I (s STRING) RETURNS STRING BEGIN RETURN '\t' || s || '\n'; END;
 CREATE FUNCTION ENI (s STRING) RETURNS STRING BEGIN RETURN I(SQ(s)); END;
 
-CREATE FUNCTION comment_on_schema(o STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, '\nCOMMENT ON SCHEMA ' || o || ' IS ' || SQ(r) || ';', ''); END;
+CREATE FUNCTION comment_on(ob STRING, id STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, '\nCOMMENT ON ' || ob ||  ' ' || id || ' IS ' || SQ(r) || ';', ''); END;
 
 CREATE FUNCTION dump_database(describe BOOLEAN)
 RETURNS STRING
@@ -43,9 +43,9 @@ BEGIN
     SET create_schemas = (
         SELECT
             GROUP_CONCAT('CREATE SCHEMA ' ||  s.name || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' || 
-            comment_on_schema(s.name, rem.remark), '\n')
+            comment_on('SCHEMA', s.name, rem.remark), '\n')
         FROM schemas s LEFT OUTER JOIN comments rem ON s.id = rem.id,auths a
-        WHERE s."authorization" = a.id AND s.system = FALSE);
+        WHERE s.authorization = a.id AND s.system = FALSE);
 
     IF create_schemas IS NULL THEN
         SET create_schemas = '';
@@ -76,7 +76,24 @@ BEGIN
         SET grant_user_priviledges = '';
     END IF;
 
-    RETURN 'START TRANSACTION;\n' || create_roles || '\n' || create_users || '\n' || create_schemas || '\n' || alter_users || '\n' || grant_user_priviledges || '\nCOMMIT;';
+	declare create_sequences STRING;
+	SET create_sequences  = (
+		SELECT GROUP_CONCAT('CREATE SEQUENCE ' || DQ(sch.name) || '.' || DQ(seq.name) || ' AS INTEGER;' || 
+		comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark), '\n')
+		FROM sys.schemas sch,
+			sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id
+		WHERE sch.id = seq.schema_id);
+
+    RETURN 
+        'START TRANSACTION;\n' ||
+        create_roles || '\n' ||
+        create_users || '\n' ||
+        create_schemas || '\n' ||
+        alter_users || '\n' ||
+        grant_user_priviledges || '\n' ||
+        create_sequences || '\n' ||
+		--create_tables || '\n' ||
+        'COMMIT;';
 
 END;
 
