@@ -7,7 +7,7 @@ import sys
 
 def check_testdata(args, expected):
     cmd = [ 'bincopydata', *(str(a) for a in args)]
-    output = subprocess.check_output(cmd, text=False)
+    output = subprocess.check_output(cmd, input=b"")
 
     if expected == output:
         return
