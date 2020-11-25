@@ -31,8 +31,7 @@ DELETE
 
 statement ok
 COPY 10 RECORDS INTO user_record_insertion FROM STDIN USING DELIMITERS ',',E'\n'
-
-statement error
+<COPY_INTO_DATA>
 Steven Teague,d5329b8f
 Chrystal Whitman,20cbc561
 Elisabeth Luetten,4e0bfbea
@@ -43,14 +42,16 @@ Randall Kaiser,f76bfe86
 Rusty Wuerzen,9c29633b
 Wilfredo Rosenbaum,e5c469cb
 Cecil Herrington,000c14c7
+
+statement ok
 INSERT INTO user_record_insertion2 (name,uid)
 SELECT name,uid FROM user_record_insertion
 
-statement error
+statement ok
 INSERT INTO user_record (name,uid)
 SELECT name,uid FROM user_record_insertion2
 
-statement error
+statement ok
 COMMIT
 
 statement ok
