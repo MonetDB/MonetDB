@@ -337,8 +337,13 @@ COPY 3 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 1970-01-24
 1970-01-24
 1970-01-24
-CREATE TABLE "sys"."t2" ("tc1" DATE NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"));
-COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+
+statement ok
+CREATE TABLE "sys"."t2" ("tc1" DATE NOT NULL,CONSTRAINT "t2_tc1_pkey" PRIMARY KEY ("tc1"))
+
+statement ok
+COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 1970-01-25
 1970-01-14
 1970-01-01

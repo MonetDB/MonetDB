@@ -11,8 +11,15 @@ statement ok
 copy 1 records into t (c1) from stdin (c1,c2) best effort
 <COPY_INTO_DATA>
 1|2
-select * from t;
-rollback;
+
+query II nosort
+select * from t
+----
+1
+NULL
+
+statement ok
+rollback
 
 statement ok
 start transaction
@@ -24,8 +31,15 @@ statement ok
 copy 1 records into t (c2) from stdin (c1,c2) best effort
 <COPY_INTO_DATA>
 1|2
-select * from t;
-rollback;
+
+query II nosort
+select * from t
+----
+NULL
+2
+
+statement ok
+rollback
 
 statement ok
 start transaction
@@ -37,8 +51,15 @@ statement ok
 copy 1 records into t (c1,c2) from stdin (x,c1,c2) best effort
 <COPY_INTO_DATA>
 0|1|2
-select * from t;
-rollback;
+
+query II nosort
+select * from t
+----
+1
+2
+
+statement ok
+rollback
 
 statement ok
 start transaction
@@ -50,8 +71,15 @@ statement ok
 copy 1 records into t (c1,c2) from stdin (c1,x,c2) best effort
 <COPY_INTO_DATA>
 1|0|2
-select * from t;
-rollback;
+
+query II nosort
+select * from t
+----
+1
+2
+
+statement ok
+rollback
 
 statement ok
 start transaction
@@ -63,7 +91,14 @@ statement ok
 copy 1 records into t (c1,c2) from stdin (c1,c2,x) best effort
 <COPY_INTO_DATA>
 1|2|0
-select * from t;
-rollback;
+
+query II nosort
+select * from t
+----
+1
+2
+
+statement ok
+rollback
 
 

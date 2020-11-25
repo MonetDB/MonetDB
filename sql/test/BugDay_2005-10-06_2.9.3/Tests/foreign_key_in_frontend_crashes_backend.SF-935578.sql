@@ -1,3 +1,5 @@
+start transaction;
+
   create table studenten(
     sid integer,
     email varchar(40),
@@ -34,3 +36,4 @@
 1,1
 1,2
 
+rollback;

@@ -33,7 +33,7 @@ COPY 54 RECORDS INTO tbls FROM stdin USING DELIMITERS E'\t',E'\n','"'
 2134	idxs	2106		10	true	2	0	0
 2139	triggers	2106		10	true	2	0	0
 2150	objects	2106		10	true	2	0	0
-5659	tables	2000	"SELECT ""id"", ""name"", ""schema_id"", ""query"", CAST(CASE WHEN ""system"" THEN ""type"" + 10   ELSE (CASE WHEN ""commit_action"" = 0 THEN ""type""   ELSE ""type"" + 20   END) END AS SMALLINT) AS ""type"", ""system"", ""commit_action"", ""access"", CASE WHEN (NOT ""system"" AND ""commit_action"" > 0) THEN 1 ELSE 0 END AS ""temporary"" FROM ""sys"".""_tables"" WHERE ""type"" <> 2 UNION ALL SELECT ""id"", ""name"", ""schema_id"", ""query"", CAST(""type"" + 30   AS SMALLINT) AS ""type"", ""system"", ""commit_action"", ""access"", 1 AS ""temporary"" FROM ""tmp"".""_tables"";"	11	true	0	0	0
+5659	tables	2000	"SELECT ""id"", ""name"", ""schema_id"", ""query"", CAST(CASE WHEN ""system"" THEN ""type"" + 10 /* system table/view */ ELSE (CASE WHEN ""commit_action"" = 0 THEN ""type"" /* table/view */ ELSE ""type"" + 20 /* global temp table */ END) END AS SMALLINT) AS ""type"", ""system"", ""commit_action"", ""access"", CASE WHEN (NOT ""system"" AND ""commit_action"" > 0) THEN 1 ELSE 0 END AS ""temporary"" FROM ""sys"".""_tables"" WHERE ""type"" <> 2 UNION ALL SELECT ""id"", ""name"", ""schema_id"", ""query"", CAST(""type"" + 30 /* local temp table */ AS SMALLINT) AS ""type"", ""system"", ""commit_action"", ""access"", 1 AS ""temporary"" FROM ""tmp"".""_tables"";"	11	true	0	0	0
 5669	columns	2000	"SELECT * FROM (SELECT p.* FROM ""sys"".""_columns"" AS p UNION ALL SELECT t.* FROM ""tmp"".""_columns"" AS t) AS columns;"	11	true	0	0	0
 5685	db_user_info	2000		10	true	0	0	0
 5691	users	2000	"SELECT u.""name"" AS ""name"", ui.""fullname"", ui.""default_schema"" FROM db_users() AS u LEFT JOIN ""sys"".""db_user_info"" AS ui ON u.""name"" = ui.""name"" ;"	11	true	0	0	0
@@ -68,14 +68,19 @@ COPY 54 RECORDS INTO tbls FROM stdin USING DELIMITERS E'\t',E'\n','"'
 7271	pg	7176		10	true	0	0	0
 7284	export	7176		10	true	0	0	0
 7366	systemfunctions	2000		10	true	0	0	0
+
+statement ok
 CREATE TABLE schms (
 	"id"            INTEGER,
 	"name"          VARCHAR(1024),
 	"authorization" INTEGER,
 	"owner"         INTEGER,
 	"system"        BOOLEAN
-);
-COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS E'\t',E'\n','"';
+)
+
+statement ok
+COPY 4 RECORDS INTO schms FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
 2000	"sys"	2	3	true
 2106	"tmp"	2	3	true
 6821	"json"	3	3	true

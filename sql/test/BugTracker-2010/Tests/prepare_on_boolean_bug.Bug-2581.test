@@ -1,7 +1,7 @@
 statement ok
 create table skycrash (id serial, boom boolean)
 
-statement error
+statement ok
 prepare select * from skycrash where boom = ? and boom = ?
 
 statement ok

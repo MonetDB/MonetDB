@@ -1,12 +1,13 @@
 statement ok
 create table t (c varchar(3))
 
-statement ok
+statement error
 COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
 ','"' NULL AS ''
-
-statement error
+<COPY_INTO_DATA>
 "abcd"
+
+statement ok
 drop table t
 
 

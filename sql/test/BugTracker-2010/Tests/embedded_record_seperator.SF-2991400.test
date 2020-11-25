@@ -3,14 +3,16 @@ create table ers (c varchar(3))
 
 statement ok
 COPY 1 RECORDS INTO ers FROM STDIN USING DELIMITERS '|',':','"' NULL AS ''
-
-statement error
+<COPY_INTO_DATA>
 "a:c":
-COPY 1 RECORDS INTO ers FROM STDIN USING DELIMITERS '|',E'\n','"' NULL AS ''
 
-statement error
+statement ok
+COPY 1 RECORDS INTO ers FROM STDIN USING DELIMITERS '|',E'\n','"' NULL AS ''
+<COPY_INTO_DATA>
 "a
 c"
+
+statement ok
 drop table ers
 
 

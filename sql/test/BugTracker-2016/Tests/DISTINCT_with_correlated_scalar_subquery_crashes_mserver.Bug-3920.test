@@ -1185,12 +1185,17 @@ COPY 1167 RECORDS INTO "sys"."functions_cpy" FROM stdin USING DELIMITERS '|',E'\
 8043|"storage"|"create function sys.""storage""( sname string, tname string, cname string)\nreturns table (\n ""schema"" string,\n ""table"" string,\n ""column"" string,\n ""type"" string,\n ""mode"" string,\n location string,\n ""count"" bigint,\n typewidth int,\n columnsize bigint,\n heapsize bigint,\n hashes bigint,\n phash boolean,\n ""imprints"" bigint,\n sorted boolean\n)\nexternal name sql.""storage"";"|"sql"|1|5|false|false|false|2000
 8074|"storagemodelinit"|"create procedure sys.storagemodelinit()\nbegin\n delete from sys.storagemodelinput;\n insert into sys.storagemodelinput\n select x.""schema"", x.""table"", x.""column"", x.""type"", x.typewidth, x.count, 0, x.typewidth, false, x.sorted from sys.""storage""() x;\n update sys.storagemodelinput\n set reference = true\n where concat(concat(""schema"",""table""), ""column"") in (\n select concat( concat(""fkschema"".""name"", ""fktable"".""name""), ""fkkeycol"".""name"" )\n from ""sys"".""keys"" as ""fkkey"",\n ""sys"".""objects"" as ""fkkeycol"",\n ""sys"".""tables"" as ""fktable"",\n ""sys"".""schemas"" as ""fkschema""\n where ""fktable"".""id"" = ""fkkey"".""table_id""\n and ""fkkey"".""id"" = ""fkkeycol"".""id""\n and ""fkschema"".""id"" = ""fktable"".""schema_id""\n and ""fkkey"".""rkey"" > -1);\n update sys.storagemodelinput\n set ""distinct"" = ""count"" \n where ""type"" = 'varchar' or ""type""='clob';\nend;"|"user"|2|2|true|false|false|2000
 8098|"storagemodel"|"create function sys.storagemodel()\nreturns table (\n ""schema"" string,\n ""table"" string,\n ""column"" string,\n ""type"" string,\n ""count"" bigint,\n columnsize bigint,\n heapsize bigint,\n hashes bigint,\n ""imprints"" bigint,\n sorted boolean)\nbegin\n return select i.""schema"", i.""table"", i.""column"", i.""type"", i.""count"",\n columnsize(i.""type"", i.count, i.""distinct""),\n heapsize(i.""type"", i.""distinct"", i.""atomwidth""),\n hashsize(i.""reference"", i.""count""),\n imprintsize(i.""count"",i.""type""),\n i.sorted\n from sys.storagemodelinput i;\nend;"|"user"|2|5|false|false|false|2000
+
+statement ok
 CREATE TABLE "sys"."args_cpy" (
 	"id"      INTEGER,
 	"func_id" INTEGER,
 	"number"  INTEGER
-);
-COPY 3416 RECORDS INTO "sys"."args_cpy" FROM stdin USING DELIMITERS '|',E'\n','"';
+)
+
+statement ok
+COPY 3416 RECORDS INTO "sys"."args_cpy" FROM stdin USING DELIMITERS '|',E'\n','"'
+<COPY_INTO_DATA>
 2286|83|0
 2287|83|1
 2288|83|2
