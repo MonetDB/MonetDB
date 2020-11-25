@@ -28,8 +28,10 @@ with tempfile.TemporaryDirectory() as farm_dir:
         node1_cur = node1_conn.cursor()
 
         node1_cur.execute("CREATE TABLE tbl (id INT, name TEXT)")
-        node1_cur.execute("INSERT INTO tbl VALUES (1, '1'), (2, '2')")
-        node1_cur.execute("INSERT INTO tbl (id) VALUES (3)")
+        if node1_cur.execute("INSERT INTO tbl VALUES (1, '1'), (2, '2')") != 2:
+            sys.stderr.write("2 rows inserted expected")
+        if node1_cur.execute("INSERT INTO tbl (id) VALUES (3)") != 1:
+            sys.stderr.write("1 row inserted expected")
         node1_cur.execute("SELECT * FROM tbl")
         if node1_cur.fetchall() != [(1, '1'), (2, '2'), (3, None)]:
             sys.stderr.write("[(1, '1'), (2, '2'), (3, None)] expected")

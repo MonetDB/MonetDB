@@ -27,9 +27,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
         conn1 = pymonetdb.connect(database='node1', port=prt1, autocommit=True)
         cur1 = conn1.cursor()
         cur1.execute("create table s1 (i int)")
-        cur1.execute("insert into s1 values (23), (42)")
+        if cur1.execute("insert into s1 values (23), (42)") != 2:
+            sys.stderr.write("2 rows inserted expected")
         cur1.execute("create table t1 (s varchar(10))")
-        cur1.execute("insert into t1 values ('abc'), ('efg')")
+        if cur1.execute("insert into t1 values ('abc'), ('efg')") != 2:
+            sys.stderr.write("2 rows inserted expected")
 
         cur1.close()
         conn1.close()
@@ -43,9 +45,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
             conn2 = pymonetdb.connect(database='node2', port=prt2, autocommit=True)
             cur2 = conn2.cursor()
             cur2.execute("create table s2 (i int)")
-            cur2.execute("insert into s2 values (23), (42)")
+            if cur2.execute("insert into s2 values (23), (42)") != 2:
+                sys.stderr.write("2 rows inserted expected")
             cur2.execute("create table t2 (s varchar(10))")
-            cur2.execute("insert into t2 values ('foo'), ('bar')")
+            if cur2.execute("insert into t2 values ('foo'), ('bar')") != 2:
+                sys.stderr.write("2 rows inserted expected")
 
             cur2.execute("create remote table s1 (i int) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
             cur2.execute("create remote table t1 (s varchar(10)) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")

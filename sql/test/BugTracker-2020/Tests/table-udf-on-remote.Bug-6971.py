@@ -1,9 +1,4 @@
-import os
-import socket
-import sys
-import tempfile
-
-import pymonetdb
+import os, socket, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -35,7 +30,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
         node1_cur.execute("create function mudf(sx float, sxx float, sxy float, sy float, syy float, n int) returns table(res float) begin return select 0.5; end")
         node1_cur.execute("create function mudf2(sx float, sxx float, sxy float, sy float, syy float, n int) returns table(res float, res2 float) begin return select 0.5, 0.6; end")
         node1_cur.execute("create table lala(sx float, sxx float, sxy float , sy float, syy float, n int)")
-        node1_cur.execute("insert into lala select 13,85,98,15,113,2")
+        if node1_cur.execute("insert into lala select 13,85,98,15,113,2") != 1:
+            sys.stderr.write("1 row inserted expected")
         node1_cur.execute("select * from lala")
         if node1_cur.fetchall() != [(13.0, 85.0, 98.0, 15.0, 113.0, 2)]:
             sys.stderr.write("Just row (13.0, 85.0, 98.0, 15.0, 113.0, 2) expected")

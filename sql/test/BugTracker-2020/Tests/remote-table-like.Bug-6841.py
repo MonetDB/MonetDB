@@ -1,10 +1,4 @@
-import os
-import socket
-import sys
-import tempfile
-import threading
-
-import pymonetdb
+import os, socket, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -34,7 +28,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
         node1_cur = node1_conn.cursor()
 
         node1_cur.execute("create table remote_data (id int, name varchar(2048))")
-        node1_cur.execute("insert into remote_data values (1, 'Name 1')")
+        if node1_cur.execute("insert into remote_data values (1, 'Name 1')") != 1:
+            sys.stderr.write("1 row inserted expected")
         node1_cur.execute("select * from remote_data")
         if node1_cur.fetchall() != [(1, 'Name 1')]:
             sys.stderr.write("Just row (1, 'Name 1') expected")
