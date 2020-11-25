@@ -1,8 +1,12 @@
-START TRANSACTION;
+statement ok
+START TRANSACTION
 
-CREATE TABLE tradeDate(date int not null constraint pk_tradeDate primary key);
+statement ok
+CREATE TABLE tradeDate(date int not null constraint pk_tradeDate primary key)
 
-COPY 32605 RECORDS INTO tradeDate FROM STDIN USING DELIMITERS E'\t';
+statement ok
+COPY 32605 RECORDS INTO tradeDate FROM STDIN USING DELIMITERS E'\t'
+<COPY_INTO_DATA>
 19251231
 19260102
 19260104
@@ -32609,14 +32613,76 @@ COPY 32605 RECORDS INTO tradeDate FROM STDIN USING DELIMITERS E'\t';
 20501222
 20501223
 
-SELECT COUNT(*) AS cnt from tradeDate;
+query I rowsort
+SELECT COUNT(*) AS cnt from tradeDate
+----
+32605
 
-WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT date, rn from e ORDER BY date limit 5;
+query II rowsort
+WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT date, rn from e ORDER BY date limit 5
+----
+19251231
+1
+19260102
+2
+19260104
+3
+19260105
+4
+19260106
+5
 
-WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn = e1.rn limit 5;
+query IIII rowsort
+WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn = e1.rn limit 5
+----
+19251231
+1
+19251231
+1
+19260102
+2
+19260102
+2
+19260104
+3
+19260104
+3
+19260105
+4
+19260105
+4
+19260106
+5
+19260106
+5
 
-WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn + 1 = e1.rn limit 5;
+query IIII rowsort
+WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn + 1 = e1.rn limit 5
+----
+19260102
+2
+19251231
+1
+19260104
+3
+19260102
+2
+19260105
+4
+19260104
+3
+19260106
+5
+19260105
+4
+19260107
+6
+19260106
+5
 
-drop table tradeDate;
+statement ok
+drop table tradeDate
 
-ROLLBACK;
+statement ok
+rollback
+

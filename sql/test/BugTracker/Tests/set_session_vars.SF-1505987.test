@@ -1,0 +1,7 @@
+statement ok
+\a
+
+statement ok
+commit
+
+

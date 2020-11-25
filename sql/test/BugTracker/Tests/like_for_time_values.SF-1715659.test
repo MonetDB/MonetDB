@@ -1,0 +1,6 @@
+query T rowsort
+select now() LIKE '12:14'
+----
+False
+
+
