@@ -408,8 +408,8 @@ OR    u IS NULL
 """
 
 LITTLE_ENDIANS = """
-CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
-COPY BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@;
+CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
+COPY LITTLE ENDIAN BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@, @le_floats@, @le_doubles@;
 
 WITH
 enlarged AS ( -- first go to the largest type
@@ -418,7 +418,9 @@ enlarged AS ( -- first go to the largest type
         CAST(t AS BIGINT) AS tt,
         CAST(s AS BIGINT) AS ss,
         CAST(i AS BIGINT) AS ii,
-        b AS bb
+        b AS bb,
+        CAST(f AS DOUBLE) AS ff,
+        d AS dd
     FROM foo
 ),
 denulled AS ( -- 0x80, 0x8000 etc have been interpreted as NULL, fix this
@@ -427,7 +429,9 @@ denulled AS ( -- 0x80, 0x8000 etc have been interpreted as NULL, fix this
         COALESCE(tt,        -128) AS tt,
         COALESCE(ss,      -32768) AS ss,
         COALESCE(ii, -2147483648) AS ii,
-        bb
+        bb,
+        ff,
+        dd
     FROM enlarged
 ),
 verified AS (
@@ -435,12 +439,100 @@ verified AS (
         t, s, i, b,
         (tt - ss) %        256 = 0 AS t_s,
         (ss - ii) %      65536 = 0 AS s_i,
-        (ii - bb) % 2147483648 = 0 AS i_b
+        (ii - bb) % 2147483648 = 0 AS i_b,
+        (dd - ff)              = 0 AS f_d
     FROM denulled
 )
-SELECT t_s, s_i, i_b, COUNT(*)
+SELECT t_s, s_i, i_b, f_d, COUNT(*)
 FROM verified
-GROUP BY t_s, s_i, i_b
-ORDER BY t_s, s_i, i_b
+GROUP BY t_s, s_i, i_b, f_d
+ORDER BY t_s, s_i, i_b, f_d
+;
+"""
+
+BIG_ENDIANS = """
+CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
+COPY BIG ENDIAN BINARY INTO foo FROM @be_tinyints@, @be_smallints@, @be_ints@, @be_bigints@, @be_floats@, @be_doubles@;
+
+WITH
+enlarged AS ( -- first go to the largest type
+    SELECT
+        t, s, i, b,
+        CAST(t AS BIGINT) AS tt,
+        CAST(s AS BIGINT) AS ss,
+        CAST(i AS BIGINT) AS ii,
+        b AS bb,
+        CAST(f AS DOUBLE) AS ff,
+        d AS dd
+    FROM foo
+),
+denulled AS ( -- 0x80, 0x8000 etc have been interpreted as NULL, fix this
+    SELECT
+        t, s, i, b,
+        COALESCE(tt,        -128) AS tt,
+        COALESCE(ss,      -32768) AS ss,
+        COALESCE(ii, -2147483648) AS ii,
+        bb,
+        ff,
+        dd
+    FROM enlarged
+),
+verified AS (
+    SELECT
+        t, s, i, b,
+        (tt - ss) %        256 = 0 AS t_s,
+        (ss - ii) %      65536 = 0 AS s_i,
+        (ii - bb) % 2147483648 = 0 AS i_b,
+        (dd - ff)              = 0 AS f_d
+    FROM denulled
+)
+SELECT t_s, s_i, i_b, f_d, COUNT(*)
+FROM verified
+GROUP BY t_s, s_i, i_b, f_d
+ORDER BY t_s, s_i, i_b, f_d
+;
+"""
+
+NATIVE_ENDIANS = """
+CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
+COPY NATIVE ENDIAN BINARY INTO foo FROM @ne_tinyints@, @ne_smallints@, @ne_ints@, @ne_bigints@, @ne_floats@, @ne_doubles@;
+
+WITH
+enlarged AS ( -- first go to the largest type
+    SELECT
+        t, s, i, b,
+        CAST(t AS BIGINT) AS tt,
+        CAST(s AS BIGINT) AS ss,
+        CAST(i AS BIGINT) AS ii,
+        b AS bb,
+        CAST(f AS DOUBLE) AS ff,
+        d AS dd
+    FROM foo
+),
+denulled AS ( -- 0x80, 0x8000 etc have been interpreted as NULL, fix this
+    SELECT
+        t, s, i, b,
+        COALESCE(tt,        -128) AS tt,
+        COALESCE(ss,      -32768) AS ss,
+        COALESCE(ii, -2147483648) AS ii,
+        bb,
+        ff,
+        dd
+    FROM enlarged
+),
+verified AS (
+    SELECT
+        t, s, i, b,
+        (tt - ss) %        256 = 0 AS t_s,
+        (ss - ii) %      65536 = 0 AS s_i,
+        (ii - bb) % 2147483648 = 0 AS i_b,
+        (dd - ff)              = 0 AS f_d
+    FROM denulled
+)
+SELECT t_s, s_i, i_b, f_d, COUNT(*)
+FROM verified
+GROUP BY t_s, s_i, i_b, f_d
+ORDER BY t_s, s_i, i_b, f_d
+LIMIT 4;
 ;
 """

@@ -47,17 +47,13 @@ stdout of test 'bincopy_little_endians_on_server` in directory 'sql/test/bincopy
 #        COALESCE(tt,        -128) AS tt,
 #        COALESCE(ss,      -32768) AS ss,
 #        COALESCE(ii, -2147483648) AS ii,
-#        bb
-#    FROM enlarged
-#),
-#verified AS (
-#    SELECT
-#        t, s, i, b,
-% .verified,	.verified,	.verified,	.%4 # table_name
-% t_s,	s_i,	i_b,	%4 # name
-% boolean,	boolean,	boolean,	bigint # type
-% 5,	5,	5,	7 # length
-[ true,	true,	true,	1000000	]
+#        bb,
+#        ff,
+% .verified,	.verified,	.verified,	sys.verified,	sys.%5 # table_name
+% t_s,	s_i,	i_b,	f_d,	%5 # name
+% boolean,	boolean,	boolean,	boolean,	bigint # type
+% 5,	5,	5,	5,	7 # length
+[ true,	true,	true,	true,	1000000	]
 #ROLLBACK;
 
 # 13:58:58 >  
