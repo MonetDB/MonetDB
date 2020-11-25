@@ -84,15 +84,17 @@ SELECT count(i) FROM wo
 ----
 9136
 
-query I rowsort
-call vacuum('sys', 'wi'); analyze sys.wi
-----
-9136
+statement ok
+call vacuum('sys', 'wi')
 
-query I rowsort
-call vacuum('sys', 'wo'); analyze sys.wo
-----
-9136
+statement ok
+analyze sys.wi
+
+statement ok
+call vacuum('sys', 'wo')
+
+statement ok
+analyze sys.wo
 
 query TTTTIIIIIIT rowsort
 SELECT "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted FROM sys.storage

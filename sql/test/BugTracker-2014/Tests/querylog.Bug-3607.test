@@ -10,9 +10,8 @@ query TTTTIIIII rowsort
 select * from sys.querylog_calls
 ----
 
-query TTTTIIIII rowsort
+statement ok
 call querylog_enable()
-----
 
 query I rowsort
 select 1
@@ -44,15 +43,11 @@ select owner, query, pipe, plan, arguments, tuples from sys.querylog_history
 ----
 18 values hashing to 594a4a49fb6f1e04c60a4e3d90d3a1ac
 
-query TTTTTI rowsort
+statement ok
 call querylog_disable()
-----
-18 values hashing to 594a4a49fb6f1e04c60a4e3d90d3a1ac
 
-query TTTTTI rowsort
+statement ok
 call sys.querylog_empty()
-----
-18 values hashing to 594a4a49fb6f1e04c60a4e3d90d3a1ac
 
 query TTTTTTIITTTIIIII rowsort
 select * from sys.querylog_history

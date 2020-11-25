@@ -22,13 +22,8 @@ from (
 2
 2
 
-query TI rowsort
+statement ok
 call profiler.stoptrace()
-----
-1
-1
-2
-2
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
@@ -40,10 +35,8 @@ select count(*) from sys.tracelog() where stmt like '% str.replace%'
 ----
 0
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-0
 
 query TI rowsort
 select replace(a1,a2,a3), id
@@ -57,13 +50,8 @@ from (
 2
 3
 
-query TI rowsort
+statement ok
 call profiler.stoptrace()
-----
-1
-2
-2
-3
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
@@ -75,10 +63,8 @@ select count(*) from sys.tracelog() where stmt like '% str.replace%'
 ----
 0
 
-query I rowsort
+statement ok
 call profiler."starttrace"()
-----
-0
 
 query TI rowsort
 select replace(a1,a2,a3), id
@@ -92,13 +78,8 @@ from (
 2
 2
 
-query TI rowsort
+statement ok
 call profiler.stoptrace()
-----
-1
-1
-2
-2
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batstr.replace%'

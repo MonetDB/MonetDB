@@ -6,10 +6,8 @@ select "schema", "table", "column", "type", "mode", case when typewidth < 14 the
 ----
 72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
 
-query TTTTTIITI rowsort
+statement ok
 call storagemodelinit()
-----
-72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
 
 statement ok
 update storagemodelinput set "count" =10000 where "table" ='bug3923'
@@ -39,10 +37,8 @@ select "schema", "table", "column", "type", "mode", case when typewidth < 14 the
 ----
 72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
 
-query TTTTTIITI rowsort
+statement ok
 call sys.storagemodelinit()
-----
-72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
 
 statement ok
 update sys.storagemodelinput set "count" =10000 where "table" ='bug3923'

@@ -38,10 +38,8 @@ select reverse('MonetDB')
 ----
 BDtenoM
 
-query T rowsort
+statement ok
 call profiler.stoptrace()
-----
-BDtenoM
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.reverse%'
@@ -58,10 +56,8 @@ select reverse('MonetDB')
 ----
 BDtenoM
 
-query T rowsort
+statement ok
 call profiler."starttrace"()
-----
-BDtenoM
 
 query T rowsort
 select reverse(x) from udf_reverse
@@ -71,13 +67,8 @@ acitamrofnI & ednuksiW murtneC
 erutcetihcrA esabataD
 smetsyS noitamrofnI
 
-query T rowsort
+statement ok
 call profiler.stoptrace()
-----
-BDtenoM
-acitamrofnI & ednuksiW murtneC
-erutcetihcrA esabataD
-smetsyS noitamrofnI
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batudf.reverse%'

@@ -24,12 +24,6 @@ select * from sys.rejects
 line 2 field isanumber 'int' expected in 'bla'
 bla@
 
-query IITT rowsort
+statement ok
 call sys.clearrejects()
-----
-2
-1
-line 2 field isanumber 'int' expected in 'bla'
-bla@
-
 
