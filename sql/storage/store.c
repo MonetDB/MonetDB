@@ -3519,6 +3519,7 @@ table_dup(sql_trans *tr, int flags, sql_table *ot, sql_schema *s)
 	t->persistence = ot->persistence;
 	t->commit_action = ot->commit_action;
 	t->access = ot->access;
+	t->partition = ot->partition;
 	t->query = (ot->query) ? sa_strdup(sa, ot->query) : NULL;
 	t->properties = ot->properties;
 
@@ -4459,6 +4460,7 @@ rollforward_update_table(sql_trans *tr, sql_table *ft, sql_table *tt, int mode)
 	if (mode == R_APPLY && ok == LOG_OK) {
 		ft->cleared = 0;
 		tt->access = ft->access;
+		tt->partition = ft->partition;
 
 		if (strcmp(tt->base.name, ft->base.name) != 0) { /* apply possible renaming */
 			list_hash_delete(tt->s->tables.set, tt, NULL);
@@ -4879,6 +4881,7 @@ reset_table(sql_trans *tr, sql_table *ft, sql_table *pft)
 
 		ft->cleared = 0;
 		ft->access = pft->access;
+		ft->partition = pft->partition;
 
 		/* apply possible renaming -> transaction rollbacks or when it starts, inherit from the previous transaction */
 		if (strcmp(ft->base.name, pft->base.name) != 0) {
