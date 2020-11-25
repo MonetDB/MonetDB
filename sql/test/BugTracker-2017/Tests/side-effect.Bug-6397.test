@@ -23,7 +23,7 @@ explain select count(*) from my_generate_series(1,5) as t1,
 my_generate_series(1,100) as t2
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack

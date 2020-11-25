@@ -8,7 +8,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where name like '%optimizers%'
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -32,7 +32,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where name not like '%optimizers%'
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -56,7 +56,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where name ilike '%optimizers%'
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -80,7 +80,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where name not ilike '%optimizers%'
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -132,7 +132,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where contains(name, 'optimizers')
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -156,7 +156,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where not_contains(name, 'optimizers')
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -180,7 +180,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where icontains(name, 'optimizers')
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -204,7 +204,7 @@ query T python .explain.function_histogram
 explain select name,func from functions where not_icontains(name, 'optimizers')
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack

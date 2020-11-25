@@ -106,7 +106,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -130,7 +130,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo OFFSET 2
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -156,7 +156,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -182,7 +182,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 1 OFFSET 2
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -208,7 +208,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo LIMIT 2 OFFSET 1
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -234,7 +234,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -260,7 +260,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a OFFSET 2
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -288,7 +288,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -318,7 +318,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 2 OFFSET 1
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -348,7 +348,7 @@ query T python .explain.function_histogram
 EXPLAIN select * from oblo ORDER BY a LIMIT 1 OFFSET 2
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc

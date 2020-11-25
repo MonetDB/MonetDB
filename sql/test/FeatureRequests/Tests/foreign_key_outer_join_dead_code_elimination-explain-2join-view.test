@@ -5,7 +5,7 @@ query T python .explain.function_histogram
 explain select count(*) from v2
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -21,7 +21,7 @@ query T python .explain.function_histogram
 explain select id       from v2 order by id
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.pack
@@ -43,7 +43,7 @@ query T python .explain.function_histogram
 explain select id , v2  from v2 order by id
 ----
 user.main
-2
+1
 querylog.define
 1
 bat.new

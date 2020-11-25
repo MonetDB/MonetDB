@@ -18,7 +18,7 @@ query T python .explain.function_histogram
 explain copy into ttt from '/tmp/xyz'
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc
@@ -68,7 +68,7 @@ query T python .explain.function_histogram
 explain copy into ttt from '/tmp/xyz'
 ----
 user.main
-2
+1
 querylog.define
 1
 sql.mvc

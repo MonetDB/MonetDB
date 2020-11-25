@@ -5,8 +5,8 @@ query T python .explain.function_histogram
 explain select count(*) from fk left outer join pk1 on fk.fk1 = pk1.pk1
 ----
 user.main
-2
-pk1.pk1
+1
+querylog.define
 1
 sql.mvc
 1
@@ -21,8 +21,8 @@ query T python .explain.function_histogram
 explain select id       from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
 user.main
-2
-pk1.pk1
+1
+querylog.define
 1
 bat.pack
 5
@@ -43,8 +43,8 @@ query T python .explain.function_histogram
 explain select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
 user.main
-2
-pk1.pk1
+1
+querylog.define
 1
 bat.new
 2
@@ -83,8 +83,8 @@ query T python .explain.function_histogram
 explain select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
 user.main
-2
-pk2.pk2
+1
+querylog.define
 1
 bat.new
 2

@@ -113,7 +113,7 @@ query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0
 ----
 user.main
-2
+1
 querylog.define
 1
 language.dataflow
@@ -145,7 +145,7 @@ query T python .explain.function_histogram
 explain select x,y from test where x between (7-3) and (7-1)
 ----
 user.main
-2
+1
 querylog.define
 1
 language.dataflow
@@ -177,7 +177,7 @@ query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0 and y between 0.0 and 2.0
 ----
 user.main
-2
+1
 querylog.define
 1
 language.dataflow
@@ -205,7 +205,7 @@ query T python .explain.function_histogram
 explain select x,y from test where x between 4.0 and 6.0 and y between (1.0-1.0) and (4.0-2.0)
 ----
 user.main
-2
+1
 querylog.define
 1
 language.dataflow
@@ -233,7 +233,7 @@ query T python .explain.function_histogram
 explain select x,y from test where x between (7-3) and (7-1) and y between (1.0-1.0) and (4.0-2.0)
 ----
 user.main
-2
+1
 querylog.define
 1
 language.dataflow

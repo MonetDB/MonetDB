@@ -12,9 +12,9 @@ def function_histogram(tab):
     histo = {}
     for row in tab:
         if row[0].find('usec') < 0:
-            g = re.match('.*\s([a-zA-Z_]\w*\.[a-zA-Z_]\w*).*;', row[0])
+            g = re.match('.*\s([a-zA-Z_][a-zA-Z_0-9]*\.[a-zA-Z_][a-zA-Z_0-9]*\().*;', row[0])
             if g:
-                f = g.groups(1)[0]
+                f = g.groups(1)[0][:-1] # Remove the trailing round bracket
                 if f in histo:
                     histo[f]+=1
                 else:
