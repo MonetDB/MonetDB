@@ -113,6 +113,8 @@ void *sa_alloc( sql_allocator *sa, size_t sz )
 				sa->size /= 2; /* undo */
 				if (sa->eb.enabled)
 					eb_error(&sa->eb, "out of memory", 1000);
+				if (!sa->pa)
+					GDKfree(r);
 				return NULL;
 			}
 			sa->blks = tmp;
