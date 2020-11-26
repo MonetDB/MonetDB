@@ -56,7 +56,7 @@ gen_smallints(FILE *f, bool byteswap, long nrecs)
 	for (long i = 0; i < nrecs; i++) {
 		uint16_t v = (uint16_t)i;
 		if (byteswap) {
-			COPY_BINARY_CONVERT16(v);
+			copy_binary_convert16(&v);
 		}
 		fwrite(&v, sizeof(v), 1, f);
 	}
@@ -68,7 +68,7 @@ gen_bigints(FILE *f, bool byteswap, long nrecs)
 	for (long i = 0; i < nrecs; i++) {
 		uint64_t v = (uint64_t)i;
 		if (byteswap) {
-			COPY_BINARY_CONVERT64(v);
+			copy_binary_convert64(&v);
 		}
 		fwrite(&v, sizeof(v), 1, f);
 	}
@@ -81,7 +81,7 @@ gen_hugeints(FILE *f, bool byteswap, long nrecs)
 	for (long i = 0; i < nrecs; i++) {
 		uhge v = (uhge)i;
 		if (byteswap) {
-			COPY_BINARY_CONVERT128(v);
+			copy_binary_convert128(&v);
 		}
 		fwrite(&v, sizeof(v), 1, f);
 	}
@@ -96,7 +96,7 @@ gen_ints(FILE *f, bool byteswap, long nrecs)
 	for (uint32_t i = 0; i < n; i++) {
 		uint32_t v = i;
 		if (byteswap) {
-			COPY_BINARY_CONVERT32(v);
+			copy_binary_convert32(&v);
 		}
 		fwrite(&v, sizeof(v), 1, f);
 	}
@@ -110,7 +110,7 @@ gen_more_ints(FILE *f, bool byteswap, long nrecs)
 	for (uint32_t i = 0; i < n; i++) {
 		uint32_t v = i + 1;
 		if (byteswap) {
-			COPY_BINARY_CONVERT32(v);
+			copy_binary_convert32(&v);
 		}
 		fwrite(&v, sizeof(v), 1, f);
 	}
@@ -125,7 +125,7 @@ gen_null_ints(FILE *f, bool byteswap, long nrecs)
 	for (uint32_t i = 0; i < n; i++) {
 		uint32_t v = i % 2 == 0 ? nil : i;
 		if (byteswap) {
-			COPY_BINARY_CONVERT32(v);
+			copy_binary_convert32(&v);
 		}
 		fwrite(&v, sizeof(v), 1, f);
 	}
@@ -150,7 +150,7 @@ gen_floats(FILE *f, bool byteswap, long nrecs)
 		float fl = (float)i;
 		fl += 0.5;
 		if (byteswap)
-			COPY_BINARY_CONVERT32(fl);
+			copy_binary_convert32(&fl);
 		fwrite(&fl, sizeof(fl), 1, f);
 	}
 }
@@ -164,7 +164,7 @@ gen_doubles(FILE *f, bool byteswap, long nrecs)
 		double fl = (double)i;
 		fl += 0.5;
 		if (byteswap)
-			COPY_BINARY_CONVERT64(fl);
+			copy_binary_convert64(&fl);
 		fwrite(&fl, sizeof(fl), 1, f);
 	}
 }

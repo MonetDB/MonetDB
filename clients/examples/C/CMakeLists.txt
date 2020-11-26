@@ -58,6 +58,16 @@ if(TESTING)
     copybinary
   )
 
+  add_executable(bincopyloops
+    bincopyloops.c
+  )
+
+  target_link_libraries(bincopyloops
+    PRIVATE
+    monetdb_config_header
+    copybinary
+  )
+
   install(TARGETS
     sample0
     sample1

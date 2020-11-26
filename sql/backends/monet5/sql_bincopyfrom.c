@@ -123,7 +123,7 @@ convert_sht(void *start, void *end, bool byteswap)
 {
 	if (byteswap)
 		for (sht *p = start; p < (sht*)end; p++)
-			COPY_BINARY_CONVERT16(*p);
+			copy_binary_convert16(p);
 
 	return MAL_SUCCEED;
 }
@@ -133,7 +133,7 @@ convert_int(void *start, void *end, bool byteswap)
 {
 	if (byteswap)
 		for (int *p = start; p < (int*)end; p++)
-			COPY_BINARY_CONVERT32(*p);
+			copy_binary_convert32(p);
 
 	return MAL_SUCCEED;
 }
@@ -143,7 +143,7 @@ convert_lng(void *start, void *end, bool byteswap)
 {
 	if (byteswap)
 		for (lng *p = start; p < (lng*)end; p++)
-			COPY_BINARY_CONVERT64(*p);
+			copy_binary_convert64(p);
 
 	return MAL_SUCCEED;
 }
@@ -154,7 +154,7 @@ convert_hge(void *start, void *end, bool byteswap)
 {
 	if (byteswap)
 		for (hge *p = start; p < (hge*)end; p++)
-			COPY_BINARY_CONVERT128(*p);
+			copy_binary_convert128(p);
 
 	return MAL_SUCCEED;
 }
@@ -173,11 +173,13 @@ convert_uuid(void *start, void *end, bool byteswap)
 static str
 convert_flt(void *start, void *end, bool byteswap)
 {
-	// slightly dodgy pointer conversions here
-	assert(sizeof(flt) == sizeof(uint32_t));
+	// Slightly dodgy pointer conversions here
+	assert(sizeof(uint32_t) == sizeof(flt));
+	assert(sizeof(struct { char dummy; uint32_t ui; }) >= sizeof(struct { char dummy; flt f; }));
+
 	if (byteswap)
-		for (union { uint32_t i; flt f; } *p = start; (void*)p < end; p++)
-			COPY_BINARY_CONVERT32(p->f);
+		for (uint32_t *p = start; (void*)p < end; p++)
+			copy_binary_convert32(p);
 
 	return MAL_SUCCEED;
 }
@@ -185,11 +187,14 @@ convert_flt(void *start, void *end, bool byteswap)
 static str
 convert_dbl(void *start, void *end, bool byteswap)
 {
-	// slightly dodgy pointer conversions here
-	assert(sizeof(dbl) == sizeof(uint64_t));
+	// Slightly dodgy pointer conversions here
+	assert(sizeof(uint64_t) == sizeof(dbl));
+	assert(sizeof(struct { char dummy; uint64_t ui; }) >= sizeof(struct { char dummy; dbl f; }));
+
+
 	if (byteswap)
-		for (union { uint64_t i; dbl d; } *p = start; (void*)p < end; p++)
-			COPY_BINARY_CONVERT64(p->d);
+		for (uint64_t *p = start; (void*)p < end; p++)
+			copy_binary_convert64(p);
 
 	return MAL_SUCCEED;
 }
@@ -269,7 +274,7 @@ convert_date(void *dst_start, void *dst_end, void *src_start, void *src_end, boo
 
 	for (; src < src_e; src++) {
 		if (byteswap)
-			COPY_BINARY_CONVERT_DATE(*src);
+			copy_binary_convert_date(src);
 		date value = date_create(src->year, src->month, src->day);
 		*dst++ = value;
 	}
@@ -289,7 +294,7 @@ convert_time(void *dst_start, void *dst_end, void *src_start, void *src_end, boo
 
 	for (; src < src_e; src++) {
 		if (byteswap)
-			COPY_BINARY_CONVERT_TIME(*src);
+			copy_binary_convert_time(src);
 		daytime value = daytime_create(src->hours, src->minutes, src->seconds, src->ms);
 		*dst++ = value;
 	}
@@ -309,7 +314,7 @@ convert_timestamp(void *dst_start, void *dst_end, void *src_start, void *src_end
 
 	for (; src < src_e; src++) {
 		if (byteswap)
-			COPY_BINARY_CONVERT_TIMESTAMP(*src);
+			copy_binary_convert_timestamp(src);
 		date dt = date_create(src->date.year, src->date.month, src->date.day);
 		daytime tm = daytime_create(src->time.hours, src->time.minutes, src->time.seconds, src->time.ms);
 		timestamp value = timestamp_create(dt, tm);
