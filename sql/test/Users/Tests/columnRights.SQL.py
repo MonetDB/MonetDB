@@ -12,10 +12,10 @@ with SQLTestCase() as tc:
     tc.execute("GRANT UPDATE (name)  ON library.orders TO alice;").assertSucceeded()
 
     tc.connect(username="alice", password="alice")
-    tc.execute("SELECT price FROM library.orders;").assertSucceeded()
-    tc.execute("UPDATE library.orders SET name = 'book title goes here';").assertSucceeded()
-    tc.execute("SELECT name FROM library.orders; --insufficient rights").assertFailed()
-    tc.execute("UPDATE orders SET price = 0; --insufficient rights").assertFailed()
+    tc.execute("SELECT price FROM library.orders;").assertSucceeded().assertRowCount(0).assertDataResultMatch([])
+    tc.execute("UPDATE library.orders SET name = 'book title goes here';").assertSucceeded().assertRowCount(0)
+    tc.execute("SELECT name FROM library.orders; --insufficient rights").assertFailed(err_message="SELECT: identifier 'name' unknown")
+    tc.execute("UPDATE orders SET price = 0; --insufficient rights").assertFailed(err_message="UPDATE: insufficient privileges for user 'alice' to update table 'orders' on column 'price'")
 
 # import os, sys
 # try:
