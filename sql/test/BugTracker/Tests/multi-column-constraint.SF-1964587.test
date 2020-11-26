@@ -1,8 +1,13 @@
 statement ok
 create table test_property(subject integer, p1 integer, p2 integer, unique(subject, p1), unique(subject, p2))
 
-statement ok
-\D
+query TTTT rowsort
+select "name", "query", "type", "remark" from describe_table('sys', 'test_property')
+----
+test_property
+NULL
+TABLE
+NULL
 
 statement ok
 drop table test_property
