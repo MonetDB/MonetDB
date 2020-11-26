@@ -323,11 +323,12 @@ rel_psm_if_then_else( sql_query *query, sql_subtype *res, list *restypelist, dno
 	[ ELSE statements ]
 	END CASE
  */
-static list *
+static sql_exp *
 rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case_when, int is_func )
 {
 	mvc *sql = query->sql;
-	list *case_stmts = sa_list(sql->sa);
+	sql_exp *case_stmt = NULL, *last_if = NULL, *ifst = NULL;
+	list *else_stmt = NULL;
 
 	if (!case_when)
 		return NULL;
@@ -338,7 +339,6 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 		symbol *case_value = n->data.sym;
 		dlist *when_statements = n->next->data.lval;
 		dlist *else_statements = n->next->next->data.lval;
-		list *else_stmt = NULL;
 		sql_rel *rel = NULL;
 		exp_kind ek = {type_value, card_value, FALSE};
 		sql_exp *v = rel_value_exp(query, &rel, case_value, sql_sel | sql_psm, ek);
@@ -354,7 +354,6 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 			dnode *m = n->data.sym->data.lval->h;
 			sql_exp *cond=0, *when_value = rel_value_exp(query, &rel, m->data.sym, sql_sel | sql_psm, ek);
 			list *if_stmts = NULL;
-			sql_exp *case_stmt = NULL;
 
 			psm_zero_or_one(when_value);
 			if (!when_value ||
@@ -363,19 +362,20 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 				return NULL;
 			}
 			psm_zero_or_one(cond);
-			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
-			list_append(case_stmts, case_stmt);
+			ifst = exp_if(sql->sa, cond, if_stmts, NULL);
+			if (last_if) { /* chain if statements for case, keep the last if */
+				last_if->f = list_append(sa_list(sql->sa), ifst);
+				last_if = ifst;
+			} else {
+				case_stmt = last_if = ifst;
+			}
 			n = n->next;
 		}
-		if (else_stmt)
-			list_merge(case_stmts, else_stmt, NULL);
-		return case_stmts;
 	} else {
 		/* case 2 */
 		dnode *n = case_when;
 		dlist *whenlist = n->data.lval;
 		dlist *else_statements = n->next->data.lval;
-		list *else_stmt = NULL;
 
 		if (else_statements && !(else_stmt = sequential_block(query, res, restypelist, else_statements, NULL, is_func)))
 			return NULL;
@@ -387,33 +387,38 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 			exp_kind ek = {type_value, card_value, FALSE};
 			sql_exp *cond = rel_logical_value_exp(query, &rel, m->data.sym, sql_sel | sql_psm, ek);
 			list *if_stmts = NULL;
-			sql_exp *case_stmt = NULL;
 
 			psm_zero_or_one(cond);
 			if (!cond ||
 			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				return NULL;
 			}
-			case_stmt = exp_if(sql->sa, cond, if_stmts, NULL);
-			list_append(case_stmts, case_stmt);
+			ifst = exp_if(sql->sa, cond, if_stmts, NULL);
+			if (last_if) { /* chain if statements for case, keep the last if */
+				last_if->f = list_append(sa_list(sql->sa), ifst);
+				last_if = ifst;
+			} else {
+				case_stmt = last_if = ifst;
+			}
 			n = n->next;
 		}
-		if (else_stmt)
-			list_merge(case_stmts, else_stmt, NULL);
-		return case_stmts;
 	}
+	if (else_stmt) {
+		assert(case_stmt && last_if && !last_if->f);
+		last_if->f = else_stmt;
+	}
+	return case_stmt;
 }
 
 /* return val;
  */
-static list *
+static sql_exp *
 rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbol *return_sym )
 {
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_exp *res = NULL;
 	sql_rel *rel = NULL;
-	list *l = sa_list(sql->sa);
 	bool requires_proj = false;
 
 	if (restypelist)
@@ -521,12 +526,12 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		rel = rel_project(sql->sa, rel, exps);
 		res = exp_rel(sql, rel);
 	}
-	append(l, res = exp_return(sql->sa, res, stack_nr_of_declared_tables(sql)));
+	res = exp_return(sql->sa, res, stack_nr_of_declared_tables(sql));
 	if (ek.card != card_relation)
 		res->card = CARD_ATOM;
 	else
 		res->card = CARD_MULTI;
-	return l;
+	return res;
 }
 
 static list *
@@ -673,7 +678,7 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 			res = rel_psm_if_then_else(query, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CASE:
-			reslist = rel_psm_case(query, restype, restypelist, s->data.lval->h, is_func);
+			res = rel_psm_case(query, restype, restypelist, s->data.lval->h, is_func);
 			break;
 		case SQL_CALL:
 			res = rel_psm_call(query, s->data.sym);
@@ -682,15 +687,10 @@ sequential_block(sql_query *query, sql_subtype *restype, list *restypelist, dlis
 			/*If it is not a function it cannot have a return statement*/
 			if (!is_func)
 				res = sql_error(sql, 01, SQLSTATE(42000) "Return statement in the procedure body");
-			else {
-				/* should be last statement of a sequential_block */
-				if (n->next) {
-					res = sql_error(sql, 01, SQLSTATE(42000) "Statement after return");
-				} else {
-					res = NULL;
-					reslist = rel_psm_return(query, restype, restypelist, s->data.sym);
-				}
-			}
+			else if (n->next) /* should be last statement of a sequential_block */
+				res = sql_error(sql, 01, SQLSTATE(42000) "Statement after return");
+			else
+				res = rel_psm_return(query, restype, restypelist, s->data.sym);
 			break;
 		case SQL_SELECT: { /* row selections (into variables) */
 			exp_kind ek = {type_value, card_row, TRUE};

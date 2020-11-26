@@ -70,7 +70,6 @@ function(monetdb_configure_defines)
   # Linux specific, in the future, it might be ported to other platforms
   check_symbol_exists("fallocate" "fcntl.h" HAVE_FALLOCATE)
   check_function_exists("fcntl" HAVE_FCNTL)
-  check_symbol_exists("F_GETLK" "fcntl.h" HAVE_F_GETLK)
   check_symbol_exists("fork" "unistd.h" HAVE_FORK)
   check_symbol_exists("fsync" "unistd.h" HAVE_FSYNC)
   check_symbol_exists("ftime" "sys/timeb.h" HAVE_FTIME)
@@ -181,13 +180,7 @@ macro(monetdb_macro_variables)
   if(HAVE_GETOPT_H)
     set(HAVE_GETOPT 1)
   endif()
-  # Check with STATIC_CODE_ANALYSIS
   # compiler options, profiling (google perf tools), valgrind
-  set(ENABLE_STATIC_ANALYSIS
-    "NO"
-    CACHE
-    STRING
-    "Configure for static code analysis (use only if you know what you are doing)")
   # Check that posix regex is available when pcre is not found
   # "monetdb5/module/mal/pcre.c" assumes the regex library is available
   # as an alternative without checking this in the C code.
