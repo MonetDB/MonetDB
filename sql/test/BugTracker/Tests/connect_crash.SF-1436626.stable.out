@@ -5,12 +5,6 @@ stdout of test 'connect_crash.SF-1436626` in directory 'sql/test/BugTracker` its
 # 14:42:35 >  Mtimeout -timeout 180 /ufs/sjoerd/bin/x86_64/python connect_crash.SF-1436626.py connect_crash.SF-1436626 
 # 14:42:35 >  
 
-#select 1;
-% .%2 # table_name
-% %2 # name
-% tinyint # type
-% 1 # length
-[ 1	]
 
 # 14:42:45 >  
 # 14:42:45 >  Done.
