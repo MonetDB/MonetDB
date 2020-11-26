@@ -324,10 +324,6 @@ snapshot_destroy_file(char *path)
 	if (e != NULL)
 		return e;
 
-	struct stat dummy;
-	if (stat(path, &dummy) < 0)
-		return newErr("Could not drop snapshot '%s': %s", path, strerror(errno));
-
 	if (remove(path) < 0)
 		return newErr("Could not remove '%s': %s", path, strerror(errno));
 
@@ -660,7 +656,7 @@ prepare_directory(struct dir_helper *state, const char *prefix_dir, const char *
 		}
 		if (close(state->fd) < 0) {
 			e = newErr("close %s: %s", state->dir, strerror(errno));
-			state->fd = 0;
+			state->fd = -1;
 			goto bailout;
 		}
 		state->fd = -1;
@@ -739,7 +735,9 @@ read_tar_block(stream *s, char *block, err *error)
 	if (nread <= 0) {
 		if (mnstr_errnr(s) != 0) {
 			/* failure */
-			*error = newErr("Read error (%zd): %s", nread, mnstr_error(s));
+			char *err = mnstr_error(s);
+			*error = newErr("Read error (%zd): %s", nread, err);
+			free(err);
 		} else {
 			*error = NULL;
 		}
@@ -832,7 +830,9 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 		sprintf(destfile, "%s/%s", destdir, useful_part);
 
 		// Create any missing directories and take care of fsync'ing them
-		prepare_directory(&dirhelper, destdir, destfile);
+		e = prepare_directory(&dirhelper, destdir, destfile);
+		if (e)
+			goto bailout;
 
 		// Copy the data
 		outfile = fopen(destfile, "w");

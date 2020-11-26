@@ -23,6 +23,12 @@
 #include <strings.h>		/* for strncasecmp */
 #endif
 
+#ifndef WIN32
+/* for umask */
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
+
 static const char *sql_commands[] = {
 	"SELECT",
 	"INSERT",
@@ -313,37 +319,40 @@ invoke_editor(int cnt, int key) {
 	char *read_buff = NULL;
 	char *editor = NULL;
 	FILE *fp = NULL;
-	size_t content_len;
+	long content_len;
 	size_t read_bytes, idx;
-#ifdef WIN32
-	char *mytemp;
-	char template[] = "mclient_temp_XXXXXX";
-#else
-	int mytemp;
-	char template[] = "/tmp/mclient_temp_XXXXXX";
-#endif
 
 	(void) cnt;
 	(void) key;
 
 #ifdef WIN32
+	char *mytemp;
+	char template[] = "mclient_temp_XXXXXX";
 	if ((mytemp = _mktemp(template)) == NULL) {
-#else
-	if ((mytemp = mkstemp(template)) == 0) {
-#endif
 		readline_show_error("invoke_editor: Cannot create temp file\n");
 		goto bailout;
 	}
-
-#ifdef WIN32
 	if ((fp = fopen(mytemp, "r+")) == NULL) {
-#else
-	if ((fp = fdopen(mytemp, "r+")) == NULL) {
-#endif
 		// Notify the user that we cannot create temp file
 		readline_show_error("invoke_editor: Cannot create temp file\n");
 		goto bailout;
 	}
+#else
+	int mytemp;
+	char template[] = "/tmp/mclient_temp_XXXXXX";
+	mode_t msk = umask(077);
+	mytemp = mkstemp(template);
+	(void) umask(msk);
+	if (mytemp == -1) {
+		readline_show_error("invoke_editor: Cannot create temp file\n");
+		goto bailout;
+	}
+	if ((fp = fdopen(mytemp, "r+")) == NULL) {
+		// Notify the user that we cannot create temp file
+		readline_show_error("invoke_editor: Cannot create temp file\n");
+		goto bailout;
+	}
+#endif
 
 	fwrite(rl_line_buffer, sizeof(char), rl_end, fp);
 	fflush(fp);
@@ -368,24 +377,24 @@ invoke_editor(int cnt, int key) {
 	rewind(fp);
 
 	if (content_len > 0) {
-		read_buff = (char *)malloc(content_len*sizeof(char));
+		read_buff = (char *)malloc(content_len + 1);
 		if (read_buff == NULL) {
 			readline_show_error("invoke_editor: Cannot allocate memory\n");
 			goto bailout;
 		}
 
-		read_bytes = fread(read_buff, sizeof(char), content_len, fp);
-		if (read_bytes != content_len) {
+		read_bytes = fread(read_buff, sizeof(char), (size_t) content_len, fp);
+		if (read_bytes != (size_t) content_len) {
 			readline_show_error("invoke_editor: Did not read from file correctly\n");
 			goto bailout;
 		}
 
-		*(read_buff + read_bytes) = 0;
+		read_buff[read_bytes] = 0;
 
 		/* Remove trailing whitespace */
 		idx = read_bytes - 1;
 		while(isspace(*(read_buff + idx))) {
-			*(read_buff + idx) = 0;
+			read_buff[idx] = 0;
 			idx--;
 		}
 
@@ -404,7 +413,8 @@ invoke_editor(int cnt, int key) {
 	return 0;
 
 bailout:
-	fclose(fp);
+	if (fp)
+		fclose(fp);
 	free(read_buff);
 	unlink(template);
 	return 1;
