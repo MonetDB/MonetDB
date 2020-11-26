@@ -1515,9 +1515,10 @@ cleanup:
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (mdbe->msg) {
-		*res = NULL;
+		if (res)
+			*res = NULL;
 		monetdbe_destroy_column(column_result);
-	} else {
+	} else if (res) {
 		result->converted_columns[column_index] = column_result;
 		*res = result->converted_columns[column_index];
 	}
