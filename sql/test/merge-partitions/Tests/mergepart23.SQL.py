@@ -48,9 +48,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
         with SQLTestCase() as tc:
             tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
             tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
-            tc.execute('DROP TABLE subtable1;').assertFailed() # error, subtable1 is a child of testme
-            tc.execute('DROP TABLE subtable3;').assertFailed() # error, subtable3 is a child of anothertest
-            tc.execute('ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20;').assertFailed() # error, subtable1 is part of another table
+            tc.execute('DROP TABLE subtable1;').assertFailed(err_message='DROP TABLE: unable to drop table subtable1 (there are database objects which depend on it)') # error, subtable1 is a child of testme
+            tc.execute('DROP TABLE subtable3;').assertFailed(err_message='DROP TABLE: unable to drop table subtable3 (there are database objects which depend on it)') # error, subtable3 is a child of anothertest
+            tc.execute('ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20;').assertFailed(err_message='ALTER TABLE: table \'sys.subtable1\' is already part of another table') # error, subtable1 is part of another table
             tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
         server_stop(s)
     with process.server(mapiport=myport, dbname='db1',
@@ -73,8 +73,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('ALTER TABLE anothertest DROP TABLE subtable3;').assertSucceeded()
             tc.execute('ALTER TABLE anothertest DROP TABLE subtable4;').assertSucceeded()
             tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([])
-            tc.execute('ALTER TABLE testme DROP COLUMN "a";').assertFailed() # error, a is a partition column
-            tc.execute('ALTER TABLE anothertest DROP COLUMN "a";').assertFailed() # error, a is used on partition expression
+            tc.execute('ALTER TABLE testme DROP COLUMN "a";').assertFailed(err_message='ALTER TABLE: cannot drop column \'a\': is the partitioned column on the table \'testme\'') # error, a is a partition column
+            tc.execute('ALTER TABLE anothertest DROP COLUMN "a";').assertFailed(err_message='ALTER TABLE: cannot drop column \'a\': there are database objects which depend on it') # error, a is used on partition expression
             tc.execute('DROP TABLE testme;').assertSucceeded()
             tc.execute('DROP TABLE subtable1;').assertSucceeded()
             tc.execute('DROP TABLE subtable2;').assertSucceeded()

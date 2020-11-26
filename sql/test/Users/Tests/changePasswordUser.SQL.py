@@ -11,12 +11,12 @@ with SQLTestCase() as tc:
     tc.connect(username="april", password="april")
     tc.execute("select 'password april';").assertFailed()
     tc.connect(username="april", password="april2")
-    tc.execute("select 'password april2';").assertSucceeded()
-    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';").assertFailed()
+    tc.execute("select 'password april2';").assertSucceeded().assertRowCount(1).assertDataResultMatch([("password april2",)])
+    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';").assertFailed(err_message='ALTER USER: Access denied')
     tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april' USING OLD PASSWORD 'april2';").assertSucceeded()
     tc.execute("select 'password april2 (wrong!!!)';").assertFailed()
     tc.connect(username="april", password="april")
-    tc.execute("select 'password change successfully';").assertSucceeded()
+    tc.execute("select 'password change successfully';").assertSucceeded().assertRowCount(1).assertDataResultMatch([("password change successfully",)])
 
 # import os, sys
 # try:
