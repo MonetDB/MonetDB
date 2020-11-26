@@ -1546,7 +1546,9 @@ close_result(MapiHdl hdl)
 				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 					close_connection(mid);
-					mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+					char *err = mnstr_error(mid->to);
+					mapi_setError(mid, err, __func__, MTIMEOUT);
+					free(err);
 					break;
 				}
 				read_into_cache(hdl, 0);
@@ -1564,7 +1566,9 @@ close_result(MapiHdl hdl)
 				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 					close_connection(mid);
-					mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+					char *err = mnstr_error(mid->to);
+					mapi_setError(mid, err, __func__, MTIMEOUT);
+					free(err);
 				} else
 					read_into_cache(hdl, 0);
 			}
@@ -1788,7 +1792,9 @@ finish_handle(MapiHdl hdl)
 			if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 			    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 				close_connection(mid);
-				mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+				char *err = mnstr_error(mid->to);
+				mapi_setError(mid, err, __func__, MTIMEOUT);
+				free(err);
 				break;
 			}
 			read_into_cache(hdl, 0);
@@ -2985,22 +2991,24 @@ mapi_resolve(const char *host, int port, const char *pattern)
 		return NULL;
 
 	mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
-	if (mid && mid->error == MOK) {
-		rmax = mid->redirmax;
-		mid->redirmax = 0;
-		mapi_reconnect(mid);	/* real connect, don't follow redirects */
-		mid->redirmax = rmax;
+	if (mid) {
 		if (mid->error == MOK) {
-			close_connection(mid);	/* we didn't expect a connection actually */
-		} else {
-			char **ret = malloc(sizeof(char *) * MAXREDIR);
-			memcpy(ret, mid->redirects, sizeof(char *) * MAXREDIR);
-			mid->redirects[0] = NULL;	/* make sure the members aren't freed */
-			mapi_destroy(mid);
-			return ret;
+			rmax = mid->redirmax;
+			mid->redirmax = 0;
+			mapi_reconnect(mid);	/* real connect, don't follow redirects */
+			mid->redirmax = rmax;
+			if (mid->error == MOK) {
+				close_connection(mid);	/* we didn't expect a connection actually */
+			} else {
+				char **ret = malloc(sizeof(char *) * MAXREDIR);
+				memcpy(ret, mid->redirects, sizeof(char *) * MAXREDIR);
+				mid->redirects[0] = NULL;	/* make sure the members aren't freed */
+				mapi_destroy(mid);
+				return ret;
+			}
 		}
+		mapi_destroy(mid);
 	}
-	mapi_destroy(mid);
 	return NULL;
 }
 
@@ -3306,7 +3314,9 @@ mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue)
 	if (mnstr_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
 	    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 		close_connection(mid);
-		mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+		char *err = mnstr_error(mid->to);
+		mapi_setError(mid, err, __func__, MTIMEOUT);
+		free(err);
 		return MERROR;
 	}
 	if (mid->tracelog) {
@@ -4569,7 +4579,9 @@ mapi_cache_limit(Mapi mid, int limit)
 		if (mnstr_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
 		    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 			close_connection(mid);
-			mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+			char *err = mnstr_error(mid->to);
+			mapi_setError(mid, err, __func__, MTIMEOUT);
+			free(err);
 			return MERROR;
 		}
 		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");

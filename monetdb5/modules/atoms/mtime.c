@@ -613,6 +613,8 @@ func1(MTIMEdate_extract_dayofyear, "date_dayofyear", date, int, date_dayofyear, 
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdate_extract_weekofyear, "date_weekofyear", date, int, date_weekofyear, SETFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
+func1(MTIMEdate_extract_usweekofyear, "date_usweekofyear", date, int, date_usweekofyear, SETFLAGS, func1_noexcept, \
+	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdate_extract_dayofweek, "date_dayofweek", date, int, date_dayofweek, SETFLAGS, func1_noexcept, \
 	  DEC_VAR_R, DEC_VAR_R, INIT_VAR, INIT_VAR, GET_NEXT_VAR)
 func1(MTIMEdate_extract_epoch_ms, "epoch_ms", date, lng, date_to_msec_since_epoch, COPYFLAGS, func1_noexcept, \
@@ -1142,6 +1144,9 @@ static mel_func mtime_init_funcs[] = {
  command("mtime", "weekofyear", MTIMEdate_extract_weekofyear, false, "Returns the week number in the year.", args(1,2, arg("",int),arg("d",date))),
  pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  pattern("batmtime", "weekofyear", MTIMEdate_extract_weekofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
+ command("mtime", "usweekofyear", MTIMEdate_extract_usweekofyear, false, "Returns the week number in the year, US style.", args(1,2, arg("",int),arg("d",date))),
+ pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
+ pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),
  command("mtime", "dayofweek", MTIMEdate_extract_dayofweek, false, "Returns the current day of the week\nwhere 1=monday, .., 7=sunday", args(1,2, arg("",int),arg("d",date))),
  pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),

@@ -93,6 +93,7 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	/* A good MAL plan should end with an END instruction */
 	if( p && p->token != ENDsymbol){
+		GDKfree(used);
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 	/* Leave a message behind when we have created variables and not used them */
@@ -128,4 +129,3 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		addtoMalBlkHistory(mb);
 	return msg;
 }
-

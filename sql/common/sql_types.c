@@ -1364,6 +1364,7 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "day", "mtime", "day", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "dayofyear", "mtime", "dayofyear", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "weekofyear", "mtime", "weekofyear", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
+	sql_create_func(sa, "usweekofyear", "mtime", "usweekofyear", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "dayofweek", "mtime", "dayofweek", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "dayofmonth", "mtime", "day", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "week", "mtime", "weekofyear", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);

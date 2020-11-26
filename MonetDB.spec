@@ -161,16 +161,13 @@ BuildRequires: pkgconfig(libR)
 BuildRequires: texlive-obsolete
 %endif
 %endif
-# if we were to compile with cmocka support (-DWITH_CMOCKA=ON):
-# BuildRequires: pkgconfig(cmocka)
-# if we were to compile with NetCDF support (-DNETCDF=ON):
-# BuildRequires: pkgconfig(netcdf)
-# if we were to compile with proj support (-DWITH_PROJ=ON):
-# BuildRequires: pkgconfig(proj)
-# if we were to compile with snappy support (-DWITH_SNAPPY=ON):
-# BuildRequires: pkgconfig(snappy)
-# if we were to compile with valgrind support (-DWITH_VALGRIND=ON):
-# BuildRequires: pkgconfig(valgrind)
+# optional packages:
+# BuildRequires: pkgconfig(cmocka)	# -DWITH_CMOCKA=ON
+# BuildRequires: pkgconfig(gdal)	# -DSHP=ON
+# BuildRequires: pkgconfig(netcdf)	# -DNETCDF=ON
+# BuildRequires: pkgconfig(proj)	# -DWITH_PROJ=ON
+# BuildRequires: pkgconfig(snappy)	# -DWITH_SNAPPY=ON
+# BuildRequires: pkgconfig(valgrind)	# -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}

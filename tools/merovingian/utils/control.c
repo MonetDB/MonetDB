@@ -609,11 +609,14 @@ char* control_send_callback(
 
 	msg = control_receive_wait(ret, control);
 
-	if (control->fdin != NULL) {
-		close_stream(control->fdin);
-		close_stream(control->fdout);
-	} else {
-		closesocket(control->sock);
+	/* control_receive_wait closes control in case of error */
+	if (msg == NULL) {
+		if (control->fdin != NULL) {
+			close_stream(control->fdin);
+			close_stream(control->fdout);
+		} else {
+			closesocket(control->sock);
+		}
 	}
 
 	return msg;

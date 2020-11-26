@@ -299,7 +299,9 @@ create_text_stream(stream *inner)
 		if (skip_bom(s) < 0) {
 			free(inner_state);
 			free(state);
-			mnstr_set_open_error(inner->name, 0, "while looking for a byte order mark: %s", mnstr_error(s));
+			char *err = mnstr_error(s);
+			mnstr_set_open_error(inner->name, 0, "while looking for a byte order mark: %s", err);
+			free(err);
 			destroy_stream(s);
 			return NULL;
 		}

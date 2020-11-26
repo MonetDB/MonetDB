@@ -461,6 +461,7 @@ ssize_t date_fromstr(const char *buf, size_t *len, date **d, bool external);
 int date_month(date dt) __attribute__((__const__));
 int date_quarter(date dt) __attribute__((__const__));
 ssize_t date_tostr(str *buf, size_t *len, const date *val, bool external);
+int date_usweekofyear(date dt) __attribute__((__const__));
 int date_weekofyear(date dt) __attribute__((__const__));
 int date_year(date dt) __attribute__((__const__));
 daytime daytime_add_usec(daytime tm, lng usec) __attribute__((__const__));
