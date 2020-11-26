@@ -32,7 +32,7 @@ CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEG
 			WHEN digits = 10 THEN 'INTERVAL HOUR TO SECOND'
 			WHEN digits = 11 THEN 'INTERVAL MINUTE'
 			WHEN digits = 12 THEN 'INTERVAL MINUTE TO SECOND'
-			ELSE  'INTERVAL SECOND' --ASSUMES digits = 13 
+			ELSE  'INTERVAL SECOND' --ASSUMES digits = 13
 			END
 		WHEN type = 'varchar' OR type = 'clob' THEN  CASE
 			WHEN digits = 0 THEN 'CHARACTER LARGE OBJECT'
@@ -71,112 +71,108 @@ END;
 CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
 	RETURN
 		SELECT 
+			' (' ||
 			GROUP_CONCAT(
 				DQ(c.name) || ' ' ||
 				dump_type(c.type, c.type_digits, c.type_scale) ||
-				ifthenelse(c."null" = 'false', ' NOT NULL ', '') ||
+				ifthenelse(c."null" = 'false', ' NOT NULL', '') ||
 				ifthenelse(c."default" IS NOT NULL, ' DEFAULT ' || c."default", '')
-			, '')
-			--c.number
+			, ', ') || ')'
 		FROM sys._columns c 
 		WHERE c.table_id = tid;
-	END;
+END;
 
-CREATE FUNCTION dump_database(describe BOOLEAN)
-RETURNS STRING
+CREATE FUNCTION dump_contraint_type_name(id INT) RETURNS STRING BEGIN
+	RETURN
+		CASE
+		WHEN id = 0 THEN 'PRIMARY KEY'
+		WHEN id = 1 THEN 'UNIQUE'
+		END;
+END;
+
+CREATE FUNCTION describe_constraints() RETURNS TABLE("table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
+	RETURN
+		SELECT t.name, kc.nr, kc.name, k.name, dump_contraint_type_name(k.type)
+		FROM sys._tables t, sys.objects kc, sys.keys k
+		WHERE kc.id = k.id
+			AND k.table_id = t.id
+			AND t.system = FALSE
+			AND k.type in (0, 1)
+			AND t.type IN (0, 6);
+END;
+
+CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
+	RETURN
+		SELECT 
+			'ALTER TABLE ' || DQ("table") ||
+			ifthenelse(con IS NOT NULL, ' ADD CONTRAINT ' || DQ(con), '') || ' '||
+			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
+		FROM describe_constraints() GROUP BY "table", con, type;
+END;
+
+CREATE TEMPORARY TABLE dump_statements(o INT AUTO_INCREMENT, s STRING, PRIMARY KEY (o));
+
+CREATE PROCEDURE dump_database(describe BOOLEAN)
 BEGIN
 
     set schema sys;
 
-    DECLARE create_roles STRING;
-    SET create_roles = (
-        SELECT GROUP_CONCAT('CREATE ROLE ' || name || ';')  FROM auths
+	INSERT INTO dump_statements(s) VALUES ('START TRANSACTION;');
+
+	INSERT INTO dump_statements(s) --dump_create_roles
+		SELECT 'CREATE ROLE ' || DQ(name) || ';' FROM auths
         WHERE name NOT IN (SELECT name FROM db_user_info) 
-        AND grantor <> 0
-    );
+        AND grantor <> 0;
 
-    IF create_roles IS NULL THEN
-        SET create_roles = '';
-    END IF;
-
-    declare create_users STRING;
-    SET create_users = (SELECT
-        GROUP_CONCAT(
-        'CREATE USER ' ||  ui.name ||  ' WITH ENCRYPTED PASSWORD\n' ||
+	INSERT INTO dump_statements(s) --dump_create_users
+		SELECT
+        'CREATE USER ' ||  DQ(ui.name) ||  ' WITH ENCRYPTED PASSWORD\n' ||
             ENI(password_hash(ui.name)) ||
-        'NAME ' || ui.fullname ||  ' SCHEMA sys;', '\n')
+        'NAME ' || ui.fullname ||  ' SCHEMA sys;'
         FROM db_user_info ui, schemas s
         WHERE ui.default_schema = s.id
             AND ui.name <> 'monetdb'
-            AND ui.name <> '.snapshot');
+            AND ui.name <> '.snapshot';
 
-    IF create_users IS NULL THEN
-        SET create_users = '';
-    END IF;
-
-    declare create_schemas STRING;
-    SET create_schemas = (
+	INSERT INTO dump_statements(s) --dump_create_schemas
         SELECT
-            GROUP_CONCAT('CREATE SCHEMA ' ||  s.name || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' || 
-            comment_on('SCHEMA', s.name, rem.remark), '\n')
+            'CREATE SCHEMA ' ||  DQ(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' ||
+            comment_on('SCHEMA', DQ(s.name), rem.remark)
         FROM schemas s LEFT OUTER JOIN comments rem ON s.id = rem.id,auths a
-        WHERE s.authorization = a.id AND s.system = FALSE);
+        WHERE s.authorization = a.id AND s.system = FALSE;
 
-    IF create_schemas IS NULL THEN
-        SET create_schemas = '';
-    END IF;
-
-    declare alter_users STRING;
-    SET alter_users = (
-        SELECT
-            GROUP_CONCAT('ALTER USER ' || ui.name || ' SET SCHEMA ' || s.name || ';', '\n')
+    INSERT INTO dump_statements(s) --dump_add_schemas_to_users
+	    SELECT
+            'ALTER USER ' || DQ(ui.name) || ' SET SCHEMA ' || DQ(s.name) || ';'
         FROM db_user_info ui, schemas s
         WHERE ui.default_schema = s.id
             AND ui.name <> 'monetdb'
             AND ui.name <> '.snapshot'
-            AND s.name <> 'sys');
+            AND s.name <> 'sys';
 
-    IF alter_users IS NULL THEN
-        SET alter_users = '';
-    END IF;
-
-    declare grant_user_priviledges STRING;
-    SET grant_user_priviledges = (
+    INSERT INTO dump_statements(s) --dump_grant_user_priviledges
         SELECT
-            GROUP_CONCAT('GRANT ' || DQ(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', DQ(a1.name)) || ';', '\n')
+            'GRANT ' || DQ(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', DQ(a1.name)) || ';'
 		FROM sys.auths a1, sys.auths a2, sys.user_role ur
-		WHERE a1.id = ur.login_id AND a2.id = ur.role_id);
+		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
-    IF grant_user_priviledges IS NULL THEN
-        SET grant_user_priviledges = '';
-    END IF;
-
-
-	declare create_sequences STRING;
-	SET create_sequences  = (
-		SELECT GROUP_CONCAT('CREATE SEQUENCE ' || DQ(sch.name) || '.' || DQ(seq.name) || ' AS INTEGER;' || 
-		comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark), '\n')
+	INSERT INTO dump_statements(s) --dump_create_sequences
+		SELECT 'CREATE SEQUENCE ' || DQ(sch.name) || '.' || DQ(seq.name) || ' AS INTEGER;' ||
+		comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark)
 		FROM sys.schemas sch,
 			sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id
-		WHERE sch.id = seq.schema_id);
+		WHERE sch.id = seq.schema_id;
 
-    IF create_sequences IS NULL THEN
-        SET create_sequences = '';
-    END IF;
-
-	declare create_tables STRING;
-    set create_tables = (
-		SELECT GROUP_CONCAT('CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || ';', '\n')
+	INSERT INTO dump_statements(s) --dump_create_tables
+		SELECT 'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || ';'
 		FROM sys.schemas s, table_types ts, sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id
 		WHERE t.type IN (0, 6)
 			AND t.system = FALSE
 			AND s.id = t.schema_id
 			AND ts.table_type_id = t.type
-			AND s.name <> 'tmp');
+			AND s.name <> 'tmp';
 
-    IF create_tables IS NULL THEN
-        SET create_tables = '';
-    END IF;
+	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
 
 	--TODO where are the parenthesis in the column definition.
 	--TODO COLUMN DEFINITIONS
@@ -187,20 +183,12 @@ BEGIN
 	--TODO CREATE INDEX + COMMENT
 	--TODO User Defined Types?
 
-    RETURN 
-        'START TRANSACTION;\n' ||
-        create_roles || '\n' ||
-        create_users || '\n' ||
-        create_schemas || '\n' ||
-        alter_users || '\n' ||
-        grant_user_priviledges || '\n' ||
-        create_sequences || '\n' ||
-		create_tables || '\n' ||
-        'COMMIT;';
+    INSERT INTO dump_statements(s) VALUES ('COMMIT;');
 
 END;
 
-SELECT dump_database(TRUE);
+CALL dump_database(TRUE);
+SELECT * FROM dump_statements;
 
 ROLLBACK;
 
