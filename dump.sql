@@ -32,7 +32,7 @@ CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEG
 			WHEN digits = 10 THEN 'INTERVAL HOUR TO SECOND'
 			WHEN digits = 11 THEN 'INTERVAL MINUTE'
 			WHEN digits = 12 THEN 'INTERVAL MINUTE TO SECOND'
-			ELSE  'INTERVAL SECOND' --ASSUMES digits = 13 
+			ELSE  'INTERVAL SECOND' --ASSUMES digits = 13
 			END
 		WHEN type = 'varchar' OR type = 'clob' THEN  CASE
 			WHEN digits = 0 THEN 'CHARACTER LARGE OBJECT'
@@ -67,17 +67,45 @@ CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEG
 		END;
 END;
 
+CREATE FUNCTION dump_contraint_type_name(id INT) RETURNS STRING BEGIN
+	RETURN
+		CASE
+		WHEN id = 0 THEN 'PRIMARY KEY'
+		WHEN id = 1 THEN 'UNIQUE'
+		END;
+END;
+
+CREATE FUNCTION describe_constraints() RETURNS TABLE("table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
+	RETURN
+		SELECT t.name, kc.nr, kc.name, k.name, dump_contraint_type_name(k.type)
+		FROM sys._tables t, sys.objects kc, sys.keys k
+		WHERE kc.id = k.id
+			AND k.table_id = t.id
+			AND t.system = FALSE
+			AND k.type in (0, 1)
+			AND t.type IN (0, 6);
+END;
+
+CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
+	RETURN
+		SELECT 
+			'ALTER TABLE ' || DQ("table") ||
+			' ADD CONTRAINT ' || DQ(con) || ' '||
+			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
+		FROM describe_constraints() GROUP BY "table", con, type;
+END;
+
 --TODO expand dump_column_definition functionality
 CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
 	RETURN
 		SELECT 
+			' (' ||
 			GROUP_CONCAT(
 				DQ(c.name) || ' ' ||
 				dump_type(c.type, c.type_digits, c.type_scale) ||
-				ifthenelse(c."null" = 'false', ' NOT NULL ', '') ||
+				ifthenelse(c."null" = 'false', ' NOT NULL', '') ||
 				ifthenelse(c."default" IS NOT NULL, ' DEFAULT ' || c."default", '')
-			, '')
-			--c.number
+			, ', ') || ')'
 		FROM sys._columns c 
 		WHERE c.table_id = tid;
 	END;
