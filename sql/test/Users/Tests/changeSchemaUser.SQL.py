@@ -10,17 +10,17 @@ from MonetDBtesting.sqltest import SQLTestCase
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
     tc.execute('ALTER USER "april" SET SCHEMA library').assertSucceeded()
-    tc.execute('ALTER USER "april2" SET SCHEMA library; --no such user').assertFailed(err_message="ALTER USER: no such user 'april2'")
-    tc.execute('ALTER USER "april" SET SCHEMA library2; --no such schema').assertFailed(err_message="ALTER USER: no such schema 'library2'")
+    tc.execute('ALTER USER "april2" SET SCHEMA library; --no such user').assertFailed()
+    tc.execute('ALTER USER "april" SET SCHEMA library2; --no such schema').assertFailed()
 
     tc.connect(username="april", password="april")
-    tc.execute('SELECT * from bank.accounts; --no such table.').assertSucceeded().assertSucceeded().assertRowCount(0).assertDataResultMatch([])
-    tc.execute('SELECT * from library.orders; --not enough privileges.').assertFailed(err_message="SELECT: access denied for april to table 'library.orders'")
+    tc.execute('SELECT * from bank.accounts; --no such table.').assertSucceeded()
+    tc.execute('SELECT * from library.orders; --not enough privileges.').assertFailed()
 
     tc.connect(username="monetdb", password="monetdb")
     tc.execute('ALTER USER "april" SET SCHEMA bank;').assertSucceeded()
     tc.execute('CREATE SCHEMA forAlice AUTHORIZATION april;').assertSucceeded()
-    tc.execute('DROP user april;').assertFailed(err_message="DROP USER: 'april' owns a schema")
+    tc.execute('DROP user april;').assertFailed()
 
 # import os, sys
 # try:
