@@ -117,7 +117,7 @@ buffer_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 		size_t ns = b->pos + size + 8192;
 
 		if ((p = realloc(b->buf, ns)) == NULL) {
-		mnstr_set_error(s, MNSTR_WRITE_ERROR, "buffer reallocation failed");
+			mnstr_set_error(s, MNSTR_WRITE_ERROR, "buffer reallocation failed");
 			return -1;
 		}
 		b->buf = p;
@@ -194,5 +194,3 @@ buffer_wastream(buffer *restrict b, const char *restrict name)
 	s->stream_data.p = (void *) b;
 	return s;
 }
-
-

@@ -2578,7 +2578,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bn->tkey = BATcount(bn) <= 1;
 
   out:
-	bn->theap.dirty |= BATcount(bn) > 0;
+	if (bn)
+		bn->theap.dirty |= BATcount(bn) > 0;
 	if (t2)
 		BBPunfix(t2->batCacheid);
 	if (freeb)
