@@ -974,6 +974,8 @@ static str RMTregisterInternal(Client cntxt, const char *conn, const char *mod, 
 	msg = chkProgram(cntxt->usermodule, sym->def);
 	if ( msg == MAL_SUCCEED || sym->def->errors) {
 		MT_lock_unset(&c->lock);
+		if (msg)
+			return msg;
 		throw(MAL, "remote.register",
 				"function '%s.%s' contains syntax or type errors",
 				mod, fcn);

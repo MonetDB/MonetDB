@@ -344,7 +344,8 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 						return;
 					cv = VALformat(&stk->stk[getArg(pci,j)]);
 					c = strchr(cv, '>');
-					*c = 0;
+					if (c)		/* unlikely that this isn't true */
+						*c = 0;
 					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
 					GDKfree(cv);
 					if (!ok)
@@ -679,8 +680,10 @@ stopProfiler(Client cntxt)
 static void
 _cleanupProfiler(Client cntxt)
 {
-	BBPunfix(cntxt->profticks->batCacheid);
-	BBPunfix(cntxt->profstmt->batCacheid);
+	if (cntxt->profticks)
+		BBPunfix(cntxt->profticks->batCacheid);
+	if (cntxt->profstmt)
+		BBPunfix(cntxt->profstmt->batCacheid);
 	cntxt->profticks = cntxt->profstmt = NULL;
 }
 
