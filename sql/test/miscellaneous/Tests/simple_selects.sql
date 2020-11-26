@@ -245,6 +245,8 @@ rollback;
 
 create or replace function ups() returns int begin declare a int; while 1 = 1 do set a = 2; end while; end; --error, return missing
 
+create or replace function ups(v int) returns int begin declare a int; case v when 1 then return 100; when 2 then set a = 2; else return -1; end case; end; --error, return missing
+
 start transaction;
 create function "😀"() returns int return 1;
 select "😀"();
