@@ -39,7 +39,7 @@ True
 query T rowsort
 SELECT CAST('2' AS INTERVAL MONTH )
 ----
-(empty)
+2
 
 statement error
 SELECT CAST('3-7' AS INTERVAL MONTH )
@@ -55,7 +55,7 @@ SELECT CAST( 103 AS INTERVAL MONTH ) = INTERVAL '103' MONTH
 query T rowsort
 SELECT CAST('2 12:34' AS INTERVAL DAY TO MINUTE )
 ----
-18040.00
+2 days, 12:34:00
 
 statement error
 SELECT CAST('12:34' AS INTERVAL DAY TO MINUTE )
