@@ -1133,12 +1133,14 @@ STRbatWChrAt(bat *ret, const bat *l, const bat *r)
 	BATloop(left, p, q) {
 		str tl = (str) BUNtvar(lefti,p);
 		ptr tr = BUNtail(righti,p);
-		STRWChrAt(&v, &tl, tr);
-		if (bunfastappTYPE(int, bn, &v) != GDK_SUCCEED) {
+		str msg = STRWChrAt(&v, &tl, tr);
+		if (msg != MAL_SUCCEED || bunfastappTYPE(int, bn, &v) != GDK_SUCCEED) {
 			BBPunfix(left->batCacheid);
 			BBPunfix(right->batCacheid);
 			BBPunfix(*ret);
-			throw(MAL, "batstr.unicodeAt", OPERATION_FAILED " During bulk operation");
+			if (msg)
+				return msg;
+			throw(MAL, "batstr.unicodeAt", GDK_EXCEPTION);
 		}
 	}
 	bn->tnonil = false;
@@ -1162,11 +1164,13 @@ STRbatWChrAtcst(bat *ret, const bat *l, const int *cst)
 
 	BATloop(left, p, q) {
 		str tl = (str) BUNtvar(lefti,p);
-		STRWChrAt(&v, &tl, cst);
-		if (bunfastappTYPE(int, bn, &v) != GDK_SUCCEED) {
+		str msg = STRWChrAt(&v, &tl, cst);
+		if (msg != MAL_SUCCEED || bunfastappTYPE(int, bn, &v) != GDK_SUCCEED) {
 			BBPunfix(left->batCacheid);
 			BBPunfix(*ret);
-			throw(MAL, "batstr.unicodeAt", OPERATION_FAILED " During bulk operation");
+			if (msg)
+				return msg;
+			throw(MAL, "batstr.unicodeAt", GDK_EXCEPTION);
 		}
 	}
 	bn->tnonil = false;
