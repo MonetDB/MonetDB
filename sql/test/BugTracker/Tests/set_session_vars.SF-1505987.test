@@ -1,5 +1,5 @@
 statement ok
-\a
+start transaction
 
 statement ok
 commit
