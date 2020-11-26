@@ -1,4 +1,5 @@
 import os, socket, sys, tempfile
+from MonetDBtesting.sqltest import SQLTestCase
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -13,37 +14,37 @@ def freeport():
 
 class server_start(process.server):
     def __init__(self, args=[]):
-        sys.stderr.write('#mserver\n')
-        sys.stderr.flush()
         super().__init__(mapiport=myport, dbname='db1',
                          dbfarm=os.path.join(farm_dir, 'db1'),
                          stdin=process.PIPE, stdout=process.PIPE,
                          stderr=process.PIPE)
-
-def client(file):
-    sys.stderr.write('#client\n')
-    sys.stderr.flush()
-    with process.client('sql', port=myport, dbname='db1', stdin=open(file),
-                        stdout=process.PIPE, stderr=process.PIPE) as clt:
-        return clt.communicate()
 
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
     myport = freeport()
 
     with server_start(["--set", "sql_debug=64"]) as srv:
-        out, err = client(os.path.join(os.getenv('RELSRCDIR'),
-                                       'set_sql_debug_64__breaking_the_DB.SF-1906287_create.sql'))
-        sys.stdout.write(out)
-        sys.stderr.write(err)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
+            tc.execute("""
+            CREATE USER "skyserver" WITH PASSWORD 'skyserver' NAME 'sky server' SCHEMA
+            "sys";
+            create schema "sky" authorization "skyserver";
+            alter user "skyserver" set schema "sky";
+            """).assertSucceeded()
         out, err = srv.communicate()
-        sys.stdout.write(out)
         sys.stderr.write(err)
+
     with server_start() as srv:
-        out, err = client(os.path.join(os.getenv('RELSRCDIR'),
-                                       'set_sql_debug_64__breaking_the_DB.SF-1906287_drop.sql'))
-        sys.stdout.write(out)
-        sys.stderr.write(err)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
+            tc.execute("""
+            select u.name, u.fullname, s.name as default_schema from sys.users u, sys.schemas s where u.default_schema = s.id and u.name like '%skyserver%';
+            """).assertSucceeded().assertRowCount(1).assertDataResultMatch([("skyserver","sky server","sky")])
+            tc.execute("""
+            alter user "skyserver" set schema "sys";
+            drop schema sky;
+            drop user skyserver;
+            """).assertSucceeded()
         out, err = srv.communicate()
-        sys.stdout.write(out)
         sys.stderr.write(err)
