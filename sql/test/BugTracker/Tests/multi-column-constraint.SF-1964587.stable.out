@@ -12,6 +12,14 @@ stdout of test 'multi-column-constraint.SF-1964587` in directory 'sql/test/BugTr
 % clob,	clob,	clob,	clob # type
 % 13,	0,	5,	0 # length
 [ "test_property",	NULL,	"TABLE",	NULL	]
+#select * from describe_columns('sys', 'test_property');
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	sqltype,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob,	clob # type
+% 7,	3,	2,	1,	5,	0,	1,	7,	0 # length
+[ "subject",	"int",	32,	0,	true,	NULL,	0,	"INTEGER",	NULL	]
+[ "p1",	"int",	32,	0,	true,	NULL,	1,	"INTEGER",	NULL	]
+[ "p2",	"int",	32,	0,	true,	NULL,	2,	"INTEGER",	NULL	]
 #drop table test_property;
 
 # 11:22:28 >  

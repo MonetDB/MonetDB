@@ -9,6 +9,37 @@ NULL
 TABLE
 NULL
 
+query TTIITTITT rowsort
+select * from describe_columns('sys', 'test_property')
+----
+p1
+int
+32
+0
+True
+NULL
+1
+INTEGER
+NULL
+p2
+int
+32
+0
+True
+NULL
+2
+INTEGER
+NULL
+subject
+int
+32
+0
+True
+NULL
+0
+INTEGER
+NULL
+
 statement ok
 drop table test_property
 
