@@ -46,7 +46,7 @@ gen_timestamps(FILE *f, bool byteswap, long nrecs)
 	for (long i = 0; i < nrecs; i++) {
 		copy_binary_timestamp ts = random_timestamp(&rng);
 		if (byteswap) {
-			COPY_BINARY_CONVERT_TIMESTAMP(ts);
+			copy_binary_convert_timestamp(&ts);
 		}
 		fwrite(&ts, sizeof(ts), 1, f);
 	}
@@ -61,7 +61,7 @@ gen_timestamps(FILE *f, bool byteswap, long nrecs)
 		for (long i = 0; i < nrecs; i++) { \
 			copy_binary_timestamp ts = random_timestamp(&rng); \
 			if (byteswap) { \
-				COPY_BINARY_CONVERT_TIMESTAMP(ts); \
+				copy_binary_convert_timestamp(&ts); \
 			} \
 			fwrite(&ts.fld, sizeof(ts.fld), 1, f); \
 		} \

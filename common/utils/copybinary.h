@@ -31,74 +31,123 @@ typedef struct {
 // not ever use it for big endian platforms.
 
 // First some macros that can be used a expressions:
-//    uint16_t swapped = COPY_BINARY_BYTESWAP16(value);
+//    uint16_t swapped = copy_binary_byteswap16(value);
 
 
 #ifdef _MSC_VER
 
-	#define COPY_BINARY_BYTESWAP16(value) _byteswap_ushort((uint16_t)value)
+static inline uint16_t
+copy_binary_byteswap16(uint16_t value) {
+	return _byteswap_ushort(value);
+}
 
-	#define COPY_BINARY_BYTESWAP32(value) _byteswap_ulong((uint32_t)value)
+static inline uint32_t
+copy_binary_byteswap32(uint32_t value) {
+	return _byteswap_ulong(value);
+}
 
-	#define COPY_BINARY_BYTESWAP64(value) _byteswap_uint64((uint64_t)value)
+static inline uint64_t
+copy_binary_byteswap64(uint64_t value) {
+	return _byteswap_uint64(value);
+}
 
 #else
 
-	#define COPY_BINARY_BYTESWAP16(value) ( \
-		(((*(uint16_t*)&value) & 0xFF00u) >>  8u) | \
-		(((*(uint16_t*)&value) & 0x00FFu) <<  8u) \
-		)
+static inline uint16_t
+copy_binary_byteswap16(uint16_t value) {
+	return
+		((value & 0xFF00u) >>  8u) |
+		((value & 0x00FFu) <<  8u)
+		;
+}
 
-	#define COPY_BINARY_BYTESWAP32(value) ( \
-		(((*(uint32_t*)&value) & 0xFF000000u) >> 24u) | \
-		(((*(uint32_t*)&value) & 0x00FF0000u) >>  8u) | \
-		(((*(uint32_t*)&value) & 0x0000FF00u) <<  8u) | \
-		(((*(uint32_t*)&value) & 0x000000FFu) << 24u) \
-		)
+static inline uint32_t
+copy_binary_byteswap32(uint32_t value) {
+	return
+		((value & 0xFF000000u) >> 24u) |
+		((value & 0x00FF0000u) >>  8u) |
+		((value & 0x0000FF00u) <<  8u) |
+		((value & 0x000000FFu) << 24u)
+		;
+}
 
-	#define COPY_BINARY_BYTESWAP64(value) ( \
-		(((*(uint64_t*)&value) & 0xFF00000000000000u) >> 56u) | \
-		(((*(uint64_t*)&value) & 0x00FF000000000000u) >> 40u) | \
-		(((*(uint64_t*)&value) & 0x0000FF0000000000u) >> 24u) | \
-		(((*(uint64_t*)&value) & 0x000000FF00000000u) >>  8u) | \
-		(((*(uint64_t*)&value) & 0x00000000FF000000u) <<  8u) | \
-		(((*(uint64_t*)&value) & 0x0000000000FF0000u) << 24u) | \
-		(((*(uint64_t*)&value) & 0x000000000000FF00u) << 40u) | \
-		(((*(uint64_t*)&value) & 0x00000000000000FFu) << 56u) \
-		)
+static inline uint64_t
+copy_binary_byteswap64(uint64_t value) {
+	return
+		((value & 0xFF00000000000000u) >> 56u) |
+		((value & 0x00FF000000000000u) >> 40u) |
+		((value & 0x0000FF0000000000u) >> 24u) |
+		((value & 0x000000FF00000000u) >>  8u) |
+		((value & 0x00000000FF000000u) <<  8u) |
+		((value & 0x0000000000FF0000u) << 24u) |
+		((value & 0x000000000000FF00u) << 40u) |
+		((value & 0x00000000000000FFu) << 56u)
+		;
+}
 
 #endif
 
-#define COPY_BINARY_BYTESWAP128(value) ( \
-    ( (uhge)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[0]   )  << 64 ) \
-    | ( (uhge)COPY_BINARY_BYTESWAP64(   ((uint64_t*)&value)[1]   )   ) \
-)
+static inline
+uhge copy_binary_byteswap128(uhge value) {
+	uint64_t lo = (uint64_t) value;
+	uint64_t hi = (uint64_t) (value >> 64);
+	uhge swapped_lo = (uhge)copy_binary_byteswap64(lo);
+	uhge swapped_hi = (uhge)copy_binary_byteswap64(hi);
+	return swapped_hi | (swapped_lo << 64);
+}
 
 // These macros are used to convert a value in-place.
 // This makes it possible to also convert timestamps.
 
-#define COPY_BINARY_CONVERT16(lhs) \
-	do { *(uint16_t*)&(lhs) = COPY_BINARY_BYTESWAP16(lhs); } while (0)
+static inline void
+copy_binary_convert16(void *p)
+{
+	uint16_t *pp = (uint16_t*)p;
+	*pp = copy_binary_byteswap16(*pp);
+}
 
-#define COPY_BINARY_CONVERT32(lhs) \
-	do { *(uint32_t*)&(lhs) = COPY_BINARY_BYTESWAP32(lhs); } while (0)
+static inline void
+copy_binary_convert32(void *p)
+{
+	uint32_t *pp = (uint32_t*)p;
+	*pp = copy_binary_byteswap32(*pp);
+}
 
-#define COPY_BINARY_CONVERT64(lhs) \
-	do { *(uint64_t*)&(lhs) = COPY_BINARY_BYTESWAP64(lhs); } while (0)
+static inline void
+copy_binary_convert64(void *p)
+{
+	uint64_t *pp = (uint64_t*)p;
+	*pp = copy_binary_byteswap64(*pp);
+}
 
-#define COPY_BINARY_CONVERT128(lhs) \
-	do { *(uhge*)&(lhs) = COPY_BINARY_BYTESWAP128(lhs); } while (0)
+static inline void
+copy_binary_convert128(void *p)
+{
+	uhge *pp = (uhge*)p;
+	*pp = copy_binary_byteswap128(*pp);
+}
 
-#define COPY_BINARY_CONVERT_DATE(d) \
-	do { COPY_BINARY_CONVERT16((d).year); } while (0)
+static inline void
+copy_binary_convert_date(void *p)
+{
+	copy_binary_date *pp = (copy_binary_date*)p;
+	copy_binary_convert32(&pp->year);
+}
 
-#define COPY_BINARY_CONVERT_TIME(t) \
-	do { COPY_BINARY_CONVERT32((t).ms); } while (0)
 
-#define COPY_BINARY_CONVERT_TIMESTAMP(ts) \
-    do { \
-        COPY_BINARY_CONVERT_DATE((ts).date); \
-        COPY_BINARY_CONVERT_TIME((ts).time); \
-    } while (0)
+static inline void
+copy_binary_convert_time(void *p)
+{
+	copy_binary_time *pp = (copy_binary_time*)p;
+	copy_binary_convert32(&pp->ms);
+}
+
+static inline void
+copy_binary_convert_timestamp(void *p)
+{
+	copy_binary_timestamp *pp = (copy_binary_timestamp*)p;
+	copy_binary_convert_date(&pp->date);
+	copy_binary_convert_time(&pp->time);
+}
 
 #endif
