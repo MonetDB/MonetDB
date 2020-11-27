@@ -1,10 +1,23 @@
-statement error
+statement ok
 insert into test (id) values (5)
 
-statement error
+statement ok
 insert into test (id) values (6)
 
-statement error
+query II rowsort
 select * from test
-
-
+----
+0
+7
+1
+10
+2
+5
+3
+8
+4
+5
+5
+8
+6
+5
