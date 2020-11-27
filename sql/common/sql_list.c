@@ -305,6 +305,7 @@ list_remove_node(list *l, node *n)
 	if (p != n)
 		while (p && p->next != n)
 			p = p->next;
+	assert(p==n||(p && p->next == n));
 	if (p == n) {
 		l->h = n->next;
 		p = NULL;
@@ -319,7 +320,7 @@ list_remove_node(list *l, node *n)
 	MT_lock_unset(&l->ht_lock);
 	node_destroy(l, n);
 	l->cnt--;
-	assert(l->cnt >= 0);
+	assert(l->cnt > 0 || l->h == NULL);
 	return p;
 }
 

@@ -601,7 +601,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 				if (!tp1 || !tp2)
 					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				else
-					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n", 
+					(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s\n",
 									 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
 				_DELETE(tp1);
 				_DELETE(tp2);
@@ -708,13 +708,13 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	int res = SQL_OK;
 
 	(void) ss;
-	if (alter && !(isTable(t) || (isMergeTable(t) && cs_size(&t->members) == 0))) {
+	if (alter && !(isTable(t) || (isMergeTable(t) && list_empty(t->members)))) {
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
 				  isMergeTable(t)?"MERGE TABLE":
 				  isRemote(t)?"REMOTE TABLE":
 				  isStream(t)?"STREAM TABLE":
 				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				  t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
+				  t->base.name, (isMergeTable(t) && !list_empty(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -745,10 +745,10 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 	if (alter &&
 		(isView(t) ||
-		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->members)>0)) ||
+		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && !list_empty(t->members))) ||
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
 		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)) ||
-		(isPartition(t) && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) &&
+		(isPartition(t) &&
 		(s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL ||
 		 s->token == SQL_DROP_CONSTRAINT)))){
 		char *msg = "";
@@ -795,7 +795,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 				isRemote(t)?"REMOTE TABLE":
 				isStream(t)?"STREAM TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name, (isMergeTable(t) && cs_size(&t->members)>0) ? " while it has partitions" : "");
+				t->base.name, (isMergeTable(t) && !list_empty(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
@@ -1531,7 +1531,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 					}
 					return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
 				}
-				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members.set))
+				if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
 					return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 									 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), spt->base.name, pt->base.name);
 
@@ -2662,7 +2662,7 @@ rel_set_table_schema(sql_query *query, char* old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
 	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
-	if (ot->members.set || ot->triggers.set)
+	if (!list_empty(ot->members) || !list_empty(ot->triggers.set))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);

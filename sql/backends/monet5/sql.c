@@ -421,12 +421,14 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			mvc_copy_key(sql, nt, k);
 		}
 	}
-	if (t->members.set) {
-		for (n = t->members.set->h; n; n = n->next) {
+	/*
+	if (t->members) {
+		for (n = t->members->h; n; n = n->next) {
 			sql_part *pt = n->data;
 			mvc_copy_part(sql, nt, pt);
 		}
 	}
+	*/
 	if (t->triggers.set) {
 		for (n = t->triggers.set->h; n; n = n->next) {
 			sql_trigger *tr = n->data;

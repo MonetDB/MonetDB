@@ -223,7 +223,7 @@ find_sql_column(sql_table *t, const char *cname)
 sql_part *
 find_sql_part_id(sql_table *t, sqlid id)
 {
-	node *n = cs_find_id(&t->members, id);
+	node *n = list_find_base_id(t->members, id);
 
 	return n ? n->data : NULL;
 }
@@ -533,4 +533,39 @@ sql_values_part_validate_and_insert(void *v1, void *v2)
 		}
 	}
 	return NULL;
+}
+
+sql_part *
+partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp)
+{
+	sql_schema *s = pt->s;
+
+	(void)tr;
+	for(node *m = s->parts.set->h; m; m=m->next) {
+		sql_part *p = m->data;
+
+		if (pp) {
+			if (p == pp)
+				pp = NULL;
+			continue;
+		}
+
+		if (p->base.id == pt->base.id)
+				return p;
+	}
+	return NULL;
+}
+
+int
+nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *tname)
+{
+	if (strcmp(mt->s->base.name, sname) == 0 && strcmp(mt->base.name, tname) == 0)
+		return 1;
+	if (isPartition(mt)) {
+		for( sql_part *parent = partition_find_part(tr, mt, NULL); parent; parent = partition_find_part(tr, mt, parent)) {
+			if (nested_mergetable(tr, parent->t, sname, tname))
+				return 1;
+		}
+	}
+	return 0;
 }
