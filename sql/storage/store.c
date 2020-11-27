@@ -3239,8 +3239,6 @@ sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
 		npt->tpe = pt->tpe;
 	npt->with_nills = pt->with_nills;
 	npt->t = t;
-	if (npt)
-	assert(0);
 
 	assert(isMergeTable(npt->t) || isReplicaTable(npt->t));
 	if (isRangePartitionTable(t)) {
