@@ -1937,8 +1937,8 @@ mat_sample(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m)
 
 	r = newInstruction(mb, algebraRef, projectionRef);
 	getArg(r,0) = getArg(p,0);
-	addArgument(mb, r, getArg(q, 0));
-	addArgument(mb, r, getArg(pck, 0));
+	r = addArgument(mb, r, getArg(q, 0));
+	r = addArgument(mb, r, getArg(pck, 0));
 	pushInstruction(mb, r);
 
 	matlist_pack(ml, piv);

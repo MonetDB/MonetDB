@@ -517,6 +517,8 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	if (msg != MAL_SUCCEED)
+		return msg;
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	snprintf(buf,256,"%-20s actions= 1 time=" LLFMT " usec","macro",usec);
@@ -524,7 +526,7 @@ str OPTmacro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.macro", SQLSTATE(42000) PROGRAM_GENERAL);
-	return msg;
+	return MAL_SUCCEED;
 }
 
 str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
@@ -559,6 +561,8 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	msg = chkTypes(cntxt->usermodule, mb, FALSE);
 	if( msg == MAL_SUCCEED) msg = chkFlow(mb);
 	if( msg == MAL_SUCCEED) msg = chkDeclarations(mb);
+	if (msg != MAL_SUCCEED)
+		return msg;
 	usec += GDKusec() - clk;
 	/* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
@@ -567,5 +571,5 @@ str OPTorcam(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	addtoMalBlkHistory(mb);
 	if (mb->errors)
 		throw(MAL, "optimizer.orcam", SQLSTATE(42000) PROGRAM_GENERAL);
-	return msg;
+	return MAL_SUCCEED;
 }

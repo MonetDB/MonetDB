@@ -440,6 +440,7 @@ parse_snapshot_name_selftest(void)
 		free(dbname);
 		return errmsg;
 	}
+	free(dbname);
 
 	return NO_ERR;
 }
