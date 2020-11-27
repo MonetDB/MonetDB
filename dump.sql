@@ -112,6 +112,24 @@ CREATE FUNCTION dump_remote_table_expressions(s STRING, t STRING) RETURNS STRING
 	RETURN SELECT ' ON ' || SQ(uri) || ' WITH USER ' || SQ(username) || ' ENCRYPTED PASSWORD ' || SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
 END;
 
+CREATE FUNCTION dump_merge_table_partition_expressions(tid INT) RETURNS STRING
+BEGIN
+	RETURN SELECT
+			'PARTITION BY ' ||
+			CASE
+				WHEN bit_and(tp.type, 2) = 2
+				THEN 'VALUES '
+               	ELSE 'RANGE '
+			END ||
+			CASE
+				WHEN bit_and(tp.type, 4) = 4 --column expression
+				THEN 'ON ' || (SELECT DQ(c.name) FROM sys.columns c WHERE c.id = tp.column_id)
+				ELSE 'USING ' || SQ(tp.expression) --generic expression
+			END
+	FROM sys._tables t, sys.table_partitions tp
+	WHERE tp.table_id = tid;
+END;
+
 CREATE TEMPORARY TABLE dump_statements(o INT AUTO_INCREMENT, s STRING, PRIMARY KEY (o));
 
 CREATE PROCEDURE dump_database(describe BOOLEAN)
@@ -175,28 +193,31 @@ BEGIN
 		WHERE sch.id = seq.schema_id;
 
 	INSERT INTO dump_statements(s) --dump_create_tables
-		SELECT 'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || ';'
+		SELECT CASE
+			WHEN t.type = 5 THEN
+				'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || dump_remote_table_expressions(s.name, t.name) || ';'
+			ELSE
+				'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || ';'
+			END
 		FROM sys.schemas s, table_types ts, sys._tables t
-		WHERE t.type IN (0, 6)
+		WHERE t.type IN (0, 5, 6)
 			AND t.system = FALSE
 			AND s.id = t.schema_id
 			AND ts.table_type_id = t.type
 			AND s.name <> 'tmp';
 
-	INSERT INTO dump_statements(s) --dump_create_remote_tables
-		SELECT 'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || dump_remote_table_expressions(s.name, t.name) || ';'
+	INSERT INTO dump_statements(s) --dump_create_merge_tables
+		SELECT 'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || dump_merge_table_partition_expressions(t.id) || ';'
 		FROM sys.schemas s, table_types ts, sys._tables t
-		WHERE t.type = 5
+		WHERE t.type = 3
 			AND t.system = FALSE
 			AND s.id = t.schema_id
 			AND ts.table_type_id = t.type
 			AND s.name <> 'tmp';
-
-	
 
 	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
 
-	--TODO PARTITION TABLE
+	--TODO MERGE TABLE
 	--TODO COMMENTS ON TABLE
 	--TODO functions
 	--TODO CREATE INDEX + COMMENT
@@ -211,4 +232,3 @@ CALL dump_database(TRUE);
 SELECT  GROUP_CONCAT(s) OVER (PARTITION BY o range between current row and current row) FROM dump_statements;
 
 ROLLBACK;
-
