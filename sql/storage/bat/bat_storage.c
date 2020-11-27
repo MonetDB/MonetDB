@@ -896,26 +896,29 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 	return ok;
 }
 
-static int
-append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
+static void*
+append_idx_prepare(sql_trans *tr, sql_idx *i)
 {
-	int ok = LOG_OK;
-	BAT *b = ib;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return ok;
-
 	if (bind_idx_data(tr, i) == LOG_ERR)
+		return NULL;
+
+	sql_delta *delta = i->data;
+
+	/* appends only write */
+	delta->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
+
+	return delta;
+}
+
+static int
+append_idx(sql_trans *tr, sql_idx * i, void *data, int tpe)
+{
+	sql_delta *delta = append_idx_prepare(tr, i);
+	if (delta == NULL)
 		return LOG_ERR;
 
-	bat = i->data;
-	/* appends only write */
-	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
-	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, ib);
-	else
-		ok = delta_append_val(bat, ib);
+	int ok = append_col_execute(delta, data, tpe == TYPE_bat);
+
 	return ok;
 }
 
@@ -3128,6 +3131,7 @@ bat_storage_init( store_functions *sf)
 	sf->append_col_prep = (append_col_prep_fptr)&append_col_prepare;
 	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
 	sf->append_idx = (append_idx_fptr)&append_idx;
+	sf->append_idx_prep = (append_idx_prep_fptr)&append_idx_prepare;
 	sf->update_col = (update_col_fptr)&update_col;
 	sf->update_idx = (update_idx_fptr)&update_idx;
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
