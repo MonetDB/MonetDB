@@ -108,6 +108,10 @@ CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
 		FROM describe_constraints() GROUP BY "table", con, type;
 END;
 
+CREATE FUNCTION dump_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
+	RETURN SELECT ' ON ' || SQ(uri) || ' WITH USER ' || SQ(username) || ' ENCRYPTED PASSWORD ' || SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
+END;
+
 CREATE TEMPORARY TABLE dump_statements(o INT AUTO_INCREMENT, s STRING, PRIMARY KEY (o));
 
 CREATE PROCEDURE dump_database(describe BOOLEAN)
@@ -179,15 +183,24 @@ BEGIN
 			AND ts.table_type_id = t.type
 			AND s.name <> 'tmp';
 
+	INSERT INTO dump_statements(s) --dump_create_remote_tables
+		SELECT 'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || dump_remote_table_expressions(s.name, t.name) || ';'
+		FROM sys.schemas s, table_types ts, sys._tables t
+		WHERE t.type = 5
+			AND t.system = FALSE
+			AND s.id = t.schema_id
+			AND ts.table_type_id = t.type
+			AND s.name <> 'tmp';
+
+	
+
 	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
 
-	--TODO where are the parenthesis in the column definition.
-	--TODO COLUMN DEFINITIONS
+	--TODO PARTITION TABLE
 	--TODO COMMENTS ON TABLE
 	--TODO functions
-	--TODO REMOTE TABLE
-	--TODO PARTITION TABLE
 	--TODO CREATE INDEX + COMMENT
+	--TODO VIEW
 	--TODO User Defined Types?
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
