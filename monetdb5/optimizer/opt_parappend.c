@@ -130,14 +130,6 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, int *action
 		return MAL_SUCCEED;
 	}
 
-	const char *cname = getVarConstant(mb, cname_var).val.sval;
-	if (cname[0] == '%') {
-		// don't touch indices
-		flush_finish_stmt(state, mb);
-		pushInstruction(mb, old);
-		return MAL_SUCCEED;
-	}
-
 	*actions += 1;
 
 	int cookie_var = setup_append_prep(state, cntxt, mb, old);

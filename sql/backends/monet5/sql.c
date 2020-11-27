@@ -1729,7 +1729,6 @@ mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	const char *tname = *getArgReference_str(stk, pci, pci->retc + 2);
 	sql_schema *s;
 	sql_table *t;
-	sql_column *c;
 
 	// for N columns, we ought to have N + 1 return values and N + 3 parameters.
 	int first_col = pci->retc + 3;
@@ -1763,16 +1762,19 @@ mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (strNil(cname))
 			throw(SQL, "sql.append_prep", SQLSTATE(42000) "column name %d is nil", i);
-		if (cname[0] == '%')
-			throw(SQL, "sql.append_prep", SQLSTATE(42000) "sql.append_prep not intended for indices: %s.%s.%s", sname, tname, cname);
 
-		c = mvc_bind_column(m, t, cname);
-		if (c == NULL)
-			throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
-
-		void *cookie = store_funcs.append_col_prep(m->session->tr, c);
-
-		*cookie_out = cookie;
+		bool is_column = cname[0] != '%';
+		if (is_column) {
+			sql_column *c = mvc_bind_column(m, t, cname);
+			if (c == NULL)
+				throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
+			*cookie_out = store_funcs.append_col_prep(m->session->tr, c);
+		} else {
+			sql_idx *i = mvc_bind_idx(m, s, cname + 1);
+			if (i == NULL)
+				throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Index missing %s.%s.%s", sname, tname, cname);
+			*cookie_out = store_funcs.append_idx_prep(m->session->tr, i);
+		}
 	}
 
 	return MAL_SUCCEED;

@@ -139,6 +139,7 @@ typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
 typedef void *(*append_col_prep_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*append_col_exec_fptr) (void *dlt, void *b, bool is_bat);
 typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
+typedef void *(*append_idx_prep_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
 typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
@@ -241,6 +242,7 @@ typedef struct store_functions {
 	append_col_prep_fptr append_col_prep;
 	append_col_exec_fptr append_col_exec;
 	append_idx_fptr append_idx;
+	append_idx_prep_fptr append_idx_prep;
 	update_col_fptr update_col;
 	update_idx_fptr update_idx;
 	delete_tab_fptr delete_tab;
