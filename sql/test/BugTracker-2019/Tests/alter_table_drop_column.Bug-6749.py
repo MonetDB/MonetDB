@@ -13,9 +13,6 @@ def freeport():
 
 myport = freeport()
 
-def server_stop(s):
-    out, err = s.communicate()
-    sys.stderr.write(err)
 
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
@@ -31,7 +28,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         ''')
         cur1.close()
         client1.close()
-        server_stop(s)
+        s.communicate()
 
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
@@ -42,7 +39,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cur1.execute('alter table t drop column c;')
         cur1.close()
         client1.close()
-        server_stop(s)
+        s.communicate()
 
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
@@ -58,7 +55,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 sys.stderr.write("Error: cannot drop column 'b': there are database objects which depend on it expected")
         cur1.close()
         client1.close()
-        server_stop(s)
+        s.communicate()
 
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
@@ -93,7 +90,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             sys.stderr.write('[] expected')
         cur1.close()
         client1.close()
-        server_stop(s)
+        s.communicate()
 
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
@@ -145,4 +142,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cur1.execute('drop table t;')
         cur1.close()
         client1.close()
-        server_stop(s)
+        s.communicate()

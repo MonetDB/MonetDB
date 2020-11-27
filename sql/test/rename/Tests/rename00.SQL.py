@@ -1,4 +1,4 @@
-import os, socket, sys, tempfile
+import os, socket, tempfile
 
 from MonetDBtesting.sqltest import SQLTestCase
 
@@ -14,9 +14,6 @@ def freeport():
     sock.close()
     return port
 
-def server_stop(s):
-    out, err = s.communicate()
-    sys.stderr.write(err)
 
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
@@ -32,7 +29,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('alter table "something" rename to "newname";').assertSucceeded()
             tc.execute('insert into "newname" values (1);').assertSucceeded().assertRowCount(1)
             tc.execute('select "a" from "newname";').assertSucceeded().assertDataResultMatch([(1,)])
-        server_stop(s)
+        s.communicate()
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
@@ -43,4 +40,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('insert into "newname" values (2);').assertSucceeded().assertRowCount(1)
             tc.execute('select "a" from "newname";').assertSucceeded().assertDataResultMatch([(1,),(2,)])
             tc.execute('drop table "newname";').assertSucceeded()
-        server_stop(s)
+        s.communicate()

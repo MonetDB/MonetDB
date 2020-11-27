@@ -1,4 +1,3 @@
-import sys
 from MonetDBtesting.sqltest import SQLTestCase
 
 try:
@@ -6,9 +5,6 @@ try:
 except ImportError:
     import process
 
-def server_stop(s):
-    out, err = s.communicate()
-    sys.stderr.write(err)
 
 with process.server(args=[],
                     stdin=process.PIPE,
@@ -21,7 +17,7 @@ with process.server(args=[],
         tc.execute("select * from t1;").assertSucceeded().assertDataResultMatch([(1,)])
         tc.execute("create table t2 (a int);").assertSucceeded()
         tc.execute("drop table t2;").assertSucceeded()
-    server_stop(s)
+    s.communicate()
 
 with process.server(args=["--readonly"],
                     stdin=process.PIPE,
@@ -41,4 +37,4 @@ with process.server(args=["--readonly"],
         tc.execute("insert into t1 (a) values ( 1 );").assertFailed(err_message='INSERT INTO: insert into table \'t1\' not allowed in readonly mode')
         tc.execute("update t1 set a = 2 where a = 1;").assertFailed(err_message='UPDATE: update table \'t1\' not allowed in readonly mode')
         tc.execute("delete from t1 where a = 1;").assertFailed(err_message='DELETE FROM: delete from table \'t1\' not allowed in readonly mode')
-    server_stop(s)
+    s.communicate()

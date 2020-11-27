@@ -68,8 +68,5 @@ with tempfile.TemporaryDirectory() as farm_dir:
             node2_conn.close()
 
             # cleanup: shutdown the monetdb servers and remove tempdir
-            out, err = node1_proc.communicate()
-            sys.stderr.write(err)
-
-            out, err = node2_proc.communicate()
-            sys.stderr.write(err)
+            node1_proc.communicate()
+            node2_proc.communicate()

@@ -1,4 +1,3 @@
-import sys
 from MonetDBtesting.sqltest import SQLTestCase
 
 try:
@@ -6,9 +5,6 @@ try:
 except ImportError:
     import process
 
-def server_stop(s):
-    out, err = s.communicate()
-    sys.stderr.write(err)
 
 with process.server(args=[],
                     stdin=process.PIPE,
@@ -23,7 +19,7 @@ with process.server(args=[],
         tc.execute("insert into v1 (a) values ( 2 );").assertFailed(err_message='INSERT INTO: cannot insert into view \'v1\'')
         tc.execute("update v1 set a = 3 where a = 2;").assertFailed(err_message='UPDATE: cannot update view \'v1\'')
         tc.execute("delete from v1 where a = 3;").assertFailed(err_message='DELETE FROM: cannot delete from view \'v1\'')
-    server_stop(s)
+    s.communicate()
 
 with process.server(args=["--readonly"],
                     stdin=process.PIPE,
@@ -38,4 +34,4 @@ with process.server(args=["--readonly"],
         tc.execute("insert into v1 (a) values ( 1 );").assertFailed(err_message='INSERT INTO: cannot insert into view \'v1\'')
         tc.execute("update v1 set a = 2 where a = 1;").assertFailed(err_message='UPDATE: cannot update view \'v1\'')
         tc.execute("delete from v1 where a = 1;").assertFailed(err_message='DELETE FROM: cannot delete from view \'v1\'')
-    server_stop(s)
+    s.communicate()

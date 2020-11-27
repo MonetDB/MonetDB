@@ -36,8 +36,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             sys.stderr.write("The result should have been 14")
         cursor1.close()
         client1.close()
-        out, err = s.communicate()
-        sys.stderr.write(err)
+        s.communicate()
 
     with process.server(args = server_args, mapiport=port, dbname='db1', dbfarm=os.path.join(farm_dir, 'db1'), stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as s:
         client1 = pymonetdb.connect(database='db1', port=port, autocommit=True)
@@ -57,5 +56,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
         """)
         cursor1.close()
         client1.close()
-        out, err = s.communicate()
-        sys.stderr.write(err)
+        s.communicate()
