@@ -71,7 +71,10 @@ MCinit(void)
 		maxclients = atoi(max_clients);
 	if (maxclients <= 0) {
 		maxclients = 64;
-		GDKsetenv("max_clients", "64");
+		if (GDKsetenv("max_clients", "64") != GDK_SUCCEED) {
+			TRC_CRITICAL(MAL_SERVER, "Initialization failed: " MAL_MALLOC_FAIL "\n");
+			return false;
+		}
 	}
 
 	MAL_MAXCLIENTS = /* client connections */ maxclients;

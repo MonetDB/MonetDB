@@ -1066,7 +1066,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 {
 	char *pwhash = NULL;
 	bool free_pw = false;
-	str tmp, output = MAL_SUCCEED;
+	str output = MAL_SUCCEED;
 	BUN p;
 	str msg = MAL_SUCCEED;
 
@@ -1151,14 +1151,14 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	msg = AUTHverifyPassword(pwhash);
 	if( msg != MAL_SUCCEED){
 		free(pwhash);
-		rethrow("addRemoteTableCredentials", tmp, msg);
+		return msg;
 	}
 
 	str cypher;
 	msg = AUTHcypherValue(&cypher, pwhash);
 	if( msg != MAL_SUCCEED){
 		free(pwhash);
-		rethrow("addRemoteTableCredentials", tmp, msg);
+		return msg;
 	}
 
 	/* Add entry */

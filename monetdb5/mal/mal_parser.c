@@ -1457,7 +1457,7 @@ parseEnd(Client cntxt)
 			cntxt->curprg->def->errors=0;
 		} else if (cntxt->curprg->def->errors) {
 			//collect all errors for reporting
-			str new = GDKzalloc(strlen(errors) + strlen(cntxt->curprg->def->errors) +16);
+			str new = GDKmalloc(strlen(errors) + strlen(cntxt->curprg->def->errors) +16);
 			if (new){
 				strcpy(new, errors);
 				if( new[strlen(new)-1] != '\n')
@@ -1478,14 +1478,23 @@ parseEnd(Client cntxt)
 			cntxt->backup = 0;
 		} else {
 			str msg;
-			if((msg = MSinitClientPrg(cntxt,cntxt->curmodule->name,"main")) != MAL_SUCCEED) {
-				if(!msg){
-					cntxt->curprg->def->errors = msg;
-					GDKfree(errors);
-				} else if(!errors){
-					cntxt->curprg->def->errors = errors;
-				} else
+			if ((msg = MSinitClientPrg(cntxt,cntxt->curmodule->name,"main")) != MAL_SUCCEED) {
+				if (errors) {
+					str new = GDKmalloc(strlen(errors) + strlen(msg) + 3);
+					if (new) {
+						strcpy(new, msg);
+						if (new[strlen(new) - 1] != '\n')
+							strcat(new, "\n");
+						strcat(new, errors);
+						freeException(errors);
+						cntxt->curprg->def->errors = new;
+					} else {
+						cntxt->curprg->def->errors = errors;
+					}
 					freeException(msg);
+				} else {
+					cntxt->curprg->def->errors = msg;
+				}
 				return 1;
 			}
 		}
