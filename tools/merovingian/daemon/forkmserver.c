@@ -934,6 +934,7 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 		snprintf(profiler_executable, executable_len, "%s%s%s",
 				 tmp_exe, profiler_filename, s + 8);
 		free(tmp_exe);
+		/* coverity[toctou] */
 		if (stat(profiler_executable, &path_info) == -1) {
 			error = newErr("Cannot find profiler executable");
 			goto cleanup;

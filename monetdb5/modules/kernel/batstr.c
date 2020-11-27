@@ -1526,7 +1526,7 @@ STRbatsplitpart(bat *ret, const bat *l, const bat *r, const bat *t)
 		str x = (str) BUNtvar(lefti,p);
 		str needle = (str) BUNtvar(arg2i,p);
 
-		if ((err = STRsplitpart(&y, &x, &needle, &(fieldi[p]))) != MAL_SUCCEED)
+		if ((err = STRsplitpart(&y, &x, &needle, &fieldi[p])) != MAL_SUCCEED)
 			goto bailout;
 		if (bunfastappVAR(bn, y) != GDK_SUCCEED) {
 			GDKfree(y);
@@ -1537,6 +1537,7 @@ STRbatsplitpart(bat *ret, const bat *l, const bat *r, const bat *t)
 			bn->tnil = true;
 		}
 		GDKfree(y);
+		y = NULL;
 	}
 
 bailout:
