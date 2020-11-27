@@ -120,12 +120,14 @@ copy_binary_convert64(void *p)
 	*pp = copy_binary_byteswap64(*pp);
 }
 
+#ifdef HAVE_HGE
 static inline void
 copy_binary_convert128(void *p)
 {
 	uhge *pp = (uhge*)p;
 	*pp = copy_binary_byteswap128(*pp);
 }
+#endif
 
 static inline void
 copy_binary_convert_date(void *p)
