@@ -15,10 +15,10 @@ select * from testdec
 ----
 0.123
 
-statement error
+statement ok
 PREPARE INSERT INTO testdec (testdec) values (?)
 
-statement error
+statement ok
 exec **(0.12345)
 
 query R rowsort

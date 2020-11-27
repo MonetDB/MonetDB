@@ -5,7 +5,7 @@ create table "test2831994" (
         "value2" DECIMAL (5, 5)
 )
 
-statement error
+statement ok
 prepare insert into "test2831994"("id","value","value2") values (?, ?, ?)
 
 statement error

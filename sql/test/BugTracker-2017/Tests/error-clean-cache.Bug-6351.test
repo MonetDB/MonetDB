@@ -8,9 +8,9 @@ statement error
 select a
 
 statement error
-iamerror; --just an error
+iamerror
 
 statement error
-select a; --a is not there
+select a
 
 
