@@ -284,9 +284,10 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	backend *b;
 	size_t query_len, input_query_len, prep_len = 0;
 	buffer query_buf;
-	stream *query_stream;
-	bstream *old_bstream = NULL;
+	stream *query_stream = NULL;
+	bstream *old_bstream = c->fdin;
 	stream *fdout = c->fdout;
+	bool fdin_changed = false;
 
 	if (result)
 		*result = NULL;
@@ -294,7 +295,6 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_query_internal")) != MAL_SUCCEED)
 		return mdbe->msg;
 
-	old_bstream = c->fdin;
 	if ((mdbe->msg = getSQLContext(c, NULL, &m, NULL)) != MAL_SUCCEED)
 		goto cleanup;
 	b = (backend *) c->sqlcontext;
@@ -326,10 +326,12 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	query_buf.len = query_len;
 	query_buf.buf = nq;
 
+	fdin_changed = true;
 	if (!(c->fdin = bstream_create(query_stream, query_len))) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", "Could not setup query stream");
 		goto cleanup;
 	}
+	query_stream = NULL;
 	if (bstream_next(c->fdin) < 0) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_query_internal", "Internal error while starting the query");
 		goto cleanup;
@@ -356,7 +358,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 		m->emode = m_prepare;
 	if ((mdbe->msg = SQLparser(c)) != MAL_SUCCEED)
 		goto cleanup;
-	if (m->emode == m_prepare)
+	if (m->emode == m_prepare && prepare_id)
 		*prepare_id = b->q->id;
 	c->fdout = NULL;
 	if ((mdbe->msg = SQLengine(c)) != MAL_SUCCEED)
@@ -380,14 +382,14 @@ cleanup:
 	if (nq)
 		GDKfree(nq);
 	MSresetInstructions(c->curprg->def, 1);
-	if (old_bstream) { //c->fdin was set
+	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
 	}
+	if (query_stream)
+		close_stream(query_stream);
 
-	char* msg = commit_action(m, mdbe, result, result?(monetdbe_result_internal*) result:NULL);
-
-	return msg;
+	return commit_action(m, mdbe, result, result?*(monetdbe_result_internal**) result:NULL);
 }
 
 static int
@@ -420,7 +422,9 @@ monetdbe_close_internal(monetdbe_database_internal *mdbe)
 
 	if (validate_database_handle_noerror(mdbe)) {
 		open_dbs--;
-		SQLexitClient(mdbe->c);
+		char *msg = SQLexitClient(mdbe->c);
+		if (msg)
+			freeException(msg);
 		MCcloseClient(mdbe->c);
 	}
 	GDKfree(mdbe);
@@ -1291,9 +1295,8 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 
 	if (!stmt)
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", "Parameter stmt is NULL");
-	else if (mdbe->mid) {
+	else if (mdbe->mid)
 		mdbe->msg = monetdbe_query_remote(mdbe, query, NULL, NULL, &prepare_id);
-	}
 	else {
 		*stmt = NULL;
 		mdbe->msg = monetdbe_query_internal(mdbe, query, NULL, NULL, &prepare_id, 'S');

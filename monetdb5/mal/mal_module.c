@@ -42,8 +42,8 @@ findFunctionImplementation(const char *cname)
 				Symbol s;
 				if ((s = moduleIndex[i]->space[j]) != NULL) {
 					do {
-						if (strcmp(s->def->binding, cname) == 0 &&
-							s->def &&
+						if (s->def &&
+							strcmp(s->def->binding, cname) == 0 &&
 							s->def->stmt &&
 							s->def->stmt[0] &&
 							s->def->stmt[0]->fcn) {
