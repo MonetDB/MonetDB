@@ -48,11 +48,9 @@ static str monetdb_query(Client c, str query) {
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	res_table* res = NULL;
 	int i;
-	retval = SQLstatementIntern(c,
-		query,
-		"name",
-		1, 0, &res);
-	SQLautocommit(m);
+	retval = SQLstatementIntern(c, query, "name", 1, 0, &res);
+	if (retval == MAL_SUCCEED)
+		retval = SQLautocommit(m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
 		freeException(retval);

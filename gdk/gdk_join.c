@@ -2933,6 +2933,7 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 
 		algomsg = "byte-sized atoms";
 		assert(bvars == NULL);
+		memset(seen, 0, sizeof(seen));
 		for (i = 0; i < ci.ncand; i++) {
 			if (i == ci.ncand/ 2) {
 				cnt = 0;

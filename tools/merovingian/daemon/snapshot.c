@@ -98,12 +98,13 @@ snapshot_database_stream(char *dbname, stream *s)
 	}
 
 	/* Set up the connection. Connect directly to the unix domain socket */
-	if (stats->conns == NULL || stats->conns[0].val == NULL) {
+	if (stats->conns == NULL || stats->conns[0].val == NULL ||
+		(conn = mapi_mapiuri(stats->conns[0].val, ".snapshot",
+							 stats->secret, "sql")) == NULL) {
 		e = newErr("internal error: no conn");
 		goto bailout;
 	}
-	conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql");
-	if (conn == NULL || mapi_error(conn) != MOK) {
+	if (mapi_error(conn) != MOK) {
 		e = newErr("connection error: %s", mapi_error_str(conn));
 		goto bailout;
 	}
@@ -174,12 +175,12 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 
 	/* Set up the connection. Connect directly to the unix domain socket */
-	if (stats->conns == NULL || stats->conns[0].val == NULL) {
+	if (stats->conns == NULL || stats->conns[0].val == NULL ||
+		(conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql")) == NULL) {
 		e = newErr("internal error: no conn");
 		goto bailout;
 	}
-	conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql");
-	if (conn == NULL || mapi_error(conn) != MOK) {
+	if (mapi_error(conn) != MOK) {
 		e = newErr("connection error: %s", mapi_error_str(conn));
 		goto bailout;
 	}
@@ -324,10 +325,6 @@ snapshot_destroy_file(char *path)
 	if (e != NULL)
 		return e;
 
-	struct stat dummy;
-	if (stat(path, &dummy) < 0)
-		return newErr("Could not drop snapshot '%s': %s", path, strerror(errno));
-
 	if (remove(path) < 0)
 		return newErr("Could not remove '%s': %s", path, strerror(errno));
 
@@ -406,11 +403,12 @@ parse_snapshot_name_selftest(void)
 	};
 
 	char *errmsg = NULL;
-	char *dbname = "<uninit>";
+	char *dbname = NULL;
 	time_t timestamp = 0;
 	bool result;
 	for (tc = &testcases[0]; tc->filename != NULL; tc++) {
-		dbname = "<uninit>";
+		free(dbname);
+		dbname = NULL;
 		timestamp = 0;
 		result = parse_snapshot_name(tc->filename, &dbname, &timestamp);
 		if (result != tc->expected_result) {
@@ -431,14 +429,17 @@ parse_snapshot_name_selftest(void)
 		}
 	}
 
-	if (errmsg != NULL)
-		return newErr(
+	if (errmsg != NULL) {
+		errmsg = newErr(
 			"parse_snapshot_name selftest failure for '%s':"
 			" %s (%s, '%s', %" PRIu64 ")\n",
 			tc->filename, errmsg,
 			result ? "true" : "false",
-			dbname,
+			dbname ? dbname : "<uninit>",
 			(uint64_t)timestamp);
+		free(dbname);
+		return errmsg;
+	}
 
 	return NO_ERR;
 }
@@ -489,17 +490,17 @@ parse_snapshot_name(const char *filename, char **dbname, time_t *timestamp)
 	}
 	*ts = '\0'; // chop!
 
-        // We want to interpret the timestamp as UTC.
-        // Unfortunately, mktime interprets it as Localtime.
-        time_t wrong = mktime(&tm);
+	// We want to interpret the timestamp as UTC.
+	// Unfortunately, mktime interprets it as Localtime.
+	time_t wrong = mktime(&tm);
 
-        // Let's adjust it.
-        // Take a timestamp, render it in UTC, then read back as Localtime.
+	// Let's adjust it.
+	// Take a timestamp, render it in UTC, then read back as Localtime.
 	// Look at the difference.
-        time_t before = time(NULL);
-        gmtime_r(&before, &tm);
-        time_t after = mktime(&tm);
-        time_t correct = before - after + wrong;
+	time_t before = time(NULL);
+	gmtime_r(&before, &tm);
+	time_t after = mktime(&tm);
+	time_t correct = before - after + wrong;
 
 	// Return the results
 	*timestamp = correct;
@@ -660,7 +661,7 @@ prepare_directory(struct dir_helper *state, const char *prefix_dir, const char *
 		}
 		if (close(state->fd) < 0) {
 			e = newErr("close %s: %s", state->dir, strerror(errno));
-			state->fd = 0;
+			state->fd = -1;
 			goto bailout;
 		}
 		state->fd = -1;
@@ -739,7 +740,9 @@ read_tar_block(stream *s, char *block, err *error)
 	if (nread <= 0) {
 		if (mnstr_errnr(s) != 0) {
 			/* failure */
-			*error = newErr("Read error (%zd): %s", nread, mnstr_error(s));
+			char *err = mnstr_error(s);
+			*error = newErr("Read error (%zd): %s", nread, err);
+			free(err);
 		} else {
 			*error = NULL;
 		}
@@ -832,7 +835,9 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 		sprintf(destfile, "%s/%s", destdir, useful_part);
 
 		// Create any missing directories and take care of fsync'ing them
-		prepare_directory(&dirhelper, destdir, destfile);
+		e = prepare_directory(&dirhelper, destdir, destfile);
+		if (e)
+			goto bailout;
 
 		// Copy the data
 		outfile = fopen(destfile, "w");

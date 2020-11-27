@@ -1231,7 +1231,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(n);
 					freeException(ret);
 					ret = new;
-				} else ret = n;
+				} else {
+					freeException(ret);
+					ret = n;
+				}
 			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");

@@ -180,13 +180,7 @@ macro(monetdb_macro_variables)
   if(HAVE_GETOPT_H)
     set(HAVE_GETOPT 1)
   endif()
-  # Check with STATIC_CODE_ANALYSIS
   # compiler options, profiling (google perf tools), valgrind
-  set(ENABLE_STATIC_ANALYSIS
-    "NO"
-    CACHE
-    STRING
-    "Configure for static code analysis (use only if you know what you are doing)")
   # Check that posix regex is available when pcre is not found
   # "monetdb5/module/mal/pcre.c" assumes the regex library is available
   # as an alternative without checking this in the C code.

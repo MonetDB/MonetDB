@@ -58,55 +58,6 @@ static struct rusage prevUsage;
 #endif
 
 #define LOGLEN 8192
-#define lognew()  loglen = 0; logbase = logbuffer; *logbase = 0;
-
-/*
- * We use a buffer (`logbuffer`) where we incrementally create the output JSON object. Initially we allocate LOGLEN (8K)
- * bytes and we keep the capacity of the buffer (`logcap`) and the length of the current string (`loglen`).
- *
- * We use the `logadd` macro to add data to our buffer (usually key-value pairs). This macro offers an interface similar
- * to printf.
- *
- * The first snprintf bellow happens in a statically allocated buffer that might be much smaller than logcap. We do not
- * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
- *
- * There are three cases:
- *
- * 1. The new string fits in the current buffer -> we just update the buffer
- *
- * 2. The new string does not fit in the current buffer, but is smaller than the capacity of the buffer -> we output the
- * current contents of the buffer and start at the beginnig.
- *
- * 3. The new string exceeds the current capacity of the buffer -> we output the current contents and reallocate the
- * buffer. The new capacity is 1.5 times the length of the new string.
- */
-#define logadd(...)														\
-	do {																\
-		char tmp_buff[LOGLEN];											\
-		size_t tmp_len = 0;												\
-		tmp_len = snprintf(tmp_buff, LOGLEN, __VA_ARGS__);				\
-		if (loglen + tmp_len < logcap)									\
-			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
-		else if (tmp_len < logcap) {									\
-			logjsonInternal(logbuffer);									\
-			lognew();													\
-			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
-		}																\
-		else {															\
-			char *alloc_buff;											\
-			logjsonInternal(logbuffer);									\
-			logcap = tmp_len + tmp_len/2;								\
-			alloc_buff = (char *)realloc(logbuffer, logcap);			\
-			if (alloc_buff == NULL) {									\
-				TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n"); \
-				free(logbuffer);										\
-				return;													\
-			}															\
-			logbuffer = alloc_buff;										\
-			lognew();													\
-			loglen += snprintf(logbase+loglen, logcap - loglen, __VA_ARGS__); \
-		}																\
-	} while (0)
 
 // The heart beat events should be sent to all outstanding channels.
 static void logjsonInternal(char *logbuffer)
@@ -121,6 +72,93 @@ static void logjsonInternal(char *logbuffer)
 		(void) mnstr_flush(maleventstream, MNSTR_FLUSH_DATA);
 	}
 	MT_lock_unset(&mal_profileLock);
+}
+
+/*
+ * We use a buffer (`logbuffer`) where we incrementally create the output JSON object. Initially we allocate LOGLEN (8K)
+ * bytes and we keep the capacity of the buffer (`logcap`) and the length of the current string (`loglen`).
+ *
+ * We use the `logadd` function to add data to our buffer (usually key-value pairs). This macro offers an interface similar
+ * to printf.
+ *
+ * The first snprintf bellow happens in a statically allocated buffer that might be much smaller than logcap. We do not
+ * care. We only need to perform this snprintf to get the actual length of the string that is to be produced.
+ *
+ * There are three cases:
+ *
+ * 1. The new string fits in the current buffer -> we just update the buffer
+ *
+ * 2. The new string does not fit in the current buffer, but is smaller than the capacity of the buffer -> we output the
+ * current contents of the buffer and start at the beginning.
+ *
+ * 3. The new string exceeds the current capacity of the buffer -> we output the current contents and reallocate the
+ * buffer. The new capacity is 1.5 times the length of the new string.
+ */
+struct logbuf {
+	char *logbuffer;
+	char *logbase;
+	size_t loglen;
+	size_t logcap;
+};
+
+static inline void
+lognew(struct logbuf *logbuf)
+{
+	logbuf->loglen = 0;
+	logbuf->logbase = logbuf->logbuffer;
+	*logbuf->logbase = 0;
+}
+
+static inline void
+logdel(struct logbuf *logbuf)
+{
+	free(logbuf->logbuffer);
+}
+
+static bool logadd(struct logbuf *logbuf,
+				   _In_z_ _Printf_format_string_ const char *fmt, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
+static bool
+logadd(struct logbuf *logbuf, const char *fmt, ...)
+{
+	char tmp_buff[LOGLEN];
+	int tmp_len;
+	va_list va;
+	va_list va2;
+
+	va_start(va, fmt);
+	va_copy(va2, va);			/* we will need it again */
+	tmp_len = vsnprintf(tmp_buff, sizeof(tmp_buff), fmt, va);
+	if (tmp_len < 0) {
+		logdel(logbuf);
+		return false;
+	}
+	if (logbuf->loglen + (size_t) tmp_len >= logbuf->logcap) {
+		if ((size_t) tmp_len >= logbuf->logcap) {
+			/* includes first time when logbuffer == NULL and logcap = 0 */
+			char *alloc_buff;
+			if (logbuf->loglen > 0)
+				logjsonInternal(logbuf->logbuffer);
+			logbuf->logcap = (size_t) tmp_len + (size_t) tmp_len/2;
+			if (logbuf->logcap < LOGLEN)
+				logbuf->logcap = LOGLEN;
+			alloc_buff = realloc(logbuf->logbuffer, logbuf->logcap);
+			if (alloc_buff == NULL) {
+				TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n");
+				logdel(logbuf);
+				return false;
+			}
+			logbuf->logbuffer = alloc_buff;
+			lognew(logbuf);
+		} else {
+			logjsonInternal(logbuf->logbuffer);
+			lognew(logbuf);
+		}
+	}
+	logbuf->loglen += vsnprintf(logbuf->logbase + logbuf->loglen,
+								logbuf->logcap - logbuf->loglen,
+								fmt, va2);
+	return true;
 }
 
 /* JSON rendering method of performance data.
@@ -140,17 +178,17 @@ EXAMPLE:
 static void
 renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int start)
 {
-	char *logbuffer = NULL, *logbase;
-	size_t loglen, logcap = LOGLEN;
+	struct logbuf logbuf;
 	str c;
 	str stmtq;
 	lng usec;
 	uint64_t microseconds;
+	bool ok;
 
 	/* ignore generation of events for instructions that are called too often
 	 * they may appear when BARRIER blocks are executed
 	 * The default parameter should be sufficient for most practical cases.
-	*/
+	 */
 	if( !start && pci->calls > HIGHWATERMARK){
 		if( pci->calls == 10000 || pci->calls == 100000 || pci->calls == 1000000 || pci->calls == 10000000)
 			TRC_WARNING(MAL_SERVER, "Too many calls: %d\n", pci->calls);
@@ -163,159 +201,206 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 	if(malprofileruser!= MAL_ADMIN && malprofileruser != cntxt->user)
 		return;
 
-	logbuffer = (char *)malloc(logcap);
-	if (logbuffer == NULL) {
-		TRC_ERROR(MAL_SERVER, "Profiler JSON buffer allocation failure\n");
-		return;
-	}
+	logbuf = (struct logbuf) {0};
 
 	usec= pci->clock;
 	microseconds = (uint64_t)usec - ((uint64_t)startup_time.tv_sec*1000000 - (uint64_t)startup_time.tv_usec);
 	/* make profile event tuple  */
-	lognew();
-	logadd("{"); // fill in later with the event counter
 	/* TODO: This could probably be optimized somehow to avoid the
 	 * function call to mercurial_revision().
 	 */
 	// No comma at the beginning
-	logadd("\"version\":\""VERSION" (hg id: %s)\"", mercurial_revision());
-	logadd(",\"user\":"OIDFMT, cntxt->user);
-	logadd(",\"clk\":"LLFMT, usec);
-	logadd(",\"mclk\":%"PRIu64"", microseconds);
-	logadd(",\"thread\":%d", THRgettid());
-	logadd(",\"program\":\"%s.%s\"", getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)));
-	logadd(",\"pc\":%d", mb?getPC(mb,pci):0);
-	logadd(",\"tag\":"OIDFMT, stk?stk->tag:0);
-	if( pci->modname)
-		logadd(",\"module\":\"%s\"", pci->modname ? pci->modname : "");
-	if( pci->fcnname)
-		logadd(",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : "");
-	if( pci->barrier)
-		logadd(",\"barrier\":\"%s\"", operatorName(pci->barrier));
-	if( pci->token < FCNcall || pci->token > PATcall)
-		logadd(",\"operator\":\"%s\"", operatorName(pci->token));
-    	if (!GDKinmemory() && !GDKembedded()) {
-			char *uuid = NULL;
-			str c;
-			if ((c = msab_getUUID(&uuid)) == NULL) {
-				logadd(",\"session\":\"%s\"", uuid);
-				free(uuid);
-			} else
-				free(c);
-		}
-		logadd(",\"state\":\"%s\"", start?"start":"done");
-		logadd(",\"usec\":"LLFMT, pci->ticks);
-		const char *algo = MT_thread_getalgorithm();
-		if (algo) {
-			logadd(",\"algorithm\":\"%s\"", algo);
+	if (!logadd(&logbuf,
+				"{"				// fill in later with the event counter
+				"\"version\":\""VERSION" (hg id: %s)\""
+				",\"user\":"OIDFMT
+				",\"clk\":"LLFMT
+				",\"mclk\":%"PRIu64""
+				",\"thread\":%d"
+				",\"program\":\"%s.%s\""
+				",\"pc\":%d"
+				",\"tag\":"OIDFMT,
+				mercurial_revision(),
+				cntxt->user,
+				usec,
+				microseconds,
+				THRgettid(),
+				getModuleId(getInstrPtr(mb, 0)), getFunctionId(getInstrPtr(mb, 0)),
+				mb?getPC(mb,pci):0,
+				stk?stk->tag:0))
+		return;
+	if( pci->modname && !logadd(&logbuf, ",\"module\":\"%s\"", pci->modname ? pci->modname : ""))
+		return;
+	if( pci->fcnname && !logadd(&logbuf, ",\"function\":\"%s\"", pci->fcnname ? pci->fcnname : ""))
+		return;
+	if( pci->barrier && !logadd(&logbuf, ",\"barrier\":\"%s\"", operatorName(pci->barrier)))
+		return;
+	if ((pci->token < FCNcall || pci->token > PATcall) &&
+		!logadd(&logbuf, ",\"operator\":\"%s\"", operatorName(pci->token)))
+		return;
+	if (!GDKinmemory() && !GDKembedded()) {
+		char *uuid = NULL;
+		str c;
+		if ((c = msab_getUUID(&uuid)) == NULL) {
+			ok = logadd(&logbuf, ",\"session\":\"%s\"", uuid);
+			free(uuid);
+			if (!ok)
+				return;
+		} else
+			free(c);
 	}
+	if (!logadd(&logbuf, ",\"state\":\"%s\",\"usec\":"LLFMT,
+				start?"start":"done", pci->ticks))
+		return;
+	const char *algo = MT_thread_getalgorithm();
+	if (algo && !logadd(&logbuf, ",\"algorithm\":\"%s\"", algo))
+		return;
+
 /* EXAMPLE MAL statement argument decomposition
  * The eventparser may assume this layout for ease of parsing
-{
-... as above ...
-"result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
-...
-"argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
-}
-This information can be used to determine memory footprint and variable life times.
- */
+ {
+ ... as above ...
+ "result":{"clk":"173297139,"pc":1,"index":0,,"name":"X_6","type":"void","value":"0@0","eol":0}
+ ...
+ "argument":{"clk":173297139,"pc":1,"index":"2","type":"str","value":"\"default_pipe\"","eol":0},
+ }
+ This information can be used to determine memory footprint and variable life times.
+*/
 
-		// Also show details of the arguments for modelling
-		if(mb && pci->modname && pci->fcnname){
-			int j;
+	// Also show details of the arguments for modelling
+	if(mb && pci->modname && pci->fcnname){
+		int j;
 
-			logadd(",\"args\":[");
-			for(j=0; j< pci->argc; j++){
-				int tpe = getVarType(mb, getArg(pci,j));
-				str tname = 0, cv;
-				lng total = 0;
-				BUN cnt = 0;
-				bat bid=0;
+		if (!logadd(&logbuf, ",\"args\":["))
+			return;
+		for(j=0; j< pci->argc; j++){
+			int tpe = getVarType(mb, getArg(pci,j));
+			str tname = 0, cv;
+			lng total = 0;
+			BUN cnt = 0;
+			bat bid=0;
 
-				if (j == 0) {
-					// No comma at the beginning
-					logadd("{");
-				}
-				else {
-					logadd(",{");
-				}
-				if(j < pci->retc)
-					logadd("\"ret\":%d", j);
-				else
-					logadd("\"arg\":%d", j);
-				logadd(",\"var\":\"%s\"", getVarName(mb, getArg(pci,j)));
-				c =getVarName(mb, getArg(pci,j));
-				if(getVarSTC(mb,getArg(pci,j))){
-					InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
-					if(stc && strcmp(getModuleId(stc),"sql") ==0  && strncmp(getFunctionId(stc),"bind",4)==0)
-						logadd(",\"alias\":\"%s.%s.%s\"",
+			if (j == 0) {
+				// No comma at the beginning
+				if (!logadd(&logbuf, "{"))
+					return;
+			}
+			else {
+				if (!logadd(&logbuf, ",{"))
+					return;
+			}
+			if (!logadd(&logbuf, "\"%s\":%d,\"var\":\"%s\"",
+						j < pci->retc ? "ret" : "arg", j,
+						getVarName(mb, getArg(pci,j))))
+				return;
+			c =getVarName(mb, getArg(pci,j));
+			if(getVarSTC(mb,getArg(pci,j))){
+				InstrPtr stc = getInstrPtr(mb, getVarSTC(mb,getArg(pci,j)));
+				if (stc &&
+					strcmp(getModuleId(stc),"sql") ==0 &&
+					strncmp(getFunctionId(stc),"bind",4)==0 &&
+					!logadd(&logbuf, ",\"alias\":\"%s.%s.%s\"",
 							getVarConstant(mb, getArg(stc,stc->retc +1)).val.sval,
 							getVarConstant(mb, getArg(stc,stc->retc +2)).val.sval,
-							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval);
-				}
-				if(isaBatType(tpe)){
-					BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
-					tname = getTypeName(getBatType(tpe));
-					logadd(",\"type\":\"bat[:%s]\"", tname);
-					if(d) {
-						BAT *v;
-						cnt = BATcount(d);
-						if(isVIEW(d)){
-							logadd(",\"view\":\"true\"");
-							logadd(",\"parent\":%d", VIEWtparent(d));
-							logadd(",\"seqbase\":"BUNFMT, d->hseqbase);
-							v= BBPquickdesc(VIEWtparent(d), false);
-							logadd(",\"mode\":\"%s\"", (v &&  !v->batTransient ? "persistent" : "transient"));
-						} else
-							logadd(",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent"));
-						logadd(",\"sorted\":%d", d->tsorted);
-						logadd(",\"revsorted\":%d", d->trevsorted);
-						logadd(",\"nonil\":%d", d->tnonil);
-						logadd(",\"nil\":%d", d->tnil);
-						logadd(",\"key\":%d", d->tkey);
-						cv = VALformat(&stk->stk[getArg(pci,j)]);
-						c = strchr(cv, '>');
-						*c = 0;
-						logadd(",\"file\":\"%s\"", cv + 1);
-						GDKfree(cv);
-						total += cnt * d->twidth;
-						logadd(",\"width\":%d", d->twidth);
-						/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-						if( d->thash)
-							logadd(",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid));
-						if( d->tvheap)
-							logadd(",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid));
-						if( d->timprints)
-							logadd(",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d));
-					/* logadd("\"debug\":\"%s\",", d->debugmessages); */
-						BBPunfix(d->batCacheid);
-					}
-					logadd(",\"bid\":%d", bid);
-					logadd(",\"count\":"BUNFMT, cnt);
-					logadd(",\"size\":" LLFMT, total);
-				} else{
-					tname = getTypeName(tpe);
-					logadd(",\"type\":\"%s\"", tname);
-					logadd(",\"const\":%d", isVarConstant(mb, getArg(pci,j)));
-					cv = VALformat(&stk->stk[getArg(pci,j)]);
-					stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
-					if (stmtq)
-						logadd(",\"value\":\"%s\"", stmtq);
-					GDKfree(cv);
-					GDKfree(stmtq);
-				}
-				logadd(",\"eol\":%d", getVarEolife(mb,getArg(pci,j)));
-				// logadd(",\"used\":%d", isVarUsed(mb,getArg(pci,j)));
-				// logadd(",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)));
-				// logadd(",\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)));
-				GDKfree(tname);
-				logadd("}");
+							getVarConstant(mb, getArg(stc,stc->retc +3)).val.sval))
+					return;
 			}
-			logadd("]"); // end marker for arguments
+			if(isaBatType(tpe)){
+				BAT *d= BATdescriptor(bid = stk->stk[getArg(pci,j)].val.bval);
+				tname = getTypeName(getBatType(tpe));
+				ok = logadd(&logbuf, ",\"type\":\"bat[:%s]\"", tname);
+				GDKfree(tname);
+				if (!ok)
+					return;
+				if(d) {
+					BAT *v;
+					cnt = BATcount(d);
+					if(isVIEW(d)){
+						v= BBPquickdesc(VIEWtparent(d), false);
+						if (!logadd(&logbuf,
+									",\"view\":\"true\""
+									",\"parent\":%d"
+									",\"seqbase\":"BUNFMT
+									",\"mode\":\"%s\"",
+									VIEWtparent(d),
+									d->hseqbase,
+									v && !v->batTransient ? "persistent" : "transient"))
+							return;
+					} else {
+						if (!logadd(&logbuf, ",\"mode\":\"%s\"", (d->batTransient ? "transient" : "persistent")))
+							return;
+					}
+					if (!logadd(&logbuf,
+								",\"sorted\":%d"
+								",\"revsorted\":%d"
+								",\"nonil\":%d"
+								",\"nil\":%d"
+								",\"key\":%d",
+								d->tsorted,
+								d->trevsorted,
+								d->tnonil,
+								d->tnil,
+								d->tkey))
+						return;
+					cv = VALformat(&stk->stk[getArg(pci,j)]);
+					c = strchr(cv, '>');
+					*c = 0;
+					ok = logadd(&logbuf, ",\"file\":\"%s\"", cv + 1);
+					GDKfree(cv);
+					if (!ok)
+						return;
+					total += cnt * d->twidth;
+					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
+						return;
+					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
+					if( d->thash)
+						logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid));
+					if( d->tvheap)
+						logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid));
+					if( d->timprints)
+						logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d));
+					/* logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages); */
+					BBPunfix(d->batCacheid);
+				}
+				if (!logadd(&logbuf,
+							",\"bid\":%d"
+							",\"count\":"BUNFMT
+							",\"size\":" LLFMT,
+							bid, cnt, total))
+					return;
+			} else{
+				tname = getTypeName(tpe);
+				ok = logadd(&logbuf,
+							",\"type\":\"%s\""
+							",\"const\":%d",
+							tname, isVarConstant(mb, getArg(pci,j)));
+				GDKfree(tname);
+				if (!ok)
+					return;
+				cv = VALformat(&stk->stk[getArg(pci,j)]);
+				stmtq = cv ? mal_quote(cv, strlen(cv)) : NULL;
+				if (stmtq)
+					ok = logadd(&logbuf, ",\"value\":\"%s\"", stmtq);
+				GDKfree(cv);
+				GDKfree(stmtq);
+				if (!ok)
+					return;
+			}
+			if (!logadd(&logbuf, ",\"eol\":%d", getVarEolife(mb,getArg(pci,j))))
+				return;
+			// if (!logadd(&logbuf, ",\"used\":%d", isVarUsed(mb,getArg(pci,j)))) return;
+			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return;
+			// if (!logadd(&logbuf, ",\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)))) return;
+			if (!logadd(&logbuf, "}"))
+				return;
 		}
-	logadd("}\n"); // end marker
-	logjsonInternal(logbuffer);
-	free(logbuffer);
+		if (!logadd(&logbuf, "]")) // end marker for arguments
+			return;
+	}
+	if (!logadd(&logbuf, "}\n")) // end marker
+		return;
+	logjsonInternal(logbuf.logbuffer);
+	logdel(&logbuf);
 }
 
 /* the OS details on cpu load are read from /proc/stat
@@ -399,8 +484,7 @@ void
 profilerHeartbeatEvent(char *alter)
 {
 	char cpuload[BUFSIZ];
-	char *logbuffer = NULL, *logbase;
-	size_t loglen, logcap = LOGLEN;
+	struct logbuf logbuf;
 	lng usec;
 	uint64_t microseconds;
 
@@ -413,44 +497,47 @@ profilerHeartbeatEvent(char *alter)
 	if (getCPULoad(cpuload))
 		return;
 
-	logbuffer = (char *)malloc(logcap);
-	if (logbuffer == NULL) {
-		TRC_ERROR(MAL_SERVER, "Profiler JSON buffer allocation failure\n");
-		return;
-	}
+	logbuf = (struct logbuf) {0};
 
-	lognew();
-	logadd("{"); // fill in later with the event counter
+	if (!logadd(&logbuf, "{"))	// fill in later with the event counter
+		return;
 	if (!GDKinmemory() && !GDKembedded()) {
 		char *uuid = NULL, *err;
 		if ((err = msab_getUUID(&uuid)) == NULL) {
-			logadd("\"session\":\"%s\",", uuid);
+			bool ok = logadd(&logbuf, "\"session\":\"%s\",", uuid);
 			free(uuid);
+			if (!ok)
+				return;
 		} else
 			free(err);
 	}
-	logadd("\"clk\":"LLFMT",",usec);
-	logadd("\"ctime\":%"PRIu64",", microseconds);
-	logadd("\"rss\":%zu,", MT_getrss()/1024/1024);
+	if (!logadd(&logbuf, "\"clk\":"LLFMT",\"ctime\":%"PRIu64",\"rss\":%zu,",
+				usec,
+				microseconds,
+				MT_getrss()/1024/1024))
+		return;
 #ifdef HAVE_SYS_RESOURCE_H
 	getrusage(RUSAGE_SELF, &infoUsage);
-	if(infoUsage.ru_inblock - prevUsage.ru_inblock)
-		logadd("\"inblock\":%ld,", infoUsage.ru_inblock - prevUsage.ru_inblock);
-	if(infoUsage.ru_oublock - prevUsage.ru_oublock)
-		logadd("\"oublock\":%ld,", infoUsage.ru_oublock - prevUsage.ru_oublock);
-	if(infoUsage.ru_majflt - prevUsage.ru_majflt)
-		logadd("\"majflt\":%ld,", infoUsage.ru_majflt - prevUsage.ru_majflt);
-	if(infoUsage.ru_nswap - prevUsage.ru_nswap)
-		logadd("\"nswap\":%ld,", infoUsage.ru_nswap - prevUsage.ru_nswap);
-	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw)
-		logadd("\"nvcsw\":%ld,", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw);
+	if(infoUsage.ru_inblock - prevUsage.ru_inblock && !logadd(&logbuf, "\"inblock\":%ld,", infoUsage.ru_inblock - prevUsage.ru_inblock))
+		return;
+	if(infoUsage.ru_oublock - prevUsage.ru_oublock && !logadd(&logbuf, "\"oublock\":%ld,", infoUsage.ru_oublock - prevUsage.ru_oublock))
+		return;
+	if(infoUsage.ru_majflt - prevUsage.ru_majflt && !logadd(&logbuf, "\"majflt\":%ld,", infoUsage.ru_majflt - prevUsage.ru_majflt))
+		return;
+	if(infoUsage.ru_nswap - prevUsage.ru_nswap && !logadd(&logbuf, "\"nswap\":%ld,", infoUsage.ru_nswap - prevUsage.ru_nswap))
+		return;
+	if(infoUsage.ru_nvcsw - prevUsage.ru_nvcsw && !logadd(&logbuf, "\"nvcsw\":%ld,", infoUsage.ru_nvcsw - prevUsage.ru_nvcsw +infoUsage.ru_nivcsw - prevUsage.ru_nivcsw))
+		return;
 	prevUsage = infoUsage;
 #endif
-	logadd("\"state\":\"%s\",",alter);
-	logadd("\"cpuload\":%s",cpuload);
-	logadd("}\n"); // end marker
-	logjsonInternal(logbuffer);
-	free(logbuffer);
+	if (!logadd(&logbuf,
+				"\"state\":\"%s\","
+				"\"cpuload\":%s"
+				"}\n",			// end marker
+				alter, cpuload))
+		return;
+	logjsonInternal(logbuf.logbuffer);
+	logdel(&logbuf);
 }
 
 void
