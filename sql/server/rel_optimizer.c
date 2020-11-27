@@ -41,7 +41,6 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 
 	switch (rel->op) {
 	case op_basetable: {
-		node *cn;
 		sql_table *t = rel->l;
 
 		if (rel->exps) {
@@ -61,12 +60,14 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			return rel->r;
 		if (rname && strcmp(t->base.name, rname) != 0)
 			return NULL;
+		node *cn;
+		sql_table *mt = rel->r;
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0) {
 				*bt = rel;
-				if (pnr < 0 || (c->t->p &&
-				    list_position(c->t->p->members.set, c->t) == pnr))
+				if (pnr < 0 || (mt &&
+					list_position(mt->members, c->t) == pnr))
 					return c;
 			}
 		}
@@ -75,8 +76,8 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			sql_idx *i = cn->data;
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
-				if (pnr < 0 || (i->t->p &&
-				    list_position(i->t->p->members.set, i->t) == pnr)) {
+				if (pnr < 0 || (mt &&
+					list_position(mt->members, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
 					return c->c;
 				}
@@ -4138,10 +4139,11 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 
 				if (find_prop(gbe->p, PROP_HASHCOL)) {
 					fcmp cmp = (fcmp)&kc_column_cmp;
-					sql_column *c = exp_find_column(rel->l, gbe, -2);
-
+					sql_rel *bt = NULL;
+					sql_column *c = exp_find_column_(rel, gbe, -2, &bt);
 					/* check if key is partition key */
-					if (c && c->t->p && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
+					sql_table *mt = (bt)?bt->r:NULL;
+					if (c && mt && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
 						v->changes++;
 						return rel_inplace_setop(rel, ul, ur, op_union,
 					       	       rel_projections(v->sql, rel, NULL, 1, 1));
@@ -4923,27 +4925,27 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 static int
 rel_part_nr( sql_rel *rel, sql_exp *e )
 {
-	sql_column *c;
-	sql_table *pp;
+	sql_column *c = NULL;
+	sql_rel *bt = NULL;
 	assert(e->type == e_cmp);
 
-	c = exp_find_column(rel, e->l, -1);
+	c = exp_find_column_(rel, e->l, -1, &bt);
 	if (!c)
-		c = exp_find_column(rel, e->r, -1);
+		c = exp_find_column_(rel, e->r, -1, &bt);
 	if (!c && e->f)
-		c = exp_find_column(rel, e->f, -1);
-	if (!c)
+		c = exp_find_column_(rel, e->f, -1, &bt);
+	if (!c || !bt || !bt->r)
 		return -1;
-	pp = c->t;
-	if (pp->p)
-		return list_position(pp->p->members.set, pp);
-	return -1;
+	sql_table *pp = c->t;
+	sql_table *mt = bt->r;
+	return list_position(mt->members, pp);
 }
 
 static int
 rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 {
-	sql_column *c;
+	sql_column *c = NULL;
+	sql_rel *bt = NULL;
 	assert(e->type == e_cmp);
 
 	/*
@@ -4953,12 +4955,13 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	 * The union will never return proper column (from A2).
 	 * ie need different solution (probaly pass pnr).
 	 */
-	c = exp_find_column(rel, e->l, pnr);
+	c = exp_find_column_(rel, e->l, pnr, &bt);
 	if (!c)
-		c = exp_find_column(rel, e->r, pnr);
-	if (c) {
+		c = exp_find_column_(rel, e->r, pnr, &bt);
+	if (c && bt && bt->r) {
 		sql_table *pp = c->t;
-		if (pp->p && list_position(pp->p->members.set, pp) == pnr)
+		sql_table *mt = bt->r;
+		if (list_position(mt->members, pp) == pnr)
 			return 1;
 	}
 	/* for projects we may need to do a rename! */
@@ -8845,6 +8848,7 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 			n = n->next;
 		}
 	}
+	p->r = mt;
 	return p;
 }
 
@@ -8880,7 +8884,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 				char *tname = t->base.name;
 				list *cols = NULL, *ranges = NULL;
 
-				if (list_empty(t->members.set))
+				if (list_empty(t->members))
 					return rel;
 				if (sel) {
 					cols = sa_list(v->sql->sa);
@@ -8935,10 +8939,10 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					}
 				}
 				v->changes++;
-				if (t->members.set) {
+				if (t->members) {
 					list *tables = sa_list(v->sql->sa);
 
-					for (node *nt = t->members.set->h; nt; nt = nt->next) {
+					for (node *nt = t->members->h; nt; nt = nt->next) {
 						sql_part *pd = nt->data;
 						sql_table *pt = find_sql_table_id(t->s, pd->base.id);
 						sql_rel *prel = rel_basetable(v->sql, pt, tname), *bt = NULL;
@@ -9228,7 +9232,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						tables = ntables;
 					}
 				}
-				if (nrel && list_length(t->members.set) == 1) {
+				if (nrel && list_length(t->members) == 1) {
 					nrel = rel_project(v->sql->sa, nrel, rel->exps);
 				} else if (nrel) {
 					rel_set_exps(nrel, rel->exps);
