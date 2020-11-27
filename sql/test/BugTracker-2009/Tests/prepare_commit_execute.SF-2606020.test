@@ -10,28 +10,28 @@ commit
 statement ok
 start transaction
 
-statement error
+statement ok
 prepare insert into pce (i,s) values (?,?)
 
-statement error
+statement ok
 exec **(1,'test 1')
 
-statement error
+statement ok
 select * from pce
 
-statement error
+statement ok
 commit
 
 statement ok
 start transaction
 
-statement error
+statement ok
 exec **(2,'test 2')
 
-statement error
+statement ok
 select * from pce
 
-statement error
+statement ok
 commit
 
 statement ok

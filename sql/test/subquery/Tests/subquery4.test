@@ -27,12 +27,12 @@ PREPARE SELECT
 	(SELECT ? FROM evilfunction((SELECT 1)))
 FROM another_T
 
-statement error
+statement ok
 PREPARE SELECT
 	(SELECT 1 FROM evilfunction((SELECT ?)))
 FROM another_T
 
-statement error
+statement ok
 PREPARE SELECT
 	(SELECT 1 FROM evilfunction((SELECT ?, ?)))
 FROM another_T
