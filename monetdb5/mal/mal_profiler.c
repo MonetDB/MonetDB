@@ -117,7 +117,8 @@ logdel(struct logbuf *logbuf)
 
 static bool logadd(struct logbuf *logbuf,
 				   _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
+	__attribute__((__format__(__printf__, 2, 3)))
+	__attribute__((__warn_unused_result__));
 static bool
 logadd(struct logbuf *logbuf, const char *fmt, ...)
 {
@@ -131,6 +132,8 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	tmp_len = vsnprintf(tmp_buff, sizeof(tmp_buff), fmt, va);
 	if (tmp_len < 0) {
 		logdel(logbuf);
+		va_end(va);
+		va_end(va2);
 		return false;
 	}
 	if (logbuf->loglen + (size_t) tmp_len >= logbuf->logcap) {
@@ -146,6 +149,8 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 			if (alloc_buff == NULL) {
 				TRC_ERROR(MAL_SERVER, "Profiler JSON buffer reallocation failure\n");
 				logdel(logbuf);
+				va_end(va);
+				va_end(va2);
 				return false;
 			}
 			logbuf->logbuffer = alloc_buff;
@@ -158,6 +163,8 @@ logadd(struct logbuf *logbuf, const char *fmt, ...)
 	logbuf->loglen += vsnprintf(logbuf->logbase + logbuf->loglen,
 								logbuf->logcap - logbuf->loglen,
 								fmt, va2);
+	va_end(va);
+	va_end(va2);
 	return true;
 }
 
@@ -354,13 +361,13 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 					if (!logadd(&logbuf, ",\"width\":%d", d->twidth))
 						return;
 					/* keeping information about the individual auxiliary heaps is helpful during analysis. */
-					if( d->thash)
-						logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid));
-					if( d->tvheap)
-						logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid));
-					if( d->timprints)
-						logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d));
-					/* logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages); */
+					if( d->thash && !logadd(&logbuf, ",\"hash\":" LLFMT, (lng) hashinfo(d->thash, d->batCacheid)))
+						return;
+					if( d->tvheap && !logadd(&logbuf, ",\"vheap\":" LLFMT, (lng) heapinfo(d->tvheap, d->batCacheid)))
+						return;
+					if( d->timprints && !logadd(&logbuf, ",\"imprints\":" LLFMT, (lng) IMPSimprintsize(d)))
+						return;
+					/* if (!logadd(&logbuf, "\"debug\":\"%s\",", d->debugmessages)) return; */
 					BBPunfix(d->batCacheid);
 				}
 				if (!logadd(&logbuf,

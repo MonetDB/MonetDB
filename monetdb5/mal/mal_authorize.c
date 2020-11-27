@@ -1075,7 +1075,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 {
 	char *pwhash = NULL;
 	bool free_pw = false;
-	str tmp, output = MAL_SUCCEED;
+	str output = MAL_SUCCEED;
 	BUN p;
 	str msg = MAL_SUCCEED;
 

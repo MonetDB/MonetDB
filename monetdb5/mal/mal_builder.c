@@ -539,7 +539,7 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 		return NULL;
 	cst.vtype= TYPE_str;
 	if ((cst.val.sval= GDKstrdup(Val)) == NULL) {
-		str msg = createException(MAL, "pushStr", "Can not allocate string variable")
+		str msg = createException(MAL, "pushStr", "Can not allocate string variable");
 		addMalException(mb, msg);
 		freeException(msg);
 	} else{
