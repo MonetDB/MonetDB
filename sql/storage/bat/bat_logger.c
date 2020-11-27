@@ -1247,10 +1247,14 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		size_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
 		ssize_t bytes_read = mnstr_read(s, buf, 1, chunk);
 		if (bytes_read < 0) {
-			GDKerror("Reading bytes of component %s failed: %s", path, mnstr_error(s));
+			char *err = mnstr_error(s);
+			GDKerror("Reading bytes of component %s failed: %s", path, err);
+			free(err);
 			goto end;
 		} else if (bytes_read < (ssize_t) chunk) {
-			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, mnstr_error(s));
+			char *err = mnstr_error(s);
+			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, err);
+			free(err);
 			goto end;
 		}
 

@@ -267,8 +267,10 @@ static str RMTconnectScen(
 	conns = c;
 
 	msg = RMTquery(&hdl, "remote.connect", m, "remote.bintype();");
-	if (msg)
+	if (msg) {
+		MT_lock_unset(&mal_remoteLock);
 		return msg;
+	}
 	if (hdl != NULL && mapi_fetch_row(hdl)) {
 		char *val = mapi_fetch_field(hdl, 0);
 		c->type = (unsigned char)atoi(val);

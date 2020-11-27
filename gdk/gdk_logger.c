@@ -468,8 +468,12 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 	int ht = -1, tt = -1, tseq = 0;
 
 	assert(!lg->inmemory);
-	if (lg->debug & 1)
-		fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
+	if (lg->debug & 1) {
+		if (name)
+			fprintf(stderr, "#logger found log_read_updates %s %s " LLFMT "\n", name, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
+		else
+			fprintf(stderr, "#logger found log_read_updates " OIDFMT " %s " LLFMT "\n", id, l->flag == LOG_INSERT ? "insert" : "update", l->nr);
+	}
 
 	if (b) {
 		ht = TYPE_void;
@@ -481,7 +485,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 
 		for (i = 0; i < tr->nr; i++) {
 			if (tr->changes[i].type == LOG_CREATE &&
-			    (tpe == 0
+			    (tpe == 0 && name != NULL
 			     ? strcmp(tr->changes[i].name, name) == 0
 			     : tr->changes[i].tpe == tpe && tr->changes[i].cid == id)) {
 				ht = tr->changes[i].ht;
@@ -495,7 +499,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, char *name, int tpe, oid i
 				}
 				break;
 			} else if (tr->changes[i].type == LOG_USE &&
-				   (tpe == 0
+				   (tpe == 0 && name != NULL
 				    ? strcmp(tr->changes[i].name, name) == 0
 				    : tr->changes[i].tpe == tpe && tr->changes[i].cid == id)) {
 				log_bid bid = (log_bid) tr->changes[i].nr;
