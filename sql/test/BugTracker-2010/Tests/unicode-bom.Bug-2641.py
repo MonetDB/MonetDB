@@ -31,6 +31,8 @@ with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, 
         sys.stderr.write("Expected nonzero return code")
     if not err or b'Unexpected character (U+FEFF)' not in err:
         sys.stderr.write("Expected stderr to contain 'Unexpected character (U+FEFF)'")
+    if "[ 1\\t]" not in str(out):
+        sys.stderr.write("The select 1; after the BOM character should have run and returned the result 1")
 
 # This line has the BOM in the middle of the SELECT 1;\n
 INPUT3 = b"\x53\x45\x4C\xEF\xBB\xBF\x45\x43\x54\x20\x31\x3B\x0A"
