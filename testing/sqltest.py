@@ -8,6 +8,7 @@ import sys
 import unittest
 import pymonetdb
 import MonetDBtesting.utils as utils
+import difflib
 
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=os.getenv("MAPIPORT")
@@ -42,6 +43,36 @@ def piped_representation(data=[]):
     res = list(map(mapfn, data))
     return '\n'.join(res)
 
+def filter_junk(s: str):
+    """filters empty strings and comments
+    """
+    s = s.strip()
+    if s.startswith('--') or s.startswith('#') or s.startswith('stdout of test'):
+        return False
+    if s == '':
+        return False
+    return True
+
+def filter_matching_blocks(a: [str] = [], b: [str] = []):
+    # TODO add some ctx before any mismatch lines
+    ptr = 0
+    red_a = []
+    red_b = []
+    min_size = min(len(a), len(b))
+    s = difflib.SequenceMatcher()
+    for i in range(min_size):
+        s.set_seq1(a[i].replace('\t', '').replace(' ', ''))
+        s.set_seq2(b[i].replace('\t', '').replace(' ', ''))
+        # should be high matching ratio
+        if s.real_quick_ratio() < 0.95:
+            red_a.append(a[i])
+            red_b.append(b[i])
+            # keep track of last mismatch to add some ctx in between
+            ptr = i
+    # add trailing data if len(a) != len(b)
+    red_a+=a[min_size:]
+    red_b+=b[min_size:]
+    return red_a, red_b
 
 class PyMonetDBConnectionContext(object):
     def __init__(self,
@@ -221,6 +252,26 @@ class SQLTestResult(object):
             self.fail(msg, data=self.data)
         return self
 
+class SQLDump():
+    def __init__(self, test_case, data=[]):
+        self.test_case = test_case
+        self.data = data
+        conn_ctx = test_case.conn_ctx
+        self.assertion_errors = [] # holds assertion errors
+
+    def assertMatchStableOut(self, fout):
+        stable = []
+        dump = list(filter(filter_junk, self.data.split('\n')))
+        with open(fout, 'r') as f:
+            stable = list(filter(filter_junk, f.read().split('\n')))
+        a, b = filter_matching_blocks(stable, dump)
+        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+        if len(diff) > 0:
+            err_file = self.test_case.err_file
+            msg = "sql dump expected to match stable output {} but it didnt\'t\n".format(fout)
+            msg+='\n'.join(diff)
+            self.assertion_errors.append(AssertionError(msg))
+            print(msg, file=err_file)
 
 class SQLTestCase():
     def __init__(self, out_file=sys.stdout, err_file=sys.stderr):
@@ -277,3 +328,22 @@ class SQLTestCase():
 
     def drop(self):
         raise NotImplementedError()
+
+    def sqldump(self, *args):
+        kwargs = dict(
+            host = self.conn_ctx.hostname,
+            port = self.conn_ctx.port,
+            dbname = self.conn_ctx.database,
+            user = self.conn_ctx.username,
+            passwd = self.conn_ctx.password)
+        dump = None
+        try:
+            import MonetDBtesting.process as process
+            with process.client('sqldump', **kwargs, args=list(args), stdout=process.PIPE, stderr=process.PIPE) as p:
+                dump, err = p.communicate()
+        except Exception as e:
+            raise SystemExit(str(e))
+        res = SQLDump(self, data=dump)
+        self.test_results.append(res)
+        return res
+

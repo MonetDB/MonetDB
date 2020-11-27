@@ -1128,7 +1128,7 @@ def RunTest(env, test, oktests, pSrvr):
         reason = "as MAPIPORT=%s is not available." % env['MAPIPORT']
     else:
         #test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
-        test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\.(?!stable).*)?$", re.MULTILINE)
+        test_rgx = re.compile("^"+TST+"((_[sp][0-9][0-9])?\..*)?$", re.MULTILINE)
         for f in listdir(TSTSRCDIR):
             if test_rgx.match(f):
                 try:
