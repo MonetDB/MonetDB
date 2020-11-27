@@ -1783,22 +1783,33 @@ str
 mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
-	(void) mb;
-	void *cookie = *getArgReference_ptr(stk, pci, 1);
-	bat batid = *getArgReference_bat(stk, pci, 2);
+	int ret;
+	ptr cookie = *getArgReference_ptr(stk, pci, 1);
+	ptr incoming = getArgReference(stk, pci, 2);
+	int incoming_type = getArgType(mb, pci, 2);
 
-	BAT *b = BATdescriptor(batid);
-	if (b == NULL)
-		throw(SQL, "sql.append_bat_exec", SQLSTATE(HY005) "Cannot access column descriptor");
-	if( b && BATcount(b) > 4096 && !b->batTransient)
-		BATmsync(b);
+	if (incoming_type > GDKatomcnt)
+		incoming_type = TYPE_bat;
 
-	int ret = store_funcs.append_col_exec(cookie, b, true);
+	if (incoming_type == TYPE_bat) {
+		bat batid = *(bat*)incoming;
+		BAT *b = BATdescriptor(batid);
+		if (b == NULL)
+			throw(SQL, "sql.append_bat_exec", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (BATcount(b) > 4096 && !b->batTransient)
+			BATmsync(b);
 
-	BBPunfix(b->batCacheid);
+		ret = store_funcs.append_col_exec(cookie, b, true);
+		BBPunfix(b->batCacheid);
+	} else {
+		if (ATOMextern(incoming_type))
+			incoming = *(ptr*)incoming;
+
+		ret = store_funcs.append_col_exec(cookie, incoming, false);
+	}
 
 	if (ret != LOG_OK)
-		throw(SQL, "sql_append_bat_exec", GDK_EXCEPTION);
+		throw(SQL, "sql_append_exec", GDK_EXCEPTION);
 
 	return MAL_SUCCEED;
 }
@@ -5398,7 +5409,7 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "append_exec", mvc_append_exec_wrap, false, "Perform the actual append",
     args(1,3,
 		arg("",ptr),
-		arg("cookie",ptr),batargany("ins",1))),
+		arg("cookie",ptr),argany("ins",1))),
 
     // tmp_1, cookie_1 := sql.append_prep(chain_0, s, t, c_1);
     // done_1 := sql.append_exec(cookie_1, bat_1);
