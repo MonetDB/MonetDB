@@ -393,7 +393,7 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isNonPartitionedTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
-	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members) == 0) {
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_empty(t->members)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
@@ -430,9 +430,9 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isNonPartitionedTable(t) && is_delete == 0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
-	} else if (isNonPartitionedTable(t) && is_delete != 0 && cs_size(&t->members) == 0) {
+	} else if (isNonPartitionedTable(t) && is_delete != 0 && list_empty(t->members)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s' has no partitions set", op, opname, tname);
-	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members) == 0) {
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_empty(t->members)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
@@ -918,7 +918,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		mt = t;
 	else if (isPartition(t))
-		mt = find_merge_table(sql->session->tr, t, NULL);
+		mt = partition_find_part(sql->session->tr, t, NULL)->t;
 
 	if (mt && isPartitionedByColumnTable(mt)) {
 		pcols = sa_list(sql->sa);
@@ -1774,8 +1774,8 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 	else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
 	else if (isPartition(t)) {
-		sql_table *mt = find_merge_table(sql->session->tr, t, NULL);
-		if (mt && (isPartitionedByColumnTable(mt) || isPartitionedByExpressionTable(mt)))
+		sql_part *mt = partition_find_part(sql->session->tr, t, NULL);
+		if (mt && (isPartitionedByColumnTable(mt->t) || isPartitionedByExpressionTable(mt->t)))
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
 	}
 
