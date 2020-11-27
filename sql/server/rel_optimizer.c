@@ -5012,8 +5012,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 static int
 rel_part_nr( sql_rel *rel, sql_exp *e )
 {
-	sql_column *c;
-	sql_rel *bt;
+	sql_column *c = NULL;
+	sql_rel *bt = NULL;
 	assert(e->type == e_cmp);
 
 	c = exp_find_column_(rel, e->l, -1, &bt);
@@ -5031,8 +5031,8 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 static int
 rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 {
-	sql_column *c;
-	sql_rel *bt;
+	sql_column *c = NULL;
+	sql_rel *bt = NULL;
 	assert(e->type == e_cmp);
 
 	/*
