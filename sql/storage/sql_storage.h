@@ -137,7 +137,7 @@ typedef void *(*bind_del_data_fptr) (sql_trans *tr, sql_table *t);
 */
 typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
 typedef void *(*append_col_prep_fptr) (sql_trans *tr, sql_column *c);
-typedef int (*append_col_exec_fptr) (void *dlt, void *b);
+typedef int (*append_col_exec_fptr) (void *dlt, void *b, bool is_bat);
 typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
 typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);

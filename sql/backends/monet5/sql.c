@@ -1793,7 +1793,7 @@ mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b && BATcount(b) > 4096 && !b->batTransient)
 		BATmsync(b);
 
-	int ret = store_funcs.append_col_exec(cookie, b);
+	int ret = store_funcs.append_col_exec(cookie, b, true);
 
 	BBPunfix(b->batCacheid);
 

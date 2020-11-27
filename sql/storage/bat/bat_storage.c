@@ -866,14 +866,21 @@ append_col_prepare(sql_trans *tr, sql_column *c)
 }
 
 static int
-append_col_execute(void *incoming_delta, void *incoming_bat)
+append_col_execute(void *incoming_delta, void *incoming_data, bool is_bat)
 {
 	sql_delta *delta = incoming_delta;
-	BAT *bat = incoming_bat;
+	int ok;
 
-	if (!BATcount(bat))
-		return LOG_OK;
-	int ok = delta_append_bat(delta, bat);
+	if (is_bat) {
+		BAT *bat = incoming_data;
+
+		if (!BATcount(bat))
+			return LOG_OK;
+		ok = delta_append_bat(delta, bat);
+	} else {
+		ok = delta_append_val(delta, incoming_data);
+	}
+
 	return ok;
 }
 
@@ -884,12 +891,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 	if (delta == NULL)
 		return LOG_ERR;
 
-	int ok;
-	if (tpe == TYPE_bat) {
-		ok = append_col_execute(delta, i);
-	} else {
-		ok = delta_append_val(delta, i);
-	}
+	int ok = append_col_execute(delta, i, tpe == TYPE_bat);
 
 	return ok;
 }
