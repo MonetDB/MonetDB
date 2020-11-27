@@ -2,10 +2,8 @@ START TRANSACTION;
 
 CREATE FUNCTION SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || s || ''' '; END;
 CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; --TODO: Figure out why this breaks with the space
-CREATE FUNCTION I (s STRING) RETURNS STRING BEGIN RETURN '\t' || s || '\n'; END;
-CREATE FUNCTION ENI (s STRING) RETURNS STRING BEGIN RETURN I(SQ(s)); END;
 
-CREATE FUNCTION comment_on(ob STRING, id STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, '\nCOMMENT ON ' || ob ||  ' ' || id || ' IS ' || SQ(r) || ';', ''); END;
+CREATE FUNCTION comment_on(ob STRING, id STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, 'COMMENT ON ' || ob ||  ' ' || id || ' IS ' || SQ(r) || ';', ''); END;
 
 CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEGIN
 	RETURN
@@ -43,9 +41,9 @@ CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEG
 			ELSE 'BINARY LARGE OBJECT(' || digits || ')' --ASSUMES digits IS NOT NULL
 			END
 		WHEN type = 'timestamp'  THEN 'TIMESTAMP' || ifthenelse(digits <> 7, '(' || (digits -1) || ') ', ' ')
-		WHEN type = 'timestampz' THEN 'TIMESTAMP' || ifthenelse(digits <> 7, '(' || (digits -1) || ') ', ' ') || 'WITH TIME ZONE'
+		WHEN type = 'timestamptz' THEN 'TIMESTAMP' || ifthenelse(digits <> 7, '(' || (digits -1) || ') ', ' ') || 'WITH TIME ZONE'
 		WHEN type = 'time'  THEN 'TIME' || ifthenelse(digits <> 1, '(' || (digits -1) || ') ', ' ')
-		WHEN type = 'timez' THEN 'TIME' || ifthenelse(digits <> 1, '(' || (digits -1) || ') ', ' ') || 'WITH TIME ZONE'
+		WHEN type = 'timetz' THEN 'TIME' || ifthenelse(digits <> 1, '(' || (digits -1) || ') ', ' ') || 'WITH TIME ZONE'
 		WHEN type = 'real' THEN CASE
 			WHEN digits = 24 AND scale=0 THEN 'REAL'
 			WHEN scale=0 THEN 'FLOAT(' || digits || ')'
@@ -105,7 +103,7 @@ CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
 	RETURN
 		SELECT 
 			'ALTER TABLE ' || DQ("table") ||
-			ifthenelse(con IS NOT NULL, ' ADD CONTRAINT ' || DQ(con), '') || ' '||
+			ifthenelse(con IS NOT NULL, ' ADD CONSTRAINT ' || DQ(con), '') || ' '||
 			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
 		FROM describe_constraints() GROUP BY "table", con, type;
 END;
@@ -126,9 +124,9 @@ BEGIN
 
 	INSERT INTO dump_statements(s) --dump_create_users
 		SELECT
-        'CREATE USER ' ||  DQ(ui.name) ||  ' WITH ENCRYPTED PASSWORD\n' ||
-            ENI(password_hash(ui.name)) ||
-        'NAME ' || ui.fullname ||  ' SCHEMA sys;'
+        'CREATE USER ' ||  DQ(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
+            SQ(password_hash(ui.name)) ||
+        ' NAME ' || SQ(ui.fullname) ||  ' SCHEMA sys;'
         FROM db_user_info ui, schemas s
         WHERE ui.default_schema = s.id
             AND ui.name <> 'monetdb'
@@ -136,10 +134,14 @@ BEGIN
 
 	INSERT INTO dump_statements(s) --dump_create_schemas
         SELECT
-            'CREATE SCHEMA ' ||  DQ(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' ||
-            comment_on('SCHEMA', DQ(s.name), rem.remark)
-        FROM schemas s LEFT OUTER JOIN comments rem ON s.id = rem.id,auths a
+            'CREATE SCHEMA ' ||  DQ(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';'
+        FROM schemas s, auths a
         WHERE s.authorization = a.id AND s.system = FALSE;
+
+	INSERT INTO dump_statements(s) --dump_create_comments_on_schemas
+        SELECT comment_on('SCHEMA', DQ(s.name), rem.remark)
+        FROM schemas s JOIN comments rem ON s.id = rem.id
+        WHERE NOT s.system;
 
     INSERT INTO dump_statements(s) --dump_add_schemas_to_users
 	    SELECT
@@ -157,15 +159,20 @@ BEGIN
 		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
 	INSERT INTO dump_statements(s) --dump_create_sequences
-		SELECT 'CREATE SEQUENCE ' || DQ(sch.name) || '.' || DQ(seq.name) || ' AS INTEGER;' ||
-		comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark)
-		FROM sys.schemas sch,
-			sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id
+		SELECT 'CREATE SEQUENCE ' || DQ(sch.name) || '.' || DQ(seq.name) || ' AS INTEGER;'
+		FROM sys.schemas sch, sys.sequences seq
+		WHERE sch.id = seq.schema_id;
+
+	INSERT INTO dump_statements(s) --dump_create_comments_on_sequences
+        SELECT comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark)
+        FROM
+			sys.schemas sch,
+			sys.sequences seq JOIN sys.comments rem ON seq.id = rem.id
 		WHERE sch.id = seq.schema_id;
 
 	INSERT INTO dump_statements(s) --dump_create_tables
 		SELECT 'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || ';'
-		FROM sys.schemas s, table_types ts, sys._tables t LEFT OUTER JOIN sys.comments rem ON t.id = rem.id
+		FROM sys.schemas s, table_types ts, sys._tables t
 		WHERE t.type IN (0, 6)
 			AND t.system = FALSE
 			AND s.id = t.schema_id
@@ -188,7 +195,7 @@ BEGIN
 END;
 
 CALL dump_database(TRUE);
-SELECT * FROM dump_statements;
+SELECT  GROUP_CONCAT(s) OVER (PARTITION BY o range between current row and current row) FROM dump_statements;
 
 ROLLBACK;
 
