@@ -76,7 +76,6 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 							   (const char *) &on, sizeof on) < 0) {
 					e = errno;
 					closesocket(sock);
-					sock = -1;
 					continue;
 				}
 #ifdef SO_EXCLUSIVEADDRUSE
