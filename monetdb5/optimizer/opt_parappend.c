@@ -63,7 +63,7 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	for (size_t i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
-		if (p->modname == sqlRef && p->fcnname == appendRef && isaBatType(getArgType(mb, p, 5))) {
+		if (p->modname == sqlRef && p->fcnname == appendRef) {
 			msg = transform(&state, cntxt, mb, p, &actions);
 		} else {
 			if (p->barrier != 0 || mayhaveSideEffects(cntxt, mb, p, false) || needs_chain_var(&state, p)) {
