@@ -34,8 +34,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cur1.close()
         client1.close()
 
-        out, err = dproc.communicate()
-        sys.stderr.write(err)
+        dproc.communicate()
 
     with process.server(mapiport=dport, dbname='db',
                         dbfarm=os.path.join(farm_dir, 'db'),
@@ -53,5 +52,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cur1.close()
         client1.close()
 
-        out, err = dproc.communicate()
-        sys.stderr.write(err)
+        dproc.communicate()

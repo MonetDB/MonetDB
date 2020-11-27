@@ -1,4 +1,4 @@
-import os, sys, socket, tempfile
+import os, socket, tempfile
 
 from MonetDBtesting.sqltest import SQLTestCase
 try:
@@ -35,5 +35,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 .assertSucceeded().assertRowCount(3).assertDataResultMatch([(1, 12884902221),(2, 30064771405),(3, 47244640589)])
             tc.execute("drop table tab1;").assertSucceeded()
             tc.execute("drop table tab2;").assertSucceeded()
-        out, err = s.communicate()
-        sys.stderr.write(err)
+        s.communicate()

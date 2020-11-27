@@ -69,8 +69,5 @@ with tempfile.TemporaryDirectory() as farm_dir:
                 sys.stderr.write("Just row (1, 'Name 1', None) expected")
 
             # cleanup: shutdown the monetdb servers and remove tempdir
-            out, err = node1_proc.communicate()
-            sys.stderr.write(err)
-
-            out, err = node2_proc.communicate()
-            sys.stderr.write(err)
+            node1_proc.communicate()
+            node2_proc.communicate()

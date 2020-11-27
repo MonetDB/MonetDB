@@ -32,8 +32,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             create schema "sky" authorization "skyserver";
             alter user "skyserver" set schema "sky";
             """).assertSucceeded()
-        out, err = srv.communicate()
-        sys.stderr.write(err)
+        srv.communicate()
 
     with server_start() as srv:
         with SQLTestCase() as tc:
@@ -46,5 +45,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
             drop schema sky;
             drop user skyserver;
             """).assertSucceeded()
-        out, err = srv.communicate()
-        sys.stderr.write(err)
+        srv.communicate()

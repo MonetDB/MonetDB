@@ -19,8 +19,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        out, err = s.communicate()
-        sys.stderr.write(err)
+        s.communicate()
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
@@ -48,5 +47,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cursor.close()
         client.close()
 
-        out, err = s.communicate()
-        sys.stderr.write(err)
+        s.communicate()

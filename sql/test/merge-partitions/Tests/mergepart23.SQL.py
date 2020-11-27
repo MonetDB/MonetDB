@@ -1,4 +1,4 @@
-import os, socket, sys, tempfile
+import os, socket, tempfile
 
 from MonetDBtesting.sqltest import SQLTestCase
 
@@ -13,10 +13,6 @@ def freeport():
     port = sock.getsockname()[1]
     sock.close()
     return port
-
-def server_stop(s):
-    out, err = s.communicate()
-    sys.stderr.write(err)
 
 
 with tempfile.TemporaryDirectory() as farm_dir:
@@ -40,7 +36,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('CREATE MERGE TABLE anothertest (a int, b varchar(32)) PARTITION BY RANGE USING (a + 1);').assertSucceeded()
             tc.execute('ALTER TABLE anothertest ADD TABLE subtable3 AS PARTITION FROM 11 TO 20;').assertSucceeded()
             tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
-        server_stop(s)
+        s.communicate()
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
@@ -52,7 +48,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('DROP TABLE subtable3;').assertFailed(err_message='DROP TABLE: unable to drop table subtable3 (there are database objects which depend on it)') # error, subtable3 is a child of anothertest
             tc.execute('ALTER TABLE anothertest ADD TABLE subtable1 AS PARTITION FROM 11 TO 20;').assertFailed(err_message='ALTER TABLE: table \'sys.subtable1\' is already part of another table') # error, subtable1 is part of another table
             tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([("5","10"),(None,None),("11","20")])
-        server_stop(s)
+        s.communicate()
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
@@ -82,7 +78,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('DROP TABLE subtable3;').assertSucceeded()
             tc.execute('DROP TABLE subtable4;').assertSucceeded()
             tc.execute('DROP TABLE subtable5;').assertSucceeded()
-        server_stop(s)
+        s.communicate()
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
@@ -98,7 +94,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('ALTER TABLE upsme ADD TABLE subtable1 AS PARTITION IN (15, 25, 35);').assertSucceeded()
             tc.execute('ALTER TABLE upsme ADD TABLE subtable2 AS PARTITION IN (45, 55, 65);').assertSucceeded()
             tc.execute('SELECT "value" FROM value_partitions;').assertSucceeded().assertDataResultMatch([(None,),("15",),("25",),("35",),("45",),("55",),("65",)])
-        server_stop(s)
+        s.communicate()
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE, stdout=process.PIPE,
@@ -119,4 +115,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('DROP TABLE subtable1;').assertSucceeded()
             tc.execute('DROP TABLE subtable2;').assertSucceeded()
             tc.execute('DROP TABLE subtable3;').assertSucceeded()
-        server_stop(s)
+        s.communicate()

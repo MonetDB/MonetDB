@@ -71,5 +71,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute("SELECT f2(p.ra,8,p.\"dec\") FROM t1999354a as p;").assertSucceeded().assertRowCount(0).assertDataResultMatch([])
             tc.execute("drop function f2;").assertSucceeded()
             tc.execute("drop table t1999354a;").assertSucceeded()
-        out, err = srv.communicate()
-        sys.stderr.write(err)
+        srv.communicate()

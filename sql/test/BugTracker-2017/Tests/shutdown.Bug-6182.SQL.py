@@ -24,5 +24,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
                             stderr=process.PIPE) as c:
             out, err = c.communicate('call sys.shutdown(10);')
             sys.stderr.write(err)
-        out, err = srv.communicate()
-        sys.stderr.write(err)
+        srv.communicate()

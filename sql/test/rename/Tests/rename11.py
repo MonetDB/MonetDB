@@ -1,4 +1,4 @@
-import os, sys, socket, tempfile, pymonetdb
+import os, socket, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -88,5 +88,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cursor4.close()
         client4.close()
 
-        out, err = s.communicate()
-        sys.stderr.write(err)
+        s.communicate()

@@ -32,8 +32,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             ALTER USER "voc2" SET SCHEMA "voc2";
             alter user "voc2" with password 'new';
             """).assertSucceeded()
-        out, err = srv.communicate()
-        sys.stderr.write(err)
+        srv.communicate()
 
     with server_start() as srv:
         with SQLTestCase() as tc:
@@ -41,8 +40,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute("""
             select 1;
             """).assertSucceeded().assertRowCount(1).assertDataResultMatch([(1,)])
-        out, err = srv.communicate()
-        sys.stderr.write(err)
+        srv.communicate()
 
     with server_start() as srv:
         with SQLTestCase() as tc:
@@ -53,5 +51,4 @@ with tempfile.TemporaryDirectory() as farm_dir:
             DROP SCHEMA "voc2";
             DROP USER "voc2";
             """).assertSucceeded()
-        out, err = srv.communicate()
-        sys.stderr.write(err)
+        srv.communicate()

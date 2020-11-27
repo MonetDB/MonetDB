@@ -73,8 +73,6 @@ with tempfile.TemporaryDirectory() as farm_dir:
 
             cur2.close()
             conn2.close()
-            out, err = prc2.communicate()
-            sys.stderr.write(err)
+            prc2.communicate()
         # cleanup: shutdown the monetdb servers and remove tempdir
-        out, err = prc1.communicate()
-        sys.stderr.write(err)
+        prc1.communicate()
