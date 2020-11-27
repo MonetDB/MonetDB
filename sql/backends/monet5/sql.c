@@ -1717,70 +1717,6 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-
-str
-mvc_append_bat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	int *res = getArgReference_int(stk, pci, 0);
-	mvc *m = NULL;
-	str msg;
-	const char *sname = *getArgReference_str(stk, pci, 2);
-	const char *tname = *getArgReference_str(stk, pci, 3);
-	const char *cname = *getArgReference_str(stk, pci, 4);
-	assert(isaBatType(getArgType(mb, pci, 5)));
-	bat batid = *getArgReference_bat(stk, pci, 5);
-	sql_schema *s;
-	sql_table *t;
-	sql_column *c;
-
-	if (strNil(sname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat schema name is nil");
-	if (strNil(tname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat table name is nil");
-	if (strNil(cname))
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat column name is nil");
-
-	if (cname[0] == '%')
-		throw(SQL, "sql.append_bat", SQLSTATE(42000) "sql.append_bat not intended for indices: %s.%s.%s", sname, tname, cname);
-
-	*res = 0;
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-	s = mvc_bind_schema(m, sname);
-	if (s == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(3F000) "Schema missing %s", sname);
-	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
-	c = mvc_bind_column(m, t, cname);
-	if (c == NULL)
-		throw(SQL, "sql.append_bat", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
-
-	fprintf(stderr, "WOOOOOPIE1\n");
-	void *cookie = store_funcs.append_col_prep(m->session->tr, c);
-
-	BAT *b = BATdescriptor(batid);
-	if (b == NULL)
-		throw(SQL, "sql.append_bat_exec", SQLSTATE(HY005) "Cannot access column descriptor %s.%s.%s",
-			sname,tname,cname);
-	if( b && BATcount(b) > 4096 && !b->batTransient)
-		BATmsync(b);
-
-	fprintf(stderr, "WOOOOOPIE2\n");
-	int ret = store_funcs.append_col_exec(cookie, b);
-
-	if (b) {
-		BBPunfix(b->batCacheid);
-	}
-
-	if (ret != LOG_OK)
-		throw(SQL, "sql_append_bat_exec", GDK_EXCEPTION);
-
-	return MAL_SUCCEED;
-}
-
 // chain_out, cookie_1, ..., cookie_N := sql.append_prep(chain_in, s, t, c_1, ... c_N);
 str
 mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -5453,9 +5389,6 @@ static mel_func sql_init_funcs[] = {
  	args(1,6,
 		arg("",int),
 		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
-
- pattern("sql", "append_bat", mvc_append_bat_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.",
-    args(1,6, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),batargany("ins",1))),
 
  pattern("sql", "append_prep", mvc_append_prep_wrap, false,
  	"Prepare to append to the column. Return new mvc state and cookie to pass to append_exec",
