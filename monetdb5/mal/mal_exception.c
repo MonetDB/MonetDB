@@ -93,6 +93,8 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		msg = M5OutOfMemory;
 	}
 	va_end(ap2);
+
+	assert(msg);
 	return msg;
 }
 
@@ -121,6 +123,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		 * reported */
 		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
 		GDKclrerr();
+		assert(ret);
 		return ret;
 	}
 	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
@@ -137,6 +140,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		if (ret == NULL)
 			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
+		assert(ret);
 		return ret;
 	}
 	va_start(ap, format);
@@ -144,6 +148,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	va_end(ap);
 	GDKclrerr();
 
+	assert(ret);
 	return ret;
 }
 
