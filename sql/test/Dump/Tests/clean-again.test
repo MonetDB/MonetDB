@@ -1,16 +1,16 @@
-statement error
+statement ok
 drop table "test"
 
-statement error
+statement ok
 drop sequence "test_seq"
 
-statement error
+statement ok
 drop table "typestest"
 
-statement error
+statement ok
 drop table keytest2
 
-statement error
+statement ok
 drop table keytest1
 
 
