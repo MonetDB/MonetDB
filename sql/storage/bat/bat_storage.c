@@ -3158,8 +3158,13 @@ bat_storage_init( store_functions *sf)
 	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
 	sf->append_idx = (append_idx_fptr)&append_idx;
 	sf->append_idx_prep = (append_idx_prep_fptr)&append_idx_prepare;
+
 	sf->update_col = (update_col_fptr)&update_col;
+	sf->update_col_prep = (update_col_prep_fptr)&update_col_prepare;
+	sf->update_col_exec = (update_col_exec_fptr)&update_col_execute;
 	sf->update_idx = (update_idx_fptr)&update_idx;
+	sf->update_idx_prep = (update_idx_prep_fptr)&update_idx_prepare;
+
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
 	sf->count_del = (count_del_fptr)&count_del;
