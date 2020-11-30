@@ -92,9 +92,36 @@ mylongname = 'a' * 1022
 cur1.execute('ALTER USER myuser SCHEMA PATH \'"%s"\';' % mylongname) # allowed
 cur1.execute('''
 START TRANSACTION;
+CREATE SCHEMA """";
+CREATE FUNCTION """".""""() returns int return 5;
+CREATE SCHEMA "😱🤐🤗";
+CREATE FUNCTION "😱🤐🤗"."🤓🤯🥶"() returns int return 6;
+CREATE SCHEMA ",";
+CREATE FUNCTION ",".","() returns int return 7;
+ALTER USER myuser SCHEMA PATH \'"""","😱🤐🤗",","\';
+COMMIT;
+''')
+cur1.close()
+client1.close()
+
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='myuser', password='1')
+cur1 = client1.cursor()
+cur1.execute('SELECT """"(), "🤓🤯🥶"(), ","();')
+if cur1.fetchall() != [(5,6,7)]:
+    sys.stderr.write('Expected result: [(5,6,7)]')
+cur1.close()
+client1.close()
+
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='monetdb', password='monetdb')
+cur1 = client1.cursor()
+cur1.execute('''
+START TRANSACTION;
 DROP USER myuser;
 DROP schema "sc1" CASCADE;
 DROP schema "sc2" CASCADE;
+DROP schema """" CASCADE;
+DROP schema "😱🤐🤗" CASCADE;
+DROP schema "," CASCADE;
 COMMIT;
 ''')
 cur1.close()
