@@ -1717,9 +1717,25 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str mvc_modify_prep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, modify_col_prep_fptr colprep, modify_idx_prep_fptr idxprep);
+
 // chain_out, cookie_1, ..., cookie_N := sql.append_prep(chain_in, s, t, c_1, ... c_N);
 str
 mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_modify_prep(cntxt, mb, stk, pci, store_funcs.append_col_prep, store_funcs.append_idx_prep);
+}
+
+// chain_out, cookie_1, ..., cookie_N := sql.update_prep(chain_in, s, t, c_1, ... c_N);
+str
+mvc_update_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_modify_prep(cntxt, mb, stk, pci, store_funcs.update_col_prep, store_funcs.update_idx_prep);
+}
+
+// chain_out, cookie_1, ..., cookie_N := sql.{update,modify}_prep(chain_in, s, t, c_1, ... c_N);
+static str
+mvc_modify_prep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, modify_col_prep_fptr colprep, modify_idx_prep_fptr idxprep)
 {
 	int *chain_out = getArgReference_int(stk, pci, 0);
 	int chain_in = *getArgReference_int(stk, pci, pci->retc);
@@ -1741,9 +1757,9 @@ mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*chain_out = chain_in;
 
 	if (strNil(sname))
-		throw(SQL, "sql.append_prep", SQLSTATE(42000) "schema name is nil");
+		throw(SQL, "sql.modify_prep", SQLSTATE(42000) "schema name is nil");
 	if (strNil(tname))
-		throw(SQL, "sql.append_prep", SQLSTATE(42000) "table name is nil");
+		throw(SQL, "sql.modify_prep", SQLSTATE(42000) "table name is nil");
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -1751,29 +1767,29 @@ mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
-		throw(SQL, "sql.append_prep", SQLSTATE(3F000) "Schema missing %s", sname);
+		throw(SQL, "sql.modify_prep", SQLSTATE(3F000) "Schema missing %s", sname);
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
-		throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+		throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
 
 	for (int i = 0; i < ncolumns; i++) {
 		const char *cname = *getArgReference_str(stk, pci, first_col + i);
 		ptr *cookie_out = getArgReference_ptr(stk, pci, first_ret + i);
 
 		if (strNil(cname))
-			throw(SQL, "sql.append_prep", SQLSTATE(42000) "column name %d is nil", i);
+			throw(SQL, "sql.modify_prep", SQLSTATE(42000) "column name %d is nil", i);
 
 		bool is_column = cname[0] != '%';
 		if (is_column) {
 			sql_column *c = mvc_bind_column(m, t, cname);
 			if (c == NULL)
-				throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
-			*cookie_out = store_funcs.append_col_prep(m->session->tr, c);
+				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
+			*cookie_out = colprep(m->session->tr, c);
 		} else {
 			sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 			if (i == NULL)
-				throw(SQL, "sql.append_prep", SQLSTATE(42S02) "Index missing %s.%s.%s", sname, tname, cname);
-			*cookie_out = store_funcs.append_idx_prep(m->session->tr, i);
+				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Index missing %s.%s.%s", sname, tname, cname);
+			*cookie_out = idxprep(m->session->tr, i);
 		}
 	}
 
@@ -1797,7 +1813,7 @@ mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		bat batid = *(bat*)incoming;
 		BAT *b = BATdescriptor(batid);
 		if (b == NULL)
-			throw(SQL, "sql.append_bat_exec", SQLSTATE(HY005) "Cannot access column descriptor");
+			throw(SQL, "sql.append_exec", SQLSTATE(HY005) "Cannot access column descriptor");
 		if (BATcount(b) > 4096 && !b->batTransient)
 			BATmsync(b);
 
@@ -1812,6 +1828,41 @@ mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (ret != LOG_OK)
 		throw(SQL, "sql_append_exec", GDK_EXCEPTION);
+
+	return MAL_SUCCEED;
+}
+
+// sql.update_exec(cookie_1, cand_1, bat_1);
+str
+mvc_update_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	int ret;
+	ptr cookie = *getArgReference_ptr(stk, pci, 1);
+	bat tids_bat = *getArgReference_bat(stk, pci, 2);
+	bat incoming_bat = *getArgReference_bat(stk, pci, 3);
+
+	BAT *data = BATdescriptor(incoming_bat);
+	if (data == NULL)
+		throw(SQL, "sql.update_exec", SQLSTATE(HY005) "Cannot access column descriptor");
+	if (BATcount(data) > 4096 && !data->batTransient)
+		BATmsync(data);
+
+	BAT *tids = BATdescriptor(tids_bat);
+	if (tids == NULL) {
+		BBPunfix(data->batCacheid);
+		throw(SQL, "sql.update_exec", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if (BATcount(tids) > 4096 && !tids->batTransient)
+		BATmsync(tids);
+
+	ret = store_funcs.update_col_exec(cookie, tids, data, true);
+	BBPunfix(data->batCacheid);
+	BBPunfix(tids->batCacheid);
+
+	if (ret != LOG_OK)
+		throw(SQL, "sql_update_exec", GDK_EXCEPTION);
 
 	return MAL_SUCCEED;
 }
@@ -5398,7 +5449,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
 
 
- pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.",
+ pattern("sql", "append", mvc_append_wrap, false,
+	"Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.",
  	args(1,6,
 		arg("",int),
 		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
@@ -5408,13 +5460,11 @@ static mel_func sql_init_funcs[] = {
     args(2,6,
 		arg("",int),vararg("",ptr),
 		arg("mvc",int),arg("sname",str),arg("tname",str),vararg("cname",str))),
+
  pattern("sql", "append_exec", mvc_append_exec_wrap, false, "Perform the actual append",
     args(1,3,
 		arg("",ptr),
 		arg("cookie",ptr),argany("ins",1))),
-
-    // tmp_1, cookie_1 := sql.append_prep(chain_0, s, t, c_1);
-    // done_1 := sql.append_exec(cookie_1, bat_1);
 
  pattern("sql", "append_finish", mvc_append_finish_wrap, false,
  	"Reconvene the sql.append_prep/sql.append_exec workflow",
@@ -5423,9 +5473,24 @@ static mel_func sql_init_funcs[] = {
 		arg("mvc",int),vararg("cookie",ptr))),
 
 
+ pattern("sql", "update", mvc_update_wrap, false,
+	"Update the values of the column tname.cname. Returns sequence number for order dependence)",
+	args(1,7,
+		arg("",int),
+		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
 
 
- pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
+ pattern("sql", "update_prep", mvc_update_prep_wrap, false,
+ 	"Prepare to append to the column. Return new mvc state and cookie to pass to update_exec",
+    args(2,6,
+		arg("",int),vararg("",ptr),
+		arg("mvc",int),arg("sname",str),arg("tname",str),vararg("cname",str))),
+
+ pattern("sql", "update_exec", mvc_update_exec_wrap, false, "Perform the actual update",
+    args(1,4,
+		arg("",ptr),
+		arg("cookie",ptr),batarg("rids",oid), batargany("values",1))),
+
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
