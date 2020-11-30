@@ -3154,16 +3154,18 @@ bat_storage_init( store_functions *sf)
 	sf->bind_del_data = (bind_del_data_fptr)&bind_del_data;
 
 	sf->append_col = (append_col_fptr)&append_col;
-	sf->append_col_prep = (append_col_prep_fptr)&append_col_prepare;
-	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
 	sf->append_idx = (append_idx_fptr)&append_idx;
-	sf->append_idx_prep = (append_idx_prep_fptr)&append_idx_prepare;
+	sf->append_col_prep = (modify_col_prep_fptr)&append_col_prepare;
+	sf->append_idx_prep = (modify_idx_prep_fptr)&append_idx_prepare;
+	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
 
 	sf->update_col = (update_col_fptr)&update_col;
-	sf->update_col_prep = (update_col_prep_fptr)&update_col_prepare;
-	sf->update_col_exec = (update_col_exec_fptr)&update_col_execute;
 	sf->update_idx = (update_idx_fptr)&update_idx;
-	sf->update_idx_prep = (update_idx_prep_fptr)&update_idx_prepare;
+
+
+	sf->update_col_prep = (modify_col_prep_fptr)&update_col_prepare;
+	sf->update_idx_prep = (modify_idx_prep_fptr)&update_idx_prepare;
+	sf->update_col_exec = (update_col_exec_fptr)&update_col_execute;
 
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
