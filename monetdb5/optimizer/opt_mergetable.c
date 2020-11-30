@@ -307,8 +307,8 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 		int nr = 1;
 		for(k=1; k < mat[e].mi->argc; k++) {
 			for(j=1; j < mat[m].mi->argc; j++) {
+				InstrPtr q;
 				switch (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)) {
-					InstrPtr q;
 				case 0:
 					continue;
 				case -1:
@@ -761,8 +761,8 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		int nr = 1;
 		for(k=1; k<mat[m].mi->argc; k++) {
 			for (j=1; j<mat[n].mi->argc; j++) {
+				InstrPtr q;
 				switch (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 0)) {
-					InstrPtr q;
 				case 0:
 					continue;
 				case -1:
