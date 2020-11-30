@@ -87,6 +87,7 @@ copy_binary_byteswap64(uint64_t value) {
 
 #endif
 
+#ifdef HAVE_HGE
 static inline
 uhge copy_binary_byteswap128(uhge value) {
 	uint64_t lo = (uint64_t) value;
@@ -95,6 +96,7 @@ uhge copy_binary_byteswap128(uhge value) {
 	uhge swapped_hi = (uhge)copy_binary_byteswap64(hi);
 	return swapped_hi | (swapped_lo << 64);
 }
+#endif
 
 // These macros are used to convert a value in-place.
 // This makes it possible to also convert timestamps.
