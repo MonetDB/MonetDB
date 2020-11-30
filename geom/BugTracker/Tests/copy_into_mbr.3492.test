@@ -16,14 +16,46 @@ INSERT INTO geom values (3, 'POLYGON((1 2, 3 2, 3 4, 1 4, 1 2))', 'MBR (1 2,3 4)
 statement ok
 INSERT INTO geom values (4, NULL, NULL)
 
-statement error
+query ITT nosort
 SELECT * FROM geom ORDER BY id
+----
+1
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+NULL
+2
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+3
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+4
+NULL
+NULL
+5
+NULL
+NULL
 
 statement ok
 UPDATE geom SET b = MBR(g)
 
-statement error
+query ITT nosort
 SELECT * FROM geom ORDER BY id
+----
+1
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+2
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+3
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+4
+NULL
+NULL
+5
+NULL
+NULL
 
 statement ok
 CREATE TABLE newgeom (id INTEGER, g GEOMETRY, b MBR)
@@ -31,8 +63,24 @@ CREATE TABLE newgeom (id INTEGER, g GEOMETRY, b MBR)
 statement ok
 INSERT INTO newgeom SELECT * FROM geom ORDER BY id
 
-statement error
+query ITT nosort
 SELECT * FROM newgeom ORDER BY id
+----
+1
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+2
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+3
+POLYGON ((1 2, 3 2, 3 4, 1 4, 1 2))
+BOX (1 2, 3 4)
+4
+NULL
+NULL
+5
+NULL
+NULL
 
 statement ok
 DROP TABLE geom
