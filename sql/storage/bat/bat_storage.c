@@ -672,27 +672,31 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 	return LOG_OK;
 }
 
+static void*
+update_idx_prepare(sql_trans *tr, sql_idx *i)
+{
+	if (bind_idx_data(tr, i) == LOG_ERR)
+		return NULL;
+
+	sql_delta *delta = i->data;
+	delta->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
+	assert(tr != gtrans);
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
+
+	delta->is_new = isNew(i);
+
+	return delta;
+}
+
 static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
-	BAT *b = tids;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return LOG_OK;
-
-	if (bind_idx_data(tr, i) == LOG_ERR)
+	sql_delta *delta = update_idx_prepare(tr, i);
+	if (delta == NULL)
 		return LOG_ERR;
 
-	bat = i->data;
-	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
-	assert(tr != gtrans);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
-	if (tpe == TYPE_bat)
-		return delta_update_bat(bat, tids, upd, isNew(i));
-	else
-		assert(0);
-	return LOG_OK;
+	int ok = update_col_execute(delta, tids, upd, tpe == TYPE_bat);
+	return ok;
 }
 
 static int
