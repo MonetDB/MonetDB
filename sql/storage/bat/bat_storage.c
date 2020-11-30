@@ -610,26 +610,48 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	return LOG_OK;
 }
 
+static void*
+update_col_prepare(sql_trans *tr, sql_column *c)
+{
+	if (bind_col_data(tr, c) == LOG_ERR)
+		return NULL;
+
+	sql_delta *delta = c->data;
+	delta->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
+	assert(tr != gtrans);
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
+
+	delta->is_new = isNew(c);
+
+	return delta;
+}
+
+static int
+update_col_execute(void *incoming_delta, void *incoming_tids, void *incoming_values, bool is_bat)
+{
+	sql_delta *delta = incoming_delta;
+
+	if (is_bat) {
+		BAT *tids = incoming_tids;
+		BAT *values = incoming_values;
+		if (BATcount(tids) == 0)
+			return LOG_OK;
+		return delta_update_bat(delta, tids, values, delta->is_new);
+	}
+	else
+		return delta_update_val(delta, *(oid*)incoming_tids, incoming_values);
+}
+
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
-	BAT *b = tids;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return LOG_OK;
-
-	if (bind_col_data(tr, c) == LOG_ERR)
+	sql_delta *delta = update_col_prepare(tr, c);
+	if (delta == NULL)
 		return LOG_ERR;
 
-	bat = c->data;
-	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
-	assert(tr != gtrans);
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
-	if (tpe == TYPE_bat)
-		return delta_update_bat(bat, tids, upd, isNew(c));
-	else
-		return delta_update_val(bat, *(oid*)tids, upd);
+	int ok = update_col_execute(delta, tids, upd, tpe == TYPE_bat);
+
+	return ok;
 }
 
 static int
