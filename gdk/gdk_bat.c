@@ -2171,6 +2171,8 @@ BATassertProps(BAT *b)
 	       b->tvheap == NULL ||
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
 
+	assert(VIEWtparent(b) == 0 || b->tvheap == NULL || b->tvheap->parentid != b->batCacheid);
+
 	cmpf = ATOMcompare(b->ttype);
 	nilp = ATOMnilptr(b->ttype);
 

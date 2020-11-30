@@ -22,7 +22,7 @@ gdk_return
 unshare_string_heap(BAT *b)
 {
 	assert(b->batCacheid > 0);
-	if (b->ttype == TYPE_str &&
+	if (ATOMstorage(b->ttype) == TYPE_str &&
 	    b->tvheap->parentid != b->batCacheid) {
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
