@@ -53,6 +53,18 @@ dupError(const char *err)
 	return msg ? msg : M5OutOfMemory;
 }
 
+char *
+concatErrors(char *err1, const char *err2)
+{
+	size_t len = strlen(err1) + strlen(err2) + 1;
+	char *new = GDKmalloc(len);
+	if (new == NULL)
+		return err1;
+	strconcat_len(new, len, err1, err2, NULL);
+	freeException(err1);
+	return new;
+}
+
 /**
  * Internal helper function for createException and
  * showException such that they share the same code, because reuse
