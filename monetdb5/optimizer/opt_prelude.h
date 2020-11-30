@@ -313,6 +313,7 @@ mal_export  str transaction_commitRef;
 mal_export  str transactionRef;
 mal_export  str transaction_releaseRef;
 mal_export  str transaction_rollbackRef;
+mal_export  str update_execRef;
 mal_export  str uniqueRef;
 mal_export  str unlockRef;
 mal_export  str unpackRef;

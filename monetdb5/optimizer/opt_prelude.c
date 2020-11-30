@@ -312,6 +312,7 @@ str transaction_commitRef;
 str transactionRef;
 str transaction_releaseRef;
 str transaction_rollbackRef;
+str update_execRef;
 str uniqueRef;
 str unlockRef;
 str unpackRef;
@@ -624,6 +625,7 @@ void optimizerInit(void)
 	transactionRef= putName("transaction");
 	transaction_releaseRef= putName("transaction_release");
 	transaction_rollbackRef= putName("transaction_rollback");
+	update_execRef = putName("update_exec");
 	uniqueRef= putName("unique");
 	unlockRef= putName("unlock");
 	unpackRef = putName("unpack");

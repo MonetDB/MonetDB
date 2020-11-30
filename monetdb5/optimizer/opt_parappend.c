@@ -20,8 +20,8 @@ typedef struct parstate {
 	InstrPtr finish_stmt;
 } parstate;
 
-static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable, int *actions);
-static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old);
+static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable, str execRef, str prepRef, int *actions);
+static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str prepRef);
 static void flush_finish_stmt(parstate *state, MalBlkPtr mb);
 static void pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr instr);
 static bool needs_chain_var(parstate *state, InstrPtr instr);
@@ -45,13 +45,21 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	int found_at = -1;
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr p = getInstrPtr(mb, i);
-		if (p->modname == sqlRef && p->fcnname == appendRef) {
-			found_at = i;
-			break;
+		if (p->modname == sqlRef) {
+			if (p->fcnname == appendRef || p->fcnname == updateRef) {
+				found_at = i;
+				break;
+			}
 		}
 	}
 	if (found_at == -1)
 		return MAL_SUCCEED;
+
+
+	// stream *s1;
+	// s1 = open_wastream("a");
+	// printFunction(s1, mb, stk, LIST_MAL_ALL);
+	// mnstr_close(s1);
 
 	old_mb_stmt = mb->stmt;
 	size_t old_ssize = mb->ssize;
@@ -64,7 +72,9 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (size_t i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
 		if (p->modname == sqlRef && p->fcnname == appendRef) {
-			msg = transform(&state, cntxt, mb, p, &actions);
+			msg = transform(&state, cntxt, mb, p, putName("append_exec"), putName("append_prep"), &actions);
+		} else if (p->modname == sqlRef && p->fcnname == updateRef) {
+			msg = transform(&state, cntxt, mb, p, putName("update_exec"), putName("update_prep"), &actions);
 		} else {
 			if (p->barrier != 0 || mayhaveSideEffects(cntxt, mb, p, false) || needs_chain_var(&state, p)) {
 				flush_finish_stmt(&state, mb);
@@ -75,6 +85,11 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			goto end;
 	}
 	assert(state.prep_stmt == NULL);
+
+	// stream *s2;
+	// s2 = open_wastream("b");
+	// printFunction(s2, mb, stk, LIST_MAL_ALL);
+	// mnstr_close(s2);
 
 end:
 	if (old_mb_stmt) {
@@ -109,15 +124,35 @@ end:
 }
 
 static str
-transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, int *actions)
+transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str opRef, str prepRef, int *actions)
 {
+	int sname_var;
+	int tname_var;
+	int cname_var;
+	int data_var;
+	int cand_var;
+
 	// take the old instruction apart
 	assert(old->retc == 1);
-	assert(old->argc == 1 + 5);
-	int sname_var = getArg(old, 2);
-	int tname_var = getArg(old, 3);
-	int cname_var = getArg(old, 4);
-	int data_var = getArg(old, 5);
+	assert(old->argc == 6 || old->argc == 7);
+	switch (old->argc) {
+	case 6:
+		sname_var = getArg(old, 2);
+		tname_var = getArg(old, 3);
+		cname_var = getArg(old, 4);
+		data_var = getArg(old, 5);
+		cand_var = 0;
+		break;
+	case 7:
+		sname_var = getArg(old, 2);
+		tname_var = getArg(old, 3);
+		cname_var = getArg(old, 4);
+		cand_var = getArg(old, 5);
+		data_var = getArg(old, 6);
+		break;
+	default:
+		throw(MAL, "optimizer.parappend", "internal error: append/update instr should have argc 6 or 7, not %d", old->argc);
+	}
 
 	bool sname_constant = isVarConstant(mb, sname_var);
 	bool tname_constant = isVarConstant(mb, tname_var);
@@ -132,28 +167,28 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, int *action
 
 	*actions += 1;
 
-	int cookie_var = setup_append_prep(state, cntxt, mb, old);
+	int cookie_var = setup_append_prep(state, cntxt, mb, old, prepRef);
 
-	str append_execRef = putName("append_exec");
 	int ret_cookie = newTmpVariable(mb, TYPE_ptr);
-	InstrPtr e = newFcnCall(mb, sqlRef, append_execRef);
+	InstrPtr e = newFcnCall(mb, sqlRef, opRef);
 	setReturnArgument(e, ret_cookie);
 	e = pushArgument(mb, e, cookie_var);
+	if (cand_var)
+		e = pushArgument(mb, e, cand_var);
 	e = pushArgument(mb, e, data_var);
 
 	state->finish_stmt = pushArgument(mb, state->finish_stmt, ret_cookie);
-	// fprintf(stderr, "TRIGGER\n");
 
 	freeInstruction(old);
 	return MAL_SUCCEED;
 }
 
 static int
-setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
+setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str prepRef)
 {
 	// take the old instruction apart
 	assert(old->retc == 1);
-	assert(old->argc == 1 + 5);
+	assert(old->argc == 6 || old->argc == 7);
 	int chain_out_var = getArg(old, 0);
 	int chain_in_var = getArg(old, 1);
 	int sname_var = getArg(old, 2);
@@ -166,6 +201,11 @@ setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
 	do {
 		if (prep_stmt == NULL)
 			break;
+
+		if (prep_stmt->fcnname != prepRef) {
+			prep_stmt = NULL;
+			break;
+		}
 
 		int existing_sname_var = getArg(prep_stmt, prep_stmt->retc + 1);
 		int existing_tname_var = getArg(prep_stmt, prep_stmt->retc + 2);
@@ -209,7 +249,7 @@ setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old)
 		flush_finish_stmt(state, mb);
 
 		int chain = newTmpVariable(mb, TYPE_int);
-		InstrPtr p = newFcnCall(mb, sqlRef, append_prepRef);
+		InstrPtr p = newFcnCall(mb, sqlRef, prepRef);
 		setReturnArgument(p, chain);
 		pushReturn(mb, p, cookie_var);
 		p = pushArgument(mb, p, chain_in_var);
