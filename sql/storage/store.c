@@ -1171,10 +1171,10 @@ static void
 part_destroy(sql_part *p)
 {
 	node *n;
-	if (p->t && p->t->members && (n=list_find(p->t->members, p, (fcmp) NULL)) != NULL) {
+	if (p->t && p->t->members && (n=list_find(p->t->members, p, (fcmp) NULL)) != NULL)
 		list_remove_node(p->t->members, n);
+	if (p && p->member)
 		p->member->partition--;
-	}
 }
 
 static sql_schema *
@@ -4513,6 +4513,10 @@ rollforward_update_schema(sql_trans *tr, sql_schema *fs, sql_schema *ts, int mod
 		ok = rollforward_changeset_updates(tr, &fs->seqs, &ts->seqs, &ts->base, (rfufunc) &rollforward_update_seq, (rfcfunc) &rollforward_create_seq, (rfdfunc) &rollforward_drop_seq, (dupfunc) &seq_dup, mode);
  	if (ok == LOG_OK)
 		ok = rollforward_changeset_updates(tr, &fs->parts, &ts->parts, &ts->base, (rfufunc) &rollforward_update_part, (rfcfunc) &rollforward_create_part, (rfdfunc) &rollforward_drop_part, (dupfunc) &part_dup, mode);
+	if (apply && ok == LOG_OK && ts->parts.dset) {
+		list_destroy(ts->parts.dset);
+		ts->parts.dset = NULL;
+	}
 
 	if (apply && ok == LOG_OK && strcmp(ts->base.name, fs->base.name) != 0) { /* apply possible renaming */
 		list_hash_delete(tr->schemas.set, ts, NULL);
@@ -6235,6 +6239,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	cs_del(&mt->s->parts, n, p->base.flags);
 	list_remove_data(mt->members, p);
 	pt->partition--;/* check other hierarchies? */
+	p->member = NULL;
 	table_funcs.table_delete(tr, sysobj, obj_oid);
 
 	mt->s->base.wtime = mt->base.wtime = pt->s->base.wtime = pt->base.wtime = p->base.wtime = tr->wtime = tr->wstime;
