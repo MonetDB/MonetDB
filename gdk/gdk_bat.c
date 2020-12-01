@@ -925,6 +925,8 @@ setcolprops(BAT *b, const void *x)
 			if (!isnil && ATOMlinear(b->ttype)) {
 				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
 				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){0});
+				BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){0});
 			}
 		}
 		return;
@@ -977,11 +979,13 @@ setcolprops(BAT *b, const void *x)
 			} else if (cmp < 0 && !isnil) {
 				/* new largest value */
 				BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
+				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){BATcount(b)});
 			}
 		} else if (!isnil &&
 			   (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL &&
 			   ATOMcmp(b->ttype, VALptr(&prop->v), x) < 0) {
 			BATsetprop(b, GDK_MAX_VALUE, b->ttype, x);
+			BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){BATcount(b)});
 		}
 		if (b->trevsorted) {
 			if (cmp < 0) {
@@ -997,15 +1001,18 @@ setcolprops(BAT *b, const void *x)
 				    (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
 				    ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
 					BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+					BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
 				}
 			} else if (cmp > 0 && !isnil) {
 				/* new smallest value */
 				BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+				BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
 			}
 		} else if (!isnil &&
 			   (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL &&
 			   ATOMcmp(b->ttype, VALptr(&prop->v), x) > 0) {
 			BATsetprop(b, GDK_MIN_VALUE, b->ttype, x);
+			BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){BATcount(b)});
 		}
 		if (BATtdense(b) && (cmp >= 0 || * (const oid *) prv + 1 != * (const oid *) x)) {
 			assert(b->ttype == TYPE_oid);
@@ -1119,11 +1126,15 @@ BUNdelete(BAT *b, oid o)
 	val = BUNtail(bi, p);
 	if (ATOMcmp(b->ttype, ATOMnilptr(b->ttype), val) != 0) {
 		if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL
-		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) >= 0)
+		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) >= 0) {
 			BATrmprop(b, GDK_MAX_VALUE);
+			BATrmprop(b, GDK_MAX_POS);
+		}
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL
-		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0)
+		    && ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
 			BATrmprop(b, GDK_MIN_VALUE);
+			BATrmprop(b, GDK_MIN_POS);
+		}
 	}
 	if (ATOMunfix(b->ttype, val) != GDK_SUCCEED)
 		return GDK_FAIL;
@@ -1223,6 +1234,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 				/* new value is larger than previous
 				 * largest */
 				BATsetprop(b, GDK_MAX_VALUE, b->ttype, t);
+				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){p});
 			} else if (ATOMcmp(b->ttype, t, val) != 0 &&
 				   ATOMcmp(b->ttype, VALptr(&prop->v), val) == 0) {
 				/* old value is equal to largest and
@@ -1230,6 +1242,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 				 * so we don't know anymore which is
 				 * the largest */
 				BATrmprop(b, GDK_MAX_VALUE);
+				BATrmprop(b, GDK_MAX_POS);
 			}
 		}
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
@@ -1238,6 +1251,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 				/* new value is smaller than previous
 				 * smallest */
 				BATsetprop(b, GDK_MIN_VALUE, b->ttype, t);
+				BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){p});
 			} else if (ATOMcmp(b->ttype, t, val) != 0 &&
 				   ATOMcmp(b->ttype, VALptr(&prop->v), val) <= 0) {
 				/* old value is equal to smallest and
@@ -1245,6 +1259,7 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 				 * we don't know anymore which is the
 				 * smallest */
 				BATrmprop(b, GDK_MIN_VALUE);
+				BATrmprop(b, GDK_MIN_POS);
 			}
 		}
 		BATrmprop(b, GDK_NUNIQUE);
@@ -2307,6 +2322,22 @@ BATassertProps(BAT *b)
 			maxval = VALptr(&prop->v);
 		if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL)
 			minval = VALptr(&prop->v);
+		if ((prop = BATgetprop(b, GDK_MAX_POS)) != NULL) {
+			if (maxval) {
+				assert(prop->v.vtype == TYPE_oid);
+				assert(prop->v.val.oval < b->batCount);
+				valp = BUNtail(bi, prop->v.val.oval);
+				assert(cmpf(maxval, valp) == 0);
+			}
+		}
+		if ((prop = BATgetprop(b, GDK_MIN_POS)) != NULL) {
+			if (minval) {
+				assert(prop->v.vtype == TYPE_oid);
+				assert(prop->v.val.oval < b->batCount);
+				valp = BUNtail(bi, prop->v.val.oval);
+				assert(cmpf(minval, valp) == 0);
+			}
+		}
 		if (b->tsorted || b->trevsorted || !b->tkey) {
 			/* if sorted (either way), or we don't have to
 			 * prove uniqueness, we can do a simple
