@@ -1429,7 +1429,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Invalid first line of %s", bbpdir);
 		goto end;
 	}
-	if (gdk_version != 061042U) {
+	if (gdk_version != 061043U) {
 		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
 		// into account.
@@ -1463,8 +1463,8 @@ snapshot_bats(stream *plan, const char *db_dir)
 				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
 
 				// Taken from the sscanf in heapinit() in gdk_bbp.c.
-				// 12 fields, we need field 10 (free)
-				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
+				// 14 fields, we need field 10 (free)
+				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s %*s %*s"
 
 				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
 				// 3 fields, we need field 1 (free).
