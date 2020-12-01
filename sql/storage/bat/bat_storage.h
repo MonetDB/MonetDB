@@ -20,7 +20,6 @@ typedef struct sql_delta {
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
 	int cleared;
-	bool is_new;
 	size_t cnt;		/* number of tuples (excluding the deletes) */
 	size_t ucnt;		/* number of updates */
 	BAT *cached;		/* cached copy, used for schema bats only */

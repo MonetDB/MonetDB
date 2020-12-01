@@ -143,8 +143,8 @@ typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, 
 typedef void *(*modify_col_prep_fptr) (sql_trans *tr, sql_column *c);
 typedef void *(*modify_idx_prep_fptr) (sql_trans *tr, sql_idx *i);
 
-typedef int (*append_col_exec_fptr) (void *dlt, void *b, bool is_bat);
-typedef int (*update_col_exec_fptr) (void *incoming_delta, void *incoming_tids, void *incoming_values, bool is_bat);
+typedef int (*append_col_exec_fptr) (void *cookie, void *b, bool is_bat);
+typedef int (*update_col_exec_fptr) (void *cookie, void *tids, void *values, bool is_bat);
 
 typedef int (*delete_tab_fptr) (sql_trans *tr, sql_table *t, void *d, int tpe);
 
