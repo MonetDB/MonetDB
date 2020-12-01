@@ -131,10 +131,16 @@ Bugs
 ----
 
 We of course hope there aren't any, but if you do find one, you can
-report bugs in our `bugzilla`__ instance.
+report bugs in our `github`__ repository.
 
-.. _bugzilla: https://bugs.monetdb.org
-__ bugzilla_
+Please note that we do not accept github Pull Requests. See the
+`developers`__ page for instructions.
+
+.. _github: https://github.com/MonetDB/MonetDB/issues
+__ github_
+
+.. _developers: https://www.monetdb.org/Developers
+__ developers_
 
 Copyright Notice
 ================
