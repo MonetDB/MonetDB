@@ -102,6 +102,7 @@ list_destroy(list *l)
 				node_destroy(l, t);
 			}
 		}
+
 		if (!l->sa)
 			_DELETE(l);
 	}
@@ -115,13 +116,9 @@ list_length(list *l)
 	return 0;
 }
 
-list *
-list_append(list *l, void *data)
+static list *
+list_append_node(list *l, node *n)
 {
-	node *n = node_create(l->sa, data);
-
-	if (n == NULL)
-		return NULL;
 	if (l->cnt) {
 		l->t->next = n;
 	} else {
@@ -129,17 +126,29 @@ list_append(list *l, void *data)
 	}
 	l->t = n;
 	l->cnt++;
-	MT_lock_set(&l->ht_lock);
-	if (l->ht) {
-		int key = l->ht->key(data);
+	if (n->data) {
+		MT_lock_set(&l->ht_lock);
+		if (l->ht) {
+			int key = l->ht->key(n->data);
 
-		if (hash_add(l->ht, key, data) == NULL) {
-			MT_lock_unset(&l->ht_lock);
-			return NULL;
+			if (hash_add(l->ht, key, n->data) == NULL) {
+				MT_lock_unset(&l->ht_lock);
+				return NULL;
+			}
 		}
+		MT_lock_unset(&l->ht_lock);
 	}
-	MT_lock_unset(&l->ht_lock);
 	return l;
+}
+
+list *
+list_append(list *l, void *data)
+{
+	node *n = node_create(l->sa, data);
+
+	if (n == NULL)
+		return NULL;
+	return list_append_node(l, n);
 }
 
 void*
@@ -296,8 +305,8 @@ hash_delete(sql_hash *h, void *data)
 	}
 }
 
-node *
-list_remove_node(list *l, node *n)
+static node *
+list_remove_node_(list *l, node *n)
 {
 	void *data = n->data;
 	node *p = l->h;
@@ -305,7 +314,6 @@ list_remove_node(list *l, node *n)
 	if (p != n)
 		while (p && p->next != n)
 			p = p->next;
-	assert(p==n||(p && p->next == n));
 	if (p == n) {
 		l->h = n->next;
 		p = NULL;
@@ -314,13 +322,23 @@ list_remove_node(list *l, node *n)
 	}
 	if (n == l->t)
 		l->t = p;
-	MT_lock_set(&l->ht_lock);
-	if (l->ht && data)
-		hash_delete(l->ht, data);
-	MT_lock_unset(&l->ht_lock);
-	node_destroy(l, n);
+	if (data) {
+		MT_lock_set(&l->ht_lock);
+		if (l->ht && data)
+			hash_delete(l->ht, data);
+		MT_lock_unset(&l->ht_lock);
+	}
 	l->cnt--;
-	assert(l->cnt > 0 || l->h == NULL);
+	assert(l->cnt >= 0);
+	return p;
+}
+
+node *
+list_remove_node(list *l, node *n)
+{
+	node *p = list_remove_node_(l, n);
+
+	node_destroy(l, n);
 	return p;
 }
 
@@ -357,7 +375,7 @@ list_remove_list(list *l, list *data)
 void
 list_move_data(list *s, list *d, void *data)
 {
-	node *n;
+	node *n = NULL;
 
 	for (n = s->h; n; n = n->next) {
 		if (n->data == data) {
@@ -366,11 +384,17 @@ list_move_data(list *s, list *d, void *data)
 				hash_delete(s->ht, n->data);
 			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;	/* make sure data isn't destroyed */
-			list_remove_node(s, n);
+			(void)list_remove_node_(s, n);
+			n->data = data;
 			break;
 		}
 	}
-	list_append(d, data);
+	if (!n) {
+		list_append(d, data);
+	} else {
+		n->next = NULL;
+		list_append_node(d, n);
+	}
 }
 
 int

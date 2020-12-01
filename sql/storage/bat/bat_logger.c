@@ -841,10 +841,10 @@ bl_destroy(void)
 }
 
 static int
-bl_restart(void)
+bl_restart(lng save_id)
 {
 	if (bat_logger)
-		return logger_restart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+		return logger_restart(bat_logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
@@ -900,6 +900,12 @@ static int
 bl_tend(void)
 {
 	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static lng
+bl_tid(void)
+{
+	return log_save_id(bat_logger);
 }
 
 static int
@@ -1361,6 +1367,7 @@ bat_logger_init( logger_functions *lf )
 	lf->log_needs_update = bl_log_needs_update;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
+	lf->log_save_id = bl_tid;
 	lf->log_sequence = bl_sequence;
 	lf->log_find_table_value = bl_find_table_value;
 	lf->get_snapshot_files = bl_snapshot;

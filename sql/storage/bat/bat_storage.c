@@ -2083,6 +2083,20 @@ clear_del(sql_trans *tr, sql_table *t)
 }
 
 static int
+check_deltas( sql_delta *c )
+{
+	for (sql_delta *i = c; i; i = i->next) {
+		if (!i->next)
+			break;
+		for (sql_delta *j = i->next; j; j = j->next) {
+			if (j == i)
+				return 1;
+		}
+	}
+	return 0;
+}
+
+static int
 gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 {
 	int ok = LOG_OK, cleared = 0;
@@ -2090,6 +2104,7 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 
 	(void)tr;
 	assert(ATOMIC_GET(&store_nr_active)==0);
+	assert(check_deltas(cbat) == 0);
 
 	if (!cbat->bid) {
 		cleared = 1;

@@ -131,7 +131,7 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
  * indicate that to the function wkbREAD during reading of the log. */
 static int geomisoldversion;
 
-static gdk_return bm_commit(logger *lg);
+static gdk_return bm_commit(logger *lg, lng save_id);
 static gdk_return tr_grow(trans *tr);
 
 static BUN
@@ -1368,7 +1368,7 @@ logger_readlogs(logger *lg, FILE *fp, char *filename)
 }
 
 static gdk_return
-logger_commit(logger *lg)
+logger_commit(logger *lg, lng save_id)
 {
 	if (lg->debug & 1)
 		fprintf(stderr, "#logger_commit\n");
@@ -1383,7 +1383,7 @@ logger_commit(logger *lg)
 		BATcommit(lg->snapshots_tid);
 		BATcommit(lg->dsnapshots);
 	}
-	return bm_commit(lg);
+	return bm_commit(lg, save_id);
 }
 
 static gdk_return
@@ -1688,6 +1688,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	lg->snapshots_tid = NULL;
 	lg->dsnapshots = NULL;
 	lg->freed = NULL;
+	lg->freed_lid = NULL;
 	lg->seqs_id = NULL;
 	lg->seqs_val = NULL;
 	lg->dseqs = NULL;
@@ -1973,6 +1974,15 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	if (BBPrename(lg->freed->batCacheid, bak) < 0) {
 		goto error;
 	}
+	lg->freed_lid = logbat_new(TYPE_lng, 1, TRANSIENT);
+	if (lg->freed_lid == NULL) {
+		GDKerror("Logger_new: failed to create freed_lid bat");
+		goto error;
+	}
+	strconcat_len(bak, sizeof(bak), fn, "_freed_lid", NULL);
+	if (BBPrename(lg->freed_lid->batCacheid, bak) < 0) {
+		goto error;
+	}
 	snapshots_bid = logger_find_bat(lg, "snapshots_bid", 0, 0);
 	if (snapshots_bid == 0) {
 		lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
@@ -2096,7 +2106,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		needcommit = true;
 	}
 	GDKdebug &= ~CHECKMASK;
-	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
+	if (needcommit && bm_commit(lg, lg->tid+1) != GDK_SUCCEED) {
 		GDKerror("Logger_new: commit failed");
 		goto error;
 	}
@@ -2270,6 +2280,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 	logbat_destroy(lg->snapshots_tid);
 	logbat_destroy(lg->dsnapshots);
 	logbat_destroy(lg->freed);
+	logbat_destroy(lg->freed_lid);
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
@@ -2384,7 +2395,7 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	}
 	fflush(stdout);
 	if (lg->changes &&
-	    (logger_restart(lg) != GDK_SUCCEED ||
+	    (logger_restart(lg, lg->tid) != GDK_SUCCEED ||
 	     logger_cleanup(lg) != GDK_SUCCEED)) {
 		logger_destroy(lg);
 		return NULL;
@@ -2423,6 +2434,7 @@ logger_destroy(logger *lg)
 		logbat_destroy(lg->catalog_oid);
 		logbat_destroy(lg->dcatalog);
 		logbat_destroy(lg->freed);
+		logbat_destroy(lg->freed_lid);
 	}
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
@@ -2431,7 +2443,7 @@ logger_destroy(logger *lg)
 }
 
 gdk_return
-logger_exit(logger *lg)
+logger_exit(logger *lg, lng save_id)
 {
 	FILE *fp;
 	char filename[FILENAME_MAX];
@@ -2439,7 +2451,7 @@ logger_exit(logger *lg)
 
 	if (LOG_DISABLED(lg)) {
 		logger_close(lg);
-		if (logger_commit(lg) != GDK_SUCCEED) {
+		if (logger_commit(lg, save_id) != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "logger_commit failed\n");
 			return GDK_FAIL;
 		}
@@ -2470,7 +2482,7 @@ logger_exit(logger *lg)
 		}
 		lg->id ++;
 
-		if (logger_commit(lg) != GDK_SUCCEED) {
+		if (logger_commit(lg, save_id) != GDK_SUCCEED) {
 			(void) fclose(fp);
 			TRC_CRITICAL(GDK, "logger_commit failed\n");
 			return GDK_FAIL;
@@ -2524,9 +2536,9 @@ logger_exit(logger *lg)
 }
 
 gdk_return
-logger_restart(logger *lg)
+logger_restart(logger *lg, lng save_id)
 {
-	if (logger_exit(lg) == GDK_SUCCEED &&
+	if (logger_exit(lg, save_id) == GDK_SUCCEED &&
 	    logger_open(lg) == GDK_SUCCEED)
 		return GDK_SUCCEED;
 	return GDK_FAIL;
@@ -3081,24 +3093,39 @@ log_sequence(logger *lg, int seq, lng val)
 }
 
 static gdk_return
-bm_commit(logger *lg)
+bm_commit(logger *lg, lng save_id)
 {
 	BUN p, q;
-	BAT *b = lg->catalog_bid;
+	BAT *b = lg->catalog_bid, *nfreed = NULL, *nfreed_lid = NULL;
 	BAT *n = logbat_new(TYPE_str, BATcount(lg->freed), TRANSIENT);
 	gdk_return res;
 	const log_bid *bids;
+	const lng *lids;
+	int leftover = 0;
 
 	if (n == NULL)
 		return GDK_FAIL;
 
 	/* subcommit the freed bats */
 	bids = (const log_bid *) Tloc(lg->freed, 0);
+	lids = (const lng *) Tloc(lg->freed_lid, 0);
 	BATloop(lg->freed, p, q) {
 		bat bid = bids[p];
+		lng lid = lids[p];
 		BAT *lb = BATdescriptor(bid);
 		str name = BBPname(bid);
 
+		if (lid > save_id) { 
+			leftover++;
+			continue;
+		}
+
+		if (lg->debug & 1) {
+			if (BBP_lrefs(bid) != 2) {
+				fprintf(stderr, "release %d %d\n", bid, BBP_lrefs(bid));
+				assert(0);
+			}
+		}
 		if (lb == NULL ||
 		    BATmode(lb, true) != GDK_SUCCEED) {
 			logbat_destroy(lb);
@@ -3117,6 +3144,29 @@ bm_commit(logger *lg)
 		}
 		BBPrelease(bid);
 	}
+	if (leftover) {
+		nfreed = logbat_new(TYPE_int, leftover, TRANSIENT);
+		nfreed_lid = logbat_new(TYPE_lng, leftover, TRANSIENT);
+
+		if (!nfreed || !nfreed_lid) {
+			logbat_destroy(n);
+			logbat_destroy(nfreed);
+			logbat_destroy(nfreed_lid);
+			return GDK_FAIL;
+		}
+		BATloop(lg->freed, p, q) {
+			lng lid = lids[p];
+
+			if (lid < save_id && (
+				BUNappend(nfreed, bids+p, false) != GDK_SUCCEED || 
+				BUNappend(nfreed_lid, &lid, false) != GDK_SUCCEED)) {
+				logbat_destroy(n);
+				logbat_destroy(nfreed);
+				logbat_destroy(nfreed_lid);
+				return GDK_FAIL;
+			}
+		}
+	}
 
 	bids = (log_bid *) Tloc(b, 0);
 	for (p = b->batInserted; p < BUNlast(b); p++) {
@@ -3134,6 +3184,8 @@ bm_commit(logger *lg)
 		    BATmode(lb, false) != GDK_SUCCEED) {
 			logbat_destroy(lb);
 			logbat_destroy(n);
+			logbat_destroy(nfreed);
+			logbat_destroy(nfreed_lid);
 			return GDK_FAIL;
 		}
 
@@ -3147,8 +3199,24 @@ bm_commit(logger *lg)
 	res = bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->catalog_tpe, lg->catalog_oid, lg->dcatalog, n, lg->debug);
 	BBPreclaim(n);
 	if (res == GDK_SUCCEED) {
-		BATclear(lg->freed, false);
-		BATcommit(lg->freed);
+		/* switch */
+		if (nfreed && nfreed_lid) {
+			if (logger_switch_bat(lg->freed, nfreed, lg->fn, "freed") != GDK_SUCCEED ||
+                    	logger_switch_bat(lg->freed_lid, nfreed_lid, lg->fn, "freed_lid") != GDK_SUCCEED) {
+				logbat_destroy(nfreed);
+				logbat_destroy(nfreed_lid);
+				return GDK_FAIL;
+			}
+			logbat_destroy(lg->freed);
+			logbat_destroy(lg->freed_lid);
+			lg->freed = nfreed;
+			lg->freed_lid = nfreed_lid;
+		} else {
+			BATclear(lg->freed, true);
+			BATclear(lg->freed_lid, true);
+			BATcommit(lg->freed);
+			BATcommit(lg->freed_lid);
+		}
 		return GDK_SUCCEED;
 	}
 	return GDK_FAIL;
@@ -3191,6 +3259,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	    BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
+	
 	BBPretain(bid);
 	return GDK_SUCCEED;
 }
@@ -3220,6 +3289,7 @@ logger_del_bat(logger *lg, log_bid bid)
 	BAT *b = BATdescriptor(bid);
 	BUN p = log_find(lg->catalog_bid, lg->dcatalog, bid), q;
 	oid pos;
+	lng lid = lg->tid;
 
 	assert(p != BUN_NONE);
 	if (p == BUN_NONE) {
@@ -3241,14 +3311,16 @@ logger_del_bat(logger *lg, log_bid bid)
 			fprintf(stderr,
 				"#logger_del_bat release snapshot %d (%d)\n",
 				bid, BBP_lrefs(bid));
-		if (BUNappend(lg->freed, &bid, false) != GDK_SUCCEED) {
+		if (BUNappend(lg->freed, &bid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->freed_lid, &lid, false) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
-	} else if (p >= lg->catalog_bid->batInserted) {
+	} else if (p >= lg->catalog_bid->batInserted) { /* never became persistent */
 		BBPrelease(bid);
 	} else {
-		if (BUNappend(lg->freed, &bid, false) != GDK_SUCCEED) {
+		if (BUNappend(lg->freed, &bid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->freed_lid, &lid, false) != GDK_SUCCEED) {
 			logbat_destroy(b);
 			return GDK_FAIL;
 		}
@@ -3332,4 +3404,10 @@ geomversion_set(void)
 int geomversion_get(void)
 {
 	return geomisoldversion;
+}
+
+lng
+log_save_id(logger *lg)
+{
+	return lg->tid;
 }
