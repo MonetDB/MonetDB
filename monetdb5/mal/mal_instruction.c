@@ -23,19 +23,10 @@
 void
 addMalException(MalBlkPtr mb, str msg)
 {
-	str new;
-
 	if( msg == NULL)
 		return;
 	if( mb->errors){
-		size_t len = strlen(mb->errors) + strlen(msg) + 1;
-		new = GDKzalloc(len);
-		if (new == NULL)
-			// just stick to one error message, ignore rest
-			return ;
-		strconcat_len(new, len, mb->errors, msg, NULL);
-		freeException(mb->errors);
-		mb->errors = new;
+		mb->errors = concatErrors(mb->errors, msg);
 	} else {
 		mb->errors = dupError(msg);
 	}

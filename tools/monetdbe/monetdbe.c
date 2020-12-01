@@ -1314,12 +1314,12 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 			stmt_internal->q = q;
 			stmt_internal->retc = p->retc;
 			stmt_internal->res.nparam = list_length(q->f->ops);
-			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * stmt_internal->res.nparam);
-			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (list_length(q->f->ops) + stmt_internal->retc));
-			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types)* stmt_internal->res.nparam);
+			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (stmt_internal->res.nparam + stmt_internal->retc));
+			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * (stmt_internal->res.nparam+1));
+			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types) * (stmt_internal->res.nparam+1));
 			if (!stmt_internal->res.type || !stmt_internal->data || !stmt_internal->args) {
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", MAL_MALLOC_FAIL);
-			} else {
+			} else if (q->f->ops) {
 				int i = 0;
 				for (node *n = q->f->ops->h; n; n = n->next, i++) {
 					sql_arg *a = n->data;
@@ -1351,7 +1351,7 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
 
 	/* TODO !data treat as NULL value (add nil mask) ? */
-	if (i > stmt->nparam)
+	if (i >= stmt->nparam)
 		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
 	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
 	assert(a);

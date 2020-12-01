@@ -259,8 +259,8 @@ overlap(matlist_t *ml, int lv, int rv, int lnr, int rnr, int ontails)
 {
 	int lpnr, rpnr;
 
-	checksize(ml, lv);
-	checksize(ml, rv);
+	if (checksize(ml, lv) || checksize(ml, rv))
+		return -1;
 	lpnr = ml->torigin[lv];
 	rpnr = (ontails)?ml->torigin[rv]:ml->horigin[rv];
 
@@ -307,8 +307,14 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 		int nr = 1;
 		for(k=1; k < mat[e].mi->argc; k++) {
 			for(j=1; j < mat[m].mi->argc; j++) {
-				if (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)){
-					InstrPtr q = copyInstruction(p);
+				InstrPtr q;
+				switch (overlap(ml, getArg(mat[e].mi, k), getArg(mat[m].mi, j), k, j, 0)) {
+				case 0:
+					continue;
+				case -1:
+					return NULL;
+				case 1:
+					q = copyInstruction(p);
 					if(!q){
 						freeInstruction(r);
 						return NULL;
@@ -338,6 +344,7 @@ mat_delta(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int
 					nr++;
 					break;
 				}
+				break;			/* only in case of overlap */
 			}
 		}
 	} else {
@@ -676,9 +683,12 @@ mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
 
 		       	ttpe = getArgType(mb, mat[n].mi, 0);
 			for (j=1; j<mat[n].mi->argc; j++) {
-				if (getBatType(ttpe) != TYPE_oid || overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)){
+				int ov = 0;
+				if (getBatType(ttpe) != TYPE_oid || (ov = overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 1)) == 1){
 					s = addArgument(mb,s,getArg(mat[n].mi,j));
 				}
+				if (ov == -1)
+					return -1;
 			}
 			if (s->retc == 1 && s->argc == 2){ /* only one input, change into an assignment */
 				getFunctionId(s) = NULL;
@@ -751,8 +761,14 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 		int nr = 1;
 		for(k=1; k<mat[m].mi->argc; k++) {
 			for (j=1; j<mat[n].mi->argc; j++) {
-				if (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 0)){
-					InstrPtr q = copyInstruction(p);
+				InstrPtr q;
+				switch (overlap(ml, getArg(mat[m].mi, k), getArg(mat[n].mi, j), k, j, 0)) {
+				case 0:
+					continue;
+				case -1:
+					return -1;
+				case 1:
+					q = copyInstruction(p);
 
 					if(!q) {
 						freeInstruction(r);
@@ -773,6 +789,7 @@ mat_projection(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n)
 					nr++;
 					break;
 				}
+				break;			/* only in case of overlap */
 			}
 		}
 	} else {
