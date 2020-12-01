@@ -206,7 +206,7 @@ class TestCaseResult(object):
     def assertResultHashTo(self, hash_value):
         raise NotImplementedError()
 
-class MclientTestResult(RunnableTestResult, TestCaseResult):
+class MclientTestResult(TestCaseResult, RunnableTestResult):
     """Holder of a sql execution result as returned from mclinet"""
 
     def __init__(self, test_case):
@@ -282,7 +282,7 @@ class MclientTestResult(RunnableTestResult, TestCaseResult):
         return self
 
 
-class PyMonetDBTestResult(RunnableTestResult, TestCaseResult):
+class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
     """Holder of sql execution information. Managed by SQLTestCase."""
     test_case = None
 
