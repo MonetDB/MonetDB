@@ -99,7 +99,7 @@ uhge copy_binary_byteswap128(uhge value) {
 #endif
 
 // These macros are used to convert a value in-place.
-// This makes it possible to also convert timestamps.
+// This makes it possible to also convert timestamp structs.
 
 static inline void
 copy_binary_convert16(void *p)

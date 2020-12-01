@@ -170,14 +170,14 @@ extract_column(MalBlkPtr mb, InstrPtr old, int idx, str proto_path, int proto_ba
 
 	if (!strNil(path)) {
 		if (proto_path != NULL && strcmp(proto_path, path) == 0) {
-			// we can reuse the prototype var
+			// Same data as in the prototype column so reuse that var
 			InstrPtr p = newInstructionArgs(mb, NULL, NULL, 2);
 			p = pushArgument(mb, p, proto_bat_var);
 			setReturnArgument(p, old->argv[idx]);
 			pushInstruction(mb, p);
 			return count_var;
 		} else {
-			// we emit a new importColumn call
+			// Emit a new importColumn call
 			InstrPtr p = newFcnCall(mb, sqlRef, importColumnRef);
 			setReturnArgument(p, old->argv[idx]);
 			int new_count_var = newTmpVariable(mb, TYPE_oid);

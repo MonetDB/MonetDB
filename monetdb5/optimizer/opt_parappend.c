@@ -39,8 +39,10 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	(void)stk;
 	(void)pci;
 
-	if (WLCused())
+	if (WLCused()) {
+		// can of worms, bail out.
 		return MAL_SUCCEED;
+	}
 
 	int found_at = -1;
 	for (int i = 0; i < mb->stop; i++) {
@@ -54,12 +56,6 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	}
 	if (found_at == -1)
 		return MAL_SUCCEED;
-
-
-	// stream *s1;
-	// s1 = open_wastream("a");
-	// printFunction(s1, mb, stk, LIST_MAL_ALL);
-	// mnstr_close(s1);
 
 	old_mb_stmt = mb->stmt;
 	size_t old_ssize = mb->ssize;
@@ -85,11 +81,6 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			goto end;
 	}
 	assert(state.prep_stmt == NULL);
-
-	// stream *s2;
-	// s2 = open_wastream("b");
-	// printFunction(s2, mb, stk, LIST_MAL_ALL);
-	// mnstr_close(s2);
 
 end:
 	if (old_mb_stmt) {
@@ -232,8 +223,8 @@ setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str
 			if (strcmp(existing_cname, incoming_cname) == 0) {
 				// We're not prepared for the complications that may arise
 				// when there are multiple appends to the same column.
-				// In particular we would have to track down where the prep_stmtious
-				// cookie is used and make sure we execute the next append
+				// In particular we would have to track down where the previous
+				// cookie was used and make sure we execute the next append
 				// after that use.
 				// This is unlikely to occur in practice, so instead we just start over.
 				prep_stmt = NULL;

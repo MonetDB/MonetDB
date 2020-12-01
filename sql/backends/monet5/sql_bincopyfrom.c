@@ -419,12 +419,12 @@ end:
 // If an entry has has 'convert_in_place' this means the external and internal
 // forms have the same size and are probably identical. In this case, the data
 // is loaded directly into the bat heap and then the 'convert_in_place' function
-// is called once for the whole to perform any necessary tweaking of the data.
+// is called once for the whole block to perform any necessary tweaking of the data.
 // We use this for example for the integer types, on little-endian platforms no
 // tweaking is necessary and on big-endian platforms we byteswap the data.
 //
 // Finally, if an entry has 'convert_fixed_width' it means the internal and
-// external forms are both fixed width but different. The data is loaded into
+// external forms are both fixed width but different in size. The data is loaded into
 // intermediate buffers first and the conversion function copies the data from
 // an array of incoming data in the buffer to an array of internal
 // representations in the BAT.
