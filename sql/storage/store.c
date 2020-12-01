@@ -68,7 +68,7 @@ static int map_timestamp[MAX_MAP];
 static lng map_log_saved_id[MAX_MAP];
 
 static void
-map_add(int ts, lng saved_id) 
+map_add(int ts, lng saved_id)
 {
 	if (map_first != map_last) {
 		int p = map_last-1;
@@ -82,16 +82,16 @@ map_add(int ts, lng saved_id)
 	map_timestamp[map_last] = ts;
 	map_log_saved_id[map_last] = saved_id;
 	map_last++;
-	if (map_last==MAX_MAP) 
+	if (map_last==MAX_MAP)
 		map_last = 0;
 	if (map_last == map_first) {
 		map_first++;
-		if (map_first==MAX_MAP) 
+		if (map_first==MAX_MAP)
 			map_first = 0;
 	}
 }
 
-static int 
+static int
 oldest_active_tid(void)
 {
 	if (active_sessions && active_sessions->h) {
@@ -101,8 +101,8 @@ oldest_active_tid(void)
 	return -1;
 }
 
-static lng 
-map_find_oldest_saved_id(int oldest_active_ts) 
+static lng
+map_find_oldest_saved_id(int oldest_active_ts)
 {
 	int i;
 	lng saved_id = 0;
@@ -2338,11 +2338,11 @@ store_exit(void)
 }
 
 static void
-cleanup_table(sql_table *t) 
+cleanup_table(sql_table *t)
 {
 	for (node *n = passive_sessions->h; n; n=n->next) {
 		sql_session *s = n->data;
-		
+
 		for (node *m = s->tr->schemas.set->h; m; m = m->next) {
 			sql_schema * schema = m->data;
 			node *o = find_sql_table_node(schema, t->base.id);
@@ -2392,7 +2392,7 @@ store_apply_deltas(bool not_locked)
 					o = n->next;
 					sql_table *b = n->data;
 					if (b->base.wtime < tid || tid < 0) { /* deleted before the oldest transaction, time to remove */
-						if (b->base.refcnt > 1) 
+						if (b->base.refcnt > 1)
 							cleanup_table(b);
 						assert(b->base.refcnt == 1);
 						list_remove_node(s->tables.dset, n);
@@ -4072,7 +4072,7 @@ rollforward_changeset_updates(sql_trans *tr, int oldest, changeset * fs, changes
 						ts->nelm = tbn->next;
 					if (!ts->dset)
 						ts->dset = list_new(tr->parent->sa, ts->destroy);
-					tb->wtime = fb->wtime; 
+					tb->wtime = fb->wtime;
 					list_move_data(ts->set, ts->dset, tb);
 				}
 			}
@@ -4089,7 +4089,10 @@ rollforward_changeset_updates(sql_trans *tr, int oldest, changeset * fs, changes
 					ok = rollforward_deletes(tr, tb, mode);
 			}
 		}
-		if (apply && ts->dset && oldest) {
+		if (apply && ts->dset && !cf) {
+			list_destroy(ts->dset);
+			ts->dset = NULL;
+		} else if (apply && ts->dset && oldest && cf) {
 			for (node *o, *n = ts->dset->h; n; n = o) {
 				o = n->next;
 				sql_base *b = n->data;
@@ -4195,6 +4198,13 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 	if (!cs)
 		return ok;
 	if (cs->dset) {
+		node *n;
+
+		for (n = cs->dset->h; ok == LOG_OK && n; n = n->next) {
+			sql_base *b = n->data;
+
+			ok = rf(tr, b, mode);
+		}
 		if (apply) {
 			list_destroy(cs->dset);
 			cs->dset = NULL;
@@ -4505,8 +4515,9 @@ rollforward_create_schema(sql_trans *tr, sql_schema *s, int mode)
 }
 
 static int
-rollforward_update_part(sql_trans *tr, sql_base *fpt, sql_base *tpt, int mode)
+rollforward_update_part(sql_trans *tr, int oldest, sql_base *fpt, sql_base *tpt, int mode)
 {
+	(void)oldest;
 	if (mode == R_APPLY) {
 		sql_part *pt = (sql_part *) tpt;
 		sql_part *opt = (sql_part *) fpt;
@@ -4587,9 +4598,10 @@ rollforward_update_table(sql_trans *tr, int oldest, sql_table *ft, sql_table *tt
 }
 
 static int
-rollforward_update_seq(sql_trans *tr, sql_sequence *ft, sql_sequence *tt, int mode)
+rollforward_update_seq(sql_trans *tr, int oldest, sql_sequence *ft, sql_sequence *tt, int mode)
 {
 	(void)tr;
+	(void)oldest;
 	if (mode != R_APPLY)
 		return LOG_OK;
 	if (ft->start != tt->start)
