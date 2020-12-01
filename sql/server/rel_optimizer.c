@@ -5672,7 +5672,7 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 		case TYPE_dbl:
 			return 75 - 53;
 		default: {
-			if (equality_based && c && (de = sql_trans_is_duplicate_eliminated(sql->session->tr, c)))
+			if (equality_based && c && (de = mvc_is_duplicate_eliminated(sql, c)))
 				return 150 - de * 8;
 			/* strings and blobs not duplicate eliminated don't get any points here */
 			return 0;
@@ -8756,7 +8756,7 @@ rel_add_dicts(visitor *v, sql_rel *rel)
 			if (!is_func(e->type) && oname[0] != '%') {
 				sql_column *c = find_sql_column(t, oname);
 
-				if ((de = sql_trans_is_duplicate_eliminated(v->sql->session->tr, c)) != 0) {
+				if ((de = mvc_is_duplicate_eliminated(v->sql, c)) != 0) {
 					int nr = ++v->sql->label;
 					char name[16], *nme;
 					sql_rel *vt = rel_dicttable(v->sql, c, rname, de);

@@ -396,7 +396,7 @@ exp_aggr( sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils,
 		set_distinct(e);
 	if (no_nils)
 		set_no_nil(e);
-	if (!has_nils)
+	if ((!a->func->semantics && !has_nils) || (!a->func->s && strcmp(a->func->base.name, "count") == 0))
 		set_has_no_nil(e);
 	return e;
 }
@@ -416,7 +416,6 @@ exp_atom(sql_allocator *sa, atom *a)
 sql_exp *
 exp_atom_max(sql_allocator *sa, sql_subtype *tpe)
 {
-
 	if (tpe->type->localtype == TYPE_bte) {
 		return exp_atom_bte(sa, GDK_bte_max);
 	} else if (tpe->type->localtype == TYPE_sht) {

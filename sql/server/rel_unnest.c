@@ -1607,6 +1607,8 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (!exp_name(ne))
 				ne = exp_label(v->sql->sa, ne, ++v->sql->label);
 			e = ne;
+			if (depth) /* a projection from an outer join may have nulls */
+				set_has_nil(e);
 		} else {
 			e = exp_rel_update_exp(v->sql, e);
 		}
