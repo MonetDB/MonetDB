@@ -34,8 +34,11 @@ convert128(void *start, void *end)
 #ifdef HAVE_HGE
 	for (uhge *p = start; p < (uhge*)end; p++) {
 		copy_binary_convert128(p);
-#endif
 	}
+#else
+	(void)start;
+	(void)end;
+#endif
 }
 
 
