@@ -108,34 +108,6 @@ CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
 		WHERE c.table_id = tid;
 END;
 
-CREATE FUNCTION dump_contraint_type_name(id INT) RETURNS STRING BEGIN
-	RETURN
-		CASE
-		WHEN id = 0 THEN 'PRIMARY KEY'
-		WHEN id = 1 THEN 'UNIQUE'
-		END;
-END;
-
-CREATE FUNCTION describe_constraints() RETURNS TABLE("table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
-	RETURN
-		SELECT t.name, kc.nr, kc.name, k.name, dump_contraint_type_name(k.type)
-		FROM sys._tables t, sys.objects kc, sys.keys k
-		WHERE kc.id = k.id
-			AND k.table_id = t.id
-			AND t.system = FALSE
-			AND k.type in (0, 1)
-			AND t.type IN (0, 6);
-END;
-
-CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
-	RETURN
-		SELECT 
-			'ALTER TABLE ' || DQ("table") ||
-			ifthenelse(con IS NOT NULL, ' ADD CONSTRAINT ' || DQ(con), '') || ' '||
-			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
-		FROM describe_constraints() GROUP BY "table", con, type;
-END;
-
 CREATE FUNCTION dump_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
 	RETURN SELECT ' ON ' || SQ(uri) || ' WITH USER ' || SQ(username) || ' ENCRYPTED PASSWORD ' || SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
 END;
