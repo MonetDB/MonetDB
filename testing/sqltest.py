@@ -150,8 +150,9 @@ class TestCaseResult(object):
         """ logs errors to test case err file"""
         err_file = self.test_case.err_file
         if len(self.assertion_errors) == 0:
-            print(self.query, file=err_file)
-            print('----', file=err_file)
+            if self.query:
+                print(self.query, file=err_file)
+                print('----', file=err_file)
         self.assertion_errors.append(AssertionError(msg))
         print(msg, file=err_file)
         if data is not None:
@@ -375,7 +376,7 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
         return self
 
 class SQLDump():
-    def __init__(self, test_case, data=[]):
+    def __init__(self, test_case, data=None):
         self.test_case = test_case
         self.data = data
         conn_ctx = test_case.conn_ctx
@@ -383,7 +384,8 @@ class SQLDump():
 
     def assertMatchStableOut(self, fout):
         stable = []
-        dump = list(filter(filter_junk, self.data.split('\n')))
+        data = self.data.split('\n') if self.data else []
+        dump = list(filter(filter_junk, data))
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
         a, b = filter_matching_blocks(stable, dump)
@@ -451,9 +453,6 @@ class SQLTestCase():
         self.test_results.append(res)
         return res
 
-    def drop(self):
-        raise NotImplementedError()
-
     def sqldump(self, *args):
         kwargs = dict(
             host = self.conn_ctx.hostname,
@@ -466,8 +465,39 @@ class SQLTestCase():
             with process.client('sqldump', **kwargs, args=list(args), stdout=process.PIPE, stderr=process.PIPE) as p:
                 dump, err = p.communicate()
         except Exception as e:
-            raise SystemExit(str(e))
+            pass
         res = SQLDump(self, data=dump)
         self.test_results.append(res)
         return res
+
+    def drop(self):
+        try:
+            with self.conn_ctx as ctx:
+                crs = ctx.crs
+                crs.execute('select s.name, t.name, tt.table_type_name from sys.tables t, sys.schemas s, sys.table_types tt where not t.system and t.schema_id = s.id and t.type = tt.table_type_id')
+                for row in crs.fetchall():
+                    crs.execute('drop {} "{}"."{}" cascade'.format(row[2], row[0], row[1]))
+
+                crs.execute('select s.name, f.name, ft.function_type_keyword from functions f, schemas s, function_types ft where not f.system and f.schema_id = s.id and f.type = ft.function_type_id')
+                for row in crs.fetchall():
+                    crs.execute('drop all {} "{}"."{}"'.format(row[2], row[0], row[1]))
+
+                crs.execute('select s.name, q.name from sys.sequences q, schemas s where q.schema_id = s.id')
+                for row in crs.fetchall():
+                    crs.execute('drop sequence "{}"."{}"'.format(row[0], row[1]))
+
+                crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
+                for row in crs.fetchall():
+                    crs.execute('alter user "{}" SET SCHEMA "sys"'.format(row[0]))
+
+                crs.execute('select name from sys.schemas where not system')
+                for row in crs.fetchall():
+                    crs.execute('drop schema "{}" cascade'.format(row[0]))
+
+                crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
+                for row in crs.fetchall():
+                    crs.execute('drop user "{}"'.format(row[0]))
+
+        except (pymonetdb.Error, ValueError) as e:
+            pass
 
