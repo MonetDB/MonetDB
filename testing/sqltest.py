@@ -7,8 +7,9 @@ import os
 import sys
 import unittest
 import pymonetdb
-import MonetDBtesting.utils as utils
 import difflib
+from abc import ABCMeta, abstractmethod
+import MonetDBtesting.process as process
 
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=os.getenv("MAPIPORT")
@@ -64,7 +65,7 @@ def filter_matching_blocks(a: [str] = [], b: [str] = []):
         s.set_seq1(a[i].replace('\t', '').replace(' ', ''))
         s.set_seq2(b[i].replace('\t', '').replace(' ', ''))
         # should be high matching ratio
-        if s.real_quick_ratio() < 0.95:
+        if s.quick_ratio() < 0.95:
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
@@ -121,35 +122,29 @@ class PyMonetDBConnectionContext(object):
             self.dbh.close()
             self.dbh = None
 
-class SQLTestResult(object):
-    """Holder of sql execution information. Managed by SQLTestCase."""
+class RunnableTestResult(metaclass=ABCMeta):
+    """Abstract class for sql result"""
+
+    @abstractmethod
+    def run(self, query:str, *args, stdin=None):
+        """Run query with specific client"""
+        pass
+
+class TestCaseResult(object):
+    """TestCase connected result"""
     test_case = None
 
     def __init__(self, test_case):
         self.test_case = test_case
-        self.query = None
         self.assertion_errors = [] # holds assertion errors
+        self.query = None
         self.query_error = None
+        self.err_code = None
+        self.err_message = None
         self.data = []
         self.rows = []
         self.rowcount = -1
         self.description = None
-
-    def run(self, query:str):
-        # ensure runs only once
-        if self.query is None:
-            self.query = query
-            try:
-                with self.test_case.conn_ctx as ctx:
-                    ctx.crs.execute(query)
-                    self.rowcount = ctx.crs.rowcount
-                    self.rows = ctx.crs._rows
-                    if ctx.crs.description:
-                        self.data = ctx.crs.fetchall()
-                        self.description = ctx.crs.description
-            except (pymonetdb.Error, ValueError) as e:
-                self.query_error = e
-        return self
 
     def fail(self, msg, data=None):
         """ logs errors to test case err file"""
@@ -181,18 +176,17 @@ class SQLTestResult(object):
             msg = "expected to fail but didn't"
             self.fail(msg)
         else:
-            err_code_received, err_msg_received = utils.parse_mapi_err_msg(self.query_error.args[0])
             if err_code and err_message:
-                if err_code != err_code_received or err_message.lower() != err_msg_received.lower():
-                    msg = "expected to fail with error code {} and error message {} but failed with error code {} and error message {}".format(err_code, err_message, err_code_received, err_msg_received)
+                if err_code != self.err_code or err_message.lower() != self.err_message.lower():
+                    msg = "expected to fail with error code {} and error message {} but failed with error code {} and error message {}".format(err_code, err_message, self.err_code, self.err_message)
                     self.fail(msg)
             elif err_code and not err_message:
-                if err_code_received != err_code:
-                    msg = "expected to fail with error code {} but failed with error code {}".format(err_code, err_code_received)
+                if self.err_code != err_code:
+                    msg = "expected to fail with error code {} but failed with error code {}".format(err_code, self.err_code)
                     self.fail(msg)
             elif err_message and not err_code:
-                if err_message.lower() != err_msg_received.lower():
-                    msg = "expected to fail with error message {} but failed with error message {}".format(err_message, err_msg_received)
+                if err_message.lower() != self.err_message.lower():
+                    msg = "expected to fail with error message {} but failed with error message {}".format(err_message, self.err_message)
                     self.fail(msg)
         return self
 
@@ -211,6 +205,127 @@ class SQLTestResult(object):
 
     def assertResultHashTo(self, hash_value):
         raise NotImplementedError()
+
+class MclientTestResult(RunnableTestResult, TestCaseResult):
+    """Holder of a sql execution result as returned from mclinet"""
+
+    def __init__(self, test_case):
+        super().__init__(test_case)
+        self.did_run = False
+
+    def _parse_error(self, err:str):
+        err_code = None
+        err_message = None
+        for l in err.splitlines():
+            l = l.strip()
+            if l.startswith('ERROR'):
+                err_message = l.split('=').pop().strip()
+            if l.startswith('CODE'):
+                err_code = l.split('=').pop().strip()
+        return err_code, err_message
+
+    def _get_row_count(self, data):
+        count = 0
+        data = list(filter(filter_junk, data.splitlines()))
+        for l in data:
+            l = l.strip()
+            if l.startswith('[') and l.endswith(']'):
+                count+=1
+        return count
+
+
+    def run(self, query:str, *args, stdin=None):
+        # ensure runs only once
+        if self.did_run is False:
+            conn_ctx = self.test_case.conn_ctx
+            kwargs = dict(
+                host = conn_ctx.hostname,
+                port = conn_ctx.port,
+                dbname = conn_ctx.database,
+                user = conn_ctx.username,
+                passwd = conn_ctx.password)
+            try:
+                if query:
+                    self.query = query
+                    with process.client('sql', **kwargs, \
+                            args=list(args), \
+                            stdin=process.PIPE, \
+                            stdout=process.PIPE, stderr=process.PIPE) as p:
+                        out, err = p.communicate(query)
+                        if out:
+                            self.data = out
+                            self.rowcount = self._get_row_count(out)
+                        if err:
+                            self.query_error = err
+                            self.err_code, self.err_message = self._parse_error(err)
+                elif stdin:
+                    # TODO
+                    pass
+                self.did_run = True
+            except Exception as e:
+                raise SystemExit(e)
+        return self
+
+    def assertMatchStableOut(self, fout):
+        stable = []
+        data = list(filter(filter_junk, self.data.split('\n')))
+        with open(fout, 'r') as f:
+            stable = list(filter(filter_junk, f.read().split('\n')))
+        a, b = filter_matching_blocks(stable, data)
+        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+        if len(diff) > 0:
+            err_file = self.test_case.err_file
+            msg = "sql query result expected to match stable output {} but it didnt\'t\n".format(fout)
+            msg+='\n'.join(diff)
+            self.assertion_errors.append(AssertionError(msg))
+            self.fail(msg)
+        return self
+
+
+class PyMonetDBTestResult(RunnableTestResult, TestCaseResult):
+    """Holder of sql execution information. Managed by SQLTestCase."""
+    test_case = None
+
+    def __init__(self, test_case):
+        super().__init__(test_case)
+        self.did_run = False
+
+    def _parse_error(self, error:str=''):
+        """Parse error string and returns (err_code, err_msg) tuple
+        """
+        err_code = None
+        err_msg = None
+        tmp = error.split('!')
+        if len(tmp) > 1:
+            try:
+                err_code = tmp[0].strip()
+            except (ValueError, TypeError):
+                pass
+            # reconstruct
+            err_msg = ('!'.join(tmp[1:])).strip()
+        elif len(tmp) == 1:
+            if tmp[0]:
+                err_msg = tmp[0].strip()
+        return err_code, err_msg
+
+    def run(self, query:str, *args, stdin=None):
+        # ensure runs only once
+        if self.did_run is False:
+            if query:
+                self.query = query
+                try:
+                    with self.test_case.conn_ctx as ctx:
+                        ctx.crs.execute(query)
+                        self.rowcount = ctx.crs.rowcount
+                        self.rows = ctx.crs._rows
+                        if ctx.crs.description:
+                            self.data = ctx.crs.fetchall()
+                            self.description = ctx.crs.description
+                except (pymonetdb.Error, ValueError) as e:
+                    self.query_error = e
+                    self.err_code, self.err_message = self._parse_error(e.args[0])
+            self.did_run = True
+        return self
 
     def assertValue(self, row, col, val):
         """assert on a value matched against row, col in the result"""
@@ -320,9 +435,12 @@ class SQLTestCase():
     def conn_ctx(self):
         return self._conn_ctx or self.default_conn_ctx()
 
-    def execute(self, query:str):
-        res = SQLTestResult(self)
-        res.run(query)
+    def execute(self, query:str, client='pymonetdb', *args):
+        if client == 'mclient':
+            res = MclientTestResult(self)
+        else:
+            res = PyMonetDBTestResult(self)
+        res.run(query, *args)
         self.test_results.append(res)
         return res
 
@@ -338,7 +456,6 @@ class SQLTestCase():
             passwd = self.conn_ctx.password)
         dump = None
         try:
-            import MonetDBtesting.process as process
             with process.client('sqldump', **kwargs, args=list(args), stdout=process.PIPE, stderr=process.PIPE) as p:
                 dump, err = p.communicate()
         except Exception as e:
@@ -347,3 +464,136 @@ class SQLTestCase():
         self.test_results.append(res)
         return res
 
+
+#-----------------------
+
+#class PyMonetDBTestResult(SQLTestResult):
+#    """Holder of sql execution information. Managed by SQLTestCase."""
+#    test_case = None
+#
+#    def __init__(self, test_case):
+#        self.test_case = test_case
+#        self.query = None
+#        self.assertion_errors = [] # holds assertion errors
+#        self.query_error = None
+#        self.data = []
+#        self.rows = []
+#        self.rowcount = -1
+#        self.description = None
+#
+#    def run(self, query:str):
+#        # ensure runs only once
+#        if self.query is None:
+#            self.query = query
+#            try:
+#                with self.test_case.conn_ctx as ctx:
+#                    ctx.crs.execute(query)
+#                    self.rowcount = ctx.crs.rowcount
+#                    self.rows = ctx.crs._rows
+#                    if ctx.crs.description:
+#                        self.data = ctx.crs.fetchall()
+#                        self.description = ctx.crs.description
+#            except (pymonetdb.Error, ValueError) as e:
+#                self.query_error = e
+#        return self
+#
+#    def fail(self, msg, data=None):
+#        """ logs errors to test case err file"""
+#        err_file = self.test_case.err_file
+#        if len(self.assertion_errors) == 0:
+#            print(self.query, file=err_file)
+#            print('----', file=err_file)
+#        self.assertion_errors.append(AssertionError(msg))
+#        print(msg, file=err_file)
+#        if data is not None:
+#            if len(data) < 100:
+#                print('query result:', file=err_file)
+#            else:
+#                print('truncated query result:', file=err_file)
+#            for row in data[:100]:
+#                sep=''
+#                for col in row:
+#                    if col is None:
+#                        print(sep, 'NULL', sep='', end='', file=err_file)
+#                    else:
+#                        print(sep, col, sep='', end='', file=err_file)
+#                    sep = '|'
+#                print('', file=err_file)
+#            print('', file=err_file)
+#
+#    def assertFailed(self, err_code=None, err_message=None):
+#        """assert on query failed with optional err_code if provided"""
+#        if self.query_error is None:
+#            msg = "expected to fail but didn't"
+#            self.fail(msg)
+#        else:
+#            err_code_received, err_msg_received = utils.parse_mapi_err_msg(self.query_error.args[0])
+#            if err_code and err_message:
+#                if err_code != err_code_received or err_message.lower() != err_msg_received.lower():
+#                    msg = "expected to fail with error code {} and error message {} but failed with error code {} and error message {}".format(err_code, err_message, err_code_received, err_msg_received)
+#                    self.fail(msg)
+#            elif err_code and not err_message:
+#                if err_code_received != err_code:
+#                    msg = "expected to fail with error code {} but failed with error code {}".format(err_code, err_code_received)
+#                    self.fail(msg)
+#            elif err_message and not err_code:
+#                if err_message.lower() != err_msg_received.lower():
+#                    msg = "expected to fail with error message {} but failed with error message {}".format(err_message, err_msg_received)
+#                    self.fail(msg)
+#        return self
+#
+#    def assertSucceeded(self):
+#        """assert on query succeeded"""
+#        if self.query_error is not None:
+#            msg = "expected to succeed but didn't\n{}".format(str(self.query_error))
+#            self.fail(msg)
+#        return self
+#
+#    def assertRowCount(self, rowcount):
+#        if self.rowcount != int(rowcount):
+#            msg = "received {} rows, expected {} rows".format(self.rowcount, rowcount)
+#            self.fail(msg)
+#        return self
+#
+#    def assertResultHashTo(self, hash_value):
+#        raise NotImplementedError()
+#
+#    def assertValue(self, row, col, val):
+#        """assert on a value matched against row, col in the result"""
+#        received = None
+#        row = int(row)
+#        col = int(col)
+#        try:
+#            received = self.data[row][col]
+#        except IndexError:
+#            pass
+#        if type(val) is type(received):
+#            if val != received:
+#                msg = 'expected "{}", received "{}" in row={}, col={}'.format(val, received, row, col)
+#                self.fail(msg, data=self.data)
+#        else:
+#            # handle type mismatch
+#            msg = 'expected type {} and value "{}", received type {} and value "{}" in row={}, col={}'.format(type(val), str(val), type(received), str(received), row, col)
+#            self.fail(msg, data=self.data)
+#        return self
+#
+#    def assertDataResultMatch(self, data=[], index=None):
+#        """Assert on a match of a subset of the result. When index is provided it
+#        starts comparig from that row index onward.
+#        """
+#        def mapfn(next):
+#            if type(next) is list:
+#                return tuple(next)
+#            return next
+#        data = list(map(mapfn, data))
+#        if index is None:
+#            if len(data) > 0:
+#                first = data[0]
+#                for i, v in enumerate(self.data):
+#                    if first == v:
+#                        index = i
+#                        break
+#        if not sequence_match(data, self.data, index):
+#            msg = '{}\nexpected to match query result starting at index={}, but it didn\'t'.format(piped_representation(data), index)
+#            self.fail(msg, data=self.data)
+#        return self
