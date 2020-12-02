@@ -1861,7 +1861,10 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 						for (node *en = ops->h; en; en = en->next)
 							en->data = column(be, (stmt *) en->data);
 
-					InstrPtr q = newStmt(be->mb, sqlRef, "unionfunc");
+					int narg = 3 + list_length(rel->exps);
+					if (ops)
+						narg += list_length(ops);
+					InstrPtr q = newStmtArgs(be->mb, sqlRef, "unionfunc", narg);
 					/* Generate output rowid column and output of function f */
 					for(i=0; m; m = m->next, i++) {
 						sql_exp *e = m->data;
