@@ -5,132 +5,237 @@
 # Assess that it is possible to regrant the revoked privilege.
 ###
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from MonetDBtesting.sqltest import SQLTestCase
 
-def sql_test_client(user, passwd, input):
-    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
-                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
-                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
-        c.communicate()
+with SQLTestCase() as tc:
+    tc.connect(username="monetdb", password="monetdb")
+    tc.execute("""
+        CREATE SCHEMA schemaTest;
 
-sql_test_client('monetdb', 'monetdb', input="""\
-CREATE SCHEMA schemaTest;
+        CREATE USER user_delete with password 'delete' name 'user can only delete' schema schemaTest;
+        CREATE USER user_insert with password 'insert' name 'user can only insert' schema schemaTest;
+        CREATE USER user_update with password 'update' name 'user can only update' schema schemaTest;
+        CREATE USER user_select with password 'select' name 'user can only select' schema schemaTest;
 
-CREATE USER user_delete with password 'delete' name 'user can only delete' schema schemaTest;
-CREATE USER user_insert with password 'insert' name 'user can only insert' schema schemaTest;
-CREATE USER user_update with password 'update' name 'user can only update' schema schemaTest;
-CREATE USER user_select with password 'select' name 'user can only select' schema schemaTest;
+        CREATE table schemaTest.testTable (v1 int, v2 int);
 
-CREATE table schemaTest.testTable (v1 int, v2 int);
+        INSERT into schemaTest.testTable values(1, 1);
+        INSERT into schemaTest.testTable values(2, 2);
+        INSERT into schemaTest.testTable values(3, 3);
 
-INSERT into schemaTest.testTable values(1, 1);
-INSERT into schemaTest.testTable values(2, 2);
-INSERT into schemaTest.testTable values(3, 3);
+        -- Grant rights.
+        GRANT DELETE on table schemaTest.testTable to user_delete;
+        GRANT INSERT on table schemaTest.testTable to user_insert;
+        GRANT UPDATE on table schemaTest.testTable to user_update;
+        GRANT SELECT on table schemaTest.testTable to user_delete;
+        GRANT SELECT on table schemaTest.testTable to user_update;
+        GRANT SELECT on table schemaTest.testTable to user_select;
+    """).assertSucceeded()
 
--- Grant rights.
-GRANT DELETE on table schemaTest.testTable to user_delete;
-GRANT INSERT on table schemaTest.testTable to user_insert;
-GRANT UPDATE on table schemaTest.testTable to user_update;
-GRANT SELECT on table schemaTest.testTable to user_delete;
-GRANT SELECT on table schemaTest.testTable to user_update;
-GRANT SELECT on table schemaTest.testTable to user_select;
 
-""")
+    tc.connect(username="user_delete", password="delete")
+    tc.execute("DELETE FROM testTable where v1 = 2; -- should work").assertSucceeded()
+    tc.execute("""
+         SELECT * FROM testTable; -- not enough privileges
+         UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+         INSERT into testTable values (3, 3); -- not enough privileges
+    """).assertFailed()
 
-sql_test_client('user_delete', 'delete', input="""\
-DELETE FROM testTable where v1 = 2; -- should work
+    tc.connect(username="user_update", password="update")
+    tc.execute("UPDATE testTable set v1 = 2 where v2 = 7;").assertSucceeded()
+    tc.execute("""
+        SELECT * FROM testTable; -- not enough privileges
+        INSERT into testTable values (3, 3); -- not enough privileges
+        DELETE FROM testTable where v1 = 2; -- not enough privileges
+     """).assertFailed()
 
--- Check all the other privileges (they should fail).
-SELECT * FROM testTable; -- not enough privileges
-UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
-INSERT into testTable values (3, 3); -- not enough privileges
-""")
+    tc.connect(username="user_insert", password="insert")
+    tc.execute("INSERT into testTable values (3, 3);").assertSucceeded()
+    tc.execute("""
+        SELECT * FROM testTable; -- not enough privileges
+        UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+        DELETE FROM testTable where v1 = 2; -- not enough privileges
+     """).assertFailed()
 
-sql_test_client('user_update', 'update', input="""\
--- Check insert.
-UPDATE testTable set v1 = 2 where v2 = 7;
+    tc.connect(username="user_select", password="select")
+    tc.execute("SELECT * FROM testTable;").assertSucceeded()
+    tc.execute("""
+        SELECT * FROM testTable; -- not enough privileges
+        UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+        DELETE FROM testTable where v1 = 2; -- not enough privileges
+     """).assertFailed()
 
--- Check all the other privileges (they should fail).
-SELECT * FROM testTable; -- not enough privileges
-INSERT into testTable values (3, 3); -- not enough privileges
-DELETE FROM testTable where v1 = 2; -- not enough privileges
-""")
+    tc.connect(username="monetdb", password="monetdb")
+    tc.execute("""
+        SELECT * FROM schemaTest.testTable;
+        REVOKE DELETE on schemaTest.testTable from user_delete;
+        REVOKE INSERT on schemaTest.testTable from user_insert;
+        REVOKE UPDATE on schemaTest.testTable from user_update;
+        REVOKE SELECT on schemaTest.testTable from user_select;
+    """).assertSucceeded()
 
-sql_test_client('user_insert', 'insert', input="""\
--- Check insert.
-INSERT into testTable values (3, 3);
 
--- Check all the other privileges (they should fail).
-SELECT * FROM testTable; -- not enough privileges
-UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
-DELETE FROM testTable where v1 = 2; -- not enough privileges
-""")
+    tc.connect(username='user_delete', password='delete')
+    tc.execute("DELETE from testTable where v2 = 666; -- not enough privileges").assertFailed()
 
-sql_test_client('user_select', 'select', input="""\
--- Check insert.
-SELECT * FROM testTable;
+    tc.connect(username='user_insert', password='insert')
+    tc.execute("INSERT into testTable values (666, 666); -- not enough privileges").assertFailed()
 
--- Check all the other privileges (they should fail).
-INSERT into testTable values (3, 3); -- not enough privileges
-UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
-DELETE FROM testTable where v1 = 2; -- not enough privileges
-""")
+    tc.connect(username='user_update', password='update')
+    tc.execute("UPDATE testTable set v1 = 666 where v2 = 666; -- not enough privileges").assertFailed()
 
-sql_test_client('monetdb', 'monetdb', input="""\
-SELECT * FROM schemaTest.testTable;
+    tc.connect(username='monetdb', password='monetdb')
+    tc.execute("SELECT * from schemaTest.testTable;").assertSucceeded()
 
-REVOKE DELETE on schemaTest.testTable from user_delete;
-REVOKE INSERT on schemaTest.testTable from user_insert;
-REVOKE UPDATE on schemaTest.testTable from user_update;
-REVOKE SELECT on schemaTest.testTable from user_select;
-""")
+    tc.connect(username='monetdb', password='monetdb')
+    tc.execute("""
+         SELECT * from schemaTest.testTable;
 
-# Next four transitions should not be allowed.
-sql_test_client('user_delete', 'delete', input="""\
-DELETE from testTable where v2 = 666; -- not enough privileges
-""")
+         -- Grant delete rights.
+         GRANT DELETE on table schemaTest.testTable to user_delete;
+         GRANT INSERT on table schemaTest.testTable to user_insert;
+         GRANT UPDATE on table schemaTest.testTable to user_update;
+         GRANT SELECT on table schemaTest.testTable to user_select;
+    """).assertSucceeded()
 
-sql_test_client('user_insert', 'insert', input="""\
-INSERT into testTable values (666, 666); -- not enough privileges
-""")
+    tc.connect(username='user_delete', password='delete')
+    tc.execute("DELETE from testTable where v1 = 42; -- privilege granted").assertSucceeded()
 
-sql_test_client('user_update', 'update', input="""\
-UPDATE testTable set v1 = 666 where v2 = 666; -- not enough privileges
-""")
+    tc.connect(username='user_insert', password='insert')
+    tc.execute("INSERT into testTable values (42, 42); -- privilege granted").assertSucceeded()
 
-sql_test_client('user_select', 'select', input="""\
-SELECT * FROM testTable where v1 = 666; -- not enough privileges
-""")
-#
+    tc.connect(username='user_update', password='update')
+    tc.execute("UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted").assertSucceeded()
 
-# Regrant the revoked permissions to the users.
-sql_test_client('monetdb', 'monetdb', input="""\
-SELECT * from schemaTest.testTable;
+    tc.connect(username='user_select', password='select')
+    tc.execute("SELECT * FROM testTable where v1 = 42; -- privilege granted").assertSucceeded()
 
--- Grant delete rights.
-GRANT DELETE on table schemaTest.testTable to user_delete;
-GRANT INSERT on table schemaTest.testTable to user_insert;
-GRANT UPDATE on table schemaTest.testTable to user_update;
-GRANT SELECT on table schemaTest.testTable to user_select;
-""")
+    # import os, sys
+    # try:
+    #     from MonetDBtesting import process
+    # except ImportError:
+    #     import process
 
-# Next four transitions should be allowed.
-sql_test_client('user_delete', 'delete', input="""\
-DELETE from testTable where v1 = 42; -- privilege granted
-""")
+    # def sql_test_client(user, passwd, input):
+    #     with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+    #                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+    #                         input=input, port=int(os.getenv("MAPIPORT"))) as c:
+    #         c.communicate()
 
-sql_test_client('user_insert', 'insert', input="""\
-INSERT into testTable values (42, 42); -- privilege granted
-""")
+    # sql_test_client('monetdb', 'monetdb', input="""\
+    # CREATE SCHEMA schemaTest;
 
-sql_test_client('user_update', 'update', input="""\
-UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted
-""")
+    # CREATE USER user_delete with password 'delete' name 'user can only delete' schema schemaTest;
+# CREATE USER user_insert with password 'insert' name 'user can only insert' schema schemaTest;
+# CREATE USER user_update with password 'update' name 'user can only update' schema schemaTest;
+# CREATE USER user_select with password 'select' name 'user can only select' schema schemaTest;
 
-sql_test_client('user_select', 'select', input="""\
-SELECT * FROM testTable where v1 = 42; -- privilege granted
-""")
+# CREATE table schemaTest.testTable (v1 int, v2 int);
+
+# INSERT into schemaTest.testTable values(1, 1);
+# INSERT into schemaTest.testTable values(2, 2);
+# INSERT into schemaTest.testTable values(3, 3);
+
+# -- Grant rights.
+# GRANT DELETE on table schemaTest.testTable to user_delete;
+# GRANT INSERT on table schemaTest.testTable to user_insert;
+# GRANT UPDATE on table schemaTest.testTable to user_update;
+# GRANT SELECT on table schemaTest.testTable to user_delete;
+# GRANT SELECT on table schemaTest.testTable to user_update;
+# GRANT SELECT on table schemaTest.testTable to user_select;
+
+# """)
+
+# sql_test_client('user_delete', 'delete', input="""\
+# DELETE FROM testTable where v1 = 2; -- should work
+
+# -- Check all the other privileges (they should fail).
+# SELECT * FROM testTable; -- not enough privileges
+# UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+# INSERT into testTable values (3, 3); -- not enough privileges
+# """)
+
+# sql_test_client('user_update', 'update', input="""\
+# -- Check insert.
+# UPDATE testTable set v1 = 2 where v2 = 7;
+
+# -- Check all the other privileges (they should fail).
+# SELECT * FROM testTable; -- not enough privileges
+# INSERT into testTable values (3, 3); -- not enough privileges
+# DELETE FROM testTable where v1 = 2; -- not enough privileges
+# """)
+
+# sql_test_client('user_insert', 'insert', input="""\
+# -- Check insert.
+# INSERT into testTable values (3, 3);
+
+# -- Check all the other privileges (they should fail).
+# SELECT * FROM testTable; -- not enough privileges
+# UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+# DELETE FROM testTable where v1 = 2; -- not enough privileges
+# """)
+
+# sql_test_client('user_select', 'select', input="""\
+# -- Check insert.
+# SELECT * FROM testTable;
+
+# -- Check all the other privileges (they should fail).
+# INSERT into testTable values (3, 3); -- not enough privileges
+# UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges
+# DELETE FROM testTable where v1 = 2; -- not enough privileges
+# """)
+
+# sql_test_client('monetdb', 'monetdb', input="""\
+# SELECT * FROM schemaTest.testTable;
+
+# REVOKE DELETE on schemaTest.testTable from user_delete;
+# REVOKE INSERT on schemaTest.testTable from user_insert;
+# REVOKE UPDATE on schemaTest.testTable from user_update;
+# REVOKE SELECT on schemaTest.testTable from user_select;
+# """)
+
+# # Next four transitions should not be allowed.
+# sql_test_client('user_delete', 'delete', input="""\
+# DELETE from testTable where v2 = 666; -- not enough privileges
+# """)
+
+# sql_test_client('user_insert', 'insert', input="""\
+# INSERT into testTable values (666, 666); -- not enough privileges
+# """)
+
+# sql_test_client('user_update', 'update', input="""\
+# UPDATE testTable set v1 = 666 where v2 = 666; -- not enough privileges
+# """)
+
+# sql_test_client('user_select', 'select', input="""\
+# SELECT * FROM testTable where v1 = 666; -- not enough privileges
+# """)
+# #
+
+# # Regrant the revoked permissions to the users.
+# sql_test_client('monetdb', 'monetdb', input="""\
+# SELECT * from schemaTest.testTable;
+
+# -- Grant delete rights.
+# GRANT DELETE on table schemaTest.testTable to user_delete;
+# GRANT INSERT on table schemaTest.testTable to user_insert;
+# GRANT UPDATE on table schemaTest.testTable to user_update;
+# GRANT SELECT on table schemaTest.testTable to user_select;
+# """)
+
+# # Next four transitions should be allowed.
+# sql_test_client('user_delete', 'delete', input="""\
+# DELETE from testTable where v1 = 42; -- privilege granted
+# """)
+
+# sql_test_client('user_insert', 'insert', input="""\
+# INSERT into testTable values (42, 42); -- privilege granted
+# """)
+
+# sql_test_client('user_update', 'update', input="""\
+# UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted
+# """)
+
+# sql_test_client('user_select', 'select', input="""\
+# SELECT * FROM testTable where v1 = 42; -- privilege granted
+# """)
