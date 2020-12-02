@@ -126,7 +126,7 @@ BEGIN
 				THEN 'ON ' || (SELECT DQ(c.name) FROM sys.columns c WHERE c.id = tp.column_id)
 				ELSE 'USING ' || SQ(tp.expression) --generic expression
 			END
-	FROM sys._tables t, sys.table_partitions tp
+	FROM sys.table_partitions tp
 	WHERE tp.table_id = tid;
 END;
 
