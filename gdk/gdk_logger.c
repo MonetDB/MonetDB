@@ -3101,7 +3101,7 @@ bm_commit(logger *lg, lng save_id)
 	gdk_return res;
 	const log_bid *bids;
 	const lng *lids;
-	int leftover = 0;
+	BUN leftover = 0;
 
 	if (n == NULL)
 		return GDK_FAIL;
@@ -3115,7 +3115,7 @@ bm_commit(logger *lg, lng save_id)
 		BAT *lb = BATdescriptor(bid);
 		str name = BBPname(bid);
 
-		if (lid > save_id) { 
+		if (lid > save_id) {
 			leftover++;
 			continue;
 		}
@@ -3158,7 +3158,7 @@ bm_commit(logger *lg, lng save_id)
 			lng lid = lids[p];
 
 			if (lid < save_id && (
-				BUNappend(nfreed, bids+p, false) != GDK_SUCCEED || 
+				BUNappend(nfreed, bids+p, false) != GDK_SUCCEED ||
 				BUNappend(nfreed_lid, &lid, false) != GDK_SUCCEED)) {
 				logbat_destroy(n);
 				logbat_destroy(nfreed);
@@ -3259,7 +3259,7 @@ logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	    BUNappend(lg->catalog_tpe, &tpe, false) != GDK_SUCCEED ||
 	    BUNappend(lg->catalog_oid, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	
+
 	BBPretain(bid);
 	return GDK_SUCCEED;
 }
