@@ -5205,39 +5205,15 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 				if (!rname)
 					rname = ATOMnilptr(TYPE_str);
 
-				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(digits, &t->digits, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(scale, &t->scale, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(schema, rschema, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(table, rname, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(column, name, false) != GDK_SUCCEED) {
+				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED ||
+					BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED ||
+					BUNappend(digits, &t->digits, false) != GDK_SUCCEED ||
+					BUNappend(scale, &t->scale, false) != GDK_SUCCEED ||
+					BUNappend(isinout, &inout, false) != GDK_SUCCEED ||
+					BUNappend(number, &arg_number, false) != GDK_SUCCEED ||
+					BUNappend(schema, rschema, false) != GDK_SUCCEED ||
+					BUNappend(table, rname, false) != GDK_SUCCEED ||
+					BUNappend(column, name, false) != GDK_SUCCEED) {
 					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
@@ -5250,39 +5226,15 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 				sql_arg *a = n->data;
 				sql_subtype *t = &a->type;
 
-				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(digits, &(t->digits), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(scale, &(t->scale), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(schema, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(table, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(column, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED ||
+					BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED ||
+					BUNappend(digits, &(t->digits), false) != GDK_SUCCEED ||
+					BUNappend(scale, &(t->scale), false) != GDK_SUCCEED ||
+					BUNappend(isinout, &inout, false) != GDK_SUCCEED ||
+					BUNappend(number, &arg_number, false) != GDK_SUCCEED ||
+					BUNappend(schema, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED ||
+					BUNappend(table, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED ||
+					BUNappend(column, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
 					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
@@ -5328,7 +5280,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
-	npci = newStmt(mb, mod, fcn);
+	npci = newStmtArgs(mb, mod, fcn, pci->argc);
 
 	for (int i = 1; i < pci->retc; i++) {
 		int type = getArgType(mb, pci, i);
