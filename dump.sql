@@ -65,7 +65,7 @@ CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEG
 		END;
 END;
 
-CREATE FUNCTION dump_contraint_type_name(id INT) RETURNS STRING BEGIN
+CREATE FUNCTION dump_CONSTRAINT_type_name(id INT) RETURNS STRING BEGIN
 	RETURN
 		CASE
 		WHEN id = 0 THEN 'PRIMARY KEY'
@@ -75,7 +75,7 @@ END;
 
 CREATE FUNCTION describe_constraints() RETURNS TABLE("table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
 	RETURN
-		SELECT t.name, kc.nr, kc.name, k.name, dump_contraint_type_name(k.type)
+		SELECT t.name, kc.nr, kc.name, k.name, dump_CONSTRAINT_type_name(k.type)
 		FROM sys._tables t, sys.objects kc, sys.keys k
 		WHERE kc.id = k.id
 			AND k.table_id = t.id
@@ -88,7 +88,7 @@ CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
 	RETURN
 		SELECT 
 			'ALTER TABLE ' || DQ("table") ||
-			' ADD CONTRAINT ' || DQ(con) || ' '||
+			' ADD CONSTRAINT ' || DQ(con) || ' '||
 			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
 		FROM describe_constraints() GROUP BY "table", con, type;
 END;
@@ -115,7 +115,7 @@ END;
 CREATE FUNCTION dump_merge_table_partition_expressions(tid INT) RETURNS STRING
 BEGIN
 	RETURN SELECT
-			'PARTITION BY ' ||
+			' PARTITION BY ' ||
 			CASE
 				WHEN bit_and(tp.type, 2) = 2
 				THEN 'VALUES '
@@ -123,8 +123,8 @@ BEGIN
 			END ||
 			CASE
 				WHEN bit_and(tp.type, 4) = 4 --column expression
-				THEN 'ON ' || (SELECT DQ(c.name) FROM sys.columns c WHERE c.id = tp.column_id)
-				ELSE 'USING ' || SQ(tp.expression) --generic expression
+				THEN 'ON ' || '(' || (SELECT DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
+				ELSE 'USING ' || '(' || tp.expression || ')' --generic expression
 			END
 	FROM sys.table_partitions tp
 	WHERE tp.table_id = tid;
@@ -193,23 +193,18 @@ BEGIN
 		WHERE sch.id = seq.schema_id;
 
 	INSERT INTO dump_statements(s) --dump_create_tables
-		SELECT CASE
-			WHEN t.type = 5 THEN
-				'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || dump_remote_table_expressions(s.name, t.name) || ';'
-			ELSE
-				'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || ';'
+		SELECT 
+			'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || 
+			CASE
+				WHEN ts.table_type_name = 'REMOTE TABLE' THEN
+					dump_remote_table_expressions(s.name, t.name) || ';'
+				WHEN ts.table_type_name = 'MERGE TABLE' THEN
+					dump_merge_table_partition_expressions(t.id) || ';'
+				ELSE
+					';'
 			END
 		FROM sys.schemas s, table_types ts, sys._tables t
-		WHERE t.type IN (0, 5, 6)
-			AND t.system = FALSE
-			AND s.id = t.schema_id
-			AND ts.table_type_id = t.type
-			AND s.name <> 'tmp';
-
-	INSERT INTO dump_statements(s) --dump_create_merge_tables
-		SELECT 'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || dump_merge_table_partition_expressions(t.id) || ';'
-		FROM sys.schemas s, table_types ts, sys._tables t
-		WHERE t.type = 3
+		WHERE ts.table_type_name IN ('TABLE', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
 			AND t.system = FALSE
 			AND s.id = t.schema_id
 			AND ts.table_type_id = t.type
