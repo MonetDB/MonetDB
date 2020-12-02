@@ -338,8 +338,10 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		BBPunfix(b1->batCacheid);
 	if (b2)
 		BBPunfix(b2->batCacheid);
+/* cannot happen
 	if (s1)
 		BBPunfix(s1->batCacheid);
+*/
 	if (s2)
 		BBPunfix(s2->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
