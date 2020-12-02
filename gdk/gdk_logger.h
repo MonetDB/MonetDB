@@ -40,8 +40,7 @@ typedef int log_bid;
 
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
-gdk_export gdk_return logger_exit(logger *lg);
-gdk_export gdk_return logger_restart(logger *lg);
+gdk_export gdk_return logger_flush(logger *lg, lng save_id);
 gdk_export gdk_return logger_cleanup(logger *lg);
 gdk_export void logger_with_ids(logger *lg);
 gdk_export lng logger_changes(logger *lg);
@@ -54,9 +53,10 @@ gdk_export gdk_return log_bat_persists(logger *lg, BAT *b, const char *n, char t
 gdk_export gdk_return log_bat_transient(logger *lg, const char *n, char tpe, oid id);
 gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, const char *n, char tpe, oid id);
 
-gdk_export gdk_return log_tstart(logger *lg);	/* TODO return transaction id */
+gdk_export gdk_return log_tstart(logger *lg);
 gdk_export gdk_return log_tend(logger *lg);
 gdk_export gdk_return log_abort(logger *lg);
+gdk_export lng log_save_id(logger *lg);	/* return the current transaction id */
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
 

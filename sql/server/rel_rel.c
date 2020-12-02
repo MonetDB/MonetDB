@@ -2355,8 +2355,6 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	return (v.changes==0);
 }
 
-
-
 static sql_exp *
 _exp_freevar_offset(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
