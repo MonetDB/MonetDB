@@ -844,6 +844,7 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	*t = p->mtid = ++MT_thread_id;
 	ret = pthread_create(&p->tid, &attr, thread_starter, p);
 	if (ret != 0) {
+		pthread_mutex_unlock(&posthread_lock);
 		GDKsyserr(ret, "Cannot start thread");
 		free(p);
 		ret = -1;
@@ -851,8 +852,8 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		/* must not fail after this: the thread has been started */
 		p->next = posthreads;
 		posthreads = p;
+		pthread_mutex_unlock(&posthread_lock);
 	}
-	pthread_mutex_unlock(&posthread_lock);
 	(void) pthread_attr_destroy(&attr); /* not interested in errors */
 #ifdef HAVE_PTHREAD_SIGMASK
 	MT_thread_sigmask(&orig_mask, NULL);

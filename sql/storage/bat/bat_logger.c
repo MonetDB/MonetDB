@@ -1247,10 +1247,14 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		size_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
 		ssize_t bytes_read = mnstr_read(s, buf, 1, chunk);
 		if (bytes_read < 0) {
-			GDKerror("Reading bytes of component %s failed: %s", path, mnstr_error(s));
+			char *err = mnstr_error(s);
+			GDKerror("Reading bytes of component %s failed: %s", path, err);
+			free(err);
 			goto end;
 		} else if (bytes_read < (ssize_t) chunk) {
-			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, mnstr_error(s));
+			char *err = mnstr_error(s);
+			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, err);
+			free(err);
 			goto end;
 		}
 
@@ -1425,7 +1429,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Invalid first line of %s", bbpdir);
 		goto end;
 	}
-	if (gdk_version != 061042U) {
+	if (gdk_version != 061043U) {
 		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
 		// into account.
@@ -1459,8 +1463,8 @@ snapshot_bats(stream *plan, const char *db_dir)
 				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
 
 				// Taken from the sscanf in heapinit() in gdk_bbp.c.
-				// 12 fields, we need field 10 (free)
-				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
+				// 14 fields, we need field 10 (free)
+				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s %*s %*s"
 
 				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
 				// 3 fields, we need field 1 (free).
