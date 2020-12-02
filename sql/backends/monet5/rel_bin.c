@@ -3572,11 +3572,11 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 static stmt *
 sql_parse(backend *be, const char *query, char mode)
 {
-	sql_rel *r = rel_parse(be->mvc, be->mvc->session->schema, (char*)query, mode);
+	sql_rel *rel = rel_parse(be->mvc, be->mvc->session->schema, (char*)query, mode);
 	stmt *sq = NULL;
 
-	if (r && (r = rel_unnest(be->mvc ,r)) != NULL && (r = rel_optimizer(be->mvc , r, 1)) != NULL)
-		sq = rel_bin(be, r);
+	if ((rel = sql_processrelation(be->mvc, rel, 1, 1)))
+		sq = rel_bin(be, rel);
 	return sq;
 }
 

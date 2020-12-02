@@ -291,7 +291,7 @@ extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
 extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
 
-extern sql_rel *sql_processrelation(mvc *m, sql_rel* rel, int value_based_opt);
+extern sql_rel *sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt, int storage_based_opt);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
