@@ -46,6 +46,8 @@ stdout of test 'test_privs2_p1` in directory 'sql/test/Users` itself:
 [ "test1",	1	]
 [ "test2",	2	]
 [ "test3",	3	]
+#update version set i = 2 where i = 10;
+[ 0	]
 #SELECT updateversion('test1', 4);
 % .%2 # table_name
 % %2 # name
@@ -60,6 +62,8 @@ stdout of test 'test_privs2_p1` in directory 'sql/test/Users` itself:
 [ "test1",	4	]
 [ "test2",	2	]
 [ "test3",	3	]
+#delete from version where i = 100;
+[ 0	]
 #SELECT deleteversion(4);
 % .%2 # table_name
 % %2 # name
@@ -74,6 +78,19 @@ stdout of test 'test_privs2_p1` in directory 'sql/test/Users` itself:
 [ "test1",	4	]
 [ "test2",	2	]
 [ "test3",	3	]
+#truncate version;
+[ 3	]
+#SELECT truncateversion();
+% .%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 1	]
+#SELECT * FROM version;
+% my_schema.version,	my_schema.version # table_name
+% name,	i # name
+% varchar,	int # type
+% 0,	1 # length
 
 # 15:54:46 >  
 # 15:54:46 >  "Done."
