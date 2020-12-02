@@ -62,16 +62,28 @@ begin
 
 end;
  
+create function truncateversion() returns int
+begin
+
+  truncate version;
+
+  return 1;
+
+end;
+
 -- grant right to my_user not to my_user2
 GRANT SELECT on table version to my_user;
 GRANT INSERT on table version to my_user;
 GRANT UPDATE on table version to my_user;
 GRANT DELETE on table version to my_user;
+GRANT TRUNCATE on table version to my_user;
 
 GRANT EXECUTE on function insertversion to my_user;
 GRANT EXECUTE on function updateversion to my_user;
 GRANT EXECUTE on function deleteversion to my_user;
+GRANT EXECUTE on function truncateversion to my_user;
 
 GRANT EXECUTE on function insertversion to my_user2;
 GRANT EXECUTE on function updateversion to my_user2;
 GRANT EXECUTE on function deleteversion to my_user2;
+GRANT EXECUTE on function truncateversion to my_user2;
