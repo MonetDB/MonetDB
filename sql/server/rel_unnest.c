@@ -2987,25 +2987,25 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			sql_rel *lsq = NULL, *rsq = NULL, *usq = NULL;
 
 			if (exp_has_rel(then_exp)) {
-				exp_set_freevar(v->sql, then_exp, lsq);
 				lsq = exp_rel_get_rel(v->sql->sa, then_exp);
 				then_exp = exp_rel_update_exp(v->sql, then_exp);
 				if (is_single(lsq))
 					single = true;
 				reset_single(lsq);
 			}
+			exp_set_freevar(v->sql, then_exp, lsq);
 			lsq = rel_project(v->sql->sa, lsq, append(sa_list(v->sql->sa), then_exp));
 			exp_set_freevar(v->sql, cond, lsq);
 			set_processed(lsq);
 			lsq = rel_select(v->sql->sa, lsq, cond);
 			if (exp_has_rel(else_exp)) {
-				exp_set_freevar(v->sql, else_exp, rsq);
 				rsq = exp_rel_get_rel(v->sql->sa, else_exp);
 				else_exp = exp_rel_update_exp(v->sql, else_exp);
 				if (is_single(rsq))
 					single = true;
 				reset_single(rsq);
 			}
+			exp_set_freevar(v->sql, else_exp, rsq);
 			rsq = rel_project(v->sql->sa, rsq, append(sa_list(v->sql->sa), else_exp));
 			cond = exp_copy(v->sql, cond);
 			exp_set_freevar(v->sql, cond, rsq);
