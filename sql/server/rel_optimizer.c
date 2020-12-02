@@ -6357,7 +6357,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			   Check if they can be pushed up, ie are they not
 			   changing or introducing any columns used
 			   by the upper operator. */
- 
+
 			exps = new_exp_list(v->sql->sa);
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -9478,8 +9478,8 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 static sql_rel *
 optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt, bool storage_based_opt)
 {
-	visitor v = { .sql = sql, .value_based_opt = value_based_opt, storage_based_opt = storage_based_opt },
-			ev = { .sql = sql, .value_based_opt = value_based_opt, storage_based_opt = storage_based_opt };
+	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt },
+			ev = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
