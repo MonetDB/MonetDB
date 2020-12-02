@@ -45,6 +45,7 @@ struct logger {
 				   These snapshot bats should be freed
 				   directly (on transaction
 				   commit). */
+	BAT *freed_lid; 	/* lid when bat got deleted from catalog table */
 	void *buf;
 	size_t bufsize;
 };
