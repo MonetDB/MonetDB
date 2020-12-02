@@ -8949,8 +8949,8 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						int skip = 0;
 						list *exps = NULL;
 
-						/* do not include empty partitions. Don't skip when storage_based_opt is not applicable */
-						if (v->storage_based_opt && pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(v->sql->session->tr, pt->columns.set->h->data, 1))
+						/* Do not include empty partitions */
+						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(v->sql->session->tr, pt->columns.set->h->data, 1))
 							continue;
 
 						prel = rel_rename_part(v->sql, prel, tname, t);
@@ -9537,8 +9537,8 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 static sql_rel *
 optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt, bool storage_based_opt)
 {
-	visitor v = { .sql = sql, .value_based_opt = value_based_opt, storage_based_opt = storage_based_opt },
-			ev = { .sql = sql, .value_based_opt = value_based_opt, storage_based_opt = storage_based_opt };
+	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt },
+			ev = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
