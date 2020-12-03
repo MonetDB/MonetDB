@@ -1376,6 +1376,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		ss->owner = sql->user_id;
 
 		sql->session->schema = ss;
+		sql->storage_opt_allowed = false;
 		while (n) {
 			sql_rel *res = rel_semantic(query, n->data.sym);
 			if (!res) {
