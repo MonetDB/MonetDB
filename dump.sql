@@ -93,7 +93,43 @@ CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
 		FROM describe_constraints() GROUP BY "table", con, type;
 END;
 
---TODO expand dump_column_definition functionality
+CREATE FUNCTION describe_indices() RETURNS TABLE (i STRING, o INT, s STRING, t STRING, c STRING, it STRING) BEGIN
+RETURN
+	WITH it (id, idx) AS (VALUES (0, 'INDEX'), (4, 'IMPRINTS INDEX'), (5, 'ORDERED INDEX')) --UNIQUE INDEX wraps to INDEX.
+	SELECT
+		i.name,
+		kc.nr, --TODO: Does this determine the concatenation order?
+		s.name,
+		t.name,
+		c.name,
+		it.idx
+	FROM
+		sys.idxs AS i LEFT JOIN sys.keys AS k ON i.name = k.name,
+		sys.objects AS kc,
+		sys._columns AS c,
+		sys.schemas s,
+		sys._tables AS t,
+		it
+	WHERE
+		i.table_id = t.id
+		AND i.id = kc.id
+		AND kc.name = c.name
+		AND t.id = c.table_id
+		AND t.schema_id = s.id
+		AND k.type IS NULL
+		AND i.type = it.id
+	ORDER BY i.name, kc.nr;
+END;
+
+CREATE FUNCTION dump_indices() RETURNS TABLE(stm STRING) BEGIN
+	RETURN
+		SELECT
+			'CREATE ' || it || ' ' ||
+			DQ(i) || ' ON ' || DQ(s) || '.' || DQ(t) ||
+			'(' || GROUP_CONCAT(c) || ');'
+		FROM describe_indices() GROUP BY i, it, s, t;
+END;
+
 CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
 	RETURN
 		SELECT 
@@ -212,12 +248,28 @@ BEGIN
 
 	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
 
-	--TODO MERGE TABLE
-	--TODO COMMENTS ON TABLE
+	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
+
+	INSERT INTO dump_statements(s) --dump_create_comments_on_schemas
+        SELECT comment_on('INDEX', DQ(i.name), rem.remark)
+        FROM sys.idxs i JOIN sys.comments rem ON i.id = rem.id;
+
+	INSERT INTO dump_statements(s) --dump_create_comments_on_schemas
+        SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
+		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
+
+	--TODO FOREIGN KEYs
+	--TODO PARTITION TABLES
+	--TODO details on SEQUENCES
 	--TODO functions
-	--TODO CREATE INDEX + COMMENT
+	--TODO Triggers
 	--TODO VIEW
+	--TODO COMMENTS ON TABLE
+	--TODO TABLE level grants
+	--TODO COLUMN level grants
 	--TODO User Defined Types?
+	--TODO STREAM TABLE?
+	--TODO Triggers
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
 
