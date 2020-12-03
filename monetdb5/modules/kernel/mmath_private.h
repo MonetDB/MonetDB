@@ -6,6 +6,16 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
  */
 
+#include "gdk.h"
+#include "xoshiro256starstar.h"
+
+/* global pseudo random generator state */
+extern random_state_engine mmath_rse
+__attribute__((__visibility__("hidden")));
+/* serialize access to state */
+extern MT_Lock mmath_rse_lock
+__attribute__((__visibility__("hidden")));
+
 /* return the logarigthm of the first argument with the second
  * argument as base */
 extern double logbs(double, double);

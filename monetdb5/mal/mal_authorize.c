@@ -23,6 +23,8 @@
 #include "mal_exception.h"
 #include "mal_private.h"
 #include "mcrypt.h"
+#include "msabaoth.h"
+
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -60,6 +62,7 @@ static BAT *rt_hashedpwd = NULL;
 static BAT *rt_deleted = NULL;
 /* yep, the vault key is just stored in memory */
 static str vaultKey = NULL;
+static str master_password = NULL;
 
 void AUTHreset(void)
 {
@@ -402,6 +405,14 @@ AUTHinitTables(const char *passwd) {
 		/* normally, we'd commit here, but it's done already in AUTHaddUser */
 	}
 
+	if (!GDKinmemory(0)) {
+		free(master_password);
+		master_password = NULL;
+		msg = msab_pickSecret(&master_password);
+		if (msg != NULL)
+			return msg;
+	}
+
 	return(MAL_SUCCEED);
 }
 
@@ -469,7 +480,6 @@ AUTHcheckCredentials(
 	/* special case: users whose name starts with '.' can authenticate using
 	 * the temporary master password.
 	 */
-	const char *master_password = GDKgetenv("master_password");
 	if (username[0] == '.' && master_password != NULL && master_password[0] != '\0') {
 		// first encrypt the master password as if we've just found it
 		// in the password store
@@ -1056,7 +1066,7 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 {
 	char *pwhash = NULL;
 	bool free_pw = false;
-	str tmp, output = MAL_SUCCEED;
+	str output = MAL_SUCCEED;
 	BUN p;
 	str msg = MAL_SUCCEED;
 
@@ -1141,14 +1151,14 @@ AUTHaddRemoteTableCredentials(const char *local_table, const char *local_user, c
 	msg = AUTHverifyPassword(pwhash);
 	if( msg != MAL_SUCCEED){
 		free(pwhash);
-		rethrow("addRemoteTableCredentials", tmp, msg);
+		return msg;
 	}
 
 	str cypher;
 	msg = AUTHcypherValue(&cypher, pwhash);
 	if( msg != MAL_SUCCEED){
 		free(pwhash);
-		rethrow("addRemoteTableCredentials", tmp, msg);
+		return msg;
 	}
 
 	/* Add entry */

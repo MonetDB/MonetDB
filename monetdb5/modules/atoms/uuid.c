@@ -189,22 +189,9 @@ UUIDcompare(const void *L, const void *R)
 #endif
 }
 
-static str
-#ifdef HAVE_HGE
-UUIDgenerateUuid(uuid *retval)
-#else
-UUIDgenerateUuid(uuid **retval)
-#endif
+static inline void
+UUIDgenerateUuid_internal(uuid *u)
 {
-	uuid *u;
-
-#ifdef HAVE_HGE
-	u = retval;
-#else
-	if (*retval == NULL && (*retval = GDKmalloc(UUID_SIZE)) == NULL)
-		throw(MAL, "uuid.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	u = *retval;
-#endif
 #ifdef HAVE_UUID
 	uuid_generate(u->u);
 #else
@@ -226,6 +213,25 @@ UUIDgenerateUuid(uuid **retval)
 	/* make sure this is version 4 (random UUID) */
 	u->u[6] = (u->u[6] & 0x0F) | 0x40;
 #endif
+}
+
+static str
+#ifdef HAVE_HGE
+UUIDgenerateUuid(uuid *retval)
+#else
+UUIDgenerateUuid(uuid **retval)
+#endif
+{
+	uuid *u;
+
+#ifdef HAVE_HGE
+	u = retval;
+#else
+	if (*retval == NULL && (*retval = GDKmalloc(UUID_SIZE)) == NULL)
+		throw(MAL, "uuid.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	u = *retval;
+#endif
+	UUIDgenerateUuid_internal(u);
 	return MAL_SUCCEED;
 }
 
@@ -253,6 +259,41 @@ isaUUID(str s)
 		return bit_nil;
 	else
 		return false;
+}
+
+static str
+UUIDgenerateUuidInt_bulk(bat *ret, const bat *bid)
+{
+	BAT *b = NULL, *bn = NULL;
+	BUN n = 0;
+	str msg = MAL_SUCCEED;
+	uuid *restrict bnt = NULL;
+
+	if ((b = BBPquickdesc(*bid, false)) == NULL)	{
+		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	n = BATcount(b);
+	if ((bn = COLnew(b->hseqbase, TYPE_uuid, n, TRANSIENT)) == NULL) {
+		msg = createException(MAL, "uuid.generateuuidint_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+	bnt = Tloc(bn, 0);
+	for (BUN i = 0 ; i < n ; i++)
+		UUIDgenerateUuid_internal(&(bnt[i]));
+	bn->tnonil = true;
+	bn->tnil = false;
+	BATsetcount(bn, n);
+	bn->tsorted = n <= 1;
+	bn->trevsorted = n <= 1;
+	bn->tkey = n <= 1;
+
+bailout:
+	if (msg && bn)
+		BBPreclaim(bn);
+	else if (bn)
+		BBPkeepref(*ret = bn->batCacheid);
+	return msg;
 }
 
 static str
@@ -405,6 +446,7 @@ mel_func uuid_init_funcs[] = {
  command("uuid", "prelude", UUIDprelude, false, "", args(1,1, arg("",void))),
  command("uuid", "new", UUIDgenerateUuid, true, "Generate a new uuid", args(1,1, arg("",uuid))),
  command("uuid", "new", UUIDgenerateUuidInt, true, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, arg("",uuid),arg("d",int))),
+ command("batuuid", "new", UUIDgenerateUuidInt_bulk, true, "Generate a new uuid (dummy version for side effect free multiplex loop)", args(1,2, batarg("",uuid),batarg("d",int))),
  command("uuid", "uuid", UUIDstr2uuid, false, "Coerce a string to a uuid, validating its format", args(1,2, arg("",uuid),arg("s",str))),
  command("uuid", "str", UUIDuuid2str, false, "Coerce a uuid to its string type", args(1,2, arg("",str),arg("u",uuid))),
  command("uuid", "isaUUID", UUIDisaUUID, false, "Test a string for a UUID format", args(1,2, arg("",bit),arg("u",str))),

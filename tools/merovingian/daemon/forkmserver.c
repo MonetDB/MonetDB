@@ -65,6 +65,7 @@ terminateProcess(char *dbname, pid_t pid, mtype type)
 			dbname,
 			(long long int)pid
 		);
+		msab_freeStatus(&stats);
 		return false;
 	}
 	assert(stats->pid == pid);
@@ -933,11 +934,15 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 		snprintf(profiler_executable, executable_len, "%s%s%s",
 				 tmp_exe, profiler_filename, s + 8);
 		free(tmp_exe);
+#ifndef STATIC_CODE_ANALYSIS
+		/* hide for coverity: time-of-check time-of-use; it's ok to do
+		 * this since if the file were to disappear between this check
+		 * and the use, things won't fall apart */
 		if (stat(profiler_executable, &path_info) == -1) {
 			error = newErr("Cannot find profiler executable");
 			goto cleanup;
 		}
-		/* free(tmp_exe); */
+#endif
 	}
 
 	/* Verify that the requested db is running */

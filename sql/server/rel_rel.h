@@ -127,6 +127,9 @@ typedef struct visitor {
 	int depth;		/* depth of the current relation */
 	sql_rel *parent;
 	mvc *sql;
+	void *data;
+	bte value_based_opt:1, /* during rel optimizer it has to now if value based optimization is possible */
+		storage_based_opt:1;
 } visitor;
 
 typedef sql_exp *(*exp_rewrite_fptr)(visitor *v, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */);
@@ -144,5 +147,7 @@ extern sql_rel *rel_visitor_bottomup(visitor *v, sql_rel *rel, rel_rewrite_fptr 
 
 /* validate that all parts of the expression e can be bound to the relation rel (or are atoms) */
 extern bool rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e);
+
+extern int exp_freevar_offset(mvc *sql, sql_exp *e);
 
 #endif /* _REL_REL_H_ */

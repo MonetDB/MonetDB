@@ -76,7 +76,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 }
 
 static char *
-rel_check_tables(sql_table *nt, sql_table *nnt, const char *errtable)
+rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 {
 	node *n, *m, *nn, *mm;
 
@@ -128,10 +128,8 @@ rel_check_tables(sql_table *nt, sql_table *nnt, const char *errtable)
 			}
 	}
 
-	for (sql_table *up = nt->p ; up ; up = up->p) {
-		if (!strcmp(up->s->base.name, nnt->s->base.name) && !strcmp(up->base.name, nnt->base.name))
-			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table is a parent of the %s", errtable, errtable);
-	}
+	if (nested_mergetable(sql->session->tr, nt/*mergetable*/, nnt->s->base.name, nnt->base.name/*parts*/))
+		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table is a parent of the %s", errtable, errtable);
 	return MAL_SUCCEED;
 }
 
@@ -159,7 +157,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 	if (!update && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	node *n = cs_find_id(&rmt->members, rpt->base.id);
+	node *n = list_find_base_id(rmt->members, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
 	if (isDeclaredTable(rpt))
@@ -172,7 +170,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' is already part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
 	if (!n && update)
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	if ((msg = rel_check_tables(rmt, rpt, errtable)) != MAL_SUCCEED)
+	if ((msg = rel_check_tables(sql, rmt, rpt, errtable)) != MAL_SUCCEED)
 		return msg;
 
 	*mt = rmt;
@@ -215,7 +213,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 									"ALTER TABLE: cannot add range partition into a %s table",
 									(isListPartitionTable(mt))?"list partition":"merge");
 		goto finish;
-	} else if (!update && pt->p) {
+	} else if (!update && isPartition(pt)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
@@ -315,8 +313,6 @@ finish:
 		GDKfree(conflict_err_min);
 	if (conflict_err_max)
 		GDKfree(conflict_err_max);
-	if (msg != MAL_SUCCEED)
-		pt->p = NULL;
 	return msg;
 }
 
@@ -340,7 +336,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 									"ALTER TABLE: cannot add value partition into a %s table",
 									(isRangePartitionTable(mt))?"range partition":"merge");
 		goto finish;
-	} else if (!update && pt->p) {
+	} else if (!update && isPartition(pt)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
@@ -394,8 +390,6 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	}
 
 finish:
-	if (msg != MAL_SUCCEED)
-		pt->p = NULL;
 	return msg;
 }
 
@@ -421,7 +415,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	const char *errtable = TABLE_TYPE_DESCRIPTION(mt->type, mt->properties);
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	if (!(n = cs_find_id(&mt->members, pt->base.id)))
+	if (!(n = list_find_base_id(mt->members, pt->base.id)))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
 	sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
@@ -485,7 +479,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql, r);
 			mvc_create_dependencies(sql, id_l, tri->base.id, TRIGGER_DEPENDENCY);
@@ -818,7 +812,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n;
 			list *id_l = rel_dependencies(sql, r);
@@ -1714,9 +1708,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
 		if (isDeclaredTable(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
-		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
-			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
-		if (t->members.set || t->triggers.set)
+		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL) || !list_empty(t->members) || !list_empty(t->triggers.set))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
 		if (!(s = mvc_bind_schema(sql, nschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", nschema_name);

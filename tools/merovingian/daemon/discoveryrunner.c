@@ -447,7 +447,7 @@ discoveryRunner(void *d)
 			if (!_mero_keep_listening)
 				goto breakout;
 		}
-		if (nread <= 0) {  /* assume only failure is EINTR */
+		if (nread <= 0 || sock < 0) {  /* assume only failure is EINTR */
 			/* nothing interesting has happened */
 			buf[0] = '\0';
 			continue;

@@ -24,31 +24,6 @@
 #include "mal_authorize.h"
 #include "mcrypt.h"
 
-#if 0
-int
-sql_find_auth_schema(mvc *m, str auth)
-{
-	int res = -1;
-	oid rid;
-	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *users = find_sql_table(sys, "db_user_info");
-	sql_column *users_name = find_sql_column(users, "name");
-
-	rid = table_funcs.column_find_row(m->session->tr, users_name, auth, NULL);
-
-	if (!is_oid_nil(rid)) {
-		sql_column *users_schema = find_sql_column(users, "default_schema");
-		int *p = (int *) table_funcs.column_find_value(m->session->tr, users_schema, rid);
-
-		if (p) {
-			res = *p;
-			_DELETE(p);
-		}
-	}
-	return res;
-}
-#endif
-
 static int
 monet5_drop_user(ptr _mvc, str user)
 {
@@ -87,7 +62,6 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 {
 	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
-	bat bid = 0;
 	str ret;
 	sqlid user_id;
 	str pwd;
@@ -96,11 +70,8 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	Client c = MCgetClient(m->clientid);
 
 	if (!enc) {
-		pwd = mcrypt_BackendSum(passwd, strlen(passwd));
-		if (pwd == NULL) {
-			BBPunfix(bid);
+		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd))))
 			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
-		}
 	} else {
 		pwd = passwd;
 	}

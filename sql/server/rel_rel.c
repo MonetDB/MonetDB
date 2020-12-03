@@ -533,7 +533,14 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && m && o ; n = n->next, m = m->next,o = o->next) {
 		sql_exp *e = n->data, *f = m->data, *g = o->data;
 
-		e->card = is_union(rel->op) ? MAX(f->card, g->card) : f->card;
+		if (is_union(rel->op)) { /* propagate set_has_no_nil only if it's applicable to both sides of the union*/
+			if (has_nil(f) || has_nil(g))
+				set_has_nil(e);
+			else
+				set_has_no_nil(e);
+			e->card = MAX(f->card, g->card);
+		} else
+			e->card = f->card;
 	}
 	rel->nrcols = l->nrcols;
 	rel->exps = exps;
@@ -2346,4 +2353,24 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	exp_visitor(&v, rel, e, 0, &_rel_rebind_exp, true, true);
 	/* problems are passed via changes */
 	return (v.changes==0);
+}
+
+static sql_exp *
+_exp_freevar_offset(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void)rel; (void)depth;
+	/* visitor will handle recursion, ie only need to check columns here */
+	int vf = is_freevar(e);
+	if (v->changes < vf)
+		v->changes=vf;
+	return e;
+}
+
+int
+exp_freevar_offset(mvc *sql, sql_exp *e)
+{
+	visitor v = { .sql = sql };
+	exp_visitor(&v, NULL, e, 0, &_exp_freevar_offset, true, true);
+	/* freevar offset is passed via changes */
+	return (v.changes);
 }

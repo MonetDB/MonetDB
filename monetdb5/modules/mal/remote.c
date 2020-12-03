@@ -267,8 +267,10 @@ static str RMTconnectScen(
 	conns = c;
 
 	msg = RMTquery(&hdl, "remote.connect", m, "remote.bintype();");
-	if (msg)
+	if (msg) {
+		MT_lock_unset(&mal_remoteLock);
 		return msg;
+	}
 	if (hdl != NULL && mapi_fetch_row(hdl)) {
 		char *val = mapi_fetch_field(hdl, 0);
 		c->type = (unsigned char)atoi(val);
@@ -1218,6 +1220,8 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 	msg = chkProgram(cntxt->usermodule, prg->def);
 	if ( msg != MAL_SUCCEED || prg->def->errors) {
 		MT_lock_unset(&c->lock);
+		if (msg)
+			return msg;
 		throw(MAL, "remote.register",
 				"function '%s.%s' contains syntax or type errors",
 				mod, *fcn_id);

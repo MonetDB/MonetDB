@@ -207,6 +207,8 @@ int cmd_read(char *argv[])
 
 	copy_stream_to_file(s, out, bufsize);
 	close_stream(s);
+	if (out != stdout)
+		fclose(out);
 
 	return 0;
 }
@@ -317,6 +319,9 @@ int cmd_write(char *argv[])
 
 	copy_file_to_stream(in, s, bufsize, do_flush, flush_level);
 	close_stream(s);
+
+	if (in != stdin)
+		fclose(in);
 
 	return 0;
 }
@@ -557,13 +562,13 @@ int cmd_bstream(char *argv[])
 			fclose(f);
 			mnstr_flush(bs, MNSTR_FLUSH_DATA);
 		}
-		mnstr_destroy(bs);
-		if (additional) {
-			mnstr_printf(s, "%s", additional);
-		}
-		mnstr_close(s);
 	}
 
+	mnstr_destroy(bs);
+	if (additional) {
+		mnstr_printf(s, "%s", additional);
+	}
+	mnstr_close(s);
 
 	return 0;
 }

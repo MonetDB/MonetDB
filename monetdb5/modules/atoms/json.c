@@ -1417,7 +1417,8 @@ JSONjson2number(dbl *ret, json *js)
 {
 	dbl val = 0;
 	dbl *val_ptr = &val;
-	JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper);
+	str tmp;
+	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtod_wrapper));
 
 	if (val_ptr == NULL) {
 		*ret = dbl_nil;
@@ -1434,8 +1435,9 @@ JSONjson2integer(lng *ret, json *js)
 {
 	lng val = 0;
 	lng *val_ptr = &val;
+	str tmp;
 
-	JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper);
+	rethrow(__func__, tmp, JSONjson2numberInternal((void **)&val_ptr, js, strtol_wrapper));
 	if (val_ptr == NULL) {
 		*ret = lng_nil;
 	}
@@ -2578,7 +2580,8 @@ JSONjsonaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 	bn->tkey = BATcount(bn) <= 1;
 
   out:
-	bn->theap.dirty |= BATcount(bn) > 0;
+	if (bn)
+		bn->theap.dirty |= BATcount(bn) > 0;
 	if (t2)
 		BBPunfix(t2->batCacheid);
 	if (freeb)
