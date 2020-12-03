@@ -270,6 +270,7 @@ typedef struct sql_schema {
 	changeset types;
 	changeset funcs;
 	changeset seqs;
+	changeset parts;/* merge/replica tables can only contain parts from the same schema */
 	list *keys;		/* Names for keys, idxs and triggers are */
 	list *idxs;		/* global, but these objects are only */
 	list *triggers;		/* useful within a table */
@@ -603,7 +604,7 @@ typedef enum table_types {
 #define isRemote(x)                       ((x)->type==tt_remote)
 #define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)                    (isTable(x) && (x)->p)
+#define isPartition(x)                    ((x)->partition)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -616,9 +617,10 @@ typedef struct sql_part_value {
 
 typedef struct sql_part {
 	sql_base base;
-	struct sql_table *t; /* cached value of the merge table */
-	sql_subtype tpe;     /* the column/expression type */
-	bit with_nills;      /* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
+	struct sql_table *t;	  /* the merge table */
+	struct sql_table *member; /* the member of the merge table */
+	sql_subtype tpe;		  /* the column/expression type */
+	bit with_nills;			  /* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
 	union {
 		list *values;         /* partition by values/list */
 		struct sql_range {    /* partition by range */
@@ -653,7 +655,7 @@ typedef struct sql_table {
 	changeset idxs;
 	changeset keys;
 	changeset triggers;
-	changeset members;
+	list *members;
 	int drop_action;	/* only needed for alter drop table */
 
 	int cleared;		/* cleared in the current transaction */
@@ -661,7 +663,7 @@ typedef struct sql_table {
 	struct sql_schema *s;
 	struct sql_table *po;	/* the outer transactions table */
 
-	struct sql_table *p;	 /* The table is part of this merge table */
+	char partition;		/* number of times this table is part of some hierachy of tables */
 	union {
 		struct sql_column *pcol; /* If it is partitioned on a column */
 		struct sql_expression *pexp; /* If it is partitioned by an expression */
@@ -734,7 +736,7 @@ extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
-extern sql_part *find_sql_part(sql_table *t, const char *tname);
+extern sql_part *find_sql_part_id(sql_table *t, sqlid id);
 
 extern sql_table *find_sql_table(sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_schema *s, sqlid id);
@@ -770,5 +772,8 @@ typedef struct {
 	char* name;
 	void* def;
 } sql_emit_col;
+
+extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
+extern sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 
 #endif /* SQL_CATALOG_H */

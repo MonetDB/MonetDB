@@ -1,0 +1,12 @@
+stderr of test 'deallocate-id.Bug-7010` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 10:44:37 >  
+# 10:44:37 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-64069" "--port=37275"
+# 10:44:37 >  
+
+
+# 10:44:37 >  
+# 10:44:37 >  "Done."
+# 10:44:37 >  
+

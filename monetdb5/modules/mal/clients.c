@@ -24,6 +24,7 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "mal_internal.h"
+#include "opt_pipes.h"
 #include "gdk_time.h"
 
 static int
@@ -39,7 +40,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 	return 0;
 }
 
-str
+static str
 CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -48,7 +49,7 @@ CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -58,7 +59,7 @@ CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -71,7 +72,7 @@ CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -102,7 +103,7 @@ CLTtimeConvert(time_t l, char *s)
 	s[24] = 0;		/* remove newline */
 }
 
-str
+static str
 CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret=  getArgReference_bat(stk,pci,0);
@@ -152,7 +153,7 @@ bailout:
 	throw(MAL, "clients.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-str
+static str
 CLTLogin(bat *nme, bat *ret)
 {
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
@@ -183,7 +184,7 @@ bailout:
 	throw(MAL, "clients.getLogins", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-str
+static str
 CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -207,7 +208,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* Stopping a client in a softmanner by setting the time out marker */
-str
+static str
 CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx = cntxt->idx;
@@ -230,7 +231,7 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int idx = cntxt->idx;
@@ -244,12 +245,14 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		opt = *getArgReference_str(stk,pci,1);
 	}
 
-	if( idx < 0 || idx > MAL_MAXCLIENTS)
+	if (idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setoptimizer","Illegal session id");
 	if (strNil(opt))
 		throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
 	if (strlen(opt) >= sizeof(mal_clients[idx].optimizer))
 		throw(MAL,"clients.setoptimizer","Input string is too large");
+	if (!isOptimizerPipe(opt))
+		throw(MAL, "clients.setoptimizer", "Valid optimizer pipe expected");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
@@ -260,7 +263,7 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -290,7 +293,7 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -320,7 +323,7 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -357,7 +360,7 @@ CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* Queries can be temporarily suspended */
-str
+static str
 CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -379,7 +382,7 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -402,7 +405,7 @@ CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* Set session time out based in seconds. As of December 2019, this function is deprecated */
-str
+static str
 CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -428,7 +431,7 @@ CLTsetSessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* Set the current query timeout in seconds. As of December 2019, this function is deprecated */
-str
+static str
 CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -464,7 +467,7 @@ CLTsetTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* set session time out based in seconds, converted into microseconds */
-str
+static str
 CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -503,7 +506,7 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* Set the current session timeout in seconds */
-str
+static str
 CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
@@ -544,7 +547,7 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* Retrieve the session time out */
-str
+static str
 CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *opt=  getArgReference_str(stk,pci,0);
@@ -565,7 +568,7 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* Long running queries are traced in the logger
  * with a message from the interpreter.
  * This value should be set to minutes to avoid a lengthly log */
-str
+static str
 CLTsetPrintTimeout(void *ret, int *secs)
 {
 	(void) ret;
@@ -576,7 +579,7 @@ CLTsetPrintTimeout(void *ret, int *secs)
 	return MAL_SUCCEED;
 }
 
-str CLTmd5sum(str *ret, str *pw) {
+static str CLTmd5sum(str *ret, str *pw) {
 #ifdef HAVE_MD5_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -598,7 +601,7 @@ str CLTmd5sum(str *ret, str *pw) {
 #endif
 }
 
-str CLTsha1sum(str *ret, str *pw) {
+static str CLTsha1sum(str *ret, str *pw) {
 #ifdef HAVE_SHA1_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -620,7 +623,7 @@ str CLTsha1sum(str *ret, str *pw) {
 #endif
 }
 
-str CLTripemd160sum(str *ret, str *pw) {
+static str CLTripemd160sum(str *ret, str *pw) {
 #ifdef HAVE_RIPEMD160_UPDATE
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
@@ -642,7 +645,7 @@ str CLTripemd160sum(str *ret, str *pw) {
 #endif
 }
 
-str CLTsha2sum(str *ret, str *pw, int *bits) {
+static str CLTsha2sum(str *ret, str *pw, int *bits) {
 	if (strNil(*pw) || is_int_nil(*bits)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -685,7 +688,7 @@ str CLTsha2sum(str *ret, str *pw, int *bits) {
 	return MAL_SUCCEED;
 }
 
-str CLTbackendsum(str *ret, str *pw) {
+static str CLTbackendsum(str *ret, str *pw) {
 	if (strNil(*pw)) {
 		*ret = GDKstrdup(str_nil);
 	} else {
@@ -700,7 +703,7 @@ str CLTbackendsum(str *ret, str *pw) {
 	return MAL_SUCCEED;
 }
 
-str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	oid *ret = getArgReference_oid(stk, pci, 0);
 	str *usr = getArgReference_str(stk, pci, 1);
 	str *pw = getArgReference_str(stk, pci, 2);
@@ -710,7 +713,7 @@ str CLTaddUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHaddUser(ret, cntxt, *usr, *pw);
 }
 
-str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr;
 	(void)mb;
 
@@ -719,14 +722,14 @@ str CLTremoveUser(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHremoveUser(cntxt, *usr);
 }
 
-str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = getArgReference_str(stk, pci, 0);
 	(void)mb;
 
 	return AUTHgetUsername(ret, cntxt);
 }
 
-str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *ret = getArgReference_str(stk, pci, 0);
 	str *user = getArgReference_str(stk, pci, 1);
 
@@ -735,7 +738,7 @@ str CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 	return AUTHgetPasswordHash(ret, cntxt, *user);
 }
 
-str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = getArgReference_str(stk, pci, 1);
 	str *new = getArgReference_str(stk, pci, 2);
 
@@ -744,7 +747,7 @@ str CLTchangeUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHchangeUsername(cntxt, *old, *new);
 }
 
-str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *old = getArgReference_str(stk, pci, 1);
 	str *new = getArgReference_str(stk, pci, 2);
 
@@ -753,7 +756,7 @@ str CLTchangePassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHchangePassword(cntxt, *old, *new);
 }
 
-str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	str *usr = getArgReference_str(stk, pci, 1);
 	str *new = getArgReference_str(stk, pci, 2);
 
@@ -762,7 +765,7 @@ str CLTsetPassword(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	return AUTHsetPassword(cntxt, *usr, *new);
 }
 
-str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 #ifdef HAVE_SHA1_UPDATE
 	str *usr = getArgReference_str(stk, pci, 1);
 	str *pw = getArgReference_str(stk, pci, 2);
@@ -787,7 +790,7 @@ str CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) 
 #endif
 }
 
-str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str CLTgetUsers(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	bat *ret1 = getArgReference_bat(stk, pci, 0);
 	bat *ret2 = getArgReference_bat(stk, pci, 1);
 	BAT *uid, *nme;

@@ -2831,6 +2831,234 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	return GDK_FAIL;
 }
 
+/* population count: count number of 1 bits in a value */
+static inline uint32_t __attribute__((__const__))
+pop(uint32_t x)
+{
+#if defined(__GNUC__)
+	return (uint32_t) __builtin_popcount(x);
+#elif defined(_MSC_VER)
+	return (uint32_t) __popcnt((unsigned int) (x));
+#else
+	/* divide and conquer implementation (the two versions are
+	 * essentially equivalent, but the first version is written a
+	 * bit smarter) */
+#if 1
+	x -= (x >> 1) & ~0U/3 /* 0x55555555 */; /* 3-1=2; 2-1=1; 1-0=1; 0-0=0 */
+	x = (x & ~0U/5) + ((x >> 2) & ~0U/5) /* 0x33333333 */;
+	x = (x + (x >> 4)) & ~0UL/0x11 /* 0x0F0F0F0F */;
+	x = (x + (x >> 8)) & ~0UL/0x101 /* 0x00FF00FF */;
+	x = (x + (x >> 16)) & 0xFFFF /* ~0UL/0x10001 */;
+#else
+	x = (x & 0x55555555) + ((x >>  1) & 0x55555555);
+	x = (x & 0x33333333) + ((x >>  2) & 0x33333333);
+	x = (x & 0x0F0F0F0F) + ((x >>  4) & 0x0F0F0F0F);
+	x = (x & 0x00FF00FF) + ((x >>  8) & 0x00FF00FF);
+	x = (x & 0x0000FFFF) + ((x >> 16) & 0x0000FFFF);
+#endif
+	return x;
+#endif
+}
+
+/* Count the number of unique values for the first half and the complete
+ * set (the sample s of b) and return the two values in *cnt1 and
+ * *cnt2. In case of error, both values are 0. */
+static void
+count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
+{
+	struct canditer ci;
+	BUN half;
+	BUN cnt = 0;
+	const void *v;
+	const char *bvals;
+	const char *bvars;
+	oid bval;
+	int bwidth;
+	oid i, o;
+	const char *nme;
+	BUN hb;
+	BATiter bi;
+	int (*cmp)(const void *, const void *);
+	const char *algomsg = "";
+	lng t0 = 0;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+	canditer_init(&ci, b, s);
+	half = ci.ncand / 2;
+
+	if (b->tkey || ci.ncand <= 1 || BATtdense(b)) {
+		/* trivial: already unique */
+		*cnt1 = half;
+		*cnt2 = ci.ncand;
+		return;
+	}
+
+	if ((BATordered(b) && BATordered_rev(b)) ||
+	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase))) {
+		/* trivial: all values are the same */
+		*cnt1 = *cnt2 = 1;
+		return;
+	}
+
+	assert(b->ttype != TYPE_void);
+
+	bvals = Tloc(b, 0);
+	if (b->tvarsized && b->ttype)
+		bvars = b->tvheap->base;
+	else
+		bvars = NULL;
+	bwidth = Tsize(b);
+	cmp = ATOMcompare(b->ttype);
+	bi = bat_iterator(b);
+
+	*cnt1 = *cnt2 = 0;
+
+	if (BATordered(b) || BATordered_rev(b)) {
+		const void *prev = NULL;
+		algomsg = "sorted";
+		for (i = 0; i < ci.ncand; i++) {
+			if (i == half)
+				*cnt1 = cnt;
+			o = canditer_next(&ci);
+			v = VALUE(b, o - b->hseqbase);
+			if (prev == NULL || (*cmp)(v, prev) != 0) {
+				cnt++;
+			}
+			prev = v;
+		}
+		*cnt2 = cnt;
+	} else if (ATOMbasetype(b->ttype) == TYPE_bte) {
+		unsigned char val;
+		uint32_t seen[256 / 32];
+
+		algomsg = "byte-sized atoms";
+		assert(bvars == NULL);
+		memset(seen, 0, sizeof(seen));
+		for (i = 0; i < ci.ncand; i++) {
+			if (i == ci.ncand/ 2) {
+				cnt = 0;
+				for (int j = 0; j < 256 / 32; j++)
+					cnt += pop(seen[j]);
+				*cnt1 = cnt;
+			}
+			o = canditer_next(&ci);
+			val = ((const unsigned char *) bvals)[o - b->hseqbase];
+			if (!(seen[val >> 5] & (1U << (val & 0x1F)))) {
+				seen[val >> 5] |= 1U << (val & 0x1F);
+			}
+		}
+		cnt = 0;
+		for (int j = 0; j < 256 / 32; j++)
+			cnt += pop(seen[j]);
+		*cnt2 = cnt;
+	} else if (ATOMbasetype(b->ttype) == TYPE_sht) {
+		unsigned short val;
+		uint32_t *seen = NULL;
+
+		algomsg = "short-sized atoms";
+		assert(bvars == NULL);
+		seen = GDKzalloc((65536 / 32) * sizeof(seen[0]));
+		if (seen == NULL)
+			return;
+		for (i = 0; i < ci.ncand; i++) {
+			if (i == half) {
+				cnt = 0;
+				for (int j = 0; j < 65536 / 32; j++)
+					cnt += pop(seen[j]);
+				*cnt1 = cnt;
+			}
+			o = canditer_next(&ci);
+			val = ((const unsigned short *) bvals)[o - b->hseqbase];
+			if (!(seen[val >> 5] & (1U << (val & 0x1F)))) {
+				seen[val >> 5] |= 1U << (val & 0x1F);
+			}
+		}
+		cnt = 0;
+		for (int j = 0; j < 65536 / 32; j++)
+			cnt += pop(seen[j]);
+		*cnt2 = cnt;
+		GDKfree(seen);
+		seen = NULL;
+	} else {
+		BUN prb;
+		BUN p;
+		BUN mask;
+		Hash hs = {0};
+
+		GDKclrerr();	/* not interested in BAThash errors */
+		algomsg = "new partial hash";
+		nme = BBP_physical(b->batCacheid);
+		mask = HASHmask(ci.ncand);
+		if (mask < ((BUN) 1 << 16))
+			mask = (BUN) 1 << 16;
+		if (snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
+		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshunib%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
+		    HASHnew(&hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
+			GDKerror("cannot allocate hash table\n");
+			HEAPfree(&hs.heaplink, true);
+			HEAPfree(&hs.heapbckt, true);
+			return;
+		}
+		for (i = 0; i < ci.ncand; i++) {
+			if (i == half)
+				*cnt1 = cnt;
+			o = canditer_next(&ci);
+			v = VALUE(b, o - b->hseqbase);
+			prb = HASHprobe(&hs, v);
+			for (hb = HASHget(&hs, prb);
+			     hb != HASHnil(&hs);
+			     hb = HASHgetlink(&hs, hb)) {
+				if (cmp(v, BUNtail(bi, hb)) == 0)
+					break;
+			}
+			if (hb == HASHnil(&hs)) {
+				p = o - b->hseqbase;
+				cnt++;
+				/* enter into hash table */
+				HASHputlink(&hs, p, HASHget(&hs, prb));
+				HASHput(&hs, prb, p);
+			}
+		}
+		*cnt2 = cnt;
+		HEAPfree(&hs.heaplink, true);
+		HEAPfree(&hs.heapbckt, true);
+	}
+
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
+		  " -> " BUNFMT " " BUNFMT " (%s -- " LLFMT "usec)\n",
+		  ALGOBATPAR(b), ALGOOPTBATPAR(s),
+		  *cnt1, *cnt2, algomsg, GDKusec() - t0);
+
+	return;
+}
+
+static double
+guess_uniques(BAT *b, struct canditer *ci)
+{
+	BUN cnt1, cnt2;
+	BAT *s1;
+
+	if (b->tkey)
+		return (double) ci->ncand;
+
+	if (ci->s) {
+		BAT *s2 = BATsample(ci->s, 1000);
+		s1 = BATproject(s2, ci->s);
+		BBPreclaim(s2);
+	} else {
+		s1 = BATsample(b, 1000);
+	}
+	BUN n2 = BATcount(s1);
+	BUN n1 = n2 / 2;
+	count_unique(b, s1, &cnt1, &cnt2);
+	BBPreclaim(s1);
+
+	double A = (double) (cnt2 - cnt1) / (n2 - n1);
+	double B = cnt1 - n1 * A;
+
+	return A * ci->ncand + B;
+}
+
 #define MASK_EQ		1
 #define MASK_LT		2
 #define MASK_GT		4
@@ -3279,7 +3507,15 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		rcost = lci.ncand * 1.1;
+		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+		if (prop) {
+			/* we know number of unique values, assume some
+			 * chains */
+			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+		} else {
+			/* guess number of unique value and work with that */
+			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / guess_uniques(r, &rci));
+		}
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
@@ -3328,7 +3564,16 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			/* no hash table, so cost includes time to build the
 			 * hash table (single scan) plus the time to do the
 			 * lookups (also single scan, we assume some chains) */
-			lcost = rci.ncand * 1.1;
+			PROPrec *prop = BATgetprop(l, GDK_NUNIQUE);
+			if (prop) {
+				/* we know number of unique values, assume some
+				 * chains */
+				lcost = rci.ncand * 1.1 * ((double) BATcount(l) / prop->v.val.oval);
+			} else {
+				/* guess number of unique value and work
+				 * with that */
+				lcost = rci.ncand * 1.1 * ((double) BATcount(l) / guess_uniques(l, &lci));
+			}
 #ifdef PERSISTENTHASH
 			/* only count the cost of creating the hash
 			 * for non-persistent bats */
@@ -3650,7 +3895,15 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		lcost = rci.ncand * 1.1;
+		PROPrec *prop = BATgetprop(l, GDK_NUNIQUE);
+		if (prop) {
+			/* we know number of unique values, assume some
+			 * chains */
+			lcost = rci.ncand * 1.1 * ((double) BATcount(l) / prop->v.val.oval);
+		} else {
+			/* guess number of unique value and work with that */
+			lcost = rci.ncand * 1.1 * ((double) BATcount(l) / guess_uniques(l, &lci));
+		}
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */
@@ -3695,7 +3948,15 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 		/* no hash table, so cost includes time to build the
 		 * hash table (single scan) plus the time to do the
 		 * lookups (also single scan, we assume some chains) */
-		rcost = lci.ncand * 1.1;
+		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+		if (prop) {
+			/* we know number of unique values, assume some
+			 * chains */
+			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+		} else {
+			/* guess number of unique value and work with that */
+			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / guess_uniques(r, &rci));
+		}
 #ifdef PERSISTENTHASH
 		/* only count the cost of creating the hash for
 		 * non-persistent bats */

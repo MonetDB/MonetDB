@@ -14,6 +14,11 @@ create function sys.uuid()
 returns uuid external name uuid."new";
 GRANT EXECUTE ON FUNCTION sys.uuid() TO PUBLIC;
 
+-- generate a new uuid with a dummy parameter, so it can be called for a column
+create function sys.uuid(d int)
+returns uuid external name uuid."new";
+GRANT EXECUTE ON FUNCTION sys.uuid(int) TO PUBLIC;
+
 create function sys.isaUUID(s string)
 returns boolean external name uuid."isaUUID";
 GRANT EXECUTE ON FUNCTION sys.isaUUID(string) TO PUBLIC;

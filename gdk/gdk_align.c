@@ -274,112 +274,99 @@ VIEWunlink(BAT *b)
 gdk_return
 VIEWreset(BAT *b)
 {
-	bat tp, tvp;
-	Heap tail, *th = NULL;
-	BAT *v = NULL;
-
 	if (b == NULL)
 		return GDK_FAIL;
-	assert(b->batCacheid > 0);
-	tp = VIEWtparent(b);
-	tvp = VIEWvtparent(b);
-	if (tp || tvp) {
-		BUN cnt;
-		const char *nme;
 
-		/* alloc heaps */
-		tail = (Heap) {0};
+	bat tp = VIEWtparent(b);
+	bat tvp = VIEWvtparent(b);
+	if (tp == 0 && tvp == 0)
+		return GDK_SUCCEED;
 
-		cnt = BATcount(b) + 1;
-		nme = BBP_physical(b->batCacheid);
-
-		assert(b->batCacheid > 0);
-		assert(tp || tvp || !b->ttype);
-
-		tail.farmid = BBPselectfarm(b->batRole, b->ttype, offheap);
-		strconcat_len(tail.filename, sizeof(tail.filename),
-			      nme, ".tail", NULL);
-		if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED)
-			goto bailout;
-		if (b->tvheap) {
-			th = GDKzalloc(sizeof(Heap));
-			if (th == NULL)
-				goto bailout;
-			th->farmid = BBPselectfarm(b->batRole, b->ttype, varheap);
-			strconcat_len(th->filename, sizeof(th->filename),
-				      nme, ".theap", NULL);
-			if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED)
-				goto bailout;
-		}
-
-		v = VIEWcreate(b->hseqbase, b);
-		if (v == NULL)
-			goto bailout;
-
-		/* cut the link to your parents */
-		VIEWunlink(b);
-		if (tp) {
-			BBPunshare(tp);
-			BBPunfix(tp);
-		}
-		if (tvp) {
-			BBPunshare(tvp);
-			BBPunfix(tvp);
-		}
-
-		b->hseqbase = v->hseqbase;
-
-		b->ttype = v->ttype;
-		b->tvarsized = v->tvarsized;
-		b->tshift = v->tshift;
-		b->twidth = v->twidth;
-		b->tseqbase = v->tseqbase;
-
-		b->theap.parentid = 0;
-		b->batRestricted = BAT_WRITE;
-
-		b->tkey = BATtkey(v);
-
-		/* copy the heaps */
-		b->theap = tail;
-
-		/* unshare from parents heap */
-		if (th) {
-			assert(b->tvheap == NULL);
-			b->tvheap = th;
-			th = NULL;
-			b->tvheap->parentid = b->batCacheid;
-		}
-
-		if (v->theap.parentid == b->batCacheid) {
-			assert(tp == 0);
-			assert(b->batSharecnt > 0);
-			BBPunshare(b->batCacheid);
-			BBPunfix(b->batCacheid);
-			v->theap.parentid = 0;
-		}
-		b->batSharecnt = 0;
-		b->batCopiedtodisk = false;
-		b->batDirtydesc = true;
-
-		b->tkey = BATtkey(v);
-
-		/* make the BAT empty and insert all again */
-		DELTAinit(b);
-		/* reset capacity */
-		b->batCapacity = cnt;
-
-		/* insert all of v in b, and quit */
-		if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED)
-			goto bailout;
-		BBPreclaim(v);
+	if (tp == 0) {
+		/* only sharing the vheap */
+		assert(ATOMstorage(b->ttype) == TYPE_str);
+		return unshare_string_heap(b);
 	}
+
+	BAT *v = VIEWcreate(b->hseqbase, b);
+	if (v == NULL)
+		return GDK_FAIL;
+
+	assert(VIEWtparent(v) != b->batCacheid);
+	assert(VIEWvtparent(v) != b->batCacheid);
+
+	const char *nme = BBP_physical(b->batCacheid);
+	BUN cnt = BATcount(b);
+	Heap tail = (Heap) {
+		.farmid = BBPselectfarm(b->batRole, b->ttype, offheap),
+	};
+	strconcat_len(tail.filename, sizeof(tail.filename), nme, ".tail", NULL);
+	if (b->ttype && HEAPalloc(&tail, cnt, Tsize(b)) != GDK_SUCCEED) {
+		BBPunfix(v->batCacheid);
+		return GDK_FAIL;
+	}
+	Heap *th = NULL;
+	if (b->tvheap) {
+		th = GDKmalloc(sizeof(Heap));
+		if (th == NULL) {
+			HEAPfree(&tail, true);
+			BBPunfix(v->batCacheid);
+			return GDK_FAIL;
+		}
+		*th = (Heap) {
+			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+			.parentid = b->batCacheid,
+		};
+		strconcat_len(th->filename, sizeof(th->filename),
+			      nme, ".theap", NULL);
+		if (ATOMheap(b->ttype, th, cnt) != GDK_SUCCEED) {
+			HEAPfree(&tail, true);
+			GDKfree(th);
+			BBPunfix(v->batCacheid);
+			return GDK_FAIL;
+		}
+	}
+
+	BAT bak = *b;		/* backup copy */
+
+	/* start overwriting */
+	VIEWunlink(b);
+	b->tvheap = th;
+	b->theap = tail;
+	/* we empty out b completely and then fill it from v */
+	DELTAinit(b);
+	b->batCapacity = cnt;
+	b->batCopiedtodisk = false;
+	b->batDirtydesc = true;
+	b->batRestricted = BAT_WRITE;
+	b->tkey = true;
+	b->tsorted = b->trevsorted = true;
+	b->tnosorted = b->tnorevsorted = 0;
+	b->tnokey[0] = b->tnokey[1] = 0;
+	b->tnil = false;
+	b->tnonil = true;
+	if (BATappend2(b, v, NULL, false, false) != GDK_SUCCEED) {
+		/* clean up the mess */
+		if (th) {
+			HEAPfree(th, true);
+			GDKfree(th);
+		}
+		HEAPfree(&tail, true);
+		*b = bak;
+		BBPunfix(v->batCacheid);
+		return GDK_FAIL;
+	}
+	/* point of no return */
+	if (tp) {
+		BBPunshare(tp);
+		BBPunfix(tp);
+	}
+	if (tvp) {
+		BBPunshare(tvp);
+		BBPunfix(tvp);
+	}
+	BBPunfix(v->batCacheid);
 	return GDK_SUCCEED;
-      bailout:
-	BBPreclaim(v);
-	HEAPfree(&tail, false);
-	GDKfree(th);
-	return GDK_FAIL;
 }
 
 /*

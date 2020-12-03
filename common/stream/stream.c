@@ -261,11 +261,12 @@ mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt)
 
 
 void
-mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void))
+mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void *), void *data)
 {
 	if (s) {
 		s->timeout = ms;
 		s->timeout_func = func;
+		s->timeout_data = data;
 		if (s->update_timeout)
 			s->update_timeout(s);
 	}
@@ -790,6 +791,7 @@ wrapper_update_timeout(stream *s)
 {
 	s->inner->timeout = s->timeout;
 	s->inner->timeout_func = s->timeout_func;
+	s->inner->timeout_data = s->timeout_data;
 	s->inner->update_timeout(s->inner);
 }
 

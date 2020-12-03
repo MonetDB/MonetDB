@@ -53,7 +53,7 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 				   ) &&	/* it was! */
 #endif
 			   s->timeout_func != NULL &&	/* callback function exists */
-			   !s->timeout_func())	/* callback says don't stop */
+			   !s->timeout_func(s->timeout_data))	/* callback says don't stop */
 		       ||(nr < 0 &&
 #ifdef _MSC_VER
 			  WSAGetLastError() == WSAEINTR
@@ -153,7 +153,7 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			}
 #endif
 			if (ret == 0) {
-				if (s->timeout_func == NULL || s->timeout_func()) {
+				if (s->timeout_func == NULL || s->timeout_func(s->timeout_data)) {
 					mnstr_set_error(s, MNSTR_TIMEOUT, NULL);
 					return -1;
 				}
@@ -388,4 +388,3 @@ socket_wstream(SOCKET sock, const char *name)
 	s->binary = true;
 	return s;
 }
-

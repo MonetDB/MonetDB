@@ -1,3 +1,5 @@
+set optimizer='sequential_pipe';
+
 start transaction;
 
 create table myy (col1 int, col2 int);
@@ -61,4 +63,18 @@ EXPLAIN SELECT 1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 > t2.col1;
 PLAN SELECT 1 FROM another_t WHERE (col1 >= 1 AND col1 <= 2) OR col2 IS NULL;
 PLAN SELECT (col1 >= 1 AND col1 <= 2) OR col2 IS NULL FROM another_t;
 
+/* Make sure no cross-products are generated */
+CREATE TABLE tabel1 (id_nr INT, dt_sur STRING, edg INT, ede DATE, pc_nml_hur STRING, srt_ukr STRING);
+INSERT INTO tabel1 VALUES (10, 'Koning', NULL, current_date - INTERVAL '1' MONTH, '50', '01'), (20, 'Nes', NULL, NULL, '50', '01');
+CREATE TABLE tabel2 (id_nr INT, dt_sur STRING, edg INT, ede DATE, pc_nml_hur STRING);
+INSERT INTO tabel2 VALUES (10, 'Koning', NULL, current_date - INTERVAL '1' MONTH, '50'), (10, 'Koning', NULL, NULL, '50'), (20, 'Nes', NULL, NULL, '50');
+CREATE TABLE tabel3 (id_nr INT, my_date DATE);
+INSERT INTO tabel3 VALUES (10, current_date - INTERVAL '1' MONTH), (10, NULL), (20, NULL);
+create view view1 as SELECT * FROM tabel1 as a;
+create view view2 as SELECT * FROM tabel2 as a;
+create view view3 as SELECT * FROM tabel3 as a;
+PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN view2 h2 ON h.id_nr = h2.id_nr INNER JOIN view3 a ON a.id_nr = s.id_nr;
+
 rollback;
+
+set optimizer='default_pipe';

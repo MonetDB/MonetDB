@@ -95,33 +95,50 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	/* create a temporary MAL function to sort the BAT in parallel */
 	snprintf(name, IDLENGTH, "sort%d", rand()%1000);
 	snew = newFunction(putName("user"), putName(name),
-	       FUNCTIONsymbol);
+					   FUNCTIONsymbol);
 	if(snew == NULL) {
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 	smb = snew->def;
 	q = getInstrPtr(smb, 0);
-	arg = newTmpVariable(smb, tpe);
+	if ((arg = newTmpVariable(smb, tpe)) < 0) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	q= addArgument(smb, q, arg);
-	getArg(q,0) = newTmpVariable(smb, TYPE_void);
+	if (q == NULL || (getArg(q,0) = newTmpVariable(smb, TYPE_void)) < 0) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 
 	if( resizeMalBlk(smb, 2*pieces+10) < 0)
 		goto bailout; // large enough
 	/* create the pack instruction first, as it will hold
 	 * intermediate variables */
 	pack = newInstruction(0, putName("bat"), putName("orderidx"));
-	if(pack == NULL) {
+	if (pack == NULL || (pack->argv[0] = newTmpVariable(smb, TYPE_void)) < 0) {
 		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	pack->argv[0] = newTmpVariable(smb, TYPE_void);
 	pack = addArgument(smb, pack, arg);
+	if (pack == NULL) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	setVarFixed(smb, getArg(pack, 0));
 
 	/* the costly part executed as a parallel block */
-	loopvar = newTmpVariable(smb, TYPE_bit);
+	if ((loopvar = newTmpVariable(smb, TYPE_bit)) < 0) {
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	q = newStmt(smb, putName("language"), putName("dataflow"));
+	if (q == NULL) {
+		freeInstruction(pack);
+		msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	q->barrier = BARRIERsymbol;
 	q->argv[0] = loopvar;
 
@@ -131,10 +148,20 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	for (i = 0; i < pieces; i++) {
 		/* add slice instruction */
 		q = newInstruction(smb, putName("algebra"),putName("slice"));
-		setDestVar(q, newTmpVariable(smb, TYPE_any));
+		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
+			freeInstruction(q);
+			freeInstruction(pack);
+			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		setVarType(smb, getArg(q,0), tpe);
 		setVarFixed(smb, getArg(q,0));
 		q = addArgument(smb, q, arg);
+		if (q == NULL) {
+			freeInstruction(pack);
+			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		pack = addArgument(smb, pack, getArg(q,0));
 		q = pushOid(smb, q, o);
 		if (i == pieces-1) {
@@ -143,16 +170,31 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 			o += step;
 		}
 		q = pushOid(smb, q, o - 1);
+		if (q == NULL) {
+			freeInstruction(pack);
+			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		pushInstruction(smb, q);
 	}
 	for (i = 0; i < pieces; i++) {
 		/* add sort instruction */
 		q = newInstruction(smb, putName("algebra"), putName("orderidx"));
-		setDestVar(q, newTmpVariable(smb, TYPE_any));
+		if (q == NULL || (setDestVar(q, newTmpVariable(smb, TYPE_any))) < 0) {
+			freeInstruction(q);
+			freeInstruction(pack);
+			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		setVarType(smb, getArg(q, 0), tpe);
 		setVarFixed(smb, getArg(q, 0));
 		q = addArgument(smb, q, pack->argv[2+i]);
 		q = pushBit(smb, q, 1);
+		if (q == NULL) {
+			freeInstruction(pack);
+			msg = createException(MAL, "bat.orderidx", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto bailout;
+		}
 		pack->argv[2+i] = getArg(q, 0);
 		pushInstruction(smb, q);
 	}
@@ -182,7 +224,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	msg = runMALsequence(cntxt, smb, 1, 0, newstk, 0, 0);
 	freeStack(newstk);
 	/* get rid of temporary MAL block */
-bailout:
+  bailout:
 	freeSymbol(snew);
 	return msg;
 }

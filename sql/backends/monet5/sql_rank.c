@@ -1678,7 +1678,7 @@ SQLvar_pop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do { \
 		TPE *restrict bp = (TPE*)Tloc(d, 0); \
 		oid ncount = i - k; \
-		if (GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &levels_capacity, &nlevels) != GDK_SUCCEED) { \
+		if (GDKrebuild_segment_tree(ncount, sizeof(lng), &segment_tree, &tree_capacity, &levels_offset, &nlevels) != GDK_SUCCEED) { \
 			msg = createException(SQL, op, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout; \
 		} \
@@ -1821,7 +1821,7 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 			BAT *d = b ? b : c;
 			ValRecord *input2 = &(stk)->stk[(pci)->argv[b ? 2 : 1]];
 			oid i = 0, j = 0, k = 0, l = 0, cnt = BATcount(d), *restrict start = s ? (oid*)Tloc(s, 0) : NULL, *restrict end = e ? (oid*)Tloc(e, 0) : NULL,
-				tree_capacity = 0, nlevels = 0, levels_capacity = 0;
+				tree_capacity = 0, nlevels = 0;
 			lng n = 0;
 			bit *np = p ? Tloc(p, 0) : NULL, *opp = o ? Tloc(o, 0) : NULL;
 			dbl *restrict rb = (dbl *) Tloc(r, 0), val = VALisnil(input2) ? dbl_nil : defaultv, rr;
@@ -1875,7 +1875,6 @@ do_covariance_and_correlation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPt
 
 bailout:
 	GDKfree(segment_tree);
-	GDKfree(levels_offset);
 	unfix_inputs(6, b, c, p, o, s, e);
 	finalize_output(res, r, msg);
 	return msg;

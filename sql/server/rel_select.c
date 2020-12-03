@@ -771,7 +771,6 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
-	unsigned int card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 
 	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
@@ -803,7 +802,9 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 			}
 		}
 	}
+
 	/* loop to check types and cardinality */
+	unsigned int card = exps->h && list_length(((sql_exp*)exps->h->data)->f) > 1 ? CARD_MULTI : CARD_ATOM;
 	for (m = exps->h; m; m = m->next) {
 		sql_exp *e = m->data;
 
@@ -948,7 +949,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				return rel;
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		}
-		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
+		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {
@@ -1549,7 +1550,7 @@ static sql_rel *
 rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier, int f)
 {
 	mvc *sql = query->sql;
-	sql_exp *L = ls, *R = rs, *e = NULL;
+	sql_exp *e = NULL;
 
 	if (quantifier || exp_is_rel(ls) || exp_is_rel(rs)) {
 		if (rs2) {
@@ -1557,7 +1558,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			if (anti)
 				set_anti(e);
 		} else {
-			if (rel_binop_check_types(sql, rel, ls, rs, 0) < 0)
+			if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 				return NULL;
 			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
@@ -1568,22 +1569,18 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 	} else if (!rs2) {
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
-
 			ls = rs;
 			rs = swap;
-
-			swap = L;
-			L = R;
-			R = swap;
-
 			type = (int)swap_compare((comp_type)type);
 		}
 		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
-		if ((rs = exp_check_type(sql, exp_subtype(ls), rel, rs, type_equal)) == NULL ||
-	   	    (rs2 && (rs2 = exp_check_type(sql, exp_subtype(ls), rel, rs2, type_equal)) == NULL))
+		assert(rs2);
+		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
+			return NULL;
+		if (!(rs2 = exp_check_type(sql, exp_subtype(ls), rel, rs2, type_equal)))
 			return NULL;
 		e = exp_compare2(sql->sa, ls, rs, rs2, type);
 	}
@@ -1606,7 +1603,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	return rel_select_push_exp_down(sql, rel, e, ls, L, rs, R, rs2, f);
+	return rel_select_push_exp_down(sql, rel, e, ls, ls, rs, rs, rs2, f);
 }
 
 static sql_rel *
@@ -1623,7 +1620,7 @@ rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *
 		/* TODO to handle filters here */
 		sql_exp *e;
 
-		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal) < 0)
+		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = rel_binop_(sql, rel, ls, rs, NULL, compare_op, card_value);
 
@@ -2218,7 +2215,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			cmp_type = swap_compare(cmp_type);
 		}
 
-		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
+		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		if (exp_is_null(ls) && exp_is_null(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
@@ -2738,7 +2735,6 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int ca
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = '\0';
-				//f = NULL;
 		}
 	}
 	if (f && check_card(card, f)) {
@@ -3206,6 +3202,55 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 	return _rel_nop(sql, s, fname, tl, rel ? *rel : NULL, exps, ek);
 }
 
+typedef struct aggr_input {
+	sql_query *query;
+	int groupby;
+	char *err;
+} aggr_input;
+
+static sql_exp *
+exp_valid(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	aggr_input *ai = v->data;
+	(void)rel; (void)depth;
+
+	int vf = is_freevar(e);
+	if (!v->changes && vf && vf < ai->groupby) { /* check need with outer query */
+		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
+
+		/* problem freevar have cardinality CARD_ATOM */
+		if (sq->card <= CARD_AGGR && exp_card(e) != CARD_AGGR && is_alias(e->type)) {
+			if (!exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) {
+				v->changes = 1;
+				ai->err = SQLSTATE(42000) "SELECT: subquery uses ungrouped column from outer query";
+			}
+		}
+	} else if (!v->changes && vf && vf == ai->groupby) {
+		sql_rel *sq = query_fetch_outer(ai->query, vf-1);
+
+		/* problem freevar have cardinality CARD_ATOM */
+		if (sq->card <= CARD_AGGR && is_alias(e->type)) {
+			if (exps_bind_column(sq->exps, e->l, e->r, NULL, 0)) { /* aggregate */
+				v->changes = 1;
+				ai->err = SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested";
+			}
+		}
+	}
+	return e;
+}
+
+static char *
+exps_valid(sql_query *query, list *exps, int groupby)
+{
+	aggr_input ai = { .query = query, .groupby = groupby };
+	visitor v = { .sql = query->sql, .data = &ai };
+
+	exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_valid, true);
+	if (v.changes)
+		return ai.err;
+	return NULL;
+}
+
 static sql_exp *
 _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *aname, dnode *args, int f)
 {
@@ -3253,7 +3298,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	exps = sa_list(sql->sa);
 	if (args && args->data.sym) {
 		int i, all_aggr = query_has_outer(query);
-		bool found_nested_aggr = false, arguments_correlated = true, all_const = true;
+		bool arguments_correlated = true, all_const = true;
 		list *ungrouped_cols = NULL;
 
 		all_freevar = 1;
@@ -3282,13 +3327,11 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 			}
 
 			all_aggr &= (exp_card(e) <= CARD_AGGR && !exp_is_atom(e) && is_aggr(e->type) && !is_func(e->type) && (!groupby || !is_groupby(groupby->op) || !groupby->r || !exps_find_exp(groupby->r, e)));
-			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &found_nested_aggr, &ungrouped_cols);
+			exp_only_freevar(query, e, &arguments_correlated, &found_one_freevar, &ungrouped_cols);
 			all_freevar &= (arguments_correlated && found_one_freevar) || (is_atom(e->type)?all_freevar:0); /* no uncorrelated variables must be found, plus at least one correlated variable to push this aggregate to an outer query */
 			all_const &= is_atom(e->type);
 			list_append(exps, e);
 		}
-		if (all_aggr || ((arguments_correlated || all_freevar) && found_nested_aggr))
-			return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function calls cannot be nested");
 		if (all_const)
 			all_freevar = 0;
 		if (!all_freevar) {
@@ -3339,17 +3382,25 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 	if (all_freevar) { /* case 2, ie use outer */
 		int card;
 		sql_exp *exp = NULL;
-		/* find proper relation, base on freevar (stack hight) */
+		/* find proper groupby relation */
 		for (node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (all_freevar<is_freevar(e))
-				all_freevar = is_freevar(e);
+			int vf = exp_freevar_offset(sql, e);
+			if (vf > (int)all_freevar)
+				all_freevar = vf;
 			exp = e;
 		}
 		int sql_state = query_fetch_outer_state(query,all_freevar-1);
 		res = groupby = query_fetch_outer(query, all_freevar-1);
 		card = query_outer_used_card(query, all_freevar-1);
+		/* given groupby validate all input expressions */
+		char *err;
+		if ((err = exps_valid(query, exps, all_freevar)) != NULL) {
+			strcpy(sql->errstr, err);
+			sql->session->status = -ERR_GROUPBY;
+			return NULL;
+		}
 		if (exp && !is_groupby_col(res, exp)) {
 			if (is_sql_groupby(sql_state))
 				return sql_error(sql, 05, SQLSTATE(42000) "SELECT: aggregate function '%s' not allowed in GROUP BY clause", aname);
@@ -3600,7 +3651,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 	}
 	if (a && execute_priv(sql,a->func)) {
-		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, have_nil(exps));
+		bool hasnil = have_nil(exps) || (strcmp(aname, "count") != 0 && (!groupby || list_empty(groupby->r))); /* for global case, the aggregate may return NULL */
+		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
 		if (!groupby)
 			return e;
@@ -5015,6 +5067,12 @@ exp_has_rank(sql_exp *e)
 		/* fall through */
 	case e_aggr:
 		return exps_has_rank(e->l);
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_has_rank(e->l) || exps_has_rank(e->r);
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_has_rank(e->l) || exps_has_rank(e->r);
+		return exp_has_rank(e->l) || exp_has_rank(e->r) || (e->f && exp_has_rank(e->f));
 	default:
 		return 0;
 	}
