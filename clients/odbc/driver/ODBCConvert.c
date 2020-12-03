@@ -53,7 +53,7 @@ typedef union {
  * 1 is returned if all is well;
  * 2 is returned if there is loss of precision (i.e. overflow of the value);
  * 0 is returned if the string is not a number, or if scale doesn't fit.
-*/
+ */
 static int
 parseint(const char *data, bignum_t *nval)
 {
@@ -1238,7 +1238,7 @@ ODBCFetch(ODBCStmt *stmt,
 			case SQL_VARBINARY:
 			case SQL_LONGVARBINARY:
 			case SQL_GUID:
-				 /* this is certainly enough for strings */
+				/* this is certainly enough for strings */
 				buflen = (SQLLEN) datalen + 1;
 				ptr = NULL;
 				break;
@@ -2836,40 +2836,40 @@ ODBCFetch(ODBCStmt *stmt,
 }
 
 #define assign(buf,bufpos,buflen,value,stmt)				\
-		do {							\
-			if (bufpos >= buflen) {				\
-				char *b = realloc(buf, buflen += 1024);	\
-				if (b == NULL) {			\
-					free(buf);			\
-					if (ctype == SQL_C_WCHAR && sval) \
-						free(sval);		\
-					/* Memory allocation error */	\
-					addStmtError(stmt, "HY001", NULL, 0); \
-					return SQL_ERROR;		\
-				}					\
-				buf = b;				\
+	do {								\
+		if (bufpos >= buflen) {					\
+			char *b = realloc(buf, buflen += 1024);		\
+			if (b == NULL) {				\
+				free(buf);				\
+				if (ctype == SQL_C_WCHAR && sval)	\
+					free(sval);			\
+				/* Memory allocation error */		\
+				addStmtError(stmt, "HY001", NULL, 0);	\
+				return SQL_ERROR;			\
 			}						\
-			buf[bufpos++] = (value);			\
-		} while (0)
+			buf = b;					\
+		}							\
+		buf[bufpos++] = (value);				\
+	} while (0)
 #define assigns(buf,bufpos,buflen,value,stmt)				\
-		do {							\
-			size_t _len = strlen(value);			\
-			size_t _i;					\
-			while (bufpos + _len >= buflen) {		\
-				char *b = realloc(buf, buflen += 1024);	\
-				if (b == NULL) {			\
-					free(buf);			\
-					if (ctype == SQL_C_WCHAR && sval) \
-						free(sval);		\
-					/* Memory allocation error */	\
-					addStmtError(stmt, "HY001", NULL, 0); \
-					return SQL_ERROR;		\
-				}					\
-				buf = b;				\
+	do {								\
+		size_t _len = strlen(value);				\
+		size_t _i;						\
+		while (bufpos + _len >= buflen) {			\
+			char *b = realloc(buf, buflen += 1024);		\
+			if (b == NULL) {				\
+				free(buf);				\
+				if (ctype == SQL_C_WCHAR && sval)	\
+					free(sval);			\
+				/* Memory allocation error */		\
+				addStmtError(stmt, "HY001", NULL, 0);	\
+				return SQL_ERROR;			\
 			}						\
-			for (_i = 0; _i < _len; _i++)			\
-				buf[bufpos++] = (value)[_i];		\
-		} while (0)
+			buf = b;					\
+		}							\
+		for (_i = 0; _i < _len; _i++)				\
+			buf[bufpos++] = (value)[_i];			\
+	} while (0)
 
 SQLRETURN
 ODBCStore(ODBCStmt *stmt,
