@@ -262,7 +262,9 @@ end user.main;
 function user.main():void;
     X_1:void := querylog.define("explain insert into sql_int128 values (123456789098765432101234567890987654321);":str, "default_pipe":str, 7:int);
     X_4:int := sql.mvc();
-    X_8:int := sql.append(X_4:int, "sys":str, "sql_int128":str, "i":str, 123456789098765432101234567890987654321:hge);
+    (X_59:int, X_58:ptr) := sql.append_prep(X_4:int, "sys":str, "sql_int128":str, "i":str);
+    X_61:ptr := sql.append_exec(X_58:ptr, 123456789098765432101234567890987654321:hge);
+    X_8:int := sql.append_finish(X_59:int, X_61:ptr);
     sql.affectedRows(X_8:int, 1:lng);
 end user.main;
 # optimizer.mitosis()
