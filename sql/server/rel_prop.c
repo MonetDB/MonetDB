@@ -61,6 +61,13 @@ find_prop( prop *p, rel_prop kind)
 	return p;
 }
 
+void *
+find_prop_and_get(prop *p, rel_prop kind)
+{
+	prop *found = find_prop(p, kind);
+	return found ? found->value : NULL;
+}
+
 const char *
 propkind2string( prop *p)
 {
@@ -76,6 +83,8 @@ propkind2string( prop *p)
 		PT(USED);
 		PT(DISTRIBUTE);
 		PT(GROUPINGS);
+		case PROP_MIN: return "MIN";
+		case PROP_MAX: return "MAX";
 	}
 	return "UNKNOWN";
 }
@@ -97,6 +106,27 @@ propvalue2string(sql_allocator *sa, prop *p)
 			char *uri = p->value;
 
 			return sa_strdup(sa, uri);
+		}
+		case PROP_MIN:
+		case PROP_MAX: {
+			ValPtr ptr = p->value;
+
+			if (VALisnil(ptr)) {
+				return sa_strdup(sa, "NULL");
+			} else {
+				char *s = ATOMformat(ptr->vtype, VALptr(ptr)), *res = NULL;
+
+				if (s && *s == '"') {
+					res = sa_strdup(sa, s);
+				} else if (s) {
+					res = sa_alloc(sa, strlen(s) + 3);
+					stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
+				} else { /* shouldn't happen */
+					res = sa_strdup(sa, "");
+				}
+				GDKfree(s);
+				return res;
+			}
 		}
 		default:
 			break;

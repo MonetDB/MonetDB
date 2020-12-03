@@ -2186,7 +2186,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (ne->type == e_atom)
 			e = exp_copy(sql, ne);
 		else
-			e = exp_alias(sql->sa, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
+			e = exp_alias(sql->sa, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_intern(e), get_min(e), get_max(e));
 		return exp_propagate(sql->sa, e, ne);
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -3684,7 +3684,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 					sql_exp *e2 = m->data;
 
 					if (exp_name(e2) && exp_match_exp(e1, e2) && (e1->type != e_column || exps_bind_column2(nexps, exp_relname(e1), exp_name(e1), NULL) == e1)) {
-						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
+						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1), get_min(e2), get_max(e2));
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
 						exp_prop_alias(v->sql->sa, ne, e1);
@@ -5798,7 +5798,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 							sql_exp *gb = n->data;
 
 							if (scores[l] == -1 && exp_refers(gb, e)) {
-								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_intern(gb));
+								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_intern(gb), get_min(gb), get_max(gb));
 								exp_setname(v->sql->sa, rs, exp_find_rel_name(e), exp_name(e));
 								e = rs;
 								fnd = 1;
@@ -6519,7 +6519,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 				break;
 			default: /* simple alias */
 				list_append(aexps, e);
-				ne = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
+				ne = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), get_min(e), get_max(e));
 				list_append(pexps, ne);
 				break;
 			}
@@ -8653,12 +8653,17 @@ rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 	int nr = 0;
 	char name[16], *nme;
 	bool has_nils = c->null;
+	ValPtr min = NULL, max = NULL;
 
-	if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, c))
-		has_nils = false;
-	if(!rel)
+	if (!rel)
 		return NULL;
-	e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
+	if (sql->storage_opt_allowed) {
+		if (has_nils && mvc_has_no_nil(sql, c))
+			has_nils = false;
+		min = mvc_has_min_value(sql, c);
+		max = mvc_has_max_value(sql, c);
+	}
+	e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
 	rel->l = NULL;
 	rel->r = c;
 	rel->op = op_basetable;

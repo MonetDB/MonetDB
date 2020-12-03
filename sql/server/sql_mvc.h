@@ -213,10 +213,13 @@ extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
 extern sql_column *mvc_storage(mvc *c, sql_column *col, char *storage);
 extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
+
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 extern int mvc_has_no_nil(mvc *m, sql_column *col);
+extern ValPtr mvc_has_min_value(mvc *m, sql_column *col);
+extern ValPtr mvc_has_max_value(mvc *m, sql_column *col);
 
 extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);
 extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);

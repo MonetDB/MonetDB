@@ -2333,7 +2333,7 @@ BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	} else {
 		VALclear(&p->v);
 	}
-	if (VALinit(&p->v, type, v) == NULL) {
+	if (v && VALinit(&p->v, type, v) == NULL) {
 		/* failed to initialize, so remove property */
 		BATrmprop_nolock(b, idx);
 		GDKclrerr();

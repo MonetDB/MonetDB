@@ -11,6 +11,8 @@
 
 typedef enum rel_prop {
 	PROP_COUNT,
+	PROP_MIN,       /* min value if available */
+	PROP_MAX,       /* max value if available */
 	PROP_JOINIDX,   /* could use join idx */
 	PROP_HASHIDX,   /* is hash idx */
 	PROP_SORTIDX,   /* is sorted */
@@ -32,6 +34,7 @@ extern prop * prop_create( sql_allocator *sa, rel_prop kind, prop *pre );
 extern prop * prop_copy( sql_allocator *sa, prop *p);
 extern prop * prop_remove( prop *plist, prop *p);
 extern prop * find_prop( prop *p, rel_prop kind);
+extern void * find_prop_and_get(prop *p, rel_prop kind);
 extern const char * propkind2string( prop *p);
 extern char * propvalue2string(sql_allocator *sa, prop *p);
 

@@ -1313,6 +1313,50 @@ nonil_col(sql_trans *tr, sql_column *col)
 	return nonil;
 }
 
+static ValPtr
+col_min_value(sql_trans *tr, sql_column *col)
+{
+	ValPtr res = NULL;
+
+	assert(tr->active || tr == gtrans);
+	if (!isTable(col->t) || !col->t->s)
+		return 0;
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data && col->po)
+		col = col->po;
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, QUICK);
+		PROPrec *prop = NULL;
+
+		if (b && (prop = BATgetprop(b, GDK_MIN_VALUE)))
+			res = &(prop->v);
+	}
+	return res;
+}
+
+static ValPtr
+col_max_value(sql_trans *tr, sql_column *col)
+{
+	ValPtr res = NULL;
+
+	assert(tr->active || tr == gtrans);
+	if (!isTable(col->t) || !col->t->s)
+		return 0;
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data && col->po)
+		col = col->po;
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, QUICK);
+		PROPrec *prop = NULL;
+
+		if (b && (prop = BATgetprop(b, GDK_MAX_VALUE)))
+			res = &(prop->v);
+	}
+	return res;
+}
+
 static int
 load_delta(sql_delta *bat, int bid, int type)
 {
@@ -3139,6 +3183,8 @@ bat_storage_init( store_functions *sf)
 	sf->unique_col = (prop_col_fptr)&unique_col;
 	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
 	sf->nonil_col = (prop_col_fptr)&nonil_col;
+	sf->col_min_value = (proprec_col_fptr)&col_min_value;
+	sf->col_max_value = (proprec_col_fptr)&col_max_value;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;

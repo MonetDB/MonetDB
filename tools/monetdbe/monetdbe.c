@@ -1096,7 +1096,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 			sql_subtype *st = SA_ZNEW(sa, sql_subtype);
 			sql_init_subtype(st, t, (unsigned) *(int*) Tloc(bdigits, i), (unsigned) *(int*) Tloc(bscale, i));
 
-			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false);
+			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, 1, 0, NULL, NULL);
 			append(rets, c);
 		}
 	}

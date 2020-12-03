@@ -152,6 +152,7 @@ typedef size_t (*count_col_upd_fptr) (sql_trans *tr, sql_column *c);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int all /* all or new only */);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
+typedef ValPtr (*proprec_col_fptr) (sql_trans *tr, sql_column *c);
 
 /*
 -- create the necessary storage resources for columns, indices and tables
@@ -251,6 +252,8 @@ typedef struct store_functions {
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	prop_col_fptr nonil_col;
+	proprec_col_fptr col_min_value;
+	proprec_col_fptr col_max_value;
 
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;
@@ -444,11 +447,14 @@ extern int sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop
 extern sql_column *sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull);
 extern sql_column *sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern sql_column *sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
+
 extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern int sql_trans_no_nil(sql_trans *tr, sql_column *col);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
+extern ValPtr sql_trans_col_min_value(sql_trans *tr, sql_column *col);
+extern ValPtr sql_trans_col_max_value(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, char **min, char **max);
 
 extern sql_key *sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt);

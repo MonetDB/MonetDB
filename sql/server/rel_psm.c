@@ -552,10 +552,15 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
 			bool has_nils = c->null;
+			ValPtr min = NULL, max = NULL;
 
-			if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, c))
-				has_nils = false;
-			e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
+			if (sql->storage_opt_allowed) {
+				if (has_nils && mvc_has_no_nil(sql, c))
+					has_nils = false;
+				min = mvc_has_min_value(sql, c);
+				max = mvc_has_max_value(sql, c);
+			}
+			e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
 			e = exp_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)
 				return NULL;

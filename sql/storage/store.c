@@ -6980,6 +6980,22 @@ sql_trans_no_nil( sql_trans *tr, sql_column *col )
 	return 0;
 }
 
+ValPtr
+sql_trans_col_min_value( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && store_funcs.col_min_value)
+		return store_funcs.col_min_value(tr, col);
+	return 0;
+}
+
+ValPtr
+sql_trans_col_max_value( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && store_funcs.col_max_value)
+		return store_funcs.col_max_value(tr, col);
+	return 0;
+}
+
 size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {
