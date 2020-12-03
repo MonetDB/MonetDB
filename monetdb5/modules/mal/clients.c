@@ -24,6 +24,7 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "mal_internal.h"
+#include "opt_pipes.h"
 #include "gdk_time.h"
 
 static int
@@ -244,7 +245,7 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		opt = *getArgReference_str(stk,pci,1);
 	}
 
-	if( idx < 0 || idx > MAL_MAXCLIENTS)
+	if (idx < 0 || idx > MAL_MAXCLIENTS)
 		throw(MAL,"clients.setoptimizer","Illegal session id");
 	if (strNil(opt))
 		throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
