@@ -250,11 +250,11 @@ BEGIN
 
 	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
 
-	INSERT INTO dump_statements(s) --dump_create_comments_on_schemas
+	INSERT INTO dump_statements(s) --dump_create_comments_on_indices
         SELECT comment_on('INDEX', DQ(i.name), rem.remark)
         FROM sys.idxs i JOIN sys.comments rem ON i.id = rem.id;
 
-	INSERT INTO dump_statements(s) --dump_create_comments_on_schemas
+	INSERT INTO dump_statements(s) --dump_create_comments_on_columns
         SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
@@ -267,7 +267,7 @@ BEGIN
 	--TODO COMMENTS ON TABLE
 	--TODO TABLE level grants
 	--TODO COLUMN level grants
-	--TODO User Defined Types?
+	--TODO User Defined Types? sys.types
 	--TODO STREAM TABLE?
 	--TODO Triggers
 
@@ -276,6 +276,6 @@ BEGIN
 END;
 
 CALL dump_database(TRUE);
-SELECT  GROUP_CONCAT(s) OVER (PARTITION BY o range between current row and current row) FROM dump_statements;
+SELECT GROUP_CONCAT(s) OVER (PARTITION BY o range between current row and current row) FROM dump_statements;
 
 ROLLBACK;
