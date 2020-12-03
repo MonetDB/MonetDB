@@ -136,7 +136,7 @@ class TestCaseResult(object):
     """TestCase connected result"""
     test_case = None
 
-    def __init__(self, test_case):
+    def __init__(self, test_case, **kwargs):
         self.test_case = test_case
         self.assertion_errors = [] # holds assertion errors
         self.query = None
@@ -147,6 +147,7 @@ class TestCaseResult(object):
         self.rows = []
         self.rowcount = -1
         self.description = None
+        self.id = kwargs.get('id')
 
     def fail(self, msg, data=None):
         """ logs errors to test case err file"""
@@ -154,7 +155,9 @@ class TestCaseResult(object):
         if len(self.assertion_errors) == 0:
             if self.query:
                 print(self.query, file=err_file)
-                print('----', file=err_file)
+            elif self.id:
+                print(self.id, file=err_file)
+            print('----', file=err_file)
         self.assertion_errors.append(AssertionError(msg))
         print(msg, file=err_file)
         if data is not None:
@@ -252,8 +255,8 @@ class TestCaseResult(object):
 class MclientTestResult(TestCaseResult, RunnableTestResult):
     """Holder of a sql execution result as returned from mclinet"""
 
-    def __init__(self, test_case):
-        super().__init__(test_case)
+    def __init__(self, test_case, **kwargs):
+        super().__init__(test_case, **kwargs)
         self.did_run = False
 
     def _parse_error(self, err:str):
@@ -341,8 +344,8 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
     """Holder of sql execution information. Managed by SQLTestCase."""
     test_case = None
 
-    def __init__(self, test_case):
-        super().__init__(test_case)
+    def __init__(self, test_case, **kwargs):
+        super().__init__(test_case, **kwargs)
         self.did_run = False
 
     def _parse_error(self, error:str=''):
@@ -385,8 +388,8 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
 
 
 class MonetDBeTestResult(TestCaseResult, RunnableTestResult):
-    def __init__(self, test_case):
-        super().__init__(test_case)
+    def __init__(self, test_case, **kwargs):
+        super().__init__(test_case, **kwargs)
         self.did_run = False
 
     def _parse_error(self, err: str):
@@ -489,13 +492,13 @@ class SQLTestCase():
     def conn_ctx(self):
         return self._conn_ctx or self.default_conn_ctx()
 
-    def execute(self, query:str, *args, client='pymonetdb', stdin=None):
+    def execute(self, query:str, *args, client='pymonetdb', stdin=None, result_id=None):
         if client == 'mclient':
-            res = MclientTestResult(self)
+            res = MclientTestResult(self, id=result_id)
         elif self.in_memory:
-            res = MonetDBeTestResult(self)
+            res = MonetDBeTestResult(self, id=result_id)
         else:
-            res = PyMonetDBTestResult(self)
+            res = PyMonetDBTestResult(self, id=result_id)
         res.run(query, *args, stdin=stdin)
         self.test_results.append(res)
         return res
