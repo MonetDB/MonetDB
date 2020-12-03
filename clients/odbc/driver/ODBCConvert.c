@@ -2399,9 +2399,11 @@ ODBCFetch(ODBCStmt *stmt,
 					/* Fractional truncation */
 					addStmtError(stmt, "01S07", NULL, 0);
 				}
-				dval.year = tsval.year;
-				dval.month = tsval.month;
-				dval.day = tsval.day;
+				dval = (DATE_STRUCT) {
+					.year = tsval.year,
+					.month = tsval.month,
+					.day = tsval.day,
+				};
 			} else if (!parsedate(data, &dval)) {
 				/* Invalid character value for cast
 				 * specification */
@@ -2484,24 +2486,28 @@ ODBCFetch(ODBCStmt *stmt,
 #else
 					tm = *localtime(&t);
 #endif
-					tsval.year = tm.tm_year + 1900;
-					tsval.month = tm.tm_mon + 1;
-					tsval.day = tm.tm_mday;
-					tsval.hour = tval.hour;
-					tsval.minute = tval.minute;
-					tsval.second = tval.second;
-					tsval.fraction = 0;
+					tsval = (TIMESTAMP_STRUCT) {
+						.year = tm.tm_year + 1900,
+						.month = tm.tm_mon + 1,
+						.day = tm.tm_mday,
+						.hour = tval.hour,
+						.minute = tval.minute,
+						.second = tval.second,
+						.fraction = 0,
+					};
 				} else {
 					i = parsedate(data, &dval);
 					if (i) {
 		case SQL_TYPE_DATE:
-						tsval.year = dval.year;
-						tsval.month = dval.month;
-						tsval.day = dval.day;
-						tsval.hour = 0;
-						tsval.minute = 0;
-						tsval.second = 0;
-						tsval.fraction = 0;
+						tsval = (TIMESTAMP_STRUCT) {
+							.year = dval.year,
+							.month = dval.month,
+							.day = dval.day,
+							.hour = 0,
+							.minute = 0,
+							.second = 0,
+							.fraction = 0,
+						};
 					} else {
 						/* Invalid character
 						 * value for cast
@@ -3404,9 +3410,11 @@ ODBCStore(ODBCStmt *stmt,
 					/* Datetime field overflow */
 					addStmtError(stmt, "22008", NULL, 0);
 				}
-				dval.year = tsval.year;
-				dval.month = tsval.month;
-				dval.day = tsval.day;
+				dval = (DATE_STRUCT) {
+					.year = tsval.year,
+					.month = tsval.month,
+					.day = tsval.day,
+				};
 			} else if (!parsedate(sval, &dval)) {
 				/* Invalid character value for cast
 				 * specification */
@@ -3441,9 +3449,11 @@ ODBCStore(ODBCStmt *stmt,
 					/* Datetime field overflow */
 					addStmtError(stmt, "22008", NULL, 0);
 				}
-				tval.hour = tsval.hour;
-				tval.minute = tsval.minute;
-				tval.second = tsval.second;
+				tval = (TIME_STRUCT) {
+					.hour = tsval.hour,
+					.minute = tsval.minute,
+					.second = tsval.second,
+				};
 			} else if (!parsetime(sval, &tval)) {
 				/* Invalid character value for cast
 				 * specification */
@@ -3484,24 +3494,28 @@ ODBCStore(ODBCStmt *stmt,
 #else
 					tm = *localtime(&t);
 #endif
-					tsval.year = tm.tm_year + 1900;
-					tsval.month = tm.tm_mon + 1;
-					tsval.day = tm.tm_mday;
-					tsval.hour = tval.hour;
-					tsval.minute = tval.minute;
-					tsval.second = tval.second;
-					tsval.fraction = 0;
+					tsval = (TIMESTAMP_STRUCT) {
+						.year = tm.tm_year + 1900,
+						.month = tm.tm_mon + 1,
+						.day = tm.tm_mday,
+						.hour = tval.hour,
+						.minute = tval.minute,
+						.second = tval.second,
+						.fraction = 0,
+					};
 				} else {
 					i = parsedate(sval, &dval);
 					if (i) {
 		case SQL_TYPE_DATE:
-						tsval.year = dval.year;
-						tsval.month = dval.month;
-						tsval.day = dval.day;
-						tsval.hour = 0;
-						tsval.minute = 0;
-						tsval.second = 0;
-						tsval.fraction = 0;
+						tsval = (TIMESTAMP_STRUCT) {
+							.year = dval.year,
+							.month = dval.month,
+							.day = dval.day,
+							.hour = 0,
+							.minute = 0,
+							.second = 0,
+							.fraction = 0,
+						};
 					} else {
 						/* Invalid character
 						 * value for cast
