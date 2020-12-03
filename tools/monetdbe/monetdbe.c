@@ -1023,7 +1023,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	o = getInstrPtr(mb, 0);
 	o->retc = o->argc = 0;
 
-	e = newInstructionArgs(mb, remoteRef, execRef, nparams + 5);
+	e = newInstructionArgs(mb, remoteRef, execRef, (int)(nparams + 5));
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, userRef);
