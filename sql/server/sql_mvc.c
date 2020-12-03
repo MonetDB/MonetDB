@@ -1568,6 +1568,20 @@ mvc_has_no_nil(mvc *m, sql_column *col)
 	return sql_trans_no_nil(m->session->tr, col);
 }
 
+ValPtr
+mvc_has_min_value(mvc *m, sql_column *col)
+{
+	TRC_DEBUG(SQL_TRANS, "Has min value: %s\n", col->base.name);
+	return sql_trans_col_min_value(m->session->tr, col);
+}
+
+ValPtr
+mvc_has_max_value(mvc *m, sql_column *col)
+{
+	TRC_DEBUG(SQL_TRANS, "Has max value: %s\n", col->base.name);
+	return sql_trans_col_max_value(m->session->tr, col);
+}
+
 sql_column *
 mvc_copy_column( mvc *m, sql_table *t, sql_column *c)
 {

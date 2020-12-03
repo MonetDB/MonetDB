@@ -63,8 +63,6 @@ void BATdestroy(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void BATfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
-PROPrec *BATgetprop(BAT *b, enum prop_t idx)
-	__attribute__((__visibility__("hidden")));
 PROPrec * BATgetprop_nolock(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
@@ -297,12 +295,6 @@ BAT *virtualize(BAT *bn)
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
 #define BBP_THREADMASK	63
-
-struct PROPrec {
-	enum prop_t id;
-	ValRecord v;
-	struct PROPrec *next;	/* simple chain of properties */
-};
 
 struct Imprints {
 	bte bits;		/* how many bits in imprints */

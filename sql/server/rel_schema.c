@@ -1567,7 +1567,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 	/* New columns need update with default values. Add one more element for new column */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	if (nt->columns.nelm) {
 		list *cols = new_exp_list(sql->sa);
@@ -1582,7 +1582,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				rel_destroy(r);
 				return NULL;
 			}
-			list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
+			list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, NULL, NULL));
 
 			assert(!updates[c->colnr]);
 			exp_setname(sql->sa, e, c->t->base.name, c->base.name);
@@ -2128,7 +2128,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* new columns need update with default values */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(nt->columns.set));
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL);
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	res = rel_update(sql, res, r, updates, NULL);
