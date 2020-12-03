@@ -2350,7 +2350,7 @@ BATgetprop(BAT *b, enum prop_t idx)
 
 	MT_lock_set(&b->batIdxLock);
 	p = BATgetprop_nolock(b, idx);
-	if (p == NULL) {
+	if (p == NULL && (b->ttype == TYPE_void || b->theap.base != NULL)) {
 		/* if looking for the min/max value, we may be able to
 		 * find it using the position; note we can't do this
 		 * when reading in the BBP since the BAT type may not be
