@@ -4755,13 +4755,19 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				append(fargs, exp_atom_bool(sql->sa, 1)); /* ignore nills */
 		}
 
-		if (!nfargs) { /* count(*) */
+		/* count(*), also optimize count(nonil) -> count(*) */
+		if (!nfargs || (strcmp(aname, "count") == 0 && !distinct && nfargs == 1 && !has_nil((sql_exp*)fargs->h->data))) {
 			if (window_function->token == SQL_AGGR && strcmp(aname, "count") != 0) {
 				char *uaname = SA_NEW_ARRAY(sql->ta, char, strlen(aname) + 1);
 				return sql_error(sql, 02, SQLSTATE(42000) "%s: unable to perform '%s(*)'", toUpperCopy(uaname, aname), aname);
 			}
 			sql_subfunc *star = sql_bind_func(sql->sa, s, "star", NULL, NULL, F_FUNC);
 			in = exp_op(sql->sa, NULL, star);
+			if (nfargs) { /* doing count(nonil) -> count(*) optimization, remove the current argument list */
+				assert(list_length(fargs) == 2);
+				list_remove_node(fargs, fargs->h);
+				list_remove_node(fargs, fargs->h);
+			}
 			append(fargs, in);
 			append(fargs, exp_atom_bool(sql->sa, 0)); /* don't ignore nills */
 		}
