@@ -6972,6 +6972,14 @@ sql_trans_is_duplicate_eliminated( sql_trans *tr, sql_column *col )
 	return 0;
 }
 
+int
+sql_trans_no_nil( sql_trans *tr, sql_column *col )
+{
+	if (col && isTable(col->t) && store_funcs.nonil_col)
+		return store_funcs.nonil_col(tr, col);
+	return 0;
+}
+
 size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {

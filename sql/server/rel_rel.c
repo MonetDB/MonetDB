@@ -803,10 +803,13 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	if (isRemote(t))
 		tname = mapiuri_table(t->query, sql->sa, tname);
 	for (cn = t->columns.set->h; cn; cn = cn->next) {
+		sql_exp *e;
 		sql_column *c = cn->data;
-		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+		bool has_nils = c->null;
 
-		if (e == NULL) {
+		if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, c))
+			has_nils = false;
+		if (!(e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0))) {
 			rel_destroy(rel);
 			return NULL;
 		}

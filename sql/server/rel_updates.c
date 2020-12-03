@@ -157,9 +157,12 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
-		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je, *rtc;
+		bool has_nils = rc->c->null;
 
+		if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, rc->c))
+			has_nils = false;
+		rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, has_nils, 0);
 		_is = exp_ref(sql, _is);
 		lnl = exp_unop(sql->sa, _is, isnil);
 		set_has_no_nil(lnl);
@@ -744,9 +747,12 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
-		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
+		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je, *rtc;
+		bool has_nils = rc->c->null;
 
+		if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, rc->c))
+			has_nils = false;
+		rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, has_nils, 0);
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
 		upd = exp_ref(sql, upd);
@@ -875,8 +881,13 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 			sql_column *c = m->data;
 			sql_exp *v = updates[c->colnr];
 
-			if (tab->idxs.set && !v)
-				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			if (tab->idxs.set && !v) {
+				bool has_nils = c->null;
+
+				if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, c))
+					has_nils = false;
+				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
+			}
 			if (v)
 				v = rel_project_add_exp(sql, uprel, v);
 		}
@@ -1455,8 +1466,13 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		if (c->base.name[0] != '%')
-			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+		if (c->base.name[0] != '%') {
+			bool has_nils = c->null;
+
+			if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, c))
+				has_nils = false;
+			list_append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, has_nils, 0));
+		}
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	return res;
@@ -1738,7 +1754,11 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	exps = new_exp_list(sql->sa);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
+		bool has_nils = c->null;
+
+		if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, c))
+			has_nils = false;
+		list_append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, has_nils, 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	res = rel_insert_table(query, t, t->base.name, res);
@@ -1866,6 +1886,7 @@ rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 
 	m->qc = NULL;
 
+	m->storage_opt_allowed = false; /* don't do storage related optimizations while parsing values */
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	len += 8; /* add 'select ;' */

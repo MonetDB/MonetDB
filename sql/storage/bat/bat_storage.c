@@ -1293,6 +1293,27 @@ double_elim_col(sql_trans *tr, sql_column *col)
 }
 
 static int
+nonil_col(sql_trans *tr, sql_column *col)
+{
+	int nonil = 0;
+
+	assert(tr->active || tr == gtrans);
+	if (!isTable(col->t) || !col->t->s)
+		return 0;
+	/* fallback to central bat */
+	if (tr && tr->parent && !col->data && col->po)
+		col = col->po;
+
+	if (col && col->data) {
+		BAT *b = bind_col(tr, col, QUICK);
+
+		if (b)
+			nonil = b->tnonil && !b->tnil; /* check deltas as well */
+	}
+	return nonil;
+}
+
+static int
 load_delta(sql_delta *bat, int bid, int type)
 {
 	BAT *b;
@@ -3117,6 +3138,7 @@ bat_storage_init( store_functions *sf)
 	sf->sorted_col = (prop_col_fptr)&sorted_col;
 	sf->unique_col = (prop_col_fptr)&unique_col;
 	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
+	sf->nonil_col = (prop_col_fptr)&nonil_col;
 
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;

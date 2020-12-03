@@ -1130,6 +1130,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	int i, retseen = 0, sideeffects = 0, vararg = (f->varres || f->vararg), no_inline = 0, clientid = be->mvc->clientid;
 	sql_rel *r;
 	str msg = MAL_SUCCEED;
+	bool prev_storage_opt_allowed = m->storage_opt_allowed;
 
 	/* nothing to do for internal and ready (not recompiling) functions, besides finding respective MAL implementation */
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
@@ -1147,13 +1148,15 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		return 0;
 	if (!vararg)
 		f->sql++;
+	m->storage_opt_allowed = false; /* can't do storage related optimizations while compiling a function */
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
-		r = sql_processrelation(m, r, 1, 0);
+		r = sql_processrelation(m, r, 1);
 	if (r)
 		r = rel_distribute(m, r);
 	if (r)
 		r = rel_partition(m, r);
+	m->storage_opt_allowed = prev_storage_opt_allowed;
 	if (r && !f->sql) 	/* native function */
 		return 0;
 

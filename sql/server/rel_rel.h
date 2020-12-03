@@ -128,8 +128,7 @@ typedef struct visitor {
 	sql_rel *parent;
 	mvc *sql;
 	void *data;
-	bte value_based_opt:1, /* during rel optimizer it has to now if value based optimization is possible */
-		storage_based_opt:1;
+	bte value_based_opt; /* during rel optimizer it has to now if value based optimization is possible */
 } visitor;
 
 typedef sql_exp *(*exp_rewrite_fptr)(visitor *v, sql_rel *rel, sql_exp *e, int depth /* depth of the nested expression */);
