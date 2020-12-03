@@ -142,13 +142,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 129 # length
+% 138 # length
 project (
 | group by (
 | | project (
 | | | table(sys.dummyme) [ "dummyme"."a" NOT NULL HASHCOL  ] COUNT 
-| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", sys.sql_add("%3"."%3" NOT NULL, bigint "1") as "%2"."%2" ]
-| ) [  ] [ sys.count unique  no nil ("%2"."%2") NOT NULL as "%1"."%1" ]
+| | ) [ bigint["dummyme"."a" NOT NULL HASHCOL ] NOT NULL as "%3"."%3", sys.sql_add("%3"."%3" NOT NULL, bigint "1") NOT NULL as "%2"."%2" ]
+| ) [  ] [ sys.count unique  no nil ("%2"."%2" NOT NULL) NOT NULL as "%1"."%1" ]
 ) [ "%1"."%1" NOT NULL ]
 #plan select count(distinct a + b) from dummyme;
 % .plan # table_name

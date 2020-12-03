@@ -471,15 +471,40 @@ newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
 	return newInstructionArgs(mb, modnme, fcnnme, MAXARG);
 }
 
+/* Moving instructions around calls for care, because all dependent
+ * information should also be updated. */
+static void
+oldmoveInstruction(InstrPtr new, InstrPtr p)
+{
+	int space;
+
+	space = offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]);
+	memcpy((char *) new, (char *) p, space);
+	setFunctionId(new, getFunctionId(p));
+	setModuleId(new, getModuleId(p));
+	new->typechk = TYPE_UNKNOWN;
+}
+
 /* Copying an instruction is space conservative. */
 InstrPtr
-copyInstruction(InstrPtr p)
+copyInstructionArgs(InstrPtr p, int args)
 {
-	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
+	if (p->maxarg > args)
+		args = p->maxarg;
+	InstrPtr new = (InstrPtr) GDKmalloc(offsetof(InstrRecord, argv) + args * sizeof(p->argv[0]));
 	if(new == NULL)
 		return new;
 	oldmoveInstruction(new, p);
+	new->maxarg = args;
+	if (args > p->maxarg)
+		memset(new->argv + p->maxarg, 0, (args - p->maxarg) * sizeof(new->argv[0]));
 	return new;
+}
+
+InstrPtr
+copyInstruction(InstrPtr p)
+{
+	return copyInstructionArgs(p, p->maxarg);
 }
 
 void
@@ -504,20 +529,6 @@ void
 freeInstruction(InstrPtr p)
 {
 	GDKfree(p);
-}
-
-/* Moving instructions around calls for care, because all dependent
- * information should also be updated. */
-void
-oldmoveInstruction(InstrPtr new, InstrPtr p)
-{
-	int space;
-
-	space = offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]);
-	memcpy((char *) new, (char *) p, space);
-	setFunctionId(new, getFunctionId(p));
-	setModuleId(new, getModuleId(p));
-	new->typechk = TYPE_UNKNOWN;
 }
 
 /* Query optimizers walk their way through a MAL program block. They

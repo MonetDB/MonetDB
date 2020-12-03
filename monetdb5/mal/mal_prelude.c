@@ -226,7 +226,7 @@ addFunctions(mel_func *fcn){
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
 		if (fcn->cname && fcn->cname[0])
 			strcpy(mb->binding, fcn->cname);
-		sig= newInstruction(mb, fcn->mod, fcn->fcn);
+		sig= newInstructionArgs(mb, fcn->mod, fcn->fcn, fcn->argc + (fcn->retc == 0));
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
@@ -338,7 +338,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		freeSymbol(s);
 		return MEL_ERR;
 	}
-	sig = newInstruction(mb, mod, fcn);
+	sig = newInstructionArgs(mb, mod, fcn, argc + (retc == 0));
 	sig->retc = 0;
 	sig->argc = 0;
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;

@@ -1012,7 +1012,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	{
 		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
-		char nme[16]		= {0};		
+		char nme[16]		= {0};
 		const char* name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
 		prg					= newFunction(userRef, putName(name), FUNCTIONsymbol);
 	}
@@ -1023,7 +1023,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	o = getInstrPtr(mb, 0);
 	o->retc = o->argc = 0;
 
-	e = newInstruction(mb, remoteRef, execRef);
+	e = newInstructionArgs(mb, remoteRef, execRef, (int)(nparams + 5));
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, userRef);
@@ -1486,7 +1486,7 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 	}
 
 	int len = snprintf(buf, 1024, "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
-					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "", 
+					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "",
 					   escaped_schema_name ? escaped_schema_name : "\".", escaped_table_name);
 	GDKfree(escaped_schema_name);
 	GDKfree(escaped_table_name);
@@ -2071,7 +2071,7 @@ remote_cleanup:
 		r = pushStr(mb, r, userRef);
 		r = pushStr(mb, r, putName(remote_prg->name));
 
-		InstrPtr e = newInstruction(mb, remoteRef, execRef);
+		InstrPtr e = newInstructionArgs(mb, remoteRef, execRef, 4 + list_length(t->columns.set));
 		setDestVar(e, newTmpVariable(mb, TYPE_any));
 		e = pushStr(mb, e, mdbe->mid);
 		e = pushStr(mb, e, userRef);
