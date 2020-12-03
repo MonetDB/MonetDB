@@ -50,7 +50,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y = '1
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) ]
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
 ) [ "myx"."x", "myx"."y" ]
 
 query T nosort
@@ -59,7 +59,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is n
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" * = uuid "NULL") ]
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" * = uuid "NULL") ]
 ) [ "myx"."x", "myx"."y" ]
 
 query T nosort
@@ -68,7 +68,7 @@ plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"], uuid[char(32) "1aea00e5db6e0810b554fde31d961966"])) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
+| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL) ]
 ) [ "myx"."x", "myx"."y" ]
 
 statement ok
