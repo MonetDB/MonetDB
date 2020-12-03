@@ -69,7 +69,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	defineQuery = addArgument(mb,defineQuery,start);
 	pushInstruction(mb, defineQuery);
 
-	q = newStmt(mb, sqlRef, "argRecord");
+	q = newStmtArgs(mb, sqlRef, "argRecord", old[0]->argc);
 	for ( argc=1; argc < old[0]->argc; argc++)
 		q = pushArgument(mb, q, getArg(old[0],argc));
 
@@ -151,7 +151,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			q = pushArgument(mb,q,idle);
 			q = pushArgument(mb,q,iowait);
 
-			q = newStmt(mb, querylogRef, "call");
+			q = newStmtArgs(mb, querylogRef, "call", 9);
 			q = pushArgument(mb, q, start);
 			q = pushArgument(mb, q, finish);
 			q = pushArgument(mb, q, arg);
@@ -169,7 +169,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 			/* the factory yield may return */
 			q = newStmt(mb, "mtime", "current_timestamp");
 			start= getArg(q,0)= newVariable(mb,"start",5,TYPE_any);
-			q = newStmt(mb, sqlRef, "argRecord");
+			q = newStmtArgs(mb, sqlRef, "argRecord", old[0]->argc);
 			for ( argc=1; argc < old[0]->argc; argc++)
 				q = pushArgument(mb, q, getArg(old[0],argc));
 			arg= getArg(q,0)= newVariable(mb,"args",4,TYPE_str);

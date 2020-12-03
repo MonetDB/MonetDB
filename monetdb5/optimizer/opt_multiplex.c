@@ -123,7 +123,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* cr:= mod.CMD($1,...,$n); */
-	q = newFcnCall(mb, mod, fcn);
+	q = newFcnCallArgs(mb, mod, fcn, pci->argc - 2);
 	for (i = 0; i < pci->retc; i++) {
 		int nvar = 0;
 		if (bat) {

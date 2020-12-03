@@ -410,6 +410,8 @@ exp_atom(sql_allocator *sa, atom *a)
 	e->card = CARD_ATOM;
 	e->tpe = a->tpe;
 	e->l = a;
+	if (!a->isnull)
+		set_has_no_nil(e);
 	return e;
 }
 
@@ -870,10 +872,6 @@ exp_rel(mvc *sql, sql_rel *rel)
 
 	if (e == NULL)
 		return NULL;
-	/*
-	rel = sql_processrelation(sql, rel, 0);
-	rel = rel_distribute(sql, rel);
-	*/
 	e->l = rel;
 	e->flag = PSM_REL;
 	e->card = rel->single?CARD_ATOM:rel->card;
@@ -1879,6 +1877,9 @@ exp_is_zero(sql_exp *e)
 int
 exp_is_not_null(sql_exp *e)
 {
+	if (!has_nil(e))
+		return true;
+
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */
@@ -1911,6 +1912,9 @@ exp_is_not_null(sql_exp *e)
 int
 exp_is_null(sql_exp *e )
 {
+	if (!has_nil(e))
+		return false;
+
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */

@@ -782,9 +782,9 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->theap.farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap.dirty = false;
 	if (minpos < b->batCount)
-		BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){minpos});
+		BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){(oid)minpos});
 	if (maxpos < b->batCount)
-		BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){maxpos});
+		BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){(oid)maxpos});
 #ifdef GDKLIBRARY_BLOB_SORT
 	if (bbpversion <= GDKLIBRARY_BLOB_SORT && strcmp(type, "blob") == 0) {
 		b->tsorted = b->trevsorted = false;

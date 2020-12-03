@@ -34,25 +34,25 @@ stdout of test 'quantile_function_resolution.Bug-3773` in directory 'sql/test/Bu
 % .plan # table_name
 % rel # name
 % clob # type
-% 92 # length
+% 101 # length
 project (
 | group by (
 | | project (
 | | | table(sys.x) [ "x"."y" ] COUNT 
 | | ) [ "x"."y", double "0" as "%2"."%2" ]
-| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2") as "%1"."%1" ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2" NOT NULL) as "%1"."%1" ]
 ) [ "%1"."%1" ]
 #plan select quantile(y, 0) from x;
 % .plan # table_name
 % rel # name
 % clob # type
-% 92 # length
+% 101 # length
 project (
 | group by (
 | | project (
 | | | table(sys.x) [ "x"."y" ] COUNT 
 | | ) [ "x"."y", double "0" as "%2"."%2" ]
-| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2") as "%1"."%1" ]
+| ) [  ] [ sys.quantile no nil (decimal(18,3)["x"."y"] as "x"."y", "%2"."%2" NOT NULL) as "%1"."%1" ]
 ) [ "%1"."%1" ]
 #rollback;
 
