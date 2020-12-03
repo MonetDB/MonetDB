@@ -40,7 +40,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	if(bufName == NULL || fcnName == NULL)
 		return 0;
 
-	p= newInstruction(mb, bufName, fcnName);
+	p= newInstructionArgs(mb, bufName, fcnName, pci->argc + 2);
 
 	for(i=0; i<pci->retc; i++)
 		if (i<1)

@@ -18,7 +18,8 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 
-Symbol newFunction(str mod, str nme,int kind){
+Symbol newFunctionArgs(str mod, str nme, int kind, int args)
+{
 	Symbol s;
 	InstrPtr p;
 	int varid;
@@ -36,7 +37,7 @@ Symbol newFunction(str mod, str nme,int kind){
 		return NULL;
 	}
 
-	p = newInstruction(NULL, mod, nme);
+	p = newInstructionArgs(NULL, mod, nme, args);
 	if (p == NULL) {
 		freeSymbol(s);
 		return NULL;
@@ -47,6 +48,12 @@ Symbol newFunction(str mod, str nme,int kind){
 	pushInstruction(s->def,p);
 	return s;
 }
+
+Symbol newFunction(str mod, str nme, int kind)
+{
+	return newFunctionArgs(mod, nme, kind, MAXARG);
+}
+
 /*
  * Optimizers may be interested in the function definition
  * for obtaining properties. Rather than polution of the

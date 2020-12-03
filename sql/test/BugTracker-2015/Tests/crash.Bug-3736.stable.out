@@ -114,7 +114,7 @@ project (
 | | | | ) [ "b2"."id" NOT NULL HASHCOL  = "%3"."%3" ]
 | | | ) [ "b2"."increase" NOT NULL, "o"."open_auction_id" NOT NULL as "%6"."%6" ]
 | | ) [ "o"."open_auction_id" NOT NULL * = "%6"."%6" NOT NULL ]
-| ) [ sys.sql_mul("%2"."%2" NOT NULL, double "2") <= "b2"."increase" NOT NULL ]
+| ) [ sys.sql_mul("%2"."%2" NOT NULL, double "2") NOT NULL <= "b2"."increase" NOT NULL ]
 ) [ "b"."id" NOT NULL HASHCOL , "b"."open_auction_id" NOT NULL, "b"."date" NOT NULL, "b"."time" NOT NULL, "b"."personref" NOT NULL, "b"."increase" NOT NULL ]
 #Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min(b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX(b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time;
 % sys.b,	sys.b,	sys.b,	sys.b,	sys.b,	sys.b # table_name
