@@ -251,6 +251,8 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL,"clients.setoptimizer","Input string cannot be NULL");
 	if (strlen(opt) >= sizeof(mal_clients[idx].optimizer))
 		throw(MAL,"clients.setoptimizer","Input string is too large");
+	if (!isOptimizerPipe(opt))
+		throw(MAL, "clients.setoptimizer", "Valid optimizer pipe expected");
 
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
