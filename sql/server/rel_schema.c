@@ -1366,6 +1366,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
 		sql_schema *os = cur_schema(sql);
+		bool prev_storage_opt_allowed = sql->storage_opt_allowed;
 		dnode *n = schema_elements->h;
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
@@ -1380,12 +1381,14 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 			if (!res) {
 				rel_destroy(ret);
 				sql->session->schema = os;
+				sql->storage_opt_allowed = prev_storage_opt_allowed;
 				return NULL;
 			}
 			ret = rel_list(sql->sa, ret, res);
 			n = n->next;
 		}
 		sql->session->schema = os;
+		sql->storage_opt_allowed = prev_storage_opt_allowed;
 		return ret;
 	}
 }
