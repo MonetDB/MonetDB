@@ -396,7 +396,7 @@ exp_aggr( sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils,
 		set_distinct(e);
 	if (no_nils)
 		set_no_nil(e);
-	if (!has_nils)
+	if ((!a->func->semantics && !has_nils) || (!a->func->s && strcmp(a->func->base.name, "count") == 0))
 		set_has_no_nil(e);
 	return e;
 }
@@ -410,13 +410,14 @@ exp_atom(sql_allocator *sa, atom *a)
 	e->card = CARD_ATOM;
 	e->tpe = a->tpe;
 	e->l = a;
+	if (!a->isnull)
+		set_has_no_nil(e);
 	return e;
 }
 
 sql_exp *
 exp_atom_max(sql_allocator *sa, sql_subtype *tpe)
 {
-
 	if (tpe->type->localtype == TYPE_bte) {
 		return exp_atom_bte(sa, GDK_bte_max);
 	} else if (tpe->type->localtype == TYPE_sht) {
@@ -869,10 +870,6 @@ exp_rel(mvc *sql, sql_rel *rel)
 
 	if (e == NULL)
 		return NULL;
-	/*
-	rel = sql_processrelation(sql, rel, 0);
-	rel = rel_distribute(sql, rel);
-	*/
 	e->l = rel;
 	e->flag = PSM_REL;
 	e->card = rel->single?CARD_ATOM:rel->card;
@@ -1878,6 +1875,9 @@ exp_is_zero(sql_exp *e)
 int
 exp_is_not_null(sql_exp *e)
 {
+	if (!has_nil(e))
+		return true;
+
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */
@@ -1910,6 +1910,9 @@ exp_is_not_null(sql_exp *e)
 int
 exp_is_null(sql_exp *e )
 {
+	if (!has_nil(e))
+		return false;
+
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */

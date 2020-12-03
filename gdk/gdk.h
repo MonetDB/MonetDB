@@ -712,7 +712,10 @@ typedef struct {
 
 #define GDKLIBRARY_BLOB_SORT	061040U /* first in Mar2018: blob compare changed */
 #define GDKLIBRARY_OLDDATE	061041U /* first in Apr2019: time/date in old format */
-#define GDKLIBRARY		061042U /* first in Nov2019 */
+#define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019 */
+
+/* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
+#define GDKLIBRARY		061043U /* first after Oct2020 */
 
 typedef struct BAT {
 	/* static bat properties */
@@ -2020,7 +2023,9 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  */
 enum prop_t {
 	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
+	GDK_MIN_POS,		/* BUN position of smallest value  */
 	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
+	GDK_MAX_POS,		/* BUN position of largest value  */
 	GDK_HASH_BUCKETS,	/* last used hash bucket size */
 	GDK_NUNIQUE,		/* number of unique values */
 };

@@ -1,3 +1,6 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Tue Dec  1 2020 Sjoerd Mullender <sjoerd@acm.org>
+- We now save the location of the min and max values when known.
+

@@ -140,7 +140,7 @@ printStackElm(stream *f, MalBlkPtr mb, ValPtr v, int index, BUN cnt, BUN first)
 	}
 	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
 	/* check for type errors */
-	if (strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
+	if (nmeOnStk && strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
 		mnstr_printf(f, "!%s ", nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
 	mnstr_printf(f, " %s", (isVarUsed(mb,index) ? "": " not used" ));
