@@ -185,7 +185,19 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 			/*
 			 * Try to expand its argument list with what we have found so far.
 			 */
-			if((q = copyInstruction(p)) == NULL) {
+			int args = p->retc;
+			for (j = p->retc; j < p->argc; j++) {
+				if (pc[getArg(p,j)] &&
+					(r = getInstrPtr(mb, pc[getArg(p, j)])) != NULL &&
+					varcnt[getArg(p,j)] <= 1 &&
+					getModuleId(r)== algebraRef &&
+					(getFunctionId(r)== projectionRef ||
+					 getFunctionId(r) == projectionpathRef))
+					args += r->argc - r->retc;
+				else
+					args++;
+			}
+			if((q = copyInstructionArgs(p, args)) == NULL) {
 				msg = createException(MAL,"optimizer.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto wrapupall;
 			}

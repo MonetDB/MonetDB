@@ -422,14 +422,14 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % .plan # table_name
 % rel # name
 % clob # type
-% 32 # length
+% 48 # length
 project (
 | group by (
 | | project (
 | | |  [ boolean "true" ]
 | | ) [ tinyint "1" as "x"."x" ]
-| ) [ "x"."x" as "z" ] [ "z" ]
-) [ "z", tinyint "2" ]
+| ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
+) [ "z" NOT NULL, tinyint "2" ]
 #select 1, null except select 1, null;
 % .%11,	.%11 # table_name
 % %2,	%3 # name
