@@ -3490,7 +3490,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		*rel = res;
 	}
 
-	if (!has_args) {	/* count(*) case */
+	/* count(*) case or optimize count(nonil) to count(*) */
+	if (!has_args || (strcmp(aname, "count") == 0 && !distinct && list_length(exps) == 1 && !has_nil((sql_exp*)exps->h->data))) {
 		sql_exp *e;
 
 		if (strcmp(aname, "count") != 0) {

@@ -548,10 +548,14 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		if (cs_size(&t->columns) != list_length(restypelist))
 			return sql_error(sql, 02, SQLSTATE(42000) "RETURN: number of columns do not match");
 		for (n = t->columns.set->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
+			sql_exp *e;
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
-			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
+			bool has_nils = c->null;
 
+			if (has_nils && sql->storage_opt_allowed && mvc_has_no_nil(sql, c))
+				has_nils = false;
+			e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
 			e = exp_check_type(sql, &ce->type, rel, e, type_equal);
 			if (!e)
 				return NULL;
@@ -1013,15 +1017,18 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			sql_arg *ra = (restype && type != F_UNION)?restype->h->data:NULL;
 			list *b = NULL;
 			sql_schema *os = cur_schema(sql);
+			bool prev_storage_opt_allowed = sql->storage_opt_allowed;
 
 			if (create) { /* needed for recursive functions */
 				q = query_cleaned(sql->ta, q);
 				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
 			}
 			sql->session->schema = s;
+			sql->storage_opt_allowed = false;
 			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
 			sql->forward = NULL;
 			sql->session->schema = os;
+			sql->storage_opt_allowed = prev_storage_opt_allowed;
 			sql->params = NULL;
 			if (!b)
 				return NULL;
@@ -1274,6 +1281,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
+	bool prev_storage_opt_allowed = sql->storage_opt_allowed;
 
 	if (sname && !(ss = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "%s TRIGGER: no such schema '%s'", base, sname);
@@ -1389,8 +1397,10 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			stack_update_rel_view(sql, old_name, new_name?rel_dup(rel):rel);
 	}
 	sql->session->schema = ss;
+	sql->storage_opt_allowed = false;
 	sq = sequential_block(query, NULL, NULL, stmts, NULL, 1);
 	sql->session->schema = old_schema;
+	sql->storage_opt_allowed = prev_storage_opt_allowed;
 	if (!sq) {
 		if (!instantiate)
 			stack_pop_frame(sql);

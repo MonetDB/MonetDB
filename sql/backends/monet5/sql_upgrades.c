@@ -1051,15 +1051,18 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 				if (f->query && f->lang == FUNC_LANG_SQL) {
 					char *relt;
 					sql_rel *r = NULL;
+					bool prev_storage_opt_allowed = sql->storage_opt_allowed;
 
 					if (!(relt = sa_strdup(sql->sa, f->query))) {
 						err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 
+					sql->storage_opt_allowed = false;
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = sql_processrelation(sql, r, 0, 0);
+						r = sql_processrelation(sql, r, 0);
+					sql->storage_opt_allowed = prev_storage_opt_allowed;
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -1085,15 +1088,18 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 				if (t->query && isView(t)) {
 					char *relt;
 					sql_rel *r = NULL;
+					bool prev_storage_opt_allowed = sql->storage_opt_allowed;
 
 					if (!(relt = sa_strdup(sql->sa, t->query))) {
 						err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
 
+					sql->storage_opt_allowed = false;
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = sql_processrelation(sql, r, 0, 0);
+						r = sql_processrelation(sql, r, 0);
+					sql->storage_opt_allowed = prev_storage_opt_allowed;
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -1113,15 +1119,18 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						sql_trigger *tr = (sql_trigger*) mm->data;
 						char *relt;
 						sql_rel *r = NULL;
+						bool prev_storage_opt_allowed = sql->storage_opt_allowed;
 
 						if (!(relt = sa_strdup(sql->sa, tr->statement))) {
 							err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 							goto bailout;
 						}
 
+						sql->storage_opt_allowed = false;
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = sql_processrelation(sql, r, 0, 0);
+							r = sql_processrelation(sql, r, 0);
+						sql->storage_opt_allowed = prev_storage_opt_allowed;
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 

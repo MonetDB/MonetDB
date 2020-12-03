@@ -121,6 +121,7 @@ typedef struct mvc {
 	struct symbol *sym;
 
 	bool use_views;
+	bool storage_opt_allowed; /* are storage properties allowed for optimizations? */
 	struct qc *qc;
 	int clientid;		/* id of the owner */
 
@@ -215,6 +216,7 @@ extern sql_table * mvc_access(mvc *m, sql_table *t, sht access);
 extern int mvc_is_sorted(mvc *c, sql_column *col);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
+extern int mvc_has_no_nil(mvc *m, sql_column *col);
 
 extern sql_ukey *mvc_create_ukey(mvc *m, sql_table *t, const char *kname, key_type kt);
 extern sql_key *mvc_create_ukey_done(mvc *m, sql_key *k);
@@ -293,7 +295,7 @@ extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
 extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
 
-extern sql_rel *sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt, int storage_based_opt);
+extern sql_rel *sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt);
 
 extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ char *format, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
