@@ -59,9 +59,8 @@ mnstr_swap_lng(stream *s, lng lngval) {
 		int neg = v < 0;							\
 		ssize_t l;									\
 		if (is_##TYPE##_nil(v)) {					\
-			if (*len < 5){							\
-				if (*Buf)							\
-					GDKfree(*Buf);					\
+			if (*Buf == NULL || *len < 5){			\
+				GDKfree(*Buf);						\
 				*len = 5;							\
 				*Buf = GDKzalloc(*len);				\
 				if (*Buf == NULL) {					\
@@ -91,9 +90,8 @@ mnstr_swap_lng(stream *s, lng lngval) {
 		if (neg)									\
 			buf[cur--] = '-';						\
 		l = (64-cur-1);								\
-		if ((ssize_t) *len < l){					\
-			if (*Buf)								\
-				GDKfree(*Buf);						\
+		if (*Buf == NULL || (ssize_t) *len < l) {	\
+			GDKfree(*Buf);							\
 			*len = (size_t) l+1;					\
 			*Buf = GDKzalloc(*len);					\
 			if (*Buf == NULL) {						\
@@ -160,9 +158,8 @@ sql_time_tostr(void *TS_RES, char **buf, size_t *len, int type, const void *A)
 		return len1;
 	}
 
-	if (*len < (size_t) len1 + 8) {
-		if (*buf)
-			GDKfree(*buf);
+	if (*buf == NULL || *len < (size_t) len1 + 8) {
+		GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = len1 + 8);
 		if (*buf == NULL) {
 			return -1;
@@ -220,9 +217,8 @@ sql_timestamp_tostr(void *TS_RES, char **buf, size_t *len, int type, const void 
 		return len1;
 	}
 
-	if (*len < (size_t) len1 + (size_t) len2 + 8) {
-		if (*buf)
-			GDKfree(*buf);
+	if (*buf == NULL || *len < (size_t) len1 + (size_t) len2 + 8) {
+		GDKfree(*buf);
 		*buf = (str) GDKzalloc(*len = (size_t) (len1 + len2 + 8));
 		if (*buf == NULL) {
 			return -1;

@@ -3359,7 +3359,6 @@ mapi_prepare(Mapi mid, const char *cmd)
 				free(q);			\
 				return;				\
 			}					\
-			hdl->query = q;				\
 		}						\
 	} while (0)
 
