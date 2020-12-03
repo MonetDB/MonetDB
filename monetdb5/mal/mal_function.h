@@ -18,6 +18,7 @@
 #define getBeginScope(L,I)	((L)->var[I].declared)
 
 mal_export Symbol   newFunction(str mod, str nme,int kind);
+mal_export Symbol   newFunctionArgs(str mod, str nme, int kind, int args);
 mal_export int      getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export Symbol   getFunctionSymbol(Module scope, InstrPtr p);
