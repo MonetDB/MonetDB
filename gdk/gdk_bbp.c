@@ -991,6 +991,28 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
 		BBP_status(bid) = BBPEXISTING;	/* do we need other status bits? */
+		bool loaded = false;
+		PROPrec *p;
+		if (bn->ttype >= 0 && (p = BATgetprop(bn, GDK_MIN_POS)) != NULL) {
+			/* for known types cache the value corresponding to the
+			 * position */
+			if ((bn = BATdescriptor(bn->batCacheid)) != NULL) {
+				loaded = true;
+				BATiter bi = bat_iterator(bn);
+				BATsetprop(bn, GDK_MIN_VALUE, bn->ttype, BUNtail(bi, p->v.val.oval));
+			}
+		}
+		if (bn->ttype >= 0 && (p = BATgetprop(bn, GDK_MAX_POS)) != NULL) {
+			/* for known types cache the value corresponding to the
+			 * position */
+			if (loaded || (bn = BATdescriptor(bn->batCacheid)) != NULL) {
+				loaded = true;
+				BATiter bi = bat_iterator(bn);
+				BATsetprop(bn, GDK_MAX_VALUE, bn->ttype, BUNtail(bi, p->v.val.oval));
+			}
+		}
+		if (loaded)
+			BBPunfix(bn->batCacheid);
 	}
 	return GDK_SUCCEED;
 }
