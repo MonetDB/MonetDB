@@ -73,12 +73,13 @@ CREATE FUNCTION dump_CONSTRAINT_type_name(id INT) RETURNS STRING BEGIN
 		END;
 END;
 
-CREATE FUNCTION describe_constraints() RETURNS TABLE("table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
+CREATE FUNCTION describe_constraints() RETURNS TABLE(s STRING, "table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
 	RETURN
-		SELECT t.name, kc.nr, kc.name, k.name, dump_CONSTRAINT_type_name(k.type)
-		FROM sys._tables t, sys.objects kc, sys.keys k
+		SELECT s.name, t.name, kc.nr, kc.name, k.name, dump_CONSTRAINT_type_name(k.type)
+		FROM sys.schemas s, sys._tables t, sys.objects kc, sys.keys k
 		WHERE kc.id = k.id
 			AND k.table_id = t.id
+			AND s.id = t.schema_id
 			AND t.system = FALSE
 			AND k.type in (0, 1)
 			AND t.type IN (0, 6);
@@ -86,11 +87,11 @@ END;
 
 CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
 	RETURN
-		SELECT 
-			'ALTER TABLE ' || DQ("table") ||
+		SELECT
+			'ALTER TABLE ' || DQ(s) || '.' || DQ("table") ||
 			' ADD CONSTRAINT ' || DQ(con) || ' '||
 			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
-		FROM describe_constraints() GROUP BY "table", con, type;
+		FROM describe_constraints() GROUP BY s, "table", con, type;
 END;
 
 CREATE FUNCTION describe_indices() RETURNS TABLE (i STRING, o INT, s STRING, t STRING, c STRING, it STRING) BEGIN
@@ -132,7 +133,7 @@ END;
 
 CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
 	RETURN
-		SELECT 
+		SELECT
 			' (' ||
 			GROUP_CONCAT(
 				DQ(c.name) || ' ' ||
@@ -140,7 +141,7 @@ CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
 				ifthenelse(c."null" = 'false', ' NOT NULL', '') ||
 				ifthenelse(c."default" IS NOT NULL, ' DEFAULT ' || c."default", '')
 			, ', ') || ')'
-		FROM sys._columns c 
+		FROM sys._columns c
 		WHERE c.table_id = tid;
 END;
 
@@ -173,8 +174,8 @@ CREATE FUNCTION describe_foreign_keys() RETURNS TABLE(
 	pk_s STRING, pk_t STRING, pk_c STRING,
 	on_update STRING, on_delete STRING) BEGIN
 
-	RETURN 
-		WITH action_type (id, act) AS (VALUES 
+	RETURN
+		WITH action_type (id, act) AS (VALUES
 			(0, 'NO ACTION'),
 			(1, 'CASCADE'),
 			(2, 'RESTRICT'),
@@ -195,7 +196,7 @@ CREATE FUNCTION describe_foreign_keys() RETURNS TABLE(
 						sys.schemas fs,
 						action_type ou,
 						action_type od
-		
+
 					WHERE fkt.id = fkk.table_id
 					AND pkt.id = pkk.table_id
 					AND fkk.id = fkkc.id
@@ -211,11 +212,12 @@ END;
 
 CREATE FUNCTION dump_foreign_keys() RETURNS TABLE(stmt STRING) BEGIN
 RETURN
-	SELECT 
+	SELECT
 		'ALTER TABLE ' || DQ(fk_s) || '.'|| DQ(fk_t) || ' ADD CONSTRAINT ' || DQ(fk) || ' ' ||
 		'FOREIGN KEY(' || GROUP_CONCAT(DQ(fk_c), ',') ||') ' ||
 		'REFERENCES ' || DQ(pk_s) || '.' || DQ(pk_t) || '(' || GROUP_CONCAT(DQ(pk_c), ',') || ') ' ||
-		'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update
+		'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
+		';'
 	FROM describe_foreign_keys() GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
 END;
 
@@ -230,7 +232,7 @@ BEGIN
 
 	INSERT INTO dump_statements(s) --dump_create_roles
 		SELECT 'CREATE ROLE ' || DQ(name) || ';' FROM auths
-        WHERE name NOT IN (SELECT name FROM db_user_info) 
+        WHERE name NOT IN (SELECT name FROM db_user_info)
         AND grantor <> 0;
 
 	INSERT INTO dump_statements(s) --dump_create_users
@@ -282,8 +284,8 @@ BEGIN
 		WHERE sch.id = seq.schema_id;
 
 	INSERT INTO dump_statements(s) --dump_create_tables
-		SELECT 
-			'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) || 
+		SELECT
+			'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) ||
 			CASE
 				WHEN ts.table_type_name = 'REMOTE TABLE' THEN
 					dump_remote_table_expressions(s.name, t.name) || ';'
@@ -313,7 +315,6 @@ BEGIN
 
 	--INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
 
-	--TODO ADD schema's to ALTER statements
 	--TODO PARTITION TABLES
 	--TODO details on SEQUENCES
 	--TODO functions
