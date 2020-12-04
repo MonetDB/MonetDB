@@ -34,6 +34,7 @@ CREATE TABLE "sys"."pfoo1" ("i" INTEGER);
 CREATE TABLE "sys"."pfoo2" ("i" INTEGER);
 CREATE TABLE "sys"."lower_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
 CREATE TABLE "sys"."higher_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
+CREATE TABLE "sys"."unknown_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
 CREATE TABLE "sfoo"."foo" ("fi" INTEGER NOT NULL, "fs" CHARACTER LARGE OBJECT NOT NULL);
 CREATE TABLE "sbar"."bar" ("bi" INTEGER NOT NULL, "bs" CHARACTER LARGE OBJECT NOT NULL);
 CREATE REMOTE TABLE "sys"."rfoo" ("i" INTEGER) ON  'mapi:monetdb://remote.host.url:50000/dbname'  WITH USER  'bob'  ENCRYPTED PASSWORD  'f8e3183d38e6c51889582cb260ab825252f395b4ac8fb0e6b13e9a71f7c10a80d5301e4a949f2783cb0c20205f1d850f87045f4420ad2271c8fd5f0cd8944be3' ;
@@ -52,4 +53,19 @@ CREATE ORDERED INDEX "ind3" ON "sys"."ungolo"(x,z);
 ALTER TABLE "sfoo"."foo" ADD CONSTRAINT "fk_foo_to_bar" FOREIGN KEY("fi","fs") REFERENCES "sbar"."bar"("bi","bs") ON DELETE CASCADE ON UPDATE SET NULL;
 COMMENT ON INDEX "ind3" IS  'This is a comment on an index.' ;
 COMMENT ON COLUMN "sfoo"."tfoo"."i" IS  'This is a comment on a column.' ;
+ALTER TABLE "sys"."scorers" ADD TABLE "sys"."lower_scorers"  AS PARTITION IN (0, 1, 2, 3, 4);
+ALTER TABLE "sys"."scorers" ADD TABLE "sys"."higher_scorers" AS PARTITION IN (5, 6, 7, 8, 9);
+ALTER TABLE "sys"."scorers" ADD TABLE "sys"."unknown_scorers" AS PARTITION FOR NULL VALUES;
+
+CREATE TABLE first_decade (stamp TIMESTAMP, val INT);
+CREATE TABLE second_decade (stamp TIMESTAMP, val INT);
+CREATE TABLE third_decade (stamp TIMESTAMP, val INT);
+ALTER TABLE splitted ADD TABLE first_decade AS PARTITION FROM RANGE MINVALUE TO TIMESTAMP '2010-01-01 00:00:00' WITH NULL VALUES;
+ALTER TABLE splitted ADD TABLE second_decade AS PARTITION FROM TIMESTAMP '2010-01-01 00:00:00' TO TIMESTAMP '2020-01-01 00:00:00';
+create merge table m1 (i int);
+create table p1 (i int);
+alter table m1 add table p1;
+
+
+
 COMMIT;

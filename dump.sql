@@ -2,6 +2,8 @@ START TRANSACTION;
 
 CREATE FUNCTION SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || s || ''' '; END;
 CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; --TODO: Figure out why this breaks with the space
+CREATE FUNCTION FQTN(s STRING, t STRING) RETURNS STRING BEGIN RETURN DQ(s) || '.' || DQ(t); END;
+CREATE FUNCTION ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || FQTN(s, t) || ' '; END;
 
 CREATE FUNCTION comment_on(ob STRING, id STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, 'COMMENT ON ' || ob ||  ' ' || id || ' IS ' || SQ(r) || ';', ''); END;
 
@@ -221,6 +223,89 @@ RETURN
 	FROM describe_foreign_keys() GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
 END;
 
+CREATE FUNCTION describe_partition_tables()
+RETURNS TABLE(
+	m_sname STRING,
+	m_tname STRING,
+	p_sname STRING,
+	p_tname STRING,
+	p_type  STRING,
+	pvalues STRING,
+	minimum STRING,
+	maximum STRING,
+	with_nulls BOOLEAN) BEGIN
+RETURN
+  SELECT 
+        m_sname,
+        m_tname,
+        p_sname,
+        p_tname,
+        CASE
+            WHEN p_raw_type IS NULL THEN 'READ ONLY'
+            WHEN (p_raw_type = 'VALUES' AND pvalues IS NULL) OR (p_raw_type = 'RANGE' AND minimum IS NULL AND maximum IS NULL AND with_nulls) THEN 'FOR NULLS'
+            ELSE p_raw_type
+        END AS p_type,
+        pvalues,
+        minimum,
+        maximum,
+        with_nulls
+    FROM 
+    (WITH
+		tp("type", table_id) AS
+		(SELECT CASE WHEN (table_partitions."type" & 2) = 2 THEN 'VALUES' ELSE 'RANGE' END, table_partitions.table_id FROM table_partitions),
+		subq(m_tid, p_mid, "type", m_sname, m_tname, p_sname, p_tname) AS
+		(SELECT m_t.id, p_m.id, m_t."type", m_s.name, m_t.name, p_s.name, p_m.name
+		FROM schemas m_s, sys._tables m_t, dependencies d, schemas p_s, sys._tables p_m
+		WHERE m_t."type" IN (3, 6)
+			AND m_t.schema_id = m_s.id
+			AND m_s.name <> 'tmp'
+			AND m_t.system = FALSE
+			AND m_t.id = d.depend_id
+			AND d.id = p_m.id
+			AND p_m.schema_id = p_s.id
+		ORDER BY m_t.id, p_m.id)
+	SELECT
+		subq.m_sname,
+		subq.m_tname,
+		subq.p_sname,
+		subq.p_tname,
+		tp."type" AS p_raw_type,
+		CASE WHEN tp."type" = 'VALUES'
+			THEN (SELECT GROUP_CONCAT(vp.value, ',')FROM value_partitions vp WHERE vp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS pvalues,
+		CASE WHEN tp."type" = 'RANGE'
+			THEN (SELECT minimum FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS minimum,
+		CASE WHEN tp."type" = 'RANGE'
+			THEN (SELECT maximum FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
+			ELSE NULL
+		END AS maximum,
+		CASE WHEN tp."type" = 'VALUES'
+			THEN EXISTS(SELECT vp.value FROM value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)
+			ELSE (SELECT rp.with_nulls FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
+		END AS with_nulls
+	FROM 
+		subq LEFT OUTER JOIN tp
+		ON subq.m_tid = tp.table_id) AS tmp_pi;
+END;
+
+CREATE FUNCTION dump_partition_tables() RETURNS TABLE(stmt STRING) BEGIN
+RETURN
+	SELECT
+		ALTER_TABLE(m_sname, m_tname) || ' ADD ' || FQTN(p_sname, p_tname) || 
+		CASE 
+			WHEN p_type = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
+			WHEN p_type = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, SQ(maximum), 'RANGE MAXVALUE')
+			WHEN p_type = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
+			ELSE '' --'READ ONLY'
+		END ||
+		CASE WHEN p_type in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
+		';' 
+	FROM describe_partition_tables();
+END;
+
 CREATE TEMPORARY TABLE dump_statements(o INT AUTO_INCREMENT, s STRING, PRIMARY KEY (o));
 
 CREATE PROCEDURE dump_database(describe BOOLEAN)
@@ -304,6 +389,7 @@ BEGIN
 	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
+	INSERT INTO dump_statements(s) SELECT * FROM dump_partition_tables();
 
 	INSERT INTO dump_statements(s) --dump_create_comments_on_indices
         SELECT comment_on('INDEX', DQ(i.name), rem.remark)
