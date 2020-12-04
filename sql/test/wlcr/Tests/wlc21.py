@@ -3,6 +3,7 @@ try:
 except ImportError:
     import process
 import os, sys
+from MonetDBtesting.sqltest import SQLTestCase
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
@@ -13,20 +14,34 @@ if not tstdb or not dbfarm:
 
 dbname = tstdb
 
-with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
-     process.client('sql', server=s, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
 
-    cout, cerr = c.communicate('''\
-insert into tmp values(5,'red'),(6,'fox');
-select * from tmp;
-''')
+with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
+        SQLTestCase() as tc:
+    tc.connect(database=dbname)
+    tc.execute("insert into tmp values(5,'red'),(6,'fox');")\
+        .assertSucceeded()\
+        .assertRowCount(2)
+    tc.execute("select * from tmp;")\
+        .assertSucceeded()\
+        .assertDataResultMatch([(1, 'hello'), (2, 'world'), (3, 'blah'), (4, 'bloh'), (5, 'red'), (6, 'fox')])
 
     sout, serr = s.communicate()
 
-    sys.stdout.write(sout)
-    sys.stdout.write(cout)
-    sys.stderr.write(serr)
-    sys.stderr.write(cerr)
+
+#with process.server(dbname=dbname, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as s, \
+#     process.client('sql', server=s, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
+#
+#    cout, cerr = c.communicate('''\
+#insert into tmp values(5,'red'),(6,'fox');
+#select * from tmp;
+#''')
+#
+#    sout, serr = s.communicate()
+#
+#    sys.stdout.write(sout)
+#    sys.stdout.write(cout)
+#    sys.stderr.write(serr)
+#    sys.stderr.write(cerr)
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE LOG FILES\n")
