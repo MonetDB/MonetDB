@@ -317,14 +317,14 @@ BEGIN
 
 	--TODO PARTITION TABLES
 	--TODO details on SEQUENCES
+	--TODO STREAM TABLE?
 	--TODO functions
-	--TODO Triggers
 	--TODO VIEW
+	--TODO Triggers
 	--TODO COMMENTS ON TABLE
 	--TODO TABLE level grants
 	--TODO COLUMN level grants
 	--TODO User Defined Types? sys.types
-	--TODO STREAM TABLE?
 	--TODO Triggers
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
