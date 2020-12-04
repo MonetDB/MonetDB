@@ -806,15 +806,8 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		sql_exp *e;
 		sql_column *c = cn->data;
 		bool has_nils = c->null;
-		ValPtr min = NULL, max = NULL;
 
-		if (sql->storage_opt_allowed) {
-			if (has_nils && mvc_has_no_nil(sql, c))
-				has_nils = false;
-			min = mvc_has_min_value(sql, c);
-			max = mvc_has_max_value(sql, c);
-		}
-		if (!(e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max))) {
+		if (!(e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0))) {
 			rel_destroy(rel);
 			return NULL;
 		}
@@ -828,7 +821,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 		set_basecol(e);
 		append(rel->exps, e);
 	}
-	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL));
+	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	if (t->idxs.set) {
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
@@ -845,7 +838,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 				t = sql_bind_localtype("oid");
 
 			iname = sa_strconcat( sa, "%", i->base.name);
-			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1, NULL, NULL);
+			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(i->type)) {
 				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
@@ -1511,7 +1504,7 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	}
 	rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
-	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e), get_min(e), get_max(e));
+	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 	e = exp_unop(sql->sa, e, sql_bind_func(sql->sa, NULL, "identity", exp_subtype(e), NULL, F_FUNC));
 	set_intern(e);
 	e->p = prop_create(sql->sa, PROP_HASHCOL, e->p);
@@ -1569,7 +1562,7 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		if (!e && cname[0] == '%' && !tname)
 			e = exps_bind_column(rel->exps, cname, &ambiguous, &multi, 0);
 		if (e && !ambiguous && !multi)
-			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e), get_min(e), get_max(e));
+			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}
 	if (is_project(rel->op) && rel->l && !is_processed(rel)) {
 		return rel_find_column(sa, rel->l, tname, cname);

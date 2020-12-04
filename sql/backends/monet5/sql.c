@@ -26,6 +26,7 @@
 #include "sql_partition.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
+#include "rel_statistics.h"
 #include "rel_partition.h"
 #include "rel_distribute.h"
 #include "rel_select.h"
@@ -115,21 +116,22 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
 	lng Tbegin;
-	bool prev_storage_opt_allowed = be->mvc->storage_opt_allowed;
+	int value_based_opt = be->mvc->emode != m_prepare, storage_based_opt;
 
-	be->mvc->storage_opt_allowed = be->mvc->emode != m_prepare; /* Don't perform storage optimizations on prepared statements */
 	rel = rel_semantic(query, sym);
+	storage_based_opt = value_based_opt && rel && !is_ddl(rel->op);
 	Tbegin = GDKusec();
 	if (rel)
-		rel = sql_processrelation(be->mvc, rel, be->mvc->emode != m_prepare);
+		rel = sql_processrelation(be->mvc, rel, value_based_opt, storage_based_opt);
 	if (rel)
 		rel = rel_distribute(be->mvc, rel);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
+	if (rel && storage_based_opt)
+		rel = rel_statistics(be->mvc, rel);
 	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;
-	be->mvc->storage_opt_allowed = prev_storage_opt_allowed;
 	return rel;
 }
 
@@ -434,7 +436,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql, r);
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);

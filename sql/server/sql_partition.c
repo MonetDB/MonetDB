@@ -273,14 +273,11 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 	}
 
 	if (instantiate) {
-		bool prev_storage_opt_allowed = sql->storage_opt_allowed;
-		sql->storage_opt_allowed = false; /* can't do storage related optimizations while compiling an expression */
 		r = rel_project(sql->sa, r, NULL);
 		exp = rel_project_add_exp(sql, r, exp);
 
 		if (r)
-			r = sql_processrelation(sql, r, 0);
-		sql->storage_opt_allowed = prev_storage_opt_allowed;
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);
