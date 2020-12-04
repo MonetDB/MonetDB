@@ -9121,19 +9121,26 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 																skip |= nskip;
 															}
 														} else { /* limit1 to limit2 (general case), limit2 is exclusive */
+															bool max_differ_min = ATOMcmp(col->type.type->localtype, &rmin->data.val, &rmax->data.val) != 0;
+
 															if (lval) {
 																if (next->flag == cmp_equal) {
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, true) != 0 :
-																						 exp_range_overlap(rmin, rmax, lval, hval, false, true) == 0;
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) == 0;
 																} else if (hval != lval) { /* For the between case */
 																	comp_type higher = range2rcompare(next->flag);
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) != 0 :
-																						 exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) == 0;
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) == 0;
 																} else {
 																	switch (next->flag) {
 																		case cmp_gt:
-																		case cmp_gte:
 																			skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+																			break;
+																		case cmp_gte:
+																			if (max_differ_min)
+																				skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+																			else
+																				skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) <= 0 : VALcmp(&(lval->data), &(rmax->data)) > 0;
 																			break;
 																		case cmp_lt:
 																			skip |= next->anti ? VALcmp(&(rmin->data), &(lval->data)) < 0 : VALcmp(&(rmin->data), &(lval->data)) >= 0;
@@ -9152,7 +9159,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 																	if (a->isnull)
 																		continue;
-																	nskip &= exp_range_overlap(rmin, rmax, a, a, false, true) == 0;
+																	nskip &= exp_range_overlap(rmin, rmax, a, a, false, max_differ_min) == 0;
 																}
 																skip |= nskip;
 															}
