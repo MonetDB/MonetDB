@@ -74,6 +74,8 @@ ALTER TABLE table1 DROP TABLE another2; --error, not there
 
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 0 to 5; --error, conflicts with another1
+ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM RANGE MINVALUE to 2; --error, conflicts with another1
+ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 2 to RANGE MAXVALUE; --error, conflicts with another1
 SELECT a FROM table1;
 SELECT a FROM another1;
 SELECT a FROM another2;
@@ -85,11 +87,13 @@ TRUNCATE another2;
 
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM RANGE MINVALUE TO 2;
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM RANGE MINVALUE TO 1; --error, conflicts with another1
+ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 0 TO 1; --error, conflicts with another1
 ALTER TABLE table1 DROP TABLE another1;
 ALTER TABLE table1 DROP TABLE another2; --error, not there
 
 ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM 2 TO RANGE MAXVALUE;
 ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 10 TO RANGE MAXVALUE; --error, conflicts with another1
+ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 1 TO 3; --error, conflicts with another1
 ALTER TABLE table1 DROP TABLE another1;
 ALTER TABLE table1 DROP TABLE another2; --error, not there
 
