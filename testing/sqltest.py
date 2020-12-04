@@ -248,7 +248,7 @@ class TestCaseResult(object):
                         index = i
                         break
         if not sequence_match(data, self.data, index):
-            msg = '{}\nexpected to match query result starting at index={}, but it didn\'t'.format(piped_representation(data), index)
+            msg = '{}\nexpected to match query result starting at index={}, but it didn\'t'.format(piped_representation(data), index or 0)
             self.fail(msg, data=self.data)
         return self
 
@@ -380,9 +380,11 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
                         if crs.description:
                             self.data = crs.fetchall()
                             self.description = crs.description
-                except (pymonetdb.Error, ValueError) as e:
+                except pymonetdb.Error as e:
                     self.test_run_error = e
                     self.err_code, self.err_message = self._parse_error(e.args[0])
+                except (OSError, ValueError) as e:
+                    self.test_run_error = e
             self.did_run = True
         return self
 
