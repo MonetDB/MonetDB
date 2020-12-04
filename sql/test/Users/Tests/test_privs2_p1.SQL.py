@@ -3,70 +3,82 @@
 # on a table for which the USER has GRANTs (possible).
 ###
 
-import os, sys
-import pymonetdb
+from MonetDBtesting.sqltest import SQLTestCase
 
-db=os.getenv("TSTDB")
-port=int(os.getenv("MAPIPORT"))
-client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user', password='p1')
-cursor = client.cursor()
+with SQLTestCase() as tc:
+    tc.connect(username="my_user", password="p1")
+    tc.execute("SELECT * FROM version").assertRowCount(1)
+    tc.execute("insert into version (name, i) values ('test2', 2)").assertSucceeded()
+    tc.execute("SELECT insertversion('test3', 3)").assertSucceeded()
+    tc.execute("SELECT updateversion('test1', 4)").assertSucceeded()
+    tc.execute("SELECT * FROM version").assertRowCount(3)
+    tc.execute("SELECT deleteversion('test1')").assertSucceeded()
+    tc.execute("SELECT * FROM version").assertRowCount(2)
 
-def error(msg):
-    print(msg)
-    sys.exit(-1)
+# import os, sys
+# import pymonetdb
 
-nr=cursor.execute("SELECT * FROM version")
-if nr != 1:
-    error("expected single row result from version")
-rows=cursor.fetchall()
-if rows[0][0] != 'test1':
-    error("expected first row with 'test1'")
+# db=os.getenv("TSTDB")
+# port=int(os.getenv("MAPIPORT"))
+# client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user', password='p1')
+# cursor = client.cursor()
 
-rowaffected=cursor.execute("insert into version (name, i) values ('test2', 2)")
-if rowaffected != 1:
-    error("expected single insert")
+# def error(msg):
+#     print(msg)
+#     sys.exit(-1)
 
-nr=cursor.execute("SELECT insertversion('test3', 3)")
-if nr != 1:
-    error("expected single row result from insertversion")
-rows=cursor.fetchall()
-if rows[0][0] != 1:
-    error("expected first row with '1' not '%d'" % rows[0][0])
+# nr=cursor.execute("SELECT * FROM version")
+# if nr != 1:
+#     error("expected single row result from version")
+# rows=cursor.fetchall()
+# if rows[0][0] != 'test1':
+#     error("expected first row with 'test1'")
 
-nr=cursor.execute("SELECT * FROM version")
-if nr != 3:
-    error("expected 3 rows")
-rows=cursor.fetchall()
-if rows[2][0] != 'test3':
-    error("expected last row with 'test3'")
+# rowaffected=cursor.execute("insert into version (name, i) values ('test2', 2)")
+# if rowaffected != 1:
+#     error("expected single insert")
 
-nr=cursor.execute("SELECT updateversion('test1', 4)")
-if nr != 1:
-    error("expected single row result from updateversion")
-rows=cursor.fetchall()
-if rows[0][0] != 1:
-    error("expected first row with '1' not '%d'" % rows[0][0])
+# nr=cursor.execute("SELECT insertversion('test3', 3)")
+# if nr != 1:
+#     error("expected single row result from insertversion")
+# rows=cursor.fetchall()
+# if rows[0][0] != 1:
+#     error("expected first row with '1' not '%d'" % rows[0][0])
 
-nr=cursor.execute("SELECT * FROM version")
-if nr != 3:
-    error("expected 3 rows")
-rows=cursor.fetchall()
-if rows[0][1] != 4:
-    error("expected first row with updated value '4', not '%d'" % row[0][1])
+# nr=cursor.execute("SELECT * FROM version")
+# if nr != 3:
+#     error("expected 3 rows")
+# rows=cursor.fetchall()
+# if rows[2][0] != 'test3':
+#     error("expected last row with 'test3'")
 
-nr=cursor.execute("SELECT deleteversion('test1')")
-if nr != 1:
-    error("expected single row result from deleteversion")
-rows=cursor.fetchall()
-if rows[0][0] != 1:
-    error("expected first row with '1' not '%d'" % rows[0][0])
+# nr=cursor.execute("assertRowCount(1)")
+# if nr != 1:
+#     error("expected single row result from updateversion")
+# rows=cursor.fetchall()
+# if rows[0][0] != 1:
+#     error("expected first row with '1' not '%d'" % rows[0][0])
 
-nr=cursor.execute("SELECT * FROM version")
-if nr != 2:
-    error("expected 2 rows")
-rows=cursor.fetchall()
-if rows[0][0] != 'test2':
-    error("expected first row after delete to be 'test2'")
+# nr=cursor.execute("SELECT * FROM version")
+# if nr != 3:
+#     error("expected 3 rows")
+# rows=cursor.fetchall()
+# if rows[0][1] != 4:
+#     error("expected first row with updated value '4', not '%d'" % row[0][1])
 
-cursor.close()
-client.close()
+# nr=cursor.execute("SELECT deleteversion('test1')")
+# if nr != 1:
+#     error("expected single row result from deleteversion")
+# rows=cursor.fetchall()
+# if rows[0][0] != 1:
+#     error("expected first row with '1' not '%d'" % rows[0][0])
+
+# nr=cursor.execute("SELECT * FROM version")
+# if nr != 2:
+#     error("expected 2 rows")
+# rows=cursor.fetchall()
+# if rows[0][0] != 'test2':
+#     error("expected first row after delete to be 'test2'")
+
+# cursor.close()
+# client.close()
