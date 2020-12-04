@@ -1366,7 +1366,6 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
 		sql_schema *os = cur_schema(sql);
-		bool prev_storage_opt_allowed = sql->storage_opt_allowed;
 		dnode *n = schema_elements->h;
 		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
 		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
@@ -1376,20 +1375,17 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 		ss->owner = sql->user_id;
 
 		sql->session->schema = ss;
-		sql->storage_opt_allowed = false;
 		while (n) {
 			sql_rel *res = rel_semantic(query, n->data.sym);
 			if (!res) {
 				rel_destroy(ret);
 				sql->session->schema = os;
-				sql->storage_opt_allowed = prev_storage_opt_allowed;
 				return NULL;
 			}
 			ret = rel_list(sql->sa, ret, res);
 			n = n->next;
 		}
 		sql->session->schema = os;
-		sql->storage_opt_allowed = prev_storage_opt_allowed;
 		return ret;
 	}
 }
@@ -1567,7 +1563,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 	/* New columns need update with default values. Add one more element for new column */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	if (nt->columns.nelm) {
 		list *cols = new_exp_list(sql->sa);
@@ -1582,7 +1578,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				rel_destroy(r);
 				return NULL;
 			}
-			list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, NULL, NULL));
+			list_append(cols, exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0));
 
 			assert(!updates[c->colnr]);
 			exp_setname(sql->sa, e, c->t->base.name, c->base.name);
@@ -2128,7 +2124,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* new columns need update with default values */
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(nt->columns.set));
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
 	res = rel_update(sql, res, r, updates, NULL);

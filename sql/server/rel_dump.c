@@ -870,7 +870,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (!exp && rrel)
 				exp = rel_bind_column2(sql, rrel, tname, cname, 0);
 		} else if (!exp) {
-			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, cname[0] == '%', NULL, NULL);
+			exp = exp_column(sql->sa, tname, cname, NULL, CARD_ATOM, 1, cname[0] == '%');
 		}
 		break;
 	/* atom */
@@ -1629,7 +1629,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					if (r[*pos] == ',')
 						(*pos)++;
 
-					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0, NULL, NULL);
+					next = exp_column(sql->sa, nrname, ncname, &a->type, CARD_MULTI, 1, 0);
 					set_basecol(next);
 					append(outputs, next);
 					m = m->next;

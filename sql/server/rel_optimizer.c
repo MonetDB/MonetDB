@@ -65,7 +65,8 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 		for (cn = t->columns.set->h; cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0) {
-				*bt = rel;
+				if (bt)
+					*bt = rel;
 				if (pnr < 0 || (mt &&
 					list_position(mt->members, c->t) == pnr))
 					return c;
@@ -75,7 +76,8 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 		for (cn = t->idxs.set->h; cn; cn = cn->next) {
 			sql_idx *i = cn->data;
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
-				*bt = rel;
+				if (bt)
+					*bt = rel;
 				if (pnr < 0 || (mt &&
 					list_position(mt->members, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
@@ -158,10 +160,8 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 static sql_column *
 exp_find_column( sql_rel *rel, sql_exp *exp, int pnr )
 {
-	if (exp->type == e_column) {
-		sql_rel *bt = NULL;
-		return name_find_column(rel, exp->l, exp->r, pnr, &bt);
-	}
+	if (exp->type == e_column)
+		return name_find_column(rel, exp->l, exp->r, pnr, NULL);
 	return NULL;
 }
 
@@ -1171,7 +1171,7 @@ reorder_join(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_join_order(visitor *v, sql_rel *rel)
 {
-	visitor ev = { .sql = v->sql, .value_based_opt = v->value_based_opt };
+	visitor ev = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
 
 	if (!rel)
 		return rel;
@@ -1507,7 +1507,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			return rel;
 		if (exps_can_push_func(exps, rel) && exps_need_push_down(exps)) {
 			sql_rel *nrel, *ol = l, *or = r;
-			visitor nv = { .sql = v->sql, .parent = v->parent, .value_based_opt = v->value_based_opt };
+			visitor nv = { .sql = v->sql, .parent = v->parent, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
@@ -2186,7 +2186,7 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 		if (ne->type == e_atom)
 			e = exp_copy(sql, ne);
 		else
-			e = exp_alias(sql->sa, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_intern(e), get_min(e), get_max(e));
+			e = exp_alias(sql->sa, exp_relname(e), exp_name(e), ne->l, ne->r, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 		return exp_propagate(sql->sa, e, ne);
 	case e_cmp:
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
@@ -3684,7 +3684,7 @@ rel_project_cse(visitor *v, sql_rel *rel)
 					sql_exp *e2 = m->data;
 
 					if (exp_name(e2) && exp_match_exp(e1, e2) && (e1->type != e_column || exps_bind_column2(nexps, exp_relname(e1), exp_name(e1), NULL) == e1)) {
-						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1), get_min(e2), get_max(e2));
+						sql_exp *ne = exp_alias(v->sql->sa, exp_relname(e1), exp_name(e1), exp_relname(e2), exp_name(e2), exp_subtype(e2), e2->card, has_nil(e2), is_intern(e1));
 
 						ne = exp_propagate(v->sql->sa, ne, e1);
 						exp_prop_alias(v->sql->sa, ne, e1);
@@ -5613,7 +5613,7 @@ sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_ba
 		case TYPE_dbl:
 			return 75 - 53;
 		default: {
-			if (equality_based && c && v->sql->storage_opt_allowed && (de = mvc_is_duplicate_eliminated(v->sql, c)))
+			if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
 				return 150 - de * 8;
 			/* strings and blobs not duplicate eliminated don't get any points here */
 			return 0;
@@ -5632,9 +5632,9 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 	if (e->card == CARD_ATOM) /* constants are trivial to group */
 		res += 1000;
 	/* can we find out if the underlying table is sorted */
-	if (find_prop(e->p, PROP_HASHCOL) || (c && v->sql->storage_opt_allowed && mvc_is_unique(v->sql, c))) /* distinct columns */
+	if (find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
 		res += 700;
-	if (c && v->sql->storage_opt_allowed && mvc_is_sorted(v->sql, c))
+	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 500;
 	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 300;
@@ -5798,7 +5798,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 							sql_exp *gb = n->data;
 
 							if (scores[l] == -1 && exp_refers(gb, e)) {
-								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_intern(gb), get_min(gb), get_max(gb));
+								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_intern(gb));
 								exp_setname(v->sql->sa, rs, exp_find_rel_name(e), exp_name(e));
 								e = rs;
 								fnd = 1;
@@ -6519,7 +6519,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 				break;
 			default: /* simple alias */
 				list_append(aexps, e);
-				ne = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e), get_min(e), get_max(e));
+				ne = exp_column(v->sql->sa, exp_find_rel_name(e), exp_name(e), exp_subtype(e), e->card, has_nil(e), is_intern(e));
 				list_append(pexps, ne);
 				break;
 			}
@@ -7395,7 +7395,7 @@ score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
 	sql_column *c = NULL;
 
 	/* can we find out if the underlying table is sorted */
-	if ((c = exp_find_column(rel, e, -2)) && v->sql->storage_opt_allowed && mvc_is_sorted(v->sql, c))
+	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 600;
 	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 400;
@@ -8653,17 +8653,10 @@ rel_dicttable(mvc *sql, sql_column *c, const char *tname, int de)
 	int nr = 0;
 	char name[16], *nme;
 	bool has_nils = c->null;
-	ValPtr min = NULL, max = NULL;
 
 	if (!rel)
 		return NULL;
-	if (sql->storage_opt_allowed) {
-		if (has_nils && mvc_has_no_nil(sql, c))
-			has_nils = false;
-		min = mvc_has_min_value(sql, c);
-		max = mvc_has_max_value(sql, c);
-	}
-	e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
+	e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
 	rel->l = NULL;
 	rel->r = c;
 	rel->op = op_basetable;
@@ -9199,7 +9192,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 				}
 				rel_destroy(rel);
 				if (sel) {
-					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt };
+					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
 					sel->l = nrel;
 					sel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
 					if (iv.changes)
@@ -9484,10 +9477,10 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt)
+optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt, bool storage_based_opt)
 {
-	visitor v = { .sql = sql, .value_based_opt = value_based_opt },
-			ev = { .sql = sql, .value_based_opt = value_based_opt };
+	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt },
+			ev = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
@@ -9653,7 +9646,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_topdown(&v, rel, &rel_simplify_fk_joins);
 	}
 
-	if (gp.cnt[op_select] && sql->emode != m_prepare)
+	if (gp.cnt[op_select] && value_based_opt)
 		rel = rel_visitor_bottomup(&v, rel, &rel_simplify_like_select);
 
 	if (gp.cnt[op_select])
@@ -9724,13 +9717,13 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 }
 
 sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
+rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt)
 {
 	int level = 0, changes = 1;
 
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
-		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
+		rel = optimize_rel(sql, rel, &changes, level, value_based_opt, storage_based_opt);
 #ifndef NDEBUG
 	assert(level < 20);
 #endif

@@ -3579,7 +3579,7 @@ sql_parse(backend *be, const char *query, char mode)
 	sql_rel *rel = rel_parse(be->mvc, be->mvc->session->schema, (char*)query, mode);
 	stmt *sq = NULL;
 
-	if ((rel = sql_processrelation(be->mvc, rel, 1)))
+	if ((rel = sql_processrelation(be->mvc, rel, 1, 1)))
 		sq = rel_bin(be, rel);
 	return sq;
 }
@@ -3815,15 +3815,8 @@ sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates
 		sql_exp *ne;
 		sql_column *c = n->data;
 		bool has_nils = c->null;
-		ValPtr min = NULL, max = NULL;
 
-		if (sql->storage_opt_allowed) {
-			if (has_nils && mvc_has_no_nil(sql, c))
-				has_nils = false;
-			min = mvc_has_min_value(sql, c);
-			max = mvc_has_max_value(sql, c);
-		}
-		ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
+		ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
 		append(exps, ne);
 	}
 	r = rel_table_func(sql->sa, NULL, NULL, exps, TRIGGER_WRAPPER);
@@ -4739,23 +4732,16 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		bool has_nils = c->null;
-		ValPtr min = NULL, max = NULL;
 
-		if (sql->storage_opt_allowed) {
-			if (has_nils && mvc_has_no_nil(sql, c))
-				has_nils = false;
-			min = mvc_has_min_value(sql, c);
-			max = mvc_has_max_value(sql, c);
-		}
 		if (updates[c->colnr]) {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
 
 			append(exps, oe);
 			append(exps, ne);
 		} else {
-			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
-			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
+			sql_exp *oe = exp_column(sql->sa, on, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
+			sql_exp *ne = exp_column(sql->sa, nn, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
 
 			append(exps, oe);
 			append(exps, ne);
@@ -5044,17 +5030,8 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, int 
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		bool has_nils = c->null;
-		ValPtr min = NULL, max = NULL;
 
-		if (sql->storage_opt_allowed) {
-			if (has_nils && mvc_has_no_nil(sql, c))
-				has_nils = false;
-			min = mvc_has_min_value(sql, c);
-			max = mvc_has_max_value(sql, c);
-		}
-		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
-
-		append(exps, ne);
+		append(exps, exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, has_nils, 0));
 	}
 	r = rel_table_func(sql->sa, NULL, NULL, exps, TRIGGER_WRAPPER);
 	r->l = ti;

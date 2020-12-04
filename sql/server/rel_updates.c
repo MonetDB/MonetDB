@@ -159,15 +159,8 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je, *rtc;
 		bool has_nils = rc->c->null;
-		ValPtr min = NULL, max = NULL;
 
-		if (sql->storage_opt_allowed) {
-			if (has_nils && mvc_has_no_nil(sql, rc->c))
-				has_nils = false;
-			min = mvc_has_min_value(sql, rc->c);
-			max = mvc_has_max_value(sql, rc->c);
-		}
-		rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, has_nils, 0, min, max);
+		rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, has_nils, 0);
 		_is = exp_ref(sql, _is);
 		lnl = exp_unop(sql->sa, _is, isnil);
 		set_has_no_nil(lnl);
@@ -207,7 +200,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	nnlls->exps = join_exps;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
 
@@ -693,7 +686,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, alias, iname, lng, CARD_MULTI, 0, 0, NULL, NULL));
+	append(updates->exps, exp_column(sql->sa, alias, iname, lng, CARD_MULTI, 0, 0));
 	return updates;
 }
 
@@ -754,15 +747,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
 		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je, *rtc;
 		bool has_nils = rc->c->null;
-		ValPtr min = NULL, max = NULL;
 
-		if (sql->storage_opt_allowed) {
-			if (has_nils && mvc_has_no_nil(sql, rc->c))
-				has_nils = false;
-			min = mvc_has_min_value(sql, rc->c);
-			max = mvc_has_max_value(sql, rc->c);
-		}
-		rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, has_nils, 0, min, max);
+		rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, has_nils, 0);
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
 		upd = exp_ref(sql, upd);
@@ -806,7 +792,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	nnlls->flag = LEFT_JOIN;
 	nnlls = rel_project(sql->sa, nnlls, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	exp_setname(sql->sa, e, alias, iname);
 	append(nnlls->exps, e);
 
@@ -820,7 +806,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	}
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, exp_column(sql->sa, alias, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0, NULL, NULL));
+	append(updates->exps, exp_column(sql->sa, alias, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0));
 	return updates;
 }
 
@@ -893,15 +879,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 
 			if (tab->idxs.set && !v) {
 				bool has_nils = c->null;
-				ValPtr min = NULL, max = NULL;
-
-				if (sql->storage_opt_allowed) {
-					if (has_nils && mvc_has_no_nil(sql, c))
-						has_nils = false;
-					min = mvc_has_min_value(sql, c);
-					max = mvc_has_max_value(sql, c);
-				}
-				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max);
+				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, has_nils, 0);
 			}
 			if (v)
 				v = rel_project_add_exp(sql, uprel, v);
@@ -951,7 +929,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 		pcols = mt->part.pexp->cols;
 	}
 	/* first create the project */
-	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL));
+	exps = list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	for (n = assignmentlist->h; n; n = n->next) {
 		symbol *a = NULL;
@@ -1001,7 +979,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
 				set_dependent(r);
 				if (single) {
-					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v), get_min(v), get_max(v));
+					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_intern(v));
 					rel_val = NULL;
 				}
 			}
@@ -1046,7 +1024,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 				if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 					return NULL;
-				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, NULL, NULL));
+				list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
 				exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 				updates[c->colnr] = v;
 			}
@@ -1074,12 +1052,12 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 				v = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL));
 			if (!(v = update_check_column(sql, t, c, v, r, cname, action)))
 				return NULL;
-			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0, NULL, NULL));
+			list_append(exps, exp_column(sql->sa, t->base.name, cname, &c->type, CARD_MULTI, 0, 0));
 			exp_setname(sql->sa, v, c->t->base.name, c->base.name);
 			updates[c->colnr] = v;
 		}
 	}
-	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL)));
+	r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1)));
 	r = rel_update(sql, bt, r, updates, exps);
 	return r;
 }
@@ -1184,7 +1162,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", get_string_global_var(sql, "current_user"), tname);
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
-			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL);
+			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
 			r = rel_delete(sql->sa, rel_basetable(sql, t, alias ? alias : tname), r);
 		} else {	/* delete all */
@@ -1325,7 +1303,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				//project columns of both bt and joined + oid to be used on update
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
-				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL));
+				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt), sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
@@ -1342,7 +1320,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 				//project columns of bt + oid to be used on delete
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
-				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, NULL, NULL));
+				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
 			} else {
@@ -1483,15 +1461,8 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 		sql_column *c = n->data;
 		if (c->base.name[0] != '%') {
 			bool has_nils = c->null;
-			ValPtr min = NULL, max = NULL;
-
-			if (sql->storage_opt_allowed) {
-				if (has_nils && mvc_has_no_nil(sql, c))
-					has_nils = false;
-				min = mvc_has_min_value(sql, c);
-				max = mvc_has_max_value(sql, c);
-			}
-			list_append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max));
+	
+			list_append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, has_nils, 0));
 		}
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
@@ -1775,15 +1746,8 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		bool has_nils = c->null;
-		ValPtr min = NULL, max = NULL;
 
-		if (sql->storage_opt_allowed) {
-			if (has_nils && mvc_has_no_nil(sql, c))
-				has_nils = false;
-			min = mvc_has_min_value(sql, c);
-			max = mvc_has_max_value(sql, c);
-		}
-		list_append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, has_nils, 0, min, max));
+		list_append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, has_nils, 0));
 	}
 	res = rel_table_func(sql->sa, NULL, import, exps, TABLE_PROD_FUNC);
 	res = rel_insert_table(query, t, t->base.name, res);
@@ -1911,7 +1875,6 @@ rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 
 	m->qc = NULL;
 
-	m->storage_opt_allowed = false; /* don't do storage related optimizations while parsing values */
 	m->emode = emode;
 	b = (buffer*)GDKmalloc(sizeof(buffer));
 	len += 8; /* add 'select ;' */
