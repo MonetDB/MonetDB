@@ -166,6 +166,59 @@ BEGIN
 	WHERE tp.table_id = tid;
 END;
 
+--SELECT * FROM dump_foreign_keys();
+CREATE FUNCTION describe_foreign_keys() RETURNS TABLE(
+	fk_s STRING, fk_t STRING, fk_c STRING,
+	o INT, fk STRING,
+	pk_s STRING, pk_t STRING, pk_c STRING,
+	on_update STRING, on_delete STRING) BEGIN
+
+	RETURN 
+		WITH action_type (id, act) AS (VALUES 
+			(0, 'NO ACTION'),
+			(1, 'CASCADE'),
+			(2, 'RESTRICT'),
+			(3, 'SET NULL'),
+			(4, 'SET DEFAULT'))
+		SELECT
+		fs.name AS fsname, fkt.name AS ktname, fkkc.name AS fcname,
+		fkkc.nr AS o, fkk.name AS fkname,
+		ps.name AS psname, pkt.name AS ptname, pkkc.name AS pcname,
+		ou.act as on_update, od.act as on_delete
+					FROM sys._tables fkt,
+						sys.objects fkkc,
+						sys.keys fkk,
+						sys._tables pkt,
+						sys.objects pkkc,
+						sys.keys pkk,
+						sys.schemas ps,
+						sys.schemas fs,
+						action_type ou,
+						action_type od
+		
+					WHERE fkt.id = fkk.table_id
+					AND pkt.id = pkk.table_id
+					AND fkk.id = fkkc.id
+					AND pkk.id = pkkc.id
+					AND fkk.rkey = pkk.id
+					AND fkkc.nr = pkkc.nr
+					AND pkt.schema_id = ps.id
+					AND fkt.schema_id = fs.id
+					AND (fkk."action" & 255)         = ou.id
+					AND ((fkk."action" >> 8) & 255)  = od.id
+					ORDER BY fkk.name, fkkc.nr;
+END;
+
+CREATE FUNCTION dump_foreign_keys() RETURNS TABLE(stmt STRING) BEGIN
+RETURN
+	SELECT 
+		'ALTER TABLE ' || DQ(fk_s) || '.'|| DQ(fk_t) || ' ADD CONSTRAINT ' || DQ(fk) || ' ' ||
+		'FOREIGN KEY(' || GROUP_CONCAT(DQ(fk_c), ',') ||') ' ||
+		'REFERENCES ' || DQ(pk_s) || '.' || DQ(pk_t) || '(' || GROUP_CONCAT(DQ(pk_c), ',') || ') ' ||
+		'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update
+	FROM describe_foreign_keys() GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
+END;
+
 CREATE TEMPORARY TABLE dump_statements(o INT AUTO_INCREMENT, s STRING, PRIMARY KEY (o));
 
 CREATE PROCEDURE dump_database(describe BOOLEAN)
@@ -247,8 +300,8 @@ BEGIN
 			AND s.name <> 'tmp';
 
 	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
-
 	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
+	INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
 
 	INSERT INTO dump_statements(s) --dump_create_comments_on_indices
         SELECT comment_on('INDEX', DQ(i.name), rem.remark)
@@ -258,7 +311,9 @@ BEGIN
         SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
-	--TODO FOREIGN KEYs
+	--INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
+
+	--TODO ADD schema's to ALTER statements
 	--TODO PARTITION TABLES
 	--TODO details on SEQUENCES
 	--TODO functions
