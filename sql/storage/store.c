@@ -1870,6 +1870,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 	cs_new(&s->types, tr->sa, (fdestroy) NULL);
 	cs_new(&s->funcs, tr->sa, (fdestroy) NULL);
 	cs_new(&s->seqs, tr->sa, (fdestroy) NULL);
+	cs_new(&s->parts, tr->sa, (fdestroy) &part_destroy);
 	s->keys = list_new(tr->sa, (fdestroy) NULL);
 	s->idxs = list_new(tr->sa, (fdestroy) NULL);
 	s->triggers = list_new(tr->sa, (fdestroy) NULL);
