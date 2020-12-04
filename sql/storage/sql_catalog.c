@@ -464,44 +464,54 @@ sql_range_part_validate_and_insert(void *v1, void *v2)
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
 	int res1, res2, tpe = pt->tpe.type->localtype;
 	const void *nil = ATOMnilptr(tpe);
-	bool pt_down_all = false, pt_upper_all = false;
+	bool pt_down_all = false, pt_upper_all = false, newp_down_all = false, newp_upper_all = false;
 
 	if (pt == newp) /* same pointer, skip (used in updates) */
 		return NULL;
 
 	assert(tpe == newp->tpe.type->localtype);
-	if (is_bit_nil(pt->with_nills)) //if one partition holds all including nills, then conflicts
+	if (is_bit_nil(pt->with_nills) || is_bit_nil(newp->with_nills)) /* if one partition holds all including nills, then conflicts */
 		return pt;
-	if (newp->with_nills && pt->with_nills) //only one partition at most has null values
+	if (newp->with_nills && pt->with_nills) /* only one partition at most has null values */
 		return pt;
 
 	pt_down_all = !ATOMcmp(tpe, nil, pt->part.range.minvalue);
 	pt_upper_all = !ATOMcmp(tpe, nil, pt->part.range.maxvalue);
+	newp_down_all = !ATOMcmp(tpe, nil, newp->part.range.minvalue);
+	newp_upper_all = !ATOMcmp(tpe, nil, newp->part.range.maxvalue);
 
-	if (pt_down_all || pt_upper_all) {
-		if (pt_down_all) {
-			if (pt->with_nills == true) /* only holds nils, allowed */
-				return NULL;
-			if (pt_upper_all)  /* holds all range, conflicts if newp holds more than nills */
-				return newp->with_nills ? NULL : pt;
-			if (!ATOMcmp(tpe, nil, newp->part.range.minvalue) || ATOMcmp(tpe, pt->part.range.maxvalue, newp->part.range.minvalue) > 0)
-				return pt;
-		}
-		if (pt_upper_all) {
-			if (pt->with_nills == true) /* only holds nils, allowed */
-				return NULL;
-			if (pt_down_all) /* holds all range, conflicts if newp holds more than nills */
-				return newp->with_nills ? NULL : pt;
-			if (!ATOMcmp(tpe, nil, newp->part.range.maxvalue) || ATOMcmp(tpe, newp->part.range.maxvalue, pt->part.range.minvalue) > 0)
-				return pt;
-		}
+	/* if one partition just holds NULL values, then there's no conflict */
+	if ((newp_down_all && newp_upper_all && newp->with_nills) || (pt_down_all && pt_upper_all && pt->with_nills))
+		return NULL;
+	 /* holds all range, will always conflict */
+	if ((pt_down_all && pt_upper_all && !pt->with_nills) || (newp_down_all && newp_upper_all && !newp->with_nills))
+		return pt;
+
+	if (pt_down_all) { /* from range min value until a value */
+		if (newp_down_all || ATOMcmp(tpe, pt->part.range.maxvalue, newp->part.range.minvalue) > 0)
+			return pt;
+		return NULL;
+	}
+	if (pt_upper_all) { /* from value until range max value */
+		if (newp_upper_all || ATOMcmp(tpe, newp->part.range.maxvalue, pt->part.range.minvalue) > 0)
+			return pt;
+		return NULL;
+	}
+	if (newp_down_all) { /* from range min value until a value */
+		if (pt_down_all || ATOMcmp(tpe, newp->part.range.maxvalue, pt->part.range.minvalue) > 0)
+			return pt;
+		return NULL;
+	}
+	if (newp_upper_all) { /* from value until range max value */
+		if (pt_upper_all || ATOMcmp(tpe, pt->part.range.maxvalue, newp->part.range.minvalue) > 0)
+			return pt;
 		return NULL;
 	}
 
 	/* Fallback into normal cases */
 	res1 = ATOMcmp(tpe, pt->part.range.minvalue, newp->part.range.maxvalue);
 	res2 = ATOMcmp(tpe, newp->part.range.minvalue, pt->part.range.maxvalue);
-	if (res1 < 0 && res2 < 0) //overlap: x1 < y2 && y1 < x2
+	if (res1 < 0 && res2 < 0) /* overlap: x1 < y2 && y1 < x2 */
 		return pt;
 	return NULL;
 }
