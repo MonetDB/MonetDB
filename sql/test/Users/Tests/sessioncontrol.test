@@ -27,7 +27,7 @@ call setmemorylimit(8000)
 statement ok
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
 
-statement ok
+statement error
 call setoptimizer('')
 
 statement error
@@ -47,7 +47,7 @@ select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout,
 ----
 0
 monetdb
-(empty)
+minimal_pipe
 5000
 123
 12
