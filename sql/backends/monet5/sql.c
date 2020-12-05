@@ -563,6 +563,7 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 		return NULL;
 
 	b = store_funcs.bind_col(tr, c, access);
+	assert(b);
 	return b;
 }
 
@@ -5440,7 +5441,6 @@ finalize:
 #include "sql_rank.h"
 #include "sql_user.h"
 #include "sql_assert.h"
-#include "sql_session.h"
 #include "sql_execute.h"
 #include "sql_orderidx.h"
 #include "sql_subquery.h"
@@ -6373,21 +6373,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "transaction_rollback", SQLtransaction_rollback, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction_begin", SQLtransaction_begin, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
- /* sql_sesssion */
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "A query is aborted after q seconds (q=0 means run undisturbed).", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "Set the session timeout for a particulat session id", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
- pattern("sql", "setoptimizer", SQLsetoptimizer, true, "", args(1,2, arg("",void),arg("opt",str))),
- pattern("sql", "setoptimizer", SQLsetoptimizer, true, "Set the session optimizer", args(1,3, arg("",void),arg("sid",int),arg("opt",str))),
- pattern("sql", "setworkerlimit", SQLsetworkerlimit, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setworkerlimit", SQLsetworkerlimit, true, "Limit the number of worker threads per query", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
- pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "Limit the memory claim in MB per query", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
 #ifdef HAVE_HGE
  /* sql_hge */
  command("calc", "dec_round", hge_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",hge),arg("v",hge),arg("r",hge))),
