@@ -106,10 +106,16 @@ ALTER TABLE table1 ADD TABLE another3 AS PARTITION FROM 0 TO 10;
 ALTER TABLE table1 ADD TABLE another4 AS PARTITION FOR NULL VALUES;
 
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM -100 TO -1; --error, conflicts with another1
+ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO -1; --error, conflicts with another1
+ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO 0; --error, conflicts with another1
+ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE; --error, conflicts with another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 0 TO 0; --error, conflicts with another1
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 10 TO 10; --error, conflicts with another2
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 10 TO 11; --error, conflicts with another2
+ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 10 TO RANGE MAXVALUE; --error, conflicts with another2
+ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 20 TO RANGE MAXVALUE; --error, conflicts with another2
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 9 TO 10; --error, conflicts with another3
+ALTER TABLE table1 ADD TABLE another5 AS PARTITION FROM 9 TO 10 WITH NULL VALUES; --error, conflicts with another3
 ALTER TABLE table1 ADD TABLE another5 AS PARTITION FOR NULL VALUES; --error, conflicts with another4
 
 ALTER TABLE table1 DROP TABLE another1;
