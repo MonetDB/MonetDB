@@ -1,9 +1,9 @@
 query T
 select current_date - current_date
 ----
-1 day
+0
 
 query T
 select current_date() - current_date()
 ----
-1 day
+0

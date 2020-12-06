@@ -13,11 +13,11 @@ INSERT INTO foo VALUES ('2016-01-01', '2016-01-31')
 query TT
 SELECT (dat2-dat1), (dat2-dat1) < interval '10' day FROM foo
 ----
-1 day
+1
 True
-00:00:00
+0
 True
-1 day
+30
 False
 
 statement ok

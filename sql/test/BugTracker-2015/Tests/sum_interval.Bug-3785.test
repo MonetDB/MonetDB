@@ -15,5 +15,4 @@ drop table foo
 query T
 select sum(i) from (select interval '1' day) x(i)
 ----
-1 day
-
+1
