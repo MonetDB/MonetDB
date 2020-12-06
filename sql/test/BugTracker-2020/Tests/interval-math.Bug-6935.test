@@ -161,7 +161,7 @@ SELECT INTERVAL '5' SECOND / cast(1.0 as double)
 query T rowsort
 SELECT INTERVAL '-100' DAY / cast(23.34 as real)
 ----
-1 day
+-5
 
 query T rowsort
 SELECT INTERVAL '32' MINUTE / cast(45.5677 as real)
