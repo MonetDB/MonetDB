@@ -406,12 +406,15 @@ int yydebug=1;
 	opt_null_string
 	opt_to_savepoint
 	opt_uescape
+	opt_user_schema_path
 	opt_using
 	opt_XML_attribute_name
 	restricted_ident
 	sstring
 	string
 	type_alias
+	user_schema
+	user_schema_path
 	ustring
 	varchar
 	window_ident_clause
@@ -468,11 +471,11 @@ int yydebug=1;
 	opt_seps
 	opt_seq_params
 	opt_typelist
+	opt_with_encrypted_password
 	ordinary_grouping_set
 	paramlist
 	params_list
 	partition_list
-	passwd_schema
 	pred_exp_list
 	privileges
 	procedure_statement_list
@@ -1221,10 +1224,19 @@ alter_statement:
 	  append_string(l, $7);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_SET_TABLE_SCHEMA, l ); }
- | ALTER USER ident passwd_schema
-	{ dlist *l = L();
+ | ALTER USER ident opt_with_encrypted_password user_schema user_schema_path
+	{ dlist *l = L(), *p = L();
+	  if (!$4 && !$5 && !$6) {
+		yyerror(m, "ALTER USER: At least one property should be updatd");
+		YYABORT;
+	  }
 	  append_string(l, $3);
-	  append_list(l, $4);
+	  append_string(p, $4 ? $4->h->data.sval : NULL);
+	  append_string(p, $5);
+	  append_string(p, $6);
+	  append_int(p, $4 ? $4->h->next->data.i_val : 0);
+	  append_string(p, NULL);
+	  append_list(l, p);
 	  $$ = _symbol_create_list( SQL_ALTER_USER, l ); }
  | ALTER USER ident RENAME TO ident
 	{ dlist *l = L();
@@ -1236,6 +1248,7 @@ alter_statement:
 	  dlist *p = L();
 	  append_string(l, NULL);
 	  append_string(p, $6);
+	  append_string(p, NULL);
 	  append_string(p, NULL);
 	  append_int(p, $4);
 	  append_string(p, $10);
@@ -1249,27 +1262,20 @@ alter_statement:
 	  $$ = _symbol_create_list( SQL_RENAME_SCHEMA, l ); }
   ;
 
-passwd_schema:
-  	WITH opt_encrypted PASSWORD string	{ dlist * l = L();
-				  append_string(l, $4);
-				  append_string(l, NULL);
-				  append_int(l, $2);
-				  append_string(l, NULL);
-				  $$ = l; }
-  |	SET SCHEMA ident	{ dlist * l = L();
-				  append_string(l, NULL);
-				  append_string(l, $3);
-				  append_int(l, 0);
-				  append_string(l, NULL);
-				  $$ = l; }
-  |	WITH opt_encrypted PASSWORD string SET SCHEMA ident	
-				{ dlist * l = L();
-				  append_string(l, $4);
-				  append_string(l, $7);
-				  append_int(l, $2);
-				  append_string(l, NULL);
-				  $$ = l; }
-  ;
+opt_with_encrypted_password:
+	WITH opt_encrypted PASSWORD string	{ $$ = append_int(append_string(L(), $4), $2); }
+ |  /* empty */							{ $$ = NULL; }
+ ;
+
+user_schema:
+	SET SCHEMA ident	{ $$ = $3; }
+ |  /* empty */			{ $$ = NULL; }
+ ;
+
+user_schema_path:
+	SCHEMA PATH string	{ $$ = $3; }
+ |  /* empty */			{ $$ = NULL; }
+ ;
 
 alter_table_element:
 	opt_column ident SET DEFAULT default_value
@@ -1462,18 +1468,23 @@ CREATE [ UNIQUE ] INDEX index_name
 }
 */
 
+opt_user_schema_path:
+   SCHEMA PATH string { $$ = $3; }
+ |					 { $$ = NULL; }
+
 role_def:
     ROLE ident opt_grantor
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident opt_user_schema_path
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_string(l, $6);
 	  append_string(l, $8);
 	  append_string(l, $10);
+	  append_string(l, $11);
 	  append_int(l, $4);
 	  $$ = _symbol_create_list( SQL_CREATE_USER, l ); }
  ;
@@ -6361,9 +6372,9 @@ void *sql_error( mvc * sql, int error_code, char *format, ... )
 	va_list	ap;
 
 	va_start (ap,format);
-	if (sql->errstr[0] == '\0' || error_code == 5)
+	if (sql->errstr[0] == '\0' || error_code == 5 || error_code == ERR_NOTFOUND)
 		vsnprintf(sql->errstr, ERRSIZE-1, _(format), ap);
-	if (!sql->session->status || error_code == 5)
+	if (!sql->session->status || error_code == 5 || error_code == ERR_NOTFOUND)
 		sql->session->status = -error_code;
 	va_end (ap);
 	return NULL;

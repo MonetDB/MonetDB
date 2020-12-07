@@ -23,15 +23,13 @@ extern sql_exp *rel_column_exp(sql_query *query, sql_rel **rel, symbol *column_e
 extern sql_exp * rel_value_exp(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek);
 extern sql_exp * rel_value_exp2(sql_query *query, sql_rel **rel, symbol *se, int f, exp_kind ek);
 
-extern sql_exp *rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, sql_schema *s, char *fname, int card);
-extern sql_exp *rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *fname, int card);
-extern sql_exp *rel_nop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, sql_schema *s,
-						 char *fname, int card);
+extern sql_exp *rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card);
+extern sql_exp *rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fname, int card);
+extern sql_exp *rel_nop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_exp *r2, sql_exp *r3, char *sname, char *fname, int card);
 extern sql_rel *rel_with_query(sql_query *query, symbol *q);
 extern sql_rel *rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t);
 extern sql_rel *table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *refs);
-extern sql_exp *find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, sql_ftype type);
-
+extern sql_exp *find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sql_ftype type);
 extern sql_rel *rel_loader_function(sql_query* query, symbol* s, list *fexps, sql_subfunc **loader_function);
 
 #endif /*_REL_SELECT_H_*/

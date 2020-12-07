@@ -123,4 +123,31 @@ plan select 1 from splitted2 where stamp in (8,9); --all children pruned
 select 1 from splitted2 where stamp in (8,9); --all children pruned
  	-- empty
 
+CREATE MERGE TABLE table1 (a int, b int) PARTITION BY RANGE ON (a);
+CREATE TABLE another1 (a int, b int);
+CREATE TABLE another2 (a int, b int);
+
+ALTER TABLE table1 ADD TABLE another1 AS PARTITION FROM 10 TO 10;
+ALTER TABLE table1 ADD TABLE another2 AS PARTITION FROM 11 TO 11;
+
+plan select 1 from table1 where a = 10; --only first child passes
+
+plan select 1 from table1 where a = 11; --only second child passes
+
+plan select 1 from table1 where a = 10 or a = 11; --nothing gets pruned
+
+plan select 1 from table1 where a >= 10; --nothing gets pruned
+
+plan select 1 from table1 where a > 10; --only second child passes
+
+plan select 1 from table1 where a <= 10; --only first child passes
+
+plan select 1 from table1 where a between 10 and 10; --only first child passes
+
+plan select 1 from table1 where a = 10 or b = 11; --nothing gets pruned
+
+plan select 1 from table1 where a not between 10 and 11; --all children pruned
+
+plan select 1 from table1 where a not between 10 and 10; --only second child passes
+
 ROLLBACK;

@@ -138,12 +138,12 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 							   sql_table **mt, sql_table **pt, int update)
 {
 	char *msg = MAL_SUCCEED;
-	sql_schema *ms = cur_schema(sql), *ps = cur_schema(sql);
+	sql_schema *ms = NULL, *ps = NULL;
 	sql_table *rmt = NULL, *rpt = NULL;
 
-	if (msname && !(ms = mvc_bind_schema(sql, msname)))
+	if (!(ms = mvc_bind_schema(sql, msname)))
 		throw(SQL,call,SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", msname);
-	if (psname && !(ps = mvc_bind_schema(sql, psname)))
+	if (!(ps = mvc_bind_schema(sql, psname)))
 		throw(SQL,call,SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", psname);
 	if (!mvc_schema_privs(sql, ms))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ms->base.name);
@@ -396,13 +396,13 @@ finish:
 static char *
 alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *ptname, int drop_action)
 {
-	sql_schema *ms = cur_schema(sql), *ps = cur_schema(sql);
+	sql_schema *ms = NULL, *ps = NULL;
 	sql_table *mt = NULL, *pt = NULL;
 	node *n = NULL;
 
-	if (msname && !(ms = mvc_bind_schema(sql, msname)))
+	if (!(ms = mvc_bind_schema(sql, msname)))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", msname);
-	if (psname && !(ps = mvc_bind_schema(sql, psname)))
+	if (!(ps = mvc_bind_schema(sql, psname)))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", psname);
 	if (!mvc_schema_privs(sql, ms))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ms->base.name);
@@ -425,10 +425,10 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 static char *
 alter_table_set_access(mvc *sql, char *sname, char *tname, int access)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 	if (s && !mvc_schema_privs(sql, s))
 		throw(SQL,"sql.alter_table_set_access",SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -451,10 +451,10 @@ static char *
 create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, int orientation, int event, char *old_name, char *new_name, char *condition, char *query)
 {
 	sql_trigger *tri = NULL;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.create_trigger",SQLSTATE(3F000) "CREATE TRIGGER: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.create_trigger",SQLSTATE(42000) "CREATE TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -479,7 +479,7 @@ create_trigger(mvc *sql, char *sname, char *tname, char *triggername, int time, 
 			throw(SQL, "sql.catalog",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql, r);
 			mvc_create_dependencies(sql, id_l, tri->base.id, TRIGGER_DEPENDENCY);
@@ -500,9 +500,9 @@ static char *
 drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 {
 	sql_trigger *tri = NULL;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+	if (!(s = mvc_bind_schema(sql, sname))) {
 		if (if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_trigger",SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
@@ -523,11 +523,10 @@ drop_trigger(mvc *sql, char *sname, char *tname, int if_exists)
 static char *
 drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *t = NULL;
-	node *n;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+	if (!(s = mvc_bind_schema(sql, sname))) {
 		if (if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_table",SQLSTATE(3F000) "DROP TABLE: no such schema '%s'", sname);
@@ -544,7 +543,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 	if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
 		throw(SQL,"sql.drop_table", SQLSTATE(42000) "DROP TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (!drop_action && t->keys.set) {
-		for (n = t->keys.set->h; n; n = n->next) {
+		for (node *n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
@@ -574,9 +573,9 @@ static char *
 drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 {
 	sql_table *t = NULL;
-	sql_schema *ss = cur_schema(sql);
+	sql_schema *ss = NULL;
 
-	if (sname && !(ss = mvc_bind_schema(sql, sname))) {
+	if (!(ss = mvc_bind_schema(sql, sname))) {
 		if (if_exists)
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_view", SQLSTATE(3F000) "DROP VIEW: no such schema '%s'", sname);
@@ -601,9 +600,9 @@ static str
 drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 {
 	sql_key *key;
-	sql_schema *ss = cur_schema(sql);
+	sql_schema *ss = NULL;
 
-	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+	if (!(ss = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_key", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, ss))
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ss->base.name);
@@ -619,10 +618,10 @@ drop_key(mvc *sql, char *sname, char *kname, int drop_action)
 static str
 drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_idx *i = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_index", SQLSTATE(3F000) "DROP INDEX: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_index", SQLSTATE(42000) "DROP INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -654,10 +653,10 @@ drop_index(Client cntxt, mvc *sql, char *sname, char *iname)
 static str
 create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 
 	(void)seqname;
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.create_seq", SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -679,11 +678,11 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 static str
 alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *val)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_sequence *nseq = NULL;
 
 	(void)seqname;
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.alter_seq", SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -710,10 +709,10 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 static str
 drop_seq(mvc *sql, char *sname, char *name)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_sequence *seq = NULL;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_seq", SQLSTATE(3F000) "DROP SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_seq", SQLSTATE(42000) "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -729,12 +728,12 @@ drop_seq(mvc *sql, char *sname, char *name)
 static str
 drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int action)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR(type)
+	FUNC_TYPE_STR(type, F, fn)
 
-	if (sname && !(s = mvc_bind_schema(sql, sname))) {
+	if (!(s = mvc_bind_schema(sql, sname))) {
 		if (fid == -2) /* if exists option */
 			return MAL_SUCCEED;
 		throw(SQL,"sql.drop_func", SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
@@ -754,18 +753,18 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	} else if (fid == -2) { /* if exists option */
 		return MAL_SUCCEED;
 	} else { /* fid == -1 */
-		node *n = NULL;
-		list *list_func = schema_bind_func(sql, s, name, type);
+		list *list_func = sql_find_funcs_by_name(sql, s->base.name, name, type);
 		int res;
 
-		for (n = list_func->h; n; n = n->next) {
-			sql_func *func = n->data;
+		if (list_func)
+			for (node *n = list_func->h; n; n = n->next) {
+				sql_func *func = n->data;
 
-			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
-				list_destroy(list_func);
-				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
+				if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, list_func)) {
+					list_destroy(list_func);
+					throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
+				}
 			}
-		}
 		res = mvc_drop_all_func(sql, s, list_func, action);
 		list_destroy(list_func);
 		if (res)
@@ -778,15 +777,15 @@ static char *
 create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 {
 	sql_func *nf;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	int clientid = sql->clientid;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR(f->type)
+	FUNC_TYPE_STR(f->type, F, fn)
 
 	(void) fname;
 	(void) fn;
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
@@ -812,7 +811,7 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 			throw(SQL, "sql.create_func", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		r = rel_parse(sql, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n;
 			list *id_l = rel_dependencies(sql, r);
@@ -853,11 +852,11 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 static str
 alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_table *nt = NULL;
 	node *n;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.alter_table", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
 		throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -1200,12 +1199,11 @@ SQLcreate_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 	char *name = *getArgReference_str(stk, pci, 2);
 	char *impl = *getArgReference_str(stk, pci, 3);
-	sql_schema *s;
+	sql_schema *s = NULL;
 
 	initcontext();
 
-	s = cur_schema(sql);
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.create_type",SQLSTATE(3F000) "CREATE TYPE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.create_type", SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -1223,13 +1221,12 @@ SQLdrop_type(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = *getArgReference_str(stk, pci, 1);
 	char *name = *getArgReference_str(stk, pci, 2);
 	int drop_action = *getArgReference_int(stk, pci, 3);
-	sql_schema *s;
+	sql_schema *s = NULL;
 	sql_type *t;
 
 	initcontext();
 
-	s = cur_schema(sql);
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_type",SQLSTATE(3F000) "DROP TYPE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_type", SQLSTATE(42000) "DROP TYPE:  access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
@@ -1349,10 +1346,11 @@ SQLcreate_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *passwd = *getArgReference_str(stk, pci, 2);
 	int enc = *getArgReference_int(stk, pci, 3);
 	char *schema = SaveArgReference(stk, pci, 4);
-	char *fullname = SaveArgReference(stk, pci, 5);
+	char *schema_path = SaveArgReference(stk, pci, 5);
+	char *fullname = SaveArgReference(stk, pci, 6);
 
 	initcontext();
-	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema);
+	msg = sql_create_user(sql, sname, passwd, enc, fullname, schema, schema_path);
 	return msg;
 }
 
@@ -1375,10 +1373,11 @@ SQLalter_user(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	char *passwd = SaveArgReference(stk, pci, 2);
 	int enc = *getArgReference_int(stk, pci, 3);
 	char *schema = SaveArgReference(stk, pci, 4);
-	char *oldpasswd = SaveArgReference(stk, pci, 5);
+	char *schema_path = SaveArgReference(stk, pci, 5);
+	char *oldpasswd = SaveArgReference(stk, pci, 6);
 
 	initcontext();
-	msg = sql_alter_user(sql, sname, passwd, enc, schema, oldpasswd);
+	msg = sql_alter_user(sql, sname, passwd, enc, schema, schema_path, oldpasswd);
 
 	return msg;
 }

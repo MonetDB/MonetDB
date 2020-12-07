@@ -21,9 +21,9 @@
 #include "mal_namespace.h"
 
 InstrPtr
-newAssignment(MalBlkPtr mb)
+newAssignmentArgs(MalBlkPtr mb, int args)
 {
-	InstrPtr q = newInstruction(mb,NULL,NULL);
+	InstrPtr q = newInstructionArgs(mb, NULL, NULL, args);
 	int k;
 
 	if (q == NULL)
@@ -41,22 +41,15 @@ newAssignment(MalBlkPtr mb)
 }
 
 InstrPtr
+newAssignment(MalBlkPtr mb)
+{
+	return newAssignmentArgs(mb, MAXARG);
+}
+
+InstrPtr
 newStmt(MalBlkPtr mb, const char *module, const char *name)
 {
-	InstrPtr q;
-	str mName = putName(module), nName = putName(name);
-
-	q = newInstruction(mb, mName, nName);
-	if (q == NULL)
-		return NULL;
-	setDestVar(q, newTmpVariable(mb, TYPE_any));
-	if (getDestVar(q) < 0 ){
-		str msg = createException(MAL, "newStmt", "Can not allocate variable");
-		addMalException(mb, msg);
-		freeException(msg);
-	}
-	pushInstruction(mb, q);
-	return q;
+	return newStmtArgs(mb, module, name, MAXARG);
 }
 
 InstrPtr
@@ -100,9 +93,9 @@ newReturnStmt(MalBlkPtr mb)
 }
 
 InstrPtr
-newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
+newFcnCallArgs(MalBlkPtr mb, char *mod, char *fcn, int args)
 {
-	InstrPtr q = newAssignment(mb);
+	InstrPtr q = newAssignmentArgs(mb, args);
 	str fcnName, modName;
 
 	modName = putName(mod);
@@ -110,6 +103,12 @@ newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
 	setModuleId(q, modName);
 	setFunctionId(q, fcnName);
 	return q;
+}
+
+InstrPtr
+newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
+{
+	return newFcnCallArgs(mb, mod, fcn, MAXARG);
 }
 
 InstrPtr

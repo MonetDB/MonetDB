@@ -467,8 +467,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 1,	1 # length
 [ 1,	2	]
 #SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN (0.5854332103580835, CASE WHEN v4.vc0 THEN (SELECT 0.023816515 WHERE TRUE) END));
-% .%15 # table_name
-% %15 # name
+% .%20 # table_name
+% %20 # name
 % boolean # type
 % 5 # length
 [ false	]

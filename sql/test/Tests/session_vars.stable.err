@@ -19,15 +19,15 @@ ERROR = !Variables cannot be declared on the global scope
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = set test_nr = 1;
-ERROR = !SET: Variable 'test_nr' unknown
+ERROR = !SET: no such variable 'test_nr'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = set test_str = 'help';
-ERROR = !SET: Variable 'test_str' unknown
+ERROR = !SET: no such variable 'test_str'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = set test_boolean = true;
-ERROR = !SET: Variable 'test_boolean' unknown
+ERROR = !SET: no such variable 'test_boolean'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = select test_nr;
@@ -43,31 +43,31 @@ ERROR = !SELECT: identifier 'test_boolean' unknown
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = select @debug; --error, @ annotation no longer exists
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
 QUERY = select @"current_schema"; --error, @ annotation no longer exists
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
 QUERY = select @"current_user"; --error, @ annotation no longer exists
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
 QUERY = select @"current_role"; --error, @ annotation no longer exists
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-272580/.s.monetdb.34031
 QUERY = set test_nr = 'help'; --error, conversion failed
-ERROR = !SET: Variable 'test_nr' unknown
+ERROR = !SET: no such variable 'test_nr'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = set test_str = 1;
-ERROR = !SET: Variable 'test_str' unknown
+ERROR = !SET: no such variable 'test_str'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = set test_boolean = 'help';
-ERROR = !SET: Variable 'test_boolean' unknown
+ERROR = !SET: no such variable 'test_boolean'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = select sys.test_nr;
@@ -83,15 +83,15 @@ ERROR = !SELECT: no such column 'sys.test_boolean'
 CODE  = 42S22
 MAPI  = (monetdb) /var/tmp/mtest-189174/.s.monetdb.30232
 QUERY = select @test_nr; --error, @ annotation no longer exists
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
 QUERY = select @test_str; --error, @ annotation no longer exists
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-143962/.s.monetdb.35511
 QUERY = select @test_boolean; --error, @ annotation no longer exists
-ERROR = !syntax error, unexpected AT in: "select @"
+ERROR = !syntax error in: "select @"
 CODE  = 42000
 
 # 20:30:43 >  

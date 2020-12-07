@@ -924,7 +924,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					list_append(tl, exp_subtype(e));
 				}
 
-				if (!(func = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), fname, tl, F_FILT)))
+				if (!(func = sql_bind_func_(sql, "sys", fname, tl, F_FILT)))
 					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
 				return exp_filter(sql->sa, lexps, rexps, func, anti);
 			}
@@ -1030,9 +1030,9 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				list *ops = sa_list(sql->sa);
 				for( n = exps->h; n; n = n->next)
 					append(ops, exp_subtype(n->data));
-				a = sql_bind_func_(sql->sa, s, cname, ops, F_AGGR);
+				a = sql_bind_func_(sql, tname, cname, ops, F_AGGR);
 			} else {
-				a = sql_bind_func(sql->sa, s, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
+				a = sql_bind_func(sql, tname, cname, sql_bind_localtype("void"), NULL, F_AGGR); /* count(*) */
 			}
 			if (!a)
 				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
@@ -1045,18 +1045,25 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			for( n = exps->h; n; n = n->next)
 				append(ops, exp_subtype(n->data));
 
-			f = sql_bind_func_(sql->sa, s, cname, ops, F_FUNC);
-			if (!f)
-				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+			f = sql_bind_func_(sql, tname, cname, ops, F_FUNC);
+			if (!f) {
+				sql->session->status = 0; /* if the function was not found clean the error */
+				sql->errstr[0] = '\0';
+				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
+			}
 			if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
+				sql->session->status = 0; /* if the function was not found clean the error */
+				sql->errstr[0] = '\0';
 				list_remove_node(ops, ops->t);
 				list_remove_node(ops, ops->t);
-				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
 			}
 			if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
+				sql->session->status = 0; /* if the function was not found clean the error */
+				sql->errstr[0] = '\0';
 				for (int i = 0 ; i < 3 ; i++)
 					list_remove_node(ops, ops->t);
-				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
+				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
 			}
 
 			/* fix scale of mul function, other type casts are explicit */
@@ -1576,10 +1583,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (!(inputs = read_exps(sql, lrel, NULL, NULL, r, pos, '(', 0, 1)))
 					return NULL;
 
-				if (!(s = mvc_bind_schema(sql, sname)))
-					return sql_error(sql, -1, SQLSTATE(3F000) "No such schema '%s'\n", sname);
 				*e = 0; /* closing table udf name string */
-				if (!(tudf = find_table_function(sql, s, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs), F_UNION)))
+				if (!(tudf = find_table_function(sql, sname, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs), F_UNION)))
 					return NULL;
 				sf = tudf->f;
 				if (tudf->type != e_func || sf->func->type != F_UNION)
