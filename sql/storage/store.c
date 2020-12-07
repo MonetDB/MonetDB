@@ -5234,7 +5234,7 @@ int
 sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
-	int oldest = oldest_active_tid();
+	int oldest = (tr->parent== gtrans)?oldest_active_tid():-1;
 
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (%d, %d) (%d, %d)\n", gtrans->stime, tr->stime, gtrans->wstime, tr->wstime);
