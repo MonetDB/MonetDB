@@ -27,7 +27,6 @@
 #include "sql_scenario.h"
 #include "sql_execute.h"
 #include "sql.h"
-#include "clients.h"
 #include "mal_exception.h"
 
 #define FITS_INS_COL "INSERT INTO sys.fits_columns(id, name, type, units, number, table_id) \

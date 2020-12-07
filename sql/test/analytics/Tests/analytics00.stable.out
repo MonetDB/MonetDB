@@ -2066,7 +2066,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 320 # length
+% 329 # length
 project (
 | project (
 | | project (
@@ -2074,7 +2074,7 @@ project (
 | | | | table(sys.myorders) [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ] COUNT 
 | | | ) [ "myorders"."o_totalprice" NOT NULL, sys.day("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.max("myorders"."o_totalprice" NOT NULL, "%2"."%2", sys.diff("%1"."%1" NOT NULL), int "1", sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "0", int "0", int "2"), sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "5", int "0", int "0")) as "%3"."%3" ]
+| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.max("myorders"."o_totalprice" NOT NULL, "%2"."%2" NOT NULL, sys.diff("%1"."%1" NOT NULL), int "1", sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "0", int "0", int "2"), sys.window_bound("%1"."%1" ASC NOT NULL, int "1", int "5", int "0", int "0")) as "%3"."%3" ]
 ) [ "%3"."%3" ]
 #SELECT MAX(o_totalprice) OVER (ORDER BY EXTRACT(DAY FROM o_orderdate) RANGE BETWEEN 2 PRECEDING AND CURRENT ROW) FROM myorders;
 % sys.%3 # table_name
@@ -2087,7 +2087,7 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 393 # length
+% 402 # length
 project (
 | project (
 | | project (
@@ -2095,7 +2095,7 @@ project (
 | | | | table(sys.myorders) [ "myorders"."o_totalprice" NOT NULL, "myorders"."o_orderdate" NOT NULL ] COUNT 
 | | | ) [ "myorders"."o_totalprice" NOT NULL, sys.year("myorders"."o_orderdate" NOT NULL) NOT NULL as "%1"."%1" ]
 | | ) [ "myorders"."o_totalprice" NOT NULL, "%1"."%1" NOT NULL ] [ "%1"."%1" ASC NOT NULL ]
-| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", sys.count("myorders"."o_totalprice" NOT NULL, boolean "true", "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", int "2", sys.window_bound("%3"."%3", int "2", int "0", int "0", tinyint "2"), sys.window_bound("%3"."%3", int "2", int "3", int "0", bigint "9223372036854775807")) as "%4"."%4" ]
+| ) [ "%1"."%1" NOT NULL, boolean "false" as "%2"."%2", sys.diff("%1"."%1" NOT NULL) as "%3"."%3", sys.count("myorders"."o_totalprice" NOT NULL, boolean "true", "%2"."%2" NOT NULL, sys.diff("%1"."%1" NOT NULL) as "%3"."%3", int "2", sys.window_bound("%3"."%3", int "2", int "0", int "0", tinyint "2"), sys.window_bound("%3"."%3", int "2", int "3", int "0", bigint "9223372036854775807")) as "%4"."%4" ]
 ) [ "%4"."%4" ]
 #SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING) FROM myorders;
 % sys.%4 # table_name
