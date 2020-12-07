@@ -346,8 +346,6 @@ CMDqgramnormalize(str *res, str *Input)
  * =========================================================================
  */
 
-#define PARAMS(proto) proto
-
 /*
  * Data on one input string being compared.
  */
@@ -417,9 +415,7 @@ struct partition {
 	cause suboptimal diff output.  It cannot cause incorrect diff
 	output.  */
 
-static int diag PARAMS((int, int, int, int, int, struct partition *, int, struct string_data *, int *, int *));
-
-static int
+static inline int
 diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part, int too_expensive, struct string_data *string, int *fdiag, int *bdiag)
 {
 	int *const fd = fdiag;	/* Give the compiler a chance. */
@@ -602,9 +598,7 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 	If MINIMAL is nonzero, find a minimal difference no matter how
 	expensive it is.  */
 
-static void compareseq PARAMS((int, int, int, int, int, int, int, struct string_data *, int*, int*));
-
-static void
+static inline void
 compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, int too_expensive, struct string_data *string, int *fdiag, int *bdiag) /* compareseq stops when edits > max_edits */
 {
 	const char *const xv = string[0].data;	/* Help the compiler.  */
