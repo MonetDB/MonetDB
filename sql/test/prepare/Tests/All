@@ -2,3 +2,5 @@ fixed_limit_for_prepare.Bug-3208
 prepare-complex
 prepare-smallint.Bug-3297
 prepare_unop_crash.Bug-3653
+prepare-utf8.Bug-3930
+rename_exps.Bug-3974
