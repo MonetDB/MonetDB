@@ -4,3 +4,4 @@ prepare-smallint.Bug-3297
 prepare_unop_crash.Bug-3653
 prepare-utf8.Bug-3930
 rename_exps.Bug-3974
+error-clean-cache.Bug-6351

@@ -73,7 +73,6 @@ crash-select_after_MAL_error.Bug-6332
 handle-values-subqueries.Bug-6336
 groupby_assertion.Bug-6338
 spurious_error.Bug-6344
-error-clean-cache.Bug-6351
 caching_stats_bug.6374
 name-interference.Bug-6348
 parsererror.Bug-6381
