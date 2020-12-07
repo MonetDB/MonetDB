@@ -153,20 +153,24 @@ END;
 
 CREATE FUNCTION dump_merge_table_partition_expressions(tid INT) RETURNS STRING
 BEGIN
-	RETURN SELECT
-			' PARTITION BY ' ||
-			CASE
-				WHEN bit_and(tp.type, 2) = 2
-				THEN 'VALUES '
-               	ELSE 'RANGE '
-			END ||
-			CASE
-				WHEN bit_and(tp.type, 4) = 4 --column expression
-				THEN 'ON ' || '(' || (SELECT DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
-				ELSE 'USING ' || '(' || tp.expression || ')' --generic expression
+	RETURN
+		SELECT
+			CASE WHEN tp.table_id IS NOT NULL THEN	--updatable merge table
+				' PARTITION BY ' ||
+				CASE
+					WHEN bit_and(tp.type, 2) = 2
+					THEN 'VALUES '
+					ELSE 'RANGE '
+				END ||
+				CASE
+					WHEN bit_and(tp.type, 4) = 4 --column expression
+					THEN 'ON ' || '(' || (SELECT DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
+					ELSE 'USING ' || '(' || tp.expression || ')' --generic expression
+				END
+			ELSE									--read only partition merge table.
+				''
 			END
-	FROM sys.table_partitions tp
-	WHERE tp.table_id = tid;
+		FROM (VALUES (tid)) t(id) LEFT JOIN sys.table_partitions tp ON t.id = tp.table_id;
 END;
 
 --SELECT * FROM dump_foreign_keys();
