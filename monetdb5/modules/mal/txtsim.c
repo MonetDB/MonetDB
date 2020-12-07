@@ -263,7 +263,6 @@ soundex_code(char *Name, char *Key)
 	}
 }
 
-
 static str
 soundex_impl(str *res, str *Name)
 {
@@ -362,38 +361,6 @@ struct string_data {
 	int edit_count;
 };
 
-static struct string_data string[2];
-
-static int max_edits;		/* compareseq stops when edits > max_edits */
-
-#ifdef MINUS_H_FLAG
-
-/* This corresponds to the diff -H flag.  With this heuristic, for
-   strings with a constant small density of changes, the algorithm is
-   linear in the strings size.  This is unlikely in typical uses of
-   fstrcmp, and so is usually compiled out.  Besides, there is no
-   interface to set it true.  */
-static int heuristic;
-
-#endif
-
-
-/* Vector, indexed by diagonal, containing 1 + the X coordinate of the
-   point furthest along the given diagonal in the forward search of the
-   edit matrix.  */
-static int *fdiag;
-
-/* Vector, indexed by diagonal, containing the X coordinate of the point
-   furthest along the given diagonal in the backward search of the edit
-   matrix.  */
-static int *bdiag;
-
-/* Edit scripts longer than this are too expensive to compute.  */
-static int too_expensive;
-
-/* Snakes bigger than this are considered `big'.  */
-#define SNAKE_LIMIT	20
-
 struct partition {
 	/* Midpoints of this partition.  */
 	int xmid, ymid;
@@ -404,7 +371,6 @@ struct partition {
 	/* Likewise for high half.  */
 	int hi_minimal;
 };
-
 
 /* NAME
 	diag - find diagonal path
@@ -450,10 +416,10 @@ struct partition {
 	cause suboptimal diff output.  It cannot cause incorrect diff
 	output.  */
 
-static int diag PARAMS((int, int, int, int, int, struct partition *));
+static int diag PARAMS((int, int, int, int, int, struct partition *, int, struct string_data *, int *, int *));
 
 static int
-diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part)
+diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part, int too_expensive, struct string_data *string, int *fdiag, int *bdiag)
 {
 	int *const fd = fdiag;	/* Give the compiler a chance. */
 	int *const bd = bdiag;	/* Additional help for the compiler. */
@@ -478,9 +444,7 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 	bd[bmid] = xlim;
 	for (c = 1;; ++c) {
 		int d;		/* Active diagonal. */
-		int big_snake;
 
-		big_snake = 0;
 		/* Extend the top-down search by an edit step in each diagonal. */
 		if (fmin > dmin)
 			fd[--fmin - 1] = -1;
@@ -493,7 +457,6 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 		for (d = fmax; d >= fmin; d -= 2) {
 			int x;
 			int y;
-			int oldx;
 			int tlo;
 			int thi;
 
@@ -503,14 +466,11 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 				x = tlo + 1;
 			else
 				x = thi;
-			oldx = x;
 			y = x - d;
 			while (x < xlim && y < ylim && xv[x] == yv[y]) {
 				++x;
 				++y;
 			}
-			if (x - oldx > SNAKE_LIMIT)
-				big_snake = 1;
 			fd[d] = x;
 			if (odd && bmin <= d && d <= bmax && bd[d] <= x) {
 				part->xmid = x;
@@ -531,7 +491,6 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 		for (d = bmax; d >= bmin; d -= 2) {
 			int x;
 			int y;
-			int oldx;
 			int tlo;
 			int thi;
 
@@ -540,14 +499,11 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 				x = tlo;
 			else
 				x = thi - 1;
-			oldx = x;
 			y = x - d;
 			while (x > xoff && y > yoff && xv[x - 1] == yv[y - 1]) {
 				--x;
 				--y;
 			}
-			if (oldx - x > SNAKE_LIMIT)
-				big_snake = 1;
 			bd[d] = x;
 			if (!odd && fmin <= d && d <= fmax && x <= fd[d]) {
 				part->xmid = x;
@@ -559,90 +515,6 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 
 		if (minimal)
 			continue;
-
-#ifdef MINUS_H_FLAG
-		/* Heuristic: check occasionally for a diagonal that has made lots
-		   of progress compared with the edit distance.  If we have any
-		   such, find the one that has made the most progress and return
-		   it as if it had succeeded.
-
-		   With this heuristic, for strings with a constant small density
-		   of changes, the algorithm is linear in the strings size.  */
-		if (c > 200 && big_snake && heuristic) {
-			int best;
-
-			best = 0;
-			for (d = fmax; d >= fmin; d -= 2) {
-				int dd;
-				int x;
-				int y;
-				int v;
-
-				dd = d - fmid;
-				x = fd[d];
-				y = x - d;
-				v = (x - xoff) * 2 - dd;
-
-				if (v > 12 * (c + (dd < 0 ? -dd : dd))) {
-					if (v > best && xoff + SNAKE_LIMIT <= x && x < xlim && yoff + SNAKE_LIMIT <= y && y < ylim) {
-						/* We have a good enough best diagonal; now insist
-						   that it end with a significant snake.  */
-						int k;
-
-						for (k = 1; xv[x - k] == yv[y - k]; k++) {
-							if (k == SNAKE_LIMIT) {
-								best = v;
-								part->xmid = x;
-								part->ymid = y;
-								break;
-							}
-						}
-					}
-				}
-			}
-			if (best > 0) {
-				part->lo_minimal = 1;
-				part->hi_minimal = 0;
-				return 2 * c - 1;
-			}
-			best = 0;
-			for (d = bmax; d >= bmin; d -= 2) {
-				int dd;
-				int x;
-				int y;
-				int v;
-
-				dd = d - bmid;
-				x = bd[d];
-				y = x - d;
-				v = (xlim - x) * 2 + dd;
-
-				if (v > 12 * (c + (dd < 0 ? -dd : dd))) {
-					if (v > best && xoff < x && x <= xlim - SNAKE_LIMIT && yoff < y && y <= ylim - SNAKE_LIMIT) {
-						/* We have a good enough best diagonal; now insist
-						   that it end with a significant snake.  */
-						int k;
-
-						for (k = 0; xv[x + k] == yv[y + k]; k++) {
-							if (k == SNAKE_LIMIT - 1) {
-								best = v;
-								part->xmid = x;
-								part->ymid = y;
-								break;
-							}
-						}
-					}
-				}
-			}
-			if (best > 0) {
-				part->lo_minimal = 0;
-				part->hi_minimal = 1;
-				return 2 * c - 1;
-			}
-		}
-#else
-		(void) big_snake;
-#endif /* MINUS_H_FLAG */
 
 		/* Heuristic: if we've gone well beyond the call of duty, give up
 		   and report halfway between our best results so far.  */
@@ -729,10 +601,10 @@ diag(int xoff, int xlim, int yoff, int ylim, int minimal, struct partition *part
 	If MINIMAL is nonzero, find a minimal difference no matter how
 	expensive it is.  */
 
-static void compareseq PARAMS((int, int, int, int, int));
+static void compareseq PARAMS((int, int, int, int, int, int, int, struct string_data *, int*, int*));
 
 static void
-compareseq(int xoff, int xlim, int yoff, int ylim, int minimal)
+compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, int too_expensive, struct string_data *string, int *fdiag, int *bdiag) /* compareseq stops when edits > max_edits */
 {
 	const char *const xv = string[0].data;	/* Help the compiler.  */
 	const char *const yv = string[1].data;
@@ -768,26 +640,18 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal)
 		struct partition part;
 
 		/* Find a point of correspondence in the middle of the strings.  */
-		c = diag(xoff, xlim, yoff, ylim, minimal, &part);
+		c = diag(xoff, xlim, yoff, ylim, minimal, &part, too_expensive, string, fdiag, bdiag);
 		if (c == 1) {
-#if 0
-			/* This should be impossible, because it implies that one of
-			   the two subsequences is empty, and that case was handled
-			   above without calling `diag'.  Let's verify that this is
-			   true.  */
-			abort();
-#else
 			/* The two subsequences differ by a single insert or delete;
 			   record it and we are done.  */
 			if (part.xmid - part.ymid < xoff - yoff)
 				++string[1].edit_count;
 			else
 				++string[0].edit_count;
-#endif
 		} else {
 			/* Use the partitions to split this problem into subproblems.  */
-			compareseq(xoff, part.xmid, yoff, part.ymid, part.lo_minimal);
-			compareseq(part.xmid, xlim, part.ymid, ylim, part.hi_minimal);
+			compareseq(xoff, part.xmid, yoff, part.ymid, part.lo_minimal, max_edits, too_expensive, string, fdiag, bdiag);
+			compareseq(part.xmid, xlim, part.ymid, ylim, part.hi_minimal, max_edits, too_expensive, string, fdiag, bdiag);
 		}
 	}
 }
@@ -814,11 +678,9 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 {
 	char *string1 = *S1;
 	char *string2 = *S2;
-	int i;
-
+	int i, max_edits, *fdiag, *bdiag, *fdiag_buf = NULL, too_expensive = 1;
 	size_t fdiag_len;
-	static int *fdiag_buf;
-	static size_t fdiag_max;
+	struct string_data string[2];
 
 	if (strNil(*S1) || strNil(*S2) || is_dbl_nil(*minimum)) {
 		*ret = dbl_nil;
@@ -843,7 +705,6 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 
 	/* Set TOO_EXPENSIVE to be approximate square root of input size,
 	   bounded below by 256.  */
-	too_expensive = 1;
 	for (i = string[0].data_length + string[1].data_length; i != 0; i >>= 2)
 		too_expensive <<= 1;
 	if (too_expensive < 256)
@@ -854,10 +715,8 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 	   allocations performed.  Thus, we use a static buffer for the
 	   diagonal vectors, and never free them.  */
 	fdiag_len = string[0].data_length + string[1].data_length + 3;
-	if (fdiag_len > fdiag_max) {
-		fdiag_max = fdiag_len;
-		fdiag_buf = realloc(fdiag_buf, fdiag_max * (2 * sizeof(int)));
-	}
+	if (!(fdiag_buf = GDKmalloc(fdiag_len * (2 * sizeof(int)))))
+		throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	fdiag = fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
@@ -866,7 +725,7 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 	/* Now do the main comparison algorithm */
 	string[0].edit_count = 0;
 	string[1].edit_count = 0;
-	compareseq(0, string[0].data_length, 0, string[1].data_length, 0);
+	compareseq(0, string[0].data_length, 0, string[1].data_length, 0, max_edits, too_expensive, string, fdiag, bdiag);
 
 	/* The result is
 	   ((number of chars in common) / (average length of the strings)).
@@ -875,6 +734,7 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 	*ret = ((double)
 		(string[0].data_length + string[1].data_length - string[1].edit_count - string[0].edit_count)
 		/ (string[0].data_length + string[1].data_length));
+	GDKfree(fdiag_buf);
 	return MAL_SUCCEED;
 }
 
