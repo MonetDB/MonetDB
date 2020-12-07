@@ -2,33 +2,42 @@
 # SELECT, INSERT, UPDATE, DELETE a table for which the USER has GRANTs (possible).
 ###
 
-import os, sys
-import pymonetdb
+from MonetDBtesting.sqltest import SQLTestCase
 
-db=os.getenv("TSTDB")
-port=int(os.getenv("MAPIPORT"))
-client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user', password='p1')
-cursor = client.cursor()
+with SQLTestCase() as tc:
+    tc.connect(username="my_user", password="p1")
+    tc.execute("select * from test").assertRowCount(0)
+    tc.execute("insert into test values(1,1)").assertRowCount(1)
+    tc.execute("update test set b = 2").assertRowCount(1)
+    tc.execute("delete from test").assertRowCount(1)
 
-def error(msg):
-    print(msg)
-    sys.exit(-1)
+# import os, sys
+# import pymonetdb
 
-nr=cursor.execute("select * from test")
-if nr != 0:
-    error("expected empty result")
+# db=os.getenv("TSTDB")
+# port=int(os.getenv("MAPIPORT"))
+# client = pymonetdb.connect(database=db, port=port, autocommit=True, user='my_user', password='p1')
+# cursor = client.cursor()
 
-rowaffected=cursor.execute("insert into test values(1,1)")
-if rowaffected != 1:
-    error("expected single insert")
+# def error(msg):
+#     print(msg)
+#     sys.exit(-1)
 
-rowaffected=cursor.execute("update test set b = 2")
-if rowaffected != 1:
-    error("expected single update")
+# nr=cursor.execute("select * from test")
+# if nr != 0:
+#     error("expected empty result")
 
-rowaffected=cursor.execute("delete from test")
-if rowaffected != 1:
-    error("expected single delete")
+# rowaffected=cursor.execute("insert into test values(1,1)")
+# if rowaffected != 1:
+#     error("expected single insert")
 
-cursor.close()
-client.close()
+# rowaffected=cursor.execute("update test set b = 2")
+# if rowaffected != 1:
+#     error("expected single update")
+
+# rowaffected=cursor.execute("delete from test")
+# if rowaffected != 1:
+#     error("expected single delete")
+
+# cursor.close()
+# client.close()
