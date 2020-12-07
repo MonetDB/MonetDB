@@ -674,18 +674,11 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 	similar.  */
 
 static str
-fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
+fstrcmp_impl_internal(dbl *ret, str string1, str string2, dbl minimum)
 {
-	char *string1 = *S1;
-	char *string2 = *S2;
 	int i, max_edits, *fdiag, *bdiag, *fdiag_buf = NULL, too_expensive = 1;
 	size_t fdiag_len;
 	struct string_data string[2];
-
-	if (strNil(*S1) || strNil(*S2) || is_dbl_nil(*minimum)) {
-		*ret = dbl_nil;
-		return MAL_SUCCEED;
-	}
 
 	/* set the info for each string.  */
 	string[0].data = string1;
@@ -720,7 +713,7 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 	fdiag = fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
-	max_edits = 1 + (int) ((string[0].data_length + string[1].data_length) * (1. - *minimum));
+	max_edits = 1 + (int) ((string[0].data_length + string[1].data_length) * (1. - minimum));
 
 	/* Now do the main comparison algorithm */
 	string[0].edit_count = 0;
@@ -739,11 +732,79 @@ fstrcmp_impl(dbl *ret, str *S1, str *S2, dbl *minimum)
 }
 
 static str
+fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum)
+{
+	if (strNil(*string1) || strNil(*string2) || is_dbl_nil(*minimum)) {
+		*ret = dbl_nil;
+		return MAL_SUCCEED;
+	}
+
+	return fstrcmp_impl_internal(ret, *string1, *string2, *minimum);
+}
+
+static str
 fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 {
-	double min = 0.0;
+	if (strNil(*string1) || strNil(*string2)) {
+		*ret = dbl_nil;
+		return MAL_SUCCEED;
+	}
 
-	return fstrcmp_impl(ret, string1, string2, &min);
+	return fstrcmp_impl_internal(ret, *string1, *string2, 0.0);
+}
+
+static str
+fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
+{
+	BATiter lefti, righti;
+	BAT *bn = NULL, *left = NULL, *right = NULL;
+	BUN q = 0;
+	str x, y, msg = MAL_SUCCEED;
+	bool nils = false;
+	dbl *restrict vals;
+
+	if (!(left = BATdescriptor(*strings1)) || !(right = BATdescriptor(*strings2))) {
+		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = BATcount(left);
+	if (!(bn = COLnew(left->hseqbase, TYPE_dbl, q, TRANSIENT))) {
+		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	vals = Tloc(bn, 0);
+	for (BUN i = 0; i < q; i++) {
+		x = (str) BUNtvar(lefti, i);
+		y = (str) BUNtvar(righti, i);
+
+		if (strNil(x) || strNil(y)) {
+			vals[i] = dbl_nil;
+			nils = true;
+		} else if ((msg = fstrcmp_impl_internal(&vals[i], x, y, 0.0))) {
+			goto bailout;
+		}
+	}
+
+bailout:
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		bn->theap.dirty = true;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
+	if (left)
+		BBPunfix(left->batCacheid);
+	if (right)
+		BBPunfix(right->batCacheid);
+	return msg;
 }
 
 
@@ -949,6 +1010,7 @@ mel_func txtsim_init_funcs[] = {
  command("txtsim", "editdistance2", levenshteinbasic2_impl, false, "Calculates Levenshtein distance (edit distance) between two strings. Cost of transposition is 1 instead of 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),
  command("txtsim", "similarity", fstrcmp_impl, false, "Normalized edit distance between two strings", args(1,4, arg("",dbl),arg("string1",str),arg("string2",str),arg("minimum",dbl))),
  command("txtsim", "similarity", fstrcmp0_impl, false, "Normalized edit distance between two strings", args(1,3, arg("",dbl),arg("string1",str),arg("string2",str))),
+ command("battxtsim", "similarity", fstrcmp0_impl_bulk, false, "Normalized edit distance between two strings", args(1,3, batarg("",dbl),batarg("string1",str),batarg("string2",str))),
  command("txtsim", "soundex", soundex_impl, false, "Soundex function for phonetic matching", args(1,2, arg("",str),arg("name",str))),
  command("txtsim", "stringdiff", stringdiff_impl, false, "calculate the soundexed editdistance", args(1,3, arg("",int),arg("s1",str),arg("s2",str))),
  command("txtsim", "qgramnormalize", CMDqgramnormalize, false, "'Normalizes' strings (eg. toUpper and replaces non-alphanumerics with one space", args(1,2, arg("",str),arg("input",str))),

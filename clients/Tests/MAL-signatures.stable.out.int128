@@ -9121,6 +9121,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batstr",	"unicode",	"command batstr.unicode(X_1:bat[:int]):bat[:str] ",	"STRbatFromWChr;",	""	]
 [ "batstr",	"unicodeAt",	"command batstr.unicodeAt(X_1:bat[:str], X_2:bat[:int]):bat[:int] ",	"STRbatWChrAt;",	""	]
 [ "batstr",	"unicodeAt",	"command batstr.unicodeAt(X_1:bat[:str], X_2:int):bat[:int] ",	"STRbatWChrAtcst;",	""	]
+[ "battxtsim",	"similarity",	"command battxtsim.similarity(X_1:bat[:str], X_2:bat[:str]):bat[:dbl] ",	"fstrcmp0_impl_bulk;",	""	]
 [ "batudf",	"fuse",	"command batudf.fuse(X_1:bat[:bte], X_2:bat[:bte]):bat[:sht] ",	"UDFBATfuse;",	""	]
 [ "batudf",	"fuse",	"command batudf.fuse(X_1:bat[:int], X_2:bat[:int]):bat[:lng] ",	"UDFBATfuse;",	""	]
 [ "batudf",	"fuse",	"command batudf.fuse(X_1:bat[:lng], X_2:bat[:lng]):bat[:hge] ",	"UDFBATfuse;",	""	]
