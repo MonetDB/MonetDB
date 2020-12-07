@@ -55,6 +55,15 @@ def filter_junk(s: str):
         return False
     return True
 
+def filter_headers(s: str):
+    """filters lines prefixed with % (MAPI headers)"""
+    s = s.strip()
+    if s.startswith('%'):
+        return False
+    if s == '':
+        return False
+    return True
+
 def filter_matching_blocks(a: [str] = [], b: [str] = []):
     # TODO add some ctx before any mismatch lines
     ptr = 0
@@ -319,11 +328,14 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
                 raise SystemExit(e)
         return self
 
-    def assertMatchStableOut(self, fout):
+    def assertMatchStableOut(self, fout, ignore_headers=False):
         stable = []
         data = list(filter(filter_junk, self.data.split('\n')))
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
+        if ignore_headers:
+            stable = list(filter(filter_headers, stable))
+            data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(stable, data)
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:

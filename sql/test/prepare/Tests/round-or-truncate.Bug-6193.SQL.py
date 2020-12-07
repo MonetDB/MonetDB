@@ -6,6 +6,6 @@ with SQLTestCase() as tc:
     with open('round-or-truncate.Bug-6193.sql') as f:
         tc.execute(query=None, client='mclient', stdin=f)\
             .assertSucceeded()\
-            .assertMatchStableOut(fout='round-or-truncate.Bug-6193.stable.out')
+            .assertMatchStableOut(fout='round-or-truncate.Bug-6193.stable.out', ignore_headers=True)
 
 
