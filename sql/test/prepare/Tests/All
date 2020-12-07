@@ -7,3 +7,4 @@ rename_exps.Bug-3974
 error-clean-cache.Bug-6351
 round-or-truncate.Bug-6193
 prepared-statement-with-udf.Bug-6650
+prepared-merge-statement.Bug-6706
