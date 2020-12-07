@@ -19,6 +19,7 @@ CREATE SEQUENCE "sys"."seq_8231" AS INTEGER;
 CREATE SEQUENCE "sys"."seq_8441" AS INTEGER;
 CREATE SEQUENCE "sys"."seq_8546" AS INTEGER;
 CREATE SEQUENCE "sys"."seq_8259" AS INTEGER;
+CREATE SEQUENCE "sys"."seq_8308" AS INTEGER;
 COMMENT ON SEQUENCE "sys"."seq_8219" IS  'This is a comment on a sequence.' ;
 CREATE TABLE "sys"."test" ("s" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."bla" ("s" CHARACTER LARGE OBJECT(10));
@@ -41,6 +42,10 @@ CREATE REMOTE TABLE "sys"."rfoo" ("i" INTEGER) ON  'mapi:monetdb://remote.host.u
 CREATE MERGE TABLE "sys"."scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER) PARTITION BY VALUES USING ("sys"."mod"("sys"."greatest"("first_score","second_score"),10));
 CREATE MERGE TABLE "sys"."splitted" ("stamp" TIMESTAMP , "val" INTEGER) PARTITION BY RANGE ON ("stamp");
 CREATE REPLICA TABLE "sys"."rep" ("i" INTEGER);
+CREATE TABLE "sys"."first_decade" ("stamp" TIMESTAMP , "val" INTEGER);
+CREATE TABLE "sys"."second_decade" ("stamp" TIMESTAMP , "val" INTEGER);
+CREATE TABLE "sys"."third_decade" ("stamp" TIMESTAMP , "val" INTEGER);
+CREATE TABLE "sys"."p1" ("i" INTEGER);
 ALTER TABLE "sys"."bolo" ADD CONSTRAINT "cpk" PRIMARY KEY ("s", "v");
 ALTER TABLE "sys"."rolo" ADD CONSTRAINT "rolo_v_pkey" PRIMARY KEY ("v");
 ALTER TABLE "sys"."ungolo" ADD CONSTRAINT "ungolo_x_y_unique" UNIQUE ("x", "y");
@@ -50,22 +55,13 @@ ALTER TABLE "sbar"."bar" ADD CONSTRAINT "bar_pk" PRIMARY KEY ("bi", "bs");
 CREATE INDEX "ind1" ON "sys"."ungolo"(x,y);
 CREATE IMPRINTS INDEX "ind2" ON "sys"."ungolo"(y,z);
 CREATE ORDERED INDEX "ind3" ON "sys"."ungolo"(x,z);
-ALTER TABLE "sfoo"."foo" ADD CONSTRAINT "fk_foo_to_bar" FOREIGN KEY("fi","fs") REFERENCES "sbar"."bar"("bi","bs") ON DELETE CASCADE ON UPDATE SET NULL;
+ALTER TABLE "sfoo"."foo" ADD CONSTRAINT "fk_foo_to_bar" FOREIGN KEY("fi","fs") REFERENCES "sbar"."bar"("bi","bs") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "sys"."scorers"  ADD TABLE "sys"."unknown_scorers" AS PARTITION FOR NULL VALUES;
+ALTER TABLE "sys"."scorers"  ADD TABLE "sys"."lower_scorers" AS PARTITION IN (4,3,2,1,0);
+ALTER TABLE "sys"."scorers"  ADD TABLE "sys"."higher_scorers" AS PARTITION IN (9,8,7,6,5);
+ALTER TABLE "sys"."splitted"  ADD TABLE "sys"."first_decade" AS PARTITION FROM RANGE MINVALUE TO  '2010-01-01 00:00:00.000000'  WITH NULL VALUES;
+ALTER TABLE "sys"."splitted"  ADD TABLE "sys"."second_decade" AS PARTITION FROM  '2010-01-01 00:00:00.000000'  TO  '2020-01-01 00:00:00.000000' ;
+ALTER TABLE "sys"."m1"  ADD TABLE "sys"."p1";
 COMMENT ON INDEX "ind3" IS  'This is a comment on an index.' ;
 COMMENT ON COLUMN "sfoo"."tfoo"."i" IS  'This is a comment on a column.' ;
-ALTER TABLE "sys"."scorers" ADD TABLE "sys"."lower_scorers"  AS PARTITION IN (0, 1, 2, 3, 4);
-ALTER TABLE "sys"."scorers" ADD TABLE "sys"."higher_scorers" AS PARTITION IN (5, 6, 7, 8, 9);
-ALTER TABLE "sys"."scorers" ADD TABLE "sys"."unknown_scorers" AS PARTITION FOR NULL VALUES;
-
-CREATE TABLE first_decade (stamp TIMESTAMP, val INT);
-CREATE TABLE second_decade (stamp TIMESTAMP, val INT);
-CREATE TABLE third_decade (stamp TIMESTAMP, val INT);
-ALTER TABLE splitted ADD TABLE first_decade AS PARTITION FROM RANGE MINVALUE TO TIMESTAMP '2010-01-01 00:00:00' WITH NULL VALUES;
-ALTER TABLE splitted ADD TABLE second_decade AS PARTITION FROM TIMESTAMP '2010-01-01 00:00:00' TO TIMESTAMP '2020-01-01 00:00:00';
-create merge table m1 (i int);
-create table p1 (i int);
-alter table m1 add table p1;
-
-
-
 COMMIT;

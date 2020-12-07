@@ -294,7 +294,7 @@ END;
 CREATE FUNCTION dump_partition_tables() RETURNS TABLE(stmt STRING) BEGIN
 RETURN
 	SELECT
-		ALTER_TABLE(m_sname, m_tname) || ' ADD ' || FQTN(p_sname, p_tname) || 
+		ALTER_TABLE(m_sname, m_tname) || ' ADD TABLE ' || FQTN(p_sname, p_tname) || 
 		CASE 
 			WHEN p_type = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
 			WHEN p_type = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, SQ(maximum), 'RANGE MAXVALUE')
@@ -399,9 +399,6 @@ BEGIN
         SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
-	--INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
-
-	--TODO PARTITION TABLES
 	--TODO details on SEQUENCES
 	--TODO STREAM TABLE?
 	--TODO functions
