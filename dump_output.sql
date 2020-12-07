@@ -41,6 +41,7 @@ CREATE TABLE "sbar"."bar" ("bi" INTEGER NOT NULL, "bs" CHARACTER LARGE OBJECT NO
 CREATE REMOTE TABLE "sys"."rfoo" ("i" INTEGER) ON  'mapi:monetdb://remote.host.url:50000/dbname'  WITH USER  'bob'  ENCRYPTED PASSWORD  'f8e3183d38e6c51889582cb260ab825252f395b4ac8fb0e6b13e9a71f7c10a80d5301e4a949f2783cb0c20205f1d850f87045f4420ad2271c8fd5f0cd8944be3' ;
 CREATE MERGE TABLE "sys"."scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER) PARTITION BY VALUES USING ("sys"."mod"("sys"."greatest"("first_score","second_score"),10));
 CREATE MERGE TABLE "sys"."splitted" ("stamp" TIMESTAMP , "val" INTEGER) PARTITION BY RANGE ON ("stamp");
+CREATE MERGE TABLE "sys"."m1" ("i" INTEGER);
 CREATE REPLICA TABLE "sys"."rep" ("i" INTEGER);
 CREATE TABLE "sys"."first_decade" ("stamp" TIMESTAMP , "val" INTEGER);
 CREATE TABLE "sys"."second_decade" ("stamp" TIMESTAMP , "val" INTEGER);
