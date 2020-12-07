@@ -156,6 +156,15 @@ createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *for
 	return p;
 }
 
+char *
+dupError(const char *err)
+{
+	char *p;
+	p = __coverity_alloc_nosize__();
+	__coverity_mark_as_afm_allocated__(p, "freeException");
+	return p;
+}
+
 void
 freeException(char *p)
 {
@@ -163,4 +172,14 @@ freeException(char *p)
 		__coverity_free__(p);
 		__coverity_mark_as_afm_freed__(p, "freeException");
 	}
+}
+
+char *
+concatErrors(char *err1, const char *err2)
+{
+	freeException(err1);
+	char *p;
+	p = __coverity_alloc_nosize__();
+	__coverity_mark_as_afm_allocated__(p, "freeException");
+	return p;
 }

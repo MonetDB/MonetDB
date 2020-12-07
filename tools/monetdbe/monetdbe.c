@@ -1012,7 +1012,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	{
 		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
-		char nme[16]		= {0};		
+		char nme[16]		= {0};
 		const char* name	= number2name(nme, sizeof(nme), ++((backend*)  mdbe->c->sqlcontext)->remote);
 		prg					= newFunction(userRef, putName(name), FUNCTIONsymbol);
 	}
@@ -1023,7 +1023,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	o = getInstrPtr(mb, 0);
 	o->retc = o->argc = 0;
 
-	e = newInstruction(mb, remoteRef, execRef);
+	e = newInstructionArgs(mb, remoteRef, execRef, (int)(nparams + 5));
 	setDestVar(e, newTmpVariable(mb, TYPE_any));
 	e = pushStr(mb, e, mdbe->mid);
 	e = pushStr(mb, e, userRef);
@@ -1314,12 +1314,12 @@ monetdbe_prepare(monetdbe_database dbhdl, char* query, monetdbe_statement **stmt
 			stmt_internal->q = q;
 			stmt_internal->retc = p->retc;
 			stmt_internal->res.nparam = list_length(q->f->ops);
-			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * stmt_internal->res.nparam);
-			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (list_length(q->f->ops) + stmt_internal->retc));
-			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types)* stmt_internal->res.nparam);
+			stmt_internal->args = (ValPtr*)GDKmalloc(sizeof(ValPtr) * (stmt_internal->res.nparam + stmt_internal->retc));
+			stmt_internal->data = (ValRecord*)GDKzalloc(sizeof(ValRecord) * (stmt_internal->res.nparam+1));
+			stmt_internal->res.type = (monetdbe_types*)GDKmalloc(sizeof(monetdbe_types) * (stmt_internal->res.nparam+1));
 			if (!stmt_internal->res.type || !stmt_internal->data || !stmt_internal->args) {
 				mdbe->msg = createException(MAL, "monetdbe.monetdbe_prepare", MAL_MALLOC_FAIL);
-			} else {
+			} else if (q->f->ops) {
 				int i = 0;
 				for (node *n = q->f->ops->h; n; n = n->next, i++) {
 					sql_arg *a = n->data;
@@ -1351,7 +1351,7 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 	monetdbe_stmt_internal *stmt_internal = (monetdbe_stmt_internal*)stmt;
 
 	/* TODO !data treat as NULL value (add nil mask) ? */
-	if (i > stmt->nparam)
+	if (i >= stmt->nparam)
 		return createException(MAL, "monetdbe.monetdbe_bind", "Parameter %zu not bound to a value", i);
 	sql_arg *a = (sql_arg*)list_fetch(stmt_internal->q->f->ops, (int) i);
 	assert(a);
@@ -1486,7 +1486,7 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 	}
 
 	int len = snprintf(buf, 1024, "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
-					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "", 
+					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "",
 					   escaped_schema_name ? escaped_schema_name : "\".", escaped_table_name);
 	GDKfree(escaped_schema_name);
 	GDKfree(escaped_table_name);
@@ -1543,10 +1543,13 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 }
 
 char*
-monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const char *table_name, size_t *column_count,
+monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const char *table_name, size_t *column_count,
 					char ***column_names, int **column_types)
 {
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+	mvc *m = NULL;
+	sql_table *t = NULL;
+	int columns = 0;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_get_columns")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -1572,25 +1575,12 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char* schema_name, const cha
 		return monetdbe_get_columns_remote(mdbe, schema_name, table_name, column_count, column_names, column_types);
 	}
 
-	mvc *m;
-	sql_schema *s;
-	sql_table *t;
-	int columns;
-
 	if ((mdbe->msg = getSQLContext(mdbe->c, NULL, &m, NULL)) != MAL_SUCCEED)
 		return mdbe->msg;
 	if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 		return mdbe->msg;
-	if (schema_name) {
-		if (!(s = mvc_bind_schema(m, schema_name))) {
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_get_columns", "Could not find schema '%s'", schema_name);
-			goto cleanup;
-		}
-	} else {
-		s = cur_schema(m);
-	}
-	if (!(t = mvc_bind_table(m, s, table_name))) {
-		mdbe->msg = createException(SQL, "monetdbe.monetdbe_get_columns", "No such table '%s' in schema '%s'", table_name, s->base.name);
+	if (!(t = find_table_or_view_on_scope(m, NULL, schema_name, table_name, "CATALOG", false))) {
+		mdbe->msg = createException(SQL, "monetdbe.monetdbe_get_columns", "%s", m->errstr + 6); /* Skip error code */
 		goto cleanup;
 	}
 
@@ -1809,17 +1799,14 @@ cleanup:
 }
 
 char*
-monetdbe_append(monetdbe_database dbhdl, const char* schema, const char* table, monetdbe_column **input, size_t column_count)
+monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, monetdbe_column **input, size_t column_count)
 {
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 	mvc *m = NULL;
-	sql_schema *s = NULL;
 	sql_table *t = NULL;
 	size_t i, cnt;
 	node *n;
-
 	Symbol remote_prg = NULL;
-
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -1891,17 +1878,8 @@ remote_cleanup:
 
 		if ((mdbe->msg = SQLtrans(m)) != MAL_SUCCEED)
 			goto cleanup;
-
-		if (schema) {
-			if (!(s = mvc_bind_schema(m, schema))) {
-				mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Could not find schema '%s'", schema);
-				goto cleanup;
-			}
-		} else {
-			s = cur_schema(m);
-		}
-		if (!(t = mvc_bind_table(m, s, table))) {
-			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "No such table '%s' in schema '%s'", table, s->base.name);
+		if (!(t = find_table_or_view_on_scope(m, NULL, schema, table, "CATALOG", false))) {
+			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "%s", m->errstr + 6); /* Skip error code */
 			goto cleanup;
 		}
 	}
@@ -2071,7 +2049,7 @@ remote_cleanup:
 		r = pushStr(mb, r, userRef);
 		r = pushStr(mb, r, putName(remote_prg->name));
 
-		InstrPtr e = newInstruction(mb, remoteRef, execRef);
+		InstrPtr e = newInstructionArgs(mb, remoteRef, execRef, 4 + list_length(t->columns.set));
 		setDestVar(e, newTmpVariable(mb, TYPE_any));
 		e = pushStr(mb, e, mdbe->mid);
 		e = pushStr(mb, e, userRef);

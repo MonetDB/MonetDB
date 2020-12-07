@@ -61,7 +61,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 
 		r = rel_parse(m, s, buf, m_deps);
 		if (r)
-			r = sql_processrelation(m, r, 0);
+			r = sql_processrelation(m, r, 0, 0);
 		if (r) {
 			list *id_l = rel_dependencies(m, r);
 			mvc_create_dependencies(m, id_l, t->base.id, VIEW_DEPENDENCY);
@@ -777,6 +777,7 @@ mvc *
 mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 {
 	mvc *m;
+	str sys_str = NULL;
 
 	assert(pa);
  	m = SA_ZNEW(pa, mvc);
@@ -803,7 +804,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->topframes = 0;
 	m->frame = 0;
 
-	m->use_views = false;
+	m->use_views = 0;
 	if (!m->frames) {
 		qc_destroy(m->qc);
 		return NULL;
@@ -827,12 +828,28 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->label = 0;
 	m->cascade_action = NULL;
 
+	if (!(m->schema_path = list_create((fdestroy)GDKfree))) {
+		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
+		return NULL;
+	}
+	if (!(sys_str = _STRDUP("sys")) || !list_append(m->schema_path, sys_str)) {
+		_DELETE(sys_str);
+		qc_destroy(m->qc);
+		list_destroy(m->global_vars);
+		list_destroy(m->schema_path);
+		return NULL;
+	}
+	m->schema_path_has_sys = 1;
+	m->schema_path_has_tmp = 0;
+
 	store_lock();
 	m->session = sql_session_create(1 /*autocommit on*/);
 	store_unlock();
 	if (!m->session) {
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
+		list_destroy(m->schema_path);
 		return NULL;
 	}
 
@@ -917,6 +934,7 @@ mvc_destroy(mvc *m)
 	store_unlock();
 
 	list_destroy(m->global_vars);
+	list_destroy(m->schema_path);
 	stack_pop_until(m, 0);
 
 	if (m->scanner.log) /* close and destroy stream */
@@ -955,18 +973,6 @@ mvc_bind_func(mvc *sql, const char *name)
 	sql_func *t = sql_trans_bind_func(sql->session->tr, name);
 	TRC_DEBUG(SQL_TRANS, "Bind function: %s\n", name);
 	return t;
-}
-
-list *
-schema_bind_func(mvc *sql, sql_schema * s, const char *name, sql_ftype type)
-{
-	list *func_list = find_all_sql_func(s, name, type);
-
-	(void) sql;
-	if (!func_list)
-		return NULL;
-	TRC_DEBUG(SQL_TRANS, "Schema bind function: %s\n", name);
-	return func_list;
 }
 
 sql_schema *
@@ -1591,12 +1597,12 @@ mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
 }
 
 sql_rel *
-sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt)
+sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt, int storage_based_opt)
 {
 	if (rel)
 		rel = rel_unnest(sql, rel);
 	if (rel)
-		rel = rel_optimizer(sql, rel, value_based_opt);
+		rel = rel_optimizer(sql, rel, value_based_opt, storage_based_opt);
 	return rel;
 }
 

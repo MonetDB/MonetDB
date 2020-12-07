@@ -284,7 +284,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 		list *l = exp_get_values(e);
 		e = l->h->data;
 	}
-	a_func = sql_bind_func(sql->sa, sql->session->schema, anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC);
+	a_func = sql_bind_func(sql, "sys", anyequal ? "sql_anyequal" : "sql_not_anyequal", exp_subtype(e), exp_subtype(e), F_FUNC);
 	if (!a_func)
 		return sql_error(sql, 02, SQLSTATE(42000) "(NOT) IN operator on type %s missing", exp_subtype(le)->type->sqlname);
 	e = exp_binop(sql->sa, le, vals, a_func);
@@ -312,7 +312,7 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 sql_exp *
 exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier)
 {
-	sql_subfunc *cmp_func = sql_bind_func(sql->sa, NULL, compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
+	sql_subfunc *cmp_func = sql_bind_func(sql, "sys", compareop, exp_subtype(le), exp_subtype(le), F_FUNC);
 	sql_exp *e;
 
 	assert(cmp_func);
@@ -396,7 +396,7 @@ exp_aggr( sql_allocator *sa, list *l, sql_subfunc *a, int distinct, int no_nils,
 		set_distinct(e);
 	if (no_nils)
 		set_no_nil(e);
-	if (!has_nils)
+	if ((!a->func->semantics && !has_nils) || (!a->func->s && strcmp(a->func->base.name, "count") == 0))
 		set_has_no_nil(e);
 	return e;
 }
@@ -410,13 +410,14 @@ exp_atom(sql_allocator *sa, atom *a)
 	e->card = CARD_ATOM;
 	e->tpe = a->tpe;
 	e->l = a;
+	if (!a->isnull)
+		set_has_no_nil(e);
 	return e;
 }
 
 sql_exp *
 exp_atom_max(sql_allocator *sa, sql_subtype *tpe)
 {
-
 	if (tpe->type->localtype == TYPE_bte) {
 		return exp_atom_bte(sa, GDK_bte_max);
 	} else if (tpe->type->localtype == TYPE_sht) {
@@ -585,12 +586,10 @@ exp_value(mvc *sql, sql_exp *e)
 		return e->l;
 	} else if (e->r) { /* param (ie not set) */
 		sql_var_name *vname = (sql_var_name*) e->r;
-		sql_schema *s = cur_schema(sql);
 		sql_var *var;
 
-		if (vname->sname && !(s = mvc_bind_schema(sql, vname->sname)))
-			return NULL;
-		if (e->flag == 0 && (var = find_global_var(sql, s, vname->name))) /* global variable */
+		assert(e->flag != 0 || vname->sname); /* global variables must have a schema */
+		if (e->flag == 0 && (var = find_global_var(sql, mvc_bind_schema(sql, vname->sname), vname->name))) /* global variable */
 			return &(var->var);
 		return NULL;
 	}
@@ -871,10 +870,6 @@ exp_rel(mvc *sql, sql_rel *rel)
 
 	if (e == NULL)
 		return NULL;
-	/*
-	rel = sql_processrelation(sql, rel, 0);
-	rel = rel_distribute(sql, rel);
-	*/
 	e->l = rel;
 	e->flag = PSM_REL;
 	e->card = rel->single?CARD_ATOM:rel->card;
@@ -1880,6 +1875,9 @@ exp_is_zero(sql_exp *e)
 int
 exp_is_not_null(sql_exp *e)
 {
+	if (!has_nil(e))
+		return true;
+
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */
@@ -1912,6 +1910,9 @@ exp_is_not_null(sql_exp *e)
 int
 exp_is_null(sql_exp *e )
 {
+	if (!has_nil(e))
+		return false;
+
 	switch (e->type) {
 	case e_atom:
 		if (e->f) /* values list */

@@ -277,7 +277,7 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 		exp = rel_project_add_exp(sql, r, exp);
 
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);
@@ -352,8 +352,12 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 						memcpy(nv->value, VALget(&vvalue), vvalue.len);
 						nv->length = vvalue.len;
 					}
-					list_append(p->part.values, nv);
 					VALclear(&vvalue);
+					if (list_append_sorted(p->part.values, nv, &found, sql_values_list_element_validate_and_insert)) {
+						res = createException(SQL, "sql.partition",
+											SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
+						goto finish;
+					}
 					if (!ok) {
 						res = createException(SQL, "sql.partition",
 											  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");

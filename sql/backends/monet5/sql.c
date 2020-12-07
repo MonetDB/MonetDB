@@ -115,11 +115,12 @@ sql_symbol2relation(backend *be, symbol *sym)
 	sql_rel *rel;
 	sql_query *query = query_create(be->mvc);
 	lng Tbegin;
+	int extra_opts = be->mvc->emode != m_prepare;
 
 	rel = rel_semantic(query, sym);
 	Tbegin = GDKusec();
 	if (rel)
-		rel = sql_processrelation(be->mvc, rel, 1);
+		rel = sql_processrelation(be->mvc, rel, extra_opts, extra_opts);
 	if (rel)
 		rel = rel_distribute(be->mvc, rel);
 	if (rel)
@@ -431,7 +432,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 
 		r = rel_parse(sql, s, nt->query, m_deps);
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			list *id_l = rel_dependencies(sql, r);
 			mvc_create_dependencies(sql, id_l, nt->base.id, VIEW_DEPENDENCY);
@@ -495,13 +496,13 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0)) != MAL_SUCCEED)
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
 			return msg;
 	}
@@ -526,15 +527,15 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
 			return msg;
 	}
@@ -562,6 +563,7 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 		return NULL;
 
 	b = store_funcs.bind_col(tr, c, access);
+	assert(b);
 	return b;
 }
 
@@ -5204,39 +5206,15 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 				if (!rname)
 					rname = ATOMnilptr(TYPE_str);
 
-				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(digits, &t->digits, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(scale, &t->scale, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(schema, rschema, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(table, rname, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(column, name, false) != GDK_SUCCEED) {
+				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED ||
+					BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED ||
+					BUNappend(digits, &t->digits, false) != GDK_SUCCEED ||
+					BUNappend(scale, &t->scale, false) != GDK_SUCCEED ||
+					BUNappend(isinout, &inout, false) != GDK_SUCCEED ||
+					BUNappend(number, &arg_number, false) != GDK_SUCCEED ||
+					BUNappend(schema, rschema, false) != GDK_SUCCEED ||
+					BUNappend(table, rname, false) != GDK_SUCCEED ||
+					BUNappend(column, name, false) != GDK_SUCCEED) {
 					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
@@ -5249,39 +5227,15 @@ SQLsession_prepared_statements_args(Client cntxt, MalBlkPtr mb, MalStkPtr stk, I
 				sql_arg *a = n->data;
 				sql_subtype *t = &a->type;
 
-				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(digits, &(t->digits), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(scale, &(t->scale), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(isinout, &inout, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(number, &arg_number, false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(schema, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(table, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
-					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (BUNappend(column, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
+				if (BUNappend(statementid, &(q->id), false) != GDK_SUCCEED ||
+					BUNappend(type, t->type->sqlname, false) != GDK_SUCCEED ||
+					BUNappend(digits, &(t->digits), false) != GDK_SUCCEED ||
+					BUNappend(scale, &(t->scale), false) != GDK_SUCCEED ||
+					BUNappend(isinout, &inout, false) != GDK_SUCCEED ||
+					BUNappend(number, &arg_number, false) != GDK_SUCCEED ||
+					BUNappend(schema, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED ||
+					BUNappend(table, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED ||
+					BUNappend(column, ATOMnilptr(TYPE_str), false) != GDK_SUCCEED) {
 					msg = createException(SQL, "sql.session_prepared_statements_args", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto bailout;
 				}
@@ -5327,7 +5281,7 @@ SQLunionfunc(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	mod = *getArgReference_str(stk, pci, arg++);
 	fcn = *getArgReference_str(stk, pci, arg++);
-	npci = newStmt(mb, mod, fcn);
+	npci = newStmtArgs(mb, mod, fcn, pci->argc);
 
 	for (int i = 1; i < pci->retc; i++) {
 		int type = getArgType(mb, pci, i);
@@ -5487,7 +5441,6 @@ finalize:
 #include "sql_rank.h"
 #include "sql_user.h"
 #include "sql_assert.h"
-#include "sql_session.h"
 #include "sql_execute.h"
 #include "sql_orderidx.h"
 #include "sql_subquery.h"
@@ -6391,10 +6344,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "revoke", SQLrevoke, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "grant_function", SQLgrant_function, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "revoke_function", SQLrevoke_function, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("fullname",str))),
+ pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("oldpasswrd",str))),
+ pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str))),
  pattern("sqlcatalog", "rename_user", SQLrename_user, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
  pattern("sqlcatalog", "create_role", SQLcreate_role, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
  pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),
@@ -6420,21 +6373,6 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "transaction_rollback", SQLtransaction_rollback, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction_begin", SQLtransaction_begin, true, "A transaction statement (type can be commit,release,rollback or start)", args(1,3, arg("",void),arg("chain",int),arg("name",str))),
  pattern("sql", "transaction", SQLtransaction2, true, "Start an autocommit transaction", noargs),
- /* sql_sesssion */
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
- pattern("sql", "setquerytimeout", SQLqueryTimeout, true, "A query is aborted after q seconds (q=0 means run undisturbed).", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",bte),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
- pattern("sql", "setsessiontimeout", SQLsessionTimeout, true, "Set the session timeout for a particulat session id", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
- pattern("sql", "setoptimizer", SQLsetoptimizer, true, "", args(1,2, arg("",void),arg("opt",str))),
- pattern("sql", "setoptimizer", SQLsetoptimizer, true, "Set the session optimizer", args(1,3, arg("",void),arg("sid",int),arg("opt",str))),
- pattern("sql", "setworkerlimit", SQLsetworkerlimit, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setworkerlimit", SQLsetworkerlimit, true, "Limit the number of worker threads per query", args(1,3, arg("",void),arg("sid",int),arg("n",int))),
- pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "", args(1,2, arg("",void),arg("n",int))),
- pattern("sql", "setmemorylimit", SQLsetmemorylimit, true, "Limit the memory claim in MB per query", args(1,3, arg("",void),arg("sid",sht),arg("n",int))),
 #ifdef HAVE_HGE
  /* sql_hge */
  command("calc", "dec_round", hge_dec_round_wrap, false, "round off the value v to nearests multiple of r", args(1,3, arg("",hge),arg("v",hge),arg("r",hge))),

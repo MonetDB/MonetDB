@@ -264,25 +264,25 @@ stdout of test 'check_ForeignKey_referential_integrity` in directory 'sql/test/s
 % int,	varchar,	int # type
 % 1,	0,	1 # length
 #SELECT * FROM sys.users WHERE name NOT IN (SELECT name FROM sys.auths);
-% .users,	.users,	.users # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 0,	0,	1 # length
+% .users,	.users,	.users,	.users # table_name
+% name,	fullname,	default_schema,	schema_path # name
+% varchar,	varchar,	int,	clob # type
+% 0,	0,	1,	0 # length
 #SELECT * FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas);
-% .users,	.users,	.users # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 0,	0,	1 # length
+% .users,	.users,	.users,	.users # table_name
+% name,	fullname,	default_schema,	schema_path # name
+% varchar,	varchar,	int,	clob # type
+% 0,	0,	1,	0 # length
 #SELECT * FROM sys.db_user_info WHERE name NOT IN (SELECT name FROM sys.auths);
-% sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 0,	0,	1 # length
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% name,	fullname,	default_schema,	schema_path # name
+% varchar,	varchar,	int,	clob # type
+% 0,	0,	1,	0 # length
 #SELECT * FROM sys.db_user_info WHERE default_schema NOT IN (SELECT id FROM sys.schemas);
-% sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% name,	fullname,	default_schema # name
-% varchar,	varchar,	int # type
-% 0,	0,	1 # length
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% name,	fullname,	default_schema,	schema_path # name
+% varchar,	varchar,	int,	clob # type
+% 0,	0,	1,	0 # length
 #SELECT * FROM sys.user_role WHERE login_id NOT IN (SELECT id FROM sys.auths);
 % sys.user_role,	sys.user_role # table_name
 % login_id,	role_id # name

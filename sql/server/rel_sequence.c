@@ -73,7 +73,6 @@ rel_seq(sql_allocator *sa, int cat_type, char *sname, sql_sequence *s, sql_rel *
 static sql_rel *
 rel_create_seq(
 	mvc *sql,
-	sql_schema *ss,
 	dlist *qname,
 	sql_subtype *tpe,
 	lng start,
@@ -86,21 +85,20 @@ rel_create_seq(
 {
 	sql_rel *res = NULL;
 	sql_sequence *seq = NULL;
-	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
-	sql_schema *s = ss;
+	char *name = qname_schema_object(qname);
+	sql_schema *s = cur_schema(sql);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
-	if (find_sql_sequence(s, name)) {
+	if (find_sql_sequence(s, name))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
-	} else if (!mvc_schema_privs(sql, s)) {
+	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
 				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	}
 
 	/* generate defaults */
 	if (is_lng_nil(start)) start = 1;
@@ -133,7 +131,6 @@ rel_create_seq(
 static sql_rel *
 list_create_seq(
 	mvc *sql,
-	sql_schema *ss,
 	dlist *qname,
 	dlist *options,
 	bit bedropped)
@@ -229,13 +226,12 @@ list_create_seq(
 	}
 	if (is_lng_nil(start) && !is_lng_nil(min) && min) /* if start value not set, set it to the minimum if available */
 		start = min;
-	return rel_create_seq(sql, ss, qname, t, start, inc, min, max, cache, cycle, bedropped);
+	return rel_create_seq(sql, qname, t, start, inc, min, max, cache, cycle, bedropped);
 }
 
 static sql_rel *
 rel_alter_seq(
 		sql_query *query,
-		sql_schema *ss,
 		dlist *qname,
 		sql_subtype *tpe,
 		dlist* start_list,
@@ -246,31 +242,23 @@ rel_alter_seq(
 		bit cycle)
 {
 	mvc *sql = query->sql;
-	char* name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
+	char *name = qname_schema_object(qname);
 	sql_sequence *seq;
-	sql_schema *s = ss;
-
 	int start_type = start_list->h->data.i_val;
 	sql_rel *r = NULL;
 	sql_exp *val = NULL;
 
 	assert(start_list->h->type == type_int);
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
-	if (!(seq = find_sql_sequence(s, name))) {
-		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", name);
-	}
-	if (!mvc_schema_privs(sql, s)) {
+	if (!(seq = find_sequence_on_scope(sql, sname, name, "ALTER SEQUENCE")))
+		return NULL;
+	if (!mvc_schema_privs(sql, seq->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges "
-				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	}
+				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), seq->s->base.name);
 
 	/* first alter the known values */
-	seq = create_sql_sequence(sql->sa, s, name, seq->start, min, max, inc, cache, (bit) cycle);
+	seq = create_sql_sequence(sql->sa, seq->s, name, seq->start, min, max, inc, cache, (bit) cycle);
 
 	/* restart may be a query, i.e. we create a statement
 	   restart(ssname,seqname,value) */
@@ -293,16 +281,15 @@ rel_alter_seq(
 		val = exp_atom_lng(sql->sa, start_list->h->next->data.l_val);
 	}
 	if (val && val->card > CARD_ATOM) {
-		sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(val), NULL, F_AGGR);
+		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(val), NULL, F_AGGR);
 		val = exp_aggr1(sql->sa, val, zero_or_one, 0, 0, CARD_ATOM, has_nil(val));
 	}
-	return rel_seq(sql->sa, ddl_alter_seq, s->base.name, seq, r, val);
+	return rel_seq(sql->sa, ddl_alter_seq, seq->s->base.name, seq, r, val);
 }
 
 static sql_rel *
 list_alter_seq(
 	sql_query *query,
-	sql_schema *ss,
 	dlist *qname,
 	dlist *options)
 {
@@ -377,7 +364,7 @@ list_alter_seq(
 	}
 	if (!is_lng_nil(min) && !is_lng_nil(max) && max < min)
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER SEQUENCE: MAXVALUE value is lesser than MINVALUE ("LLFMT" < "LLFMT")", max, min);
-	return rel_alter_seq(query, ss, qname, t, start, inc, min, max, cache, cycle);
+	return rel_alter_seq(query, qname, t, start, inc, min, max, cache, cycle);
 }
 
 sql_rel *
@@ -393,7 +380,6 @@ rel_sequences(sql_query *query, symbol *s)
 
 			res = list_create_seq(
 /* mvc* sql */		sql,
-/* sql_schema* s */	cur_schema(sql),
 /* dlist* qname */	l->h->data.lval,
 /* dlist* options */	l->h->next->data.lval,
 /* bit bedropped */	(bit) (l->h->next->next->data.i_val != 0));
@@ -405,7 +391,6 @@ rel_sequences(sql_query *query, symbol *s)
 
 			res = list_alter_seq(
 /* mvc* sql */		query,
-/* sql_schema* s */	cur_schema(sql),
 /* dlist* qname */	l->h->data.lval,
 /* dlist* options */	l->h->next->data.lval);
 		}
@@ -415,13 +400,11 @@ rel_sequences(sql_query *query, symbol *s)
 			dlist *l = s->data.lval;
 			char *sname = qname_schema(l->h->data.lval);
 			char *seqname = qname_schema_object(l->h->data.lval);
+			sql_sequence *seq = NULL;
 
-			if (!sname) {
-				sql_schema *ss = cur_schema(sql);
-
-				sname = ss->base.name;
-			}
-			res = rel_drop_seq(sql->sa, sname, seqname);
+			if (!(seq = find_sequence_on_scope(sql, sname, seqname, "DROP SEQUENCE")))
+				return NULL;
+			res = rel_drop_seq(sql->sa, seq->s->base.name, seqname);
 		}
 		break;
 		default:

@@ -771,7 +771,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		int oldstop = c->curprg->def->stop;
 
 		if (*opt && rel)
-			rel = sql_processrelation(m, rel, 0);
+			rel = sql_processrelation(m, rel, 1, 1);
 
 		if ((msg = MSinitClientPrg(c, "user", "test")) != MAL_SUCCEED) {
 			rel_destroy(rel);
@@ -902,7 +902,7 @@ RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	rel = rel_read(m, expr, &pos, refs);
 	stack_pop_frame(m);
 	if (rel)
-		rel = sql_processrelation(m, rel, 1);
+		rel = sql_processrelation(m, rel, 1, 1);
 	if (!rel) {
 		if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 			msg = createException(SQL, "RAstatement2", "%s", m->errstr);

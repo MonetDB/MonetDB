@@ -1085,10 +1085,10 @@ bl_destroy(void)
 }
 
 static int
-bl_restart(void)
+bl_flush(lng save_id)
 {
 	if (bat_logger)
-		return logger_restart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+		return logger_flush(bat_logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
@@ -1144,6 +1144,12 @@ static int
 bl_tend(void)
 {
 	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static lng
+bl_tid(void)
+{
+	return log_save_id(bat_logger);
 }
 
 static int
@@ -1429,7 +1435,7 @@ snapshot_bats(stream *plan, const char *db_dir)
 		GDKerror("Invalid first line of %s", bbpdir);
 		goto end;
 	}
-	if (gdk_version != 061042U) {
+	if (gdk_version != 061043U) {
 		// If this version number has changed, the structure of BBP.dir
 		// may have changed. Update this whole function to take this
 		// into account.
@@ -1463,8 +1469,8 @@ snapshot_bats(stream *plan, const char *db_dir)
 				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
 
 				// Taken from the sscanf in heapinit() in gdk_bbp.c.
-				// 12 fields, we need field 10 (free)
-				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
+				// 14 fields, we need field 10 (free)
+				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s %*s %*s"
 
 				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
 				// 3 fields, we need field 1 (free).
@@ -1605,7 +1611,7 @@ bat_logger_init( logger_functions *lf )
 {
 	lf->create = bl_create;
 	lf->destroy = bl_destroy;
-	lf->restart = bl_restart;
+	lf->flush = bl_flush;
 	lf->cleanup = bl_cleanup;
 	lf->with_ids = bl_with_ids;
 	lf->changes = bl_changes;
@@ -1614,6 +1620,7 @@ bat_logger_init( logger_functions *lf )
 	lf->log_needs_update = bl_log_needs_update;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
+	lf->log_save_id = bl_tid;
 	lf->log_sequence = bl_sequence;
 	lf->log_find_table_value = bl_find_table_value;
 	lf->get_snapshot_files = bl_snapshot;

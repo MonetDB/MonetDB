@@ -299,20 +299,20 @@ stdout of test 'check_Not_Nullable_columns` in directory 'sql/test/sys-schema` i
 % int,	int,	varchar,	int # type
 % 1,	1,	0,	1 # length
 #SELECT "name", * FROM "sys"."db_user_info" WHERE "name" IS NULL;
-% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% name,	name,	fullname,	default_schema # name
-% varchar,	varchar,	varchar,	int # type
-% 0,	0,	0,	1 # length
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% name,	name,	fullname,	default_schema,	schema_path # name
+% varchar,	varchar,	varchar,	int,	clob # type
+% 0,	0,	0,	1,	0 # length
 #SELECT "fullname", * FROM "sys"."db_user_info" WHERE "fullname" IS NULL;
-% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% fullname,	name,	fullname,	default_schema # name
-% varchar,	varchar,	varchar,	int # type
-% 0,	0,	0,	1 # length
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% fullname,	name,	fullname,	default_schema,	schema_path # name
+% varchar,	varchar,	varchar,	int,	clob # type
+% 0,	0,	0,	1,	0 # length
 #SELECT "default_schema", * FROM "sys"."db_user_info" WHERE "default_schema" IS NULL;
-% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
-% default_schema,	name,	fullname,	default_schema # name
-% int,	varchar,	varchar,	int # type
-% 1,	0,	0,	1 # length
+% sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info,	sys.db_user_info # table_name
+% default_schema,	name,	fullname,	default_schema,	schema_path # name
+% int,	varchar,	varchar,	int,	clob # type
+% 1,	0,	0,	1,	0 # length
 #SELECT "id", * FROM "sys"."dependencies" WHERE "id" IS NULL;
 % sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % id,	id,	depend_id,	depend_type # name

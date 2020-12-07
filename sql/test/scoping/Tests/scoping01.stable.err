@@ -58,7 +58,7 @@ ERROR = !DECLARE: Variable 'i' declared as a parameter
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-183822/.s.monetdb.31204
 QUERY = SELECT tests_scopes1(vals) FROM (VALUES (1),(2),(3)) AS vals(vals); --will trigger error
-ERROR = !SELECT: no such unary operator 'tests_scopes1(tinyint)'
+ERROR = !SELECT: no such unary operator 'tests_scopes1'(tinyint)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-126495/.s.monetdb.31037
 QUERY = with a("optimizer") as (select 4) select "optimizer" from tmp1, a; --error, ambiguous identifier 'i'
@@ -116,13 +116,13 @@ QUERY = CREATE OR REPLACE FUNCTION scoping4() RETURNS TABLE(a int)
         BEGIN
         	DECLARE TABLE mytable (a int);
         	RETURN mytable, mytable; --error, cannot return two tables (we get an parser error which is also fine)
-ERROR = !syntax error, unexpected ',', expecting SCOLON in: "create or replace function scoping4() returns table(a int)
+ERROR = !syntax error in: "create or replace function scoping4() returns table(a int)
         !begin
         !	declare table "
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-183822/.s.monetdb.31204
 QUERY = END;
-ERROR = !syntax error, unexpected END in: "end"
+ERROR = !syntax error in: "end"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-183822/.s.monetdb.31204
 QUERY = CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
@@ -136,14 +136,14 @@ QUERY = CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
         BEGIN
         	DECLARE idoexist int;
         	RETURN idoexist, idoexist; --error, cannot return two variables  (we get an parser error which is also fine)
-ERROR = !syntax error, unexpected ',', expecting SCOLON in: "create or replace function scoping4() returns int
+ERROR = !syntax error in: "create or replace function scoping4() returns int
         !begin
         !	declare idoexist int;
         !	"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-183822/.s.monetdb.31204
 QUERY = END;
-ERROR = !syntax error, unexpected END in: "end"
+ERROR = !syntax error in: "end"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-183822/.s.monetdb.31204
 QUERY = CREATE OR REPLACE FUNCTION scoping4() RETURNS INT

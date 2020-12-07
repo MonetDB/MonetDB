@@ -1171,7 +1171,7 @@ reorder_join(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_join_order(visitor *v, sql_rel *rel)
 {
-	visitor ev = { .sql = v->sql };
+	visitor ev = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
 
 	if (!rel)
 		return rel;
@@ -1507,7 +1507,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			return rel;
 		if (exps_can_push_func(exps, rel) && exps_need_push_down(exps)) {
 			sql_rel *nrel, *ol = l, *or = r;
-			visitor nv = { .sql = v->sql, .parent = v->parent };
+			visitor nv = { .sql = v->sql, .parent = v->parent, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
@@ -1607,7 +1607,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 		args = new_exp_list(v->sql->sa);
 		srel = r->l;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql->sa, v->sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -1620,7 +1620,7 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 
 		srel = r->r;
 		{
-			sql_subfunc *cf = sql_bind_func(v->sql->sa, v->sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+			sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 			sql_exp *cnt, *e = exp_aggr(v->sql->sa, NULL, cf, need_distinct(oce), need_no_nil(oce), oce->card, 0);
 
 			exp_label(v->sql->sa, e, ++v->sql->label);
@@ -1828,7 +1828,7 @@ sum_limit_offset(mvc *sql, sql_rel *rel)
 	if (list_length(rel->exps) == 1 && rel->exps->h->data)
 		return list_append(sa_list(sql->sa), rel->exps->h->data);
 	sql_subtype *lng = sql_bind_localtype("lng");
-	sql_subfunc *add = sql_bind_func_result(sql->sa, sql->session->schema, "sql_add", F_FUNC, lng, 2, lng, lng);
+	sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, lng, 2, lng, lng);
 	return list_append(sa_list(sql->sa), exp_op(sql->sa, rel->exps, add));
 }
 
@@ -2873,7 +2873,7 @@ find_func( mvc *sql, char *name, list *exps )
 
 	for(n = exps->h; n; n = n->next)
 		append(l, exp_subtype(n->data));
-	return sql_bind_func_(sql->sa, sql->session->schema, name, l, F_FUNC);
+	return sql_bind_func_(sql, "sys", name, l, F_FUNC);
 }
 
 static sql_exp *
@@ -2987,7 +2987,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 			else if (exp_is_atom(le)) {
 				l->h->data = re;
 				l->h->next->data = le;
-				e->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(re), exp_subtype(le), F_FUNC);
+				e->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(re), exp_subtype(le), F_FUNC);
 				exp_sum_scales(e->f, re, le);
 				(*changes)++;
 				return e;
@@ -2997,7 +2997,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 				/* pow */
 				list *l;
 				sql_exp *ne;
-				sql_subfunc *pow = sql_bind_func(sql->sa, sql->session->schema, "power", exp_subtype(le), exp_subtype(re), F_FUNC);
+				sql_subfunc *pow = sql_bind_func(sql, "sys", "power", exp_subtype(le), exp_subtype(re), F_FUNC);
 				assert(pow);
 				if (exp_subtype(le)->type->localtype == TYPE_flt)
 					re = exp_atom_flt(sql->sa, 2);
@@ -3039,12 +3039,12 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 						append(l, lre);
 						append(l, re);
 						le->l = l;
-						le->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(lre), exp_subtype(re), F_FUNC);
+						le->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lre), exp_subtype(re), F_FUNC);
 						exp_sum_scales(le->f, lre, re);
 						l = e->l;
 						l->h->data = lle;
 						l->h->next->data = le;
-						e->f = sql_bind_func(sql->sa, NULL, "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
+						e->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(lle), exp_subtype(le), F_FUNC);
 						exp_sum_scales(e->f, lle, le);
 						if (subtype_cmp(&et, exp_subtype(e)) != 0)
 							e = exp_convert(sql->sa, e, exp_subtype(e), &et);
@@ -3791,8 +3791,8 @@ exps_merge_select_rse( mvc *sql, list *l, list *r, bool *merged)
 				fnd = exp_in(sql->sa, le->l, exps, cmp_in);
 			} else if (le->f && re->f && /* merge ranges */
 				   le->flag == re->flag && le->flag <= cmp_lt) {
-				sql_subfunc *min = sql_bind_func(sql->sa, sql->session->schema, "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
-				sql_subfunc *max = sql_bind_func(sql->sa, sql->session->schema, "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
+				sql_subfunc *min = sql_bind_func(sql, "sys", "sql_min", exp_subtype(le->r), exp_subtype(re->r), F_FUNC);
+				sql_subfunc *max = sql_bind_func(sql, "sys", "sql_max", exp_subtype(le->f), exp_subtype(re->f), F_FUNC);
 				sql_exp *mine, *maxe;
 
 				if (!min || !max)
@@ -4120,7 +4120,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			if (oa->type == e_aggr) {
 				sql_subfunc *f = oa->f;
 				int cnt = exp_aggr_is_count(oa);
-				sql_subfunc *a = sql_bind_func(v->sql->sa, v->sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+				sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 				assert(a);
 				/* union of aggr result may have nils
@@ -5588,7 +5588,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 }
 
 static int
-sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_based)
+sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_based)
 {
 	int de;
 
@@ -5613,7 +5613,7 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 		case TYPE_dbl:
 			return 75 - 53;
 		default: {
-			if (equality_based && c && (de = sql_trans_is_duplicate_eliminated(sql->session->tr, c)))
+			if (equality_based && c && v->storage_based_opt && (de = mvc_is_duplicate_eliminated(v->sql, c)))
 				return 150 - de * 8;
 			/* strings and blobs not duplicate eliminated don't get any points here */
 			return 0;
@@ -5623,7 +5623,7 @@ sql_class_base_score(mvc *sql, sql_column *c, sql_subtype *t, bool equality_base
 
 /* Compute the efficiency of using this expression earl	y in a group by list */
 static int
-score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
+score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 {
 	int res = 0;
 	sql_subtype *t = exp_subtype(e);
@@ -5632,9 +5632,9 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 	if (e->card == CARD_ATOM) /* constants are trivial to group */
 		res += 1000;
 	/* can we find out if the underlying table is sorted */
-	if (find_prop(e->p, PROP_HASHCOL) || (c && mvc_is_unique(sql, c))) /* distinct columns */
+	if (find_prop(e->p, PROP_HASHCOL) || (c && v->storage_based_opt && mvc_is_unique(v->sql, c))) /* distinct columns */
 		res += 700;
-	if (c && mvc_is_sorted(sql, c))
+	if (c && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 500;
 	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 300;
@@ -5642,7 +5642,7 @@ score_gbe(mvc *sql, sql_rel *rel, sql_exp *e)
 		res += 200;
 
 	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(sql, c, t, true); /* smaller the type, better */
+	res += sql_class_base_score(v, c, t, true); /* smaller the type, better */
 	return res;
 }
 
@@ -5663,7 +5663,7 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		/* first sorting step, give priority for integers and sorted columns */
 		for (i = 0, n = gbe->h; n; i++, n = n->next) {
 			exps[i] = n->data;
-			scores[i] = score_gbe(v->sql, rel, exps[i]);
+			scores[i] = score_gbe(v, rel, exps[i]);
 		}
 		GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
 
@@ -5928,7 +5928,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
 			sql_exp *v;
 			sql_subfunc *f = e->f;
 			int cnt = exp_aggr_is_count(e);
-			sql_subfunc *a = sql_bind_func(v->sql->sa, v->sql->session->schema, (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
+			sql_subfunc *a = sql_bind_func(v->sql, "sys", (cnt)?"sum":f->func->base.name, exp_subtype(e), NULL, F_AGGR);
 
 			append(aggrs, e);
 			if (!exp_name(e))
@@ -6357,7 +6357,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			   Check if they can be pushed up, ie are they not
 			   changing or introducing any columns used
 			   by the upper operator. */
- 
+
 			exps = new_exp_list(v->sql->sa);
 			for (n = l->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -7388,25 +7388,25 @@ rel_use_index(visitor *v, sql_rel *rel)
 }
 
 static int
-score_se_base(mvc *sql, sql_rel *rel, sql_exp *e)
+score_se_base(visitor *v, sql_rel *rel, sql_exp *e)
 {
 	int res = 0;
 	sql_subtype *t = exp_subtype(e);
 	sql_column *c = NULL;
 
 	/* can we find out if the underlying table is sorted */
-	if ((c = exp_find_column(rel, e, -2)) && mvc_is_sorted(sql, c))
+	if ((c = exp_find_column(rel, e, -2)) && v->storage_based_opt && mvc_is_sorted(v->sql, c))
 		res += 600;
 	if (find_prop(e->p, PROP_SORTIDX)) /* has sort index */
 		res += 400;
 
 	/* prefer the shorter var types over the longer ones */
-	res += sql_class_base_score(sql, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
+	res += sql_class_base_score(v, c, t, is_equality_or_inequality_exp(e->flag)); /* smaller the type, better */
 	return res;
 }
 
 static int
-score_se(mvc *sql, sql_rel *rel, sql_exp *e)
+score_se(visitor *v, sql_rel *rel, sql_exp *e)
 {
 	int score = 0;
 	if (e->type == e_cmp && !is_complex_exp(e->flag)) {
@@ -7423,7 +7423,7 @@ score_se(mvc *sql, sql_rel *rel, sql_exp *e)
 				break;
 			l = ll;
 		}
-		score += score_se_base(sql, rel, l);
+		score += score_se_base(v, rel, l);
 	}
 	score += exp_keyvalue(e);
 	return score;
@@ -7443,7 +7443,7 @@ rel_select_order(visitor *v, sql_rel *rel)
 
 		for (i = 0, n = rel->exps->h; n; i++, n = n->next) {
 			exps[i] = n->data;
-			scores[i] = score_se(v->sql, rel, n->data);
+			scores[i] = score_se(v, rel, n->data);
 		}
 		GDKqsort(scores, exps, NULL, nexps, sizeof(int), sizeof(void *), TYPE_int, true, true);
 
@@ -8628,7 +8628,7 @@ exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de,
 {
 	sql_subtype *rt = sql_bind_localtype(de==1?"bte":de==2?"sht":"int");
 	sql_exp *u = exp_atom_bool(sql->sa, unique);
-	sql_subfunc *f = sql_bind_func_result(sql->sa, mvc_bind_schema(sql,"sys"), "index", F_FUNC, rt, 2, exp_subtype(e), exp_subtype(u));
+	sql_subfunc *f = sql_bind_func_result(sql, "sys", "index", F_FUNC, rt, 2, exp_subtype(e), exp_subtype(u));
 
 	e = exp_binop(sql->sa, e, u, f);
 	exp_setname(sql->sa, e, tname, cname);
@@ -8638,7 +8638,7 @@ exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de,
 static sql_exp *
 exp_stringscol(mvc *sql, sql_exp *e, const char *tname, const char *cname)
 {
-	sql_subfunc *f = sql_bind_func(sql->sa, mvc_bind_schema(sql,"sys"), "strings", exp_subtype(e), NULL, F_FUNC);
+	sql_subfunc *f = sql_bind_func(sql, "sys", "strings", exp_subtype(e), NULL, F_FUNC);
 
 	e = exp_unop(sql->sa, e, f);
 	exp_setname(sql->sa, e, tname, cname);
@@ -8697,7 +8697,7 @@ rel_add_dicts(visitor *v, sql_rel *rel)
 			if (!is_func(e->type) && oname[0] != '%') {
 				sql_column *c = find_sql_column(t, oname);
 
-				if ((de = sql_trans_is_duplicate_eliminated(v->sql->session->tr, c)) != 0) {
+				if ((de = mvc_is_duplicate_eliminated(v->sql, c)) != 0) {
 					int nr = ++v->sql->label;
 					char name[16], *nme;
 					sql_rel *vt = rel_dicttable(v->sql, c, rname, de);
@@ -8890,7 +8890,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						int skip = 0;
 						list *exps = NULL;
 
-						/* do not include empty partitions */
+						/* Do not include empty partitions */
 						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store_funcs.count_col(v->sql->session->tr, pt->columns.set->h->data, 1))
 							continue;
 
@@ -9062,19 +9062,26 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 																skip |= nskip;
 															}
 														} else { /* limit1 to limit2 (general case), limit2 is exclusive */
+															bool max_differ_min = ATOMcmp(col->type.type->localtype, &rmin->data.val, &rmax->data.val) != 0;
+
 															if (lval) {
 																if (next->flag == cmp_equal) {
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, true) != 0 :
-																						 exp_range_overlap(rmin, rmax, lval, hval, false, true) == 0;
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, false, max_differ_min) == 0;
 																} else if (hval != lval) { /* For the between case */
 																	comp_type higher = range2rcompare(next->flag);
-																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) != 0 :
-																						 exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, true) == 0;
+																	skip |= next->anti ? exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) != 0 :
+																						 exp_range_overlap(rmin, rmax, lval, hval, higher == cmp_lt, max_differ_min) == 0;
 																} else {
 																	switch (next->flag) {
 																		case cmp_gt:
-																		case cmp_gte:
 																			skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+																			break;
+																		case cmp_gte:
+																			if (max_differ_min)
+																				skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) < 0 : VALcmp(&(lval->data), &(rmax->data)) >= 0;
+																			else
+																				skip |= next->anti ? VALcmp(&(lval->data), &(rmax->data)) <= 0 : VALcmp(&(lval->data), &(rmax->data)) > 0;
 																			break;
 																		case cmp_lt:
 																			skip |= next->anti ? VALcmp(&(rmin->data), &(lval->data)) < 0 : VALcmp(&(rmin->data), &(lval->data)) >= 0;
@@ -9093,7 +9100,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 																	if (a->isnull)
 																		continue;
-																	nskip &= exp_range_overlap(rmin, rmax, a, a, false, true) == 0;
+																	nskip &= exp_range_overlap(rmin, rmax, a, a, false, max_differ_min) == 0;
 																}
 																skip |= nskip;
 															}
@@ -9191,7 +9198,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 				}
 				rel_destroy(rel);
 				if (sel) {
-					visitor iv = { .sql = v->sql };
+					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
 					sel->l = nrel;
 					sel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
 					if (iv.changes)
@@ -9476,9 +9483,10 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_opt)
+optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt, bool storage_based_opt)
 {
-	visitor v = { .sql = sql }, ev = { .sql = sql };
+	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt },
+			ev = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
@@ -9670,8 +9678,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, int value_based_
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_topn_and_sample_down);
 
-	if (value_based_opt)
-		rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
+	rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rel_visitor_topdown(&v, rel, &rel_add_dicts);
 
@@ -9716,13 +9723,13 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 }
 
 sql_rel *
-rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt)
+rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt)
 {
 	int level = 0, changes = 1;
 
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
-		rel = optimize_rel(sql, rel, &changes, level, value_based_opt);
+		rel = optimize_rel(sql, rel, &changes, level, value_based_opt, storage_based_opt);
 #ifndef NDEBUG
 	assert(level < 20);
 #endif

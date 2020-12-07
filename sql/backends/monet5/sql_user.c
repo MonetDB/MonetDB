@@ -57,17 +57,102 @@ monet5_drop_user(ptr _mvc, str user)
 	return TRUE;
 }
 
+#define outside_str 1
+#define inside_str 2
+#define default_schema_path "\"sys\"" /* "sys" will be the default schema path */
+
 static str
-monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, sqlid grantorid)
+parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for both building and validating the schema path */
+{
+	list *l = m->schema_path;
+	char next_schema[1024]; /* needs one extra character for null terminator */
+	int status = outside_str;
+	size_t bp = 0;
+
+	if (strNil(schema_path))
+		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot be NULL");
+
+	if (build) {
+		while (l->t) /* if building, empty schema_path list */
+			(void) list_remove_node(l, l->t);
+		m->schema_path_has_sys = 0;
+		m->schema_path_has_tmp = 0;
+	}
+
+	for (size_t i = 0; schema_path[i]; i++) {
+		char next = schema_path[i];
+
+		if (next == '"') {
+			if (status == inside_str && schema_path[i + 1] == '"') {
+				next_schema[bp++] = '"';
+				i++; /* has to advance two positions */
+			} else if (status == inside_str) {
+				if (bp == 0)
+					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema name cannot be empty");
+				if (bp == 1023)
+					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+
+				if (build) {
+					char *val = NULL;
+					next_schema[bp++] = '\0';
+					if (!(val = _STRDUP(next_schema)) || !list_append(l, val)) {
+						_DELETE(val);
+						throw(SQL, "sql.schema_path", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
+					if (strcmp(next_schema, "sys") == 0)
+						m->schema_path_has_sys = 1;
+					else if (strcmp(next_schema, "tmp") == 0)
+						m->schema_path_has_tmp = 1;
+				}
+
+				bp = 0;
+				status = outside_str;
+			} else {
+				assert(status == outside_str);
+				status = inside_str;
+			}
+		} else if (next == ',') {
+			if (status == outside_str && schema_path[i + 1] == '"') {
+				status = inside_str;
+				i++; /* has to advance two positions */
+			} else if (status == inside_str) {
+				if (bp == 1023)
+					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+				next_schema[bp++] = ','; /* used inside a schema name */
+			} else if (status == outside_str) {
+				throw(SQL, "sql.schema_path", SQLSTATE(42000) "The '\"' character is expected after the comma separator");
+			}
+		} else if (status == inside_str) {
+			if (bp == 1023)
+				throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+			if (bp == 0 && next == '%')
+				throw(SQL, "sql.schema_path", SQLSTATE(42000) "The character '%%' is not allowed as the first schema character");
+			next_schema[bp++] = next;
+		} else {
+			assert(status == outside_str);
+			throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema in the path must be within '\"'");
+		}
+	}
+	if (status == inside_str)
+		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot end inside inside a schema name");
+	return MAL_SUCCEED;
+}
+
+static str
+monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid schema_id, str schema_path, sqlid grantorid)
 {
 	mvc *m = (mvc *) _mvc;
 	oid uid = 0;
-	str ret;
+	str ret, pwd;
 	sqlid user_id;
-	str pwd;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
 	Client c = MCgetClient(m->clientid);
+
+	if (!schema_path)
+		schema_path = default_schema_path;
+	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED)
+		return ret;
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd))))
@@ -85,7 +170,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	user_id = store_next_oid();
 	db_user_info = find_sql_table(s, "db_user_info");
 	auths = find_sql_table(s, "auths");
-	table_funcs.table_insert(m->session->tr, db_user_info, user, fullname, &schema_id);
+	table_funcs.table_insert(m->session->tr, db_user_info, user, fullname, &schema_id, schema_path);
 	table_funcs.table_insert(m->session->tr, auths, &user_id, user, &grantorid);
 	return NULL;
 }
@@ -175,7 +260,6 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	sql_table *t, *uinfo;
 	mvc *m = (mvc *) _mvc;
 	sqlid schema_id = 0;
-	str monetdbuser = "monetdb";
 	list *res, *ops;
 
 	/* create the authorisation related tables */
@@ -183,6 +267,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
+	mvc_create_column_(m, t, "schema_path", "clob", 0);
 	uinfo = t;
 
 	res = sa_list(m->sa);
@@ -196,9 +281,9 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 
 	t = mvc_init_create_view(m, s, "users",
 			    "SELECT u.\"name\" AS \"name\", "
-			    "ui.\"fullname\", ui.\"default_schema\" "
-			    "FROM db_users() AS u LEFT JOIN "
-			    "\"sys\".\"db_user_info\" AS ui "
+			    "ui.\"fullname\", ui.\"default_schema\", "
+				"ui.\"schema_path\" FROM db_users() AS u "
+				"LEFT JOIN \"sys\".\"db_user_info\" AS ui "
 			    "ON u.\"name\" = ui.\"name\";");
 	if (!t) {
 		TRC_CRITICAL(SQL_TRANS, "Failed to create 'users' view\n");
@@ -208,11 +293,12 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_column_(m, t, "name", "varchar", 1024);
 	mvc_create_column_(m, t, "fullname", "varchar", 2024);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
+	mvc_create_column_(m, t, "schema_path", "clob", 0);
 
 	schema_id = sql_find_schema(m, "sys");
 	assert(schema_id >= 0);
 
-	table_funcs.table_insert(m->session->tr, uinfo, monetdbuser, "MonetDB Admin", &schema_id);
+	table_funcs.table_insert(m->session->tr, uinfo, "monetdb", "MonetDB Admin", &schema_id, default_schema_path);
 }
 
 static int
@@ -232,7 +318,7 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd)
+monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str schema_path, str oldpasswd)
 {
 	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
@@ -309,18 +395,34 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 	}
 
 	if (schema_id) {
-		oid rid;
 		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
 		sql_table *info = find_sql_table(sys, "db_user_info");
 		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *users_schema = find_sql_column(info, "default_schema");
 
 		/* FIXME: we don't really check against the backend here */
-		rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
+		oid rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
 		if (is_oid_nil(rid))
 			return FALSE;
-
 		table_funcs.column_update_value(m->session->tr, users_schema, rid, &schema_id);
+	}
+
+	if (schema_path) {
+		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
+		sql_table *info = find_sql_table(sys, "db_user_info");
+		sql_column *users_name = find_sql_column(info, "name");
+		sql_column *sp = find_sql_column(info, "schema_path");
+
+		if ((err = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
+			(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
+			freeException(err);
+			return (FALSE);
+		}
+
+		oid rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
+		if (is_oid_nil(rid))
+			return FALSE;
+		table_funcs.column_update_value(m->session->tr, sp, rid, schema_path);
 	}
 
 	return TRUE;
@@ -460,22 +562,18 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	sql_table *user_info = NULL;
 	sql_column *users_name = NULL;
 	sql_column *users_schema = NULL;
+	sql_column *users_schema_path = NULL;
 	sql_table *schemas = NULL;
 	sql_column *schemas_name = NULL;
 	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
 	sql_column *auths_name = NULL;
-	str other;
-
+	str path_err = NULL, other = NULL, schema = NULL, schema_path = NULL, username = NULL, err = NULL;
 	void *p = 0;
-
-	str schema = NULL;
-	str username = NULL;
-	str err = NULL;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
 
-	if ((err = AUTHresolveUser(&username, user)) !=MAL_SUCCEED) {
+	if ((err = AUTHresolveUser(&username, user)) != MAL_SUCCEED) {
 		freeException(err);
 		return (NULL);	/* don't reveal that the user doesn't exist */
 	}
@@ -489,6 +587,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	user_info = find_sql_table(sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
 	users_schema = find_sql_column(user_info, "default_schema");
+	users_schema_path = find_sql_column(user_info, "schema_path");
 
 	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
 	if (is_oid_nil(rid)) {
@@ -498,10 +597,13 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		return NULL;
 	}
 	p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
-
 	assert(p);
 	schema_id = *(sqlid *) p;
 	_DELETE(p);
+
+	p = table_funcs.column_find_value(m->session->tr, users_schema_path, rid);
+	assert(p);
+	schema_path = (str) p;
 
 	schemas = find_sql_table(sys, "schemas");
 	schemas_name = find_sql_column(schemas, "name");
@@ -527,12 +629,15 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 
-	if (!schema || !mvc_set_schema(m, schema)) {
+	/* while getting the session's schema, set the search path as well */
+	if (!schema || !mvc_set_schema(m, schema) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
 		if (m->session->tr->active) {
 			if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 				freeException(other);
 		}
 		GDKfree(username);
+		_DELETE(schema_path);
+		freeException(path_err);
 		return NULL;
 	}
 	/* reset the user and schema names */
@@ -542,6 +647,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		schema = NULL;
 	}
 	GDKfree(username);
+	_DELETE(schema_path);
 	if ((other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED) {
 		freeException(other);
 		return NULL;
