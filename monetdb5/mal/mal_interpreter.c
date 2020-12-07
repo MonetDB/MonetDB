@@ -652,8 +652,8 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 						if (isaBatType(t)) {
 							bat bid = stk->stk[a].val.bval;
 							BAT *_b = BATdescriptor(bid);
-							assert(stk->stk[a].vtype == TYPE_bat);
 							t = getBatType(t);
+							assert(stk->stk[a].vtype == TYPE_bat);
 							assert(is_bat_nil(bid) ||
 								   t == TYPE_any ||
 								   ATOMtype(_b->ttype) == ATOMtype(t));
@@ -767,6 +767,14 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					for (ii = 0; ii < nstk->stktop; ii++)
 						if (ATOMextern(nstk->stk[ii].vtype))
 							GDKfree(nstk->stk[ii].val.pval);
+					/*
+					arg = q->retc;
+					for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
+						lhs = &nstk->stk[q->argv[arg]];
+						if (lhs->vtype == TYPE_bat)
+							BBPrelease(lhs->val.bval);
+					}
+					*/
 					GDKfree(nstk);
 				}
 			}
@@ -1231,7 +1239,10 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 					freeException(n);
 					freeException(ret);
 					ret = new;
-				} else ret = n;
+				} else {
+					freeException(ret);
+					ret = n;
+				}
 			}
 		} else {
 			ret = createException(MAL, nme, "Exception not caught");

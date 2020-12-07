@@ -49,31 +49,31 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 138 # length
+% 156 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) ]
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) ]
 ) [ "myx"."x", "myx"."y" ]
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965') or y is null;
 % .plan # table_name
 % rel # name
 % clob # type
-% 102 # length
+% 111 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"]) or ("myx"."y" * = uuid "NULL") ]
+| ) [ ("myx"."x" = uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL) or ("myx"."y" * = uuid "NULL") ]
 ) [ "myx"."x", "myx"."y" ]
 #plan select * from myx where x in ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961966') or y = '1aea00e5db6e0810b554fde31d961967';
 % .plan # table_name
 % rel # name
 % clob # type
-% 192 # length
+% 219 # length
 project (
 | select (
 | | table(sys.myx) [ "myx"."x", "myx"."y" ] COUNT 
-| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"], uuid[char(32) "1aea00e5db6e0810b554fde31d961966"])) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"]) ]
+| ) [ ("myx"."x" in (uuid[char(32) "1aea00e5db6e0810b554fde31d961965"] NOT NULL, uuid[char(32) "1aea00e5db6e0810b554fde31d961966"] NOT NULL)) or ("myx"."y" = uuid[char(32) "1aea00e5db6e0810b554fde31d961967"] NOT NULL) ]
 ) [ "myx"."x", "myx"."y" ]
 #insert into myx values ('1aea00e5db6e0810b554fde31d961965', '1aea00e5db6e0810b554fde31d961967');
 [ 1	]

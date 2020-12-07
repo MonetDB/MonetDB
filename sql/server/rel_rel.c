@@ -533,7 +533,14 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && m && o ; n = n->next, m = m->next,o = o->next) {
 		sql_exp *e = n->data, *f = m->data, *g = o->data;
 
-		e->card = is_union(rel->op) ? MAX(f->card, g->card) : f->card;
+		if (is_union(rel->op)) { /* propagate set_has_no_nil only if it's applicable to both sides of the union*/
+			if (has_nil(f) || has_nil(g))
+				set_has_nil(e);
+			else
+				set_has_no_nil(e);
+			e->card = MAX(f->card, g->card);
+		} else
+			e->card = f->card;
 	}
 	rel->nrcols = l->nrcols;
 	rel->exps = exps;
@@ -2347,8 +2354,6 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	/* problems are passed via changes */
 	return (v.changes==0);
 }
-
-
 
 static sql_exp *
 _exp_freevar_offset(visitor *v, sql_rel *rel, sql_exp *e, int depth)

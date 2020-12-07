@@ -29,5 +29,7 @@ integers-intervals.Bug-6979
 KNOWNFAIL?wrong-key-error.Bug-6983
 window-function-order.Bug-6997
 semijoin.Bug-7001
+decimal-multiplication.Bug-7003
 drop-stream-table.Bug-7005
 deallocate-id.Bug-7010
+values-groupby.Bug-7013

@@ -227,7 +227,7 @@ addFunctions(mel_func *fcn){
 			throw(LOADER, "addFunctions", "Can not create program block for %s.%s missing", fcn->mod, fcn->fcn);
 		if (fcn->cname && fcn->cname[0])
 			strcpy(mb->binding, fcn->cname);
-		sig= newInstruction(mb, fcn->mod, fcn->fcn);
+		sig= newInstructionArgs(mb, fcn->mod, fcn->fcn, fcn->argc + (fcn->retc == 0));
 		sig->retc = 0;
 		sig->argc = 0;
 		sig->token = fcn->command?COMMANDsymbol:PATTERNsymbol;
@@ -335,9 +335,11 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 	(void)comment;
 	if (fname)
 		strcpy(mb->binding, fname);
-	if( mb == NULL)
+	if (mb == NULL) {
+		freeSymbol(s);
 		return MEL_ERR;
-	sig = newInstruction(mb, mod, fcn);
+	}
+	sig = newInstructionArgs(mb, mod, fcn, argc + (retc == 0));
 	sig->retc = 0;
 	sig->argc = 0;
 	sig->token = command ? COMMANDsymbol:PATTERNsymbol;
@@ -348,16 +350,22 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 	if(retc == 0) {
 		idx = newTmpVariable(mb, TYPE_void);
 		sig = pushReturn(mb, sig, idx);
-		if (sig == NULL)
+		if (idx < 0 || sig == NULL) {
+			freeInstruction(sig);
+			freeSymbol(s);
 			return MEL_ERR;
+		}
 	}
 
 	for (i = 0; i<retc; i++ ){
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
 		sig = pushReturn(mb, sig, idx);
-		if (sig == NULL)
+		if (idx < 0 || sig == NULL) {
+			freeInstruction(sig);
+			freeSymbol(s);
 			return MEL_ERR;
+		}
 		int tpe = TYPE_any;
 		if (a.nr > 0) {
 			if (a.isbat)
@@ -374,8 +382,11 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
 		sig = pushArgument(mb, sig, idx);
-		if (sig == NULL)
+		if (idx < 0 || sig == NULL) {
+			freeInstruction(sig);
+			freeSymbol(s);
 			return MEL_ERR;
+		}
 		int tpe = TYPE_any;
 		if (a.nr > 0) {
 			if (a.isbat)

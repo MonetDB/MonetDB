@@ -399,7 +399,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	q = getArg(p, 0);
 
 	/* remote.exec(q, "sql", "register", "mod", "name", "relational_plan", "signature"); */
-	p = newInstruction(curBlk, remoteRef, execRef);
+	p = newInstructionArgs(curBlk, remoteRef, execRef, 10);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, sqlRef);
 	p = pushStr(curBlk, p, registerRef);
@@ -582,7 +582,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		free(err);
 
 	/* (x1, x2, ..., xn) := remote.exec(q, "mod", "fcn"); */
-	p = newInstruction(curBlk, remoteRef, execRef);
+	p = newInstructionArgs(curBlk, remoteRef, execRef, list_length(r->exps) + curInstr->argc - curInstr->retc + 4);
 	p = pushArgument(curBlk, p, q);
 	p = pushStr(curBlk, p, mod);
 	p = pushStr(curBlk, p, lname);
@@ -621,7 +621,7 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 	p = newStmt(curBlk, remoteRef, disconnectRef);
 	p = pushArgument(curBlk, p, q);
 
-	p = newInstruction(curBlk, NULL, NULL);
+	p = newInstructionArgs(curBlk, NULL, NULL, 2 * curInstr->retc);
 	p->barrier= RETURNsymbol;
 	p->retc = p->argc = 0;
 	for (i = 0; i < curInstr->retc; i++)
@@ -786,13 +786,18 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	InstrPtr curInstr = 0;
 	char arg[IDLENGTH];
 	node *n;
-	int argc = 0, res, added_to_cache = 0;
+	int argc, res, added_to_cache = 0;
 
 	backup = c->curprg;
+	argc = 1;
+	if (m->params)
+		argc += list_length(m->params);
+	if (argc < MAXARG)
+		argc = MAXARG;
 	if (cq)
-		c->curprg = newFunction(userRef, putName(cq->name), FUNCTIONsymbol);
+		c->curprg = newFunctionArgs(userRef, putName(cq->name), FUNCTIONsymbol, argc);
 	else
-		c->curprg = newFunction(userRef, "tmp", FUNCTIONsymbol);
+		c->curprg = newFunctionArgs(userRef, "tmp", FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
@@ -809,6 +814,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 
 	if (m->params) {	/* needed for prepare statements */
 
+		argc = 0;
 		for (n = m->params->h; n; n = n->next, argc++) {
 			sql_arg *a = n->data;
 			sql_type *tpe = a->type.type;
@@ -1156,7 +1162,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 		f->sql++;
 	r = rel_parse(m, f->s, f->query, m_instantiate);
 	if (r)
-		r = sql_processrelation(m, r, 1);
+		r = sql_processrelation(m, r, 1, 0);
 	if (r)
 		r = rel_distribute(m, r);
 	if (r)
@@ -1171,7 +1177,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 
 	backup = c->curprg;
-	curPrg = c->curprg = newFunction(userRef, putName(f->base.name), FUNCTIONsymbol);
+	curPrg = c->curprg = newFunctionArgs(userRef, putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
 	if( curPrg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;

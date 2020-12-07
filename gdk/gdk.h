@@ -717,7 +717,7 @@ typedef struct {
 
 #define GDKLIBRARY_BLOB_SORT	061040U /* first in Mar2018: blob compare changed */
 #define GDKLIBRARY_OLDDATE	061041U /* first in Apr2019: time/date in old format */
-#define GDKLIBRARY_NOINFO	061042U /* no extra info in header */
+#define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019 */
 #define GDKLIBRARY		061043U
 
 typedef struct BAT {
@@ -2085,7 +2085,9 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  */
 enum prop_t {
 	GDK_MIN_VALUE = 3,	/* smallest non-nil value in BAT */
+	GDK_MIN_POS,		/* BUN position of smallest value  */
 	GDK_MAX_VALUE,		/* largest non-nil value in BAT */
+	GDK_MAX_POS,		/* BUN position of largest value  */
 	GDK_HASH_BUCKETS,	/* last used hash bucket size */
 	GDK_NUNIQUE,		/* number of unique values */
 };
@@ -2142,6 +2144,10 @@ gdk_export BAT *BATprojectchain(BAT **bats);
 gdk_export BAT *BATslice(BAT *b, BUN low, BUN high);
 
 gdk_export BAT *BATunique(BAT *b, BAT *s);
+
+gdk_export BAT *BATmergecand(BAT *a, BAT *b);
+gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
+gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
 
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));

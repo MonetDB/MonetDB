@@ -92,6 +92,7 @@
 		if (histo)						\
 			cnts[ngrp] = 1;					\
 		ngrps[r] = ngrp++;					\
+		maxgrppos = r;						\
 	} while (0)
 
 
@@ -584,6 +585,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	Hash *hs = NULL;
 	BUN hb;
 	BUN maxgrps;
+	BUN maxgrppos = BUN_NONE;
 	bat parent;
 	BUN cnt;
 	BUN lo = 0;
@@ -717,6 +719,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				prop = BATgetprop(g, GDK_MAX_VALUE);
 				if (prop)
 					BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &maxgrp);
+				prop = BATgetprop(g, GDK_MAX_POS);
+				if (prop)
+					BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &prop->v.val.oval);
 			}
 
 			*groups = gn;
@@ -935,6 +940,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			p = o - b->hseqbase;
 			if ((v = bgrps[w[p]]) == 0xFF && ngrp < 256) {
 				bgrps[w[p]] = v = (unsigned char) ngrp++;
+				maxgrppos = r;
 				if (extents)
 					exts[v] = o;
 			}
@@ -967,6 +973,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			p = o - b->hseqbase;
 			if ((v = sgrps[w[p]]) == 0xFFFF && ngrp < 65536) {
 				sgrps[w[p]] = v = (unsigned short) ngrp++;
+				maxgrppos = r;
 				if (extents)
 					exts[v] = o;
 			}
@@ -1208,6 +1215,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->tnil = false;
 	ngrp--;	     /* max value is one less than number of values */
 	BATsetprop(gn, GDK_MAX_VALUE, TYPE_oid, &ngrp);
+	BATsetprop(gn, GDK_MAX_POS, TYPE_oid, &(oid){maxgrppos});
 	*groups = gn;
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT

@@ -709,11 +709,14 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	uint64_t free;
 	uint64_t size;
 	uint16_t storage;
+	uint64_t minpos, maxpos;
 	int n;
 
 	(void) bbpversion;	/* could be used to implement compatibility */
 
-	if (sscanf(buf,
+	minpos = maxpos = (uint64_t) oid_nil; /* for GDKLIBRARY_MINMAX_POS case */
+	if (bbpversion <= GDKLIBRARY_MINMAX_POS ?
+	    sscanf(buf,
 		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
 		   " %" SCNu64 " %" SCNu64 " %" SCNu16
@@ -721,7 +724,16 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 		   type, &width, &var, &properties, &nokey0,
 		   &nokey1, &nosorted, &norevsorted, &base,
 		   &free, &size, &storage,
-		   &n) < 12) {
+		   &n) < 12 :
+	    sscanf(buf,
+		   " %10s %" SCNu16 " %" SCNu16 " %" SCNu16 " %" SCNu64
+		   " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64
+		   " %" SCNu64 " %" SCNu64 " %" SCNu16 " %" SCNu64 " %" SCNu64
+		   "%n",
+		   type, &width, &var, &properties, &nokey0,
+		   &nokey1, &nosorted, &norevsorted, &base,
+		   &free, &size, &storage, &minpos, &maxpos,
+		   &n) < 14) {
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 		return -1;
 	}
@@ -784,6 +796,10 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
+	if (minpos < b->batCount)
+		BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){(oid)minpos});
+	if (maxpos < b->batCount)
+		BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){(oid)maxpos});
 #ifdef GDKLIBRARY_BLOB_SORT
 	if (bbpversion <= GDKLIBRARY_BLOB_SORT && strcmp(type, "blob") == 0) {
 		b->tsorted = b->trevsorted = false;
@@ -1119,7 +1135,7 @@ BBPheader(FILE *fp, int *lineno)
 	sz = (int) (sz * BATMARGIN);
 	if (sz > (bat) ATOMIC_GET(&BBPsize))
 		ATOMIC_SET(&BBPsize, sz);
-	if (bbpversion > GDKLIBRARY_NOINFO) {
+	if (bbpversion > GDKLIBRARY_MINMAX_POS) {
 		if (fgets(buf, sizeof(buf), fp) == NULL) {
 			TRC_CRITICAL(GDK, "short BBP");
 			return 0;
@@ -1479,6 +1495,9 @@ BBPexit(void)
 static inline int
 heap_entry(FILE *fp, BAT *b, BUN size)
 {
+	PROPrec *minprop, *maxprop;
+	minprop = BATgetprop(b, GDK_MIN_POS);
+	maxprop = BATgetprop(b, GDK_MAX_POS);
 	size_t free = b->theap->free;
 	if (size < BUN_NONE) {
 		if (ATOMstorage(b->ttype) == TYPE_msk) {
@@ -1489,7 +1508,7 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 			free = size * b->twidth;
 	}
 	return fprintf(fp, " %s %d %d %d " BUNFMT " " BUNFMT " " BUNFMT " "
-		       BUNFMT " " OIDFMT " %zu %zu %d",
+		       BUNFMT " " OIDFMT " %zu %zu %d " OIDFMT " " OIDFMT,
 		       b->ttype >= 0 ? BATatoms[b->ttype].name : ATOMunknown_name(b->ttype),
 		       b->twidth,
 		       b->tvarsized | (b->tvheap ? b->tvheap->hashash << 1 : 0),
@@ -1506,7 +1525,9 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 		       b->tseqbase,
 		       free,
 		       b->theap->size,
-		       (int) b->theap->newstorage);
+		       (int) b->theap->newstorage,
+		       minprop ? minprop->v.val.oval : oid_nil,
+		       maxprop ? maxprop->v.val.oval : oid_nil);
 }
 
 static inline int

@@ -370,8 +370,10 @@ bailout:
 		BBPunfix(b1->batCacheid);
 	if (b2)
 		BBPunfix(b2->batCacheid);
+/* cannot happen
 	if (s1)
 		BBPunfix(s1->batCacheid);
+*/
 	if (s2)
 		BBPunfix(s2->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -479,8 +481,10 @@ bailout:
 		BBPunfix(b1->batCacheid);
 	if (b2)
 		BBPunfix(b2->batCacheid);
+/* cannot happen
 	if (s1)
 		BBPunfix(s1->batCacheid);
+*/
 	if (s2)
 		BBPunfix(s2->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -565,8 +569,10 @@ bailout:
 		BBPunfix(b1->batCacheid);
 	if (b2)
 		BBPunfix(b2->batCacheid);
+/* cannot happen
 	if (s1)
 		BBPunfix(s1->batCacheid);
+*/
 	if (s2)
 		BBPunfix(s2->batCacheid);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -988,8 +994,10 @@ CMDbatBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPunfix(s->batCacheid);
 	if (slo)
 		BBPunfix(slo->batCacheid);
+/* cannot happen
 	if (shi)
 		BBPunfix(shi->batCacheid);
+*/
 	throw(MAL, "batcalc.between", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 }
 

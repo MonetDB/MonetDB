@@ -76,7 +76,6 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 							   (const char *) &on, sizeof on) < 0) {
 					e = errno;
 					closesocket(sock);
-					sock = -1;
 					continue;
 				}
 #ifdef SO_EXCLUSIVEADDRUSE
@@ -94,13 +93,11 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 			if (bind(sock, rp->ai_addr, rp->ai_addrlen) == -1) {
 				e = errno;
 				closesocket(sock);
-				sock = -1;
 				continue;
 			}
 			if (!udp && listen(sock, 5) == -1) {
 				e = errno;
 				closesocket(sock);
-				sock = -1;
 				continue;
 			}
 			struct sockaddr_storage addr;
@@ -108,7 +105,6 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 			if (getsockname(sock, (struct sockaddr *) &addr, &addrlen) == -1) {
 				e = errno;
 				closesocket(sock);
-				sock = -1;
 				continue;
 			}
 			if (getnameinfo((struct sockaddr *) &addr, addrlen,

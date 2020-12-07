@@ -852,7 +852,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = sql_processrelation(sql, r, 0);
+						r = sql_processrelation(sql, r, 0, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -886,7 +886,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 					r = rel_parse(sql, s, relt, m_deps);
 					if (r)
-						r = sql_processrelation(sql, r, 0);
+						r = sql_processrelation(sql, r, 0, 0);
 					if (r) {
 						list *id_l = rel_dependencies(sql, r);
 
@@ -914,7 +914,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 
 						r = rel_parse(sql, s, relt, m_deps);
 						if (r)
-							r = sql_processrelation(sql, r, 0);
+							r = sql_processrelation(sql, r, 0, 0);
 						if (r) {
 							list *id_l = rel_dependencies(sql, r);
 

@@ -46,7 +46,7 @@ gdk_export gdk_return old_logger_load(int debug, const char *fn, const char *log
 
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 gdk_export void logger_destroy(logger *lg);
-gdk_export gdk_return logger_flush(logger *lg); /* try too flush a part of the logs */
+gdk_export gdk_return logger_flush(logger *lg, lng saved_id); /* try too flush a part of the logs, including the passed saved_id */
 
 gdk_export lng logger_changes(logger *lg);
 gdk_export int logger_sequence(logger *lg, int seq, lng *id);
@@ -65,7 +65,7 @@ gdk_export gdk_return log_delta(logger *lg, BAT *uid, BAT *uval, log_id id);
 
 gdk_export gdk_return log_tstart(logger *lg);
 gdk_export gdk_return log_tend(logger *lg);
-gdk_export lng log_tid(logger *lg);	/* return the active transaction id */
+gdk_export lng log_save_id(logger *lg);	/* return the current file id */
 
 gdk_export gdk_return log_sequence(logger *lg, int seq, lng id);
 

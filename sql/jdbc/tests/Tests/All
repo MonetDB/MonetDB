@@ -1,3 +1,4 @@
+HAVE_JDBCTESTS?JDBC_API_Tester
 HAVE_JDBCTESTS?SQLcopyinto
 HAVE_JDBCTESTS?Test_Cautocommit
 HAVE_JDBCTESTS?Test_CisValid
@@ -46,4 +47,5 @@ HAVE_JDBCTESTS?Bug_PrepStmtSetString_6382
 HAVE_JDBCTESTS?Bug_LargeQueries_6571_6693
 HAVE_JDBCTESTS?Bug_IsValid_Timeout_Bug_6782
 HAVE_JDBCTESTS?Bug_PrepStmt_With_Errors_Jira292
+# next test should be done AFTER all the other tests have completed
 HAVE_JDBCCLIENT_JAR?ValidateSystemCatalogTables

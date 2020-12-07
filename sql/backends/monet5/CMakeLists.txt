@@ -72,7 +72,6 @@ target_sources(sql
   sql_statement.c sql_statement.h
   sql_statistics.c sql_statistics.h
   sql_gencode.c sql_gencode.h
-  sql_session.c sql_session.h
   sql_optimizer.c sql_optimizer.h
   sql_result.c sql_result.h
   sql_cast.c sql_cast.h

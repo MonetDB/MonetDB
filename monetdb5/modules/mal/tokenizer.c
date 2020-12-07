@@ -101,7 +101,7 @@ TKNZRopen(void *ret, str *in)
 	(void) ret;
 	if (strlen(*in) > 127)
 		throw(MAL, "tokenizer.open",
-				ILLEGAL_ARGUMENT " tokenizer name too long");
+			  ILLEGAL_ARGUMENT " tokenizer name too long");
 
 	MT_lock_set(&mal_contextLock);
 	if (TRANS != NULL) {
@@ -132,11 +132,14 @@ TKNZRopen(void *ret, str *in)
 		b = COLnew(0, TYPE_oid, 1024, PERSISTENT);
 		if (b == NULL)
 			throw(MAL, "tokenizer.open", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if (BKCsetName(&r, &b->batCacheid, &(const char*){batname}) != MAL_SUCCEED ||
-			BKCsetPersistent(&r, &b->batCacheid) != MAL_SUCCEED ||
+		str msg;
+		if ((msg = BKCsetName(&r, &b->batCacheid, &(const char*){batname})) != MAL_SUCCEED ||
+			(msg = BKCsetPersistent(&r, &b->batCacheid)) != MAL_SUCCEED ||
 			BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 			BBPreclaim(b);
-			throw(MAL, "tokenizer.open", OPERATION_FAILED);
+			if (msg)
+				return msg;
+			throw(MAL, "tokenizer.open", GDK_EXCEPTION);
 		}
 		tokenBAT[INDEX].val = b;
 	} else { /* existing tokenizer */
@@ -282,7 +285,7 @@ TKNZRappend(oid *pos, str *s)
 				(msg = BKCsetPersistent(&r, &bVal->batCacheid)) != MAL_SUCCEED ||
 				BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return msg ? msg : createException(MAL, "tokenizer.append", GDK_EXCEPTION);
 			}
 
 			/* make new bat for index */
@@ -299,7 +302,7 @@ TKNZRappend(oid *pos, str *s)
 				(msg = BKCsetPersistent(&r, &bIdx->batCacheid)) != MAL_SUCCEED ||
 				BUNappend(TRANS, batname, false) != GDK_SUCCEED) {
 				GDKfree(url);
-				return msg ? msg : createException(MAL, "tokenizer.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return msg ? msg : createException(MAL, "tokenizer.append", GDK_EXCEPTION);
 			}
 
 		}

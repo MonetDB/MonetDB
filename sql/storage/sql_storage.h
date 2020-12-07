@@ -270,7 +270,7 @@ sql_export store_functions store_funcs;
 
 typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
 typedef void (*logger_destroy_fptr) (void);
-typedef int (*logger_flush_fptr) (void);
+typedef int (*logger_flush_fptr) (lng saved_id);
 
 typedef int (*logger_changes_fptr)(void);
 typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
@@ -278,6 +278,7 @@ typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
 typedef int (*log_isnew_fptr)(void);
 typedef int (*log_tstart_fptr) (void);
 typedef int (*log_tend_fptr) (void);
+typedef lng (*log_save_id_fptr) (void);
 typedef int (*log_sequence_fptr) (int seq, lng id);
 
 /*
@@ -308,6 +309,7 @@ typedef struct logger_functions {
 	log_isnew_fptr log_isnew;
 	log_tstart_fptr log_tstart;
 	log_tend_fptr log_tend;
+	log_save_id_fptr log_save_id;
 	log_sequence_fptr log_sequence;
 } logger_functions;
 

@@ -53,6 +53,18 @@ dupError(const char *err)
 	return msg ? msg : M5OutOfMemory;
 }
 
+char *
+concatErrors(char *err1, const char *err2)
+{
+	size_t len = strlen(err1) + strlen(err2) + 1;
+	char *new = GDKmalloc(len);
+	if (new == NULL)
+		return err1;
+	strconcat_len(new, len, err1, err2, NULL);
+	freeException(err1);
+	return new;
+}
+
 /**
  * Internal helper function for createException and
  * showException such that they share the same code, because reuse
@@ -93,6 +105,8 @@ createExceptionInternal(enum malexception type, const char *fcn, const char *for
 		msg = M5OutOfMemory;
 	}
 	va_end(ap2);
+
+	assert(msg);
 	return msg;
 }
 
@@ -121,6 +135,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		 * reported */
 		ret = createException(type, fcn, SQLSTATE(HY013) MAL_MALLOC_FAIL ": %s", GDKerrbuf);
 		GDKclrerr();
+		assert(ret);
 		return ret;
 	}
 	if (strcmp(format, GDK_EXCEPTION) == 0 && GDKerrbuf[0]) {
@@ -137,6 +152,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 		if (ret == NULL)
 			ret = createException(type, fcn, "GDK reported error: %s", p);
 		GDKclrerr();
+		assert(ret);
 		return ret;
 	}
 	va_start(ap, format);
@@ -144,6 +160,7 @@ createException(enum malexception type, const char *fcn, const char *format, ...
 	va_end(ap);
 	GDKclrerr();
 
+	assert(ret);
 	return ret;
 }
 
@@ -163,8 +180,8 @@ static str __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type, char *prev, const char *format, va_list ap)
 {
 	bool addnl = false;
-	const char *s = mb ? getModName(mb) : "unknown";
-	const char *fcn = mb ? getFcnName(mb) : "unknown";
+	const char *s = mb && getInstrPtr(mb,0) ? getModName(mb) : "unknown";
+	const char *fcn = mb && getInstrPtr(mb,0) ? getFcnName(mb) : "unknown";
 	size_t msglen;
 
 	if (prev) {

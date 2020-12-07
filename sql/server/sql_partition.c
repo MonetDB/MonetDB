@@ -277,7 +277,7 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 		exp = rel_project_add_exp(sql, r, exp);
 
 		if (r)
-			r = sql_processrelation(sql, r, 0);
+			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
 			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);
@@ -321,15 +321,16 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	if (isPartitionedByExpressionTable(mt)) /* Propagate type to outer transaction table */
 		mt->po->part.pexp->type = mt->part.pexp->type;
 
-	if (localtype != TYPE_str && mt->members.set && list_length(mt->members.set)) {
+	if (localtype != TYPE_str && mt->members && list_length(mt->members)) {
 		list *new = sa_list(tr->sa), *old = sa_list(tr->sa);
 
-		for (node *n = mt->members.set->h; n; n = n->next) {
+		for (node *n = mt->members->h; n; n = n->next) {
 			sql_part *next = (sql_part*) n->data, *p = SA_ZNEW(tr->sa, sql_part);
-			sql_table *pt = find_sql_table(mt->s, next->base.name);
+			sql_table *pt = find_sql_table_id(mt->s, next->base.id);
 
 			base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 			p->t = mt;
+			p->member = pt;
 			assert(isMergeTable(mt) || isReplicaTable(mt));
 			p->tpe = found;
 			p->with_nills = next->with_nills;
@@ -405,17 +406,21 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			list_append(new, p);
 			list_append(old, next);
 		}
-		for (node *n = old->h; n; n = n->next) /* remove the old */
-			cs_del(&mt->members, n, 0);
+		for (node *n = old->h; n; n = n->next) { /* remove the old */
+			list_remove_data(mt->members, n->data);
+			if (!mt->s->parts.dset)
+				mt->s->parts.dset = sa_list(tr->sa);
+			list_move_data(mt->s->parts.set, mt->s->parts.dset, n->data);
+		}
 		for (node *n = new->h; n; n = n->next) {
 			sql_part *next = (sql_part*) n->data;
-			sql_table *pt = find_sql_table(mt->s, next->base.name);
+			sql_table *pt = find_sql_table_id(mt->s, next->base.id);
 			sql_part *err = NULL;
 
-			pt->p = mt;
+			cs_add(&mt->s->parts, next, TR_NEW);
 			assert(isMergeTable(mt) || isReplicaTable(mt));
 			if (isRangePartitionTable(mt) || isListPartitionTable(mt)) {
-				err = cs_add_with_validate(&mt->members, next, TR_NEW,
+				err = list_append_with_validate(mt->members, next,
 										   isRangePartitionTable(mt) ?
 										   sql_range_part_validate_and_insert : sql_values_part_validate_and_insert);
 			} else {
