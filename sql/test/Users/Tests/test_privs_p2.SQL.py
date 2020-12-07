@@ -37,7 +37,7 @@ except:
     pass
 
 if err != 15:
-    print("User should have no access too this table\n")
+    print("User should have no access too this table\n", file=sys.stderr)
     sys.exit(-1)
 
 cursor.close()
