@@ -22,6 +22,7 @@
 #include "mal.h"
 #include <string.h>
 #include "gdk.h"
+#include "str.h"
 #include <limits.h>
 #include "mal_exception.h"
 
@@ -673,10 +674,25 @@ compareseq(int xoff, int xlim, int yoff, int ylim, int minimal, int max_edits, i
 	strings are identical, and a number in between if they are
 	similar.  */
 
+#define INITIAL_INT_BUFFER_LENGTH 2048
+
+#define CHECK_INT_BUFFER_LENGTH(BUFFER, BUFFER_LEN, NEXT_LEN, OP) \
+	do { \
+		if ((NEXT_LEN) > *BUFFER_LEN) { \
+			size_t newlen = (((NEXT_LEN) + 1023) & ~1023); /* align to a multiple of 1024 bytes */ \
+			int *newbuf = GDKmalloc(newlen); \
+			if (!newbuf) \
+				throw(MAL, OP, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+			GDKfree(*BUFFER); \
+			*BUFFER = newbuf; \
+			*BUFFER_LEN = newlen; \
+		} \
+	} while (0)
+
 static str
-fstrcmp_impl_internal(dbl *ret, str string1, str string2, dbl minimum)
+fstrcmp_impl_internal(dbl *ret, int **fdiag_buf, size_t *fdiag_buflen, str string1, str string2, dbl minimum)
 {
-	int i, max_edits, *fdiag, *bdiag, *fdiag_buf = NULL, too_expensive = 1;
+	int i, max_edits, *fdiag, *bdiag, too_expensive = 1;
 	size_t fdiag_len;
 	struct string_data string[2];
 
@@ -708,9 +724,8 @@ fstrcmp_impl_internal(dbl *ret, str string1, str string2, dbl minimum)
 	   allocations performed.  Thus, we use a static buffer for the
 	   diagonal vectors, and never free them.  */
 	fdiag_len = string[0].data_length + string[1].data_length + 3;
-	if (!(fdiag_buf = GDKmalloc(fdiag_len * (2 * sizeof(int)))))
-		throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	fdiag = fdiag_buf + string[1].data_length + 1;
+	CHECK_INT_BUFFER_LENGTH(fdiag_buf, fdiag_buflen, fdiag_len, "txtsim.similarity");
+	fdiag = *fdiag_buf + string[1].data_length + 1;
 	bdiag = fdiag + fdiag_len;
 
 	max_edits = 1 + (int) ((string[0].data_length + string[1].data_length) * (1. - minimum));
@@ -727,30 +742,50 @@ fstrcmp_impl_internal(dbl *ret, str string1, str string2, dbl minimum)
 	*ret = ((double)
 		(string[0].data_length + string[1].data_length - string[1].edit_count - string[0].edit_count)
 		/ (string[0].data_length + string[1].data_length));
-	GDKfree(fdiag_buf);
 	return MAL_SUCCEED;
 }
 
 static str
 fstrcmp_impl(dbl *ret, str *string1, str *string2, dbl *minimum)
 {
-	if (strNil(*string1) || strNil(*string2) || is_dbl_nil(*minimum)) {
+	str s1 = *string1, s2 = *string2;
+	dbl min = *minimum;
+
+	if (strNil(s1) || strNil(s2) || is_dbl_nil(min)) {
 		*ret = dbl_nil;
 		return MAL_SUCCEED;
-	}
+	} else {
+		str msg = MAL_SUCCEED;
+		int *fdiag_buf = NULL;
+		size_t fdiag_buflen = INITIAL_INT_BUFFER_LENGTH;
 
-	return fstrcmp_impl_internal(ret, *string1, *string2, *minimum);
+		if (!(fdiag_buf = GDKmalloc(fdiag_buflen)))
+			throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s1, min);
+		GDKfree(fdiag_buf);
+		return msg;
+	}
 }
 
 static str
 fstrcmp0_impl(dbl *ret, str *string1, str *string2)
 {
-	if (strNil(*string1) || strNil(*string2)) {
+	str s1 = *string1, s2 = *string2;
+
+	if (strNil(s1) || strNil(s2)) {
 		*ret = dbl_nil;
 		return MAL_SUCCEED;
-	}
+	} else {
+		str msg = MAL_SUCCEED;
+		int *fdiag_buf = NULL;
+		size_t fdiag_buflen = INITIAL_INT_BUFFER_LENGTH;
 
-	return fstrcmp_impl_internal(ret, *string1, *string2, 0.0);
+		if (!(fdiag_buf = GDKmalloc(fdiag_buflen)))
+			throw(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		msg = fstrcmp_impl_internal(ret, &fdiag_buf, &fdiag_buflen, s1, s2, 0.0);
+		GDKfree(fdiag_buf);
+		return msg;
+	}
 }
 
 static str
@@ -759,10 +794,16 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *right = NULL;
 	BUN q = 0;
+	size_t fdiag_buflen = INITIAL_INT_BUFFER_LENGTH;
 	str x, y, msg = MAL_SUCCEED;
 	bool nils = false;
 	dbl *restrict vals;
+	int *fdiag_buf = GDKmalloc(fdiag_buflen);
 
+	if (!fdiag_buf) {
+		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
 	if (!(left = BATdescriptor(*strings1)) || !(right = BATdescriptor(*strings2))) {
 		msg = createException(MAL, "txtsim.similarity", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -776,19 +817,20 @@ fstrcmp0_impl_bulk(bat *res, bat *strings1, bat *strings2)
 	lefti = bat_iterator(left);
 	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
-	for (BUN i = 0; i < q; i++) {
+	for (BUN i = 0; i < q && !msg; i++) {
 		x = (str) BUNtvar(lefti, i);
 		y = (str) BUNtvar(righti, i);
 
 		if (strNil(x) || strNil(y)) {
 			vals[i] = dbl_nil;
 			nils = true;
-		} else if ((msg = fstrcmp_impl_internal(&vals[i], x, y, 0.0))) {
-			goto bailout;
+		} else {
+			msg = fstrcmp_impl_internal(&vals[i], &fdiag_buf, &fdiag_buflen, x, y, 0.0);
 		}
 	}
 
 bailout:
+	GDKfree(fdiag_buf);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = nils;
