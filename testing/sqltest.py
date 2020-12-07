@@ -56,13 +56,25 @@ def filter_junk(s: str):
     return True
 
 def filter_headers(s: str):
-    """filters lines prefixed with % (MAPI headers)"""
+    """filter lines prefixed with % (MAPI headers)"""
     s = s.strip()
     if s.startswith('%'):
         return False
     if s == '':
         return False
     return True
+
+def filter_lines_starting_with(predicates=[]):
+    def _fn(line:str):
+        line = line.strip()
+        if line == '':
+            return False
+        for p in predicates:
+            if line.startswith(p):
+                return False
+        return True
+    return _fn
+
 
 def filter_matching_blocks(a: [str] = [], b: [str] = []):
     # TODO add some ctx before any mismatch lines
@@ -302,6 +314,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             try:
                 if query:
                     self.query = query
+                    # TODO multiline stmts won't work here ensure single stmt
                     with process.client('sql', **kwargs, \
                             args=list(args), \
                             stdin=process.PIPE, \
@@ -340,7 +353,25 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
-            msg = "sql query result expected to match stable output {} but it didnt\'t\n".format(fout)
+            msg = "expected to match stable output {} but it didnt\'t\n".format(fout)
+            msg+='\n'.join(diff)
+            self.assertion_errors.append(AssertionError(msg))
+            self.fail(msg)
+        return self
+
+    def assertMatchStableError(self, ferr):
+        stable = []
+        err = []
+        filter_fn = filter_lines_starting_with(['--', '#', 'stderr of test', 'MAPI'])
+        if self.test_run_error:
+            err = list(filter(filter_fn, self.test_run_error.split('\n')))
+        with open(ferr, 'r') as f:
+            stable = list(filter(filter_fn, f.read().split('\n')))
+        a, b = filter_matching_blocks(stable, err)
+        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+        if len(diff) > 0:
+            err_file = self.test_case.err_file
+            msg = "expected to match stable error {} but it didnt\'t\n".format(ferr)
             msg+='\n'.join(diff)
             self.assertion_errors.append(AssertionError(msg))
             self.fail(msg)
