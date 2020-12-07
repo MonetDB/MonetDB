@@ -310,6 +310,50 @@ RETURN
 	FROM describe_partition_tables();
 END;
 
+CREATE FUNCTION describe_sequences()
+	RETURNS TABLE(
+		sch STRING,
+		seq STRING,
+		s BIGINT,
+		rs BIGINT,
+		mi BIGINT,
+		ma BIGINT,
+		inc BIGINT,
+		cache BIGINT,
+		cycle BOOLEAN)
+BEGIN
+	RETURN SELECT
+	s.name as sch,
+	seq.name as seq,
+	seq."start",
+	get_value_for(s.name, seq.name) AS "restart",
+	seq."minvalue",
+	seq."maxvalue",
+	seq."increment",
+	seq."cacheinc",
+	seq."cycle"
+	FROM sys.sequences seq, sys.schemas s
+	WHERE s.id = seq.schema_id
+	ORDER BY s.name, seq.name;
+END;
+
+CREATE FUNCTION dump_sequences() RETURNS TABLE(stmt STRING) BEGIN
+RETURN
+	SELECT
+		'CREATE SEQUENCE ' || FQTN(sch, seq) || 'AS BIGINT ' ||
+		CASE WHEN "s" <> 0 THEN ' START WITH ' || "s" ELSE '' END ||
+		CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
+		CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
+		CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
+		CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
+		CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';'
+	FROM describe_sequences();
+END;
+
+--We cannot directly use dump_sequences() later because the temporary table "dump_statements" creates a SEQUENCE due to AUTO_INCREMENT.
+--So we first dump the current sequences into a temp table "_dump_sequences" which will use to create the database_dump.
+
+CREATE TEMPORARY TABLE _dump_sequences AS SELECT * FROM dump_sequences();
 CREATE TEMPORARY TABLE dump_statements(o INT AUTO_INCREMENT, s STRING, PRIMARY KEY (o));
 
 CREATE PROCEDURE dump_database(describe BOOLEAN)
@@ -360,10 +404,7 @@ BEGIN
 		FROM sys.auths a1, sys.auths a2, sys.user_role ur
 		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
-	INSERT INTO dump_statements(s) --dump_create_sequences
-		SELECT 'CREATE SEQUENCE ' || DQ(sch.name) || '.' || DQ(seq.name) || ' AS INTEGER;'
-		FROM sys.schemas sch, sys.sequences seq
-		WHERE sch.id = seq.schema_id;
+	INSERT INTO dump_statements(s) SELECT * FROM _dump_sequences;
 
 	INSERT INTO dump_statements(s) --dump_create_comments_on_sequences
         SELECT comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark)
@@ -403,7 +444,6 @@ BEGIN
         SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
-	--TODO details on SEQUENCES
 	--TODO STREAM TABLE?
 	--TODO functions
 	--TODO VIEW
@@ -413,6 +453,7 @@ BEGIN
 	--TODO COLUMN level grants
 	--TODO User Defined Types? sys.types
 	--TODO Triggers
+	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
 
