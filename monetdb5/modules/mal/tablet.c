@@ -248,7 +248,7 @@ static int
 TABLET_error(stream *s)
 {
 	char *err = mnstr_error(s);
-	/* use free as stream allocates out side GDK */
+	/* use free as stream allocates outside GDK */
 	if (err)
 		free(err);
 	return -1;

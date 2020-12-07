@@ -89,9 +89,9 @@ void BATrmprop(BAT *b, enum prop_t idx)
 	__attribute__((__visibility__("hidden")));
 void BATsetdims(BAT *b)
 	__attribute__((__visibility__("hidden")));
-void BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
+PROPrec *BATsetprop(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
-void BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
+PROPrec *BATsetprop_nolock(BAT *b, enum prop_t idx, int type, const void *v)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPcacheit(BAT *bn, bool lock)
 	__attribute__((__warn_unused_result__))

@@ -64,8 +64,6 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 			list_append(l, help);
 		}
 		return rel_dup(rel->r);
-	} else {
-		assert(0);
 	}
 	return NULL;
 }
@@ -76,7 +74,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 	sql_exp* res = NULL;
 
 	if ((*anti_rel)->op != op_project && (*anti_rel)->op != op_basetable && (*anti_rel)->op != op_table) {
-		sql_rel *inserts; //In a nested partition case the operation is a op_select, then a projection must be created
+		sql_rel *inserts; /* In a nested partition case the operation is a op_select, then a projection must be created */
 		list *l = new_exp_list(sql->sa);
 		*anti_rel = rel_project(sql->sa, *anti_rel, l);
 
@@ -162,7 +160,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 }
 
 static sql_rel*
-create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, bit with_nills, sql_exp *pmin, sql_exp *pmax, bool all_ranges)
+create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, bit with_nills, sql_exp *pmin, sql_exp *pmax, bool all_ranges, bool max_equal_min)
 {
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
@@ -186,14 +184,18 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 			if (!(e1 = exp_check_type(sql, &tpe, NULL, e1, type_equal)))
 				return NULL;
 
-			e2 = exp_copy(sql, pmax);
-			if (!(e2 = exp_check_type(sql, &tpe, NULL, e2, type_equal)))
-				return NULL;
+			if (max_equal_min) {
+				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);
+			} else {
+				e2 = exp_copy(sql, pmax);
+				if (!(e2 = exp_check_type(sql, &tpe, NULL, e2, type_equal)))
+					return NULL;
 
-			range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, 3);
-			range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, 1);
-			anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
-							list_append(new_exp_list(sql->sa), range2), 0);
+				range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
+				range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
+				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
+								list_append(new_exp_list(sql->sa), range2), 0);
+			}
 		}
 		if (!with_nills) {
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
@@ -213,7 +215,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
 	exp_label(sql->sa, aggr, ++sql->label);
 
-	//generate the exception
+	/* generate the exception */
 	aggr = exp_ref(sql, aggr);
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
@@ -255,7 +257,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 	(void) rel_groupby_add_aggr(sql, anti_rel, aggr);
 	exp_label(sql->sa, aggr, ++sql->label);
 
-	//generate the exception
+	/* generate the exception */
 	aggr = exp_ref(sql, aggr);
 	generate_alter_table_error_message(buf, mt);
 	exception = exp_exception(sql->sa, aggr, buf);
@@ -267,37 +269,43 @@ static sql_rel *
 propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table *pt, sql_rel *rel)
 {
 	mvc *sql = query->sql;
-	for (sql_table *prev = mt, *it = prev->p ; it && prev ; prev = it, it = it->p) {
-		sql_part *spt = find_sql_part(it, prev->base.name);
+	sql_part *it = NULL;
+
+	for (sql_table *prev = mt ; prev; prev = it?it->t:NULL) {
+		if (!isPartition(prev) || (it=partition_find_part(sql->session->tr, prev, NULL)) == NULL)
+			break;
+		sql_part *spt = it;
 		if (spt) {
-			if (isRangePartitionTable(it)) {
+			if (isRangePartitionTable(it->t)) {
 				int tpe = spt->tpe.type->localtype;
 				int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 				const void *nil = ATOMnilptr(tpe);
 				sql_exp *e1 = NULL, *e2 = NULL;
-				bool found_all = false;
+				bool found_all = false, max_equal_min = false;
 
 				if (atomcmp(spt->part.range.minvalue, nil) != 0 && atomcmp(spt->part.range.maxvalue, nil) != 0) {
+					max_equal_min = ATOMcmp(spt->tpe.type->localtype, spt->part.range.maxvalue, spt->part.range.minvalue) == 0;
 					e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.minvalue));
-					e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.maxvalue));
+					if (!max_equal_min)
+						e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.maxvalue));
 				} else {
 					assert(spt->with_nills);
 					found_all = is_bit_nil(spt->with_nills);
 				}
 				if (!found_all || !spt->with_nills)
-					rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(query, it, pt, spt->with_nills, e1, e2, false));
-			} else if (isListPartitionTable(it)) {
+					rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(query, it->t, pt, spt->with_nills, e1, e2, false, max_equal_min));
+			} else if (isListPartitionTable(it->t)) {
 				list *exps = new_exp_list(sql->sa);
 				for (node *n = spt->part.values->h ; n ; n = n->next) {
 					sql_part_value *next = (sql_part_value*) n->data;
 					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, next->value));
 					list_append(exps, e1);
 				}
-				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it, pt, spt->with_nills, exps));
+				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it->t, pt, spt->with_nills, exps));
 			} else {
 				assert(0);
 			}
-		} else { //the sql_part should exist
+		} else { /* the sql_part should exist */
 			assert(0);
 		}
 	}
@@ -334,7 +342,7 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 		pmax = exp_atom(sql->sa, atom_general(sql->sa, &tpe, NULL));
 	}
 
-	//generate the psm statement
+	/* generate the psm statement */
 	append(exps, exp_atom_clob(sql->sa, sname));
 	append(exps, exp_atom_clob(sql->sa, tname));
 	assert((sname2 && tname2) || (!sname2 && !tname2));
@@ -355,7 +363,12 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	rel_psm->nrcols = 0;
 
 	if (!is_bit_nil(with_nills)) {
-		res = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges);
+		bool min_max_equal = false;
+		if (pmin && pmax && pmin->type == e_atom && pmax->type == e_atom && pmin->l && pmax->l) {
+			atom *e1 = pmin->l, *e2 = pmax->l;
+			min_max_equal = ATOMcmp(tpe.type->localtype, &e1->data.val, &e2->data.val) == 0;
+		}
+		res = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges, min_max_equal);
 		res->l = rel_psm;
 	} else {
 		res = rel_psm;
@@ -397,7 +410,7 @@ rel_alter_table_add_partition_list(sql_query *query, sql_table *mt, sql_table *p
 		if (!(n->data = exp_check_type(sql, &tpe, NULL, n->data, type_equal)))
 			return NULL;
 
-	//generate the psm statement
+	/* generate the psm statement */
 	append(exps, exp_atom_clob(sql->sa, sname));
 	append(exps, exp_atom_clob(sql->sa, tname));
 	assert((sname2 && tname2) || (!sname2 && !tname2));
@@ -579,9 +592,9 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1, *dup = NULL;
 
 		if (!update_allowed(sql, sub, sub->base.name, is_delete(rel->op) ? "DELETE": "TRUNCATE",
@@ -613,9 +626,9 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1, *dup = NULL;
 		list *uexps = exps_copy(sql, rel->exps), *checked_updates = new_exp_list(sql->sa);
 
@@ -674,14 +687,16 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		anti_rel = rel_dup(rel->r);
 	} else if (isPartitionedByExpressionTable(t)) {
 		anti_rel = rel_create_common_relation(sql, rel, t);
+		if (!anti_rel)
+			return NULL;
 	} else {
 		assert(0);
 	}
 	anti_le = rel_generate_anti_insert_expression(sql, &anti_rel, t);
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
-		sql_table *sub = find_sql_table(t->s, pt->base.name);
+		sql_table *sub = find_sql_table_id(t->s, pt->base.id);
 		sql_rel *s1 = NULL, *dup = NULL;
 		sql_exp *le = NULL;
 
@@ -706,9 +721,15 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 
 			if (atomcmp(pt->part.range.minvalue, nil) != 0 || atomcmp(pt->part.range.maxvalue, nil) != 0) {
 				sql_exp *e1, *e2;
+				bool max_equal_min = ATOMcmp(pt->tpe.type->localtype, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+
 				e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
-				e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
-				range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
+				if (!max_equal_min) {
+					e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
+					range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
+				} else {
+					range = exp_compare(sql->sa, le, e1, cmp_equal);
+				}
 				full_range = range;
 			} else {
 				found_all_range_values |= (pt->with_nills != 1);
@@ -776,7 +797,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 		}
 
 		new_table = rel_basetable(sql, sub, sub->base.name);
-		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); //don't create infinite loops in the optimizer
+		new_table->p = prop_create(sql->sa, PROP_USED, new_table->p); /* don't create infinite loops in the optimizer */
 
 		if (isPartitionedByExpressionTable(t)) {
 			sql_exp *del;
@@ -796,7 +817,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	}
 
 	if (!found_all_range_values || !found_nils) {
-		//generate the exception
+		/* generate the exception */
 		if (isRangePartitionTable(t)) {
 			if (accum) {
 				set_anti(accum);
@@ -820,7 +841,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			set_has_no_nil(anti_nils);
 			anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 		}
-		//generate a count aggregation for the values not present in any of the partitions
+		/* generate a count aggregation for the values not present in any of the partitions */
 		anti_rel = rel_select(sql->sa, anti_rel, anti_exp);
 		anti_rel = rel_groupby(sql, anti_rel, NULL);
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_rel->card, 0);
@@ -887,13 +908,13 @@ rel_propagate_update(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	bool found_partition_col = update_move_across_partitions(rel, t);
 	sql_rel *sel = NULL;
 
-	if (!found_partition_col) { //easy scenario where the partitioned column is not being updated, just propagate
+	if (!found_partition_col) { /* easy scenario where the partitioned column is not being updated, just propagate */
 		sel = rel_generate_subupdates(sql, rel, t, changes);
 		if (sel) {
 			sel = rel_exception(sql->sa, sel, NULL, NULL);
 			sel->p = prop_create(sql->sa, PROP_DISTRIBUTE, sel->p);
 		}
-	} else { //harder scenario, has to insert and delete across partitions.
+	} else { /* harder scenario, has to insert and delete across partitions. */
 		/*sql_exp *exception = NULL;
 		sql_rel *inserts = NULL, *deletes = NULL, *anti_rel = NULL;
 
@@ -911,17 +932,21 @@ static sql_rel*
 rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 {
 	mvc *sql = query->sql;
-	sql_table *upper = t->p; //is part of a partition table and not been used yet
-	sql_part *pt = find_sql_part(upper, t->base.name);
-	sql_rel *anti_dup = rel_create_common_relation(sql, rel, upper), *left = rel->l;
-	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper), *aggr = NULL,
+	sql_part *upper = partition_find_part(sql->session->tr, t, NULL);
+	if (!upper)
+		return NULL;
+	sql_part *pt = upper;
+	sql_rel *anti_dup = rel_create_common_relation(sql, rel, upper->t), *left = rel->l;
+	if (!anti_dup)
+		return NULL;
+	sql_exp *anti_exp = NULL, *anti_le = rel_generate_anti_insert_expression(sql, &anti_dup, upper->t), *aggr = NULL,
 			*exception = NULL, *anti_nils = NULL;
 	list *anti_exps = new_exp_list(sql->sa);
 	sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 	bool found_nils = false, found_all_range_values = false;
 
-	if (isRangePartitionTable(upper)) {
+	if (isRangePartitionTable(upper->t)) {
 		int tpe = pt->tpe.type->localtype;
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 		const void *nil = ATOMnilptr(tpe);
@@ -946,12 +971,19 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
 			} else {
-				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue)),
-					*e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue)),
-					*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
-					*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
-				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
-						  list_append(new_exp_list(sql->sa), range2), 0);
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
+				bool max_equal_min = ATOMcmp(pt->tpe.type->localtype, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+
+				if (max_equal_min) {
+					anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);
+				} else {
+					sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue)),
+						*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
+						*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
+
+					anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
+							list_append(new_exp_list(sql->sa), range2), 0);
+				}
 			}
 		}
 		if (!pt->with_nills) { /* handle the nulls case */
@@ -964,7 +996,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 			else
 				anti_exp = anti_nils;
 		}
-	} else if (isListPartitionTable(upper)) {
+	} else if (isListPartitionTable(upper->t)) {
 		if (list_length(pt->part.values)) { /* if the partition holds non-null values */
 			for (node *n = pt->part.values->h ; n ; n = n->next) {
 				sql_part_value *next = (sql_part_value*) n->data;
@@ -991,18 +1023,18 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	}
 
 	if (!found_all_range_values || !found_nils) {
-		//generate a count aggregation for the values not present in any of the partitions
+		/* generate a count aggregation for the values not present in any of the partitions */
 		anti_dup = rel_select(sql->sa, anti_dup, anti_exp);
 		anti_dup = rel_groupby(sql, anti_dup, NULL);
 		aggr = exp_aggr(sql->sa, NULL, cf, 0, 0, anti_dup->card, 0);
 		(void) rel_groupby_add_aggr(sql, anti_dup, aggr);
 		exp_label(sql->sa, aggr, ++sql->label);
 
-		//generate the exception
+		/* generate the exception */
 		aggr = exp_ref(sql, aggr);
 		snprintf(buf, BUFSIZ, "INSERT: table %s.%s is part of merge table %s.%s and the insert violates the "
-				"partition %s of values", t->s->base.name, t->base.name, upper->s->base.name,
-				upper->base.name, isRangePartitionTable(upper) ? "range" : "list");
+				"partition %s of values", t->s->base.name, t->base.name, upper->t->s->base.name,
+				upper->t->base.name, isRangePartitionTable(upper->t) ? "range" : "list");
 		exception = exp_exception(sql->sa, aggr, buf);
 
 		left->p = prop_create(sql->sa, PROP_USED, left->p);
@@ -1024,25 +1056,28 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 	if (l->op == op_basetable) {
 		sql_table *t = l->l;
 
-		if (t->p && (isRangePartitionTable(t->p) || isListPartitionTable(t->p)) && !find_prop(l->p, PROP_USED)) {
+		if (isPartition(t) && !find_prop(l->p, PROP_USED)) {
 			isSubtable = true;
-			if (is_insert(rel->op)) { //insertion directly to sub-table (must do validation)
-				rel = rel_subtable_insert(query, rel, t, changes);
-				propagate = rel->l;
+			if (is_insert(rel->op)) { /* insertion directly to sub-table (must do validation) */
+				sql_rel *nrel = rel_subtable_insert(query, rel, t, changes);
+				if (!nrel)
+					return rel;
+				rel = nrel;
+				propagate = nrel->l;
 			}
 		}
 		if (isMergeTable(t)) {
-			assert(list_length(t->members.set) > 0);
-			if (is_delete(propagate->op) || is_truncate(propagate->op)) { //propagate deletions to the partitions
+			assert(!list_empty(t->members));
+			if (is_delete(propagate->op) || is_truncate(propagate->op)) { /* propagate deletions to the partitions */
 				rel = rel_propagate_delete(sql, rel, t, changes);
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {
-				if (is_insert(propagate->op)) { //on inserts create a selection for each partition
+				if (is_insert(propagate->op)) { /* on inserts create a selection for each partition */
 					if (isSubtable) {
 						rel->l = rel_propagate_insert(query, propagate, t, changes);
 					} else {
 						rel = rel_propagate_insert(query, rel, t, changes);
 					}
-				} else if (is_update(propagate->op)) { //for updates propagate like in deletions
+				} else if (is_update(propagate->op)) { /* for updates propagate like in deletions */
 					rel = rel_propagate_update(sql, rel, t, changes);
 				} else {
 					assert(0);

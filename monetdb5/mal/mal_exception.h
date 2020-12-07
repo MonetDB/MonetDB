@@ -34,7 +34,7 @@ enum malexception {
 #define throw \
 	return createException
 #define rethrow(FCN, TMP, PRV) \
-	{if ((TMP = PRV) != MAL_SUCCEED) return(TMP);}
+	do { if ((TMP = (PRV)) != MAL_SUCCEED) return(TMP); } while(0)
 
 #if !__has_attribute(__returns_nonnull__)
 #define __returns_nonnull__

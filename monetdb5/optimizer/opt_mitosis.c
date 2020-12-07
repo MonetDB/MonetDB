@@ -227,11 +227,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 
 		qtpe = getVarType(mb, getArg(p, 0));
 
-		matq = newInstruction(NULL, matRef, newRef);
+		matq = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
 		getArg(matq, 0) = getArg(p, 0);
 
 		if (upd) {
-			matr = newInstruction(NULL, matRef, newRef);
+			matr = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
 			getArg(matr, 0) = getArg(p, 1);
 			rtpe = getVarType(mb, getArg(p, 1));
 		}

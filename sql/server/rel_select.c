@@ -771,7 +771,6 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 	node *m;
 	list *exps = sa_list(sql->sa);
 	exp_kind ek = {type_value, card_value, TRUE};
-	unsigned int card = dlist_length(rowlist) == 1 ? CARD_ATOM : CARD_MULTI;
 
 	for (dnode *o = rowlist->h; o; o = o->next) {
 		dlist *values = o->data.lval;
@@ -803,7 +802,9 @@ rel_values(sql_query *query, symbol *tableref, list *refs)
 			}
 		}
 	}
+
 	/* loop to check types and cardinality */
+	unsigned int card = exps->h && list_length(((sql_exp*)exps->h->data)->f) > 1 ? CARD_MULTI : CARD_ATOM;
 	for (m = exps->h; m; m = m->next) {
 		sql_exp *e = m->data;
 
@@ -948,7 +949,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				return rel;
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to table '%s.%s'", get_string_global_var(sql, "current_user"), s->base.name, tname);
 		}
-		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members.set))
+		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {
@@ -1549,7 +1550,7 @@ static sql_rel *
 rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_exp *rs2, int type, int anti, int quantifier, int f)
 {
 	mvc *sql = query->sql;
-	sql_exp *L = ls, *R = rs, *e = NULL;
+	sql_exp *e = NULL;
 
 	if (quantifier || exp_is_rel(ls) || exp_is_rel(rs)) {
 		if (rs2) {
@@ -1557,7 +1558,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 			if (anti)
 				set_anti(e);
 		} else {
-			if (rel_binop_check_types(sql, rel, ls, rs, 0) < 0)
+			if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 				return NULL;
 			e = exp_compare_func(sql, ls, rs, compare_func((comp_type)type, quantifier?0:anti), quantifier);
 			if (anti && quantifier)
@@ -1568,22 +1569,18 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 	} else if (!rs2) {
 		if (ls->card < rs->card) {
 			sql_exp *swap = ls;
-
 			ls = rs;
 			rs = swap;
-
-			swap = L;
-			L = R;
-			R = swap;
-
 			type = (int)swap_compare((comp_type)type);
 		}
 		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = exp_compare(sql->sa, ls, rs, type);
 	} else {
-		if ((rs = exp_check_type(sql, exp_subtype(ls), rel, rs, type_equal)) == NULL ||
-	   	    (rs2 && (rs2 = exp_check_type(sql, exp_subtype(ls), rel, rs2, type_equal)) == NULL))
+		assert(rs2);
+		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
+			return NULL;
+		if (!(rs2 = exp_check_type(sql, exp_subtype(ls), rel, rs2, type_equal)))
 			return NULL;
 		e = exp_compare2(sql->sa, ls, rs, rs2, type);
 	}
@@ -1606,7 +1603,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		else
 			return sql_error(sql, ERR_GROUPBY, SQLSTATE(42000) "SELECT: cannot use non GROUP BY column in query results without an aggregate function");
 	}
-	return rel_select_push_exp_down(sql, rel, e, ls, L, rs, R, rs2, f);
+	return rel_select_push_exp_down(sql, rel, e, ls, ls, rs, rs, rs2, f);
 }
 
 static sql_rel *
@@ -1623,7 +1620,7 @@ rel_compare_exp(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, char *
 		/* TODO to handle filters here */
 		sql_exp *e;
 
-		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal) < 0)
+		if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		e = rel_binop_(sql, rel, ls, rs, NULL, compare_op, card_value);
 
@@ -2218,7 +2215,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			cmp_type = swap_compare(cmp_type);
 		}
 
-		if (rel_binop_check_types(sql, rel ? *rel : NULL, ls, rs, 0) < 0)
+		if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
 			return NULL;
 		if (exp_is_null(ls) && exp_is_null(rs))
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("bit"), NULL));
@@ -3654,7 +3651,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 		}
 	}
 	if (a && execute_priv(sql,a->func)) {
-		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, have_nil(exps));
+		bool hasnil = have_nil(exps) || (strcmp(aname, "count") != 0 && (!groupby || list_empty(groupby->r))); /* for global case, the aggregate may return NULL */
+		sql_exp *e = exp_aggr(sql->sa, exps, a, distinct, no_nil, groupby?groupby->card:CARD_ATOM, hasnil);
 
 		if (!groupby)
 			return e;
@@ -5069,6 +5067,12 @@ exp_has_rank(sql_exp *e)
 		/* fall through */
 	case e_aggr:
 		return exps_has_rank(e->l);
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_has_rank(e->l) || exps_has_rank(e->r);
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return exp_has_rank(e->l) || exps_has_rank(e->r);
+		return exp_has_rank(e->l) || exp_has_rank(e->r) || (e->f && exp_has_rank(e->f));
 	default:
 		return 0;
 	}

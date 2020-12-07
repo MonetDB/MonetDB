@@ -665,27 +665,27 @@ IOimport(void *ret, bat *bid, str *fnme)
 			BBPunfix(b->batCacheid);
 			fclose(fp);
 			GDKfree(buf);
-			throw(MAL, "io.imports", OPERATION_FAILED ": fstat()");
+			throw(MAL, "io.import", OPERATION_FAILED ": fstat()");
 		}
 
 		(void) fclose(fp);
 		if (st.st_size <= 0) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.imports", OPERATION_FAILED ": empty file");
+			throw(MAL, "io.import", OPERATION_FAILED ": empty file");
 		}
 #if SIZEOF_SIZE_T == SIZEOF_INT
 		if (st.st_size > 0x7FFFFFFF) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.imports", OPERATION_FAILED ": file too large");
+			throw(MAL, "io.import", OPERATION_FAILED ": file too large");
 		}
 #endif
 		base = cur = (char *) GDKmmap(*fnme, MMAP_SEQUENTIAL, (size_t) st.st_size);
 		if (cur == NULL) {
 			BBPunfix(b->batCacheid);
 			GDKfree(buf);
-			throw(MAL, "io.mport", OPERATION_FAILED "GDKmmap()");
+			throw(MAL, "io.import", OPERATION_FAILED "GDKmmap()");
 		}
 		end = cur + st.st_size;
 
@@ -710,7 +710,8 @@ IOimport(void *ret, bat *bid, str *fnme)
 						BBPunfix(b->batCacheid);
 						GDKfree(buf);
 						GDKfree(t);
-						throw(MAL, "io.imports", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+						GDKmunmap(base, end - base);
+						throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					}
 					buf = tmp;
 					dst = buf + len;
@@ -734,7 +735,8 @@ IOimport(void *ret, bat *bid, str *fnme)
 				BBPunfix(b->batCacheid);
 				GDKfree(buf);
 				GDKfree(t);
-				throw(MAL, "io.imports", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				GDKmunmap(base, end - base);
+				throw(MAL, "io.import", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 			buf = tmp;
 			dst = buf + len;

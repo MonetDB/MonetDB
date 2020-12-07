@@ -440,10 +440,10 @@ bl_destroy(void)
 }
 
 static int
-bl_flush(void)
+bl_flush(lng saved_id)
 {
 	if (bat_logger)
-		return logger_flush(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+		return logger_flush(bat_logger, saved_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
@@ -478,6 +478,12 @@ static int
 bl_tend(void)
 {
 	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+}
+
+static lng
+bl_tid(void)
+{
+	return log_save_id(bat_logger);
 }
 
 static int
@@ -533,10 +539,14 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		size_t chunk = (to_copy <= bufsize) ? to_copy : bufsize;
 		ssize_t bytes_read = mnstr_read(s, buf, 1, chunk);
 		if (bytes_read < 0) {
-			GDKerror("Reading bytes of component %s failed: %s", path, mnstr_error(s));
+			char *err = mnstr_error(s);
+			GDKerror("Reading bytes of component %s failed: %s", path, err);
+			free(err);
 			goto end;
 		} else if (bytes_read < (ssize_t) chunk) {
-			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, mnstr_error(s));
+			char *err = mnstr_error(s);
+			GDKerror("Read only %zu/%zu bytes of component %s: %s", (size_t) bytes_read, chunk, path, err);
+			free(err);
 			goto end;
 		}
 
@@ -711,8 +721,8 @@ snapshot_bats(stream *plan, const char *db_dir)
 				"%" SCNu64 " %*s %*s %19s %*s %*s %*s %*s"
 
 				// Taken from the sscanf in heapinit() in gdk_bbp.c.
-				// 12 fields, we need field 10 (free)
-				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s"
+				// 14 fields, we need field 10 (free)
+				" %*s %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64 " %*s %*s %*s %*s"
 
 				// Taken from the sscanf in vheapinit() in gdk_bbp.c.
 				// 3 fields, we need field 1 (free).
@@ -859,6 +869,7 @@ bat_logger_init( logger_functions *lf )
 	lf->log_isnew = bl_log_isnew;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
+	lf->log_save_id = bl_tid;
 	lf->log_sequence = bl_sequence;
 	lf->get_snapshot_files = bl_snapshot;
 }

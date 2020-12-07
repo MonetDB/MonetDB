@@ -1524,8 +1524,7 @@ close_result(MapiHdl hdl)
 		       (hdl->npending_close > 0 && hdl->pending_close != NULL));
 		if (mid->active &&
 		    (mid->active->active != result ||
-		     result->cache.tuplecount < result->row_count))
-		{
+		     result->cache.tuplecount < result->row_count)) {
 			/* results for which we got all tuples at the initial
 			 * response, need not to be closed as the server already
 			 * did that immediately */
@@ -1546,7 +1545,9 @@ close_result(MapiHdl hdl)
 				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 					close_connection(mid);
-					mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+					char *err = mnstr_error(mid->to);
+					mapi_setError(mid, err, __func__, MTIMEOUT);
+					free(err);
 					break;
 				}
 				read_into_cache(hdl, 0);
@@ -1564,7 +1565,9 @@ close_result(MapiHdl hdl)
 				if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 				    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 					close_connection(mid);
-					mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+					char *err = mnstr_error(mid->to);
+					mapi_setError(mid, err, __func__, MTIMEOUT);
+					free(err);
 				} else
 					read_into_cache(hdl, 0);
 			}
@@ -1685,9 +1688,9 @@ mapi_next_result(MapiHdl hdl)
 			return MERROR;
 		if (hdl->result &&
 		    (hdl->result->querytype == -1 ||
-			 /* basically exclude Q_PARSE and Q_BLOCK */
-			 (hdl->result->querytype >= Q_TABLE &&
-			  hdl->result->querytype <= Q_PREPARE) ||
+		     /* basically exclude Q_PARSE and Q_BLOCK */
+		     (hdl->result->querytype >= Q_TABLE &&
+		      hdl->result->querytype <= Q_PREPARE) ||
 		     hdl->result->errorstr != NULL))
 			return 1;
 	}
@@ -1723,9 +1726,9 @@ mapi_more_results(MapiHdl hdl)
 	while (result->next) {
 		result = result->next;
 		if (result->querytype == -1 ||
-			/* basically exclude Q_PARSE and Q_BLOCK */
-			(hdl->result->querytype >= Q_TABLE &&
-			 hdl->result->querytype <= Q_PREPARE) ||
+		    /* basically exclude Q_PARSE and Q_BLOCK */
+		    (hdl->result->querytype >= Q_TABLE &&
+		     hdl->result->querytype <= Q_PREPARE) ||
 		    result->errorstr != NULL)
 			return true;
 	}
@@ -1788,7 +1791,9 @@ finish_handle(MapiHdl hdl)
 			if (mnstr_printf(mid->to, "%s", msg) < 0 ||
 			    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 				close_connection(mid);
-				mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+				char *err = mnstr_error(mid->to);
+				mapi_setError(mid, err, __func__, MTIMEOUT);
+				free(err);
 				break;
 			}
 			read_into_cache(hdl, 0);
@@ -2280,7 +2285,7 @@ mapi_reconnect(Mapi mid)
 					/* see comment above for why
 					 * we don't stat */
 					snprintf(buf, sizeof(buf),
-							 "%s/.s.monetdb.%d", host, MAPI_PORT);
+						 "%s/.s.monetdb.%d", host, MAPI_PORT);
 					host = buf;
 				}
 #endif
@@ -2473,12 +2478,12 @@ mapi_reconnect(Mapi mid)
 				closesocket(s);
 			}
 			snprintf(errbuf, sizeof(errbuf),
-					 "could not connect to %s:%s: %s",
-					 mid->hostname, port,
+				 "could not connect to %s:%s: %s",
+				 mid->hostname, port,
 #ifdef _MSC_VER
-					 wsaerror(WSAGetLastError())
+				 wsaerror(WSAGetLastError())
 #else
-					 strerror(errno)
+				 strerror(errno)
 #endif
 				);
 		}
@@ -2504,15 +2509,15 @@ mapi_reconnect(Mapi mid)
 		praddrlen = (socklen_t) sizeof(praddr.ss);
 		if (getsockname(s, (struct sockaddr *) &myaddr.ss, &myaddrlen) == 0 &&
 		    getpeername(s, (struct sockaddr *) &praddr.ss, &praddrlen) == 0 &&
-			myaddr.ss.ss_family == praddr.ss.ss_family &&
-			(myaddr.ss.ss_family == AF_INET
-			 ? myaddr.i4.sin_port == praddr.i4.sin_port
-			 : myaddr.i6.sin6_port == praddr.i6.sin6_port) &&
-			(myaddr.ss.ss_family == AF_INET
-			 ? myaddr.i4.sin_addr.s_addr == praddr.i4.sin_addr.s_addr
-			 : memcmp(myaddr.i6.sin6_addr.s6_addr,
-					  praddr.i6.sin6_addr.s6_addr,
-					  sizeof(praddr.i6.sin6_addr.s6_addr)) == 0)) {
+		    myaddr.ss.ss_family == praddr.ss.ss_family &&
+		    (myaddr.ss.ss_family == AF_INET
+		     ? myaddr.i4.sin_port == praddr.i4.sin_port
+		     : myaddr.i6.sin6_port == praddr.i6.sin6_port) &&
+		    (myaddr.ss.ss_family == AF_INET
+		     ? myaddr.i4.sin_addr.s_addr == praddr.i4.sin_addr.s_addr
+		     : memcmp(myaddr.i6.sin6_addr.s6_addr,
+			      praddr.i6.sin6_addr.s6_addr,
+			      sizeof(praddr.i6.sin6_addr.s6_addr)) == 0)) {
 			closesocket(s);
 			return mapi_setError(mid, "connected to self",
 					     __func__, MERROR);
@@ -2605,7 +2610,7 @@ mapi_reconnect(Mapi mid)
 
 		if (mid->username == NULL || mid->password == NULL) {
 			mapi_setError(mid, "username and password must be set",
-					__func__, MERROR);
+				      __func__, MERROR);
 			close_connection(mid);
 			return mid->error;
 		}
@@ -2616,7 +2621,7 @@ mapi_reconnect(Mapi mid)
 		if (rest == NULL) {
 			/* protocol violation, not enough fields */
 			mapi_setError(mid, "Not enough fields in challenge string",
-					__func__, MERROR);
+				      __func__, MERROR);
 			close_connection(mid);
 			return mid->error;
 		}
@@ -2652,43 +2657,43 @@ mapi_reconnect(Mapi mid)
 #ifdef HAVE_RIPEMD160_UPDATE
 			if (strcmp(serverhash, "RIPEMD160") == 0) {
 				pwdhash = mcrypt_RIPEMD160Sum(mid->password,
-						strlen(mid->password));
+							      strlen(mid->password));
 			} else
 #endif
 #ifdef HAVE_SHA512_UPDATE
 			if (strcmp(serverhash, "SHA512") == 0) {
 				pwdhash = mcrypt_SHA512Sum(mid->password,
-						strlen(mid->password));
+							   strlen(mid->password));
 			} else
 #endif
 #ifdef HAVE_SHA384_UPDATE
 			if (strcmp(serverhash, "SHA384") == 0) {
 				pwdhash = mcrypt_SHA384Sum(mid->password,
-						strlen(mid->password));
+							   strlen(mid->password));
 			} else
 #endif
 #ifdef HAVE_SHA256_UPDATE
 			if (strcmp(serverhash, "SHA256") == 0) {
 				pwdhash = mcrypt_SHA256Sum(mid->password,
-						strlen(mid->password));
+							   strlen(mid->password));
 			} else
 #endif
 #ifdef HAVE_SHA224_UPDATE
 			if (strcmp(serverhash, "SHA224") == 0) {
 				pwdhash = mcrypt_SHA224Sum(mid->password,
-						strlen(mid->password));
+							   strlen(mid->password));
 			} else
 #endif
 #ifdef HAVE_SHA1_UPDATE
 			if (strcmp(serverhash, "SHA1") == 0) {
 				pwdhash = mcrypt_SHA1Sum(mid->password,
-						strlen(mid->password));
+							 strlen(mid->password));
 			} else
 #endif
 			{
 				(void)pwdhash;
 				snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
-						serverhash);
+					 serverhash);
 				close_connection(mid);
 				return mapi_setError(mid, buf, __func__, MERROR);
 			}
@@ -2696,7 +2701,7 @@ mapi_reconnect(Mapi mid)
 #if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
 			if (pwdhash == NULL) {
 				snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
-						serverhash);
+					 serverhash);
 				close_connection(mid);
 				return mapi_setError(mid, buf, __func__, MERROR);
 			}
@@ -2985,22 +2990,24 @@ mapi_resolve(const char *host, int port, const char *pattern)
 		return NULL;
 
 	mid = mapi_mapi(host, port, "mero", "mero", "resolve", pattern);
-	if (mid && mid->error == MOK) {
-		rmax = mid->redirmax;
-		mid->redirmax = 0;
-		mapi_reconnect(mid);	/* real connect, don't follow redirects */
-		mid->redirmax = rmax;
+	if (mid) {
 		if (mid->error == MOK) {
-			close_connection(mid);	/* we didn't expect a connection actually */
-		} else {
-			char **ret = malloc(sizeof(char *) * MAXREDIR);
-			memcpy(ret, mid->redirects, sizeof(char *) * MAXREDIR);
-			mid->redirects[0] = NULL;	/* make sure the members aren't freed */
-			mapi_destroy(mid);
-			return ret;
+			rmax = mid->redirmax;
+			mid->redirmax = 0;
+			mapi_reconnect(mid);	/* real connect, don't follow redirects */
+			mid->redirmax = rmax;
+			if (mid->error == MOK) {
+				close_connection(mid);	/* we didn't expect a connection actually */
+			} else {
+				char **ret = malloc(sizeof(char *) * MAXREDIR);
+				memcpy(ret, mid->redirects, sizeof(char *) * MAXREDIR);
+				mid->redirects[0] = NULL;	/* make sure the members aren't freed */
+				mapi_destroy(mid);
+				return ret;
+			}
 		}
+		mapi_destroy(mid);
 	}
-	mapi_destroy(mid);
 	return NULL;
 }
 
@@ -3188,7 +3195,7 @@ MapiMsg
 mapi_bind_numeric(MapiHdl hdl, int fnr, int scale, int prec, void *ptr)
 {
 	if (mapi_bind_var(hdl, fnr, MAPI_NUMERIC, ptr))
-		 return hdl->mid->error;
+		return hdl->mid->error;
 
 	hdl->bindings[fnr].scale = scale;
 	hdl->bindings[fnr].precision = prec;
@@ -3245,7 +3252,7 @@ MapiMsg
 mapi_param_numeric(MapiHdl hdl, int fnr, int scale, int prec, void *ptr)
 {
 	if (mapi_param_type(hdl, fnr, MAPI_NUMERIC, MAPI_NUMERIC, ptr))
-		 return hdl->mid->error;
+		return hdl->mid->error;
 
 	hdl->params[fnr].scale = scale;
 	hdl->params[fnr].precision = prec;
@@ -3279,14 +3286,20 @@ prepareQuery(MapiHdl hdl, const char *cmd)
 
 
 MapiMsg
-mapi_timeout(Mapi mid, unsigned int timeout)
+mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
 {
 	mapi_check(mid);
 	if (mid->trace)
 		printf("Set timeout to %u\n", timeout);
-	mnstr_settimeout(mid->to, timeout, NULL);
-	mnstr_settimeout(mid->from, timeout, NULL);
+	mnstr_settimeout(mid->to, timeout, callback, callback_data);
+	mnstr_settimeout(mid->from, timeout, callback, callback_data);
 	return MOK;
+}
+
+MapiMsg
+mapi_timeout(Mapi mid, unsigned int timeout)
+{
+	return mapi_set_timeout(mid, timeout, NULL, NULL);
 }
 
 static MapiMsg
@@ -3300,7 +3313,9 @@ mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue)
 	if (mnstr_printf(mid->to, "X" "%s %s\n", cmdname, cmdvalue) < 0 ||
 	    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 		close_connection(mid);
-		mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+		char *err = mnstr_error(mid->to);
+		mapi_setError(mid, err, __func__, MTIMEOUT);
+		free(err);
 		return MERROR;
 	}
 	if (mid->tracelog) {
@@ -3357,7 +3372,6 @@ mapi_prepare(Mapi mid, const char *cmd)
 				free(q);			\
 				return;				\
 			}					\
-			hdl->query = q;				\
 		}						\
 	} while (0)
 
@@ -3460,30 +3474,30 @@ mapi_param_store(MapiHdl hdl)
 			case MAPI_DATE:
 				checkSpace(50);
 				snprintf(hdl->query + k, lim - k,
-					"DATE '%04hd-%02hu-%02hu'",
-					((MapiDate *) src)->year,
-					((MapiDate *) src)->month,
-					((MapiDate *) src)->day);
+					 "DATE '%04hd-%02hu-%02hu'",
+					 ((MapiDate *) src)->year,
+					 ((MapiDate *) src)->month,
+					 ((MapiDate *) src)->day);
 				break;
 			case MAPI_TIME:
 				checkSpace(60);
 				snprintf(hdl->query + k, lim - k,
-					"TIME '%02hu:%02hu:%02hu'",
-					((MapiTime *) src)->hour,
-					((MapiTime *) src)->minute,
-					((MapiTime *) src)->second);
+					 "TIME '%02hu:%02hu:%02hu'",
+					 ((MapiTime *) src)->hour,
+					 ((MapiTime *) src)->minute,
+					 ((MapiTime *) src)->second);
 				break;
 			case MAPI_DATETIME:
 				checkSpace(110);
 				snprintf(hdl->query + k, lim - k,
-					"TIMESTAMP '%04hd-%02hu-%02hu %02hu:%02hu:%02hu.%09u'",
-					((MapiDateTime *) src)->year,
-					((MapiDateTime *) src)->month,
-					((MapiDateTime *) src)->day,
-					((MapiDateTime *) src)->hour,
-					((MapiDateTime *) src)->minute,
-					((MapiDateTime *) src)->second,
-					((MapiDateTime *) src)->fraction);
+					 "TIMESTAMP '%04hd-%02hu-%02hu %02hu:%02hu:%02hu.%09u'",
+					 ((MapiDateTime *) src)->year,
+					 ((MapiDateTime *) src)->month,
+					 ((MapiDateTime *) src)->day,
+					 ((MapiDateTime *) src)->hour,
+					 ((MapiDateTime *) src)->minute,
+					 ((MapiDateTime *) src)->second,
+					 ((MapiDateTime *) src)->fraction);
 				break;
 			case MAPI_CHAR:
 				buf[0] = *(char *) src;
@@ -3819,7 +3833,7 @@ mapi_extend_cache(struct MapiResultSet *result, int cacheall)
 	}
 
 	/* extend row cache */
-      retry:;
+  retry:;
 	if (oldsize == 0)
 		incr = 100;
 	else
@@ -3924,10 +3938,10 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 				   &queryid, &result->querytime,
 				   &result->maloptimizertime,
 				   &result->sqloptimizertime) < 8){
-					result->querytime = 0;
-					result->maloptimizertime = 0;
-					result->sqloptimizertime = 0;
-				}
+				result->querytime = 0;
+				result->maloptimizertime = 0;
+				result->sqloptimizertime = 0;
+			}
 			(void) queryid; /* ignored for now */
 			break;
 		case Q_PREPARE:
@@ -4289,9 +4303,8 @@ read_into_cache(MapiHdl hdl, int lookahead)
 			   yet (duh!), or if we've already seen
 			   normal output for the current one */
 			if (result == NULL ||
-					result->cache.writer > 0 ||
-					result->querytype > 0)
-			{
+			    result->cache.writer > 0 ||
+			    result->querytype > 0) {
 				result = new_result(hdl);
 				result->commentonly = false;
 				hdl->active = result;
@@ -4563,7 +4576,9 @@ mapi_cache_limit(Mapi mid, int limit)
 		if (mnstr_printf(mid->to, "X" "reply_size %d\n", limit) < 0 ||
 		    mnstr_flush(mid->to, MNSTR_FLUSH_DATA)) {
 			close_connection(mid);
-			mapi_setError(mid, mnstr_error(mid->to), __func__, MTIMEOUT);
+			char *err = mnstr_error(mid->to);
+			mapi_setError(mid, err, __func__, MTIMEOUT);
+			free(err);
 			return MERROR;
 		}
 		hdl = prepareQuery(mapi_new_handle(mid), "reply_size");
@@ -4698,13 +4713,13 @@ mapi_fetch_line(MapiHdl hdl)
 		if (hdl->mid->tracelog) {
 			mapi_log_header(hdl->mid, "W");
 			mnstr_printf(hdl->mid->tracelog, "X" "export %d %" PRId64 "\n",
-				      result->tableid,
-				      result->cache.first + result->cache.tuplecount);
+				     result->tableid,
+				     result->cache.first + result->cache.tuplecount);
 			mnstr_flush(hdl->mid->tracelog, MNSTR_FLUSH_DATA);
 		}
 		if (mnstr_printf(hdl->mid->to, "X" "export %d %" PRId64 "\n",
-				  result->tableid,
-				  result->cache.first + result->cache.tuplecount) < 0 ||
+				 result->tableid,
+				 result->cache.first + result->cache.tuplecount) < 0 ||
 		    mnstr_flush(hdl->mid->to, MNSTR_FLUSH_DATA))
 			check_stream(hdl->mid, hdl->mid->to, "sending export command", NULL);
 		reply = mapi_fetch_line_internal(hdl);
@@ -4791,7 +4806,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 				/* later
 				   case '0': case '1': case '2': case '3': case '4':
 				   case '5': case '6': case '7': case '8': case '9':
-				 */
+				*/
 				case 'n':
 					*s = '\n';
 					break;
@@ -4940,7 +4955,7 @@ mapi_extend_bindings(MapiHdl hdl, int minbindings)
 	int nm = hdl->maxbindings + 32;
 
 	if (nm <= minbindings)
-		 nm = minbindings + 32;
+		nm = minbindings + 32;
 	REALLOC(hdl->bindings, nm);
 	assert(hdl->bindings);
 	/* clear new entries */
@@ -4956,7 +4971,7 @@ mapi_extend_params(MapiHdl hdl, int minparams)
 	int nm = hdl->maxparams + 32;
 
 	if (nm <= minparams)
-		 nm = minparams + 32;
+		nm = minparams + 32;
 	REALLOC(hdl->params, nm);
 	assert(hdl->params);
 	/* clear new entries */
@@ -5225,11 +5240,11 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			if (mid->tracelog) {
 				mapi_log_header(mid, "W");
 				mnstr_printf(mid->tracelog, "X" "export %d %" PRId64 "\n",
-					      result->tableid, result->cache.first + result->cache.tuplecount);
+					     result->tableid, result->cache.first + result->cache.tuplecount);
 				mnstr_flush(mid->tracelog, MNSTR_FLUSH_DATA);
 			}
 			if (mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
-					  result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
+					 result->tableid, result->cache.first + result->cache.tuplecount) < 0 ||
 			    mnstr_flush(mid->to, MNSTR_FLUSH_DATA))
 				check_stream(mid, mid->to, "sending export command", 0);
 		}

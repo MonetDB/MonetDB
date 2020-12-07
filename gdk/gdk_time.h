@@ -42,6 +42,8 @@ gdk_export int date_dayofweek(date dt) /* Monday=1, Sunday=7 */
 	__attribute__((__const__));
 gdk_export int date_weekofyear(date dt)
 	__attribute__((__const__));
+gdk_export int date_usweekofyear(date dt)
+	__attribute__((__const__));
 gdk_export int date_dayofyear(date dt)
 	__attribute__((__const__));
 gdk_export int date_century(date dt)

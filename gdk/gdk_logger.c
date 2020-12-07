@@ -1338,6 +1338,7 @@ bm_subcommit(logger *lg)
 				return GDK_FAIL;
 			}
 			logbat_destroy(lb);
+			//assert(BBP_lrefs(bids[pos])<=0 && BBP_refs(bids[pos])==0);
 		}
 		/* only project out the deleted with last id > lg->saved_tid
 		 * update dcatalog, ie only keep those deleted which
@@ -1956,60 +1957,69 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 
 
 gdk_return
-logger_flush(logger *lg)
+logger_flush(logger *lg, lng saved_id)
 {
 	if (LOG_DISABLED(lg)) {
-		lg->saved_id = lg->id-1;
-		lg->saved_tid = lg->tid-1;
+		lg->saved_id = saved_id;
+		lg->saved_tid = saved_id;
 		return GDK_SUCCEED;
 	}
+	if (lg->saved_id >= saved_id)
+		return GDK_SUCCEED;
 	if (lg->saved_id+1 >= lg->id) /* logger should first release the file */
 		return GDK_SUCCEED;
-	if (!lg->input_log) {
-		char *filename;
-		char id[BUFSIZ];
-		int len = snprintf(id, sizeof(id), LLFMT, lg->saved_id+1);
-
-		if (len == -1 || len >= BUFSIZ) {
-			TRC_CRITICAL(GDK, "log_id filename is too large\n");
-			return GDK_FAIL;
-		}
-		if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)))
-			return GDK_FAIL;
-		if (strlen(filename) >= FILENAME_MAX) {
-			GDKerror("Logger filename path is too large\n");
+	log_return res = LOG_OK;
+	while(lg->saved_id < saved_id && res == LOG_OK) {
+		if (!lg->input_log) {
+			char *filename;
+			char id[BUFSIZ];
+			int len = snprintf(id, sizeof(id), LLFMT, lg->saved_id+1);
+	
+			if (len == -1 || len >= BUFSIZ) {
+				TRC_CRITICAL(GDK, "log_id filename is too large\n");
+				return GDK_FAIL;
+			}
+			if (!(filename = GDKfilepath(BBPselectfarm(PERSISTENT, 0, offheap), lg->dir, LOGFILE, id)))
+				return GDK_FAIL;
+			if (strlen(filename) >= FILENAME_MAX) {
+				GDKerror("Logger filename path is too large\n");
+				GDKfree(filename);
+				return GDK_FAIL;
+			}
+	
+			bool filemissing = false;
+			if (logger_open_input(lg, filename, &filemissing) == GDK_FAIL) {
+				GDKfree(filename);
+				return GDK_FAIL;
+			}
 			GDKfree(filename);
-			return GDK_FAIL;
 		}
-
-		bool filemissing = false;
-		if (logger_open_input(lg, filename, &filemissing) == GDK_FAIL) {
-			GDKfree(filename);
-			return GDK_FAIL;
+		/* we read the full file because skipping is impossible with current log format */
+		logger_lock(lg);
+		lg->flushing = 1;
+		res = logger_read_transaction(lg);
+		lg->flushing = 0;
+		if (res == LOG_EOF) {
+			logger_close_input(lg);
+			res = LOG_OK;
 		}
-		GDKfree(filename);
-	}
-	/* we read the full file because skipping is impossible with current log format */
-	logger_lock(lg);
-	lg->flushing = 1;
-	log_return res = logger_read_transaction(lg);
-	lg->flushing = 0;
-	if (res == LOG_EOF)
-		logger_close_input(lg);
-	if (res != LOG_ERR) {
-		lg->saved_id++;
-		if (logger_commit(lg) != GDK_SUCCEED) {
-			TRC_ERROR(GDK, "failed to commit");
-			res = LOG_ERR;
-		}
-
-		/* remove old log file */
 		if (res != LOG_ERR) {
-			logger_unlock(lg);
-			return logger_cleanup(lg, lg->saved_id);
+			lg->saved_id++;
+			if (logger_commit(lg) != GDK_SUCCEED) {
+				TRC_ERROR(GDK, "failed to commit");
+				res = LOG_ERR;
+			}
+
+			/* remove old log file */
+			if (res != LOG_ERR) {
+				logger_unlock(lg);
+				if (logger_cleanup(lg, lg->saved_id) != GDK_SUCCEED)
+					res = LOG_ERR;
+				logger_lock(lg);
+			}
 		}
+		logger_unlock(lg);
 	}
-	logger_unlock(lg);
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -2463,7 +2473,7 @@ logger_del_bat(logger *lg, log_bid bid)
 		GDKerror("cannot find BAT\n");
 		return GDK_FAIL;
 	}
-	assert(BBP_lrefs(bid) >= 2);
+	//assert(BBP_lrefs(bid) >= 2);
 
 	pos = (oid) p;
 	if (BUNinplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
@@ -2496,4 +2506,10 @@ log_tstart(logger *lg)
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
 	return log_write_format(lg, &l);
+}
+
+lng
+log_save_id(logger *lg)
+{
+	return lg->id;
 }

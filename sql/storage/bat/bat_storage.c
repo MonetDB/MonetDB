@@ -2003,8 +2003,9 @@ static int
 update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
 	sql_trans *oldest = oldest_active_transaction();
+	sql_table *ot = NULL;
 	int ok = LOG_OK;
-	node *n, *m;
+	node *n, *m, *o = NULL;
 
 	if (ATOMIC_GET(&store_nr_active) == 1 || ft->base.allocated) {
 		if (ATOMIC_GET(&store_nr_active) > 1 && ft->data) { /* move delta */
@@ -2013,15 +2014,20 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (!tt->data)
 				tt->base.allocated = ft->base.allocated;
 			ft->data = NULL;
+			assert(!b->next);
 			b->next = tt->data;
 			tt->data = b;
 
-			while (b && b->cs.wtime >= oldest->stime)
-				b = b->next;
-			if (b && b->next) {
+			/* find table t->base.stime */
+           		ot = tr_find_table(oldest, tt);
+			if (b && ot && b->cs.wtime < ot->base.stime) {
+				while (b && b->cs.wtime >= ot->base.stime)
+					b = b->next;
 				/* anything older can go */
-				delayed_destroy_dbat(b->next);
-				b->next = NULL;
+				if (b && b->next && b->cs.wtime < ot->base.stime) {
+					delayed_destroy_dbat(b->next);
+					b->next = NULL;
+				}
 			}
 		} else if (tt->data && ft->base.allocated) {
 			if (tr_update_dbat(tr, tt->data, ft->data) != LOG_OK)
@@ -2037,31 +2043,42 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ok = LOG_ERR;
 			ft->data = NULL;
 		} else if (ft->data) {
+			assert(!tt->data);
 			tt->data = ft->data;
 			tt->base.allocated = 1;
 			ft->data = NULL;
 		}
 	}
-	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+	if (ot)
+		o = ot->columns.set->h;
+	for (n = ft->columns.set->h, m = tt->columns.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 		sql_column *cc = n->data; // TODO: either stick to to/from terminology or old/current terminology
 		sql_column *oc = m->data;
 
 		if (ATOMIC_GET(&store_nr_active) == 1 || ((cc->base.wtime || cc->base.atime) && cc->base.allocated)) {
+			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime || (oc->base.wtime == cc->base.wtime && oc->base.allocated /* alter */));
 			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
+				sql_column *oldc = NULL;
 
 				if (!oc->data)
 					oc->base.allocated = cc->base.allocated;
 				cc->data = NULL;
+				assert(!b->next);
 				b->next = oc->data;
 				oc->data = b;
 
-				while (b && b->cs.wtime >= oldest->stime)
-					b = b->next;
-				if (b && b->next) {
+				/* find column c->base.stime */
+				if (o)
+					oldc = o->data;
+				if (oldc && b && oldc->base.id == cc->base.id && b->cs.wtime < oldc->base.stime) {
+					while (b && b->cs.wtime >= oldc->base.stime)
+						b = b->next;
 					/* anything older can go */
-					delayed_destroy_bat(b->next);
-					b->next = NULL;
+					if (b && b->next && b->cs.wtime < oldc->base.stime) {
+						delayed_destroy_bat(b->next);
+						b->next = NULL;
+					}
 				}
 			} else if (oc->data && cc->base.allocated) {
 				if (tr_update_delta(tr, oc->data, cc->data) != LOG_OK)
@@ -2115,7 +2132,9 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		cc->base.allocated = 0;
 	}
 	if (ok == LOG_OK && tt->idxs.set) {
-		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next) {
+		if (ot)
+			o = ot->idxs.set->h;
+		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
 
@@ -2128,19 +2147,25 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			if (ATOMIC_GET(&store_nr_active) == 1 || ((ci->base.wtime || ci->base.atime) && ci->base.allocated)) {
 				if (ATOMIC_GET(&store_nr_active) > 1 && ci->data) { /* move delta */
 					sql_delta *b = ci->data;
+					sql_idx *oldi = NULL;
 
 					if (!oi->data)
 						oi->base.allocated = ci->base.allocated;
 					ci->data = NULL;
+					assert(!b->next);
 					b->next = oi->data;
 					oi->data = b;
 
-					while (b && b->cs.wtime >= oldest->stime)
-						b = b->next;
-					if (b && b->next) {
+					if (o)
+						oldi = o->data;
+					if (oldi && b && oldi->base.id == ci->base.id && b->cs.wtime < oldi->base.stime) {
+						while (b && b->cs.wtime >= oldi->base.stime)
+							b = b->next;
 						/* anything older can go */
-						delayed_destroy_bat(b->next);
-						b->next = NULL;
+						if (b && b->next && b->cs.wtime >= oldi->base.stime) {
+							delayed_destroy_bat(b->next);
+							b->next = NULL;
+						}
 					}
 				} else if (oi->data && ci->base.allocated) {
 					if (tr_update_delta(tr, oi->data, ci->data) != LOG_OK)

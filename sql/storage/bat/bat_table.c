@@ -58,7 +58,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 				BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
 
 				BBPunfix(d->batCacheid);
-	    		if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
+	    			if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
 					if (nd) BBPunfix(nd->batCacheid);
 					if (ui) BBPunfix(ui->batCacheid);
 					if (uv) BBPunfix(uv->batCacheid);

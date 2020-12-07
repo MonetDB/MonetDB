@@ -3623,6 +3623,7 @@ BATmin_skipnil(BAT *b, void *aggr, bit skipnil)
 			bi = bat_iterator(b);
 			res = BUNtail(bi, pos - b->hseqbase);
 			BATsetprop(b, GDK_MIN_VALUE, b->ttype, res);
+			BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){pos - b->hseqbase});
 		}
 	}
 	if (aggr == NULL) {
@@ -3724,8 +3725,10 @@ BATmax_skipnil(BAT *b, void *aggr, bit skipnil)
 		} else {
 			bi = bat_iterator(b);
 			res = BUNtail(bi, pos - b->hseqbase);
-			if (b->tnonil)
+			if (b->tnonil) {
 				BATsetprop(b, GDK_MAX_VALUE, b->ttype, res);
+				BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){pos - b->hseqbase});
+			}
 		}
 	}
 	if (aggr == NULL) {

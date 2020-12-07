@@ -42,7 +42,7 @@ target_sources(malmodules
   tracer.c
   projectionpath.c
   tablet.c tablet.h
-  batcalc.c calc.c 
+  batcalc.c calc.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/wlc.h)
 
@@ -52,6 +52,7 @@ target_include_directories(malmodules
   $<TARGET_PROPERTY:kernel,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mapi,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:optimizer,INTERFACE_INCLUDE_DIRECTORIES>
   $<$<BOOL:${COMMONCRYPTO_FOUND}>:${COMMONCRYPTO_INCLUDE_DIR}>
   $<$<BOOL:${OPENSSL_FOUND}>:$<TARGET_PROPERTY:OpenSSL::Crypto,INTERFACE_INCLUDE_DIRECTORIES>>
   PUBLIC

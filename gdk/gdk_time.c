@@ -250,6 +250,24 @@ date_weekofyear(date dt)
 	return (cnt2 - cnt1) / 7 + 1;
 }
 
+/* In the US they have to do it differently, of course.
+ * Week 1 is the week (Sunday to Saturday) in which January 1 falls */
+int
+date_usweekofyear(date dt)
+{
+	if (is_date_nil(dt))
+		return int_nil;
+	int y = date_extract_year(dt);
+	int m = date_extract_month(dt);
+	/* day of year (date_dayofyear without nil check) */
+	int doy = date_extract_day(dt) + cumdays[m-1]
+		+ (m > 2 && isleapyear(y));
+	int jan1 = mkdate(y, 1, 1);
+	int jan1days = date_countdays(jan1);
+	int jan1dow = (jan1days + DOW_OFF + 1) % 7; /* Sunday=0, Saturday=6 */
+	return (doy + jan1dow - 1) / 7 + 1;
+}
+
 int
 date_dayofyear(date dt)
 {

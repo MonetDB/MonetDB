@@ -37,6 +37,6 @@ mal_export void     freeModuleList(Module* list);
 mal_export void     dumpModules(stream *out);
 mal_export BAT     *getModules(void);
 
-#define getSymbolIndex(N)  (int)(*(char*)(N))
+#define getSymbolIndex(N)  (int)(*(unsigned char*)(N))
 
 #endif /* _MAL_SCOPE_H_ */

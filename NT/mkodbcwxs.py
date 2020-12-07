@@ -80,9 +80,9 @@ def main():
                r'lib\MonetODBC.dll', # r'lib\MonetODBC.pdb',
                r'lib\MonetODBCs.dll', # r'lib\MonetODBCs.pdb',
                r'bin\stream.dll', # r'lib\stream.pdb',
-               vcpkg.format(r'bin\libiconv.dll'),
+               vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
-               vcpkg.format(r'bin\libcharset.dll'), # for libiconv.dll
+               vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
                vcpkg.format(r'bin\libcrypto-1_1{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\zlib1.dll')])
     print(r'            </Directory>')

@@ -161,16 +161,13 @@ BuildRequires: pkgconfig(libR)
 BuildRequires: texlive-obsolete
 %endif
 %endif
-# if we were to compile with cmocka support (-DWITH_CMOCKA=ON):
-# BuildRequires: pkgconfig(cmocka)
-# if we were to compile with NetCDF support (-DNETCDF=ON):
-# BuildRequires: pkgconfig(netcdf)
-# if we were to compile with proj support (-DWITH_PROJ=ON):
-# BuildRequires: pkgconfig(proj)
-# if we were to compile with snappy support (-DWITH_SNAPPY=ON):
-# BuildRequires: pkgconfig(snappy)
-# if we were to compile with valgrind support (-DWITH_VALGRIND=ON):
-# BuildRequires: pkgconfig(valgrind)
+# optional packages:
+# BuildRequires: pkgconfig(cmocka)	# -DWITH_CMOCKA=ON
+# BuildRequires: pkgconfig(gdal)	# -DSHP=ON
+# BuildRequires: pkgconfig(netcdf)	# -DNETCDF=ON
+# BuildRequires: pkgconfig(proj)	# -DWITH_PROJ=ON
+# BuildRequires: pkgconfig(snappy)	# -DWITH_SNAPPY=ON
+# BuildRequires: pkgconfig(valgrind)	# -DWITH_VALGRIND=ON
 
 %if (0%{?fedora} >= 22)
 Recommends: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
@@ -866,6 +863,15 @@ else
     # Fedora 31
     /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
 fi
+%endif
+
+%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
+# fix up some paths (/var/run -> /run)
+# needed because CMAKE_INSTALL_RUNSTATEDIR refers to /var/run
+sed -i 's|/var/run|/run|' \
+    %{buildroot}%{_tmpfilesdir}/monetdbd.conf \
+    %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_properties \
+    %{buildroot}%{_unitdir}/monetdbd.service
 %endif
 
 %post -p /sbin/ldconfig
