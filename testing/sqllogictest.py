@@ -177,6 +177,9 @@ class SQLLogic:
                             + (", error message {}".format(expected_err_msg) if expected_err_msg else '')
                     self.query_error(err_stmt or statement, msg, str(e))
                 return
+        except ConnectionError as e:
+            self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
+            return
         else:
             if expectok:
                 if expected_rowcount:
