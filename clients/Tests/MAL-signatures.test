@@ -1,6 +1,0 @@
-query TTTTT rowsort
-select * from sys.malfunctions() order by module, "function", address, signature, comment
-----
-65520 values hashing to 3abd7dc63f82fc485bf8bfcf1b2af07e
-
-
