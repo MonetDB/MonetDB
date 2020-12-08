@@ -11,4 +11,5 @@ prepared-merge-statement.Bug-6706
 prepare-types.Bug-6724
 prepared-select-with-error-causes-hang.Bug-6761
 sample.15
-
+prepare-where.SF-1238867.1238959.1238965.1240124
+prepare_doesnot_like_LIKE.SF-1234205
