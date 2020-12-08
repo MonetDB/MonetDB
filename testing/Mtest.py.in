@@ -346,7 +346,6 @@ F_SKIP = -1
 F_OK = 0
 F_WARN = 1
 F_SOCK = 2
-F_MISSING = 3
 F_ERROR = 4
 F_TIME = 5
 F_ABRT = 6
@@ -363,7 +362,6 @@ FAILURES = {
     F_ABRT  : ("F_ABRT",  'A'),
     F_RECU  : ("F_RECU",  'R'),
     F_SEGV  : ("F_SEGV",  'C'),
-    F_MISSING: ("F_MISSING", 'M'),
 }
 
 CONDITIONALS = {
@@ -817,9 +815,6 @@ def CreateTstWhatXhtml (env, TST, stableWHAT, EXT, result) :
         elif result == F_SEGV:
             diffclass = 'segfault'
             difftext += ' (Crash)'
-        elif result == F_MISSING:
-            diffclass = 'error'
-            difftext += ' (Output missing)'
         else:
             diffclass = 'error'
 
@@ -1063,8 +1058,6 @@ def AddHref (href, target, linktext, diff) :
         klass = 'segfault'
     elif diff == F_WARN:
         klass = 'warning'
-    elif diff == F_MISSING:
-        klass = 'error'
     else:
         klass = 'good'
     a = Element('a', {'href': href, 'target': target, 'class': klass},
@@ -1091,8 +1084,6 @@ def AddTstToHtmlIndex (env, TST, STABLEout, STABLEerr, EXT, o, e) :
         tstclass = 'abort'
     elif e == F_SEGV:
         tstclass = 'segfault'
-    elif o == F_MISSING or e == F_MISSING:
-        tstclass = 'error'
     elif o == F_ERROR or e == F_ERROR:
         tstclass = 'error'
     elif o == F_WARN or e == F_WARN:
@@ -1809,7 +1800,7 @@ def StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) :
     return STABLEout, STABLEerr
 ### StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION) #
 
-def CategorizeResult(TST, SockTime, outmissing, errmissing):
+def CategorizeResult(TST, SockTime):
     l = '<!--MajorDiffs-->'   # assign something in case file is empty
     for l in openutf8("%s.out.diff.html" % TST):
         pass
@@ -1818,10 +1809,7 @@ def CategorizeResult(TST, SockTime, outmissing, errmissing):
     elif l.startswith('<!--MinorDiffs-->'):
         o = F_WARN
     elif l.startswith('<!--MajorDiffs-->'):
-        if outmissing:
-            o = F_MISSING
-        else:
-            o = F_ERROR
+        o = F_ERROR
     else:
         Warn("Unexpected last line in %s.out.diff.html:\n%s" % (TST, l))
         ff = openutf8("%s.out.diff.html" % TST, "a")
@@ -1836,17 +1824,14 @@ def CategorizeResult(TST, SockTime, outmissing, errmissing):
     elif l.startswith('<!--MinorDiffs-->'):
         e = F_WARN
     elif l.startswith('<!--MajorDiffs-->'):
-        if errmissing:
-            e = F_MISSING
-        else:
-            e = F_ERROR
+        e = F_ERROR
     else:
         Warn("Unexpected last line in %s.err.diff.html:\n%s" % (TST, l))
         ff = openutf8("%s.err.diff.html" % TST, "a")
         ff.write("\n<!--MajorDiffs-->\n")
         ff.close()
         e = F_ERROR
-    if e in (F_ERROR, F_MISSING) and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
+    if e = F_ERROR and SockTime in (F_SOCK, F_TIME, F_RECU, F_ABRT, F_SEGV):
         e = SockTime
     return o, e
 
@@ -2137,22 +2122,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         ACCURACYout = par['ACCURACY']
         ACCURACYerr = par['ACCURACY']
         STABLEout,STABLEerr = StableOutErr(env,par,TST,SYST,RELEASE,DIST,VERSION)
-        outmissing = errmissing = False
-        if CALL not in ('sqltest', 'maltest'):
-            if not os.path.isfile(TST+STABLEout):
-                openutf8(TST+STABLEout,"w").close()
-                ACCURACYout = 0
-                outmissing = True
-            if not os.path.isfile(TST+STABLEerr):
-                openutf8(TST+STABLEerr,"w").close()
-                ACCURACYerr = 0
-                errmissing = True
-        if (outmissing or errmissing) and not CONDITIONALS['KNOWNFAIL']:
-            # no stable output, so known to fail
-            reason = "as conditional 'KNOWNFAIL' does not hold."
-            elem = SkipTest(env, TST, EXT, reason, length)
-            return TX,Failed,Failed,elem,reason,links
-
         TIMEOUT = par['TIMEOUT']
         if os.path.isfile(TST+".timeout"):
             for f in openutf8(TST+".timeout"):
@@ -2415,7 +2384,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             if ACCURACYerr < 0:
                 timedout = False # don't try again
 
-        FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode), outmissing, errmissing)
+        FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
         if FailedOut == F_OK and FailedErr == F_OK and testweb:
             for f in ['%s.out.diff.html' % TST, '%s.test.out' % TST,
                       '%s.server.out' % TST, '%s.client.out' % TST,
@@ -2449,8 +2418,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                     prgreen('OK   ')
                 elif FailedOut == F_WARN:
                     prgreen('minor')
-                elif FailedOut == F_MISSING:
-                    prred('MISS ')
                 else:
                     prred('MAJOR')
                 STDOUT.write(' ')
@@ -2458,8 +2425,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                     prgreen('OK')
                 elif FailedErr == F_WARN:
                     prgreen('minor')
-                elif FailedErr == F_MISSING:
-                    prred('MISS')
                 else:
                     prred('MAJOR')
             STDOUT.write('\n')
@@ -4356,8 +4321,7 @@ VALUES (%s, '%s', '%s', '%s',
                         (F_ABRT, "caused an abort (assertion failure)", "SIGNIFICANTLY"),
                         (F_SEGV, "resulted in a crash", "SIGNIFICANTLY"),
                         (F_RECU, "ran into too deep recursion", "SIGNIFICANTLY"),
-                        (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY"),
-                        (F_MISSING, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
+                        (F_ERROR, "produced SIGNIFICANTLY different output", "SIGNIFICANTLY")]:
             if Failure[x]:
                 how = z
                 what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
