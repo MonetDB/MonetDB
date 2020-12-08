@@ -85,16 +85,20 @@ def findfiles(dirlist, skipfiles = [], skipdirs = []):
     names, decls = list(zip(*decls))
     return decls
 
-def main():
+def listexports():
+    output = []
     for lib in libs:
         dirs = dirlist[lib]
         dl = [os.path.join(srcdir, d) for d in dirs]
         decls = findfiles(dl, skipfiles = skipfiles, skipdirs = skipdirs)
-        sys.stdout.write('# %s\n' % lib)
+        output.append('# %s\n' % lib)
         for d in decls:
-            sys.stdout.write(d)
-            sys.stdout.write('\n')
-        sys.stdout.write('\n')
+            output.append(d + '\n')
+        output.append('\n')
+    return output
+
+def main():
+    sys.stdout.writelines(listexports())
 
 if __name__ == '__main__':
     main()
