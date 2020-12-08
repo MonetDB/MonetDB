@@ -2362,16 +2362,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             ACCURACYout = ACCURACYout - 1
             if ACCURACYout < 0:
                 timedout = False # don't try again
-        if env.get('ECHO_DIFF'):
-            cmd = ['diff']
-            if ACCURACYout >= 0:
-                cmd.append('-d')
-            cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
-                        '-U%s' % par['CONTEXT'],
-                        '%s%s.FILTERED' % (TST, STABLEout),
-                        '%s.test.out.FILTERED' % TST])
-            proc = process.Popen(cmd, text=True)
-            proc.wait()
 
         diff_html = openutf8('%s.err.diff.html' % TST,"w")
         diff_html.write('<!--MajorDiffs-->\n')
@@ -2424,16 +2414,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             ACCURACYerr = ACCURACYerr - 1
             if ACCURACYerr < 0:
                 timedout = False # don't try again
-        if env.get('ECHO_DIFF'):
-            cmd = ['diff']
-            if ACCURACYerr >= 0:
-                cmd.append('-d')
-            cmd.extend(['-Bb', '-F^#', '-I%s' % par['IGNORE'],
-                        '-U%s' % par['CONTEXT'],
-                        '%s%s.FILTERED' % (TST, STABLEerr),
-                        '%s.test.err.FILTERED' % TST])
-            proc = process.Popen(cmd, text=True)
-            proc.wait()
 
         FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode), outmissing, errmissing)
         if FailedOut == F_OK and FailedErr == F_OK and testweb:
@@ -3629,7 +3609,6 @@ def main(argv) :
     parser.add_argument('--RUBYCLIENT', action='store', dest='RUBYCLIENT', metavar='<ruby program>', help='default: %s' % dft['RUBYCLIENT'])
     parser.add_argument('--concurrent', action='store_true', dest='concurrent', help='There are concurrent Mtest runs using the same MonetDB installation')
     parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help="debugger to start before each server")
-    parser.add_argument('--echo-diff', action='store_true', dest='echo_diff', help="echo differences between stable and current test output to console (stdout)")
     parser.add_argument('--mserver_set', action='store', dest='mserver_set', metavar='<mserver5_option>', help="This passes a single set to the server")
     parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
     parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
@@ -3690,9 +3669,6 @@ def main(argv) :
     a = opts.dbg
     if a is not None:
         env['DBG'] = a
-    a = opts.echo_diff
-    if a:
-        env['ECHO_DIFF'] = a
     a = opts.mserver_set
     if a is not None:
         env['MSERVER_SET'] = "--set " + a
