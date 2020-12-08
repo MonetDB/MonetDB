@@ -10,4 +10,5 @@ prepared-statement-with-udf.Bug-6650
 prepared-merge-statement.Bug-6706
 prepare-types.Bug-6724
 prepared-select-with-error-causes-hang.Bug-6761
+sample.15
 
