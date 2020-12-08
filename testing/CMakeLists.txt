@@ -171,12 +171,6 @@ if(WIN32)
     DESTINATION ${CMAKE_INSTALL_BINDIR})
 
   install(FILES
-    Mtest.py.bat
-    DESTINATION
-    ${CMAKE_INSTALL_BINDIR}
-    RENAME Mapprove.py.bat)
-
-  install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb_mtest.bat
     PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
     DESTINATION ${CMAKE_INSTALL_BINDIR})
@@ -201,12 +195,6 @@ else()
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT pytesting)
 
-  install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
-    PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-    RENAME Mapprove.py
-    COMPONENT pytesting)
 endif()
 
 configure_file(mktest.py
