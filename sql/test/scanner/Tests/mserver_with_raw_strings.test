@@ -1,5 +1,5 @@
 query T rowsort
 SELECT '\"'
 ----
-"
+\"
 
