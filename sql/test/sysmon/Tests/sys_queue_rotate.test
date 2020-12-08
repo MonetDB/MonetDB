@@ -3,8 +3,17 @@ select 1, username, status, case when query ilike 'set time%' then 'set time...'
 ----
 1
 monetdb
+finished
+select name from sys.schemas where not system@;
+1
+monetdb
+finished
+select name from sys.users where name not in (\'monetdb\', \'.snapshot\')@;
+1
+monetdb
 running
 select 1, username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
+
 
 query ITTT rowsort
 select 2, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
@@ -15,8 +24,13 @@ finished
 select 1, username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
 2
 monetdb
+finished
+select name from sys.users where name not in (\'monetdb\', \'.snapshot\')@;
+2
+monetdb
 running
 select 2, username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
+
 
 query ITTT rowsort
 select 3, username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
