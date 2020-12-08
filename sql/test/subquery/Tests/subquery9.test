@@ -228,4 +228,16 @@ CA
 Head Office
 CA
 
+statement ok
+DROP TABLE branches
+
+statement ok
+DROP TABLE branches_services
+
+statement ok
+DROP TABLE clients
+
+statement ok
+DROP TABLE services
+
 
