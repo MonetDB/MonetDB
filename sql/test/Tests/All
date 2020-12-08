@@ -128,3 +128,13 @@ HAVE_PYMONETDB&HAVE_LIBLZMA?hot_snapshot_xz
 HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4
 !HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4_lite
 
+# The following tests are some old tests moved from sql/test
+## FOREIGN KEY reference to the same table
+foreign_key
+## IN operator in SELECT and type checking
+in
+## Don't know what it tests. Maybe it's no longer a challenge for MDB
+meltdown
+savepoints1
+savepoints2
+union
