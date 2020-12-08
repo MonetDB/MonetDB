@@ -12,6 +12,7 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 
+extern void initialize_sql_functions_lookup(sql_allocator *sa);
 extern sql_rel *rel_statistics(mvc *sql, sql_rel *rel);
 
 #endif /*_REL_STATISTICS_H_*/

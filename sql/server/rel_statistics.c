@@ -16,18 +16,6 @@
 #include "rel_rewriter.h"
 #include "sql_mvc.h"
 
-static bool
-exps_have_or(list *exps)
-{
-	for (node *n = exps->h ; n ; n = n->next) {
-		sql_exp *e = n->data;
-		assert(e->type == e_cmp);
-		if (e->flag == cmp_or)
-			return true;
-	}
-	return false;
-}
-
 static inline void
 set_max_of_values(mvc *sql, sql_exp *e, rel_prop kind, ValPtr lval, ValPtr rval)
 {
@@ -55,6 +43,73 @@ copy_property(mvc *sql, sql_exp *e, rel_prop kind, ValPtr val)
 {
 	prop *p = e->p = prop_create(sql->sa, kind, e->p);
 	p->value = val;
+}
+
+static sql_hash *sql_functions_lookup = NULL;
+
+static void
+sql_add_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data, *second = l->h->next->data;
+	ValPtr lval, rval;
+
+	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		res->vtype = lval->vtype;
+		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
+			copy_property(sql, e, PROP_MAX, res);
+		} else {
+			GDKclrerr();
+			atom *a = atom_max_value(sql->sa, exp_subtype(first));
+			copy_property(sql, e, PROP_MAX, &a->data);
+		}
+	}
+	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		res->vtype = lval->vtype;
+		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
+			copy_property(sql, e, PROP_MIN, res);
+		} else {
+			GDKclrerr();
+			atom *a = atom_max_value(sql->sa, exp_subtype(first));
+			copy_property(sql, e, PROP_MIN, &a->data);
+		}
+	}
+}
+
+typedef void (*lookup_function) (mvc*, sql_exp*);
+
+static struct function_properties {
+	const char *name;
+	lookup_function func;
+} functions_list[1] = {
+	{"sql_add", &sql_add_propagate_statistics}
+};
+
+void
+initialize_sql_functions_lookup(sql_allocator *sa)
+{
+	int nentries = sizeof(functions_list) / sizeof(functions_list[0]);
+
+	sql_functions_lookup = hash_new(sa, nentries, (fkeyvalue)&hash_key);
+	for (int i = 0; i < nentries ; i++) {
+		int key = hash_key(functions_list[i].name);
+
+		hash_add(sql_functions_lookup, key, &(functions_list[i]));
+	}
+}
+
+static bool
+exps_have_or(list *exps)
+{
+	for (node *n = exps->h ; n ; n = n->next) {
+		sql_exp *e = n->data;
+		assert(e->type == e_cmp);
+		if (e->flag == cmp_or)
+			return true;
+	}
+	return false;
 }
 
 static sql_exp *
@@ -323,17 +378,51 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		}
 	} break;
 	case e_convert: {
-		if (((sql_subtype*)exp_fromtype(e))->type->eclass == ((sql_subtype*)exp_totype(e))->type->eclass) {
+		sql_subtype *from = exp_fromtype(e), *to = exp_totype(e);
+
+		if (from->type->eclass == to->type->eclass) {
 			sql_exp *l = e->l;
-			if ((lval = find_prop_and_get(l->p, PROP_MAX)))
-				copy_property(sql, e, PROP_MAX, lval);
-			if ((lval = find_prop_and_get(l->p, PROP_MIN)))
-				copy_property(sql, e, PROP_MIN, lval);
+			if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
+				if (EC_NUMBER(from->type->eclass)) {
+					ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+					VALcopy(res, lval);
+					if (VALconvert(to->type->localtype, res))
+						copy_property(sql, e, PROP_MAX, res);
+				} else {
+					copy_property(sql, e, PROP_MAX, lval);
+				}
+			}
+			if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
+				if (EC_NUMBER(from->type->eclass)) {
+					ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+					VALcopy(res, lval);
+					if (VALconvert(to->type->localtype, res))
+						copy_property(sql, e, PROP_MIN, res);
+				} else {
+					copy_property(sql, e, PROP_MIN, lval);
+				}
+			}
 		}
 	} break;
 	case e_aggr:
-	case e_func:
-		break;
+	case e_func: {
+		sql_subfunc *f = e->f;
+
+		if (!f->func->s) {
+			int key = hash_key(f->func->base.name); /* Using hash lookup */
+			sql_hash_e *he = sql_functions_lookup->buckets[key&(sql_functions_lookup->size-1)];
+			lookup_function look = NULL;
+
+			for (; he && !look; he = he->chain) {
+				struct function_properties* fp = (struct function_properties*) he->value;
+
+				if (!strcmp(f->func->base.name, fp->name))
+					look = fp->func;
+			}
+			if (look)
+				look(sql, e);
+		}
+	} break;
 	case e_atom:
 		if (e->l) {
 			atom *a = (atom*) e->l;
