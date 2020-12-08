@@ -24,6 +24,7 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
+#include "rel_statistics.h"
 #include "wlc.h"
 
 #include "mal_authorize.h"
@@ -137,6 +138,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su)
 		TRC_CRITICAL(SQL_TRANS, "Unable to create system tables\n");
 		return -1;
 	}
+	initialize_sql_functions_lookup(pa);
 
 	m = mvc_create(pa, 0, 0, NULL, NULL);
 	if (!m) {
