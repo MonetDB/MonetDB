@@ -108,3 +108,12 @@ SELECT bs.bid FROM branches_services AS bs, services AS s WHERE s.sid = bs.sid A
 SELECT bid, bdesc, bloc FROM branches WHERE bloc = (SELECT bloc FROM branches WHERE bid = 1101 AND cid = 110);
 
 SELECT table1.bid, table1.bdesc, table1.bloc FROM branches AS table1, branches AS table2 WHERE table2.bid = 1101 AND table2.cid = 110 AND table1.bloc = table2.bloc ;
+
+
+DROP TABLE branches;
+
+DROP TABLE branches_services;
+
+DROP TABLE clients;
+
+DROP TABLE services;
