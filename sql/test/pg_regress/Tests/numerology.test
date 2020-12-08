@@ -1,4 +1,4 @@
-statement error
+statement ok
 CREATE TABLE INT2_TBL(f1 smallint)
 
 statement ok
@@ -16,7 +16,7 @@ INSERT INTO INT2_TBL(f1) VALUES ('32767')
 statement ok
 INSERT INTO INT2_TBL(f1) VALUES ('-32767')
 
-statement error
+statement ok
 CREATE TABLE INT4_TBL(f1 integer)
 
 statement ok
@@ -63,11 +63,30 @@ statement ok
 INSERT INTO TEMP_FLOAT (f1)
   SELECT cast(f1 as double) FROM INT2_TBL
 
-query TR rowsort
-SELECT '' AS ten, f1 FROM TEMP_FLOAT
+query IR rowsort
+SELECT 10 AS ten, f1 FROM TEMP_FLOAT
   ORDER BY f1
 ----
-40 values hashing to df459ee5ca66a94e94e832cdef0cf44c
+10
+-1234.000
+10
+-123456.000
+10
+-2147483647.000
+10
+-32767.000
+10
+0.000
+10
+0.000
+10
+1234.000
+10
+123456.000
+10
+2147483647.000
+10
+32767.000
 
 statement ok
 CREATE TABLE TEMP_INT4 (f1 integer)
@@ -81,11 +100,28 @@ statement ok
 INSERT INTO TEMP_INT4 (f1)
   SELECT cast(f1 as integer) FROM INT2_TBL
 
-query TI rowsort
-SELECT '' AS nine, f1 FROM TEMP_INT4
+query II rowsort
+SELECT 9 AS nine, f1 FROM TEMP_INT4
   ORDER BY f1
 ----
-28 values hashing to fef642df41ed8f82cfc0e76457f10387
+9
+-1234
+9
+-32767
+9
+-35
+9
+0
+9
+0
+9
+0
+9
+1004
+9
+1234
+9
+32767
 
 statement ok
 CREATE TABLE TEMP_INT2 (f1 smallint)
@@ -100,11 +136,20 @@ INSERT INTO TEMP_INT2 (f1)
   SELECT cast(f1 as smallint) FROM INT4_TBL
   WHERE (f1 >= -32767) AND (f1 <= 32767)
 
-query TI rowsort
-SELECT '' AS five, f1 FROM TEMP_INT2
+query II rowsort
+SELECT 5 AS five, f1 FROM TEMP_INT2
   ORDER BY f1
 ----
-12 values hashing to 55d923bcd140103b78b3ebb755e08cd8
+5
+-35
+5
+0
+5
+0
+5
+0
+5
+1004
 
 statement ok
 CREATE TABLE TEMP_GROUP (f1 integer, f2 integer, f3 double)
@@ -199,5 +244,4 @@ DROP TABLE INT4_TBL
 
 statement ok
 DROP TABLE INT2_TBL
-
 
