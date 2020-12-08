@@ -1282,6 +1282,7 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         os.environ['TSTSRCDIR'] = TSTSRCDIR
         os.environ['TSTTRGDIR'] = TSTTRGDIR
         os.environ['RELSRCDIR'] = env['RELSRCDIR']
+        os.environ['HAVE_HGE'] = CONDITIONALS['HAVE_HGE']
         if 'TSTDATAPATH' not in os.environ and TSTDATAPATH:
             env['TSTDATAPATH'] = TSTDATAPATH
             os.environ['TSTDATAPATH'] = TSTDATAPATH
