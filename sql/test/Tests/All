@@ -99,7 +99,6 @@ median_stdev
 
 ifexists
 ifexists-views
-subqueries
 
 trace
 

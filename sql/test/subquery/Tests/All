@@ -4,7 +4,8 @@ scalar
 any_all
 exists
 correlated
-subquery
+subquery0
+subquery1
 subquery2
 subquery3
 subquery4
