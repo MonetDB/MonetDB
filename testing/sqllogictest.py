@@ -166,16 +166,20 @@ class SQLLogic:
                 if expected_err_code or expected_err_msg:
                     # check whether failed as expected
                     err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
-                    if expected_err_code:
-                        if expected_err_code == err_code_received:
+                    if expected_err_code and expected_err_msg:
+                        if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
                             return
-                    if expected_err_msg:
-                        if expected_err_msg.lower() == err_msg_received.lower():
-                            return
+                    else:
+                        if expected_err_code:
+                            if expected_err_code == err_code_received:
+                                return
+                        if expected_err_msg:
+                            if expected_err_msg.lower() == err_msg_received.lower():
+                                return
                     msg = "statement was expected to fail with" \
                             + (" error code {}".format(expected_err_code) if expected_err_code else '')\
-                            + (", error message {}".format(expected_err_msg) if expected_err_msg else '')
-                    self.query_error(err_stmt or statement, msg, str(e))
+                            + (", error message {}".format(str(expected_err_msg)) if expected_err_msg else '')
+                    self.query_error(err_stmt or statement, str(msg), str(e))
                 return
         except ConnectionError as e:
             self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
@@ -414,7 +418,8 @@ class SQLLogic:
                         if line[2] == 'rowcount':
                             expected_rowcount = int(line[3])
                     else:
-                        expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(line[2])
+                        err_str = " ".join(line[2:])
+                        expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(err_str)
                 statement = []
                 self.qline = self.line + 1
                 while True:
