@@ -2267,16 +2267,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 f.close()
                 if os.path.isfile(TSTSRC):
                     try:
-                        if '.stable.' in ff:
-                            f1 = openutf8(TSTSRC, "r")
-                            f2 = openutf8(ff[:-4], "w")
-                            line = f1.readline()
-                            f2.write("%s of test '%s` in directory '%s` itself:\n" % (line[:6], TST, TSTDIR.replace('\\', '/')))
-                            f2.write(f1.read())
-                            f1.close()
-                            f2.close()
-                        else:
-                            SymlinkOrCopy(TSTSRC, ff[:-4])
+                        SymlinkOrCopy(TSTSRC, ff[:-4])
                         links.append(ff[:-4])
                     except IOError as err:
                         ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
@@ -2343,13 +2334,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         TestErrFile = TST+".test.err"
         TestOut = openutf8(TestOutFile,"w")
         TestErr = openutf8(TestErrFile,"w")
-        TestOut.write("stdout of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
-        TestErr.write("stderr of test '"+TST+"` in directory '"+url(TSTDIR)+"` itself:\n\n")
         TestOut.close()
         TestErr.close()
 
         t0 = time.time()
-        tres, issqllogictest = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito, threads, user, passwd, COND, all_tests, pSrvr)
         t1 = time.time()
         TX = t1 - t0
         if not quiet:
@@ -2438,12 +2427,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         except IOError as err:
             Warn("Flushing STDOUT in RunTest failed with #%d: '%s'." % (err.errno, err.strerror))
 
-        if not issqllogictest:
-            Mfilter.mFilter(TST+STABLEout,par['IGNORE'])
-            Mfilter.mFilter(TST+STABLEerr,par['IGNORE'])
-            Mfilter.mFilter(TST+".test.out",par['IGNORE'])
-            Mfilter.mFilter(TST+".test.err",par['IGNORE'])
-
         if REV:
             d = '%s%s/%s' % (URLPREFIX, url(TSTDIR), TSTSUFF)
             if os.path.isfile(TST + EXT + '.src'):
@@ -2483,12 +2466,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         if tres is not None:
             # test program exited with error => expect major differences!
             ACCURACYout = -1
-        elif not issqllogictest:
-            szs = os.stat("%s%s.FILTERED" % (TST, STABLEout)).st_size
-            szt = os.stat("%s.test.out.FILTERED" % TST).st_size
-            if szt < szs*0.5 or szt > szs*1.5:
-                # filesizes differ significantly => expect major differences!
-                ACCURACYout = -1
         out = err = ''
         while timedout:
             cmd = ['Mdiff']
@@ -2498,18 +2475,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
-            if issqllogictest:
-                cmd.extend([titlefmt % ('err', 'err'),
-                            os.devnull,
-                            os.devnull,
-                            '%s.out.diff.html' % TST])
-            else:
-                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYout,
-                            titlefmt % ('err', 'err'),
-                            '%s%s.FILTERED' % (TST, STABLEout),
-                            '%s.test.out.FILTERED' % TST,
-                            '%s.out.diff.html' % TST])
+            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                        titlefmt % ('err', 'err'),
+                        os.devnull,
+                        '%s.test.out' % TST,
+                        '%s.out.diff.html' % TST])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -2559,12 +2529,6 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         if tres is not None:
             # test program exited with error => expect major differences!
             ACCURACYerr = -1
-        elif not issqllogictest:
-            szs = os.stat("%s%s.FILTERED" % (TST, STABLEerr)).st_size
-            szt = os.stat("%s.test.err.FILTERED" % TST).st_size
-            if szt < szs*0.5 or szt > szs*1.5:
-                # filesizes differ significantly => expect major differences!
-                ACCURACYerr = -1
         while timedout:
             cmd = ['Mdiff']
             if ACCURACYerr == -1:
@@ -2573,26 +2537,11 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
-            if issqllogictest:
-                if tres:
-                    cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                                titlefmt % ('out', 'out'),
-                                os.devnull,
-                                '%s.test.err' % TST,
-                                '%s.err.diff.html' % TST])
-                else:
-                    cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                                titlefmt % ('out', 'out'),
-                                os.devnull,
-                                os.devnull,
-                                '%s.err.diff.html' % TST])
-            else:
-                cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                            '-C%s' % par['CONTEXT'], '-A%d' % ACCURACYerr,
-                            titlefmt % ('out', 'out'),
-                            '%s%s.FILTERED' % (TST, STABLEerr),
-                            '%s.test.err.FILTERED' % TST,
-                            '%s.err.diff.html' % TST])
+            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
+                        titlefmt % ('out', 'out'),
+                        os.devnull,
+                        '%s.test.err' % TST,
+                        '%s.err.diff.html' % TST])
             if procdebug:
                 print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
             setpgrp = True
@@ -2807,13 +2756,6 @@ def prompt() :
     return time.strftime('%H:%M:%S> ',time.localtime(time.time()))
 ### prompt() #
 
-def Prompt(cmd) :
-    if type(cmd) is type([]):
-        cmd = '" "'.join(cmd)
-    prmpt = time.strftime('\n# %H:%M:%S >  ',time.localtime(time.time()))
-    return '%s%s"%s"%s\n\n' % (prmpt, prmpt, cmd, prmpt)
-### Prompt(cmd) #
-
 def getkids():
     # return a dictionary with process IDs as key and a list of child
     # processes as value
@@ -2980,9 +2922,7 @@ class ServerClass:
     def LaunchIt(self):
         global setpgrp
 
-        self.outfile.write(Prompt(self.cmd))
         self.outfile.flush()
-        self.errfile.write(Prompt(self.cmd))
         self.errfile.flush()
 
         if procdebug:
@@ -3056,9 +2996,7 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
         TestIn = process.PIPE
     else:
         TestInput = None
-    TestOut.write(Prompt(cmd))
     TestOut.flush()
-    TestErr.write(Prompt(cmd))
     TestErr.flush()
     if procdebug:
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
@@ -3390,10 +3328,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             TestErr = try_open(TestErrFile, 'a')
 
         if TestOut is not None:
-            TestOut.write(Prompt('Done.'))
             TestOut.close()
         if TestErr is not None:
-            TestErr.write(Prompt('Done.'))
             TestErr.close()
 
     if returncode is None and pSrvr is not None:
@@ -3404,14 +3340,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             raise KeyboardInterrupt
         for err in ('timeout', 'segfault', 'abort', 'signal', 'error'):
             if returncode == err:
-                return err, issqllogictest
-        return returncode, issqllogictest       # remaining error (shouldn't get here)
+                return err
+        return returncode       # remaining error (shouldn't get here)
 
     if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail
         if logicerror:
-            return 'logicerror', issqllogictest
-        return None, issqllogictest
+            return 'logicerror'
+        return None
 
     # Try to detect segfaults and the like
     # Try to detect aborts due to too deep recursion
@@ -3427,9 +3363,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             if os.path.isfile(f):
                 for l in openutf8(f):
                     if TO.search(l):
-                        return msg, issqllogictest
+                        return msg
 
-    return None, issqllogictest
+    return None
 
 ### DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, ME, MAPIsockets, length, nomito) #
 
