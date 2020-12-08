@@ -75,6 +75,10 @@ case		#[MK] interactive behavior is inconsistent with script run, see bugreport
 #ToDo aggregates
 #ToDo transactions
 random	#[MK] causes an non-displayed error and lost of information in the result
+limit	#[MK] handles
+alter_table
+drop
+
 #portals [MK] MonetDB does not support SQL cursor/fetch operations
 arrays
 #btree_index	[MK]MonetDB does not support construction of btrees
@@ -86,7 +90,6 @@ update
 #ToDo portals_p2 [MK] MonetDB does not support SQL cursor/fetch operations
 #ToDo foreign_key
 #cluster	[MK]MonetDB does not support clustering of tables
-limit	#[MK] handles
 #ToDo plpgsql
 #ToDo copy2
 #ToDo temp
@@ -96,7 +99,6 @@ limit	#[MK] handles
 without_oid
 #ToDo conversion
 #truncate [MK] a combination of a DROP TABLE followed by its CREATE table, feature request?
-alter_table
 #ToDo sequence
 #ToDo polymorphism
 #rowtypes [MK] MonetDB does not support object type definitions 
@@ -105,7 +107,6 @@ alter_table
 # these four were in a 2005 pgregress set, but are no longer
 # in the 2014 v9.3.4 pgregress set; not sure when/where they
 # should be run; keep them for last for now
-drop
 #ToDo mule_internal
 numeric_big
 #ToDo sql_ascii
