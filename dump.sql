@@ -2,6 +2,7 @@ START TRANSACTION;
 
 --We start with creating static versions of catalogue tables that are going to be affected by this dump script itself.
 CREATE TEMPORARY TABLE _user_sequences AS SELECT * FROM sys.sequences;
+CREATE TEMPORARY TABLE _user_functions AS SELECT * FROM sys.functions f WHERE NOT f.system;
 
 CREATE FUNCTION SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || s || ''' '; END;
 CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; --TODO: Figure out why this breaks with the space
@@ -353,13 +354,27 @@ RETURN
 	FROM describe_sequences();
 END;
 
+CREATE FUNCTION describe_functions() RETURNS TABLE (o INT, sch STRING, fun STRING, def STRING) BEGIN
+RETURN
+	SELECT f.id, s.name, f.name, f.func from _user_functions f JOIN schemas s ON f.schema_id = s.id;
+END;
+
+CREATE FUNCTION dump_functions() RETURNS TABLE (o INT, stmt STRING) BEGIN
+	RETURN SELECT f.o, 'SET SCHEMA ' || DQ(f.sch) || ';' || f.def || 'SET SCHEMA "sys";' FROM describe_functions() f;
+END;
+
 --The dump statement should normally have an auto-incremented column representing the creation order.
 --But in cases of db objects that can be interdependent, i.e. functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
---Because we need to explicitly overwrite the creation order column "o" in those cases and after inserting the dump statements for functions and table-likes,
+--Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for functions and table-likes,
 --we can restart the auto-increment sequence with a sensible value for following dump statements.
 
 CREATE SEQUENCE _auto_increment;
 CREATE TEMPORARY TABLE dump_statements(o INT DEFAULT NEXT VALUE FOR _auto_increment, s STRING, PRIMARY KEY (o));
+
+--Because ALTER SEQUENCE statements are not allowed in procedures,
+--we have to do a really nasty hack to restart the _auto_increment sequence.
+
+CREATE FUNCTION restart_sequence(sch STRING, seq STRING, val BIGINT) RETURNS BIGINT EXTERNAL NAME sql."restart";
 
 CREATE PROCEDURE dump_database(describe BOOLEAN)
 BEGIN
@@ -367,6 +382,7 @@ BEGIN
     set schema sys;
 
 	INSERT INTO dump_statements(s) VALUES ('START TRANSACTION;');
+	INSERT INTO dump_statements(s) VALUES ('SET SCHEMA "sys";');
 
 	INSERT INTO dump_statements(s) --dump_create_roles
 		SELECT 'CREATE ROLE ' || DQ(name) || ';' FROM auths
@@ -418,6 +434,15 @@ BEGIN
 			sys.sequences seq JOIN sys.comments rem ON seq.id = rem.id
 		WHERE sch.id = seq.schema_id;
 
+	DECLARE current_order INT;
+	SET current_order = (SELECT max(o) FROM dump_statements) - (SELECT min(ids.id) FROM (select id from tables union select id from functions) ids(id));
+
+	INSERT INTO dump_statements SELECT f.o + current_order, f.stmt FROM dump_functions() f;
+
+	SET current_order = (SELECT max(o) + 1 FROM dump_statements);
+	DECLARE dummy_result BIGINT;
+	SET dummy_result = restart_sequence('sys', '_auto_increment', current_order + 1);
+
 	INSERT INTO dump_statements(s) --dump_create_tables
 		SELECT
 			'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) ||
@@ -449,15 +474,12 @@ BEGIN
         SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
-	--TODO STREAM TABLE?
-	--TODO functions
 	--TODO VIEW
 	--TODO Triggers
 	--TODO COMMENTS ON TABLE
 	--TODO TABLE level grants
 	--TODO COLUMN level grants
 	--TODO User Defined Types? sys.types
-	--TODO Triggers
 	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
