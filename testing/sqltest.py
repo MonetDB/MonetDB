@@ -211,18 +211,18 @@ class TestCaseResult(object):
             msg = "expected to fail but didn't"
             self.fail(msg)
         else:
-            if err_code and err_message:
-                if err_code != self.err_code or err_message.lower() != self.err_message.lower():
-                    msg = "expected to fail with error code {} and error message {} but failed with error code {} and error message {}".format(err_code, err_message, self.err_code, self.err_message)
-                    self.fail(msg)
-            elif err_code and not err_message:
+            msgs = []
+            if err_code:
                 if self.err_code != err_code:
-                    msg = "expected to fail with error code {} but failed with error code {}".format(err_code, self.err_code)
-                    self.fail(msg)
-            elif err_message and not err_code:
-                if err_message.lower() != self.err_message.lower():
-                    msg = "expected to fail with error message {} but failed with error message {}".format(err_message, self.err_message)
-                    self.fail(msg)
+                    msgs.append( "expected to fail with error code {} but failed with error code {}".format(err_code, self.err_code))
+            if err_message:
+                if self.err_message:
+                    if err_message.lower() != self.err_message.lower():
+                        msgs.append("expected to fail with error message {} but failed with error message {}".format(err_message, self.err_message))
+                else:
+                    msgs.append("expected to fail with error message {} but got {}".format(err_message, self.err_message))
+            if len(msgs) > 0:
+                self.fail('\n'.join(msgs))
         return self
 
     def assertSucceeded(self):
