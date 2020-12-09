@@ -344,7 +344,7 @@ END;
 CREATE FUNCTION dump_sequences() RETURNS TABLE(stmt STRING) BEGIN
 RETURN
 	SELECT
-		'CREATE SEQUENCE ' || FQTN(sch, seq) || 'AS BIGINT ' ||
+		'CREATE SEQUENCE ' || FQTN(sch, seq) || ' AS BIGINT ' ||
 		CASE WHEN "s" <> 0 THEN ' START WITH ' || "s" ELSE '' END ||
 		CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
 		CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
