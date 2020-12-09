@@ -376,11 +376,13 @@ RETURN
 				dump_remote_table_expressions(s.name, t.name)
 			WHEN ts.table_type_name = 'MERGE TABLE' THEN
 				dump_merge_table_partition_expressions(t.id)
+			WHEN ts.table_type_name = 'VIEW' THEN
+				t.query
 			ELSE
 				''
 		END
-	FROM sys.schemas s, table_types ts, sys._tables t
-	WHERE ts.table_type_name IN ('TABLE', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
+	FROM sys.schemas s, table_types ts, sys.tables t
+	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
 		AND t.system = FALSE
 		AND s.id = t.schema_id
 		AND ts.table_type_id = t.type
@@ -389,7 +391,14 @@ END;
 
 CREATE FUNCTION dump_tables() RETURNS TABLE (o INT, stmt STRING) BEGIN
 RETURN
-	SELECT t.o, 'CREATE ' || t.typ || ' ' || FQTN(t.sch, t.tab) || t.col || t.opt || ';'
+	SELECT
+		t.o,
+		CASE
+			WHEN t.typ <> 'VIEW' THEN
+				'CREATE ' || t.typ || ' ' || FQTN(t.sch, t.tab) || t.col || t.opt || ';'
+			ELSE
+				t.opt
+		END
 	FROM describe_tables() t;
 END;
 
