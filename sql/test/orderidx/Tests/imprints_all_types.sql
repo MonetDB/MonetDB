@@ -156,8 +156,6 @@ create imprints index "impidx_url55" on all_types ("url55");
 create imprints index "impidx_uuid" on all_types ("uuid");
 
 -- dump the table including all indexes defined on it
-\D all_types
-
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
 
 
@@ -330,7 +328,7 @@ drop index "impidx_url55";
 drop index "impidx_uuid";
 
 -- dump the table again, now it should not list any indexes anymore
-\D all_types
+select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name;
 
 drop table all_types;
 

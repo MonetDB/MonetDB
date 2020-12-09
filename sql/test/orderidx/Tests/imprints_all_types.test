@@ -92,18 +92,115 @@ insert into all_types values (false, -10, -10000, -1000000,
 	'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype',
 	'76236890-f4e2-4d4f-a02b-ec7a02c3cb50')
 
-query I
+query TIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
-1
+False
+-10
+-10000
+-1000000
+-10000000000
+-1000000000000000019884624838656.000
+-100000000000000000000.000
+-1.000
+-123456789.000
+-12345.678
+-3.142
+-3.142
+-3.142
+2005-04-15
+-24
+-18
+-3
+-20
+-2 days, 18:00:00
+-2 days, 14:40:00
+-2 days, 20:13:20
+-1 day, 14:00:00
+-1 day, 22:20:00
+-1 day, 23:26:40
+-1 day, 23:50:00
+-1 day, 23:58:20
+-1 day, 23:59:50
+1988-07-15 07:30:00
+1988-07-15 07:30:00
+1988-07-15 09:30:00
+1988-07-15 09:30:00
+06:30:00
+06:30:00
+08:30:00
+08:30:00
+01234567
+01234567
+0123456
+0123456
+A
+Avarchar
+A012345678
+120.0.0.0
+120.120.120.129
+{"A": -123}
+{"B": -456}
+https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
+https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
+76236890-f4e2-4d4f-a02b-ec7a02c3cb50
+True
+10
+10000
+1000000
+10000000000
+1000000000000000019884624838656.000
+100000000000000000000.000
+1.000
+123456789.000
+12345.678
+3.142
+3.142
+3.142
+2009-04-15
+24
+18
+3
+20
+1 day, 6:00:00
+1 day, 9:20:00
+1 day, 3:46:40
+10:00:00
+1:40:00
+0:33:20
+0:10:00
+0:01:40
+0:00:10
+1995-07-15 07:30:00
+1995-07-15 07:30:00
+1995-07-15 09:30:00
+1995-07-15 09:30:00
+07:30:00
+07:30:00
+09:30:00
+09:30:00
+123456
+123456
+123456
+123456
+x
+varchar
+0123456789
+127.0.0.0
+127.127.127.255
+{"a": 123}
+{"b": 456}
+www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
+www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
+ae106ad4-81fd-4f1a-85e8-5efface60da4
 
 statement ok
 insert into all_types select * from all_types
 
-query I
+query TIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
-1
+196 values hashing to cd4383d0c716ab2c0b46d96fb6394a99
 
 query TIITIIT rowsort
 select name, schema_id, type, system, commit_action, access, query from sys._tables where name = 'all_types'
@@ -266,7 +363,76 @@ create imprints index "impidx_uuid" on all_types ("uuid")
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
 ----
-70 values hashing to 410642cb50b0381ccdb5e36252d1a7d3
+4
+impidx_bigint
+4
+impidx_boolean
+4
+impidx_date
+4
+impidx_decimal
+4
+impidx_decimal83
+4
+impidx_decimal9
+4
+impidx_double
+4
+impidx_float
+4
+impidx_float83
+4
+impidx_float9
+4
+impidx_iM
+4
+impidx_iY
+4
+impidx_iYM
+4
+impidx_id
+4
+impidx_idh
+4
+impidx_idm
+4
+impidx_ids
+4
+impidx_ih
+4
+impidx_ihm
+4
+impidx_ihs
+4
+impidx_im
+4
+impidx_ims
+4
+impidx_int
+4
+impidx_is
+4
+impidx_real
+4
+impidx_smallint
+4
+impidx_time
+4
+impidx_time5
+4
+impidx_time5zone
+4
+impidx_timestamp
+4
+impidx_timestamp5
+4
+impidx_timestamp5zone
+4
+impidx_timestampzone
+4
+impidx_timezone
+4
+impidx_tinyint
 
 query T rowsort
 select "boolean" from all_types order by "boolean" ASC
@@ -404,10 +570,13 @@ select "iM" from all_types order by "iM" ASC
 3
 3
 
-query I
+query T rowsort
 select "id" from all_types order by "id" ASC
 ----
-1
+-20
+-20
+20
+20
 
 query T rowsort
 select "idh" from all_types order by "idh" ASC
@@ -548,18 +717,18 @@ select "time5zone" from all_types order by "time5zone" ASC
 query T rowsort
 select "blob" from all_types order by "blob" ASC
 ----
-b'\x01#Eg'
-b'\x01#Eg'
-b'\x124V'
-b'\x124V'
+01234567
+01234567
+123456
+123456
 
 query T rowsort
 select "blob100" from all_types order by "blob100" ASC
 ----
-b'\x01#Eg'
-b'\x01#Eg'
-b'\x124V'
-b'\x124V'
+01234567
+01234567
+123456
+123456
 
 query T rowsort
 select "clob" from all_types order by "clob" ASC
@@ -793,10 +962,13 @@ select "iM" from all_types order by "iM" DESC
 3
 3
 
-query I
+query T rowsort
 select "id" from all_types order by "id" DESC
 ----
-1
+-20
+-20
+20
+20
 
 query T rowsort
 select "idh" from all_types order by "idh" DESC
@@ -937,18 +1109,18 @@ select "time5zone" from all_types order by "time5zone" DESC
 query T rowsort
 select "blob" from all_types order by "blob" DESC
 ----
-b'\x01#Eg'
-b'\x01#Eg'
-b'\x124V'
-b'\x124V'
+01234567
+01234567
+123456
+123456
 
 query T rowsort
 select "blob100" from all_types order by "blob100" DESC
 ----
-b'\x01#Eg'
-b'\x01#Eg'
-b'\x124V'
-b'\x124V'
+01234567
+01234567
+123456
+123456
 
 query T rowsort
 select "clob" from all_types order by "clob" DESC
@@ -1049,15 +1221,84 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-query I
+query TIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10
 ----
-1
+392 values hashing to d867a67935623e9cd794a91e48fc7373
 
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
 ----
-70 values hashing to 410642cb50b0381ccdb5e36252d1a7d3
+4
+impidx_bigint
+4
+impidx_boolean
+4
+impidx_date
+4
+impidx_decimal
+4
+impidx_decimal83
+4
+impidx_decimal9
+4
+impidx_double
+4
+impidx_float
+4
+impidx_float83
+4
+impidx_float9
+4
+impidx_iM
+4
+impidx_iY
+4
+impidx_iYM
+4
+impidx_id
+4
+impidx_idh
+4
+impidx_idm
+4
+impidx_ids
+4
+impidx_ih
+4
+impidx_ihm
+4
+impidx_ihs
+4
+impidx_im
+4
+impidx_ims
+4
+impidx_int
+4
+impidx_is
+4
+impidx_real
+4
+impidx_smallint
+4
+impidx_time
+4
+impidx_time5
+4
+impidx_time5zone
+4
+impidx_timestamp
+4
+impidx_timestamp5
+4
+impidx_timestamp5zone
+4
+impidx_timestampzone
+4
+impidx_timezone
+4
+impidx_tinyint
 
 statement ok
 drop index "impidx_boolean"
@@ -1205,6 +1446,10 @@ drop index "impidx_url55"
 
 statement error
 drop index "impidx_uuid"
+
+query IT rowsort
+select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
+----
 
 statement ok
 drop table all_types
