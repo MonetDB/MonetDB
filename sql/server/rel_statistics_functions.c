@@ -217,12 +217,86 @@ sql_neg_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[11] = {
+static void
+sql_sign_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data;
+	ValPtr omin, omax, res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+	ValRecord minus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = -1}, plus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = 1};
+	bool properties_set = false;
+
+	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
+		ValRecord zero1 = (ValRecord) {.vtype = omin->vtype,}, zero2 = (ValRecord) {.vtype = omax->vtype,}, verify1, verify2, verify3, verify4;
+
+		VARcalcgt(&verify1, omin, &zero1);
+		VARcalcgt(&verify2, omax, &zero2);
+		VARcalclt(&verify3, omin, &zero1);
+		VARcalclt(&verify4, omax, &zero2);
+
+		if (verify1.val.btval == 1 && verify2.val.btval == 1) {
+			VALcopy(res1, &plus1);
+			VALcopy(res2, &plus1);
+			set_property(sql, e, PROP_MAX, res1);
+			set_property(sql, e, PROP_MIN, res2);
+			properties_set = true;
+		} else if (verify3.val.btval == 1 && verify4.val.btval == 1) {
+			VALcopy(res1, &minus1);
+			VALcopy(res2, &minus1);
+			set_property(sql, e, PROP_MAX, res1);
+			set_property(sql, e, PROP_MIN, res2);
+			properties_set = true;
+		}
+	}
+	if (!properties_set) {
+		VALcopy(res1, &plus1);
+		VALcopy(res2, &minus1);
+		set_property(sql, e, PROP_MAX, res1);
+		set_property(sql, e, PROP_MIN, res2);
+	}
+}
+
+static void
+sql_abs_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data;
+	ValPtr omin, omax, res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+
+	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
+		ValRecord zero1 = (ValRecord) {.vtype = omin->vtype,}, zero2 = (ValRecord) {.vtype = omax->vtype,}, verify1, verify2, verify3, verify4;
+
+		VARcalcge(&verify1, omin, &zero1);
+		VARcalcge(&verify2, omax, &zero2);
+		VARcalcle(&verify3, omin, &zero1);
+		VARcalcle(&verify4, omax, &zero2);
+
+		if (verify1.val.btval == 1 && verify2.val.btval == 1) {
+			gdk_return code1 = VARcalcabsolute(res1, omax);
+			gdk_return code2 = VARcalcabsolute(res2, omin);
+
+			assert(code1 && code2);
+			set_property(sql, e, PROP_MAX, res1);
+			set_property(sql, e, PROP_MIN, res2);
+		} else if (verify3.val.btval == 1 && verify4.val.btval == 1) {
+			gdk_return code1 = VARcalcabsolute(res1, omax);
+			gdk_return code2 = VARcalcabsolute(res2, omin);
+
+			assert(code1 && code2);
+			set_property(sql, e, PROP_MAX, res2);
+			set_property(sql, e, PROP_MIN, res1);
+		}
+	}
+}
+
+static struct function_properties functions_list[13] = {
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
 	{"sql_mul", &sql_mul_propagate_statistics},
 	{"sql_div", &sql_div_propagate_statistics},
 	{"sql_neg", &sql_neg_propagate_statistics},
+	{"sign", &sql_sign_propagate_statistics},
+	{"abs", &sql_abs_propagate_statistics},
 	{"sql_min", &sql_least_greatest_propagate_statistics},
 	{"sql_max", &sql_least_greatest_propagate_statistics},
 	{"least", &sql_least_greatest_propagate_statistics},
