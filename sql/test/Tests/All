@@ -133,8 +133,13 @@ HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4
 foreign_key
 ## IN operator in SELECT and type checking
 in
-## Don't know what it tests. Maybe it's no longer a challenge for MDB
+## Don't know what problem it used to test. Probably no longer an issue.
 meltdown
 savepoints1
 savepoints2
 union
+## Queries from the old AS3AP benchmark.
+## Since we don't have the data, let's just execute the queries here
+## Commented-out queries suffer from the problem reported in Issue #7023
+as3ap
+
