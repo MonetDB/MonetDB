@@ -121,7 +121,7 @@ SQLall(ptr ret, const bat *bid)
 {
 	BAT *b;
 	BUN c, _s;
-	const void *p;
+	const void *p = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "sql.all", SQLSTATE(HY005) "Cannot access column descriptor");
