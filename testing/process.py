@@ -464,5 +464,26 @@ class server(Popen):
                 break
             if os.path.exists(started):
                 # server is ready
+                try:
+                    conn = open(os.path.join(dbpath, '.conn')).read()
+                except:
+                    if verbose:
+                        print('failed to open {}'.format(os.path.join(dbpath, '.conn')))
+                    pass
+                else:
+                    # retrieve mapi port if available
+                    for c in conn.splitlines():
+                        c = c.rstrip('/')
+                        c = c.rsplit(':', maxsplit=1)
+                        if len(c) == 2:
+                            try:
+                                port = int(c[1])
+                            except ValueError:
+                                pass
+                            else:
+                                if verbose:
+                                    print('mapi port: {}'.format(c[1]))
+                                self.dbport = c[1]
+                                break
                 break
             time.sleep(0.001)
