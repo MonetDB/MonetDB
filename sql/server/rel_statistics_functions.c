@@ -77,8 +77,8 @@ sql_##FUNC##_propagate_statistics(mvc *sql, sql_exp *e) \
 				set_property(sql, e, PROP_MAX, res1); \
 				set_property(sql, e, PROP_MIN, res2); \
 			} else if (verify1.val.btval == 0 && verify2.val.btval == 0 && verify3.val.btval == 0 && verify4.val.btval == 0) { /* if all negative propagate by swapping min and max */ \
-				set_property(sql, e, PROP_MIN, res1); \
 				set_property(sql, e, PROP_MAX, res2); \
+				set_property(sql, e, PROP_MIN, res1); \
 			} \
 		} \
 	} \
@@ -118,8 +118,8 @@ sql_div_propagate_statistics(mvc *sql, sql_exp *e)
 				set_property(sql, e, PROP_MAX, res1);
 				set_property(sql, e, PROP_MIN, res2);
 			} else if (verify1.val.btval == 0 && verify2.val.btval == 0 && verify3.val.btval == 0 && verify4.val.btval == 0) { /* if all negative propagate by swapping min and max */
-				set_property(sql, e, PROP_MIN, res1);
 				set_property(sql, e, PROP_MAX, res2);
+				set_property(sql, e, PROP_MIN, res1);
 			}
 		}
 	}
@@ -181,11 +181,48 @@ sql_nullif_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[10] = {
+static void
+sql_neg_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data;
+	ValPtr lval;
+	sql_subtype *tp = ((sql_subfunc *)e->f)->res->h->data;
+
+	if ((lval = find_prop_and_get(first->p, PROP_MIN))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		ValRecord minus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = -1};
+		ptr pt = VALconvert(tp->type->localtype, &minus1);
+
+		assert(pt);
+		res->vtype = lval->vtype;
+		if (VARcalcmul(res, lval, &minus1, true) == GDK_SUCCEED) {
+			set_property(sql, e, PROP_MAX, res);
+		} else {
+			GDKclrerr();
+		}
+	}
+	if ((lval = find_prop_and_get(first->p, PROP_MAX))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		ValRecord minus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = -1};
+		ptr pt = VALconvert(tp->type->localtype, &minus1);
+
+		assert(pt);
+		res->vtype = lval->vtype;
+		if (VARcalcmul(res, lval, &minus1, true) == GDK_SUCCEED) {
+			set_property(sql, e, PROP_MIN, res);
+		} else {
+			GDKclrerr();
+		}
+	}
+}
+
+static struct function_properties functions_list[11] = {
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
 	{"sql_mul", &sql_mul_propagate_statistics},
 	{"sql_div", &sql_div_propagate_statistics},
+	{"sql_neg", &sql_neg_propagate_statistics},
 	{"sql_min", &sql_least_greatest_propagate_statistics},
 	{"sql_max", &sql_least_greatest_propagate_statistics},
 	{"least", &sql_least_greatest_propagate_statistics},
