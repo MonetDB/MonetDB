@@ -588,7 +588,6 @@ mvc_bind(mvc *m, const char *sname, const char *tname, const char *cname, int ac
 		return NULL;
 
 	b = store_funcs.bind_col(tr, c, access);
-	assert(b);
 	return b;
 }
 
