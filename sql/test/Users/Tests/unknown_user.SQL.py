@@ -3,6 +3,9 @@
 ###
 
 from MonetDBtesting.sqltest import SQLTestCase
+import logging
+
+logging.basicConfig(level=logging.FATAL)
 
 err_msg = "InvalidCredentialsException:checkCredentials:invalid credentials for user 'this_user_does_not_exist'".strip()
 

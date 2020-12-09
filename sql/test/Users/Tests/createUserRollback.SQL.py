@@ -1,5 +1,8 @@
 
 from MonetDBtesting.sqltest import SQLTestCase
+import logging
+
+logging.basicConfig(level=logging.FATAL)
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
