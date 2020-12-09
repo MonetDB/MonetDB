@@ -45,7 +45,7 @@ set_min_of_values(mvc *sql, sql_exp *e, rel_prop kind, ValPtr lval, ValPtr rval)
 }
 
 static inline void
-copy_property(mvc *sql, sql_exp *e, rel_prop kind, ValPtr val)
+set_property(mvc *sql, sql_exp *e, rel_prop kind, ValPtr val)
 {
 	prop *p = e->p = prop_create(sql->sa, kind, e->p);
 	p->value = val;

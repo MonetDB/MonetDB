@@ -66,9 +66,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
 							if (is_outerjoin(rel->op)) {
 								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MAX, lval);
+									set_property(sql, e, PROP_MAX, lval);
 								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
-									copy_property(sql, e, PROP_MIN, lval);
+									set_property(sql, e, PROP_MIN, lval);
 							} else {
 								if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
 									set_min_of_values(sql, e, PROP_MAX, lval, rval); /* for equality reduce */
@@ -84,9 +84,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
 							if (is_outerjoin(rel->op)) {
 								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MAX, lval);
+									set_property(sql, e, PROP_MAX, lval);
 								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
-									copy_property(sql, e, PROP_MIN, lval);
+									set_property(sql, e, PROP_MIN, lval);
 							} else {
 								if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
 									set_max_of_values(sql, e, PROP_MAX, lval, rval); /* for inequality expand */
@@ -104,19 +104,19 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
 							if (is_outerjoin(rel->op)) {
 								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MAX, lval);
+									set_property(sql, e, PROP_MAX, lval);
 								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
-									copy_property(sql, e, PROP_MIN, lval);
+									set_property(sql, e, PROP_MIN, lval);
 							} else if (ne) {
 								if ((lval = find_prop_and_get(le->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MAX, lval);
+									set_property(sql, e, PROP_MAX, lval);
 								if ((rval = find_prop_and_get(re->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MIN, rval);
+									set_property(sql, e, PROP_MIN, rval);
 							} else {
 								if ((lval = find_prop_and_get(le->p, PROP_MIN)))
-									copy_property(sql, e, PROP_MAX, lval);
+									set_property(sql, e, PROP_MAX, lval);
 								if ((rval = find_prop_and_get(re->p, PROP_MIN)))
-									copy_property(sql, e, PROP_MIN, rval);
+									set_property(sql, e, PROP_MIN, rval);
 							}
 						}
 						ne = ne ? ne : rne;
@@ -128,38 +128,38 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e)))) {
 							if (is_outerjoin(rel->op)) {
 								if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MAX, lval);
+									set_property(sql, e, PROP_MAX, lval);
 								if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MIN)))
-									copy_property(sql, e, PROP_MIN, lval);
+									set_property(sql, e, PROP_MIN, lval);
 							} else if (ne) {
 								if (fe) { /* range case */
 									if ((lval = find_prop_and_get(fe->p, PROP_MIN)))
-										copy_property(sql, e, PROP_MAX, lval);
+										set_property(sql, e, PROP_MAX, lval);
 									if ((rval = find_prop_and_get(re->p, PROP_MAX)))
-										copy_property(sql, e, PROP_MIN, rval);
+										set_property(sql, e, PROP_MIN, rval);
 								} else {
 									if ((lval = find_prop_and_get(re->p, PROP_MIN)))
-										copy_property(sql, e, PROP_MAX, lval);
+										set_property(sql, e, PROP_MAX, lval);
 									if ((rval = find_prop_and_get(le->p, PROP_MIN)))
-										copy_property(sql, e, PROP_MIN, rval);
+										set_property(sql, e, PROP_MIN, rval);
 								}
 							} else if (rne) {
 								if (fe) { /* range case */
 									if ((lval = find_prop_and_get(re->p, PROP_MIN)))
-										copy_property(sql, e, PROP_MAX, lval);
+										set_property(sql, e, PROP_MAX, lval);
 									if ((rval = find_prop_and_get(le->p, PROP_MIN)))
-										copy_property(sql, e, PROP_MIN, rval);
+										set_property(sql, e, PROP_MIN, rval);
 								} else {
 									if ((lval = find_prop_and_get(re->p, PROP_MAX)))
-										copy_property(sql, e, PROP_MAX, lval);
+										set_property(sql, e, PROP_MAX, lval);
 									if ((rval = find_prop_and_get(le->p, PROP_MAX)))
-										copy_property(sql, e, PROP_MIN, rval);
+										set_property(sql, e, PROP_MIN, rval);
 								}
 							} else { /* range case */
 								if ((lval = find_prop_and_get(fe->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MAX, lval);
+									set_property(sql, e, PROP_MAX, lval);
 								if ((rval = find_prop_and_get(le->p, PROP_MAX)))
-									copy_property(sql, e, PROP_MIN, rval);
+									set_property(sql, e, PROP_MIN, rval);
 							}
 						}
 						ne = ne ? ne : rne ? rne : fne;
@@ -180,9 +180,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_basetable: {
 			if (e->l && (ne = exps_bind_column2(rel->exps, e->l, e->r, NULL))) {
 				if ((lval = find_prop_and_get(ne->p, PROP_MAX)))
-					copy_property(sql, e, PROP_MAX, lval);
+					set_property(sql, e, PROP_MAX, lval);
 				if ((lval = find_prop_and_get(ne->p, PROP_MIN)))
-					copy_property(sql, e, PROP_MIN, lval);
+					set_property(sql, e, PROP_MIN, lval);
 			}
 		} break;
 		case op_union:
@@ -193,9 +193,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 			ne = e->l ? exps_bind_column2(rel->exps, e->l, e->r, NULL) : exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
 			if (ne) {
 				if ((lval = find_prop_and_get(ne->p, PROP_MAX)))
-					copy_property(sql, e, PROP_MAX, lval);
+					set_property(sql, e, PROP_MAX, lval);
 				if ((lval = find_prop_and_get(ne->p, PROP_MIN)))
-					copy_property(sql, e, PROP_MIN, lval);
+					set_property(sql, e, PROP_MIN, lval);
 			}
 		} break;
 		default: /* if there is a topN or sample relation in between, then the MIN and MAX values are lost */
@@ -244,7 +244,7 @@ rel_set_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e, int i)
 		else if (rel->op == op_inter)
 			set_min_of_values(sql, e, PROP_MAX, lval, rval); /* for intersect the new max will be the min of the two */
 		else
-			copy_property(sql, e, PROP_MAX, lval);
+			set_property(sql, e, PROP_MAX, lval);
 	}
 	if ((lval = find_prop_and_get(le->p, PROP_MIN)) && (rval = find_prop_and_get(re->p, PROP_MIN))) {
 		if (rel->op == op_union)
@@ -252,7 +252,7 @@ rel_set_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e, int i)
 		else if (rel->op == op_inter)
 			set_max_of_values(sql, e, PROP_MIN, lval, rval); /* for intersect the new min will be the max of the two */
 		else
-			copy_property(sql, e, PROP_MIN, lval);
+			set_property(sql, e, PROP_MIN, lval);
 	}
 }
 
@@ -301,9 +301,9 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
 						VALcopy(res, lval);
 						if (VALconvert(to->type->localtype, res))
-							copy_property(sql, e, PROP_MAX, res);
+							set_property(sql, e, PROP_MAX, res);
 					} else {
-						copy_property(sql, e, PROP_MAX, lval);
+						set_property(sql, e, PROP_MAX, lval);
 					}
 				}
 				if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
@@ -311,9 +311,9 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
 						VALcopy(res, lval);
 						if (VALconvert(to->type->localtype, res))
-							copy_property(sql, e, PROP_MIN, res);
+							set_property(sql, e, PROP_MIN, res);
 					} else {
-						copy_property(sql, e, PROP_MIN, lval);
+						set_property(sql, e, PROP_MIN, lval);
 					}
 				}
 			}
@@ -341,8 +341,8 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (e->l) {
 				atom *a = (atom*) e->l;
 				if (!a->isnull) {
-					copy_property(sql, e, PROP_MAX, &a->data);
-					copy_property(sql, e, PROP_MIN, &a->data);
+					set_property(sql, e, PROP_MAX, &a->data);
+					set_property(sql, e, PROP_MIN, &a->data);
 				}
 			} else if (e->f) {
 				list *vals = (list *) e->f;
@@ -377,9 +377,9 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 
 				if (max)
-					copy_property(sql, e, PROP_MAX, max);
+					set_property(sql, e, PROP_MAX, max);
 				if (min)
-					copy_property(sql, e, PROP_MIN, min);
+					set_property(sql, e, PROP_MIN, min);
 			}
 		} break;
 		case e_cmp: /* propagating min and max of booleans is not very worth it */
