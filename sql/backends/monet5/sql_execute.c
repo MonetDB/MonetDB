@@ -298,6 +298,7 @@ SQLrun(Client c, backend *be, mvc *m)
 	}
 	if (m->emode == m_execute && be->q->paramlen != m->argc)
 		throw(SQL, "sql.prepare", SQLSTATE(42000) "EXEC called with wrong number of arguments: expected %d, got %d", be->q->paramlen, m->argc);
+	TRC_INFO(SQL_EXECUTION, "Executing: %s", m->query);
 	MT_thread_setworking(m->query);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
