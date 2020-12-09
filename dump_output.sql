@@ -17,8 +17,6 @@ CREATE SEQUENCE "sys"."seq7"AS BIGINT  START WITH 1;
 CREATE SEQUENCE "sys"."seq8"AS BIGINT  START WITH -10 INCREMENT BY -1 MINVALUE -10 MAXVALUE -1;
 CREATE SEQUENCE "sys"."seq9"AS BIGINT  START WITH 10 MINVALUE 10 MAXVALUE 10;
 COMMENT ON SEQUENCE "sys"."seq1" IS  'This is a comment on a sequence.' ;
-SET SCHEMA "sfoo";create function
-func1(x int, y int) returns int begin return x + y; end;SET SCHEMA "sys";
 CREATE TABLE "sys"."test" ("s" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."bla" ("s" CHARACTER LARGE OBJECT(10));
 CREATE TABLE "sys"."bob" ("ts" TIMESTAMP(3) );
@@ -31,6 +29,8 @@ CREATE TABLE "sfoo"."tfoo" ("i" INTEGER);
 CREATE TABLE "sfoo"."test" ("s" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."pfoo1" ("i" INTEGER);
 CREATE TABLE "sys"."pfoo2" ("i" INTEGER);
+SET SCHEMA "sfoo";create function
+func1(x int, y int) returns int begin return x + y; end;SET SCHEMA "sys";
 CREATE TABLE "sys"."lower_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
 CREATE TABLE "sys"."higher_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
 CREATE TABLE "sys"."unknown_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);

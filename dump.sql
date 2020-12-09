@@ -363,13 +363,43 @@ CREATE FUNCTION dump_functions() RETURNS TABLE (o INT, stmt STRING) BEGIN
 	RETURN SELECT f.o, 'SET SCHEMA ' || DQ(f.sch) || ';' || f.def || 'SET SCHEMA "sys";' FROM describe_functions() f;
 END;
 
+CREATE FUNCTION describe_tables() RETURNS TABLE(o INT, sch STRING, tab STRING, typ STRING,  col STRING, opt STRING) BEGIN
+RETURN
+	SELECT
+		t.id,
+		s.name,
+		t.name,
+		ts.table_type_name,
+		dump_column_definition(t.id),
+		CASE
+			WHEN ts.table_type_name = 'REMOTE TABLE' THEN
+				dump_remote_table_expressions(s.name, t.name)
+			WHEN ts.table_type_name = 'MERGE TABLE' THEN
+				dump_merge_table_partition_expressions(t.id)
+			ELSE
+				''
+		END
+	FROM sys.schemas s, table_types ts, sys._tables t
+	WHERE ts.table_type_name IN ('TABLE', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
+		AND t.system = FALSE
+		AND s.id = t.schema_id
+		AND ts.table_type_id = t.type
+		AND s.name <> 'tmp';
+END;
+
+CREATE FUNCTION dump_tables() RETURNS TABLE (o INT, stmt STRING) BEGIN
+RETURN
+	SELECT t.o, 'CREATE ' || t.typ || ' ' || FQTN(t.sch, t.tab) || t.col || t.opt || ';'
+	FROM describe_tables() t;
+END;
+
 --The dump statement should normally have an auto-incremented column representing the creation order.
 --But in cases of db objects that can be interdependent, i.e. functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
 --Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for functions and table-likes,
 --we can restart the auto-increment sequence with a sensible value for following dump statements.
 
-CREATE SEQUENCE _auto_increment;
-CREATE TEMPORARY TABLE dump_statements(o INT DEFAULT NEXT VALUE FOR _auto_increment, s STRING, PRIMARY KEY (o));
+CREATE SEQUENCE tmp._auto_increment;
+CREATE TEMPORARY TABLE dump_statements(o INT DEFAULT NEXT VALUE FOR tmp._auto_increment, s STRING, PRIMARY KEY (o));
 
 --Because ALTER SEQUENCE statements are not allowed in procedures,
 --we have to do a really nasty hack to restart the _auto_increment sequence.
@@ -434,32 +464,18 @@ BEGIN
 			sys.sequences seq JOIN sys.comments rem ON seq.id = rem.id
 		WHERE sch.id = seq.schema_id;
 
-	DECLARE current_order INT;
-	SET current_order = (SELECT max(o) FROM dump_statements) - (SELECT min(ids.id) FROM (select id from tables union select id from functions) ids(id));
+	--START OF COMPLICATED DEPENDENCY STUFF:
+	--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
+	DECLARE offs INT;
+	SET offs = (SELECT max(o) FROM dump_statements) - (SELECT min(ids.id) FROM (select id from tables union select id from functions) ids(id));
 
-	INSERT INTO dump_statements SELECT f.o + current_order, f.stmt FROM dump_functions() f;
+	INSERT INTO dump_statements SELECT f.o + offs, f.stmt FROM dump_functions() f;
+	INSERT INTO dump_statements SELECT t.o + offs, t.stmt FROM dump_tables() t;
 
-	SET current_order = (SELECT max(o) + 1 FROM dump_statements);
-	DECLARE dummy_result BIGINT;
-	SET dummy_result = restart_sequence('sys', '_auto_increment', current_order + 1);
-
-	INSERT INTO dump_statements(s) --dump_create_tables
-		SELECT
-			'CREATE ' || ts.table_type_name || ' ' || DQ(s.name) || '.' || DQ(t.name) || dump_column_definition(t.id) ||
-			CASE
-				WHEN ts.table_type_name = 'REMOTE TABLE' THEN
-					dump_remote_table_expressions(s.name, t.name) || ';'
-				WHEN ts.table_type_name = 'MERGE TABLE' THEN
-					dump_merge_table_partition_expressions(t.id) || ';'
-				ELSE
-					';'
-			END
-		FROM sys.schemas s, table_types ts, sys._tables t
-		WHERE ts.table_type_name IN ('TABLE', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
-			AND t.system = FALSE
-			AND s.id = t.schema_id
-			AND ts.table_type_id = t.type
-			AND s.name <> 'tmp';
+	SET offs = (SELECT max(o) + 1 FROM dump_statements);
+	DECLARE dummy_result BIGINT; --HACK: otherwise I cannot call restart_sequence.
+	SET dummy_result = restart_sequence('tmp', '_auto_increment', offs);
+	--END OF COMPLICATED DEPENDENCY STUFF.
 
 	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
@@ -475,6 +491,7 @@ BEGIN
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
 	--TODO VIEW
+	--TODO SCHEMA GUARD
 	--TODO Triggers
 	--TODO COMMENTS ON TABLE
 	--TODO TABLE level grants
