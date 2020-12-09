@@ -15,3 +15,4 @@ prepare-where.SF-1238867.1238959.1238965.1240124
 prepare_doesnot_like_LIKE.SF-1234205
 crash_with_prepare_statement.Bug-2549
 limit_in_prepare.Bug-2552
+prepare_on_boolean_bug.Bug-2581
