@@ -7,8 +7,6 @@ CREATE table test (i int, b bigint)
 statement ok
 GRANT SELECT on table test to my_user
 
-# TODO: add tests for GRANT <privs> ON <sth> TO PUBLIC
-
 statement ok
 GRANT INSERT on table test to my_user
 
