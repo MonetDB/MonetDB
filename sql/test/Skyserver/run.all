@@ -32,8 +32,18 @@ EOF
 echo tables
 $SQL < Skyserver_tables.sql
 
+cat << EOF > .monetdb
+user=monetdb
+password=monetdb
+EOF
+
 echo loading
 cat Skyserver_import.sql | sed -e "s|DATA|$PWD/microsky|g" | $SQL
+
+cat << EOF > .monetdb
+user=skyserver
+password=skyserver
+EOF
 
 echo Constraints
 $SQL < Skyserver_constraints.sql
@@ -46,8 +56,6 @@ $SQL < Skyserver_functions.sql
 
 echo Cleanup
 $SQL < Skyserver_dropFunctions.sql
-$SQL < Skyserver_dropMs_functions.sql
-$SQL < Skyserver_dropMath.sql
 $SQL < Skyserver_dropViews.sql
 $SQL < Skyserver_dropConstraints.sql
 $SQL < Skyserver_dropTables.sql
