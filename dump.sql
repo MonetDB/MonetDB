@@ -487,6 +487,7 @@ BEGIN
 END;
 
 CALL dump_database(TRUE);
-SELECT GROUP_CONCAT(s) OVER (PARTITION BY o range between current row and current row) FROM dump_statements;
+
+SELECT s FROM dump_statements order by o;
 
 ROLLBACK;
