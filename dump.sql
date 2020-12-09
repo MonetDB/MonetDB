@@ -1,5 +1,8 @@
 START TRANSACTION;
 
+--We start with creating static versions of catalogue tables that are going to be affected by this dump script itself.
+CREATE TEMPORARY TABLE _user_sequences AS SELECT * FROM sys.sequences;
+
 CREATE FUNCTION SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || s || ''' '; END;
 CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; --TODO: Figure out why this breaks with the space
 CREATE FUNCTION FQTN(s STRING, t STRING) RETURNS STRING BEGIN RETURN DQ(s) || '.' || DQ(t); END;
@@ -332,7 +335,7 @@ BEGIN
 	seq."increment",
 	seq."cacheinc",
 	seq."cycle"
-	FROM sys.sequences seq, sys.schemas s
+	FROM _user_sequences seq, sys.schemas s
 	WHERE s.id = seq.schema_id
 	ORDER BY s.name, seq.name;
 END;
@@ -350,11 +353,13 @@ RETURN
 	FROM describe_sequences();
 END;
 
---We cannot directly use dump_sequences() later because the temporary table "dump_statements" creates a SEQUENCE due to AUTO_INCREMENT.
---So we first dump the current sequences into a temp table "_dump_sequences" which will use to create the database_dump.
+--The dump statement should normally have an auto-incremented column representing the creation order.
+--But in cases of db objects that can be interdependent, i.e. functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
+--Because we need to explicitly overwrite the creation order column "o" in those cases and after inserting the dump statements for functions and table-likes,
+--we can restart the auto-increment sequence with a sensible value for following dump statements.
 
-CREATE TEMPORARY TABLE _dump_sequences AS SELECT * FROM dump_sequences();
-CREATE TEMPORARY TABLE dump_statements(o INT AUTO_INCREMENT, s STRING, PRIMARY KEY (o));
+CREATE SEQUENCE _auto_increment;
+CREATE TEMPORARY TABLE dump_statements(o INT DEFAULT NEXT VALUE FOR _auto_increment, s STRING, PRIMARY KEY (o));
 
 CREATE PROCEDURE dump_database(describe BOOLEAN)
 BEGIN
@@ -404,7 +409,7 @@ BEGIN
 		FROM sys.auths a1, sys.auths a2, sys.user_role ur
 		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
-	INSERT INTO dump_statements(s) SELECT * FROM _dump_sequences;
+	INSERT INTO dump_statements(s) SELECT * FROM dump_sequences();
 
 	INSERT INTO dump_statements(s) --dump_create_comments_on_sequences
         SELECT comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark)
