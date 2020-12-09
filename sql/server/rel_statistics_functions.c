@@ -18,39 +18,66 @@
 
 sql_hash *sql_functions_lookup = NULL;
 
-#define sql_binop_propagate_trivial(FUNC) \
-static void \
-sql_##FUNC##_propagate_statistics(mvc *sql, sql_exp *e) \
-{ \
-	list *l = e->l; \
-	sql_exp *first = l->h->data, *second = l->h->next->data; \
-	ValPtr lval, rval; \
-	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) { \
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)); \
-		res->vtype = lval->vtype; \
-		if (VARcalc##FUNC(res, lval, rval, true) == GDK_SUCCEED) { \
-			copy_property(sql, e, PROP_MAX, res); \
-		} else { \
-			GDKclrerr(); \
-			atom *a = atom_max_value(sql->sa, exp_subtype(first)); \
-			copy_property(sql, e, PROP_MAX, &a->data); \
-		} \
-	} \
-	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) { \
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)); \
-		res->vtype = lval->vtype; \
-		if (VARcalc##FUNC(res, lval, rval, true) == GDK_SUCCEED) { \
-			copy_property(sql, e, PROP_MIN, res); \
-		} else { \
-			GDKclrerr(); \
-			atom *a = atom_max_value(sql->sa, exp_subtype(first)); \
-			copy_property(sql, e, PROP_MIN, &a->data); \
-		} \
-	} \
+static void
+sql_add_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data, *second = l->h->next->data;
+	ValPtr lval, rval;
+
+	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		res->vtype = lval->vtype;
+		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
+			copy_property(sql, e, PROP_MAX, res);
+		} else {
+			GDKclrerr(); /* if the min/max pair overflows, then disable */
+		}
+	}
+	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		res->vtype = lval->vtype;
+		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
+			copy_property(sql, e, PROP_MIN, res);
+		} else {
+			GDKclrerr();
+		}
+	}
 }
 
-sql_binop_propagate_trivial(add)
-sql_binop_propagate_trivial(mul)
+static void
+sql_mul_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data, *second = l->h->next->data;
+	ValPtr lval, rval;
+	ValRecord zero, verify;
+
+	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		res->vtype = lval->vtype;
+		if (VARcalcmul(res, lval, rval, true) == GDK_SUCCEED) { /* only propagate '*' min/max when both sides have the same sign ie a * b >= 0 */
+			VALinit(&zero, res->vtype, &(int){0});
+			VARcalcge(&verify, res, &zero);
+			if (verify.val.btval == 1)
+				copy_property(sql, e, PROP_MAX, res);
+		} else {
+			GDKclrerr(); /* if the min/max pair overflows, then disable */
+		}
+	}
+	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) {
+		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+		res->vtype = lval->vtype;
+		if (VARcalcmul(res, lval, rval, true) == GDK_SUCCEED) {
+			VALinit(&zero, res->vtype, &(int){0});
+			VARcalcge(&verify, res, &zero);
+			if (verify.val.btval == 1)
+				copy_property(sql, e, PROP_MIN, res);
+		} else {
+			GDKclrerr();
+		}
+	}
+}
 
 static struct function_properties functions_list[2] = {
 	{"sql_add", &sql_add_propagate_statistics},
