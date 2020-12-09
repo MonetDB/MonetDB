@@ -363,7 +363,10 @@ class server(Popen):
             cmd.append('mapi_port=%s' % mapiport)
             if usock is not None:
                 cmd.append('--set')
-                cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
+                if mapiport == '0':
+                    cmd.append('mapi_usock=%s.${PORT}' % usock)
+                else:
+                    cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbpath='):
                 dbpath = cmd[i][9:]
