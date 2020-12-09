@@ -206,6 +206,7 @@ SQLrun(Client c, mvc *m)
 		*m->errstr=0;
 		return msg;
 	}
+	TRC_INFO(SQL_EXECUTION, "Executing: %s", c->query);
 	MT_thread_setworking(c->query);
 	// locate and inline the query template instruction
 	mb = copyMalBlk(c->curprg->def);
