@@ -18,4 +18,3 @@ GRANT UPDATE on table test to my_user
 statement ok
 GRANT DELETE on table test to my_user
 
-
