@@ -166,7 +166,7 @@ generate_partition_limits(sql_query *query, sql_rel **r, symbol *s, sql_subtype 
 }
 
 static sql_rel*
-create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, bit with_nills, sql_exp *pmin, sql_exp *pmax, bool all_ranges)
+create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, bit with_nills, sql_exp *pmin, sql_exp *pmax, bool all_ranges, bool max_equal_min)
 {
 	mvc *sql = query->sql;
 	sql_rel *anti_rel;
@@ -190,14 +190,18 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 			if (!(e1 = exp_check_type(sql, &tpe, NULL, e1, type_equal)))
 				return NULL;
 
-			e2 = exp_copy(sql, pmax);
-			if (!(e2 = exp_check_type(sql, &tpe, NULL, e2, type_equal)))
-				return NULL;
+			if (max_equal_min) {
+				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);
+			} else {
+				e2 = exp_copy(sql, pmax);
+				if (!(e2 = exp_check_type(sql, &tpe, NULL, e2, type_equal)))
+					return NULL;
 
-			range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, 3);
-			range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, 1);
-			anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
-							list_append(new_exp_list(sql->sa), range2), 0);
+				range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
+				range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
+				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
+								list_append(new_exp_list(sql->sa), range2), 0);
+			}
 		}
 		if (!with_nills) {
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
@@ -284,17 +288,19 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 				int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 				const void *nil = ATOMnilptr(tpe);
 				sql_exp *e1 = NULL, *e2 = NULL;
-				bool found_all = false;
+				bool found_all = false, max_equal_min = false;
 
 				if (atomcmp(spt->part.range.minvalue, nil) != 0 && atomcmp(spt->part.range.maxvalue, nil) != 0) {
+					max_equal_min = ATOMcmp(spt->tpe.type->localtype, spt->part.range.maxvalue, spt->part.range.minvalue) == 0;
 					e1 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.minvalue);
-					e2 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.maxvalue);
+					if (!max_equal_min)
+						e2 = create_table_part_atom_exp(sql, spt->tpe, spt->part.range.maxvalue);
 				} else {
 					assert(spt->with_nills);
 					found_all = is_bit_nil(spt->with_nills);
 				}
 				if (!found_all || !spt->with_nills)
-					rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(query, it->t, pt, spt->with_nills, e1, e2, false));
+					rel = rel_list(sql->sa, rel, create_range_partition_anti_rel(query, it->t, pt, spt->with_nills, e1, e2, false, max_equal_min));
 			} else if (isListPartitionTable(it->t)) {
 				list *exps = new_exp_list(sql->sa);
 				for (node *n = spt->part.values->h ; n ; n = n->next) {
@@ -364,7 +370,12 @@ rel_alter_table_add_partition_range(sql_query* query, sql_table *mt, sql_table *
 	rel_psm->nrcols = 0;
 
 	if (!is_bit_nil(with_nills)) {
-		res = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges);
+		bool min_max_equal = false;
+		if (pmin && pmax && pmin->type == e_atom && pmax->type == e_atom && pmin->l && pmax->l) {
+			atom *e1 = pmin->l, *e2 = pmax->l;
+			min_max_equal = ATOMcmp(tpe.type->localtype, &e1->data.val, &e2->data.val) == 0;
+		}
+		res = create_range_partition_anti_rel(query, mt, pt, with_nills, (min && max) ? pmin : NULL, (min && max) ? pmax : NULL, all_ranges, min_max_equal);
 		res->l = rel_psm;
 	} else {
 		res = rel_psm;
@@ -720,9 +731,15 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 
 			if (atomcmp(pt->part.range.minvalue, nil) != 0 || atomcmp(pt->part.range.maxvalue, nil) != 0) {
 				sql_exp *e1, *e2;
+				bool max_equal_min = ATOMcmp(pt->tpe.type->localtype, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+
 				e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
-				e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
-				range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
+				if (!max_equal_min) {
+					e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue);
+					range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
+				} else {
+					range = exp_compare(sql->sa, le, e1, cmp_equal);
+				}
 				full_range = range;
 			} else {
 				found_all_range_values |= (pt->with_nills != 1);
@@ -964,12 +981,19 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
 			} else {
-				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue),
-					*e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue),
-					*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
-					*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
-				anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
-						  list_append(new_exp_list(sql->sa), range2), 0);
+				sql_exp *e1 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.minvalue);
+				bool max_equal_min = ATOMcmp(pt->tpe.type->localtype, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+
+				if (max_equal_min) {
+					anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);
+				} else {
+					sql_exp *e2 = create_table_part_atom_exp(sql, pt->tpe, pt->part.range.maxvalue),
+						*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
+						*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
+
+					anti_exp = exp_or(sql->sa, list_append(new_exp_list(sql->sa), range1),
+							list_append(new_exp_list(sql->sa), range2), 0);
+				}
 			}
 		}
 		if (!pt->with_nills) { /* handle the nulls case */
