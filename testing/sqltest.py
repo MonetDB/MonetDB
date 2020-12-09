@@ -570,8 +570,15 @@ class SQLTestCase():
             user = self.conn_ctx.username,
             passwd = self.conn_ctx.password)
         dump = None
+        if '--inserts' in args:
+            args = list(args)
+            cmd = 'sqldump'
+        else:
+            cmd = 'sql'
+            # TODO should more options be allowed here
+            args = ['-lsql', '-D']
         try:
-            with process.client('sqldump', **kwargs, args=list(args), stdout=process.PIPE, stderr=process.PIPE) as p:
+            with process.client(cmd, **kwargs, args=args, stdout=process.PIPE, stderr=process.PIPE) as p:
                 dump, err = p.communicate()
         except Exception as e:
             pass
