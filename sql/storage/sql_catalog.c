@@ -119,7 +119,7 @@ cs_find_id(changeset * cs, sqlid id)
 			sql_base *b = n->data;
 
 			/* check if names match */
-			if (b->id == id) {
+			if (b && b->id == id) {
 				return n;
 			}
 		}
