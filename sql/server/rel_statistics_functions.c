@@ -289,7 +289,49 @@ sql_abs_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[13] = {
+static void
+sql_coalesce_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data;
+	ValPtr curmin = NULL, curmax = NULL, lval;
+
+	if ((lval = find_prop_and_get(first->p, PROP_MAX)))
+		curmax = lval;
+	if ((lval = find_prop_and_get(first->p, PROP_MIN)))
+		curmin = lval;
+	for (node *n = l->h->next ; n && curmin && curmax ; n = n->next) {
+		sql_exp *next = n->data;
+
+		if ((lval = find_prop_and_get(next->p, PROP_MAX))) {
+			ValRecord verify1;
+
+			VARcalcgt(&verify1, lval, curmax);
+			curmax = verify1.val.btval == 1 ? lval : curmax;
+		} else {
+			curmax = NULL;
+		}
+		if ((lval = find_prop_and_get(next->p, PROP_MIN))) {
+			ValRecord verify1;
+
+			VARcalcgt(&verify1, lval, curmin);
+			curmin = verify1.val.btval == 1 ? curmin : lval;
+		} else {
+			curmin = NULL;
+		}
+	}
+
+	if (curmin && curmax) {
+		ValPtr res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+
+		VALcopy(res2, curmax);
+		VALcopy(res1, curmin);
+		set_property(sql, e, PROP_MAX, res2);
+		set_property(sql, e, PROP_MIN, res1);
+	}
+}
+
+static struct function_properties functions_list[14] = {
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
 	{"sql_mul", &sql_mul_propagate_statistics},
@@ -302,7 +344,8 @@ static struct function_properties functions_list[13] = {
 	{"least", &sql_least_greatest_propagate_statistics},
 	{"greatest", &sql_least_greatest_propagate_statistics},
 	{"ifthenelse", &sql_ifthenelse_propagate_statistics},
-	{"nullif", &sql_nullif_propagate_statistics}
+	{"nullif", &sql_nullif_propagate_statistics},
+	{"coalesce", &sql_coalesce_propagate_statistics}
 };
 
 void
