@@ -110,34 +110,41 @@ class PyMonetDBConnectionContext(object):
         self.dbh = None
         self.language = language
 
+    def connect(self):
+        if self.dbh is None:
+            if self.language == 'sql':
+                self.dbh = pymonetdb.connect(
+                                         username=self.username,
+                                         password=self.password,
+                                         hostname=self.hostname,
+                                         port=self.port,
+                                         database=self.database,
+                                         autocommit=True)
+            else:
+                self.dbh = malmapi.Connection()
+                self.dbh.connect(
+                                 username=self.username,
+                                 password=self.password,
+                                 hostname=self.hostname,
+                                 port=self.port,
+                                 database=self.database,
+                                 language=self.language)
+        return self.dbh
+
     def __enter__(self):
-        if self.language == 'sql':
-            self.dbh = pymonetdb.connect(
-                                     username=self.username,
-                                     password=self.password,
-                                     hostname=self.hostname,
-                                     port=self.port,
-                                     database=self.database,
-                                     autocommit=True)
-        else:
-            self.dbh = malmapi.Connection()
-            self.dbh.connect(
-                             username=self.username,
-                             password=self.password,
-                             hostname=self.hostname,
-                             port=self.port,
-                             database=self.database,
-                             language=self.language)
+        self.connect()
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
     def cursor(self):
-        if self.language == 'sql':
-            return self.dbh.cursor()
-        else:
-            return MapiCursor(self.dbh)
+        if self.dbh:
+            if self.language == 'sql':
+                return self.dbh.cursor()
+            else:
+                return MapiCursor(self.dbh)
+        return None
 
     def close(self):
         if self.dbh:
@@ -174,6 +181,7 @@ class TestCaseResult(object):
         """ logs errors to test case err file"""
         err_file = self.test_case.err_file
         if len(self.assertion_errors) == 0:
+            print('', file=err_file)
             if self.query:
                 print(self.query, file=err_file)
             elif self.id:
@@ -220,7 +228,7 @@ class TestCaseResult(object):
     def assertSucceeded(self):
         """assert on query succeeded"""
         if self.test_run_error is not None:
-            msg = "expected to succeed but didn't\n{}".format(str(self.test_run_error))
+            msg = "expected to succeed but didn't\n{}".format(str(self.test_run_error).rstrip('\n'))
             self.fail(msg)
         return self
 
@@ -415,14 +423,14 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
             if query:
                 self.query = query
                 try:
-                    with self.test_case.conn_ctx as ctx:
-                        crs = ctx.cursor()
-                        crs.execute(query)
-                        self.rowcount = crs.rowcount
-                        self.rows = crs._rows
-                        if crs.description:
-                            self.data = crs.fetchall()
-                            self.description = crs.description
+                    conn = self.test_case.conn_ctx.connect()
+                    crs = conn.cursor()
+                    crs.execute(query)
+                    self.rowcount = crs.rowcount
+                    self.rows = crs._rows
+                    if crs.description:
+                        self.data = crs.fetchall()
+                        self.description = crs.description
                 except pymonetdb.Error as e:
                     self.test_run_error = e
                     self.err_code, self.err_message = self._parse_error(e.args[0])
@@ -462,7 +470,6 @@ class SQLDump():
     def __init__(self, test_case, data=None):
         self.test_case = test_case
         self.data = data
-        conn_ctx = test_case.conn_ctx
         self.assertion_errors = [] # holds assertion errors
 
     def assertMatchStableOut(self, fout):
@@ -487,6 +494,7 @@ class SQLTestCase():
         self.test_results = []
         self._conn_ctx = None
         self.in_memory = False
+        self.client = 'pymonetdb'
 
     def __enter__(self):
         return self
@@ -494,10 +502,13 @@ class SQLTestCase():
     def __exit__(self, exc_type, exc_value, traceback):
         self.exit()
 
-    def exit(self):
+    def close(self):
         if self._conn_ctx:
             self._conn_ctx.close()
         self._conn_ctx = None
+
+    def exit(self):
+        self.close()
         for res in self.test_results:
             if len(res.assertion_errors) > 0:
                 raise SystemExit(1)
@@ -513,6 +524,8 @@ class SQLTestCase():
     def connect(self,
             username='monetdb', password='monetdb', port=MAPIPORT,
             hostname='localhost', database=TSTDB, language='sql'):
+        if self._conn_ctx:
+            self.close()
         if database == ':memory:':
             self.in_memory = True
             # TODO add username, password, port when supported from monetdbe
@@ -531,7 +544,8 @@ class SQLTestCase():
     def default_conn_ctx(self):
         if self.in_memory:
             return  monetdbe.connect(':memory:', autocommit=True)
-        return PyMonetDBConnectionContext()
+        ctx = PyMonetDBConnectionContext()
+        return ctx
 
     @property
     def conn_ctx(self):
