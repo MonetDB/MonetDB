@@ -10,95 +10,7 @@
 #include "monetdb_config.h"
 #include "rel_statistics.h"
 #include "rel_optimizer.h"
-#include "rel_rel.h"
-#include "rel_exp.h"
-#include "rel_prop.h"
 #include "rel_rewriter.h"
-#include "sql_mvc.h"
-
-static inline void
-set_max_of_values(mvc *sql, sql_exp *e, rel_prop kind, ValPtr lval, ValPtr rval)
-{
-	prop *p;
-	ValRecord res;
-
-	VARcalcgt(&res, lval, rval);
-	p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = res.val.btval == 1 ? lval : rval;
-}
-
-static inline void
-set_min_of_values(mvc *sql, sql_exp *e, rel_prop kind, ValPtr lval, ValPtr rval)
-{
-	prop *p;
-	ValRecord res;
-
-	VARcalcgt(&res, lval, rval);
-	p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = res.val.btval == 1 ? rval : lval;
-}
-
-static inline void
-copy_property(mvc *sql, sql_exp *e, rel_prop kind, ValPtr val)
-{
-	prop *p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = val;
-}
-
-static sql_hash *sql_functions_lookup = NULL;
-
-static void
-sql_add_propagate_statistics(mvc *sql, sql_exp *e)
-{
-	list *l = e->l;
-	sql_exp *first = l->h->data, *second = l->h->next->data;
-	ValPtr lval, rval;
-
-	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		res->vtype = lval->vtype;
-		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
-			copy_property(sql, e, PROP_MAX, res);
-		} else {
-			GDKclrerr();
-			atom *a = atom_max_value(sql->sa, exp_subtype(first));
-			copy_property(sql, e, PROP_MAX, &a->data);
-		}
-	}
-	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		res->vtype = lval->vtype;
-		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
-			copy_property(sql, e, PROP_MIN, res);
-		} else {
-			GDKclrerr();
-			atom *a = atom_max_value(sql->sa, exp_subtype(first));
-			copy_property(sql, e, PROP_MIN, &a->data);
-		}
-	}
-}
-
-typedef void (*lookup_function) (mvc*, sql_exp*);
-
-static struct function_properties {
-	const char *name;
-	lookup_function func;
-} functions_list[1] = {
-	{"sql_add", &sql_add_propagate_statistics}
-};
-
-void
-initialize_sql_functions_lookup(sql_allocator *sa)
-{
-	int nentries = sizeof(functions_list) / sizeof(functions_list[0]);
-
-	sql_functions_lookup = hash_new(sa, nentries, (fkeyvalue)&hash_key);
-	for (int i = 0; i < nentries ; i++) {
-		int key = hash_key(functions_list[i].name);
-
-		hash_add(sql_functions_lookup, key, &(functions_list[i]));
-	}
-}
 
 static bool
 exps_have_or(list *exps)
@@ -153,9 +65,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
 							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(ne ? ne->p : rne->p, PROP_MAX)))
+								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
 									copy_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(ne ? ne->p : rne->p, PROP_MIN)))
+								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
 									copy_property(sql, e, PROP_MIN, lval);
 							} else {
 								if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
@@ -171,9 +83,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
 							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(ne ? ne->p : rne->p, PROP_MAX)))
+								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
 									copy_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(ne ? ne->p : rne->p, PROP_MIN)))
+								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
 									copy_property(sql, e, PROP_MIN, lval);
 							} else {
 								if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
@@ -191,9 +103,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 						assert(!comp->f);
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
 							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(ne ? ne->p : rne->p, PROP_MAX)))
+								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
 									copy_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(ne ? ne->p : rne->p, PROP_MIN)))
+								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
 									copy_property(sql, e, PROP_MIN, lval);
 							} else if (ne) {
 								if ((lval = find_prop_and_get(le->p, PROP_MAX)))
@@ -215,9 +127,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 
 						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e)))) {
 							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(ne ? ne->p : rne ? rne->p : fne->p, PROP_MAX)))
+								if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MAX)))
 									copy_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(ne ? ne->p : rne ? rne->p : fne->p, PROP_MIN)))
+								if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MIN)))
 									copy_property(sql, e, PROP_MIN, lval);
 							} else if (ne) {
 								if (fe) { /* range case */
@@ -305,12 +217,12 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 		if (has_nil(e) && mvc_has_no_nil(sql, c))
 			set_has_no_nil(e);
-
-		if ((max = mvc_has_max_value(sql, c))) {
+ 
+		if ((EC_NUMBER(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) && (max = mvc_has_max_value(sql, c))) {
 			prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
 			p->value = max;
 		}
-		if ((min = mvc_has_min_value(sql, c))) {
+		if ((EC_NUMBER(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) && (min = mvc_has_min_value(sql, c))) {
 			prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
 			p->value = min;
 		}
@@ -349,128 +261,131 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	mvc *sql = v->sql;
 	ValPtr lval;
+	sql_subtype *tp = exp_subtype(e);
 
 	(void) depth;
-	switch(e->type) {
-	case e_column: {
-		switch (rel->op) {
-		case op_join:
-		case op_left:
-		case op_right:
-		case op_full: {
-			sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e);
-			if (!found)
+	if (tp && (EC_NUMBER(tp->type->eclass) || EC_TEMP_NOFRAC(tp->type->eclass) || tp->type->eclass == EC_DATE)) {
+		switch(e->type) {
+		case e_column: {
+			switch (rel->op) {
+			case op_join:
+			case op_left:
+			case op_right:
+			case op_full: {
+				sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e);
+				if (!found)
+					(void) rel_propagate_column_ref_statistics(sql, rel->r, e);
+			} break;
+			case op_semi:
+			case op_select:
+			case op_project:
+			case op_groupby:
+				(void) rel_propagate_column_ref_statistics(sql, rel->l, e);
+				break;
+			case op_insert:
+			case op_update:
+			case op_delete:
 				(void) rel_propagate_column_ref_statistics(sql, rel->r, e);
+				break;
+			default:
+				break;
+			}
 		} break;
-		case op_semi:
-		case op_select:
-		case op_project:
-		case op_groupby:
-			(void) rel_propagate_column_ref_statistics(sql, rel->l, e);
-			break;
-		case op_insert:
-		case op_update:
-		case op_delete:
-			(void) rel_propagate_column_ref_statistics(sql, rel->r, e);
-			break;
-		default:
-			break;
-		}
-	} break;
-	case e_convert: {
-		sql_subtype *from = exp_fromtype(e), *to = exp_totype(e);
+		case e_convert: {
+			sql_subtype *from = exp_fromtype(e), *to = exp_totype(e);
 
-		if (from->type->eclass == to->type->eclass) {
-			sql_exp *l = e->l;
-			if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
-				if (EC_NUMBER(from->type->eclass)) {
-					ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-					VALcopy(res, lval);
-					if (VALconvert(to->type->localtype, res))
-						copy_property(sql, e, PROP_MAX, res);
-				} else {
-					copy_property(sql, e, PROP_MAX, lval);
-				}
-			}
-			if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
-				if (EC_NUMBER(from->type->eclass)) {
-					ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-					VALcopy(res, lval);
-					if (VALconvert(to->type->localtype, res))
-						copy_property(sql, e, PROP_MIN, res);
-				} else {
-					copy_property(sql, e, PROP_MIN, lval);
-				}
-			}
-		}
-	} break;
-	case e_aggr:
-	case e_func: {
-		sql_subfunc *f = e->f;
-
-		if (!f->func->s) {
-			int key = hash_key(f->func->base.name); /* Using hash lookup */
-			sql_hash_e *he = sql_functions_lookup->buckets[key&(sql_functions_lookup->size-1)];
-			lookup_function look = NULL;
-
-			for (; he && !look; he = he->chain) {
-				struct function_properties* fp = (struct function_properties*) he->value;
-
-				if (!strcmp(f->func->base.name, fp->name))
-					look = fp->func;
-			}
-			if (look)
-				look(sql, e);
-		}
-	} break;
-	case e_atom:
-		if (e->l) {
-			atom *a = (atom*) e->l;
-			if (!a->isnull) {
-				copy_property(sql, e, PROP_MAX, &a->data);
-				copy_property(sql, e, PROP_MIN, &a->data);
-			}
-		} else if (e->f) {
-			list *vals = (list *) e->f;
-			sql_exp *first = vals->h ? vals->h->data : NULL;
-			ValPtr max = NULL, min = NULL; /* all child values must have a valid min/max */
-
-			if (first) {
-				max = ((lval = find_prop_and_get(first->p, PROP_MAX))) ? lval : NULL;
-				min = ((lval = find_prop_and_get(first->p, PROP_MIN))) ? lval : NULL;
-			}
-
-			for (node *n = vals->h ? vals->h->next : NULL ; n && min && max; n = n->next) {
-				sql_exp *ee = n->data;
-				ValRecord res;
-
-				if (max) {
-					if ((lval = find_prop_and_get(ee->p, PROP_MAX))) {
-						VARcalcgt(&res, lval, max);
-						max = res.val.btval == 1 ? lval : max;
+			if (from->type->eclass == to->type->eclass) {
+				sql_exp *l = e->l;
+				if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
+					if (EC_NUMBER(from->type->eclass)) {
+						ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+						VALcopy(res, lval);
+						if (VALconvert(to->type->localtype, res))
+							copy_property(sql, e, PROP_MAX, res);
 					} else {
-						max = NULL;
+						copy_property(sql, e, PROP_MAX, lval);
 					}
 				}
-				if (min) {
-					if ((lval = find_prop_and_get(ee->p, PROP_MIN))) {
-						VARcalcgt(&res, min, lval);
-						min = res.val.btval == 1 ? lval : min;
+				if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
+					if (EC_NUMBER(from->type->eclass)) {
+						ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+						VALcopy(res, lval);
+						if (VALconvert(to->type->localtype, res))
+							copy_property(sql, e, PROP_MIN, res);
 					} else {
-						min = NULL;
+						copy_property(sql, e, PROP_MIN, lval);
 					}
 				}
 			}
+		} break;
+		case e_aggr:
+		case e_func: {
+			sql_subfunc *f = e->f;
 
-			if (max)
-				copy_property(sql, e, PROP_MAX, max);
-			if (min)
-				copy_property(sql, e, PROP_MIN, min);
+			if (!f->func->s) {
+				int key = hash_key(f->func->base.name); /* Using hash lookup */
+				sql_hash_e *he = sql_functions_lookup->buckets[key&(sql_functions_lookup->size-1)];
+				lookup_function look = NULL;
+
+				for (; he && !look; he = he->chain) {
+					struct function_properties* fp = (struct function_properties*) he->value;
+
+					if (!strcmp(f->func->base.name, fp->name))
+						look = fp->func;
+				}
+				if (look)
+					look(sql, e);
+			}
+		} break;
+		case e_atom: {
+			if (e->l) {
+				atom *a = (atom*) e->l;
+				if (!a->isnull) {
+					copy_property(sql, e, PROP_MAX, &a->data);
+					copy_property(sql, e, PROP_MIN, &a->data);
+				}
+			} else if (e->f) {
+				list *vals = (list *) e->f;
+				sql_exp *first = vals->h ? vals->h->data : NULL;
+				ValPtr max = NULL, min = NULL; /* all child values must have a valid min/max */
+
+				if (first) {
+					max = ((lval = find_prop_and_get(first->p, PROP_MAX))) ? lval : NULL;
+					min = ((lval = find_prop_and_get(first->p, PROP_MIN))) ? lval : NULL;
+				}
+
+				for (node *n = vals->h ? vals->h->next : NULL ; n && min && max; n = n->next) {
+					sql_exp *ee = n->data;
+					ValRecord res;
+
+					if (max) {
+						if ((lval = find_prop_and_get(ee->p, PROP_MAX))) {
+							VARcalcgt(&res, lval, max);
+							max = res.val.btval == 1 ? lval : max;
+						} else {
+							max = NULL;
+						}
+					}
+					if (min) {
+						if ((lval = find_prop_and_get(ee->p, PROP_MIN))) {
+							VARcalcgt(&res, min, lval);
+							min = res.val.btval == 1 ? lval : min;
+						} else {
+							min = NULL;
+						}
+					}
+				}
+
+				if (max)
+					copy_property(sql, e, PROP_MAX, max);
+				if (min)
+					copy_property(sql, e, PROP_MIN, min);
+			}
+		} break;
+		case e_cmp: /* propagating min and max of booleans is not very worth it */
+		case e_psm:
+			break;
 		}
-		break;
-	case e_cmp: /* propagating min and max of booleans is not very worth it */
-	case e_psm:
-		break;
 	}
 	return e;
 }
