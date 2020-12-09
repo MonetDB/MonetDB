@@ -6,10 +6,10 @@ from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
     tc.connect(username="my_user", password="p1")
-    tc.execute("select * from test").assertRowCount(0)
-    tc.execute("insert into test values(1,1)").assertRowCount(1)
-    tc.execute("update test set b = 2").assertRowCount(1)
-    tc.execute("delete from test").assertRowCount(1)
+    tc.execute("select * from test").assertSucceeded().assertRowCount(0)
+    tc.execute("insert into test values(1,1)").assertSucceeded().assertRowCount(1)
+    tc.execute("update test set b = 2").assertSucceeded().assertRowCount(1)
+    tc.execute("delete from test").assertSucceeded().assertRowCount(1)
 
 # import os, sys
 # import pymonetdb

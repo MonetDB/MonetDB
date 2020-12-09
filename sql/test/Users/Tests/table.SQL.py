@@ -14,7 +14,9 @@ with SQLTestCase() as tc:
       time_e BIGINT NULL,
       PRIMARY KEY (obsid)
     ) """).assertSucceeded()
-    tc.execute("INSERT INTO my_schema.my_table (time_s) values (300)").assertRowCount(1)
+    tc.execute("INSERT INTO my_schema.my_table (time_s) values (300)")\
+            .assertSucceeded()\
+            .assertRowCount(1)
 
 # import os, sys
 # import pymonetdb
