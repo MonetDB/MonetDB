@@ -7,12 +7,15 @@ from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
-    tc.execute("ALTER USER april  WITH UNENCRYPTED PASSWORD 'april2';").assertSucceeded()
+    tc.execute("ALTER USER april WITH UNENCRYPTED PASSWORD 'april2';").assertSucceeded()
     tc.connect(username="april", password="april")
     tc.execute("select 'password april';").assertFailed()
     tc.connect(username="april", password="april2")
-    tc.execute("select 'password april2';").assertSucceeded().assertRowCount(1).assertDataResultMatch([("password april2",)])
-    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';").assertFailed(err_message='ALTER USER: Access denied')
+    tc.execute("select 'password april2';")\
+            .assertSucceeded()\
+            .assertRowCount(1).assertDataResultMatch([("password april2",)])
+    tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april5' USING OLD PASSWORD 'april3';")\
+            .assertFailed(err_message='ALTER USER: Access denied')
     tc.execute("ALTER USER SET UNENCRYPTED PASSWORD 'april' USING OLD PASSWORD 'april2';").assertSucceeded()
     tc.connect(username="april", password="april2")
     tc.execute("select 'password april2 (wrong!!!)';").assertFailed()
