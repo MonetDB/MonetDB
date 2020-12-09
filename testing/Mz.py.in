@@ -1204,12 +1204,12 @@ def RunTest(env, test, oktests, pSrvr):
         TestErrFile = TST+".test.err"
 
         t0 = time.time()
-        if CALL == 'sqltest' or CALL == 'maltest':
-            # TODO make TestOutFile optional
-            exit_code, reason = RunSQLLogicTest(env, (TST + EXT), TestOutFile, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests, lsql= CALL == 'sqltest', username=user, password=passwd)
-        else:
-         tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
-         exit_code = transform_str_return_code(tres)
+        #if CALL == 'sqltest' or CALL == 'maltest':
+        #    # TODO make TestOutFile optional
+        #    exit_code, reason = RunSQLLogicTest(env, (TST + EXT), TestOutFile, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests, lsql= CALL == 'sqltest', username=user, password=passwd)
+        #else:
+        tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
+        exit_code = transform_str_return_code(tres)
 
         t1 = time.time()
         TX = t1 - t0
@@ -1750,6 +1750,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
     ClntErrFile = TST+".client.err"
     returncode = None
     pSrvr = PSRVR
+    issqllogictest = False
+    logicerror = False
     try:
         if SERVER in ["MAL", "SQL"]:
             SrvrOut = openutf8(SrvrOutFile,"w")
@@ -1871,6 +1873,36 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     returncode = RunIt(Clnt, True, openutf8(f), ClntOut, ClntErr, TIMEOUT)
                     if returncode:
                         break
+            elif CALL == "sqltest" or CALL == "maltest":
+                issqllogictest = True
+                import MonetDBtesting.sqllogictest as sqllogictest
+                with sqllogictest.SQLLogic(out=ClntErr) as sql:
+                    if CALL == 'sqltest':
+                        lang = 'sql'
+                    else:
+                        lang = 'mal'
+                    try:
+                        sql.connect(username=user or 'monetdb',
+                                    password=passwd or 'monetdb',
+                                    hostname='localhost',
+                                    port=int(env['MAPIPORT']),
+                                    database=TSTDB,
+                                    language=lang)
+                    except:
+                        returncode = 'error'
+                    else:
+                        if not os.path.exists(TST+'.reqtests'):
+                            try:
+                                sql.drop()
+                            except:
+                                pass
+                        try:
+                            sql.parse(TST+EXT)
+                        except sqllogictest.SQLLogicSyntaxError:
+                            pass
+                        except BrokenPipeError:
+                            # server timeout
+                            pass
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
@@ -1941,9 +1973,14 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     n = q.name
                     q.close()
                 q = openutf8(n,'r')
-                TestErr.write(q.read())
+                data = q.read()
+                TestErr.write(data)
                 TestErr.flush()
                 q.close()
+                if issqllogictest and n.endswith('.client.err') and data:
+                    logicerror = True
+                else:
+                    logicerror = False
         else:
             TestOut = try_open(TestOutFile, 'a')
             TestErr = try_open(TestErrFile, 'a')
@@ -1970,6 +2007,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
 
     if CALL not in ('python', 'other', 'ruby'):
         # running mserver/mclient directly, so we know they didn't fail
+        if logicerror:
+            return 'logicerror'
         return None
 
     # Try to detect segfaults and the like
