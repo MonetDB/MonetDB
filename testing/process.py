@@ -14,10 +14,7 @@ import copy
 import atexit
 import threading
 import signal
-if sys.version.startswith('2'):
-    import Queue as queue
-else:
-    import queue
+import queue
 
 from subprocess import PIPE
 try:
