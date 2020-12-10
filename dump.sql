@@ -151,8 +151,7 @@ CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
 			GROUP_CONCAT(
 				DQ(c.name) || ' ' ||
 				dump_type(c.type, c.type_digits, c.type_scale) ||
-				ifthenelse(c."null" = 'false', ' NOT NULL', '') ||
-				ifthenelse(c."default" IS NOT NULL, ' DEFAULT ' || c."default", '')
+				ifthenelse(c."null" = 'false', ' NOT NULL', '')
 			, ', ') || ')'
 		FROM sys._columns c
 		WHERE c.table_id = tid;
@@ -182,6 +181,28 @@ BEGIN
 				''
 			END
 		FROM (VALUES (tid)) t(id) LEFT JOIN sys.table_partitions tp ON t.id = tp.table_id;
+END;
+
+CREATE FUNCTION describe_column_defaults() RETURNS TABLE(sch STRING, tbl STRING, col STRING, def STRING) BEGIN
+RETURN
+	SELECT
+		s.name,
+		t.name,
+		c.name,
+		c."default"
+	FROM schemas s, tables t, columns c
+	WHERE
+		s.id = t.schema_id AND
+		t.id = c.table_id AND
+		s.name <> 'tmp' AND
+		NOT t.system AND
+		c."default" IS NOT NULL;
+END;
+
+CREATE FUNCTION dump_column_defaults() RETURNS TABLE(stmt STRING) BEGIN
+	RETURN
+		SELECT 'ALTER TABLE ' || FQTN(sch, tbl) || ' ALTER COLUMN ' || DQ(col) || ' SET DEFAULT ' || def || ';'
+		FROM describe_column_defaults();
 END;
 
 --SELECT * FROM dump_foreign_keys();
@@ -493,6 +514,7 @@ BEGIN
 	SET dummy_result = restart_sequence('tmp', '_auto_increment', offs);
 	--END OF COMPLICATED DEPENDENCY STUFF.
 
+	INSERT INTO dump_statements(s) SELECT * FROM dump_column_defaults();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
@@ -520,5 +542,4 @@ END;
 CALL dump_database(TRUE);
 
 SELECT s FROM dump_statements order by o;
-
 ROLLBACK;
