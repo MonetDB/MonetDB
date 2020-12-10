@@ -14,7 +14,7 @@ select "ii"."type" from "sys"."idxs" "ii" inner join "sys"."tables" "tt" on "ii"
 insert into "newtables"."t1" values (4, default);
 select "a", "b" from "newtables"."t1";
 
-create trigger "newtables"."tr1" after insert on "newtables"."t1" insert into "newtables"."t1" values (5, default);
+create trigger "tr1" after insert on "newtables"."t1" insert into "newtables"."t1" values (5, default);
 alter table "newtables"."t1" set schema "oldtables"; --error, dependency on trigger
 
 drop schema "oldtables" cascade;
