@@ -23,25 +23,17 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data, *second = l->h->next->data;
-	ValPtr lval, rval;
+	atom *lval, *rval;
 
 	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		res->vtype = lval->vtype > rval->vtype ? lval->vtype : rval->vtype;
-		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
+		atom *res = atom_add(atom_dup(sql->sa, lval), rval);
+		if (res)
 			set_property(sql, e, PROP_MAX, res);
-		} else {
-			GDKclrerr(); /* if the min/max pair overflows, then don't propagate */
-		}
 	}
 	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		res->vtype = lval->vtype > rval->vtype ? lval->vtype : rval->vtype;
-		if (VARcalcadd(res, lval, rval, true) == GDK_SUCCEED) {
+		atom *res = atom_add(atom_dup(sql->sa, lval), rval);
+		if (res)
 			set_property(sql, e, PROP_MIN, res);
-		} else {
-			GDKclrerr();
-		}
 	}
 }
 
@@ -51,32 +43,21 @@ sql_##FUNC##_propagate_statistics(mvc *sql, sql_exp *e) \
 { \
 	list *l = e->l; \
 	sql_exp *first = l->h->data, *second = l->h->next->data; \
-	ValPtr lmax, rmax, lmin, rmin; \
+	atom *lmax, *rmax, *lmin, *rmin; \
  \
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) && \
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) { \
-		ValPtr res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)); \
-		gdk_return code1, code2; \
+		atom *res1 = atom_##FUNC(atom_dup(sql->sa, lmax), rmax); \
+		atom *res2 = atom_##FUNC(atom_dup(sql->sa, lmin), rmin); \
  \
-		res1->vtype = res2->vtype = lmax->vtype > rmax->vtype ? lmax->vtype : rmax->vtype; \
-		code1 = VARcalc##FUNC(res1, lmax, rmax, true); \
-		GDKclrerr(); \
-		code2 = VARcalc##FUNC(res2, lmin, rmin, true); \
-		GDKclrerr(); \
+		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */ \
+			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe)); \
+			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2); \
  \
-		if (code1 == GDK_SUCCEED && code2 == GDK_SUCCEED) { /* if the min/max pair overflows, then don't propagate */ \
-			ValRecord zero1 = (ValRecord) {.vtype = lmax->vtype,}, zero2 = (ValRecord) {.vtype = rmax->vtype,}, zero3 = (ValRecord) {.vtype = lmin->vtype,}, \
-					  zero4 = (ValRecord) {.vtype = rmin->vtype,}, verify1, verify2, verify3, verify4; \
- \
-			VARcalcge(&verify1, lmax, &zero1); \
-			VARcalcge(&verify2, rmax, &zero2); \
-			VARcalcge(&verify3, lmin, &zero3); \
-			VARcalcge(&verify4, rmin, &zero4); \
- \
-			if (verify1.val.btval == 1 && verify2.val.btval == 1 && verify3.val.btval == 1 && verify4.val.btval == 1) { /* if all positive then propagate */ \
+			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */ \
 				set_property(sql, e, PROP_MAX, res1); \
 				set_property(sql, e, PROP_MIN, res2); \
-			} else if (verify1.val.btval == 0 && verify2.val.btval == 0 && verify3.val.btval == 0 && verify4.val.btval == 0) { /* if all negative propagate by swapping min and max */ \
+			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */ \
 				set_property(sql, e, PROP_MAX, res2); \
 				set_property(sql, e, PROP_MIN, res1); \
 			} \
@@ -92,32 +73,21 @@ sql_div_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data, *second = l->h->next->data;
-	ValPtr lmax, rmax, lmin, rmin;
+	atom *lmax, *rmax, *lmin, *rmin;
 
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
-		ValPtr res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		gdk_return code1, code2;
+		atom *res1 = atom_div(atom_dup(sql->sa, lmax), rmin);
+		atom *res2 = atom_div(atom_dup(sql->sa, lmin), rmax);
 
-		res1->vtype = res2->vtype = lmax->vtype > rmax->vtype ? lmax->vtype : rmax->vtype;
-		code1 = VARcalcdiv(res1, lmax, rmin, true);
-		GDKclrerr();
-		code2 = VARcalcdiv(res2, lmin, rmax, true);
-		GDKclrerr();
+		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
+			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
+			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2);
 
-		if (code1 == GDK_SUCCEED && code2 == GDK_SUCCEED) { /* if the min/max pair overflows, then don't propagate */
-			ValRecord zero1 = (ValRecord) {.vtype = lmax->vtype,}, zero2 = (ValRecord) {.vtype = rmax->vtype,}, zero3 = (ValRecord) {.vtype = lmin->vtype,},
-					  zero4 = (ValRecord) {.vtype = rmin->vtype,}, verify1, verify2, verify3, verify4;
-
-			VARcalcge(&verify1, lmax, &zero1);
-			VARcalcge(&verify2, rmax, &zero2);
-			VARcalcge(&verify3, lmin, &zero3);
-			VARcalcge(&verify4, rmin, &zero4);
-
-			if (verify1.val.btval == 1 && verify2.val.btval == 1 && verify3.val.btval == 1 && verify4.val.btval == 1) { /* if all positive then propagate */
+			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */
 				set_property(sql, e, PROP_MAX, res1);
 				set_property(sql, e, PROP_MIN, res2);
-			} else if (verify1.val.btval == 0 && verify2.val.btval == 0 && verify3.val.btval == 0 && verify4.val.btval == 0) { /* if all negative propagate by swapping min and max */
+			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */
 				set_property(sql, e, PROP_MAX, res2);
 				set_property(sql, e, PROP_MIN, res1);
 			}
@@ -128,24 +98,12 @@ sql_div_propagate_statistics(mvc *sql, sql_exp *e)
 static void
 sql_extend_min_max(mvc *sql, sql_exp *e, sql_exp *first, sql_exp *second)
 {
-	ValPtr lval, rval;
+	atom *lval, *rval;
 
-	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		ValRecord verify1;
-
-		VARcalcgt(&verify1, lval, rval);
-		VALcopy(res, verify1.val.btval == 1 ? lval : rval);
-		set_property(sql, e, PROP_MAX, res);
-	}
-	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		ValRecord verify1;
-
-		VARcalcgt(&verify1, lval, rval);
-		VALcopy(res, verify1.val.btval == 1 ? rval : lval);
-		set_property(sql, e, PROP_MIN, res);
-	}
+	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX)))
+		set_property(sql, e, PROP_MAX, atom_cmp(lval, rval) > 0 ? lval : rval);
+	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN)))
+		set_property(sql, e, PROP_MIN, atom_cmp(lval, rval) > 0 ? rval : lval);
 }
 
 static void
@@ -167,18 +125,12 @@ sql_nullif_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data;
-	ValPtr lval;
+	atom *lval;
 
-	if ((lval = find_prop_and_get(first->p, PROP_MAX))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		VALcopy(res, lval);
-		set_property(sql, e, PROP_MAX, res);
-	}
-	if ((lval = find_prop_and_get(first->p, PROP_MIN))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		VALcopy(res, lval);
-		set_property(sql, e, PROP_MIN, res);
-	}
+	if ((lval = find_prop_and_get(first->p, PROP_MAX)))
+		set_property(sql, e, PROP_MAX, lval);
+	if ((lval = find_prop_and_get(first->p, PROP_MIN)))
+		set_property(sql, e, PROP_MIN, lval);
 }
 
 static void
@@ -186,34 +138,17 @@ sql_neg_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data;
-	ValPtr lval;
-	sql_subtype *tp = ((sql_subfunc *)e->f)->res->h->data;
+	atom *lval;
 
 	if ((lval = find_prop_and_get(first->p, PROP_MIN))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		ValRecord minus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = -1};
-		ptr pt = VALconvert(tp->type->localtype, &minus1);
-
-		assert(pt);
-		res->vtype = lval->vtype;
-		if (VARcalcmul(res, lval, &minus1, true) == GDK_SUCCEED) {
+		atom *res = atom_dup(sql->sa, lval);
+		if (atom_neg(res))
 			set_property(sql, e, PROP_MAX, res);
-		} else {
-			GDKclrerr();
-		}
 	}
 	if ((lval = find_prop_and_get(first->p, PROP_MAX))) {
-		ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-		ValRecord minus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = -1};
-		ptr pt = VALconvert(tp->type->localtype, &minus1);
-
-		assert(pt);
-		res->vtype = lval->vtype;
-		if (VARcalcmul(res, lval, &minus1, true) == GDK_SUCCEED) {
+		atom *res = atom_dup(sql->sa, lval);
+		if (atom_neg(res))
 			set_property(sql, e, PROP_MIN, res);
-		} else {
-			GDKclrerr();
-		}
 	}
 }
 
@@ -222,37 +157,27 @@ sql_sign_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data;
-	ValPtr omin, omax, res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-	ValRecord minus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = -1}, plus1 = (ValRecord) {.vtype = TYPE_bte, .val.btval = 1};
+	atom *omin, *omax;
+	sql_subtype *bte = sql_bind_localtype("bte");
 	bool properties_set = false;
 
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
-		ValRecord zero1 = (ValRecord) {.vtype = omin->vtype,}, zero2 = (ValRecord) {.vtype = omax->vtype,}, verify1, verify2, verify3, verify4;
+		atom *zero1 = atom_zero_value(sql->sa, &(omin->tpe));
+		int cmp1 = atom_cmp(omax, zero1), cmp2 = atom_cmp(omin, zero1);
 
-		VARcalcgt(&verify1, omin, &zero1);
-		VARcalcgt(&verify2, omax, &zero2);
-		VARcalclt(&verify3, omin, &zero1);
-		VARcalclt(&verify4, omax, &zero2);
-
-		if (verify1.val.btval == 1 && verify2.val.btval == 1) {
-			VALcopy(res1, &plus1);
-			VALcopy(res2, &plus1);
-			set_property(sql, e, PROP_MAX, res1);
-			set_property(sql, e, PROP_MIN, res2);
+		if (cmp1 >= 0 && cmp2 >= 0) {
+			set_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 1));
+			set_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, 1));
 			properties_set = true;
-		} else if (verify3.val.btval == 1 && verify4.val.btval == 1) {
-			VALcopy(res1, &minus1);
-			VALcopy(res2, &minus1);
-			set_property(sql, e, PROP_MAX, res1);
-			set_property(sql, e, PROP_MIN, res2);
+		} else if (cmp1 < 0 && cmp2 < 0) {
+			set_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, -1));
+			set_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, -1));
 			properties_set = true;
 		}
 	}
 	if (!properties_set) {
-		VALcopy(res1, &plus1);
-		VALcopy(res2, &minus1);
-		set_property(sql, e, PROP_MAX, res1);
-		set_property(sql, e, PROP_MIN, res2);
+		set_property(sql, e, PROP_MAX, atom_int(sql->sa, bte, 1));
+		set_property(sql, e, PROP_MIN, atom_int(sql->sa, bte, -1));
 	}
 }
 
@@ -261,30 +186,22 @@ sql_abs_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data;
-	ValPtr omin, omax, res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
+	atom *omin, *omax;
 
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
-		ValRecord zero1 = (ValRecord) {.vtype = omin->vtype,}, zero2 = (ValRecord) {.vtype = omax->vtype,}, verify1, verify2, verify3, verify4;
+		atom *zero1 = atom_zero_value(sql->sa, &(omin->tpe));
+		int cmp1 = atom_cmp(omax, zero1), cmp2 = atom_cmp(omin, zero1);
 
-		VARcalcge(&verify1, omin, &zero1);
-		VARcalcge(&verify2, omax, &zero2);
-		VARcalcle(&verify3, omin, &zero1);
-		VARcalcle(&verify4, omax, &zero2);
+		if (cmp1 >= 0 && cmp2 >= 0) {
+			set_property(sql, e, PROP_MAX, omax);
+			set_property(sql, e, PROP_MIN, omin);
+		} else if (cmp1 < 0 && cmp2 < 0) {
+			atom *res1 = atom_dup(sql->sa, omin), *res2 = atom_dup(sql->sa, omax);
 
-		if (verify1.val.btval == 1 && verify2.val.btval == 1) {
-			gdk_return code1 = VARcalcabsolute(res1, omax);
-			gdk_return code2 = VARcalcabsolute(res2, omin);
-
-			assert(code1 && code2);
-			set_property(sql, e, PROP_MAX, res1);
-			set_property(sql, e, PROP_MIN, res2);
-		} else if (verify3.val.btval == 1 && verify4.val.btval == 1) {
-			gdk_return code1 = VARcalcabsolute(res1, omax);
-			gdk_return code2 = VARcalcabsolute(res2, omin);
-
-			assert(code1 && code2);
-			set_property(sql, e, PROP_MAX, res2);
-			set_property(sql, e, PROP_MIN, res1);
+			if (atom_absolute(res1) && atom_absolute(res2)) {
+				set_property(sql, e, PROP_MAX, res1);
+				set_property(sql, e, PROP_MIN, res2);
+			}
 		}
 	}
 }
@@ -294,7 +211,7 @@ sql_coalesce_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data;
-	ValPtr curmin = NULL, curmax = NULL, lval;
+	atom *curmin = NULL, *curmax = NULL, *lval;
 
 	if ((lval = find_prop_and_get(first->p, PROP_MAX)))
 		curmax = lval;
@@ -304,30 +221,20 @@ sql_coalesce_propagate_statistics(mvc *sql, sql_exp *e)
 		sql_exp *next = n->data;
 
 		if ((lval = find_prop_and_get(next->p, PROP_MAX))) {
-			ValRecord verify1;
-
-			VARcalcgt(&verify1, lval, curmax);
-			curmax = verify1.val.btval == 1 ? lval : curmax;
+			curmax = atom_cmp(lval, curmax) > 0 ? lval : curmax;
 		} else {
 			curmax = NULL;
 		}
 		if ((lval = find_prop_and_get(next->p, PROP_MIN))) {
-			ValRecord verify1;
-
-			VARcalcgt(&verify1, lval, curmin);
-			curmin = verify1.val.btval == 1 ? curmin : lval;
+			curmin = atom_cmp(lval, curmin) > 0 ? curmin : lval;
 		} else {
 			curmin = NULL;
 		}
 	}
 
 	if (curmin && curmax) {
-		ValPtr res1 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord)), res2 = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-
-		VALcopy(res2, curmax);
-		VALcopy(res1, curmin);
-		set_property(sql, e, PROP_MAX, res2);
-		set_property(sql, e, PROP_MIN, res1);
+		set_property(sql, e, PROP_MAX, curmax);
+		set_property(sql, e, PROP_MIN, curmin);
 	}
 }
 

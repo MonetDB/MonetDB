@@ -42,7 +42,7 @@ comparison_find_column(sql_exp *input, sql_exp *e)
 static sql_exp *
 rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	ValPtr lval, rval;
+	atom *lval, *rval;
 	sql_exp *ne = NULL;
 
 	assert(e->type == e_column);
@@ -220,11 +220,11 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
  
 		if ((EC_NUMBER(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) && (max = mvc_has_max_value(sql, c))) {
 			prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-			p->value = max;
+			p->value = atom_general_ptr(sql->sa, &c->type, max);
 		}
 		if ((EC_NUMBER(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) && (min = mvc_has_min_value(sql, c))) {
 			prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-			p->value = min;
+			p->value = atom_general_ptr(sql->sa, &c->type, min);
 		}
 	}
 	return e;
@@ -235,7 +235,7 @@ rel_set_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e, int i)
 {
 	sql_exp *le = list_fetch(((sql_rel*)(rel->l))->exps, i);
 	sql_exp *re = list_fetch(((sql_rel*)(rel->r))->exps, i);
-	ValPtr lval, rval;
+	atom *lval, *rval;
 
 	assert(le && e);
 	if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX))) {
@@ -260,7 +260,7 @@ static sql_exp *
 rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	mvc *sql = v->sql;
-	ValPtr lval;
+	atom *lval;
 	sql_subtype *tp = exp_subtype(e);
 
 	(void) depth;
@@ -298,9 +298,8 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				sql_exp *l = e->l;
 				if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
 					if (EC_NUMBER(from->type->eclass)) {
-						ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-						VALcopy(res, lval);
-						if (VALconvert(to->type->localtype, res))
+						atom *res = atom_dup(sql->sa, lval);
+						if (atom_cast(sql->sa, res, to))
 							set_property(sql, e, PROP_MAX, res);
 					} else {
 						set_property(sql, e, PROP_MAX, lval);
@@ -308,9 +307,8 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 				if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
 					if (EC_NUMBER(from->type->eclass)) {
-						ValPtr res = (ValPtr) sa_zalloc(sql->sa, sizeof(ValRecord));
-						VALcopy(res, lval);
-						if (VALconvert(to->type->localtype, res))
+						atom *res = atom_dup(sql->sa, lval);
+						if (atom_cast(sql->sa, res, to))
 							set_property(sql, e, PROP_MIN, res);
 					} else {
 						set_property(sql, e, PROP_MIN, lval);
@@ -341,35 +339,32 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (e->l) {
 				atom *a = (atom*) e->l;
 				if (!a->isnull) {
-					set_property(sql, e, PROP_MAX, &a->data);
-					set_property(sql, e, PROP_MIN, &a->data);
+					set_property(sql, e, PROP_MAX, a);
+					set_property(sql, e, PROP_MIN, a);
 				}
 			} else if (e->f) {
 				list *vals = (list *) e->f;
 				sql_exp *first = vals->h ? vals->h->data : NULL;
-				ValPtr max = NULL, min = NULL; /* all child values must have a valid min/max */
+				atom *max = NULL, *min = NULL; /* all child values must have a valid min/max */
 
 				if (first) {
 					max = ((lval = find_prop_and_get(first->p, PROP_MAX))) ? lval : NULL;
 					min = ((lval = find_prop_and_get(first->p, PROP_MIN))) ? lval : NULL;
 				}
 
-				for (node *n = vals->h ? vals->h->next : NULL ; n && min && max; n = n->next) {
+				for (node *n = vals->h ? vals->h->next : NULL ; n ; n = n->next) {
 					sql_exp *ee = n->data;
-					ValRecord res;
 
 					if (max) {
 						if ((lval = find_prop_and_get(ee->p, PROP_MAX))) {
-							VARcalcgt(&res, lval, max);
-							max = res.val.btval == 1 ? lval : max;
+							max = atom_cmp(lval, max) > 0 ? lval : max;
 						} else {
 							max = NULL;
 						}
 					}
 					if (min) {
 						if ((lval = find_prop_and_get(ee->p, PROP_MIN))) {
-							VARcalcgt(&res, min, lval);
-							min = res.val.btval == 1 ? lval : min;
+							min = atom_cmp(min, lval) > 0 ? lval : min;
 						} else {
 							min = NULL;
 						}

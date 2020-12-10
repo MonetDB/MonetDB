@@ -1280,8 +1280,26 @@ atom_neg(atom *a)
 		return 0;
 	VALempty(&dst);
 	dst.vtype = a->data.vtype;
-	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED)
+	if (VARcalcnegate(&dst, &a->data) != GDK_SUCCEED) {
+		GDKclrerr();
 		return -1;
+	}
+	a->data = dst;
+	return 0;
+}
+
+int
+atom_absolute(atom *a)
+{
+	ValRecord dst;
+	if (a->isnull)
+		return 0;
+	VALempty(&dst);
+	dst.vtype = a->data.vtype;
+	if (VARcalcabsolute(&dst, &a->data) != GDK_SUCCEED) {
+		GDKclrerr();
+		return -1;
+	}
 	a->data = dst;
 	return 0;
 }
@@ -1313,8 +1331,10 @@ atom_add(atom *a1, atom *a2)
 		a2 = t;
 	}
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
+	if (VARcalcadd(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+		GDKclrerr();
 		return NULL;
+	}
 	a1->data = dst;
 	if (a1->isnull || a2->isnull)
 		a1->isnull = 1;
@@ -1334,8 +1354,10 @@ atom_sub(atom *a1, atom *a2)
 		dst.vtype = a2->tpe.type->localtype;
 	else
 		dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcsub(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
+	if (VARcalcsub(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+		GDKclrerr();
 		return NULL;
+	}
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
 	     a1->tpe.digits < a2->tpe.digits))
@@ -1365,10 +1387,39 @@ atom_mul(atom *a1, atom *a2)
 		return a1;
 	}
 	dst.vtype = a1->tpe.type->localtype;
-	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED)
+	if (VARcalcmul(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+		GDKclrerr();
 		return NULL;
+	}
 	a1->data = dst;
 	a1->tpe.digits += a2->tpe.digits;
+	return a1;
+}
+
+atom *
+atom_div(atom *a1, atom *a2)
+{
+	ValRecord dst;
+
+	if (!EC_COMPUTE(a1->tpe.type->eclass))
+		return NULL;
+	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
+	     a1->tpe.digits < a2->tpe.digits)) {
+		atom *t = a1;
+		a1 = a2;
+		a2 = t;
+	}
+	if (a1->isnull || a2->isnull) {
+		a1->isnull = 1;
+		return a1;
+	}
+	dst.vtype = a1->tpe.type->localtype;
+	if (VARcalcdiv(&dst, &a1->data, &a2->data, 1) != GDK_SUCCEED) {
+		GDKclrerr();
+		return NULL;
+	}
+	a1->data = dst;
 	return a1;
 }
 
@@ -1380,8 +1431,10 @@ atom_inc(atom *a)
 	if (a->isnull)
 		return -1;
 	dst.vtype = a->data.vtype;
-	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED)
+	if (VARcalcincr(&dst, &a->data, 1) != GDK_SUCCEED) {
+		GDKclrerr();
 		return -1;
+	}
 	a->data = dst;
 	return 0;
 }
