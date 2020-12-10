@@ -1,0 +1,65 @@
+stdout of test 'mclient-lsql-D` in directory 'sql/test/BugTracker-2009` itself:
+
+
+# 21:51:00 >  
+# 21:51:00 >   mserver5 "--config=/ufs/niels/scratch/rc/Linux-x86_64/etc/monetdb5.conf" --debug=10 --set gdk_nr_threads=0 --set "monet_mod_path=/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/lib:/ufs/niels/scratch/rc/Linux-x86_64/lib/MonetDB5/bin" --set "gdk_dbfarm=/ufs/niels/scratch/rc/Linux-x86_64/var/MonetDB5/dbfarm"    --set mapi_open=true --set xrpc_open=true --set mapi_port=38418 --set xrpc_port=47399 --set monet_prompt= --trace  "--dbname=mTests_src_test_BugTracker-2009" --set mal_listing=0 "--dbinit= include sql;" ; echo ; echo Over..
+# 21:51:00 >  
+
+# MonetDB server v5.12.0, based on kernel v1.30.0
+# Serving database 'mTests_src_test_BugTracker-2009', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2009 MonetDB B.V., all rights reserved
+# Visit http://monetdb.cwi.nl/ for further information
+# Listening for connection requests on mapi:monetdb://alf.ins.cwi.nl:38418/
+# MonetDB/SQL module v2.30.1 loaded
+
+#function user.main():void;
+#    clients.quit();
+#end main;
+
+
+# 21:51:00 >  
+# 21:51:00 >  ./mclient-lsql-D.SQL.sh mclient-lsql-D 
+# 21:51:00 >  
+
+
+# 21:51:00 >  
+# 21:51:00 >  Mtimeout -timeout 60 mclient -lsql -umonetdb -Pmonetdb --host=alf --port=38418  -D < /dev/null
+# 21:51:00 >  
+
+START TRANSACTION;
+SET SCHEMA "sys";
+CREATE TABLE "sys"."table_a" (
+	"table_a_id" INTEGER       NOT NULL,
+	"value_a"    INTEGER       NOT NULL,
+	CONSTRAINT "pk_table_a_id" PRIMARY KEY ("table_a_id")
+);
+CREATE TABLE "sys"."table_b" (
+	"table_b_id" INTEGER       NOT NULL,
+	"table_a_id" INTEGER       NOT NULL,
+	CONSTRAINT "pk_table_b_id" PRIMARY KEY ("table_b_id")
+);
+CREATE TABLE "sys"."table_d" (
+	"table_d_id" INTEGER       NOT NULL,
+	"table_a_id" INTEGER       NOT NULL,
+	CONSTRAINT "pk_table_d_id" PRIMARY KEY ("table_d_id")
+);
+CREATE TABLE "sys"."table_c" (
+	"table_c_id" INTEGER       NOT NULL,
+	"table_a_id" INTEGER       NOT NULL,
+	"table_b_id" INTEGER       NOT NULL,
+	"table_d_id" INTEGER       NOT NULL,
+	"value_c"    INTEGER       NOT NULL,
+	CONSTRAINT "pk_table_c_id" PRIMARY KEY ("table_c_id")
+);
+ALTER TABLE "sys"."table_b" ADD CONSTRAINT "fk_table_a_id" FOREIGN KEY ("table_a_id") REFERENCES "sys"."table_a" ("table_a_id");
+ALTER TABLE "sys"."table_c" ADD CONSTRAINT "fk_table_c_table_a_id" FOREIGN KEY ("table_a_id") REFERENCES "sys"."table_a" ("table_a_id");
+ALTER TABLE "sys"."table_c" ADD CONSTRAINT "fk_table_c_table_d_id" FOREIGN KEY ("table_d_id") REFERENCES "sys"."table_b" ("table_b_id");
+ALTER TABLE "sys"."table_d" ADD CONSTRAINT "fk_table_d_table_a_id" FOREIGN KEY ("table_a_id") REFERENCES "sys"."table_a" ("table_a_id");
+COMMIT;
+
+# 21:51:00 >  
+# 21:51:00 >  Done.
+# 21:51:00 >  
+
