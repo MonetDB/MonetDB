@@ -7,33 +7,35 @@ from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
-    tc.execute('CREATE SCHEMA new_schema_as_well')
-    tc.execute('SET SCHEMA new_schema_as_well')
-    tc.execute('CREATE TABLE test (x int, y int)')
-    tc.execute('INSERT INTO test VALUES (-1, -1)')
+    tc.execute('CREATE SCHEMA new_schema_as_well').assertSucceeded()
+    tc.execute('SET SCHEMA new_schema_as_well').assertSucceeded()
+    tc.execute('CREATE TABLE test (x int, y int)').assertSucceeded()
+    tc.execute('INSERT INTO test VALUES (-1, -1)').assertSucceeded()
 
      # Create a new user and grant the right to select.
-    tc.execute('CREATE USER new_user WITH PASSWORD \'new_quite_long_password\' NAME \'newUser\' SCHEMA new_schema_as_well')
-    tc.execute('GRANT SELECT ON new_schema_as_well.test TO new_user')
-    tc.execute('GRANT UPDATE ON new_schema_as_well.test TO new_user')
-    tc.execute('GRANT INSERT ON new_schema_as_well.test TO new_user')
-    tc.execute('GRANT DELETE ON new_schema_as_well.test TO new_user')
+    tc.execute('CREATE USER new_user WITH PASSWORD \'new_quite_long_password\' NAME \'newUser\' SCHEMA new_schema_as_well').assertSucceeded()
+    tc.execute('GRANT SELECT ON new_schema_as_well.test TO new_user').assertSucceeded()
+    tc.execute('GRANT UPDATE ON new_schema_as_well.test TO new_user').assertSucceeded()
+    tc.execute('GRANT INSERT ON new_schema_as_well.test TO new_user').assertSucceeded()
+    tc.execute('GRANT DELETE ON new_schema_as_well.test TO new_user').assertSucceeded()
 
     # Login the new user, and select.
     tc.connect(username='new_user', password='new_quite_long_password')
-    tc.execute('SELECT * FROM test')
-    tc.execute('UPDATE test SET x = -3 WHERE y = -1')
-    tc.execute('INSERT INTO test VALUES (0, 0)')
-    tc.execute('DELETE FROM test WHERE y = -2')
+    tc.execute('SELECT * FROM test').assertSucceeded()
+    tc.execute('UPDATE test SET x = -3 WHERE y = -1').assertSucceeded()
+    tc.execute('INSERT INTO test VALUES (0, 0)').assertSucceeded()
+    tc.execute('DELETE FROM test WHERE y = -2').assertSucceeded()
 
+    tc.connect(username="monetdb", password="monetdb")
     # Revoke the right to select from the new user.
-    tc.execute('REVOKE SELECT ON new_schema_as_well.test FROM new_user')
+    tc.execute('REVOKE SELECT ON new_schema_as_well.test FROM new_user').assertSucceeded()
 
+    tc.connect(username='new_user', password='new_quite_long_password')
     # The new user should not be able to select anymore.
-    tc.execute('UPDATE test SET x = -66 WHERE y = 66')
-    tc.execute('INSERT INTO test VALUES (66, 66)')
-    tc.execute('DELETE FROM test WHERE y = -66')
-    tc.execute('SELECT * FROM test')
+    tc.execute('UPDATE test SET x = -66 WHERE y = 66').assertFailed()
+    tc.execute('INSERT INTO test VALUES (66, 66)').assertSucceeded()
+    tc.execute('DELETE FROM test WHERE y = -66').assertFailed()
+    tc.execute('SELECT * FROM test').assertFailed()
 
 # import sys, time, pymonetdb, os
 
