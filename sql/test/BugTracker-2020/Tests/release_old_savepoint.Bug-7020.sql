@@ -16,3 +16,5 @@ release savepoint name1;
 select * from savepointtest;
 commit;
 
+drop table if exists savepointtest;
+

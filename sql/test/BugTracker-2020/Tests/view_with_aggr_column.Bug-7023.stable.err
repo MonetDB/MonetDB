@@ -1,0 +1,16 @@
+stderr of test 'view_with_aggr_column.Bug-7023` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 15:22:56 >  
+# 15:22:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-177928" "--port=37553"
+# 15:22:56 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-177928/.s.monetdb.37553
+QUERY = select * from v1;
+
+CODE  = 42000
+
+# 15:22:56 >  
+# 15:22:56 >  "Done."
+# 15:22:56 >  
+
