@@ -76,13 +76,20 @@ def _delfiles():
 atexit.register(_delfiles)
 
 class _BufferedPipe:
-    def __init__(self, fd):
+    def __init__(self, fd, text=True):
         self._pipe = fd
         self._queue = queue.Queue()
         self._cur = None
         self._curidx = 0
         self._eof = False
-        self._empty = ''
+        if text:
+            self._empty = ''
+            self._nl = '\n'
+            self._cr = '\r'
+        else:
+            self._empty = b''
+            self._nl = b'\n'
+            self._cr = b'\r'
         self._thread = threading.Thread(target=self._readerthread,
                                         args=(fd, self._queue))
         self._thread.setDaemon(True)
@@ -91,17 +98,12 @@ class _BufferedPipe:
     def _readerthread(self, fh, queue):
         s = 0
         w = 0
-        first = True
         while True:
             c = fh.read(1024)
-            if first:
-                if type(c) is type(b''):
-                    self._empty = b''
-                first = False
             if not c:
                 queue.put(c)    # put '' if at EOF
                 break
-            c = c.replace('\r', '')
+            c = c.replace(self._cr, self._empty)
             if c:
                 queue.put(c)
 
@@ -155,7 +157,7 @@ class _BufferedPipe:
             ret.append(c)
             if size > 0:
                 size -= 1
-            if c == '\n' or c == self._empty:
+            if c == self._nl or c == self._empty:
                 break
         return self._empty.join(ret)
 
@@ -266,6 +268,8 @@ class client(Popen):
                     break
             cmd.append('-f' + format)
         if encoding is not None:
+            if text:
+                raise RuntimeError('text cannot be combined with encoding')
             for i in range(len(cmd)):
                 if cmd[i] == '-E' or cmd[i] == '--encoding':
                     del cmd[i:i+2]
@@ -339,18 +343,20 @@ class client(Popen):
             out = PIPE
         else:
             out = stdout
+        if text and not encoding:
+            encoding = 'utf-8'
         super().__init__(cmd + args,
                          stdin=stdin,
                          stdout=out,
                          stderr=stderr,
                          shell=False,
                          env=env,
-                         encoding=encoding or 'utf-8',
+                         encoding=encoding,
                          text=text)
         if stdout == PIPE:
-            self.stdout = _BufferedPipe(self.stdout)
+            self.stdout = _BufferedPipe(self.stdout, text)
         if stderr == PIPE:
-            self.stderr = _BufferedPipe(self.stderr)
+            self.stderr = _BufferedPipe(self.stderr, text)
         if input is not None:
             self.stdin.write(input)
         if communicate:
