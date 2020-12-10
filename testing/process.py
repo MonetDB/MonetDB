@@ -232,7 +232,7 @@ class client(Popen):
                  server=None, port=None, dbname=None, host=None,
                  user='monetdb', passwd='monetdb', log=False,
                  interactive=None, echo=None, format=None,
-                 input=None, communicate=False, text=True):
+                 input=None, communicate=False, text=True, encoding=None):
         '''Start a client process.'''
         if lang == 'mal':
             cmd = _mal_client[:]
@@ -257,11 +257,23 @@ class client(Popen):
             elif '-e' not in cmd and echo:
                 cmd.append('-e')
         if format is not None:
-            for c in cmd:
-                if c.startswith('-f'):
-                    cmd.remove(c)
+            for i in range(len(cmd)):
+                if cmd[i] == '-f' or cmd[i] == '--format':
+                    del cmd[i:i+2]
+                    break
+                if cmd[i].startswith('-f') or cmd[i].startswith('--format='):
+                    del cmd[i]
                     break
             cmd.append('-f' + format)
+        if encoding is not None:
+            for i in range(len(cmd)):
+                if cmd[i] == '-E' or cmd[i] == '--encoding':
+                    del cmd[i:i+2]
+                    break
+                if cmd[i].startswith('-E') or cmd[i].startswith('--encoding='):
+                    del cmd[i]
+                    break
+            cmd.append('-E' + encoding)
 
         env = None
 
@@ -333,7 +345,7 @@ class client(Popen):
                          stderr=stderr,
                          shell=False,
                          env=env,
-                         encoding='utf-8',
+                         encoding=encoding or 'utf-8',
                          text=text)
         if stdout == PIPE:
             self.stdout = _BufferedPipe(self.stdout)
