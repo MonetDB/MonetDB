@@ -222,7 +222,7 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/Documentation/Manuals/SQLreference/Tables"},
 	{"CREATE TRIGGER",
 	 "Define a triggered action for a table data update event",
-	 "CREATE [ OR REPLACE ] TRIGGER qname { BEFORE | AFTER }\n"
+	 "CREATE [ OR REPLACE ] TRIGGER ident { BEFORE | AFTER }\n"
 	 " { INSERT | DELETE | TRUNCATE | UPDATE [ OF ident_list ] }\n"
 	 " ON qname [ REFERENCING trigger_reference [...] ] triggered_action",
 	 "qname,ident_list,trigger_reference,triggered_action",
