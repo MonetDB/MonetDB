@@ -372,10 +372,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap.base)[lo] = v - GDK_VAROFFSET;
+				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
 				break;
 			case 2:
-				((uint16_t *) bn->theap.base)[lo] = v - GDK_VAROFFSET;
+				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
 			case 4:
 				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
@@ -419,10 +419,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap.base)[lo] = v - GDK_VAROFFSET;
+				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
 				break;
 			case 2:
-				((uint16_t *) bn->theap.base)[lo] = v - GDK_VAROFFSET;
+				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
 			case 4:
 				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
@@ -467,10 +467,10 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			v += off;
 			switch (bn->twidth) {
 			case 1:
-				((uint8_t *) bn->theap.base)[lo] = v - GDK_VAROFFSET;
+				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
 				break;
 			case 2:
-				((uint16_t *) bn->theap.base)[lo] = v - GDK_VAROFFSET;
+				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
 				break;
 			case 4:
 				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
