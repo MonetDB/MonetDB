@@ -18,3 +18,8 @@ limit_in_prepare.Bug-2552
 prepare_on_boolean_bug.Bug-2581
 prepare_statements_crash_server.Bug-2599
 prepare_stmt.Bug-2533.Bug-2534
+large_prepare.SF-1363729
+large_prepare_2.SF-1363729
+prepare_decimal_float.SF-1675795
+decimal_prepare.SF-1655818
+bind_with_cast.SF-1720934
