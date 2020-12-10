@@ -343,7 +343,8 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			oid o = canditer_next(ci);
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
-				return GDK_FAIL;
+				BBPreclaim(bn);
+				return NULL;
 			}
 			if (o < r1end) {
 				r = r1;
@@ -389,7 +390,8 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			oid o = l->tseqbase + lo;
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
-				return GDK_FAIL;
+				BBPreclaim(bn);
+				return NULL;
 			}
 			if (o < r1end) {
 				r = r1;
@@ -436,7 +438,8 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			oid o = ot[lo];
 			if (o < r1seq || o >= r2end) {
 				GDKerror("does not match always\n");
-				return GDK_FAIL;
+				BBPreclaim(bn);
+				return NULL;
 			}
 			if (o < r1end) {
 				r = r1;
