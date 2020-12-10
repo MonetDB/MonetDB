@@ -1294,6 +1294,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		}
 	}
 
+	if (triggerschema)
+		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: a trigger will be placed on the respective table's schema, specify the schema on the table reference, ie ON clause instead", base);
 	if (create && !mvc_schema_privs(sql, ss))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 	if (create) {
@@ -1302,8 +1304,6 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	}
 	if (create && isView(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
-	if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: trigger and respective table must belong to the same schema", base);
 	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 		if (replace) {
 			if (mvc_drop_trigger(sql, ss, st))

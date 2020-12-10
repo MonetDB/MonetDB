@@ -54,6 +54,7 @@ stdout of test 'release_old_savepoint.Bug-7020` in directory 'sql/test/BugTracke
 [ 8	]
 [ 9	]
 #commit;
+#drop table if exists savepointtest;
 
 # 09:05:47 >  
 # 09:05:47 >  "Done."
