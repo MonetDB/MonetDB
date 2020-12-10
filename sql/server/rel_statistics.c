@@ -28,10 +28,8 @@ static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)
 {
 	switch (input->type) {
-		case e_convert: /* if the conversion is for a different SQL class, the min and max cannot be converted */
-			if (((sql_subtype*)exp_fromtype(input))->type->eclass == ((sql_subtype*)exp_totype(input))->type->eclass)
-				return comparison_find_column(input->l, e);
-			return NULL;
+		case e_convert:
+			return comparison_find_column(input->l, e) ? input : NULL;
 		case e_column:
 			return exp_match(e, input) ? input : NULL;
 		default:
@@ -218,11 +216,11 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (has_nil(e) && mvc_has_no_nil(sql, c))
 			set_has_no_nil(e);
  
-		if ((EC_NUMBER(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) && (max = mvc_has_max_value(sql, c))) {
+		if ((max = mvc_has_max_value(sql, c))) {
 			prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
 			p->value = atom_general_ptr(sql->sa, &c->type, max);
 		}
-		if ((EC_NUMBER(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) && (min = mvc_has_min_value(sql, c))) {
+		if ((min = mvc_has_min_value(sql, c))) {
 			prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
 			p->value = atom_general_ptr(sql->sa, &c->type, min);
 		}
@@ -261,126 +259,113 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	mvc *sql = v->sql;
 	atom *lval;
-	sql_subtype *tp = exp_subtype(e);
 
 	(void) depth;
-	if (tp && (EC_NUMBER(tp->type->eclass) || EC_TEMP_NOFRAC(tp->type->eclass) || tp->type->eclass == EC_DATE)) {
-		switch(e->type) {
-		case e_column: {
-			switch (rel->op) {
-			case op_join:
-			case op_left:
-			case op_right:
-			case op_full: {
-				sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e);
-				if (!found)
-					(void) rel_propagate_column_ref_statistics(sql, rel->r, e);
-			} break;
-			case op_semi:
-			case op_select:
-			case op_project:
-			case op_groupby:
-				(void) rel_propagate_column_ref_statistics(sql, rel->l, e);
-				break;
-			case op_insert:
-			case op_update:
-			case op_delete:
+	switch(e->type) {
+	case e_column: {
+		switch (rel->op) {
+		case op_join:
+		case op_left:
+		case op_right:
+		case op_full: {
+			sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e);
+			if (!found)
 				(void) rel_propagate_column_ref_statistics(sql, rel->r, e);
-				break;
-			default:
-				break;
-			}
 		} break;
-		case e_convert: {
-			sql_subtype *from = exp_fromtype(e), *to = exp_totype(e);
-
-			if (from->type->eclass == to->type->eclass) {
-				sql_exp *l = e->l;
-				if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
-					if (EC_NUMBER(from->type->eclass)) {
-						atom *res = atom_dup(sql->sa, lval);
-						if (atom_cast(sql->sa, res, to))
-							set_property(sql, e, PROP_MAX, res);
-					} else {
-						set_property(sql, e, PROP_MAX, lval);
-					}
-				}
-				if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
-					if (EC_NUMBER(from->type->eclass)) {
-						atom *res = atom_dup(sql->sa, lval);
-						if (atom_cast(sql->sa, res, to))
-							set_property(sql, e, PROP_MIN, res);
-					} else {
-						set_property(sql, e, PROP_MIN, lval);
-					}
-				}
-			}
-		} break;
-		case e_aggr:
-		case e_func: {
-			sql_subfunc *f = e->f;
-
-			if (!f->func->s) {
-				int key = hash_key(f->func->base.name); /* Using hash lookup */
-				sql_hash_e *he = sql_functions_lookup->buckets[key&(sql_functions_lookup->size-1)];
-				lookup_function look = NULL;
-
-				for (; he && !look; he = he->chain) {
-					struct function_properties* fp = (struct function_properties*) he->value;
-
-					if (!strcmp(f->func->base.name, fp->name))
-						look = fp->func;
-				}
-				if (look)
-					look(sql, e);
-			}
-		} break;
-		case e_atom: {
-			if (e->l) {
-				atom *a = (atom*) e->l;
-				if (!a->isnull) {
-					set_property(sql, e, PROP_MAX, a);
-					set_property(sql, e, PROP_MIN, a);
-				}
-			} else if (e->f) {
-				list *vals = (list *) e->f;
-				sql_exp *first = vals->h ? vals->h->data : NULL;
-				atom *max = NULL, *min = NULL; /* all child values must have a valid min/max */
-
-				if (first) {
-					max = ((lval = find_prop_and_get(first->p, PROP_MAX))) ? lval : NULL;
-					min = ((lval = find_prop_and_get(first->p, PROP_MIN))) ? lval : NULL;
-				}
-
-				for (node *n = vals->h ? vals->h->next : NULL ; n ; n = n->next) {
-					sql_exp *ee = n->data;
-
-					if (max) {
-						if ((lval = find_prop_and_get(ee->p, PROP_MAX))) {
-							max = atom_cmp(lval, max) > 0 ? lval : max;
-						} else {
-							max = NULL;
-						}
-					}
-					if (min) {
-						if ((lval = find_prop_and_get(ee->p, PROP_MIN))) {
-							min = atom_cmp(min, lval) > 0 ? lval : min;
-						} else {
-							min = NULL;
-						}
-					}
-				}
-
-				if (max)
-					set_property(sql, e, PROP_MAX, max);
-				if (min)
-					set_property(sql, e, PROP_MIN, min);
-			}
-		} break;
-		case e_cmp: /* propagating min and max of booleans is not very worth it */
-		case e_psm:
+		case op_semi:
+		case op_select:
+		case op_project:
+		case op_groupby:
+			(void) rel_propagate_column_ref_statistics(sql, rel->l, e);
+			break;
+		case op_insert:
+		case op_update:
+		case op_delete:
+			(void) rel_propagate_column_ref_statistics(sql, rel->r, e);
+			break;
+		default:
 			break;
 		}
+	} break;
+	case e_convert: {
+		sql_subtype *to = exp_totype(e);
+		sql_exp *l = e->l;
+
+		if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
+			atom *res = atom_dup(sql->sa, lval);
+			if (atom_cast(sql->sa, res, to))
+				set_property(sql, e, PROP_MAX, res);
+		}
+		if ((lval = find_prop_and_get(l->p, PROP_MIN))) {
+			atom *res = atom_dup(sql->sa, lval);
+			if (atom_cast(sql->sa, res, to))
+				set_property(sql, e, PROP_MIN, res);
+		}
+	} break;
+	case e_aggr:
+	case e_func: {
+		sql_subfunc *f = e->f;
+
+		if (!f->func->s) {
+			int key = hash_key(f->func->base.name); /* Using hash lookup */
+			sql_hash_e *he = sql_functions_lookup->buckets[key&(sql_functions_lookup->size-1)];
+			lookup_function look = NULL;
+
+			for (; he && !look; he = he->chain) {
+				struct function_properties* fp = (struct function_properties*) he->value;
+
+				if (!strcmp(f->func->base.name, fp->name))
+					look = fp->func;
+			}
+			if (look)
+				look(sql, e);
+		}
+	} break;
+	case e_atom: {
+		if (e->l) {
+			atom *a = (atom*) e->l;
+			if (!a->isnull) {
+				set_property(sql, e, PROP_MAX, a);
+				set_property(sql, e, PROP_MIN, a);
+			}
+		} else if (e->f) {
+			list *vals = (list *) e->f;
+			sql_exp *first = vals->h ? vals->h->data : NULL;
+			atom *max = NULL, *min = NULL; /* all child values must have a valid min/max */
+
+			if (first) {
+				max = ((lval = find_prop_and_get(first->p, PROP_MAX))) ? lval : NULL;
+				min = ((lval = find_prop_and_get(first->p, PROP_MIN))) ? lval : NULL;
+			}
+
+			for (node *n = vals->h ? vals->h->next : NULL ; n ; n = n->next) {
+				sql_exp *ee = n->data;
+
+				if (max) {
+					if ((lval = find_prop_and_get(ee->p, PROP_MAX))) {
+						max = atom_cmp(lval, max) > 0 ? lval : max;
+					} else {
+						max = NULL;
+					}
+				}
+				if (min) {
+					if ((lval = find_prop_and_get(ee->p, PROP_MIN))) {
+						min = atom_cmp(min, lval) > 0 ? lval : min;
+					} else {
+						min = NULL;
+					}
+				}
+			}
+
+			if (max)
+				set_property(sql, e, PROP_MAX, max);
+			if (min)
+				set_property(sql, e, PROP_MIN, min);
+		}
+	} break;
+	case e_cmp: /* propagating min and max of booleans is not very worth it */
+	case e_psm:
+		break;
 	}
 	return e;
 }
