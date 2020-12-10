@@ -12,4 +12,4 @@ commit;
 
 select 42;
 select * from savepointtest;
-
+drop table if exists savepointtest;
