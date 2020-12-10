@@ -31,6 +31,7 @@ CREATE TABLE "sys"."pfoo1" ("i" INTEGER);
 CREATE TABLE "sys"."pfoo2" ("i" INTEGER);
 create function "sfoo"."func1" (x int, y int) returns int begin return x + y; end;
 create view "sfoo"."baz" (i) as select func1(t.x, t.y) from (values (10, 1), (20, 2)) as t(x,y);
+create function "sfoo"."func2" () RETURNS TABLE(i INTEGER) BEGIN RETURN SELECT * FROM "sfoo"."baz"; END;
 CREATE TABLE "sys"."lower_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
 CREATE TABLE "sys"."higher_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
 CREATE TABLE "sys"."unknown_scorers" ("name" CHARACTER LARGE OBJECT, "first_score" INTEGER, "second_score" INTEGER);
