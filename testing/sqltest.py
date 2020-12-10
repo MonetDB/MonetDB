@@ -7,7 +7,6 @@ import os
 import sys
 import unittest
 import pymonetdb
-import monetdbe
 import difflib
 from abc import ABCMeta, abstractmethod
 import MonetDBtesting.process as process
@@ -527,6 +526,7 @@ class SQLTestCase():
         if self._conn_ctx:
             self.close()
         if database == ':memory:':
+            import monetdbe
             self.in_memory = True
             # TODO add username, password, port when supported from monetdbe
             self._conn_ctx = monetdbe.connect(':memory:', autocommit=True)
