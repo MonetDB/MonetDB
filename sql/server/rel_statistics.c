@@ -17,8 +17,7 @@ exps_have_or(list *exps)
 {
 	for (node *n = exps->h ; n ; n = n->next) {
 		sql_exp *e = n->data;
-		assert(e->type == e_cmp);
-		if (e->flag == cmp_or)
+		if (e->type == e_cmp && e->flag == cmp_or)
 			return true;
 	}
 	return false;
@@ -57,113 +56,115 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 				for (node *n = rel->exps->h ; n && !ne; n = n->next) {
 					sql_exp *comp = n->data;
 
-					switch (comp->flag) {
-					case cmp_equal: {
-						sql_exp *le = comp->l, *re = comp->r, *rne = NULL;
+					if (comp->type == e_cmp) {
+						switch (comp->flag) {
+						case cmp_equal: {
+							sql_exp *le = comp->l, *re = comp->r, *rne = NULL;
 
-						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
-							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
-									set_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
-									set_property(sql, e, PROP_MIN, lval);
-							} else {
-								if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
-									set_min_of_values(sql, e, PROP_MAX, lval, rval); /* for equality reduce */
-								if ((lval = find_prop_and_get(le->p, PROP_MIN)) && (rval = find_prop_and_get(re->p, PROP_MIN)))
-									set_max_of_values(sql, e, PROP_MIN, lval, rval);
+							if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
+								if (is_outerjoin(rel->op)) {
+									if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
+										set_property(sql, e, PROP_MAX, lval);
+									if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
+										set_property(sql, e, PROP_MIN, lval);
+								} else {
+									if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
+										set_min_of_values(sql, e, PROP_MAX, lval, rval); /* for equality reduce */
+									if ((lval = find_prop_and_get(le->p, PROP_MIN)) && (rval = find_prop_and_get(re->p, PROP_MIN)))
+										set_max_of_values(sql, e, PROP_MIN, lval, rval);
+								}
 							}
-						}
-						ne = ne ? ne : rne;
-					} break;
-					case cmp_notequal: {
-						sql_exp *le = comp->l, *re = comp->r, *rne = NULL;
+							ne = ne ? ne : rne;
+						} break;
+						case cmp_notequal: {
+							sql_exp *le = comp->l, *re = comp->r, *rne = NULL;
 
-						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
-							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
-									set_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
-									set_property(sql, e, PROP_MIN, lval);
-							} else {
-								if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
-									set_max_of_values(sql, e, PROP_MAX, lval, rval); /* for inequality expand */
-								if ((lval = find_prop_and_get(le->p, PROP_MIN)) && (rval = find_prop_and_get(re->p, PROP_MIN)))
-									set_min_of_values(sql, e, PROP_MIN, lval, rval);
+							if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
+								if (is_outerjoin(rel->op)) {
+									if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
+										set_property(sql, e, PROP_MAX, lval);
+									if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
+										set_property(sql, e, PROP_MIN, lval);
+								} else {
+									if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
+										set_max_of_values(sql, e, PROP_MAX, lval, rval); /* for inequality expand */
+									if ((lval = find_prop_and_get(le->p, PROP_MIN)) && (rval = find_prop_and_get(re->p, PROP_MIN)))
+										set_min_of_values(sql, e, PROP_MIN, lval, rval);
+								}
 							}
-						}
-						ne = ne ? ne : rne;
-					} break;
-					case cmp_gt:
-					case cmp_gte: {
-						sql_exp *le = comp->l, *re = comp->r, *rne = NULL;
+							ne = ne ? ne : rne;
+						} break;
+						case cmp_gt:
+						case cmp_gte: {
+							sql_exp *le = comp->l, *re = comp->r, *rne = NULL;
 
-						assert(!comp->f);
-						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
-							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
-									set_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
-									set_property(sql, e, PROP_MIN, lval);
-							} else if (ne) {
-								if ((lval = find_prop_and_get(le->p, PROP_MAX)))
-									set_property(sql, e, PROP_MAX, lval);
-								if ((rval = find_prop_and_get(re->p, PROP_MAX)))
-									set_property(sql, e, PROP_MIN, rval);
-							} else {
-								if ((lval = find_prop_and_get(le->p, PROP_MIN)))
-									set_property(sql, e, PROP_MAX, lval);
-								if ((rval = find_prop_and_get(re->p, PROP_MIN)))
-									set_property(sql, e, PROP_MIN, rval);
-							}
-						}
-						ne = ne ? ne : rne;
-					} break;
-					case cmp_lt:
-					case cmp_lte: {
-						sql_exp *le = comp->l, *re = comp->r, *fe = comp->f, *rne = NULL, *fne = NULL;
-
-						if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e)))) {
-							if (is_outerjoin(rel->op)) {
-								if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MAX)))
-									set_property(sql, e, PROP_MAX, lval);
-								if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MIN)))
-									set_property(sql, e, PROP_MIN, lval);
-							} else if (ne) {
-								if (fe) { /* range case */
-									if ((lval = find_prop_and_get(fe->p, PROP_MIN)))
+							assert(!comp->f);
+							if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e))) {
+								if (is_outerjoin(rel->op)) {
+									if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MAX)))
+										set_property(sql, e, PROP_MAX, lval);
+									if ((lval = find_prop_and_get(le ? le->p : re->p, PROP_MIN)))
+										set_property(sql, e, PROP_MIN, lval);
+								} else if (ne) {
+									if ((lval = find_prop_and_get(le->p, PROP_MAX)))
 										set_property(sql, e, PROP_MAX, lval);
 									if ((rval = find_prop_and_get(re->p, PROP_MAX)))
 										set_property(sql, e, PROP_MIN, rval);
 								} else {
-									if ((lval = find_prop_and_get(re->p, PROP_MIN)))
+									if ((lval = find_prop_and_get(le->p, PROP_MIN)))
 										set_property(sql, e, PROP_MAX, lval);
-									if ((rval = find_prop_and_get(le->p, PROP_MIN)))
+									if ((rval = find_prop_and_get(re->p, PROP_MIN)))
 										set_property(sql, e, PROP_MIN, rval);
 								}
-							} else if (rne) {
-								if (fe) { /* range case */
-									if ((lval = find_prop_and_get(re->p, PROP_MIN)))
+							}
+							ne = ne ? ne : rne;
+						} break;
+						case cmp_lt:
+						case cmp_lte: {
+							sql_exp *le = comp->l, *re = comp->r, *fe = comp->f, *rne = NULL, *fne = NULL;
+
+							if ((ne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e)))) {
+								if (is_outerjoin(rel->op)) {
+									if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MAX)))
 										set_property(sql, e, PROP_MAX, lval);
-									if ((rval = find_prop_and_get(le->p, PROP_MIN)))
-										set_property(sql, e, PROP_MIN, rval);
-								} else {
-									if ((lval = find_prop_and_get(re->p, PROP_MAX)))
+									if ((lval = find_prop_and_get(le ? le->p : re ? re->p : fe->p, PROP_MIN)))
+										set_property(sql, e, PROP_MIN, lval);
+								} else if (ne) {
+									if (fe) { /* range case */
+										if ((lval = find_prop_and_get(fe->p, PROP_MIN)))
+											set_property(sql, e, PROP_MAX, lval);
+										if ((rval = find_prop_and_get(re->p, PROP_MAX)))
+											set_property(sql, e, PROP_MIN, rval);
+									} else {
+										if ((lval = find_prop_and_get(re->p, PROP_MIN)))
+											set_property(sql, e, PROP_MAX, lval);
+										if ((rval = find_prop_and_get(le->p, PROP_MIN)))
+											set_property(sql, e, PROP_MIN, rval);
+									}
+								} else if (rne) {
+									if (fe) { /* range case */
+										if ((lval = find_prop_and_get(re->p, PROP_MIN)))
+											set_property(sql, e, PROP_MAX, lval);
+										if ((rval = find_prop_and_get(le->p, PROP_MIN)))
+											set_property(sql, e, PROP_MIN, rval);
+									} else {
+										if ((lval = find_prop_and_get(re->p, PROP_MAX)))
+											set_property(sql, e, PROP_MAX, lval);
+										if ((rval = find_prop_and_get(le->p, PROP_MAX)))
+											set_property(sql, e, PROP_MIN, rval);
+									}
+								} else { /* range case */
+									if ((lval = find_prop_and_get(fe->p, PROP_MAX)))
 										set_property(sql, e, PROP_MAX, lval);
 									if ((rval = find_prop_and_get(le->p, PROP_MAX)))
 										set_property(sql, e, PROP_MIN, rval);
 								}
-							} else { /* range case */
-								if ((lval = find_prop_and_get(fe->p, PROP_MAX)))
-									set_property(sql, e, PROP_MAX, lval);
-								if ((rval = find_prop_and_get(le->p, PROP_MAX)))
-									set_property(sql, e, PROP_MIN, rval);
 							}
+							ne = ne ? ne : rne ? rne : fne;
+						} break;
+						default: /* Maybe later I can do cmp_in and cmp_notin */
+							break;
 						}
-						ne = ne ? ne : rne ? rne : fne;
-					} break;
-					default: /* Maybe later I can do cmp_in and cmp_notin */
-						break;
 					}
 				}
 			}
@@ -216,14 +217,17 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (has_nil(e) && mvc_has_no_nil(sql, c))
 			set_has_no_nil(e);
  
-		if ((max = mvc_has_max_value(sql, c))) {
-			prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-			p->value = atom_general_ptr(sql->sa, &c->type, max);
+		if (EC_NUMBER(c->type.type->localtype) || EC_VARCHAR(c->type.type->localtype) || EC_TEMP_NOFRAC(c->type.type->localtype) || c->type.type->localtype == EC_DATE) {
+			if ((max = mvc_has_max_value(sql, c))) {
+				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
+				p->value = atom_general_ptr(sql->sa, &c->type, max);
+			}
+			if ((min = mvc_has_min_value(sql, c))) {
+				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+				p->value = atom_general_ptr(sql->sa, &c->type, min);
+			}
 		}
-		if ((min = mvc_has_min_value(sql, c))) {
-			prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-			p->value = atom_general_ptr(sql->sa, &c->type, min);
-		}
+
 	}
 	return e;
 }
