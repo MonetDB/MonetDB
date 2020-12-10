@@ -545,6 +545,8 @@ BEGIN
 	--TODO TABLE level grants
 	--TODO COLUMN level grants
 	--TODO User Defined Types? sys.types
+	--TODO loaders ,procedures, window and filter functions.
+	--TODO dumping table data
 	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
