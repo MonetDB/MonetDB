@@ -36,32 +36,31 @@ with SQLTestCase() as tc:
     # but individually, because, otherwise, the fact that a query actually
     # succeeds will be lost.
     tc.connect(username="user_delete", password="delete")
-    tc.execute("DELETE FROM testTable where v1 = 2; -- should work").assertSucceeded()
-    tc.execute("SELECT * FROM testTable; -- should work").assertSucceeded()
-    tc.execute("UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges").assertFailed()
-    tc.execute("INSERT into testTable values (3, 3); -- not enough privileges").assertFailed()
+    tc.execute("DELETE FROM testTable where v1 = 2;").assertSucceeded()
+    tc.execute("SELECT * FROM testTable;").assertSucceeded()
+    tc.execute("UPDATE testTable set v1 = 2 where v2 = 7;").assertFailed(err_code="42000", err_message="UPDATE: insufficient privileges for user 'user_delete' to update table 'testtable' on column 'v1'")
+    tc.execute("INSERT into testTable values (3, 3);").assertFailed(err_code="42000", err_message="INSERT INTO: insufficient privileges for user 'user_delete' to insert into table 'testtable'")
 
     tc.connect(username="user_update", password="update")
     tc.execute("UPDATE testTable set v1 = 2 where v2 = 7;").assertSucceeded()
-    tc.execute("SELECT * FROM testTable; -- should work").assertSucceeded()
-    tc.execute("INSERT into testTable values (3, 3); -- not enough privileges").assertFailed()
-    tc.execute("DELETE FROM testTable where v1 = 2; -- not enough privileges").assertFailed()
+    tc.execute("SELECT * FROM testTable;").assertSucceeded()
+    tc.execute("INSERT into testTable values (3, 3);").assertFailed(err_code="42000", err_message="INSERT INTO: insufficient privileges for user 'user_update' to insert into table 'testtable'")
+    tc.execute("DELETE FROM testTable where v1 = 2;").assertFailed(err_code="42000", err_message="DELETE FROM: insufficient privileges for user 'user_update' to delete from table 'testtable'")
 
     tc.connect(username="user_insert", password="insert")
     tc.execute("INSERT into testTable values (3, 3);").assertSucceeded()
-    tc.execute("SELECT * FROM testTable; -- not enough privileges").assertFailed()
-    tc.execute("UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges").assertFailed()
-    tc.execute("DELETE FROM testTable where v1 = 2; -- not enough privileges").assertFailed()
+    tc.execute("SELECT * FROM testTable;").assertFailed(err_code="42000", err_message="SELECT: access denied for user_insert to table 'schematest.testtable'")
+    tc.execute("UPDATE testTable set v1 = 2 where v2 = 7;").assertFailed(err_code="42000", err_message="UPDATE: insufficient privileges for user 'user_insert' to update table 'testtable'")
+    tc.execute("DELETE FROM testTable where v1 = 2;").assertFailed(err_code="42000", err_message="DELETE FROM: insufficient privileges for user 'user_insert' to delete from table 'testtable'")
 
     tc.connect(username="user_select", password="select")
     tc.execute("SELECT * FROM testTable;").assertSucceeded()
-    tc.execute("INSERT into testTable values (3, 3); -- not enough privileges").assertFailed()
-    tc.execute("UPDATE testTable set v1 = 2 where v2 = 7; -- not enough privileges").assertFailed()
-    tc.execute("DELETE FROM testTable where v1 = 2; -- not enough privileges").assertFailed()
+    tc.execute("INSERT into testTable values (3, 3);").assertFailed(err_code="42000", err_message="INSERT INTO: insufficient privileges for user 'user_select' to insert into table 'testtable'")
+    tc.execute("UPDATE testTable set v1 = 2 where v2 = 7;").assertFailed(err_code="42000", err_message="UPDATE: insufficient privileges for user 'user_select' to update table 'testtable' on column 'v1'")
+    tc.execute("DELETE FROM testTable where v1 = 2;").assertFailed(err_code="42000", err_message="DELETE FROM: insufficient privileges for user 'user_select' to delete from table 'testtable'")
 
     tc.connect(username="monetdb", password="monetdb")
     tc.execute("""
-        SELECT * FROM schemaTest.testTable;
         REVOKE DELETE on schemaTest.testTable from user_delete;
         REVOKE INSERT on schemaTest.testTable from user_insert;
         REVOKE UPDATE on schemaTest.testTable from user_update;
@@ -70,22 +69,20 @@ with SQLTestCase() as tc:
 
 
     tc.connect(username='user_delete', password='delete')
-    tc.execute("DELETE from testTable where v2 = 666; -- not enough privileges").assertFailed()
+    tc.execute("DELETE from testTable where v2 = 666;").assertFailed(err_code="42000", err_message="DELETE FROM: insufficient privileges for user 'user_delete' to delete from table 'testtable'")
 
     tc.connect(username='user_insert', password='insert')
-    tc.execute("INSERT into testTable values (666, 666); -- not enough privileges").assertFailed()
+    tc.execute("INSERT into testTable values (666, 666);").assertFailed(err_code="42000", err_message="INSERT INTO: insufficient privileges for user 'user_insert' to insert into table 'testtable'")
 
     tc.connect(username='user_update', password='update')
-    tc.execute("UPDATE testTable set v1 = 666 where v2 = 666; -- not enough privileges").assertFailed()
+    tc.execute("UPDATE testTable set v1 = 666 where v2 = 666;").assertFailed(err_code="42000", err_message="UPDATE: insufficient privileges for user 'user_update' to update table 'testtable' on column 'v1'")
 
-    tc.connect(username='monetdb', password='monetdb')
-    tc.execute("SELECT * from schemaTest.testTable;").assertSucceeded()
+    tc.connect(username='user_select', password='select')
+    tc.execute("SELECT * from schemaTest.testTable;").assertFailed(err_code="42000", err_message="SELECT: access denied for user_select to table 'schematest.testtable'")
 
     tc.connect(username='monetdb', password='monetdb')
     tc.execute("""
-         SELECT * from schemaTest.testTable;
-
-         -- Grant delete rights.
+         -- Re-grant the rights.
          GRANT DELETE on table schemaTest.testTable to user_delete;
          GRANT INSERT on table schemaTest.testTable to user_insert;
          GRANT UPDATE on table schemaTest.testTable to user_update;
@@ -93,14 +90,14 @@ with SQLTestCase() as tc:
     """).assertSucceeded()
 
     tc.connect(username='user_delete', password='delete')
-    tc.execute("DELETE from testTable where v1 = 42; -- privilege granted").assertSucceeded()
+    tc.execute("DELETE from testTable where v1 = 42;").assertSucceeded()
 
     tc.connect(username='user_insert', password='insert')
-    tc.execute("INSERT into testTable values (42, 42); -- privilege granted").assertSucceeded()
+    tc.execute("INSERT into testTable values (42, 42);").assertSucceeded()
 
     tc.connect(username='user_update', password='update')
-    tc.execute("UPDATE testTable set v1 = 42 where v2 = 42; -- privilege granted").assertSucceeded()
+    tc.execute("UPDATE testTable set v1 = 42 where v2 = 42;").assertSucceeded()
 
     tc.connect(username='user_select', password='select')
-    tc.execute("SELECT * FROM testTable where v1 = 42; -- privilege granted").assertSucceeded()
+    tc.execute("SELECT * FROM testTable where v1 = 42;").assertSucceeded()
 
