@@ -432,6 +432,7 @@ CONDITIONALS = {
     'RELEASERUN'           : "",
     'BAD_HOSTNAME'         : "",
     'HAVE_IPV6'            : "",
+    'HAVE_MONETDBE'        : "",
 }
 
 
@@ -2521,6 +2522,14 @@ def main(argv) :
         CONDITIONALS['HAVE_PYTHON_LZ4'] = False
     else:
         CONDITIONALS['HAVE_PYTHON_LZ4'] = True
+
+    try:
+        import monetdbe
+    except ImportError:
+        CONDITIONALS['HAVE_MONETDBE'] = False
+    else:
+        CONDITIONALS['HAVE_MONETDBE'] = True
+
     if 'PYTHON3' in os.environ:
         proc = process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
                              stdout=process.PIPE, stderr=process.PIPE,
