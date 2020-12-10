@@ -11,6 +11,13 @@ CREATE FUNCTION ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALT
 
 CREATE FUNCTION comment_on(ob STRING, id STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, 'COMMENT ON ' || ob ||  ' ' || id || ' IS ' || SQ(r) || ';', ''); END;
 
+--We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
+CREATE FUNCTION replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
+CREATE FUNCTION schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
+RETURN
+	SELECT replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || FQTN(sch, nme) || ' ', 'imsx');
+END;
+
 CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEGIN
 	RETURN
 		CASE
@@ -360,7 +367,7 @@ RETURN
 END;
 
 CREATE FUNCTION dump_functions() RETURNS TABLE (o INT, stmt STRING) BEGIN
-	RETURN SELECT f.o, 'SET SCHEMA ' || DQ(f.sch) || ';' || f.def || 'SET SCHEMA "sys";' FROM describe_functions() f;
+	RETURN SELECT f.o, schema_guard(f.sch, f.fun, f.def)  FROM describe_functions() f;
 END;
 
 CREATE FUNCTION describe_tables() RETURNS TABLE(o INT, sch STRING, tab STRING, typ STRING,  col STRING, opt STRING) BEGIN
@@ -377,7 +384,7 @@ RETURN
 			WHEN ts.table_type_name = 'MERGE TABLE' THEN
 				dump_merge_table_partition_expressions(t.id)
 			WHEN ts.table_type_name = 'VIEW' THEN
-				t.query
+				schema_guard(s.name, t.name, t.query)
 			ELSE
 				''
 		END
@@ -499,10 +506,8 @@ BEGIN
         SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
-	--TODO VIEW
-	--TODO SCHEMA GUARD
 	--TODO Triggers
-	--TODO COMMENTS ON TABLE
+	--TODO COMMENTS ON TABLE and add schema to commented objects identifier
 	--TODO TABLE level grants
 	--TODO COLUMN level grants
 	--TODO User Defined Types? sys.types
