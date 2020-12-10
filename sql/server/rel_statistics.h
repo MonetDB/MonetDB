@@ -23,29 +23,21 @@ struct function_properties {
 };
 
 static inline void
-set_max_of_values(mvc *sql, sql_exp *e, rel_prop kind, ValPtr lval, ValPtr rval)
+set_max_of_values(mvc *sql, sql_exp *e, rel_prop kind, atom *lval, atom *rval)
 {
-	prop *p;
-	ValRecord res;
-
-	VARcalcgt(&res, lval, rval);
-	p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = res.val.btval == 1 ? lval : rval;
+	prop *p = e->p = prop_create(sql->sa, kind, e->p);
+	p->value = atom_cmp(lval, rval) > 0 ? lval : rval;
 }
 
 static inline void
-set_min_of_values(mvc *sql, sql_exp *e, rel_prop kind, ValPtr lval, ValPtr rval)
+set_min_of_values(mvc *sql, sql_exp *e, rel_prop kind, atom *lval, atom *rval)
 {
-	prop *p;
-	ValRecord res;
-
-	VARcalcgt(&res, lval, rval);
-	p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = res.val.btval == 1 ? rval : lval;
+	prop *p = e->p = prop_create(sql->sa, kind, e->p);
+	p->value = atom_cmp(lval, rval) > 0 ? rval : lval;
 }
 
 static inline void
-set_property(mvc *sql, sql_exp *e, rel_prop kind, ValPtr val)
+set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 {
 	prop *p = e->p = prop_create(sql->sa, kind, e->p);
 	p->value = val;

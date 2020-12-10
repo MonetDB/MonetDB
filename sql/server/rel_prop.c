@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "sql_relation.h"
 #include "rel_prop.h"
+#include "sql_atom.h"
 
 prop *
 prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
@@ -68,6 +69,14 @@ find_prop_and_get(prop *p, rel_prop kind)
 	return found ? found->value : NULL;
 }
 
+#ifdef MIN
+#undef MIN
+#endif
+
+#ifdef MAX
+#undef MAX
+#endif
+
 const char *
 propkind2string( prop *p)
 {
@@ -83,8 +92,8 @@ propkind2string( prop *p)
 		PT(USED);
 		PT(DISTRIBUTE);
 		PT(GROUPINGS);
-		case PROP_MIN: return "MIN";
-		case PROP_MAX: return "MAX";
+		PT(MIN);
+		PT(MAX);
 	}
 	return "UNKNOWN";
 }
@@ -109,24 +118,17 @@ propvalue2string(sql_allocator *sa, prop *p)
 		}
 		case PROP_MIN:
 		case PROP_MAX: {
-			ValPtr ptr = p->value;
+			atom *a = p->value;
+			char *s = atom2sql(sa, a, 0), *res = NULL;
 
-			if (VALisnil(ptr)) {
-				return sa_strdup(sa, "NULL");
+			assert(s);
+			if (*s == '"') {
+				res = sa_strdup(sa, s);
 			} else {
-				char *s = ATOMformat(ptr->vtype, VALptr(ptr)), *res = NULL;
-
-				if (s && *s == '"') {
-					res = sa_strdup(sa, s);
-				} else if (s) {
-					res = sa_alloc(sa, strlen(s) + 3);
-					stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
-				} else { /* shouldn't happen */
-					res = sa_strdup(sa, "");
-				}
-				GDKfree(s);
-				return res;
+				res = sa_alloc(sa, strlen(s) + 3);
+				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
 			}
+			return res;
 		}
 		default:
 			break;
