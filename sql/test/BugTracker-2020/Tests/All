@@ -34,3 +34,8 @@ drop-stream-table.Bug-7005
 deallocate-id.Bug-7010
 values-groupby.Bug-7013
 txtsim-parallel.Bug-7016
+release_old_savepoint.Bug-7020
+savepoints_crash_mserver5_1.Bug-7021
+savepoints_crash_mserver5_2.Bug-7021
+transaction_with_unreleased_savepoint.Bug-7022
+view_with_aggr_column.Bug-7023
