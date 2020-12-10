@@ -1,4 +1,7 @@
 import sys, os, pymonetdb
+import logging
+
+logging.basicConfig(level=logging.FATAL)
 
 db = os.getenv("TSTDB")
 port = int(os.getenv("MAPIPORT"))

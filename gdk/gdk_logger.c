@@ -3182,7 +3182,7 @@ bm_commit(logger *lg, lng save_id)
 			return GDK_FAIL;
 		}
 		BBPrelease(bid);
-		assert(BBP_lrefs(bid)<=0 && BBP_refs(bid)==0);
+		//assert(BBP_lrefs(bid)<=0 && BBP_refs(bid)==0);
 	}
 	if (leftover) {
 		nfreed = logbat_new(TYPE_int, leftover, TRANSIENT);
