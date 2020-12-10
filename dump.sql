@@ -430,6 +430,18 @@ RETURN
 	FROM describe_tables() t;
 END;
 
+CREATE FUNCTION describe_triggers() RETURNS TABLE (sch STRING, tab STRING, tri STRING, def STRING) BEGIN
+	RETURN
+		SELECT s.name, t.name, tr.name, tr.statement
+		FROM sys.schemas s, sys.tables t, sys.triggers tr
+		WHERE s.id = t.schema_id AND t.id = tr.table_id AND NOT t.system;
+END;
+
+CREATE FUNCTION dump_triggers() RETURNS TABLE (stmt STRING) BEGIN
+	RETURN
+		SELECT schema_guard(sch, tab, def) FROM describe_triggers();
+END;
+
 --The dump statement should normally have an auto-incremented column representing the creation order.
 --But in cases of db objects that can be interdependent, i.e. functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
 --Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for functions and table-likes,
@@ -519,6 +531,7 @@ BEGIN
 	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_partition_tables();
+	INSERT INTO dump_statements(s) SELECT * from dump_triggers();
 
 	INSERT INTO dump_statements(s) --dump_create_comments_on_indices
         SELECT comment_on('INDEX', DQ(i.name), rem.remark)
@@ -528,7 +541,6 @@ BEGIN
         SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
 		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
 
-	--TODO Triggers
 	--TODO COMMENTS ON TABLE and add schema to commented objects identifier
 	--TODO TABLE level grants
 	--TODO COLUMN level grants
