@@ -478,73 +478,6 @@ mvc_trans(mvc *m)
 	return 0;
 }
 
-static sql_trans *
-sql_trans_deref( sql_trans *tr )
-{
-	node *n, *m, *o;
-
-	for ( n = tr->schemas.set->h; n; n = n->next) {
-		sql_schema *s = n->data;
-
-		if (s->tables.set)
-		for ( m = s->tables.set->h; m; m = m->next) {
-			sql_table *t = m->data;
-
-			if (t->po) {
-				sql_table *p = t->po;
-
-				if (t->base.rtime < p->base.rtime)
-					t->base.rtime = p->base.rtime;
-				if (t->base.wtime < p->base.wtime)
-					t->base.wtime = p->base.wtime;
-				t->po = p->po;
-				p->po = NULL; /* we used its reference */
-				table_destroy(p);
-			}
-
-			if (t->columns.set) {
-				for ( o = t->columns.set->h; o; o = o->next) {
-					sql_column *c = o->data;
-
-					if (c->po) {
-						sql_column *p = c->po;
-
-						if (c->base.rtime < p->base.rtime)
-							c->base.rtime = p->base.rtime;
-						if (c->base.wtime < p->base.wtime)
-							c->base.wtime = p->base.wtime;
-						c->po = p->po;
-						p->po = NULL; /* we used its reference */
-						column_destroy(p);
-					}
-				}
-				if(isPartitionedByColumnTable(t)) {
-					t->part.pcol = t->po->part.pcol;
-				} else if(isPartitionedByExpressionTable(t)) {
-					t->part.pexp = t->po->part.pexp;
-				}
-			}
-			if (t->idxs.set)
-			for ( o = t->idxs.set->h; o; o = o->next) {
-				sql_idx *i = o->data;
-
-				if (i->po) {
-					sql_idx *p = i->po;
-
-					if (i->base.rtime < p->base.rtime)
-						i->base.rtime = p->base.rtime;
-					if (i->base.wtime < p->base.wtime)
-						i->base.wtime = p->base.wtime;
-					i->po = p->po;
-					p->po = NULL; /* we used its reference */
-					idx_destroy(p);
-				}
-			}
-		}
-	}
-	return tr->parent;
-}
-
 str
 mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
@@ -601,15 +534,16 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	tr = tr->parent;
 	if (tr->parent) {
 		store_lock();
+		/* change to sql_trans_commit */
 		while (ctr->parent->parent != NULL && ok == SQL_OK) {
-			/* first free references to tr objects, ie
-			 * c->po = c->po->po etc
-			 */
-			ctr = sql_trans_deref(ctr);
+			if ((ok = sql_trans_commit(ctr)) != SQL_OK) {
+				GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
+			}
+			cur = ctr = sql_trans_destroy(ctr, true);
+			tr = cur->parent;
 		}
-		while (tr->parent != NULL && ok == SQL_OK)
-			tr = sql_trans_destroy(tr, true);
 		store_unlock();
+		m->session->tr = cur;
 	}
 	cur -> parent = tr;
 	tr = cur;
