@@ -142,12 +142,12 @@ sql_neg_propagate_statistics(mvc *sql, sql_exp *e)
 
 	if ((lval = find_prop_and_get(first->p, PROP_MIN))) {
 		atom *res = atom_dup(sql->sa, lval);
-		if (atom_neg(res))
+		if (!atom_neg(res))
 			set_property(sql, e, PROP_MAX, res);
 	}
 	if ((lval = find_prop_and_get(first->p, PROP_MAX))) {
 		atom *res = atom_dup(sql->sa, lval);
-		if (atom_neg(res))
+		if (!atom_neg(res))
 			set_property(sql, e, PROP_MIN, res);
 	}
 }
@@ -189,8 +189,8 @@ sql_abs_propagate_statistics(mvc *sql, sql_exp *e)
 	atom *omin, *omax;
 
 	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
-		atom *zero1 = atom_zero_value(sql->sa, &(omin->tpe));
-		int cmp1 = atom_cmp(omax, zero1), cmp2 = atom_cmp(omin, zero1);
+		atom *zero = atom_zero_value(sql->sa, &(omin->tpe));
+		int cmp1 = atom_cmp(omax, zero), cmp2 = atom_cmp(omin, zero);
 
 		if (cmp1 >= 0 && cmp2 >= 0) {
 			set_property(sql, e, PROP_MAX, omax);
@@ -198,9 +198,16 @@ sql_abs_propagate_statistics(mvc *sql, sql_exp *e)
 		} else if (cmp1 < 0 && cmp2 < 0) {
 			atom *res1 = atom_dup(sql->sa, omin), *res2 = atom_dup(sql->sa, omax);
 
-			if (atom_absolute(res1) && atom_absolute(res2)) {
+			if (!atom_absolute(res1) && !atom_absolute(res2)) {
 				set_property(sql, e, PROP_MAX, res1);
 				set_property(sql, e, PROP_MIN, res2);
+			}
+		} else {
+			atom *res1 = atom_dup(sql->sa, omin);
+
+			if (!atom_absolute(res1)) {
+				set_property(sql, e, PROP_MAX, atom_cmp(res1, omax) > 0 ? res1 : omax);
+				set_property(sql, e, PROP_MIN, zero);
 			}
 		}
 	}
