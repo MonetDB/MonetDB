@@ -1262,14 +1262,14 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 
 	if (create) {
+		if (triggerschema)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: a trigger will be placed on the respective table's schema, specify the schema on the table reference, ie ON clause instead", base);
 		if (!(t = mvc_bind_table(sql, ss, tname)))
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
 		if (!mvc_schema_privs(sql, ss))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
 		if (isView(t))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
-		if (triggerschema && strcmp(triggerschema, ss->base.name) != 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "%s: trigger and respective table must belong to the same schema", base);
 		if ((st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
 			if (replace) {
 				if (mvc_drop_trigger(sql, ss, st))

@@ -1693,46 +1693,20 @@ rel_find_exp_and_corresponding_rel(sql_rel *rel, sql_exp *e, sql_rel **res, bool
 		case op_right:
 		case op_full:
 		case op_join:
+		case op_semi:
+		case op_anti:
 			ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
-			if (!ne)
+			if (!ne && is_join(rel->op))
 				ne = rel_find_exp_and_corresponding_rel(rel->r, e, res, under_join);
 			if (ne && under_join)
 				*under_join = true;
 			break;
 		case op_table:
-			if (rel->exps && e->type == e_column && e->l && exps_bind_column2(rel->exps, e->l, e->r, NULL))
-				ne = e;
-			if (ne && res)
-				*res = rel;
-			break;
-		case op_union:
-		case op_except:
-		case op_inter:
-		{
-			if (rel->l)
-				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
-			else if (rel->exps && e->l) {
-				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
-				if (ne && res)
-					*res = rel;
-			} else if (rel->exps) {
-				ne = exps_bind_column(rel->exps, e->r, NULL, NULL, 1);
-				if (ne && res)
-					*res = rel;
-			}
-		}
-		break;
 		case op_basetable:
-			if (rel->exps && e->type == e_column && e->l)
-				ne = exps_bind_column2(rel->exps, e->l, e->r, NULL);
-			if (ne && res)
-				*res = rel;
 			break;
 		default:
 			if (!is_project(rel->op) && rel->l)
 				ne = rel_find_exp_and_corresponding_rel(rel->l, e, res, under_join);
-			if (ne && (rel->op == op_semi || rel->op == op_anti) && under_join)
-				*under_join = true;
 		}
 	}
 	return ne;
