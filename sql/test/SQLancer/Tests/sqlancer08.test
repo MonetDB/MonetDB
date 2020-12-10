@@ -288,15 +288,6 @@ statement ok
 ROLLBACK
 
 statement ok
-PREPARE SELECT round(-'b', ?)
-
-statement ok
-PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474
-
-statement error
-PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second)
-
-statement ok
 START TRANSACTION
 
 statement ok
@@ -435,10 +426,6 @@ select round(t2.tc0, 88) from t2
 
 statement ok
 ROLLBACK
-
-statement ok
-PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
-WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL)
 
 statement error
 SELECT round(- (((-443710828)||(1616633099))), 789092170)
