@@ -16,3 +16,5 @@ prepare_doesnot_like_LIKE.SF-1234205
 crash_with_prepare_statement.Bug-2549
 limit_in_prepare.Bug-2552
 prepare_on_boolean_bug.Bug-2581
+prepare_statements_crash_server.Bug-2599
+prepare_stmt.Bug-2533.Bug-2534

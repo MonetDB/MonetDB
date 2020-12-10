@@ -21,11 +21,9 @@ decimal_div_whole_nrs.Bug-2579
 SQLengine_error_on_join.Bug-2580
 keycheck_crash.Bug-2583
 in_query_with_constants_fails.Bug-2582
-prepare_statements_crash_server.Bug-2599
 and_not_broken.Bug-2602
 insert-into-except.Bug-2569
 not-in-union-except-union.Bug-2577
-prepare_stmt.Bug-2533.Bug-2534
 predicate_in_select.Bug-2535
 subselect.Bug-2537
 group-by_ordered_column.Bug-2564
