@@ -82,6 +82,8 @@ class _BufferedPipe:
     def __init__(self, fd):
         self._pipe = fd
         self._queue = queue.Queue()
+        self._cur = None
+        self._curidx = 0
         self._eof = False
         self._empty = ''
         self._thread = threading.Thread(target=self._readerthread,
@@ -94,14 +96,17 @@ class _BufferedPipe:
         w = 0
         first = True
         while True:
-            c = fh.read(1)
+            c = fh.read(1024)
             if first:
                 if type(c) is type(b''):
                     self._empty = b''
                 first = False
-            queue.put(c)                # put '' if at EOF
             if not c:
+                queue.put(c)    # put '' if at EOF
                 break
+            c = c.replace('\r', '')
+            if c:
+                queue.put(c)
 
     def close(self):
         if self._thread:
@@ -109,24 +114,38 @@ class _BufferedPipe:
         self._thread = None
 
     def read(self, size=-1):
+        ret = []
+        if self._cur:
+            if size < 0:
+                ret.append(self._cur)
+                self._cur = None
+            else:
+                ret.append(self._cur[self._curidx:self._curidx+size])
+                if self._curidx + size >= len(self._cur):
+                    self._cur = None
+                    self._curidx = 0
+                else:
+                    self._curidx += len(ret[-1])
+                size -= len(ret[-1])
+                if size == 0:
+                    return self._empty.join(ret)
         if self._eof:
+            if ret:
+                return self._empty.join(ret)
             return self._empty
         if size < 0:
             self.close()
-        ret = []
         while size != 0:
             c = self._queue.get()
-            if c == '\r':
-                c = self._queue.get()   # just ignore \r
-            ret.append(c)
-            if size > 0:
-                size -= 1
-            try:
-                # only available as of Python 2.5
-                self._queue.task_done()
-            except AttributeError:
-                # not essential, if not available
-                pass
+            if len(c) > size > 0:
+                ret.append(c[:size])
+                self._cur = c[size:]
+                size = 0
+            else:
+                ret.append(c)
+                if size > 0:
+                    size -= len(c)
+            self._queue.task_done()
             if not c:
                 self._eof = True
                 break                   # EOF
@@ -317,6 +336,7 @@ class client(Popen):
                          stderr=stderr,
                          shell=False,
                          env=env,
+                         encoding='utf-8',
                          text=text)
         if stdout == PIPE:
             self.stdout = _BufferedPipe(self.stdout)
@@ -450,6 +470,7 @@ class server(Popen):
                          shell=False,
                          text=True,
                          bufsize=bufsize,
+                         encoding='utf-8',
                          **kw)
         self.isserver = True
         if stderr == PIPE:
