@@ -48,8 +48,8 @@ create table a (
         id int
 );
 create trigger a after insert on foo insert into a values (1);
-create trigger test.x after insert on foo insert into a values (1);
-create trigger "test"."z" after insert on "foo" insert into a values (1);
+create trigger x after insert on foo insert into a values (1);
+create trigger "z" after insert on "foo" insert into a values (1);
 ''')
 client('sqldump')
 client('sqldump', user = 'voc', passwd = 'voc')
