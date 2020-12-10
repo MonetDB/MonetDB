@@ -576,8 +576,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			}
 		} else {
 			bat->uibid = e_bat(TYPE_oid);
-			obat->uvbid = e_bat(type);
-			if (bat->uibid == BID_NIL || obat->uvbid == BID_NIL)
+			bat->uvbid = e_bat(type);
+			if (bat->uibid == BID_NIL || bat->uvbid == BID_NIL)
 				return LOG_ERR;
 		}
 	}
@@ -2380,10 +2380,10 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 {
 	int ok = LOG_OK;
 	BAT *ins, *cur = NULL;
+	int savepoint = tr->parent != gtrans;
 
 	(void)tr;
-	assert(ATOMIC_GET(&store_nr_active)==1);
-	assert (obat->bid != 0 || tr != gtrans);
+	assert(ATOMIC_GET(&store_nr_active)==1 || savepoint);
 
 	/* for cleared tables the bid is reset */
 	if (cbat->bid == 0) {
@@ -2405,7 +2405,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		if(!cur)
 			return LOG_ERR;
 	}
-	if (!obat->bid && tr != gtrans) {
+	if (!savepoint && !obat->bid && tr != gtrans) {
 		if (obat->next)
 			destroy_bat(obat->next);
 		destroy_delta(obat);
@@ -2425,7 +2425,21 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		return LOG_ERR;
 	}
 	/* any inserts */
-	if (BUNlast(ins) > 0 || cbat->cleared) {
+	if (savepoint && !cur) {
+		/* new table, ie keep in ibid */
+		cur = temp_descriptor(cbat->bid);
+		if (cbat->bid && ins && BATcount(ins)) {
+			if (BATappend(cur, ins, NULL, true) != GDK_SUCCEED) {
+				bat_destroy(cur);
+				bat_destroy(ins);
+				return LOG_ERR;
+			}
+		}
+		temp_destroy(cbat->ibid);
+		temp_destroy(obat->ibid);
+		obat->ibid = cbat->bid;
+		obat->cnt = cbat->cnt;
+	} else	if (BUNlast(ins) > 0 || cbat->cleared) {
 		if ((!cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
 			BAT *newcur = ins;
@@ -2691,9 +2705,10 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	sql_table *ot = NULL;
 	int ok = LOG_OK;
 	node *n, *m, *o = NULL;
+	int savepoint = tr->parent != gtrans;
 
 	if (ATOMIC_GET(&store_nr_active) == 1 || ft->base.allocated) {
-		if (ATOMIC_GET(&store_nr_active) > 1 && ft->data) { /* move delta */
+		if (!savepoint && ATOMIC_GET(&store_nr_active) > 1 && ft->data) { /* move delta */
 			sql_dbat *b = ft->data;
 
 			if (!tt->data)
@@ -2746,7 +2761,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 
 		if (ATOMIC_GET(&store_nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
 			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime || (oc->base.wtime == cc->base.wtime && oc->base.allocated /* alter */));
-			if (ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
+			if (!savepoint && ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
 				sql_column *oldc = NULL;
 
@@ -2838,7 +2853,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				continue;
 			}
 			if (ATOMIC_GET(&store_nr_active) == 1 || (ci->base.wtime && ci->base.allocated)) {
-				if (ATOMIC_GET(&store_nr_active) > 1 && ci->data) { /* move delta */
+				if (!savepoint && ATOMIC_GET(&store_nr_active) > 1 && ci->data) { /* move delta */
 					sql_delta *b = ci->data;
 					sql_idx *oldi = NULL;
 
