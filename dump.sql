@@ -243,8 +243,8 @@ CREATE FUNCTION describe_foreign_keys() RETURNS TABLE(
 					AND fkkc.nr = pkkc.nr
 					AND pkt.schema_id = ps.id
 					AND fkt.schema_id = fs.id
-					AND (fkk."action" & 255)         = ou.id
-					AND ((fkk."action" >> 8) & 255)  = od.id
+					AND (fkk."action" & 255)         = od.id
+					AND ((fkk."action" >> 8) & 255)  = ou.id
 					ORDER BY fkk.name, fkkc.nr;
 END;
 
@@ -542,4 +542,5 @@ END;
 CALL dump_database(TRUE);
 
 SELECT s FROM dump_statements order by o;
+
 ROLLBACK;
