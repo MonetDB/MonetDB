@@ -3,9 +3,9 @@
 
 * Mon Nov 30 2020 Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>
 - Added 'schema path' property to user, specifying a list of schemas
-  to be search on to find SQL objects such as tables and
+  to be searched on to find SQL objects such as tables and
   functions. The scoping rules have been updated to support this feature
-  and now it follows this order to find a SQL object:
+  and it now finds SQL objects in the following order:
    1. On occasions with multiple tables (e.g. add foreign key constraint,
       add table to a merge table), the child will be searched on the
       parent's schema.
