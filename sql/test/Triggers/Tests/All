@@ -8,3 +8,4 @@ trigger_owner
 triggers_schema_operations
 trigger_insert
 KNOWNFAIL?trigger_projection
+trigger_schema

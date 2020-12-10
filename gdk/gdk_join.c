@@ -3041,12 +3041,19 @@ guess_uniques(BAT *b, struct canditer *ci)
 	if (b->tkey)
 		return (double) ci->ncand;
 
-	if (ci->s) {
+	if (ci->s == NULL ||
+	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
+		PROPrec *p = BATgetprop(b, GDK_UNIQUE_ESTIMATE);
+		if (p) {
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
+				  ALGOBATPAR(b));
+			return p->v.val.dval;
+		}
+		s1 = BATsample(b, 1000);
+	} else {
 		BAT *s2 = BATsample(ci->s, 1000);
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
-	} else {
-		s1 = BATsample(b, 1000);
 	}
 	BUN n2 = BATcount(s1);
 	BUN n1 = n2 / 2;
@@ -3056,7 +3063,12 @@ guess_uniques(BAT *b, struct canditer *ci)
 	double A = (double) (cnt2 - cnt1) / (n2 - n1);
 	double B = cnt1 - n1 * A;
 
-	return A * ci->ncand + B;
+	B += A * ci->ncand;
+	if (ci->s == NULL ||
+	    (ci->tpe == cand_dense && ci->ncand == BATcount(b))) {
+		BATsetprop(b, GDK_UNIQUE_ESTIMATE, TYPE_dbl, &B);
+	}
+	return B;
 }
 
 #define MASK_EQ		1

@@ -290,6 +290,214 @@ project_any(BAT *restrict bn, BAT *restrict l, struct canditer *restrict ci,
 	return GDK_SUCCEED;
 }
 
+static BAT *
+project_str(BAT *restrict l, struct canditer *restrict ci,
+	    BAT *restrict r1, BAT *restrict r2, lng t0)
+{
+	BAT *bn;
+	BUN lo, hi;
+	oid r1seq, r1end;
+	oid r2seq, r2end;
+	BUN h1off;
+	BAT *r;
+	BUN off;
+	oid seq;
+	var_t v;
+
+	if ((bn = COLnew(l->hseqbase, TYPE_str, ci ? ci->ncand : BATcount(l),
+			 TRANSIENT)) != NULL)
+		return NULL;
+
+	v = (var_t) r1->tvheap->free;
+	if (r1->tvheap == r2->tvheap) {
+		h1off = 0;
+		BBPshare(bn->tvheap->parentid);
+		HEAPfree(bn->tvheap, true);
+		GDKfree(bn->tvheap);
+		bn->tvheap = r1->tvheap;
+	} else {
+		v = (v + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
+		h1off = (BUN) v;
+		v += ((var_t) r2->tvheap->free + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1);
+		if (HEAPextend(bn->tvheap, v, false) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			return NULL;
+		}
+		memcpy(bn->tvheap->base, r1->tvheap->base, r1->tvheap->free);
+#ifndef NDEBUG
+		if (h1off > r1->tvheap->free)
+			memset(bn->tvheap->base + r1->tvheap->free, 0, h1off - r1->tvheap->free);
+#endif
+		memcpy(bn->tvheap->base + h1off, r2->tvheap->base, r2->tvheap->free);
+	}
+
+	if (v >= ((var_t) 1 << (8 * bn->twidth)) &&
+	    GDKupgradevarheap(bn, v, false, false) != GDK_SUCCEED) {
+		BBPreclaim(bn);
+		return NULL;
+	}
+
+	r1seq = r1->hseqbase;
+	r1end = r1seq + BATcount(r1);
+	r2seq = r2->hseqbase;
+	r2end = r2seq + BATcount(r2);
+	if (ci) {
+		for (lo = 0, hi = ci->ncand; lo < hi; lo++) {
+			oid o = canditer_next(ci);
+			if (o < r1seq || o >= r2end) {
+				GDKerror("does not match always\n");
+				BBPreclaim(bn);
+				return NULL;
+			}
+			if (o < r1end) {
+				r = r1;
+				off = 0;
+				seq = r1seq;
+			} else {
+				r = r2;
+				off = h1off;
+				seq = r2seq;
+			}
+			switch (r->twidth) {
+			case 1:
+				v = (var_t) ((uint8_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				break;
+			case 2:
+				v = (var_t) ((uint16_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				break;
+			case 4:
+				v = (var_t) ((uint32_t *) r->theap.base)[o - seq];
+				break;
+			case 8:
+				v = (var_t) ((uint64_t *) r->theap.base)[o - seq];
+				break;
+			}
+			v += off;
+			switch (bn->twidth) {
+			case 1:
+				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				break;
+			case 2:
+				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				break;
+			case 4:
+				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
+				break;
+			case 8:
+				((uint64_t *) bn->theap.base)[lo] = (uint64_t) v;
+				break;
+			}
+		}
+	} else if (BATtdense(l)) {
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+			oid o = l->tseqbase + lo;
+			if (o < r1seq || o >= r2end) {
+				GDKerror("does not match always\n");
+				BBPreclaim(bn);
+				return NULL;
+			}
+			if (o < r1end) {
+				r = r1;
+				off = 0;
+				seq = r1seq;
+			} else {
+				r = r2;
+				off = h1off;
+				seq = r2seq;
+			}
+			switch (r->twidth) {
+			case 1:
+				v = (var_t) ((uint8_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				break;
+			case 2:
+				v = (var_t) ((uint16_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				break;
+			case 4:
+				v = (var_t) ((uint32_t *) r->theap.base)[o - seq];
+				break;
+			case 8:
+				v = (var_t) ((uint64_t *) r->theap.base)[o - seq];
+				break;
+			}
+			v += off;
+			switch (bn->twidth) {
+			case 1:
+				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				break;
+			case 2:
+				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				break;
+			case 4:
+				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
+				break;
+			case 8:
+				((uint64_t *) bn->theap.base)[lo] = (uint64_t) v;
+				break;
+			}
+		}
+	} else {
+		const oid *restrict ot = (const oid *) Tloc(l, 0);
+		for (lo = 0, hi = BATcount(l); lo < hi; lo++) {
+			oid o = ot[lo];
+			if (o < r1seq || o >= r2end) {
+				GDKerror("does not match always\n");
+				BBPreclaim(bn);
+				return NULL;
+			}
+			if (o < r1end) {
+				r = r1;
+				off = 0;
+				seq = r1seq;
+			} else {
+				r = r2;
+				off = h1off;
+				seq = r2seq;
+			}
+			switch (r->twidth) {
+			case 1:
+				v = (var_t) ((uint8_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				break;
+			case 2:
+				v = (var_t) ((uint16_t *) r->theap.base)[o - seq] + GDK_VAROFFSET;
+				break;
+			case 4:
+				v = (var_t) ((uint32_t *) r->theap.base)[o - seq];
+				break;
+			case 8:
+				v = (var_t) ((uint64_t *) r->theap.base)[o - seq];
+				break;
+			}
+			v += off;
+			switch (bn->twidth) {
+			case 1:
+				((uint8_t *) bn->theap.base)[lo] = (uint8_t) (v - GDK_VAROFFSET);
+				break;
+			case 2:
+				((uint16_t *) bn->theap.base)[lo] = (uint16_t) (v - GDK_VAROFFSET);
+				break;
+			case 4:
+				((uint32_t *) bn->theap.base)[lo] = (uint32_t) v;
+				break;
+			case 8:
+				((uint64_t *) bn->theap.base)[lo] = (uint64_t) v;
+				break;
+			}
+		}
+	}
+	BATsetcount(bn, lo);
+	bn->tsorted = bn->trevsorted = false;
+	bn->tnil = false;
+	bn->tnonil = r1->tnonil & r2->tnonil;
+	bn->tkey = false;
+	TRC_DEBUG(ALGO, "l=" ALGOBATFMT " r1=" ALGOBATFMT " r2=" ALGOBATFMT
+		  " -> " ALGOBATFMT "%s " LLFMT "us\n",
+		  ALGOBATPAR(l), ALGOBATPAR(r1), ALGOBATPAR(r2),
+		  ALGOBATPAR(bn),
+		  bn && bn->ttype == TYPE_str && bn->tvheap == r1->tvheap ? " sharing string heap" : "",
+		  GDKusec() - t0);
+	return bn;
+}
+
 BAT *
 BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 {
@@ -354,20 +562,33 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		goto doreturn;
 	}
 
-	if (ATOMstorage(tpe) == TYPE_str &&
-	    l->tnonil &&
-	    r2 == NULL &&
-	    (r1->batCount == 0 ||
-	     lcount > (r1->batCount >> 3) ||
-	     r1->batRestricted == BAT_READ)) {
-		/* insert strings as ints, we need to copy the string
-		 * heap whole sale; we can't do this if there are nils
-		 * in the left column, and we won't do it if the left
-		 * is much smaller than the right and the right is
-		 * writable (meaning we have to actually copy the
-		 * right string heap) */
-		tpe = r1->twidth == 1 ? TYPE_bte : (r1->twidth == 2 ? TYPE_sht : (r1->twidth == 4 ? TYPE_int : TYPE_lng));
-		stringtrick = true;
+	if (ATOMstorage(tpe) == TYPE_str) {
+		if (l->tnonil &&
+		    r2 == NULL &&
+		    (r1->batCount == 0 ||
+		     lcount > (r1->batCount >> 3) ||
+		     r1->batRestricted == BAT_READ)) {
+			/* insert strings as ints, we need to copy the
+			 * string heap whole sale; we can't do this if
+			 * there are nils in the left column, and we
+			 * won't do it if the left is much smaller than
+			 * the right and the right is writable (meaning
+			 * we have to actually copy the right string
+			 * heap) */
+			tpe = r1->twidth == 1 ? TYPE_bte : (r1->twidth == 2 ? TYPE_sht : (r1->twidth == 4 ? TYPE_int : TYPE_lng));
+			stringtrick = true;
+		} else if (l->tnonil &&
+			   r2 != NULL &&
+			   (r1->tvheap == r2->tvheap ||
+			    (!GDK_ELIMDOUBLES(r1->tvheap) &&
+			     !GDK_ELIMDOUBLES(r2->tvheap) /* && size tests */))) {
+			/* r1 and r2 may explicitly share their vheap,
+			 * if they do, the result will also share the
+			 * vheap; this also means that for this case we
+			 * don't care about duplicate elimination: it
+			 * will remain the same */
+			return project_str(l, lci, r1, r2, t0);
+		}
 	}
 	bn = COLnew(l->hseqbase, tpe, lcount, TRANSIENT);
 	if (bn == NULL) {

@@ -5206,9 +5206,12 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 		}
 
 		if (project->op == op_project && project->l && project == *rel && !tname && !rel_is_ref(project) && !need_distinct(project) && single_exp) {
-			rel_remove_internal_exp(*rel);
-			exps = project->exps;
-			*rel = project->l;
+			sql_rel *l = project->l;
+			if (!l || !is_project(l->op) || list_length(project->exps) == list_length(l->exps)) {
+				rel_remove_internal_exp(*rel);
+				exps = project->exps;
+				*rel = project->l;
+			}
 		}
 		if ((exps || (exps = rel_table_projections(sql, project, tname, 0)) != NULL) && !list_empty(exps)) {
 			if (groupby) {
