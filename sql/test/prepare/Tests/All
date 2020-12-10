@@ -24,3 +24,4 @@ prepare_decimal_float.SF-1675795
 decimal_prepare.SF-1655818
 bind_with_cast.SF-1720934
 sqlancer_prepare
+subquery_prepare

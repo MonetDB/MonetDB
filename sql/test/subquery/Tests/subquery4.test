@@ -22,21 +22,6 @@ CREATE FUNCTION evilfunction(input INT) RETURNS TABLE (outt INT) BEGIN RETURN TA
 statement ok
 CREATE FUNCTION evilfunction(input1 INT, input2 INT) RETURNS TABLE (outt INT) BEGIN RETURN TABLE(SELECT input1 + input2); END
 
-statement error
-PREPARE SELECT
-	(SELECT ? FROM evilfunction((SELECT 1)))
-FROM another_T
-
-statement ok
-PREPARE SELECT
-	(SELECT 1 FROM evilfunction((SELECT ?)))
-FROM another_T
-
-statement ok
-PREPARE SELECT
-	(SELECT 1 FROM evilfunction((SELECT ?, ?)))
-FROM another_T
-
 query I rowsort
 SELECT
 	(SELECT i2.i FROM evilfunction(MIN(i1.i)) as i2(i))
