@@ -5,6 +5,7 @@ stdout of test 'view_with_aggr_column.Bug-7023` in directory 'sql/test/BugTracke
 # 15:22:56 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-177928" "--port=37553"
 # 15:22:56 >  
 
+#start transaction;
 #create table tst (k integer  not null, name char(20)  not null);
 #select min(k) from tst group by name;
 % sys.%1 # table_name
@@ -17,6 +18,7 @@ stdout of test 'view_with_aggr_column.Bug-7023` in directory 'sql/test/BugTracke
 % %1 # name
 % int # type
 % 1 # length
+#rollback;
 
 # 15:22:56 >  
 # 15:22:56 >  "Done."
