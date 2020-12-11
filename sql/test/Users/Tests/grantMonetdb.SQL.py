@@ -7,12 +7,13 @@ from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
-    tc.execute("GRANT sysadmin TO alice;")
+    tc.execute("GRANT sysadmin TO alice;").assertSucceeded()
     tc.connect(username="alice", password="alice")
-    tc.execute("SET ROLE sysadmin;")
-    tc.execute("CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;")
-    tc.execute("GRANT ALL ON orders TO april;")
-    tc.execute("GRANT sysadmin TO april;")
+    tc.execute("""
+    SET ROLE sysadmin;
+    CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;""").assertFailed(err_code='M0M27')
+    tc.execute("GRANT ALL ON orders TO april;").assertSucceeded()
+    tc.execute("GRANT sysadmin TO april;").assertFailed(err_code='0P000')
 
 # import os, sys
 # try:
