@@ -2287,9 +2287,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
+            # on Windows we use Cygwin diff, os use /dev/null, not os.devnull
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         titlefmt % ('err', 'err'),
-                        os.devnull,
+                        '/dev/null',
                         '%s.test.out' % TST,
                         '%s.out.diff.html' % TST])
             if procdebug:
@@ -2339,9 +2340,10 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
                 cmd.append('-d')
             if not verbose:
                 cmd.append('-q')
+            # on Windows we use Cygwin diff, os use /dev/null, not os.devnull
             cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
                         titlefmt % ('out', 'out'),
-                        os.devnull,
+                        '/dev/null',
                         '%s.test.err' % TST,
                         '%s.err.diff.html' % TST])
             if procdebug:
