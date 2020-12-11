@@ -32,8 +32,8 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 		sql_subfunc *f = (sql_subfunc *)e->f;
 
 		if (strcmp(f->func->mod, "calc") == 0) {
-			res1 = atom_add(atom_dup(sql->sa, lmax), rmax);
-			res2 = atom_add(atom_dup(sql->sa, lmin), rmin);
+			res1 = atom_add(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmax));
+			res2 = atom_add(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmin));
 		} else {
 			sql_subtype tp;
 
@@ -106,8 +106,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 		str msg1 = NULL, msg2 = NULL;
 
 		if (strcmp(f->func->mod, "calc") == 0) {
-			res1 = atom_sub(atom_dup(sql->sa, lmax), rmax);
-			res2 = atom_sub(atom_dup(sql->sa, lmin), rmin);
+			res1 = atom_sub(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmax));
+			res2 = atom_sub(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmin));
 		} else {
 			sql_subtype tp;
 
@@ -203,8 +203,8 @@ sql_mul_propagate_statistics(mvc *sql, sql_exp *e)
 
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
-		atom *res1 = atom_mul(atom_dup(sql->sa, lmax), rmax);
-		atom *res2 = atom_mul(atom_dup(sql->sa, lmin), rmin);
+		atom *res1 = atom_mul(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmax));
+		atom *res2 = atom_mul(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmin));
 
 		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
 			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
@@ -230,8 +230,8 @@ sql_div_propagate_statistics(mvc *sql, sql_exp *e)
 
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
-		atom *res1 = atom_div(atom_dup(sql->sa, lmax), rmin);
-		atom *res2 = atom_div(atom_dup(sql->sa, lmin), rmax);
+		atom *res1 = atom_div(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmin));
+		atom *res2 = atom_div(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmax));
 
 		if (res1 && res2) { /* on div by zero don't propagate */
 			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
