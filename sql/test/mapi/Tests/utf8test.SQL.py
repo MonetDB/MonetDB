@@ -5,10 +5,10 @@ try:
 except ImportError:
     import process
 
-def client(args, encoding=None, format=None, text=True):
+def client(args, encoding=None, format=None):
     with process.client('sql', args=args, echo=False,
                         stdout=process.PIPE, stderr=process.PIPE,
-                        text=text, encoding=encoding, format=format) as clt:
+                        encoding=encoding, format=format) as clt:
         return clt.communicate()
 
 def printit(file, string):
@@ -51,22 +51,22 @@ if out != expectsql:
     sys.stdout.write('utf-8, sql:\n')
     sys.stdout.write(out)
 out, err = client(['-s', 'select * from utf8test'],
-                  text=False, encoding='iso-8859-1', format='raw')
+                  encoding='iso-8859-1', format='raw')
 if out != expectraw:
     sys.stdout.write('iso-8859-1, raw:\n')
     sys.stdout.write(out)
 out, err = client(['-s', 'select * from utf8test'],
-                  text=False, encoding='iso-8859-1', format='sql')
+                  encoding='iso-8859-1', format='sql')
 if out != expectsql:
     sys.stdout.write('iso-8859-1, sql:\n')
     sys.stdout.write(out)
 out, err = client(['-s', 'select * from utf8test'],
-                  text=False, encoding='us-ascii', format='raw')
+                  encoding='us-ascii', format='raw')
 if err != expecterr:
     sys.stdout.write('us-ascii, raw:\n')
     sys.stdout.write(err)
 out, err = client(['-s', 'select * from utf8test'],
-                  text=False, encoding='us-ascii', format='sql')
+                  encoding='us-ascii', format='sql')
 if err != expecterr:
     sys.stdout.write('us-ascii, sql:\n')
     sys.stdout.write(err)

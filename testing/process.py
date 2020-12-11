@@ -76,20 +76,15 @@ def _delfiles():
 atexit.register(_delfiles)
 
 class _BufferedPipe:
-    def __init__(self, fd, text=True):
+    def __init__(self, fd):
         self._pipe = fd
         self._queue = queue.Queue()
         self._cur = None
         self._curidx = 0
         self._eof = False
-        if text:
-            self._empty = ''
-            self._nl = '\n'
-            self._cr = '\r'
-        else:
-            self._empty = b''
-            self._nl = b'\n'
-            self._cr = b'\r'
+        self._empty = ''
+        self._nl = '\n'
+        self._cr = '\r'
         self._thread = threading.Thread(target=self._readerthread,
                                         args=(fd, self._queue))
         self._thread.setDaemon(True)
@@ -98,9 +93,16 @@ class _BufferedPipe:
     def _readerthread(self, fh, queue):
         s = 0
         w = 0
+        first = True
         while True:
             c = fh.read(1024)
             if not c:
+                if first:
+                    if type(c) is type(b''):
+                        self._empty = b''
+                        self._nl = b'\n'
+                        self._cr = b'\r'
+                        first = False
                 queue.put(c)    # put '' if at EOF
                 break
             c = c.replace(self._cr, self._empty)
@@ -234,7 +236,7 @@ class client(Popen):
                  server=None, port=None, dbname=None, host=None,
                  user='monetdb', passwd='monetdb', log=False,
                  interactive=None, echo=None, format=None,
-                 input=None, communicate=False, text=True, encoding=None):
+                 input=None, communicate=False, text=None, encoding=None):
         '''Start a client process.'''
         if lang == 'mal':
             cmd = _mal_client[:]
@@ -244,6 +246,9 @@ class client(Popen):
             cmd = _sql_dump[:]
         if verbose:
             sys.stdout.write('Default client: ' + ' '.join(cmd +  args) + '\n')
+
+        if (encoding is None or encoding.lower() == 'utf-8') and text is None:
+            text = True
 
         # no -i if input from -s or /dev/null
         if '-i' in cmd and ('-s' in args or stdin is None):
@@ -268,7 +273,7 @@ class client(Popen):
                     break
             cmd.append('-f' + format)
         if encoding is not None:
-            if text:
+            if text and encoding.lower() != 'utf-8':
                 raise RuntimeError('text cannot be combined with encoding')
             for i in range(len(cmd)):
                 if cmd[i] == '-E' or cmd[i] == '--encoding':
@@ -354,9 +359,9 @@ class client(Popen):
                          encoding=encoding,
                          text=text)
         if stdout == PIPE:
-            self.stdout = _BufferedPipe(self.stdout, text)
+            self.stdout = _BufferedPipe(self.stdout)
         if stderr == PIPE:
-            self.stderr = _BufferedPipe(self.stderr, text)
+            self.stderr = _BufferedPipe(self.stderr)
         if input is not None:
             self.stdin.write(input)
         if communicate:
