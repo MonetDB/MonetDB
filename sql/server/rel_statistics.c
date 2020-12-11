@@ -204,6 +204,27 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 	return ne;
 }
 
+static atom *
+atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValPtr pt)
+{
+	atom *a = SA_ZNEW(sa, atom);
+
+	a->tpe = *tpe;
+	a->data.vtype = tpe->type->localtype;
+	if (ATOMstorage(a->data.vtype) == TYPE_str) {
+		if (VALisnil(pt)) {
+			VALset(&a->data, a->data.vtype, (ptr) ATOMnilptr(a->data.vtype));
+		} else {
+			a->data.val.sval = sa_strdup(sa, pt->val.sval);
+			a->data.len = strlen(a->data.val.sval);
+		}
+	} else {
+		VALcopy(&a->data, pt);
+	}
+	a->isnull = VALisnil(&a->data);
+	return a;
+}
+
 static sql_exp *
 rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
@@ -220,11 +241,11 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (EC_NUMBER(c->type.type->eclass) || EC_VARCHAR(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) {
 			if ((max = mvc_has_max_value(sql, c))) {
 				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
-				p->value = atom_general_ptr(sql->sa, &c->type, max);
+				p->value = atom_from_valptr(sql->sa, &c->type, max);
 			}
 			if ((min = mvc_has_min_value(sql, c))) {
 				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-				p->value = atom_general_ptr(sql->sa, &c->type, min);
+				p->value = atom_from_valptr(sql->sa, &c->type, min);
 			}
 		}
 
