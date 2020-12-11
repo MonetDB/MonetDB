@@ -342,15 +342,7 @@ import threading
 
 randomPortRepeat = 9
 
-F_SKIP = -1
-F_OK = 0
-F_WARN = 1
-F_SOCK = 2
-F_ERROR = 4
-F_TIME = 5
-F_ABRT = 6
-F_RECU = 7
-F_SEGV = 8
+(F_SKIP, F_OK, F_WARN, F_SOCK, F_ERROR, F_TIME, F_ABRT, F_RECU, F_SEGV) = range(9)
 
 FAILURES = {
     F_SKIP  : ("F_SKIP",  '-'),
@@ -4312,8 +4304,8 @@ VALUES (%s, '%s', '%s', '%s',
             CreateHtmlIndex(env, F_SKIP, F_SKIP, *body)
 
         Failed = 0
-        for f in Failure[1:-1]:
-            Failed += len(f)
+        for f in [F_SKIP, F_WARN, F_SOCK, F_TIME, F_ABRT, F_SEGV, F_RECU, F_ERROR]:
+            Failed += len(Failure[f])
         num_tests = 0
         for f in Failure:
             num_tests += len(f)
