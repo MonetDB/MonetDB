@@ -1,50 +1,47 @@
 ###
-# Let any user grant any role (not possible).
+# Check that a user cannot grant a role to anyone, including themselves, if the
+#   role was not assigned to this user.
+# Check that the monetdb user, the role owner or a user granted with sysadmin
+#   can grant roles
 ###
 
 from MonetDBtesting.sqltest import SQLTestCase
 
-with SQLTestCase() as tc:
-    tc.connect(username="monetdb", password="monetdb")
-    tc.execute("""
+with SQLTestCase() as mdb:
+    mdb.connect(username="monetdb", password="monetdb")
+    mdb.execute("""
         CREATE SCHEMA s1;
         CREATE USER bruce WITH PASSWORD 'bruce' name 'willis' schema s1;
+        CREATE USER alice WITH PASSWORD 'alice' name 'wonderland' schema s1;
         CREATE TABLE s1.test(d int);
         CREATE ROLE role1;
         GRANT ALL ON s1.test to role1;
      """).assertSucceeded()
 
-    tc.connect(username="bruce", password="bruce")
-    tc.execute("""
-        GRANT role1 to bruce;
-        SET role role1;
-        select * from test;
-     """).assertFailed()
+    with SQLTestCase() as bruce:
+        # check that bruce cannot grant role1
+        bruce.connect(username="bruce", password="bruce")
+        bruce.execute("SET role role1;").assertFailed(err_code="42000", err_message="Role (role1) missing")
+        bruce.execute("select * from test;").assertFailed(err_code="42000", err_message="SELECT: access denied for bruce to table 's1.test'")
+        bruce.execute("GRANT role1 TO alice FROM current_role;").assertFailed(err_code="0P000", err_message="GRANT: Insufficient privileges to grant ROLE 'role1'")
+        bruce.execute("GRANT role1 TO bruce FROM current_role;").assertFailed(err_code="0P000", err_message="GRANT: Insufficient privileges to grant ROLE 'role1'")
 
+        # check that bruce can grant role1 once he's assigned the role
+        mdb.execute("GRANT role1 TO bruce WITH ADMIN OPTION;").assertSucceeded()
+        bruce.execute("SET role role1;").assertSucceeded()
+        bruce.execute("select * from test;").assertSucceeded()
+        bruce.execute("GRANT role1 TO alice FROM current_role;").assertSucceeded()
+        bruce.execute("GRANT role1 TO bruce FROM current_role;").assertSucceeded()
 
-# import os, sys
-# try:
-#     from MonetDBtesting import process
-# except ImportError:
-#     import process
+        # revoke role1 from bruce and check that he's lost his privileges
+        mdb.execute("REVOKE role1 FROM bruce;").assertSucceeded()
+        bruce.execute("select * from test;").assertFailed(err_code="42000", err_message="SELECT: access denied for bruce to table 's1.test'")
+        bruce.execute("GRANT role1 TO alice FROM current_role;").assertFailed(err_code="0P000", err_message="GRANT: Insufficient privileges to grant ROLE 'role1'")
 
-# def sql_test_client(user, passwd, input):
-#     with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
-#                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
-#                         input=input, port=int(os.getenv("MAPIPORT"))) as c:
-#         c.communicate()
+        # grant sysadmin to bruce and check that he now can do everything again
+        # as a sysadmin
+        mdb.execute("GRANT sysadmin TO bruce;").assertSucceeded()
+        bruce.execute("SET role sysadmin;").assertSucceeded()
+        bruce.execute("select * from test;").assertSucceeded()
+        bruce.execute("GRANT role1 TO alice FROM current_role;").assertSucceeded()
 
-# sql_test_client('monetdb', 'monetdb', input="""\
-# CREATE SCHEMA s1;
-# CREATE USER bruce WITH PASSWORD 'bruce' name 'willis' schema s1;
-# CREATE TABLE s1.test(d int);
-# CREATE ROLE role1;
-# GRANT ALL ON s1.test to role1;
-# """)
-
-
-# sql_test_client('bruce', 'bruce', input="""\
-# GRANT role1 to bruce;
-# SET role role1;
-# select * from test;
-# """)
