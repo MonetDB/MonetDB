@@ -30,17 +30,13 @@ SELECT * FROM test;
 REVOKE role1 FROM bruce;
 # OK
 INSERT INTO test VALUES (24), (42);
-! 42000!INSERT INTO: insufficient privileges for user 'bruce' to insert into table 'test'
-
+# OK
 UPDATE test SET d = 42 WHERE d <> 42;
-! 42000!UPDATE: insufficient privileges for user 'bruce' to update table 'test'
-
+# OK
 DELETE FROM test WHERE d = 42;
-! 42000!DELETE FROM: insufficient privileges for user 'bruce' to delete from table 'test'
-
+# OK
 SELECT * FROM test;
-! 42000!SELECT: access denied for bruce to table 's1.test'
-
+[]
 SET role role1; -- verifies role1 is gone
 ! 42000!Role (role1) missing
 
