@@ -6679,7 +6679,8 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 	sql_column *c = n->data;
 	BUN sz = 0, nsz = 0;
 
-	t->cleared = 1;
+	if (!isNew(t))
+		t->cleared = 1;
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.wtime = tr->wstime;
 
