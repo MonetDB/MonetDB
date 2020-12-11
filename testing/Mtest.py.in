@@ -3574,6 +3574,7 @@ def main(argv) :
     parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
+    parser.add_argument('--report-all-failures', action='store_true', dest='report_all_failures', help='report all failing tests, even if many')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
@@ -4323,7 +4324,7 @@ VALUES (%s, '%s', '%s', '%s',
                 how = z
                 what += "  %3d out of %3d tests %s\n" % (len(Failure[x]),num_tests, y)
                 # only report failed tests if there aren't too many
-                if Failed < 30 and \
+                if opts.report_all_failures or Failed < 30 and \
                        (x != F_SKIP or len(Failure[F_SKIP]) + Failed < 30):
                     for f in Failure[x]:
                         what += "        %s\n" % f
