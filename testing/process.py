@@ -96,13 +96,13 @@ class _BufferedPipe:
         first = True
         while True:
             c = fh.read(1024)
+            if first:
+                if type(c) is type(b''):
+                    self._empty = b''
+                    self._nl = b'\n'
+                    self._cr = b'\r'
+                    first = False
             if not c:
-                if first:
-                    if type(c) is type(b''):
-                        self._empty = b''
-                        self._nl = b'\n'
-                        self._cr = b'\r'
-                        first = False
                 queue.put(c)    # put '' if at EOF
                 break
             c = c.replace(self._cr, self._empty)
