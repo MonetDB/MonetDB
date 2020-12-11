@@ -15,6 +15,7 @@
 #include "rel_prop.h"
 #include "rel_rewriter.h"
 #include "sql_mvc.h"
+#include "mtime.h"
 
 sql_hash *sql_functions_lookup = NULL;
 
@@ -23,17 +24,72 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data, *second = l->h->next->data;
-	atom *lval, *rval;
+	atom *lmax, *rmax, *lmin, *rmin, *res1 = NULL, *res2 = NULL;
+	str msg1 = NULL, msg2 = NULL;
 
-	if ((lval = find_prop_and_get(first->p, PROP_MAX)) && (rval = find_prop_and_get(second->p, PROP_MAX))) {
-		atom *res = atom_add(atom_dup(sql->sa, lval), rval);
-		if (res)
-			set_property(sql, e, PROP_MAX, res);
-	}
-	if ((lval = find_prop_and_get(first->p, PROP_MIN)) && (rval = find_prop_and_get(second->p, PROP_MIN))) {
-		atom *res = atom_add(atom_dup(sql->sa, lval), rval);
-		if (res)
-			set_property(sql, e, PROP_MIN, res);
+	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
+		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
+		sql_subfunc *f = (sql_subfunc *)e->f;
+
+		if (strcmp(f->func->mod, "calc") == 0) {
+			res1 = atom_add(atom_dup(sql->sa, lmax), rmax);
+			res2 = atom_add(atom_dup(sql->sa, lmin), rmin);
+		} else {
+			sql_subtype tp;
+
+			assert(strcmp(f->func->mod, "mtime") == 0);
+			if (strcmp(f->func->imp, "date_add_msec_interval") == 0) {
+				date sub1, sub2;
+
+				if (!(msg1 = date_add_msec_interval(&sub1, (date)lmax->data.val.ival, rmax->data.val.lval)) &&
+					!(msg2 = date_add_msec_interval(&sub2, (date)lmin->data.val.ival, rmin->data.val.lval))) {
+					sql_find_subtype(&tp, "date", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			} else if (strcmp(f->func->imp, "addmonths") == 0) {
+				date sub1, sub2;
+
+				if (!(msg1 = date_addmonths(&sub1, (date)lmax->data.val.ival, rmax->data.val.ival)) &&
+					!(msg2 = date_addmonths(&sub2, (date)lmin->data.val.ival, rmin->data.val.ival))) {
+					sql_find_subtype(&tp, "date", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			} else if (strcmp(f->func->imp, "time_add_msec_interval") == 0) {
+				daytime sub1 = time_add_msec_interval((daytime)lmax->data.val.lval, rmax->data.val.lval),
+						sub2 = time_add_msec_interval((daytime)lmin->data.val.lval, rmin->data.val.lval);
+
+				sql_find_subtype(&tp, "time", 0, 0);
+				res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+				res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+			} else if (strcmp(f->func->imp, "timestamp_add_msec_interval") == 0) {
+				timestamp sub1, sub2;
+
+				if (!(msg1 = timestamp_add_msec_interval(&sub1, (timestamp)lmax->data.val.lval, rmax->data.val.lval)) &&
+					!(msg2 = timestamp_add_msec_interval(&sub2, (timestamp)lmin->data.val.lval, rmin->data.val.lval))) {
+					sql_find_subtype(&tp, "timestamp", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			} else if (strcmp(f->func->imp, "timestamp_add_month_interval") == 0) {
+				timestamp sub1, sub2;
+
+				if (!(msg1 = timestamp_add_month_interval(&sub1, (timestamp)lmax->data.val.lval, rmax->data.val.ival)) &&
+					!(msg2 = timestamp_add_month_interval(&sub2, (timestamp)lmin->data.val.lval, rmin->data.val.ival))) {
+					sql_find_subtype(&tp, "timestamp", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			}
+		}
+
+		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
+			set_property(sql, e, PROP_MAX, res1);
+			set_property(sql, e, PROP_MIN, res2);
+		}
+		freeException(msg1);
+		freeException(msg2);
 	}
 }
 
@@ -42,12 +98,84 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 {
 	list *l = e->l;
 	sql_exp *first = l->h->data, *second = l->h->next->data;
-	atom *lmax, *rmax, *lmin, *rmin;
+	atom *lmax, *rmax, *lmin, *rmin, *res1 = NULL, *res2 = NULL;
 
 	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
 		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
-		atom *res1 = atom_sub(atom_dup(sql->sa, lmax), rmax);
-		atom *res2 = atom_sub(atom_dup(sql->sa, lmin), rmin);
+		sql_subfunc *f = (sql_subfunc *)e->f;
+		str msg1 = NULL, msg2 = NULL;
+
+		if (strcmp(f->func->mod, "calc") == 0) {
+			res1 = atom_sub(atom_dup(sql->sa, lmax), rmax);
+			res2 = atom_sub(atom_dup(sql->sa, lmin), rmin);
+		} else {
+			sql_subtype tp;
+
+			assert(strcmp(f->func->mod, "mtime") == 0);
+			if (strcmp(f->func->imp, "diff") == 0) {
+				sql_subtype *t1 = exp_subtype(first);
+
+				switch (t1->type->eclass) {
+				case EC_DATE: {
+					res1 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmax->data.val.ival, (date)rmax->data.val.ival));
+					res2 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmin->data.val.ival, (date)rmin->data.val.ival));
+				} break;
+				case EC_TIME: {
+					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmax->data.val.lval, (daytime)rmax->data.val.lval));
+					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmin->data.val.lval, (daytime)rmin->data.val.lval));
+				} break;
+				case EC_TIMESTAMP: {
+					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmax->data.val.lval, (timestamp)rmax->data.val.lval));
+					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmin->data.val.lval, (timestamp)rmin->data.val.lval));
+				} break;
+				default:
+					break;
+				}
+			} else if (strcmp(f->func->imp, "date_sub_msec_interval") == 0) {
+				date sub1, sub2;
+
+				if (!(msg1 = date_sub_msec_interval(&sub1, (date)lmax->data.val.ival, rmax->data.val.lval)) &&
+					!(msg2 = date_sub_msec_interval(&sub2, (date)lmin->data.val.ival, rmin->data.val.lval))) {
+					sql_find_subtype(&tp, "date", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			} else if (strcmp(f->func->imp, "date_sub_month_interval") == 0) {
+				date sub1, sub2;
+
+				if (!(msg1 = date_submonths(&sub1, (date)lmax->data.val.ival, rmax->data.val.ival)) &&
+					!(msg2 = date_submonths(&sub2, (date)lmin->data.val.ival, rmin->data.val.ival))) {
+					sql_find_subtype(&tp, "date", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			} else if (strcmp(f->func->imp, "time_sub_msec_interval") == 0) {
+				daytime sub1 = time_sub_msec_interval((daytime)lmax->data.val.lval, rmax->data.val.lval),
+						sub2 = time_sub_msec_interval((daytime)lmin->data.val.lval, rmin->data.val.lval);
+
+				sql_find_subtype(&tp, "time", 0, 0);
+				res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+				res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+			} else if (strcmp(f->func->imp, "timestamp_sub_msec_interval") == 0) {
+				timestamp sub1, sub2;
+
+				if (!(msg1 = timestamp_sub_msec_interval(&sub1, (timestamp)lmax->data.val.lval, rmax->data.val.lval)) &&
+					!(msg2 = timestamp_sub_msec_interval(&sub2, (timestamp)lmin->data.val.lval, rmin->data.val.lval))) {
+					sql_find_subtype(&tp, "timestamp", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			} else if (strcmp(f->func->imp, "timestamp_sub_month_interval") == 0) {
+				timestamp sub1, sub2;
+
+				if (!(msg1 = timestamp_sub_month_interval(&sub1, (timestamp)lmax->data.val.lval, rmax->data.val.ival)) &&
+					!(msg2 = timestamp_sub_month_interval(&sub2, (timestamp)lmin->data.val.lval, rmin->data.val.ival))) {
+					sql_find_subtype(&tp, "timestamp", 0, 0);
+					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
+					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
+				}
+			}
+		}
 
 		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
 			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
@@ -61,6 +189,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 				set_property(sql, e, PROP_MIN, res1);
 			}
 		}
+		freeException(msg1);
+		freeException(msg2);
 	}
 }
 
