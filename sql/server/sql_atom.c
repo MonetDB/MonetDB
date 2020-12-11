@@ -1321,7 +1321,7 @@ atom_add(atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype)
+	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
@@ -1346,7 +1346,7 @@ atom_sub(atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if ((!EC_COMPUTE(a1->tpe.type->eclass) && (a1->tpe.type->eclass != EC_DEC || a1->tpe.digits != a2->tpe.digits || a1->tpe.scale != a2->tpe.scale)) || a1->tpe.digits < a2->tpe.digits || a1->tpe.type->localtype != a2->tpe.type->localtype)
+	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
@@ -1373,7 +1373,7 @@ atom_mul(atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if (!EC_COMPUTE(a1->tpe.type->eclass))
+	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
@@ -1401,7 +1401,7 @@ atom_div(atom *a1, atom *a2)
 {
 	ValRecord dst;
 
-	if (!EC_COMPUTE(a1->tpe.type->eclass))
+	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
 	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&

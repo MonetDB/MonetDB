@@ -37,36 +37,59 @@ sql_add_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-#define mul_and_sub_propagate(FUNC) \
-static void \
-sql_##FUNC##_propagate_statistics(mvc *sql, sql_exp *e) \
-{ \
-	list *l = e->l; \
-	sql_exp *first = l->h->data, *second = l->h->next->data; \
-	atom *lmax, *rmax, *lmin, *rmin; \
- \
-	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) && \
-		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) { \
-		atom *res1 = atom_##FUNC(atom_dup(sql->sa, lmax), rmax); \
-		atom *res2 = atom_##FUNC(atom_dup(sql->sa, lmin), rmin); \
- \
-		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */ \
-			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe)); \
-			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2); \
- \
-			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */ \
-				set_property(sql, e, PROP_MAX, res1); \
-				set_property(sql, e, PROP_MIN, res2); \
-			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */ \
-				set_property(sql, e, PROP_MAX, res2); \
-				set_property(sql, e, PROP_MIN, res1); \
-			} \
-		} \
-	} \
+static void
+sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data, *second = l->h->next->data;
+	atom *lmax, *rmax, *lmin, *rmin;
+
+	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
+		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
+		atom *res1 = atom_sub(atom_dup(sql->sa, lmax), rmax);
+		atom *res2 = atom_sub(atom_dup(sql->sa, lmin), rmin);
+
+		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
+			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
+			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2);
+
+			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */
+				set_property(sql, e, PROP_MAX, res1);
+				set_property(sql, e, PROP_MIN, res2);
+			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */
+				set_property(sql, e, PROP_MAX, res2);
+				set_property(sql, e, PROP_MIN, res1);
+			}
+		}
+	}
 }
 
-mul_and_sub_propagate(sub)
-mul_and_sub_propagate(mul)
+static void
+sql_mul_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data, *second = l->h->next->data;
+	atom *lmax, *rmax, *lmin, *rmin;
+
+	if ((lmax = find_prop_and_get(first->p, PROP_MAX)) && (rmax = find_prop_and_get(second->p, PROP_MAX)) &&
+		(lmin = find_prop_and_get(first->p, PROP_MIN)) && (rmin = find_prop_and_get(second->p, PROP_MIN))) {
+		atom *res1 = atom_mul(atom_dup(sql->sa, lmax), rmax);
+		atom *res2 = atom_mul(atom_dup(sql->sa, lmin), rmin);
+
+		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
+			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
+			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2);
+
+			if (cmp1 >= 0 && cmp2 >= 0 && cmp3 >= 0 && cmp4 >= 0) { /* if all positive then propagate */
+				set_property(sql, e, PROP_MAX, res1);
+				set_property(sql, e, PROP_MIN, res2);
+			} else if (cmp1 < 0 && cmp2 < 0 && cmp3 < 0 && cmp4 < 0) { /* if all negative propagate by swapping min and max */
+				set_property(sql, e, PROP_MAX, res2);
+				set_property(sql, e, PROP_MIN, res1);
+			}
+		}
+	}
+}
 
 static void
 sql_div_propagate_statistics(mvc *sql, sql_exp *e)
@@ -80,7 +103,7 @@ sql_div_propagate_statistics(mvc *sql, sql_exp *e)
 		atom *res1 = atom_div(atom_dup(sql->sa, lmax), rmin);
 		atom *res2 = atom_div(atom_dup(sql->sa, lmin), rmax);
 
-		if (res1 && res2) { /* if the min/max pair overflows, then don't propagate */
+		if (res1 && res2) { /* on div by zero don't propagate */
 			atom *zero1 = atom_zero_value(sql->sa, &(lmax->tpe)), *zero2 = atom_zero_value(sql->sa, &(rmax->tpe));
 			int cmp1 = atom_cmp(lmax, zero1), cmp2 = atom_cmp(lmin, zero1), cmp3 = atom_cmp(rmin, zero2), cmp4 = atom_cmp(rmax, zero2);
 
