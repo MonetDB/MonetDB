@@ -1305,10 +1305,20 @@ nonil_col(sql_trans *tr, sql_column *col)
 		col = col->po;
 
 	if (col && col->data) {
-		BAT *b = bind_col(tr, col, QUICK);
+		BAT *b = bind_col(tr, col, QUICK), *c;
 
-		if (b)
+		if (b) {
 			nonil = b->tnonil && !b->tnil; /* check deltas as well */
+
+			if ((c = bind_col(tr, col, RD_INS))) {
+				nonil &= c->tnonil && !c->tnil;
+				BBPunfix(c->batCacheid);
+			}
+			if ((c = bind_col(tr, col, RD_UPD_VAL))) {
+				nonil &= c->tnonil && !c->tnil;
+				BBPunfix(c->batCacheid);
+			}
+		}
 	}
 	return nonil;
 }
@@ -1326,11 +1336,38 @@ col_min_value(sql_trans *tr, sql_column *col)
 		col = col->po;
 
 	if (col && col->data) {
-		BAT *b = bind_col(tr, col, QUICK);
-		PROPrec *prop = NULL;
+		BAT *b = bind_col(tr, col, QUICK), *c;
+		PROPrec *prop1 = NULL, *prop2 = NULL;
 
-		if (b && (prop = BATgetprop(b, GDK_MIN_VALUE)))
-			res = &(prop->v);
+		if (b && (prop1 = BATgetprop(b, GDK_MIN_VALUE))) {
+			ValRecord cp;
+			res = &(prop1->v);
+
+			if ((c = bind_col(tr, col, RD_INS))) {
+				if ((prop2 = BATgetprop(c, GDK_MIN_VALUE))) {
+					if (VARcalcgt(&cp, res, &(prop2->v)) != GDK_SUCCEED) {
+						BBPunfix(c->batCacheid);
+						return NULL;
+					}
+					res = cp.val.btval == 1 ? &(prop2->v) : res;
+				} else if (BATcount(c) > 0) {
+					res = NULL;
+				}
+				BBPunfix(c->batCacheid);
+			}
+			if (res && (c = bind_col(tr, col, RD_UPD_VAL))) {
+				if ((prop2 = BATgetprop(c, GDK_MIN_VALUE))) {
+					if (VARcalcgt(&cp, res, &(prop2->v)) != GDK_SUCCEED) {
+						BBPunfix(c->batCacheid);
+						return NULL;
+					}
+					res = cp.val.btval == 1 ? &(prop2->v) : res;
+				} else if (BATcount(c) > 0) {
+					res = NULL;
+				}
+				BBPunfix(c->batCacheid);
+			}
+		}
 	}
 	return res;
 }
@@ -1348,11 +1385,38 @@ col_max_value(sql_trans *tr, sql_column *col)
 		col = col->po;
 
 	if (col && col->data) {
-		BAT *b = bind_col(tr, col, QUICK);
-		PROPrec *prop = NULL;
+		BAT *b = bind_col(tr, col, QUICK), *c;
+		PROPrec *prop1 = NULL, *prop2 = NULL;
 
-		if (b && (prop = BATgetprop(b, GDK_MAX_VALUE)))
-			res = &(prop->v);
+		if (b && (prop1 = BATgetprop(b, GDK_MAX_VALUE))) {
+			ValRecord cp;
+			res = &(prop1->v);
+
+			if ((c = bind_col(tr, col, RD_INS))) {
+				if ((prop2 = BATgetprop(c, GDK_MAX_VALUE))) {
+					if (VARcalclt(&cp, res, &(prop2->v)) != GDK_SUCCEED) {
+						BBPunfix(c->batCacheid);
+						return NULL;
+					}
+					res = cp.val.btval == 1 ? &(prop2->v) : res;
+				} else if (BATcount(c) > 0) {
+					res = NULL;
+				}
+				BBPunfix(c->batCacheid);
+			}
+			if (res && (c = bind_col(tr, col, RD_UPD_VAL))) {
+				if ((prop2 = BATgetprop(c, GDK_MAX_VALUE))) {
+					if (VARcalclt(&cp, res, &(prop2->v)) != GDK_SUCCEED) {
+						BBPunfix(c->batCacheid);
+						return NULL;
+					}
+					res = cp.val.btval == 1 ? &(prop2->v) : res;
+				} else if (BATcount(c) > 0) {
+					res = NULL;
+				}
+				BBPunfix(c->batCacheid);
+			}
+		}
 	}
 	return res;
 }
