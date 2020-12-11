@@ -119,7 +119,7 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 	if (grantee_id <= 0)
 		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: User/role '%s' unknown", grantee);
 	/* first check if privilege isn't already given */
-	if ((sql_privilege(sql, grantee_id, GLOBAL_OBJID, privs)))
+	if ((sql_privilege(sql, grantee_id, GLOBAL_OBJID, privs) >= 0))
 		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
 	tr->schema_updates++;
@@ -168,13 +168,13 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 		throw(SQL,"sql.grant_table", SQLSTATE(01007) "GRANT: User/role '%s' unknown", grantee);
 	/* first check if privilege isn't already given */
 	if ((privs == all &&
-	    (sql_privilege(sql, grantee_id, t->base.id, PRIV_SELECT) ||
-	     sql_privilege(sql, grantee_id, t->base.id, PRIV_UPDATE) ||
-	     sql_privilege(sql, grantee_id, t->base.id, PRIV_INSERT) ||
-	     sql_privilege(sql, grantee_id, t->base.id, PRIV_DELETE) ||
-	     sql_privilege(sql, grantee_id, t->base.id, PRIV_TRUNCATE))) ||
-	    (privs != all && !c && sql_privilege(sql, grantee_id, t->base.id, privs)) ||
-	    (privs != all && c && sql_privilege(sql, grantee_id, c->base.id, privs))) {
+	    (sql_privilege(sql, grantee_id, t->base.id, PRIV_SELECT) >= 0 ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_UPDATE) >= 0 ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_INSERT) >= 0 ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_DELETE) >= 0 ||
+	     sql_privilege(sql, grantee_id, t->base.id, PRIV_TRUNCATE) >= 0)) ||
+	    (privs != all && !c && sql_privilege(sql, grantee_id, t->base.id, privs) >= 0) ||
+	    (privs != all && c && sql_privilege(sql, grantee_id, c->base.id, privs) >= 0)) {
 		throw(SQL, "sql.grant", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	}
 	if (privs == all) {
@@ -215,7 +215,7 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 	if (grantee_id <= 0)
 		throw(SQL, "sql.grant_func", SQLSTATE(01007) "GRANT: User/role '%s' unknown", grantee);
 	/* first check if privilege isn't already given */
-	if (sql_privilege(sql, grantee_id, f->base.id, privs))
+	if (sql_privilege(sql, grantee_id, f->base.id, privs) >= 0)
 		throw(SQL,"sql.grant", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
 	tr->schema_updates++;
@@ -428,7 +428,7 @@ int
 sql_privilege(mvc *m, sqlid auth_id, sqlid obj_id, int priv)
 {
 	oid rid = sql_privilege_rid(m, auth_id, obj_id, priv);
-	int res = 0;
+	int res = -1;
 
 	if (!is_oid_nil(rid)) {
 		/* found priv */
@@ -513,7 +513,7 @@ role_granting_privs(mvc *m, oid role_rid, sqlid role_id, sqlid grantor_id)
 	owner_id = table_funcs.column_find_sqlid(m->session->tr, auths_grantor, role_rid);
 	if (owner_id == grantor_id)
 		return true;
-	if (sql_privilege(m, grantor_id, role_id, PRIV_ROLE_ADMIN))
+	if (sql_privilege(m, grantor_id, role_id, PRIV_ROLE_ADMIN) == PRIV_ROLE_ADMIN)
 		return true;
 	/* check for grant rights in the privs table */
 	return false;

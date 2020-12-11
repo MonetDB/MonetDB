@@ -1,0 +1,47 @@
+stdout of test 'revokeRoleUserLoggedIN.Bug-7026` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 14:34:36 >  
+# 14:34:36 >  "/usr/bin/python3.8" "revokeRoleUserLoggedIN.Bug-7026.SQL.py" "revokeRoleUserLoggedIN.Bug-7026"
+# 14:34:36 >  
+
+CREATE SCHEMA s1;
+# OK
+CREATE USER bruce WITH PASSWORD 'bruce' name 'willis' schema s1;
+# OK
+CREATE TABLE s1.test(d int);
+# OK
+CREATE ROLE role1;
+# OK
+GRANT ALL ON s1.test to role1;
+# OK
+GRANT role1 TO bruce;
+# OK
+SET role role1;
+# OK
+INSERT INTO test VALUES (24), (42);
+# OK
+UPDATE test SET d = 42 WHERE d <> 42;
+# OK
+DELETE FROM test WHERE d = 42;
+# OK
+SELECT * FROM test;
+[]
+REVOKE role1 FROM bruce;
+# OK
+INSERT INTO test VALUES (24), (42);
+# OK
+UPDATE test SET d = 42 WHERE d <> 42;
+# OK
+DELETE FROM test WHERE d = 42;
+# OK
+SELECT * FROM test;
+[]
+SET role role1; -- verifies role1 is gone
+! 42000!Role (role1) missing
+
+
+# 14:34:37 >  
+# 14:34:37 >  "Done."
+# 14:34:37 >  
+
