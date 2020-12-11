@@ -1324,8 +1324,7 @@ atom_add(atom *a1, atom *a2)
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
-	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits)) {
+		(a1->tpe.type->localtype == a2->tpe.type->localtype && a1->tpe.digits < a2->tpe.digits)) {
 		atom *t = a1;
 		a1 = a2;
 		a2 = t;
@@ -1349,8 +1348,7 @@ atom_sub(atom *a1, atom *a2)
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
 	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
-	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits))
+		(a1->tpe.type->localtype == a2->tpe.type->localtype && a1->tpe.digits < a2->tpe.digits))
 		dst.vtype = a2->tpe.type->localtype;
 	else
 		dst.vtype = a1->tpe.type->localtype;
@@ -1375,9 +1373,8 @@ atom_mul(atom *a1, atom *a2)
 
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
-	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
-	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits)) {
+	if (!EC_INTERVAL(a1->tpe.type->eclass) && (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+		(a1->tpe.type->localtype == a2->tpe.type->localtype && a1->tpe.digits < a2->tpe.digits))) {
 		atom *t = a1;
 		a1 = a2;
 		a2 = t;
@@ -1403,9 +1400,8 @@ atom_div(atom *a1, atom *a2)
 
 	if (!EC_NUMBER(a1->tpe.type->eclass))
 		return NULL;
-	if (a1->tpe.type->localtype < a2->tpe.type->localtype ||
-	    (a1->tpe.type->localtype == a2->tpe.type->localtype &&
-	     a1->tpe.digits < a2->tpe.digits)) {
+	if (!EC_INTERVAL(a1->tpe.type->eclass) && (a1->tpe.type->localtype < a2->tpe.type->localtype ||
+		(a1->tpe.type->localtype == a2->tpe.type->localtype && a1->tpe.digits < a2->tpe.digits))) {
 		atom *t = a1;
 		a1 = a2;
 		a2 = t;
