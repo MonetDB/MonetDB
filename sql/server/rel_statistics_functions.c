@@ -605,7 +605,21 @@ sql_epoch_ms_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[30] = {
+static void
+sql_min_max_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	list *l = e->l;
+	sql_exp *first = l->h->data;
+	atom *omin, *omax;
+
+	if ((omin = find_prop_and_get(first->p, PROP_MIN)) && (omax = find_prop_and_get(first->p, PROP_MAX))) {
+		set_property(sql, e, PROP_MAX, omax);
+		set_property(sql, e, PROP_MIN, omin);
+	}
+}
+
+static struct function_properties functions_list[33] = {
+	/* arithmetic functions */
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
 	{"sql_mul", &sql_mul_propagate_statistics},
@@ -613,6 +627,8 @@ static struct function_properties functions_list[30] = {
 	{"sql_neg", &sql_neg_propagate_statistics},
 	{"sign", &sql_sign_propagate_statistics},
 	{"abs", &sql_abs_propagate_statistics},
+
+	/* sql comparison functions */
 	{"sql_min", &sql_least_greatest_propagate_statistics},
 	{"sql_max", &sql_least_greatest_propagate_statistics},
 	{"least", &sql_least_greatest_propagate_statistics},
@@ -620,6 +636,8 @@ static struct function_properties functions_list[30] = {
 	{"ifthenelse", &sql_ifthenelse_propagate_statistics},
 	{"nullif", &sql_nullif_propagate_statistics},
 	{"coalesce", &sql_coalesce_propagate_statistics},
+
+	/* time functions */
 	{"century", &sql_century_propagate_statistics},
 	{"decade", &sql_decade_propagate_statistics},
 	{"year", &sql_year_propagate_statistics},
@@ -635,7 +653,12 @@ static struct function_properties functions_list[30] = {
 	{"hour", &sql_hour_propagate_statistics},
 	{"minute", &sql_minute_propagate_statistics},
 	{"second", &sql_second_propagate_statistics},
-	{"epoch_ms", &sql_epoch_ms_propagate_statistics}
+	{"epoch_ms", &sql_epoch_ms_propagate_statistics},
+
+	/* aggregates */
+	{"min", &sql_min_max_propagate_statistics},
+	{"max", &sql_min_max_propagate_statistics},
+	{"zero_or_one", &sql_min_max_propagate_statistics}
 };
 
 void
