@@ -217,7 +217,7 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		if (has_nil(e) && mvc_has_no_nil(sql, c))
 			set_has_no_nil(e);
  
-		if (EC_NUMBER(c->type.type->localtype) || EC_VARCHAR(c->type.type->localtype) || EC_TEMP_NOFRAC(c->type.type->localtype) || c->type.type->localtype == EC_DATE) {
+		if (EC_NUMBER(c->type.type->eclass) || EC_VARCHAR(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) {
 			if ((max = mvc_has_max_value(sql, c))) {
 				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
 				p->value = atom_general_ptr(sql->sa, &c->type, max);
@@ -255,6 +255,17 @@ rel_set_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e, int i)
 			set_max_of_values(sql, e, PROP_MIN, lval, rval); /* for intersect the new min will be the max of the two */
 		else
 			set_property(sql, e, PROP_MIN, lval);
+	}
+
+	if (rel->op == op_union) {
+		if (!has_nil(le) && !has_nil(re))
+			set_has_no_nil(e);
+	} else if (rel->op == op_inter) {
+		if (!has_nil(le) || !has_nil(re))
+			set_has_no_nil(e);
+	} else {
+		if (!has_nil(le))
+			set_has_no_nil(e);
 	}
 }
 
@@ -305,6 +316,8 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (atom_cast(sql->sa, res, to))
 				set_property(sql, e, PROP_MIN, res);
 		}
+		if (!has_nil(l))
+			set_has_no_nil(e);
 	} break;
 	case e_aggr:
 	case e_func: {
@@ -324,6 +337,8 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (look)
 				look(sql, e);
 		}
+		if (!e->semantics && e->l && !have_nil(e->l))
+			set_has_no_nil(e);
 	} break;
 	case e_atom: {
 		if (e->l) {
@@ -367,7 +382,21 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				set_property(sql, e, PROP_MIN, min);
 		}
 	} break;
-	case e_cmp: /* propagating min and max of booleans is not very worth it */
+	case e_cmp:
+		/* propagating min and max of booleans is not very worth it */
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			if (!have_nil(e->l) && !have_nil(e->r))
+				set_has_no_nil(e);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			sql_exp *le = e->l;
+			if (!has_nil(le) && !have_nil(e->r))
+				set_has_no_nil(e);
+		} else {
+			sql_exp *le = e->l, *re = e->r, *fe = e->f;
+			if (!has_nil(le) && !has_nil(re) && (!e->f || !has_nil(fe)))
+				set_has_no_nil(e);
+		}
+		break;
 	case e_psm:
 		break;
 	}
