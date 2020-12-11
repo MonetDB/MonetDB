@@ -2095,6 +2095,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 {
 	BAT *b;
 	BUN sz = 0;
+	int isnew = 0;
 
 	if (bat->cached) {
 		bat_destroy(bat->cached);
@@ -2124,6 +2125,8 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 			}
 			bat_destroy(b);
 		}
+	} else {
+		isnew = 1;
 	}
 	if (bat->uibid) {
 		b = temp_descriptor(bat->uibid);
@@ -2141,7 +2144,8 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 		}
 		bat_destroy(b);
 	}
-	bat->cleared = 1;
+	if (!isnew)
+		bat->cleared = 1;
 	bat->ibase = 0;
 	bat->cnt = 0;
 	bat->ucnt = 0;
@@ -2568,6 +2572,7 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 		temp_destroy(obat->ibid);
 		obat->ibid = cbat->bid;
 		obat->cnt = cbat->cnt;
+		cbat->bid = cbat->ibid = 0;
 	} else	if (BUNlast(ins) > 0 || cbat->cleared) {
 		if ((!cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE)){
 			/* swap cur and ins */
