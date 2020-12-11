@@ -7,7 +7,7 @@ from MonetDBtesting.sqltest import SQLTestCase
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
-    tc.execute("CREATE USER user_with_many_rights with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys;")
+    tc.execute("CREATE USER user_with_many_rights with password 'ThisIsAS3m1S3cur3P4ssw0rd' name 'user gets monetdb rights' schema sys;").assertSucceeded()
     tc.execute("CREATE SCHEMA a_brand_new_schema_with_a_longer_name_than_usual;").assertSucceeded()
     tc.execute("CREATE table a_brand_new_schema_with_a_longer_name_than_usual.testTable(v1 int, v2 int);").assertSucceeded()
     tc.execute("GRANT sysadmin to user_with_many_rights;").assertSucceeded()
