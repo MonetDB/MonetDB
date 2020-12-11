@@ -76,6 +76,8 @@ def process_test_dir(dir_path:str, ctx={}, **kwargs):
         #('_p00.sql',      '.sql',    'sqlXp',  'SQL'),
         ('.R',            '.R',      'R',      'SQL'),
         ('.rb',           '.rb',     'ruby',   'SQL'),
+        ('.php',          '.php',     'php',   'SQL'),
+        ('.pl',           '.pl',     'perl',   'SQL'),
     ]
     if os.name == 'nt':
         lookup.append(('.MAL.bat', '.MAL.bat', 'other', ''))
