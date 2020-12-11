@@ -4,6 +4,12 @@
 
 #Mlog "mclient -d mapi:monetdb://$HOST:$MAPIPORT/$TSTDB?language=sql&user=monetdb -f test -t none -E utf-8 -s select 1"
 mclient -d "mapi:monetdb://$HOST:$MAPIPORT/$TSTDB?language=sql&user=monetdb" -f csv -t none -E utf-8 -s 'select 1' | grep -v '^1$'
+if [ $? -eq 2 ]; then
+	return 2;
+fi
 
 #Mlog "mclient -d mapi:monetdb://$MAPIHOST/.s.monetdb.$MAPIPORT?database=$TSTDB&language=sql&user=monetdb -f test -t none -E utf-8 -s select 1"
 mclient -d "mapi:monetdb://$MAPIHOST/.s.monetdb.$MAPIPORT?database=$TSTDB&language=sql&user=monetdb" -f csv -t none -E utf-8 -s 'select 1' | grep -v '^1$'
+if [ $? -eq 2 ]; then
+	return 2;
+fi
