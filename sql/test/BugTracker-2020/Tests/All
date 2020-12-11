@@ -40,3 +40,4 @@ savepoints_crash_mserver5_2.Bug-7021
 transaction_with_unreleased_savepoint.Bug-7022
 view_with_aggr_column.Bug-7023
 delete-transaction-loose-inserts.Bug-7024
+revokeRoleUserLoggedIN.Bug-7026
