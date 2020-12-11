@@ -91,6 +91,18 @@ try:
 except pymonetdb.DatabaseError as e:
     if "SELECT: access denied for u2 to view 'foo.v1'" not in str(e):
         sys.stderr.write('Wrong error %s, expected SELECT: access denied for u2 to view \'foo.v1\'' % (str(e)))
+try:
+    cur1.execute('SELECT "col1" FROM "foo"."tab1";') # error, not allowed
+    sys.stderr.write("Exception expected")
+except pymonetdb.DatabaseError as e:
+    if "SELECT: access denied for u2 to table 'foo.tab1'" not in str(e):
+        sys.stderr.write('Wrong error %s, expected SELECT: access denied for u2 to table \'foo.tab1\'' % (str(e)))
+try:
+    cur1.execute('SELECT "col1" FROM "foo"."tab2";') # error, not allowed
+    sys.stderr.write("Exception expected")
+except pymonetdb.DatabaseError as e:
+    if "SELECT: access denied for u2 to table 'foo.tab2'" not in str(e):
+        sys.stderr.write('Wrong error %s, expected SELECT: access denied for u2 to table \'foo.tab2\'' % (str(e)))
 cur1.close()
 conn1.close()
 
