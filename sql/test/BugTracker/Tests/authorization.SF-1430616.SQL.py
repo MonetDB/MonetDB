@@ -29,7 +29,7 @@ with SQLTestCase() as tc:
 
     # just use the new user once
     tc.connect(username="voc", password="voc")
-    tc.execute("select current_schema;").assertSucceeded().assertDataResultMatch([('voc')])
+    tc.execute("select current_schema;").assertSucceeded().assertDataResultMatch([('voc',)])
 
     tc.connect(username="monetdb", password="monetdb")
     # we can drop neither of them yet
