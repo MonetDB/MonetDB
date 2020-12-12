@@ -9,8 +9,6 @@ CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; 
 CREATE FUNCTION FQTN(s STRING, t STRING) RETURNS STRING BEGIN RETURN DQ(s) || '.' || DQ(t); END;
 CREATE FUNCTION ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || FQTN(s, t) || ' '; END;
 
-CREATE FUNCTION comment_on(ob STRING, id STRING, r STRING) RETURNS STRING BEGIN RETURN ifthenelse(r IS NOT NULL, 'COMMENT ON ' || ob ||  ' ' || id || ' IS ' || SQ(r) || ';', ''); END;
-
 --We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
 CREATE FUNCTION replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
 CREATE FUNCTION schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
@@ -442,6 +440,43 @@ CREATE FUNCTION dump_triggers() RETURNS TABLE (stmt STRING) BEGIN
 		SELECT schema_guard(sch, tab, def) FROM describe_triggers();
 END;
 
+CREATE FUNCTION describe_comments() RETURNS TABLE(id INT, tpe STRING, fqn STRING, rem STRING) BEGIN
+	RETURN
+		SELECT o.id, o.tpe, o.nme, c.remark FROM (
+
+			SELECT id, 'SCHEMA', DQ(name) FROM schemas
+
+			UNION ALL
+
+			SELECT t.id, CASE WHEN ts.table_type_name = 'VIEW' THEN 'VIEW' ELSE 'TABLE' END, FQTN(s.name, t.name)
+			FROM schemas s JOIN tables t ON s.id = t.schema_id JOIN table_types ts ON t.type = ts.table_type_id
+			WHERE NOT s.name <> 'tmp'
+
+			UNION ALL
+
+			SELECT c.id, 'COLUMN', FQTN(s.name, t.name) || '.' || DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
+
+			UNION ALL
+
+			SELECT idx.id, 'INDEX', FQTN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
+
+			UNION ALL
+
+			SELECT seq.id, 'SEQUENCE', FQTN(s.name, seq.name) FROM sys.sequences seq, schemas s WHERE seq.schema_id = s.id
+
+			UNION ALL
+
+			SELECT f.id, ft.function_type_keyword, FQTN(s.name, f.name) FROM functions f, function_types ft, schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
+
+			) AS o(id, tpe, nme)
+			JOIN comments c ON c.id = o.id;
+END;
+
+CREATE FUNCTION dump_comments() RETURNS TABLE(stmt STRING) BEGIN
+RETURN
+	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || SQ(c.rem) || ';' FROM describe_comments() c;
+END;
+
 --The dump statement should normally have an auto-incremented column representing the creation order.
 --But in cases of db objects that can be interdependent, i.e. functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
 --Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for functions and table-likes,
@@ -484,11 +519,6 @@ BEGIN
         FROM schemas s, auths a
         WHERE s.authorization = a.id AND s.system = FALSE;
 
-	INSERT INTO dump_statements(s) --dump_create_comments_on_schemas
-        SELECT comment_on('SCHEMA', DQ(s.name), rem.remark)
-        FROM schemas s JOIN comments rem ON s.id = rem.id
-        WHERE NOT s.system;
-
     INSERT INTO dump_statements(s) --dump_add_schemas_to_users
 	    SELECT
             'ALTER USER ' || DQ(ui.name) || ' SET SCHEMA ' || DQ(s.name) || ';'
@@ -505,13 +535,6 @@ BEGIN
 		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
 	INSERT INTO dump_statements(s) SELECT * FROM dump_sequences();
-
-	INSERT INTO dump_statements(s) --dump_create_comments_on_sequences
-        SELECT comment_on('SEQUENCE', DQ(sch.name) || '.' || DQ(seq.name), rem.remark)
-        FROM
-			sys.schemas sch,
-			sys.sequences seq JOIN sys.comments rem ON seq.id = rem.id
-		WHERE sch.id = seq.schema_id;
 
 	--START OF COMPLICATED DEPENDENCY STUFF:
 	--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
@@ -533,15 +556,8 @@ BEGIN
 	INSERT INTO dump_statements(s) SELECT * FROM dump_partition_tables();
 	INSERT INTO dump_statements(s) SELECT * from dump_triggers();
 
-	INSERT INTO dump_statements(s) --dump_create_comments_on_indices
-        SELECT comment_on('INDEX', DQ(i.name), rem.remark)
-        FROM sys.idxs i JOIN sys.comments rem ON i.id = rem.id;
+	INSERT INTO dump_statements(s) SELECT * FROM dump_comments();
 
-	INSERT INTO dump_statements(s) --dump_create_comments_on_columns
-        SELECT comment_on('COLUMN', DQ(s.name) || '.' || DQ(t.name) || '.' || DQ(c.name), rem.remark)
-		FROM sys.columns c JOIN sys.comments rem ON c.id = rem.id, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id AND NOT t.system;
-
-	--TODO COMMENTS ON TABLE and add schema to commented objects identifier
 	--TODO TABLE level grants
 	--TODO COLUMN level grants
 	--TODO User Defined Types? sys.types
