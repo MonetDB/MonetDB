@@ -2593,6 +2593,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 		}
 	}
 
+	if (!err)
+		err = SQLstatementIntern(
+					c,
+					"ALTER TABLE sys.function_types SET READ WRITE;\n"
+					"UPDATE sys.function_types SET function_type_keyword = 'WINDOW' WHERE function_type_id = 6;\n",
+					"ALTER TABLE sys.function_types SET READ ONLY;\n"
+					"update", true, false, NULL);
+
 bailout:
 	if (b)
 		BBPunfix(b->batCacheid);

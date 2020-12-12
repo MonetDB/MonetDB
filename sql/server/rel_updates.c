@@ -894,7 +894,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 sql_exp *
 update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
 {
-	if (!table_privs(sql, t, PRIV_UPDATE) && !sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE))
+	if (!table_privs(sql, t, PRIV_UPDATE) && sql_privilege(sql, sql->user_id, c->base.id, PRIV_UPDATE) < 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to update table '%s' on column '%s'", action, get_string_global_var(sql, "current_user"), t->base.name, cname);
 	if (!v || (v = exp_check_type(sql, &c->type, r, v, type_equal)) == NULL)
 		return NULL;

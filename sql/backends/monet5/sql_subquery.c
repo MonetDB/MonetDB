@@ -16,7 +16,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 	BAT *b;
 	BUN c;
 	size_t _s;
-	const void *p;
+	const void *p = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "sql.zero_or_one", SQLSTATE(HY005) "Cannot access column descriptor");

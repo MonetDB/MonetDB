@@ -38,9 +38,9 @@ stdout of test 'sessioncontrol` in directory 'sql/test/Users` itself:
 % .s,	.s,	.s,	.s,	.s,	.s,	.s # table_name
 % sessionid,	username,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
 % int,	clob,	clob,	int,	int,	int,	int # type
-% 1,	7,	0,	4,	3,	2,	2 # length
-[ 0,	"monetdb",	"",	5000,	123,	12,	10	]
-#select sessionid, s."user", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s;
+% 1,	7,	12,	4,	3,	2,	2 # length
+[ 0,	"monetdb",	"minimal_pipe",	5000,	123,	12,	10	]
+#select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s;
 % .s,	.s,	.s,	.s,	.s,	.s,	.s # table_name
 % sessionid,	username,	optimizer,	sessiontimeout,	querytimeout,	workerlimit,	memorylimit # name
 % int,	clob,	clob,	int,	int,	int,	int # type
