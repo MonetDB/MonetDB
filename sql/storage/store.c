@@ -833,12 +833,7 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 				nextv->value = sa_alloc(tr->sa, vvalue.len);
 				memcpy(nextv->value, VALget(&vvalue), vvalue.len);
 				nextv->length = vvalue.len;
-				if (list_append_sorted(vals, nextv, empty, sql_values_list_element_validate_and_insert) != NULL) {
-					VALclear(&vvalue);
-					table_funcs.rids_destroy(rs);
-					list_destroy(vals);
-					return -i - 1;
-				}
+				list_append(vals, nextv);
 			}
 		}
 		VALclear(&vvalue);
@@ -1870,6 +1865,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 	cs_new(&s->types, tr->sa, (fdestroy) NULL);
 	cs_new(&s->funcs, tr->sa, (fdestroy) NULL);
 	cs_new(&s->seqs, tr->sa, (fdestroy) NULL);
+	cs_new(&s->parts, tr->sa, (fdestroy) &part_destroy);
 	s->keys = list_new(tr->sa, (fdestroy) NULL);
 	s->idxs = list_new(tr->sa, (fdestroy) NULL);
 	s->triggers = list_new(tr->sa, (fdestroy) NULL);
@@ -5233,7 +5229,7 @@ int
 sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
-	int oldest = oldest_active_tid();
+	int oldest = (tr->parent== gtrans)?oldest_active_tid():-1;
 
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (%d, %d) (%d, %d)\n", gtrans->stime, tr->stime, gtrans->wstime, tr->wstime);
@@ -6683,7 +6679,8 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 	sql_column *c = n->data;
 	BUN sz = 0, nsz = 0;
 
-	t->cleared = 1;
+	if (!isNew(t))
+		t->cleared = 1;
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.wtime = tr->wstime;
 

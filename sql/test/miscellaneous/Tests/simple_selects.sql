@@ -201,6 +201,12 @@ rollback;
 select * from (select 1 as c0, 2 as c0) as sub;
 	-- 1 2
 
+select *,* from (select 1 as c0, 2 as c0) as sub;
+	--  1 2 1 2
+
+select * from (select 1 as c0, max(k) as c0 from (select 2, 3) tst(k, name) group by name) as sub;
+	-- 1 2
+
 select cast(interval '3' second as clob);
 	-- 3.000
 

@@ -786,11 +786,6 @@ fi
 %setup -q
 
 %build
-%if (0%{?fedora} >= 33)
-# on Fedora 33 we get a crash of the compiler when using -flto, so disable it
-CFLAGS="${CFLAGS:-%optflags} -fno-lto"
-export CFLAGS
-%endif
 %cmake3 \
 	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
