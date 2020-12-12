@@ -18,7 +18,7 @@ KNOWNFAIL?singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
-HAVE_PYMONETDB?transaction-conflict
+transaction-conflict
 
 HAVE_NETCDF&HAVE_NETCDF?mergedb_create
 HAVE_GEOM?sqlsmith.Bug-6459

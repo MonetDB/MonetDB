@@ -67,7 +67,7 @@ alter-sequence
 restart-sequence
 create_in_schema
 
-HAVE_PYMONETDB?null-byte-hang
+null-byte-hang
 orderby_limit
 orderby_non_selection_column
 
@@ -121,11 +121,11 @@ unicode
 
 window_functions
 
-HAVE_PYMONETDB?hot_snapshot
-HAVE_PYMONETDB&HAVE_LIBZ?hot_snapshot_gz
-HAVE_PYMONETDB&HAVE_LIBBZ2?hot_snapshot_bz2
-HAVE_PYMONETDB&HAVE_LIBLZMA?hot_snapshot_xz
-HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4
+hot_snapshot
+HAVE_LIBZ?hot_snapshot_gz
+HAVE_LIBBZ2?hot_snapshot_bz2
+HAVE_LIBLZMA?hot_snapshot_xz
+HAVE_PYTHON_LZ4&HAVE_LIBLZ4?hot_snapshot_lz4
 !HAVE_PYTHON_LZ4&HAVE_PYMONETDB&HAVE_LIBLZ4?hot_snapshot_lz4_lite
 
 # The following tests are some old tests moved from sql/test
