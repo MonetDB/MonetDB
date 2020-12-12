@@ -348,7 +348,7 @@ INSERT INTO sys.function_types (function_type_id, function_type_name, function_t
   (3, 'Aggregate function', 'AGGREGATE'),
   (4, 'Filter function', 'FILTER FUNCTION'),
   (5, 'Function returning a table', 'FUNCTION'),
-  (6, 'Analytic function', 'FUNCTION'),
+  (6, 'Analytic function', 'WINDOW'),
   (7, 'Loader function', 'LOADER');
 
 ALTER TABLE sys.function_types SET READ ONLY;
