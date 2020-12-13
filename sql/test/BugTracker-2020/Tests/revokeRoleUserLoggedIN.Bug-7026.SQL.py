@@ -4,62 +4,40 @@
 #   privileges associated with that role.
 ###
 
-import sys, time, pymonetdb, os
-
-def connect(username, password):
-    return pymonetdb.connect(database = os.getenv('TSTDB'),
-                             hostname = 'localhost',
-                             port = int(os.getenv('MAPIPORT')),
-                             username = username,
-                             password = password,
-                             autocommit = True)
-
-def query(conn, sql):
-    print(sql)
-    cur = conn.cursor()
-    try:
-        cur.execute(sql)
-    except pymonetdb.OperationalError as e:
-        print("!", e)
-        return
-    r = cur.fetchall()
-    cur.close()
-    print(r)
-
-def run(conn, sql):
-    print(sql)
-    try:
-        r = conn.execute(sql)
-    except pymonetdb.OperationalError as e:
-        print("!", e)
-        return
-    print('# OK')
+from MonetDBtesting.sqltest import SQLTestCase
 
 
-c1 = connect('monetdb', 'monetdb')
-# Create a user, schema and role
-run(c1, 'CREATE SCHEMA s1;')
-run(c1, 'CREATE USER bruce WITH PASSWORD \'bruce\' name \'willis\' schema s1;')
-run(c1, 'CREATE TABLE s1.test(d int);')
-run(c1, 'CREATE ROLE role1;')
-run(c1, 'GRANT ALL ON s1.test to role1;')
-run(c1, 'GRANT role1 TO bruce;')
+with SQLTestCase() as tc1:
+    with SQLTestCase() as tc2:
+        tc1.connect(username="monetdb", password="monetdb")
+        # Create a user, schema and role
+        tc1.execute("""
+        CREATE SCHEMA s1;
+        CREATE USER bruce WITH PASSWORD 'bruce' name 'willis' schema s1;
+        CREATE TABLE s1.test(d int);
+        CREATE ROLE role1;
+        GRANT ALL ON s1.test to role1;
+        GRANT role1 TO bruce;""").assertSucceeded()
 
-# Login as `bruce` and use `role1`
-c2 = connect('bruce', 'bruce')
-run(c2, 'SET role role1;')
-run(c2, 'INSERT INTO test VALUES (24), (42);')
-run(c2, 'UPDATE test SET d = 42 WHERE d <> 42;')
-run(c2, 'DELETE FROM test WHERE d = 42;')
-query(c2, 'SELECT * FROM test;')
+        # Login as `bruce` and use `role1`
+        tc2.connect(username="bruce", password="bruce")
+        tc2.execute('SET role role1;').assertSucceeded()
+        tc2.execute('INSERT INTO test VALUES (24), (42);').assertSucceeded().assertRowCount(2)
+        tc2.execute('UPDATE test SET d = 42 WHERE d <> 42;').assertSucceeded().assertRowCount(1)
+        tc2.execute('DELETE FROM test WHERE d = 42;').assertSucceeded().assertRowCount(2)
+        tc2.execute('SELECT * FROM test;').assertSucceeded().assertRowCount(0).assertDataResultMatch([])
 
-# Revoke `role1` from `bruce`
-run(c1, 'REVOKE role1 FROM bruce;')
+        # Revoke `role1` from `bruce`
+        tc1.execute('REVOKE role1 FROM bruce;').assertSucceeded()
 
-# `bruce` should not be able to access `test` again:
-run(c2, 'INSERT INTO test VALUES (24), (42);')
-run(c2, 'UPDATE test SET d = 42 WHERE d <> 42;')
-run(c2, 'DELETE FROM test WHERE d = 42;')
-query(c2, 'SELECT * FROM test;')
-query(c2, 'SET role role1; -- verifies role1 is gone')
+        # `bruce` should not be able to access `test` again:
+        tc2.execute('INSERT INTO test VALUES (24), (42);').assertSucceeded().assertRowCount(2)
+        tc2.execute('UPDATE test SET d = 42 WHERE d <> 42;').assertSucceeded().assertRowCount(1)
+        tc2.execute('DELETE FROM test WHERE d = 42;').assertSucceeded().assertRowCount(2)
+        tc2.execute('SELECT * FROM test;').assertSucceeded().assertRowCount(0).assertDataResultMatch([])
+        tc2.execute('SET ROLE role1; -- verifies role1 is gone').assertFailed(err_message="Role (role1) missing")
 
+    tc1.execute("""
+    DROP USER bruce;
+    DROP SCHEMA s1 CASCADE;
+    DROP ROLE role1""").assertSucceeded()
