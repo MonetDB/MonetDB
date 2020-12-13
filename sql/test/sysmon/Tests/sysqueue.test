@@ -1,38 +1,31 @@
-query TTT rowsort
-select username, status, case when query ilike 'set time%' then 'set time...' else query end from sys.queue()
+query I rowsort
+select 1
 ----
-monetdb
-finished
-select name from sys.schemas where not system@;
-monetdb
-finished
-select name from sys.users where name not in (\'monetdb\', \'.snapshot\')@;
-monetdb
-running
-select username, status, case when query ilike \'set time%\' then \'set time...\' else query end from sys.queue()@;
+1
 
 query I rowsort
-select count(*) from sys.queue();
-----
-3
-
-query I rowsort
-select count(*) from sys.queue();
-----
-3
-
-query I rowsort
-select count(*) from sys.queue();
-----
-3
-
-query I rowsort
-select count(*) from sys.queue();
-----
-3
-
-query I rowsort
-select count(*) from sys.queue() where query = 'select count(*) from sys.queue();';
+select 2
 ----
 2
+
+query I rowsort
+select 3
+----
+3
+
+query I rowsort
+select 4
+----
+4
+
+query TT rowsort
+select username, query from sys.queue() order by query
+----
+monetdb
+select 3@;
+monetdb
+select 4@;
+monetdb
+select username, query from sys.queue() order by query@;
+
 
