@@ -2363,6 +2363,11 @@ cleanup_table(sql_table *t)
 		for (int i = 0; i<spares; i++) {
 			for (node *m = spare_trans[i]->schemas.set->h; m; m = m->next) {
 				sql_schema * schema = m->data;
+
+				if (schema->tables.dset) {
+					list_destroy(schema->tables.dset);
+					schema->tables.dset = NULL;
+				}
 				node *o = find_sql_table_node(schema, t->base.id);
 				if (o) {
 					list_remove_node(schema->tables.set, o);
@@ -4125,6 +4130,7 @@ rollforward_changeset_updates(sql_trans *tr, int oldest, changeset * fs, changes
 			list_destroy(fs->dset);
 			fs->dset = NULL;
 		}
+		/*
 		if (!apply && ts->dset) {
 			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
 				sql_base *tb = n->data;
@@ -4133,6 +4139,7 @@ rollforward_changeset_updates(sql_trans *tr, int oldest, changeset * fs, changes
 					ok = rollforward_deletes(tr, tb, mode);
 			}
 		}
+		*/
 		if (apply && ts->dset && !cf) {
 			list_destroy(ts->dset);
 			ts->dset = NULL;
@@ -6679,7 +6686,8 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 	sql_column *c = n->data;
 	BUN sz = 0, nsz = 0;
 
-	t->cleared = 1;
+	if (!isNew(t))
+		t->cleared = 1;
 	t->base.wtime = t->s->base.wtime = tr->wtime = tr->wstime;
 	c->base.wtime = tr->wstime;
 

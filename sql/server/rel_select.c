@@ -524,6 +524,14 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such %s function %s%s%s'%s'(%s)",
 							 type == F_UNION ? "table returning" : "loader", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
 		}
+		for (node *n = ff->h; n ; ) { /* Reduce on privileges */
+			sql_subfunc *sf = n->data;
+			node *nn = n->next;
+
+			if (!execute_priv(sql, sf->func))
+				list_remove_node(funcs, n);
+			n = nn;
+		}
 		len = list_length(ff);
 		if (len > 1) {
 			int i, score = 0;
@@ -670,7 +678,7 @@ rel_op_(mvc *sql, char *sname, char *fname, exp_kind ek)
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
-	if ((f = sql_bind_func(sql, sname, fname, NULL, NULL, type)) && check_card(ek.card, f))
+	if ((f = bind_func_(sql, sname, fname, NULL, type)) && check_card(ek.card, f))
 		return exp_op(sql->sa, NULL, f);
 	return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator %s%s%s'%s'()", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname);
 }
@@ -1460,7 +1468,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		list_append(tl, exp_subtype(e));
 	}
 	/* find filter function */
-	if (!(f = sql_bind_func_(sql, sname, filter_op, tl, F_FILT))) {
+	if (!(f = bind_func_(sql, sname, filter_op, tl, F_FILT))) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
 		f = find_func(sql, sname, filter_op, list_length(tl), F_FILT, NULL);
@@ -1738,6 +1746,15 @@ _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps,
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such operator %s%s%s'%s'(%s)",
 							 sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
 		}
+		for (node *n = ff->h; n ; ) { /* Reduce on privileges */
+			sql_subfunc *sf = n->data;
+			node *nn = n->next;
+
+			if (!execute_priv(sql, sf->func))
+				list_remove_node(funcs, n);
+			n = nn;
+		}
+
 		len = list_length(ff);
 		if (len > 1) {
 			int i, score = 0;
@@ -2813,6 +2830,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	/* handle param's early */
 	if (!t1 || !t2) {
 		f = sql_resolve_function_with_undefined_parameters(sql, sname, fname, list_append(list_append(sa_list(sql->sa), t1), t2), type);
+		if (f && !execute_priv(sql, f->func))
+			f = NULL;
 		if (f) { /* add types using f */
 			if (!t1) {
 				sql_subtype *t = arg_type(f->func->ops->h->data);
@@ -3639,6 +3658,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 					a = (sql_subfunc *) m->data;
 					op = a->func->ops->h;
 
+					if (!execute_priv(sql, a->func))
+						a = NULL;
 					for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
 						sql_arg *arg = op->data;
 						sql_exp *e = n->data;
