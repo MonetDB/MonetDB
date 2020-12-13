@@ -1,5 +1,4 @@
 sysqueue
-sys_queue_rotate
 create_sleep
 sys_queue_expand
 sys_user_statistics
