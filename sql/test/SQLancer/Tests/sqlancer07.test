@@ -637,11 +637,6 @@ statement ok
 ROLLBACK
 
 query T rowsort
-SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL
-----
-False
-
-query T rowsort
 select interval '1' month * cast(1 as bigint)
 ----
 1

@@ -287,7 +287,4 @@ SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN
 	-- False
 ROLLBACK;
 
-SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;
-	-- error, overflow in conversion
-
 select interval '1' month * cast(1 as bigint);

@@ -45,6 +45,20 @@ except pymonetdb.DatabaseError as e:
     elif "overflow in calculation" not in str(e):
         sys.stderr.write('Wrong error %s, expected overflow in calculation' % (str(e)))
 
+# This is a leftover of int128 vs no-int128 from sqlancer07 test. Leave it here just to not create another test
+try:
+    cur1.execute("SELECT CAST(((24829)+(((0.9767751031140547)*(0.7479400824095245)))) AS DOUBLE) IS NULL;")
+    if has_huge:
+        if cur1.fetchall() != [(False,)]:
+            sys.stderr.write('[(False,)] expected\n')
+    else:
+        sys.stderr.write("Exception expected")
+except pymonetdb.DatabaseError as e:
+    if has_huge:
+        raise e
+    elif "overflow in calculation" not in str(e):
+        sys.stderr.write('Wrong error %s, expected overflow in calculation' % (str(e)))
+
 cur1.execute("drop table test_num_data;")
 cur1.close()
 conn1.close()
