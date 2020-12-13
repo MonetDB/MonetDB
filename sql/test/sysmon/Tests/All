@@ -1,5 +1,3 @@
-sysqueue
-create_sleep
+sys_queue
 sys_queue_expand
 sys_user_statistics
-drop_sleep
