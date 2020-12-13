@@ -22,3 +22,4 @@ schemaRights
 metadataConsistency
 sessioncontrol
 createUserRollback
+HAVE_PYMONETDB?userCallFunction
