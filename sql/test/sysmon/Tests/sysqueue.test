@@ -18,13 +18,28 @@ select 4
 ----
 4
 
+query I rowsort
+select 5
+----
+5
+
+query I rowsort
+select 6
+----
+6
+
+query I rowsort
+select 7
+----
+7
+
 query TT rowsort
 select username, query from sys.queue() order by query
 ----
 monetdb
-select 3@;
+select 6@;
 monetdb
-select 4@;
+select 7@;
 monetdb
 select username, query from sys.queue() order by query@;
 
