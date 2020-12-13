@@ -2573,12 +2573,14 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 			pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
 
-			/* 51_sys_schema_extensions, remove stream table entries */
+			/* 51_sys_schema_extensions, remove stream table entries and update window function description */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"ALTER TABLE sys.keywords SET READ WRITE;\n"
 					"DELETE FROM sys.keywords where keyword = 'STREAM';\n"
 					"ALTER TABLE sys.table_types SET READ WRITE;\n"
-					"DELETE FROM sys.table_types where table_type_id = 4;\n");
+					"DELETE FROM sys.table_types where table_type_id = 4;\n"
+					"ALTER TABLE sys.function_types SET READ WRITE;\n"
+					"UPDATE sys.function_types SET function_type_keyword = 'WINDOW' WHERE function_type_id = 6;\n");
 
 			/* scoping2 branch changes, the 'users' view has to be re-created because of the 'schema_path' addition on 'db_user_info' table
 			   However 'dependency_schemas_on_users' has a dependency on 'users', so it has to be re-created as well */
@@ -2617,7 +2619,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 			pos = snprintf(buf, bufsize, "set schema \"sys\";\n"
 					"ALTER TABLE sys.keywords SET READ ONLY;\n"
-					"ALTER TABLE sys.table_types SET READ ONLY;\n");
+					"ALTER TABLE sys.table_types SET READ ONLY;\n"
+					"ALTER TABLE sys.function_types SET READ ONLY;\n");
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 			assert(pos < bufsize);
 			printf("Running database upgrade commands:\n%s\n", buf);
