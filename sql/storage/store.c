@@ -378,7 +378,7 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
 	if (t->sa->nr > 2*new_trans_size)
-		try_spare = 0;
+		try_spare = false;
 	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 0 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
 		trans_drop_tmp(t);
@@ -2091,6 +2091,7 @@ store_load(sql_allocator *pa) {
 			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
 		}
 		sql_trans_destroy(tr, true);
+		tr = gtrans;
 	} else {
 		tr->active = 0;
 		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(sqlid), 0, TYPE_int, false, false);
