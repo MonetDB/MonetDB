@@ -4030,6 +4030,7 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 	if (!cs)
 		return ok;
 	if (cs->dset) {
+		/*
 		node *n;
 
 		for (n = cs->dset->h; ok == LOG_OK && n; n = n->next) {
@@ -4037,6 +4038,7 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 
 			ok = rf(tr, b, mode);
 		}
+		*/
 		if (apply) {
 			list_destroy(cs->dset);
 			cs->dset = NULL;
