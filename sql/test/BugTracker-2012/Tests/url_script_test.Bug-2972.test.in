@@ -1,0 +1,141 @@
+statement ok
+start transaction
+
+statement ok
+create table t2972(u url)
+
+statement ok
+insert into t2972 values('http://www.cwi.nl/~mk/vision2011.pdf')
+
+statement ok
+insert into t2972 values('http://www.monetdb.com?x=2')
+
+statement ok
+insert into t2972 values('http://www.monetdb.org:8080/Documentation/Manuals/SQLreference/Datamanipulation')
+
+query T rowsort
+select getAnchor(u) from t2972
+----
+NULL
+NULL
+NULL
+
+query T rowsort
+select getBasename(u) from t2972
+----
+Datamanipulation
+NULL
+vision2011
+
+query T rowsort
+select getContext(u) from t2972
+----
+/Documentation/Manuals/SQLreference/Datamanipulation
+/~mk/vision2011.pdf
+NULL
+
+query T rowsort
+select getDomain(u) from t2972
+----
+com
+nl
+org
+
+query T rowsort
+select getExtension(u) from t2972
+----
+NULL
+NULL
+pdf
+
+query T rowsort
+select getFile(u) from t2972
+----
+Datamanipulation
+NULL
+vision2011.pdf
+
+query T rowsort
+select getHost(u) from t2972
+----
+www.cwi.nl
+www.monetdb.com
+www.monetdb.org
+
+query T rowsort
+select getPort(u) from t2972
+----
+8080
+NULL
+NULL
+
+query T rowsort
+select getQuery(u) from t2972
+----
+NULL
+NULL
+x=2
+
+query T rowsort
+select getUser(u) from t2972
+----
+NULL
+NULL
+NULL
+
+query T rowsort
+select getRobotURL(u) from t2972
+----
+http://www.cwi.nl/robots.txt
+http://www.monetdb.com/robots.txt
+http://www.monetdb.org:8080/robots.txt
+
+query T rowsort
+select isaURL(u) from t2972
+----
+True
+True
+True
+
+query T rowsort
+select isaURL('http://www.monetdb.org')
+----
+True
+
+query T rowsort
+select isaURL('http://www.monetdb.org')
+----
+True
+
+query T rowsort
+select isaURL('htp:///www.monetdb.org')
+----
+True
+
+query T rowsort
+select newurl('https','www.monetdb.org',8080,'blah')
+----
+https://www.monetdb.org:8080/blah
+
+query T rowsort
+select newurl('https','localhost','boe')
+----
+https://localhost/boe
+
+statement ok
+drop table t2972
+
+statement ok
+create table t2972(u url)
+
+statement ok
+insert into t2972 values ('$UTSTSRCDIR/url_script_test.Bug-2972.txt')
+
+statement error
+select getContent(u) from t2972
+
+statement error
+drop table t2972
+
+statement ok
+rollback

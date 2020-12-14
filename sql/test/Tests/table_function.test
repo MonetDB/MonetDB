@@ -1,0 +1,46 @@
+statement ok
+CREATE FUNCTION f1(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i); END
+
+statement ok
+CREATE FUNCTION f2(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i UNION SELECT 2 * i); END
+
+statement ok
+CREATE FUNCTION f3(i bigint) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i UNION SELECT 2 * i); END
+
+statement ok
+CREATE FUNCTION f4(i int) RETURNS TABLE (j int) BEGIN RETURN TABLE(SELECT i UNION SELECT i); END
+
+query I rowsort
+SELECT * FROM f1(1)
+----
+1
+
+query I rowsort
+SELECT * FROM f2(3)
+----
+3
+6
+
+query I rowsort
+SELECT * FROM f3(5)
+----
+10
+5
+
+query I rowsort
+SELECT * FROM f4(7)
+----
+7
+
+statement ok
+DROP FUNCTION f1
+
+statement ok
+DROP FUNCTION f2
+
+statement ok
+DROP FUNCTION f3
+
+statement ok
+DROP FUNCTION f4
+

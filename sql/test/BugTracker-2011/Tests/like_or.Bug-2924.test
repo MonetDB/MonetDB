@@ -1,0 +1,11 @@
+query ITIIT rowsort
+select * from schemas where name like '%ys' escape '=' or name like '%y' escape
+'='
+----
+2000
+sys
+2
+3
+True
+
+

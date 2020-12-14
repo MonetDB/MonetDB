@@ -1,0 +1,23 @@
+statement ok
+start transaction
+
+statement ok
+create table "ordertest"(str text, orderA int, orderB int, num int)
+
+statement ok
+insert into "ordertest" values('a',1,1,1), ('a',2,1,10), ('a',3,1,20), ('a',4,1,30)
+
+query TIIIIIII rowsort
+select *,
+cast(sum("num") over(order by orderA) as bigint) as orderbyA,
+cast(sum("num") over(order by orderA,orderB) as bigint) as orderbyAB,
+cast(sum("num") over(order by orderB,orderA) as bigint) as orderbyBA,
+cast(sum("num") over(order by orderB) as bigint) as orderbyB
+from "ordertest"
+----
+32 values hashing to be2ba4a9ebc38a56e601c0eb5cff7b31
+
+statement ok
+rollback
+
+

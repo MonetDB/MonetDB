@@ -1,0 +1,14 @@
+START TRANSACTION;
+SET SCHEMA "voc";
+CREATE TABLE "voc"."foo" (
+	"id" INTEGER       NOT NULL,
+	"v"  INTEGER,
+	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
+);
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
+CREATE TABLE "voc"."a" (
+	"id" INTEGER
+);
+create trigger a after insert on foo insert into a values (1);
+COMMIT;

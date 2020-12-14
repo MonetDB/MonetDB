@@ -1,0 +1,68 @@
+statement ok
+create table jsonparse(j json)
+
+statement ok
+insert into jsonparse values('{}')
+
+statement ok
+insert into jsonparse values('{}  ')
+
+statement ok
+insert into jsonparse values('[]')
+
+statement ok
+insert into jsonparse values('{"null": null}')
+
+statement ok
+insert into jsonparse values('{"f1":1,"f2":2} ')
+
+statement ok
+insert into jsonparse values('[1,2,null,true,false]')
+
+statement ok
+insert into jsonparse values('[1,"hello",2]')
+
+query T rowsort
+select * from jsonparse
+----
+[1,"hello",2]
+[1,2,null,true,false]
+[]
+{"f1":1,"f2":2} 
+{"null": null}
+{}
+{}  
+
+statement error
+insert into jsonparse values('{')
+
+statement error
+insert into jsonparse values('}')
+
+statement error
+insert into jsonparse values('{}  k')
+
+statement error
+insert into jsonparse values('{:1}')
+
+statement error
+insert into jsonparse values('{"k"}')
+
+statement error
+insert into jsonparse values('{[}]')
+
+statement error
+insert into jsonparse values('{} }')
+
+statement error
+insert into jsonparse values('{} }[1]')
+
+statement error
+insert into jsonparse values('{"f1"::1}')
+
+statement error
+insert into jsonparse values('{"f1":1,"f2":2 ')
+
+statement ok
+drop table jsonparse
+

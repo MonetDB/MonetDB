@@ -1,0 +1,8 @@
+query I rowsort
+SELECT * FROM foo
+----
+
+statement ok
+drop table foo
+
+

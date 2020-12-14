@@ -1,0 +1,35 @@
+statement ok
+CREATE TABLE a (
+b VARCHAR(50),
+c VARCHAR(50)
+)
+
+statement ok
+COPY 2 OFFSET 2 RECORDS INTO "a" FROM E'$QTSTSRCDIR/COPY_INTO_char_NULL.SF-2560780.csv' USING DELIMITERS ',', E'\n', '"'
+
+query TT rowsort
+SELECT * FROM a
+----
+a
+aa
+bb
+b
+
+statement ok
+COPY 2 OFFSET 2 RECORDS INTO "a" FROM E'$QTSTSRCDIR/COPY_INTO_char_NULL.SF-2560780.csv' USING DELIMITERS ',', E'\n', '"' NULL AS ''
+
+query TT rowsort
+SELECT * FROM a
+----
+a
+aa
+a
+aa
+bb
+b
+bb
+b
+
+statement ok
+DROP TABLE a
+

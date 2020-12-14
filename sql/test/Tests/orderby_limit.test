@@ -1,0 +1,52 @@
+statement ok
+start transaction
+
+statement ok
+create table lim_prob(dir varchar(30), test varchar(30))
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest1')
+
+statement ok
+insert into lim_prob values ('mydir2/', 'mytest3')
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest2')
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest4')
+
+statement ok
+insert into lim_prob values ('mydir2/', 'mytest1')
+
+statement ok
+insert into lim_prob values ('mydir2/', 'mytest2')
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest3')
+
+query T rowsort
+select distinct concat("dir", "test") as a from lim_prob order by a limit 10
+----
+mydir1/mytest1
+mydir1/mytest2
+mydir1/mytest3
+mydir1/mytest4
+mydir2/mytest1
+mydir2/mytest2
+mydir2/mytest3
+
+query T rowsort
+select distinct concat("dir", "test") as a from lim_prob order by a
+----
+mydir1/mytest1
+mydir1/mytest2
+mydir1/mytest3
+mydir1/mytest4
+mydir2/mytest1
+mydir2/mytest2
+mydir2/mytest3
+
+statement ok
+rollback
+

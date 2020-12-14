@@ -1,0 +1,44 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION average(i INTEGER) RETURNS INTEGER LANGUAGE PYTHON 'pyapi26_test.py'
+
+statement error
+CREATE FUNCTION create_file() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON {
+    import os
+    homedir = os.getenv('HOME')
+
+statement error
+    f = open("%s/pyapi26_test.py" % (homedir), 'w+')
+    f.write("return numpy.mean(i)")
+    f.close()
+    return 1
+}
+
+statement error
+CREATE FUNCTION delete_file() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON {
+    import os
+    homedir = os.getenv('HOME')
+
+statement error
+    os.remove("%s/pyapi26_test.py" % (homedir))
+    return 1
+}
+
+statement error
+SELECT * FROM create_file()
+
+statement error
+CREATE FUNCTION integers() RETURNS TABLE(i INTEGER) LANGUAGE PYTHON { return numpy.arange(10000) + 1 }
+
+statement error
+SELECT average(i) FROM integers()
+
+statement error
+SELECT * FROM delete_file()
+
+statement ok
+ROLLBACK
+
+

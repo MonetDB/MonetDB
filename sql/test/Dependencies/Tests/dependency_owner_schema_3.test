@@ -1,0 +1,235 @@
+statement ok
+ALTER USER "monet_test" SET SCHEMA "sys"
+
+statement ok
+DROP SCHEMA test
+
+statement ok
+DROP USER monet_test
+
+statement error
+DROP SCHEMA test_2
+
+query TTT rowsort
+SELECT s.name, u.name, 'DEP_USER' from sys.schemas as s, users u where u.default_schema = s.id order by s.name, u.name
+----
+sys
+.snapshot
+DEP_USER
+sys
+monetdb
+DEP_USER
+
+query TTT rowsort
+SELECT a.name, s.name, 'DEP_SCHEMA' from sys.schemas as s, auths a where s.owner = a.id order by a.name, s.name
+----
+monetdb
+json
+DEP_SCHEMA
+monetdb
+logging
+DEP_SCHEMA
+monetdb
+profiler
+DEP_SCHEMA
+monetdb
+sys
+DEP_SCHEMA
+monetdb
+tmp
+DEP_SCHEMA
+monetdb
+wlc
+DEP_SCHEMA
+monetdb
+wlr
+DEP_SCHEMA
+
+query TTT rowsort
+SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
+----
+324 values hashing to e020d09504870ef9571021d508055252
+
+query TTT rowsort
+SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type in (0, 10, 20, 30) order by t.name, i.name
+----
+
+query TTT rowsort
+(SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.tables as t, sys.triggers as tri where tri.table_id = t.id) UNION (SELECT t.name as name, tri.name as trigname, 'DEP_TRIGGER' from sys.triggers tri, sys.tables t, sys.dependencies dep where dep.id = t.id AND dep.depend_id =tri.id AND dep.depend_type = 8) order by name, trigname
+----
+_tables
+system_update_tables
+DEP_TRIGGER
+schemas
+system_update_schemas
+DEP_TRIGGER
+
+query TTT rowsort
+SELECT t.name, fk.name, 'DEP_FKEY' from sys.tables as t, sys.keys as k, sys.keys as fk where fk.rkey = k.id and k.table_id = t.id order by t.name, fk.name
+----
+
+query TTT rowsort
+SELECT t.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as t, sys.dependencies as dep where t.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND t.type in (0, 10, 20, 30) ORDER BY t.name, f.name
+----
+_columns
+describe_columns
+DEP_FUNC
+_tables
+describe_columns
+DEP_FUNC
+_tables
+describe_table
+DEP_FUNC
+comments
+describe_columns
+DEP_FUNC
+comments
+describe_function
+DEP_FUNC
+comments
+describe_table
+DEP_FUNC
+function_languages
+describe_function
+DEP_FUNC
+function_types
+describe_function
+DEP_FUNC
+functions
+describe_function
+DEP_FUNC
+schemas
+describe_columns
+DEP_FUNC
+schemas
+describe_function
+DEP_FUNC
+schemas
+describe_table
+DEP_FUNC
+spatial_ref_sys
+getproj4
+DEP_FUNC
+table_types
+describe_table
+DEP_FUNC
+
+query TTT rowsort
+SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
+----
+1131 values hashing to 217c0dddc280dd654bc83c6dc79720c4
+
+query TTT rowsort
+SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
+----
+dependency_type_id
+dependency_types_dependency_type_id_pkey
+DEP_KEY
+dependency_type_name
+dependency_types_dependency_type_name_unique
+DEP_KEY
+function_type_id
+function_types_function_type_id_pkey
+DEP_KEY
+function_type_name
+function_types_function_type_name_unique
+DEP_KEY
+id
+comments_id_pkey
+DEP_KEY
+index_type_id
+index_types_index_type_id_pkey
+DEP_KEY
+index_type_name
+index_types_index_type_name_unique
+DEP_KEY
+key_type_id
+key_types_key_type_id_pkey
+DEP_KEY
+key_type_name
+key_types_key_type_name_unique
+DEP_KEY
+keyword
+keywords_keyword_pkey
+DEP_KEY
+language_id
+function_languages_language_id_pkey
+DEP_KEY
+language_name
+function_languages_language_name_unique
+DEP_KEY
+privilege_code_id
+privilege_codes_privilege_code_id_pkey
+DEP_KEY
+privilege_code_name
+privilege_codes_privilege_code_name_unique
+DEP_KEY
+srid
+spatial_ref_sys_srid_pkey
+DEP_KEY
+table_type_id
+table_types_table_type_id_pkey
+DEP_KEY
+table_type_name
+table_types_table_type_name_unique
+DEP_KEY
+
+query TTT rowsort
+SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sys.idxs as i where kc."name" = c.name AND kc.id = i.id AND c.table_id = i.table_id AND i.name not in (select name from sys.keys) order by c.name, i.name
+----
+
+query TTT rowsort
+SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
+----
+216 values hashing to e8f79649cf289338183a5bd412bf2ca0
+
+query TTT rowsort
+SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
+----
+
+query TTT rowsort
+SELECT v.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type in (1, 11, 21, 31) ORDER BY v.name, f.name
+----
+
+query TTT rowsort
+SELECT v.name, i.name, 'DEP_INDEX' from sys.tables as v, sys.idxs as i where i.table_id = v.id and i.name not in (select name from sys.keys) and v.type in (1, 11, 21, 31) order by v.name, i.name
+----
+
+query TTT rowsort
+SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.objects as tri, sys.dependencies as dep where dep.id = v.id AND dep.depend_id =tri.id AND dep.depend_type = 8 AND v.type in (1, 11, 21, 31) order by v.name, tri.name
+----
+
+query TTT rowsort
+SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 ORDER BY f1.name, f2.name
+----
+describe_type
+describe_columns
+DEP_FUNC
+getproj4
+st_transform
+DEP_FUNC
+internaltransform
+st_transform
+DEP_FUNC
+ms_trunc
+ms_round
+DEP_FUNC
+st_geometryn
+st_patchn
+DEP_FUNC
+st_numgeometries
+st_numpatches
+DEP_FUNC
+st_srid
+st_transform
+DEP_FUNC
+
+query TTT rowsort
+SELECT f.name, tri.name, 'DEP_TRIGGER' from sys.functions as f, sys.objects as tri, sys.dependencies as dep where dep.id = f.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by f.name, tri.name
+----
+
+query TTT rowsort
+SELECT k.name, fk.name, 'DEP_FKEY' from sys.keys as k, sys.keys as fk where fk.rkey = k.id order by k.name, fk.name
+----
+
+

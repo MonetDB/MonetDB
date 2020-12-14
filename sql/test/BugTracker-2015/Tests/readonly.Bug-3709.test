@@ -1,0 +1,22 @@
+statement ok
+create table s10 (x int)
+
+statement ok
+start transaction
+
+statement ok
+insert into s10 values (8)
+
+statement error
+alter table s10 set read only
+
+statement error
+trace select * from s10
+
+statement ok
+rollback
+
+statement ok
+drop table s10
+
+

@@ -1,0 +1,6 @@
+MAPI  = (monetdb) /var/tmp/mtest-938108/.s.monetdb.30716
+QUERY = PREPARE SELECT
+        	(SELECT ? FROM evilfunction((SELECT 1))) 
+        FROM another_T;
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000

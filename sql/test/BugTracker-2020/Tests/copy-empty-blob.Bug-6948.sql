@@ -2,7 +2,7 @@ start transaction;
 create table blobtbl (i int, b blob);
 
 -- the following COPY INTO should succeed
-copy into blobtbl from stdin delimiters ',','\n','"';
+copy 4 records into blobtbl from stdin delimiters ',','\n','"';
 0,NULL
 1,12ff
 2,""

@@ -1,0 +1,4 @@
+query I rowsort
+select * from broken_delete
+----
+

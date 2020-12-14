@@ -1,0 +1,33 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table employees (dep varchar(10), name varchar(20), salary double)
+
+statement ok
+insert into employees values
+   ('mgmt', 'Smith',81),
+   ('dev', 'Jones',55),
+   ('sls', 'Williams',55),
+   ('sls', 'Taylor',62),
+   ('dev', 'Brown',62),
+   ('mgmt', 'Davies',84),
+   ('sls', 'Evans',87),
+   ('sls', 'Wilson',72),
+   ('sls', 'Thomas',72),
+   ('mgmt', 'Johnson',100)
+
+query TTRR rowsort
+SELECT dep, name, salary, CUME_DIST() OVER (partition by dep ORDER BY salary) cume_dist_val FROM employees
+----
+40 values hashing to 5b2c925e3e13a428e0f839cf50be6ed7
+
+query TTRR rowsort
+SELECT dep, name, salary, CUME_DIST() OVER (PARTITION BY dep) cume_dist_val FROM employees
+----
+40 values hashing to 576bcad741f66d34851d2ff4e5c2ebbb
+
+statement ok
+ROLLBACK
+
+

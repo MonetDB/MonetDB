@@ -1,0 +1,119 @@
+statement ok
+create schema "bla"
+
+statement ok
+create table bla1(id int)
+
+query I rowsort
+select * from bla1
+----
+
+statement ok
+create temporary table bla2(id int)
+
+query I rowsort
+select * from bla2
+----
+
+statement ok
+create table bla.bla3(id int)
+
+statement error
+select * from bla3
+
+query I rowsort
+select * from bla.bla3
+----
+
+statement ok
+create temporary table tmp.bla4(id int)
+
+query I rowsort
+select * from bla4
+----
+
+statement error
+create table tmp.bla5(id int)
+
+statement error
+select * from bla5
+
+statement ok
+create view v_bla1 as select * from bla1
+
+query I rowsort
+select * from v_bla1
+----
+
+statement ok
+create view v_bla2 as select * from bla2
+
+query I rowsort
+select * from v_bla2
+----
+
+statement ok
+create view v_bla3 as select * from bla.bla3
+
+query I rowsort
+select * from v_bla3
+----
+
+statement ok
+create view bla.v_bla4 as select * from bla4
+
+query I rowsort
+select * from bla.v_bla4
+----
+
+statement error
+create view tmp.v_bla5 as select * from bla5
+
+statement error
+select * from v_bla5
+
+statement error
+drop view v_bla5
+
+statement error
+drop view tmp.v_bla5
+
+statement error
+drop view v_bla4
+
+statement ok
+drop view bla.v_bla4
+
+statement ok
+drop view v_bla3
+
+statement ok
+drop view v_bla2
+
+statement ok
+drop view v_bla1
+
+statement error
+drop table bla5
+
+statement error
+drop table sys.bla4
+
+statement ok
+drop table bla4
+
+statement error
+drop table bla3
+
+statement ok
+drop table bla.bla3
+
+statement ok
+drop table bla1
+
+statement ok
+drop table bla2
+
+statement ok
+drop schema "bla"
+

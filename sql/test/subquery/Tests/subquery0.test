@@ -1,0 +1,44 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE _subqueries(i INTEGER)
+
+statement ok
+INSERT INTO _subqueries VALUES (0), (1), (2), (3), (4), (5), (6), (7), (8), (9)
+
+query I rowsort
+SELECT * FROM (SELECT * FROM _subqueries LIMIT 5) AS result
+----
+0
+1
+2
+3
+4
+
+query I rowsort
+SELECT * FROM (SELECT * FROM _subqueries ORDER BY i DESC LIMIT 5) AS result
+----
+5
+6
+7
+8
+9
+
+query I rowsort
+SELECT * FROM (SELECT * FROM _subqueries ORDER BY i DESC LIMIT 5 OFFSET 2) AS result
+----
+3
+4
+5
+6
+7
+
+query I rowsort
+SELECT MIN(i) FROM (SELECT * FROM _subqueries SAMPLE 1000) AS result
+----
+0
+
+statement ok
+ROLLBACK
+
