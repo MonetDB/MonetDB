@@ -1,5 +1,0 @@
-query T rowsort
-select name from tables where name LIKE '%????%'
-----
-
-
