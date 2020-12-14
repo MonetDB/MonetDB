@@ -1195,12 +1195,26 @@ def RunTest(env, test, oktests, pSrvr):
         TestErrFile = TST+".test.err"
 
         t0 = time.time()
-        #if CALL == 'sqltest' or CALL == 'maltest':
-        #    # TODO make TestOutFile optional
-        #    exit_code, reason = RunSQLLogicTest(env, (TST + EXT), TestOutFile, TestErrFile, is_reqtest=is_reqtest, has_reqtests=has_reqtests, lsql= CALL == 'sqltest', username=user, password=passwd)
-        #else:
         tres = DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, pSrvr)
         exit_code = transform_str_return_code(tres)
+
+        if CALL == 'other':
+            # check if executable type test produced output, if so match against .stable.out
+            if exit_code == F_OK and os.path.getsize(TestOutFile) > 0:
+                stable_file = TST + '.stable.out'
+                if os.path.exists(stable_file):
+                    from MonetDBtesting.sqltest import diff
+                    try:
+                        res = diff(stable_file, TestOutFile)
+                    except Exception as e:
+                        exit_code = F_ERROR
+                        with open(TestErrFile, 'a') as f:
+                            f.write(repr(e))
+                    else:
+                        if res:
+                            exit_code = F_ERROR
+                            with open(TestErrFile, 'a') as f:
+                                f.write(res)
 
         t1 = time.time()
         TX = t1 - t0
@@ -1615,10 +1629,6 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
         TestIn = process.PIPE
     else:
         TestInput = None
-    #TestOut.write(Prompt(cmd))
-    #TestOut.flush()
-    #TestErr.write(Prompt(cmd))
-    #TestErr.flush()
     if procdebug:
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
     setpgrp = True
@@ -1837,7 +1847,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
             ClntErr = openutf8(TestErrFile, 'a')
 
         if SERVER not in ["MAL", "SQL"] or pSrvr.started:
-            if   CALL == "other":
+            if  CALL == "other":
                 cmd = [os.path.join(".", TST + EXT), TST]
                 returncode = RunIt(cmd, False, "", ClntOut, ClntErr, CTIMEOUT)
             elif CALL == "python":
