@@ -10,8 +10,7 @@ def client(cmd, infile = None):
     else:
         f = None
     with process.client(cmd, stdin = f,
-                        stdout = process.PIPE, stderr = process.PIPE,
-                        log = True) as clt:
+                        stdout = process.PIPE, stderr = process.PIPE) as clt:
         if f is not None:
             f.close()
         out, err = clt.communicate()

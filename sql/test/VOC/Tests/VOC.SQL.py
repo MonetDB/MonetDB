@@ -37,7 +37,7 @@ with SQLTestCase() as tc:
 #    with process.client(lang='sql',
 #                       user=user, passwd=passwd,
 #                       args=[os.path.join(d, os.pardir, file)],
-#                       log=True, echo=echo) as c:
+#                       echo=echo) as c:
 #        c.communicate()
 #
 #client('VOCcreate_user.sql', 'monetdb', 'monetdb')
