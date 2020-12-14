@@ -1199,7 +1199,7 @@ def RunTest(env, test, oktests, pSrvr):
         exit_code = transform_str_return_code(tres)
 
         if CALL == 'other':
-            # check if executable type test produced output, if so match against .stable.out
+            # check if executable test produced an output, if so match against .stable.out
             if exit_code == F_OK and os.path.getsize(TestOutFile) > 0:
                 stable_file = TST + '.stable.out'
                 if os.path.exists(stable_file):
@@ -1681,59 +1681,6 @@ def mapi_ping(port) :
         time.sleep(wait)
     return False
 ### mapi_ping() #
-
-def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=False, lsql=True, username='monetdb', password='monetdb') -> (int, str):
-    """
-    Run SQLLogic test
-    returns:
-       (exit_code, msg)
-    """
-    import MonetDBtesting.sqllogictest as sqllogictest
-    exit_code = None
-    msg = None
-    with open(TestErr, 'w') as f:
-        res = None
-        if TestOut:
-            res = openutf8(TestOut, 'w')
-        with sqllogictest.SQLLogic(out=f) as sql:
-            sql.res = res
-            try:
-                sql.connect(username or 'monetdb',
-                            password or 'monetdb',
-                            hostname='localhost',
-                            port=int(env['MAPIPORT']),
-                            database=env['TSTDB'], language='sql' if lsql else 'mal')
-            except Exception as e:
-                exit_code = F_SOCK
-                msg = "Connection refused"
-                print(e, file=f)
-            else:
-                # if not required by any other test clean up
-                if not (is_reqtest or has_reqtests):
-                    try:
-                        sql.drop()
-                    except pymonetdb.Error as e:
-                        print(e, file=f)
-                try:
-                    sql.parse(Test)
-                except sqllogictest.SQLLogicSyntaxError as e:
-                    print(e, file=f)
-                    exit_code = F_SKIP
-                    msg = 'sqllogic syntax error'
-                except BrokenPipeError as e:
-                    # server timeout
-                    print(e, file=f)
-                    exit_code = F_SOCK
-                    msg = "Broken pipe"
-        if res:
-            res.close()
-    is_dirty = os.path.getsize(TestErr) > 0
-    # clean up if all okay
-    if not is_dirty:
-        os.remove(TestErr)
-    if is_dirty and exit_code is None:
-        exit_code = F_ERROR
-    return exit_code or F_OK, msg
 
 def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEOUT, TIMEOUT, MAPIsockets, nomito, threads, user, passwd, COND, PSRVR) :
 
