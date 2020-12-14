@@ -97,6 +97,21 @@ def filter_matching_blocks(a: [str] = [], b: [str] = []):
     red_b+=b[min_size:]
     return red_a, red_b
 
+def diff(stable_file, test_file):
+    diff = None
+    filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test', 'stderr of test', 'MAPI'])
+    with open(stable_file) as fstable:
+        stable = list(filter(filter_fn, fstable.read().split('\n')))
+        with open(test_file) as ftest:
+            test = list(filter(filter_fn, ftest.read().split('\n')))
+            a, b = filter_matching_blocks(stable, test)
+            diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+            if len(diff) > 0:
+                diff = '\n'.join(diff)
+            else:
+                diff = None
+    return diff
+
 class PyMonetDBConnectionContext(object):
     def __init__(self,
             username='monetdb', password='monetdb',
