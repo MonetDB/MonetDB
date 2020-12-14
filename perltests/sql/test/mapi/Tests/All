@@ -1,0 +1,3 @@
+HAVE_PERL?perl_dbi
+HAVE_PERL?perl_dec38
+HAVE_PERL?perl_int128

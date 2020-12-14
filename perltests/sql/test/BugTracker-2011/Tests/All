@@ -1,0 +1,3 @@
+HAVE_PERL?DBD-manyrows.Bug-2889
+HAVE_PERL?perl-short-read-bug.Bug-2897
+HAVE_PERL?perl-table_info.Bug-2885
