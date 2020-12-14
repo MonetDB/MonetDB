@@ -345,3 +345,152 @@ rewrite_reset_used(visitor *v, sql_rel *rel)
 	rel->used = 0;
 	return rel;
 }
+
+static void psm_exps_properties(mvc *sql, global_props *gp, list *exps);
+
+static void
+psm_exp_properties(mvc *sql, global_props *gp, sql_exp *e)
+{
+	/* only functions need fix up */
+	switch(e->type) {
+	case e_atom:
+	case e_column:
+		break;
+	case e_convert:
+		psm_exp_properties(sql, gp, e->l);
+		break;
+	case e_aggr:
+	case e_func:
+		psm_exps_properties(sql, gp, e->l);
+		assert(!e->r);
+		break;
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			psm_exps_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+		} else {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exp_properties(sql, gp, e->r);
+			if (e->f)
+				psm_exp_properties(sql, gp, e->f);
+		}
+		break;
+	case e_psm:
+		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
+			psm_exp_properties(sql, gp, e->l);
+		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
+			psm_exp_properties(sql, gp, e->l);
+			psm_exps_properties(sql, gp, e->r);
+			if (e->flag == PSM_IF && e->f)
+				psm_exps_properties(sql, gp, e->f);
+		} else if (e->flag & PSM_REL && e->l) {
+			rel_properties(sql, gp, e->l);
+		}
+		break;
+	}
+}
+
+static void
+psm_exps_properties(mvc *sql, global_props *gp, list *exps)
+{
+	if (!exps)
+		return;
+	for (node *n = exps->h; n; n = n->next)
+		psm_exp_properties(sql, gp, n->data);
+}
+
+void
+rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
+{
+	if (!rel)
+		return;
+
+	gp->cnt[(int)rel->op]++;
+	switch (rel->op) {
+	case op_basetable:
+		break;
+	case op_table:
+		if (rel->l && rel->flag != TRIGGER_WRAPPER)
+			rel_properties(sql, gp, rel->l);
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+
+	case op_semi:
+	case op_anti:
+
+	case op_union:
+	case op_inter:
+	case op_except:
+
+	case op_insert:
+	case op_update:
+	case op_delete:
+		if (rel->l)
+			rel_properties(sql, gp, rel->l);
+		if (rel->r)
+			rel_properties(sql, gp, rel->r);
+		break;
+	case op_project:
+	case op_select:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
+	case op_truncate:
+		if (rel->l)
+			rel_properties(sql, gp, rel->l);
+		break;
+	case op_ddl:
+		if (rel->flag == ddl_psm && rel->exps)
+			psm_exps_properties(sql, gp, rel->exps);
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
+			if (rel->l)
+				rel_properties(sql, gp, rel->l);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				rel_properties(sql, gp, rel->l);
+			if (rel->r)
+				rel_properties(sql, gp, rel->r);
+		}
+		break;
+	}
+
+	switch (rel->op) {
+	case op_basetable:
+	case op_table:
+		if (!find_prop(rel->p, PROP_COUNT))
+			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+		break;
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+
+	case op_semi:
+	case op_anti:
+
+	case op_union:
+	case op_inter:
+	case op_except:
+		break;
+
+	case op_project:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
+	case op_select:
+		break;
+
+	case op_insert:
+	case op_update:
+	case op_delete:
+	case op_truncate:
+	case op_ddl:
+		break;
+	}
+}
