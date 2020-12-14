@@ -1,3 +1,3 @@
 #!/bin/sh
 
-Mlog -x Mbeddedsql5 --help
+Mbeddedsql5 --help

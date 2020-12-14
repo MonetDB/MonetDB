@@ -234,7 +234,7 @@ class Popen(subprocess.Popen):
 class client(Popen):
     def __init__(self, lang, args=[], stdin=None, stdout=None, stderr=None,
                  server=None, port=None, dbname=None, host=None,
-                 user='monetdb', passwd='monetdb', log=False,
+                 user='monetdb', passwd='monetdb',
                  interactive=None, echo=None, format=None,
                  input=None, communicate=False, text=None, encoding=None):
         '''Start a client process.'''
@@ -324,23 +324,6 @@ class client(Popen):
         if verbose:
             sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
             sys.stdout.flush()
-        if log:
-            prompt = time.strftime('# %H:%M:%S >  ')
-            cmdstr = ' '.join(cmd +  args)
-            if hasattr(stdin, 'name'):
-                cmdstr += ' < "%s"' % stdin.name
-            sys.stdout.write('\n')
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('%s%s\n' % (prompt, cmdstr))
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-            sys.stderr.write('\n')
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('%s%s\n' % (prompt, cmdstr))
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('\n')
-            sys.stderr.flush()
         if stdin is None:
             # if no input provided, use /dev/null as input
             stdin = open(os.devnull)
@@ -372,7 +355,7 @@ class client(Popen):
 class server(Popen):
     def __init__(self, args=[], stdin=None, stdout=None, stderr=None,
                  mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
-                 dbextra=None, bufsize=0, log=False,
+                 dbextra=None, bufsize=0,
                  notrace=False, notimeout=False, ipv6=False):
         '''Start a server process.'''
         cmd = _server[:]
@@ -457,23 +440,6 @@ class server(Popen):
                     if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
                         del cmd[j:j+2]
                         break
-        if log:
-            prompt = time.strftime('# %H:%M:%S >  ')
-            cmdstr = ' '.join(cmd +  args)
-            if hasattr(stdin, 'name'):
-                cmdstr += ' < "%s"' % stdin.name
-            sys.stdout.write('\n')
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('%s%s\n' % (prompt, cmdstr))
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-            sys.stderr.write('\n')
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('%s%s\n' % (prompt, cmdstr))
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('\n')
-            sys.stderr.flush()
         started = os.path.join(dbpath, '.started')
         try:
             os.unlink(started)
