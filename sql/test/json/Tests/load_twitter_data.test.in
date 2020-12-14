@@ -1,0 +1,12 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE twitter_data (tweets JSON)
+
+statement ok 
+COPY INTO twitter_data FROM E'$QTSTDATAPATH/json/tweets200k.json' USING DELIMITERS E'\x01',E'\n' NO ESCAPE
+
+statement ok 
+COMMIT
+

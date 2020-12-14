@@ -1,0 +1,25 @@
+statement ok
+start transaction
+
+statement ok
+create table test3351 (i integer)
+
+statement ok
+copy into test3351 from E'$QTSTSRCDIR/test3351.csv'
+
+query I rowsort
+select * from test3351
+----
+1
+2
+3
+4
+5
+
+statement ok
+delete from test3351
+
+statement ok
+rollback
+
+

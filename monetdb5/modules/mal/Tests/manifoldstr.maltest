@@ -1,0 +1,98 @@
+statement ok
+t0:= alarm.usec()
+
+statement ok
+b:= bat.new(:str)
+
+statement ok
+INT_MAX := 2147483647
+
+statement ok
+dbgmsk_restore := mdb.getDebug()
+
+statement ok
+dbgmsk_unset := 8+8388608
+
+statement ok
+dbgmsk_keep := calc.xor(INT_MAX,dbgmsk_unset)
+
+statement ok
+dbgmsk_set := calc.and(dbgmsk_restore,dbgmsk_keep)
+
+statement ok
+mdb.setDebug(dbgmsk_set)
+
+statement ok
+r:= mmath.srand(0)
+
+statement ok
+barrier i:= 0:lng
+
+statement ok
+	bat.append(b,"The quick brown fox")
+
+statement ok
+	redo i:= iterator.next(1:lng,100000:lng)
+
+statement ok
+exit i
+
+statement ok
+mdb.setDebug(dbgmsk_restore)
+
+statement ok
+mdb.setDebug(dbgmsk_set)
+
+statement ok
+t0:= alarm.usec()
+
+statement ok
+z:bat[:str]:= mal.manifold("str","toUpper",b)
+
+statement ok
+t1:= alarm.usec()
+
+statement ok
+d0:= t1-t0
+
+#query T rowsort
+#io.printf("#mal.manifold(str,toUpper) %d\n",d0)
+#----
+##mal.manifold(str,toUpper) 46357
+
+statement ok
+t0:= alarm.usec()
+
+statement ok
+x:= bat.new(:str)
+
+statement ok
+barrier j:= 0@0
+
+statement ok
+	ii:= algebra.fetch(b,j)
+
+statement ok
+	d:= str.toUpper(ii)
+
+statement ok
+	bat.append(x,d)
+
+statement ok
+	redo j:= iterator.next(1@0,100000@0)
+
+statement ok
+exit j
+
+statement ok
+t1:= alarm.usec()
+
+statement ok
+d0:= t1-t0
+
+#query T rowsort
+#io.printf("#mal.multiplex(str,toUpper) %d\n",d0)
+#----
+##mal.multiplex(str,toUpper) 183589
+
+

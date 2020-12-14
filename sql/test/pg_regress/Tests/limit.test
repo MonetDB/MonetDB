@@ -1,0 +1,75 @@
+query TIIT rowsort
+SELECT '' AS two, unique1, unique2, stringu1
+		FROM onek WHERE unique1 > 50
+		ORDER BY unique1 LIMIT 2
+----
+(empty)
+51
+76
+ZBAAAA
+(empty)
+52
+985
+ACAAAA
+
+query TIIT rowsort
+SELECT '' AS five, unique1, unique2, stringu1
+		FROM onek WHERE unique1 > 60
+		ORDER BY unique1 LIMIT 5
+----
+20 values hashing to 73bd82021298603ec78a0a00c0df2cb9
+
+query TIIT rowsort
+SELECT '' AS two, unique1, unique2, stringu1
+		FROM onek WHERE unique1 > 60 AND unique1 < 63
+		ORDER BY unique1 LIMIT 5
+----
+(empty)
+61
+560
+JCAAAA
+(empty)
+62
+633
+KCAAAA
+
+query TIIT rowsort
+SELECT '' AS three, unique1, unique2, stringu1
+		FROM onek WHERE unique1 > 100
+		ORDER BY unique1 LIMIT 3 OFFSET 20
+----
+12 values hashing to b51a8d8cd8acafcd81a71e5497cfcd1b
+
+query TIIT rowsort
+SELECT '' AS zero, unique1, unique2, stringu1
+		FROM onek WHERE unique1 < 50
+		ORDER BY unique1 DESC LIMIT 8 OFFSET 99
+----
+
+query TIIT rowsort
+SELECT '' AS eleven, unique1, unique2, stringu1
+		FROM onek WHERE unique1 < 50
+		ORDER BY unique1 DESC LIMIT 20 OFFSET 39
+----
+44 values hashing to d8ebf76c60eb8393dfea613dc230148a
+
+query TIIT rowsort
+SELECT '' AS ten, unique1, unique2, stringu1
+		FROM onek
+		ORDER BY unique1 OFFSET 990
+----
+40 values hashing to 7ee0ebb0db667c599d942cbc0376de2a
+
+statement error
+SELECT '' AS five, unique1, unique2, stringu1
+		FROM onek
+		ORDER BY unique1 OFFSET 990 LIMIT 5
+
+query TIIT rowsort
+SELECT '' AS five, unique1, unique2, stringu1
+		FROM onek
+		ORDER BY unique1 LIMIT 5 OFFSET 900
+----
+20 values hashing to f6c67375f4ea2d3c0b34dd2ced7f7612
+
+

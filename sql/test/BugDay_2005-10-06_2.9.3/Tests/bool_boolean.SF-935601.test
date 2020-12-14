@@ -1,0 +1,16 @@
+query T rowsort
+select isnull(1)
+----
+False
+
+query T rowsort
+select isnull(1)=false
+----
+True
+
+query T rowsort
+select (1=1)=true
+----
+True
+
+

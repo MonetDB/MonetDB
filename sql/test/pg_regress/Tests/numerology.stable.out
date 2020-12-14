@@ -102,24 +102,14 @@ stdout of test 'numerology` in directory 'sql/test/pg_regress` itself:
 % char,	double # type
 % 0,	24 # length
 [ "",	-2147483647	]
-[ "",	-2147483647	]
-[ "",	-123456	]
 [ "",	-123456	]
 [ "",	-32767	]
-[ "",	-32767	]
-[ "",	-1234	]
 [ "",	-1234	]
 [ "",	0	]
 [ "",	0	]
-[ "",	0	]
-[ "",	0	]
-[ "",	1234	]
 [ "",	1234	]
 [ "",	32767	]
-[ "",	32767	]
 [ "",	123456	]
-[ "",	123456	]
-[ "",	2147483647	]
 [ "",	2147483647	]
 #CREATE TABLE TEMP_INT4 (f1 integer);
 #INSERT INTO TEMP_INT4 (f1)
@@ -136,18 +126,13 @@ stdout of test 'numerology` in directory 'sql/test/pg_regress` itself:
 % char,	int # type
 % 0,	6 # length
 [ "",	-32767	]
-[ "",	-32767	]
-[ "",	-1234	]
 [ "",	-1234	]
 [ "",	-35	]
 [ "",	0	]
 [ "",	0	]
 [ "",	0	]
-[ "",	0	]
 [ "",	1004	]
 [ "",	1234	]
-[ "",	1234	]
-[ "",	32767	]
 [ "",	32767	]
 #CREATE TABLE TEMP_INT2 (f1 smallint);
 #INSERT INTO TEMP_INT2 (f1)
@@ -165,7 +150,6 @@ stdout of test 'numerology` in directory 'sql/test/pg_regress` itself:
 % char,	smallint # type
 % 0,	4 # length
 [ "",	-35	]
-[ "",	0	]
 [ "",	0	]
 [ "",	0	]
 [ "",	0	]

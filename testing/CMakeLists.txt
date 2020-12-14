@@ -115,12 +115,27 @@ configure_file(Mtest.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
   @ONLY)
 
+configure_file(Mz.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
+  @ONLY)
+
+configure_file(Mconvert.py.in
+  ${CMAKE_CURRENT_BINARY_DIR}/Mconvert.py
+  @ONLY)
+
 configure_file(listexports.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
   @ONLY)
 
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
+  PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT pytesting)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
+  ${CMAKE_CURRENT_BINARY_DIR}/Mconvert.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   COMPONENT pytesting)
@@ -134,6 +149,12 @@ if(PYTHON3_LIBDIR)
     exportutils.py
     malcheck.py
     sqllogictest.py
+    explain.py
+    mapicursor.py
+    malmapi.py
+    helpers.py
+    sqltest.py
+    utils.py
     DESTINATION ${PYTHON3_LIBDIR}/MonetDBtesting
     COMPONENT pytesting)
 endif()
@@ -146,13 +167,8 @@ if(WIN32)
   install(FILES
     Mlog.bat
     Mtest.py.bat
+    Mz.py.bat
     DESTINATION ${CMAKE_INSTALL_BINDIR})
-
-  install(FILES
-    Mtest.py.bat
-    DESTINATION
-    ${CMAKE_INSTALL_BINDIR}
-    RENAME Mapprove.py.bat)
 
   install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/monetdb_mtest.bat
@@ -179,12 +195,21 @@ else()
     DESTINATION ${CMAKE_INSTALL_BINDIR}
     COMPONENT pytesting)
 
-  install(FILES
-    ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
-    PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
-    DESTINATION ${CMAKE_INSTALL_BINDIR}
-    RENAME Mapprove.py
-    COMPONENT pytesting)
 endif()
+
+configure_file(mktest.py
+  ${CMAKE_CURRENT_BINARY_DIR}/mktest.py
+  COPYONLY)
+
+configure_file(sqllogictest.py
+  ${CMAKE_CURRENT_BINARY_DIR}/sqllogictest.py
+  COPYONLY)
+
+install(FILES
+  ${CMAKE_CURRENT_BINARY_DIR}/mktest.py
+  ${CMAKE_CURRENT_BINARY_DIR}/sqllogictest.py
+  PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
+  COMPONENT pytesting)
 
 # vim: set ts=2:sw=2:et

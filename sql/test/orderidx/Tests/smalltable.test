@@ -1,0 +1,98 @@
+statement ok
+CREATE TABLE xtmp2(i integer)
+
+query TTTTTIITITI rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx FROM storage(current_schema, 'xtmp2')
+----
+11 values hashing to 2a890383b2dad7902f60cb6110cc0150
+
+statement ok
+ALTER TABLE xtmp2 SET read only
+
+statement ok
+CREATE ORDERED INDEX sys_xtmp2_i_oidx ON xtmp2(i)
+
+query TTTTTIITITI rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx FROM storage(current_schema, 'xtmp2')
+----
+11 values hashing to 15db76910dff2b291dbdc914e932f63f
+
+query I rowsort
+SELECT * FROM xtmp2 wHERE i>=0 AND i<8
+----
+
+statement ok
+CREATE TABLE xtmp3(i integer)
+
+statement ok
+INSERT INTO xtmp3 VALUES(3)
+
+query TTTTTIITITI rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx FROM storage(current_schema, 'xtmp3')
+----
+11 values hashing to 8bb43ce071f5fcd8ccc8f43b86ab1754
+
+statement ok
+ALTER TABLE xtmp3 SET read only
+
+statement ok
+CREATE ORDERED INDEX sys_xtmp3_i_oidx ON xtmp3(i)
+
+query TTTTTIITITI rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx from storage(current_schema, 'xtmp3')
+----
+11 values hashing to bfa16daba155136e8f7c50b17ed773c9
+
+query I rowsort
+SELECT * FROM xtmp3 WHERE i>=0 AND i<8
+----
+3
+
+statement ok
+CREATE TABLE xtmp4(i integer)
+
+statement ok
+INSERT INTO xtmp4 VALUES (3),(0),(2)
+
+query TTTTTIITITI rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx FROM storage(current_schema, 'xtmp4')
+----
+11 values hashing to 39a21df6ae88354fdee59c53120db61d
+
+statement ok
+ALTER TABLE xtmp4 SET read only
+
+statement ok
+CREATE ORDERED INDEX sys_xtmp4_i_oidx ON xtmp4(i)
+
+query TTTTTIITITI rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx from storage(current_schema, 'xtmp4')
+----
+11 values hashing to 40e34ed6914d622800731d55e6800802
+
+query I rowsort
+SELECT * FROM xtmp4 WHERE i>=0 AND i<8
+----
+0
+2
+3
+
+statement ok
+DROP INDEX sys_xtmp2_i_oidx
+
+statement ok
+DROP INDEX sys_xtmp3_i_oidx
+
+statement ok
+DROP INDEX sys_xtmp4_i_oidx
+
+statement ok
+DROP TABLE xtmp2
+
+statement ok
+DROP TABLE xtmp3
+
+statement ok
+DROP TABLE xtmp4
+
+

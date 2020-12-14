@@ -7,7 +7,6 @@ CREATE FUNCTION capi06(inp INTEGER) RETURNS INTEGER LANGUAGE CPP {
 #include <vector>
 #include <algorithm>
 	size_t i;
-
     std::vector<int> elements;
     for(i = 0; i < inp.count; i++) {
         elements.push_back(inp.data[i]);

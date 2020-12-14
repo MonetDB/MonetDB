@@ -1,0 +1,23 @@
+statement ok
+CREATE TABLE foo (col CHAR(8))
+
+statement ok
+INSERT INTO foo VALUES ('bee')
+
+query I rowsort
+SELECT * FROM foo WHERE NOT col LIKE 'b%'
+----
+
+query I rowsort
+SELECT * FROM foo WHERE (col NOT LIKE 'b%')
+----
+
+query T 
+SELECT * FROM foo WHERE NOT col NOT like 'b%'
+----
+bee
+
+statement ok
+DROP TABLE foo
+
+

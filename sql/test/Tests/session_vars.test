@@ -1,0 +1,106 @@
+query I rowsort
+select debug
+----
+0
+
+query T rowsort
+select current_schema
+----
+sys
+
+query T rowsort
+select current_user
+----
+monetdb
+
+query T rowsort
+select current_role
+----
+monetdb
+
+statement error
+declare test_nr int
+
+statement error
+declare test_str varchar(1024)
+
+statement error
+declare test_boolean boolean
+
+statement error
+set test_nr = 1
+
+statement error
+set test_str = 'help'
+
+statement error
+set test_boolean = true
+
+statement error
+select test_nr
+
+statement error
+select test_str
+
+statement error
+select test_boolean
+
+query I rowsort
+select sys.debug
+----
+0
+
+query T rowsort
+select sys."current_schema"
+----
+sys
+
+query T rowsort
+select sys."current_user"
+----
+monetdb
+
+query T rowsort
+select sys."current_role"
+----
+monetdb
+
+statement error
+select @debug
+
+statement error
+select @"current_schema"
+
+statement error
+select @"current_user"
+
+statement error
+select @"current_role"
+
+statement error
+set test_nr = 'help'
+
+statement error
+set test_str = 1
+
+statement error
+set test_boolean = 'help'
+
+statement error
+select sys.test_nr
+
+statement error
+select sys.test_str
+
+statement error
+select sys.test_boolean
+
+statement error
+select @test_nr
+
+statement error
+select @test_str
+
+statement error
+select @test_boolean
+

@@ -3,6 +3,7 @@ try:
 except ImportError:
     import process
 import os, sys, socket, time
+from MonetDBtesting.sqltest import SQLTestCase
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
@@ -23,27 +24,42 @@ cloneport = freeport()
 dbname = tstdb
 dbnameclone = tstdb + 'clone'
 
-#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 with process.server(dbname=dbnameclone, mapiport=cloneport, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
-     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-
-    cout, cerr = c.communicate('''\
-select * from tmp;
-call wlr.master('%s');
-call wlr.replicate(-1);
-call wlr.replicate(8);
-select * from tmp;
-'''  % dbname)
+        SQLTestCase() as tc:
+    tc.connect(database=dbnameclone, port=cloneport)
+    tc.execute("select * from tmp;")\
+            .assertSucceeded()\
+            .assertDataResultMatch([(1, 'hello'), (2, 'world'), (3, 'blah'), (4, 'bloh'), (5, 'red'), (6, 'fox')])
+    tc.execute("call wlr.master('%s');" % dbname).assertSucceeded()
+    tc.execute("call wlr.replicate(-1);").assertFailed()
+    tc.execute("call wlr.replicate(8);").assertSucceeded()
+    tc.execute("select * from tmp;")\
+            .assertSucceeded()\
+            .assertDataResultMatch([(3, 'blah'), (2, 'blah'), (3, 'blah'), (4, 'blah'), (5, 'blah'), (6, 'blah')])
 
     sout, serr = slave.communicate()
-    #mout, merr = master.communicate()
 
-    #sys.stdout.write(mout)
-    sys.stdout.write(sout)
-    sys.stdout.write(cout)
-    #sys.stderr.write(merr)
-    sys.stderr.write(serr)
-    sys.stderr.write(cerr)
+##master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+#with process.server(dbname=dbnameclone, mapiport=cloneport, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
+#     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
+#
+#    cout, cerr = c.communicate('''\
+#select * from tmp;
+#call wlr.master('%s');
+#call wlr.replicate(-1);
+#call wlr.replicate(8);
+#select * from tmp;
+#'''  % dbname)
+#
+#    sout, serr = slave.communicate()
+#    #mout, merr = master.communicate()
+#
+#    #sys.stdout.write(mout)
+#    sys.stdout.write(sout)
+#    sys.stdout.write(cout)
+#    #sys.stderr.write(merr)
+#    sys.stderr.write(serr)
+#    sys.stderr.write(cerr)
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE WLR LOG FILE\n")

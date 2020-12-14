@@ -1,0 +1,32 @@
+statement ok
+b:= bat.new(:str)
+
+statement ok
+bat.append(b,"Mary Ann Walker")
+
+statement ok
+bat.append(b,"Annie Chapman")
+
+query TT rowsort
+io.print(b)
+----
+0
+Mary Ann Walker
+1
+Annie Chapman
+
+statement ok
+bc:= batxml.comment(b)
+
+statement ok
+bj:= batxml.str(bc)
+
+query TT rowsort
+io.print(bj)
+----
+0
+<!--Mary Ann Walker-->
+1
+<!--Annie Chapman-->
+
+

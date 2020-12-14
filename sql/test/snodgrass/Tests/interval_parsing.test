@@ -1,0 +1,35 @@
+query T rowsort
+SELECT INTERVAL '3' YEAR
+----
+36
+
+query T rowsort
+SELECT INTERVAL '7' MONTH
+----
+7
+
+query T rowsort
+SELECT INTERVAL '3-7' YEAR TO MONTH
+----
+43
+
+query T rowsort
+SELECT INTERVAL -'3-7' YEAR TO MONTH
+----
+-43
+
+query T rowsort
+SELECT INTERVAL +'0-0' YEAR TO MONTH
+----
+0
+
+query T rowsort
+SELECT INTERVAL -'0-0' YEAR TO MONTH
+----
+0
+
+query T rowsort
+SELECT INTERVAL '1 23:45:12' DAY TO SECOND
+----
+1 day, 23:45:12
+

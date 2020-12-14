@@ -1,3 +1,6 @@
+set optimizer = 'sequential_pipe';
+
+start transaction;
 -- this query gives inconsistent answers when run multiple times.
 CREATE FUNCTION my_generate_series(start INT, finish INT)
 RETURNS TABLE (value INT)
@@ -21,3 +24,6 @@ select count(*) from my_generate_series(1,5) as t1,
 my_generate_series(1,100) as t2;
 select count(*) from my_generate_series(1,5) as t1,
 my_generate_series(1,100) as t2;
+rollback;
+
+set optimizer = 'default_pipe';

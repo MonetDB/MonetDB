@@ -204,3 +204,4 @@ create view s13f62fa36e4_filter_class_equal_retrieve_result as select a1 as a1, 
 
 SELECT d.id as id, d.idstr as pid, d.type as class, '<attributes/>' as xml, '{ "pid":"'||d.idstr||'" }' as json, s.prob as prob FROM s13f62fa36e4_filter_class_equal_RETRIEVE_result as s, dict as d WHERE s.a1=d.id ORDER BY s.prob DESC;
 
+rollback;

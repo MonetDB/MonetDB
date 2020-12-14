@@ -1,0 +1,57 @@
+query T rowsort
+SELECT E'\\a' LIKE E'\\\\a'
+----
+False
+
+query T rowsort
+SELECT E'\\a' LIKE E'\\\\\\\\a'
+----
+False
+
+query T rowsort
+SELECT 'xa' LIKE '_a{1}'
+----
+False
+
+query T rowsort
+SELECT 'xa$b' LIKE '_a$b'
+----
+True
+
+statement ok
+CREATE FUNCTION sql2pcre(pat TEXT, esc TEXT) RETURNS TEXT EXTERNAL NAME pcre.sql2pcre
+
+query T rowsort
+SELECT sql2pcre('a', E'\\')
+----
+NULL
+
+query T rowsort
+SELECT sql2pcre('_', E'\\')
+----
+^.$
+
+query T rowsort
+SELECT sql2pcre('%', E'\\')
+----
+^.*?$
+
+query T rowsort
+SELECT sql2pcre('_??', '?')
+----
+^.\?$
+
+query T rowsort
+SELECT sql2pcre('_{', E'\\')
+----
+^.\{$
+
+query T rowsort
+SELECT sql2pcre('%^%', E'\\')
+----
+^.*?\^.*?$
+
+statement ok
+DROP FUNCTION sql2pcre
+
+

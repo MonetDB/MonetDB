@@ -1,0 +1,6 @@
+query R rowsort
+select 1.0/2.0
+----
+0.500
+
+

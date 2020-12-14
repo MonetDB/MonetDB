@@ -712,7 +712,6 @@ developer, but if you do want to test, this is the package you need.
 
 %files testing-python
 %defattr(-,root,root)
-%{_bindir}/Mapprove.py
 %{_bindir}/Mtest.py
 %dir %{python3_sitelib}/MonetDBtesting
 %{python3_sitelib}/MonetDBtesting/*

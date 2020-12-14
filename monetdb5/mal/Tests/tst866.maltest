@@ -1,0 +1,30 @@
+statement ok
+function foo();
+b:= bat.new(:int);
+bat.append(b,1);
+bat.append(b,2);
+bat.append(b,3);
+bat.append(b,4);
+bat.append(b,5);
+bat.append(b,6);
+bat.append(b,7);
+bat.append(b,8);
+bat.append(b,9);
+io.print(b);
+d:= bat.new(:oid);
+bat.append(d,1@0);
+bat.append(d,2@0);
+bat.append(d,7@0);
+io.print(d);
+s:= bat.reuse(b,d);
+io.print(s);
+so:= bat.reuseMap(b,d);
+io.print(so);
+end foo;
+
+query TT rowsort
+user.foo();
+----
+48 values hashing to 8a22da7f5ade05a40de9d9e0e687d7c0
+
+

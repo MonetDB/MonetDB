@@ -1,0 +1,15 @@
+query T rowsort
+SELECT r'\"'
+----
+\"
+
+query T rowsort
+SELECT r''''
+----
+'
+
+query T rowsort
+SELECT r'\u1234'
+----
+\u1234
+

@@ -1,0 +1,30 @@
+statement ok
+create table nntest(alive boolean)
+
+statement ok
+insert into nntest(alive) values(False)
+
+query T rowsort
+select n.alive from nntest n
+----
+False
+
+query T rowsort
+select not n.alive from nntest n
+----
+True
+
+query T rowsort
+select not not n.alive from nntest n
+----
+False
+
+query T rowsort
+select not not not n.alive from nntest n
+----
+True
+
+statement ok
+drop table nntest
+
+

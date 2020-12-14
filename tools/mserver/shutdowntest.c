@@ -49,7 +49,7 @@ static str monetdb_query(Client c, str query) {
 	str retval;
 	mvc* m = ((backend *) c->sqlcontext)->mvc;
 	res_table* res = NULL;
-	int i;
+
 	retval = SQLstatementIntern(c, query, "name", 1, 0, &res);
 	if (retval == MAL_SUCCEED)
 		retval = SQLautocommit(m);
@@ -61,11 +61,11 @@ static str monetdb_query(Client c, str query) {
 	}
 	if (res) {
 		// print result columns
-		printf("%s (", res->cols->tn);
-		for(i = 0; i < res->nr_cols; i++) {
-			printf("%s", res->cols[i].name);
-			printf(i + 1 == res->nr_cols ? ")\n" : ",");
-		}
+//		printf("%s (", res->cols->tn);
+//		for(int i = 0; i < res->nr_cols; i++) {
+//			printf("%s", res->cols[i].name);
+//			printf(i + 1 == res->nr_cols ? ")\n" : ",");
+//		}
 		SQLdestroyResult(res);
 	}
 	return MAL_SUCCEED;
@@ -312,16 +312,16 @@ int main(int argc, char **argv) {
 	monetdb_query(c, "CREATE TABLE temporary_table(i INTEGER);");
 	monetdb_query(c, "INSERT INTO temporary_table VALUES (3), (4);");
 	monetdb_disconnect(c);
-	printf("Successfully initialized MonetDB.\n");
+//	printf("Successfully initialized MonetDB.\n");
 	for(i = 0; i < 10; i++) {
 		monetdb_shutdown();
-		printf("Successfully shutdown MonetDB.\n");
+//		printf("Successfully shutdown MonetDB.\n");
 		retval = monetdb_initialize();
 		if (retval != MAL_SUCCEED) {
 			printf("Failed MonetDB restart: %s\n", retval);
 			return -1;
 		}
-		printf("Successfully restarted MonetDB.\n");
+//		printf("Successfully restarted MonetDB.\n");
 		c = (Client) monetdb_connect();
 		monetdb_query(c, "SELECT * FROM temporary_table;");
 		monetdb_query(c, "DROP TABLE temporary_table;");

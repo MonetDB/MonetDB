@@ -1,0 +1,22 @@
+statement ok
+start transaction
+
+statement ok
+create table a (id int primary key)
+
+statement ok
+insert into a values (1)
+
+statement ok
+create table b (id int primary key)
+
+statement ok
+create table c (a int references a(id), b int references b(id))
+
+statement error 40002!INSERT INTO: FOREIGN KEY constraint 'c.c_b_fkey' violated
+insert into c (a, b) values (1, 2)
+
+statement ok
+rollback
+
+

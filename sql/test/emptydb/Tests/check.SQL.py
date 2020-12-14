@@ -4,6 +4,8 @@ try:
 except ImportError:
     import process
 
+output = []
+
 with process.client('sql', format='csv', echo=False,
                      stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
@@ -24,7 +26,7 @@ with process.client('sql', format='csv', echo=False,
     out, err = clt.communicate()
     out = re.sub('^"(.*)"$', r'\1', out, flags=re.MULTILINE).replace('"\n', '\n').replace('\n"', '\n').replace('""', '"').replace(r'\\', '\\')
 
-    sys.stdout.write(out)
+    output.append(out)
     sys.stderr.write(err)
 
 with process.client('sql', interactive=True,
@@ -55,7 +57,7 @@ with process.client('sql', interactive=True,
     nout += out[pos:]
     out = nout
 
-    sys.stdout.write(out)
+    output.append(out)
     sys.stderr.write(err)
 
 # add queries to dump the system tables, but avoid dumping IDs since
@@ -174,12 +176,22 @@ select 'sys.dependency_types', dependency_type_id, dependency_type_name from sys
 drop function pcre_replace(string, string, string, string);
 '''
 
-sys.stdout.write(out)
+output.append(out)
 
 with process.client('sql', interactive=True,
                      stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
     out, err = clt.communicate(out)
 
-    sys.stdout.write(out)
+    output.append(out)
     sys.stderr.write(err)
+
+if len(sys.argv) == 2 and sys.argv[1] == 'check':
+    output = ''.join(output).splitlines(keepends=True)
+    stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
+    stable = open(stableout).readlines()
+    import difflib
+    for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
+        sys.stderr.write(line)
+else:
+    sys.stdout.writelines(output)

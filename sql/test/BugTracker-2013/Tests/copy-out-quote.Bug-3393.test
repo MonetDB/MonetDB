@@ -1,0 +1,38 @@
+statement ok
+start transaction
+
+statement ok
+create table table3393 (a clob, b clob)
+
+statement ok
+insert into table3393 values ('one|two', 'three"four')
+
+statement ok
+insert into table3393 values (E'five\tsix', E'seven\neight')
+
+statement ok
+insert into table3393 values ('nine,ten', E'eleven\\twelve')
+
+query TT rowsort
+select * from table3393
+----
+five@six
+seven@eight
+nine,ten
+eleven\twelve
+one|two
+three"four
+
+statement ok
+copy select * from table3393 into stdout delimiters ',', E'\n', '|'
+
+statement ok
+copy select * from table3393 into stdout delimiters '|', E'\n', ','
+
+statement ok
+copy select * from table3393 into stdout
+
+statement ok
+rollback
+
+

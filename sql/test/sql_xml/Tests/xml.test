@@ -1,0 +1,128 @@
+query IT nosort
+select c.CustId, c.Name as CustName
+from customers c
+----
+1
+WoodWorks
+2
+Software Solutions
+3
+Food Supplies
+4
+Hardware Shop
+5
+Books Inc
+
+query T nosort
+select xmlelement(name "Customer",
+       	xmlelement(name "CustId",  c.CustId),
+       	xmlelement(name "CustName", c.Name),
+        xmlelement(name "City", c.City))
+from customers c
+----
+<Customer><CustId>1</CustId><CustName>WoodWorks</CustName><City>Baltimore</City></Customer>
+<Customer><CustId>2</CustId><CustName>Software Solutions</CustName><City>Boston</City></Customer>
+<Customer><CustId>3</CustId><CustName>Food Supplies</CustName><City>New York</City></Customer>
+<Customer><CustId>4</CustId><CustName>Hardware Shop</CustName><City>Washington</City></Customer>
+<Customer><CustId>5</CustId><CustName>Books Inc</CustName><City>New Orleans</City></Customer>
+
+query T nosort
+select xmlelement(name "Customer",
+	xmlforest(c.CustId, c.Name AS CustName, c.City))
+from customers c
+----
+<Customer><custid>1</custid><custname>WoodWorks</custname><city>Baltimore</city></Customer>
+<Customer><custid>2</custid><custname>Software Solutions</custname><city>Boston</city></Customer>
+<Customer><custid>3</custid><custname>Food Supplies</custname><city>New York</city></Customer>
+<Customer><custid>4</custid><custname>Hardware Shop</custname><city>Washington</city></Customer>
+<Customer><custid>5</custid><custname>Books Inc</custname><city>New Orleans</city></Customer>
+
+query ITTITI nosort
+select *
+from Customers c, Projects p
+where c.CustId = p.CustId
+order by c.CustId, p.ProjId
+----
+1
+WoodWorks
+Baltimore
+1
+Medusa
+1
+4
+Hardware Shop
+Washington
+2
+Pegasus
+4
+4
+Hardware Shop
+Washington
+8
+Typhon
+4
+5
+Books Inc
+New Orleans
+10
+Sphinx
+5
+
+query T nosort
+select xmlelement(name "CustomerProj",
+	xmlforest(c.CustId, c.Name AS CustName, p.ProjId, p.Name AS ProjName))
+from Customers c, Projects p
+where c.CustId = p.CustId
+order by c.CustId, p.ProjId
+----
+<CustomerProj><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></CustomerProj>
+<CustomerProj><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></CustomerProj>
+<CustomerProj><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></CustomerProj>
+<CustomerProj><custid>5</custid><custname>Books Inc</custname><projid>10</projid><projname>Sphinx</projname></CustomerProj>
+
+query T nosort
+select xmlelement(name project,
+	xmlattributes(p.ProjId as "id"),
+	xmlforest(c.CustId, c.Name AS CustName, p.ProjId, p.Name AS ProjName))
+from Customers c, Projects p
+where c.CustId = p.CustId
+order by c.CustId, p.ProjId
+----
+<project id = "1"><custid>1</custid><custname>WoodWorks</custname><projid>1</projid><projname>Medusa</projname></project>
+<project id = "2"><custid>4</custid><custname>Hardware Shop</custname><projid>2</projid><projname>Pegasus</projname></project>
+<project id = "8"><custid>4</custid><custname>Hardware Shop</custname><projid>8</projid><projname>Typhon</projname></project>
+<project id = "10"><custid>5</custid><custname>Books Inc</custname><projid>10</projid><projname>Sphinx</projname></project>
+
+query T nosort
+select
+  xmlelement(name "Customer",
+    xmlattributes(c.CustId as "id"),
+    xmlforest(c.Name as "name", c.City as city),
+    xmlelement(name projects,
+      (select xmlagg(xmlelement(name project,
+         xmlattributes(p.ProjId as "id"),
+         xmlforest(p.Name as name)))
+        from Projects p
+       where p.CustId = c.CustId) )) as "customer_projects"
+from Customers c
+order by c.CustId
+----
+<Customer id = "1"><name>WoodWorks</name><city>Baltimore</city><projects><project id = "1"><name>Medusa</name></project></projects></Customer>
+<Customer id = "2"><name>Software Solutions</name><city>Boston</city></Customer>
+<Customer id = "3"><name>Food Supplies</name><city>New York</city></Customer>
+<Customer id = "4"><name>Hardware Shop</name><city>Washington</city><projects><project id = "2"><name>Pegasus</name></project><project id = "8"><name>Typhon</name></project></projects></Customer>
+<Customer id = "5"><name>Books Inc</name><city>New Orleans</city><projects><project id = "10"><name>Sphinx</name></project></projects></Customer>
+
+query T nosort
+select
+  xmlelement(name "Customer",
+  xmlattributes(c.CustId as "id"),
+  xmlcomment('simple comment test'))
+from Customers c
+----
+<Customer id = "1"><!--simple comment test--></Customer>
+<Customer id = "2"><!--simple comment test--></Customer>
+<Customer id = "3"><!--simple comment test--></Customer>
+<Customer id = "4"><!--simple comment test--></Customer>
+<Customer id = "5"><!--simple comment test--></Customer>
+

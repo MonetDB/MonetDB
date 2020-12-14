@@ -1,0 +1,41 @@
+statement ok
+set optimizer='sequential_pipe'
+
+statement ok
+create table t2564 (c1 int, c2 int, c3 int)
+
+statement ok
+insert into t2564 values (3,1,2)
+
+statement ok
+insert into t2564 values (1,2,1)
+
+statement ok
+insert into t2564 values (2,3,3)
+
+query III rowsort
+select * from t2564
+----
+1
+2
+1
+2
+3
+3
+3
+1
+2
+
+query I rowsort
+select count(*) from t2564 group by c1, c2, c3
+----
+1
+1
+1
+
+statement ok
+drop table t2564
+
+statement ok
+set optimizer = 'default_pipe'
+

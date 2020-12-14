@@ -1,0 +1,11 @@
+query T rowsort
+select false
+----
+False
+
+query T rowsort
+select not true
+----
+False
+
+

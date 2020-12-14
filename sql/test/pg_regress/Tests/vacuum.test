@@ -1,0 +1,192 @@
+statement ok
+CREATE TABLE vactst (i INT)
+
+statement ok
+INSERT INTO vactst VALUES (1)
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst VALUES (0)
+
+query I rowsort
+SELECT count(*) FROM vactst
+----
+2049
+
+query II rowsort
+SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i
+----
+0
+1
+1
+2048
+
+query I rowsort
+SELECT count(*) FROM vactst WHERE i <> 0
+----
+2048
+
+statement ok
+DELETE FROM vactst WHERE i <> 0
+
+query I rowsort
+SELECT * FROM vactst
+----
+0
+
+query TTTTIIIIIIT rowsort
+select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
+----
+11 values hashing to cb42c97271c0549d5d22e21760173195
+
+statement ok
+call vacuum(current_schema, 'vactst')
+
+query TTTTIIIIIIT rowsort
+select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
+----
+11 values hashing to 903d4da5c45a119e4e90695daba873a3
+
+statement ok
+UPDATE vactst SET i = i + 1
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst SELECT * FROM vactst
+
+statement ok
+INSERT INTO vactst VALUES (0)
+
+query I rowsort
+SELECT count(*) FROM vactst
+----
+1048577
+
+query II rowsort
+SELECT i, count(*) AS count FROM vactst GROUP BY i ORDER BY i
+----
+0
+1
+1
+1048576
+
+query I rowsort
+SELECT count(*) FROM vactst WHERE i <> 0
+----
+1048576
+
+statement ok
+DELETE FROM vactst WHERE i <> 0
+
+query TTTTIIIIIIT rowsort
+select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
+----
+11 values hashing to 7fc5b1d0f53242d03fe8b11e960e3249
+
+statement ok
+call vacuum(current_schema, 'vactst')
+
+query TTTTIIIIIIT rowsort
+select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
+----
+11 values hashing to 903d4da5c45a119e4e90695daba873a3
+
+statement ok
+DELETE FROM vactst
+
+query I rowsort
+SELECT * FROM vactst
+----
+
+statement ok
+DROP TABLE vactst
+
+

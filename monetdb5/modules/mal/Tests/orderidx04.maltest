@@ -1,0 +1,69 @@
+statement ok
+bv:= bat.new(:int)
+
+statement ok
+bat.append(bv,959217167 )
+
+statement ok
+bat.append(bv,1920220901 )
+
+statement ok
+bat.append(bv,1303856962 )
+
+statement ok
+bat.append(bv,1667896496 )
+
+statement ok
+bat.append(bv,1080090866 )
+
+statement ok
+bat.append(bv,527076325 )
+
+statement ok
+bat.append(bv,266430612 )
+
+statement ok
+bat.append(bv,1674978691 )
+
+statement ok
+bat.append(bv,1863672321 )
+
+statement ok
+bat.append(bv,58690783 )
+
+query TI rowsort
+io.print(bv)
+----
+20 values hashing to 0a90958a5f39bc70be3ba0dc3a938556
+
+statement ok
+bat.orderidx(bv,3)
+
+statement ok
+ord := bat.getorderidx(bv)
+
+query TT rowsort
+io.print(ord)
+----
+20 values hashing to 3cb93d8caeadc97ad36636b562cc1831
+
+statement ok
+s:= algebra.sort(bv,false,false,false)
+
+query TI rowsort
+io.print(s)
+----
+20 values hashing to 00603b75348bece0a499f25e4924d19d
+
+statement ok
+bat.orderidx(bv,3)
+
+statement ok
+ord1 := bat.getorderidx(bv)
+
+query TT rowsort
+io.print(ord1)
+----
+20 values hashing to 3cb93d8caeadc97ad36636b562cc1831
+
+

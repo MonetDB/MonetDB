@@ -1,0 +1,92 @@
+statement ok
+CREATE OR REPLACE function schema_id(sname varchar(1024)) RETURNS INT
+BEGIN
+  RETURN SELECT min(id) from sys.schemas where name = sname;
+END
+
+query I rowsort
+SELECT schema_id('sys')
+----
+2000
+
+query T rowsort
+SELECT schema_id('json') > 2000
+----
+True
+
+query I rowsort
+SELECT schema_id('hsfdjkhksf does not exist')
+----
+NULL
+
+statement ok
+CREATE OR REPLACE function table_id(sname varchar(1024), tname varchar(1024)) RETURNS INT
+BEGIN
+  RETURN SELECT min(id) from sys.tables where name = tname AND schema_id = (SELECT id from sys.schemas where name = sname);
+END
+
+query T rowsort
+SELECT table_id('sys','tables') > 2000
+----
+True
+
+query T rowsort
+SELECT table_id(current_schema,'columns') > 2000
+----
+True
+
+query TTIITI rowsort
+SELECT name, type, type_digits, type_scale, "null", number from columns where table_id = table_id('sys','tables')
+----
+54 values hashing to 0e6f99a8b7d9c6a09c1aa1aee32c46ae
+
+query I rowsort
+SELECT table_id('sys','hsfdjkhksf does not exist')
+----
+NULL
+
+statement ok
+CREATE OR REPLACE function table_id(tname varchar(1024)) RETURNS INT
+BEGIN
+  RETURN SELECT min(id) from sys.tables where name = tname AND schema_id = (SELECT id from sys.schemas where name = current_schema);
+END
+
+query T rowsort
+SELECT current_schema
+----
+sys
+
+query T rowsort
+SELECT table_id('tables') > 2000
+----
+True
+
+query T rowsort
+SELECT table_id('columns') > 2000
+----
+True
+
+query TTIITI rowsort
+SELECT name, type, type_digits, type_scale, "null", number from columns where table_id = table_id('tables')
+----
+54 values hashing to 0e6f99a8b7d9c6a09c1aa1aee32c46ae
+
+query I rowsort
+SELECT table_id('hsfdjkhksf does not exist')
+----
+NULL
+
+query T rowsort
+select name from sys.functions where not system
+----
+schema_id
+table_id
+table_id
+
+statement ok
+DROP ALL function table_id
+
+statement ok
+DROP function schema_id
+
+

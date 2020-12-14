@@ -1,0 +1,85 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE mytable(a DOUBLE, d int, s STRING)
+
+statement ok
+CREATE LOADER myfunc() LANGUAGE PYTHON {
+	_emit.emit({'a':42,'d':1})
+}
+
+statement ok
+CREATE LOADER myfunc1(i integer) LANGUAGE PYTHON {
+	_emit.emit({'a':i,'d':2})
+}
+
+statement ok
+CREATE LOADER myfunc2(i integer, f string) LANGUAGE PYTHON {
+	_emit.emit({'a':i,'d':3})
+}
+
+statement ok
+CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
+	_emit.emit({'a':i,'d':4, 's': 'hello'})
+}
+
+query TTTIITTT rowsort
+SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc'
+----
+myfunc
+{@@_emit.emit({'a':42,'d':1})@}@;
+pyapi
+6
+7
+True
+True
+False
+
+statement ok
+COPY LOADER INTO mytable FROM myfunc()
+
+statement ok
+COPY LOADER INTO mytable FROM myfunc3(46, 'asdf', 3.2)
+
+statement ok
+COPY LOADER INTO mytable FROM myfunc2(45, 'asdf')
+
+statement ok
+COPY LOADER INTO mytable FROM myfunc1(44)
+
+query RIT rowsort
+SELECT * FROM mytable
+----
+12 values hashing to eccb34e3faa304d259b42a92b22494d6
+
+statement ok
+DROP TABLE mytable
+
+statement ok
+DROP ALL LOADER myfunc
+
+statement ok
+CREATE LOADER myfunc() LANGUAGE PYTHON {
+}
+
+statement ok
+DROP LOADER myfunc
+
+statement ok
+DROP LOADER myfunc1
+
+statement ok
+DROP LOADER myfunc2
+
+statement ok
+DROP LOADER myfunc3
+
+query ITTTIITTTITT rowsort
+SELECT * FROM functions WHERE name='myfunc'
+----
+
+statement ok
+ROLLBACK
+
+
