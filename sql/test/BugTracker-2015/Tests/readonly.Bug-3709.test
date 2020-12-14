@@ -7,11 +7,13 @@ start transaction
 statement ok
 insert into s10 values (8)
 
-statement error
+statement ok
 alter table s10 set read only
 
-statement error
-trace select * from s10
+query I rowsort
+select count(*) from s10
+----
+1
 
 statement ok
 rollback
