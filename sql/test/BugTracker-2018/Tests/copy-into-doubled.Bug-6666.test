@@ -8,7 +8,7 @@ statement ok
 drop index "t1_v1"
 
 statement ok
-copy 1 records into "t1" from stdin locked
+copy 1 records into "t1" from stdin
 <COPY_INTO_DATA>
 1
 
