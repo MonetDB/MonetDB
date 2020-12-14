@@ -72,18 +72,11 @@ try:
     #   to have 7 queries in the queue
     mstcur.execute('select 6')
     mstcur.execute('select 7')
-    query = 'select username, status, query from sys.queue() order by query'
-    expected_res = [
-    ('monetdb', 'finished', 'call sys.sleep('+SLEEP_TIME+')\n;'),
-    ('monetdb', 'finished', 'call sys.sleep('+SLEEP_TIME+')\n;'),
-    ('monetdb', 'finished', 'call sys.sleep('+SLEEP_TIME+')\n;'),
-    ('monetdb', 'finished', 'select 6\n;'),
-    ('monetdb', 'finished', 'select 7\n;'),
-    ('monetdb', 'running', 'select username, status, query from sys.queue() order by query\n;'),
-    ('monetdb', 'finished', "select username, status, query from sys.queue() where query like \\'call sys.sleep(5000)%\\' order by query\n;")]
+    query = 'select count(*) from sys.queue()'
+    expected_res = 7
     rowcnt = mstcur.execute(query)
     res = mstcur.fetchall()
-    if rowcnt != len(expected_res) or res != expected_res:
+    if rowcnt != 1 or res[0][0] != expected_res:
         do_error(query, res, expected_res)
 except pymonetdb.exceptions.Error as e:
     print(e)
