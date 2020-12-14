@@ -1,0 +1,221 @@
+stdout of test 'fixed_limit_for_prepare.Bug-3208` in directory 'sql/test/BugTracker-2012` itself:
+
+
+# 18:08:17 >  
+# 18:08:17 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36971" "--set" "mapi_usock=/var/tmp/mtest-22422/.s.monetdb.36971" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_test_BugTracker-2012" "--set" "mal_listing=0"
+# 18:08:17 >  
+
+# MonetDB 5 server v11.13.6
+# This is an unreleased version
+# Serving database 'mTests_test_BugTracker-2012', using 4 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 64bit OIDs dynamically linked
+# Found 3.778 GiB available main-memory.
+# Copyright (c) 1993-July 2008 CWI.
+# Copyright (c) August 2008-2015 MonetDB B.V., all rights reserved
+# Visit http://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://niels.nesco.mine.nu:36971/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-22422/.s.monetdb.36971
+# MonetDB/GIS module loaded
+# MonetDB/JAQL module loaded
+# MonetDB/SQL module loaded
+
+
+# 18:08:17 >  
+# 18:08:17 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-22422" "--port=36971"
+# 18:08:17 >  
+
+#CREATE TABLE wide("1" VARCHAR(255), "2" VARCHAR(255), "3" VARCHAR(255), "4"
+#	VARCHAR(255), "5" VARCHAR(255), "6" VARCHAR(255), "7" VARCHAR(255), "8"
+#	VARCHAR(255), "9" VARCHAR(255), "10" VARCHAR(255), "11" VARCHAR(255), "12"
+#	VARCHAR(255), "13" VARCHAR(255), "14" VARCHAR(255), "15" VARCHAR(255), "16"
+#	VARCHAR(255), "17" VARCHAR(255), "18" VARCHAR(255), "19" VARCHAR(255), "20"
+#	VARCHAR(255), "21" VARCHAR(255), "22" VARCHAR(255), "23" VARCHAR(255), "24"
+#	VARCHAR(255), "25" VARCHAR(255), "26" VARCHAR(255), "27" VARCHAR(255), "28"
+#PREPARE INSERT INTO wide("1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+#	"11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23",
+#	"24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36",
+#	"37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+#	"50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62",
+#	"63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75",
+#	"76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88",
+#PREPARE INSERT INTO wide("1", "2", "3", "4", "5", "6", "7", "8", "9", "10",
+#	"11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23",
+#	"24", "25", "26", "27", "28", "29", "30", "31", "32", "33", "34", "35", "36",
+#	"37", "38", "39", "40", "41", "42", "43", "44", "45", "46", "47", "48", "49",
+#	"50", "51", "52", "53", "54", "55", "56", "57", "58", "59", "60", "61", "62",
+#	"63", "64", "65", "66", "67", "68", "69", "70", "71", "72", "73", "74", "75",
+#	"76", "77", "78", "79", "80", "81", "82", "83", "84", "85", "86", "87", "88",
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	3,	1,	0,	0,	0 # length
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+[ "varchar",	255,	0,	NULL,	NULL,	NULL	]
+#EXEC 0('', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+#	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+#	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+#	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+#	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+#	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+#	'', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '',
+[ 1	]
+#select count(*) from wide;
+% .%1 # table_name
+% %1 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#drop TABLE wide;
+
+# 18:08:18 >  
+# 18:08:18 >  "Done."
+# 18:08:18 >  
+

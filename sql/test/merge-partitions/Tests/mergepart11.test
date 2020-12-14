@@ -1,0 +1,203 @@
+statement ok
+CREATE MERGE TABLE moveaccrosspartitions (a int, b varchar(32)) PARTITION BY RANGE ON (a)
+
+statement ok
+CREATE TABLE sublimits1 (a int, b varchar(32))
+
+statement ok
+CREATE TABLE sublimits2 (a int, b varchar(32))
+
+statement ok
+CREATE TABLE sublimits3 (a int, b varchar(32))
+
+statement ok
+ALTER TABLE moveaccrosspartitions ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
+
+statement ok
+ALTER TABLE moveaccrosspartitions ADD TABLE sublimits2 AS PARTITION FROM 101 TO 200
+
+statement ok
+ALTER TABLE moveaccrosspartitions ADD TABLE sublimits3 AS PARTITION FROM 201 TO 300
+
+statement ok
+INSERT INTO moveaccrosspartitions VALUES (50, 'first'), (150, 'second'), (250, 'third'), (60, 'fourth'), (120, 'fifth'), (240, 'sixth')
+
+query IT rowsort
+SELECT a, b FROM moveaccrosspartitions
+----
+12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+50
+first
+60
+fourth
+
+query IT rowsort
+SELECT a, b FROM sublimits2
+----
+120
+fifth
+150
+second
+
+query IT rowsort
+SELECT a, b FROM sublimits3
+----
+240
+sixth
+250
+third
+
+statement error
+UPDATE moveaccrosspartitions SET a = a + 1 WHERE a % 50 = 0
+
+query IT rowsort
+SELECT a, b FROM moveaccrosspartitions
+----
+12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+50
+first
+60
+fourth
+
+query IT rowsort
+SELECT a, b FROM sublimits2
+----
+120
+fifth
+150
+second
+
+query IT rowsort
+SELECT a, b FROM sublimits3
+----
+240
+sixth
+250
+third
+
+statement error
+UPDATE moveaccrosspartitions SET a = a - 50, b = 'p' || b || 's' WHERE a % 60 = 0
+
+query IT rowsort
+SELECT a, b FROM moveaccrosspartitions
+----
+12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+50
+first
+60
+fourth
+
+query IT rowsort
+SELECT a, b FROM sublimits2
+----
+120
+fifth
+150
+second
+
+query IT rowsort
+SELECT a, b FROM sublimits3
+----
+240
+sixth
+250
+third
+
+statement error
+UPDATE moveaccrosspartitions SET a = a - 60 WHERE a % 10 = 0
+
+query IT rowsort
+SELECT a, b FROM moveaccrosspartitions
+----
+12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+50
+first
+60
+fourth
+
+query IT rowsort
+SELECT a, b FROM sublimits2
+----
+120
+fifth
+150
+second
+
+query IT rowsort
+SELECT a, b FROM sublimits3
+----
+240
+sixth
+250
+third
+
+statement error
+UPDATE moveaccrosspartitions SET a = a + 100, b = 'moved' WHERE a % 10 = 0 AND a < 100
+
+query IT rowsort
+SELECT a, b FROM moveaccrosspartitions
+----
+12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+50
+first
+60
+fourth
+
+query IT rowsort
+SELECT a, b FROM sublimits2
+----
+120
+fifth
+150
+second
+
+query IT rowsort
+SELECT a, b FROM sublimits3
+----
+240
+sixth
+250
+third
+
+statement ok
+ALTER TABLE moveaccrosspartitions DROP TABLE sublimits1
+
+statement ok
+ALTER TABLE moveaccrosspartitions DROP TABLE sublimits2
+
+statement ok
+ALTER TABLE moveaccrosspartitions DROP TABLE sublimits3
+
+statement ok
+DROP TABLE sublimits1
+
+statement ok
+DROP TABLE sublimits2
+
+statement ok
+DROP TABLE sublimits3
+
+statement ok
+DROP TABLE moveaccrosspartitions
+
+

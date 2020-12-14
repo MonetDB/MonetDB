@@ -1,0 +1,29 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table mtcars (
+    mpg DOUBLE PRECISION,
+    cyl DOUBLE PRECISION,
+    disp DOUBLE PRECISION,
+    hp DOUBLE PRECISION,
+    drat DOUBLE PRECISION,
+    wt DOUBLE PRECISION,
+    qsec DOUBLE PRECISION,
+    vs DOUBLE PRECISION,
+    am DOUBLE PRECISION,
+    gear DOUBLE PRECISION,
+    carb DOUBLE PRECISION
+)
+
+statement ok
+copy into mtcars from E'$QTSTSRCDIR/mtcars' using delimiters 'a','b','c' null as '' fwf (4, 2, 6, 4, 5, 6, 6, 2, 2, 2, 2)
+
+query I
+select count(*) from mtcars
+----
+32
+
+statement ok
+ROLLBACK
+

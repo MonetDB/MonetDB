@@ -764,17 +764,16 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 				}
 				if (ret == MAL_SUCCEED && ii == pci->argc) {
 					ret = runMALsequence(cntxt, pci->blk, 1, pci->blk->stop, nstk, stk, pci);
+					//garbageCollector(cntxt, pci->blk, nstk, 0);
 					for (ii = 0; ii < nstk->stktop; ii++)
 						if (ATOMextern(nstk->stk[ii].vtype))
 							GDKfree(nstk->stk[ii].val.pval);
-					/*
 					arg = q->retc;
 					for (ii = pci->retc; ii < pci->argc; ii++,arg++) {
 						lhs = &nstk->stk[q->argv[arg]];
 						if (lhs->vtype == TYPE_bat)
 							BBPrelease(lhs->val.bval);
 					}
-					*/
 					GDKfree(nstk);
 				}
 			}

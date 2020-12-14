@@ -366,8 +366,8 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
 	if (t->sa->nr > 2*new_trans_size)
-		try_spare = 0;
-	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
+		try_spare = false;
+	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 0 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
 		trans_drop_tmp(t);
 		spare_trans[spares++] = t;
@@ -2068,6 +2068,7 @@ store_load(sql_allocator *pa) {
 			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
 		}
 		sql_trans_destroy(tr, true);
+		tr = gtrans;
 	}
 
 	logger_funcs.get_sequence(OBJ_SID, &lng_store_oid);
@@ -2080,6 +2081,7 @@ store_load(sql_allocator *pa) {
 	if (!first && !load_trans(gtrans)) {
 		return -1;
 	}
+	tr->active = 0;
 	store_initialized = 1;
 	return first;
 }
@@ -2179,6 +2181,11 @@ cleanup_table(sql_table *t)
 		for (int i = 0; i<spares; i++) {
 			for (node *m = spare_trans[i]->schemas.set->h; m; m = m->next) {
 				sql_schema * schema = m->data;
+
+				if (schema->tables.dset) {
+					list_destroy(schema->tables.dset);
+					schema->tables.dset = NULL;
+				}
 				node *o = find_sql_table_node(schema, t->base.id);
 				if (o) {
 					list_remove_node(schema->tables.set, o);
@@ -4023,7 +4030,6 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 	if (!cs)
 		return ok;
 	if (cs->dset) {
-		/*
 		node *n;
 
 		for (n = cs->dset->h; ok == LOG_OK && n; n = n->next) {
@@ -4031,7 +4037,6 @@ rollforward_changeset_deletes(sql_trans *tr, changeset * cs, rfdfunc rf, int mod
 
 			ok = rf(tr, b, mode);
 		}
-		*/
 		if (apply) {
 			list_destroy(cs->dset);
 			cs->dset = NULL;
@@ -7373,7 +7378,7 @@ sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start)
 }
 
 sql_session *
-sql_session_create(int ac )
+sql_session_create(int ac)
 {
 	sql_session *s;
 

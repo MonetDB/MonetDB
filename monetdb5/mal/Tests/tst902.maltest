@@ -1,0 +1,27 @@
+statement ok
+function foo();
+b:= bat.new(:lng);
+barrier v:= 0:lng;
+	bat.append(b,v);
+	redo v:= iterator.next(1:lng,10:lng);
+exit v;
+c:= algebra.copy(b);
+d:= bat.new(:lng);
+barrier (h,t):= iterator.new(b);
+	B1:= algebra.fetch(b,h);
+	B2:= algebra.fetch(c,h);
+	t:= B1+B2;
+	bat.append(d,t);
+	redo (h,t):= iterator.next(b);
+catch 	GDKerror:str;
+exit	GDKerror;
+exit (h,t);
+io.print(d);
+end;
+
+query TT rowsort
+user.foo();
+----
+20 values hashing to e1077e0061cd2ee38a51615ad534c98a
+
+

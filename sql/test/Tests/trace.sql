@@ -12,3 +12,5 @@ select '~EndVariableOutput~';
 SELECT COUNT(*) FROM tracelog();
 
 DROP TABLE mytypes;
+
+set optimizer='default_pipe';

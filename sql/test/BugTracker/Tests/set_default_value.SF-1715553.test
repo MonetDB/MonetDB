@@ -1,0 +1,80 @@
+statement ok
+create table t1715553a(id int DEFAULT 50, name varchar(1024), age int )
+
+query TTT rowsort
+select name, "default", "null" from columns where name = 'id' and table_id = (select id from tables where name = 't1715553a')
+----
+id
+50
+True
+
+statement ok
+alter table t1715553a alter id set DEFAULT 30
+
+query TTT rowsort
+select name, "default", "null" from columns where name = 'id' and table_id = (select id from tables where name = 't1715553a')
+----
+id
+30
+True
+
+statement ok
+alter table t1715553a alter id DROP DEFAULT
+
+query TTT rowsort
+select name, "default", "null" from columns where name = 'id' and table_id = (select id from tables where name = 't1715553a')
+----
+id
+NULL
+True
+
+statement ok
+drop table t1715553a
+
+statement ok
+create table t1715553a(id int, name varchar(1024), age int )
+
+query TTT rowsort
+select name, "default", "null" from columns where name = 'id' and table_id = (select id from tables where name = 't1715553a')
+----
+id
+NULL
+True
+
+statement ok
+alter table t1715553a alter id set NULL
+
+query TTT rowsort
+select name, "default", "null" from columns where name = 'id' and table_id = (select id from tables where name = 't1715553a')
+----
+id
+NULL
+True
+
+statement ok
+drop table t1715553a
+
+statement ok
+create table t1715553a(id int, name varchar(1024), age int )
+
+query TTT rowsort
+select name, "default", "null" from columns where name = 'id' and table_id = (select id from tables where name = 't1715553a')
+----
+id
+NULL
+True
+
+statement ok
+alter table t1715553a alter id set NOT NULL
+
+query TTT rowsort
+select name, "default", "null" from columns where name = 'id' and table_id = (select id from tables where name = 't1715553a')
+----
+id
+NULL
+False
+
+statement ok
+drop table t1715553a
+
+

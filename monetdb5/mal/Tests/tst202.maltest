@@ -1,0 +1,42 @@
+statement ok
+	b:bat[:int]:= bat.new(:int)
+
+statement ok
+	bat.setName(b,"mybat")
+
+statement ok
+	bat.setColumn(b,"second")
+
+query TI rowsort
+	io.print(b)
+----
+
+statement ok
+	c:= bat.new(:str)
+
+statement ok
+	bat.setName(c,"mybat")
+
+query TT rowsort
+	io.print(c)
+----
+
+query TT rowsort
+	io.print(c)
+----
+
+query T rowsort
+	io.printf("caught anything?\n")
+----
+caught anything?
+
+statement ok
+catch GDKerror:str
+
+statement ok
+	io.printf("Catched the renaming exception\n")
+
+statement ok
+exit  GDKerror
+
+

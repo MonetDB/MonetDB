@@ -2,8 +2,9 @@
 # by remains of other tests in case those don't work / clean-up properly.
 alter_table_drop_constraint.SF-2803477
 mclient-lsql-D
-alter_table_drop_constraint.SF-2803477_cleanup
-#
+
+# coversion to logic tests (11/2020): Cleanup tests are not needed.
+# alter_table_drop_constraint.SF-2803477_cleanup
 binop.SF.2499537
 incomplete.SF.2536893
 subquery_returns_table_crash.SF-2513620
@@ -26,10 +27,8 @@ rollback_bug
 update-crash
 correlated-selection-bug
 row_number_bug.SF-2546109
-#set_history_and_drop_table.SF-2607045  not relevant anymore
 TypeException_having_count_distinct.SF-2494227
 insert_into_done_by_procedure.SF-2607293
-decimal_needs_truncation.SF-2605686
 number_between_col1_and_col2
 order_by_column_position
 error_while_drop_func_returns_table_type.SF-2604573
@@ -47,13 +46,14 @@ TribooleanFailureWithSubquery.SF-2679434
 nullstr.SF-2704016
 parallel_bulk-load.SF-2771052.unpack_csv
 parallel_bulk-load.SF-2771052.test
-parallel_bulk-load.SF-2771052.clean
+
+# coversion to logic tests (11/2020): Cleanup tests are not needed.
+# parallel_bulk-load.SF-2771052.clean
 wrong_error_message.SF-2637051
 AVG_of_SQRT.SF-2757642
 missing_column_name.SF-2776100
 dumping_tables.SF-2776908
 dumping_tables.SF-2776908--performance
-name_clash_with_dump.SF-2780395
 temporary_table_leftover.SF-2779437
 temporary_table_leftover.SF-2734713
 multi-column_join_with_expression.SF-2783279
@@ -70,7 +70,6 @@ reorder.SF-2770608
 orIssue.SF-2812504
 recursion-problem.SF-2827784
 select_X_where_bla_EQ_whatever.SF-282597
-prepare_decimal_bug.SF-2831994
 rollback_mistake.SF-2814622
 numeric_data_type_bug.SF-2818176
 insert_into_values_bug.SF-2807609
@@ -78,7 +77,6 @@ set_and_arg_null.SF-2812729
 pow_operator.SF-2812721
 count_distinct_bug.SF-2826015
 assert_in_update.SF-2807336
-prepare_commit_execute.SF-2606020
 ambiguous_order_by.SF-2827916
 except_error_wrong.SF-2808409
 Floating_point_exception.SF-2791356
@@ -92,7 +90,10 @@ overflow.SF-2853458
 bit_and.SF-2850341
 double_count_limit_bug.SF-2862146
 create_on_ro_db_crash.SF-2830238
-old_views_incorrectly_reused.SF-2863804
+old_views_incorrectly_reused.SF-2863804.def
+old_views_incorrectly_reused.SF-2863804.view1
+old_views_incorrectly_reused.SF-2863804.view2
+old_views_incorrectly_reused.SF-2863804.del
 updating_non-loaded_columns.SF-2864313_OK-0
 updating_non-loaded_columns.SF-2864313_KO-1
 updating_non-loaded_columns.SF-2864313_KO-2
@@ -117,5 +118,7 @@ arithmetic-small-values-null.SF-2921310
 #
 # The following test currently crashes and this fact (or its remains) might
 # harm sub-sequent tests; hence, this test should be last in this directory.
-explain_gives_crash.SF-2741829
-explain_gives_crash.SF-2741829_cleanup
+
+# coversion to logic tests (11/2020): These tests use explain so we just skip them for now
+# explain_gives_crash.SF-2741829
+# explain_gives_crash.SF-2741829_cleanup

@@ -3572,9 +3572,9 @@ rel2bin_sample(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
-sql_parse(backend *be, const char *query, char mode)
+sql_parse(backend *be, sql_schema *s, const char *query, char mode)
 {
-	sql_rel *rel = rel_parse(be->mvc, be->mvc->session->schema, (char*)query, mode);
+	sql_rel *rel = rel_parse(be->mvc, s, (char*)query, mode);
 	stmt *sq = NULL;
 
 	if ((rel = sql_processrelation(be->mvc, rel, 1, 1)))
@@ -3846,7 +3846,7 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 				stack_pop_frame(sql);
 				return 0;
 			}
-			if (!sql_parse(be, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->t->s, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -4800,7 +4800,7 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 				return 0;
 			}
 
-			if (!sql_parse(be, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->t->s, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}
@@ -5081,7 +5081,7 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, stmt **deleted_cols, 
 				return 0;
 			}
 
-			if (!sql_parse(be, trigger->statement, m_instantiate)) {
+			if (!sql_parse(be, trigger->t->s, trigger->statement, m_instantiate)) {
 				stack_pop_frame(sql);
 				return 0;
 			}

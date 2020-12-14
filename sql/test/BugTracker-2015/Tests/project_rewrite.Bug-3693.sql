@@ -74,3 +74,4 @@ FROM source,
  naturalis_materialized_1 as t1
 WHERE t1.id=source.a1 and source.rownum > 0 AND source.rownum <= 10;
 
+rollback;

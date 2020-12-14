@@ -2090,6 +2090,7 @@ enum prop_t {
 	GDK_MAX_POS,		/* BUN position of largest value  */
 	GDK_HASH_BUCKETS,	/* last used hash bucket size */
 	GDK_NUNIQUE,		/* number of unique values */
+	GDK_UNIQUE_ESTIMATE,	/* estimate of number of distinct values */
 };
 
 /*

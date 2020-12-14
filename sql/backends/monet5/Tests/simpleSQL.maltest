@@ -1,0 +1,23 @@
+statement ok
+function foo();
+sql.eval("select 1;",false);
+sql.eval("create table simpleT(i integer);");
+sql.eval("insert into simpleT values(123);");
+sql.eval("select * from simpleT;");
+sql.eval("select * from simpleT;",false);
+sql.eval("drop table simpleT;");
+sql.eval("select 1;",false);
+end foo
+
+query T rowsort
+mdb.list("user","foo")
+----
+end user.foo;
+
+query T rowsort
+user.foo()
+----
+% 1 # length
+1
+
+

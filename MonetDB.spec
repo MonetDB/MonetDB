@@ -712,7 +712,6 @@ developer, but if you do want to test, this is the package you need.
 
 %files testing-python
 %defattr(-,root,root)
-%{_bindir}/Mapprove.py
 %{_bindir}/Mtest.py
 %dir %{python3_sitelib}/MonetDBtesting
 %{python3_sitelib}/MonetDBtesting/*
@@ -786,11 +785,6 @@ fi
 %setup -q
 
 %build
-%if (0%{?fedora} >= 33)
-# on Fedora 33 we get a crash of the compiler when using -flto, so disable it
-CFLAGS="${CFLAGS:-%optflags} -fno-lto"
-export CFLAGS
-%endif
 %cmake3 \
 	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \

@@ -1,0 +1,54 @@
+statement ok
+CREATE TABLE ints ( val int )
+
+statement ok
+prepare INSERT INTO ints VALUES ( ? - 20 )
+
+statement ok
+exec **(1)
+
+statement ok
+exec **(10)
+
+statement ok
+exec **(100)
+
+statement ok
+exec **(1000)
+
+statement ok
+exec **(10000)
+
+statement ok
+exec **(100000)
+
+statement ok
+exec **(1000000)
+
+statement ok
+exec **(10000000)
+
+statement ok
+exec **(100000000)
+
+statement ok
+exec **(1000000000)
+
+query I nosort
+select * from ints
+----
+-19
+-10
+80
+980
+9980
+99980
+999980
+9999980
+99999980
+999999980
+
+statement ok
+drop table ints
+
+

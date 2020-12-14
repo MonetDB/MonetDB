@@ -1,12 +1,13 @@
 function one(base:int):int;
-	io.print(base);
+	#io.print(base);
 	return base;
 end one;
 
 function three(base:int,x:int,y:int):int;
-	io.print(base);
+	#io.print(base);
 	return base;
 end three;
+
 function pow(base:int,raise:int):int;
         mg_a := calc.dbl(base);
         ng_a := calc.dbl(raise);
@@ -15,7 +16,7 @@ function pow(base:int,raise:int):int;
         return pg_a;
 end pow;
 
-function foo();
+function foo():bat[:int];
 k:= user.one(1);
 l:= user.three(1,2,3);
 p:= user.pow(1,2);
@@ -23,14 +24,16 @@ p:= user.pow(1,2);
 b:= bat.new(:int);
 bat.append(b,1);
 
-io.print("do multiplex three test");
+io.printf("[ do multiplex three test, ");
 z:bat[:int]:=mal.multiplex("user","three",b,2,3);
-io.print("do multiplex one test");
+io.printf("do multiplex one test, ");
 z:bat[:int]:=mal.multiplex("user","one",b);
-io.print("do multiplex pow test");
+io.printf("do multiplex pow test ]\n");
 z:bat[:int]:=mal.multiplex("user","pow",b,2);
-io.print(z);
+return z;
 end;
+
 optimizer.multiplex("user","foo");
-mdb.List("user","foo");
-user.foo();
+
+z := user.foo();
+io.print(z);

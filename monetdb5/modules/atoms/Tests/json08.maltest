@@ -1,0 +1,116 @@
+statement ok
+j:= bat.new(:json)
+
+statement ok
+b:= json.new("{}")
+
+statement ok
+bat.append(j,b)
+
+statement ok
+b:= json.new("{\"f1\":1}")
+
+statement ok
+bat.append(j,b)
+
+statement ok
+b:= json.new("{\"f1\":1,\"f2\":2}")
+
+statement ok
+bat.append(j,b)
+
+statement ok
+b:= json.new("{\"f1\":1,\"f2\":2,\"f1\":3}")
+
+statement ok
+bat.append(j,b)
+
+statement ok
+b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}")
+
+statement ok
+bat.append(j,b)
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",j,"f1")
+
+query TT rowsort
+io.print(f)
+----
+10 values hashing to 9ae1f3b8f8209b3bcd88a9c80b27967b
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",j,"f2")
+
+query TT rowsort
+io.print(f)
+----
+10 values hashing to d0b0decdfa7d6fad7f357560a6430dd3
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",j,"f1[0]")
+
+query TT rowsort
+io.print(f)
+----
+10 values hashing to 2d193446aa0f4cc62522067377a19faf
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",j,"..f12")
+
+query TT rowsort
+io.print(f)
+----
+10 values hashing to 24065aba10509ac79c9e45413e977b3b
+
+query T rowsort
+io.printf("#next batch\n")
+----
+#next batch
+
+statement ok
+i:= bat.new(:json)
+
+statement ok
+b:= json.new("[1,\"f2\", 2]")
+
+statement ok
+bat.append(i,b)
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",i,0)
+
+query TT rowsort
+io.print(f)
+----
+0
+[1]
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",i,1)
+
+query TT rowsort
+io.print(f)
+----
+0
+["f2"]
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",i,2)
+
+query TT rowsort
+io.print(f)
+----
+0
+[2]
+
+statement ok
+f:bat[:json]:= mal.manifold("json","filter",i,3)
+
+query TT rowsort
+io.print(f)
+----
+0
+[]
+
+

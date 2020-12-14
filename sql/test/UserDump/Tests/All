@@ -1,1 +1,4 @@
 create
+dump
+dump_with_voc
+dump_with_test

@@ -1,0 +1,10 @@
+statement ok
+create table t2713(id int)
+
+statement error
+drop view t2713
+
+statement ok
+drop table t2713
+
+
