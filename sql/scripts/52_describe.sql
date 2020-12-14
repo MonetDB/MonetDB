@@ -4,7 +4,7 @@
 --
 -- Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
 
-CREATE FUNCTION describe_type(ctype string, digits integer, tscale integer)
+CREATE FUNCTION sys.describe_type(ctype string, digits integer, tscale integer)
   RETURNS string
 BEGIN
   RETURN
@@ -138,8 +138,8 @@ BEGIN
     END;
 END;
 
-create function describe_table(schemaName string, tableName string)
-  returns table(name string, query string, type string, id integer, remark string)
+CREATE FUNCTION sys.describe_table(schemaName string, tableName string)
+  RETURNS TABLE(name string, query string, type string, id integer, remark string)
 BEGIN
 	RETURN SELECT t.name, t.query, tt.table_type_name, t.id, c.remark
 		FROM sys.schemas s, sys.table_types tt, sys._tables t
@@ -150,10 +150,10 @@ BEGIN
 			AND t.type = tt.table_type_id;
 END;
 
-create function describe_columns(schemaName string, tableName string)
-	returns table(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
+CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)
+	RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
 BEGIN
-	return SELECT c.name, c."type", c.type_digits, c.type_scale, c."null", c."default", c.number, describe_type(c."type", c.type_digits, c.type_scale), com.remark
+	RETURN SELECT c.name, c."type", c.type_digits, c.type_scale, c."null", c."default", c.number, describe_type(c."type", c.type_digits, c.type_scale), com.remark
 		FROM sys._tables t, sys.schemas s, sys._columns c
 		LEFT OUTER JOIN sys.comments com ON c.id = com.id
 			WHERE c.table_id = t.id
@@ -163,10 +163,10 @@ BEGIN
 		ORDER BY c.number;
 END;
 
-create function describe_function(schemaName string, functionName string)
-	returns table(id integer, name string, type string, language string, remark string)
+CREATE FUNCTION sys.describe_function(schemaName string, functionName string)
+	RETURNS TABLE(id integer, name string, type string, language string, remark string)
 BEGIN
-    return SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark
+    RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark
         FROM sys.functions f
         JOIN sys.schemas s ON f.schema_id = s.id
         JOIN sys.function_types ft ON f.type = ft.function_type_id
