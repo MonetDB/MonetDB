@@ -1,0 +1,48 @@
+statement ok
+start transaction
+
+statement ok
+create table a (k varchar(64),v boolean)
+
+statement ok
+insert into a values ('one',true),('two',false),('one',false)
+
+statement ok
+create table b (k varchar(64))
+
+statement ok
+insert into b values ('two'),('two'),('two')
+
+query TT rowsort
+select * from a
+----
+one
+False
+one
+True
+two
+False
+
+query T rowsort
+select * from b
+----
+two
+two
+two
+
+query TT rowsort
+select k, v from a union all select k,NULL from b
+----
+12 values hashing to 4cdb4345da13acb6cdd6b50076aeda13
+
+query TII rowsort
+select k,count(*),count(v) from (select k,v from a union all select k,null from b) as t(k,v) group by k order by count(*) desc
+----
+one
+2
+2
+two
+4
+1
+
+

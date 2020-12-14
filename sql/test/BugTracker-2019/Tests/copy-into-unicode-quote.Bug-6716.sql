@@ -1,7 +1,7 @@
 start transaction;
 
 create table foo (i bigint, t text, f int);
-copy into foo from stdin;
+copy 8 records into foo from stdin;
 1689|00i\047m|2
 1690|00i\047v|2
 41561|2015‎|1

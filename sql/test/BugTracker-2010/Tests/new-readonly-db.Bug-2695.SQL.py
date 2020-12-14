@@ -20,5 +20,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
         out, err = s.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
+        if s.returncode == 0 or not err or 'Fatal error during initialization' not in err:
+            print("Test failed: expected a fatal error during initialization", file=sys.stderr)
+            print(file=sys.stderr)
+            sys.stderr.write(err)
+            sys.stdout.write(out)
+            sys.exit(1)

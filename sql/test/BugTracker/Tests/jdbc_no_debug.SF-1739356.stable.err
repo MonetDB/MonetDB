@@ -26,19 +26,7 @@ stderr of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` its
 # cmdline opt 	gdk_dbname = mTests_test_BugTracker
 # cmdline opt 	mal_listing = 0
 
-# 13:05:27 >  
-# 13:05:27 >  "./jdbc_no_debug.SF-1739356.SQL.sh" "jdbc_no_debug.SF-1739356"
-# 13:05:27 >  
-
-
-# 13:05:27 >  
-# 13:05:27 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h sofia -p 38256 -d mTests_test_BugTracker -f "../../../../../..//monetdb/Dec2011/hgrepo/sql/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
-# 13:05:27 >  
-
-Error on line 1: [42000] SQL debugging only supported in interactive mode in: "debug"
-Error on line 1: [25005] Current transaction is aborted (please ROLLBACK)
-
-# 13:05:27 >  
-# 13:05:27 >  "Done."
-# 13:05:27 >  
+# 15:15:25 >  
+# 15:15:25 >  "Done."
+# 15:15:25 >  
 

@@ -1,0 +1,40 @@
+query R rowsort
+select 0.01
+----
+0.010
+
+query R rowsort
+select .01
+----
+0.010
+
+query R rowsort
+select .1
+----
+0.100
+
+query R rowsort
+select .10
+----
+0.100
+
+query R rowsort
+select 01.0
+----
+1.000
+
+query R rowsort
+select 10.0
+----
+10.000
+
+query R rowsort
+select 10.
+----
+10.000
+
+query R rowsort
+select 0.
+----
+0.000
+

@@ -1,0 +1,436 @@
+statement error
+drop table s
+
+statement error
+drop table sp
+
+statement error
+commit
+
+statement ok
+create table s ( snr int, sname varchar(30) )
+
+statement ok
+create table sp ( snr int, pnr varchar(30) )
+
+query I rowsort
+select 1
+----
+1
+
+query T rowsort
+SELECT DISTINCT S.SNAME
+    FROM     S, SP
+    WHERE  S.SNR = SP.SNR
+    AND       SP.PNR = 'P2'
+----
+
+query I rowsort
+select 2
+----
+2
+
+query T rowsort
+SELECT DISTINCT S.SNAME
+    FROM     S
+    WHERE  S.SNR IN
+                  (SELECT SP.SNR
+                    FROM     SP
+                    WHERE  SP.PNR = 'P2' )
+----
+
+query I rowsort
+select 10
+----
+10
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+      WHERE  EXISTS
+                    (SELECT  *
+                       FROM     SP
+                       WHERE  SP.SNR = S.SNR
+                       AND        SP.PNR = 'P2' )
+----
+
+query I rowsort
+select 11
+----
+11
+
+query T rowsort
+SELECT DISTINCT S.SNAME
+      FROM   S
+     WHERE (SELECT COUNT(*)
+                      FROM     SP
+                      WHERE  SP.SNR = S.SNR
+                      AND        SP.PNR = 'P2' ) > 0
+----
+
+query I rowsort
+select 12
+----
+12
+
+query T rowsort
+SELECT DISTINCT S.SNAME
+      FROM    S
+      WHERE (SELECT COUNT(*)
+                       FROM     SP
+                       WHERE  SP.SNR = S.SNR
+                       AND        SP.PNR = 'P2' ) = 1
+----
+
+query I rowsort
+select 21
+----
+21
+
+query T rowsort
+SELECT  S.SNAME
+      FROM     S, SP
+      WHERE  S.SNR = SP.SNR
+      AND       SP.PNR = 'P2'
+      GROUP  BY S.SNAME
+----
+
+query I rowsort
+select 22
+----
+22
+
+query T rowsort
+SELECT DISTINCT S.SNAME
+      FROM     S, SP
+      WHERE  S.SNR = SP.SNR
+      GROUP   BY S.SNAME, SP.PNR
+      HAVING SP.PNR = 'P2'
+----
+
+query I rowsort
+select 23
+----
+23
+
+query T rowsort
+SELECT DISTINCT S.SNAME
+      FROM     S, SP
+      WHERE  SP.PNR = 'P2'
+      GROUP   BY S.SNR, S.SNAME, SP.SNR
+      HAVING SP.SNR = S.SNR
+----
+
+query I rowsort
+select 24
+----
+24
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S, SP
+      GROUP   BY S.SNR, S.SNAME, SP.SNR, SP.PNR
+      HAVING SP.SNR = S.SNR
+      AND        SP.PNR = 'P2'
+----
+
+query I rowsort
+select 25
+----
+25
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S CROSS JOIN SP
+      WHERE  S.SNR = SP.SNR
+      AND        SP.PNR = 'P2'
+----
+
+query I rowsort
+select 26
+----
+26
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S NATURAL JOIN SP
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 27
+----
+27
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S JOIN SP USING ( SNR )
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 28
+----
+28
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S JOIN SP ON S.SNR = SP.SNR
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 29
+----
+29
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S NATURAL LEFT JOIN SP
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 30
+----
+30
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S LEFT JOIN SP USING ( SNR )
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 31
+----
+31
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S LEFT JOIN SP ON S.SNR = SP.SNR
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 32
+----
+32
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S NATURAL RIGHT JOIN SP
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 33
+----
+33
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S RIGHT JOIN SP USING ( SNR )
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 34
+----
+34
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S RIGHT JOIN SP ON S.SNR = SP.SNR
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 35
+----
+35
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S NATURAL FULL JOIN SP
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 36
+----
+36
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S FULL JOIN SP USING ( SNR )
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 37
+----
+37
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S FULL JOIN SP ON S.SNR = SP.SNR
+      WHERE  SP.PNR = 'P2'
+----
+
+query I rowsort
+select 38
+----
+38
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      NATURAL JOIN
+                    (SELECT  SP.SNR
+                      FROM     SP
+                      WHERE  SP.PNR = 'P2' ) AS POINTLESS
+----
+
+query I rowsort
+select 39
+----
+39
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      JOIN
+                   (SELECT SP.SNR
+                     FROM     SP
+                     WHERE  SP.PNR = 'P2' ) AS POINTLESS
+                     USING  ( SNR )
+----
+
+query I rowsort
+select 41
+----
+41
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      NATURAL LEFT JOIN
+                    (SELECT SP.SNR
+                      FROM     SP
+                      WHERE  SP.PNR = 'P2' ) AS POINTLESS
+----
+
+query I rowsort
+select 42
+----
+42
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      LEFT JOIN
+                    (SELECT SP.SNR
+                      FROM     SP
+                      WHERE  SP.PNR = 'P2' ) AS POINTLESS
+                      USING  ( SNR )
+----
+
+query I rowsort
+select 44
+----
+44
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      NATURAL RIGHT JOIN
+                    (SELECT SP.SNR
+                      FROM     SP
+                      WHERE  SP.PNR = 'P2' ) AS POINTLESS
+----
+
+query I rowsort
+select 45
+----
+45
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      RIGHT JOIN
+                    (SELECT SP.SNR
+                      FROM     SP
+                      WHERE  SP.PNR = 'P2' ) AS POINTLESS
+                      USING  ( SNR )
+----
+
+query I rowsort
+select 47
+----
+47
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      NATURAL FULL JOIN
+                    (SELECT  SP.SNR
+                       FROM     SP
+                       WHERE  SP.PNR = 'P2' ) AS POINTLESS
+----
+
+query I rowsort
+select 48
+----
+48
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM     S
+                      FULL JOIN
+                    (SELECT SP.SNR
+                      FROM     SP
+                      WHERE  SP.PNR = 'P2' ) AS POINTLESS
+                      USING  ( SNR )
+----
+
+query I rowsort
+select 50
+----
+50
+
+query T rowsort
+SELECT  DISTINCT S.SNAME
+      FROM  (  ( SELECT S.SNR FROM S )
+                      INTERSECT
+                      (SELECT SP.SNR FROM SP
+                        WHERE SP.PNR = 'P2' ) ) AS POINTLESS
+                      NATURAL JOIN S
+----
+
+query I rowsort
+select 51
+----
+51
+
+statement error
+SELECT  DISTINCT S.SNAME
+      FROM  (  ( SELECT * FROM S )
+                       INTERSECT CORRESPONDING
+                       (SELECT * FROM SP
+                         WHERE SP.PNR = 'P2' ) ) AS POINTLESS
+                       NATURAL JOIN S
+
+query I rowsort
+select 52
+----
+52
+
+statement error
+SELECT  DISTINCT S.SNAME
+      FROM  (  ( SELECT * FROM S )
+                       INTERSECT CORRESPONDING BY ( SNR )
+                       (SELECT * FROM SP
+                         WHERE SP.PNR = 'P2' ) ) AS POINTLESS
+                       NATURAL JOIN S
+

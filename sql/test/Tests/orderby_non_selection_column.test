@@ -1,0 +1,60 @@
+statement ok
+create table lim_prob(dir varchar(30), test varchar(30), dir_test varchar(60))
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest1', 'mydir1/mytest1')
+
+statement ok
+insert into lim_prob values ('mydir2/', 'mytest3', 'mydir2/mytest3')
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest2', 'mydir1/mytest2')
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest4', 'mydir1/mytest4')
+
+statement ok
+insert into lim_prob values ('mydir2/', 'mytest1', 'mydir2/mytest1')
+
+statement ok
+insert into lim_prob values ('mydir2/', 'mytest2', 'mydir2/mytest2')
+
+statement ok
+insert into lim_prob values ('mydir1/', 'mytest3', 'mydir1/mytest3')
+
+query T rowsort
+select test     from lim_prob order by dir_test limit 10
+----
+mytest1
+mytest1
+mytest2
+mytest2
+mytest3
+mytest3
+mytest4
+
+query T rowsort
+select dir      from lim_prob order by dir_test limit 10
+----
+mydir1/
+mydir1/
+mydir1/
+mydir1/
+mydir2/
+mydir2/
+mydir2/
+
+query T rowsort
+select dir_test from lim_prob order by dir,test limit 10
+----
+mydir1/mytest1
+mydir1/mytest2
+mydir1/mytest3
+mydir1/mytest4
+mydir2/mytest1
+mydir2/mytest2
+mydir2/mytest3
+
+statement ok
+drop table lim_prob
+

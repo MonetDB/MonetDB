@@ -1,0 +1,83 @@
+statement ok
+create table fun(a int, b varchar(32))
+
+statement ok
+create table fun2(c int, d varchar(32))
+
+statement ok
+create or replace trigger mytrigger
+	after insert on fun referencing new row as "ins"
+	for each statement insert into fun2 values( a, b )
+
+statement error
+create or replace trigger mytrigger2
+	after update on fun referencing new row as "old"
+	for each statement insert into fun2 values( 1, 'value' )
+
+statement error
+create or replace trigger mytrigger2
+	after insert on fun referencing old row as "ups"
+	for each statement insert into fun2 values( 1, 'value' )
+
+statement error
+create or replace trigger mytrigger2
+	after update on fun referencing new row as "ins" old row as "ins"
+	for each statement insert into fun2 values( 1, 'value' )
+
+statement error
+create or replace trigger mytrigger2
+	after update on fun referencing new row as "ins" old row as "del"
+	for each statement insert into fun2 values( a, 'value' )
+
+statement error
+create or replace trigger mytrigger2
+	after delete on fun referencing old row as "fun3"
+	for each statement update fun2 fun3 set c = (select a from fun3)
+
+statement ok
+create or replace trigger mytrigger2
+	after delete on fun referencing old row as "del"
+	delete from fun2 where fun2.c = a
+
+statement ok
+insert into fun values (1, 'a')
+
+query IT rowsort
+select c, d from fun2
+----
+1
+a
+
+statement ok
+create or replace trigger mytrigger3
+	after insert on fun referencing new row as "fun2"
+	for each statement insert into fun2 values( 1, 'values' )
+
+statement ok
+truncate fun
+
+statement ok
+insert into fun
+
+query IT rowsort
+select a, b from fun
+----
+NULL
+NULL
+
+query IT rowsort
+select c, d from fun2
+----
+1
+a
+1
+values
+NULL
+NULL
+
+statement ok
+drop table fun cascade
+
+statement ok
+drop table fun2
+

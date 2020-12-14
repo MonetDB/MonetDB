@@ -1,0 +1,53 @@
+statement ok
+i:= mat.pack(1,2,3)
+
+query TI rowsort
+io.print(i)
+----
+0
+1
+1
+2
+2
+3
+
+statement ok
+f:= mat.pack(1.0,2.0,3.0)
+
+query TT rowsort
+io.print(f)
+----
+0
+1.0
+1
+2.0
+2
+3.0
+
+statement ok
+s:= mat.pack("a","b","c")
+
+query TT rowsort
+io.print(s)
+----
+0
+a
+1
+b
+2
+c
+
+statement ok
+b:= mat.pack(true,false,true)
+
+query TT rowsort
+io.print(b)
+----
+0
+True
+1
+False
+2
+True
+
+

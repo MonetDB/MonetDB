@@ -1,0 +1,32 @@
+statement ok
+start transaction
+
+statement error
+create table like_test (
+	v1 varchar
+)
+
+statement error
+insert into like_test values ('a math assignment')
+
+statement error
+insert into like_test values ('pathfinder is fun!')
+
+statement error
+select * from like_test where v1 like '%math%'
+
+statement error
+select * from like_test where v1 like 'a%math%'
+
+statement error
+select * from like_test where v1 like 'a_math%'
+
+statement error
+select * from like_test where v1 like '%m_th_a%t'
+
+statement error
+select * from like_test where v1 like '%in%_!'
+
+statement ok
+rollback
+

@@ -14,10 +14,7 @@ import copy
 import atexit
 import threading
 import signal
-if sys.version.startswith('2'):
-    import Queue as queue
-else:
-    import queue
+import queue
 
 from subprocess import PIPE
 try:
@@ -82,8 +79,12 @@ class _BufferedPipe:
     def __init__(self, fd):
         self._pipe = fd
         self._queue = queue.Queue()
+        self._cur = None
+        self._curidx = 0
         self._eof = False
         self._empty = ''
+        self._nl = '\n'
+        self._cr = '\r'
         self._thread = threading.Thread(target=self._readerthread,
                                         args=(fd, self._queue))
         self._thread.setDaemon(True)
@@ -94,14 +95,19 @@ class _BufferedPipe:
         w = 0
         first = True
         while True:
-            c = fh.read(1)
+            c = fh.read(1024)
             if first:
                 if type(c) is type(b''):
                     self._empty = b''
-                first = False
-            queue.put(c)                # put '' if at EOF
+                    self._nl = b'\n'
+                    self._cr = b'\r'
+                    first = False
             if not c:
+                queue.put(c)    # put '' if at EOF
                 break
+            c = c.replace(self._cr, self._empty)
+            if c:
+                queue.put(c)
 
     def close(self):
         if self._thread:
@@ -109,24 +115,38 @@ class _BufferedPipe:
         self._thread = None
 
     def read(self, size=-1):
+        ret = []
+        if self._cur:
+            if size < 0:
+                ret.append(self._cur)
+                self._cur = None
+            else:
+                ret.append(self._cur[self._curidx:self._curidx+size])
+                if self._curidx + size >= len(self._cur):
+                    self._cur = None
+                    self._curidx = 0
+                else:
+                    self._curidx += len(ret[-1])
+                size -= len(ret[-1])
+                if size == 0:
+                    return self._empty.join(ret)
         if self._eof:
+            if ret:
+                return self._empty.join(ret)
             return self._empty
         if size < 0:
             self.close()
-        ret = []
         while size != 0:
             c = self._queue.get()
-            if c == '\r':
-                c = self._queue.get()   # just ignore \r
-            ret.append(c)
-            if size > 0:
-                size -= 1
-            try:
-                # only available as of Python 2.5
-                self._queue.task_done()
-            except AttributeError:
-                # not essential, if not available
-                pass
+            if len(c) > size > 0:
+                ret.append(c[:size])
+                self._cur = c[size:]
+                size = 0
+            else:
+                ret.append(c)
+                if size > 0:
+                    size -= len(c)
+            self._queue.task_done()
             if not c:
                 self._eof = True
                 break                   # EOF
@@ -139,7 +159,7 @@ class _BufferedPipe:
             ret.append(c)
             if size > 0:
                 size -= 1
-            if c == '\n' or c == self._empty:
+            if c == self._nl or c == self._empty:
                 break
         return self._empty.join(ret)
 
@@ -216,7 +236,7 @@ class client(Popen):
                  server=None, port=None, dbname=None, host=None,
                  user='monetdb', passwd='monetdb', log=False,
                  interactive=None, echo=None, format=None,
-                 input=None, communicate=False, text=True):
+                 input=None, communicate=False, text=None, encoding=None):
         '''Start a client process.'''
         if lang == 'mal':
             cmd = _mal_client[:]
@@ -226,6 +246,9 @@ class client(Popen):
             cmd = _sql_dump[:]
         if verbose:
             sys.stdout.write('Default client: ' + ' '.join(cmd +  args) + '\n')
+
+        if (encoding is None or encoding.lower() == 'utf-8') and text is None:
+            text = True
 
         # no -i if input from -s or /dev/null
         if '-i' in cmd and ('-s' in args or stdin is None):
@@ -241,11 +264,25 @@ class client(Popen):
             elif '-e' not in cmd and echo:
                 cmd.append('-e')
         if format is not None:
-            for c in cmd:
-                if c.startswith('-f'):
-                    cmd.remove(c)
+            for i in range(len(cmd)):
+                if cmd[i] == '-f' or cmd[i] == '--format':
+                    del cmd[i:i+2]
+                    break
+                if cmd[i].startswith('-f') or cmd[i].startswith('--format='):
+                    del cmd[i]
                     break
             cmd.append('-f' + format)
+        if encoding is not None:
+            if text and encoding.lower() != 'utf-8':
+                raise RuntimeError('text cannot be combined with encoding')
+            for i in range(len(cmd)):
+                if cmd[i] == '-E' or cmd[i] == '--encoding':
+                    del cmd[i:i+2]
+                    break
+                if cmd[i].startswith('-E') or cmd[i].startswith('--encoding='):
+                    del cmd[i]
+                    break
+            cmd.append('-E' + encoding)
 
         env = None
 
@@ -311,12 +348,15 @@ class client(Popen):
             out = PIPE
         else:
             out = stdout
+        if text and not encoding:
+            encoding = 'utf-8'
         super().__init__(cmd + args,
                          stdin=stdin,
                          stdout=out,
                          stderr=stderr,
                          shell=False,
                          env=env,
+                         encoding=encoding,
                          text=text)
         if stdout == PIPE:
             self.stdout = _BufferedPipe(self.stdout)
@@ -363,7 +403,10 @@ class server(Popen):
             cmd.append('mapi_port=%s' % mapiport)
             if usock is not None:
                 cmd.append('--set')
-                cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
+                if mapiport == '0':
+                    cmd.append('mapi_usock=%s.${PORT}' % usock)
+                else:
+                    cmd.append('mapi_usock=%s.%s' % (usock, mapiport))
         for i in range(len(cmd)):
             if cmd[i].startswith('--dbpath='):
                 dbpath = cmd[i][9:]
@@ -447,6 +490,7 @@ class server(Popen):
                          shell=False,
                          text=True,
                          bufsize=bufsize,
+                         encoding='utf-8',
                          **kw)
         self.isserver = True
         if stderr == PIPE:
@@ -464,5 +508,26 @@ class server(Popen):
                 break
             if os.path.exists(started):
                 # server is ready
+                try:
+                    conn = open(os.path.join(dbpath, '.conn')).read()
+                except:
+                    if verbose:
+                        print('failed to open {}'.format(os.path.join(dbpath, '.conn')))
+                    pass
+                else:
+                    # retrieve mapi port if available
+                    for c in conn.splitlines():
+                        c = c.rstrip('/')
+                        c = c.rsplit(':', maxsplit=1)
+                        if len(c) == 2:
+                            try:
+                                port = int(c[1])
+                            except ValueError:
+                                pass
+                            else:
+                                if verbose:
+                                    print('mapi port: {}'.format(c[1]))
+                                self.dbport = c[1]
+                                break
                 break
             time.sleep(0.001)

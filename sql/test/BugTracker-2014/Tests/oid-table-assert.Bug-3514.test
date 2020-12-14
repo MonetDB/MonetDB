@@ -1,0 +1,49 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE OID_TBL(f1 oid)
+
+statement ok
+INSERT INTO OID_TBL(f1) VALUES ('1234')
+
+statement ok
+INSERT INTO OID_TBL(f1) VALUES ('1235')
+
+query T rowsort
+SELECT * FROM OID_TBL WHERE f1 = 1234
+----
+<function oid at 0x7f7f49c4dca0>
+
+query T rowsort
+SELECT * FROM OID_TBL WHERE f1 <> 1234
+----
+<function oid at 0x7f7f49c4dca0>
+
+query T rowsort
+SELECT * FROM OID_TBL WHERE f1 = '1234'
+----
+<function oid at 0x7f7f49c4dca0>
+
+statement ok
+INSERT INTO OID_TBL(f1) VALUES (NULL)
+
+query T rowsort
+SELECT * FROM OID_TBL WHERE f1 = 1234
+----
+<function oid at 0x7f7f49c4dca0>
+
+query T rowsort
+SELECT * FROM OID_TBL WHERE f1 <> 1234
+----
+<function oid at 0x7f7f49c4dca0>
+
+query T rowsort
+SELECT * FROM OID_TBL WHERE f1 = '1234'
+----
+<function oid at 0x7f7f49c4dca0>
+
+statement ok
+ROLLBACK
+
+

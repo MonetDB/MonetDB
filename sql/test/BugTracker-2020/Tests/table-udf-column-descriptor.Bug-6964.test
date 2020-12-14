@@ -1,0 +1,20 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE OR REPLACE FUNCTION test(i integer)
+RETURNS TABLE (value integer)
+BEGIN
+  return select value from generate_series(1,i);
+END
+
+query I
+select value from test(3)
+----
+1
+2
+
+statement ok
+ROLLBACK
+
+

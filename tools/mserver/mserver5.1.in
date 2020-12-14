@@ -268,8 +268,16 @@ Default
 .TP
 .B mapi_usock
 The name of the UNIX domain socket file on which the server will
-listen for connections.  Note, there is usually a severe
-system-imposed length limitation on the name of the file.
+listen for connections.
+If the name contains the substring
+.BR ${PORT} ,
+that part will be replaced by the decimal representation of the TCP/IP
+port (option
+.BR mapi_port ).
+This is especially useful if the port was specified as
+.BR 0 .
+Note, there is usually a severe system-imposed length limitation on
+the name of the file.
 .TP
 .B mapi_port
 The TCP/IP port number on which the server will listen for

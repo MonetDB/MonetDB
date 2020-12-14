@@ -1,0 +1,29 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE testschema.geomtest (
+	p   GEOMETRY(POINT),
+	c   GEOMETRY(LINESTRING), --was CURVE but is not supported anymore,
+	ls  GEOMETRY(LINESTRING),
+	s   GEOMETRY(POLYGON), -- was SURFACE but is not supported anymore,
+	pg  GEOMETRY(POLYGON),
+	mp  GEOMETRY(MULTIPOINT),
+	mc  GEOMETRY(MULTILINESTRING), -- was MULTICURVE but is not supported anymore,
+	mls GEOMETRY(MULTILINESTRING),
+	ms  GEOMETRY(MULTIPOLYGON), --was MULTISURFACE but is not supported anymore,
+	mpg GEOMETRY(MULTIPOLYGON),
+	g   GEOMETRY,
+	gc  GEOMETRY(GEOMETRYCOLLECTION),
+	m   MBR
+)
+
+statement ok
+insert into testschema.geomtest values('POINT(10.5 12.3)', 'LINESTRING(10 10, 20 20, 30 40)', 'LINESTRING(10 10, 20 20, 30 40)', 'POLYGON((10 10, 10 20, 20 20, 20 15, 10 10))', 'POLYGON((10 10, 10 20, 20 20, 20 15, 10 10))', 'MULTIPOINT(20 80, 110 160, 20 160)', 'MULTILINESTRING((0 0,0 80,60 80,60 0,0 0))', 'MULTILINESTRING((0 0,0 80,60 80,60 0,0 0))', 'MULTIPOLYGON(((140 110, 260 110, 170 20, 50 20, 140 110)), ((300 270, 420 270, 340 190, 220 190, 300 270)))', 'MULTIPOLYGON(((140 110, 260 110, 170 20, 50 20, 140 110)), ((300 270, 420 270, 340 190, 220 190, 300 270)))', 'POLYGON((10 10, 10 20, 20 20, 20 15, 10 10))', 'GEOMETRYCOLLECTION (POLYGON ((0 0, 0 100, 100 100, 100 0, 0 0)), LINESTRING(10 10, 20 20, 30 40))', sys.mbr('POLYGON((10 10, 10 20, 20 20, 20 15, 10 10))'))
+
+statement ok
+insert into testschema.geomtest values(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
+
+statement ok
+COMMIT
+

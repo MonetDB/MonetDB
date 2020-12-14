@@ -1,0 +1,41 @@
+statement ok
+CREATE TABLE testing7 (ab INT)
+
+statement ok
+CREATE TABLE testing8 (abc INT)
+
+statement ok
+CREATE TRIGGER nanani AFTER INSERT ON testing7 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (1); END
+
+statement ok
+INSERT INTO testing7 values (1)
+
+query I rowsort
+SELECT abc FROM testing8
+----
+1
+
+statement ok
+CREATE OR REPLACE TRIGGER nanani AFTER INSERT ON testing7 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (2); END
+
+statement ok
+INSERT INTO testing7 values (1)
+
+query I rowsort
+SELECT abc FROM testing8
+----
+1
+2
+
+statement error
+CREATE OR REPLACE TRIGGER failedtrigger AFTER INSERT ON testing3 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (3); END
+
+statement ok
+DROP TRIGGER nanani
+
+statement ok
+DROP TABLE testing7
+
+statement ok
+DROP TABLE testing8
+

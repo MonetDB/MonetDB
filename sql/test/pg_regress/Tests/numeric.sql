@@ -815,3 +815,4 @@ DROP TABLE num_exp_log10;
 DROP TABLE num_exp_power_10_ln;
 DROP TABLE num_result;
 
+set optimizer = 'default_pipe';

@@ -1,0 +1,32 @@
+statement ok
+set optimizer='default_pipe'
+
+statement ok
+set optimizer='minimal_pipe'
+
+query T rowsort
+select optimizer
+----
+minimal_pipe
+
+statement error
+set optimizer=' optimizer.inline(); optimizer.remap(); optimizer.evaluate(); optimizer.costModel(); optimizer.coercions(); optimizer.emptySet(); optimizer.aliases(); optimizer.mergetable(); optimizer.deadcode(); optimizer.commonTerms(); optimizer.joinPath(); optimizer.reorder(); optimizer.deadcode(); optimizer.reduce(); optimizer.querylog(); optimizer.multiplex(); optimizer.garbageCollector();'
+
+query T rowsort
+select optimizer
+----
+minimal_pipe
+
+statement error
+set optimizer='myfamous_pipe'
+
+query T rowsort
+select optimizer
+----
+minimal_pipe
+
+query TTT rowsort
+select * from optimizers()
+----
+18 values hashing to a37beedc8e37ec2b97c186efcf42a2dc
+

@@ -3,6 +3,7 @@ try:
 except ImportError:
     import process
 import os, sys, socket
+from MonetDBtesting.sqltest import SQLTestCase
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
@@ -23,26 +24,38 @@ cloneport = freeport()
 dbname = tstdb
 dbnameclone = tstdb + 'clone'
 
-#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
 with process.server(dbname=dbnameclone, mapiport=cloneport, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
-     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-
-    # Generate a wrong master record
-    cout, cerr = c.communicate('''\
-call wlr.master('%s');
-call wlr.replicate();
-select * from tmp;
-''' % dbname )
+        SQLTestCase() as tc:
+    tc.connect(database=dbnameclone, port=cloneport)
+    tc.execute("call wlr.master('%s');" % dbname).assertSucceeded()
+    tc.execute("call wlr.replicate();").assertSucceeded()
+    tc.execute("select * from tmp;")\
+            .assertSucceeded()\
+            .assertDataResultMatch([])
 
     sout, serr = slave.communicate()
-    #mout, merr = master.communicate()
 
-    #sys.stdout.write(mout)
-    sys.stdout.write(sout)
-    sys.stdout.write(cout)
-    #sys.stderr.write(merr)
-    sys.stderr.write(serr)
-    sys.stderr.write(cerr)
+
+#master = process.server(dbname = dbname, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE)
+#with process.server(dbname=dbnameclone, mapiport=cloneport, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as slave, \
+#     process.client('sql', server = slave, stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
+#
+#    # Generate a wrong master record
+#    cout, cerr = c.communicate('''\
+#call wlr.master('%s');
+#call wlr.replicate();
+#select * from tmp;
+#''' % dbname )
+#
+#    sout, serr = slave.communicate()
+#    #mout, merr = master.communicate()
+#
+#    #sys.stdout.write(mout)
+#    sys.stdout.write(sout)
+#    sys.stdout.write(cout)
+#    #sys.stderr.write(merr)
+#    sys.stderr.write(serr)
+#    sys.stderr.write(cerr)
 
 def listfiles(path):
     sys.stdout.write("#LISTING OF THE WLR LOG FILE\n")

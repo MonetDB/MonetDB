@@ -1,0 +1,79 @@
+statement ok
+create table aggrtest00 ( col1 varchar(10), col2 integer )
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00
+----
+NULL
+
+statement ok
+insert into aggrtest00 values ('hallo', 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00
+----
+[ "hallo" ]
+
+statement ok
+insert into aggrtest00 values ('world', 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00
+----
+[ "hallo", "world" ]
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00 group by col2
+----
+[ "hallo", "world" ]
+
+statement ok
+insert into aggrtest00 values ('foobar', 2)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00
+----
+[ "hallo", "world", "foobar" ]
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00 group by col2
+----
+[ "foobar" ]
+[ "hallo", "world" ]
+
+statement ok
+delete from aggrtest00
+
+statement ok
+insert into aggrtest00 values (NULL, 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00
+----
+NULL
+
+statement ok
+insert into aggrtest00 values ('hello', 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00
+----
+[ "hello" ]
+
+statement ok
+insert into aggrtest00 values ('world', 2)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00
+----
+[ "hello", "world" ]
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest00 group by col2
+----
+[ "hello" ]
+[ "world" ]
+
+statement ok
+drop table aggrtest00
+

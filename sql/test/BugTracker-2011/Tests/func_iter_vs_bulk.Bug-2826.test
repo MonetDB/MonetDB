@@ -1,0 +1,25 @@
+statement ok
+set optimizer='sequential_pipe'
+
+statement ok
+create table tab_2826 (d double)
+
+statement ok
+insert into tab_2826 values (1.0),(2.0),(3.0),(4.0),(5.0)
+
+statement ok
+create function func_2826(f real) returns real begin return log10(f); end
+
+query R rowsort
+select * from tab_2826 where func_2826(d) > 1
+----
+
+statement ok
+drop function func_2826
+
+statement ok
+drop table tab_2826
+
+statement ok
+set optimizer = 'default_pipe'
+

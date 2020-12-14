@@ -261,3 +261,4 @@ SELECT * FROM rank_DOC_BM250_RETRIEVE_result LIMIT 10;
 -- The following works:
 -- EXPLAIN SELECT * FROM rank_DOC_BM250_RETRIEVE_result;
 
+ROLLBACK;

@@ -1,0 +1,3 @@
+--set embedded_c=yes
+--set embedded_r=yes
+--set embedded_py=3

@@ -557,50 +557,6 @@ stdout of test 'alter_table` in directory 'sql/test/pg_regress` itself:
 #drop table c1;
 #drop table p2 cascade;
 #drop table p1 cascade;
-#create table altstartwith (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
-#insert into altstartwith (col) values (1);
-[ 1	]
-#select oid, * from altstartwith;
-% sys.altstartwith,	sys.altstartwith,	sys.altstartwith # table_name
-% oid,	oid,	col # name
-% oid,	oid,	int # type
-% 3,	3,	1 # length
-[ 1@0,	1@0,	1	]
-#alter table altstartwith drop column oid;
-#select * from altstartwith;
-% sys.altstartwith # table_name
-% col # name
-% int # type
-% 1 # length
-[ 1	]
-#drop table altstartwith;
-#create table altwithoid (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
-#create table altinhoid (col integer); -- inherits (altwithoid) without oids
-#insert into altinhoid values (1);
-[ 1	]
-#select oid > 0, * from altwithoid;
-% sys.%1,	sys.altwithoid,	sys.altwithoid # table_name
-% %1,	oid,	col # name
-% boolean,	oid,	int # type
-% 5,	3,	1 # length
-#select oid > 0, * from altwithoid; -- fails
-% sys.%1,	sys.altwithoid,	sys.altwithoid # table_name
-% %1,	oid,	col # name
-% boolean,	oid,	int # type
-% 5,	3,	1 # length
-#select * from altwithoid;
-% sys.altwithoid,	sys.altwithoid # table_name
-% oid,	col # name
-% oid,	int # type
-% 3,	1 # length
-#select * from altinhoid;
-% sys.altinhoid # table_name
-% col # name
-% int # type
-% 1 # length
-[ 1	]
-#drop table altwithoid;
-#drop table altinhoid;
 #create table p1 (f1 int);
 #create table c1 (f1 int, f2 text, f3 int); -- inherits (p1)
 #alter table p1 add column a1 int check (a1 > 0);

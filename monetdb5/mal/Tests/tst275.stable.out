@@ -28,50 +28,6 @@ stdout of test 'tst275` in directory 'monetdb5/mal` itself:
 # 13:20:46 >  "mclient" "-lmal" "-ftest" "-Eutf-8" "--host=/var/tmp/mtest-18020" "--port=37961"
 # 13:20:46 >  
 
-#~BeginVariableOutput~#
-#--------------------------#
-# t	t	t  # name
-# void	str	str  # type
-#--------------------------#
-[ 0@0,	"batId",	"tmp_1004"	]
-[ 1@0,	"batCacheid",	"516"	]
-[ 2@0,	"tparentid",	"0"	]
-[ 3@0,	"batSharecnt",	"0"	]
-[ 4@0,	"batCount",	"0"	]
-[ 5@0,	"batCapacity",	"256"	]
-[ 6@0,	"head",	"void"	]
-[ 7@0,	"tail",	"int"	]
-[ 8@0,	"batPersistence",	"transient"	]
-[ 9@0,	"batRestricted",	"updatable"	]
-[ 10@0,	"batRefcnt",	"1"	]
-[ 11@0,	"batLRefcnt",	"1"	]
-[ 12@0,	"batDirty",	"dirty"	]
-[ 13@0,	"hseqbase",	"0@0"	]
-[ 14@0,	"tident",	"t"	]
-[ 15@0,	"tdense",	"0"	]
-[ 16@0,	"tseqbase",	nil	]
-[ 17@0,	"tsorted",	"1"	]
-[ 18@0,	"trevsorted",	"1"	]
-[ 19@0,	"tkey",	"1"	]
-[ 20@0,	"tvarsized",	"0"	]
-[ 21@0,	"tnosorted",	"0"	]
-[ 22@0,	"tnorevsorted",	"0"	]
-[ 23@0,	"tnokey[0]",	"0"	]
-[ 24@0,	"tnokey[1]",	"0"	]
-[ 25@0,	"tnonil",	"1"	]
-[ 26@0,	"tnil",	"0"	]
-[ 27@0,	"batInserted",	"0"	]
-[ 28@0,	"ttop",	"0"	]
-[ 29@0,	"batCopiedtodisk",	"0"	]
-[ 30@0,	"batDirtydesc",	"dirty"	]
-[ 31@0,	"theap.dirty",	"clean"	]
-[ 32@0,	"tail.free",	"0"	]
-[ 33@0,	"0",	"1024"	]
-[ 34@0,	"1024",	"malloced"	]
-[ 35@0,	"1024",	"malloced"	]
-[ 36@0,	"1024",	"10/1004.tail"	]
-[ 37@0,	"tvheap->dirty",	"clean"	]
-#~EndVariableOutput~#
 #--------------------------#
 # h	t  # name
 # void	int  # type

@@ -362,8 +362,6 @@ insert into atacc1 (test) values (2);
 insert into atacc1 (test) values (2);
 -- should succeed
 insert into atacc1 (test) values (4);
--- try adding a unique oid constraint
-alter table atacc1 add constraint atacc_oid1 unique(oid);
 drop table atacc1;
 
 -- let's do one where the unique constraint fails when added
@@ -419,12 +417,8 @@ insert into atacc1 (test) values (2);
 insert into atacc1 (test) values (4);
 -- inserting NULL should fail
 insert into atacc1 (test) values(NULL);
--- try adding a second primary key (should fail)
-alter table atacc1 add constraint atacc_oid1 primary key(oid);
 -- drop first primary key constraint
 alter table atacc1 drop constraint atacc_test1 restrict;
--- try adding a primary key on oid (should succeed)
-alter table atacc1 add constraint atacc_oid1 primary key(oid);
 alter table atacc1 add constraint atacc_test1 primary key (test);
 drop table atacc1;
 
@@ -509,10 +503,6 @@ alter table atacc1 alter test set not null;
 -- try altering a non-existent column, should fail
 alter table atacc1 alter bar set not null;
 alter table atacc1 alter bar drop not null;
-
--- try altering the oid column, should fail
-alter table atacc1 alter oid set not null;
-alter table atacc1 alter oid drop not null;
 
 -- try creating a view and altering that, should fail
 create view myview as select * from atacc1;
@@ -648,9 +638,6 @@ delete from atacc1;
 
 -- try dropping a non-existent column, should fail
 alter table atacc1 drop bar;
-
--- try dropping the oid column, should succeed
-alter table atacc1 drop oid;
 
 -- try dropping the xmin column, should fail
 alter table atacc1 drop xmin;
@@ -856,11 +843,6 @@ create table p2(id2 int, name text, height int);
 create table c1(age int, id int, name text); -- inherits(p1,p2)
 create table gc1(age int, id int, name text); -- inherits (c1)
 
-select relname, attname, attinhcount, attislocal
-from pg_class join pg_attribute on (pg_class.oid = pg_attribute.attrelid)
-where relname in ('p1','p2','c1','gc1') and attnum > 0 and not attisdropped
-order by relname, attnum;
-
 -- should work
 alter table /* only */ p1 drop column name;
 -- should work. Now c1.name is local and inhcount is 0.
@@ -874,52 +856,9 @@ alter table gc1 drop column name;
 -- should work and drop the attribute in all tables
 alter table p2 drop column height;
 
-select relname, attname, attinhcount, attislocal
-from pg_class join pg_attribute on (pg_class.oid = pg_attribute.attrelid)
-where relname in ('p1','p2','c1','gc1') and attnum > 0 and not attisdropped
-order by relname, attnum;
-
 drop table c1;
 drop table p2 cascade;
 drop table p1 cascade;
-
---
--- Test the ALTER TABLE WITHOUT OIDS command
---
-create table altstartwith (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
-
-insert into altstartwith (col) values (1);
-
-select oid, * from altstartwith;
-
---alter table altstartwith set without oids;
-alter table altstartwith drop column oid;
-
-select oid, * from altstartwith; -- fails
-select * from altstartwith;
-drop table altstartwith;
-
--- Run inheritance tests
-create table altwithoid (oid oid GENERATED ALWAYS AS IDENTITY, col integer) /* with oids */;
-
--- Inherits parents oid column
-create table altinhoid (col integer); -- inherits (altwithoid) without oids
-
-insert into altinhoid values (1);
-
-select oid > 0, * from altwithoid;
-select oid > 0, * from altinhoid;
-
-alter table altwithoid set without oids;
-alter table altinhoid set without oids;
-
-select oid > 0, * from altwithoid; -- fails
-select oid > 0, * from altinhoid; -- fails
-select * from altwithoid;
-select * from altinhoid;
-
-drop table altwithoid;
-drop table altinhoid;
 
 -- test renumbering of child-table columns in inherited operations
 

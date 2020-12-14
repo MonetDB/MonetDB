@@ -39,3 +39,5 @@ explain select name,func from functions where icontains(name, 'optimizers');
 explain select name,func from functions where not_icontains(name, 'optimizers');
 
 rollback;
+
+set optimizer='default_pipe';

@@ -1,0 +1,404 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table aircraft (aircraft_code char(3) NOT NULL,aircraft_type char(64) NOT NULL,engines decimal(1) NOT NULL,category char(10) NOT NULL,wide_body char(3) NOT NULL,wing_span float(6,2) NOT NULL,length1 float(6,2) NOT NULL,weight integer NOT NULL,capacity decimal(3) NOT NULL,pay_load integer NOT NULL,cruising_speed decimal(5) NOT NULL,range_miles decimal(5) NOT NULL,pressurized char(3) NOT NULL,PRIMARY KEY (aircraft_code))
+
+statement ok
+create table airline (airline_code char(2) NOT NULL,airline_name char(64) NOT NULL,notes char(38) NOT NULL,PRIMARY KEY (airline_code))
+
+statement ok
+create table airport (airport_code char(3) NOT NULL,airport_name char(40) NOT NULL,location char(36) NOT NULL,state_code char(2) NOT NULL,country_name char(25) NOT NULL,time_zone_code char(3) NOT NULL,PRIMARY KEY (airport_code))
+
+statement ok
+create table airport_service (city_code char(4) NOT NULL,airport_code char(3) NOT NULL,miles_distant float(4,1) NOT NULL,direction char(3) NOT NULL,minutes_distant decimal(3) NOT NULL,PRIMARY KEY (city_code, airport_code))
+
+statement ok
+create table city (city_code char(4) NOT NULL,city_name char(25) NOT NULL,state_code char(2) NOT NULL,country_name char(25) NOT NULL,time_zone_code char(3) NOT NULL,PRIMARY KEY (city_code))
+
+statement ok
+create table class_of_service (class_code char(2) NOT NULL,rank decimal(2) NOT NULL,class_description char(80) NOT NULL,PRIMARY KEY (class_code))
+
+statement ok
+create table code_description (code char(5) NOT NULL,description char(110) NOT NULL,PRIMARY KEY (code))
+
+statement ok
+create table compound_class (fare_class char(3) NOT NULL,base_class char(2) NOT NULL,class_type char(10) NOT NULL,premium char(3) NOT NULL,economy char(3) NOT NULL,discounted char(3) NOT NULL,night char(3) NOT NULL,season_fare char(4) NOT NULL,class_days char(7) NOT NULL,PRIMARY KEY (fare_class))
+
+statement ok
+create table connect_leg (connect_code integer NOT NULL,leg_number decimal(1) NOT NULL,flight_code integer NOT NULL,PRIMARY KEY (connect_code, leg_number, flight_code))
+
+statement ok
+create table fconnection (connect_code integer NOT NULL,from_airport char(3) NOT NULL,to_airport char(3) NOT NULL,departure_time decimal(4) NOT NULL,arrival_time decimal(4) NOT NULL,flight_days char(7) NOT NULL,stops decimal(1) NOT NULL,connections decimal(1) NOT NULL,time_elapsed decimal(4) NOT NULL,PRIMARY KEY (connect_code))
+
+statement ok
+create table day_name (day_code decimal(1) NOT NULL,day_name char(9) NOT NULL,PRIMARY KEY (day_code))
+
+statement ok
+create table dual_carrier (main_airline char(2) NOT NULL,dual_airline char(2) NOT NULL,low_flight decimal(4) NOT NULL,high_flight decimal(4) NOT NULL,fconnection_name char(64) NOT NULL,PRIMARY KEY (main_airline, dual_airline, low_flight))
+
+statement ok
+create table fare (fare_code char(8) NOT NULL,from_airport char(3) NOT NULL,to_airport char(3) NOT NULL,fare_class char(3) NOT NULL,fare_airline char(2) NOT NULL,restrict_code char(5) NOT NULL,one_way_cost float(7,2) NOT NULL,rnd_trip_cost float(8,2) NOT NULL,PRIMARY KEY (fare_code))
+
+statement ok
+create table flight (flight_code integer NOT NULL,flight_days char(7) NOT NULL,from_airport char(3) NOT NULL,to_airport char(3) NOT NULL,departure_time decimal(4) NOT NULL,arrival_time decimal(4) NOT NULL,airline_code char(2) NOT NULL,flight_number decimal(4) NOT NULL,class_string char(8) NOT NULL,aircraft_code char(3) NOT NULL,meal_code char(7) NOT NULL,stops decimal(1) NOT NULL,dual_carrier char(1) NOT NULL,time_elapsed decimal(4) NOT NULL,PRIMARY KEY (flight_code))
+
+statement ok
+create table flight_class (flight_code integer NOT NULL,fare_class char(3) NOT NULL,PRIMARY KEY (flight_code, fare_class))
+
+statement ok
+create table flight_day (day_mask char(7) NOT NULL,day_code decimal(1) NOT NULL,day_name char(9) NOT NULL,PRIMARY KEY (day_mask, day_code))
+
+statement ok
+create table flight_fare (flight_code integer NOT NULL,fare_code char(8) NOT NULL,PRIMARY KEY (flight_code, fare_code))
+
+statement ok
+create table food_service (meal_code char(4) NOT NULL,meal_number decimal(1) NOT NULL,meal_class char(10) NOT NULL,meal_description char(10) NOT NULL,PRIMARY KEY (meal_code, meal_number, meal_class))
+
+statement ok
+create table ground_service (city_code char(4) NOT NULL,airport_code char(3) NOT NULL,transport_code char(1) NOT NULL,ground_fare float(6,2) NOT NULL,PRIMARY KEY (city_code, airport_code, transport_code))
+
+statement ok
+create table time_interval (period char(20) NOT NULL,begin_time decimal(4) NOT NULL,end_time decimal(4) NOT NULL,PRIMARY KEY (period, begin_time))
+
+statement ok
+create table month_name (month_number decimal(2) NOT NULL,month_name char(9) NOT NULL,PRIMARY KEY (month_number))
+
+statement ok
+create table restrict_carrier (restrict_code char(5) NOT NULL,airline_code char(2) NOT NULL,PRIMARY KEY (restrict_code, airline_code))
+
+statement ok
+create table restrict_class (restrict_code char(5) NOT NULL,ex_fare_class char(12) NOT NULL,PRIMARY KEY (restrict_code, ex_fare_class))
+
+statement ok
+create table restriction (restrict_code char(5) NOT NULL,application char(80) NOT NULL,no_discounts char(80) NOT NULL,reserve_ticket decimal(3) NOT NULL,stopovers char(1) NOT NULL,return_min decimal(3) NOT NULL,return_max decimal(3) NOT NULL,PRIMARY KEY (restrict_code))
+
+statement ok
+create table state (state_code char(2) NOT NULL,state_name char(25) NOT NULL,country_name char(25) NOT NULL,PRIMARY KEY (state_code))
+
+statement ok
+create table stop1 (flight_code integer NOT NULL,stop_number decimal(1) NOT NULL,stop_flight integer NOT NULL,PRIMARY KEY (flight_code, stop_number))
+
+statement ok
+create table time_zone (time_zone_code char(3) NOT NULL,time_zone_name char(32) NOT NULL,PRIMARY KEY (time_zone_code, time_zone_name))
+
+statement ok
+create table transport (transport_code char(1) NOT NULL,transport_desc char(32) NOT NULL,PRIMARY KEY (transport_code))
+
+statement ok
+COPY 135 RECORDS INTO "sys"."aircraft" FROM E'$QTSTSRCDIR/aircraft.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 314 RECORDS INTO "sys"."airline" FROM E'$QTSTSRCDIR/airline.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 9 RECORDS INTO "sys"."airport" FROM E'$QTSTSRCDIR/airport.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 14 RECORDS INTO "sys"."airport_service" FROM E'$QTSTSRCDIR/airport_service.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 11 RECORDS INTO "sys"."city" FROM E'$QTSTSRCDIR/city.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 27 RECORDS INTO "sys"."class_of_service" FROM E'$QTSTSRCDIR/class_of_service.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 15 RECORDS INTO "sys"."code_description" FROM E'$QTSTSRCDIR/code_description.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 149 RECORDS INTO "sys"."compound_class" FROM E'$QTSTSRCDIR/compound_class.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 351 RECORDS INTO "sys"."connect_leg" FROM E'$QTSTSRCDIR/connect_leg.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 164 RECORDS INTO "sys"."fconnection" FROM E'$QTSTSRCDIR/fconnection.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 7 RECORDS INTO "sys"."day_name" FROM E'$QTSTSRCDIR/day_name.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 114 RECORDS INTO "sys"."dual_carrier" FROM E'$QTSTSRCDIR/dual_carrier.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 534 RECORDS INTO "sys"."fare" FROM E'$QTSTSRCDIR/fare.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 579 RECORDS INTO "sys"."flight" FROM E'$QTSTSRCDIR/flight.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 2895 RECORDS INTO "sys"."flight_class" FROM E'$QTSTSRCDIR/flight_class.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 448 RECORDS INTO "sys"."flight_day" FROM E'$QTSTSRCDIR/flight_day.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 2998 RECORDS INTO "sys"."flight_fare" FROM E'$QTSTSRCDIR/flight_fare.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 121 RECORDS INTO "sys"."food_service" FROM E'$QTSTSRCDIR/food_service.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 33 RECORDS INTO "sys"."ground_service" FROM E'$QTSTSRCDIR/ground_service.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 12 RECORDS INTO "sys"."time_interval" FROM E'$QTSTSRCDIR/time_interval.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 12 RECORDS INTO "sys"."month_name" FROM E'$QTSTSRCDIR/month_name.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 612 RECORDS INTO "sys"."restrict_carrier" FROM E'$QTSTSRCDIR/restrict_carrier.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 4 RECORDS INTO "sys"."restrict_class" FROM E'$QTSTSRCDIR/restrict_class.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 65 RECORDS INTO "sys"."restriction" FROM E'$QTSTSRCDIR/restriction.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 63 RECORDS INTO "sys"."state" FROM E'$QTSTSRCDIR/state.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 69 RECORDS INTO "sys"."stop1" FROM E'$QTSTSRCDIR/stop1.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 9 RECORDS INTO "sys"."time_zone" FROM E'$QTSTSRCDIR/time_zone.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+COPY 4 RECORDS INTO "sys"."transport" FROM E'$QTSTSRCDIR/transport.dat' USING DELIMITERS E'\t',E'\n','"'
+
+statement ok
+commit
+
+query TTT rowsort
+select city.city_name,state.state_name,city.city_code from city,state where city.city_code='MATL' and city.state_code=state.state_code
+----
+ATLANTA
+GEORGIA
+MATL
+
+query TTT rowsort
+select city.city_name,state.state_name,city.city_code from state,city where city.state_code=state.state_code order by city.city_name,state.state_name
+----
+33 values hashing to 7ac2a3c0577af8c1393796e07d9e0f19
+
+query TT rowsort
+select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code order by month_name.month_number
+----
+14 values hashing to ab97c4bd58e2e3b3d27ee07bb6a7bb4c
+
+query TT rowsort
+select month_name.month_name,day_name.day_name from month_name,day_name where month_name.month_number=day_name.day_code and day_name.day_code >= 4 order by month_name.month_number
+----
+APRIL
+THURSDAY
+JULY
+SUNDAY
+JUNE
+SATURDAY
+MAY
+FRIDAY
+
+query IT rowsort
+select flight.flight_code,aircraft.aircraft_type from flight,aircraft where flight.aircraft_code=aircraft.aircraft_code order by flight.flight_code
+----
+1158 values hashing to 07d61913957a010682838ee6b1143e28
+
+query T rowsort
+select fare.fare_code from restrict_carrier,airline,fare where restrict_carrier.airline_code=airline.airline_code and fare.restrict_code=restrict_carrier.restrict_code order by fare.fare_code
+----
+5692 values hashing to 15f76b6565aff84c2ad9c6243b0b7532
+
+query T rowsort
+select distinct category from aircraft order by category
+----
+(empty)
+AMPHIBIAN
+HELICOPTER
+JET
+PROPELLER
+TURBOPROP
+
+query T rowsort
+select distinct from_airport from flight order by from_airport
+----
+ATL
+BOS
+BWI
+DEN
+DFW
+OAK
+PHL
+PIT
+SFO
+
+query T rowsort
+select distinct aircraft_code from flight order by aircraft_code
+----
+22 values hashing to f044834d5fb1d0ece7a6af6095fc624b
+
+query TTTTTTRR rowsort
+select distinct * from fare
+----
+4272 values hashing to f56eaeef899632ebee916e30fa9350d4
+
+query I rowsort
+select distinct flight_code from flight_fare order by flight_code
+----
+579 values hashing to 40dff75cf7e5726c14d219495d13385b
+
+query IT rowsort
+select distinct flight.flight_code,aircraft.aircraft_type from flight,aircraft where flight.aircraft_code=aircraft.aircraft_code order by flight.flight_code
+----
+1158 values hashing to 07d61913957a010682838ee6b1143e28
+
+query TT rowsort
+select distinct airline.airline_name,aircraft.aircraft_type from aircraft,airline,flight where flight.aircraft_code=aircraft.aircraft_code and flight.airline_code=airline.airline_code order by airline.airline_name, aircraft.aircraft_type
+----
+88 values hashing to 4be5fca64dbd9a9e66b4844951fba7ae
+
+query TRI rowsort
+select day_name.day_name,day_name.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name,day_name.day_code order by day_code
+----
+21 values hashing to 219038206da80f137b975866538f00f6
+
+query TI rowsort
+select day_name.day_name,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by day_name.day_name
+----
+14 values hashing to be66532d880a2cb6f14480ba6dc80929
+
+query TT rowsort
+select month_name,day_name from month_name,day_name where month_number=day_code and day_code>3 group by month_name,day_name
+----
+APRIL
+THURSDAY
+JULY
+SUNDAY
+JUNE
+SATURDAY
+MAY
+FRIDAY
+
+query TRI rowsort
+select day_name.day_name,flight_day.day_code,count(*) from flight_day,day_name where day_name.day_code=flight_day.day_code group by flight_day.day_code,day_name.day_name order by day_code
+----
+21 values hashing to 219038206da80f137b975866538f00f6
+
+query R rowsort
+select sum(engines) from aircraft
+----
+278.000
+
+query R rowsort
+select avg(engines) from aircraft
+----
+2.000
+
+query R rowsort
+select avg(engines) from aircraft where engines>0
+----
+2.000
+
+query III rowsort
+select count(*),min(pay_load),max(pay_load) from aircraft where pay_load>0
+----
+94
+240
+165710
+
+query II rowsort
+select min(flight_code),min(flight_code) from flight
+----
+101908
+101908
+
+query TT rowsort
+select min(from_airport),min(to_airport) from flight
+----
+ATL
+ATL
+
+query I rowsort
+select count(*) from aircraft where pay_load>10000
+----
+50
+
+query I rowsort
+select count(*) from aircraft where pay_load<>0
+----
+94
+
+query I rowsort
+select count(*) from flight where flight_code >= 112793
+----
+279
+
+query TTR rowsort
+SELECT from_airport,to_airport,avg(time_elapsed) FROM flight WHERE from_airport='ATL' AND to_airport='BOS' group by from_airport,to_airport
+----
+ATL
+BOS
+154.000
+
+query TR rowsort
+select city_code, avg(ground_fare) from ground_service where ground_fare<>0 group by city_code
+----
+22 values hashing to 938fcbb7f1cfb1f8dc85da50efc63152
+
+query IT rowsort
+select count(*), ground_service.city_code from ground_service group by ground_service.city_code
+----
+24 values hashing to 62ec9f43e5c9d1ab1bc67c0fb792e90b
+
+query TI rowsort
+select category,count(*) as totalnr from aircraft where engines=2 group by category having count(*)>4 order by category
+----
+JET
+15
+PROPELLER
+16
+TURBOPROP
+32
+
+query TI rowsort
+select category,count(*) from aircraft where engines=2 group by category having count(*)>4 order by category
+----
+JET
+15
+PROPELLER
+16
+TURBOPROP
+32
+
+query RRT rowsort
+select flight_number,range_miles,fare_class FROM aircraft,flight,flight_class WHERE flight.flight_code=flight_class.flight_code AND flight.aircraft_code=aircraft.aircraft_code AND range_miles<>0 AND (stops=1 OR stops=2) GROUP BY flight_number,range_miles,fare_class order by flight_number, range_miles, fare_class
+----
+450 values hashing to 6848c17b8f3a43ba6a037911f2b41d00
+
+query TTRR rowsort
+select from_airport,to_airport,range_miles,time_elapsed FROM aircraft,flight WHERE aircraft.aircraft_code=flight.aircraft_code AND to_airport <> from_airport AND range_miles<>0 AND time_elapsed<>0 GROUP BY from_airport,to_airport,range_miles,time_elapsed ORDER BY from_airport, to_airport,range_miles,time_elapsed
+----
+1636 values hashing to e0903cd80e0542b23297eea56c6f8d9f
+
+query TTTT rowsort
+SELECT airport.country_name,state.state_name,city.city_name,airport_service.direction FROM airport_service,state,airport,city WHERE airport_service.city_code=city.city_code AND airport_service.airport_code=airport.airport_code AND state.state_code=airport.state_code AND state.state_code=city.state_code AND airport.state_code=city.state_code AND airport.country_name=city.country_name AND airport.country_name=state.country_name AND city.time_zone_code=airport.time_zone_code GROUP BY airport.country_name,state.state_name,city.city_name,airport_service.direction ORDER BY state_name, city_name, direction
+----
+44 values hashing to 9ba469f005507bbf5a603782b012bb42
+
+query TTTT rowsort
+ SELECT airport.country_name,state.state_name,city.city_name,airport_service.direction FROM airport_service,state,airport,city WHERE airport_service.city_code=city.city_code AND airport_service.airport_code=airport.airport_code AND state.state_code=airport.state_code AND state.state_code=city.state_code AND airport.state_code=city.state_code AND airport.country_name=city.country_name AND airport.country_name=state.country_name AND city.time_zone_code=airport.time_zone_code GROUP BY airport.country_name,state.state_name,city.city_name,airport_service.direction ORDER BY state_name DESC, city_name DESC, direction DESC
+----
+44 values hashing to 9ba469f005507bbf5a603782b012bb42
+
+query TTTTRRT rowsort
+ SELECT from_airport,to_airport,fare.fare_class,night,one_way_cost,rnd_trip_cost,class_days FROM compound_class,fare WHERE compound_class.fare_class=fare.fare_class AND one_way_cost <= 825 AND one_way_cost >= 280 AND from_airport='SFO' AND to_airport='DFW' GROUP BY from_airport,to_airport,fare.fare_class,night,one_way_cost,rnd_trip_cost,class_days ORDER BY one_way_cost,fare_class
+----
+70 values hashing to 30896582ada897ff5a9cb3afd186a9eb
+
+query RTRTT rowsort
+ select engines,category,cruising_speed,from_airport,to_airport FROM aircraft,flight WHERE category='JET' AND ENGINES >= 1 AND aircraft.aircraft_code=flight.aircraft_code AND to_airport <> from_airport AND stops>0 GROUP BY engines,category,cruising_speed,from_airport,to_airport ORDER BY engines, from_airport, to_airport, cruising_speed  DESC
+----
+145 values hashing to e6173e55777a5ca0b4f24a2f4f696c9f
+

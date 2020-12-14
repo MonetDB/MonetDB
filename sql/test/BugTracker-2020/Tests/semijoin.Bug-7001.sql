@@ -14,3 +14,6 @@ call profiler.stoptrace();
 select count(*) from sys.tracelog() where stmt like '%cross%';
 
 drop table i;
+
+drop procedure profiler.starttrace();
+drop procedure profiler.stoptrace();

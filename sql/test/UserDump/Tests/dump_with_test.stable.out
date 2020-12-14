@@ -1,0 +1,16 @@
+START TRANSACTION;
+SET SCHEMA "test";
+CREATE TABLE "test"."foo" (
+	"id" INTEGER       NOT NULL,
+	"v"  INTEGER,
+	CONSTRAINT "foo_id_pkey" PRIMARY KEY ("id")
+);
+create view bar as select * from foo;
+create function b(i int) returns int begin return select v from bar where id = i; end;
+CREATE TABLE "test"."a" (
+	"id" INTEGER
+);
+create trigger a after insert on foo insert into a values (1);
+create trigger test.x after insert on foo insert into a values (1);
+create trigger "z" after insert on "foo" insert into a values (1);
+COMMIT;

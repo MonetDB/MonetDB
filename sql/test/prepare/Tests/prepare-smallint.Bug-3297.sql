@@ -1,0 +1,14 @@
+CREATE TABLE ints ( val int );
+prepare INSERT INTO ints VALUES ( ? - 20 );
+exec **(1);
+exec **(10);
+exec **(100);
+exec **(1000);
+exec **(10000);
+exec **(100000);
+exec **(1000000);
+exec **(10000000);
+exec **(100000000);
+exec **(1000000000);
+select * from ints;
+drop table ints;

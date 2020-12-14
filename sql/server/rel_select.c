@@ -497,8 +497,15 @@ find_table_function(mvc *sql, sql_schema *s, char *fname, list *exps, list *tl, 
 	if (!f && list_length(tl)) {
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
-		if (!funcs)
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		for (node *n = funcs->h; n ; ) { /* Reduce on privileges */
+			sql_subfunc *sf = n->data;
+			node *nn = n->next;
+
+			if (!execute_priv(sql, sf->func))
+				list_remove_node(funcs, n);
+			n = nn;
+		}
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0;
@@ -647,8 +654,7 @@ rel_op_(mvc *sql, sql_schema *s, char *fname, exp_kind ek)
 	sql_ftype type = (ek.card == card_loader)?F_LOADER:((ek.card == card_none)?F_PROC:
 		   ((ek.card == card_relation)?F_UNION:F_FUNC));
 
-	f = sql_bind_func(sql->sa, s, fname, NULL, NULL, type);
-	if (f && check_card(ek.card, f)) {
+	if ((f = bind_func_(sql, s, fname, NULL, type)) && check_card(ek.card, f)) {
 		return exp_op(sql->sa, NULL, f);
 	} else {
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such operator '%s'", fname);
@@ -1454,9 +1460,7 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "SELECT: no such schema '%s'", sname);
 	/* find filter function */
-	f = sql_bind_func_(sql->sa, s, filter_op, tl, F_FILT);
-
-	if (!f)
+	if (!(f = bind_func_(sql, s, filter_op, tl, F_FILT)))
 		f = find_func(sql, s, filter_op, list_length(tl), F_FILT, NULL);
 	if (f) {
 		node *n,*m = f->func->ops->h;
@@ -1724,8 +1728,15 @@ _rel_nop(mvc *sql, sql_schema *s, char *fname, list *tl, sql_rel *rel, list *exp
 	if (!f && list_length(tl)) {
 		int len, match = 0;
 		list *funcs = sql_find_funcs(sql->sa, s, fname, list_length(tl), type);
-		if (!funcs)
-			return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+
+		for (node *n = funcs->h; n ; ) { /* Reduce on privileges */
+			sql_subfunc *sf = n->data;
+			node *nn = n->next;
+
+			if (!execute_priv(sql, sf->func))
+				list_remove_node(funcs, n);
+			n = nn;
+		}
 		len = list_length(funcs);
 		if (len > 1) {
 			int i, score = 0;
@@ -2809,6 +2820,8 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, sql_schema *s, char *
 	/* handle param's early */
 	if (!t1 || !t2) {
 		f = sql_resolve_function_with_undefined_parameters(sql->sa, s, fname, list_append(list_append(sa_list(sql->sa), t1), t2), type);
+		if (f && !execute_priv(sql, f->func))
+			f = NULL;
 		if (f) { /* add types using f */
 			if (!t1) {
 				sql_subtype *t = arg_type(f->func->ops->h->data);
@@ -3630,6 +3643,8 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, sql_schema *s, char *an
 				a = (sql_subfunc *) m->data;
 				op = a->func->ops->h;
 
+				if (!execute_priv(sql, a->func))
+					a = NULL;
 				for (n = exps->h ; a && op && n; op = op->next, n = n->next ) {
 					sql_arg *arg = op->data;
 					sql_exp *e = n->data;
@@ -5199,9 +5214,12 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 		}
 
 		if (project->op == op_project && project->l && project == *rel && !tname && !rel_is_ref(project) && !need_distinct(project) && single_exp) {
-			rel_remove_internal_exp(*rel);
-			exps = project->exps;
-			*rel = project->l;
+			sql_rel *l = project->l;
+			if (!l || !is_project(l->op) || list_length(project->exps) == list_length(l->exps)) {
+				rel_remove_internal_exp(*rel);
+				exps = project->exps;
+				*rel = project->l;
+			}
 		}
 		if ((exps || (exps = rel_table_projections(sql, project, tname, 0)) != NULL) && !list_empty(exps)) {
 			if (groupby) {

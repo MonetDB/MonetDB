@@ -768,6 +768,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 	}
 	BATrmprop(b, GDK_NUNIQUE);
+	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 #if 0		/* enable if we have more properties than just min/max */
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
@@ -1117,6 +1118,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	BATrmprop(b, GDK_NUNIQUE);
+	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;

@@ -1,0 +1,114 @@
+query T rowsort
+SELECT '#' || trim('zzzytrimxxxx', 'zyx') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || trim('zzëzytrimxxëxx', 'zëyx') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || trim('zzë颖zytrimxx颖ëxx', 'zëy颖x') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || ltrim('zzzytrim', 'zyx') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || ltrim('zzëzytrim', 'zëyx') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || ltrim('zzë颖zytrim', 'zëy颖x') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || rtrim('trimxxxx', 'zyx') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || rtrim('trimxxëxx', 'zëyx') || '#'
+----
+#trim#
+
+query T rowsort
+SELECT '#' || rtrim('trimxx颖ëxx', 'zëy颖x') || '#'
+----
+#trim#
+
+statement ok
+CREATE TABLE t (s VARCHAR(20), s2 VARCHAR(10))
+
+statement ok
+INSERT INTO t VALUES ('zzzytrimxxxx', 'zyx'), ('zzëzytrimxxëxx', 'zëyx'), ('zzë颖zytrimxx颖ëxx', 'zëy颖x')
+
+query T rowsort
+SELECT trim(s, 'zëy颖x') FROM t
+----
+trim
+trim
+trim
+
+query T rowsort
+SELECT trim(s, s2) FROM t
+----
+trim
+trim
+trim
+
+statement ok
+CREATE TABLE lt (s VARCHAR(20), s2 VARCHAR(10))
+
+statement ok
+INSERT INTO lt VALUES ('zzzytrim', 'zyx'), ('zzëzytrim', 'zëyx'), ('zzë颖zytrim', 'zëy颖x')
+
+query T rowsort
+SELECT ltrim(s, 'zëy颖x') FROM lt
+----
+trim
+trim
+trim
+
+query T rowsort
+SELECT ltrim(s, s2) FROM lt
+----
+trim
+trim
+trim
+
+statement ok
+CREATE TABLE rt (s VARCHAR(20), s2 VARCHAR(10))
+
+statement ok
+INSERT INTO rt VALUES ('trimxxxx', 'zyx'), ('trimxxëxx', 'zëyx'), ('trimxx颖ëxx', 'zëy颖x')
+
+query T rowsort
+SELECT rtrim(s, 'zëy颖x') FROM rt
+----
+trim
+trim
+trim
+
+query T rowsort
+SELECT rtrim(s, s2) FROM rt
+----
+trim
+trim
+trim
+
+statement ok
+DROP TABLE t
+
+statement ok
+DROP TABLE lt
+
+statement ok
+DROP TABLE rt
+
