@@ -25,10 +25,12 @@ sql.mvc
 1
 sql.copy_from
 1
-sql.append
-3
 aggr.count
 1
+sql.claim
+1
+sql.append
+3
 sql.affectedRows
 1
 
@@ -75,10 +77,12 @@ sql.mvc
 1
 sql.copy_from
 1
-sql.append
-3
 aggr.count
 1
+sql.claim
+1
+sql.append
+3
 sql.affectedRows
 1
 
