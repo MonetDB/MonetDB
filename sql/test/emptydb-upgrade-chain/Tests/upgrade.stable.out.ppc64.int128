@@ -4213,19 +4213,19 @@ create function sys.generate_series(first hugeint, "limit" hugeint, stepsize hug
 returns table (value hugeint)
 external name generator.series;
 create aggregate stddev_samp(val HUGEINT) returns DOUBLE
-    external name "aggr"."stdev";
+ external name "aggr"."stdev";
 GRANT EXECUTE ON AGGREGATE stddev_samp(HUGEINT) TO PUBLIC;
 create window stddev_samp(val HUGEINT) returns DOUBLE
  external name "sql"."stdev";
 GRANT EXECUTE ON WINDOW stddev_samp(HUGEINT) TO PUBLIC;
 create aggregate stddev_pop(val HUGEINT) returns DOUBLE
-    external name "aggr"."stdevp";
+ external name "aggr"."stdevp";
 GRANT EXECUTE ON AGGREGATE stddev_pop(HUGEINT) TO PUBLIC;
 create window stddev_pop(val HUGEINT) returns DOUBLE
  external name "sql"."stdevp";
 GRANT EXECUTE ON WINDOW stddev_pop(HUGEINT) TO PUBLIC;
 create aggregate var_samp(val HUGEINT) returns DOUBLE
-    external name "aggr"."variance";
+ external name "aggr"."variance";
 GRANT EXECUTE ON AGGREGATE var_samp(HUGEINT) TO PUBLIC;
 create window var_samp(val HUGEINT) returns DOUBLE
  external name "sql"."variance";
@@ -4237,7 +4237,7 @@ create window covar_samp(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
  external name "sql"."covariance";
 GRANT EXECUTE ON WINDOW covar_samp(HUGEINT, HUGEINT) TO PUBLIC;
 create aggregate var_pop(val HUGEINT) returns DOUBLE
-    external name "aggr"."variancep";
+ external name "aggr"."variancep";
 GRANT EXECUTE ON AGGREGATE var_pop(HUGEINT) TO PUBLIC;
 create window var_pop(val HUGEINT) returns DOUBLE
  external name "sql"."variancep";
@@ -4249,10 +4249,10 @@ create window covar_pop(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
  external name "sql"."covariancep";
 GRANT EXECUTE ON WINDOW covar_pop(HUGEINT, HUGEINT) TO PUBLIC;
 create aggregate median(val HUGEINT) returns HUGEINT
-    external name "aggr"."median";
+ external name "aggr"."median";
 GRANT EXECUTE ON AGGREGATE median(HUGEINT) TO PUBLIC;
 create aggregate quantile(val HUGEINT, q DOUBLE) returns HUGEINT
-    external name "aggr"."quantile";
+ external name "aggr"."quantile";
 GRANT EXECUTE ON AGGREGATE quantile(HUGEINT, DOUBLE) TO PUBLIC;
 create aggregate median_avg(val HUGEINT) returns DOUBLE
  external name "aggr"."median_avg";
@@ -4261,7 +4261,7 @@ create aggregate quantile_avg(val HUGEINT, q DOUBLE) returns DOUBLE
  external name "aggr"."quantile_avg";
 GRANT EXECUTE ON AGGREGATE quantile_avg(HUGEINT, DOUBLE) TO PUBLIC;
 create aggregate corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
-    external name "aggr"."corr";
+ external name "aggr"."corr";
 GRANT EXECUTE ON AGGREGATE corr(HUGEINT, HUGEINT) TO PUBLIC;
 create window corr(e1 HUGEINT, e2 HUGEINT) returns DOUBLE
  external name "sql"."corr";
