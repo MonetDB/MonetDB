@@ -14,6 +14,9 @@ CREATE FUNCTION "sc1"."foo"() RETURNS INT BEGIN RETURN 1; END;
 CREATE FUNCTION "sc2"."foo"() RETURNS INT BEGIN RETURN 2; END;
 CREATE FUNCTION "sys"."foo"() RETURNS INT BEGIN RETURN 3; END;
 CREATE USER myuser WITH UNENCRYPTED PASSWORD '1' NAME '1' SCHEMA "sys" SCHEMA PATH '"sc1","sc2"';
+GRANT EXECUTE ON FUNCTION "sc1"."foo"() TO myuser;
+GRANT EXECUTE ON FUNCTION "sc2"."foo"() TO myuser;
+GRANT EXECUTE ON FUNCTION "sys"."foo"() TO myuser;
 COMMIT;
 ''')
 cur1.close()
@@ -94,10 +97,13 @@ cur1.execute('''
 START TRANSACTION;
 CREATE SCHEMA """";
 CREATE FUNCTION """".""""() returns int return 5;
+GRANT EXECUTE ON FUNCTION """".""""() TO myuser;
 CREATE SCHEMA "😱🤐🤗";
 CREATE FUNCTION "😱🤐🤗"."🤓🤯🥶"() returns int return 6;
+GRANT EXECUTE ON FUNCTION "😱🤐🤗"."🤓🤯🥶"() TO myuser;
 CREATE SCHEMA ",";
 CREATE FUNCTION ",".","() returns int return 7;
+GRANT EXECUTE ON FUNCTION ",".","() TO myuser;
 ALTER USER myuser SCHEMA PATH \'"""","😱🤐🤗",","\';
 COMMIT;
 ''')
