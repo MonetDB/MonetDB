@@ -174,6 +174,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 				ne = rel_propagate_column_ref_statistics(sql, rel->l, e);
 			if (!ne && is_join(rel->op))
 				ne = rel_propagate_column_ref_statistics(sql, rel->r, e);
+			if (ne)
+				set_has_nil(e); /* TODO do this better */
 		} break;
 		/* case op_table: later */
 		case op_basetable: {
@@ -182,6 +184,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					set_property(sql, e, PROP_MAX, lval);
 				if ((lval = find_prop_and_get(ne->p, PROP_MIN)))
 					set_property(sql, e, PROP_MIN, lval);
+				if (!has_nil(ne))
+					set_has_no_nil(e);
 			}
 		} break;
 		case op_union:
@@ -195,6 +199,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					set_property(sql, e, PROP_MAX, lval);
 				if ((lval = find_prop_and_get(ne->p, PROP_MIN)))
 					set_property(sql, e, PROP_MIN, lval);
+				if (!has_nil(ne))
+					set_has_no_nil(e);
 			}
 		} break;
 		default: /* if there is a topN or sample relation in between, then the MIN and MAX values are lost */
@@ -471,11 +477,62 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_simplify_count(visitor *v, sql_rel *rel)
+{
+	mvc *sql = v->sql;
+
+	if (is_groupby(rel->op)) {
+		int ncountstar = 0;
+
+		/* Convert count(no null) into count(*) */
+		for (node *n = rel->exps->h; n ; n = n->next) {
+			sql_exp *e = n->data;
+
+			if (exp_aggr_is_count(e) && !need_distinct(e)) {
+				if (list_length(e->l) == 0) {
+					ncountstar++;
+				} else if (list_length(e->l) == 1 && !has_nil((sql_exp*)((list*)e->l)->h->data)) {
+					sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
+					if (exp_name(e))
+						exp_prop_alias(sql->sa, ne, e);
+					n->data = ne;
+					ncountstar++;
+				}
+			}
+		}
+		/* With multiple count(*), use exp_ref to reduce the number of calls to this aggregate */
+		if (ncountstar > 1) {
+			sql_exp *count_star = NULL;
+			for (node *n = rel->exps->h; n ; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (exp_aggr_is_count(e) && !need_distinct(e) && list_length(e->l) == 0) {
+					if (!count_star) {
+						count_star = e;
+					} else {
+						sql_exp *ne = exp_ref(sql, count_star);
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
+						n->data = ne;
+					}
+				}
+			}
+		}
+	}
+	return rel;
+}
+
 sql_rel *
 rel_statistics(mvc *sql, sql_rel *rel)
 {
 	visitor v = { .sql = sql };
+	global_props gp = (global_props) {.cnt = {0},};
+	rel_properties(sql, &gp, rel);
 
 	rel = rel_visitor_bottomup(&v, rel, &rel_get_statistics);
+	if (gp.cnt[op_groupby])
+		rel = rel_visitor_bottomup(&v, rel, &rel_simplify_count);
 	return rel;
 }

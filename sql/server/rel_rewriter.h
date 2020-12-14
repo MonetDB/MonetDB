@@ -17,6 +17,10 @@
 #define is_isnull_func(sf) (strcmp((sf)->func->base.name, "isnull") == 0)
 #define is_not_func(sf) (strcmp((sf)->func->base.name, "not") == 0)
 
+typedef struct global_props {
+	int cnt[ddl_maxops];
+} global_props;
+
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 extern sql_rel *rewrite_simplify(visitor *v, sql_rel *rel);
 extern sql_rel *rel_remove_empty_select(visitor *v, sql_rel *rel);
@@ -24,5 +28,7 @@ extern sql_rel *rel_remove_empty_select(visitor *v, sql_rel *rel);
 extern sql_exp *exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 
 extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
+
+extern void rel_properties(mvc *sql, global_props *gp, sql_rel *rel);
 
 #endif /*_REL_REWRITER_H_*/
