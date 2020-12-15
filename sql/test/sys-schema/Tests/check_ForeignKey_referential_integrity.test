@@ -190,19 +190,19 @@ query ITI rowsort
 SELECT * FROM sys.auths WHERE grantor NOT IN (SELECT id FROM sys.auths) AND grantor > 0
 ----
 
-query TTI rowsort
+query TTIT rowsort
 SELECT * FROM sys.users WHERE name NOT IN (SELECT name FROM sys.auths)
 ----
 
-query TTI rowsort
+query TTIT rowsort
 SELECT * FROM sys.users WHERE default_schema NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query TTI rowsort
+query TTIT rowsort
 SELECT * FROM sys.db_user_info WHERE name NOT IN (SELECT name FROM sys.auths)
 ----
 
-query TTI rowsort
+query TTIT rowsort
 SELECT * FROM sys.db_user_info WHERE default_schema NOT IN (SELECT id FROM sys.schemas)
 ----
 
