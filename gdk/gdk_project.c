@@ -577,8 +577,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		} else if (l->tnonil &&
 			   r2 != NULL &&
 			   (r1->tvheap == r2->tvheap ||
-			    (!GDK_ELIMDOUBLES(r1->tvheap) &&
-			     !GDK_ELIMDOUBLES(r2->tvheap) /* && size tests */))) {
+			    (!GDK_ELIMDOUBLES(r1->tvheap) /* && size tests */))) {
 			/* r1 and r2 may explicitly share their vheap,
 			 * if they do, the result will also share the
 			 * vheap; this also means that for this case we
