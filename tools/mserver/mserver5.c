@@ -296,9 +296,42 @@ main(int argc, char **av)
 		{ "transactions", no_argument, NULL, 0 },
 
 		{ "read-password-initialize-and-exit", no_argument, NULL, 0 },
+		{ "loadmodule", required_argument, NULL, 0 },
 
 		{ NULL, 0, NULL, 0 }
 	};
+
+#define MAX_MODULES 32
+	char *modules[MAX_MODULES+1];
+	int mods = 0;
+
+	modules[mods++] = "sql";
+	modules[mods++] = "generator";
+	modules[mods++] = "opt_sql_append";
+#ifdef HAVE_GEOM
+	modules[mods++] = "geom";
+#endif
+#ifdef HAVE_LIBR
+	/* TODO check for used */
+	modules[mods++] = "rapi";
+#endif
+#ifdef HAVE_LIBPY3
+	/* TODO check for used */
+	modules[mods++] = "pyapi3";
+#endif
+#ifdef HAVE_CUDF
+	modules[mods++] = "capi";
+#endif
+	modules[mods++] = "udf";
+#ifdef HAVE_FITS
+	modules[mods++] = "fits";
+#endif
+#ifdef HAVE_NETCDF
+	modules[mods++] = "netcdf";
+#endif
+#ifdef HAVE_SHP
+	modules[mods++] = "shp";
+#endif
 
 #if defined(_MSC_VER) && defined(__cplusplus)
 	set_terminate(mserver_abort);
@@ -433,6 +466,11 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
 				readpwdxit = true;
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {
+				if (mods < MAX_MODULES)
+					modules[mods++]=optarg;
 				break;
 			}
 			usage(prog, -1);
@@ -730,38 +768,7 @@ main(int argc, char **av)
 		}
 	}
 
-	char *modules[16];
-	int mods = 0;
-
-	modules[mods++] = "sql";
-	modules[mods++] = "generator";
-	modules[mods++] = "opt_sql_append";
-#ifdef HAVE_GEOM
-	modules[mods++] = "geom";
-#endif
-#ifdef HAVE_LIBR
-	/* TODO check for used */
-	modules[mods++] = "rapi";
-#endif
-#ifdef HAVE_LIBPY3
-	/* TODO check for used */
-	modules[mods++] = "pyapi3";
-#endif
-#ifdef HAVE_CUDF
-	modules[mods++] = "capi";
-#endif
-	modules[mods++] = "udf";
-#ifdef HAVE_FITS
-	modules[mods++] = "fits";
-#endif
-#ifdef HAVE_NETCDF
-	modules[mods++] = "netcdf";
-#endif
-#ifdef HAVE_SHP
-	modules[mods++] = "shp";
-#endif
 	modules[mods++] = 0;
-
 	if (mal_init(modules, 0)) {
 		/* don't show this as a crash */
 		if (!GDKinmemory())
