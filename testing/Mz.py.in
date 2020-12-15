@@ -2406,6 +2406,8 @@ def main(argv) :
     testweb = opts.testweb
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
+    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+        CONDITIONALS['KNOWNFAIL'] = 'execute'
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
