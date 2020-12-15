@@ -6,6 +6,6 @@ select s.name as "schema", f.name as "function", a.number as "argno", a.type as 
    and f.system
  order by s.name, f.name, f.id, a.number
 ----
-21770 values hashing to 654890d1d2aec83280cd4629f387f937
+21735 values hashing to 6c5e19f87f5f32ba4387ee54b026514c
 
 

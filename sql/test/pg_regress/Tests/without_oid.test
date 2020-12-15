@@ -85,13 +85,7 @@ SELECT count(i) FROM wo
 9136
 
 statement ok
-call vacuum('sys', 'wi')
-
-statement ok
 analyze sys.wi
-
-statement ok
-call vacuum('sys', 'wo')
 
 statement ok
 analyze sys.wo
