@@ -1,39 +1,9 @@
-stderr of test 'convert-function-test.Bug-3460` in directory 'sql/test/BugTracker-2016` itself:
-
-
-# 19:10:34 >  
-# 19:10:34 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=37752" "--set" "mapi_usock=/var/tmp/mtest-10540/.s.monetdb.37752" "--set" "monet_prompt=" "--forcemito" "--dbpath=/export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016" "--set" "embedded_r=yes"
-# 19:10:34 >  
-
-# builtin opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/monetdb5/dbfarm/demo
-# builtin opt 	gdk_debug = 0
-# builtin opt 	gdk_vmtrim = no
-# builtin opt 	monet_prompt = >
-# builtin opt 	monet_daemon = no
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_open = false
-# builtin opt 	mapi_autosense = false
-# builtin opt 	sql_optimizer = default_pipe
-# builtin opt 	sql_debug = 0
-# cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 37752
-# cmdline opt 	mapi_usock = /var/tmp/mtest-10540/.s.monetdb.37752
-# cmdline opt 	monet_prompt = 
-# cmdline opt 	gdk_dbpath = /export/scratch2/dinther/INSTALL/var/MonetDB/mTests_sql_test_BugTracker-2016
-# cmdline opt 	embedded_r = yes
-# cmdline opt 	gdk_debug = 536870922
-
-# 19:10:35 >  
-# 19:10:35 >  "mclient" "-lsql" "-ftest" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-10540" "--port=37752"
-# 19:10:35 >  
-
 MAPI  = (monetdb) /var/tmp/mtest-10540/.s.monetdb.37752
 QUERY = SELECT v, convert(v, bit) from T_BOOLEAN; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, float) from T_BOOLEAN; -- conversion not supported
 ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -80,31 +50,31 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_BOOLEAN; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_BOOLEAN; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_BOOLEAN; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_BOOLEAN; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_BOOLEAN; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_BOOLEAN; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_BOOLEAN; -- conversion not supported
@@ -133,9 +103,9 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_BOOLEAN; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as float) from T_BOOLEAN; -- conversion not supported
 ERROR = !types boolean(1,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -182,31 +152,31 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_BOOLEAN;
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_BOOLEAN; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_BOOLEAN; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_BOOLEAN; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_BOOLEAN; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_BOOLEAN; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_BOOLEAN; -- conversion not supported
@@ -235,40 +205,40 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, XML) from T_BOOLEAN; -- XML not valid data type
 ERROR = !Type (xml) unknown in: "select v, convert(v, xml)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, REF) from T_BOOLEAN; -- REF not valid data type
-ERROR = !syntax error, unexpected REF in: "select v, convert(v, ref"
+ERROR = !syntax error in: "select v, convert(v, ref"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, ROWID) from T_BOOLEAN; -- ROWID not valid data type
 ERROR = !Type (rowid) unknown in: "select v, convert(v, rowid)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, STRUCT) from T_BOOLEAN; -- STRUCT not valid data type
 ERROR = !Type (struct) unknown in: "select v, convert(v, struct)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as XML) from T_BOOLEAN; -- XML not valid data type
 ERROR = !Type (xml) unknown in: "select v, cast(v as xml)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as REF) from T_BOOLEAN; -- REF not valid data type
-ERROR = !syntax error, unexpected REF in: "select v, cast(v as ref"
+ERROR = !syntax error in: "select v, cast(v as ref"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as ROWID) from T_BOOLEAN; -- ROWID not valid data type
 ERROR = !Type (rowid) unknown in: "select v, cast(v as rowid)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as STRUCT) from T_BOOLEAN; -- STRUCT not valid data type
 ERROR = !Type (struct) unknown in: "select v, cast(v as struct)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, boolean) from T_blob;
@@ -277,7 +247,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_blob; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, tinyint) from T_blob where v between '00' and '11';
@@ -299,7 +269,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, hugeint) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, float) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -350,31 +320,31 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_blob; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_blob; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_blob; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_blob; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_blob; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_blob; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, date) from T_blob; -- conversion not supported
@@ -403,7 +373,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_blob; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as tinyint) from T_blob where v between '00' and '11';
@@ -425,7 +395,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as hugeint) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as float) from T_blob where v between '00' and '11';
 ERROR = !types blob(0,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -476,31 +446,31 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_blob; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_blob; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_blob; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_blob; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_blob; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_blob; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as date) from T_blob; -- conversion not supported
@@ -525,36 +495,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_tinyint; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, convert(v, varchar) from T_tinyint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_tinyint; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_tinyint; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_tinyint; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_tinyint; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_tinyint; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_tinyint; -- conversion not supported
@@ -583,36 +553,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_tinyint; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as varchar) from T_tinyint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_tinyint; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_tinyint; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_tinyint; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_tinyint; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_tinyint; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_tinyint; -- conversion not supported
@@ -641,36 +611,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_smallint; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, varchar) from T_smallint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_smallint; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_smallint; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_smallint; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_smallint; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_smallint; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_smallint; -- conversion not supported
@@ -699,36 +669,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_smallint; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as varchar) from T_smallint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_smallint; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_smallint; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_smallint; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_smallint; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_smallint; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_smallint; -- conversion not supported
@@ -757,36 +727,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_int; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, convert(v, varchar) from T_int; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_int; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_int; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_int; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_int; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_int; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_int; -- conversion not supported
@@ -815,36 +785,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_int; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as varchar) from T_int; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_int; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_int; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_int; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_int; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_int; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_int; -- conversion not supported
@@ -873,36 +843,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_bigint; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, convert(v, varchar) from T_bigint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_bigint; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_bigint; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_bigint; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_bigint; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_bigint; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_bigint; -- conversion not supported
@@ -931,36 +901,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_bigint; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as varchar) from T_bigint; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_bigint; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_bigint; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_bigint; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_bigint; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_bigint; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_bigint; -- conversion not supported
@@ -993,36 +963,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_float; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, convert(v, varchar) from T_float; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_float; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_float; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_float; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_float; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_float; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_float; -- conversion not supported
@@ -1055,36 +1025,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_float; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as varchar) from T_float; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_float; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_float; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_float; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_float; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_float; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_float; -- conversion not supported
@@ -1117,44 +1087,44 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_real; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, integer) from T_real;
 ERROR = !overflow in conversion of -2.14748365e+09 to int.
 CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, char) from T_real where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_real; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_real; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_real; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_real; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_real; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_real; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_real; -- conversion not supported
@@ -1187,44 +1157,44 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_real; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as integer) from T_real;
 ERROR = !overflow in conversion of -2.14748365e+09 to int.
 CODE  = 22003
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as char) from T_real where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_real; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_real; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_real; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_real; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_real; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_real; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_real; -- conversion not supported
@@ -1257,40 +1227,40 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_double; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, char) from T_double where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_double; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_double; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_double; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_double; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_double; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_double; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_double; -- conversion not supported
@@ -1323,40 +1293,40 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_double; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as char) from T_double where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_double; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_double; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_double; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_double; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_double; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_double; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_double; -- conversion not supported
@@ -1389,36 +1359,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_num; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, convert(v, varchar) from T_num; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_num; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_num; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_num; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_num; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_num; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_num; -- conversion not supported
@@ -1451,36 +1421,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_num; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as varchar) from T_num; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_num; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_num; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_num; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_num; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_num; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_num; -- conversion not supported
@@ -1513,40 +1483,40 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_dec; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, convert(v, char) from T_dec where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_dec; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_dec; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_dec; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_dec; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_dec; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_dec; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_dec; -- conversion not supported
@@ -1579,40 +1549,40 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_dec; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as char) from T_dec where v between 0 and 1;
 ERROR = !value too long for type (var)char(1)
 CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_dec; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_dec; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_dec; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_dec; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_dec; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_dec; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_dec; -- conversion not supported
@@ -1641,36 +1611,36 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_char where v in ('0', '1'); -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, varchar) from T_char; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_char; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_char; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_char; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_char; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_char; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, date) from T_char;
@@ -1695,36 +1665,36 @@ CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_char where v in ('0', '1'); -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as varchar) from T_char; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_char; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_char; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_char; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_char; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_char; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as date) from T_char;
@@ -1749,36 +1719,36 @@ CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_varchar where v in ('0', '1'); -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, varchar) from T_varchar; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_varchar; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_varchar; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_varchar; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_varchar; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_varchar; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, date) from T_varchar;
@@ -1803,36 +1773,36 @@ CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_varchar where v in ('0', '1'); -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as varchar) from T_varchar; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_varchar; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_varchar; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_varchar; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_varchar; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_varchar; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as date) from T_varchar;
@@ -1857,36 +1827,36 @@ CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_clob where v in ('0', '1'); -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, varchar) from T_clob; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_clob; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_clob; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_clob; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_clob; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_clob; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, date) from T_clob;
@@ -1911,36 +1881,36 @@ CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_clob where v in ('0', '1'); -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-24770/.s.monetdb.36959
 QUERY = SELECT v, cast(v as varchar) from T_clob; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_clob; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_clob; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_clob; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_clob; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_clob; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as date) from T_clob;
@@ -1969,7 +1939,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_date; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, tinyint) from T_date;
@@ -1991,7 +1961,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, hugeint) from T_date;
 ERROR = !types date(0,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, float) from T_date;
 ERROR = !types date(0,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2042,31 +2012,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_date; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_date; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_date; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_date; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_date; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_date; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_date where v in (date '2016-01-01');
@@ -2087,7 +2057,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_date; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as tinyint) from T_date;
@@ -2109,7 +2079,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as hugeint) from T_date;
 ERROR = !types date(0,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as float) from T_date;
 ERROR = !types date(0,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2160,31 +2130,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_date; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_date; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_date; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_date; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_date; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_date; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_date where v in (date '2016-01-01');
@@ -2205,7 +2175,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_time; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, tinyint) from T_time;
@@ -2227,7 +2197,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, hugeint) from T_time;
 ERROR = !types time(1,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, float) from T_time;
 ERROR = !types time(1,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2278,31 +2248,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_time; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_time; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_time; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_time; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_time; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_time; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_time;
@@ -2327,7 +2297,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_time; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as tinyint) from T_time;
@@ -2349,7 +2319,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as hugeint) from T_time;
 ERROR = !types time(1,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as float) from T_time;
 ERROR = !types time(1,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2400,31 +2370,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_time; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_time; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_time; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_time; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_time; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_time; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_time;
@@ -2449,7 +2419,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_timestamp; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, tinyint) from T_timestamp;
@@ -2471,7 +2441,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, hugeint) from T_timestamp;
 ERROR = !types timestamp(7,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, float) from T_timestamp;
 ERROR = !types timestamp(7,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2522,31 +2492,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_timestamp; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_timestamp; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_timestamp; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_timestamp; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_timestamp; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_timestamp; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_timestamp;
@@ -2559,7 +2529,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_timestamp; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as tinyint) from T_timestamp;
@@ -2581,7 +2551,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as hugeint) from T_timestamp;
 ERROR = !types timestamp(7,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as float) from T_timestamp;
 ERROR = !types timestamp(7,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2632,31 +2602,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_timestamp; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_timestamp; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_timestamp; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_timestamp; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_timestamp; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_timestamp; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_timestamp;
@@ -2669,7 +2639,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_timetz; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, tinyint) from T_timetz;
@@ -2691,7 +2661,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, hugeint) from T_timetz;
 ERROR = !types timetz(1,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, float) from T_timetz;
 ERROR = !types timetz(1,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2742,31 +2712,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_timetz; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_timetz; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_timetz; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_timetz; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_timetz; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_timetz; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_timetz;
@@ -2791,7 +2761,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_timetz; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as tinyint) from T_timetz;
@@ -2813,7 +2783,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as hugeint) from T_timetz;
 ERROR = !types timetz(1,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as float) from T_timetz;
 ERROR = !types timetz(1,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2864,31 +2834,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_timetz; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_timetz; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_timetz; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_timetz; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_timetz; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_timetz; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_timetz;
@@ -2913,7 +2883,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, bit) from T_timestamptz; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, convert(v, bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, tinyint) from T_timestamptz;
@@ -2935,7 +2905,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, hugeint) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, convert(v, float) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -2986,31 +2956,31 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varchar) from T_timestamptz; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, convert(v, varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarchar) from T_timestamptz; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, convert(v, longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, long varchar) from T_timestamptz; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, convert(v, long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Binary) from T_timestamptz; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, convert(v, binary)"
+ERROR = !syntax error in: "select v, convert(v, binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, varBinary) from T_timestamptz; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, convert(v, varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, longvarBinary) from T_timestamptz; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, convert(v, longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, convert(v, Blob) from T_timestamptz;
@@ -3023,7 +2993,7 @@ CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as bit) from T_timestamptz; -- BIT not valid data type
 ERROR = !Type (bit) unknown in: "select v, cast(v as bit)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as tinyint) from T_timestamptz;
@@ -3045,7 +3015,7 @@ MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as hugeint) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and hugeint(128,0) are not equal for column 'v'
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
+MAPI  = (monetdb) /var/tmp/mtest-141191/.s.monetdb.37090
 QUERY = SELECT v, cast(v as float) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and double(53,0) are not equal for column 'v'
 CODE  = 42000
@@ -3096,38 +3066,33 @@ CODE  = 22001
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varchar) from T_timestamptz; -- missing length specification
 ERROR = !CHARACTER VARYING needs a mandatory length specification in: "select v, cast(v as varchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarchar) from T_timestamptz; -- LONGVARCHAR not valid data type
 ERROR = !Type (longvarchar) unknown in: "select v, cast(v as longvarchar)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as long varchar) from T_timestamptz; -- LONG VARCHAR not valid data type
 ERROR = !Type (long) unknown in: "select v, cast(v as long varchar"
-        !syntax error, unexpected ')' in: ")"
+        !syntax error in: ")"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Binary) from T_timestamptz; -- BINARY not valid data type
-ERROR = !syntax error, unexpected ')', expecting LARGE in: "select v, cast(v as binary)"
+ERROR = !syntax error in: "select v, cast(v as binary)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as varBinary) from T_timestamptz; -- VARBINARY not valid data type
 ERROR = !Type (varbinary) unknown in: "select v, cast(v as varbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as longvarBinary) from T_timestamptz; -- LONGVARBINARY not valid data type
 ERROR = !Type (longvarbinary) unknown in: "select v, cast(v as longvarbinary)"
-        !syntax error, unexpected FROM in: "from"
+        !syntax error in: "from"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT v, cast(v as Blob) from T_timestamptz;
 ERROR = !types timestamptz(7,0) and blob(0,0) are not equal for column 'v'
 CODE  = 42000
-
-# 19:10:37 >  
-# 19:10:37 >  "Done."
-# 19:10:37 >  
-
