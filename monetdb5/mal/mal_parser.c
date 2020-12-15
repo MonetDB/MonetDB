@@ -20,6 +20,7 @@
 #include "mal_utils.h"
 #include "mal_builder.h"
 #include "mal_type.h"
+#include "mal_session.h"
 #include "mal_private.h"
 
 #define FATALINPUT MAXERRORS+1
