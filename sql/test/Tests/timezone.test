@@ -1,0 +1,33 @@
+statement ok
+set time zone interval '10:00' HOUR TO MINUTE
+
+statement ok
+create table time_example ( time_local TIMESTAMP, time_tz TIMESTAMP WITH TIME ZONE)
+
+statement ok
+insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-07-15 07:30')
+
+statement ok
+insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-07-15 07:30+02:30')
+
+statement ok
+insert into time_example values ( TIMESTAMP '1995-07-15 07:30', TIMESTAMP '1995-07-15 07:30+04:30')
+
+query TT rowsort
+select * from time_example
+----
+1995-07-15 07:30:00
+1995-07-15 23:00:00
+1995-07-15 07:30:00
+1995-07-16 01:00:00
+1995-07-15 07:30:00
+1995-07-16 03:30:00
+
+statement ok
+set time zone local
+
+query T rowsort
+select current_timezone
+----
+0:00:00
+

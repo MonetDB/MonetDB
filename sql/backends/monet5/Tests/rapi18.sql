@@ -1,6 +1,5 @@
 -- https://www.monetdb.org/pipermail/users-list/2015-October/008472.html
 -- used this to create test output
---set optimizer='sequential_pipe';
 
 START TRANSACTION;
 

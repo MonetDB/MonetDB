@@ -1,0 +1,31 @@
+statement ok
+CREATE TABLE part1 ( x double, y double, z double)
+
+statement ok
+CREATE TABLE part2 ( x double, y double, z double)
+
+statement ok
+CREATE MERGE TABLE complete ( x double, y double, z double)
+
+statement ok
+ALTER TABLE complete ADD TABLE part1
+
+statement ok
+ALTER TABLE complete ADD TABLE part2
+
+statement error
+ALTER TABLE complete ADD TABLE part1
+
+statement error
+ALTER TABLE complete ADD TABLE part2
+
+statement ok
+DROP TABLE complete
+
+statement ok
+DROP TABLE part1
+
+statement ok
+DROP TABLE part2
+
+

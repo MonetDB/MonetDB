@@ -1,0 +1,57 @@
+statement ok
+create table bug3923(i integer)
+
+query TTTTTIITI rowsort
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables')
+----
+72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
+
+statement ok
+call storagemodelinit()
+
+statement ok
+update storagemodelinput set "count" =10000 where "table" ='bug3923'
+
+statement ok
+update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
+
+query TTTTIIIIIITTT rowsort
+select * from storagemodel where "table" = 'bug3923'
+----
+13 values hashing to c499d6faa21698d5f67e25ef85e898e1
+
+statement ok
+drop table bug3923
+
+statement ok
+create schema bug3923schema
+
+statement ok
+set schema bug3923schema
+
+statement ok
+create table bug3923(i integer)
+
+query TTTTTIITI rowsort
+select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from sys.storage('sys','_tables')
+----
+72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
+
+statement ok
+call sys.storagemodelinit()
+
+statement ok
+update sys.storagemodelinput set "count" =10000 where "table" ='bug3923'
+
+statement ok
+update sys.storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
+
+query TTTTIIIIIITTT rowsort
+select * from sys.storagemodel where "table" = 'bug3923'
+----
+13 values hashing to c8680d05829bc5dfcfaf3bd1d4505eda
+
+statement ok
+drop table bug3923
+
+

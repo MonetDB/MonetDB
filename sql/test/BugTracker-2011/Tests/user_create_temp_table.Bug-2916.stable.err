@@ -26,16 +26,7 @@ stderr of test 'user_create_temp_table.Bug-2916` in directory 'sql/test/BugTrack
 # cmdline opt 	gdk_dbname = mTests_test_BugTracker-2011
 # cmdline opt 	mal_listing = 0
 
-# 12:25:25 >  
-# 12:25:25 >  "/usr/bin/python" "user_create_temp_table.Bug-2916.SQL.py" "user_create_temp_table.Bug-2916"
-# 12:25:25 >  
-
-MAPI  = (testuser) /var/tmp/mtest-27483/.s.monetdb.35395
-QUERY = CREATE GLOBAL TEMPORARY TABLE TempTable (i int);
-ERROR = !CREATE TABLE: insufficient privileges for user 'testuser' in schema 'tmp'
-CODE  = 42000
-
-# 12:25:26 >  
-# 12:25:26 >  "Done."
-# 12:25:26 >  
+# 10:22:53 >  
+# 10:22:53 >  "Done."
+# 10:22:53 >  
 

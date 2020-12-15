@@ -1,0 +1,61 @@
+statement ok
+start transaction
+
+statement ok
+CREATE TABLE BOOLTBL1 (f1 bool)
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('true' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES ('true')
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES ('false')
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE f1 = NOT FALSE
+----
+True
+True
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE f1 = NOT TRUE
+----
+False
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE f1 = (NOT FALSE)
+----
+True
+True
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE NOT FALSE = f1
+----
+True
+True
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE NOT f1 = FALSE
+----
+True
+True
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE f1 = (NOT TRUE)
+----
+False
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE NOT TRUE = f1
+----
+False
+
+query T rowsort
+SELECT f1 FROM BOOLTBL1 WHERE NOT f1 = TRUE
+----
+False
+
+statement ok
+rollback

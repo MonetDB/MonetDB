@@ -5,10 +5,6 @@ stdout of test 'urlstream` in directory 'common/stream` itself:
 # 11:20:38 >  "/usr/bin/python3.7" "urlstream.py" "urlstream"
 # 11:20:38 >  
 
-#Listening on 41153
-FETCHING /42a yielded return code 0
-FETCHING /40Ka yielded return code 0
-FETCHING /xyzzy yielded return code 2
 
 # 11:20:39 >  
 # 11:20:39 >  "Done."

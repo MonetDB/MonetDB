@@ -1,0 +1,29 @@
+query IIT nosort
+select * from video_sets
+----
+1
+21
+fabchannel2007
+
+query III nosort
+select * from video_set
+----
+1
+1
+1
+
+query IITTTTITTII nosort
+select * from file
+----
+1
+1
+filename 1
+codec 1
+2000
+1
+86046057
+url 1
+empty
+250
+250
+

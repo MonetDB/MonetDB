@@ -152,17 +152,17 @@ stdout of test 'forex` in directory 'sql/test/mergetables` itself:
 [ 2014-10-14 06:12:51.000000,	"EUR/USD",	2014-10-14 06:12:38.643000,	1.271810,	1.271890,	0.000080	]
 [ 2014-10-14 06:12:56.000000,	"EUR/USD",	2014-10-14 06:12:57.168000,	1.271780,	1.271880,	0.000100	]
 [ 2014-10-14 06:13:01.000000,	"EUR/USD",	2014-10-14 06:13:02.327000,	1.271910,	1.271990,	0.000080	]
-#SELECT avg(bid), sum(bid) FROM forex;
-% .%1,	.%2 # table_name
-% %1,	%2 # name
+#SELECT avg(bid), cast(sum(bid) AS DECIMAL(12,6)) FROM forex;
+% .%1,	.%3 # table_name
+% %1,	%3 # name
 % decimal,	decimal # type
-% 20,	20 # length
+% 20,	14 # length
 [ 42.330748,	1269.922430	]
-#SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
-% .forex,	.%2,	.%3 # table_name
-% currency,	%2,	%3 # name
+#SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), cast(sum(bid) AS DECIMAL(12,6)) FROM forex GROUP BY currency;
+% .forex,	.%2,	.%4 # table_name
+% currency,	%2,	%4 # name
 % clob,	decimal,	decimal # type
-% 7,	14,	20 # length
+% 7,	14,	14 # length
 [ "EUR/USD",	1.271833,	3.815500	]
 [ "USD/JPY",	107.118333,	321.355000	]
 [ "GBP/USD",	1.606837,	4.820510	]

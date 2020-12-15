@@ -1,0 +1,58 @@
+statement ok
+idx := bat.new(:int)
+
+statement ok
+bat.append(idx,1)
+
+statement ok
+bat.append(idx,2)
+
+statement ok
+bat.append(idx,3)
+
+statement ok
+wrd:= bat.new(:str)
+
+statement ok
+bat.append(wrd,"hello")
+
+statement ok
+bat.append(wrd,"brave")
+
+statement ok
+bat.append(wrd,"world")
+
+statement ok
+ans:= bat.new(:bit)
+
+statement ok
+bat.append(ans,true)
+
+statement ok
+bat.append(ans,false)
+
+statement ok
+bat.append(ans,nil:bit)
+
+query TITT rowsort
+io.print(idx,wrd,ans)
+----
+12 values hashing to 19ddc97069f43af16a86f51966a8da63
+
+statement ok
+result:=json.renderobject("idx",idx,"wrd",wrd,"ans",ans)
+
+query T rowsort
+io.print(result)
+----
+"[{\"idx\":1,\"wrd\":\"hello\",\"ans\":true},{\"idx\":2,\"wrd\":\"brave\",\"ans\":false},{\"idx\":3,\"wrd\":\"world\",\"ans\":null}]"
+
+statement ok
+result:=json.renderarray(idx,wrd,ans)
+
+query T rowsort
+io.print(result)
+----
+"[[1,\"hello\",true],[2,\"brave\",false],[3,\"world\",null]]"
+
+

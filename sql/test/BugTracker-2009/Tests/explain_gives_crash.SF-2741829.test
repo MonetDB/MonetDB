@@ -1,0 +1,47 @@
+statement ok
+set optimizer='sequential_pipe'
+
+statement ok
+create table blabla(id integer)
+
+query T rowsort
+select '~BeginProfilingOutput~'
+----
+~BeginProfilingOutput~
+
+query T rowsort
+explain alter table blabla add constraint dada unique (id)
+----
+42 values hashing to 21a8f0388c1567e3388eff8d26aa8cee
+
+query T rowsort
+explain alter table blabla add constraint dada unique (id)
+----
+42 values hashing to 64069f06ba33ca07651fd1cd0cf2d8a7
+
+query T rowsort
+select '~EndProfilingOutput~'
+----
+~EndProfilingOutput~
+
+statement error
+alter table blabla drop constraint dada
+
+query T rowsort
+select '~BeginProfilingOutput~'
+----
+~BeginProfilingOutput~
+
+query T rowsort
+explain alter table blabla add constraint dada unique (id)
+----
+42 values hashing to 29928a32f10acd62f7ae255837b36c44
+
+query T rowsort
+select '~EndProfilingOutput~'
+----
+~EndProfilingOutput~
+
+statement ok
+set optimizer = 'default_pipe'
+

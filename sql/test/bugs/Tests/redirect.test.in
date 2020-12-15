@@ -1,0 +1,6 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table cs_901b_counts (i int)
+

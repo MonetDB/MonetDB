@@ -64,3 +64,5 @@ select * from statistics_;
 drop table click_;
 drop table statistics_;
 drop table temp_table_;
+
+rollback;

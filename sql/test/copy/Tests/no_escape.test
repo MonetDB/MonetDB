@@ -1,0 +1,63 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE IF NOT EXISTS json_data (id INT, jdata JSON)
+
+statement ok
+COPY 4 RECORDS INTO json_data FROM STDIN DELIMITERS E',',E'\n'
+<COPY_INTO_DATA>
+1,"\\""
+2,"\\\\"
+3,NULL
+4,"\\n"
+
+statement ok
+COPY 4 RECORDS INTO json_data FROM STDIN DELIMITERS E',',E'\n' NO ESCAPE
+<COPY_INTO_DATA>
+5,"\""
+6,"\\"
+7,NULL
+8,"\n"
+
+query IT rowsort
+SELECT * FROM json_data
+----
+16 values hashing to 358def0a93ea956db4fa7294739972ce
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE IF NOT EXISTS str_data (id INT, bdata TEXT)
+
+statement ok
+COPY 5 RECORDS INTO str_data FROM STDIN DELIMITERS E',',E'\n'
+<COPY_INTO_DATA>
+1,
+2,NULL
+3,A12B
+4,\\
+5,a\nb
+
+statement ok
+COPY 5 RECORDS INTO str_data FROM STDIN DELIMITERS E',',E'\n' NO ESCAPE
+<COPY_INTO_DATA>
+6,
+7,NULL
+8,A12B
+9,\\
+10,a\nb
+
+query IT rowsort
+SELECT * FROM str_data
+----
+20 values hashing to e2002c7aa60bc5bbd41d71acc376f826
+
+statement ok
+ROLLBACK
+
+

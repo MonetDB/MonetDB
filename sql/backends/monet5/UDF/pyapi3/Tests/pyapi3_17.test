@@ -1,0 +1,142 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
+language P
+{
+	retval = dict()
+	retval['a'] = ['foo']
+	retval['b'] = 'bar'
+	retval['c'] = numpy.zeros(1, dtype=numpy.int32)
+	retval['d'] = True
+	return retval
+}
+
+query TTIT rowsort
+SELECT * FROM pyapi17()
+----
+foo
+bar
+0
+True
+
+statement ok
+DROP FUNCTION pyapi17
+
+statement ok
+CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
+language P
+{
+	retval = dict()
+	retval['a'] = ['foo']
+	retval['b'] = 'bar'
+	retval['c'] = numpy.zeros(1, dtype=numpy.int32)
+	retval['d'] = True
+	retval['e'] = "Unused value"
+	return retval
+}
+
+query TTIT rowsort
+SELECT * FROM pyapi17()
+----
+foo
+bar
+0
+True
+
+statement ok
+DROP FUNCTION pyapi17
+
+statement ok
+CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
+language P
+{
+	retval = dict()
+	retval['a'] = [['foo'], ['hello']]
+	retval['b'] = 'bar'
+	retval['c'] = numpy.zeros(1, dtype=numpy.int32)
+	retval['d'] = True
+	return retval
+}
+
+statement error
+SELECT * FROM pyapi17()
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION pyapi17() returns TABLE (a STRING, b STRING, c INTEGER, d BOOLEAN)
+language P
+{
+	retval = dict()
+	retval['a'] = ['foo']
+	retval['b'] = 'bar'
+	retval['d'] = True
+	return retval
+}
+
+statement error
+SELECT * FROM pyapi17()
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE integers(i INTEGER)
+
+statement ok
+INSERT INTO integers VALUES (3)
+
+statement ok
+CREATE FUNCTION pyapi17(i integer) returns integer
+language P
+{
+	retval = dict()
+	retval['a'] = 33
+	return retval
+}
+
+statement error
+SELECT pyapi17(i) FROM integers
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE integers(i INTEGER)
+
+statement ok
+INSERT INTO integers VALUES (3)
+
+statement ok
+CREATE FUNCTION pyapi17(i integer) returns integer
+language P
+{
+	retval = dict()
+	retval['result'] = 33
+	return retval
+}
+
+query I rowsort
+SELECT pyapi17(i) FROM integers
+----
+33
+
+statement ok
+DROP FUNCTION pyapi17
+
+statement ok
+ROLLBACK
+
+

@@ -23,3 +23,5 @@ explain copy into ttt from '/tmp/xyz';
 explain copy into ttt from E'\\tmp/xyz';
 explain copy into ttt from 'Z:/tmp/xyz';
 drop table ttt;
+
+set optimizer = 'default_pipe';

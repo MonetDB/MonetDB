@@ -34,6 +34,7 @@ set(include_sql_files
   45_uuid
   46_profiler
   51_sys_schema_extension
+  52_describe
   58_hot_snapshot
   60_wlcr
   61_wlcr
@@ -46,11 +47,6 @@ if(HAVE_HGE)
     39_analytics_hge
     40_json_hge)
 endif()
-
-create_include_object(
-  MAL_LANGUAGE
-  name_module "sql"
-  modules_list ${include_mal_files})
 
 create_include_object(
   SQL_LANGUAGE
@@ -118,7 +114,8 @@ set_target_properties(sql
   PROPERTIES
   OUTPUT_NAME monetdbsql
   VERSION ${MONETDB_VERSION}
-  SOVERSION ${MONETDB_VERSION_MAJOR})
+  SOVERSION ${MONETDB_VERSION_MAJOR}
+  PUBLIC_HEADER "${sql_public_headers}")
 
 target_compile_definitions(sql
   PRIVATE
@@ -128,6 +125,9 @@ target_compile_definitions(sql
 install(TARGETS
   sql
   EXPORT sqlTargets
+  PUBLIC_HEADER
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  COMPONENT sql
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY

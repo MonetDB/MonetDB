@@ -1,0 +1,417 @@
+statement ok
+b:= bat.new(:int)
+
+statement ok
+bat.append(b,1)
+
+statement ok
+bat.append(b,0)
+
+statement ok
+bat.append(b,2)
+
+statement ok
+bat.append(b,2)
+
+statement ok
+bat.append(b,5)
+
+statement ok
+bat.append(b,5)
+
+statement ok
+bat.append(b,3)
+
+query TI rowsort
+io.print(b)
+----
+14 values hashing to 6f65e6b8b547c5732d61c715af858a15
+
+statement ok
+a:= bat.new(:str)
+
+statement ok
+bat.append(a,"sjoerd")
+
+statement ok
+bat.append(a,"peter")
+
+statement ok
+bat.append(a,"stefan")
+
+statement ok
+bat.append(a,"stefan")
+
+statement ok
+bat.append(a,"niels")
+
+statement ok
+bat.append(a,"martin")
+
+statement ok
+bat.append(a,"stefan")
+
+query TT rowsort
+io.print(a)
+----
+14 values hashing to 24bb5ad1f1a8d95b0be1e3c7406fa3b7
+
+statement ok
+bp:= algebra.firstn(a,0:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+
+statement ok
+bp:= algebra.firstn(a,1:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+6
+
+statement ok
+bp:= algebra.firstn(a,2:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+2
+1
+6
+
+statement ok
+bp:= algebra.firstn(a,3:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+2
+1
+3
+2
+6
+
+statement ok
+bp:= algebra.firstn(a,4:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+0
+1
+2
+2
+3
+3
+6
+
+statement ok
+bp:= algebra.firstn(a,5:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+10 values hashing to f51acd2cc63747ad3ac6c1140a98247f
+
+statement ok
+bp:= algebra.firstn(a,6:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+12 values hashing to 62c2e86589d15c4e4a7edfd67ebb2baa
+
+statement ok
+bp:= algebra.firstn(a,7:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+statement ok
+bp:= algebra.firstn(a,8:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+query T rowsort
+io.print("Start of compound")
+----
+"Start of compound"
+
+statement ok
+(bp,bg):= algebra.firstn(b,0:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+
+query TT rowsort
+io.print(bg)
+----
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,0:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+
+statement ok
+(bp,bg):= algebra.firstn(b,1:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+4
+1
+5
+
+query TT rowsort
+io.print(bg)
+----
+0
+0
+1
+0
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,1:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+0
+4
+
+query TT rowsort
+io.print(cg)
+----
+0
+0
+
+statement ok
+(bp,bg):= algebra.firstn(b,2:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+4
+1
+5
+
+query TT rowsort
+io.print(bg)
+----
+0
+0
+1
+0
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,2:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+0
+4
+1
+5
+
+query TT rowsort
+io.print(cg)
+----
+0
+0
+1
+1
+
+statement ok
+(bp,bg):= algebra.firstn(b,3:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+4
+1
+5
+2
+6
+
+query TT rowsort
+io.print(bg)
+----
+0
+0
+1
+0
+2
+1
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,3:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+0
+4
+1
+5
+2
+6
+
+query TT rowsort
+io.print(cg)
+----
+0
+0
+1
+1
+2
+2
+
+statement ok
+(bp,bg):= algebra.firstn(b,4:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+10 values hashing to 9366dac70a8c800c4a3ba376d3995e4b
+
+query TT rowsort
+io.print(bg)
+----
+10 values hashing to 50c2f7e4272444652de778c5078bd293
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,4:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+10 values hashing to 9366dac70a8c800c4a3ba376d3995e4b
+
+query TT rowsort
+io.print(cg)
+----
+10 values hashing to b98a13ce6d69bd865ae4e48c9203532a
+
+statement ok
+(bp,bg):= algebra.firstn(b,5:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+10 values hashing to 9366dac70a8c800c4a3ba376d3995e4b
+
+query TT rowsort
+io.print(bg)
+----
+10 values hashing to 50c2f7e4272444652de778c5078bd293
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,5:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+10 values hashing to 9366dac70a8c800c4a3ba376d3995e4b
+
+query TT rowsort
+io.print(cg)
+----
+10 values hashing to b98a13ce6d69bd865ae4e48c9203532a
+
+statement ok
+(bp,bg):= algebra.firstn(b,6:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+12 values hashing to 0c93b862b714640e965b921e1f8ab8ff
+
+query TT rowsort
+io.print(bg)
+----
+12 values hashing to 661285379ca34c927e10e59d1f92a9e6
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,6:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+12 values hashing to 0c93b862b714640e965b921e1f8ab8ff
+
+query TT rowsort
+io.print(cg)
+----
+12 values hashing to e6802a1612b71f46e39cfc1ae12ae173
+
+statement ok
+(bp,bg):= algebra.firstn(b,7:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+query TT rowsort
+io.print(bg)
+----
+14 values hashing to 8632ba86ef7badd3e6f0eac58a486c97
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,7:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+query TT rowsort
+io.print(cg)
+----
+14 values hashing to 22b3ec6253c4f13e02af78cfe8068a60
+
+statement ok
+(bp,bg):= algebra.firstn(b,8:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+query TT rowsort
+io.print(bg)
+----
+14 values hashing to 8632ba86ef7badd3e6f0eac58a486c97
+
+statement ok
+(cp,cg):= algebra.firstn(a,bp,bg,8:lng,false,true,false)
+
+query TT rowsort
+io.print(cp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+query TT rowsort
+io.print(cg)
+----
+14 values hashing to 22b3ec6253c4f13e02af78cfe8068a60
+
+

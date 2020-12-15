@@ -1,0 +1,43 @@
+statement ok
+b:= bat.new(:str)
+
+statement ok
+bat.append(b,"Mary Ann Walker")
+
+statement ok
+bat.append(b,nil:str)
+
+statement ok
+bat.append(b,"Annie Chapman")
+
+query TT rowsort
+io.print(b)
+----
+@
+Annie Chapman
+@
+Mary Ann Walker
+@
+NULL
+
+statement error
+bx:= xml.xml(b)
+
+statement error
+bc:= xml.options("author","absent",bx)
+
+statement error
+io.print(bc)
+
+statement error
+bc:= xml.options("author","empty",bx)
+
+statement error
+io.print(bc)
+
+statement error
+bc:= xml.options("author","nil",bx)
+
+statement error
+io.print(bc)
+

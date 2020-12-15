@@ -17,19 +17,7 @@ stdout of test 'operation-successful.Bug-2589` in directory 'sql/test/BugTracker
 # MonetDB/SQL module v2.40.0 loaded
 # MonetDB/GIS module v0.20.0 loaded
 
-# SQL catalog created, loading sql scripts once
-
-
-# 10:20:48 >  
-# 10:20:48 >  /usr/bin/python operation-successful.Bug-2589.SQL.py operation-successful.Bug-2589 
-# 10:20:48 >  
-
-create table t2589 as select * from tables with data
-operation successful
-drop table t2589
-operation successful
-
-# 10:20:48 >  
-# 10:20:48 >  Done.
-# 10:20:48 >  
+# 17:44:40 >  
+# 17:44:40 >  "Done."
+# 17:44:40 >  
 

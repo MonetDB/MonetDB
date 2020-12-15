@@ -14,11 +14,10 @@ dbh = pymonetdb.connect(port=int(sys.argv[1]),database=sys.argv[2],hostname=sys.
 cursor = dbh.cursor()
 
 cursor.execute('CREATE TABLE python_int128 (i HUGEINT);')
-cursor.execute('INSERT INTO python_int128 VALUES (123456789098765432101234567890987654321);')
+if cursor.execute('INSERT INTO python_int128 VALUES (123456789098765432101234567890987654321);') != 1:
+    sys.stderr.write("1 row inserted expected")
 cursor.execute('SELECT * FROM python_int128;')
-result = cursor.fetchall()
-print(result)
-print(result[0])
-print(result[0][0])
+if cursor.fetchall() != [(123456789098765432101234567890987654321,)]:
+    sys.stderr.write("Result set [(123456789098765432101234567890987654321,)] expected")
 
 cursor.execute('DROP TABLE python_int128;')

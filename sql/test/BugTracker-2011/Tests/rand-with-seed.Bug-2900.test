@@ -1,0 +1,7 @@
+query TT rowsort
+select rand(100) is null , rand() is null 
+----
+False
+False
+
+

@@ -8,6 +8,8 @@ barrier1 = threading.Barrier(3)
 barrier2 = threading.Barrier(3)
 
 MAX_ITERATIONS = 100
+vals = [[(1,)],[(3,), (4,)],[(7,)],[(10,)],[(13,)],[(16,)],[(19,)],[(22,)],[(25,)],[(28,)],[(31,)],[(34,)],[(37,)],[(40,)],[(43,)],[(46,)],[(49,)],[(52,)],[(55,)],
+        [(58,)],[(61,)],[(64,)],[(67,)], [(70,)],[(73,)]]
 
 cursor1.execute("""
 START TRANSACTION;
@@ -26,6 +28,8 @@ class TestClient1(threading.Thread):
 
     def run(self):
         i = 0
+        vals_i = 0
+
         while i < MAX_ITERATIONS:
             next_action = i % 4
 
@@ -33,7 +37,9 @@ class TestClient1(threading.Thread):
                 self._cursor.execute('INSERT INTO tbl1;')
             elif next_action == 1:
                 self._cursor.execute('SELECT col1 FROM tbl1;')
-                print([x[0] for x in self._cursor.fetchall()])
+                if self._cursor.fetchall() != vals[vals_i]:
+                    sys.stderr.write("Expected %s" % str(vals[vals_i]))
+                vals_i += 1
             elif next_action == 2:
                 self._cursor.execute("""
                 START TRANSACTION;
@@ -58,6 +64,8 @@ class TestClient2(threading.Thread):
 
     def run(self):
         i = 0
+        vals_i = 0
+
         while i < MAX_ITERATIONS:
             next_action = i % 4
 
@@ -66,7 +74,9 @@ class TestClient2(threading.Thread):
                 self._cursor.execute('INSERT INTO tbl2;')
             elif next_action == 1:
                 self._cursor.execute('SELECT col2 FROM tbl2;')
-                print([x[0] for x in self._cursor.fetchall()])
+                if self._cursor.fetchall() != vals[vals_i]:
+                    sys.stderr.write("Expected %s" % str(vals[vals_i]))
+                vals_i += 1
             elif next_action == 2:
                 self._cursor.execute("""
                 START TRANSACTION;

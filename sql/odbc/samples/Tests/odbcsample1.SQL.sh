@@ -16,4 +16,4 @@ Debug		=
 
 EOF
 export ODBCINI
-Mlog -x "odbcsample1 MonetDB-Test"
+eval odbcsample1 MonetDB-Test

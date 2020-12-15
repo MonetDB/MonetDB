@@ -1,0 +1,61 @@
+statement ok
+create table minitable(j json)
+
+statement ok
+insert into minitable values('
+{"_id" : 1,
+"name" : { "first" : "John", "last" : "Backus" },
+"contribs" : [ "Fortran", "ALGOL", "Backus-Naur Form", "FP" ],
+"awards" : [
+           {
+             "award" : "W.W. McDowell Award",
+             "year" : 1967,
+             "by" : "IEEE Computer Society"
+           },
+           { "award" : "Draper Prize",
+             "year" : 1993,
+             "by" : "National Academy of Engineering"
+           }
+]
+}')
+
+query T rowsort
+select * from minitable
+----
+@{"_id" : 1,@"name" : { "first" : "John", "last" : "Backus" },@"contribs" : [ "Fortran", "ALGOL", "Backus-Naur Form", "FP" ],@"awards" : [@           {@             "award" : "W.W. McDowell Award",@             "year" : 1967,@             "by" : "IEEE Computer Society"@           },@           { "award" : "Draper Prize",@             "year" : 1993,@             "by" : "National Academy of Engineering"@           }@]@}
+
+query T rowsort
+select json.filter(j,'_id') from minitable
+----
+[1]
+
+query T rowsort
+select json.filter(j,'name') from minitable
+----
+[{ "first" : "John", "last" : "Backus" }]
+
+query T rowsort
+select json.filter(j,'contribs') from minitable
+----
+[[ "Fortran", "ALGOL", "Backus-Naur Form", "FP" ]]
+
+query T rowsort
+select json.filter(j,'awards') from minitable
+----
+[[@           {@             "award" : "W.W. McDowell Award",@             "year" : 1967,@             "by" : "IEEE Computer Society"@           },@           { "award" : "Draper Prize",@             "year" : 1993,@             "by" : "National Academy of Engineering"@           }@]]
+
+statement error
+select json.filter(j,'name'), json_filter(j,'contribs') from minitable
+
+statement error
+select json.keys(j) from minitable
+
+statement error
+select json.names(j) from minitable
+
+statement error
+select json.values(j) from minitable
+
+statement ok
+drop table minitable
+

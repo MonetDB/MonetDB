@@ -1,0 +1,27 @@
+statement ok
+CREATE table a3423 (k int,b int)
+
+statement ok
+INSERT into a3423 values (1,2)
+
+statement ok
+INSERT into a3423 values (2,2)
+
+statement ok
+INSERT into a3423 values (3,3)
+
+statement ok
+INSERT into a3423 values (4,65)
+
+statement ok
+INSERT into a3423 values (5,21)
+
+query II rowsort
+SELECT k as c,count(distinct b) from a3423 group by c
+----
+10 values hashing to aea99e3217b694b9b5bd462f3c4d1b3d
+
+statement ok
+drop table a3423
+
+

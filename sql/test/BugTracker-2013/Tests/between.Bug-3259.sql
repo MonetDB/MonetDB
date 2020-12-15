@@ -25,3 +25,5 @@ SELECT t1.subject as id1, t2.subject as id2
 FROM  treeitems t1, treeitems t2
 WHERE t2.pre between t1.pre and t1.pre + t1.size;
 ROLLBACK;
+
+set optimizer = 'default_pipe';

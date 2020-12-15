@@ -1,0 +1,241 @@
+statement ok
+CREATE MERGE TABLE testsmallpartitions (a int, b varchar(32)) PARTITION BY VALUES ON (a)
+
+statement ok
+CREATE TABLE testingme (a int, b varchar(32))
+
+statement error
+INSERT INTO testsmallpartitions VALUES (1, 'fail')
+
+statement error
+DELETE FROM testsmallpartitions
+
+statement error
+DELETE FROM testsmallpartitions WHERE a < 400
+
+statement error
+TRUNCATE testsmallpartitions
+
+statement error
+UPDATE testsmallpartitions SET b = 'try update me'
+
+statement ok
+ALTER TABLE testsmallpartitions ADD TABLE testingme AS PARTITION IN ('100', 300, '400')
+
+statement ok
+DELETE FROM testsmallpartitions
+
+statement ok
+DELETE FROM testsmallpartitions WHERE a < 400
+
+statement ok
+TRUNCATE testsmallpartitions
+
+statement ok
+UPDATE testsmallpartitions SET b = 'updating'
+
+statement ok
+INSERT INTO testsmallpartitions VALUES (100, 'ok'), (100, 'also'), (100, 'ok')
+
+statement ok
+DELETE FROM testsmallpartitions
+
+statement ok
+INSERT INTO testsmallpartitions VALUES (100, 'another'), (100, 'test'), (100, 'todo')
+
+statement ok
+DELETE FROM testsmallpartitions WHERE a < 400
+
+statement ok
+INSERT INTO testsmallpartitions VALUES (100, 'more'), (100, 'testing'), (100, 'please'), (100, 'now')
+
+statement ok
+TRUNCATE testsmallpartitions
+
+statement ok
+INSERT INTO testsmallpartitions VALUES (300, 'just'), (100, 'one'), (300, 'more'), (100, 'insert')
+
+query IT rowsort
+SELECT a, b FROM testsmallpartitions
+----
+100
+insert
+100
+one
+300
+just
+300
+more
+
+query IT rowsort
+SELECT a, b FROM testingme
+----
+100
+insert
+100
+one
+300
+just
+300
+more
+
+statement ok
+UPDATE testsmallpartitions SET b = 'nothing' WHERE a = 0
+
+statement ok
+UPDATE testsmallpartitions SET b = 'another update' WHERE a = 100
+
+query IT rowsort
+SELECT a, b FROM testsmallpartitions
+----
+100
+another update
+100
+another update
+300
+just
+300
+more
+
+query IT rowsort
+SELECT a, b FROM testingme
+----
+100
+another update
+100
+another update
+300
+just
+300
+more
+
+statement ok
+UPDATE testsmallpartitions SET b = 'change' || 'me' WHERE a = 300
+
+query IT rowsort
+SELECT a, b FROM testsmallpartitions
+----
+100
+another update
+100
+another update
+300
+changeme
+300
+changeme
+
+query IT rowsort
+SELECT a, b FROM testingme
+----
+100
+another update
+100
+another update
+300
+changeme
+300
+changeme
+
+statement ok
+CREATE TABLE testmealso (a int, b varchar(32))
+
+statement ok
+ALTER TABLE testsmallpartitions ADD TABLE testmealso AS PARTITION IN ('200', 500)
+
+statement ok
+INSERT INTO testsmallpartitions VALUES (100, 'more'), (200, 'data'), (100, 'to'), (400, 'test'), (500, 'on')
+
+statement ok
+UPDATE testsmallpartitions SET b = 'on both partitions' WHERE a = 400 OR a = 200
+
+query IT rowsort
+SELECT a, b FROM testsmallpartitions
+----
+18 values hashing to 027514c046f3a9f80e02d457d5aa9090
+
+query IT rowsort
+SELECT a, b FROM testingme
+----
+14 values hashing to 6acfc17eb98783c3b670dbc82ec4aef5
+
+query IT rowsort
+SELECT a, b FROM testmealso
+----
+200
+on both partitions
+500
+on
+
+statement ok
+UPDATE testsmallpartitions SET b = 'just on the second partition' WHERE a = 500
+
+query IT rowsort
+SELECT a, b FROM testsmallpartitions
+----
+18 values hashing to a221f8045c3322940e24cdd3cbfd7d53
+
+query IT rowsort
+SELECT a, b FROM testingme
+----
+14 values hashing to 6acfc17eb98783c3b670dbc82ec4aef5
+
+query IT rowsort
+SELECT a, b FROM testmealso
+----
+200
+on both partitions
+500
+just on the second partition
+
+statement ok
+UPDATE testsmallpartitions SET b = 'no partition' WHERE a = 1000
+
+query IT rowsort
+SELECT a, b FROM testsmallpartitions
+----
+18 values hashing to a221f8045c3322940e24cdd3cbfd7d53
+
+query IT rowsort
+SELECT a, b FROM testingme
+----
+14 values hashing to 6acfc17eb98783c3b670dbc82ec4aef5
+
+query IT rowsort
+SELECT a, b FROM testmealso
+----
+200
+on both partitions
+500
+just on the second partition
+
+statement ok
+TRUNCATE testsmallpartitions
+
+query IT rowsort
+SELECT a, b FROM testsmallpartitions
+----
+
+query IT rowsort
+SELECT a, b FROM testingme
+----
+
+query IT rowsort
+SELECT a, b FROM testmealso
+----
+
+statement ok
+ALTER TABLE testsmallpartitions DROP TABLE testingme
+
+statement ok
+ALTER TABLE testsmallpartitions DROP TABLE testmealso
+
+statement ok
+DROP TABLE testingme
+
+statement ok
+DROP TABLE testmealso
+
+statement ok
+DROP TABLE testsmallpartitions
+
+

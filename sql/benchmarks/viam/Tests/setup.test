@@ -1,0 +1,78 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SEQUENCE "seq_3310" AS INTEGER
+
+statement ok
+CREATE SEQUENCE "seq_3320" AS INTEGER
+
+statement ok
+CREATE SEQUENCE "seq_3330" AS INTEGER
+
+statement ok
+CREATE SEQUENCE "seq_3361" AS INTEGER
+
+statement ok
+CREATE TABLE "sys"."video" (
+	"video_id" int NOT NULL DEFAULT next value for "sys"."seq_3310",
+	"filename" varchar(50) NOT NULL,
+	"media_uri" varchar(50) NOT NULL,
+	"media_time_point" varchar(50) NOT NULL,
+	"media_duration" varchar(50) NOT NULL,
+	"shot" int NOT NULL,
+	"framecount" int NOT NULL,
+	CONSTRAINT "video_video_id_pkey" PRIMARY KEY ("video_id")
+)
+
+statement ok
+CREATE TABLE "sys"."video_segment" (
+	"video_segment_id" int NOT NULL DEFAULT next value for "sys"."seq_3320",
+	"video_id" int NOT NULL,
+	"segment" varchar(50) NOT NULL,
+	"shot" varchar(50) NOT NULL,
+	"framecount" varchar(50) NOT NULL,
+	"framenumber" int NOT NULL,
+	"framelength" int NOT NULL,
+	CONSTRAINT "video_segment_video_segment_id_pkey" PRIMARY KEY ("video_segment_id"),
+	CONSTRAINT "unq_shot_frame" UNIQUE ("framenumber", "framelength"),
+	CONSTRAINT "fk_video_segment_video_id" FOREIGN KEY ("video_id") REFERENCES "video" ("video_id")
+)
+
+statement ok
+CREATE TABLE "sys"."concepts" (
+	"concepts_id" int NOT NULL DEFAULT next value for "sys"."seq_3330",
+	"video_segment_id" int NOT NULL,
+	"_2personshot_c" real,
+	"_2personshot_r" real,
+	"closeup_c" real,
+	"closeup_r" real,
+	"complete_podium_c" real,
+	"complete_podium_r" real,
+	"draaitafel_c" real,
+	"draaitafel_r" real,
+	"drummer_c" real,
+	"drummer_r" real,
+	"gitarist_c" real,
+	"gitarist_r" real,
+	"instrument_closup_c" real,
+	"instrument_closup_r" real,
+	"medium_podium_c" real,
+	"medium_podium_r" real,
+	"mediumshot_c" real,
+	"mediumshot_r" real,
+	"piano_c" real,
+	"piano_r" real,
+	"publiek_c" real,
+	"publiek_r" real,
+	"rug_artiesten_c" real,
+	"rug_artiesten_r" real,
+	"zanger_c" real,
+	"zanger_r" real,
+	CONSTRAINT "concepts_concepts_id_pkey" PRIMARY KEY ("concepts_id"),
+	CONSTRAINT "fk_concepts_video_segment_id" FOREIGN KEY ("video_segment_id") REFERENCES "video_segment" ("video_segment_id")
+)
+
+statement ok
+COMMIT
+
