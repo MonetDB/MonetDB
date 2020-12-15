@@ -1,6 +1,5 @@
-schema
 role1
-role2
+schema
 table
 unknown_user
 privs
@@ -22,4 +21,4 @@ schemaRights
 metadataConsistency
 sessioncontrol
 createUserRollback
-HAVE_PYMONETDB?userCallFunction
+userCallFunction
