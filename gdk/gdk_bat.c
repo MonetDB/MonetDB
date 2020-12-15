@@ -926,7 +926,7 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 	}
 	if (!writable)
 		bn->batRestricted = BAT_READ;
-	TRC_DEBUG(ALGO, "COLcopy(" ALGOBATFMT ")=" ALGOBATFMT "\n",
+	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
 		  ALGOBATPAR(b), ALGOBATPAR(bn));
 	return bn;
       bunins_failed:
