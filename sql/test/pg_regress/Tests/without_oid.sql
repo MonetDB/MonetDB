@@ -51,7 +51,7 @@ SELECT min(relpages) < max(relpages), min(reltuples) - max(reltuples)
  WHERE relname IN ('wi', 'wo');
 */
 SELECT "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted FROM sys.storage
- WHERE "table" IN ('wi', 'wo');
+ WHERE "table" IN ('wi', 'wo') and "type" <> 'oid';
 
 DROP TABLE wi;
 DROP TABLE wo;
