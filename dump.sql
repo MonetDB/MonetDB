@@ -477,6 +477,77 @@ RETURN
 	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || SQ(c.rem) || ';' FROM describe_comments() c;
 END;
 
+CREATE FUNCTION describe_privileges() RETURNS TABLE(o_id INT, o_nme STRING, o_tpe STRING, p_nme STRING, a_nme STRING, g_nme STRING, grantable BOOLEAN) BEGIN
+RETURN SELECT
+	CASE
+		WHEN o.id IS NULL THEN
+			0
+		ELSE
+			o.id
+	END,
+	CASE
+		WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN --GLOBAL privileges: SELECT maps to COPY FROM
+			'COPY FROM'
+		WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN --GLOBAL privileges: UPDATE maps to COPY INTO
+			'COPY INTO'
+		ELSE
+			o.nme
+	END,
+	CASE
+		WHEN o.tpe IS NOT NULL THEN
+			o.tpe
+		ELSE
+			'GLOBAL'
+	END,
+	pc.privilege_code_name,
+	a.name,
+	g.name,
+	p.grantable
+FROM
+	privileges p LEFT JOIN
+	(
+    SELECT t.id, s.name || '.' || t.name , 'TABLE'
+		from sys.schemas s, sys.tables t where s.id = t.schema_id
+	UNION ALL
+		SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'
+		FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
+	UNION ALL
+		SELECT f.id, f.nme, f.tpe
+		FROM fully_qualified_functions() f
+    ) o(id, nme, tpe) ON o.id = p.obj_id,
+	sys.privilege_codes pc,
+	auths a, auths g
+WHERE
+	p.privileges = pc.privilege_code_id AND
+	p.auth_id = a.id AND
+	p.grantor = g.id;
+END;
+
+CREATE FUNCTION dump_privileges() RETURNS TABLE (stmt STRING) BEGIN
+RETURN
+	SELECT
+		'INSERT INTO sys.privileges VALUES (' ||
+			CASE
+				WHEN dp.o_tpe = 'GLOBAL' THEN
+					'0,'
+				WHEN dp.o_tpe = 'TABLE' THEN
+					'(SELECT t.id FROM sys.schemas s, tables t WHERE s.id = t.schema_id' ||
+						' AND s.name || ''.'' || t.name =' || SQ(dp.o_nme) || '),'
+				WHEN dp.o_tpe = 'COLUMN' THEN
+					'(SELECT c.id FROM sys.schemas s, tables t, columns c WHERE s.id = t.schema_id AND t.id = c.table_id' ||
+						' AND s.name || ''.'' || t.name || ''.'' || c.name =' || SQ(dp.o_nme) || '),'
+				ELSE -- FUNCTION-LIKE
+					'(SELECT fqn.id FROM fully_qualified_functions() fqn WHERE' ||
+						' fqn.nme = ' || SQ(dp.o_nme) || ' AND fqn.tpe = ' || SQ(dp.o_tpe) || '),'
+			END ||
+			'(SELECT id FROM auths a WHERE a.name = ' || SQ(dp.a_nme) || '),' ||
+			'(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name = ' || SQ(p_nme) || '),'
+			'(SELECT id FROM auths g WHERE g.name = ' || SQ(dp.g_nme) || '),' ||
+			dp.grantable ||
+		');'
+	FROM describe_privileges() dp;
+END;
+
 --The dump statement should normally have an auto-incremented column representing the creation order.
 --But in cases of db objects that can be interdependent, i.e. functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
 --Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for functions and table-likes,
@@ -555,11 +626,14 @@ BEGIN
 	INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
 	INSERT INTO dump_statements(s) SELECT * FROM dump_partition_tables();
 	INSERT INTO dump_statements(s) SELECT * from dump_triggers();
-
 	INSERT INTO dump_statements(s) SELECT * FROM dump_comments();
 
-	--TODO TABLE level grants
-	--TODO COLUMN level grants
+	--We are dumping ALL privileges so we need to erase existing privileges on the receiving side;
+	INSERT INTO dump_statements(s) VALUES ('TRUNCATE sys.privileges;');
+	INSERT INTO dump_statements(s) SELECT * FROM dump_privileges();
+
+	--move describe functions 52_describe.sql
+	--merge dump_type with describe_type function in 52_describe.sql
 	--TODO User Defined Types? sys.types
 	--TODO loaders ,procedures, window and filter functions.
 	--TODO dumping table data
