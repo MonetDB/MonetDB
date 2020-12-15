@@ -2,9 +2,6 @@ statement ok
 CREATE SCHEMA library
 
 statement ok
-CREATE ROLE libraryWorker
-
-statement ok
 CREATE TABLE library.orders(price int, name VARCHAR(100))
 
 statement ok
