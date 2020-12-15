@@ -11,8 +11,6 @@
 
 #include "mal_exception.h"
 #include "mal_client.h"
-#include "mal_session.h"
-#include "mal_utils.h"
 
 #include "mel.h"
 

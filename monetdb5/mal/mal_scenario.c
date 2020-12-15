@@ -97,6 +97,7 @@
 #include "mal_exception.h"
 #include "mal_profiler.h"
 #include "mal_private.h"
+#include "mal_session.h"
 
 #ifdef HAVE_SYS_TIMES_H
 # include <sys/times.h>
