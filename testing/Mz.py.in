@@ -2808,6 +2808,7 @@ def main(argv) :
         fl = openutf8(fn+"lst","w")
         Failure = [[] for i in FAILURES]
         SKIPPED_TESTS = []
+        FAILED_TESTS = []
         for TSTDIR, TST, tt, ms, FtErr, reason in TIMES:
             fl.write('%s:\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
                                                 tt,
@@ -2817,6 +2818,8 @@ def main(argv) :
                 Failure[FtErr].append(os.path.join(TSTDIR,TST))
             if FtErr == F_SKIP:
                 SKIPPED_TESTS.append((TSTDIR, TST, reason))
+            if TST and FtErr == F_ERROR:
+                FAILED_TESTS.append((TSTDIR, TST))
 
         fl.write(":\t%7.3f\t\n" % t_)
         fl.close()
@@ -2840,6 +2843,9 @@ def main(argv) :
             print('failed={}, skipped={}'.format(failed, skipped))
             print('Ran {} test in {:7.3f}'.format(test_count - skipped, t_))
             if verbose:
+                for TSTDIR, TST in FAILED_TESTS:
+                    prred('ERROR\t')
+                    print('{} {}'.format(TSTDIR, TST))
                 for TSTDIR, TST, reason in SKIPPED_TESTS:
                     prpurple('SKIP\t')
                     print('{} {} {}'.format(TSTDIR, TST, reason))
