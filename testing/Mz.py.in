@@ -1035,7 +1035,8 @@ def RunTest(env, test, oktests, pSrvr):
     test_counter = env.get('test_counter', 1)
 
     # print progress
-    progress(test_counter, env.get('test_count'), os.path.join(TSTDIR, TST + EXT))
+    if not quiet:
+        progress(test_counter, env.get('test_count'), os.path.join(TSTDIR, TST + EXT))
 
     # change to test target directory
     os.chdir(TSTTRGDIR)
