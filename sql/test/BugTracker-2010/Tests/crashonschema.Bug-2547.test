@@ -23,14 +23,14 @@ drop schema intro1
 statement ok
 create table t2010(i int)
 
-statement error
+statement ok
 create schema intro3
   grant insert on t2010 to monetdb
 
 statement ok
 drop table t2010
 
-statement error
+statement ok
 drop schema intro3
 
 
