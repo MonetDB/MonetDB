@@ -672,30 +672,9 @@ program that uses MonetDB as an embeddable library.
 %{_includedir}/monetdb/monetdbe.h
 %{_libdir}/pkgconfig/monetdbe.pc
 
-%package testing
-Summary: MonetDB - Monet Database Management System
-Group: Applications/Databases
-
-%description testing
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the programs and files needed for testing the
-MonetDB packages.  You probably don't need this, unless you are a
-developer.  If you do want to test, install %{name}-testing-python.
-
-%files testing
-%license COPYING
-%defattr(-,root,root)
-%{_bindir}/Mdiff
-%{_bindir}/Mlog
-
 %package testing-python
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
-Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: /usr/bin/python3
 BuildArch: noarch

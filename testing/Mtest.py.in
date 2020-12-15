@@ -211,24 +211,20 @@ def _configure(str):
             str = nstr
     return str
 
-try:
-    import Mfilter
-except ImportError:
-    try:
-        import MonetDBtesting.Mfilter as Mfilter
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
-        sys.path.insert(0, p)
-        import MonetDBtesting.Mfilter as Mfilter
-        if 'PYTHONPATH' in os.environ:
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
-
-# use our own process module because it has _BufferedPipe
+# use our own process module (instead of subprocess) because it has
+# _BufferedPipe
 try:
     import process
 except ImportError:
-    import MonetDBtesting.process as process
+    try:
+        import MonetDBtesting.process as process
+    except ImportError:
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
+        sys.path.insert(0, p)
+        import MonetDBtesting.process as process
+        if 'PYTHONPATH' in os.environ:
+            p += os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
 
 # Replace os.fork by a version that forks but also sets the process
 # group in the child.  This is done so that we can easily kill a
@@ -2264,112 +2260,41 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         else:
             titlefmt = '-tTest <a href="%s%s">%s%s</a> (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, TST)
         diff_html = openutf8('%s.out.diff.html' % TST,"w")
-        diff_html.write('<!--MajorDiffs-->\n')
+        out = open('%s.test.out' % TST).read()
+        Element('html', None,
+#                 Element('head', None,
+#                         Element('style', None,
+#                                 Text('''
+# .neutral { color: black; }
+# .deleted { color: red; }
+# .added   { color: green; }
+# '''))),
+                Element('body', None,
+                        Element('pre', None,
+                                Text(out)))).write(diff_html, True)
+        if out and [x for x in out.splitlines() if not x.startswith('#')]:
+            diff_html.write('<!--MajorDiffs-->\n')
+        else:
+            diff_html.write('<!--NoDiffs-->\n')
         diff_html.close()
-        timedout = True
-        if tres is not None:
-            # test program exited with error => expect major differences!
-            ACCURACYout = -1
-        out = err = ''
-        while timedout:
-            cmd = ['Mdiff']
-            if ACCURACYout == -1:
-                ACCURACYout = 0
-            else:
-                cmd.append('-d')
-            if not verbose:
-                cmd.append('-q')
-            # on Windows we use Cygwin diff, os use /dev/null, not os.devnull
-            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                        titlefmt % ('err', 'err'),
-                        '/dev/null',
-                        '%s.test.out' % TST,
-                        '%s.out.diff.html' % TST])
-            if procdebug:
-                print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
-            setpgrp = True
-            proc = process.Popen(cmd, stdout=process.PIPE,
-                                 stderr=process.PIPE,
-                                 text=True)
-            proc.killed = False
-            proc.onechild = False
-            t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-            try:
-                t.start()
-                out, err = proc.communicate()
-                t.cancel()
-                if verbose or quiet:
-                    if out:
-                        STDOUT.write(out)
-                    if err:
-                        sys.stderr.write(err)
-                if procdebug:
-                    print('RunTest: process exited "%s" (%s)\n' %
-                          ('" "'.join(cmd), proc.returncode))
-            except KeyboardInterrupt:
-                t.cancel()
-                killProc(proc)
-                if procdebug:
-                    print('RunTest: process killed "%s"\n' % '" "'.join(cmd))
-                raise
-            timedout = proc.killed
-            ACCURACYout = ACCURACYout - 1
-            if ACCURACYout < 0:
-                timedout = False # don't try again
-
         diff_html = openutf8('%s.err.diff.html' % TST,"w")
-        diff_html.write('<!--MajorDiffs-->\n')
+        err = open('%s.test.err' % TST).read()
+        Element('html', None,
+#                 Element('head', None,
+#                         Element('style', None,
+#                                 Text('''
+# .neutral { color: black; }
+# .deleted { color: red; }
+# .added   { color: green; }
+# '''))),
+                Element('body', None,
+                        Element('pre', None,
+                                Text(err)))).write(diff_html, True)
+        if err and [x for x in err.splitlines() if not x.startswith('#')]:
+            diff_html.write('<!--MajorDiffs-->\n')
+        else:
+            diff_html.write('<!--NoDiffs-->\n')
         diff_html.close()
-        timedout = True
-        if tres is not None:
-            # test program exited with error => expect major differences!
-            ACCURACYerr = -1
-        while timedout:
-            cmd = ['Mdiff']
-            if ACCURACYerr == -1:
-                ACCURACYerr = 0
-            else:
-                cmd.append('-d')
-            if not verbose:
-                cmd.append('-q')
-            # on Windows we use Cygwin diff, os use /dev/null, not os.devnull
-            cmd.extend(['-F^#', '-I%s' % par['IGNORE'],
-                        titlefmt % ('out', 'out'),
-                        '/dev/null',
-                        '%s.test.err' % TST,
-                        '%s.err.diff.html' % TST])
-            if procdebug:
-                print('RunTest: starting process "%s"\n' % '" "'.join(cmd))
-            setpgrp = True
-            proc = process.Popen(cmd, stdout=process.PIPE,
-                                 stderr=process.PIPE,
-                                 text=True)
-            proc.killed = False
-            proc.onechild = False
-            t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-            try:
-                t.start()
-                out, err = proc.communicate()
-                t.cancel()
-                if verbose or quiet:
-                    if out:
-                        STDOUT.write(out)
-                    if err:
-                        sys.stderr.write(err)
-                if procdebug:
-                    print('RunTest: process exited "%s" (%s)\n' %
-                          ('" "'.join(cmd), proc.returncode))
-            except KeyboardInterrupt:
-                t.cancel()
-                killProc(proc)
-                if procdebug:
-                    print('RunTest: process killed "%s"\n' % '" "'.join(cmd))
-                raise
-            timedout = proc.killed
-            ACCURACYerr = ACCURACYerr - 1
-            if ACCURACYerr < 0:
-                timedout = False # don't try again
-
         FailedOut, FailedErr = CategorizeResult(TST, max(sockerr, errcode))
         if FailedOut == F_OK and FailedErr == F_OK and testweb:
             for f in ['%s.out.diff.html' % TST, '%s.test.out' % TST,
@@ -3949,7 +3874,6 @@ def main(argv) :
         exe = {}
         exe['mserver5']       = CheckExec('mserver5')     , '%s mserver5 --debug=%s --set gdk_nr_threads=%s %s --set mapi_listenaddr=all --set mapi_port=%s %s %s %s' % \
                                                                (env['setDBG'], env['GDK_DEBUG'], env['GDK_NR_THREADS'], env['setMONETDB_MOD_PATH'], env['MAPIPORT'], SOCK, not nomito and '--forcemito' or '', env['MSERVER_SET'])
-        exe['Mdiff']         = CheckExec('Mdiff')        , 'Mdiff'
         exe['python']        = CheckExec(sys.executable) , sys.executable
         exe['ruby_client']   = CheckExec(env['RUBYCLIENT'].split(None, 1)[0])   , '%s %s' % (env['RUBYCLIENT'], env['MAPIPORT'])
         exe['MAL_Client']    = CheckExec(env['MALCLIENT'].split(None, 1)[0])  , '%s --host=%s --port=%s' % (env['MALCLIENT'], HOST, env['MAPIPORT'])

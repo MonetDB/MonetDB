@@ -226,24 +226,19 @@ except ImportError:
             p += os.pathsep + os.environ['PYTHONPATH']
         os.environ['PYTHONPATH'] = p
 
-try:
-    import Mfilter
-except ImportError:
-    try:
-        import MonetDBtesting.Mfilter as Mfilter
-    except ImportError:
-        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
-        sys.path.insert(0, p)
-        import MonetDBtesting.Mfilter as Mfilter
-        if 'PYTHONPATH' in os.environ:
-            p += os.pathsep + os.environ['PYTHONPATH']
-        os.environ['PYTHONPATH'] = p
-
 # use our own process module because it has _BufferedPipe
 try:
     import process
 except ImportError:
-    import MonetDBtesting.process as process
+    try:
+        import MonetDBtesting.process as process
+    except ImportError:
+        p = _configure(os.path.join('@QXprefix@', '@QXPYTHON_LIBDIR@'))
+        sys.path.insert(0, p)
+        import MonetDBtesting.process as process
+        if 'PYTHONPATH' in os.environ:
+            p += os.pathsep + os.environ['PYTHONPATH']
+        os.environ['PYTHONPATH'] = p
 
 # Replace os.fork by a version that forks but also sets the process
 # group in the child.  This is done so that we can easily kill a
