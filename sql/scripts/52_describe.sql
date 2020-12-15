@@ -174,3 +174,28 @@ BEGIN
         LEFT OUTER JOIN sys.comments c ON f.id = c.id
         WHERE f.name=functionName AND s.name = schemaName;
 END;
+
+CREATE FUNCTION fully_qualified_functions() RETURNS TABLE(id INT, tpe STRING, nme STRING) BEGIN
+RETURN
+	WITH fqn(id, tpe, sig, num) AS
+	(
+		SELECT
+			f.id,
+			ft.function_type_keyword,
+			CASE WHEN a.type IS NULL THEN
+				s.name || '.' || f.name || '()'
+			ELSE
+				s.name || '.' || f.name || '(' || group_concat(describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
+			END,
+			a.number
+		FROM schemas s, sys.function_types ft, functions f LEFT JOIN args a ON f.id = a.func_id
+		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
+	)
+	SELECT
+		fqn1.id,
+		fqn1.tpe,
+		fqn1.sig
+	FROM
+		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
+		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
+END;
