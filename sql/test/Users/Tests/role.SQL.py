@@ -42,6 +42,7 @@ with SQLTestCase() as tc:
     tc.execute("SET ROLE role1;").assertFailed(err_code="42000", err_message="Role (role1) missing")
     tc.execute("SET ROLE role2;").assertFailed(err_code="42000", err_message="Role (role2) missing")
 
+    tc.connect(username="monetdb", password="monetdb")
     tc.execute("DROP ROLE role1;").assertSucceeded()
     tc.execute("DROP ROLE role3;").assertSucceeded()
     tc.execute("DROP USER alice;").assertSucceeded()
