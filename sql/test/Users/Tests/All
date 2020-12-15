@@ -1,4 +1,4 @@
-role1
+role
 schema
 table
 unknown_user
@@ -14,7 +14,6 @@ columnRights
 changePasswordUser
 renameUser
 changeSchemaUser
-role
 grantMonetdb
 copyinto
 schemaRights
