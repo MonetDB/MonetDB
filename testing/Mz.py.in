@@ -1131,6 +1131,17 @@ def RunTest(env, test, oktests, pSrvr):
                 except OSError:
                     if not env.get('NOCLEAN'):
                         raise
+                if f.endswith('.src'):
+                    with open(f) as fp:
+                        src = expandvars(fp.readline().strip(), env)
+                    if os.path.isfile(src):
+                        f = f[:-4]
+                        try:
+                            SymlinkOrCopy(src, f)
+                            links.append(f)
+                        except IOError as err:
+                            ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                                   % (os.path.join(dir_, f), f, os.getcwd(), err.errno, err.strerror))
         # Check for available sockets and block them until we're ready to run the actual test
         if pSrvr is None:
             MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
@@ -1140,24 +1151,7 @@ def RunTest(env, test, oktests, pSrvr):
         else:
             MAPIsockets = None
 
-        if test.get('is_src_link', False) and not os.path.isfile(TST + EXT):
-            with open(test.get('test_path') + test.get('tail'), 'r') as f:
-                TSTSRC = expandvars(f.readline().strip(), env)
-            if os.path.isfile(TSTSRC):
-                try:
-                    SymlinkOrCopy(TSTSRC, TST + EXT)
-                    links.append(TST + EXT)
-                except IOError as err:
-                    ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (TSTSRC, TST + EXT, os.getcwd(), err.errno, err.strerror))
-            else:
-                reason = "as source file '%s` is missing." % TSTSRC
-                if MAPIsockets is not None:
-                    # Release reserved sockets before bailing out
-                    MAPIsockets[0].close()
-                    MAPIsockets[1].close()
-                return TX,F_SKIP,reason,links
-        elif test.get('is_input', False) and not os.path.isfile(TST+EXT):
+        if test.get('is_input', False) and not os.path.isfile(TST+EXT):
             with open(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
                 with open(test.get('test_path') + test.get('tail'), 'r') as f:
                     for l in f:
