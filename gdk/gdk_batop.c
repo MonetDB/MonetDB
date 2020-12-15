@@ -2080,11 +2080,11 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			}
 			*groups = gn;
 		}
-		TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT ",o="
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",o="
 			  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
 			  ",reverse=%d,nilslast=%d,stable=%d) = ("
 			  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-			  ALGOOPTBATFMT ") -- trivial (" LLFMT
+			  ALGOOPTBATFMT " -- trivial (" LLFMT
 			  " usec)\n",
 			  ALGOBATPAR(b), ALGOOPTBATPAR(o),
 			  ALGOOPTBATPAR(g), reverse, nilslast, stable,
@@ -2168,11 +2168,11 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			BBPunfix(on->batCacheid);
 			on = NULL;
 		}
-		TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT ",o="
+		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",o="
 			  ALGOOPTBATFMT ",g=" ALGOOPTBATFMT
 			  ",reverse=%d,nilslast=%d,stable=%d) = ("
 			  ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-			  ALGOOPTBATFMT ") -- orderidx (" LLFMT
+			  ALGOOPTBATFMT " -- orderidx (" LLFMT
 			  " usec)\n",
 			  ALGOBATPAR(b), ALGOOPTBATPAR(o),
 			  ALGOOPTBATPAR(g), reverse, nilslast, stable,
@@ -2270,12 +2270,12 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 					goto error;
 				*groups = gn;
 			}
-			TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT
+			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",o=" ALGOOPTBATFMT ",g=" ALGOBATFMT
 				  ",reverse=%d,nilslast=%d,stable=%d"
 				  ") = (" ALGOOPTBATFMT ","
 				  ALGOOPTBATFMT "," ALGOOPTBATFMT
-				  ") -- key group (" LLFMT " usec)\n",
+				  " -- key group (" LLFMT " usec)\n",
 				  ALGOBATPAR(b), ALGOOPTBATPAR(o),
 				  ALGOBATPAR(g), reverse, nilslast,
 				  stable, ALGOOPTBATPAR(bn),
@@ -2392,10 +2392,10 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 		bn = NULL;
 	}
 
-	TRC_DEBUG(ALGO, "BATsort(b=" ALGOBATFMT ",o=" ALGOOPTBATFMT
+	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",o=" ALGOOPTBATFMT
 		  ",g=" ALGOOPTBATFMT ",reverse=%d,nilslast=%d,"
 		  "stable=%d) = (" ALGOOPTBATFMT "," ALGOOPTBATFMT ","
-		  ALGOOPTBATFMT ") -- %ssort (" LLFMT " usec)\n",
+		  ALGOOPTBATFMT " -- %ssort (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(o), ALGOOPTBATPAR(g),
 		  reverse, nilslast, stable, ALGOOPTBATPAR(bn),
 		  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(on),

@@ -7,16 +7,6 @@ stderr of test 'python3_dbapi` in directory 'sql/test/mapi` itself:
 
 
 # 22:24:36 >  
-# 22:24:36 >  Mtimeout -timeout 180 ./python_dbapi.SQL.sh python_dbapi 
-# 22:24:36 >  
-
-
-# 22:24:36 >  
-# 22:24:36 >  sqlsample.py 33515 mTests_src_test_mapi
-# 22:24:36 >  
-
-
-# 22:24:36 >  
 # 22:24:36 >  Done.
 # 22:24:36 >  
 
