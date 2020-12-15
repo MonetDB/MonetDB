@@ -7,12 +7,33 @@ INSERT INTO xtmp1 VALUES (1),(2),(4),(0),(10),(7),(3),(1),(1),(-4),(-9),(-1)
 query I rowsort
 SELECT * FROM xtmp1
 ----
-12 values hashing to 79c2fc4656e2efecc6234b0b30f31f5d
+-1
+-4
+-9
+0
+1
+1
+1
+10
+2
+3
+4
+7
 
-query TTTTTIITITI rowsort
-SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx FROM storage(current_schema, 'xtmp1')
+query TTTTTIITITT rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 FROM storage(current_schema, 'xtmp1')
 ----
-11 values hashing to e2c40acce8780f75ba49f0184e69334b
+sys
+xtmp1
+i
+int
+writable
+12
+0
+False
+0
+False
+False
 
 statement ok
 ALTER TABLE xtmp1 SET READ ONLY
@@ -20,10 +41,20 @@ ALTER TABLE xtmp1 SET READ ONLY
 statement ok
 CREATE ORDERED INDEX sys_xtmp1_i_oidx ON xtmp1(i)
 
-query TTTTTIITITI rowsort
-SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx FROM storage(current_schema, 'xtmp1')
+query TTTTTIITITT rowsort
+SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 FROM storage(current_schema, 'xtmp1')
 ----
-11 values hashing to 2c4fdc8dbf8800c22ee6e102683f713b
+sys
+xtmp1
+i
+int
+readonly
+12
+0
+False
+0
+False
+True
 
 query I rowsort
 SELECT * FROM xtmp1 WHERE i<0
@@ -54,12 +85,31 @@ SELECT * FROM xtmp1 WHERE i<2
 query I rowsort
 SELECT * FROM xtmp1 WHERE i<5
 ----
-10 values hashing to 4add91adbcb78fb20cbc511f66ab2957
+-1
+-4
+-9
+0
+1
+1
+1
+2
+3
+4
 
 query I rowsort
 SELECT * FROM xtmp1 WHERE i<8
 ----
-11 values hashing to 3b3003424f6f904b802553c24fb33eec
+-1
+-4
+-9
+0
+1
+1
+1
+2
+3
+4
+7
 
 query I rowsort
 SELECT * FROM xtmp1 WHERE i>=0 AND i<8
