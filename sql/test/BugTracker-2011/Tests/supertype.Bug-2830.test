@@ -1,0 +1,6 @@
+query R rowsort
+select 30. - 0.025
+----
+29.975
+
+

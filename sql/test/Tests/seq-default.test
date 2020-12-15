@@ -1,0 +1,153 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create sequence test_seq as integer
+
+statement ok
+create table seqdeftest (ts timestamp, i integer default next value for test_seq)
+
+statement ok
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736')
+
+statement ok
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736')
+
+statement ok
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736')
+
+statement ok
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736')
+
+statement ok
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736')
+
+statement ok
+insert into seqdeftest(ts) values ('2005-09-23 12:34:26.736')
+
+query TI rowsort
+select * from seqdeftest
+----
+12 values hashing to d9d2f221c41a4a75a2af05b45b5bbef1
+
+statement ok
+drop table seqdeftest
+
+statement ok
+drop sequence test_seq
+
+statement ok
+create table seqdeftest (
+	d date,
+	id serial,
+	count int auto_increment,
+	bla int generated always as identity (
+		start with 100 increment by 2 no minvalue maxvalue 1000
+		cache 2 cycle)
+)
+
+statement ok
+insert into seqdeftest(d) values ('2005-10-01')
+
+statement ok
+insert into seqdeftest(d) values ('2005-10-01')
+
+statement ok
+insert into seqdeftest(d) values ('2005-10-01')
+
+statement ok
+insert into seqdeftest(d) values ('2005-10-01')
+
+statement ok
+insert into seqdeftest(d) values ('2005-10-01')
+
+statement ok
+insert into seqdeftest(d) values ('2005-10-01')
+
+query TIII rowsort
+select * from seqdeftest
+----
+24 values hashing to b251e8a2031ae1fddea47bb43c8388ec
+
+statement ok
+drop table seqdeftest
+
+statement ok
+CREATE SEQUENCE seq_5700 AS INTEGER
+
+statement ok
+CREATE TABLE kvk (
+        id                INTEGER       NOT NULL       DEFAULT next value for seq_5700,
+        kvk               BIGINT,
+        bedrijfsnaam      VARCHAR(256),
+        CONSTRAINT kvk_id_pkey PRIMARY KEY (id)
+)
+
+statement ok
+insert into kvk(kvk, bedrijfsnaam) values (1, 'ones')
+
+statement ok
+insert into kvk(kvk, bedrijfsnaam) values (2, 'toos')
+
+query IIT rowsort
+select * from kvk
+----
+1
+1
+ones
+2
+2
+toos
+
+statement ok
+CREATE TABLE kvk_cp (
+        id                INTEGER       NOT NULL       DEFAULT next value for seq_5700,
+        kvk               BIGINT,
+        bedrijfsnaam      VARCHAR(256),
+        CONSTRAINT kvk_cp_id_pkey PRIMARY KEY (id)
+)
+
+statement ok
+insert into kvk_cp(kvk, bedrijfsnaam) values (3, 'dries')
+
+statement ok
+insert into kvk_cp(kvk, bedrijfsnaam) values (4, 'viers')
+
+query IIT rowsort
+select * from kvk_cp
+----
+3
+3
+dries
+4
+4
+viers
+
+statement ok
+drop TABLE kvk
+
+statement ok
+insert into kvk_cp(kvk, bedrijfsnaam) values (5, 'vijfs')
+
+query IIT rowsort
+select * from kvk_cp
+----
+3
+3
+dries
+4
+4
+viers
+5
+5
+vijfs
+
+statement ok
+drop TABLE kvk_cp
+
+statement ok
+drop SEQUENCE seq_5700
+
+statement ok
+ROLLBACK
+

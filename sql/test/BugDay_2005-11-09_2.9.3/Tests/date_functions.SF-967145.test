@@ -1,0 +1,9 @@
+query T
+select current_date - current_date
+----
+0
+
+query T
+select current_date() - current_date()
+----
+0

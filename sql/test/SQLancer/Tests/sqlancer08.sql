@@ -145,10 +145,6 @@ DELETE FROM salesmart WHERE (((CAST(CAST(-1073480726 AS BOOLEAN) AS BOOLEAN)) = 
 	-- Delete all rows
 ROLLBACK;
 
-PREPARE SELECT round(-'b', ?);
-PREPARE SELECT sql_max(+ (0.29353363282850464), round(- (sql_min('-Infinity', ?)), ?)) LIMIT 8535194086169274474;
-PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, types decimal(2,1) and sec_interval(13,0) are not equal
-
 START TRANSACTION;
 CREATE TABLE "sys"."t2" ("tc2" INTERVAL DAY);
 COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
@@ -219,8 +215,5 @@ COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 
 select round(t2.tc0, 88) from t2;
 ROLLBACK;
-
-PREPARE (SELECT DISTINCT ((CAST(- (CASE r'' WHEN r'tU1{D^㙝U' THEN 1739172851 WHEN ? THEN -1313600539 WHEN r'X(%4}' THEN NULL WHEN r')帘''舻CD' THEN 95 END) AS BIGINT))&(least(- (-235253756), 64)))
-WHERE ((rtrim(r'Z'))LIKE(r'rK'))) UNION ALL (SELECT ALL ? WHERE (scale_down(ifthenelse(TRUE, 18, ?), r'4')) IS NULL);
 
 SELECT round(- (((-443710828)||(1616633099))), 789092170);

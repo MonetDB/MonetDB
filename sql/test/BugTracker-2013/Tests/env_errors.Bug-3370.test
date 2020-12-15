@@ -1,0 +1,17 @@
+statement error
+set role blah
+
+query T rowsort
+select current_role
+----
+monetdb
+
+statement error
+set schema xyz
+
+query T rowsort
+select current_schema
+----
+sys
+
+

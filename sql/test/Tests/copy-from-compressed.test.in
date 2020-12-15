@@ -1,0 +1,35 @@
+statement ok
+start transaction
+
+statement ok
+create table compression_schemes (
+	name varchar(20),
+	extension varchar(5)
+)
+
+statement ok
+copy into compression_schemes
+from E'$QTSTSRCDIR/copy-from-compressed.csv.raw'
+using delimiters ',', E'\n'
+
+statement ok
+copy into compression_schemes
+from E'$QTSTSRCDIR/copy-from-compressed.csv.gz'
+using delimiters ',', E'\n'
+
+statement ok
+copy into compression_schemes
+from E'$QTSTSRCDIR/copy-from-compressed.csv.bz2'
+using delimiters ',', E'\n'
+
+statement ok
+copy into compression_schemes
+from E'$QTSTSRCDIR/copy-from-compressed.csv.xz'
+using delimiters ',', E'\n'
+
+statement ok
+select * from compression_schemes order by extension
+
+statement ok
+rollback
+

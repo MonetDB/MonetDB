@@ -1,0 +1,36 @@
+statement ok
+m:= inspect.getModule()
+
+statement ok
+m0:= algebra.select(m,nil:bat[:oid],"bat", "bat", true,true,false)
+
+statement ok
+k:= inspect.getKind()
+
+statement ok
+f:= inspect.getFunction()
+
+statement ok
+s:= inspect.getSignatures()
+
+statement ok
+f0:= algebra.projection(m0,f)
+
+statement ok
+(fv,forder):= algebra.sort(f0,false,false,true)
+
+statement ok
+m1:= algebra.projectionpath(forder,m0,m)
+
+statement ok
+k0:= algebra.projectionpath(forder,m0,k)
+
+statement ok
+s0:= algebra.projectionpath(forder,m0,s)
+
+query TTTTT rowsort
+io.print(fv,k0,m1,s0)
+----
+370 values hashing to 89098586f700282e5acd6dcc6c1e6c8b
+
+

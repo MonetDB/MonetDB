@@ -10,3 +10,5 @@ select count(*) from geoms;
 select ST_X(g) from geoms order by id;
 
 DROP TABLE geoms;
+
+set optimizer = 'default_pipe';

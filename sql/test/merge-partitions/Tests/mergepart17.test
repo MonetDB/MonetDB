@@ -1,0 +1,112 @@
+statement ok
+CREATE MERGE TABLE testupdates (a int, b varchar(32)) PARTITION BY RANGE ON (a)
+
+statement ok
+CREATE TABLE sublimits1 (a int, b varchar(32))
+
+statement ok
+INSERT INTO sublimits1 VALUES (1000, 'ups')
+
+statement error
+ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
+
+statement ok
+TRUNCATE sublimits1
+
+statement ok
+ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
+
+statement ok
+INSERT INTO sublimits1 VALUES (99, 'ok')
+
+statement error
+UPDATE sublimits1 SET a = a + 1
+
+statement ok
+UPDATE sublimits1 SET b = 'p' || b WHERE a = 99
+
+query IT rowsort
+SELECT a, b FROM testupdates
+----
+99
+pok
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+99
+pok
+
+statement ok
+ALTER TABLE testupdates DROP TABLE sublimits1
+
+statement ok
+UPDATE sublimits1 SET a = a + 1
+
+statement ok
+UPDATE sublimits1 SET b = b || 's' WHERE a = 100
+
+statement error
+ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
+
+statement ok
+UPDATE sublimits1 SET a = a - 1
+
+statement ok
+ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
+
+query IT rowsort
+SELECT a, b FROM testupdates
+----
+99
+poks
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+99
+poks
+
+statement ok
+ALTER TABLE testupdates DROP TABLE sublimits1
+
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
+
+statement ok
+ROLLBACK
+
+statement ok
+UPDATE sublimits1 SET a = a + 1
+
+statement ok
+ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 101
+
+query IT rowsort
+SELECT a, b FROM sublimits1
+----
+100
+poks
+
+query IT rowsort
+SELECT a, b FROM testupdates
+----
+100
+poks
+
+statement ok
+ALTER TABLE testupdates DROP TABLE sublimits1
+
+statement error
+ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
+
+statement ok
+DROP TABLE sublimits1
+
+statement ok
+DROP TABLE testupdates
+
+

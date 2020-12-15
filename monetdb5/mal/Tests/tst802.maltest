@@ -1,0 +1,20 @@
+statement ok
+function tst(b:bat[:any_2]):bat[:any_2];
+	return b;
+end tst;
+
+statement ok
+function foo();
+z:= bat.new(:int);
+b:= nil:bat[:int];
+b:= z;
+#io.print(b);
+c:= tst(b);
+io.print(c);
+end;
+
+query TI rowsort
+user.foo();
+----
+
+

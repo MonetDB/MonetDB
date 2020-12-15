@@ -1,3 +1,5 @@
+START TRANSACTION;
+
 CREATE TABLE tradeDate(date int not null constraint pk_tradeDate primary key);
 
 COPY 32605 RECORDS INTO tradeDate FROM STDIN USING DELIMITERS E'\t';
@@ -32616,3 +32618,5 @@ WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) 
 WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn + 1 = e1.rn limit 5;
 
 drop table tradeDate;
+
+ROLLBACK;

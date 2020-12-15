@@ -1,0 +1,353 @@
+query I rowsort
+SELECT 1 AS one
+----
+1
+
+statement error
+SELECT cast('t' AS boolean) AS "true"
+
+statement error
+SELECT cast('true' AS boolean) AS true
+
+query T rowsort
+SELECT cast('true' AS boolean) AS "true"
+----
+True
+
+statement error
+SELECT cast('f' AS boolean) AS "false"
+
+statement error
+SELECT cast('false' AS boolean) AS false
+
+query T rowsort
+SELECT cast('false' AS boolean) AS "false"
+----
+False
+
+statement error
+SELECT cast('t' AS boolean) or cast('f' AS boolean) AS "true"
+
+query T rowsort
+SELECT cast('true' AS boolean) or cast('false' AS boolean) AS "true"
+----
+True
+
+statement error
+SELECT cast('t' AS boolean) and cast('f' AS boolean) AS "false"
+
+query T rowsort
+SELECT cast('true' AS boolean) and cast('false' AS boolean) AS "false"
+----
+False
+
+statement error
+SELECT not cast('f' AS boolean) AS "true"
+
+query T rowsort
+SELECT not cast('false' AS boolean) AS "true"
+----
+True
+
+query T rowsort
+SELECT not cast('true' AS boolean) AS "false"
+----
+False
+
+statement error
+SELECT cast('t' AS boolean) = cast('f' AS boolean) AS "false"
+
+query T rowsort
+SELECT cast('true' AS boolean) = cast('false' AS boolean) AS "false"
+----
+False
+
+statement error
+SELECT cast('t' AS boolean) <> cast('f' AS boolean) AS "true"
+
+query T rowsort
+SELECT cast('true' AS boolean) <> cast('false' AS boolean) AS "true"
+----
+True
+
+statement ok
+CREATE TABLE BOOLTBL1 (f1 bool)
+
+statement error
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('t' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('true' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('True' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES (cast(lower('True') AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES ('true')
+
+query TT rowsort
+SELECT '' AS f_3, * FROM BOOLTBL1
+----
+(empty)
+True
+(empty)
+True
+(empty)
+True
+(empty)
+True
+
+query TT rowsort
+SELECT '' AS t_3, BOOLTBL1.*
+   FROM BOOLTBL1
+   WHERE f1 = cast('true' AS boolean)
+----
+(empty)
+True
+(empty)
+True
+(empty)
+True
+(empty)
+True
+
+query TT rowsort
+SELECT '' AS t_3, BOOLTBL1.*
+   FROM BOOLTBL1
+   WHERE f1 <> cast('false' AS boolean)
+----
+(empty)
+True
+(empty)
+True
+(empty)
+True
+(empty)
+True
+
+statement error
+SELECT '' AS zero, BOOLTBL1.*
+   FROM BOOLTBL1
+   WHERE booleq(cast('false' AS boolean), f1)
+
+statement error
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('f' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL1 (f1) VALUES (cast('false' AS boolean))
+
+query TT rowsort
+SELECT '' AS f_1, BOOLTBL1.*
+   FROM BOOLTBL1
+   WHERE f1 = cast('false' AS boolean)
+----
+(empty)
+False
+
+statement ok
+CREATE TABLE BOOLTBL2 (f1 bool)
+
+statement error
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('f' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('false' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('False' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL2 (f1) VALUES (cast(lower('False') AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL2 (f1) VALUES (cast('FALSE' AS boolean))
+
+statement ok
+INSERT INTO BOOLTBL2 (f1) VALUES (cast(lower('FALSE') AS boolean))
+
+statement error
+INSERT INTO BOOLTBL2 (f1)
+   VALUES ('XXX')
+
+query TT rowsort
+SELECT '' AS f_4, * FROM BOOLTBL2
+----
+10 values hashing to bd240e5a7c499cb805e9a09930d82891
+
+query TTT rowsort
+SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
+   FROM BOOLTBL1, BOOLTBL2
+   WHERE BOOLTBL2.f1 <> BOOLTBL1.f1
+----
+60 values hashing to 55a036c77b2b168f4072d1dd22aa850b
+
+statement error
+SELECT '' AS tf_12, BOOLTBL1.*, BOOLTBL2.*
+   FROM BOOLTBL1, BOOLTBL2
+   WHERE boolne(BOOLTBL2.f1,BOOLTBL1.f1)
+
+query TTT rowsort
+SELECT '' AS ff_4, BOOLTBL1.*, BOOLTBL2.*
+   FROM BOOLTBL1, BOOLTBL2
+   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 and BOOLTBL1.f1 = cast('false' AS boolean)
+----
+15 values hashing to 39139d8ed7d39b4d8bfbe1e9fea6659d
+
+query TTT rowsort
+SELECT '' AS tf_12_ff_4, BOOLTBL1.*, BOOLTBL2.*
+   FROM BOOLTBL1, BOOLTBL2
+   WHERE BOOLTBL2.f1 = BOOLTBL1.f1 or BOOLTBL1.f1 = cast('true' AS boolean)
+   ORDER BY BOOLTBL1.f1, BOOLTBL2.f1
+----
+75 values hashing to b0de3afc246ae59f70ebb7a19d28c836
+
+query TT rowsort
+SELECT '' AS "True", f1
+   FROM BOOLTBL1
+   WHERE f1 = TRUE
+----
+(empty)
+True
+(empty)
+True
+(empty)
+True
+(empty)
+True
+
+query TT rowsort
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL1
+   WHERE f1 = NOT FALSE
+----
+(empty)
+True
+(empty)
+True
+(empty)
+True
+(empty)
+True
+
+query TT rowsort
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL1
+   WHERE NOT FALSE = f1
+----
+(empty)
+True
+(empty)
+True
+(empty)
+True
+(empty)
+True
+
+query TT rowsort
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL1
+   WHERE f1 = (NOT FALSE)
+----
+(empty)
+True
+(empty)
+True
+(empty)
+True
+(empty)
+True
+
+query TT rowsort
+SELECT '' AS "False", f1
+   FROM BOOLTBL1
+   WHERE f1 = FALSE
+----
+(empty)
+False
+
+query TT rowsort
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL1
+   WHERE f1 = NOT TRUE
+----
+(empty)
+False
+
+query TT rowsort
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL1
+   WHERE NOT TRUE = f1
+----
+(empty)
+False
+
+query TT rowsort
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL1
+   WHERE f1 = (NOT TRUE)
+----
+(empty)
+False
+
+query TT rowsort
+SELECT '' AS "True", f1
+   FROM BOOLTBL2
+   WHERE f1 = TRUE
+----
+
+query TT rowsort
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL2
+   WHERE f1 = NOT FALSE
+----
+
+query TT rowsort
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL2
+   WHERE NOT FALSE = f1
+----
+
+query TT rowsort
+SELECT '' AS "Not False", f1
+   FROM BOOLTBL2
+   WHERE f1 = (NOT FALSE)
+----
+
+query TT rowsort
+SELECT '' AS "False", f1
+   FROM BOOLTBL2
+   WHERE f1 = FALSE
+----
+10 values hashing to bd240e5a7c499cb805e9a09930d82891
+
+query TT rowsort
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL2
+   WHERE f1 = NOT TRUE
+----
+10 values hashing to bd240e5a7c499cb805e9a09930d82891
+
+query TT rowsort
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL2
+   WHERE NOT TRUE = f1
+----
+10 values hashing to bd240e5a7c499cb805e9a09930d82891
+
+query TT rowsort
+SELECT '' AS "Not True", f1
+   FROM BOOLTBL2
+   WHERE f1 = (NOT TRUE)
+----
+10 values hashing to bd240e5a7c499cb805e9a09930d82891
+
+statement ok
+DROP TABLE  BOOLTBL1
+
+statement ok
+DROP TABLE  BOOLTBL2
+
+

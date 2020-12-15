@@ -7,3 +7,5 @@ set optimizer = 'sequential_pipe';
 
 
    plan select id , v2  from v2 order by id;
+
+set optimizer = 'default_pipe';

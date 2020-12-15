@@ -1,0 +1,12 @@
+statement error
+	true:= 23;
+
+statement error
+	false:= 24;
+
+statement ok
+barrier barrier:= true;
+	b:= true;
+	b:= false;
+exit barrier;
+

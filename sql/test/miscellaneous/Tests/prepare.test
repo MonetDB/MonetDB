@@ -1,0 +1,7 @@
+statement error
+prepare select 1=?+?
+
+statement error
+exec ** (1,0)
+
+

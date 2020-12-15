@@ -1,0 +1,17 @@
+statement ok
+function foo();
+b:= bat.new(:int);
+b1:= bat.append(b,2);
+b2:= bat.append(b1,5);
+b3:= bat.append(b2,3);
+b5:= algebra.sort(b3,false,false,false);
+end
+
+#mdb.List("user","foo")
+
+statement ok
+optimizer.deadcode("user","foo")
+
+#mdb.List("user","foo")
+
+

@@ -1,0 +1,9 @@
+query T rowsort
+select current_role
+----
+monetdb
+
+statement ok
+set role "monetdb"
+
+

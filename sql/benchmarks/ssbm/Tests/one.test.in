@@ -1,0 +1,352 @@
+statement ok
+create table DWDATE (
+D_DATEKEY int,
+D_DATE string,
+D_DAYOFWEEK string,
+D_MONTH string,
+D_YEAR int,
+D_YEARMONTHNUM int,
+D_YEARMONTH string,
+D_DAYNUMINWEEK int,
+D_DAYNUMINMONTH int,
+D_DAYNUMINYEAR int,
+D_MONTHNUMINYEAR int,
+D_WEEKNUMINYEAR int,
+D_SELLINGSEASON string,
+D_LASTDAYINWEEKFL int,
+D_LASTDAYINMONTHFL int,
+D_HOLIDAYFL int,
+D_WEEKDAYFL int,
+primary key(D_DATEKEY)
+)
+
+statement ok
+create table SUPPLIER (
+S_SUPPKEY int,
+S_NAME string,
+S_ADDRESS string,
+S_CITY string,
+S_NATION string,
+S_REGION string,
+S_PHONE string,
+primary key(S_SUPPKEY)
+)
+
+statement ok
+create table CUSTOMER (
+C_CUSTKEY int,
+C_NAME string,
+C_ADDRESS string,
+C_CITY string,
+C_NATION string,
+C_REGION string,
+C_PHONE string,
+C_MKTSEGMENT string,
+primary key (C_CUSTKEY)
+)
+
+statement ok
+create table PART (
+P_PARTKEY int,
+P_NAME string,
+P_MFGR string,
+P_CATEGORY string,
+P_BRAND1 string,
+P_COLOR string,
+P_TYPE string,
+P_SIZE int,
+P_CONTAINER string,
+primary key (P_PARTKEY)
+)
+
+statement ok
+create table LINEORDER (
+LO_ORDERKEY int,
+LO_LINENUMBER int,
+LO_CUSTKEY int,
+LO_PARTKEY int,
+LO_SUPPKEY int,
+LO_ORDERDATE int,
+LO_ORDERPRIORITY string,
+LO_SHIPPRIORITY string,
+LO_QUANTITY int,
+LO_EXTENDEDPRICE int,
+LO_ORDTOTALPRICE int,
+LO_DISCOUNT int,
+LO_REVENUE int,
+LO_SUPPLYCOST int,
+LO_TAX int,
+LO_COMMITDATE int,
+LO_SHIPMODE string,
+primary key (LO_ORDERKEY, LO_LINENUMBER),
+FOREIGN KEY (LO_ORDERDATE)  REFERENCES DWDATE   (D_DATEKEY),
+FOREIGN KEY (LO_COMMITDATE) REFERENCES DWDATE   (D_DATEKEY),
+FOREIGN KEY (LO_SUPPKEY)    REFERENCES SUPPLIER (S_SUPPKEY),
+FOREIGN KEY (LO_CUSTKEY)    REFERENCES CUSTOMER (C_CUSTKEY),
+FOREIGN KEY (LO_PARTKEY)    REFERENCES PART     (P_PARTKEY)
+)
+
+query ITTTIITIIIIITIIII rowsort
+select * from DWDATE
+----
+
+query ITTTTTT rowsort
+select * from SUPPLIER
+----
+
+query ITTTTTTT rowsort
+select * from CUSTOMER
+----
+
+query ITTTTTTIT rowsort
+select * from PART
+----
+
+query IIIIIITTIIIIIIIIT rowsort
+select * from LINEORDER
+----
+
+statement ok
+START TRANSACTION
+
+statement ok
+COPY    2556 RECORDS INTO DWDATE    FROM E'$QTSTSRCDIR/SF-0.01/date.tbl'      USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY     100 RECORDS INTO SUPPLIER  FROM E'$QTSTSRCDIR/SF-0.01/supplier.tbl'  USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY     300 RECORDS INTO CUSTOMER  FROM E'$QTSTSRCDIR/SF-0.01/customer.tbl'  USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY    2000 RECORDS INTO PART      FROM E'$QTSTSRCDIR/SF-0.01/part.tbl'      USING DELIMITERS '|', E'|\n'
+
+statement ok
+COPY   60175 RECORDS INTO LINEORDER FROM E'$QTSTSRCDIR/SF-0.01/lineorder.tbl' USING DELIMITERS '|', E'|\n'
+
+statement ok
+COMMIT
+
+query I rowsort
+select count(*) from DWDATE
+----
+2556
+
+query I rowsort
+select count(*) from SUPPLIER
+----
+100
+
+query I rowsort
+select count(*) from CUSTOMER
+----
+300
+
+query I rowsort
+select count(*) from PART
+----
+2000
+
+query I rowsort
+select count(*) from LINEORDER
+----
+60175
+
+query ITTTIITIIIIITIIII rowsort
+select * from DWDATE    order by D_DATEKEY limit 9
+----
+153 values hashing to 208f3d42f09b64a2c5bdadd8db7d4bec
+
+query ITTTTTT rowsort
+select * from SUPPLIER  order by S_SUPPKEY limit 9
+----
+63 values hashing to a3b80b87db31a7e9f69d8cf6cb1f7853
+
+query ITTTTTTT rowsort
+select * from CUSTOMER  order by C_CUSTKEY limit 9
+----
+72 values hashing to 255c6cddba47b59eb07a080520214f7c
+
+query ITTTTTTIT rowsort
+select * from PART      order by P_PARTKEY limit 9
+----
+81 values hashing to 4d93e051f6e0daaa8a7ba148682bbae9
+
+query IIIIIITTIIIIIIIIT rowsort
+select * from LINEORDER order by LO_ORDERKEY, LO_LINENUMBER limit 9
+----
+153 values hashing to 1f5f562bf00a0bf197569dc56625d60d
+
+query I rowsort
+select sum(lo_extendedprice*lo_discount) as revenue
+	from lineorder, dwdate
+	where lo_orderdate = d_datekey
+		and d_year = 1993
+		and lo_discount between 1 and 3
+		and lo_quantity < 25
+----
+4199635969
+
+query I rowsort
+select sum(lo_extendedprice*lo_discount) as revenue
+	from lineorder, dwdate
+	where lo_orderdate = d_datekey
+		and d_yearmonthnum = 199401
+		and lo_discount between 4 and 6
+		and lo_quantity between 26 and 35
+----
+927530712
+
+query I rowsort
+select sum(lo_extendedprice*lo_discount) as revenue
+	from lineorder, dwdate
+	where lo_orderdate = d_datekey
+		and d_weeknuminyear = 6 and d_year = 1994
+		and lo_discount between 5 and 7
+		and lo_quantity between 36 and 40
+----
+213477639
+
+query IIT rowsort
+select sum(lo_revenue), d_year, p_brand1
+	from lineorder, dwdate, part, supplier
+	where lo_orderdate = d_datekey
+		and lo_partkey = p_partkey
+		and lo_suppkey = s_suppkey
+		and p_category = 'MFGR#12'
+		and s_region = 'AMERICA'
+	group by d_year, p_brand1
+	order by d_year, p_brand1
+----
+465 values hashing to 7a17aefb56671083165cf6c1ec7165c9
+
+query IIT rowsort
+select sum(lo_revenue), d_year, p_brand1
+	from lineorder, dwdate, part, supplier
+	where lo_orderdate = d_datekey
+		and lo_partkey = p_partkey
+		and lo_suppkey = s_suppkey
+		and p_brand1 between 'MFGR#2221' and 'MFGR#2228'
+		and s_region = 'ASIA'
+	group by d_year, p_brand1
+	order by d_year, p_brand1
+----
+135 values hashing to d604cf966140b2342b84aaf8da38f8d8
+
+query IIT rowsort
+select sum(lo_revenue), d_year, p_brand1
+	from lineorder, dwdate, part, supplier
+	where lo_orderdate = d_datekey
+		and lo_partkey = p_partkey
+		and lo_suppkey = s_suppkey
+		and p_brand1 = 'MFGR#2221'
+		and s_region = 'EUROPE'
+	group by d_year, p_brand1
+	order by d_year, p_brand1
+----
+21 values hashing to c52df9641b9901b6b5e242ba6d767d44
+
+query TTII rowsort
+select c_nation, s_nation, d_year, sum(lo_revenue) as revenue
+	from customer, lineorder, supplier, dwdate
+	where lo_custkey = c_custkey
+		and lo_suppkey = s_suppkey
+		and lo_orderdate = d_datekey
+		and c_region = 'ASIA'
+		and s_region = 'ASIA'
+		and d_year >= 1992 and d_year <= 1997
+	group by c_nation, s_nation, d_year
+	order by d_year asc, revenue desc
+----
+600 values hashing to dfed01b3001e93a41c0865d715ee2b97
+
+query TTII rowsort
+select c_city, s_city, d_year, sum(lo_revenue) as revenue
+	from customer, lineorder, supplier, dwdate
+	where lo_custkey = c_custkey
+		and lo_suppkey = s_suppkey
+		and lo_orderdate = d_datekey
+		and c_nation = 'UNITED STATES'
+		and s_nation = 'UNITED STATES'
+		and d_year >= 1992 and d_year <= 1997
+	group by c_city, s_city, d_year
+	order by d_year asc, revenue desc
+----
+
+query TTII rowsort
+select c_city, s_city, d_year, sum(lo_revenue) as revenue
+	from customer, lineorder, supplier, dwdate
+	where lo_custkey = c_custkey
+		and lo_suppkey = s_suppkey
+		and lo_orderdate = d_datekey
+		and c_nation = 'UNITED KINGDOM'
+		and (c_city='UNITED KI1' or c_city='UNITED KI5')
+		and (s_city='UNITED KI1' or s_city='UNITED KI5')
+		and s_nation = 'UNITED KINGDOM'
+		and d_year >= 1992 and d_year <= 1997
+	group by c_city, s_city, d_year
+	order by d_year asc, revenue desc
+----
+
+query TTII rowsort
+select c_city, s_city, d_year, sum(lo_revenue) as revenue
+	from customer, lineorder, supplier, dwdate
+	where lo_custkey = c_custkey
+		and lo_suppkey = s_suppkey
+		and lo_orderdate = d_datekey
+		and c_nation = 'UNITED KINGDOM'
+		and (c_city='UNITED KI1' or c_city='UNITED KI5')
+		and (s_city='UNITED KI1' or s_city='UNITED KI5')
+		and s_nation = 'UNITED KINGDOM'
+		and d_yearmonth = 'Dec1997'
+	group by c_city, s_city, d_year
+	order by d_year asc, revenue desc
+----
+
+query ITI rowsort
+select d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1
+	from dwdate, customer, supplier, part, lineorder
+	where lo_custkey = c_custkey
+		and lo_suppkey = s_suppkey
+		and lo_partkey = p_partkey
+		and lo_orderdate = d_datekey
+		and c_region = 'AMERICA'
+		and s_region = 'AMERICA'
+		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
+	group by d_year, c_nation
+	order by d_year, c_nation
+----
+84 values hashing to 85b58d8b755ca1b883513de0fd08546b
+
+query ITTI rowsort
+select d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1
+	from dwdate, customer, supplier, part, lineorder
+	where lo_custkey = c_custkey
+		and lo_suppkey = s_suppkey
+		and lo_partkey = p_partkey
+		and lo_orderdate = d_datekey
+		and c_region = 'AMERICA'
+		and s_region = 'AMERICA'
+		and (d_year = 1997 or d_year = 1998)
+		and (p_mfgr = 'MFGR#1' or p_mfgr = 'MFGR#2')
+	group by d_year, s_nation, p_category
+	order by d_year, s_nation, p_category
+----
+304 values hashing to e5636859acb993008b37bfae32f2f9e9
+
+query ITTI rowsort
+select d_year, s_city, p_brand1, sum(lo_revenue-lo_supplycost) as profit1
+	from dwdate, customer, supplier, part, lineorder
+	where lo_custkey = c_custkey
+		and lo_suppkey = s_suppkey
+		and lo_partkey = p_partkey
+		and lo_orderdate = d_datekey
+		and c_region = 'AMERICA'
+		and s_nation = 'UNITED STATES'
+		and (d_year = 1997 or d_year = 1998)
+		and p_category = 'MFGR#14'
+	group by d_year, s_city, p_brand1
+	order by d_year, s_city, p_brand1
+----
+28 values hashing to dea45ef297261624a6a828a04e3b1f0c
+

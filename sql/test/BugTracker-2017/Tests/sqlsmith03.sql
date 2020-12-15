@@ -1,6 +1,4 @@
 -- And a new run after 234K queries
--- !42S02!SELECT: no such table 'querylog_calls'
-
 
 select
   8 as c0

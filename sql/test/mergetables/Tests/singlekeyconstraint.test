@@ -1,0 +1,99 @@
+statement ok
+CREATE TABLE part1 ( x double, y double, z double)
+
+statement ok
+ALTER TABLE part1 ADD PRIMARY KEY (x)
+
+statement ok
+COPY 2 RECORDS INTO part1 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+0.0 0.0 0.0
+1.0 0.0 0.0 
+
+statement ok
+CREATE TABLE part2 ( x double, y double, z double)
+
+statement ok
+ALTER TABLE part2 ADD PRIMARY KEY (x)
+
+statement ok
+COPY 2 RECORDS INTO part2 FROM stdin USING DELIMITERS ' ',E'\n'
+<COPY_INTO_DATA>
+2.0 0.0 0.0
+3.0 0.0 0.0 
+
+statement ok
+CREATE MERGE TABLE complete ( x double, y double, z double)
+
+statement error
+ALTER TABLE complete ADD TABLE part1
+
+statement error
+ALTER TABLE complete ADD TABLE part2
+
+statement ok
+ALTER TABLE complete ADD PRIMARY KEY (x)
+
+statement ok
+ALTER TABLE complete ADD TABLE part1
+
+statement ok
+ALTER TABLE complete ADD TABLE part2
+
+query RRR rowsort
+SELECT * FROM COMPLETE
+----
+0.000
+0.000
+0.000
+1.000
+0.000
+0.000
+2.000
+0.000
+0.000
+3.000
+0.000
+0.000
+
+statement error
+INSERT INTO part2 VALUES(2.0, 0.0, 1.0)
+
+statement error
+INSERT INTO part1 VALUES(0.0, 0.0, 2.0)
+
+statement error
+INSERT INTO part2 VALUES(0.0, 0.0, 3.0)
+
+statement error
+INSERT INTO complete VALUES(4.0, 0.0, 4.0)
+
+query RRR rowsort
+SELECT * FROM complete
+----
+0.000
+0.000
+0.000
+0.000
+0.000
+3.000
+1.000
+0.000
+0.000
+2.000
+0.000
+0.000
+3.000
+0.000
+0.000
+
+statement ok
+DROP TABLE complete
+
+statement ok
+DROP TABLE part1
+
+statement ok
+DROP TABLE part2
+
+

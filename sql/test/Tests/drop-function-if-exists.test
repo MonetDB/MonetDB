@@ -1,0 +1,24 @@
+statement ok
+CREATE FUNCTION demof1(fin int) RETURNS TABLE (fout int) BEGIN RETURN TABLE(SELECT fin); END
+
+statement ok
+CREATE FUNCTION demof(fin clob) RETURNS TABLE (fout clob) BEGIN RETURN TABLE(SELECT fin); END
+
+statement ok
+DROP FUNCTION demof1(int)
+
+statement error
+SELECT * FROM demof1(1)
+
+statement ok
+DROP FUNCTION IF EXISTS demof1(int)
+
+statement ok
+DROP FUNCTION IF EXISTS demof(clob)
+
+statement error
+DROP FUNCTION demof(clob)
+
+statement error
+SELECT * FROM demof('test')
+

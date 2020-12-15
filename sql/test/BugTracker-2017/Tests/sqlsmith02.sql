@@ -1,8 +1,5 @@
 --Another round. After 116K queries
 
---Seems geom related:
---!42S02!SELECT: no such table 'spatial_ref_sys'
-
 select
   ref_78.mod as c0,
   ref_79.name as c1

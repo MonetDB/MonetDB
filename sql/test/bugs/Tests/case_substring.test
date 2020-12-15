@@ -1,0 +1,52 @@
+statement ok
+CREATE TABLE test456 (col1 INT) 
+
+statement ok
+INSERT INTO test456 VALUES (20080101) 
+
+statement ok
+INSERT INTO test456 VALUES (20080227) 
+
+statement ok
+INSERT INTO test456 VALUES (20080215) 
+
+statement ok
+INSERT INTO test456 VALUES (NULL) 
+
+statement ok
+INSERT INTO test456 VALUES (NULL) 
+
+query ITTT rowsort
+SELECT col1, SUBSTRING(col1,1,4), SUBSTRING(col1 ,5,2), SUBSTRING(col1 ,7,2)
+FROM   test456  
+----
+20 values hashing to 68966fbb9e9cd3228759eb7b0bf6b2e7
+
+query T rowsort
+SELECT CASE
+         WHEN col1 IS NOT NULL
+           THEN CAST(SUBSTRING(col1 ,1,4)||'-'||SUBSTRING(col1
+,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
+       END
+FROM   test456 
+----
+2008-01-01
+2008-02-15
+2008-02-27
+NULL
+NULL
+
+query T rowsort
+SELECT CAST(SUBSTRING(col1 ,1,4)||'-'||SUBSTRING(col1
+,5,2)||'-'||SUBSTRING(col1 ,7,2) AS DATE)
+FROM   test456
+WHERE  col1 IS NOT NULL 
+----
+2008-01-01
+2008-02-15
+2008-02-27
+
+statement ok
+DROP TABLE test456 
+
+

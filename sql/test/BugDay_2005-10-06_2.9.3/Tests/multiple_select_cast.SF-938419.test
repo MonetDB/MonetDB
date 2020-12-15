@@ -1,0 +1,11 @@
+query I rowsort
+select cast(0 as integer)
+----
+0
+
+query I rowsort
+select cast(0 as integer)
+----
+0
+
+

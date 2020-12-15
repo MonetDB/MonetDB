@@ -1,0 +1,49 @@
+statement ok
+create table t3225 ("eId" BIGINT, "timeInsert" TIMESTAMP, "uId" BIGINT)
+
+statement ok
+copy into t3225 from E'$QTSTSRCDIR/segfault_in_aggregation.Bug-3225.data' USING DELIMITERS E'\t',E'\n'
+
+query II rowsort
+select "eId", count(*) from t3225 where "uId" = 312459 group by "eId"
+----
+1000761
+11603
+1000763
+4985
+1000807
+1
+
+query ITTI rowsort
+select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000761 group by "eId"
+----
+1000761
+2012-11-02 09:53:57
+2012-12-18 19:12:38
+11603
+
+query ITTI rowsort
+select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000763 group by "eId"
+----
+1000763
+2012-11-21 17:42:25
+2012-12-18 07:48:32
+4985
+
+query ITTI rowsort
+select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 and "eId" = 1000807 group by "eId"
+----
+1000807
+2012-12-10 17:22:59
+2012-12-10 17:22:59
+1
+
+query ITTI rowsort
+select "eId", min("timeInsert"), max("timeInsert"), count(*) from t3225 where "uId" = 312459 group by "eId"
+----
+12 values hashing to 9b51a17c04ac8f571381d727e7d991a2
+
+statement ok
+drop table t3225
+
+

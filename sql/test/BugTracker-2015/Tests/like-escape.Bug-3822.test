@@ -1,0 +1,20 @@
+query T rowsort
+select '_' like E'\\_'
+----
+False
+
+query T rowsort
+select '_' like E'\\_' escape E'\\'
+----
+True
+
+query T rowsort
+select * from (select '_' as foo) AS t0 WHERE foo LIKE E'\\_'
+----
+
+query T rowsort
+select * from (select '_' as foo) AS t0 WHERE foo LIKE E'\\_' escape E'\\'
+----
+_
+
+

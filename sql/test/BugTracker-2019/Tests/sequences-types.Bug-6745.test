@@ -1,0 +1,53 @@
+statement error
+CREATE SEQUENCE seqBool AS boolean
+
+statement error
+CREATE SEQUENCE seqChar AS char
+
+statement error
+CREATE SEQUENCE seqClob AS CLOB
+
+statement error
+CREATE SEQUENCE seqBlob AS BLOB
+
+statement error
+CREATE SEQUENCE seqDate AS date
+
+statement error
+CREATE SEQUENCE seqTime AS time
+
+statement error
+CREATE SEQUENCE seqInet AS inet
+
+statement error
+CREATE SEQUENCE seqUuid AS uuid
+
+statement ok
+start transaction
+
+statement ok
+CREATE SEQUENCE seqTiny AS tinyint
+
+statement ok
+CREATE SEQUENCE seqSmall AS smallint
+
+statement ok
+CREATE SEQUENCE seqInt AS int
+
+statement ok
+CREATE SEQUENCE seqBint AS bigint
+
+statement ok
+CREATE SEQUENCE seqInteger AS integer
+
+query TIIIIIT rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seqbool', 'seqchar', 'seqclob', 'seqblob', 'seqdate', 'seqtime', 'seqinet', 'sequuid', 'seqtiny',
+               'seqsmall', 'seqint', 'seqbint', 'seqinteger')
+----
+35 values hashing to 2a3ea86cd231272a0475dfb7f319c1ec
+
+statement ok
+rollback
+
+

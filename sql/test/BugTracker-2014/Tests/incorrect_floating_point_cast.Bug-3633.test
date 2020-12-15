@@ -1,0 +1,22 @@
+statement ok
+START TRANSACTION
+
+statement ok
+create table foo3633 (a int, b int)
+
+statement ok
+insert into foo3633 values (1,1)
+
+query I rowsort
+select a from foo3633 group by a having sum(b)>count(*)*.5
+----
+1
+
+query IT rowsort
+select a,sum(b)>count(*)*.5 from foo3633 group by a
+----
+1
+True
+
+statement ok
+rollback

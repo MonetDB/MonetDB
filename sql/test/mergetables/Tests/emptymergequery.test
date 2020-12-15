@@ -1,0 +1,10 @@
+statement ok
+create merge table emptym(i integer, j integer)
+
+statement error
+select * from emptym
+
+statement ok
+drop table emptym
+
+

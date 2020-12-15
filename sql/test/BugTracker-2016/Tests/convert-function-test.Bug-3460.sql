@@ -1840,3 +1840,4 @@ SELECT v, cast(v as timestamp with time zone) from T_timestamptz;
 
 DROP TABLE T_timestamptz;
 
+set optimizer = 'default_pipe';

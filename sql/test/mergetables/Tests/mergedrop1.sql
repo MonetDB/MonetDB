@@ -1,8 +1,4 @@
-drop table t;
-drop table t1;
-drop table t2;
-drop table t3;
-
+start transaction;
 create merge table t(x double);
 create table t1(x double);
 create table t2(x double);
@@ -22,3 +18,4 @@ alter table t add table t3;
 
 alter table t drop table t1;
 alter table t add table t1;
+rollback;

@@ -17,6 +17,7 @@ with process.client('sql', stdin=process.PIPE, stdout=process.PIPE, stderr=proce
             c.stdin.write('explain select\n')
         elif not stats.match(ln):
             c.stdin.write(ln)
+    c.stdin.write("set optimizer = 'default_pipe';\n")
     out, err = c.communicate()
     sys.stdout.write(out)
     sys.stderr.write(err)
