@@ -32,7 +32,7 @@ writable
 0
 False
 0
-False
+NULL
 False
 
 statement ok
@@ -53,8 +53,8 @@ readonly
 0
 False
 0
+NULL
 False
-True
 
 query I rowsort
 SELECT * FROM xtmp1 WHERE i<0
