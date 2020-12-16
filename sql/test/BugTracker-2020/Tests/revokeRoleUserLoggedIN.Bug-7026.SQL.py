@@ -63,3 +63,8 @@ run(c2, 'DELETE FROM test WHERE d = 42;')
 query(c2, 'SELECT * FROM test;')
 query(c2, 'SET role role1; -- verifies role1 is gone')
 
+c2.close()
+run(c1, 'DROP USER bruce;')
+run(c1, 'DROP ROLE role1;')
+run(c1, 'DROP SCHEMA s1 CASCADE;')
+c1.close()

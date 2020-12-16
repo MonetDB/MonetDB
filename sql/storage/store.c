@@ -5512,27 +5512,26 @@ sys_drop_statistics(sql_trans *tr, sql_column *col)
 static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
-	char *seq_pos = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq_";
-	sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
+	const char *next_value_for = "next value for ";
 
 	/* Drop sequence for generated column if it's the case */
-	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
+	if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
+		sql_schema *s = NULL;
 		sql_sequence *seq = NULL;
-		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 		node *n = NULL;
+		char *schema = NULL, *seq_name = NULL;
 
-		if (!seq_name)
+		extract_schema_and_sequence_name(tr->sa, col->def + strlen(next_value_for), &schema, &seq_name);
+		if (!schema || !seq_name || !(s = find_sql_schema(tr, schema)))
 			return -1;
-		seq_name[strlen(seq_name)-1] = '\0';
-		n = cs_find_name(&syss->seqs, seq_name);
-		seq = find_sql_sequence(syss, seq_name);
-		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY) > 0) {
+
+		n = cs_find_name(&s->seqs, seq_name);
+		seq = find_sql_sequence(s, seq_name);
+		if (seq && n && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY) > 0) {
 			sys_drop_sequence(tr, seq, drop_action);
-			seq->base.wtime = syss->base.wtime = tr->wtime = tr->wstime;
-			cs_del(&syss->seqs, n, seq->base.flags);
+			seq->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+			cs_del(&s->seqs, n, seq->base.flags);
 		}
-		_DELETE(seq_name);
 	}
 	return 0;
 }

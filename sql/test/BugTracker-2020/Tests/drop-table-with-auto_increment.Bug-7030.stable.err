@@ -5,10 +5,6 @@ stderr of test 'drop-table-with-auto_increment.Bug-7030` in directory 'sql/test/
 # 12:21:18 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-868236" "--port=30843"
 # 12:21:18 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-868236/.s.monetdb.30843
-QUERY = drop schema s1;
-
-CODE  = 2BM37
 
 # 12:21:18 >  
 # 12:21:18 >  "Done."

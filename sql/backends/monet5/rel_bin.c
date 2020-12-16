@@ -5314,15 +5314,11 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
 	stmt *v, *ret = NULL, *other = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq_";
-	char *seq_name = NULL;
-	str seq_pos = NULL;
+	const char *next_value_for = "next value for ";
 	sql_column *col = NULL;
-	sql_sequence *seq = NULL;
 	sql_schema *sche = NULL;
 	sql_table *next = NULL;
 	sql_trans *tr = sql->session->tr;
-	node *n = NULL;
 	int error = 0;
 	struct tablelist* new_list = SA_NEW(sql->ta, struct tablelist), *list_node;
 
@@ -5343,18 +5339,20 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		sche = next->s;
 
 		if (restart_sequences) { /* restart the sequences if it's the case */
-			for (n = next->columns.set->h; n; n = n->next) {
+			for (node *n = next->columns.set->h; n; n = n->next) {
 				col = n->data;
-				if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
-					seq_name = sa_strdup(sql->ta, seq_pos + (strlen(next_value_for) - strlen("seq_")));
-					if (!seq_name) {
-						sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						error = 1;
-						goto finalize;
-					}
-					seq_name[strlen(seq_name)-1] = '\0';
-					seq = find_sql_sequence(sche, seq_name);
-					if (seq) {
+
+				if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
+					sql_schema *s = NULL;
+					sql_sequence *seq = NULL;
+					char *schema = NULL, *seq_name = NULL;
+
+					extract_schema_and_sequence_name(sql->ta, col->def + strlen(next_value_for), &schema, &seq_name);
+					if (!schema || !seq_name || !(s = find_sql_schema(tr, schema)))
+						continue;
+
+					assert(s->base.id == sche->base.id);
+					if ((seq = find_sql_sequence(s, seq_name))) {
 						if (!sql_trans_sequence_restart(tr, seq, seq->start)) {
 							sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
 							error = 1;
