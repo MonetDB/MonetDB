@@ -6405,7 +6405,6 @@ sqlerror(mvc * sql, const char *err)
 
 static void *ma_alloc(sql_allocator *sa, size_t sz)
 {
-	printf("#ma_alloc\n");
 	return sa_alloc(sa, sz);
 }
 static void ma_free(void *p)
