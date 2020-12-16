@@ -737,8 +737,12 @@ readString( char *r, int *pos)
 	if (r[*pos] == '"'){
 		(*pos)++;
 		st = r+*pos;
-		while (r[*pos] != '"')
-			(*pos)++;
+		while (r[*pos] != '"') {
+			if (r[*pos] == '\\' && r[*pos + 1] == '"')
+				(*pos)+=2;
+			else
+				(*pos)++;
+		}
 		r[*pos] = 0;
 		(*pos)++;
 	}
