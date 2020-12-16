@@ -51,9 +51,11 @@ with process.server(stdin=process.PIPE,
                             stdout='PIPE',
                             stderr=process.PIPE) as d1, \
              process.client(lang='sql',
+                            format='trash',
+                            echo=False,
                             server=s2,
                             stdin=d1.stdout,
-                            stdout=process.DEVNULL,
+                            stdout=process.PIPE,
                             stderr=process.PIPE) as c2:
             d1.stdout.close()
             d1.stdout = None
