@@ -1,9 +1,5 @@
-
-
 CREATE SCHEMA library;
-CREATE ROLE libraryWorker;
 CREATE TABLE library.orders(price int, name VARCHAR(100));
-
 
 CREATE ROLE bankAdmin;
 CREATE SCHEMA bank AUTHORIZATION bankAdmin;

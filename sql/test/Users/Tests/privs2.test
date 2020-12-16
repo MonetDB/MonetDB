@@ -2,60 +2,29 @@ statement ok
 set schema "my_schema"
 
 statement ok
-create table version
-  (name varchar(10)
-  ,i int
-  )
-
+create table version (name varchar(10), i int)
 
 statement ok
-insert into version
-  (name
-  ,i
-  )
-values
-  ('test1'
-  ,1
-  )
-
+insert into version (name, i) values ('test1', 1)
 
 statement ok
-create function insertversion(iname varchar(10)
-                             ,ii int
-                             ) returns int
+create function insertversion(iname varchar(10), ii int) returns int
 begin
-  insert into version
-    (name
-    ,i
-    )
-  values
-    (iname
-    ,ii
-    )
-  ;
+  insert into version (name, i) values (iname, ii);
   return 1;
 end
 
 statement ok
-create function updateversion(iname varchar(10)
-                             ,ii int
-                             ) returns int
+create function updateversion(iname varchar(10), ii int) returns int
 begin
-  update version
-     set i = ii
-    where name = iname
-  ;
+  update version set i = ii where name = iname;
   return 1;
 end
 
 statement ok
-create function deleteversion(iname varchar(10)
-                             ) returns int
+create function deleteversion(iname varchar(10)) returns int
 begin
-  delete
-    from version
-   where name = iname
-  ;
+  delete from version where name = iname;
   return 1;
 end
 
@@ -64,7 +33,7 @@ create function truncateversion() returns int
 begin
   truncate version;
   return 1;
-end;
+end
 
 statement ok
 GRANT SELECT on table version to my_user
