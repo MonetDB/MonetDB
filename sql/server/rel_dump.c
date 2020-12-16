@@ -783,6 +783,22 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 		}
 		r[*pos] = old;
 		skipWS(r,pos);
+	} else if (strncmp(r+*pos, "MIN", strlen("MIN")) == 0 || strncmp(r+*pos, "MAX", strlen("MAX")) == 0) {
+		rel_prop kind = strncmp(r+*pos, "MIN", strlen("MIN")) == 0 ? PROP_MIN : PROP_MAX;
+		char *st;
+		atom *a;
+
+		(*pos) += (int) strlen("MIN");
+		skipWS(r, pos);
+		st = readString(r,pos);
+		if (st && strcmp(st, "NULL") == 0)
+			a = atom_general(sql->sa, exp_subtype(exp), NULL);
+		else
+			a = atom_general(sql->sa, exp_subtype(exp), st);
+		if (!find_prop(exp->p, kind)) {
+			prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
+			p->value = a;
+		}
 	}
 	return exp;
 }
