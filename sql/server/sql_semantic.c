@@ -342,20 +342,41 @@ dlist2string(mvc *sql, dlist *l, int expression, char **err)
 	return b;
 }
 
+static const char *
+symbol_escape_ident(sql_allocator *sa, const char *s)
+{
+	char *res = NULL;
+	if (s) {
+		size_t l = strlen(s);
+		char *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
+
+		res = r;
+		while (*s) {
+			if (*s == '"')
+				*r++ = '"';
+			*r++ = *s++;
+		}
+		*r = '\0';
+	}
+	return res;
+}
+
 char *
-_symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
+_symbol2string(mvc *sql, symbol *se, int expression, char **err)
 {
 	/* inner symbol2string uses the temporary allocator */
 	switch (se->token) {
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = lst->next->next->data.lval->h, *aux;
-		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
+				   *sname = qname_schema(lst->data.lval);
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
 		size_t inputs_length = 0;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
+		sname = symbol_escape_ident(sql->ta, sname);
 
 		for (aux = ops; aux; aux = aux->next)
 			nargs++;
@@ -385,11 +406,14 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
-		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
+				   *sname = qname_schema(lst->data.lval);
 		char *l = NULL, *r = NULL, *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
+		sname = symbol_escape_ident(sql->ta, sname);
+
 		if (!(l = _symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = _symbol2string(sql, lst->next->next->next->data.sym, expression, err)))
 			return NULL;
 
@@ -400,11 +424,13 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_OP: {
 		dnode *lst = se->data.lval->h;
-		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
+				   *sname = qname_schema(lst->data.lval);
 		char *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
+		sname = symbol_escape_ident(sql->ta, sname);
 
 		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + 8)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"()");
@@ -413,11 +439,13 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 	} break;
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
-		const char *op = qname_schema_object(lst->data.lval), *sname = qname_schema(lst->data.lval);
+		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
+				   *sname = qname_schema(lst->data.lval);
 		char *l = _symbol2string(sql, lst->next->next->data.sym, expression, err), *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
+		sname = symbol_escape_ident(sql->ta, sname);
 		if (!l)
 			return NULL;
 
@@ -438,11 +466,13 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 			return sa_strdup(sql->ta, "NULL");
 	}
 	case SQL_NEXT: {
-		const char *seq = qname_schema_object(se->data.lval), *sname = qname_schema(se->data.lval);
+		const char *seq = symbol_escape_ident(sql->ta, qname_schema_object(se->data.lval)),
+				   *sname = qname_schema(se->data.lval);
 		char *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
+		sname = symbol_escape_ident(sql->ta, sname);
 
 		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "next value for \""), sname), "\".\""), seq), "\"");
@@ -455,14 +485,16 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err) /**/
 		assert(l->h->type != type_lng);
 		if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
-			const char *op = l->h->data.sval;
+			const char *op = symbol_escape_ident(sql->ta, l->h->data.sval);
 			char *res;
 
 			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(op) + 3)))
 				stpcpy(stpcpy(stpcpy(res, "\""), op), "\"");
 			return res;
 		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
-			char *first = l->h->data.sval, *second = l->h->next->data.sval, *res;
+			const char *first = symbol_escape_ident(sql->ta, l->h->data.sval),
+					   *second = symbol_escape_ident(sql->ta, l->h->next->data.sval);
+			char *res;
 
 			if (!first || !second)
 				return NULL;
