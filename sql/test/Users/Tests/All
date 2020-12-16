@@ -1,7 +1,6 @@
-schema
-role1
-role2
+role
 table
+schema
 unknown_user
 privs
 test_privs_p1
@@ -15,11 +14,10 @@ columnRights
 changePasswordUser
 renameUser
 changeSchemaUser
-role
 grantMonetdb
 copyinto
 schemaRights
 metadataConsistency
 sessioncontrol
 createUserRollback
-HAVE_PYMONETDB?userCallFunction
+userCallFunction
