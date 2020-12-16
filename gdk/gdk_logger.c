@@ -3181,7 +3181,7 @@ bm_commit(logger *lg, lng save_id)
 			logbat_destroy(n);
 			return GDK_FAIL;
 		}
-		assert(BBP_lrefs(bid) == 1 && BBP_refs(bid) == 0);
+		assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
 		BBPrelease(bid);
 	}
 	if (leftover) {
