@@ -302,7 +302,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	var_t v;
 
 	if ((bn = COLnew(l->hseqbase, TYPE_str, ci ? ci->ncand : BATcount(l),
-			 TRANSIENT)) != NULL)
+			 TRANSIENT)) == NULL)
 		return NULL;
 
 	v = (var_t) r1->tvheap->free;
@@ -326,6 +326,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			memset(bn->tvheap->base + r1->tvheap->free, 0, h1off - r1->tvheap->free);
 #endif
 		memcpy(bn->tvheap->base + h1off, r2->tvheap->base, r2->tvheap->free);
+		bn->tvheap->free = h1off + r2->tvheap->free;
 	}
 
 	if (v >= ((var_t) 1 << (8 * bn->twidth)) &&
