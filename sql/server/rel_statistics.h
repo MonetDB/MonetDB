@@ -22,25 +22,38 @@ struct function_properties {
 	lookup_function func;
 };
 
-static inline void
-set_max_of_values(mvc *sql, sql_exp *e, rel_prop kind, atom *lval, atom *rval)
-{
-	prop *p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = atom_cmp(lval, rval) > 0 ? lval : rval;
-}
-
-static inline void
-set_min_of_values(mvc *sql, sql_exp *e, rel_prop kind, atom *lval, atom *rval)
-{
-	prop *p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = atom_cmp(lval, rval) > 0 ? rval : lval;
-}
+#define atom_max(X,Y) atom_cmp(X, Y) > 0 ? X : Y
+#define atom_min(X,Y) atom_cmp(X, Y) > 0 ? Y : X
 
 static inline void
 set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 {
 	prop *p = e->p = prop_create(sql->sa, kind, e->p);
 	p->value = val;
+}
+
+static inline void
+set_min_property(mvc *sql, sql_exp *e, atom *val)
+{
+	prop *found = find_prop(e->p, PROP_MIN);
+	if (found) {
+		found->value = atom_min(found->value, val);
+	} else {
+		prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
+		p->value = val;
+	}
+}
+
+static inline void
+set_max_property(mvc *sql, sql_exp *e, atom *val)
+{
+	prop *found = find_prop(e->p, PROP_MAX);
+	if (found) {
+		found->value = atom_max(found->value, val);
+	} else {
+		prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
+		p->value = val;
+	}
 }
 
 extern sql_hash *sql_functions_lookup;
