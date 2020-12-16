@@ -1,0 +1,36 @@
+statement ok
+create schema intro1
+
+statement error
+create schema intro2 authorized monetdb
+
+statement error
+create schema authorized monetdb
+
+statement ok
+drop schema intro1
+
+statement error
+drop schema intro2
+
+statement ok
+create schema intro1
+ default character set whatever
+
+statement ok
+drop schema intro1
+
+statement ok
+create table t2010(i int)
+
+statement error
+create schema intro3
+  grant insert on t2010 to monetdb
+
+statement ok
+drop table t2010
+
+statement error
+drop schema intro3
+
+

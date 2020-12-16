@@ -1,0 +1,6 @@
+query T rowsort
+SELECT f_table_name FROM geometry_columns ORDER BY f_table_name
+----
+11 values hashing to c4c2fd32627fe8478eeeb74c8a76c7c7
+
+

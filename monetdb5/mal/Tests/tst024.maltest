@@ -1,0 +1,18 @@
+statement ok
+i:= 12
+
+statement ok
+_2:=55
+
+statement ok
+_3:= 23
+
+statement ok
+_5:=23
+
+query T rowsort
+io.print(_5)
+----
+23
+
+

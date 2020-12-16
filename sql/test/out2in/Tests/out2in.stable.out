@@ -94,12 +94,12 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 173 # length
+% 189 # length
 project (
 | join (
 | | select (
 | | | table(sys.foo) [ "foo"."i" ] COUNT 
-| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_mul("foo"."i", "foo"."i") = bigint["foo"."i"]) ],
+| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
 | | table(sys.bar) [ "bar"."i" ] COUNT 
 | ) [ "foo"."i" = "bar"."i" ]
 ) [ "foo"."i", "bar"."i" ]
@@ -107,12 +107,12 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 173 # length
+% 189 # length
 project (
 | left outer join (
 | | select (
 | | | table(sys.foo) [ "foo"."i" ] COUNT 
-| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_mul("foo"."i", "foo"."i") = bigint["foo"."i"]) ],
+| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
 | | table(sys.bar) [ "bar"."i" ] COUNT 
 | ) [ "foo"."i" = "bar"."i" ]
 ) [ "foo"."i", "bar"."i" ]
@@ -133,12 +133,12 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 173 # length
+% 189 # length
 project (
 | join (
 | | select (
 | | | table(sys.foo) [ "foo"."i" ] COUNT 
-| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_mul("foo"."i", "foo"."i") = bigint["foo"."i"]) ],
+| | ) [ (sys.sql_mul(tinyint "2", "foo"."i") > bigint "20") or (sys.sql_mul("foo"."i", tinyint "2") > bigint "400", sys.sql_add(bigint["foo"."i"], bigint["foo"."i"]) = bigint["foo"."i"]) ],
 | | select (
 | | | table(sys.bar) [ "bar"."i", "bar"."j" ] COUNT 
 | | ) [ "bar"."j" ! * = int "NULL" ]

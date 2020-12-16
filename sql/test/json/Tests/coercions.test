@@ -1,0 +1,102 @@
+statement ok
+create table nosql(j json)
+
+statement ok
+insert into  nosql values
+	('{}'),
+	('{"f1":1}'),
+	('{"f1":1,"f2":2}'),
+	('{"f1":1,"f2":2,"f1":3}'),
+	('{"f1":{"f12":3},"f2":[2,3,4]}'),
+	('[1,"f2", 2]')
+
+query T rowsort
+select * from nosql
+----
+[1,"f2", 2]
+{"f1":1,"f2":2,"f1":3}
+{"f1":1,"f2":2}
+{"f1":1}
+{"f1":{"f12":3},"f2":[2,3,4]}
+{}
+
+statement ok
+create table nosql_string as (select cast (j as string) as j from nosql)
+
+query T rowsort
+select * from nosql_string
+----
+[1,"f2", 2]
+{"f1":1,"f2":2,"f1":3}
+{"f1":1,"f2":2}
+{"f1":1}
+{"f1":{"f12":3},"f2":[2,3,4]}
+{}
+
+query T rowsort
+select cast (j as json) as j from nosql_string
+----
+[1,"f2", 2]
+{"f1":1,"f2":2,"f1":3}
+{"f1":1,"f2":2}
+{"f1":1}
+{"f1":{"f12":3},"f2":[2,3,4]}
+{}
+
+statement ok
+create table tmpsql(j string)
+
+statement ok
+insert into  tmpsql values
+	('{}'),
+	('{"f1":1}'),
+	('{"f1":1,"f2":2}'),
+	('{"f1":1,"f2":2,"f1":3}'),
+	('{"f1":{"f12":3},"f2":[2,3,4]}'),
+	('[1,"f2", 2]')
+
+query T rowsort
+select * from tmpsql
+----
+[1,"f2", 2]
+{"f1":1,"f2":2,"f1":3}
+{"f1":1,"f2":2}
+{"f1":1}
+{"f1":{"f12":3},"f2":[2,3,4]}
+{}
+
+statement ok
+create table tmpsql_json as (select cast (j as json) as j from tmpsql)
+
+query T rowsort
+select * from tmpsql_json
+----
+[1,"f2", 2]
+{"f1":1,"f2":2,"f1":3}
+{"f1":1,"f2":2}
+{"f1":1}
+{"f1":{"f12":3},"f2":[2,3,4]}
+{}
+
+query T rowsort
+select cast (j as string) as j from tmpsql_json
+----
+[1,"f2", 2]
+{"f1":1,"f2":2,"f1":3}
+{"f1":1,"f2":2}
+{"f1":1}
+{"f1":{"f12":3},"f2":[2,3,4]}
+{}
+
+statement ok
+drop table tmpsql
+
+statement ok
+drop table nosql
+
+statement ok
+drop table tmpsql_json
+
+statement ok
+drop table nosql_string
+

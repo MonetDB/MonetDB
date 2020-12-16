@@ -9,24 +9,22 @@ import tempfile
 
 
 def run_streamcat(text, enc):
-    content = bytes(text, 'utf-8')
+    utf8_text = bytes(text, 'utf-8')
+    expected = bytes(text, enc)
+
     name = f'write_iconv_{enc}.txt'
-
     tf = TestFile(name, None)
-    filename = tf.path()
 
-    cmd = ['streamcat', 'write', filename, 'wstream', f'iconv:{enc}']
-
-    print(f"Input UTF-8 encoded is {repr(content)}")
-    # print(cmd)
-    proc = subprocess.run(cmd, input=content)
+    cmd = ['streamcat', 'write', tf.path(), 'wstream', f'iconv:{enc}']
+    proc = subprocess.run(cmd, input=utf8_text)
     if proc.returncode != 0:
-        print(f"{cmd} exited with status {proc.returncode}", file=sys.stderr)
+        print(f"command {cmd} exited with status {proc.returncode} for input {utf8_text!r} ({text!r})", file=sys.stderr)
         sys.exit(1)
     output = tf.read()
-    os.remove(filename)
-    print(f"Output is {repr(output)}")
-    print()
+    os.remove(tf.path())
+
+    if output != expected:
+        raise Exception(f"command {cmd} with input {utf8_text!r} yielded {output!r}, expected {expected!r}")
 
 
 text = "MøNëTDB"

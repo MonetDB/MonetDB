@@ -1,41 +1,61 @@
-import os
-import sys
+import sys, os, pymonetdb
 
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+db = os.getenv("TSTDB")
+port = int(os.getenv("MAPIPORT"))
 
-
-def client(next_user, next_passwd, input):
-    with process.client('sql', user=next_user, passwd=next_passwd, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
-        out, err = c.communicate(input)
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-client('monetdb', 'monetdb', '''
-CREATE schema  "myschema";
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='monetdb', password='monetdb')
+cur1 = client1.cursor()
+cur1.execute('''
+START TRANSACTION;
+CREATE schema "myschema";
 CREATE TABLE "myschema"."test" ("id" integer, "name" varchar(20));
 INSERT INTO "myschema"."test" ("id", "name") VALUES (1,'Tom'),(2,'Karen');
 CREATE USER myuser WITH UNENCRYPTED PASSWORD 'Test123' NAME 'Hulk' SCHEMA "myschema";
 GRANT SELECT ON "myschema"."test" TO myuser;
+COMMIT;
 ''')
+cur1.execute('SELECT "name" FROM "myschema"."test";')
+if cur1.fetchall() != [('Tom',), ('Karen',)]:
+    sys.stderr.write('Expected result: [(\'Tom\',), (\'Karen\',)]')
+cur1.close()
+client1.close()
 
-client('myuser', 'Test123', '''
-SELECT "id", "name" FROM "myschema"."test";
-''')
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='myuser', password='Test123')
+cur1 = client1.cursor()
+cur1.execute('SELECT "id", "name" FROM "myschema"."test";')
+if cur1.fetchall() != [(1,'Tom'),(2,'Karen')]:
+    sys.stderr.write('Expected result: [(1,\'Tom\'),(2,\'Karen\')]')
+cur1.close()
+client1.close()
 
-client('monetdb', 'monetdb', '''
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='monetdb', password='monetdb')
+cur1 = client1.cursor()
+cur1.execute('''
 REVOKE SELECT ON "myschema"."test" FROM myuser;
 GRANT SELECT ("name") ON "myschema"."test" TO myuser;
 ''')
+cur1.close()
+client1.close()
 
-client('myuser', 'Test123', '''
-SELECT "id", "name" FROM "myschema"."test"; --error, no permission on column "name"%s
-SELECT "name" FROM "myschema"."test"; --ok
-''' % (os.linesep))
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='myuser', password='Test123')
+cur1 = client1.cursor()
+try:
+    cur1.execute('SELECT "id", "name" FROM "myschema"."test";')
+    sys.stderr.write("Exception expected")
+except pymonetdb.DatabaseError as e:
+    if "identifier 'id' unknown" not in str(e):
+        sys.stderr.write("Error: identifier 'id' unknown expected")
+cur1.execute('SELECT "name" FROM "myschema"."test";')
+if cur1.fetchall() != [('Tom',), ('Karen',)]:
+    sys.stderr.write('Expected result: [(\'Tom\',), (\'Karen\',)]')
+cur1.close()
+client1.close()
 
-client('monetdb', 'monetdb', '''
+client1 = pymonetdb.connect(database=db, port=port, autocommit=True, username='monetdb', password='monetdb')
+cur1 = client1.cursor()
+cur1.execute('''
 DROP USER myuser;
 DROP SCHEMA "myschema" CASCADE;
 ''')
+cur1.close()
+client1.close()

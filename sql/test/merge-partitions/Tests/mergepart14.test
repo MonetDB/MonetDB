@@ -1,0 +1,16 @@
+statement error
+CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE ON (d)
+
+statement error
+CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY RANGE ON (b)
+
+statement error
+CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY VALUES ON (c)
+
+statement ok
+CREATE MERGE TABLE testme (a INT, b MULTIPOLYGON, c json) PARTITION BY VALUES ON (a)
+
+statement ok
+DROP TABLE testme
+
+

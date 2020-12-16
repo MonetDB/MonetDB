@@ -20,3 +20,4 @@ end;
 select * from test_002();
 
 drop function test_002;
+rollback;

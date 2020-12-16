@@ -7,3 +7,4 @@ create function func_2826(f real) returns real begin return log10(f); end;
 select * from tab_2826 where func_2826(d) > 1;   
 drop function func_2826;
 drop table tab_2826;
+set optimizer='default_pipe';

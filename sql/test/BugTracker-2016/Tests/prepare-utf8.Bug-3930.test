@@ -1,0 +1,16 @@
+statement ok
+start transaction
+
+statement ok
+create table bug3930 (a varchar(4))
+
+statement ok
+prepare select * from bug3930 where a = ?
+
+statement ok
+exec **('ä123')
+
+statement ok
+rollback
+
+

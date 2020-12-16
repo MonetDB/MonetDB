@@ -1,0 +1,10 @@
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.spatial_ref_sys
+
+statement error
+TRUNCATE TABLE sys.spatial_ref_sys
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.spatial_ref_sys
+
+

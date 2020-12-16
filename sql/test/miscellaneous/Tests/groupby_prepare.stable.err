@@ -1,0 +1,32 @@
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select col0 from tab0 where (?) in (?); --error
+ERROR = !Cannot have a parameter (?) on both sides of an expression
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select ? = ALL (select ? from tab0) from tab0 t1; --error
+ERROR = !Cannot have a parameter (?) on both sides of an expression
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select 1 from tab0 where ? between ? and ?; --error
+ERROR = !Cannot have a parameter (?) on both sides of an expression
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select case when col0 = 0 then ? else ? end from tab0; --error
+ERROR = !Result type missing
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0; --error
+ERROR = !Result type missing
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select ? is null from tab0; --error
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select max(?); --error
+ERROR = !MAX: parameters not allowed as arguments to aggregate functions
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-75295/.s.monetdb.36655
+QUERY = prepare select max(?) over (); --error
+ERROR = !MAX: parameters not allowed as arguments to window functions
+CODE  = 42000

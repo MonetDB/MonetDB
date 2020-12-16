@@ -25,3 +25,4 @@ SELECT * FROM ( SELECT tailnum , AVG( arr_delay ) FROM x GROUP BY tailnum ) AS x
 SELECT tailnum , MIN( arr_delay ) FROM x WHERE tailnum = 'N907MQ' GROUP BY tailnum;
 SELECT * FROM ( SELECT tailnum , MIN( arr_delay ) FROM x GROUP BY tailnum ) AS xxx WHERE tailnum = 'N907MQ';
 
+rollback;

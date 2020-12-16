@@ -1,0 +1,77 @@
+statement ok
+b:= bat.new(:dbl)
+
+statement ok
+bat.append(b,27.0:dbl)
+
+statement ok
+bat.append(b,16.0:dbl)
+
+statement ok
+bat.append(b,nil:dbl)
+
+statement ok
+z:= batmmath.sqrt(b)
+
+query RR rowsort
+io.print(z)
+----
+0.000
+5.196
+1.000
+4.000
+2.000
+NULL
+
+statement ok
+zz:= batmmath.cbrt(b)
+
+query RR rowsort
+io.print(zz)
+----
+0.000
+3.000
+1.000
+2.520
+2.000
+NULL
+
+statement ok
+f:= bat.new(:flt)
+
+statement ok
+bat.append(f,27.0:flt)
+
+statement ok
+bat.append(f,16.0:flt)
+
+statement ok
+bat.append(f,nil:flt)
+
+statement ok
+zf:= batmmath.sqrt(f)
+
+query RR rowsort
+io.print(zf)
+----
+0.000
+5.196
+1.000
+4.000
+2.000
+NULL
+
+statement ok
+zzf:= batmmath.cbrt(f)
+
+query RR rowsort
+io.print(zzf)
+----
+0.000
+3.000
+1.000
+2.520
+2.000
+NULL
+
+

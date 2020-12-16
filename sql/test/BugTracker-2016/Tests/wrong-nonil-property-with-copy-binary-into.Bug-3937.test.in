@@ -1,0 +1,95 @@
+statement ok
+start transaction
+
+statement ok
+create table "noNULLtinyint" (x tinyint)
+
+statement ok
+copy binary into "noNULLtinyint" from (E'$QTSTSRCDIR/noNULLtinyintBAT.bin')
+
+query I rowsort
+select * from "noNULLtinyint"
+----
+0
+1
+2
+
+query II rowsort
+select count(*), count(x) from "noNULLtinyint"
+----
+3
+3
+
+query I rowsort
+select * from "noNULLtinyint" where x is null
+----
+
+query I rowsort
+select * from "noNULLtinyint" where x is not null
+----
+0
+1
+2
+
+statement ok
+insert into "noNULLtinyint" values (null)
+
+queey I rowsort
+select * from "noNULLtinyint"
+----
+0
+1
+2
+NULL
+
+query II rowsort
+select count(*), count(x) from "noNULLtinyint"
+----
+4
+3
+
+query I rowsort
+select * from "noNULLtinyint" where x is null
+----
+NULL
+
+query I rowsort
+select * from "noNULLtinyint" where x is not null
+----
+0
+1
+2
+
+statement ok
+create table "NULLtinyint" (x tinyint)
+
+statement ok
+copy binary into "NULLtinyint" from (E'$QTSTSRCDIR/NULLtinyintBAT.bin')
+
+query I 
+select * from "NULLtinyint"
+----
+0
+NULL
+2
+
+query II rowsort
+select count(*), count(x) from "NULLtinyint"
+----
+3
+2
+
+query I
+select * from "NULLtinyint" where x is null
+----
+NULL
+
+query I
+select * from "NULLtinyint" where x is not null
+----
+0
+2
+
+statement ok
+rollback
+

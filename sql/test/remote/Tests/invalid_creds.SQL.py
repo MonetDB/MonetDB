@@ -71,7 +71,7 @@ def create_workers(TMPDIR, workers, fn_template, nworkers, cmovies, ratings_tabl
         }
         workers.append(workerrec)
         os.mkdir(workerrec['dbfarm'])
-        workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE)
+        workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
         workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerport, autocommit=True)
         filename = fn_template.format(workerrec['num'])
         t = threading.Thread(target=worker_load, args=[filename, workerrec, cmovies, ratings_table_def_fk])
@@ -87,7 +87,7 @@ supervisorproc = None
 workers = []
 with tempfile.TemporaryDirectory() as TMPDIR:
     os.mkdir(os.path.join(TMPDIR, "supervisor"))
-    with process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE) as supervisorproc:
+    with process.server(mapiport=supervisorport, dbname="supervisor", dbfarm=os.path.join(TMPDIR, "supervisor"), stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as supervisorproc:
         supervisorconn = pymonetdb.connect(database='supervisor', port=supervisorport, autocommit=True)
         supervisor_uri = "mapi:monetdb://localhost:{}/supervisor".format(supervisorport)
         c = supervisorconn.cursor()
@@ -120,17 +120,17 @@ with tempfile.TemporaryDirectory() as TMPDIR:
             # Run the queries
             try:
                 c.execute("SELECT COUNT(*) FROM ratings0")
-                print("{} rows in remote table".format(c.fetchall()[0][0]))
+                sys.stderr.write("Exception expected")
             except pymonetdb.OperationalError as e1:
-                print("OperationalError:", file=sys.stderr)
-                print("# " + e1.args[0], file=sys.stderr)
+                if "invalid credentials for user 'invaliduser'" not in str(e1):
+                    sys.stderr.write("Exception: invalid credentials for user 'invaliduser' expected")
 
             try:
                 c.execute("SELECT COUNT(*) FROM ratings")
-                print("{} rows in merge table".format(c.fetchall()[0][0]))
+                sys.stderr.write("Exception expected")
             except pymonetdb.OperationalError as e2:
-                print("OperationalError:", file=sys.stderr)
-                print("# " + e2.args[0], file=sys.stderr)
+                if "invalid credentials for user 'invaliduser'" not in str(e2):
+                    sys.stderr.write("Exception: invalid credentials for user 'invaliduser' expected")
             for wrec in workers:
                 wrec['proc'].communicate()
             supervisorproc.communicate()

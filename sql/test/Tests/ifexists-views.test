@@ -1,0 +1,45 @@
+statement ok
+CREATE TABLE tab0 (col0 INTEGER, col2 TEXT)
+
+statement ok
+INSERT INTO tab0 VALUES (1,'lekker'), (2, 'heerlijk'), (3, 'smullen')
+
+statement ok
+CREATE VIEW view1 AS SELECT * FROM tab0
+
+statement ok
+CREATE VIEW view2 AS SELECT COUNT(*) FROM tab0
+
+statement ok
+DROP VIEW view1
+
+statement error
+SELECT * FROM view1
+
+statement ok
+DROP VIEW IF EXISTS view1
+
+statement ok
+DROP VIEW IF EXISTS view2
+
+statement error
+DROP VIEW view2
+
+statement error
+SELECT * FROM view2
+
+statement ok
+DROP FUNCTION IF EXISTS "idontexist"."idontexist"()
+
+statement ok
+DROP FUNCTION IF EXISTS "idontexist"."idontexist"(INT)
+
+statement ok
+DROP FUNCTION IF EXISTS "sys"."idontexist"()
+
+statement ok
+DROP FUNCTION IF EXISTS "sys"."idontexist"(INT)
+
+statement ok
+DROP TABLE tab0
+

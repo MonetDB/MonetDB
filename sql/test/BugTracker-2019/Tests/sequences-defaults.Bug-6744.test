@@ -1,0 +1,49 @@
+statement ok
+start transaction
+
+statement ok
+create sequence seq
+
+statement ok
+create sequence seq1 AS int
+
+statement ok
+create sequence seq2 START WITH 2
+
+statement ok
+create sequence seq3 INCREMENT BY 3
+
+statement ok
+create sequence seq4 MINVALUE 4
+
+statement ok
+create sequence seq5 NO MINVALUE
+
+statement ok
+create sequence seq6 MAXVALUE 6
+
+statement ok
+create sequence seq7 NO MAXVALUE
+
+statement ok
+create sequence seq8 CACHE 8
+
+statement ok
+create sequence seq9 NO CYCLE
+
+statement ok
+create sequence seq0 CYCLE
+
+query TIIIIIT rowsort
+select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
+where name in ('seq', 'seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6', 'seq7', 'seq8', 'seq9', 'seq0')
+----
+77 values hashing to abeeee19e0bb439b90472321409a52df
+
+statement ok
+rollback
+
+statement error
+create sequence seq6 MAXVALUE -3
+
+

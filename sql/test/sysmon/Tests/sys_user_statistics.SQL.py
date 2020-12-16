@@ -1,47 +1,36 @@
-import pymonetdb
-import os
+###
+# Check that the sys.user_statistics() function works, i.e. it correctly logs
+#   new users and their query count and maxquery
+###
+from MonetDBtesting.sqltest import SQLTestCase
 
-users = ['user1', 'user2', 'user3', 'user4', 'user5', 'user6', 'user7']
-try:
-    mdbdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], autocommit=True)
-    mdbcursor = mdbdbh.cursor()
-    rowcnt = mdbcursor.execute('call sys.sleep(200)')
-    rowcnt = mdbcursor.execute('select querycount from sys.user_statistics() where username = \'monetdb\'')
-    mdbqrycnt = mdbcursor.fetchone()[0]
+users = ['user1', 'user2', 'user3', 'user4']
+SLEEP_TIME = "200"
+
+with SQLTestCase() as mdb:
+    mdb.connect(username="monetdb", password="monetdb")
+    # we use the sleep() function to acquire determinable maxquery
+    mdb.execute('create procedure sleep(i int) external name alarm.sleep;').assertSucceeded()
 
     # create and run some user queries to populate the user_statistics table
-    for usr in users:
-        mdbcursor.execute('create user "{usr}" with password \'{usr}\' name \'{usr}\' schema "sys"'.format(usr=usr))
-        mdbcursor.execute('grant all on procedure sys.sleep to {usr}'.format(usr=usr))
+    for u in users:
+        mdb.execute('create user {u} with password \'{u}\' name \'{u}\' schema sys'.format(u=u)).assertSucceeded()
+        mdb.execute('grant all on procedure sys.sleep to {u}'.format(u=u)).assertSucceeded()
 
-        try:
-            usrdbh = pymonetdb.connect(database = os.environ['TSTDB'], port = int(os.environ['MAPIPORT']), hostname = os.environ['MAPIHOST'], username=usr, password=usr, autocommit=True)
-            usrcursor = usrdbh.cursor()
-            usrcursor.execute('select current_user as myname')
-            usrcursor.execute('call sys.sleep(200)')
-        except pymonetdb.exceptions.Error as e:
-            print(usr + ' query failed')
-            print(e)
-        finally:
-            usrdbh.close()
+        with SQLTestCase() as usr:
+            usr.connect(username=u, password=u)
+            usr.execute('select current_user as myname').assertSucceeded()
+            usr.execute('call sys.sleep('+SLEEP_TIME+')').assertSucceeded()
 
     # now check user_statistics again
-    rowcnt = mdbcursor.execute('select username, querycount, maxquery from sys.user_statistics()')
-    records = mdbcursor.fetchall()
-    print("User statistics after: {cnt}".format(cnt=rowcnt))
-    for row in records:
-        if row[0] == 'monetdb':
-            print((row[0], int(row[1]) - mdbqrycnt, row[2]))
-        else:
-            print(row)
-except pymonetdb.exceptions.Error as e:
-    print(e)
-finally:
-    # clean up the created users and don't stop by an error
-    for usr in users:
-        try:
-            mdbcursor.execute('drop user {usr}'.format(usr=usr))
-        except pymonetdb.exceptions.Error as e:
-            print(e)
-    mdbdbh.close()
+    rowcnt = mdb.execute('select username, querycount, maxquery from sys.user_statistics() where username like \'user%\' order by username;').assertSucceeded().\
+        assertDataResultMatch([
+            ('user1', 2, 'call sys.sleep('+SLEEP_TIME+')\n;'),
+            ('user2', 2, 'call sys.sleep('+SLEEP_TIME+')\n;'),
+            ('user3', 2, 'call sys.sleep('+SLEEP_TIME+')\n;'),
+            ('user4', 2, 'call sys.sleep('+SLEEP_TIME+')\n;')
+            ])
+    for u in users:
+        mdb.execute('drop user {u};'.format(u=u)).assertSucceeded()
+    mdb.execute('drop procedure sleep;').assertSucceeded()
 

@@ -1,0 +1,19 @@
+statement ok
+start transaction
+
+statement ok
+create table t (id int auto_increment, a clob)
+
+statement ok
+copy 1 records into t (a) from stdin (id, a) using delimiters ',',E'\n','"' null as ''
+<COPY_INTO_DATA>
+100,
+
+query I rowsort
+select count(a) from t;
+----
+0
+
+statement ok
+rollback;
+

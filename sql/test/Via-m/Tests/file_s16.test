@@ -1,0 +1,48 @@
+query ITTT nosort
+select * from event
+----
+1
+event 1
+2009-06-23
+description1
+2
+event 2
+2009-06-23
+description2
+4
+event 3
+2009-06-23
+description3
+5
+event 4
+2009-06-23
+description3
+
+query IITT nosort
+select * from event_metadata
+----
+1
+1
+artist
+artist1
+2
+1
+location
+location1
+3
+2
+artist
+artist2
+4
+2
+location
+location2
+5
+4
+artist
+artist2
+6
+4
+location
+location3
+

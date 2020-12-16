@@ -1,0 +1,75 @@
+statement ok
+CREATE TABLE test1 (a INT DEFAULT -1)
+
+statement ok
+INSERT INTO test1 VALUES (1)
+
+statement ok
+INSERT INTO test1 VALUES (DEFAULT)
+
+statement ok
+INSERT INTO test1 VALUES (2), (DEFAULT), (3), (DEFAULT), (4)
+
+query I rowsort
+SELECT * FROM test1
+----
+-1
+-1
+-1
+1
+2
+3
+4
+
+statement ok
+UPDATE test1 SET a = DEFAULT WHERE a = 4
+
+query I rowsort
+SELECT * FROM test1
+----
+-1
+-1
+-1
+-1
+1
+2
+3
+
+statement ok
+DROP TABLE test1
+
+statement ok
+CREATE TABLE test2 (a INT DEFAULT 0, b CLOB, c INT, d CLOB DEFAULT 'astring')
+
+statement ok
+INSERT INTO test2 VALUES (1, 'a', 1, 'a')
+
+statement ok
+INSERT INTO test2 VALUES (DEFAULT, 'a', 1, DEFAULT)
+
+statement ok
+INSERT INTO test2 VALUES (2, 'b', 2, 'b'), (100, 'other', -1, DEFAULT), (3, 'c', 3, 'c'), (DEFAULT, 'd', 4, 'd')
+
+query ITIT rowsort
+SELECT * FROM test2
+----
+24 values hashing to 4d4dd5f56aa89665568947ec438aa3ba
+
+statement ok
+UPDATE test2 SET d = DEFAULT, b = 'bbb' WHERE a = 1
+
+query ITIT rowsort
+SELECT * FROM test2
+----
+24 values hashing to 99e374e8eec5fbec427b4cebc2f49982
+
+statement error
+INSERT INTO test2 VALUES (1, 'a', DEFAULT, 'a'); --throw an error
+
+statement error
+UPDATE test2 SET b = DEFAULT; --throw an error
+
+statement ok
+DROP TABLE test2
+
+

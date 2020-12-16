@@ -1,0 +1,75 @@
+query ITITTT rowsort
+select * from quser
+----
+12 values hashing to 6c54389ae7cd21ce8e2cf63242a74fb8
+
+query IITITTTITT rowsort
+select * from query
+----
+30 values hashing to 9254cf796b8d213cedc03124129850b2
+
+query IIITTTT rowsort
+select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue
+----
+
+query I rowsort
+select insert_queue(1, 'monet', 'linux')
+----
+1
+
+query IIITTTT rowsort
+select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue
+----
+1
+1
+0
+monet
+linux
+NULL
+NULL
+
+statement error
+select insert_queue(10, 'monet', 'linux')
+
+query IIITTTT rowsort
+select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue
+----
+1
+1
+0
+monet
+linux
+NULL
+NULL
+
+query I rowsort
+select insert_queue(2, 'monet', 'linux')
+----
+3
+
+query IIITTTT rowsort
+select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue
+----
+14 values hashing to 3c778120c39cf7775b0b887021f72cc4
+
+query I rowsort
+select insert_queue(4, 'monet', 'linux')
+----
+4
+
+query ITITTT rowsort
+select * from quser
+----
+12 values hashing to 6c54389ae7cd21ce8e2cf63242a74fb8
+
+query IITITTTITT rowsort
+select * from query
+----
+30 values hashing to 9254cf796b8d213cedc03124129850b2
+
+query IIITTTT rowsort
+select queue_id, query_id, queue_number, os_version, monetdb_version, start_query, query_ready from ssqq_queue
+----
+21 values hashing to 13a96089171739719e790818c4279c6c
+
+

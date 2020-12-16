@@ -1,0 +1,7 @@
+statement ok
+delete from broken_delete
+
+query I rowsort
+select * from broken_delete
+----
+

@@ -1,0 +1,18 @@
+statement ok
+CREATE TABLE testing9 (abc INT)
+
+statement ok
+CREATE TRIGGER test9 AFTER INSERT ON testing9 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing9 VALUES (1); END
+
+statement ok
+DROP TRIGGER test9
+
+statement ok
+DROP TRIGGER IF EXISTS test9
+
+statement error
+DROP TRIGGER test9
+
+statement ok
+DROP TABLE testing9
+

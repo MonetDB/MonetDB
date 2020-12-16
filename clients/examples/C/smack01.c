@@ -72,7 +72,8 @@ main(int argc, char **argv)
 		if ((hdl = mapi_query(dbh, buf)) == NULL || mapi_error(dbh))
 			die(dbh, hdl);
 		while ((line = mapi_fetch_line(hdl))) {
-			printf("%s \n", line);
+			// printf("%s \n", line);
+			(void) line;
 		}
 		if (mapi_error(dbh))
 			die(dbh, hdl);
