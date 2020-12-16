@@ -1,0 +1,52 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SEQUENCE "my_test_seq" AS INTEGER START WITH 2
+
+statement ok
+CREATE TABLE altseqtest (t int default next value for "my_test_seq", v char)
+
+statement ok
+INSERT INTO altseqtest(v)  VALUES ('a')
+
+statement ok
+INSERT INTO altseqtest VALUES (10, 'b')
+
+statement ok
+ALTER SEQUENCE "my_test_seq" RESTART WITH (SELECT max(t) + 1 FROM altseqtest)
+
+statement ok
+INSERT INTO altseqtest(v)  VALUES ('c')
+
+query IT rowsort
+SELECT * FROM altseqtest
+----
+10
+b
+11
+c
+2
+a
+
+statement ok
+ROLLBACK
+
+statement error
+CREATE SEQUENCE dummyme START WITH 0 MINVALUE 1 MAXVALUE 30
+
+statement error
+CREATE SEQUENCE dummyme START WITH 31 MINVALUE 1 MAXVALUE 30
+
+statement ok
+CREATE SEQUENCE dummyme START WITH 2 MINVALUE 1 MAXVALUE 30
+
+statement error
+ALTER SEQUENCE dummyme RESTART WITH 0
+
+statement error
+ALTER SEQUENCE dummyme RESTART WITH 31
+
+statement ok
+DROP SEQUENCE dummyme
+

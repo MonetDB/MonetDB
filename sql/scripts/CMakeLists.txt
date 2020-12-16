@@ -28,6 +28,7 @@ install(FILES
   45_uuid.sql
   46_profiler.sql
   51_sys_schema_extension.sql
+  52_describe.sql
   58_hot_snapshot.sql
   60_wlcr.sql
   61_wlcr.sql

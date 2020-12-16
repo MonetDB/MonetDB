@@ -1,0 +1,257 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "a" (
+	"property" int	NOT NULL,
+	"class"    int	NOT NULL,
+	CONSTRAINT "a_property_class_pkey" PRIMARY KEY ("class", "property")
+)
+
+statement ok
+INSERT INTO "a" VALUES (1, 17)
+
+statement ok
+INSERT INTO "a" VALUES (21, 17)
+
+statement ok
+INSERT INTO "a" VALUES (22, 17)
+
+statement ok
+INSERT INTO "a" VALUES (20, 2)
+
+statement ok
+INSERT INTO "a" VALUES (19, 17)
+
+statement ok
+INSERT INTO "a" VALUES (4, 16)
+
+statement ok
+INSERT INTO "a" VALUES (5, 16)
+
+statement ok
+INSERT INTO "a" VALUES (6, 16)
+
+statement ok
+INSERT INTO "a" VALUES (29, 16)
+
+statement ok
+INSERT INTO "a" VALUES (12, 16)
+
+statement ok
+INSERT INTO "a" VALUES (13, 11)
+
+statement ok
+INSERT INTO "a" VALUES (26, 16)
+
+statement ok
+INSERT INTO "a" VALUES (25, 16)
+
+statement ok
+INSERT INTO "a" VALUES (23, 18)
+
+statement ok
+INSERT INTO "a" VALUES (24, 18)
+
+statement ok
+INSERT INTO "a" VALUES (15, 16)
+
+statement ok
+CREATE TABLE "b" (
+	"property" int	NOT NULL,
+	"class"    int	NOT NULL,
+	CONSTRAINT "b_property_class_pkey" PRIMARY KEY ("class", "property")
+)
+
+statement ok
+INSERT INTO "b" VALUES (1, 17)
+
+statement ok
+INSERT INTO "b" VALUES (21, 17)
+
+statement ok
+INSERT INTO "b" VALUES (22, 17)
+
+statement ok
+INSERT INTO "b" VALUES (20, 2)
+
+statement ok
+INSERT INTO "b" VALUES (19, 17)
+
+statement ok
+INSERT INTO "b" VALUES (4, 16)
+
+statement ok
+INSERT INTO "b" VALUES (5, 16)
+
+statement ok
+INSERT INTO "b" VALUES (6, 16)
+
+statement ok
+INSERT INTO "b" VALUES (28, 15)
+
+statement ok
+INSERT INTO "b" VALUES (11, 15)
+
+statement ok
+INSERT INTO "b" VALUES (12, 10)
+
+statement ok
+INSERT INTO "b" VALUES (25, 15)
+
+statement ok
+INSERT INTO "b" VALUES (24, 15)
+
+statement ok
+INSERT INTO "b" VALUES (23, 17)
+
+statement ok
+INSERT INTO "b" VALUES (14, 15)
+
+statement ok
+COMMIT
+
+statement ok
+START TRANSACTION
+
+query II rowsort
+SELECT * FROM a
+----
+32 values hashing to 6a613f656229cd142160fb9a09b3aed1
+
+query II rowsort
+SELECT * FROM b
+----
+30 values hashing to 2afa7bdba49986a1d3a24a81bbc433e6
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+query I rowsort
+SELECT class FROM a EXCEPT SELECT 16 ORDER BY class
+----
+11
+17
+18
+2
+
+query I rowsort
+SELECT class FROM a UNION SELECT 16 ORDER BY class
+----
+11
+16
+17
+18
+2
+
+query I rowsort
+SELECT class FROM a INTERSECT SELECT 16 ORDER BY class
+----
+16
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+query II rowsort
+SELECT * FROM a EXCEPT SELECT * FROM b ORDER BY class, property
+----
+16 values hashing to f7dae4be38e491125b30b4fdb5eee94b
+
+query II rowsort
+SELECT * FROM a UNION SELECT * FROM b ORDER BY class, property
+----
+46 values hashing to 1a7c2a8e047542131f744b57d950cb41
+
+query II rowsort
+SELECT * FROM a INTERSECT SELECT * FROM b ORDER BY class, property
+----
+16 values hashing to 3d6367e8616b6a6451fc8b0f42df08a1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+query I rowsort
+SELECT class FROM a EXCEPT ALL SELECT 16 ORDER BY class
+----
+15 values hashing to e2f63c5c44b92affc266c3ed81eb26d6
+
+query I rowsort
+SELECT class FROM a UNION ALL SELECT 16 ORDER BY class
+----
+17 values hashing to dbe605318ed1997a0fddda204e0f359d
+
+query I rowsort
+SELECT class FROM a INTERSECT ALL SELECT 16 ORDER BY class
+----
+16
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+query II rowsort
+SELECT * FROM a EXCEPT ALL SELECT * FROM b ORDER BY class, property
+----
+16 values hashing to f7dae4be38e491125b30b4fdb5eee94b
+
+query I rowsort
+SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class
+----
+11
+16
+16
+16
+16
+16
+18
+18
+
+query II rowsort
+SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property
+----
+62 values hashing to d8aff666dbb57f9b11f5b00b8ec4f630
+
+query II rowsort
+SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property
+----
+16 values hashing to 3d6367e8616b6a6451fc8b0f42df08a1
+
+query I rowsort
+SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class
+----
+16
+16
+16
+17
+17
+17
+17
+2
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE "a"
+
+statement ok
+DROP TABLE "b"
+
+statement ok
+COMMIT
+
+

@@ -213,3 +213,4 @@ WHERE t1.id=source.a1 AND t2.id=source.a2 AND       source.groupnum <= 5
   AND source.rownum <= 20
 ORDER BY source.prob DESC, a1;
 
+rollback;

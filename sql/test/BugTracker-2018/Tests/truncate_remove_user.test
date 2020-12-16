@@ -1,0 +1,4 @@
+statement ok
+DROP USER testuser
+
+

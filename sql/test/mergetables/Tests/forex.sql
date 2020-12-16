@@ -72,8 +72,8 @@ ALTER TABLE forex ADD TABLE day3;
 
 SELECT * FROM forex WHERE currency = 'EUR/USD';
 -- perform some compound queries
-SELECT avg(bid), sum(bid) FROM forex;
-SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), sum(bid) FROM forex GROUP BY currency;
+SELECT avg(bid), cast(sum(bid) AS DECIMAL(12,6)) FROM forex;
+SELECT currency, cast(avg(bid) AS DECIMAL(12,6)), cast(sum(bid) AS DECIMAL(12,6)) FROM forex GROUP BY currency;
 
 -- drop the first day
 ALTER TABLE forex DROP TABLE day1;

@@ -1,0 +1,11 @@
+statement error
+barrier i:= 1;
+	i:= i+1;
+	io.print(i);
+	barrier t:=calc.>(i,3);
+		io.print("leave loop");
+		leave i;
+	exit t;
+	redo;
+exit;
+

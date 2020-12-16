@@ -17,7 +17,9 @@ set(mal_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_linker.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_namespace.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_stack.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/mal_type.h)
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_type.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_prelude.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mel.h)
 
 add_library(mal OBJECT)
 
@@ -53,7 +55,6 @@ target_sources(mal
   mal_embedded.c mal_embedded.h
   mal_private.h mal_internal.h
   mal_prelude.c
-  mel.h
   PUBLIC
   ${mal_public_headers})
 

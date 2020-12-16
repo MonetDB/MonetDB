@@ -1,31 +1,50 @@
 ###
-# Revoke role and confirm user can no longer assume it.
-# Assess there is an error message if dropping unexisting role.
-# Assess it is not possible to recreate an existing role.
+# Tests for roles and users
+#
+# 1. check that we cannot DROP an unexisting ROLE.
+# 2. check that it is not possible to reCREATE an existing ROLE.
+# 3. check that we cannot DROP a ROLE GRANTed TO a USER
+# 4. check that a USER can SET a GRANTed ROLE but cannot SET a non-GRANTed ROLE
+# 5. check that we can DROP a ROLE after REVOKE
+# 6. check that we cannot REVOKE a non-GRANTed ROLE
+# 7. check that afer a ROLE is REVOKEd the USER can no longer assume it.
+# 8. check that we cannot GRANT an unexisting ROLE.
 ###
 
+from MonetDBtesting.sqltest import SQLTestCase
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+with SQLTestCase() as tc:
+    tc.connect(username="monetdb", password="monetdb")
 
-def sql_test_client(user, passwd, input):
-    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
-                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
-                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
-        c.communicate()
+    tc.execute("DROP ROLE non_existing_role;").assertFailed(err_code="0P000", err_message="DROP ROLE: no such role 'non_existing_role'")
 
-sql_test_client('monetdb', 'monetdb', input="""\
-REVOKE bankAdmin from april;
-CREATE ROLE bankAdmin2;
-GRANT bankAdmin2 to april;
-DROP ROLE bankAdmin2;
-DROP ROLE bankAdmin3; -- role doesn't exist
-""")
+    tc.execute("CREATE ROLE role1;").assertSucceeded()
+    tc.execute("CREATE ROLE role2;").assertSucceeded()
+    tc.execute("CREATE ROLE role3;").assertSucceeded()
+    tc.execute("CREATE ROLE role1;").assertFailed(err_code="0P000", err_message="Role 'role1' already exists")
 
-sql_test_client('april', 'april', input="""\
-SET ROLE bankAdmin; -- role revoked
-SET ROLE bankAdmin2; -- role no longer exists
-""")
+    tc.execute("CREATE USER alice with password 'alice' name 'alice' schema sys;")
+    tc.execute("GRANT role1 TO alice;").assertSucceeded()
+    tc.execute("GRANT role2 TO alice;").assertSucceeded()
+    #tc.execute("DROP ROLE role1;").assertFailed()
+
+    tc.connect(username="alice", password="alice")
+    tc.execute("SET ROLE role1;").assertSucceeded()
+    tc.execute("SET ROLE role3;").assertFailed(err_code="42000", err_message="Role (role3) missing")
+
+    tc.connect(username="monetdb", password="monetdb")
+    tc.execute("REVOKE role1 FROM alice;").assertSucceeded()
+    tc.execute("REVOKE role2 FROM alice;").assertSucceeded()
+    tc.execute("DROP ROLE role2;").assertSucceeded()
+
+    tc.execute("REVOKE role3 FROM alice;").assertFailed(err_code="01006", err_message="REVOKE: User 'alice' does not have ROLE 'role3'")
+
+    tc.connect(username="alice", password="alice")
+    tc.execute("SET ROLE role1;").assertFailed(err_code="42000", err_message="Role (role1) missing")
+    tc.execute("SET ROLE role2;").assertFailed(err_code="42000", err_message="Role (role2) missing")
+
+    tc.connect(username="monetdb", password="monetdb")
+    tc.execute("GRANT non_existing_role TO alice;").assertFailed(err_code="M1M05", err_message="GRANT: Cannot grant ROLE 'non_existing_role' to user 'alice'")
+    tc.execute("DROP ROLE role1;").assertSucceeded()
+    tc.execute("DROP ROLE role3;").assertSucceeded()
+    tc.execute("DROP USER alice;").assertSucceeded()

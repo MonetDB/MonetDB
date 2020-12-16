@@ -1,4 +1,4 @@
 -- first disable auto commit
-\a
+start transaction;
 -- commit should now work
 commit;

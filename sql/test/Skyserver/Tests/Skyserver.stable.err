@@ -6,18 +6,7 @@ stderr of test 'Skyserver` in directory 'sql/test/Skyserver` itself:
 # 18:20:19 >  
 
 
-# 18:20:19 >  
-# 18:20:19 >  Mtimeout -timeout 60 ./Skyserver.SQL Skyserver 
-# 18:20:19 >  
-
-Create User
-tables
-views
-functions
-Cleanup
-Remove User
-
-# 18:20:22 >  
-# 18:20:22 >  Done.
-# 18:20:22 >  
+# 12:01:36 >  
+# 12:01:36 >  "Done."
+# 12:01:36 >  
 

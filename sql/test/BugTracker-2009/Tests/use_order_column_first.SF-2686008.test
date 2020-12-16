@@ -1,0 +1,65 @@
+statement ok
+create table unsorted (a int,b int)
+
+statement ok
+insert into unsorted values (2, 3)
+
+statement ok
+insert into unsorted values (1, 2)
+
+statement ok
+insert into unsorted values (4, 1)
+
+statement ok
+insert into unsorted values (3, 2)
+
+statement ok
+insert into unsorted values (2, 3)
+
+statement ok
+insert into unsorted values (3, 3)
+
+statement ok
+insert into unsorted values (3, 1)
+
+statement ok
+insert into unsorted values (4, 3)
+
+statement ok
+create table sorted (a int, b int)
+
+statement ok
+insert into sorted
+select * from unsorted
+order by a,b
+
+query II rowsort
+select * from sorted
+----
+16 values hashing to 2cdd4950dea01e559cbfccc9f0aafd12
+
+query T nosort
+PLAN select a,b from sorted group by a,b
+----
+project (
+| group by (
+| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
+| ) [ "sorted"."a", "sorted"."b" ] [ "sorted"."a", "sorted"."b" ]
+) [ "sorted"."a", "sorted"."b" ]
+
+query T nosort
+PLAN select a,b from sorted group by b,a
+----
+project (
+| group by (
+| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
+| ) [ "sorted"."b", "sorted"."a" ] [ "sorted"."b", "sorted"."a" ]
+) [ "sorted"."a", "sorted"."b" ]
+
+statement ok
+drop table unsorted
+
+statement ok
+drop table sorted
+
+

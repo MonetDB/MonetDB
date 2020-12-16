@@ -1,0 +1,16 @@
+query T rowsort
+select json.text('"abc"', '')
+----
+abc
+
+query T rowsort
+select json.text('["abc", "def"]', '')
+----
+abcdef
+
+query T rowsort
+select json.text('{"a":"abc", "b":"def"}', '')
+----
+abcdef
+
+

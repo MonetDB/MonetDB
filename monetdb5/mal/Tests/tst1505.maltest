@@ -1,0 +1,185 @@
+statement ok
+	y := bat.new(:dbl)
+
+statement ok
+	le_a := calc.dbl(1.0)
+
+statement ok
+	y:= bat.append(y,le_a)
+
+statement ok
+	ne_a := calc.dbl(2.0)
+
+statement ok
+	y:= bat.append(y,ne_a)
+
+statement ok
+	pe_a := calc.dbl(2.0)
+
+statement ok
+	y:= bat.append(y,pe_a)
+
+statement ok
+	re_a := calc.dbl(2.0)
+
+statement ok
+	y:= bat.append(y,re_a)
+
+statement ok
+	te_a := calc.dbl(2.0)
+
+statement ok
+	y:= bat.append(y,te_a)
+
+statement ok
+	ve_a := calc.dbl(3.0)
+
+statement ok
+	y:= bat.append(y,ve_a)
+
+statement ok
+	xe_a := calc.dbl(1.0)
+
+statement ok
+	y:= bat.append(y,xe_a)
+
+statement ok
+	af_a := calc.dbl(1.0)
+
+statement ok
+	y:= bat.append(y,af_a)
+
+query TT rowsort
+io.print(y)
+----
+16 values hashing to 56100a666db1f7b6ee39551171c64c65
+
+statement ok
+z:= batcalc.<(y,2.0:dbl)
+
+query TT rowsort
+io.print(z)
+----
+16 values hashing to c0a575e4ae9136e9992439f9155b93c1
+
+statement ok
+c:= aggr.count(z)
+
+query T rowsort
+io.print("count")
+----
+"count"
+
+query T rowsort
+io.print(c)
+----
+8
+
+statement ok
+	x:= bat.new(:bit)
+
+statement ok
+	x:= bat.append(x,true)
+
+statement ok
+	x:= bat.append(x,false)
+
+statement ok
+	x:= bat.append(x,true)
+
+statement ok
+	x:= bat.append(x,false)
+
+query TT rowsort
+	io.print(x)
+----
+0
+True
+1
+False
+2
+True
+3
+False
+
+statement ok
+	A:= bat.new(:bit)
+
+statement ok
+	A:= bat.append(A,true)
+
+statement ok
+	A:= bat.append(A,true)
+
+statement ok
+	A:= bat.append(A,false)
+
+statement ok
+	A:= bat.append(A,false)
+
+query TT rowsort
+	io.print(A)
+----
+0
+True
+1
+True
+2
+False
+3
+False
+
+statement ok
+	xn:= batcalc.not(x)
+
+query TTT rowsort
+io.print(x,xn)
+----
+12 values hashing to aadeabf79ed8132e380121e5ccfe07a4
+
+statement ok
+	xandx:= batcalc.and(x,A)
+
+query TTT rowsort
+io.print(x,xandx)
+----
+12 values hashing to 1bd0fbe2fcac5b9e31aaab8fed03adf8
+
+statement ok
+	xorx:= batcalc.or(x,A)
+
+query TTT rowsort
+io.print(x,xorx)
+----
+12 values hashing to 4147b4c4b9bc7fef0aa75f255607c60d
+
+query T rowsort
+io.print("ifthen group")
+----
+"ifthen group"
+
+statement ok
+	xif2:= batcalc.ifthenelse(x,x,xn)
+
+query TTTTT rowsort
+io.print(x,x,xn,xif2)
+----
+20 values hashing to 18699b095356b3b87dd5df600f3e2ee1
+
+statement ok
+	xif3:= batcalc.ifthenelse(x,x,true)
+
+query TTTT rowsort
+io.print(x,x,xif3)
+----
+16 values hashing to c23fed359e03d2ffb855025da406a1c9
+
+statement ok
+	xif4:= batcalc.ifthenelse(x,1,2)
+
+query TTI rowsort
+io.print(x,xif4)
+----
+12 values hashing to 8986ae362618b5d93e967b7f70d572ab
+
+

@@ -1,0 +1,28 @@
+statement ok
+drop table i0
+
+statement ok
+drop table i1
+
+statement ok
+drop table i2
+
+statement ok
+drop table i3
+
+statement ok
+drop table i4
+
+statement ok
+drop table i5
+
+statement ok
+drop table i6
+
+statement ok
+drop table i7
+
+statement ok
+drop table i8
+
+

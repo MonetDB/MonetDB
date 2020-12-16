@@ -1,0 +1,58 @@
+statement ok
+create table x (a integer)
+
+statement ok
+create table y (b integer)
+
+statement ok
+insert into x values (1), (2), (3), (4)
+
+statement ok
+insert into y values (1), (2), (3), (4)
+
+query I rowsort
+select * from x
+----
+1
+2
+3
+4
+
+query I rowsort
+select * from y
+----
+1
+2
+3
+4
+
+statement error
+select a from y
+
+statement error
+delete from x where a in (select nonexistant from y)
+
+statement ok
+delete from x where a in (select a from y)
+
+query I rowsort
+select * from x
+----
+
+statement ok
+insert into x values (1), (2), (3), (4)
+
+statement ok
+delete from x where a in (select a from y where a < 10)
+
+query I rowsort
+select * from x
+----
+
+statement ok
+drop table x
+
+statement ok
+drop table y
+
+

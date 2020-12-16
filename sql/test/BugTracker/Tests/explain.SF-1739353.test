@@ -1,0 +1,37 @@
+statement ok
+set optimizer='sequential_pipe'
+
+query T python .explain.function_histogram
+EXPLAIN SELECT "name" FROM "tables"
+----
+user.main
+1
+querylog.define
+1
+bat.new
+1
+sql.mvc
+1
+sql.bind
+7
+sql.tid
+2
+algebra.thetaselect
+3
+sql.subdelta
+1
+sql.projectdelta
+1
+algebra.projection
+1
+bat.append
+2
+bat.pack
+5
+sql.resultSet
+1
+
+statement ok
+set optimizer='default_pipe'
+
+

@@ -1,0 +1,101 @@
+statement ok
+create table jspath(js json)
+
+statement ok
+insert into jspath values('{"book": [{ "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }], "pencil":{ "color": "red", "price": 19.95 }}')
+
+query T rowsort
+select * from jspath
+----
+{"book": [{ "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }], "pencil":{ "color": "red", "price": 19.95 }}
+
+query T rowsort
+select json.filter(js,'.book') from jspath
+----
+[[{ "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }]]
+
+query T rowsort
+select json.filter(js,'.pencil') from jspath
+----
+[{ "color": "red", "price": 19.95 }]
+
+query T rowsort
+select json.filter(js,'pencil') from jspath
+----
+[{ "color": "red", "price": 19.95 }]
+
+query T rowsort
+select json.filter(js,'..author') from jspath
+----
+["Nigel Rees","Evelyn Waugh","Herman Melville","J. R. R. Tolkien"]
+
+query T rowsort
+select json.filter(js,'..category') from jspath
+----
+["reference","fiction","fiction","fiction"]
+
+query T rowsort
+select json.filter(js,'.book.[0]') from jspath
+----
+[{ "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }]
+
+query T rowsort
+select json.filter(js,'.book.[1]') from jspath
+----
+[{ "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }]
+
+query T rowsort
+select json.filter(js,'.book.[2]') from jspath
+----
+[{ "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }]
+
+query T rowsort
+select json.filter(js,'.book.[3]') from jspath
+----
+[{ "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }]
+
+query T rowsort
+select json.filter(js,'.book.[*].category') from jspath
+----
+["reference","fiction","fiction","fiction"]
+
+query T rowsort
+select json.filter('[[{"name":"john"}], {"name":"mary"}]','..name')
+----
+["john","mary"]
+
+query T rowsort
+select  json.filter('[[{"name":"john"}], {"name":"mary"}]','$.[*].name')
+----
+["mary"]
+
+query T rowsort
+select  json.filter('[[{"name":"john"}], {"name":"mary"}]','..name[0]')
+----
+["john"]
+
+query T rowsort
+select  json.filter('[[{"name":"john"}], {"name":"mary"}]','..name[1]')
+----
+[]
+
+statement error
+select json.filter(js,'.book[-1]') from jspath
+
+query T rowsort
+select json.filter(js,'.book[4]') from jspath
+----
+[]
+
+statement error
+select json.filter(js,'$$$') from jspath
+
+statement error
+select json.filter(js,'...') from jspath
+
+statement error
+select json.filter(js,'[[2]]') from jspath
+
+statement ok
+drop table jspath
+

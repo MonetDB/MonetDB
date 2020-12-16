@@ -1,0 +1,15 @@
+query IIT nosort
+select * from video_sets
+----
+1
+21
+fabchannel2007
+
+query III nosort
+select * from video_set
+----
+
+query IITTTTITTII nosort
+select * from file
+----
+

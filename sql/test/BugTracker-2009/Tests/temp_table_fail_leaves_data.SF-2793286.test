@@ -1,0 +1,12 @@
+statement ok
+create temporary table testpk (hello int, primary key(hello))
+
+query TT nosort
+select s.name, t.name from sys.tables t, sys.schemas s where t.name = 'testpk' and t.schema_id = s.id
+----
+tmp
+testpk
+
+statement error
+create temporary table testpk (hello int, primary key(hello))
+

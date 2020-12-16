@@ -1,0 +1,34 @@
+statement ok
+start transaction
+
+statement ok
+create table tmpcopy(i integer, d decimal(8,3))
+
+statement ok
+copy 10 records into tmpcopy from stdin delimiters ',','\n'
+<COPY_INTO_DATA>
+0,1.2
+0,2.34
+ 0,3.456
+0, 4.456
+0,5
+0 ,67
+0,890
+0,5 
+0,67 
+0,890
+
+query IR
+select * from tmpcopy;
+----
+20 values hashing to 32102c6f8607147544fd523688eef6e2
+
+statement error
+copy 1 records into tmpcopy from stdin delimiters ',','\n';
+<COPY_INTO_DATA>
+0,12.3456
+
+statement ok
+rollback;
+
+
