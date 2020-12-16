@@ -2952,6 +2952,9 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                         except BrokenPipeError:
                             # server timeout
                             pass
+                        except ConnectionResetError:
+                            # server crash?
+                            pass
             elif CALL in ["sql", "sqlXs"]:
                 TSTs = []
                 if CALL == "sql":
