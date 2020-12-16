@@ -1,0 +1,26 @@
+statement ok
+create local temp table "depend_count" ("a" bigint) on commit preserve rows
+
+statement ok
+insert into "depend_count" values ((select count(*) from dependencies, sequences))
+
+statement ok
+create schema s1
+
+statement ok
+create table s1.t (i int not null auto_increment)
+
+statement ok
+drop table s1.t
+
+statement ok
+drop schema s1
+
+query I nosort
+select cast(count(*) - (select "a" from "depend_count") as bigint) from dependencies, sequences
+----
+0
+
+statement ok
+drop table "depend_count"
+
