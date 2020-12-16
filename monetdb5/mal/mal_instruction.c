@@ -1276,7 +1276,7 @@ pushArgumentId(MalBlkPtr mb, InstrPtr p, const char *name)
 		if ((v = newVariable(mb, name, namelen, getAtomIndex(name, namelen, TYPE_any))) < 0) {
 			/* set the MAL block to erroneous and simply return without doing anything */
 			/* mb->errors already set */
-			return NULL;
+			return p;
 		}
 	}
 	return pushArgument(mb, p, v);

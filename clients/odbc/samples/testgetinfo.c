@@ -79,7 +79,7 @@ const struct {
 	enum {
 		STRING,
 		INTEGER,
-		SHORT,
+		SHORTINT,
 	} type;
 	char *name;
 	union {
@@ -161,7 +161,7 @@ const struct {
 	{
 		.info = SQL_CATALOG_LOCATION,
 		.name = "SQL_CATALOG_LOCATION",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
@@ -203,7 +203,7 @@ const struct {
 	{
 		.info = SQL_CONCAT_NULL_BEHAVIOR,
 		.name = "SQL_CONCAT_NULL_BEHAVIOR",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_CB_NULL,
 	},
 	{
@@ -341,7 +341,7 @@ const struct {
 	{
 		.info = SQL_CORRELATION_NAME,
 		.name = "SQL_CORRELATION_NAME",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_CN_ANY,
 	},
 	{
@@ -395,13 +395,13 @@ const struct {
 	{
 		.info = SQL_CURSOR_COMMIT_BEHAVIOR,
 		.name = "SQL_CURSOR_COMMIT_BEHAVIOR",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_CB_DELETE,
 	},
 	{
 		.info = SQL_CURSOR_ROLLBACK_BEHAVIOR,
 		.name = "SQL_CURSOR_ROLLBACK_BEHAVIOR",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_CB_DELETE,
 	},
 	{
@@ -565,7 +565,7 @@ const struct {
 	{
 		.info = SQL_FILE_USAGE,
 		.name = "SQL_FILE_USAGE",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_FILE_NOT_SUPPORTED,
 	},
 	{
@@ -589,13 +589,13 @@ const struct {
 	{
 		.info = SQL_GROUP_BY,
 		.name = "SQL_GROUP_BY",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_GB_NO_RELATION,
 	},
 	{
 		.info = SQL_IDENTIFIER_CASE,
 		.name = "SQL_IDENTIFIER_CASE",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_IC_LOWER,
 	},
 	{
@@ -667,7 +667,7 @@ const struct {
 	{
 		.info = SQL_MAX_CATALOG_NAME_LEN,
 		.name = "SQL_MAX_CATALOG_NAME_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
@@ -679,55 +679,55 @@ const struct {
 	{
 		.info = SQL_MAX_COLUMN_NAME_LEN,
 		.name = "SQL_MAX_COLUMN_NAME_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 1024,
 	},
 	{
 		.info = SQL_MAX_COLUMNS_IN_GROUP_BY,
 		.name = "SQL_MAX_COLUMNS_IN_GROUP_BY",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
 		.info = SQL_MAX_COLUMNS_IN_INDEX,
 		.name = "SQL_MAX_COLUMNS_IN_INDEX",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
 		.info = SQL_MAX_COLUMNS_IN_ORDER_BY,
 		.name = "SQL_MAX_COLUMNS_IN_ORDER_BY",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
 		.info = SQL_MAX_COLUMNS_IN_SELECT,
 		.name = "SQL_MAX_COLUMNS_IN_SELECT",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
 		.info = SQL_MAX_COLUMNS_IN_TABLE,
 		.name = "SQL_MAX_COLUMNS_IN_TABLE",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
 		.info = SQL_MAX_CURSOR_NAME_LEN,
 		.name = "SQL_MAX_CURSOR_NAME_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
 		.info = SQL_MAX_DRIVER_CONNECTIONS,
 		.name = "SQL_MAX_DRIVER_CONNECTIONS",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 64,
 	},
 	{
 		.info = SQL_MAX_IDENTIFIER_LEN,
 		.name = "SQL_MAX_IDENTIFIER_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 1024,
 	},
 	{
@@ -739,7 +739,7 @@ const struct {
 	{
 		.info = SQL_MAX_PROCEDURE_NAME_LEN,
 		.name = "SQL_MAX_PROCEDURE_NAME_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 256,
 	},
 	{
@@ -757,7 +757,7 @@ const struct {
 	{
 		.info = SQL_MAX_SCHEMA_NAME_LEN,
 		.name = "SQL_MAX_SCHEMA_NAME_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 1024,
 	},
 	{
@@ -769,19 +769,19 @@ const struct {
 	{
 		.info = SQL_MAX_TABLE_NAME_LEN,
 		.name = "SQL_MAX_TABLE_NAME_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 1024,
 	},
 	{
 		.info = SQL_MAX_TABLES_IN_SELECT,
 		.name = "SQL_MAX_TABLES_IN_SELECT",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 0,
 	},
 	{
 		.info = SQL_MAX_USER_NAME_LEN,
 		.name = "SQL_MAX_USER_NAME_LEN",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = 1024,
 	},
 	{
@@ -805,13 +805,13 @@ const struct {
 	{
 		.info = SQL_NON_NULLABLE_COLUMNS,
 		.name = "SQL_NON_NULLABLE_COLUMNS",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_NNC_NON_NULL,
 	},
 	{
 		.info = SQL_NULL_COLLATION,
 		.name = "SQL_NULL_COLLATION",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_NC_LOW,
 	},
 	{
@@ -871,7 +871,7 @@ const struct {
 	{
 		.info = SQL_QUOTED_IDENTIFIER_CASE,
 		.name = "SQL_QUOTED_IDENTIFIER_CASE",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_IC_SENSITIVE,
 	},
 	{
@@ -1051,7 +1051,7 @@ const struct {
 	{
 		.info = SQL_TXN_CAPABLE,
 		.name = "SQL_TXN_CAPABLE",
-		.type = SHORT,
+		.type = SHORTINT,
 		.s = SQL_TC_ALL,
 	},
 	{
@@ -1135,7 +1135,7 @@ main(int argc, char **argv)
 			    sqlinfo[n].i != i)
 				fprintf(stderr, "%s: expected: %u, received: %u\n", sqlinfo[n].name, sqlinfo[n].i, i);
 			break;
-		default:	/* case SHORT */
+		default:	/* case SHORTINT */
 			ret = SQLGetInfo(dbc, sqlinfo[n].info, &s, sizeof(s), &resultlen);
 			if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo") &&
 			    sqlinfo[n].s != s)
