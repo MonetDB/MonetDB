@@ -1,0 +1,16 @@
+stdout of test 'drop-table-with-auto_increment.Bug-7030` in directory 'sql/test/BugTracker-2020` itself:
+
+
+# 12:21:18 >  
+# 12:21:18 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-868236" "--port=30843"
+# 12:21:18 >  
+
+#create schema s1;
+#create table s1.t (i int not null auto_increment);
+#drop table s1.t;
+#drop schema s1;
+
+# 12:21:18 >  
+# 12:21:18 >  "Done."
+# 12:21:18 >  
+
