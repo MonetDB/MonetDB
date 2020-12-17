@@ -85,12 +85,12 @@ BEGIN
 	INSERT INTO dump_statements(s) VALUES ('TRUNCATE sys.privileges;');
 	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_privileges();
 
-	--check REFERENCES privilege
 	--TODO User Defined Types? sys.types
 	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO dumping table data
-	--look into order dependent group_concat
+	--TODO look into order dependent group_concat
 	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
+	--TODO ADD upgrade code 
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
 
