@@ -32,11 +32,11 @@ stdout of test 'rangejoin_optimizer.Bug-3411` in directory 'sql/test/BugTracker-
 % .plan # table_name
 % rel # name
 % clob # type
-% 80 # length
+% 84 # length
 project (
 | join (
-| | table(sys.t4311) [ "t4311"."a" as "t2"."a" ] COUNT ,
-| | table(sys.t4311) [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
+| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ] COUNT ,
+| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
 | ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
 ) [ "t2"."a" ]
 #plan 
@@ -47,11 +47,11 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 80 # length
+% 84 # length
 project (
 | join (
-| | table(sys.t4311) [ "t4311"."a" as "t2"."a" ] COUNT ,
-| | table(sys.t4311) [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
+| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ] COUNT ,
+| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
 | ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
 ) [ "t2"."a" ]
 #plan 
@@ -62,11 +62,11 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 80 # length
+% 84 # length
 project (
 | join (
-| | table(sys.t4311) [ "t4311"."a" as "t2"."a" ] COUNT ,
-| | table(sys.t4311) [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
+| | table("sys"."t4311") [ "t4311"."a" as "t2"."a" ] COUNT ,
+| | table("sys"."t4311") [ "t4311"."a" as "t1"."a", "t4311"."b" as "t1"."b" ] COUNT 
 | ) [ "t1"."a" <= "t2"."a" <= "t1"."b" BETWEEN  ]
 ) [ "t2"."a" ]
 #drop table t4311;

@@ -24,7 +24,7 @@ stdout of test 'mergepart31` in directory 'sql/test/merge-partitions` itself:
 % 70 # length
 project (
 | select (
-| | table(sys.third_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" = timestamp(7) "2020-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2000-02-01 00:00:00');
@@ -34,7 +34,7 @@ project (
 % 142 # length
 project (
 | select (
-| | table(sys.first_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" in (timestamp(7) "2000-01-01 00:00:00.000000" as "%2"."%2", timestamp(7) "2000-02-01 00:00:00.000000" as "%3"."%3") ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp IN (TIMESTAMP '2000-01-01 00:00:00', TIMESTAMP '2010-01-01 00:00:00');
@@ -45,12 +45,12 @@ project (
 union (
 | project (
 | | select (
-| | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" in (timestamp(7) "2000-01-01 00:00:00.000000" as "%2"."%2", timestamp(7) "2010-01-01 00:00:00.000000" as "%3"."%3") ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" in (timestamp(7) "2000-01-01 00:00:00.000000" as "%2"."%2", timestamp(7) "2010-01-01 00:00:00.000000" as "%3"."%3") ]
 | ) [ tinyint "1" ]
 ) [ "%6"."%6" NOT NULL ]
@@ -63,18 +63,18 @@ union (
 | union (
 | | project (
 | | | select (
-| | | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ "splitted"."stamp" in (timestamp(7) "2000-02-01 00:00:00.000000" as "%2"."%2", timestamp(7) "2010-02-01 00:00:00.000000" as "%3"."%3", timestamp(7) "2020-02-01 00:00:00.000000" as "%4"."%4") ]
 | | ) [ tinyint "1" ],
 | | project (
 | | | select (
-| | | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ "splitted"."stamp" in (timestamp(7) "2000-02-01 00:00:00.000000" as "%2"."%2", timestamp(7) "2010-02-01 00:00:00.000000" as "%3"."%3", timestamp(7) "2020-02-01 00:00:00.000000" as "%4"."%4") ]
 | | ) [ tinyint "1" ]
 | ) [ "%11"."%11" NOT NULL ],
 | project (
 | | select (
-| | | table(sys.third_decade) [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" in (timestamp(7) "2000-02-01 00:00:00.000000" as "%2"."%2", timestamp(7) "2010-02-01 00:00:00.000000" as "%3"."%3", timestamp(7) "2020-02-01 00:00:00.000000" as "%4"."%4") ]
 | ) [ tinyint "1" ]
 ) [ "%10"."%10" NOT NULL ]
@@ -85,7 +85,7 @@ union (
 % 125 # length
 project (
 | select (
-| | table(sys.third_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2020-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-10-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp NOT BETWEEN TIMESTAMP '2020-01-01 00:00:00' AND TIMESTAMP '2020-10-01 00:00:00'; --third child pruned
@@ -96,12 +96,12 @@ project (
 union (
 | project (
 | | select (
-| | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2020-01-01 00:00:00.000000" ! <= "splitted"."stamp" ! <= timestamp(7) "2020-10-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2020-01-01 00:00:00.000000" ! <= "splitted"."stamp" ! <= timestamp(7) "2020-10-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -113,12 +113,12 @@ union (
 union (
 | project (
 | | select (
-| | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.third_decade) [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -131,18 +131,18 @@ union (
 | union (
 | | project (
 | | | select (
-| | | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ timestamp(7) "2000-02-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | | ) [ tinyint "1" ],
 | | project (
 | | | select (
-| | | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ timestamp(7) "2000-02-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | | ) [ tinyint "1" ]
 | ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
-| | | table(sys.third_decade) [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2000-02-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2020-03-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%4"."%4" NOT NULL ]
@@ -165,16 +165,16 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 87 # length
+% 91 # length
 union (
 | project (
 | | select (
-| | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" > timestamp(7) "2010-03-01 00:00:00.000000" ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.third_decade) [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" > timestamp(7) "2010-03-01 00:00:00.000000" ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -185,7 +185,7 @@ union (
 % 71 # length
 project (
 | select (
-| | table(sys.first_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" <= timestamp(7) "2009-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' AND stamp < TIMESTAMP '2019-01-01 00:00:00';
@@ -195,30 +195,30 @@ project (
 % 124 # length
 project (
 | select (
-| | table(sys.second_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2019-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp <= TIMESTAMP '2020-10-01 00:00:00'; --nothing gets pruned
 % .plan # table_name
 % rel # name
 % clob # type
-% 89 # length
+% 93 # length
 union (
 | union (
 | | project (
 | | | select (
-| | | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ "splitted"."stamp" <= timestamp(7) "2020-10-01 00:00:00.000000" ]
 | | ) [ tinyint "1" ],
 | | project (
 | | | select (
-| | | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ "splitted"."stamp" <= timestamp(7) "2020-10-01 00:00:00.000000" ]
 | | ) [ tinyint "1" ]
 | ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
-| | | table(sys.third_decade) [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ "splitted"."stamp" <= timestamp(7) "2020-10-01 00:00:00.000000" ]
 | ) [ tinyint "1" ]
 ) [ "%4"."%4" NOT NULL ]
@@ -239,17 +239,17 @@ project (
 % 71 # length
 project (
 | select (
-| | table(sys.first_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" <= timestamp(7) "2000-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp is null; --only third passes
 % .plan # table_name
 % rel # name
 % clob # type
-% 57 # length
+% 61 # length
 project (
 | select (
-| | table(sys.third_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" * = timestamp(7) "NULL" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp is null and stamp < TIMESTAMP '2008-01-01 00:00:00'; --all children pruned
@@ -269,7 +269,7 @@ project (
 % 124 # length
 project (
 | select (
-| | table(sys.third_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."third_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2020-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp >= TIMESTAMP '2000-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'; --third child pruned
@@ -280,12 +280,12 @@ project (
 union (
 | project (
 | | select (
-| | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2000-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2000-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -296,7 +296,7 @@ union (
 % 123 # length
 project (
 | select (
-| | table(sys.second_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2010-01-01 00:00:00.000000" < "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp >= TIMESTAMP '2010-01-01 00:00:00' and stamp < TIMESTAMP '2020-01-01 00:00:00'; --only second child passes
@@ -306,7 +306,7 @@ project (
 % 124 # length
 project (
 | select (
-| | table(sys.second_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2010-01-01 00:00:00.000000" <= "splitted"."stamp" < timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp > TIMESTAMP '2001-01-02 00:00:00' and stamp < TIMESTAMP '2015-01-01 00:00:00'; --third child pruned
@@ -317,12 +317,12 @@ project (
 union (
 | project (
 | | select (
-| | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2001-01-02 00:00:00.000000" < "splitted"."stamp" < timestamp(7) "2015-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2001-01-02 00:00:00.000000" < "splitted"."stamp" < timestamp(7) "2015-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -344,12 +344,12 @@ project (
 union (
 | project (
 | | select (
-| | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2010-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2010-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -362,18 +362,18 @@ union (
 | union (
 | | project (
 | | | select (
-| | | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | | ) [ tinyint "1" ],
 | | project (
 | | | select (
-| | | | table(sys.second_decade) [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | | table("sys"."second_decade") [ "second_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | | ) [ tinyint "1" ]
 | ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
-| | | table(sys.third_decade) [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."third_decade") [ "third_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "2009-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2020-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%4"."%4" NOT NULL ]
@@ -388,7 +388,7 @@ union (
 % 125 # length
 project (
 | select (
-| | table(sys.first_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ timestamp(7) "2000-01-01 00:00:00.000000" <= "splitted"."stamp" <= timestamp(7) "2001-01-01 00:00:00.000000" BETWEEN  ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp > TIMESTAMP '1999-01-01 00:00:00' and stamp <= TIMESTAMP '2001-01-01 00:00:00'; --second and third children pruned
@@ -399,12 +399,12 @@ project (
 union (
 | project (
 | | select (
-| | | table(sys.first_decade) [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."first_decade") [ "first_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "1999-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2001-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.fourth_decade) [ "fourth_decade"."stamp" as "splitted"."stamp" ] COUNT 
+| | | table("sys"."fourth_decade") [ "fourth_decade"."stamp" as "splitted"."stamp" ] COUNT 
 | | ) [ timestamp(7) "1999-01-01 00:00:00.000000" < "splitted"."stamp" <= timestamp(7) "2001-01-01 00:00:00.000000" BETWEEN  ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -415,7 +415,7 @@ union (
 % 70 # length
 project (
 | select (
-| | table(sys.second_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."second_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" = timestamp(7) "2010-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted where stamp = TIMESTAMP '2000-01-01 00:00:00'; --only first child passes
@@ -425,7 +425,7 @@ project (
 % 70 # length
 project (
 | select (
-| | table(sys.first_decade) [ "splitted"."stamp" ] COUNT 
+| | table("sys"."first_decade") [ "splitted"."stamp" ] COUNT 
 | ) [ "splitted"."stamp" = timestamp(7) "2000-01-01 00:00:00.000000" ]
 ) [ tinyint "1" ]
 #ALTER TABLE splitted DROP TABLE second_decade;
@@ -458,33 +458,33 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 59 # length
+% 63 # length
 project (
 | select (
-| | table(sys.third_decade2) [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."third_decade2") [ "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" = int "5" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted2 where val = 1; /* nothing gets pruned */
 % .plan # table_name
 % rel # name
 % clob # type
-% 88 # length
+% 92 # length
 union (
 | union (
 | | project (
 | | | select (
-| | | | table(sys.first_decade2) [ "first_decade2"."val" as "splitted2"."val" ] COUNT 
+| | | | table("sys"."first_decade2") [ "first_decade2"."val" as "splitted2"."val" ] COUNT 
 | | | ) [ "splitted2"."val" = int "1" ]
 | | ) [ tinyint "1" ],
 | | project (
 | | | select (
-| | | | table(sys.second_decade2) [ "second_decade2"."val" as "splitted2"."val" ] COUNT 
+| | | | table("sys"."second_decade2") [ "second_decade2"."val" as "splitted2"."val" ] COUNT 
 | | | ) [ "splitted2"."val" = int "1" ]
 | | ) [ tinyint "1" ]
 | ) [ "%5"."%5" NOT NULL ],
 | project (
 | | select (
-| | | table(sys.third_decade2) [ "third_decade2"."val" as "splitted2"."val" ] COUNT 
+| | | table("sys"."third_decade2") [ "third_decade2"."val" as "splitted2"."val" ] COUNT 
 | | ) [ "splitted2"."val" = int "1" ]
 | ) [ tinyint "1" ]
 ) [ "%4"."%4" NOT NULL ]
@@ -492,10 +492,10 @@ union (
 % .plan # table_name
 % rel # name
 % clob # type
-% 60 # length
+% 64 # length
 project (
 | select (
-| | table(sys.second_decade2) [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."second_decade2") [ "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" * = int "NULL" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted2 where stamp is null and stamp in (3,4,5); --all children pruned
@@ -540,17 +540,17 @@ project (
 % 75 # length
 project (
 | select (
-| | table(sys.first_decade2) [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."first_decade2") [ "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" in (int "2" as "%2"."%2", int "1" as "%3"."%3") ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted2 where stamp in (4); --only second child passes
 % .plan # table_name
 % rel # name
 % clob # type
-% 60 # length
+% 64 # length
 project (
 | select (
-| | table(sys.second_decade2) [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."second_decade2") [ "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" = int "4" ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted2 where stamp in (5,6) and stamp in (6,7); --only third child passes
@@ -560,7 +560,7 @@ project (
 % 144 # length
 project (
 | select (
-| | table(sys.third_decade2) [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."third_decade2") [ "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" in (int "5" as "%2"."%2", int "6" as "%3"."%3"), "splitted2"."stamp" in (int "6" as "%5"."%5", int "7" as "%6"."%6") ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted2 where stamp in (5,6) and stamp > 100; --only third child passes
@@ -570,7 +570,7 @@ project (
 % 108 # length
 project (
 | select (
-| | table(sys.third_decade2) [ "splitted2"."stamp" ] COUNT 
+| | table("sys"."third_decade2") [ "splitted2"."stamp" ] COUNT 
 | ) [ "splitted2"."stamp" > int "100", "splitted2"."stamp" in (int "5" as "%2"."%2", int "6" as "%3"."%3") ]
 ) [ tinyint "1" ]
 #plan select 1 from splitted2 where stamp in (1,2,3); --all children pruned
@@ -607,36 +607,36 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 47 # length
+% 51 # length
 project (
 | select (
-| | table(sys.another1) [ "table1"."a" ] COUNT 
+| | table("sys"."another1") [ "table1"."a" ] COUNT 
 | ) [ "table1"."a" = int "10" ]
 ) [ tinyint "1" ]
 #plan select 1 from table1 where a = 11; --only second child passes
 % .plan # table_name
 % rel # name
 % clob # type
-% 47 # length
+% 51 # length
 project (
 | select (
-| | table(sys.another2) [ "table1"."a" ] COUNT 
+| | table("sys"."another2") [ "table1"."a" ] COUNT 
 | ) [ "table1"."a" = int "11" ]
 ) [ tinyint "1" ]
 #plan select 1 from table1 where a = 10 or a = 11; --nothing gets pruned
 % .plan # table_name
 % rel # name
 % clob # type
-% 67 # length
+% 71 # length
 union (
 | project (
 | | select (
-| | | table(sys.another1) [ "another1"."a" as "table1"."a" ] COUNT 
+| | | table("sys"."another1") [ "another1"."a" as "table1"."a" ] COUNT 
 | | ) [ "table1"."a" in (int "10", int "11") ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.another2) [ "another2"."a" as "table1"."a" ] COUNT 
+| | | table("sys"."another2") [ "another2"."a" as "table1"."a" ] COUNT 
 | | ) [ "table1"."a" in (int "10", int "11") ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -644,16 +644,16 @@ union (
 % .plan # table_name
 % rel # name
 % clob # type
-% 67 # length
+% 71 # length
 union (
 | project (
 | | select (
-| | | table(sys.another1) [ "another1"."a" as "table1"."a" ] COUNT 
+| | | table("sys"."another1") [ "another1"."a" as "table1"."a" ] COUNT 
 | | ) [ "table1"."a" >= int "10" ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.another2) [ "another2"."a" as "table1"."a" ] COUNT 
+| | | table("sys"."another2") [ "another2"."a" as "table1"."a" ] COUNT 
 | | ) [ "table1"."a" >= int "10" ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -661,20 +661,20 @@ union (
 % .plan # table_name
 % rel # name
 % clob # type
-% 47 # length
+% 51 # length
 project (
 | select (
-| | table(sys.another2) [ "table1"."a" ] COUNT 
+| | table("sys"."another2") [ "table1"."a" ] COUNT 
 | ) [ "table1"."a" > int "10" ]
 ) [ tinyint "1" ]
 #plan select 1 from table1 where a <= 10; --only first child passes
 % .plan # table_name
 % rel # name
 % clob # type
-% 47 # length
+% 51 # length
 project (
 | select (
-| | table(sys.another1) [ "table1"."a" ] COUNT 
+| | table("sys"."another1") [ "table1"."a" ] COUNT 
 | ) [ "table1"."a" <= int "10" ]
 ) [ tinyint "1" ]
 #plan select 1 from table1 where a between 10 and 10; --only first child passes
@@ -684,23 +684,23 @@ project (
 % 53 # length
 project (
 | select (
-| | table(sys.another1) [ "table1"."a" ] COUNT 
+| | table("sys"."another1") [ "table1"."a" ] COUNT 
 | ) [ int "10" <= "table1"."a" <= int "10" BETWEEN  ]
 ) [ tinyint "1" ]
 #plan select 1 from table1 where a = 10 or b = 11; --nothing gets pruned
 % .plan # table_name
 % rel # name
 % clob # type
-% 99 # length
+% 103 # length
 union (
 | project (
 | | select (
-| | | table(sys.another1) [ "another1"."a" as "table1"."a", "another1"."b" as "table1"."b" ] COUNT 
+| | | table("sys"."another1") [ "another1"."a" as "table1"."a", "another1"."b" as "table1"."b" ] COUNT 
 | | ) [ ("table1"."a" = int "10") or ("table1"."b" = int "11") ]
 | ) [ tinyint "1" ],
 | project (
 | | select (
-| | | table(sys.another2) [ "another2"."a" as "table1"."a", "another2"."b" as "table1"."b" ] COUNT 
+| | | table("sys"."another2") [ "another2"."a" as "table1"."a", "another2"."b" as "table1"."b" ] COUNT 
 | | ) [ ("table1"."a" = int "10") or ("table1"."b" = int "11") ]
 | ) [ tinyint "1" ]
 ) [ "%3"."%3" NOT NULL ]
@@ -721,7 +721,7 @@ project (
 % 57 # length
 project (
 | select (
-| | table(sys.another2) [ "table1"."a" ] COUNT 
+| | table("sys"."another2") [ "table1"."a" ] COUNT 
 | ) [ int "10" ! <= "table1"."a" ! <= int "10" BETWEEN  ]
 ) [ tinyint "1" ]
 #ROLLBACK;
