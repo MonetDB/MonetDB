@@ -41,7 +41,7 @@ with SQLTestCase() as tc:
     tc.execute("SET ROLE role2;").assertFailed(err_code="42000", err_message="Role (role2) missing")
 
     tc.connect(username="monetdb", password="monetdb")
-    tc.execute("GRANT non_existing_role TO alice;").assertFailed(err_code="M1M05", err_message="GRANT: Cannot grant ROLE 'non_existing_role' to user 'alice'")
+    tc.execute("GRANT non_existing_role TO alice;").assertFailed(err_code="M1M05", err_message="GRANT: no such role 'non_existing_role' or grantee 'alice'")
     tc.execute("DROP ROLE role1;").assertSucceeded()
     tc.execute("DROP ROLE role3;").assertSucceeded()
     tc.execute("DROP USER alice;").assertSucceeded()

@@ -136,12 +136,12 @@ with SQLTestCase() as mdb:
         tc.execute("UPDATE version SET name = 'test22' WHERE i = 2;").assertFailed(err_code="42000", err_message="UPDATE: insufficient privileges for user 'my_user2' to update table 'version'")
         tc.execute("DELETE FROM version WHERE name = 'test22';").assertFailed(err_code="42000", err_message="DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'version'")
         tc.execute("SELECT * FROM version;").assertFailed(err_code="42000", err_message="SELECT: access denied for my_user2 to table 'my_schema.version'")
-        tc.execute("SELECT insertversion('test4', 4);").assertSucceeded()
-        tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([('test3', 3), ('test4', 4)])
-        tc.execute("SELECT updateversion('test3', 33);").assertSucceeded()
-        tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([('test3', 33), ('test4', 4)])
-        tc.execute("SELECT deleteversion('test3');").assertSucceeded()
-        tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([('test4', 4)])
+        tc.execute("SELECT insertversion('test4', 4);").assertFailed(err_code="42000", err_message="INSERT INTO: insufficient privileges for user 'my_user2' to insert into table 'version'")
+        tc.execute("SELECT * FROM selectversion();").assertFailed(err_code="42000", err_message="SELECT: access denied for my_user2 to table 'my_schema.version'")
+        tc.execute("SELECT updateversion('test3', 33);").assertFailed(err_code="42000", err_message="UPDATE: insufficient privileges for user 'my_user2' to update table 'version'")
+        tc.execute("SELECT * FROM selectversion();").assertFailed(err_code="42000", err_message="SELECT: access denied for my_user2 to table 'my_schema.version'")
+        tc.execute("SELECT deleteversion('test3');").assertFailed(err_code="42000", err_message="DELETE FROM: insufficient privileges for user 'my_user2' to delete from table 'version'")
+        tc.execute("SELECT * FROM selectversion();").assertFailed(err_code="42000", err_message="SELECT: access denied for my_user2 to table 'my_schema.version'")
         # and my_user2 cannot create functions to operate on the table
         tc.execute("""
             create function myselect2() returns table(name varchar(10), i int)
