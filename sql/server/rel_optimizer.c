@@ -269,6 +269,8 @@ psm_exps_properties(mvc *sql, global_props *gp, list *exps)
 		psm_exp_properties(sql, gp, n->data);
 }
 
+static int exps_count(list *exps);
+
 static void
 rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 {
@@ -330,8 +332,16 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	switch (rel->op) {
 	case op_basetable:
 	case op_table:
-		if (!find_prop(rel->p, PROP_COUNT))
-			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+		if (!find_prop(rel->p, PROP_COUNT)) {
+			prop *p = rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+
+			if (mvc_debug_on(sql, 4096) && p && is_basetable(rel->op)) {
+				sql_table *t = rel->l;
+
+				if (t && isTable(t))
+					p->value = (void*)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+			}
+		}
 		break;
 	case op_join:
 	case op_left:
@@ -351,6 +361,21 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	case op_topn:
 	case op_sample:
 	case op_select:
+		if (mvc_debug_on(sql, 4096) && is_select(rel->op) && !find_prop(rel->p, PROP_COUNT)) {
+			sql_rel *l = rel->l;
+			if (l && !list_empty(rel->exps)) {
+				prop *p = find_prop(l->p, PROP_COUNT);
+				if (p && p->value) {
+					lng cnt = (lng)p->value;
+					prop *np = rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+
+					if (np) {
+						lng ec = exps_count(rel->exps);
+						np->value = (void*)((cnt+ec-1)/ec);
+					}
+				}
+			}
+		}
 		break;
 
 	case op_insert:
@@ -641,6 +666,35 @@ exps_count(list *exps)
 	return cnt;
 }
 
+static prop*
+rel_getprop(sql_rel *r)
+{
+	if (!r)
+		return NULL;
+	if(is_basetable(r->op))
+		return find_prop(r->p, PROP_COUNT);
+	if (is_select(r->op))
+		return rel_getprop(r->l);
+	return NULL;
+}
+
+static lng
+add_count_weight(sql_rel *r, lng curweight)
+{
+	if (!r)
+		return 0;
+	prop *p = rel_getprop(r);
+	if (p && p->value) {
+		lng cnt = (lng)p->value;
+		if (cnt > 100000)
+			return curweight/100;
+		if (cnt < 100)
+			return curweight*100;
+		return curweight;
+	}
+	return 0;
+}
+
 static list *
 order_join_expressions(mvc *sql, list *dje, list *rels)
 {
@@ -648,7 +702,8 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	node *n = NULL;
 	int i, *keys, cnt = list_length(dje);
 	void **data;
-	int debug = mvc_debug_on(sql, 16);
+	int use_select_exps = mvc_debug_on(sql, 16);
+	int use_table_size = mvc_debug_on(sql, 4096);
 
 	if (cnt == 0)
 		return res;
@@ -671,9 +726,13 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 			sql_rel *r = find_rel(rels, e->r);
 
 			if (l && is_select(l->op) && l->exps)
-				keys[i] += list_length(l->exps)*10 + exps_count(l->exps)*debug;
+				keys[i] += list_length(l->exps)*10 + exps_count(l->exps)*use_select_exps;
 			if (r && is_select(r->op) && r->exps)
-				keys[i] += list_length(r->exps)*10 + exps_count(r->exps)*debug;
+				keys[i] += list_length(r->exps)*10 + exps_count(r->exps)*use_select_exps;
+			if (use_table_size) {
+				keys[i] = add_count_weight(l, keys[i]);
+				keys[i] = add_count_weight(r, keys[i]);
+			}
 		}
 		data[i] = n->data;
 	}

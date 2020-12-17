@@ -1079,7 +1079,10 @@ count_col(sql_trans *tr, sql_column *c, int all)
 		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, c->base.stime);
+		if (oc)
+			c->data = timestamp_delta(oc->data, c->base.stime);
+		else
+			return 0;
 	}
 	b = c->data;
 	if (!b)

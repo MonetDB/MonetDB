@@ -98,6 +98,14 @@ propvalue2string( prop *p)
 
 			return _STRDUP(uri);
 		}
+		case PROP_COUNT: {
+			if (p->value) {
+				char buf[16];
+				lng cnt = (lng)p->value;
+				snprintf(buf, 16, LLFMT, cnt);
+				return _STRDUP(buf);
+			}
+		}
 		default:
 			break;
 		}
