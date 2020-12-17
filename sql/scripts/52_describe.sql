@@ -29,13 +29,13 @@ BEGIN
       WHEN 'date' THEN 'DATE'
       WHEN 'day_interval' THEN 'INTERVAL DAY'
       WHEN ctype = 'decimal' THEN
-	  	CASE
-			WHEN (digits = 1 AND tscale = 0) OR digits = 0 THEN 'DECIMAL'
-			WHEN tscale = 0 THEN 'DECIMAL(' || digits || ')'
-			WHEN digits = 39 THEN 'DECIMAL(' || 38 || ',' || tscale || ')'
-			WHEN digits = 19 AND (SELECT COUNT(*) = 0 FROM sys.types WHERE sqlname = 'hugeint' ) THEN 'DECIMAL(' || 18 || ',' || tscale || ')'
-			ELSE 'DECIMAL(' || digits || ',' || tscale || ')'
-		END
+  	CASE
+	  WHEN (digits = 1 AND tscale = 0) OR digits = 0 THEN 'DECIMAL'
+	  WHEN tscale = 0 THEN 'DECIMAL(' || digits || ')'
+	  WHEN digits = 39 THEN 'DECIMAL(' || 38 || ',' || tscale || ')'
+	  WHEN digits = 19 AND (SELECT COUNT(*) = 0 FROM sys.types WHERE sqlname = 'hugeint' ) THEN 'DECIMAL(' || 18 || ',' || tscale || ')'
+	  ELSE 'DECIMAL(' || digits || ',' || tscale || ')'
+	END
       WHEN 'double' THEN
 	CASE
 	  WHEN digits = 53 and tscale = 0 THEN 'DOUBLE'
