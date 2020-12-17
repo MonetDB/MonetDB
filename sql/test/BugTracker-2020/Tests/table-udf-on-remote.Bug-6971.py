@@ -64,6 +64,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
             except pymonetdb.OperationalError as e:
                 if 'to type int failed' not in str(e):
                     sys.stderr.write(str(e))
+            node2_cur.execute("select * from mudf((select sx,sxx,sxy,sy,syy,1 as \"a\"\"a\" from fofo))")
+            print(node2_cur.fetchall())
             node2_cur.execute("select * from mudf2((select * from fofo))")
             print(node2_cur.fetchall())
 

@@ -23,22 +23,22 @@ alter table mrgT add table t1
 alter table mrgT add table t2
 plan select * from repS
 project (
-| table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ]
+| table("sys"."s2") [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ]
 ) [ "reps"."i" ]
 plan select * from repS, mrgT
 union (
 | project (
 | | crossproduct (
-| | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
+| | | table("sys"."s2") [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
 | | | table (
-| | | | REMOTE(sys.t1) [ "t1"."s" as "mrgt"."s" ] REMOTE sys.t1 COUNT 
+| | | | REMOTE("sys"."t1") [ "t1"."s" as "mrgt"."s" ] REMOTE sys.t1 COUNT 
 | | | ) [ "mrgt"."s" ]
 | | ) [  ]
 | ) [ "reps"."i", "mrgt"."s" ],
 | project (
 | | crossproduct (
-| | | table(sys.s2) [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
-| | | table(sys.t2) [ "t2"."s" as "mrgt"."s" ] COUNT 
+| | | table("sys"."s2") [ "s2"."i" as "reps"."i", "s2"."%TID%" NOT NULL as "reps"."%TID%" ],
+| | | table("sys"."t2") [ "t2"."s" as "mrgt"."s" ] COUNT 
 | | ) [  ]
 | ) [ "reps"."i", "mrgt"."s" ]
 ) [ "reps"."i", "mrgt"."s" ]

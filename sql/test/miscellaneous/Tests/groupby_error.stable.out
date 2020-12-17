@@ -164,7 +164,7 @@ stdout of test 'groupby_error` in directory 'sql/test/miscellaneous` itself:
 % clob # type
 % 112 # length
 group by (
-| table(sys.tab0) [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
+| table("sys"."tab0") [ "tab0"."col0", "tab0"."col1", "tab0"."col2" ] COUNT 
 ) [ "tab0"."col2", "tab0"."col0", "tab0"."col1" ] [ "tab0"."col0", "tab0"."col1", "tab0"."col2", "tab0"."col0" ]
 #SELECT DISTINCT col0, col1, col2, col0 FROM tab0;
 % sys.tab0,	sys.tab0,	sys.tab0,	sys.tab0 # table_name
@@ -178,10 +178,10 @@ group by (
 % .plan # table_name
 % rel # name
 % clob # type
-% 59 # length
+% 63 # length
 project (
 | select (
-| | table(sys.tab2) [ "tab2"."col0", "tab2"."col2" ] COUNT 
+| | table("sys"."tab2") [ "tab2"."col0", "tab2"."col2" ] COUNT 
 | ) [ bigint["tab2"."col2"] = bigint "40" ]
 ) [ "tab2"."col0" ]
 #SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40;
@@ -576,14 +576,14 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 138 # length
+% 142 # length
 project (
 | group by (
 | | left outer join (
-| | | table(sys.tab1) [ "tab1"."part" as "myalias0"."part", "tab1"."tet" as "myalias0"."tet" ] COUNT ,
-| | | table(sys.tab2) [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" as "myalias1"."ups" ] COUNT 
+| | | table("sys"."tab1") [ "tab1"."part" as "myalias0"."part", "tab1"."tet" as "myalias0"."tet" ] COUNT ,
+| | | table("sys"."tab2") [ "tab2"."myk" as "myalias1"."myk", "tab2"."ups" as "myalias1"."ups" ] COUNT 
 | | ) [ "myalias0"."part" = "myalias1"."myk" ]
-| ) [ "myalias0"."part", "myalias0"."tet" as "track", "myalias1"."ups" ] [ "myalias0"."part", "track", sys.count() NOT NULL as "%1"."%1" ]
+| ) [ "myalias0"."part", "myalias0"."tet" as "track", "myalias1"."ups" ] [ "myalias0"."part", "track", "sys"."count"() NOT NULL as "%1"."%1" ]
 ) [ "myalias0"."part", "track" as "tet", "%1"."%1" NOT NULL as "mycount", "track" ]
 #select
 #  myalias0."part" as "part",

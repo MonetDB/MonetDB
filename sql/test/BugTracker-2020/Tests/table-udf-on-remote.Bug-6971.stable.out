@@ -10,6 +10,7 @@ stdout of test 'table-udf-on-remote.Bug-6971` in directory 'sql/test/BugTracker-
 [(0.5, 0.6)]
 [(13.0, 85.0, 98.0, 15.0, 113.0, 2)]
 [(0.5,)]
+[(0.5,)]
 [(0.5, 0.6)]
 
 # 11:17:12 >  

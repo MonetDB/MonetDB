@@ -19,37 +19,28 @@ stdout of test 'jdbc_no_debug.SF-1739356` in directory 'sql/test/BugTracker` its
 # MonetDB/SQL module loaded
 
 
-# 15:14:32 >  
-# 15:14:32 >  "./jdbc_no_debug.SF-1739356.SQL.sh" "jdbc_no_debug.SF-1739356"
-# 15:14:32 >  
-
-
-# 15:14:32 >  
-# 15:14:32 >  Mtimeout -timeout 60  java nl.cwi.monetdb.client.JdbcClient -h methuselah -p 34637 -d mTests_sql_test_BugTracker -f "../../../../../../../../scratch1/sjoerd/src/MonetDB/virgin/sql/test/BugTracker/Tests/jdbc_no_debug.SF-1739356-data.sql"
-# 15:14:32 >  
-
-+----------------------------------------------------------------------------+
++--------------------------------------------------------------------------------+
 | rel                                                                        |
-+============================================================================+
++================================================================================+
 | project (                                                                  |
 | | group by (                                                               |
 | | | union (                                                                |
 | | | | group by (                                                           |
 | | | | | project (                                                          |
 | | | | | | select (                                                         |
-| | | | | | | table(sys._tables) [ "_tables"."id", "_tables"."type" ] COUNT  |
+| | | | | | | table("sys"."_tables") [ "_tables"."id", "_tables"."type" ] COUNT  |
 | | | | | | ) [ "_tables"."type" != smallint "2" ]                           |
 | | | | | ) [ "_tables"."id" as "tables"."id" ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as "%10"."%10" ],                      |
+| | | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ],                      |
 | | | | group by (                                                           |
 | | | | | project (                                                          |
-| | | | | | table(tmp._tables) [ "_tables"."id" ] COUNT                      |
+| | | | | | table("tmp"."_tables") [ "_tables"."id" ] COUNT                      |
 | | | | | ) [ "_tables"."id" as "tables"."id" ]                              |
-| | | | ) [  ] [ sys.count() NOT NULL as "%10"."%10" ]                       |
+| | | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ]                       |
 | | | ) [ "%10"."%10" ]                                                      |
-| | ) [  ] [ sys.sum no nil ("%10"."%10") as "%10"."%10" ]                   |
+| | ) [  ] [ "sys"."sum" no nil ("%10"."%10") as "%10"."%10" ]                   |
 | ) [ "%10"."%10" NOT NULL ]                                                 |
-+----------------------------------------------------------------------------+
++--------------------------------------------------------------------------------+
 18 rows
 Operation successful
 +--------------------------------------------------------------------------------------------------------------------+
@@ -77,31 +68,31 @@ Operation successful
 |     sql.resultSet(".%10":str, "%10":str, "bigint":str, 64:int, 0:int, 7:int, X_47:lng);                            |
 | end user.main;                                                                                                     |
 | #inline               actions= 0 time=0 usec                                                                       |
-| #remap                actions= 0 time=1 usec                                                                       |
-| #costmodel            actions= 1 time=1 usec                                                                       |
-| #coercion             actions= 0 time=1 usec                                                                       |
-| #aliases              actions= 1 time=4 usec                                                                       |
-| #evaluate             actions= 0 time=4 usec                                                                       |
+| #remap                actions= 0 time=2 usec                                                                       |
+| #costmodel            actions= 1 time=2 usec                                                                       |
+| #coercion             actions= 0 time=2 usec                                                                       |
+| #aliases              actions= 1 time=7 usec                                                                       |
+| #evaluate             actions= 0 time=6 usec                                                                       |
 | #emptybind            actions= 0 time=1 usec                                                                       |
-| #pushselect           actions= 2 time=16 usec                                                                      |
-| #aliases              actions= 0 time=0 usec                                                                       |
-| #mergetable           actions= 0 time=27 usec                                                                      |
-| #deadcode             actions=14 time=7 usec                                                                       |
+| #pushselect           actions= 2 time=24 usec                                                                      |
 | #aliases              actions= 0 time=1 usec                                                                       |
-| #constants            actions= 1 time=3 usec                                                                       |
-| #commonTerms          actions= 0 time=4 usec                                                                       |
-| #projectionpath       actions= 0 time=2 usec                                                                       |
-| #deadcode             actions= 0 time=4 usec                                                                       |
-| #reorder              actions= 1 time=12 usec                                                                      |
+| #mergetable           actions= 0 time=39 usec                                                                      |
+| #deadcode             actions=14 time=17 usec                                                                      |
+| #aliases              actions= 0 time=0 usec                                                                       |
+| #constants            actions= 1 time=7 usec                                                                       |
+| #commonTerms          actions= 0 time=6 usec                                                                       |
+| #projectionpath       actions= 0 time=3 usec                                                                       |
+| #deadcode             actions= 0 time=7 usec                                                                       |
+| #reorder              actions= 1 time=33 usec                                                                      |
 | #matpack              actions= 0 time=0 usec                                                                       |
 | #multiplex            actions= 0 time=1 usec                                                                       |
 | #profiler             actions= 1 time=1 usec                                                                       |
-| #candidates           actions= 1 time=0 usec                                                                       |
-| #deadcode             actions= 0 time=4 usec                                                                       |
-| #postfix              actions= 0 time=3 usec                                                                       |
-| #wlc                  actions= 0 time=0 usec                                                                       |
-| #garbagecollector     actions= 1 time=23 usec                                                                      |
-| #total                actions=27 time=175 usec                                                                     |
+| #candidates           actions= 1 time=1 usec                                                                       |
+| #deadcode             actions= 0 time=9 usec                                                                       |
+| #postfix              actions= 0 time=4 usec                                                                       |
+| #wlc                  actions= 0 time=1 usec                                                                       |
+| #garbagecollector     actions= 1 time=32 usec                                                                      |
+| #total                actions=27 time=306 usec                                                                     |
 +--------------------------------------------------------------------------------------------------------------------+
 47 rows
 
