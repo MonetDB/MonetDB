@@ -2,6 +2,7 @@ function_privs
 role
 table
 table_privs
+view_privs
 unknown_user
 createSetUp
 withGrantOption
