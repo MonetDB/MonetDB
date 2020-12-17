@@ -1,13 +1,8 @@
+function_privs
 role
-schema
 table
+table_privs
 unknown_user
-privs
-test_privs_p1
-test_privs_p2
-privs2
-test_privs2_p1
-test_privs2_p2
 createSetUp
 withGrantOption
 columnRights
