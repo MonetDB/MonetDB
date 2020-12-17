@@ -21,7 +21,7 @@ with SQLTestCase() as tc:
         CREATE TABLE t (i INT);
     """).assertSucceeded()
 
-    tc.execute("GRANT r1 TO "+usr).assertFailed(err_code="M1M05", err_message="GRANT: Cannot grant ROLE 'r1' to user '"+usr+"'")
+    tc.execute("GRANT r1 TO "+usr).assertFailed(err_code="M1M05", err_message="GRANT: no such role 'r1' or grantee '"+usr+"'")
     tc.execute("GRANT ALL ON t TO "+usr).assertFailed(err_code="01007", err_message="GRANT: User/role '"+usr+"' unknown")
     tc.execute("GRANT COPY INTO TO "+usr).assertFailed(err_code="01007", err_message="GRANT: User/role '"+usr+"' unknown")
     tc.execute("GRANT COPY FROM TO "+usr).assertFailed(err_code="01007", err_message="GRANT: User/role '"+usr+"' unknown")
