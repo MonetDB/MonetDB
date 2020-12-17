@@ -41,3 +41,4 @@ transaction_with_unreleased_savepoint.Bug-7022
 view_with_aggr_column.Bug-7023
 delete-transaction-loose-inserts.Bug-7024
 revokeRoleUserLoggedIN.Bug-7026
+drop-table-with-auto_increment.Bug-7030

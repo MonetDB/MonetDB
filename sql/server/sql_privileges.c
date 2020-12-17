@@ -528,7 +528,7 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, role, NULL);
 	if (is_oid_nil(rid))
-		throw(SQL, "sql.grant_role", SQLSTATE(M1M05) "GRANT: Cannot grant ROLE '%s' to user '%s'", role, grantee);
+		throw(SQL, "sql.grant_role", SQLSTATE(M1M05) "GRANT: no such role '%s' or grantee '%s'", role, grantee);
 	role_id = table_funcs.column_find_sqlid(m->session->tr, auths_id, rid);
 	if (backend_find_user(m, role) >= 0)
 		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: '%s' is a USER not a ROLE", role);
@@ -536,7 +536,7 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 		throw(SQL,"sql.grant_role", SQLSTATE(0P000) "GRANT: Insufficient privileges to grant ROLE '%s'", role);
 	rid = table_funcs.column_find_row(m->session->tr, auths_name, grantee, NULL);
 	if (is_oid_nil(rid))
-		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: Cannot grant ROLE '%s' to user '%s'", role, grantee);
+		throw(SQL,"sql.grant_role", SQLSTATE(M1M05) "GRANT: no such role '%s' or grantee '%s'", role, grantee);
 	grantee_id = table_funcs.column_find_sqlid(m->session->tr, auths_id, rid);
 	rid = table_funcs.column_find_row(m->session->tr, find_sql_column(roles, "login_id"), &grantee_id, find_sql_column(roles, "role_id"), &role_id, NULL);
 	if (!is_oid_nil(rid))
