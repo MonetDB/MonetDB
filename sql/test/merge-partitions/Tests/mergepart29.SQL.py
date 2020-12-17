@@ -42,21 +42,24 @@ with tempfile.TemporaryDirectory() as farm_dir:
             node1_cur.execute('CREATE REMOTE TABLE "tb2" ("col1" int, "col2" int) ON \'mapi:monetdb://localhost:'+str(node2_port)+'/db2\';')
             try:
                 node1_cur.execute('ALTER TABLE "tb1" ADD TABLE "tb2" AS PARTITION FROM 0 TO 1;')  # error
+                sys.stderr.write('Exception expected')
             except Exception as ex:
-                sys.stderr.write(ex.__str__())
+                if 'there are values in the column col1 outside the partition range' not in str(ex):
+                    sys.stderr.write('Exception: there are values in the column col1 outside the partition range expected')
             node1_cur.execute('ALTER TABLE "tb1" ADD TABLE "tb2" AS PARTITION FROM 0 TO 100;')
             try:
                 node1_cur.execute('INSERT INTO "tb1" VALUES (4, 4)')  # TODO, inserts on remote tables
+                sys.stderr.write('Exception expected')
             except Exception as ex:
-                sys.stderr.write(ex.__str__())
+                if 'cannot insert remote table \'tb2\' from this server at the moment' not in str(ex):
+                    sys.stderr.write('Exception: cannot insert remote table \'tb2\' from this server at the moment expected')
             node1_cur.execute('SELECT "col1", "col2" FROM "tb1";')
-            output = node1_cur.fetchall()
+            if node1_cur.fetchall() != [(1, 1), (2, 2), (3, 3)]:
+                sys.stderr.write('[(1, 1), (2, 2), (3, 3)] expected')
 
             out2, err2 = node2_proc.communicate()
-            sys.stdout.write(out2)
             sys.stderr.write(err2)
-            print('\n')
+
         out1, err1 = node1_proc.communicate()
-        sys.stdout.write(out1)
         sys.stderr.write(err1)
-        print(output)
+

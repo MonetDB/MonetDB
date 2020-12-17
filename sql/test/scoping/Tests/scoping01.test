@@ -1,0 +1,279 @@
+statement ok
+create table tmp1("optimizer" integer, s string)
+
+statement ok
+insert into tmp1 values(1,'hello'),(2,'world')
+
+query I rowsort
+select "optimizer" from tmp1
+----
+1
+2
+
+query TI rowsort
+select sys."optimizer", "optimizer" from tmp1
+----
+default_pipe
+1
+default_pipe
+2
+
+statement ok
+CREATE table tmp2("optimizer" integer, s string)
+
+statement ok
+insert into tmp2 values(3,'another'),(4,'test')
+
+query II rowsort
+select tmp1."optimizer", tmp2."optimizer" from sys.tmp1, sys.tmp2
+----
+1
+3
+1
+4
+2
+3
+2
+4
+
+query I rowsort
+SELECT MAX("optimizer") FROM tmp1
+----
+2
+
+statement error
+CREATE OR REPLACE FUNCTION tests_scopes1(i INT) RETURNS INT
+BEGIN
+	DECLARE i int; --error, variable redeclaration;
+	RETURN i;
+END
+
+statement error
+SELECT tests_scopes1(vals) FROM (VALUES (1),(2),(3)) AS vals(vals)
+
+statement ok
+CREATE OR REPLACE FUNCTION tests_scopes2("optimizer" INT) RETURNS INT
+BEGIN
+	DECLARE j int;
+	SET j = "optimizer";
+	RETURN j;
+END
+
+query I rowsort
+SELECT tests_scopes2(vals) FROM (VALUES (1),(2),(3)) AS vals(vals)
+----
+1
+2
+3
+
+statement error
+with a("optimizer") as (select 4) select "optimizer" from tmp1, a
+
+statement ok
+DROP TABLE tmp1
+
+statement ok
+DROP TABLE tmp2
+
+statement error
+DROP FUNCTION tests_scopes1(INT)
+
+statement ok
+DROP FUNCTION tests_scopes2(INT)
+
+statement error
+DECLARE "current_schema" string
+
+statement error
+DECLARE "sys"."current_schema" string
+
+statement error
+with a(a) as (select 1), a(a) as (select 2) select 1
+
+query I rowsort
+with a(a) as (with a(a) as (select 1) select 2) select a from a
+----
+2
+
+statement ok
+CREATE OR REPLACE FUNCTION tests_scopes3(input INT) RETURNS STRING
+BEGIN
+	IF input = 1 THEN
+		DECLARE "optimizer" string; --allowed
+		SET "optimizer" = 'anything';
+	END IF;
+	RETURN SELECT "optimizer";
+END
+
+query TT rowsort
+SELECT tests_scopes3(0), tests_scopes3(1)
+----
+default_pipe
+default_pipe
+
+statement ok
+SET "optimizer" = 'default_pipe'
+
+statement ok
+DROP FUNCTION tests_scopes3(INT)
+
+statement error
+create function tests_scopes4() returns int begin declare table y (a int, b int); return select y; end
+
+statement error
+create function tests_scopes4() returns table (i integer, s string) begin return select tmp2; end
+
+statement ok
+CREATE table tmp2(i integer, s string)
+
+statement ok
+insert into tmp2 values(3,'another'),(4,'test')
+
+statement ok
+create function tests_scopes4() returns table (i integer, s string) begin return tmp2; end
+
+query IT rowsort
+select * from tests_scopes4()
+----
+3
+another
+4
+test
+
+statement error
+DROP TABLE tmp2
+
+statement ok
+DROP FUNCTION tests_scopes4
+
+statement ok
+DROP TABLE tmp2
+
+statement ok
+CREATE OR REPLACE FUNCTION scoping(input INT) RETURNS INT
+BEGIN
+	DECLARE x int;
+	SET x = 1;
+	IF input = 2 THEN
+		DECLARE x int;
+		SET x = 2;
+	ELSE
+		IF input = 3 THEN
+			SET x = 3;
+		END IF;
+	END IF;
+	RETURN x;
+END
+
+query I rowsort
+SELECT scoping(vals) FROM (VALUES (1),(2),(3)) AS vals(vals)
+----
+1
+1
+3
+
+statement ok
+DROP FUNCTION scoping(INT)
+
+statement ok
+CREATE OR REPLACE FUNCTION scoping2(input INT) RETURNS INT
+BEGIN
+	DECLARE TABLE z (a int);
+	INSERT INTO z VALUES (1);
+	IF input = 2 THEN
+		DECLARE TABLE z (a int);
+		INSERT INTO z VALUES (2);
+	ELSE
+		IF input = 3 THEN
+			TRUNCATE z;
+			INSERT INTO z VALUES (3);
+		END IF;
+	END IF;
+	RETURN SELECT a FROM z;
+END
+
+query I rowsort
+SELECT scoping2(vals) FROM (VALUES (1),(2),(3),(4)) AS vals(vals)
+----
+1
+1
+1
+3
+
+statement error
+CREATE OR REPLACE FUNCTION scoping2(input INT) RETURNS INT
+BEGIN
+	IF input = 2 THEN
+		DECLARE TABLE z (a int);
+		DECLARE TABLE z (a int); --error, redifinition on the same scope level
+	END IF;
+	RETURN SELECT a FROM z;
+END
+
+statement ok
+DROP FUNCTION scoping2(INT)
+
+statement ok
+CREATE TABLE atest (a int)
+
+statement ok
+INSERT INTO atest VALUES (1)
+
+statement ok
+CREATE OR REPLACE FUNCTION scoping3() RETURNS TABLE(a int)
+BEGIN
+	DECLARE TABLE atest (a int); -- allowed, the table atest from scoping3 is unrelated to "atest" from the global scope
+	INSERT INTO atest VALUES (2);
+	RETURN atest;
+END
+
+query I rowsort
+SELECT a FROM atest
+----
+1
+
+query I rowsort
+SELECT a FROM scoping3()
+----
+2
+
+statement error
+CREATE OR REPLACE FUNCTION scoping4() RETURNS TABLE(a int)
+BEGIN
+	DECLARE tableydoesntexist int;
+	RETURN tableydoesntexist; --error, no table named "tableydoesntexist" exists
+END
+
+statement error
+CREATE OR REPLACE FUNCTION scoping4() RETURNS TABLE(a int)
+BEGIN
+	DECLARE TABLE mytable (a int);
+	RETURN mytable, mytable; --error, cannot return two tables (we get an parser error which is also fine)
+END
+
+statement error
+CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
+BEGIN
+	RETURN idontexist; --error, no variable named "idontexist" exists
+END
+
+statement error
+CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
+BEGIN
+	DECLARE idoexist int;
+	RETURN idoexist, idoexist; --error, cannot return two variables  (we get an parser error which is also fine)
+END
+
+statement error
+CREATE OR REPLACE FUNCTION scoping4() RETURNS INT
+BEGIN
+	DECLARE TABLE z (a int);
+	RETURN VALUES (z); --error, there's no declared variable z on the scope
+END
+
+statement ok
+DROP TABLE atest
+
+statement ok
+DROP FUNCTION scoping3
+

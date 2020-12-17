@@ -30,7 +30,8 @@ class Client(threading.Thread):
         self.result = cursor.fetchall()
 
     def output(self):
-        print("(%d, %s)" % (self.client, self.result))
+        if self.result != [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)]:
+            sys.stderr.write('[(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)] expected')
 
 def main():
         C = []

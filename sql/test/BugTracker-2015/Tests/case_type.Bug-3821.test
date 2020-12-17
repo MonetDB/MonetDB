@@ -1,0 +1,6 @@
+query I rowsort
+    select case when 1 then 2 else 3 end
+----
+2
+
+

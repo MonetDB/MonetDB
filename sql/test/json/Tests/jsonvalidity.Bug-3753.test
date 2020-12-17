@@ -1,0 +1,175 @@
+query T rowsort
+SELECT json.isvalid('[0,1]')
+----
+True
+
+query T rowsort
+SELECT json.isvalid('[0,,1]')
+----
+False
+
+query T rowsort
+SELECT json.isValid(null)
+----
+NULL
+
+query T rowsort
+SELECT json.isValid('')
+----
+False
+
+query T rowsort
+SELECT json.isValid('null')
+----
+True
+
+query T rowsort
+SELECT json.isValid('"')
+----
+False
+
+query T rowsort
+SELECT json.isValid('""')
+----
+True
+
+query T rowsort
+SELECT json.isValid('"""')
+----
+False
+
+query T rowsort
+SELECT json.isValid(E'"\\""')
+----
+True
+
+query T rowsort
+SELECT json.isValid('""""')
+----
+False
+
+query T rowsort
+SELECT json.isValid(E'"\\"\\""')
+----
+True
+
+query T rowsort
+SELECT json.isValid('[]')
+----
+True
+
+query T rowsort
+SELECT json.isValid('[null]')
+----
+True
+
+query T rowsort
+SELECT json.isValid('[""]')
+----
+True
+
+query T rowsort
+SELECT json.isValid('["""]')
+----
+False
+
+query T rowsort
+SELECT json.isValid(E'["\\""]')
+----
+True
+
+query T rowsort
+SELECT json.isValid('[""""]')
+----
+False
+
+query T rowsort
+SELECT json.isValid(E'["\\"\\""]')
+----
+True
+
+query T rowsort
+SELECT json.isValid('{}')
+----
+True
+
+query T rowsort
+SELECT json.isValid('{"test":null}')
+----
+True
+
+query T rowsort
+SELECT json.isValid('{"test":""}')
+----
+True
+
+query T rowsort
+SELECT json.isValid('{"test":"""}')
+----
+False
+
+query T rowsort
+SELECT json.isValid(E'{"test":"\\""}')
+----
+True
+
+query T rowsort
+SELECT json.isValid('{"test":""""}')
+----
+False
+
+query T rowsort
+SELECT json.isValid(E'{"test":"\\"\\""}')
+----
+True
+
+query T rowsort
+SELECT json.isValid(R'"\u003c\""')
+----
+True
+
+query T rowsort
+SELECT json.isValid(R'01')
+----
+False
+
+query T rowsort
+SELECT json.isValid(R'[01]')
+----
+False
+
+query T rowsort
+SELECT json.isValid(r'0.001')
+----
+True
+
+query T rowsort
+SELECT json.isValid(r'-0.001')
+----
+True
+
+query T rowsort
+SELECT json.isValid(r'0.001e12')
+----
+True
+
+query T rowsort
+SELECT json.isValid(r'-0.001e-12')
+----
+True
+
+query T rowsort
+SELECT json.isValid(r'1290345')
+----
+True
+
+query T rowsort
+SELECT json.isValid(r'{"foo": 90}')
+----
+True
+
+query T rowsort
+SELECT json.isValid(r'{"foo": 9}')
+----
+True
+

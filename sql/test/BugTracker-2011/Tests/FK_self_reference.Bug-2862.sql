@@ -10,4 +10,4 @@ COPY 2 RECORDS INTO "device" FROM stdin USING DELIMITERS ',',E'\n','"';
 SELECT * FROM "device";
 ALTER TABLE "device" ADD CONSTRAINT "device_device_fk" FOREIGN KEY ("parentdeviceid") REFERENCES "device" ("deviceid");
 SELECT * FROM "device";
---COMMIT;
+ROLLBACK;

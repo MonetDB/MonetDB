@@ -60,10 +60,19 @@ stdout of test 'mserver-creates-but-not-accept-column-types-decimal19-decimal39.
 #CREATE TABLE bar (name CHAR(8), ct INTEGER, ct2 INTEGER);
 #INSERT INTO bar VALUES ('A', 123, 456);
 [ 1	]
-#CREATE TABLE foo AS SELECT SUM(ct + ct2) / 100.0 AS eur FROM bar GROUP BY name WITH DATA;
-CREATE TABLE "sys"."foo" (
-	"eur" DECIMAL(18,3)
-);
+#CREATE TABLE foo AS SELECT cast(SUM(ct + ct2) as bigint) / 100.0 AS eur FROM bar GROUP BY name WITH DATA;
+#select "name", "query", "type", "remark" from describe_table('sys', 'foo');
+% .%3,	.%3,	.%3,	.%3 # table_name
+% name,	query,	type,	remark # name
+% clob,	clob,	clob,	clob # type
+% 3,	0,	5,	0 # length
+[ "foo",	NULL,	"TABLE",	NULL	]
+#select * from describe_columns('sys', 'foo');
+% .%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3,	.%3 # table_name
+% name,	type,	digits,	scale,	nulls,	cdefault,	number,	remark # name
+% clob,	clob,	int,	int,	boolean,	clob,	int,	clob # type
+% 3,	7,	2,	1,	5,	0,	1,	0 # length
+[ "eur",	"decimal",	23,	3,	true,	NULL,	0,	NULL	]
 #DROP TABLE foo;
 #DROP TABLE bar;
 

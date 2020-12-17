@@ -1,0 +1,31 @@
+statement ok
+CREATE SCHEMA library
+
+statement ok
+CREATE TABLE library.orders(price int, name VARCHAR(100))
+
+statement ok
+CREATE ROLE bankAdmin
+
+statement ok
+CREATE SCHEMA bank AUTHORIZATION bankAdmin
+
+statement ok
+CREATE TABLE bank.accounts(nr int, name VARCHAR(100))
+
+statement ok
+CREATE TABLE bank.loans(nr int, amount int)
+
+statement ok
+CREATE USER alice WITH PASSWORD 'alice' name 'alice' schema library
+
+statement ok
+CREATE USER april WITH PASSWORD 'april' name 'april' schema bank
+
+statement ok
+GRANT ALL ON bank.accounts to april
+
+statement ok
+GRANT bankAdmin to april
+
+

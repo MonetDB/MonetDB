@@ -1,0 +1,744 @@
+query I rowsort
+select 1 where false
+----
+
+query I rowsort
+select 1 where true
+----
+1
+
+query I rowsort
+select (select 1 where false)
+----
+NULL
+
+query I rowsort
+select (select 1 where true)
+----
+1
+
+query I rowsort
+select (select (select 1 where true) where false)
+----
+NULL
+
+query I rowsort
+select (select (select 1 where false) where true)
+----
+NULL
+
+query I rowsort
+select (select (select 1 where true) where true)
+----
+1
+
+query I rowsort
+select (select (select 1 where false) where false)
+----
+NULL
+
+query I rowsort
+select count(*) having -1 > 0
+----
+
+query I rowsort
+select cast(sum(42) as bigint) group by 1
+----
+42
+
+query I rowsort
+select cast(sum(42) as bigint) limit 2
+----
+42
+
+query I rowsort
+select cast(sum(42) as bigint) having 42>80
+----
+
+query I rowsort
+select 1 having false
+----
+
+query I rowsort
+select 1 having true
+----
+1
+
+query R rowsort
+select -NULL
+----
+NULL
+
+statement ok
+create table x (x interval second, y interval month)
+
+statement ok
+insert into x values (interval '1' second, interval '1' month)
+
+statement error
+select cast(x as date) from x
+
+query T rowsort
+select cast(x as time) from x
+----
+00:00:01
+
+statement error
+select cast(x as timestamp) from x
+
+statement error
+select cast(x as real) from x
+
+statement error
+select cast(x as double) from x
+
+statement error
+select cast(x as decimal) from x
+
+statement error
+select cast(y as date) from x
+
+statement error
+select cast(y as time) from x
+
+statement error
+select cast(y as timestamp) from x
+
+statement error
+select cast(y as real) from x
+
+statement error
+select cast(y as double) from x
+
+statement error
+select cast(y as decimal) from x
+
+statement ok
+insert into x values (null, null)
+
+statement error
+select cast(x as date) from x
+
+query T rowsort
+select cast(x as time) from x
+----
+00:00:01
+NULL
+
+statement error
+select cast(x as timestamp) from x
+
+statement error
+select cast(x as real) from x
+
+statement error
+select cast(x as double) from x
+
+statement error
+select cast(x as decimal) from x
+
+statement error
+select cast(y as date) from x
+
+statement error
+select cast(y as time) from x
+
+statement error
+select cast(y as timestamp) from x
+
+statement error
+select cast(y as real) from x
+
+statement error
+select cast(y as double) from x
+
+statement error
+select cast(y as decimal) from x
+
+statement ok
+drop table x
+
+statement ok
+create table x (x time, y date, z timestamp, w real, a double, b decimal)
+
+statement ok
+insert into x values (null, null, null, null, null, null)
+
+statement error
+select cast(x as interval second) from x
+
+statement error
+select cast(x as interval month) from x
+
+statement error
+select cast(y as interval second) from x
+
+statement error
+select cast(y as interval month) from x
+
+statement error
+select cast(z as interval second) from x
+
+statement error
+select cast(z as interval month) from x
+
+statement error
+select cast(w as interval second) from x
+
+statement error
+select cast(w as interval month) from x
+
+statement error
+select cast(a as interval second) from x
+
+statement error
+select cast(a as interval month) from x
+
+statement error
+select cast(b as interval second) from x
+
+statement error
+select cast(b as interval month) from x
+
+statement ok
+drop table x
+
+query IIIIIIIIIIIIRRRRIIII rowsort
+select difference('foobar', 'oobar'), difference(NULL, 'oobar'), difference('foobar', NULL), difference(NULL, NULL),
+       editdistance('foobar', 'oobar'), editdistance(NULL, 'oobar'), editdistance('foobar', NULL), editdistance(NULL, NULL),
+       editdistance2('foobar', 'oobar'), editdistance2(NULL, 'oobar'), editdistance2('foobar', NULL), editdistance2(NULL, NULL),
+       similarity('foobar', 'oobar'), similarity(NULL, 'oobar'), similarity('foobar', NULL), similarity(NULL, NULL),
+       levenshtein('foobar', 'oobar'), levenshtein(NULL, 'oobar'), levenshtein('foobar', NULL), levenshtein(NULL, NULL)
+----
+1
+NULL
+NULL
+NULL
+1
+NULL
+NULL
+NULL
+1
+NULL
+NULL
+NULL
+0.909
+NULL
+NULL
+NULL
+1
+NULL
+NULL
+NULL
+
+query RTIIIIII rowsort
+select avg(10), avg(NULL),
+       patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL),
+       "hash"(null)
+----
+10.000
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+NULL
+
+statement error
+select "idontexist"."idontexist"()
+
+statement error
+select "idontexist"."idontexist"(1)
+
+statement error
+select "idontexist"."idontexist"(1,2)
+
+statement error
+select "idontexist"."idontexist"(1,2,3)
+
+statement error
+select "idontexist".SUM(1)
+
+statement error
+select * from "idontexist"."idontexist"()
+
+statement error
+select * from "idontexist"."idontexist"(1)
+
+statement error
+call "idontexist"."idontexist"()
+
+statement error
+call "idontexist"."idontexist"(1)
+
+statement error
+select "idontexist"."idontexist"(1) over ()
+
+statement error
+select cast(true as interval second)
+
+statement error
+select cast(true as interval month)
+
+statement error
+select cast(cast(1 as interval second) as boolean)
+
+statement error
+select cast(cast(1 as interval month) as boolean)
+
+query T rowsort
+select cast(null as blob) > cast(null as blob)
+----
+NULL
+
+query T rowsort
+select substring('abc' from 1 for null)
+----
+NULL
+
+query T rowsort
+select substring('abc' from null for 2)
+----
+NULL
+
+query T rowsort
+select substring('abc' from null for null)
+----
+NULL
+
+statement error
+CREATE FUNCTION count(input INT) RETURNS INT BEGIN RETURN SELECT 1; END
+
+statement error
+CREATE AGGREGATE sin(input REAL) RETURNS REAL EXTERNAL NAME "mmath"."sin"
+
+query IIII rowsort
+select length(myblob), octet_length(myblob), length(mystr), octet_length(mystr)
+from (values (cast(null as blob), cast(null as char(32)))) as my(myblob, mystr)
+----
+NULL
+NULL
+NULL
+NULL
+
+query T rowsort
+select md5(null)
+----
+NULL
+
+query TTTTTTTTTTTT rowsort
+select 'a' like null, null like 'a', null like null, 'a' ilike null, null ilike 'a', null ilike null,
+       'a' not like null, null not like 'a', null not like null, 'a' not ilike null, null not ilike 'a', null not ilike null; --all NULL
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+statement ok
+create table x (x varchar(32))
+
+statement ok
+insert into x values (null), ('a')
+
+query TTTTTTTTTTTT rowsort
+select x like null, null like x, null like null, x ilike null, null ilike x, null ilike null,
+       x not like null, null not like x, null not like null, x not ilike null, null not ilike x, null not ilike null from x
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query T rowsort
+select x like null from x
+----
+NULL
+NULL
+
+query TTTT rowsort
+select x like x, x ilike x, x not like x, x not ilike x from x
+----
+NULL
+NULL
+NULL
+NULL
+True
+True
+False
+False
+
+query T rowsort
+select x1.x from x x1 inner join x x2 on x1.x not like x2.x
+----
+
+query I rowsort
+select i from (values (1),(2),(3),(NULL)) as integers(i) where not cast(i as varchar(32)) like null
+----
+
+statement ok
+drop table x
+
+statement error
+create table x (x int null not null)
+
+statement error
+create table x (a int default '1' GENERATED ALWAYS AS IDENTITY)
+
+statement ok
+create table myvar (m bigint)
+
+statement ok
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences))
+
+statement ok
+create table x (a int GENERATED ALWAYS AS IDENTITY)
+
+statement ok
+alter table x alter a set default 1
+
+query I rowsort
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences
+----
+0
+
+statement ok
+drop table myvar
+
+statement ok
+drop table x
+
+statement ok
+create table myvar (m bigint)
+
+statement ok
+INSERT INTO myvar VALUES ((SELECT COUNT(*) FROM sequences))
+
+statement ok
+create table x (a int GENERATED ALWAYS AS IDENTITY)
+
+statement ok
+alter table x alter a drop default
+
+query I rowsort
+SELECT CAST(COUNT(*) - (SELECT m FROM myvar) AS BIGINT) FROM sequences
+----
+0
+
+statement ok
+drop table myvar
+
+statement ok
+drop table x
+
+statement error
+create function myudf() returns int
+begin
+declare myvar int;
+SELECT 1, 2 INTO myvar; --error, number of variables don't match
+return 1;
+end
+
+statement ok
+create table x (a int)
+
+statement error
+create table x (c int)
+
+statement ok
+drop table if exists x
+
+statement ok
+create table myx (a boolean)
+
+statement ok
+create table myy (a interval second)
+
+statement error
+select * from myx natural full outer join myy
+
+statement ok
+drop table myx
+
+statement ok
+drop table myy
+
+statement error
+create view iambad as select * from _tables sample 10
+
+statement error
+set "current_timezone" = null
+
+statement error
+set "current_timezone" = interval '111111111' second
+
+statement error
+set "current_timezone" = 11111111111111
+
+statement error
+set "current_schema" = null
+
+query T rowsort
+select greatest(null, null)
+----
+NULL
+
+query T rowsort
+select sql_min(null, null)
+----
+NULL
+
+statement ok
+start transaction
+
+statement ok
+create table tab1(col1 blob default blob '1122')
+
+statement ok
+insert into tab1 values('2233')
+
+query I rowsort
+select length(col1) from tab1
+----
+2
+
+statement ok
+insert into tab1 values(null), (null), ('11'), ('2233')
+
+query I rowsort
+select length(col1) from tab1
+----
+1
+2
+2
+NULL
+NULL
+
+statement ok
+insert into tab1 values(default)
+
+query T rowsort
+select col1 from tab1
+----
+11
+1122
+2233
+2233
+NULL
+NULL
+
+statement ok
+rollback
+
+statement error
+select 'a' like 'a' escape 'a'
+
+query T rowsort
+select cast(x as interval second) from (values ('1'), (NULL), ('100'), (NULL)) as x(x)
+----
+0:00:01
+0:01:40
+NULL
+NULL
+
+query T rowsort
+select cast(x as interval month) from (values ('1'), (NULL), ('100'), (NULL)) as x(x)
+----
+1
+100
+NULL
+NULL
+
+statement error
+select cast(92233720368547750 as interval month)
+
+statement error
+select cast(92233720368547750 as interval second)
+
+statement ok
+start transaction
+
+statement ok
+CREATE VIEW myv AS
+SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, fk.name AS fk_name
+  FROM sys.tables AS t, sys.keys AS k, sys.keys AS fk
+ WHERE fk.rkey = k.id and k.table_id = t.id
+ ORDER BY t.schema_id, t.name, fk.name
+
+query IITT rowsort
+select * from myv limit 1
+----
+
+statement ok
+rollback
+
+query II rowsort
+select * from (select 1 as c0, 2 as c0) as sub
+----
+1
+2
+
+query T rowsort
+select cast(interval '3' second as clob)
+----
+3.000
+
+statement error
+select cast(13121 as varchar(2147483647)) || cast(231231 as varchar(2147483647))
+
+query T rowsort
+select date_to_str(date '2010-01-10','%y/%m/%d')
+----
+10/01/10
+
+query T rowsort
+select date_to_str(a,'%y/%m/%d') from (values (date '2012-02-11'), (date '2012-02-12'),(date '2012-02-13')) as a(a)
+----
+12/02/11
+12/02/12
+12/02/13
+
+query II rowsort
+select x as z, 2 from (select 1) as x(x) order by z, z
+----
+1
+2
+
+query II rowsort
+select x as z, 2 from (select 1) as x(x) group by z, z
+----
+1
+2
+
+query T nosort
+plan select x as z, 2 from (select 1) as x(x) group by z, z
+----
+project (
+| group by (
+| | project (
+| | |  [ boolean "true" ]
+| | ) [ tinyint "1" as "x"."x" ]
+| ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
+) [ "z" NOT NULL, tinyint "2" ]
+
+statement error
+select x as z, y as z from (select 1, 2) as x(x,y) group by z
+
+statement error
+select x as z, y as z from (select 1, 2) as x(x,y) order by z
+
+query IT rowsort
+select 1, null except select 1, null
+----
+
+query IT rowsort
+select 1, null intersect select 1, null
+----
+1
+NULL
+
+statement ok
+start transaction
+
+statement ok
+create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end
+
+query I rowsort
+select ups()
+----
+2
+
+statement ok
+create or replace function ups() returns int begin while 1 = 1 do if null is null then return 1; else return 2; end if; end while; end
+
+query I rowsort
+select ups()
+----
+1
+
+statement ok
+create or replace function ups() returns int begin declare a int; set a = 2; while a < 2 do if null is null then return 3; else set a = 2; end if; end while; end
+
+query I rowsort
+select ups()
+----
+3
+
+statement error
+create or replace function ups() returns int begin if 1 > 1 then return 1; end if; end
+
+statement ok
+rollback
+
+statement error
+create or replace function ups() returns int begin declare a int; while 1 = 1 do set a = 2; end while; end
+
+statement error
+create or replace function ups(v int) returns int begin declare a int; case v when 1 then return 100; when 2 then set a = 2; else return -1; end case; end
+
+statement ok
+start transaction
+
+statement ok
+create function "😀"() returns int return 1
+
+query I rowsort
+select "😀"()
+----
+1
+
+statement ok
+CREATE FUNCTION ups() RETURNS INT
+BEGIN
+	DECLARE "nononononononononononononononononononononononononononononononono" int;
+	RETURN "nononononononononononononononononononononononononononononononono";
+END
+
+statement ok
+select ups()
+
+statement ok
+create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
+
+statement ok
+select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"()
+
+statement ok
+create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3
+
+statement ok
+select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
+
+statement ok
+rollback
+
+

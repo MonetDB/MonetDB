@@ -1,0 +1,37 @@
+statement ok
+create table nosql(j json)
+
+statement ok
+insert into  nosql values
+	('{}'),
+	('{"f1":1}'),
+	('{"f1":1,"f2":2}'),
+	('{"f1":1,"f2":2,"f1":3}'),
+	('{"f1":{"f12":3},"f2":[2,3,4]}')
+
+statement ok
+insert into nosql values('[1,"f2", 2]')
+
+query T rowsort
+select * from nosql
+----
+[1,"f2", 2]
+{"f1":1,"f2":2,"f1":3}
+{"f1":1,"f2":2}
+{"f1":1}
+{"f1":{"f12":3},"f2":[2,3,4]}
+{}
+
+query I rowsort
+select json.length(j) from nosql
+----
+0
+1
+2
+2
+3
+3
+
+statement ok
+drop table nosql
+

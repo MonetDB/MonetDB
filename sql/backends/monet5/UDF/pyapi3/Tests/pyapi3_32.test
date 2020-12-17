@@ -1,0 +1,41 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION pyapi32_gentbl() RETURNS TABLE(i TINYINT) LANGUAGE PYTHON {
+	return { 'i': numpy.arange(100) }
+}
+
+statement error
+CREATE FUNCTION pyapi32_function(i INTEGER) RETURNS INTEGER LANGUAGE PYTHON {
+	return i * 2
+
+statement error
+}
+
+statement error
+CREATE FUNCTION pyapi32_function_mapped(i INTEGER) RETURNS INTEGER LANGUAGE PYTHON_MAP {
+	return i * 2
+
+statement error
+}
+
+statement error
+CREATE TABLE integers AS SELECT * FROM pyapi32_gentbl() WITH DATA
+
+statement error
+SELECT pyapi32_function(i) FROM integers
+
+statement error
+SELECT pyapi32_function(i) FROM integers WHERE i > 50
+
+statement error
+SELECT pyapi32_function_mapped(i) FROM integers
+
+statement error
+SELECT pyapi32_function_mapped(i) FROM integers WHERE i > 50
+
+statement ok
+ROLLBACK
+
+

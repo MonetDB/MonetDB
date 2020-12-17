@@ -87,7 +87,6 @@ language C
             result->data[i].date.year = d.data[i].date.year + 1;
             result->data[i].date.month = d.data[i].date.month;
             result->data[i].date.day = d.data[i].date.day;
-
             result->data[i].time.hours = (i + 1234) % 24;
             result->data[i].time.minutes = (i + 1234) % 60;
             result->data[i].time.seconds = (i + 1234) % 60;

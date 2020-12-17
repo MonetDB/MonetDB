@@ -1,0 +1,11 @@
+query T rowsort
+select '  '
+----
+  
+
+query T rowsort
+select '  ﻿'
+----
+  @
+
+

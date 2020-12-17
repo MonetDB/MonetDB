@@ -74,34 +74,6 @@ stdout of test 'sqlsmith.Bug-6459` in directory 'sql/test/mergetables` itself:
 % c0 # name
 % int # type
 % 1 # length
-#select
-#  cast(coalesce(cast(coalesce(subq_0.c0,
-#      subq_0.c0) as clob),
-#    subq_0.c0) as clob) as c0,
-#  subq_0.c3 as c1,
-#  subq_0.c1 as c2,
-#  subq_0.c2 as c3,
-#  subq_0.c1 as c4,
-#  subq_0.c2 as c5,
-#  subq_0.c1 as c6,
-#  subq_0.c2 as c7,
-#  subq_0.c0 as c8,
-#  subq_0.c2 as c9,
-#  subq_0.c3 as c10
-#from
-#  (select
-#        ref_0.z as c0,
-#        ref_0.x as c1,
-#        case when false then ref_0.x else ref_0.x end
-#           as c2,
-#        case when EXISTS (
-#            select
-#                ref_0.x as c0,
-#                ref_1.type as c1,
-% .,	.,	.,	.,	.,	.,	.,	.,	.,	.,	. # table_name
-% c0,	c1,	c2,	c3,	c4,	c5,	c6,	c7,	c8,	c9,	c10 # name
-% clob,	int,	int,	int,	int,	int,	int,	int,	clob,	int,	int # type
-% 0,	1,	1,	1,	1,	1,	1,	1,	0,	1,	1 # length
 
 # 18:45:51 >  
 # 18:45:51 >  "Done."

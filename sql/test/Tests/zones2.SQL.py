@@ -1,19 +1,9 @@
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from MonetDBtesting.sqltest import SQLTestCase
 
-def main():
-    with process.client('sql',
-                        args = [os.path.join(os.getenv('TSTSRCBASE'),
-                                             os.getenv('TSTDIR'),
-                                             'Tests',
-                                             'zones2.sql')],
-                        stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as c:
-        out, err = c.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
+def zones():
+    with SQLTestCase() as tc:
+        tc.connect(username="monetdb", password="monetdb")
+        tc.execute('select degrees(-0.1)').assertSucceeded().assertValue(0, 0, -5.729577951308233)
 
-main()
-main()
+zones()
+zones()

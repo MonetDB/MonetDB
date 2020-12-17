@@ -1,0 +1,34 @@
+statement ok
+create table jsoncomp(j json)
+
+statement ok
+insert into jsoncomp values( '{"myBoolean":true,"myList":["a","b"],"myMap":{"c":"d","a":"b"},"myObject":"myClass","myJsonObject":{"myString":"myStringValue"}}')
+
+query T rowsort
+select * from jsoncomp
+----
+{"myBoolean":true,"myList":["a","b"],"myMap":{"c":"d","a":"b"},"myObject":"myClass","myJsonObject":{"myString":"myStringValue"}}
+
+query T rowsort
+select json.keyarray('{"myBoolean":true,"myList":["a","b"],"myMap":{"c":"d","a":"b"},"myObject":"myClass","myJsonObject":{"myString":"myStringValue"}}')
+----
+["myBoolean","myList","myMap","myObject","myJsonObject"]
+
+query T rowsort
+select json.valuearray('{"myBoolean":true,"myList":["a","b"],"myMap":{"c":"d","a":"b"},"myObject":"myClass","myJsonObject":{"myString":"myStringValue"}}')
+----
+[true,["a","b"],{"c":"d","a":"b"},"myClass",{"myString":"myStringValue"}]
+
+query T rowsort
+select json.keyarray(j) from jsoncomp
+----
+["myBoolean","myList","myMap","myObject","myJsonObject"]
+
+query T rowsort
+select json.valuearray(j) from jsoncomp
+----
+[true,["a","b"],{"c":"d","a":"b"},"myClass",{"myString":"myStringValue"}]
+
+statement ok
+drop table jsoncomp
+

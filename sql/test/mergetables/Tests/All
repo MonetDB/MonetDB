@@ -13,23 +13,18 @@ mergekey
 crash0
 mergedropcrash
 mergedrop1
-mergedrop2
 mergemergeload
 KNOWNFAIL?singlekeyconstraint
 part-elim
 mergedropcascade
 addtable
-HAVE_PYMONETDB?transaction-conflict
+transaction-conflict
 
-mergedb_create
-HAVE_NETCDF?sqlsmith.Bug-6451
-HAVE_NETCDF?sqlsmith.Bug-6453
+HAVE_NETCDF&HAVE_NETCDF?mergedb_create
 HAVE_GEOM?sqlsmith.Bug-6459
-HAVE_NETCDF?sqlsmith-exist-lateral
-HAVE_NETCDF?sqlsmith-apply-outer-join-or
 HAVE_NETCDF?sqlsmith.Bug-6472
-sqlsmith.Bug-6480
+
 sqlsmith-exists
 sqlsmith-exists2
-mergedb_drop
+
 mergetable_rel_push_aggr_down

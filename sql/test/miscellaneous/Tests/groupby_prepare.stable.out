@@ -1,0 +1,151 @@
+#CREATE TABLE tab0(col0 INTEGER, col1 INTEGER, col2 INTEGER);
+#INSERT INTO tab0 VALUES(97,1,99), (15,81,47), (87,21,10);
+[ 3	]
+#prepare select col0 from tab0 where (?) in (select col0 from tab0);
+#prepare select col0 from tab0 where (?) in (select col0 from tab0);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
+#prepare select col0 from tab0 where (?,?) in (select col0,col1 from tab0);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0);
+#prepare select col0 from tab0 where (col1,col1) in (select col0,? from tab0);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0);
+#prepare select col0 from tab0 where (col1,col1) in (select ?,? from tab0);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 from tab0 where (col0) in (?);
+#prepare select col0 from tab0 where (col0) in (?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 from tab0 where (col0) in (?,?);
+#prepare select col0 from tab0 where (col0) in (?,?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	4,	4 # length
+[ "int",	32,	0,	"",	"tab0",	"col0"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;
+#prepare select ? < ANY (select max(col0) from tab0) from tab0 t1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%4",	"%4"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select col0 = ALL (select ? from tab0) from tab0 t1;
+#prepare select col0 = ALL (select ? from tab0) from tab0 t1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%4",	"%4"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#prepare select 1 from tab0 where 1 between ? and ?;
+#prepare select 1 from tab0 where 1 between ? and ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select 1 from tab0 where ? between 1 and ?;
+#prepare select 1 from tab0 where ? between 1 and ?;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select 1 from tab0 where ? between ? and 1;
+#prepare select 1 from tab0 where ? between ? and 1;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select EXISTS (SELECT ? FROM tab0) from tab0;
+#prepare select EXISTS (SELECT ? FROM tab0) from tab0;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%2",	"%2"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select EXISTS (SELECT ?,? FROM tab0) from tab0;
+#prepare select EXISTS (SELECT ?,? FROM tab0) from tab0;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%3",	"%3"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select case when col0 = 0 then ? else 1 end from tab0;
+#prepare select case when col0 = 0 then ? else 1 end from tab0;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select case when col0 = 0 then 1 else ? end from tab0;
+#prepare select case when col0 = 0 then 1 else ? end from tab0;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+#prepare select case when col0 = 0 then ? when col0 = 1 then ? else 1 end from tab0;
+#prepare select case when col0 = 0 then ? when col0 = 1 then ? else 1 end from tab0;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "tinyint",	1,	0,	"",	"%1",	"%1"	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+[ "tinyint",	1,	0,	NULL,	NULL,	NULL	]
+#CREATE TABLE tab1(col0 INTEGER, col1 STRING);
+#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+#prepare select 1 from tab1 where (col0,col1) in (select ?,? from tab1);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	2,	1,	0,	3,	3 # length
+[ "tinyint",	1,	0,	"",	"%10",	"%10"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+#drop table tab0;
+#drop table tab1;

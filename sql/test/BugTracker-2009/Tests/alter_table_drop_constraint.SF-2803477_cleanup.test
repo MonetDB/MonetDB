@@ -1,0 +1,13 @@
+statement ok
+DROP TABLE TABLE_C
+
+statement ok
+DROP TABLE TABLE_D
+
+statement ok
+DROP TABLE TABLE_B
+
+statement ok
+DROP TABLE TABLE_A
+
+

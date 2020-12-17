@@ -1,0 +1,4 @@
+statement error
+CREATE TABLE "programs" ("state" VARCHAR(10) DEFAULT UNLOCKED NOT NULL)
+
+

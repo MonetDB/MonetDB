@@ -1,0 +1,73 @@
+query T rowsort
+SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10, 20 20)'))
+----
+False
+
+query T rowsort
+SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10, 20 20, 10 10)'))
+----
+True
+
+query T rowsort
+SELECT ST_IsClosed(st_mlinefromtext('MULTILINESTRING((10 10, 20 20, 10 10),(10 10, 20 20))'))
+----
+False
+
+query T rowsort
+SELECT ST_IsClosed(st_pointfromtext('POINT(10 10)'))
+----
+True
+
+query T rowsort
+SELECT ST_IsClosed(st_mpointfromtext('MULTIPOINT((10 10), (20 20))'))
+----
+True
+
+query T rowsort
+SELECT ST_IsClosed(st_polygonfromtext('POLYGON((10 10 10, 20 20 20, 30 30 30, 10 10 10))'))
+----
+True
+
+query T rowsort
+SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10 10, 20 20 20, 10 10 10)'))
+----
+True
+
+statement ok
+create table geo (g geometry(linestring, 4326))
+
+statement ok
+insert into geo values (st_linefromtext('LINESTRING(10 10, 20 20)', 4326))
+
+statement ok
+insert into geo values (st_linefromtext('LINESTRING(10 10, 20 20, 10 10)', 4326))
+
+query T rowsort
+select st_isclosed(g) from geo
+----
+False
+True
+
+statement ok
+drop table geo
+
+statement ok
+create table geo (g geometry(polygonz, 4326))
+
+statement ok
+insert into geo values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))', 4326))
+
+query T rowsort
+select st_isclosed(g) from geo
+----
+True
+
+statement ok
+drop table geo
+
+query TT rowsort
+SELECT geom AS "GEOMETRY", ST_IsClosed(geom) FROM geometries WHERE id<14
+----
+26 values hashing to 82bfb34137bb3aeaa63ded85d29445af
+
+

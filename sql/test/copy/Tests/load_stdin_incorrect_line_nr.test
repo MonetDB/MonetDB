@@ -1,0 +1,29 @@
+statement ok
+CREATE TABLE "sys"."number" (
+        "isanumber" int
+)
+
+statement error
+COPY 2 RECORDS INTO "number" FROM stdin USING DELIMITERS ';', E'\n'
+<COPY_INTO_DATA>
+1
+bla
+
+query I rowsort
+select * from "number"
+----
+
+statement ok
+drop table "number"
+
+query IITT rowsort
+select * from sys.rejects
+----
+2
+1
+line 2 field isanumber 'int' expected in 'bla'
+bla@
+
+statement ok
+call sys.clearrejects()
+
