@@ -75,6 +75,7 @@ psm
 
 outerref_in_selection
 session_vars
+sessioncontrol
 add_column_with_seq
 
 zones

@@ -13,6 +13,5 @@ grantMonetdb
 copyinto
 schemaRights
 metadataConsistency
-sessioncontrol
 createUserRollback
 userCallFunction
