@@ -54,3 +54,5 @@ select count(*) from output_1427369057457;
 
 -- The following SUCCEEDS:
 -- explain select * from output_1427369057457;
+
+rollback;

@@ -8,4 +8,4 @@ testpath="$TSTSRCDIR"
 PYTHONPATH=$testpath:${PYTHON3PATH}
 export PYTHONPATH
 
-Mlog -x "${PYTHON3} $testpath/python_int128.py $MAPIPORT $TSTDB $MAPIHOST"
+${PYTHON3} $testpath/python_int128.py $MAPIPORT $TSTDB $MAPIHOST

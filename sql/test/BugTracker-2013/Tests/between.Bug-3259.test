@@ -1,0 +1,36 @@
+statement ok
+set optimizer = 'sequential_pipe'
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE treeitems (
+	    "tree"    CHARACTER LARGE OBJECT,
+	    "subject" INTEGER,
+	    "pre"     BIGINT,
+	    "post"    BIGINT,
+	    "size"    BIGINT,
+	    "level"   TINYINT,
+	    "prob"    DOUBLE        DEFAULT 1.0,
+	    CONSTRAINT "treeitems_tree_pre_unique" UNIQUE ("tree", "pre"),
+	    CONSTRAINT "treeitems_tree_post_unique" UNIQUE ("tree", "post")
+)
+
+statement ok
+insert into treeitems values('sequoia',1,2,2,2,2,2.0)
+
+query II rowsort
+SELECT t1.subject as id1, t2.subject as id2
+FROM  treeitems t1, treeitems t2
+WHERE t2.pre between t1.pre and t1.pre + t1.size
+----
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+set optimizer = 'default_pipe'
+

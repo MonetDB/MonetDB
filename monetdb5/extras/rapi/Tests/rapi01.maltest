@@ -1,0 +1,60 @@
+statement ok
+b:= bat.new(:int)
+
+statement ok
+bat.append(b,1804289383)
+
+statement ok
+bat.append(b,846930886)
+
+statement ok
+bat.append(b,1681692777)
+
+statement ok
+bat.append(b,1714636915)
+
+statement ok
+bat.append(b,1957747793)
+
+statement ok
+bat.append(b,424238335)
+
+statement ok
+bat.append(b,719885386)
+
+statement ok
+bat.append(b,1649760492)
+
+statement ok
+bat.append(b,596516649)
+
+statement ok
+bat.append(b,1189641421)
+
+query TI rowsort
+io.print(b)
+----
+20 values hashing to 74a3c631a4c9ac875a281da7c6d5441c
+
+statement error
+r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b)
+
+statement error
+r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(arg2));",b)
+
+statement error
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(somevalue));",b)
+
+statement error
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret1 <- Re(fft(arg2));",b)
+
+statement error
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg5));",b)
+
+statement error
+r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b)
+
+statement error
+io.print(r)
+
+

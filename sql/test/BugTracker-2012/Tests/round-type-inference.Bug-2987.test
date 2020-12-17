@@ -1,0 +1,6 @@
+query R rowsort
+select round(750,1)
+----
+750.000
+
+

@@ -1,0 +1,7 @@
+query II rowsort
+select 1 as "a,b", 2 as c
+----
+1
+2
+
+

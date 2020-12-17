@@ -1,0 +1,70 @@
+statement ok
+a:hge := 1234567890987654321:hge
+
+statement ok
+b:hge := 10000000000:hge
+
+statement ok
+c:hge := calc.*(a,b)
+
+statement ok
+d:hge := calc.*(c,b)
+
+statement ok
+e:hge := calc.+(d,a)
+
+query T rowsort
+io.print(a)
+----
+1234567890987654321
+
+query T rowsort
+io.print(b)
+----
+10000000000
+
+query T rowsort
+io.print(c)
+----
+12345678909876543210000000000
+
+query T rowsort
+io.print(d)
+----
+123456789098765432100000000000000000000
+
+query T rowsort
+io.print(e)
+----
+123456789098765432101234567890987654321
+
+query T rowsort
+io.print(123456789098765432101234567890987654321)
+----
+123456789098765432101234567890987654321
+
+query T rowsort
+io.print(123456789098765432101234567890987654321H)
+----
+123456789098765432101234567890987654321
+
+query T rowsort
+io.print(123456789098765432101234567890987654321:hge)
+----
+123456789098765432101234567890987654321
+
+statement ok
+z := bat.new(:hge)
+
+statement ok
+z := bat.append(z,123456789098765432101234567890987654321)
+
+statement ok
+z := bat.append(z,123456789098765432101234567890987654321H)
+
+statement ok
+z := bat.append(z,123456789098765432101234567890987654321:hge)
+
+statement error
+io.print(z)
+

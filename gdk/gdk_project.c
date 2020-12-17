@@ -305,7 +305,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 	var_t v;
 
 	if ((bn = COLnew(l->hseqbase, TYPE_str, ci ? ci->ncand : BATcount(l),
-			 TRANSIENT)) != NULL)
+			 TRANSIENT)) == NULL)
 		return NULL;
 
 	v = (var_t) r1->tvheap->free;
@@ -329,6 +329,7 @@ project_str(BAT *restrict l, struct canditer *restrict ci,
 			memset(bn->tvheap->base + r1->tvheap->free, 0, h1off - r1->tvheap->free);
 #endif
 		memcpy(bn->tvheap->base + h1off, r2->tvheap->base, r2->tvheap->free);
+		bn->tvheap->free = h1off + r2->tvheap->free;
 	}
 
 	if (v >= ((var_t) 1 << (8 * bn->twidth)) &&
@@ -580,8 +581,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		} else if (l->tnonil &&
 			   r2 != NULL &&
 			   (r1->tvheap == r2->tvheap ||
-			    (!GDK_ELIMDOUBLES(r1->tvheap) &&
-			     !GDK_ELIMDOUBLES(r2->tvheap) /* && size tests */))) {
+			    (!GDK_ELIMDOUBLES(r1->tvheap) /* && size tests */))) {
 			/* r1 and r2 may explicitly share their vheap,
 			 * if they do, the result will also share the
 			 * vheap; this also means that for this case we

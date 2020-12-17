@@ -32,6 +32,8 @@
 #include "mal_parser.h"
 #include "mal_authorize.h"
 #include "mal_private.h"
+#include "mal_session.h"
+#include "mal_utils.h"
 
 void
 slash_2_dir_sep(str fname)

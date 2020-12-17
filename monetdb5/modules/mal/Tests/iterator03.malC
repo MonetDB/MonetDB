@@ -19,7 +19,7 @@
 	io.print("start loop");
 	c := 3:lng;
 barrier (mloop,chunk) := iterator.new(t,c);
-	io.print("next chunk");
+	#io.print("next chunk");
 	io.print(chunk);
 	redo (mloop,chunk) := iterator.next(t,3:lng);
 exit mloop;

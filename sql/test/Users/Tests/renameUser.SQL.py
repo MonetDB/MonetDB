@@ -10,42 +10,72 @@
 # Create an user with a name of an existing user (not possible).
 ###
 
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from MonetDBtesting.sqltest import SQLTestCase
 
-def sql_test_client(user, passwd, input):
-    with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
-                        stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
-                        input=input, port=int(os.getenv("MAPIPORT"))) as c:
-        c.communicate()
+with SQLTestCase() as tc:
+    tc.connect(username="monetdb", password="monetdb")
+    tc.execute('ALTER USER "april" RENAME TO "april2"; --succeed').assertSucceeded()
 
-sql_test_client('monetdb', 'monetdb', input="""\
-ALTER USER "april" RENAME TO "april2"; --succeed
-CREATE USER april with password 'april' name 'second' schema bank;
-""")
+    tc.execute("CREATE USER april with password 'april' name 'second' schema bank;")
 
-# This is the new april, so these operations should fail.
-sql_test_client('april', 'april', input="""\
-DELETE from bank.accounts; -- not enough privelges
-SET role bankAdmin; -- no such role
-ALTER USER "april2" RENAME TO "april3"; --not enough privileges
-""")
+    tc.connect(username="april", password="april")
+    tc.execute("DELETE from bank.accounts; -- not enough privelges").assertFailed()
+    tc.execute("SET role bankAdmin; -- no such role").assertFailed()
+    tc.execute('ALTER USER "april2" RENAME TO "april3"; --not enough privileges').assertFailed()
 
-# This is the initial april, so these operations should succeed.
-sql_test_client('april2', 'april', input="""\
-SELECT * from bank.accounts;
-SET role bankAdmin;
-""")
+    tc.connect(username='april2', password='april')
+    tc.execute("""
+        SELECT * from bank.accounts;
+        SET role bankAdmin;
+    """).assertSucceeded()
 
-sql_test_client('monetdb', 'monetdb', input="""\
-ALTER USER "april2" RENAME TO "april";
-drop user april;
-ALTER USER "april2" RENAME TO "april";
-ALTER USER "april5" RENAME TO "april2"; -- no such user
-drop user april2; --nu such user
-CREATE USER april2 with password 'april' name 'second april, no rights' schema library2; --no such schema
-CREATE USER april with password 'april' name 'second april, no rights' schema library; --user exsists
-""")
+    tc.connect(username='monetdb', password='monetdb')
+    tc.execute('ALTER USER "april2" RENAME TO "april";').assertFailed()
+    tc.execute("drop user april;").assertSucceeded()
+    tc.execute('ALTER USER "april2" RENAME TO "april";').assertSucceeded()
+    tc.execute('ALTER USER "april5" RENAME TO "april2"; -- no such user').assertFailed()
+    tc.execute("drop user april2; --nu such user").assertFailed()
+    tc.execute("CREATE USER april2 with password 'april' name 'second april, no rights' schema library2; --no such schema").assertFailed()
+    tc.execute("CREATE USER april with password 'april' name 'second april, no rights' schema library; --user exsists").assertFailed()
+
+
+
+# import os, sys
+# try:
+#     from MonetDBtesting import process
+# except ImportError:
+#     import process
+
+# def sql_test_client(user, passwd, input):
+#     with process.client(lang="sql", user=user, passwd=passwd, communicate=True,
+#                         stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE,
+#                         input=input, port=int(os.getenv("MAPIPORT"))) as c:
+#         c.communicate()
+
+# sql_test_client('monetdb', 'monetdb', input="""\
+# ALTER USER "april" RENAME TO "april2"; --succeed
+# CREATE USER april with password 'april' name 'second' schema bank;
+# """)
+
+# # This is the new april, so these operations should fail.
+# sql_test_client('april', 'april', input="""\
+# DELETE from bank.accounts; -- not enough privelges
+# SET role bankAdmin; -- no such role
+# ALTER USER "april2" RENAME TO "april3"; --not enough privileges
+# """)
+
+# # This is the initial april, so these operations should succeed.
+# sql_test_client('april2', 'april', input="""\
+# SELECT * from bank.accounts;
+# SET role bankAdmin;
+# """)
+
+# sql_test_client('monetdb', 'monetdb', input="""\
+# ALTER USER "april2" RENAME TO "april";
+# drop user april;
+# ALTER USER "april2" RENAME TO "april";
+# ALTER USER "april5" RENAME TO "april2"; -- no such user
+# drop user april2; --nu such user
+# CREATE USER april2 with password 'april' name 'second april, no rights' schema library2; --no such schema
+# CREATE USER april with password 'april' name 'second april, no rights' schema library; --user exsists
+# """)

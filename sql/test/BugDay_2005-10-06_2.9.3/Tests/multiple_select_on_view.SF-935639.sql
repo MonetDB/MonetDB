@@ -5,3 +5,4 @@ insert into a values(2);
 create view c as select * from a;
 select count(*) from c;
 select count(*) from c;
+rollback;

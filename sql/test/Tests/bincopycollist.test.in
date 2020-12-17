@@ -1,0 +1,52 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement ok
+COPY BINARY INTO intvals (x, y, z) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+COPY BINARY INTO intvals (z) FROM (E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+COPY BINARY INTO intvals (z, y) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+query I
+SELECT count(*) FROM intvals
+----
+30
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement ok
+COPY BINARY INTO intvals (x, x) FROM (E'$QTSTTRGDIR/bincopyint.bin', E'$QTSTTRGDIR/bincopyint.bin')
+
+query I
+SELECT count(*) FROM intvals
+----
+10
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE intvals (x INTEGER, y INTEGER, z INTEGER)
+
+statement error
+COPY BINARY INTO intvals (a) FROM (E'$QTSTTRGDIR/bincopyint.bin')
+
+statement ok
+ROLLBACK
+

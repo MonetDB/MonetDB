@@ -378,8 +378,8 @@ sql_trans_destroy(sql_trans *t, bool try_spare)
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
 	if (t->sa->nr > 2*new_trans_size)
-		try_spare = 0;
-	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 2 : MAX_SPARES) && !t->name && try_spare) {
+		try_spare = false;
+	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 0 : MAX_SPARES) && !t->name && try_spare) {
 		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
 		trans_drop_tmp(t);
 		spare_trans[spares++] = t;
@@ -2091,6 +2091,7 @@ store_load(sql_allocator *pa) {
 			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
 		}
 		sql_trans_destroy(tr, true);
+		tr = gtrans;
 	} else {
 		tr->active = 0;
 		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(sqlid), 0, TYPE_int, false, false);
@@ -2363,6 +2364,11 @@ cleanup_table(sql_table *t)
 		for (int i = 0; i<spares; i++) {
 			for (node *m = spare_trans[i]->schemas.set->h; m; m = m->next) {
 				sql_schema * schema = m->data;
+
+				if (schema->tables.dset) {
+					list_destroy(schema->tables.dset);
+					schema->tables.dset = NULL;
+				}
 				node *o = find_sql_table_node(schema, t->base.id);
 				if (o) {
 					list_remove_node(schema->tables.set, o);
@@ -4125,6 +4131,7 @@ rollforward_changeset_updates(sql_trans *tr, int oldest, changeset * fs, changes
 			list_destroy(fs->dset);
 			fs->dset = NULL;
 		}
+		/*
 		if (!apply && ts->dset) {
 			for (n = ts->dset->h; ok == LOG_OK && n; n = n->next) {
 				sql_base *tb = n->data;
@@ -4133,6 +4140,7 @@ rollforward_changeset_updates(sql_trans *tr, int oldest, changeset * fs, changes
 					ok = rollforward_deletes(tr, tb, mode);
 			}
 		}
+		*/
 		if (apply && ts->dset && !cf) {
 			list_destroy(ts->dset);
 			ts->dset = NULL;
@@ -5502,27 +5510,26 @@ sys_drop_statistics(sql_trans *tr, sql_column *col)
 static int
 sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 {
-	char *seq_pos = NULL;
-	const char *next_value_for = "next value for \"sys\".\"seq_";
-	sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
+	const char *next_value_for = "next value for ";
 
 	/* Drop sequence for generated column if it's the case */
-	if (col->def && (seq_pos = strstr(col->def, next_value_for))) {
+	if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
+		sql_schema *s = NULL;
 		sql_sequence *seq = NULL;
-		char *seq_name = _STRDUP(seq_pos + (strlen(next_value_for) - strlen("seq_")));
 		node *n = NULL;
+		char *schema = NULL, *seq_name = NULL;
 
-		if (!seq_name)
+		extract_schema_and_sequence_name(tr->sa, col->def + strlen(next_value_for), &schema, &seq_name);
+		if (!schema || !seq_name || !(s = find_sql_schema(tr, schema)))
 			return -1;
-		seq_name[strlen(seq_name)-1] = '\0';
-		n = cs_find_name(&syss->seqs, seq_name);
-		seq = find_sql_sequence(syss, seq_name);
-		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY) > 0) {
+
+		n = cs_find_name(&s->seqs, seq_name);
+		seq = find_sql_sequence(s, seq_name);
+		if (seq && n && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY) > 0) {
 			sys_drop_sequence(tr, seq, drop_action);
-			seq->base.wtime = syss->base.wtime = tr->wtime = tr->wstime;
-			cs_del(&syss->seqs, n, seq->base.flags);
+			seq->base.wtime = s->base.wtime = tr->wtime = tr->wstime;
+			cs_del(&s->seqs, n, seq->base.flags);
 		}
-		_DELETE(seq_name);
 	}
 	return 0;
 }

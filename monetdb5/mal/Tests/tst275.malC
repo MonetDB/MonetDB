@@ -4,10 +4,7 @@
 #it includes insertions,deletions,selections, and joins.
 
 b:= bat.new(:int);
-io.printf("#~BeginVariableOutput~#\n"); 
-(bk,bv):= bat.info(b);
-io.print(bk,bv); 
-io.printf("#~EndVariableOutput~#\n");
+(bk,bv):= bat.info(b)
 
 profiler.start();
 err := bat.append(b,15);

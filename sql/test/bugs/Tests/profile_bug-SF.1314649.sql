@@ -7,3 +7,5 @@ record select 1;
 select query, user from history;
 record select count(*) from t1314649 where "human" = true;
 select query, user from history;
+
+rollback;

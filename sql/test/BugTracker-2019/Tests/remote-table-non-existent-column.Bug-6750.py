@@ -1,8 +1,4 @@
-import os
-import socket
-import sys
-import tempfile
-import pymonetdb
+import os, socket, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -25,9 +21,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
         cur1 = conn1.cursor()
         cur1.execute("start transaction;")
         cur1.execute("create table tab1 (col1 clob);")
-        cur1.execute("insert into tab1 values ('a');")
+        if cur1.execute("insert into tab1 values ('a');") != 1:
+            sys.stderr.write("1 row inserted expected")
         cur1.execute("create table tab2 (col1 tinyint);")
-        cur1.execute("insert into tab2 values (1);")
+        if cur1.execute("insert into tab2 values (1);") != 1:
+            sys.stderr.write("1 row inserted expected")
         cur1.execute("commit;")
 
         prt2 = freeport()
@@ -42,12 +40,16 @@ with tempfile.TemporaryDirectory() as farm_dir:
             cur2.execute("create remote table tab2 (col1 double) on 'mapi:monetdb://localhost:"+str(prt1)+"/node1';")
             try:
                 cur2.execute("select col2 from tab1;")  # col2 doesn't exist
+                sys.stderr.write('Exception expected')
             except pymonetdb.OperationalError as e:
-                sys.stderr.write(str(e))
+                if 'Identifier tab1.col2 doesn\'t exist' not in str(e):
+                    sys.stderr.write(str(e))
             try:
                 cur2.execute("select col1 from tab2;")  # col1 is not a floating point column
+                sys.stderr.write('Exception expected')
             except pymonetdb.OperationalError as e:
-                sys.stderr.write(str(e))
+                if 'Parameter 1 has wrong SQL type, expected double, but got tinyint instead' not in str(e):
+                    sys.stderr.write(str(e))
             cur2.execute("drop table tab1;")
             cur2.execute("drop table tab2;")
 
@@ -60,16 +62,14 @@ with tempfile.TemporaryDirectory() as farm_dir:
             cur2.execute("alter table m2 add table m1;")
             try:
                 cur2.execute("select * from m2;")  # Infinite loop while resolving the children of m2
+                sys.stderr.write('Exception expected')
             except pymonetdb.OperationalError as e:
-                sys.stderr.write(str(e))
+                if 'Merge tables not supported under remote connections' not in str(e):
+                    sys.stderr.write(str(e))
 
             cur1.close()
             conn1.close()
             cur2.close()
             conn2.close()
-            out, err = prc2.communicate()
-            sys.stdout.write(out)
-            sys.stderr.write(err)
-        out, err = prc1.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
+            prc2.communicate()
+        prc1.communicate()

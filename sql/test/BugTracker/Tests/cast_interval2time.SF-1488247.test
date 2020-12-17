@@ -1,0 +1,11 @@
+query T rowsort
+select interval '60' second
+----
+0:01:00
+
+query T rowsort
+select cast(interval '60' second as time)
+----
+00:01:00
+
+

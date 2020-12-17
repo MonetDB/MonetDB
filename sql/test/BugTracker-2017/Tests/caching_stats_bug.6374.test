@@ -1,0 +1,96 @@
+statement ok
+create table sub1 (i int)
+
+statement ok
+create table sub2 (i int)
+
+statement ok
+create merge table mt as select * from sub1 with no data
+
+statement ok
+alter table mt add table sub1
+
+statement ok
+alter table mt add table sub2
+
+statement ok
+insert into sub1 values (1),(2)
+
+statement ok
+insert into sub2 values (11),(12)
+
+statement ok
+alter table sub1 set read only
+
+statement ok
+alter table sub2 set read only
+
+statement ok
+analyze sys.sub1
+
+statement ok
+analyze sys.sub2
+
+query I rowsort
+select count(*) from mt where i >= 5 and i < 100
+----
+2
+
+query T nosort
+PLAN select count(*) from mt where i >= 5 and i < 100
+----
+project (
+| group by (
+| | select (
+| | | table(sys.sub2) [ "mt"."i" ] COUNT 
+| | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
+
+statement ok
+alter table sub1 set read write
+
+statement ok
+insert into sub1 values (7),(8)
+
+statement ok
+alter table sub1 set read only
+
+statement ok
+analyze sys.sub1
+
+query I rowsort
+select count(*) from mt where i >= 5 and i < 100
+----
+4
+
+query T nosort
+PLAN select count(*) from mt where i >= 5 and i < 100
+----
+project (
+| group by (
+| | union (
+| | | group by (
+| | | | select (
+| | | | | table(sys.sub1) [ "sub1"."i" as "mt"."i" ] COUNT 
+| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | ) [  ] [ sys.count() NOT NULL as "%1"."%1" ],
+| | | group by (
+| | | | select (
+| | | | | table(sys.sub2) [ "sub2"."i" as "mt"."i" ] COUNT 
+| | | | ) [ int "5" <= "mt"."i" < int "100" BETWEEN  ]
+| | | ) [  ] [ sys.count() NOT NULL as "%1"."%1" ]
+| | ) [ "%1"."%1" ]
+| ) [  ] [ sys.sum no nil ("%1"."%1") as "%1"."%1" ]
+) [ "%1"."%1" NOT NULL ]
+
+statement ok
+drop table mt
+
+statement ok
+drop table sub1
+
+statement ok
+drop table sub2
+
+

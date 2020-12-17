@@ -13,38 +13,6 @@ MAPI  = (monetdb) /var/tmp/mtest-561836/.s.monetdb.32526
 QUERY = SELECT col0 FROM tab0 ORDER BY sys.tab0.col0; --error, TODO
 ERROR = !TODO: column names of level >= 3
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-561836/.s.monetdb.32526
-QUERY = prepare select col0 from tab0 where (?) in (?); --error
-ERROR = !Cannot have a parameter (?) on both sides of an expression
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-54771/.s.monetdb.35007
-QUERY = prepare select ? = ALL (select ? from tab0) from tab0 t1; --error
-ERROR = !Cannot have a parameter (?) on both sides of an expression
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-109859/.s.monetdb.35986
-QUERY = prepare select 1 from tab0 where ? between ? and ?; --error
-ERROR = !Cannot have a parameter (?) on both sides of an expression
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-128195/.s.monetdb.35720
-QUERY = prepare select case when col0 = 0 then ? else ? end from tab0; --error
-ERROR = !Result type missing
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-128195/.s.monetdb.35720
-QUERY = prepare select case when col0 = 0 then ? when col0 = 1 then ? else ? end from tab0; --error
-ERROR = !Result type missing
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-143244/.s.monetdb.35226
-QUERY = prepare select ? is null from tab0; --error
-ERROR = !Could not determine type for argument number 1
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-160872/.s.monetdb.39398
-QUERY = prepare select max(?); --error
-ERROR = !MAX: parameters not allowed as arguments to aggregate functions
-CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-165100/.s.monetdb.38196
-QUERY = prepare select max(?) over (); --error
-ERROR = !MAX: parameters not allowed as arguments to window functions
-CODE  = 42000
 
 # 10:56:47 >  
 # 10:56:47 >  "Done."

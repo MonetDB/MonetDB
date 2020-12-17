@@ -1,0 +1,16 @@
+query I rowsort
+select COUNT(*) >= 0 from "sys"."queue"
+----
+1
+
+query I rowsort
+select COUNT(*) >= 0 from "sys"."rejects"
+----
+1
+
+query I rowsort
+select COUNT(*) >= 0 from "sys"."sessions"
+----
+1
+
+

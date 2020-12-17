@@ -1,0 +1,118 @@
+statement ok
+create table aggrtest01 ( col1 double, col2 integer )
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+NULL
+
+statement ok
+insert into aggrtest01 values (0.1234, 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+[ 0.123400 ]
+
+statement ok
+insert into aggrtest01 values (5.6789, 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+[ 0.123400, 5.678900 ]
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01 group by col2
+----
+[ 0.123400, 5.678900 ]
+
+statement ok
+insert into aggrtest01 values (0.516273849, 2)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+[ 0.123400, 5.678900, 0.516274 ]
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01 group by col2
+----
+[ 0.123400, 5.678900 ]
+[ 0.516274 ]
+
+statement ok
+delete from aggrtest01
+
+statement ok
+insert into aggrtest01 values (NULL, 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+NULL
+
+statement ok
+insert into aggrtest01 values (NULL, 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+NULL
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01 group by col2
+----
+[  ]
+
+statement ok
+insert into aggrtest01 values (0.1234, 1)
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+[ 0.123400 ]
+
+statement ok
+insert into aggrtest01 values (0.516273849, 2)
+
+query RI rowsort
+select * from aggrtest01
+----
+0.123
+1
+0.516
+2
+NULL
+1
+NULL
+1
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+[ 0.123400, 0.516274 ]
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01 group by col2
+----
+[ 0.123400 ]
+[ 0.516274 ]
+
+statement ok
+delete from aggrtest01 where col1 is null
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01
+----
+[ 0.123400, 0.516274 ]
+
+query T rowsort
+select json.tojsonarray(col1) from aggrtest01 group by col2
+----
+[ 0.123400 ]
+[ 0.516274 ]
+
+statement ok
+drop table aggrtest01
+

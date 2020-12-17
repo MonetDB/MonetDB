@@ -1,0 +1,54 @@
+statement ok
+start transaction
+
+statement ok
+create table t3addcolumn (name varchar(10))
+
+statement ok
+insert into t3addcolumn values ('a'), ('b'), ('c')
+
+query T rowsort
+select * from t3addcolumn
+----
+a
+b
+c
+
+statement ok
+create table t2addcolumn (name varchar(10), seq serial)
+
+statement ok
+insert into t2addcolumn (name) select (name) from t3addcolumn
+
+query TI rowsort
+select * from t2addcolumn
+----
+a
+1
+b
+2
+c
+3
+
+statement ok
+create table t1addcolumn (name varchar(10))
+
+statement ok
+insert into t1addcolumn (name) select (name) from t3addcolumn
+
+statement ok
+alter table t1addcolumn add column seq serial
+
+query TI rowsort
+select * from t1addcolumn
+----
+a
+1
+b
+2
+c
+3
+
+statement ok
+rollback
+

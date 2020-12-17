@@ -1,0 +1,37 @@
+statement ok
+create table t1 (i int)
+
+statement ok
+create table t2 (i int)
+
+statement ok
+create merge table m (i int)
+
+statement ok
+alter table m add table t1
+
+statement ok
+alter table m add table t2
+
+statement ok
+alter table m drop table t1
+
+statement error
+alter table m drop table t1
+
+statement ok
+DROP table t1
+
+statement error
+alter table m drop table t1
+
+statement ok
+alter table m drop table t2
+
+statement ok
+DROP table t2
+
+statement ok
+DROP table m
+
+

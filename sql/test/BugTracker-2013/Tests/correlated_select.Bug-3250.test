@@ -1,0 +1,39 @@
+statement ok
+start transaction
+
+statement ok
+create table mytest (
+	id int,
+	n int,
+	flag int
+)
+
+statement ok
+insert into mytest values (1,1,null),
+	(2 ,    1 , null ),
+	(3 ,    1 , null ),
+	(4 ,    2 , null ),
+	(5 ,    1 ,   42 ),
+	(6 ,    1 ,   42 )
+
+query III rowsort
+select * from mytest
+----
+18 values hashing to 2bf51a6d6bef2bd92f05592a8b04a5e8
+
+query IIII rowsort
+select id, n, flag, (select count(*) from mytest as i where i.id <
+	mytest.id and i.n = mytest.n) from mytest order by id
+----
+24 values hashing to 244369d1dca8687ab3305a68cf4fd230
+
+query IIII rowsort
+select id, n, flag, (select count(*) from mytest as i where i.id <
+	mytest.id and i.n = mytest.n and flag is not null) from mytest order by id
+----
+24 values hashing to 8c3a865cd8a431783c7001459d035478
+
+statement ok
+rollback
+
+
