@@ -961,7 +961,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (!(rexps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0)))
 				return NULL;
 			if (filter) {
-				sql_subfunc *func = NULL;
+				sql_subfunc *f = NULL;
 				list *tl = sa_list(sql->sa);
 
 				for (node *n = lexps->h; n; n = n->next){
@@ -975,9 +975,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					list_append(tl, exp_subtype(e));
 				}
 
-				if (!(func = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), fname, tl, F_FILT)))
+				if (!(f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), fname, tl, F_FILT)))
 					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
-				return exp_filter(sql->sa, lexps, rexps, func, anti);
+				if (!execute_priv(sql, f->func))
+					return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'\n", fname);
+				return exp_filter(sql->sa, lexps, rexps, f, anti);
 			}
 			return exp_or(sql->sa, lexps, rexps, anti);
 		}
@@ -1090,6 +1092,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			}
 			if (!a)
 				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
+			if (!execute_priv(sql, a->func))
+				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate: no privilege to call aggregate '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 			if (zero_if_empty)
 				set_zero_if_empty(exp);
@@ -1108,6 +1112,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				f = sql_bind_func_(sql->sa, s, cname, ops, F_ANALYTIC);
 			}
 
+			if (f && !execute_priv(sql, f->func))
+				return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
 			/* fix scale of mul function, other type casts are explicit */
 			if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
 				sql_arg *ares = f->func->res->h->data;
