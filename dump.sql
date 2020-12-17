@@ -1,556 +1,8 @@
 START TRANSACTION;
 
---We start with creating static versions of catalogue tables that are going to be affected by this dump script itself.
-CREATE TEMPORARY TABLE _user_sequences AS SELECT * FROM sys.sequences;
-CREATE TEMPORARY TABLE _user_functions AS SELECT * FROM sys.functions f WHERE NOT f.system;
-
-CREATE FUNCTION SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || s || ''' '; END;
-CREATE FUNCTION DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; --TODO: Figure out why this breaks with the space
-CREATE FUNCTION FQTN(s STRING, t STRING) RETURNS STRING BEGIN RETURN DQ(s) || '.' || DQ(t); END;
-CREATE FUNCTION ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || FQTN(s, t) || ' '; END;
-
---We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
-CREATE FUNCTION replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
-CREATE FUNCTION schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
-RETURN
-	SELECT replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || FQTN(sch, nme) || ' ', 'imsx');
-END;
-
-CREATE FUNCTION dump_type(type STRING, digits INT, scale INT) RETURNS STRING BEGIN
-	RETURN
-		CASE
-		WHEN type = 'boolean' THEN  'BOOLEAN'
-		WHEN type = 'int' THEN  'INTEGER'
-		WHEN type = 'smallint' THEN  'SMALLINT'
-		WHEN type = 'tinyiny' THEN  'TINYINT'
-		WHEN type = 'bigint' THEN  'BIGINT'
-		WHEN type = 'hugeint' THEN  'HUGEINT'
-		WHEN type = 'date' THEN  'DATE'
-		WHEN type = 'month_interval' THEN  CASE
-			WHEN digits = 1 THEN 'INTERVAL YEAR'
-			WHEN digits = 2 THEN 'INTERVAL YEAR TO MONTH'
-			ELSE  'INTERVAL MONTH' --ASSUMES digits = 3
-			END
-		WHEN type LIKE '%_INTERVAL' THEN  CASE
-			WHEN digits = 4  THEN 'INTERVAL DAY'
-			WHEN digits = 5  THEN 'INTERVAL DAY TO HOUR'
-			WHEN digits = 6  THEN 'INTERVAL DAY TO MINUTE'
-			WHEN digits = 7  THEN 'INTERVAL DAY TO SECOND'
-			WHEN digits = 8  THEN 'INTERVAL HOUR'
-			WHEN digits = 9  THEN 'INTERVAL HOUR TO MINUTE'
-			WHEN digits = 10 THEN 'INTERVAL HOUR TO SECOND'
-			WHEN digits = 11 THEN 'INTERVAL MINUTE'
-			WHEN digits = 12 THEN 'INTERVAL MINUTE TO SECOND'
-			ELSE  'INTERVAL SECOND' --ASSUMES digits = 13
-			END
-		WHEN type = 'varchar' OR type = 'clob' THEN  CASE
-			WHEN digits = 0 THEN 'CHARACTER LARGE OBJECT'
-			ELSE 'CHARACTER LARGE OBJECT(' || digits || ')' --ASSUMES digits IS NOT NULL
-			END
-		WHEN type = 'blob' THEN  CASE
-			WHEN digits = 0 THEN 'BINARY LARGE OBJECT'
-			ELSE 'BINARY LARGE OBJECT(' || digits || ')' --ASSUMES digits IS NOT NULL
-			END
-		WHEN type = 'timestamp'  THEN 'TIMESTAMP' || ifthenelse(digits <> 7, '(' || (digits -1) || ') ', ' ')
-		WHEN type = 'timestamptz' THEN 'TIMESTAMP' || ifthenelse(digits <> 7, '(' || (digits -1) || ') ', ' ') || 'WITH TIME ZONE'
-		WHEN type = 'time'  THEN 'TIME' || ifthenelse(digits <> 1, '(' || (digits -1) || ') ', ' ')
-		WHEN type = 'timetz' THEN 'TIME' || ifthenelse(digits <> 1, '(' || (digits -1) || ') ', ' ') || 'WITH TIME ZONE'
-		WHEN type = 'real' THEN CASE
-			WHEN digits = 24 AND scale=0 THEN 'REAL'
-			WHEN scale=0 THEN 'FLOAT(' || digits || ')'
-			ELSE 'FLOAT(' || digits || ',' || scale || ')'
-			END
-		WHEN type = 'double' THEN CASE
-			WHEN digits = 53 AND scale=0 THEN 'DOUBLE'
-			WHEN scale = 0 THEN 'FLOAT(' || digits || ')'
-			ELSE 'FLOAT(' || digits || ',' || scale || ')'
-			END
-		WHEN type = 'decimal' THEN CASE
-			WHEN (digits = 1 AND scale = 0) OR digits = 0 THEN 'DECIMAL'
-			WHEN scale = 0 THEN 'DECIMAL(' || digits || ')'
-			WHEN digits = 39 THEN 'DECIMAL(' || 38 || ',' || scale || ')'
-			WHEN digits = 19 AND (SELECT COUNT(*) = 0 FROM sys.types WHERE sqlname = 'hugeint' ) THEN 'DECIMAL(' || 18 || ',' || scale || ')'
-			ELSE 'DECIMAL(' || digits || ',' || scale || ')'
-			END
-		ELSE upper(type) || '(' || digits || ',' || scale || ')' --TODO: might be a bit too simple
-		END;
-END;
-
-CREATE FUNCTION dump_CONSTRAINT_type_name(id INT) RETURNS STRING BEGIN
-	RETURN
-		CASE
-		WHEN id = 0 THEN 'PRIMARY KEY'
-		WHEN id = 1 THEN 'UNIQUE'
-		END;
-END;
-
-CREATE FUNCTION describe_constraints() RETURNS TABLE(s STRING, "table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
-	RETURN
-		SELECT s.name, t.name, kc.nr, kc.name, k.name, dump_CONSTRAINT_type_name(k.type)
-		FROM sys.schemas s, sys._tables t, sys.objects kc, sys.keys k
-		WHERE kc.id = k.id
-			AND k.table_id = t.id
-			AND s.id = t.schema_id
-			AND t.system = FALSE
-			AND k.type in (0, 1)
-			AND t.type IN (0, 6);
-END;
-
-CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stm STRING) BEGIN
-	RETURN
-		SELECT
-			'ALTER TABLE ' || DQ(s) || '.' || DQ("table") ||
-			' ADD CONSTRAINT ' || DQ(con) || ' '||
-			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
-		FROM describe_constraints() GROUP BY s, "table", con, type;
-END;
-
-CREATE FUNCTION describe_indices() RETURNS TABLE (i STRING, o INT, s STRING, t STRING, c STRING, it STRING) BEGIN
-RETURN
-	WITH it (id, idx) AS (VALUES (0, 'INDEX'), (4, 'IMPRINTS INDEX'), (5, 'ORDERED INDEX')) --UNIQUE INDEX wraps to INDEX.
-	SELECT
-		i.name,
-		kc.nr, --TODO: Does this determine the concatenation order?
-		s.name,
-		t.name,
-		c.name,
-		it.idx
-	FROM
-		sys.idxs AS i LEFT JOIN sys.keys AS k ON i.name = k.name,
-		sys.objects AS kc,
-		sys._columns AS c,
-		sys.schemas s,
-		sys._tables AS t,
-		it
-	WHERE
-		i.table_id = t.id
-		AND i.id = kc.id
-		AND kc.name = c.name
-		AND t.id = c.table_id
-		AND t.schema_id = s.id
-		AND k.type IS NULL
-		AND i.type = it.id
-	ORDER BY i.name, kc.nr;
-END;
-
-CREATE FUNCTION dump_indices() RETURNS TABLE(stm STRING) BEGIN
-	RETURN
-		SELECT
-			'CREATE ' || it || ' ' ||
-			DQ(i) || ' ON ' || DQ(s) || '.' || DQ(t) ||
-			'(' || GROUP_CONCAT(c) || ');'
-		FROM describe_indices() GROUP BY i, it, s, t;
-END;
-
-CREATE FUNCTION dump_column_definition(tid INT) RETURNS STRING BEGIN
-	RETURN
-		SELECT
-			' (' ||
-			GROUP_CONCAT(
-				DQ(c.name) || ' ' ||
-				dump_type(c.type, c.type_digits, c.type_scale) ||
-				ifthenelse(c."null" = 'false', ' NOT NULL', '')
-			, ', ') || ')'
-		FROM sys._columns c
-		WHERE c.table_id = tid;
-END;
-
-CREATE FUNCTION dump_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
-	RETURN SELECT ' ON ' || SQ(uri) || ' WITH USER ' || SQ(username) || ' ENCRYPTED PASSWORD ' || SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
-END;
-
-CREATE FUNCTION dump_merge_table_partition_expressions(tid INT) RETURNS STRING
-BEGIN
-	RETURN
-		SELECT
-			CASE WHEN tp.table_id IS NOT NULL THEN	--updatable merge table
-				' PARTITION BY ' ||
-				CASE
-					WHEN bit_and(tp.type, 2) = 2
-					THEN 'VALUES '
-					ELSE 'RANGE '
-				END ||
-				CASE
-					WHEN bit_and(tp.type, 4) = 4 --column expression
-					THEN 'ON ' || '(' || (SELECT DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
-					ELSE 'USING ' || '(' || tp.expression || ')' --generic expression
-				END
-			ELSE									--read only partition merge table.
-				''
-			END
-		FROM (VALUES (tid)) t(id) LEFT JOIN sys.table_partitions tp ON t.id = tp.table_id;
-END;
-
-CREATE FUNCTION describe_column_defaults() RETURNS TABLE(sch STRING, tbl STRING, col STRING, def STRING) BEGIN
-RETURN
-	SELECT
-		s.name,
-		t.name,
-		c.name,
-		c."default"
-	FROM schemas s, tables t, columns c
-	WHERE
-		s.id = t.schema_id AND
-		t.id = c.table_id AND
-		s.name <> 'tmp' AND
-		NOT t.system AND
-		c."default" IS NOT NULL;
-END;
-
-CREATE FUNCTION dump_column_defaults() RETURNS TABLE(stmt STRING) BEGIN
-	RETURN
-		SELECT 'ALTER TABLE ' || FQTN(sch, tbl) || ' ALTER COLUMN ' || DQ(col) || ' SET DEFAULT ' || def || ';'
-		FROM describe_column_defaults();
-END;
-
---SELECT * FROM dump_foreign_keys();
-CREATE FUNCTION describe_foreign_keys() RETURNS TABLE(
-	fk_s STRING, fk_t STRING, fk_c STRING,
-	o INT, fk STRING,
-	pk_s STRING, pk_t STRING, pk_c STRING,
-	on_update STRING, on_delete STRING) BEGIN
-
-	RETURN
-		WITH action_type (id, act) AS (VALUES
-			(0, 'NO ACTION'),
-			(1, 'CASCADE'),
-			(2, 'RESTRICT'),
-			(3, 'SET NULL'),
-			(4, 'SET DEFAULT'))
-		SELECT
-		fs.name AS fsname, fkt.name AS ktname, fkkc.name AS fcname,
-		fkkc.nr AS o, fkk.name AS fkname,
-		ps.name AS psname, pkt.name AS ptname, pkkc.name AS pcname,
-		ou.act as on_update, od.act as on_delete
-					FROM sys._tables fkt,
-						sys.objects fkkc,
-						sys.keys fkk,
-						sys._tables pkt,
-						sys.objects pkkc,
-						sys.keys pkk,
-						sys.schemas ps,
-						sys.schemas fs,
-						action_type ou,
-						action_type od
-
-					WHERE fkt.id = fkk.table_id
-					AND pkt.id = pkk.table_id
-					AND fkk.id = fkkc.id
-					AND pkk.id = pkkc.id
-					AND fkk.rkey = pkk.id
-					AND fkkc.nr = pkkc.nr
-					AND pkt.schema_id = ps.id
-					AND fkt.schema_id = fs.id
-					AND (fkk."action" & 255)         = od.id
-					AND ((fkk."action" >> 8) & 255)  = ou.id
-					ORDER BY fkk.name, fkkc.nr;
-END;
-
-CREATE FUNCTION dump_foreign_keys() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
-	SELECT
-		'ALTER TABLE ' || DQ(fk_s) || '.'|| DQ(fk_t) || ' ADD CONSTRAINT ' || DQ(fk) || ' ' ||
-		'FOREIGN KEY(' || GROUP_CONCAT(DQ(fk_c), ',') ||') ' ||
-		'REFERENCES ' || DQ(pk_s) || '.' || DQ(pk_t) || '(' || GROUP_CONCAT(DQ(pk_c), ',') || ') ' ||
-		'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
-		';'
-	FROM describe_foreign_keys() GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
-END;
-
-CREATE FUNCTION describe_partition_tables()
-RETURNS TABLE(
-	m_sname STRING,
-	m_tname STRING,
-	p_sname STRING,
-	p_tname STRING,
-	p_type  STRING,
-	pvalues STRING,
-	minimum STRING,
-	maximum STRING,
-	with_nulls BOOLEAN) BEGIN
-RETURN
-  SELECT 
-        m_sname,
-        m_tname,
-        p_sname,
-        p_tname,
-        CASE
-            WHEN p_raw_type IS NULL THEN 'READ ONLY'
-            WHEN (p_raw_type = 'VALUES' AND pvalues IS NULL) OR (p_raw_type = 'RANGE' AND minimum IS NULL AND maximum IS NULL AND with_nulls) THEN 'FOR NULLS'
-            ELSE p_raw_type
-        END AS p_type,
-        pvalues,
-        minimum,
-        maximum,
-        with_nulls
-    FROM 
-    (WITH
-		tp("type", table_id) AS
-		(SELECT CASE WHEN (table_partitions."type" & 2) = 2 THEN 'VALUES' ELSE 'RANGE' END, table_partitions.table_id FROM table_partitions),
-		subq(m_tid, p_mid, "type", m_sname, m_tname, p_sname, p_tname) AS
-		(SELECT m_t.id, p_m.id, m_t."type", m_s.name, m_t.name, p_s.name, p_m.name
-		FROM schemas m_s, sys._tables m_t, dependencies d, schemas p_s, sys._tables p_m
-		WHERE m_t."type" IN (3, 6)
-			AND m_t.schema_id = m_s.id
-			AND m_s.name <> 'tmp'
-			AND m_t.system = FALSE
-			AND m_t.id = d.depend_id
-			AND d.id = p_m.id
-			AND p_m.schema_id = p_s.id
-		ORDER BY m_t.id, p_m.id)
-	SELECT
-		subq.m_sname,
-		subq.m_tname,
-		subq.p_sname,
-		subq.p_tname,
-		tp."type" AS p_raw_type,
-		CASE WHEN tp."type" = 'VALUES'
-			THEN (SELECT GROUP_CONCAT(vp.value, ',')FROM value_partitions vp WHERE vp.table_id = subq.p_mid)
-			ELSE NULL
-		END AS pvalues,
-		CASE WHEN tp."type" = 'RANGE'
-			THEN (SELECT minimum FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
-			ELSE NULL
-		END AS minimum,
-		CASE WHEN tp."type" = 'RANGE'
-			THEN (SELECT maximum FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
-			ELSE NULL
-		END AS maximum,
-		CASE WHEN tp."type" = 'VALUES'
-			THEN EXISTS(SELECT vp.value FROM value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)
-			ELSE (SELECT rp.with_nulls FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
-		END AS with_nulls
-	FROM 
-		subq LEFT OUTER JOIN tp
-		ON subq.m_tid = tp.table_id) AS tmp_pi;
-END;
-
-CREATE FUNCTION dump_partition_tables() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
-	SELECT
-		ALTER_TABLE(m_sname, m_tname) || ' ADD TABLE ' || FQTN(p_sname, p_tname) || 
-		CASE 
-			WHEN p_type = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
-			WHEN p_type = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, SQ(maximum), 'RANGE MAXVALUE')
-			WHEN p_type = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
-			ELSE '' --'READ ONLY'
-		END ||
-		CASE WHEN p_type in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
-		';' 
-	FROM describe_partition_tables();
-END;
-
-CREATE FUNCTION describe_sequences()
-	RETURNS TABLE(
-		sch STRING,
-		seq STRING,
-		s BIGINT,
-		rs BIGINT,
-		mi BIGINT,
-		ma BIGINT,
-		inc BIGINT,
-		cache BIGINT,
-		cycle BOOLEAN)
-BEGIN
-	RETURN SELECT
-	s.name as sch,
-	seq.name as seq,
-	seq."start",
-	get_value_for(s.name, seq.name) AS "restart",
-	seq."minvalue",
-	seq."maxvalue",
-	seq."increment",
-	seq."cacheinc",
-	seq."cycle"
-	FROM _user_sequences seq, sys.schemas s
-	WHERE s.id = seq.schema_id
-	ORDER BY s.name, seq.name;
-END;
-
-CREATE FUNCTION dump_sequences() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
-	SELECT
-		'CREATE SEQUENCE ' || FQTN(sch, seq) || ' AS BIGINT ' ||
-		CASE WHEN "s" <> 0 THEN ' START WITH ' || "s" ELSE '' END ||
-		CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
-		CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
-		CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
-		CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
-		CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';'
-	FROM describe_sequences();
-END;
-
-CREATE FUNCTION describe_functions() RETURNS TABLE (o INT, sch STRING, fun STRING, def STRING) BEGIN
-RETURN
-	SELECT f.id, s.name, f.name, f.func from _user_functions f JOIN schemas s ON f.schema_id = s.id;
-END;
-
-CREATE FUNCTION dump_functions() RETURNS TABLE (o INT, stmt STRING) BEGIN
-	RETURN SELECT f.o, schema_guard(f.sch, f.fun, f.def)  FROM describe_functions() f;
-END;
-
-CREATE FUNCTION describe_tables() RETURNS TABLE(o INT, sch STRING, tab STRING, typ STRING,  col STRING, opt STRING) BEGIN
-RETURN
-	SELECT
-		t.id,
-		s.name,
-		t.name,
-		ts.table_type_name,
-		dump_column_definition(t.id),
-		CASE
-			WHEN ts.table_type_name = 'REMOTE TABLE' THEN
-				dump_remote_table_expressions(s.name, t.name)
-			WHEN ts.table_type_name = 'MERGE TABLE' THEN
-				dump_merge_table_partition_expressions(t.id)
-			WHEN ts.table_type_name = 'VIEW' THEN
-				schema_guard(s.name, t.name, t.query)
-			ELSE
-				''
-		END
-	FROM sys.schemas s, table_types ts, sys.tables t
-	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
-		AND t.system = FALSE
-		AND s.id = t.schema_id
-		AND ts.table_type_id = t.type
-		AND s.name <> 'tmp';
-END;
-
-CREATE FUNCTION dump_tables() RETURNS TABLE (o INT, stmt STRING) BEGIN
-RETURN
-	SELECT
-		t.o,
-		CASE
-			WHEN t.typ <> 'VIEW' THEN
-				'CREATE ' || t.typ || ' ' || FQTN(t.sch, t.tab) || t.col || t.opt || ';'
-			ELSE
-				t.opt
-		END
-	FROM describe_tables() t;
-END;
-
-CREATE FUNCTION describe_triggers() RETURNS TABLE (sch STRING, tab STRING, tri STRING, def STRING) BEGIN
-	RETURN
-		SELECT s.name, t.name, tr.name, tr.statement
-		FROM sys.schemas s, sys.tables t, sys.triggers tr
-		WHERE s.id = t.schema_id AND t.id = tr.table_id AND NOT t.system;
-END;
-
-CREATE FUNCTION dump_triggers() RETURNS TABLE (stmt STRING) BEGIN
-	RETURN
-		SELECT schema_guard(sch, tab, def) FROM describe_triggers();
-END;
-
-CREATE FUNCTION describe_comments() RETURNS TABLE(id INT, tpe STRING, fqn STRING, rem STRING) BEGIN
-	RETURN
-		SELECT o.id, o.tpe, o.nme, c.remark FROM (
-
-			SELECT id, 'SCHEMA', DQ(name) FROM schemas
-
-			UNION ALL
-
-			SELECT t.id, CASE WHEN ts.table_type_name = 'VIEW' THEN 'VIEW' ELSE 'TABLE' END, FQTN(s.name, t.name)
-			FROM schemas s JOIN tables t ON s.id = t.schema_id JOIN table_types ts ON t.type = ts.table_type_id
-			WHERE NOT s.name <> 'tmp'
-
-			UNION ALL
-
-			SELECT c.id, 'COLUMN', FQTN(s.name, t.name) || '.' || DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
-
-			UNION ALL
-
-			SELECT idx.id, 'INDEX', FQTN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
-
-			UNION ALL
-
-			SELECT seq.id, 'SEQUENCE', FQTN(s.name, seq.name) FROM sys.sequences seq, schemas s WHERE seq.schema_id = s.id
-
-			UNION ALL
-
-			SELECT f.id, ft.function_type_keyword, FQTN(s.name, f.name) FROM functions f, function_types ft, schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
-
-			) AS o(id, tpe, nme)
-			JOIN comments c ON c.id = o.id;
-END;
-
-CREATE FUNCTION dump_comments() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
-	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || SQ(c.rem) || ';' FROM describe_comments() c;
-END;
-
-CREATE FUNCTION describe_privileges() RETURNS TABLE(o_id INT, o_nme STRING, o_tpe STRING, p_nme STRING, a_nme STRING, g_nme STRING, grantable BOOLEAN) BEGIN
-RETURN SELECT
-	CASE
-		WHEN o.id IS NULL THEN
-			0
-		ELSE
-			o.id
-	END,
-	CASE
-		WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN --GLOBAL privileges: SELECT maps to COPY FROM
-			'COPY FROM'
-		WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN --GLOBAL privileges: UPDATE maps to COPY INTO
-			'COPY INTO'
-		ELSE
-			o.nme
-	END,
-	CASE
-		WHEN o.tpe IS NOT NULL THEN
-			o.tpe
-		ELSE
-			'GLOBAL'
-	END,
-	pc.privilege_code_name,
-	a.name,
-	g.name,
-	p.grantable
-FROM
-	privileges p LEFT JOIN
-	(
-    SELECT t.id, s.name || '.' || t.name , 'TABLE'
-		from sys.schemas s, sys.tables t where s.id = t.schema_id
-	UNION ALL
-		SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'
-		FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
-	UNION ALL
-		SELECT f.id, f.nme, f.tpe
-		FROM fully_qualified_functions() f
-    ) o(id, nme, tpe) ON o.id = p.obj_id,
-	sys.privilege_codes pc,
-	auths a, auths g
-WHERE
-	p.privileges = pc.privilege_code_id AND
-	p.auth_id = a.id AND
-	p.grantor = g.id;
-END;
-
-CREATE FUNCTION dump_privileges() RETURNS TABLE (stmt STRING) BEGIN
-RETURN
-	SELECT
-		'INSERT INTO sys.privileges VALUES (' ||
-			CASE
-				WHEN dp.o_tpe = 'GLOBAL' THEN
-					'0,'
-				WHEN dp.o_tpe = 'TABLE' THEN
-					'(SELECT t.id FROM sys.schemas s, tables t WHERE s.id = t.schema_id' ||
-						' AND s.name || ''.'' || t.name =' || SQ(dp.o_nme) || '),'
-				WHEN dp.o_tpe = 'COLUMN' THEN
-					'(SELECT c.id FROM sys.schemas s, tables t, columns c WHERE s.id = t.schema_id AND t.id = c.table_id' ||
-						' AND s.name || ''.'' || t.name || ''.'' || c.name =' || SQ(dp.o_nme) || '),'
-				ELSE -- FUNCTION-LIKE
-					'(SELECT fqn.id FROM fully_qualified_functions() fqn WHERE' ||
-						' fqn.nme = ' || SQ(dp.o_nme) || ' AND fqn.tpe = ' || SQ(dp.o_tpe) || '),'
-			END ||
-			'(SELECT id FROM auths a WHERE a.name = ' || SQ(dp.a_nme) || '),' ||
-			'(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name = ' || SQ(p_nme) || '),'
-			'(SELECT id FROM auths g WHERE g.name = ' || SQ(dp.g_nme) || '),' ||
-			dp.grantable ||
-		');'
-	FROM describe_privileges() dp;
-END;
-
 --The dump statement should normally have an auto-incremented column representing the creation order.
---But in cases of db objects that can be interdependent, i.e. functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
---Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for functions and table-likes,
+--But in cases of db objects that can be interdependent, i.e. sys.functions and table-likes, we need access to the underlying sequence of the AUTO_INCREMENT property.
+--Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for sys.functions and table-likes,
 --we can restart the auto-increment sequence with a sensible value for following dump statements.
 
 CREATE SEQUENCE tmp._auto_increment;
@@ -559,9 +11,10 @@ CREATE TEMPORARY TABLE dump_statements(o INT DEFAULT NEXT VALUE FOR tmp._auto_in
 --Because ALTER SEQUENCE statements are not allowed in procedures,
 --we have to do a really nasty hack to restart the _auto_increment sequence.
 
-CREATE FUNCTION restart_sequence(sch STRING, seq STRING, val BIGINT) RETURNS BIGINT EXTERNAL NAME sql."restart";
+CREATE FUNCTION tmp.restart_sequence(sch STRING, seq STRING, val BIGINT) RETURNS BIGINT EXTERNAL NAME sql."restart";
 
-CREATE PROCEDURE dump_database(describe BOOLEAN)
+
+CREATE PROCEDURE tmp.dump_database(describe BOOLEAN)
 BEGIN
 
     set schema sys;
@@ -570,30 +23,30 @@ BEGIN
 	INSERT INTO dump_statements(s) VALUES ('SET SCHEMA "sys";');
 
 	INSERT INTO dump_statements(s) --dump_create_roles
-		SELECT 'CREATE ROLE ' || DQ(name) || ';' FROM auths
-        WHERE name NOT IN (SELECT name FROM db_user_info)
+		SELECT 'CREATE ROLE ' || sys.dq(name) || ';' FROM sys.auths
+        WHERE name NOT IN (SELECT name FROM sys.db_user_info)
         AND grantor <> 0;
 
 	INSERT INTO dump_statements(s) --dump_create_users
 		SELECT
-        'CREATE USER ' ||  DQ(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
-            SQ(password_hash(ui.name)) ||
-        ' NAME ' || SQ(ui.fullname) ||  ' SCHEMA sys;'
-        FROM db_user_info ui, schemas s
+        'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
+            sys.sq(sys.password_hash(ui.name)) ||
+        ' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;'
+        FROM sys.db_user_info ui, sys.schemas s
         WHERE ui.default_schema = s.id
             AND ui.name <> 'monetdb'
             AND ui.name <> '.snapshot';
 
 	INSERT INTO dump_statements(s) --dump_create_schemas
         SELECT
-            'CREATE SCHEMA ' ||  DQ(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';'
-        FROM schemas s, auths a
+            'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';'
+        FROM sys.schemas s, sys.auths a
         WHERE s.authorization = a.id AND s.system = FALSE;
 
     INSERT INTO dump_statements(s) --dump_add_schemas_to_users
 	    SELECT
-            'ALTER USER ' || DQ(ui.name) || ' SET SCHEMA ' || DQ(s.name) || ';'
-        FROM db_user_info ui, schemas s
+            'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';'
+        FROM sys.db_user_info ui, sys.schemas s
         WHERE ui.default_schema = s.id
             AND ui.name <> 'monetdb'
             AND ui.name <> '.snapshot'
@@ -601,49 +54,49 @@ BEGIN
 
     INSERT INTO dump_statements(s) --dump_grant_user_priviledges
         SELECT
-            'GRANT ' || DQ(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', DQ(a1.name)) || ';'
+            'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';'
 		FROM sys.auths a1, sys.auths a2, sys.user_role ur
 		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
-	INSERT INTO dump_statements(s) SELECT * FROM dump_sequences();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_sequences();
 
 	--START OF COMPLICATED DEPENDENCY STUFF:
 	--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
 	DECLARE offs INT;
-	SET offs = (SELECT max(o) FROM dump_statements) - (SELECT min(ids.id) FROM (select id from tables union select id from functions) ids(id));
+	SET offs = (SELECT max(o) FROM dump_statements) - (SELECT min(ids.id) FROM (select id from sys.tables union select id from sys.functions) ids(id));
 
-	INSERT INTO dump_statements SELECT f.o + offs, f.stmt FROM dump_functions() f;
-	INSERT INTO dump_statements SELECT t.o + offs, t.stmt FROM dump_tables() t;
+	INSERT INTO dump_statements SELECT f.o + offs, f.stmt FROM sys.dump_functions() f;
+	INSERT INTO dump_statements SELECT t.o + offs, t.stmt FROM sys.dump_tables() t;
 
 	SET offs = (SELECT max(o) + 1 FROM dump_statements);
 	DECLARE dummy_result BIGINT; --HACK: otherwise I cannot call restart_sequence.
-	SET dummy_result = restart_sequence('tmp', '_auto_increment', offs);
+	SET dummy_result = tmp.restart_sequence('tmp', '_auto_increment', offs);
 	--END OF COMPLICATED DEPENDENCY STUFF.
 
-	INSERT INTO dump_statements(s) SELECT * FROM dump_column_defaults();
-	INSERT INTO dump_statements(s) SELECT * FROM dump_table_constraint_type();
-	INSERT INTO dump_statements(s) SELECT * FROM dump_indices();
-	INSERT INTO dump_statements(s) SELECT * FROM dump_foreign_keys();
-	INSERT INTO dump_statements(s) SELECT * FROM dump_partition_tables();
-	INSERT INTO dump_statements(s) SELECT * from dump_triggers();
-	INSERT INTO dump_statements(s) SELECT * FROM dump_comments();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_column_defaults();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_table_constraint_type();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_indices();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_foreign_keys();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_partition_tables();
+	INSERT INTO dump_statements(s) SELECT * from sys.dump_triggers();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_comments();
 
 	--We are dumping ALL privileges so we need to erase existing privileges on the receiving side;
 	INSERT INTO dump_statements(s) VALUES ('TRUNCATE sys.privileges;');
-	INSERT INTO dump_statements(s) SELECT * FROM dump_privileges();
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_privileges();
 
-	--move describe functions 52_describe.sql
-	--merge dump_type with describe_type function in 52_describe.sql
+	--check REFERENCES privilege
 	--TODO User Defined Types? sys.types
-	--TODO loaders ,procedures, window and filter functions.
+	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO dumping table data
+	--look into order dependent group_concat
 	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
 
 END;
 
-CALL dump_database(TRUE);
+CALL tmp.dump_database(TRUE);
 
 SELECT s FROM dump_statements order by o;
 

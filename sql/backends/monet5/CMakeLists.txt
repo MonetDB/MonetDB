@@ -35,6 +35,7 @@ set(include_sql_files
   46_profiler
   51_sys_schema_extension
   52_describe
+  53_dump
   58_hot_snapshot
   60_wlcr
   61_wlcr
