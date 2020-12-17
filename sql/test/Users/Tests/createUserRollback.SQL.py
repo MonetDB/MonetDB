@@ -1,3 +1,7 @@
+###
+# Check that if a CREATE USER transaction is aborted, the user is not created
+#   and hence cannot log in
+###
 
 from MonetDBtesting.sqltest import SQLTestCase
 import logging
