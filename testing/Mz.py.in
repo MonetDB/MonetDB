@@ -1353,7 +1353,11 @@ def Prompt(cmd) :
 def progress(count, total, test):
     perc = round((count/total) * 100) if total and count else 0
     print('\r', ' '*(ttywidth or 100), end='', sep='')
-    print('\r','[{}/{}] ({}%)    {}'.format(count, total, perc, test), end='', sep='', flush=True)
+    s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+    if len(s) > ttywidth:
+        test = test[len(s)-ttywidth:]
+        s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+    print('\r', s, end='', sep='', flush=True)
 
 def getkids():
     # return a dictionary with process IDs as key and a list of child

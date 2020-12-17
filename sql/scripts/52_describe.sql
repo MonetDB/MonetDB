@@ -13,64 +13,71 @@ BEGIN
       WHEN 'blob' THEN
 	CASE digits
 	  WHEN 0 THEN 'BINARY LARGE OBJECT'
-	  ELSE 'BINARY LARGE OBJECT(' || CAST(digits AS string) || ')'
+	  ELSE 'BINARY LARGE OBJECT(' || digits || ')'
 	END
       WHEN 'boolean' THEN 'BOOLEAN'
       WHEN 'char' THEN
         CASE digits
           WHEN 1 THEN 'CHARACTER'
-          ELSE 'CHARACTER(' || CAST(digits AS string) || ')'
+          ELSE 'CHARACTER(' || digits || ')'
         END
       WHEN 'clob' THEN
 	CASE digits
 	  WHEN 0 THEN 'CHARACTER LARGE OBJECT'
-	  ELSE 'CHARACTER LARGE OBJECT(' || CAST(digits AS string) || ')'
+	  ELSE 'CHARACTER LARGE OBJECT(' || digits || ')'
 	END
       WHEN 'date' THEN 'DATE'
       WHEN 'day_interval' THEN 'INTERVAL DAY'
-      WHEN 'decimal' THEN 'DECIMAL(' || CAST(digits AS string) || ',' || CAST(tscale AS string) || ')'
+      WHEN ctype = 'decimal' THEN
+  	CASE
+	  WHEN (digits = 1 AND tscale = 0) OR digits = 0 THEN 'DECIMAL'
+	  WHEN tscale = 0 THEN 'DECIMAL(' || digits || ')'
+	  WHEN digits = 39 THEN 'DECIMAL(' || 38 || ',' || tscale || ')'
+	  WHEN digits = 19 AND (SELECT COUNT(*) = 0 FROM sys.types WHERE sqlname = 'hugeint' ) THEN 'DECIMAL(' || 18 || ',' || tscale || ')'
+	  ELSE 'DECIMAL(' || digits || ',' || tscale || ')'
+	END
       WHEN 'double' THEN
 	CASE
 	  WHEN digits = 53 and tscale = 0 THEN 'DOUBLE'
-	  WHEN tscale = 0 THEN 'FLOAT(' || CAST(digits AS string) || ')'
-	  ELSE 'FLOAT(' || CAST(digits AS string) || ',' || CAST(tscale AS string) || ')'
+	  WHEN tscale = 0 THEN 'FLOAT(' || digits || ')'
+	  ELSE 'FLOAT(' || digits || ',' || tscale || ')'
 	END
       WHEN 'geometry' THEN
 	CASE digits
 	  WHEN 4 THEN 'GEOMETRY(POINT' ||
             CASE tscale
               WHEN 0 THEN ''
-              ELSE ',' || CAST(tscale AS string)
+              ELSE ',' || tscale
             END || ')'
 	  WHEN 8 THEN 'GEOMETRY(LINESTRING' ||
             CASE tscale
               WHEN 0 THEN ''
-              ELSE ',' || CAST(tscale AS string)
+              ELSE ',' || tscale
             END || ')'
 	  WHEN 16 THEN 'GEOMETRY(POLYGON' ||
             CASE tscale
               WHEN 0 THEN ''
-              ELSE ',' || CAST(tscale AS string)
+              ELSE ',' || tscale
             END || ')'
 	  WHEN 20 THEN 'GEOMETRY(MULTIPOINT' ||
             CASE tscale
               WHEN 0 THEN ''
-              ELSE ',' || CAST(tscale AS string)
+              ELSE ',' || tscale
             END || ')'
 	  WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' ||
             CASE tscale
               WHEN 0 THEN ''
-              ELSE ',' || CAST(tscale AS string)
+              ELSE ',' || tscale
             END || ')'
 	  WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' ||
             CASE tscale
               WHEN 0 THEN ''
-              ELSE ',' || CAST(tscale AS string)
+              ELSE ',' || tscale
             END || ')'
 	  WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' ||
             CASE tscale
               WHEN 0 THEN ''
-              ELSE ',' || CAST(tscale AS string)
+              ELSE ',' || tscale
             END || ')'
 	  ELSE 'GEOMETRY'
         END
@@ -85,8 +92,8 @@ BEGIN
       WHEN 'real' THEN
 	CASE
 	  WHEN digits = 24 and tscale = 0 THEN 'REAL'
-	  WHEN tscale = 0 THEN 'FLOAT(' || CAST(digits AS string) || ')'
-	  ELSE 'FLOAT(' || CAST(digits AS string) || ',' || CAST(tscale AS string) || ')'
+	  WHEN tscale = 0 THEN 'FLOAT(' || digits || ')'
+	  ELSE 'FLOAT(' || digits || ',' || tscale || ')'
 	END
       WHEN 'sec_interval' THEN
 	CASE digits
@@ -105,34 +112,34 @@ BEGIN
       WHEN 'time' THEN
 	CASE digits
 	  WHEN 1 THEN 'TIME'
-	  ELSE 'TIME(' || CAST(digits - 1 AS string) || ')'
+	  ELSE 'TIME(' || (digits - 1) || ')'
 	END
       WHEN 'timestamp' THEN
 	CASE digits
 	  WHEN 7 THEN 'TIMESTAMP'
-	  ELSE 'TIMESTAMP(' || CAST(digits - 1 AS string) || ')'
+	  ELSE 'TIMESTAMP(' || (digits - 1) || ')'
 	END
       WHEN 'timestamptz' THEN
 	CASE digits
 	  WHEN 7 THEN 'TIMESTAMP'
-	  ELSE 'TIMESTAMP(' || CAST(digits - 1 AS string) || ')'
+	  ELSE 'TIMESTAMP(' || (digits - 1) || ')'
 	END || ' WITH TIME ZONE'
       WHEN 'timetz' THEN
 	CASE digits
 	  WHEN 1 THEN 'TIME'
-	  ELSE 'TIME(' || CAST(digits - 1 AS string) || ')'
+	  ELSE 'TIME(' || (digits - 1) || ')'
 	END || ' WITH TIME ZONE'
       WHEN 'tinyint' THEN 'TINYINT'
-      WHEN 'varchar' THEN 'CHARACTER VARYING(' || CAST(digits AS string) || ')'
+      WHEN 'varchar' THEN 'CHARACTER VARYING(' || digits || ')'
       ELSE
         CASE
           WHEN lower(ctype) = ctype THEN upper(ctype)
           ELSE '"' || ctype || '"'
         END || CASE digits
 	  WHEN 0 THEN ''
-          ELSE '(' || CAST(digits AS string) || CASE tscale
+          ELSE '(' || digits || CASE tscale
 	    WHEN 0 THEN ''
-            ELSE ',' || CAST(tscale AS string)
+            ELSE ',' || tscale
           END || ')'
 	END
     END;
