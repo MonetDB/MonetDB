@@ -178,7 +178,7 @@ drop function pcre_replace(string, string, string, string);
 
 output.append(out)
 
-with process.client('sql', interactive=True,
+with process.client('sql', interactive=True, echo=False, format='test',
                      stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
     out, err = clt.communicate(out)
