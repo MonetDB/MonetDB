@@ -75,6 +75,25 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	mnstr_printf(fout, " %s ", r);
 }
 
+static const char *
+dump_escape_ident(sql_allocator *sa, const char *s)
+{
+	char *res = NULL;
+	if (s) {
+		size_t l = strlen(s);
+		char *r = SA_NEW_ARRAY(sa, char, (l * 2) + 1);
+
+		res = r;
+		while (*s) {
+			if (*s == '"')
+				*r++ = '\\';
+			*r++ = *s++;
+		}
+		*r = '\0';
+	}
+	return res;
+}
+
 static void exps_print(mvc *sql, stream *fout, list *exps, int depth, list *refs, int alias, int brackets);
 
 static void
@@ -90,8 +109,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			const char *rname = exp_relname(e);
 			int level = GET_PSM_LEVEL(e->flag);
 			if (rname)
-				mnstr_printf(fout, "\"%s\".", rname);
-			mnstr_printf(fout, "\"%s\" = ", exp_name(e));
+				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname));
+			mnstr_printf(fout, "\"%s\" = ",  dump_escape_ident(sql->ta, exp_name(e)));
 			exp_print(sql, fout, e->l, depth, refs, 0, 0);
 			mnstr_printf(fout, " FRAME %d ", level);
 			alias = 0;
@@ -102,8 +121,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			int level = GET_PSM_LEVEL(e->flag);
 			mnstr_printf(fout, "declare ");
 			if (rname)
-				mnstr_printf(fout, "\"%s\".", rname);
-			mnstr_printf(fout, "\"%s\" %s FRAME %d ", exp_name(e), type_str ? type_str : "", level);
+				mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, rname));
+			mnstr_printf(fout, "\"%s\" %s FRAME %d ", dump_escape_ident(sql->ta, exp_name(e)), type_str ? type_str : "", level);
 			alias = 0;
 		} else if (e->flag & PSM_RETURN) {
 			int level = GET_PSM_LEVEL(e->flag);
@@ -142,10 +161,10 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			atom *a = e->l;
 			if (atom_type(a)->type->localtype == TYPE_ptr) {
 				sql_table *t = a->data.val.pval;
-				mnstr_printf(fout, "%s(%s)",
+				mnstr_printf(fout, "%s(\"%s\")",
 					isMergeTable(t)?"merge table":
 					isReplicaTable(t)?"replica table":"table",
-					t->base.name);
+					dump_escape_ident(sql->ta, t->base.name));
 			} else {
 				char *t = sql_subtype_string(sql->ta, atom_type(a));
 				if (a->isnull)
@@ -163,8 +182,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			if (e->r) { /* named parameters and declared variables */
 				sql_var_name *vname = (sql_var_name*) e->r;
 				if (vname->sname)
-					mnstr_printf(fout, "\"%s\".", vname->sname);
-				mnstr_printf(fout, "\"%s\"", vname->name);
+					mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, vname->sname));
+				mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, vname->name));
 			} else if (e->f) {	/* values list */
 				list *l = e->f;
 				exps_print(sql, fout, l, depth, refs, 0, 0);
@@ -175,9 +194,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	} 	break;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		mnstr_printf(fout, "%s.%s",
-				f->func->s?f->func->s->base.name:"sys",
-				f->func->base.name);
+		mnstr_printf(fout, "\"%s\".\"%s\"",
+				f->func->s?dump_escape_ident(sql->ta, f->func->s->base.name):"sys",
+				dump_escape_ident(sql->ta, f->func->base.name));
 		exps_print(sql, fout, e->l, depth, refs, alias, 1);
 		if (e->r) { /* list of optional lists */
 			list *l = e->r;
@@ -189,9 +208,9 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	} 	break;
 	case e_aggr: {
 		sql_subfunc *a = e->f;
-		mnstr_printf(fout, "%s.%s",
-				a->func->s?a->func->s->base.name:"sys",
-				a->func->base.name);
+		mnstr_printf(fout, "\"%s\".\"%s\"",
+				a->func->s?dump_escape_ident(sql->ta, a->func->s->base.name):"sys",
+				dump_escape_ident(sql->ta, a->func->base.name));
 		if (need_distinct(e))
 			mnstr_printf(fout, " unique ");
 		if (need_no_nil(e))
@@ -207,8 +226,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		if (is_freevar(e))
 			mnstr_printf(fout, "!!!FREE!!! ");
 		if (e->l)
-			mnstr_printf(fout, "\"%s\".", (char*)e->l);
-		mnstr_printf(fout, "\"%s\"", (char*)e->r);
+			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, (char*)e->l));
+		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, (char*)e->r));
 		if (exp_relname(e) && exp_name(e) && e->l && e->r &&
 			strcmp(exp_relname(e), e->l) == 0 &&
 			strcmp(exp_name(e), e->r) == 0)
@@ -235,7 +254,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			exps_print(sql, fout, e->l, depth, refs, alias, 1);
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			mnstr_printf(fout, " FILTER %s ", f->func->base.name);
+			mnstr_printf(fout, " FILTER \"%s\" ", dump_escape_ident(sql->ta, f->func->base.name));
 			exps_print(sql, fout, e->r, depth, refs, alias, 1);
 		} else if (e->f) {
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0);
@@ -287,8 +306,8 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 	if (exp_name(e) && alias) {
 		mnstr_printf(fout, " as ");
 		if (exp_relname(e))
-			mnstr_printf(fout, "\"%s\".", exp_relname(e));
-		mnstr_printf(fout, "\"%s\"", exp_name(e));
+			mnstr_printf(fout, "\"%s\".", dump_escape_ident(sql->ta, exp_relname(e)));
+		mnstr_printf(fout, "\"%s\"", dump_escape_ident(sql->ta, exp_name(e)));
 	}
 	if (comma)
 		mnstr_printf(fout, ", ");
@@ -392,7 +411,8 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 		sql_column *c = rel->r;
 
 		if (!t && c) {
-			mnstr_printf(fout, "dict(%s.%s)", c->t->base.name, c->base.name);
+			mnstr_printf(fout, "dict(\"%s\".\"%s\")",
+						 dump_escape_ident(sql->ta, c->t->base.name), dump_escape_ident(sql->ta, c->base.name));
 		} else {
 			const char *sname = t->s ? t->s->base.name : NULL; /* All tables, but declared ones on the stack have schema */
 			const char *tname = t->base.name;
@@ -404,15 +424,15 @@ rel_print_(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int dec
 				tname = mapiuri_table( uri, sql->sa, tname);
 			}
 			if (sname)
-				mnstr_printf(fout, "%s(%s.%s)",
+				mnstr_printf(fout, "%s(\"%s\".\"%s\")",
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
-					sname, tname);
+					dump_escape_ident(sql->ta, sname), dump_escape_ident(sql->ta, tname));
 			else
-		  		mnstr_printf(fout, "%s(%s)",
+				mnstr_printf(fout, "%s(\"%s\")",
 					isRemote(t)&&decorate?"REMOTE":
 					isReplicaTable(t)?"REPLICA":"table",
-					tname);
+					dump_escape_ident(sql->ta, tname));
 		}
 		if (rel->exps)
 			exps_print(sql, fout, rel->exps, depth, refs, 1, 0);
@@ -687,13 +707,31 @@ skipIdent( char *r, int *pos)
 {
 	if (r[*pos] == '"') {
 		(*pos)++;
-		while(r[*pos] && r[*pos] != '"')
-			(*pos)++;
-		(*pos)++;
+		while(r[*pos] && r[*pos] != '"') {
+			if (r[*pos] == '\\' && r[*pos + 1] == '"') /* We send escaped '"' character, so consider this pair as just one */
+				(*pos)+=2;
+			else
+				(*pos)++;
+		}
 	} else {
 		while(r[*pos] && (isalnum((unsigned char) r[*pos]) || r[*pos] == '_' || r[*pos] == '%'))
 			(*pos)++;
 	}
+}
+
+static void /* We send escaped '"' character, so remove the escape after parsing */
+convertIdent(char *r)
+{
+	int i = 0, j = 0;
+	while(r[i] && r[i] != '"') {
+		if (r[i] == '\\' && r[i + 1] == '"') {
+			r[j++] = '"';
+			i+=2;
+		} else {
+			r[j++] = r[i++];
+		}
+	}
+	r[i] = '\0';
 }
 
 static void
@@ -734,8 +772,12 @@ readString( char *r, int *pos)
 	if (r[*pos] == '"'){
 		(*pos)++;
 		st = r+*pos;
-		while (r[*pos] != '"')
-			(*pos)++;
+		while (r[*pos] != '"') {
+			if (r[*pos] == '\\' && r[*pos + 1] == '"')
+				(*pos)+=2;
+			else
+				(*pos)++;
+		}
 		r[*pos] = 0;
 		(*pos)++;
 	}
@@ -749,30 +791,31 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 {
 	/* PROPs */
 	if (strncmp(r+*pos, "JOINIDX",  strlen("JOINIDX")) == 0) {
-		int old;
-		char *sname,*iname;
+		char *sname, *tname, *iname;
 		sql_schema *s = NULL;
 		prop *p;
 
 		(*pos)+= (int) strlen("JOINIDX");
 		skipWS(r, pos);
 		/* schema.table.index */
-		sname = r+*pos;
+		sname = r+*pos + 1;
 		skipIdent(r,pos);
+		convertIdent(sname);
+		(*pos)++;
 		if (r[*pos] != '.')
 			return sql_error(sql, -1, SQLSTATE(42000) "JOINIDX: missing '.'\n");
-		r[*pos] = 0;
-		(*pos)++;
+		tname = r+*pos + 1;
 		skipIdent(r,pos);
+		convertIdent(tname);
+		(*pos)++;
 		if (r[*pos] != '.')
 			return sql_error(sql, -1, SQLSTATE(42000) "JOINIDX: missing '.'\n");
-		r[*pos] = 0;
-		(*pos)++;
-		iname = r+*pos;
+		iname = r+*pos + 1;
 		skipIdent(r,pos);
-		old = r[*pos];
-		r[*pos] = 0;
+		convertIdent(iname);
+		(*pos)++;
 
+		(void) tname;
 		s = mvc_bind_schema(sql, sname);
 		if (sname && !s)
 			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s missing\n", sname);
@@ -781,7 +824,6 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 			if (!(p->value = mvc_bind_idx(sql, s, iname)))
 				return sql_error(sql, -1, SQLSTATE(42000) "Index %s missing\n", iname);
 		}
-		r[*pos] = old;
 		skipWS(r,pos);
 	}
 	return exp;
@@ -843,17 +885,24 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	quote = (r[*pos] == '"');
 	b += quote;
 	skipIdent(r, pos);
-	e = r+*pos-quote;
+	e = r+*pos;
+	(*pos) += quote;
 	skipWS(r, pos);
 	switch(r[*pos]) {
 	case '.':
 		*e = 0;
 		(*pos)++;
 		tname = b;
+		convertIdent(tname);
 		cname = r + *pos + quote;
 		skipIdentOrSymbol(r, pos);
-		e = r+*pos - quote;
-		old = *e;
+		e = r+*pos;
+		if (quote) {
+			old = ' ';
+			convertIdent(cname);
+		} else {
+			old = *e;
+		}
 		*e = 0;
 
 		tname = sa_strdup(sql->sa, tname);
@@ -898,11 +947,10 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			}
 			skipWS(r, pos);
 			if (filter) {
-				fname = r+*pos;
+				fname = r+*pos + 1;
 
 				skipIdent(r,pos);
-				e = r+*pos;
-				*e = 0;
+				convertIdent(fname);
 				(*pos)++;
 				skipWS(r,pos);
 			}
@@ -910,7 +958,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (!(rexps = read_exps(sql, lrel, rrel, top_exps, r, pos, '(', 0, 0)))
 				return NULL;
 			if (filter) {
-				sql_subfunc *func = NULL;
+				sql_subfunc *f = NULL;
 				list *tl = sa_list(sql->sa);
 
 				for (node *n = lexps->h; n; n = n->next){
@@ -924,9 +972,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					list_append(tl, exp_subtype(e));
 				}
 
-				if (!(func = sql_bind_func_(sql, "sys", fname, tl, F_FILT)))
+				if (!(f = sql_bind_func_(sql, "sys", fname, tl, F_FILT)))
 					return sql_error(sql, -1, SQLSTATE(42000) "Filter: missing function '%s'\n", fname);
-				return exp_filter(sql->sa, lexps, rexps, func, anti);
+				if (!execute_priv(sql, f->func))
+					return sql_error(sql, -1, SQLSTATE(42000) "Filter: no privilege to call filter function '%s'\n", fname);
+				return exp_filter(sql->sa, lexps, rexps, f, anti);
 			}
 			return exp_or(sql->sa, lexps, rexps, anti);
 		}
@@ -953,6 +1003,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 					return sql_error(sql, -1, SQLSTATE(42000) "Type: missing ')'\n");
 				(*pos)++;
 			}
+			convertIdent(tname);
 			if (!(tpe = sql_bind_subtype(sql->sa, tname, d, s)))
 				return sql_error(sql, -1, SQLSTATE(42000) "SQL type %s(%d, %d) not found\n", tname, d, s);
 			skipWS(r, pos);
@@ -980,6 +1031,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 	case '\"':
 		*e = 0;
 		tname = b;
+		convertIdent(tname);
 		if (!(tpe = sql_bind_subtype(sql->sa, tname, 0, 0)))
 			return sql_error(sql, -1, SQLSTATE(42000) "SQL type %s not found\n", tname);
 		st = readString(r,pos);
@@ -1022,6 +1074,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			return NULL;
 		tname = b;
 		*e = 0;
+		convertIdent(tname);
 		s = mvc_bind_schema(sql, tname);
 		if (tname && !s)
 			return sql_error(sql, -1, SQLSTATE(42000) "Schema %s not found\n", tname);
@@ -1036,6 +1089,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			}
 			if (!a)
 				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate '%s%s%s %d' not found\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
+			if (!execute_priv(sql, a->func))
+				return sql_error(sql, -1, SQLSTATE(42000) "Aggregate: no privilege to call aggregate '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, list_length(exps));
 			exp = exp_aggr( sql->sa, exps, a, unique, no_nils, CARD_ATOM, 1);
 			if (zero_if_empty)
 				set_zero_if_empty(exp);
@@ -1066,6 +1121,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
 			}
 
+			if (f && !execute_priv(sql, f->func))
+				return sql_error(sql, -1, SQLSTATE(42000) "Function: no privilege to call function '%s%s%s %d'\n", tname ? tname : "", tname ? "." : "", cname, nops);
 			/* fix scale of mul function, other type casts are explicit */
 			if (f && f->func->fix_scale == SCALE_MUL && list_length(exps) == 2) {
 				sql_arg *ares = f->func->res->h->data;
@@ -1117,6 +1174,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 			old = *e;
 			*e = 0;
+			convertIdent(b);
 			var_cname = sa_strdup(sql->sa, b);
 			if (top_exps) {
 				exp = exps_bind_column(top_exps, var_cname, &amb, &mul, 1);
@@ -1224,19 +1282,19 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 
 		tname = r+*pos+1;
 		skipIdent(r, pos);
+		convertIdent(tname);
+		(*pos)++;
 		if (r[*pos] != '.') {
-			r[*pos-1] = 0;
 			cname = tname;
 			exp_setname(sql->sa, exp, NULL, cname);
 			skipWS(r, pos);
 		} else {
-			r[*pos-1] = 0;
 			(*pos)++;
 			cname = r+*pos+1;
 			skipIdent(r, pos);
-			e = r+*pos-1;
+			convertIdent(cname);
+			(*pos)++;
 			skipWS(r, pos);
-			*e = 0;
 			exp_setname(sql->sa, exp, tname, cname);
 		}
 	}
@@ -1541,23 +1599,24 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (r[*pos+1] == 'a') {
 			sql_schema *s = NULL;
 			sql_table *t = NULL;
-			char *sname, *tname, *e;
+			char *sname, *tname;
 			*pos += (int) strlen("table");
 			skipWS(r, pos);
 			if (r[*pos] != '(')
 				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '('\n");
 			(*pos)++;
 			skipWS(r, pos);
-			sname = r+*pos;
+			sname = r+*pos + 1;
 			skipIdent(r, pos);
-			e = r+*pos;
+			convertIdent(sname);
+			(*pos)++;
 			if (r[*pos] != '.')
 				return sql_error(sql, -1, SQLSTATE(42000) "Table: missing '.' in table name\n");
-			*e = 0;
 			(*pos)++;
-			tname = r+*pos;
+			tname = r+*pos + 1;
 			skipIdent(r, pos);
-			e = r+*pos;
+			convertIdent(tname);
+			(*pos)++;
 			skipWS(r, pos);
 			if (r[*pos] == '(') { /* table returning function */
 				node *m;
@@ -1568,9 +1627,14 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				bool inside_identifier = false;
 
 				while (r[*pos] && (inside_identifier || r[*pos] != '\n')) { /* the input parameters must be parsed after the input relation, skip them for now  */
-					(*pos)++;
-					if (r[*pos] == '"')
+					if (inside_identifier && r[*pos] == '\\' && r[*pos + 1] == '"') {
+						(*pos)+=2;
+					} else if (r[*pos] == '"') {
 						inside_identifier = !inside_identifier;
+						(*pos)++;
+					} else {
+						(*pos)++;
+					}
 				}
 				if (r[*pos] != '\n')
 					return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing ']' for output parameters\n");
@@ -1583,7 +1647,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (!(inputs = read_exps(sql, lrel, NULL, NULL, r, pos, '(', 0, 1)))
 					return NULL;
 
-				*e = 0; /* closing table udf name string */
 				if (!(tudf = find_table_function(sql, sname, tname, list_empty(inputs) ? NULL : inputs, list_empty(inputs) ? NULL : exp_types(sql->sa, inputs), F_UNION)))
 					return NULL;
 				sf = tudf->f;
@@ -1610,26 +1673,22 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 					if (r[*pos] != '"')
 						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
-					(*pos)++;
-					nrname = r+*pos;
+					nrname = r+*pos + 1;
 					skipIdent(r, pos);
 					if (r[*pos] != '"')
 						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
-					e = r+*pos;
-					*e = 0;
+					convertIdent(nrname);
 					(*pos)++;
 					if (r[*pos] != '.')
 						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing '.' for output parameters\n");
 					(*pos)++; /* skip '.' */
 					if (r[*pos] != '"')
 						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
-					(*pos)++;
-					ncname = r+*pos;
+					ncname = r+*pos + 1;
 					skipIdent(r, pos);
 					if (r[*pos] != '"')
 						return sql_error(sql, -1, SQLSTATE(42000) "Table returning function: missing identifier for output parameters\n");
-					e = r+*pos;
-					*e = 0;
+					convertIdent(ncname);
 					(*pos)++;
 					if (r[*pos] == ',')
 						(*pos)++;
@@ -1651,7 +1710,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			} else {
 				if (r[*pos] != ')')
 					sql_error(sql, -1, SQLSTATE(42000) "Table: missing ')'\n");
-				*e = 0;
 				(*pos)++;
 				skipWS(r, pos);
 				if (!(s = mvc_bind_schema(sql, sname)))

@@ -271,7 +271,8 @@ class client(Popen):
                 if cmd[i].startswith('-f') or cmd[i].startswith('--format='):
                     del cmd[i]
                     break
-            cmd.append('-f' + format)
+            if format:
+                cmd.append('-f' + format)
         if encoding is not None:
             if text and encoding.lower() != 'utf-8':
                 raise RuntimeError('text cannot be combined with encoding')
@@ -282,7 +283,8 @@ class client(Popen):
                 if cmd[i].startswith('-E') or cmd[i].startswith('--encoding='):
                     del cmd[i]
                     break
-            cmd.append('-E' + encoding)
+            if encoding:
+                cmd.append('-E' + encoding)
 
         env = None
 
@@ -299,10 +301,14 @@ class client(Popen):
                 if cmd[i].startswith('--port='):
                     del cmd[i]
                     break
-            cmd.append('--port=%d' % int(port))
+            try:
+                cmd.append('--port=%d' % int(port))
+            except ValueError:
+                if port:
+                    raise
         if dbname is None:
             dbname = os.getenv('TSTDB')
-        if dbname is not None:
+        if dbname is not None and dbname:
             cmd.append('--database=%s' % dbname)
         if user is not None or passwd is not None:
             env = copy.deepcopy(os.environ)
@@ -320,7 +326,8 @@ class client(Popen):
                 if cmd[i].startswith('--host='):
                     del cmd[i]
                     break
-            cmd.append('--host=%s' % host)
+            if host:
+                cmd.append('--host=%s' % host)
         if verbose:
             sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
             sys.stdout.flush()
