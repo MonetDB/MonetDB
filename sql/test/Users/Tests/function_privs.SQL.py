@@ -49,6 +49,13 @@ with SQLTestCase() as mdb:
           return 1;
         end;
     """).assertSucceeded()
+    mdb.execute("""
+        create function truncateversion() returns int
+        begin
+          truncate version;
+          return 1;
+        end;
+    """).assertSucceeded()
 
     # create a table to which my_user doesn't have access
     mdb.execute("CREATE SCHEMA your_schema;").assertSucceeded()
@@ -65,11 +72,13 @@ with SQLTestCase() as mdb:
     mdb.execute("GRANT EXECUTE on function insertversion to my_user;").assertSucceeded()
     mdb.execute("GRANT EXECUTE on function updateversion to my_user;").assertSucceeded()
     mdb.execute("GRANT EXECUTE on function deleteversion to my_user;").assertSucceeded()
+    mdb.execute("GRANT EXECUTE on function truncateversion to my_user;").assertSucceeded()
 
     mdb.execute("GRANT EXECUTE on function selectversion to my_user2;").assertSucceeded()
     mdb.execute("GRANT EXECUTE on function insertversion to my_user2;").assertSucceeded()
     mdb.execute("GRANT EXECUTE on function updateversion to my_user2;").assertSucceeded()
     mdb.execute("GRANT EXECUTE on function deleteversion to my_user2;").assertSucceeded()
+    mdb.execute("GRANT EXECUTE on function truncateversion to my_user2;").assertSucceeded()
 
     with SQLTestCase() as tc:
         # my_user can SEL/INS/UPD/DEL both directly on the table or through the functions
@@ -85,6 +94,9 @@ with SQLTestCase() as mdb:
         tc.execute("SELECT updateversion('test1', 4);").assertSucceeded()
         tc.execute("SELECT deleteversion('test1');").assertSucceeded()
         tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([('test3', 3)])
+        tc.execute("SELECT truncateversion();").assertSucceeded()
+        tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([])
+        tc.execute("INSERT INTO version VALUES ('test3', 3)").assertSucceeded() # insert for the next user
         # make my_user an owner of my_schema so that my_user can create functions
         # in my_schema
         mdb.execute("GRANT my_role to my_user;").assertSucceeded()
@@ -116,10 +128,18 @@ with SQLTestCase() as mdb:
               return 1;
             end;
         """).assertSucceeded()
+        tc.execute("""
+            create function mytruncate() returns int
+            begin
+              truncate version;
+              return 1;
+            end;
+        """).assertSucceeded()
         tc.execute("DROP FUNCTION myselect;").assertSucceeded()
         tc.execute("DROP FUNCTION myinsert;").assertSucceeded()
         tc.execute("DROP FUNCTION myupdate;").assertSucceeded()
         tc.execute("DROP FUNCTION mydelete;").assertSucceeded()
+        tc.execute("DROP FUNCTION mytruncate;").assertSucceeded()
         # but my_user cannot create functions to operate on a table to which it
         # doesn't have access
         tc.execute("""
@@ -142,6 +162,8 @@ with SQLTestCase() as mdb:
         tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([('test3', 33), ('test4', 4)])
         tc.execute("SELECT deleteversion('test3');").assertSucceeded()
         tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([('test4', 4)])
+        tc.execute("SELECT truncateversion();").assertSucceeded()
+        tc.execute("SELECT * FROM selectversion();").assertSucceeded().assertDataResultMatch([])
         # and my_user2 cannot create functions to operate on the table
         tc.execute("""
             create function myselect2() returns table(name varchar(10), i int)
@@ -170,6 +192,13 @@ with SQLTestCase() as mdb:
               return 1;
             end;
         """).assertFailed(err_code="42000", err_message="CREATE FUNCTION: insufficient privileges for user 'my_user2' in schema 'my_schema'")
+        tc.execute("""
+            create function mytruncate2() returns int
+            begin
+              truncate version;
+              return 1;
+            end;
+        """).assertFailed(err_code="42000", err_message="CREATE FUNCTION: insufficient privileges for user 'my_user2' in schema 'my_schema'")
 
         # clean up
         mdb.connect(username="monetdb", password="monetdb")
@@ -177,6 +206,7 @@ with SQLTestCase() as mdb:
         mdb.execute("DROP FUNCTION my_schema.insertversion;").assertSucceeded()
         mdb.execute("DROP FUNCTION my_schema.updateversion;").assertSucceeded()
         mdb.execute("DROP FUNCTION my_schema.deleteversion;").assertSucceeded()
+        mdb.execute("DROP FUNCTION my_schema.truncateversion;").assertSucceeded()
         mdb.execute("DROP TABLE my_schema.version;").assertSucceeded()
         mdb.execute("DROP TABLE your_schema.your_table;").assertSucceeded()
         mdb.execute("DROP USER my_user;").assertSucceeded()
