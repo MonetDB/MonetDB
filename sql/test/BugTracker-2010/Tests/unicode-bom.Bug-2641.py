@@ -57,7 +57,7 @@ with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, 
         sys.stderr.write("Expected stderr to contain 'Unexpected character (U+FEFF)'")
 
 # Using BOM as a SQL identifier
-INPUT5 = b"\x53\x45\x4C\x45\x43\x54\x20\x22\xEF\xBB\xBF\x22\x3B"
+INPUT5 = b"\x53\x45\x4C\x45\x43\x54\x20\x22\xEF\xBB\xBF\x22\x3B\x0A"
 with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as c:
     out, err = c.communicate(INPUT5)
     retcode = c.returncode
