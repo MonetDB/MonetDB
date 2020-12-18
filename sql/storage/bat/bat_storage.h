@@ -36,15 +36,16 @@ typedef struct segment {
 /* container structure too allow sharing this structure */
 typedef struct segments {
 	sql_ref r;
-	//BUN start;
-	BUN end;	/* current end */
+	BUN end;		/* current end */
 	struct segment *head;
 } segments;
 
 typedef struct storage {
-	column_storage cs;
-	//BUN start;
-	BUN end;
+	column_storage cs;	/* storage on disk */
+	bit cached_cnt;
+	size_t cnt;
+	size_t ucnt;	/* updates (ie deletes) in this transaction */
+	BUN end;		/* end maybe less than the segments indicate */
 	segments *segs;	/* local used segements */
 	struct storage *next;
 } storage;
