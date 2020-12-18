@@ -1075,11 +1075,23 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		return sql_error(sql, 02, SQLSTATE(3F000) "UPDATE: no such schema '%s'", sname);
 	t = find_table_on_scope(sql, &s, sname, tname);
 	if (update_allowed(sql, t, tname, "UPDATE", "update", 0) != NULL) {
-		sql_rel *r = NULL, *bt = rel_basetable(sql, t, alias ? alias : tname), *res = bt;
+		sql_rel *r = NULL, *res = rel_basetable(sql, t, alias ? alias : tname);
 
+		/* We have always to reduce the column visibility because of the SET clause */
+		if (!table_privs(sql, t, PRIV_SELECT)) {
+			sql_rel *nres = NULL;
+			if (!(nres = rel_reduce_on_column_privileges(sql, res, t)) && opt_where) /* on global updates the user may be able to upd*/
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
+			if (!nres) {
+				res->exps = sa_list(sql->sa); /* hasn't select privilege on any column, add just TID column to the list */
+			} else {
+				res = nres; /* add TID column to the columns it has permission to */
+			}
+			list_append(res->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+		}
 		if (opt_from) {
 			dlist *fl = opt_from->data.lval;
-			list *refs = list_append(new_exp_list(sql->sa), (char*) rel_name(bt));
+			list *refs = list_append(new_exp_list(sql->sa), (char*) rel_name(res));
 
 			for (dnode *n = fl->h; n && res; n = n->next) {
 				sql_rel *fnd = table_ref(query, NULL, n->data.sym, 0, refs);
@@ -1093,8 +1105,6 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 				return NULL;
 		}
 		if (opt_where) {
-			if (!table_privs(sql, t, PRIV_SELECT))
-				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
 				return NULL;
 			/* handle join */
@@ -1107,7 +1117,7 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		} else {	/* update all */
 			r = res;
 		}
-		return update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		return update_generate_assignments(query, t, r, rel_basetable(sql, t, alias ? alias : tname), assignmentlist, "UPDATE");
 	}
 	return NULL;
 }
@@ -1158,8 +1168,11 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 		if (opt_where) {
 			sql_exp *e;
 
-			if (!table_privs(sql, t, PRIV_SELECT))
-				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
+			if (!table_privs(sql, t, PRIV_SELECT)) {
+				if (!(r = rel_reduce_on_column_privileges(sql, r, t)))
+					return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
+				list_append(r->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+			}
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
 			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
@@ -1255,13 +1268,16 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		return sql_error(sql, 02, SQLSTATE(3F000) "MERGE: no such schema '%s'", sname);
 	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
 		return sql_error(sql, 02, SQLSTATE(42S02) "MERGE: no such table '%s'", tname);
-	if (!table_privs(sql, t, PRIV_SELECT))
-		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table %s%s%s'%s'",
-						 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
 	if (isMergeTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: merge statements not available for merge tables yet");
 
 	bt = rel_basetable(sql, t, alias ? alias : tname);
+	if (!table_privs(sql, t, PRIV_SELECT)) {
+		if (!(bt = rel_reduce_on_column_privileges(sql, bt, t)))
+			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table %s%s%s'%s'",
+							 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
+		list_append(bt->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+	}
 	joined = table_ref(query, NULL, tref, 0, NULL);
 	if (!bt || !joined)
 		return NULL;
@@ -1305,7 +1321,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				extra_project->exps = list_merge(extra_project->exps, rel_projections(sql, joined, NULL, 1, 0), (fdup)NULL);
 				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
-				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt), sts->h->data.lval, "MERGE");
+				upd_del = update_generate_assignments(query, t, extra_project, rel_basetable(sql, t, bt_name), sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
@@ -1322,7 +1338,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, bt, NULL, 1, 0));
 				list_prepend(extra_project->exps, exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
-				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
+				upd_del = rel_delete(sql->sa, rel_basetable(sql, t, bt_name), extra_project);
 			} else {
 				assert(0);
 			}
@@ -1351,7 +1367,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
-			if (!(insert = rel_insert(query->sql, rel_dup(bt), insert)))
+			if (!(insert = rel_insert(query->sql, rel_basetable(sql, t, bt_name), insert)))
 				return NULL;
 		} else {
 			assert(0);

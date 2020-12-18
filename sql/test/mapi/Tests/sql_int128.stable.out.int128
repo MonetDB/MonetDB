@@ -12,19 +12,15 @@ stdout of test 'sql_int128` in directory 'sql/test/mapi` itself:
 % .explain # table_name
 % mal # name
 % clob # type
-% 118 # length
+% 117 # length
 function user.main():void;
-    X_1:void := querylog.define("explain update mytest set a = 1234567890987654321;":str, "default_pipe":str, 39:int);
-barrier X_110:bit := language.dataflow();
+    X_1:void := querylog.define("explain update mytest set a = 1234567890987654321;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "mytest":str);
-    X_17:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "a":str, 0:int);
-    X_47:bat[:hge] := algebra.projection(C_5:bat[:oid], X_17:bat[:hge]);
-    X_54:bat[:hge] := algebra.project(X_47:bat[:hge], 1234567890987654321:hge);
-exit X_110:bit;
-    X_56:int := sql.update(X_4:int, "sys":str, "mytest":str, "a":str, C_5:bat[:oid], X_54:bat[:hge]);
-    X_59:lng := aggr.count(C_5:bat[:oid]);
-    sql.affectedRows(X_56:int, X_59:lng);
+    X_10:bat[:hge] := algebra.project(C_5:bat[:oid], 1234567890987654321:hge);
+    X_12:int := sql.update(X_4:int, "sys":str, "mytest":str, "a":str, C_5:bat[:oid], X_10:bat[:hge]);
+    X_14:lng := aggr.count(C_5:bat[:oid]);
+    sql.affectedRows(X_12:int, X_14:lng);
 end user.main;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -58,19 +54,15 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 110 # length
+% 109 # length
 function user.main():void;
-    X_1:void := querylog.define("explain update mytest set b = 10000000000;":str, "default_pipe":str, 39:int);
-barrier X_110:bit := language.dataflow();
+    X_1:void := querylog.define("explain update mytest set b = 10000000000;":str, "default_pipe":str, 9:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "mytest":str);
-    X_17:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "a":str, 0:int);
-    X_47:bat[:hge] := algebra.projection(C_5:bat[:oid], X_17:bat[:hge]);
-    X_54:bat[:hge] := algebra.project(X_47:bat[:hge], 10000000000:hge);
-exit X_110:bit;
-    X_56:int := sql.update(X_4:int, "sys":str, "mytest":str, "b":str, C_5:bat[:oid], X_54:bat[:hge]);
-    X_59:lng := aggr.count(C_5:bat[:oid]);
-    sql.affectedRows(X_56:int, X_59:lng);
+    X_10:bat[:hge] := algebra.project(C_5:bat[:oid], 10000000000:hge);
+    X_12:int := sql.update(X_4:int, "sys":str, "mytest":str, "b":str, C_5:bat[:oid], X_10:bat[:hge]);
+    X_14:lng := aggr.count(C_5:bat[:oid]);
+    sql.affectedRows(X_12:int, X_14:lng);
 end user.main;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -106,19 +98,19 @@ end user.main;
 % clob # type
 % 104 # length
 function user.main():void;
-    X_1:void := querylog.define("explain update mytest set c = a * b;":str, "default_pipe":str, 38:int);
-barrier X_111:bit := language.dataflow();
+    X_1:void := querylog.define("explain update mytest set c = a * b;":str, "default_pipe":str, 23:int);
+barrier X_90:bit := language.dataflow();
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "mytest":str);
     X_17:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "a":str, 0:int);
-    X_47:bat[:hge] := algebra.projection(C_5:bat[:oid], X_17:bat[:hge]);
+    X_29:bat[:hge] := algebra.projection(C_5:bat[:oid], X_17:bat[:hge]);
     X_22:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "b":str, 0:int);
-    X_48:bat[:hge] := algebra.projection(C_5:bat[:oid], X_22:bat[:hge]);
-    X_52:bat[:hge] := batcalc.*(X_47:bat[:hge], X_48:bat[:hge], nil:BAT, nil:BAT);
-exit X_111:bit;
-    X_56:int := sql.update(X_4:int, "sys":str, "mytest":str, "c":str, C_5:bat[:oid], X_52:bat[:hge]);
-    X_58:lng := aggr.count(C_5:bat[:oid]);
-    sql.affectedRows(X_56:int, X_58:lng);
+    X_30:bat[:hge] := algebra.projection(C_5:bat[:oid], X_22:bat[:hge]);
+    X_31:bat[:hge] := batcalc.*(X_29:bat[:hge], X_30:bat[:hge], nil:BAT, nil:BAT);
+exit X_90:bit;
+    X_35:int := sql.update(X_4:int, "sys":str, "mytest":str, "c":str, C_5:bat[:oid], X_31:bat[:hge]);
+    X_37:lng := aggr.count(C_5:bat[:oid]);
+    sql.affectedRows(X_35:int, X_37:lng);
 end user.main;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -154,19 +146,19 @@ end user.main;
 % clob # type
 % 104 # length
 function user.main():void;
-    X_1:void := querylog.define("explain update mytest set d = c * b;":str, "default_pipe":str, 38:int);
-barrier X_111:bit := language.dataflow();
+    X_1:void := querylog.define("explain update mytest set d = c * b;":str, "default_pipe":str, 23:int);
+barrier X_90:bit := language.dataflow();
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "mytest":str);
-    X_28:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "c":str, 0:int);
-    X_49:bat[:hge] := algebra.projection(C_5:bat[:oid], X_28:bat[:hge]);
-    X_22:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "b":str, 0:int);
-    X_48:bat[:hge] := algebra.projection(C_5:bat[:oid], X_22:bat[:hge]);
-    X_52:bat[:hge] := batcalc.*(X_49:bat[:hge], X_48:bat[:hge], nil:BAT, nil:BAT);
-exit X_111:bit;
-    X_56:int := sql.update(X_4:int, "sys":str, "mytest":str, "d":str, C_5:bat[:oid], X_52:bat[:hge]);
-    X_58:lng := aggr.count(C_5:bat[:oid]);
-    sql.affectedRows(X_56:int, X_58:lng);
+    X_22:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "c":str, 0:int);
+    X_30:bat[:hge] := algebra.projection(C_5:bat[:oid], X_22:bat[:hge]);
+    X_17:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "b":str, 0:int);
+    X_29:bat[:hge] := algebra.projection(C_5:bat[:oid], X_17:bat[:hge]);
+    X_31:bat[:hge] := batcalc.*(X_30:bat[:hge], X_29:bat[:hge], nil:BAT, nil:BAT);
+exit X_90:bit;
+    X_35:int := sql.update(X_4:int, "sys":str, "mytest":str, "d":str, C_5:bat[:oid], X_31:bat[:hge]);
+    X_37:lng := aggr.count(C_5:bat[:oid]);
+    sql.affectedRows(X_35:int, X_37:lng);
 end user.main;
 # optimizer.mitosis()
 # optimizer.dataflow()
@@ -199,19 +191,19 @@ end user.main;
 % clob # type
 % 104 # length
 function user.main():void;
-    X_1:void := querylog.define("explain update mytest set e = d + a;":str, "default_pipe":str, 38:int);
-barrier X_111:bit := language.dataflow();
+    X_1:void := querylog.define("explain update mytest set e = d + a;":str, "default_pipe":str, 23:int);
+barrier X_90:bit := language.dataflow();
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "mytest":str);
-    X_34:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "d":str, 0:int);
-    X_50:bat[:hge] := algebra.projection(C_5:bat[:oid], X_34:bat[:hge]);
+    X_22:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "d":str, 0:int);
+    X_30:bat[:hge] := algebra.projection(C_5:bat[:oid], X_22:bat[:hge]);
     X_17:bat[:hge] := sql.bind(X_4:int, "sys":str, "mytest":str, "a":str, 0:int);
-    X_47:bat[:hge] := algebra.projection(C_5:bat[:oid], X_17:bat[:hge]);
-    X_52:bat[:hge] := batcalc.+(X_50:bat[:hge], X_47:bat[:hge], nil:BAT, nil:BAT);
-exit X_111:bit;
-    X_56:int := sql.update(X_4:int, "sys":str, "mytest":str, "e":str, C_5:bat[:oid], X_52:bat[:hge]);
-    X_58:lng := aggr.count(C_5:bat[:oid]);
-    sql.affectedRows(X_56:int, X_58:lng);
+    X_29:bat[:hge] := algebra.projection(C_5:bat[:oid], X_17:bat[:hge]);
+    X_31:bat[:hge] := batcalc.+(X_30:bat[:hge], X_29:bat[:hge], nil:BAT, nil:BAT);
+exit X_90:bit;
+    X_35:int := sql.update(X_4:int, "sys":str, "mytest":str, "e":str, C_5:bat[:oid], X_31:bat[:hge]);
+    X_37:lng := aggr.count(C_5:bat[:oid]);
+    sql.affectedRows(X_35:int, X_37:lng);
 end user.main;
 # optimizer.mitosis()
 # optimizer.dataflow()
