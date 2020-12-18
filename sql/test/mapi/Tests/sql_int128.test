@@ -168,6 +168,8 @@ querylog.define
 1
 sql.mvc
 1
+sql.claim
+1
 sql.append
 1
 sql.affectedRows
