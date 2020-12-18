@@ -45,6 +45,7 @@ typedef struct storage {
 	bit cached_cnt;
 	size_t cnt;
 	size_t ucnt;	/* updates (ie deletes) in this transaction */
+	size_t icnt;	/* claimed in the transaction */
 	BUN end;		/* end maybe less than the segments indicate */
 	segments *segs;	/* local used segements */
 	struct storage *next;

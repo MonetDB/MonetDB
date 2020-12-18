@@ -156,7 +156,7 @@ gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool 
 gdk_return BATkey(BAT *b, bool onoff);
 bool BATkeyed(BAT *b);
 gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate) __attribute__((__warn_unused_result__));
-BAT *BATmaskedcands(oid hseq, BAT *masked, bool selected);
+BAT *BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected);
 void *BATmax(BAT *b, void *aggr);
 void *BATmax_skipnil(BAT *b, void *aggr, bit skipnil);
 BAT *BATmergecand(BAT *a, BAT *b);
