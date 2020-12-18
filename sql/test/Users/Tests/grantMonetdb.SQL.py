@@ -1,6 +1,8 @@
 ###
 # Grant sysadmin rights to a user.
-# Verify that the user can assume the sysadmin role and CREATE new users, GRANT privileges and roles.
+# Verify that the user can assume the sysadmin role and GRANT privileges and
+#   roles, but cannot CREATE new users since only 'monetdb' in its 'sysadmin'
+#   role can
 ###
 
 from MonetDBtesting.sqltest import SQLTestCase
@@ -20,12 +22,12 @@ with SQLTestCase() as mdb:
         tc.connect(username="alice", password="alice")
         # alice is not a sysadmin yet
         tc.execute("SET ROLE sysadmin;").assertFailed(err_code='42000', err_message="Role (sysadmin) missing")
-        tc.execute("CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;").assertFailed(err_code='42M31', err_message="Insufficient privileges to create user 'may'")
         tc.execute("GRANT ALL ON library.orders TO april;").assertFailed(err_code='01007', err_message="GRANT: Grantor 'alice' is not allowed to grant privileges for table 'orders'")
         # give alice sysadmin rights
         mdb.execute("GRANT sysadmin TO alice;").assertSucceeded()
         tc.execute("SET ROLE sysadmin;").assertSucceeded()
-        # FIXME: this query should probably not fail
+
+        # but alice cannot create another user
         tc.execute("CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;").assertFailed(err_code='M0M27', err_message="CREATE USER: access denied for user 'alice'")
 
         with SQLTestCase() as tc2:
