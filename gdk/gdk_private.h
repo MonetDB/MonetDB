@@ -276,6 +276,28 @@ BAT *virtualize(BAT *bn)
 	b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s"
+#if defined(_MSC_VER) && defined(__INTEL_COMPILER)
+/* stupid Intel compiler can't handle the "complexity" */
+#define ALGOOPTBATPAR(b)						\
+	b ? BATgetId(b) : "",						\
+	b ? "#" : "",							\
+	b ? BATcount(b) : 0,						\
+	b ? "@" : "",							\
+	b ? b->hseqbase : 0,						\
+	b ? "[" : "",							\
+	b ? ATOMname(b->ttype) : "",					\
+	b ? "]" : "",							\
+	b ? !b->batTransient ? "P" : b->theap.parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
+	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : "" : "", \
+	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
+	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
+	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\
+	b && b->tnonil ? "N" : "",					\
+	b && b->thash ? "H" : "",					\
+	b && b->torderidx ? "O" : "",					\
+	b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
+#else
+/* this is the version we actually want to use (and do use on most platforms) */
 #define ALGOOPTBATPAR(b)						\
 	b ? BATgetId(b) : "",						\
 	b ? "#" : "",							\
@@ -294,6 +316,7 @@ BAT *virtualize(BAT *bn)
 	b && b->thash ? "H" : "",					\
 	b && b->torderidx ? "O" : "",					\
 	b ? b->timprints ? "I" : b->theap.parentid && BBP_cache(b->theap.parentid)->timprints ? "(I)" : "" : ""
+#endif
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
 #define BBP_THREADMASK	63
