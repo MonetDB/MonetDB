@@ -778,4 +778,55 @@ typedef struct {
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
 extern sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
 
+#define outside_str 1
+#define inside_str 2
+
+#define extracting_schema 1
+#define extracting_sequence 2
+
+static inline void
+extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **schema, char **sequence)
+{
+	int status = outside_str, identifier = extracting_schema;
+	char next_identifier[1024]; /* needs one extra character for null terminator */
+	size_t bp = 0;
+
+	for (size_t i = 0; default_value[i]; i++) {
+		char next = default_value[i];
+
+		if (next == '"') {
+			if (status == inside_str && default_value[i + 1] == '"') {
+				next_identifier[bp++] = '"';
+				i++; /* has to advance two positions */
+			} else if (status == inside_str) {
+				next_identifier[bp++] = '\0';
+				if (identifier == extracting_schema) {
+					*schema = sa_strdup(sa, next_identifier);
+					identifier = extracting_sequence;
+				} else if (identifier == extracting_sequence) {
+					*sequence = sa_strdup(sa, next_identifier);
+					break; /* done extracting */
+				}
+				bp = 0;
+				status = outside_str;
+			} else {
+				assert(status == outside_str);
+				status = inside_str;
+			}
+		} else if (next == '.') {
+			if (status == outside_str && default_value[i + 1] == '"') {
+				status = inside_str;
+				i++; /* has to advance two positions */
+			} else {
+				assert(status == inside_str);
+				next_identifier[bp++] = '.'; /* used inside an identifier name */
+			}
+		} else if (status == inside_str) {
+			next_identifier[bp++] = next;
+		} else {
+			assert(status == outside_str);
+		}
+	}
+}
+
 #endif /* SQL_CATALOG_H */

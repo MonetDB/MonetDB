@@ -86,7 +86,7 @@ stdout of test 'use_order_column_first.SF-2686008` in directory 'sql/test/BugTra
 % 65 # length
 project (
 | group by (
-| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
+| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ] COUNT 
 | ) [ "sorted"."a", "sorted"."b" ] [ "sorted"."a", "sorted"."b" ]
 ) [ "sorted"."a", "sorted"."b" ]
 #plan select a,b from sorted group by b,a;
@@ -96,7 +96,7 @@ project (
 % 65 # length
 project (
 | group by (
-| | table(sys.sorted) [ "sorted"."a", "sorted"."b" ] COUNT 
+| | table("sys"."sorted") [ "sorted"."a", "sorted"."b" ] COUNT 
 | ) [ "sorted"."b", "sorted"."a" ] [ "sorted"."b", "sorted"."a" ]
 ) [ "sorted"."a", "sorted"."b" ]
 #drop table unsorted;

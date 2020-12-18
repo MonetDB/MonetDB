@@ -1337,8 +1337,8 @@ bm_subcommit(logger *lg)
 				logbat_destroy(lb);
 				return GDK_FAIL;
 			}
+			assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
 			logbat_destroy(lb);
-			//assert(BBP_lrefs(bids[pos])<=0 && BBP_refs(bids[pos])==0);
 		}
 		/* only project out the deleted with last id > lg->saved_tid
 		 * update dcatalog, ie only keep those deleted which
@@ -1974,7 +1974,7 @@ logger_flush(logger *lg, lng saved_id)
 			char *filename;
 			char id[BUFSIZ];
 			int len = snprintf(id, sizeof(id), LLFMT, lg->saved_id+1);
-	
+
 			if (len == -1 || len >= BUFSIZ) {
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
@@ -1986,7 +1986,7 @@ logger_flush(logger *lg, lng saved_id)
 				GDKfree(filename);
 				return GDK_FAIL;
 			}
-	
+
 			bool filemissing = false;
 			if (logger_open_input(lg, filename, &filemissing) == GDK_FAIL) {
 				GDKfree(filename);
@@ -2473,13 +2473,11 @@ logger_del_bat(logger *lg, log_bid bid)
 		GDKerror("cannot find BAT\n");
 		return GDK_FAIL;
 	}
-	//assert(BBP_lrefs(bid) >= 2);
 
 	pos = (oid) p;
 	if (BUNinplace(lg->catalog_lid, p, &lid, false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return BUNappend(lg->dcatalog, &pos, false);
-/*assert(BBP_lrefs(bid) == 0);*/
 }
 
 log_bid

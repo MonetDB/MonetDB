@@ -7,17 +7,17 @@ project (
 | | | group by (
 | | | | project (
 | | | | | select (
-| | | | | | table(sys._tables) [ "_tables"."id", "_tables"."type" ] COUNT 
+| | | | | | table("sys"."_tables") [ "_tables"."id", "_tables"."type" ] COUNT 
 | | | | | ) [ "_tables"."type" != smallint "2" ]
 | | | | ) [ "_tables"."id" as "tables"."id" ]
-| | | ) [  ] [ sys.count() NOT NULL as "%10"."%10" ],
+| | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ],
 | | | group by (
 | | | | project (
-| | | | | table(tmp._tables) [ "_tables"."id" ] COUNT 
+| | | | | table("tmp"."_tables") [ "_tables"."id" ] COUNT 
 | | | | ) [ "_tables"."id" as "tables"."id" ]
-| | | ) [  ] [ sys.count() NOT NULL as "%10"."%10" ]
+| | | ) [  ] [ "sys"."count"() NOT NULL as "%10"."%10" ]
 | | ) [ "%10"."%10" ]
-| ) [  ] [ sys.sum no nil ("%10"."%10") as "%10"."%10" ]
+| ) [  ] [ "sys"."sum" no nil ("%10"."%10") as "%10"."%10" ]
 ) [ "%10"."%10" NOT NULL ]
 
 statement ok
