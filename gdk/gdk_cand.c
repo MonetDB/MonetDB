@@ -1007,15 +1007,20 @@ canditer_sliceval_mask(struct canditer *ci, oid lo1, oid hi1, BUN cnt1,
 		return NULL;
 	bn->tkey = true;
 
-	lo1 -= ci->mskoff;
-	hi1 -= ci->mskoff;
-	for (oid o = lo1; o < hi1 && cnt1 > 0; o++) {
-		if (ci->mask[o / 32] & (1U << (o % 32))) {
-			if (BUNappend(bn, &(oid){o + ci->mskoff}, false) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				return NULL;
+	if (hi1 > ci->mskoff) {
+		if (lo1 < ci->mskoff)
+			lo1 = 0;
+		else
+			lo1 -= ci->mskoff;
+		hi1 -= ci->mskoff;
+		for (oid o = lo1; o < hi1 && cnt1 > 0; o++) {
+			if (ci->mask[o / 32] & (1U << (o % 32))) {
+				if (BUNappend(bn, &(oid){o + ci->mskoff}, false) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+				cnt1--;
 			}
-			cnt1--;
 		}
 	}
 	if (cnt2 > 0) {
