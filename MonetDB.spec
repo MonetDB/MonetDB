@@ -2720,7 +2720,7 @@ sed -i 's|/var/run|/run|' \
   are equal to 1.1.  (The old code returned 33554432 instead of 1.1e8.)
 
 * Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
-- BZ#6460 - selinux doen't allow mmap
+- BZ#6460: selinux doen't allow mmap
 
 * Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
 - Rebuilt.
