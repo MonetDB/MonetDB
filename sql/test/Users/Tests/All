@@ -5,8 +5,8 @@ table_privs
 unknown_user
 withGrantOption
 grantMonetdb
-createSetUp
 columnRights
+createSetUp
 changePasswordUser
 renameUser
 changeSchemaUser
