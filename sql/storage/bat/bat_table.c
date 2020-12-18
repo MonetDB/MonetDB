@@ -25,11 +25,22 @@ _delta_cands(sql_trans *tr, sql_table *t)
 
 		if (d && store_funcs.count_del(tr, t, 2) > 0) {
 		    BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
-			BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
-			BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
-
 			bat_destroy(d);
 			d = nd;
+			/*
+			storage *s = t->data;
+			if (BATcount(d) < s->segs->head->end) {
+				msk deleted = 0;
+				for(BUN i = BATcount(d); i<nr; i++) {
+					if (BUNappend(d, &deleted, true) != GDK_SUCCEED) {
+						bat_destroy(d);
+						return NULL;
+					}
+				}
+			}
+			*/
+			BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
+			BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
 	    	if (!ui || !uv || !d || BATreplace(d, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(d);
 				bat_destroy(ui);
@@ -42,7 +53,7 @@ _delta_cands(sql_trans *tr, sql_table *t)
 		if (!d)
 			return NULL;
 		/* true == deleted, need not deleted  */
-		tids = BATmaskedcands(0, d, false);
+		tids = BATmaskedcands(0, nr, d, false);
 		bat_destroy(d);
 		if(tids == NULL)
 			return NULL;

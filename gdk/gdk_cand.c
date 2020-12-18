@@ -1298,7 +1298,7 @@ BATnegcands(BUN nr, BAT *odels)
 }
 
 BAT *
-BATmaskedcands(oid hseq, BAT *masked, bool selected)
+BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 {
 	const char *nme;
 	Heap *msks;
@@ -1326,7 +1326,7 @@ BATmaskedcands(oid hseq, BAT *masked, bool selected)
 	strconcat_len(msks->filename, sizeof(msks->filename),
 		      nme, ".theap", NULL);
 
-	nmask = (BATcount(masked) + 31) / 32;
+	nmask = (nr + 31) / 32;
     	if (HEAPalloc(msks, nmask + (sizeof(ccand_t)/sizeof(uint32_t)), sizeof(uint32_t), 0) != GDK_SUCCEED) {
 		GDKfree(msks);
 		BBPreclaim(bn);
@@ -1344,11 +1344,24 @@ BATmaskedcands(oid hseq, BAT *masked, bool selected)
 		memcpy(r, Tloc(masked, 0), nmask * sizeof(uint32_t));
 	} else {
 		const uint32_t *s = (const uint32_t *) Tloc(masked, 0);
-		for (BUN i = 0; i < nmask; i++)
+		BUN nmask_ = (BATcount(masked) + 31)/32;
+		for (BUN i = 0; i < nmask_; i++)
 			r[i] = ~s[i];
 	}
+	if (nr > BATcount(masked)) {
+		BUN rest = BATcount(masked)&31, nmask_ = (BATcount(masked)+31)/32, nrest = nr;
+		int v = 0;
+		if (nmask_ > nmask)
+			nrest = 32-rest;
+
+		for (BUN j = rest; j < nrest; j++)
+			v |= 1U<<j;
+		r[nmask_ -1] |= v;
+		for (BUN j = nmask_; j < nmask; j++)
+			r[j] = ~0;
+	}
 	/* make sure last word doesn't have any spurious bits set */
-	BUN cnt = BATcount(masked) % 32;
+	BUN cnt = nr % 32;
 	if (cnt > 0)
 		r[nmask - 1] &= (1U << cnt) - 1;
 	cnt = 0;

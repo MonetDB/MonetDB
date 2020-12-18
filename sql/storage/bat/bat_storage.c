@@ -184,10 +184,11 @@ cs_real_update_bats( column_storage *cs, BAT **Ui, BAT **Uv)
 static size_t
 count_deletes(storage *d)
 {
-	/* needs to be optimized */
-	BAT *b = temp_descriptor(d->cs.bid);
-	lng cnt = 0;
+	if (d->cached_cnt)
+		return d->cnt+d->ucnt;
 
+	lng cnt = 0;
+	BAT *b = temp_descriptor(d->cs.bid);
 	if (!d->cs.ucnt) {
 		if (BATsum(&cnt, TYPE_lng, b, NULL, true, false, false) != GDK_SUCCEED) {
 			bat_destroy(b);
@@ -218,7 +219,9 @@ count_deletes(storage *d)
 		}
 		bat_destroy(c);
 	}
-	return (size_t) cnt;
+	d->cached_cnt = 1;
+	d->cnt = (size_t)cnt;
+	return d->cnt;
 }
 
 static size_t
@@ -765,6 +768,9 @@ dup_dbat(storage *obat, storage *bat, int is_new, int temp)
 		MT_lock_unset(&segs_lock);
 		assert(bat->end <= bat->segs->end);
 	}
+	bat->cached_cnt = obat->cached_cnt;
+	bat->cnt = obat->cnt + obat->ucnt;
+	bat->ucnt = 0;
 	return dup_cs(&obat->cs, &bat->cs, TYPE_msk, is_new, temp);
 }
 
@@ -838,6 +844,7 @@ delta_delete_bat( storage *bat, BAT *i, int is_new)
 
 	if (i->ttype == TYPE_msk || mask_cand(i))
 		i = BATunmask(i);
+	bat->ucnt+=BATcount(i);
 	t = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
 	int ok = LOG_OK;
 
@@ -855,6 +862,7 @@ delta_delete_val( storage *bat, oid rid, int is_new)
 {
 	/* update pos */
 	msk T = TRUE;
+	bat->ucnt++;
 	return cs_update_val(&bat->cs, rid, &T, is_new);
 }
 
@@ -1011,8 +1019,8 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 
 	assert(isNew(t) || isTempTable(t) || s->cs.cleared || BATcount(b) == slot);
 
-	msk deleted = FALSE;
 
+	msk deleted = FALSE;
 	/* general case, write deleted in the central bat (ie others don't see these values) and
 	 * insert rows into the update bats */
 	if (!s->cs.cleared && ps != s && !isTempTable(t)) {
@@ -1385,6 +1393,8 @@ create_del(sql_trans *tr, sql_table *t)
 		assert(!bat->segs && !bat->end);
 		bat->segs = new_segments(0);
 		bat->end = 0;
+		bat->cnt = bat->ucnt = 0;
+		bat->cached_cnt = 1;
 
 		b = bat_new(TYPE_msk, t->sz, PERSISTENT);
 		if(b != NULL) {
@@ -1703,12 +1713,14 @@ clear_del(sql_trans *tr, sql_table *t)
 		return;
 	t->s->base.wtime = t->base.wtime = tr->wstime;
 	storage *s = t->data;
+	s->cnt = 0;
 	clear_cs(tr, &s->cs);
 
 	if (s->segs)
 		destroy_segments(s->segs);
 	s->segs = new_segments(0);
 	s->end = 0;
+	s->cnt = s->ucnt = 0;
 }
 
 static BUN
@@ -1948,8 +1960,30 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 }
 
 static int
+cs_grow( column_storage *cs, BUN nr)
+{
+	if (cs->bid) {
+		BAT *cur = temp_descriptor(cs->bid);
+		if (!cur)
+			return LOG_ERR;
+		if (BATcount(cur) < nr) {
+			msk deleted = 0;
+			/* todo faster inserts */
+			for(BUN i = BATcount(cur); i<nr; i++) {
+				if (BUNappend(cur, &deleted, true) != GDK_SUCCEED) {
+					bat_destroy(cur);
+					return LOG_ERR;
+				}
+			}
+		}
+	}
+	return LOG_OK;
+}
+
+static int
 tr_update_dbat( sql_trans *tr, storage *ts, storage *fs)
 {
+	int grow = 0;
 	if (fs->cs.cleared) {
 		destroy_segments(ts->segs);
 		MT_lock_set(&segs_lock);
@@ -1957,11 +1991,14 @@ tr_update_dbat( sql_trans *tr, storage *ts, storage *fs)
 		MT_lock_unset(&segs_lock);
 		ts->end = ts->segs->end;
 		assert(ts->segs->head);
+		ts->cnt = 0;
+		ts->ucnt = 0;
 	} else {
 		assert(ts->segs == fs->segs);
 		/* merge segments or cleanup ? */
 		segment *segs = ts->segs->head, *seg = segs;
 		for (; segs; segs = segs->next) {
+			grow |= (segs->owner == tr);
 			if (segs->owner == tr || !segs->owner) {
 				/* merge range */
 				segs->owner = NULL;
@@ -1980,6 +2017,10 @@ tr_update_dbat( sql_trans *tr, storage *ts, storage *fs)
 		}
 		ts->end = ts->segs->end;
 	}
+	ts->cnt += fs->ucnt;
+	/* first check if bat needs too grow */
+	if ( 0 && (fs->ucnt || grow))
+		cs_grow(&ts->cs, ts->end);
 	int ok = tr_update_cs( tr, &ts->cs, &fs->cs);
 	if (ok == LOG_OK && ts->next) {
 		ok = destroy_dbat(tr, ts->next);
