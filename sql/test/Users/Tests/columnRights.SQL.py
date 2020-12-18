@@ -33,3 +33,8 @@ with SQLTestCase() as tc:
     # but not this update involving the 'price' column
     tc.execute("UPDATE orders SET name = 'new book title' where price = 12;").assertSucceeded().assertRowCount(2)
 
+    # clean up
+    tc.connect(username="monetdb", password="monetdb")
+    tc.execute("DROP USER alice;").assertSucceeded()
+    tc.execute("DROP TABLE library.orders;").assertSucceeded()
+    tc.execute("DROP SCHEMA library;").assertSucceeded()
