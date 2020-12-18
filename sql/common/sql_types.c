@@ -1224,6 +1224,7 @@ sqltypeinit( sql_allocator *sa)
 		/* the geom module is loaded */
 		GEOM = *t++ = sql_create_type(sa, "GEOMETRY", 0, SCALE_NONE, 0, EC_GEOM, "wkb");
 		/*POINT =*/ //*t++ = sql_create_type(sa, "POINT", 0, SCALE_FIX, 0, EC_GEOM, "wkb");
+		// TODO: The GEOMETRYA  and MBR types should actually also be part of EC_GEOM. However this requires more (bat)calc.<convert> functions.
 		*t++ = sql_create_type(sa, "GEOMETRYA", 0, SCALE_NONE, 0, EC_EXTERNAL, "wkba");
 
 		MBR = *t++ = sql_create_type(sa, "MBR", 0, SCALE_NONE, 0, EC_EXTERNAL, "mbr");
