@@ -3,13 +3,13 @@ role
 table
 table_privs
 unknown_user
-createSetUp
 withGrantOption
+grantMonetdb
+createSetUp
 columnRights
 changePasswordUser
 renameUser
 changeSchemaUser
-grantMonetdb
 copyinto
 schemaRights
 metadataConsistency
