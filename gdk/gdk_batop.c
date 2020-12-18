@@ -500,7 +500,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	struct canditer ci;
 	BUN cnt;
 	BUN r;
-	PROPrec *prop, *nprop;
+	PROPrec *prop = NULL, *nprop;
 	oid hseq = n->hseqbase;
 	char buf[64];
 	lng t0 = 0;
@@ -548,9 +548,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	IMPSdestroy(b);		/* imprints do not support updates yet */
 	OIDXdestroy(b);
-	if ((prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
+	if (BATcount(b) == 0 || (prop = BATgetprop(b, GDK_MAX_VALUE)) != NULL) {
 		if ((nprop = BATgetprop(n, GDK_MAX_VALUE)) != NULL) {
-			if (ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) < 0) {
+			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) < 0) {
 				if (s == NULL) {
 					BATsetprop(b, GDK_MAX_VALUE, b->ttype, VALptr(&nprop->v));
 					if ((nprop = BATgetprop(n, GDK_MAX_POS)) != NULL)
@@ -567,9 +567,9 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			BATrmprop(b, GDK_MAX_POS);
 		}
 	}
-	if ((prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
+	if (BATcount(b) == 0 || (prop = BATgetprop(b, GDK_MIN_VALUE)) != NULL) {
 		if ((nprop = BATgetprop(n, GDK_MIN_VALUE)) != NULL) {
-			if (ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) > 0) {
+			if (BATcount(b) == 0 || ATOMcmp(b->ttype, VALptr(&prop->v), VALptr(&nprop->v)) > 0) {
 				if (s == NULL) {
 					BATsetprop(b, GDK_MIN_VALUE, b->ttype, VALptr(&nprop->v));
 					if ((nprop = BATgetprop(n, GDK_MIN_POS)) != NULL)
@@ -587,6 +587,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		}
 	}
 	BATrmprop(b, GDK_NUNIQUE);
+	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 #if 0		/* enable if we have more properties than just min/max */
 	do {
 		for (prop = b->tprops; prop; prop = prop->next)
@@ -904,6 +905,7 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 	OIDXdestroy(b);
 	IMPSdestroy(b);
 	BATrmprop(b, GDK_NUNIQUE);
+	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 
 	b->tsorted = b->trevsorted = false;
 	b->tnosorted = b->tnorevsorted = 0;
