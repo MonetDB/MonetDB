@@ -1131,6 +1131,17 @@ def RunTest(env, test, oktests, pSrvr):
                 except OSError:
                     if not env.get('NOCLEAN'):
                         raise
+                if f.endswith('.src'):
+                    with open(f) as fp:
+                        src = expandvars(fp.readline().strip(), env)
+                    if os.path.isfile(src):
+                        f = f[:-4]
+                        try:
+                            SymlinkOrCopy(src, f)
+                            links.append(f)
+                        except IOError as err:
+                            ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
+                                   % (os.path.join(dir_, f), f, os.getcwd(), err.errno, err.strerror))
         # Check for available sockets and block them until we're ready to run the actual test
         if pSrvr is None:
             MAPIsockets, reason = CheckSocket2(env, "MAPI")   #, SrvrErr)
@@ -1140,24 +1151,7 @@ def RunTest(env, test, oktests, pSrvr):
         else:
             MAPIsockets = None
 
-        if test.get('is_src_link', False) and not os.path.isfile(TST + EXT):
-            with open(test.get('test_path') + test.get('tail'), 'r') as f:
-                TSTSRC = expandvars(f.readline().strip(), env)
-            if os.path.isfile(TSTSRC):
-                try:
-                    SymlinkOrCopy(TSTSRC, TST + EXT)
-                    links.append(TST + EXT)
-                except IOError as err:
-                    ErrMsg("SymlinkOrCopy('%s','%s') in '%s' failed with #%d: '%s'."
-                           % (TSTSRC, TST + EXT, os.getcwd(), err.errno, err.strerror))
-            else:
-                reason = "as source file '%s` is missing." % TSTSRC
-                if MAPIsockets is not None:
-                    # Release reserved sockets before bailing out
-                    MAPIsockets[0].close()
-                    MAPIsockets[1].close()
-                return TX,F_SKIP,reason,links
-        elif test.get('is_input', False) and not os.path.isfile(TST+EXT):
+        if test.get('is_input', False) and not os.path.isfile(TST+EXT):
             with open(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
                 with open(test.get('test_path') + test.get('tail'), 'r') as f:
                     for l in f:
@@ -1359,7 +1353,11 @@ def Prompt(cmd) :
 def progress(count, total, test):
     perc = round((count/total) * 100) if total and count else 0
     print('\r', ' '*(ttywidth or 100), end='', sep='')
-    print('\r','[{}/{}] ({}%)    {}'.format(count, total, perc, test), end='', sep='', flush=True)
+    s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+    if len(s) > ttywidth:
+        test = test[len(s)-ttywidth:]
+        s = '[{}/{}] ({}%)    {}'.format(count, total, perc, test)
+    print('\r', s, end='', sep='', flush=True)
 
 def getkids():
     # return a dictionary with process IDs as key and a list of child
@@ -2406,6 +2404,8 @@ def main(argv) :
     testweb = opts.testweb
     CONDITIONALS['RELEASERUN'] = opts.releaserun
     nomito = opts.nomito
+    if testweb or int(MonetDB_VERSION[1])%2 == 0 or opts.alltests or CONDITIONALS['MERCURIAL']:
+        CONDITIONALS['KNOWNFAIL'] = 'execute'
     par['TIMEOUT'] = opts.timeout
     env['GDK_DEBUG'] = str(opts.debug)
     env['GDK_NR_THREADS'] = str(opts.nr_threads)
@@ -2808,6 +2808,7 @@ def main(argv) :
         fl = openutf8(fn+"lst","w")
         Failure = [[] for i in FAILURES]
         SKIPPED_TESTS = []
+        FAILED_TESTS = []
         for TSTDIR, TST, tt, ms, FtErr, reason in TIMES:
             fl.write('%s:\t%s\t%s\t%s\n' % (url(os.path.join(TSTDIR, TST)),
                                                 tt,
@@ -2817,6 +2818,8 @@ def main(argv) :
                 Failure[FtErr].append(os.path.join(TSTDIR,TST))
             if FtErr == F_SKIP:
                 SKIPPED_TESTS.append((TSTDIR, TST, reason))
+            if TST and FtErr == F_ERROR:
+                FAILED_TESTS.append((TSTDIR, TST))
 
         fl.write(":\t%7.3f\t\n" % t_)
         fl.close()
@@ -2840,6 +2843,9 @@ def main(argv) :
             print('failed={}, skipped={}'.format(failed, skipped))
             print('Ran {} test in {:7.3f}'.format(test_count - skipped, t_))
             if verbose:
+                for TSTDIR, TST in FAILED_TESTS:
+                    prred('ERROR\t')
+                    print('{} {}'.format(TSTDIR, TST))
                 for TSTDIR, TST, reason in SKIPPED_TESTS:
                     prpurple('SKIP\t')
                     print('{} {} {}'.format(TSTDIR, TST, reason))
