@@ -43,6 +43,8 @@ BEGIN
         FROM sys.schemas s, sys.auths a
         WHERE s.authorization = a.id AND s.system = FALSE;
 
+	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_user_defined_types();
+
     INSERT INTO dump_statements(s) --dump_add_schemas_to_users
 	    SELECT
             'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';'
@@ -85,11 +87,10 @@ BEGIN
 	INSERT INTO dump_statements(s) VALUES ('TRUNCATE sys.privileges;');
 	INSERT INTO dump_statements(s) SELECT * FROM sys.dump_privileges();
 
-	--TODO User Defined Types? sys.types
-	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO dumping table data
-	--TODO look into order dependent group_concat
 	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
+	--TODO loaders ,procedures, window and filter sys.functions.	
+	--TODO look into order dependent group_concat
 	--TODO ADD upgrade code 
 
     INSERT INTO dump_statements(s) VALUES ('COMMIT;');
