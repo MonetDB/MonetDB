@@ -2487,7 +2487,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 struct canditer *restrict lci, struct canditer *restrict rci,
 	 bool nil_matches, bool nil_on_miss, bool semi, bool only_misses,
 	 bool not_in, bool max_one,
-	 BUN estimate, lng t0, bool swapped, bool hash, bool phash,
+	 BUN estimate, lng t0, bool swapped,
+	 bool hash, bool phash, bool hash_cand,
 	 const char *reason)
 {
 	oid lo, ro;
@@ -2506,7 +2507,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	const char *v = (const char *) &lval;
 	bool lskipped = false;	/* whether we skipped values in l */
 	Hash *restrict hsh = NULL;
-	bool hash_cand = false;
 
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
@@ -2542,7 +2542,23 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	rl = rci->seq - r->hseqbase;
 	rh = canditer_last(rci) + 1 - r->hseqbase;
-	if (phash) {
+	if (hash_cand) {
+		/* we need to create a hash on r specific for the
+		 * candidate list */
+		char ext[32];
+		assert(rci->s);
+		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
+			  "hash for candidate list " ALGOBATFMT "%s%s\n",
+			  ALGOBATPAR(r), ALGOBATPAR(rci->s),
+			  r->thash ? " ignoring existing hash" : "",
+			  swapped ? " (swapped)" : "");
+		if (snprintf(ext, sizeof(ext), "thshjn%x",
+			     (unsigned) rci->s->batCacheid) >= (int) sizeof(ext))
+			goto bailout;
+		if ((hsh = BAThash_impl(r, rci, ext)) == NULL) {
+			goto bailout;
+		}
+	} else if (phash) {
 		/* there is a hash on the parent which we should use */
 		BAT *b = BBPdescriptor(VIEWtparent(r));
 		TRC_DEBUG(ALGO, "%s(%s): using "
@@ -2562,23 +2578,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			  "existing hash%s\n",
 			  ALGOBATPAR(r),
 			  swapped ? " (swapped)" : "");
-	} else if (rci->tpe != cand_dense || rci->ncand != BATcount(r)) {
-		/* we need to create a hash on r specific for the
-		 * candidate list */
-		char ext[32];
-		assert(rci->s);
-		TRC_DEBUG(ALGO, ALGOBATFMT ": creating "
-			  "hash for candidate list " ALGOBATFMT "%s%s\n",
-			  ALGOBATPAR(r), ALGOBATPAR(rci->s),
-			  r->thash ? " ignoring existing hash" : "",
-			  swapped ? " (swapped)" : "");
-		if (snprintf(ext, sizeof(ext), "thshjn%x",
-			     (unsigned) rci->s->batCacheid) >= (int) sizeof(ext))
-			goto bailout;
-		if ((hsh = BAThash_impl(r, rci, ext)) == NULL) {
-			goto bailout;
-		}
-		hash_cand = true;
 	} else {
 		/* we need to create a hash on r */
 		TRC_DEBUG(ALGO, ALGOBATFMT ": creating hash%s\n",
@@ -3053,6 +3052,79 @@ guess_uniques(BAT *b, struct canditer *ci)
 	return B;
 }
 
+/* estimate the cost of doing a hashjoin with a hash on r; return value
+ * is the estimated cost, the last three arguments receive some extra
+ * information */
+static double
+joincost(BAT *r, struct canditer *lci, struct canditer *rci,
+	 bool *hash, bool *phash, bool *cand)
+{
+	bool rhash = BATcheckhash(r);
+	bool prhash = false;
+	bool rcand = false;
+	double rcost = 1;
+	bat parent;
+	BAT *b;
+
+	if (rci->noids > 0) {
+		/* if we need to do binary search on candidate
+		 * list, take that into account */
+		rcost += log2((double) rci->noids);
+	}
+	rcost *= lci->ncand;
+	if (rhash) {
+		/* average chain length */
+		rcost *= (double) BATcount(r) / r->thash->nheads;
+	} else if ((parent = VIEWtparent(r)) != 0 &&
+		   (b = BBPdescriptor(parent)) != NULL &&
+		   BATcheckhash(b)) {
+		rhash = prhash = true;
+		/* average chain length */
+		rcost *= (double) BATcount(b) / b->thash->nheads;
+	} else {
+		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+		if (prop) {
+			/* we know number of unique values, assume some
+			 * collisions */
+			rcost *= 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+		} else {
+			/* guess number of unique value and work with that */
+			rcost *= 1.1 * ((double) BATcount(r) / guess_uniques(r, &(struct canditer){.tpe=cand_dense, .ncand=BATcount(r)}));
+		}
+#ifdef PERSISTENTHASH
+		/* only count the cost of creating the hash for
+		 * non-persistent bats */
+		if (!(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
+#endif
+			rcost += BATcount(r) * 2.0;
+	}
+	if (rci->ncand != BATcount(r)) {
+		/* instead of using the hash on r (cost in rcost), we
+		 * can build a new hash on r taking the candidate list
+		 * into account */
+		double rccost;
+		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
+		if (prop) {
+			/* we know number of unique values, assume some
+			 * chains */
+			rccost = 1.1 * ((double) BATcount(r) / prop->v.val.oval);
+		} else {
+			/* guess number of unique value and work with that */
+			rccost = 1.1 * ((double) BATcount(r) / guess_uniques(r, rci));
+		}
+		rccost *= lci->ncand;
+		rccost += rci->ncand * 2.0; /* cost of building the hash */
+		if (rccost < rcost) {
+			rcost = rccost;
+			rcand = true;
+		}
+	}
+	*hash = rhash;
+	*phash = prhash;
+	*cand = rcand;
+	return rcost;
+}
+
 #define MASK_EQ		1
 #define MASK_LT		2
 #define MASK_GT		4
@@ -3392,7 +3464,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 {
 	BUN lcnt, rcnt;
 	struct canditer lci, rci;
-	bool rhash, prhash = false;
+	bool rhash, prhash, rcand;
 	bat parent;
 
 	/* only_misses implies left output only */
@@ -3481,115 +3553,17 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 				 nil_matches, nil_on_miss, semi, only_misses,
 				 not_in, max_one, estimate, t0, false, func);
 	}
-	rhash = BATcheckhash(r);
-	double rcost = 0;
-	if (rhash) {
-		/* average chain length */
-		rcost = (double) BATcount(r) / r->thash->nheads;
-	} else if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBPdescriptor(parent);
-		rhash = prhash = BATcheckhash(b);
-		if (prhash) {
-			/* average chain length */
-			rcost = (double) BATcount(b) / b->thash->nheads;
-		}
-	}
-	if (!rhash) {
-		/* no hash table, so cost includes time to build the
-		 * hash table (single scan) plus the time to do the
-		 * lookups (also single scan, we assume some chains) */
-		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
-		if (prop) {
-			/* we know number of unique values, assume some
-			 * chains */
-			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / prop->v.val.oval);
-		} else {
-			/* guess number of unique value and work with that */
-			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / guess_uniques(r, &rci));
-		}
-#ifdef PERSISTENTHASH
-		/* only count the cost of creating the hash for
-		 * non-persistent bats */
-		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
-#endif
-			rcost += rci.ncand * 2.0;
-	} else {
-		if (rci.noids > 0) {
-			/* if we need to do binary search on candidate
-			 * list, take that into account */
-			rcost *= log2((double) rci.noids) + 1;
-		}
-		/* all of this so far for each lookup of which we have
-		 * rci.ncand */
-		rcost *= lci.ncand;
-		if (rci.ncand < BATcount(r) &&
-		    rci.ncand * 2 + lci.ncand * 1.1 < rcost) {
-			/* it's cheaper to rebuild the hash table for
-			 * just the candidates (this saves on the
-			 * binary searches), again, assume some
-			 * chains */
-			rhash = prhash = false;
-			rcost = rci.ncand * 2 + lci.ncand * 1.1;
-		}
-	}
+	double rcost;
+	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
 
 	if (!nil_on_miss && !only_misses && !not_in && !max_one) {
 		/* maybe do a hash join on the swapped operands; if we
 		 * do, we need to sort the output, so we take that into
 		 * account as well */
-		bool lhash = BATcheckhash(l);
-		bool plhash = false;
-		double lcost = 0;
-		if (lhash) {
-			/* average chain length */
-			lcost = (double) BATcount(l) / l->thash->nheads;
-		} else if ((parent = VIEWtparent(l)) != 0) {
-			BAT *b = BBPdescriptor(parent);
-			lhash = plhash = BATcheckhash(b);
-			if (plhash) {
-				/* average chain length */
-				lcost = (double) BATcount(b) / b->thash->nheads;
-			}
-		}
-		if (!lhash) {
-			/* no hash table, so cost includes time to build the
-			 * hash table (single scan) plus the time to do the
-			 * lookups (also single scan, we assume some chains) */
-			PROPrec *prop = BATgetprop(l, GDK_NUNIQUE);
-			if (prop) {
-				/* we know number of unique values, assume some
-				 * chains */
-				lcost = rci.ncand * 1.1 * ((double) BATcount(l) / prop->v.val.oval);
-			} else {
-				/* guess number of unique value and work
-				 * with that */
-				lcost = rci.ncand * 1.1 * ((double) BATcount(l) / guess_uniques(l, &lci));
-			}
-#ifdef PERSISTENTHASH
-			/* only count the cost of creating the hash
-			 * for non-persistent bats */
-			if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
-#endif
-				lcost += lci.ncand * 2.0;
-		} else {
-			if (lci.noids > 0) {
-				/* if we need to do binary search on candidate
-				 * list, take that into account */
-				lcost *= log2((double) lci.noids) + 1;
-			}
-			/* all of this so far for each lookup of which we have
-			 * rci.ncand */
-			lcost *= rci.ncand;
-			if (lci.ncand < BATcount(l) &&
-			    lci.ncand * 2 + rci.ncand * 1.1 < lcost) {
-				/* it's cheaper to rebuild the hash table for
-				 * just the candidates (this saves on the
-				 * binary searches), again, assume some
-				 * chains */
-				lhash = plhash = false;
-				lcost = lci.ncand * 2 + rci.ncand * 1.1;
-			}
-		}
+		bool lhash, plhash, lcand;
+		double lcost;
+
+		lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
 		if (semi)
 			lcost += rci.ncand; /* cost of BATunique(r) */
 		/* add cost of sorting; obviously we don't know the
@@ -3608,7 +3582,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 			}
 			rc = hashjoin(&r2, &r1, r, l, &rci, &lci, nil_matches,
 				      false, false, false, false, false, estimate,
-				      t0, true, lhash, plhash, func);
+				      t0, true, lhash, plhash, lcand, func);
 			if (semi)
 				BBPunfix(sr->batCacheid);
 			if (rc != GDK_SUCCEED)
@@ -3670,7 +3644,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 	return hashjoin(r1p, r2p, l, r, &lci, &rci,
 			nil_matches, nil_on_miss, semi, only_misses,
-			not_in, max_one, estimate, t0, false, rhash, prhash, func);
+			not_in, max_one, estimate, t0, false, rhash, prhash,
+			rcand, func);
 }
 
 /* Perform an equi-join over l and r.  Returns two new, aligned, bats
@@ -3787,8 +3762,8 @@ gdk_return
 BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 {
 	struct canditer lci, rci;
-	bool lhash = false, rhash = false;
-	bool plhash = false, prhash = false;
+	bool lhash = false, rhash = false, lcand = false;
+	bool plhash = false, prhash = false, rcand = false;
 	bool swap;
 	bat parent;
 	gdk_return rc;
@@ -3869,115 +3844,13 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	 * multiplied by the number of times we need to do a lookup
 	 * (rci.ncand) */
 	lhash = BATcheckhash(l);
-	double lcost = 0;
-	if (lhash) {
-		/* average chain length */
-		lcost = (double) BATcount(l) / l->thash->nheads;
-	} else if ((parent = VIEWtparent(l)) != 0) {
-		BAT *b = BBPdescriptor(parent);
-		lhash = plhash = BATcheckhash(b);
-		if (plhash) {
-			/* average chain length */
-			lcost = (double) BATcount(b) / b->thash->nheads;
-		}
-	}
-	if (!lhash) {
-		/* no hash table, so cost includes time to build the
-		 * hash table (single scan) plus the time to do the
-		 * lookups (also single scan, we assume some chains) */
-		PROPrec *prop = BATgetprop(l, GDK_NUNIQUE);
-		if (prop) {
-			/* we know number of unique values, assume some
-			 * chains */
-			lcost = rci.ncand * 1.1 * ((double) BATcount(l) / prop->v.val.oval);
-		} else {
-			/* guess number of unique value and work with that */
-			lcost = rci.ncand * 1.1 * ((double) BATcount(l) / guess_uniques(l, &lci));
-		}
-#ifdef PERSISTENTHASH
-		/* only count the cost of creating the hash for
-		 * non-persistent bats */
-		if (lci.ncand != BATcount(l) || !(BBP_status(l->batCacheid) & BBPEXISTING) || l->theap.dirty || GDKinmemory())
-#endif
-			lcost += lci.ncand * 2.0;
-	} else {
-		if (lci.noids > 0) {
-			/* if we need to do binary search on candidate
-			 * list, take that into account */
-			lcost *= log2((double) lci.noids) + 1;
-		}
-		/* all of this so far for each lookup of which we have
-		 * rci.ncand */
-		lcost *= rci.ncand;
-		if (lci.ncand < BATcount(l) &&
-		    lci.noids > 0 &&
-		    lci.ncand * 2 + rci.ncand * 1.1 < lcost) {
-			/* it's cheaper to rebuild the hash table for
-			 * just the candidates (this saves on the
-			 * binary searches), again, assume some
-			 * chains */
-			lhash = plhash = false;
-			lcost = lci.ncand + rci.ncand * 1.1;
-			lcost *= 2;
-		}
-	}
-	rhash = BATcheckhash(r);
-	double rcost = 0;
-	if (rhash) {
-		/* average chain length */
-		rcost = (double) BATcount(r) / r->thash->nheads;
-	} else if ((parent = VIEWtparent(r)) != 0) {
-		BAT *b = BBPdescriptor(parent);
-		rhash = prhash = BATcheckhash(b);
-		if (prhash) {
-			/* average chain length */
-			rcost = (double) BATcount(b) / b->thash->nheads;
-		}
-	}
-	if (!rhash) {
-		/* no hash table, so cost includes time to build the
-		 * hash table (single scan) plus the time to do the
-		 * lookups (also single scan, we assume some chains) */
-		PROPrec *prop = BATgetprop(r, GDK_NUNIQUE);
-		if (prop) {
-			/* we know number of unique values, assume some
-			 * chains */
-			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / prop->v.val.oval);
-		} else {
-			/* guess number of unique value and work with that */
-			rcost = lci.ncand * 1.1 * ((double) BATcount(r) / guess_uniques(r, &rci));
-		}
-#ifdef PERSISTENTHASH
-		/* only count the cost of creating the hash for
-		 * non-persistent bats */
-		if (rci.ncand != BATcount(r) || !(BBP_status(r->batCacheid) & BBPEXISTING) || r->theap.dirty || GDKinmemory())
-#endif
-			rcost += rci.ncand * 2.0;
-	} else {
-		if (rci.noids > 0) {
-			/* if we need to do binary search on candidate
-			 * list, take that into account */
-			rcost *= log2((double) rci.noids) + 1;
-		}
-		/* all of this so far for each lookup of which we have
-		 * rci.ncand */
-		rcost *= lci.ncand;
-		if (rci.ncand < BATcount(r) &&
-		    rci.noids > 0 &&
-		    2 * (rci.ncand + lci.ncand * 1.1) < rcost) {
-			/* it's cheaper to rebuild the hash table for
-			 * just the candidates (this saves on the
-			 * binary searches), again, assume some
-			 * chains */
-			rhash = prhash = false;
-			rcost = rci.ncand + lci.ncand * 1.1;
-			rcost *= 2;
-		}
-	}
+	double lcost, rcost;
+
+	lcost = joincost(l, &rci, &lci, &lhash, &plhash, &lcand);
+	rcost = joincost(r, &lci, &rci, &rhash, &prhash, &rcand);
 
 	/* if the cost of doing searches on l is lower than the cost
-	 * to do searches on r, we swap (i.e., lookups on right), but
-	 * add a cost */
+	 * of doing searches on r, we swap */
 	swap = (lcost < rcost);
 
 	if ((BATordered(r) || BATordered_rev(r)) &&
@@ -4003,14 +3876,16 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	if (swap) {
 		rc = hashjoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
 			      nil_matches, false, false, false, false, false,
-			      estimate, t0, true, lhash, plhash, __func__);
+			      estimate, t0, true, lhash, plhash, lcand,
+			      __func__);
 		if (rc == GDK_SUCCEED && r2p == NULL)
 			BBPunfix(r2->batCacheid);
 		return rc;
 	} else {
 		return hashjoin(r1p, r2p, l, r, &lci, &rci,
 				nil_matches, false, false, false, false, false,
-				estimate, t0, false, rhash, prhash, __func__);
+				estimate, t0, false, rhash, prhash, rcand,
+				__func__);
 	}
 }
 
