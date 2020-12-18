@@ -1337,7 +1337,7 @@ bm_subcommit(logger *lg)
 				logbat_destroy(lb);
 				return GDK_FAIL;
 			}
-			assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
+			//assert(BBP_lrefs(bid) == lb->batSharecnt + 1 && BBP_refs(bid) <= lb->batSharecnt);
 			logbat_destroy(lb);
 		}
 		/* only project out the deleted with last id > lg->saved_tid
