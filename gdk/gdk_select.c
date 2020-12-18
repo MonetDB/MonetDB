@@ -32,6 +32,12 @@ BAT *
 virtualize(BAT *bn)
 {
 	/* input must be a valid candidate list or NULL */
+	if(bn && ((bn->ttype != TYPE_void && bn->ttype != TYPE_oid) || !bn->tkey || !bn->tsorted)) {
+		fprintf(stderr, "#bn type %d nil %d key %d sorted %d\n",
+				bn->ttype, is_oid_nil(bn->tseqbase),
+				bn->tkey, bn->tsorted);
+		fflush(stderr);
+	}
 	assert(bn == NULL ||
 	       (((bn->ttype == TYPE_void && !is_oid_nil(bn->tseqbase)) ||
 		 bn->ttype == TYPE_oid) &&

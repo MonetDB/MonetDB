@@ -1,7 +1,7 @@
 % .plan # table_name
 % rel # name
 % clob # type
-% 200 # length
+% 191 # length
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (

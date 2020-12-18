@@ -771,6 +771,7 @@ dup_dbat(storage *obat, storage *bat, int is_new, int temp)
 	bat->cached_cnt = obat->cached_cnt;
 	bat->cnt = obat->cnt + obat->ucnt;
 	bat->ucnt = 0;
+	bat->icnt = 0;
 	return dup_cs(&obat->cs, &bat->cs, TYPE_msk, is_new, temp);
 }
 
@@ -1070,13 +1071,16 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 		}
 #endif
 		s->cs.ucnt += cnt;
+		s->icnt += cnt;
 	}
 
 	assert(isNew(t) || isTempTable(t) || s->cs.cleared || BATcount(b) == slot);
 	if (isNew(t) || isTempTable(t) || s->cs.cleared)
 		deleted = FALSE;
-	else /* persistent central copy needs space marked deleted (such that other transactions don't see these rows) */
+	else { /* persistent central copy needs space marked deleted (such that other transactions don't see these rows) */
 		deleted = TRUE;
+		ps->cnt += cnt;
+	}
 	/* TODO first up to 32 boundary, then int writes */
 	for(lng i=0; i<(lng)cnt; i++) {
 		if (BUNappend(b, &deleted, true) != GDK_SUCCEED) {
@@ -1393,7 +1397,7 @@ create_del(sql_trans *tr, sql_table *t)
 		assert(!bat->segs && !bat->end);
 		bat->segs = new_segments(0);
 		bat->end = 0;
-		bat->cnt = bat->ucnt = 0;
+		bat->cnt = bat->ucnt = bat->icnt = 0;
 		bat->cached_cnt = 1;
 
 		b = bat_new(TYPE_msk, t->sz, PERSISTENT);
@@ -1720,7 +1724,7 @@ clear_del(sql_trans *tr, sql_table *t)
 		destroy_segments(s->segs);
 	s->segs = new_segments(0);
 	s->end = 0;
-	s->cnt = s->ucnt = 0;
+	s->cnt = s->ucnt = s->icnt = 0;
 }
 
 static BUN
@@ -1960,30 +1964,8 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 }
 
 static int
-cs_grow( column_storage *cs, BUN nr)
-{
-	if (cs->bid) {
-		BAT *cur = temp_descriptor(cs->bid);
-		if (!cur)
-			return LOG_ERR;
-		if (BATcount(cur) < nr) {
-			msk deleted = 0;
-			/* todo faster inserts */
-			for(BUN i = BATcount(cur); i<nr; i++) {
-				if (BUNappend(cur, &deleted, true) != GDK_SUCCEED) {
-					bat_destroy(cur);
-					return LOG_ERR;
-				}
-			}
-		}
-	}
-	return LOG_OK;
-}
-
-static int
 tr_update_dbat( sql_trans *tr, storage *ts, storage *fs)
 {
-	int grow = 0;
 	if (fs->cs.cleared) {
 		destroy_segments(ts->segs);
 		MT_lock_set(&segs_lock);
@@ -1993,12 +1975,12 @@ tr_update_dbat( sql_trans *tr, storage *ts, storage *fs)
 		assert(ts->segs->head);
 		ts->cnt = 0;
 		ts->ucnt = 0;
+		ts->icnt = 0;
 	} else {
 		assert(ts->segs == fs->segs);
 		/* merge segments or cleanup ? */
 		segment *segs = ts->segs->head, *seg = segs;
 		for (; segs; segs = segs->next) {
-			grow |= (segs->owner == tr);
 			if (segs->owner == tr || !segs->owner) {
 				/* merge range */
 				segs->owner = NULL;
@@ -2018,9 +2000,7 @@ tr_update_dbat( sql_trans *tr, storage *ts, storage *fs)
 		ts->end = ts->segs->end;
 	}
 	ts->cnt += fs->ucnt;
-	/* first check if bat needs too grow */
-	if ( 0 && (fs->ucnt || grow))
-		cs_grow(&ts->cs, ts->end);
+	ts->cnt -= fs->icnt;
 	int ok = tr_update_cs( tr, &ts->cs, &fs->cs);
 	if (ok == LOG_OK && ts->next) {
 		ok = destroy_dbat(tr, ts->next);
