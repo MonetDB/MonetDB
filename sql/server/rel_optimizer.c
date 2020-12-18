@@ -371,7 +371,10 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 
 					if (np) {
 						lng ec = exps_count(rel->exps);
-						np->value = (void*)((cnt+ec-1)/ec);
+						if (ec>0)
+							np->value = (void*)((cnt+ec-1)/ec);
+						else
+							np->value = (void*)cnt;
 					}
 				}
 			}
