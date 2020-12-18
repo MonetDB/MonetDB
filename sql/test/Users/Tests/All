@@ -6,12 +6,12 @@ unknown_user
 withGrantOption
 grantMonetdb
 columnRights
-createSetUp
 changePasswordUser
-renameUser
-changeSchemaUser
 copyinto
 schemaRights
 metadataConsistency
 createUserRollback
 userCallFunction
+createSetUp
+renameUser
+changeSchemaUser
