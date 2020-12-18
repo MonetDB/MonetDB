@@ -439,6 +439,12 @@ BEGIN
 			AND t.type = tt.table_type_id;
 END;
 
+CREATE FUNCTION sys.describe_user_defined_types() RETURNS TABLE(sch STRING, sql_tpe STRING, ext_tpe STRING)  BEGIN
+	RETURN
+		SELECT s.name, t.sqlname, t.systemname FROM sys.types t JOIN sys.schemas s ON t.schema_id = s.id
+		WHERE t.eclass = 18 AND ((s.name = 'sys' and t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml')) OR (s.name <> 'sys'));
+END;
+
 CREATE FUNCTION describe_partition_tables()
 RETURNS TABLE(
 	m_sname STRING,

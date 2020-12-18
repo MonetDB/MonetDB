@@ -88,6 +88,12 @@ RETURN
 	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || SQ(c.rem) || ';' FROM describe_comments() c;
 END;
 
+--CREATE FUNCTION sys.describe_user_defined_types() RETURNS TABLE(sch STRING, sql_tpe STRING, ext_tpe STRING)  BEGIN
+CREATE FUNCTION sys.dump_user_defined_types() RETURNS TABLE(stmt STRING)  BEGIN
+	RETURN
+		SELECT 'CREATE TYPE ' || FQN(sch, sql_tpe) || ' EXTERNAL NAME ' || DQ(ext_tpe) || ';' FROM sys.describe_user_defined_types();
+END;
+
 CREATE FUNCTION dump_privileges() RETURNS TABLE (stmt STRING) BEGIN
 RETURN
 	SELECT
