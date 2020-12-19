@@ -1270,6 +1270,20 @@ bm_get_counts(logger *lg)
 	return GDK_SUCCEED;
 }
 
+static int
+subcommit_list_add(int next, bat *n, BUN *sizes, bat bid, BUN sz)
+{
+	for(int i=0; i<next; i++) {
+		if (n[i] == bid) {
+			sizes[i] = sz;
+			return next;
+		}
+	}
+	n[next] = bid;
+	sizes[next++] = sz;
+	return next;
+}
+
 static gdk_return
 bm_subcommit(logger *lg)
 {
@@ -1398,12 +1412,9 @@ bm_subcommit(logger *lg)
 			GDKfree(sizes);
 			return GDK_FAIL;
 		}
-		sizes[i] = BATcount(nbids);
-		n[i++] = nbids->batCacheid;
-		sizes[i] = BATcount(noids);
-		n[i++] = noids->batCacheid;
-		sizes[i] = BATcount(ndels);
-		n[i++] = ndels->batCacheid;
+		i = subcommit_list_add(i, n, sizes, nbids->batCacheid, BATcount(nbids));
+		i = subcommit_list_add(i, n, sizes, noids->batCacheid, BATcount(nbids));
+		i = subcommit_list_add(i, n, sizes, ndels->batCacheid, BATcount(ndels));
 
 		logbat_destroy(lg->catalog_bid);
 		logbat_destroy(lg->catalog_id);
@@ -1466,10 +1477,8 @@ bm_subcommit(logger *lg)
 			GDKfree(sizes);
 			return GDK_FAIL;
 		}
-		sizes[i] = BATcount(ids);
-		n[i++] = ids->batCacheid;
-		sizes[i] = BATcount(vals);
-		n[i++] = vals->batCacheid;
+		i = subcommit_list_add(i, n, sizes, ids->batCacheid, BATcount(ids));
+		i = subcommit_list_add(i, n, sizes, vals->batCacheid, BATcount(ids));
 
 		logbat_destroy(lg->seqs_id);
 		logbat_destroy(lg->seqs_val);
@@ -1483,9 +1492,11 @@ bm_subcommit(logger *lg)
 	}
 
 	assert((BUN) i <= nn);
+	/*
 	BATcommit(catalog_bid, BUN_NONE);
 	BATcommit(catalog_id, BUN_NONE);
 	BATcommit(dcatalog, BUN_NONE);
+	*/
 	res = TMsubcommit_list(n, cnts?sizes:NULL, i, lg->saved_id, lg->saved_tid);
 	GDKfree(n);
 	GDKfree(sizes);
