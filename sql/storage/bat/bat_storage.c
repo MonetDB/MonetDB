@@ -1012,7 +1012,11 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 			ps->segs->end = ps->segs->head->end = ps->end;
 	} else {
 		assert(ps->end <= ps->segs->end);
-		ps->segs->head = new_segment(ps->segs->head, tr, cnt);
+		if (ps->segs->head->owner == tr) {
+			ps->segs->head->end += cnt;
+		} else {
+			ps->segs->head = new_segment(ps->segs->head, tr, cnt);
+		}
 		s->end = ps->end = ps->segs->end = ps->segs->head->end;
 	}
 
