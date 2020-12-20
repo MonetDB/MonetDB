@@ -1887,7 +1887,16 @@ tr_update_cs( sql_trans *tr, column_storage *ocs, column_storage *ccs)
 		ccs->ucnt = ocs->ucnt = 0;
 		bat_destroy(ui);
 		bat_destroy(uv);
+	} else if (ocs->ucnt && ccs->uibid) {
+		temp_destroy(ocs->uibid);
+		temp_destroy(ocs->uvbid);
+		ocs->uibid = e_bat(TYPE_oid);
+		ocs->uvbid = e_bat(cur->ttype);
+		if(ocs->uibid == BID_NIL || ocs->uvbid == BID_NIL)
+			ok = LOG_ERR;
+		ocs->ucnt = 0;
 	}
+	assert(ocs->uibid == 0 || ocs->uibid == ebats[TYPE_oid]->batCacheid);
 	bat_destroy(cur);
 	return ok;
 }
@@ -1990,12 +1999,12 @@ tr_update_dbat( sql_trans *tr, storage *ts, storage *fs)
 				segs->owner = NULL;
 				if (seg == segs) /* skip first */
 					continue;
-				if (seg->start == segs->end) {
-					seg->start = segs->start;
+				if (seg->end == segs->start) {
+					seg->end = segs->end;
 					seg->next = segs->next;
 					segs->next = NULL;
 					destroy_segs(segs);
-						segs = seg;
+					segs = seg;
 				} else {
 					seg = segs; /* begin of new merge */
 				}
