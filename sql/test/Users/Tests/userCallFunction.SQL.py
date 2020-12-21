@@ -24,6 +24,8 @@ with SQLTestCase() as mdb:
         tc.execute('SELECT s1.f1(cast(1 as int));').assertFailed(err_code="42000", err_message="SELECT: no such unary operator 'f1(int)'")
         tc.execute('CALL sys.flush_log();').assertFailed(err_code="42000", err_message="SELECT: no such operator 'flush_log'")
 
+        mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1 TO u1;').assertFailed(err_code="42000", err_message="GRANT FUNCTION: there are more than one function called 'f1', please use the full signature")
+
         mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1() TO u1;').assertSucceeded()
         tc.execute('SELECT s1.f1();').assertDataResultMatch([(10,)])
         tc.execute('SELECT s1.f1(1);').assertFailed(err_code="42000", err_message="SELECT: no such unary operator 'f1(tinyint)'")
