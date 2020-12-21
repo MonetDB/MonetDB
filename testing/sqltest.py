@@ -198,11 +198,11 @@ class TestCaseResult(object):
         err_file = self.test_case.err_file
         if len(self.assertion_errors) == 0:
             lineno = self.lineno or 'N/A'
-            print(f'line {lineno}', file=err_file)
+            print('', file=err_file)
             if self.query:
-                print(self.query, file=err_file)
+                print(f'ln{lineno}:', self.query, file=err_file)
             elif self.id:
-                print(self.id, file=err_file)
+                print(f'ln{lineno}:', self.id, file=err_file)
             print('----', file=err_file)
         self.assertion_errors.append(AssertionError(msg))
         print(msg, file=err_file)
@@ -385,7 +385,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             self.fail(msg)
         return self
 
-    def assertMatchStableError(self, ferr):
+    def assertMatchStableError(self, ferr, ignore_err_messages=False):
         stable = []
         err = []
         filter_fn = filter_lines_starting_with(['--', '#', 'stderr of test', 'MAPI'])
