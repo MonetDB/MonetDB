@@ -399,8 +399,8 @@ extern void store_lock(void);
 extern void store_unlock(void);
 extern sqlid store_next_oid(void);
 
-extern sql_trans *sql_trans_create(sql_trans *parent, const char *name, bool try_spare);
-extern sql_trans *sql_trans_destroy(sql_trans *tr, bool try_spare);
+extern sql_trans *sql_trans_create(sql_trans *parent, const char *name);
+extern sql_trans *sql_trans_destroy(sql_trans *tr);
 extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
 extern int sql_save_snapshots(sql_trans *tr);

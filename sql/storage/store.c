@@ -48,10 +48,6 @@ logger_functions logger_funcs;
 static int schema_number = 0; /* each committed schema change triggers a new
 				 schema number (session wise unique number) */
 
-#define MAX_SPARES 32
-static sql_trans *spare_trans[MAX_SPARES];
-static int spares = 0;
-
 static int
 key_cmp(sql_key *k, sqlid *id)
 {
@@ -347,48 +343,15 @@ schema_reset_parent(sql_schema *s, sql_trans *tr)
 	assert(s->tables.dset == NULL);
 }
 
-static void
-trans_drop_tmp(sql_trans *tr)
-{
-	sql_schema *tmp;
-
-	if (!tr)
-		return;
-
-	tmp = find_sql_schema(tr, "tmp");
-
-	if (tmp->tables.set) {
-		node *n;
-		for (n = tmp->tables.set->h; n; ) {
-			node *nxt = n->next;
-			sql_table *t = n->data;
-
-			if (t->persistence == SQL_LOCAL_TEMP)
-				cs_remove_node(&tmp->tables, n);
-			n = nxt;
-		}
-	}
-}
-
 sql_trans *
-sql_trans_destroy(sql_trans *t, bool try_spare)
+sql_trans_destroy(sql_trans *t)
 {
 	sql_trans *res = t->parent;
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", t);
 
-	if (t->sa->nr > 2*new_trans_size)
-		try_spare = false;
-	if (res == gtrans && spares < ((GDKdebug & FORCEMITOMASK) ? 0 : MAX_SPARES) && !t->name && try_spare) {
-		TRC_DEBUG(SQL_STORE, "Spared '%d' transactions '%p'\n", spares, t);
-		trans_drop_tmp(t);
-		spare_trans[spares++] = t;
-		return res;
-	}
-
 	if (t->name)
 		t->name = NULL;
-
 	cs_destroy(&t->schemas);
 	sa_destroy(t->sa);
 	_DELETE(t);
@@ -415,18 +378,6 @@ trans_reset_parent(sql_trans *t)
 	t->parent = NULL;
 }
 
-
-static void
-destroy_spare_transactions(void)
-{
-	int i, s = spares;
-
-	spares = (GDKdebug & FORCEMITOMASK)? 2 : MAX_SPARES; /* ie now there not spared anymore */
-	for (i = 0; i < s; i++) {
-		sql_trans_destroy(spare_trans[i], false);
-	}
-	spares = 0;
-}
 
 static int
 tr_flag(sql_base * b, int flags)
@@ -1922,7 +1873,7 @@ store_load(sql_allocator *pa) {
 		/* cannot initialize database in readonly mode */
 		if (store_readonly)
 			return -1;
-		tr = sql_trans_create(NULL, NULL, true);
+		tr = sql_trans_create(NULL, NULL);
 		if (!tr) {
 			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 			return -1;
@@ -2090,7 +2041,7 @@ store_load(sql_allocator *pa) {
 		if (sql_trans_commit(tr) != SQL_OK) {
 			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
 		}
-		sql_trans_destroy(tr, true);
+		sql_trans_destroy(tr);
 		tr = gtrans;
 	} else {
 		tr->active = 0;
@@ -2321,9 +2272,6 @@ store_exit(void)
 		sequences_exit();
 		MT_lock_set(&bs_lock);
 	}
-	if (spares > 0)
-		destroy_spare_transactions();
-
 	logger_funcs.destroy();
 
 	/* Open transactions have a link to the global transaction therefore
@@ -2332,7 +2280,7 @@ store_exit(void)
 	   exit (but leak memory).
 	 */
 	if (!ATOMIC_GET(&transactions)) {
-		sql_trans_destroy(gtrans, false);
+		sql_trans_destroy(gtrans);
 		gtrans = NULL;
 	}
 	list_destroy(active_sessions);
@@ -2357,23 +2305,6 @@ cleanup_table(sql_table *t)
 			if (o) {
 				list_remove_node(schema->tables.set, o);
 				break;
-			}
-		}
-	}
-	if (spares) {
-		for (int i = 0; i<spares; i++) {
-			for (node *m = spare_trans[i]->schemas.set->h; m; m = m->next) {
-				sql_schema * schema = m->data;
-
-				if (schema->tables.dset) {
-					list_destroy(schema->tables.dset);
-					schema->tables.dset = NULL;
-				}
-				node *o = find_sql_table_node(schema, t->base.id);
-				if (o) {
-					list_remove_node(schema->tables.set, o);
-					break;
-				}
 			}
 		}
 	}
@@ -2425,14 +2356,12 @@ store_apply_deltas(bool not_locked)
 			MT_lock_set(&bs_lock);
 	}
 	if (/* DISABLES CODE */ (0) && /*gtrans->sa->nr > 2*new_trans_size &&*/ !(ATOMIC_GET(&nr_sessions)) /* only save when there are no dependencies on the gtrans */) {
-		sql_trans *ntrans = sql_trans_create(gtrans, NULL, false);
+		sql_trans *ntrans = sql_trans_create(gtrans, NULL);
 
 		trans_init(ntrans, gtrans);
-		if (spares > 0)
-			destroy_spare_transactions();
 		trans_reset_parent(ntrans);
 
-		sql_trans_destroy(gtrans, false);
+		sql_trans_destroy(gtrans);
 		gtrans = ntrans;
 	}
 	flusher.working = false;
@@ -5147,20 +5076,15 @@ reset_trans(sql_trans *tr, sql_trans *ptr)
 }
 
 sql_trans *
-sql_trans_create(sql_trans *parent, const char *name, bool try_spare)
+sql_trans_create(sql_trans *parent, const char *name)
 {
 	sql_trans *tr = NULL;
 
 	if (gtrans) {
-		 if (!parent && spares > 0 && !name && try_spare) {
-			tr = spare_trans[--spares];
-			TRC_DEBUG(SQL_STORE, "Reuse transaction: %p - Spares: %d\n", tr, spares);
-		} else {
-			tr = trans_dup((parent) ? parent : gtrans, name);
-			TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
-			if (tr)
-				(void) ATOMIC_INC(&transactions);
-		}
+		tr = trans_dup((parent) ? parent : gtrans, name);
+		TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
+		if (tr)
+			(void) ATOMIC_INC(&transactions);
 	}
 	return tr;
 }
@@ -7688,7 +7612,7 @@ sql_session_create(int ac)
 	s = ZNEW(sql_session);
 	if (!s)
 		return NULL;
-	s->tr = sql_trans_create(NULL, NULL, true);
+	s->tr = sql_trans_create(NULL, NULL);
 	if (!s->tr) {
 		_DELETE(s);
 		return NULL;
@@ -7697,7 +7621,7 @@ sql_session_create(int ac)
 	s->tr->active = 0;
 	list_append(passive_sessions, s);
 	if (!sql_session_reset(s, ac)) {
-		sql_trans_destroy(s->tr, true);
+		sql_trans_destroy(s->tr);
 		_DELETE(s);
 		return NULL;
 	}
@@ -7710,7 +7634,7 @@ sql_session_destroy(sql_session *s)
 {
 	assert(!s->tr || s->tr->active == 0);
 	if (s->tr)
-		sql_trans_destroy(s->tr, true);
+		sql_trans_destroy(s->tr);
 	if (s->schema_name)
 		_DELETE(s->schema_name);
 	list_remove_data(passive_sessions, s);
@@ -7804,8 +7728,8 @@ sql_trans_begin(sql_session *s)
 	    (tr->stime < gtrans->wstime || tr->wtime ||
 			store_schema_number() != snr)) {
 		if (!list_empty(tr->moved_tables)) {
-			sql_trans_destroy(tr, false);
-			s->tr = tr = sql_trans_create(NULL, NULL, false);
+			sql_trans_destroy(tr);
+			s->tr = tr = sql_trans_create(NULL, NULL);
 		} else {
 			reset_trans(tr, gtrans);
 		}
