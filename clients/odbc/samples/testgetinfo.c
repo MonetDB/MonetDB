@@ -1133,13 +1133,13 @@ main(int argc, char **argv)
 			ret = SQLGetInfo(dbc, sqlinfo[n].info, &i, sizeof(i), &resultlen);
 			if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo") &&
 			    sqlinfo[n].i != i)
-				fprintf(stderr, "%s: expected: %u, received: %u\n", sqlinfo[n].name, sqlinfo[n].i, i);
+				fprintf(stderr, "%s: expected: %u, received: %u\n", sqlinfo[n].name, (unsigned int) sqlinfo[n].i, (unsigned int) i);
 			break;
 		default:	/* case SHORTINT */
 			ret = SQLGetInfo(dbc, sqlinfo[n].info, &s, sizeof(s), &resultlen);
 			if (check(ret, SQL_HANDLE_DBC, dbc, "SQLGetInfo") &&
 			    sqlinfo[n].s != s)
-				fprintf(stderr, "%s: expected: %u, received: %u\n", sqlinfo[n].name, sqlinfo[n].s, s);
+				fprintf(stderr, "%s: expected: %u, received: %u\n", sqlinfo[n].name, (unsigned int) sqlinfo[n].s, (unsigned int) s);
 			break;
 		}
 	}
