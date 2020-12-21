@@ -25,8 +25,8 @@ with SQLTestCase() as mdb:
         # give alice sysadmin rights
         mdb.execute("GRANT sysadmin TO alice;").assertSucceeded()
         tc.execute("SET ROLE sysadmin;").assertSucceeded()
-        # FIXME: this query should probably not fail
-        tc.execute("CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;").assertFailed(err_code='M0M27', err_message="CREATE USER: access denied for user 'alice'")
+        tc.execute("CREATE USER may WITH PASSWORD 'may' NAME 'May' SCHEMA library;").assertSucceeded()
+        tc.execute("DROP USER may;").assertSucceeded()
 
         with SQLTestCase() as tc2:
             # check that april can only SEL/INS/UPD/DEL the table after the GRANT ALL
