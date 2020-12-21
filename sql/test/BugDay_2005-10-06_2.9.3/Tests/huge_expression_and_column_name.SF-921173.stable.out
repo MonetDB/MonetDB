@@ -73,7 +73,7 @@ stdout of test 'huge_expression_and_column_name.SF-921173` in directory 'sql/tes
 % %1 # name
 % bigint # type
 % 4 # length
-[ 1001	]
+[ 251	]
 
 # 16:51:10 >  
 # 16:51:10 >  Done.

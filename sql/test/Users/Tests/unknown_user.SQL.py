@@ -26,3 +26,5 @@ with SQLTestCase() as tc:
     tc.execute("GRANT COPY INTO TO "+usr).assertFailed(err_code="01007", err_message="GRANT: User/role '"+usr+"' unknown")
     tc.execute("GRANT COPY FROM TO "+usr).assertFailed(err_code="01007", err_message="GRANT: User/role '"+usr+"' unknown")
 
+    tc.execute("DROP TABLE t;").assertSucceeded()
+    tc.execute("DROP ROLE r1;").assertSucceeded()
