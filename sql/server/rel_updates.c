@@ -1076,8 +1076,9 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 		/* We have always to reduce the column visibility because of the SET clause */
 		if (!table_privs(sql, t, PRIV_SELECT)) {
 			sql_rel *nres = NULL;
-			if (!(nres = rel_reduce_on_column_privileges(sql, res, t)) && opt_where) /* on global updates the user may be able to upd*/
-				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
+			if (!(nres = rel_reduce_on_column_privileges(sql, res, t)) && opt_where) /* on global updates the user may be able to update */
+				return sql_error(sql, 02, SQLSTATE(42000) "UPDATE: insufficient privileges for user '%s' to update table '%s'",
+								 get_string_global_var(sql, "current_user"), tname);
 			if (!nres) {
 				res->exps = sa_list(sql->sa); /* hasn't select privilege on any column, add just TID column to the list */
 			} else {
@@ -1166,7 +1167,8 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 
 			if (!table_privs(sql, t, PRIV_SELECT)) {
 				if (!(r = rel_reduce_on_column_privileges(sql, r, t)))
-					return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), tname);
+					return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'",
+									 get_string_global_var(sql, "current_user"), tname);
 				list_append(r->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 			}
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
@@ -1271,7 +1273,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (!table_privs(sql, t, PRIV_SELECT)) {
 		if (!(bt = rel_reduce_on_column_privileges(sql, bt, t)))
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: access denied for %s to table %s%s%s'%s'",
-							 sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
+							 get_string_global_var(sql, "current_user"), t->s ? "'":"", t->s ? t->s->base.name : "", t->s ? "'.":"", tname);
 		list_append(bt->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 	}
 	joined = table_ref(query, NULL, tref, 0, NULL);
