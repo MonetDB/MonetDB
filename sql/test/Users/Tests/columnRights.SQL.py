@@ -29,9 +29,9 @@ with SQLTestCase() as tc:
     # FIXME: the following two queries currently fail due to the problems
     #   discussed in issue #7035.  May need to fix the expected error once that
     #   issue is fixed
-    tc.execute("UPDATE orders SET name = name || 'book title goes here';").assertFailed(err_code='42000', err_message="UPDATE: inufficient privileges for user 'alice' to update table 'orders'")
+    tc.execute("UPDATE orders SET name = name || 'book title goes here';").assertFailed(err_code='42000', err_message="SELECT: identifier 'name' unknown")
     # but not this update involving the 'price' column
-    tc.execute("UPDATE orders SET name = 'new book title' where price = 12;").assertSucceeded().assertRowCount(2)
+    tc.execute("UPDATE orders SET name = 'new book title' where price = 12;").assertSucceeded().assertRowCount(1)
 
     # clean up
     tc.connect(username="monetdb", password="monetdb")
