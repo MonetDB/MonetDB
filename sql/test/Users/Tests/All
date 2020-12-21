@@ -12,6 +12,6 @@ schemaRights
 metadataConsistency
 createUserRollback
 userCallFunction
-createSetUp
 renameUser
+createSetUp
 changeSchemaUser
