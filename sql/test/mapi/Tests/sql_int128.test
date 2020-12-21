@@ -18,10 +18,6 @@ sql.mvc
 1
 sql.tid
 1
-sql.bind
-1
-algebra.projection
-1
 algebra.project
 1
 sql.update
@@ -41,10 +37,6 @@ querylog.define
 sql.mvc
 1
 sql.tid
-1
-sql.bind
-1
-algebra.projection
 1
 algebra.project
 1
