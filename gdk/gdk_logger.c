@@ -1972,7 +1972,7 @@ logger_flush(logger *lg, lng saved_id)
 {
 	if (LOG_DISABLED(lg)) {
 		lg->saved_id = saved_id;
-		lg->saved_tid = saved_id;
+		lg->saved_tid = lg->tid;
 		return GDK_SUCCEED;
 	}
 	if (lg->saved_id >= saved_id)
