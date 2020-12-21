@@ -1981,6 +1981,8 @@ logger_flush(logger *lg, lng saved_id)
 		return GDK_SUCCEED;
 	log_return res = LOG_OK;
 	while(lg->saved_id < saved_id && res == LOG_OK) {
+		if (lg->saved_id >= lg->id)
+			break;
 		if (!lg->input_log) {
 			char *filename;
 			char id[BUFSIZ];
