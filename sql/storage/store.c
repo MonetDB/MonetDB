@@ -7420,6 +7420,36 @@ sql_session_destroy(sql_session *s)
 }
 
 static void
+table_rollback(sql_trans *tr, sql_table *t)
+{
+	store_funcs.rollback_table(tr, t);
+}
+
+static void
+schema_rollback(sql_trans *tr, sql_schema *s)
+{
+	if (s->tables.set) {
+		for (node *n = s->tables.set->h; n; n = n->next) {
+			sql_table *t = n->data;
+			if (t->base.atime)
+				table_rollback(tr, t);
+		}
+	}
+}
+
+static void
+sql_trans_rollback(sql_trans *tr) 
+{
+	sql_schema *tmp = find_sql_schema(tr, "tmp");
+
+	for (node *m = tr->schemas.set->h; m; m = m->next) {
+		sql_schema *s = m->data;
+		if (s->base.atime && s != tmp)
+			schema_rollback(tr, s);
+	}
+}
+
+static void
 sql_trans_reset_tmp(sql_trans *tr, int commit)
 {
 	sql_schema *tmp = find_sql_schema(tr, "tmp");
@@ -7520,6 +7550,8 @@ sql_trans_end(sql_session *s, int commit)
 	TRC_DEBUG(SQL_STORE, "End of transaction: %d\n", s->tr->schema_number);
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
+	if(!commit && s->tr->atime)
+		sql_trans_rollback(s->tr);
 	sql_trans_reset_tmp(s->tr, commit); /* reset temp schema */
 	if (s->tr->parent == gtrans) {
 		list_move_data(active_sessions, passive_sessions, s);

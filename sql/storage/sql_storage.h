@@ -262,6 +262,7 @@ typedef struct store_functions {
 	update_table_fptr log_table;
 	update_table_fptr update_table;
 	gtrans_update_fptr gtrans_minmax;
+	clear_table_fptr rollback_table;
 
 	cleanup_fptr cleanup;
 } store_functions;
