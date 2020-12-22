@@ -2516,7 +2516,10 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 	size_t bufsize = 1024, pos = 0;
 	char *buf = NULL, *err = NULL;
 
-	if (!sql_bind_func(sql->sa, mvc_bind_schema(sql, "sys"), "uuid", sql_bind_localtype("int"), NULL, F_FUNC)) {
+	if (!sql_bind_func(sql, "sys", "uuid", sql_bind_localtype("int"), NULL, F_FUNC)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+
 		if ((buf = GDKmalloc(bufsize)) == NULL)
 			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -2550,6 +2553,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	char *buf = NULL, *err = NULL;
 	res_table *output = NULL;
 	BAT *b = NULL;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_table *t;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2758,6 +2763,33 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and "
 					"((name = 'describe_type' and type = %d) or (name in ('describe_table', 'describe_columns', 'describe_function') and type = %d));\n", (int) F_FUNC, (int) F_UNION);
 
+			/* scoping2 branch changes, the 'users' view has to be re-created because of the 'schema_path' addition on 'db_user_info' table
+			   However 'dependency_schemas_on_users' has a dependency on 'users', so it has to be re-created as well */
+			t = mvc_bind_table(sql, s, "users");
+			t->system = 0;	/* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "dependency_schemas_on_users");
+			t->system = 0;	/* make it non-system else the drop view will fail */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"DROP VIEW sys.dependency_schemas_on_users;\n"
+					"DROP VIEW sys.users;\n"
+
+					"ALTER TABLE sys.db_user_info ADD COLUMN schema_path CLOB;\n"
+					"UPDATE sys.db_user_info SET schema_path = '\"sys\"';\n"
+
+					"CREATE VIEW sys.users AS\n"
+					"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\"\n"
+					" FROM db_users() AS u\n"
+					" LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\";\n"
+					"GRANT SELECT ON sys.users TO PUBLIC;\n"
+					"CREATE VIEW sys.dependency_schemas_on_users AS\n"
+					" SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type\n"
+					" FROM sys.users AS u, sys.schemas AS s\n"
+					" WHERE u.default_schema = s.id\n"
+					" ORDER BY s.name, u.name;\n"
+					"GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;\n"
+					"update sys._tables set system = true where system <> true and name in ('users','dependency_schemas_on_users')"
+					" and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) tt_view);
+
 			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
 
@@ -2803,7 +2835,9 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
+	if (!sql_bind_func(m, s->base.name, "var_pop", &tp, NULL, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2813,7 +2847,9 @@ SQLupgrades(Client c, mvc *m)
 	}
 #endif
 
-	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
+	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION);
+	m->session->status = 0; /* if the function was not found clean the error */
+	m->errstr[0] = '\0';
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(s, "privileges");
 		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
@@ -2837,8 +2873,9 @@ SQLupgrades(Client c, mvc *m)
 	} else if (geomsqlfix_get() != NULL) {
 		/* the geom module is loaded... */
 		sql_find_subtype(&tp, "clob", 0, 0);
-		if (!sql_bind_func(m->sa, s, "st_wkttosql",
-				   &tp, NULL, F_FUNC)) {
+		if (!sql_bind_func(m, s->base.name, "st_wkttosql", &tp, NULL, F_FUNC)) {
+			m->session->status = 0; /* if the function was not found clean the error */
+			m->errstr[0] = '\0';
 			/* ... but the database is not geom-enabled */
 			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
@@ -2850,7 +2887,9 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (sql_bind_func(m->sa, s, "group_concat", &tp, NULL, F_AGGR) == NULL) {
+	if (!sql_bind_func(m, s->base.name, "group_concat", &tp, NULL, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2859,29 +2898,32 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_views", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_views", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_keys", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_indexes", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_views_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_views_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_functions_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
+	if (sql_bind_func(m, s->base.name, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_keys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_views_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_views_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			GDKfree(prev_schema);
 			return -1;
 		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	if ((err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
@@ -2912,7 +2954,7 @@ SQLupgrades(Client c, mvc *m)
 	/* when function storagemodel() exists and views tablestorage
 	 * and schemastorage don't, then upgrade storagemodel to match
 	 * 75_storagemodel.sql */
-	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
+	if (sql_bind_func(m, s->base.name, "storagemodel", NULL, NULL, F_UNION)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
 		if ((err = sql_update_storagemodel(c, m, prev_schema, false)) != NULL) {
@@ -2921,6 +2963,9 @@ SQLupgrades(Client c, mvc *m)
 			GDKfree(prev_schema);
 			return -1;
 		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
@@ -2930,17 +2975,22 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if (sql_bind_func(m->sa, s, "times", NULL, NULL, F_PROC)) {
+	if (sql_bind_func(m, s->base.name, "times", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			GDKfree(prev_schema);
 			return -1;
 		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
-	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
+	if (!sql_bind_func3(m, s->base.name, "deltas", &tp, &tp, &tp, F_UNION)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2965,7 +3015,9 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
+	if (!sql_bind_func(m, s->base.name, "median_avg", &tp, NULL, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2975,7 +3027,9 @@ SQLupgrades(Client c, mvc *m)
 	}
 #endif
 
-	if (!sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+	if (!sql_bind_func(m, s->base.name, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_jun2020(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2993,12 +3047,15 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "covar_pop", &tp, &tp, F_AGGR) &&
-		(err = sql_update_jun2020_sp1_hugeint(c, prev_schema)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		GDKfree(prev_schema);
-		return -1;
+	if (!sql_bind_func(m, s->base.name, "covar_pop", &tp, &tp, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
+		if ((err = sql_update_jun2020_sp1_hugeint(c, prev_schema)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+			freeException(err);
+			GDKfree(prev_schema);
+			return -1;
+		}
 	}
 #endif
 
@@ -3010,12 +3067,16 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
-	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
-	    (err = sql_update_oscar_lidar(c)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		GDKfree(prev_schema);
-		return -1;
+	if (sql_bind_func(m, s->base.name, "lidarattach", &tp, NULL, F_PROC)) {
+		if ((err = sql_update_oscar_lidar(c)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+			freeException(err);
+			GDKfree(prev_schema);
+			return -1;
+		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	if ((err = sql_update_oscar(c, m, prev_schema, &systabfixed)) != NULL) {

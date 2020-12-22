@@ -30,7 +30,7 @@ stderr of test 'rename06` in directory 'sql/test/rename` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-26221/.s.monetdb.30630
 QUERY = alter table "thistableshouldnotexist" add column "a" int; --error
-ERROR = !ALTER TABLE: no such table 'thistableshouldnotexist' in schema 'sys'
+ERROR = !ALTER TABLE: no such table 'thistableshouldnotexist'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-26221/.s.monetdb.30630
 QUERY = insert into "other_table" values (1); --error

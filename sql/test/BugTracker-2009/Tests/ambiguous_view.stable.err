@@ -94,7 +94,7 @@ ERROR = !SELECT: no such table 'eur_kg_test'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = drop view eur_kg_test;
-ERROR = !DROP VIEW: unknown view 'eur_kg_test'
+ERROR = !DROP VIEW: no such view 'eur_kg_test'
 CODE  = 42S02
 
 # 20:07:37 >  

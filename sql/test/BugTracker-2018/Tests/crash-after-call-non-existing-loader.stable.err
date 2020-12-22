@@ -32,7 +32,7 @@ stderr of test 'crash-after-call-non-existing-loader` in directory 'sql/test/Bug
 
 MAPI  = (monetdb) /var/tmp/mtest-13619/.s.monetdb.33078
 QUERY = CREATE TABLE mytable FROM LOADER non_existing_loader();
-ERROR = !SELECT: no such loader function 'non_existing_loader'
+ERROR = !SELECT: no such loader function 'non_existing_loader'()
 CODE  = 42000
 
 # 16:24:03 >  
