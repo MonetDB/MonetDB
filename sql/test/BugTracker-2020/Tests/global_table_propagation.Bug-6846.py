@@ -34,7 +34,7 @@ try:
     cursor2.execute('SELECT qaid, value_ FROM tmp.close_d;')  # error, tmp.close_d doesn't exist anymore
     sys.stderr.write('Exception expected')
 except pymonetdb.OperationalError as e:
-    if "no such table 'close_d'" not in str(e):
+    if "no such table 'tmp'.'close_d'" not in str(e):
         sys.stderr.write(str(e))
 
 cursor1.close()
