@@ -33,6 +33,17 @@ def sequence_match(left=[], right=[], index=0):
             return False
     return True
 
+def get_index_mismatch(left=[], right=[]):
+    ll = len(left)
+    rl = len(right)
+    index = None
+    for i in range(min(ll, rl)):
+        if not equals(left[i], right[i]):
+            index = i
+            break
+    return index
+
+
 def piped_representation(data=[]):
     def mapfn(next):
         if type(next) is tuple:
@@ -293,8 +304,15 @@ class TestCaseResult(object):
                     if first == v:
                         index = i
                         break
-        if not sequence_match(data, self.data, index):
-            msg = '{}\nexpected to match query result starting at index={}, but it didn\'t'.format(piped_representation(data), index or 0)
+        index = index or 0
+        # align sequences
+        idx_mis = get_index_mismatch(data, self.data[index:])
+        if idx_mis is not None:
+            exp_v = data[idx_mis]
+            exp_t = type(exp_v)
+            res_v = self.data[idx_mis]
+            res_t = type(res_v)
+            msg = 'expected to match query result at index {} but it didn\'t as {} not equals {}'.format(idx_mis, repr(exp_v), repr(res_v))
             self.fail(msg, data=self.data)
         return self
 
