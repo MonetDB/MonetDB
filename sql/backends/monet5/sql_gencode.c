@@ -1058,7 +1058,7 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	m->user_id = m->role_id = USER_MONETDB;
 
 	store_lock();
-	m->session = sql_session_create(0);
+	m->session = sql_session_create(m->pa, 0);
 	store_unlock();
 	if (!m->session) {
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);

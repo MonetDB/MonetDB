@@ -2272,7 +2272,7 @@ _gtr_update( sql_trans *tr, gtr_update_table_fptr gtr_update_table_f)
 	int ok = LOG_OK, tchanges = 0;
 	node *sn;
 
-	for(sn = tr->schemas.set->h; sn && ok == LOG_OK; sn = sn->next) {
+	for(sn = tr->cat->schemas.set->h; sn && ok == LOG_OK; sn = sn->next) {
 		int schanges = 0;
 		sql_schema *s = sn->data;
 
@@ -2847,6 +2847,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ok == LOG_OK && tt->idxs.set) {
 		if (ot)
 			o = ot->idxs.set->h;
+		if (ft->idxs.set && tt->idxs.set)
 		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
