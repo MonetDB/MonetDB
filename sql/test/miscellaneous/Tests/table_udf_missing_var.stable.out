@@ -5,34 +5,6 @@ stdout of test 'table_udf_missing_var` in directory 'sql/test/miscellaneous` its
 # 12:13:31 >  "/usr/bin/python3" "table_udf_missing_var.py" "table_udf_missing_var"
 # 12:13:31 >  
 
-#create function myfunc() returns table (x int) begin declare myvar int; return select myvar; end;
-#create function myfunc2() returns int begin declare myvar int; return myvar; end;
-#select * from myfunc();
-% .%1 # table_name
-% x # name
-% int # type
-% 1 # length
-[ NULL	]
-#select myfunc2();
-% .%2 # table_name
-% %2 # name
-% int # type
-% 1 # length
-[ NULL	]
-#select * from myfunc();
-% .%1 # table_name
-% x # name
-% int # type
-% 1 # length
-[ NULL	]
-#select myfunc2();
-% .%2 # table_name
-% %2 # name
-% int # type
-% 1 # length
-[ NULL	]
-#drop function myfunc();
-#drop function myfunc2();
 
 # 12:13:31 >  
 # 12:13:31 >  "Done."

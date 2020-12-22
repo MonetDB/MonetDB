@@ -761,7 +761,12 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 #endif
 
 		userver.sun_family = AF_UNIX;
-		memcpy(userver.sun_path, usockfile, ulen + 1);
+		const char *p;
+		if ((p = strstr(usockfile, "${PORT}")) != NULL)
+			snprintf(userver.sun_path, sizeof(userver.sun_path),
+					 "%.*s%d%s", (int) (p - usockfile), usockfile, port<0?0:port, p + 7);
+		else
+			memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
 		if (remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file: %s",

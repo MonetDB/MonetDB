@@ -1,0 +1,16 @@
+statement ok
+prepare select 1
+
+statement error
+declare a int
+
+statement error
+select a
+
+statement error
+iamerror
+
+statement error
+select a
+
+

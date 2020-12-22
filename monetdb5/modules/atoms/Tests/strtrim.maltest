@@ -1,0 +1,72 @@
+statement ok
+a := str.trim("zzzytrimxxxx", "zyx")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.trim("zzëzytrimxxëxx", "zëyx")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.trim("zzë颖zytrimxx颖ëxx", "zëy颖x")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.ltrim("zzzytrim", "zyx")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.ltrim("zzëzytrim", "zëyx")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.ltrim("zzë颖zytrim", "zëy颖x")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.rtrim("trimxxxx", "zyx")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.rtrim("trimxxëxx", "zëyx")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+
+statement ok
+a := str.rtrim("trimxx颖ëxx", "zëy颖x")
+
+query T rowsort
+io.print(a)
+----
+"trim"
+

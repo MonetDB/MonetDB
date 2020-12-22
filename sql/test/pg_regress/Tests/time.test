@@ -1,0 +1,192 @@
+statement ok
+CREATE TABLE TIME_TBL (f1 time(2))
+
+statement ok
+INSERT INTO TIME_TBL VALUES ('00:00')
+
+statement ok
+INSERT INTO TIME_TBL VALUES ('01:00')
+
+statement error
+INSERT INTO TIME_TBL VALUES ('02:03 PST')
+
+statement error
+INSERT INTO TIME_TBL VALUES ('11:59 EDT')
+
+statement ok
+INSERT INTO TIME_TBL VALUES ('12:00')
+
+statement ok
+INSERT INTO TIME_TBL VALUES ('12:01')
+
+statement ok
+INSERT INTO TIME_TBL VALUES ('23:59')
+
+statement error
+INSERT INTO TIME_TBL VALUES ('11:59:59.99 AM')
+
+statement error
+INSERT INTO TIME_TBL VALUES ('11:59:59.99 PM')
+
+query T rowsort
+SELECT f1 AS "Time" FROM TIME_TBL
+----
+00:00:00
+01:00:00
+12:00:00
+12:01:00
+23:59:00
+
+query T rowsort
+SELECT f1 AS "Three" FROM TIME_TBL WHERE f1 < '05:06:07'
+----
+00:00:00
+01:00:00
+
+query T rowsort
+SELECT f1 AS "Six" FROM TIME_TBL WHERE f1 > '05:06:07'
+----
+12:00:00
+12:01:00
+23:59:00
+
+query T rowsort
+SELECT f1 AS "None" FROM TIME_TBL WHERE f1 < '00:00'
+----
+
+query T rowsort
+SELECT f1 AS "Nine" FROM TIME_TBL WHERE f1 >= '00:00'
+----
+00:00:00
+01:00:00
+12:00:00
+12:01:00
+23:59:00
+
+statement error
+SELECT f1, f1 + time '00:01' AS "Illegal" FROM TIME_TBL
+
+statement ok
+INSERT INTO TIME_TBL VALUES (null)
+
+statement error
+SELECT f1, day(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, "day"(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, hour(f1) FROM TIME_TBL
+
+query TI rowsort
+SELECT f1, "hour"(f1) FROM TIME_TBL
+----
+12 values hashing to 74887904801095a1ea94969d27aa9fc7
+
+statement error
+SELECT f1, minute(f1) FROM TIME_TBL
+
+query TI rowsort
+SELECT f1, "minute"(f1) FROM TIME_TBL
+----
+12 values hashing to 7d325c35646f63d407f3d4ae9acced9a
+
+statement error
+SELECT f1, second(f1) FROM TIME_TBL
+
+query TR rowsort
+SELECT f1, "second"(f1) FROM TIME_TBL
+----
+12 values hashing to ca05e56d3cf36d7adbe4fc31992f9124
+
+statement error
+SELECT f1, extract(day from f1) FROM TIME_TBL
+
+query TI rowsort
+SELECT f1, extract(hour from f1) FROM TIME_TBL
+----
+12 values hashing to 74887904801095a1ea94969d27aa9fc7
+
+query TI rowsort
+SELECT f1, extract(minute from f1) FROM TIME_TBL
+----
+12 values hashing to 7d325c35646f63d407f3d4ae9acced9a
+
+query TR rowsort
+SELECT f1, extract(second from f1) FROM TIME_TBL
+----
+12 values hashing to ca05e56d3cf36d7adbe4fc31992f9124
+
+query TI rowsort
+SELECT f1, extract(epoch from f1) FROM TIME_TBL
+----
+12 values hashing to a6225af1687967b1b001567fe62b1fb4
+
+statement error
+SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIME_TBL
+
+statement error
+SELECT f1, sql_add(f1, cast(2*60*60 as interval second)) FROM TIME_TBL
+
+statement error
+SELECT f1, sql_add(f1, cast('2:44:59' as time)) FROM TIME_TBL
+
+statement error
+SELECT f1, sql_add(f1, cast('2:44:59 CET' as timetz)) FROM TIME_TBL
+
+statement error
+SELECT f1, sql_sub(f1, 12*60*60.0 + 66) FROM TIME_TBL
+
+statement error
+SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIME_TBL
+
+query TT rowsort
+SELECT f1, sql_sub(f1, cast('23:22:21' as time)) FROM TIME_TBL
+----
+12 values hashing to d29847f9b37c3509d6007e16552a96ea
+
+query TT rowsort
+SELECT f1, sql_sub(cast('23:22:21' as time), f1) FROM TIME_TBL
+----
+12 values hashing to 81e13210fa89940b9c16d315376400d4
+
+statement error
+SELECT f1, month(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, "month"(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, year(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, "year"(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, extract(week from f1) FROM TIME_TBL
+
+statement error
+SELECT f1, extract(month from f1) FROM TIME_TBL
+
+statement error
+SELECT f1, extract(year from f1) FROM TIME_TBL
+
+statement error
+SELECT f1, week(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, weekofyear(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, dayofmonth(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, dayofweek(f1) FROM TIME_TBL
+
+statement error
+SELECT f1, dayofyear(f1) FROM TIME_TBL
+
+statement ok
+DROP TABLE TIME_TBL
+
+

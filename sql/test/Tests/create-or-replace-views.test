@@ -1,0 +1,33 @@
+statement ok
+CREATE TABLE testing9 (a1 int, b2 text)
+
+statement ok
+CREATE VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE a1 = 1
+
+statement ok
+INSERT INTO testing9 VALUES (1, 'one'), (2, 'two')
+
+query IT rowsort
+SELECT a1, b2 FROM viewtest
+----
+1
+one
+
+statement ok
+CREATE OR REPLACE VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'two'
+
+query IT rowsort
+SELECT a1, b2 FROM viewtest
+----
+2
+two
+
+statement error
+CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'
+
+statement ok
+DROP VIEW viewtest
+
+statement ok
+DROP TABLE testing9
+

@@ -4,3 +4,4 @@ insert into test_update values ('b', 2);
 select * from test_update order by id;
 update test_update set x=x+1 where x >= 2;
 select * from test_update order by id;
+drop table test_update;

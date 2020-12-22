@@ -23,7 +23,7 @@ bat.append(g,2@0);
 bat.append(g,3@0);
 bat.append(g,3@0);
 
-io.print(g,b);
+#io.print(g,b);
 
 # only head is used
 e := bat.new(:oid);
@@ -33,10 +33,9 @@ bat.append(e,2@0);
 bat.append(e,3@0);
 
 i := aggr.min(b,g,e);
-io.print(i);
-
 h := aggr.max(b,g,e);
-io.print(h);
+
+io.print(i,h);
 end foo;
-mdb.List("user","foo");
+
 user.foo();

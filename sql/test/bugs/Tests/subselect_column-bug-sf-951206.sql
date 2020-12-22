@@ -6,3 +6,4 @@ insert into "t951206" values ('niels', false), ('fabian', true),
 
 select x from (select count(*) as x from "t951206" where "isloco" = true) as t;
 select x from (select name as x from "t951206" where "isloco" = true) as t;
+rollback;

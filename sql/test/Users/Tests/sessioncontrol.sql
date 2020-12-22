@@ -20,3 +20,5 @@ call setquerytimeout(0, 60);
 call setworkerlimit(0,8);
 call setmemorylimit(2000);
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s;
+
+call setoptimizer(0, 'default_pipe');

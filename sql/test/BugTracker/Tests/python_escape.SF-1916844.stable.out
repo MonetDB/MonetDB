@@ -6,33 +6,6 @@ stdout of test 'python_escape.SF-1916844` in directory 'sql/test/BugTracker` its
 # 16:09:54 >  
 
 
-
-# MonetDB server v5.4.1, based on kernel v1.22.1
-# Serving database 'mTests_src_test_BugTracker'
-# Compiled for x86_64-unknown-linux-gnu/64bit with 32bit OIDs dynamically linked
-# Copyright (c) 1993-2008 CWI, all rights reserved
-# Visit http://monetdb.cwi.nl/ for further information
-# Listening for connection requests on mapi:monetdb://hirundo.ins.cwi.nl:38861/
-# MonetDB/SQL module v2.22.1 loaded
-
-#function user.main():void;
-#    clients.quit();
-#end main;
-
-
-# 16:09:54 >  
-# 16:09:54 >  /usr/bin/python python_escape.SF-1916844.SQL.py python_escape.SF-1916844 
-# 16:09:54 >  
-
-1
-1
-1
-2
-2
-2
-2
-2
-
 # 16:09:54 >  
 # 16:09:54 >  Done.
 # 16:09:54 >  

@@ -1,9 +1,4 @@
-import os
-import socket
-import sys
-import tempfile
-
-import pymonetdb
+import os, socket, sys, tempfile, pymonetdb
 
 try:
     from MonetDBtesting import process
@@ -35,13 +30,17 @@ with tempfile.TemporaryDirectory() as farm_dir:
         node1_cur.execute("create function mudf(sx float, sxx float, sxy float, sy float, syy float, n int) returns table(res float) begin return select 0.5; end")
         node1_cur.execute("create function mudf2(sx float, sxx float, sxy float, sy float, syy float, n int) returns table(res float, res2 float) begin return select 0.5, 0.6; end")
         node1_cur.execute("create table lala(sx float, sxx float, sxy float , sy float, syy float, n int)")
-        node1_cur.execute("insert into lala select 13,85,98,15,113,2")
+        if node1_cur.execute("insert into lala select 13,85,98,15,113,2") != 1:
+            sys.stderr.write("1 row inserted expected")
         node1_cur.execute("select * from lala")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [(13.0, 85.0, 98.0, 15.0, 113.0, 2)]:
+            sys.stderr.write("Just row (13.0, 85.0, 98.0, 15.0, 113.0, 2) expected")
         node1_cur.execute("select * from mudf((select * from lala))")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [(0.5,)]:
+            sys.stderr.write("Just row (0.5,) expected")
         node1_cur.execute("select * from mudf2((select * from lala))")
-        print(node1_cur.fetchall())
+        if node1_cur.fetchall() != [(0.5, 0.6)]:
+            sys.stderr.write("Just row (0.5, 0.6) expected")
 
         node2_port = freeport()
         with process.server(mapiport=node2_port, dbname='node2',
@@ -55,15 +54,15 @@ with tempfile.TemporaryDirectory() as farm_dir:
             node2_cur.execute("create function mudf2(sx float, sxx float, sxy float, sy float, syy float, n int) returns table(res float, res2 float) begin return select 0.5, 0.6; end")
             node2_cur.execute("create remote table fofo(sx float, sxx float, sxy float, sy float, syy float, n int) on 'mapi:monetdb://localhost:{}/node1/sys/lala'".format(node1_port))
             node2_cur.execute("select * from fofo")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [(13.0, 85.0, 98.0, 15.0, 113.0, 2)]:
+                sys.stderr.write("Just row (13.0, 85.0, 98.0, 15.0, 113.0, 2) expected")
             node2_cur.execute("select * from mudf((select * from fofo))")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [(0.5,)]:
+                sys.stderr.write("Just row (0.5,) expected")
             node2_cur.execute("select * from mudf2((select * from fofo))")
-            print(node2_cur.fetchall())
+            if node2_cur.fetchall() != [(0.5, 0.6)]:
+                sys.stderr.write("Just row (0.5, 0.6) expected")
 
             # cleanup: shutdown the monetdb servers and remove tempdir
-            out, err = node1_proc.communicate()
-            sys.stderr.write(err)
-
-            out, err = node2_proc.communicate()
-            sys.stderr.write(err)
+            node1_proc.communicate()
+            node2_proc.communicate()

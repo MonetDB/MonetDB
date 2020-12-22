@@ -1,0 +1,6 @@
+query I rowsort
+select * from GENERATE_SERIES(1,41) sample 1.0
+----
+40 values hashing to 15478724c53006b905a0c5a7a063bcdd
+
+

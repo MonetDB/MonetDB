@@ -1,0 +1,58 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE mytable4(a1 int, a2 int, a3 int, a4 int)
+
+statement ok
+CREATE TABLE mytable3(a1 int, a2 int, a3 int)
+
+statement ok
+CREATE TABLE mytable2(a1 int, a2 int)
+
+statement ok
+CREATE LOADER myfunc(nvalues int, ncols int) LANGUAGE PYTHON {
+	for i in range(nvalues):
+		res = dict()
+		for j in range(ncols):
+			res['a'+str(j+1)] = (i+1)*(j+1)
+		_emit.emit(res)
+}
+
+statement ok
+COPY LOADER INTO mytable3 FROM myfunc(10, 3)
+
+statement ok
+COPY LOADER INTO mytable4 FROM myfunc(10, 3)
+
+statement ok
+COPY LOADER INTO mytable2 FROM myfunc(20, 2)
+
+query IIII rowsort
+SELECT * FROM mytable4
+----
+40 values hashing to 06a6a8bbebc60088a694e1f9372bdf54
+
+query III rowsort
+SELECT * FROM mytable3
+----
+30 values hashing to 05ecd200f24684cb86aa59915a63fddd
+
+query II rowsort
+SELECT * FROM mytable2
+----
+40 values hashing to 4b9a1c8a9990e321afcc917839eedc40
+
+statement ok
+DROP TABLE mytable3
+
+statement ok
+DROP TABLE mytable2
+
+statement ok
+DROP LOADER myfunc
+
+statement ok
+ROLLBACK
+
+

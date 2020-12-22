@@ -1,0 +1,21 @@
+query T rowsort
+select '12345' || 678
+----
+12345678
+
+query T rowsort
+select 12345 || '678'
+----
+12345678
+
+query T rowsort
+select '12345' || '678'
+----
+12345678
+
+query T rowsort
+select 12345 || 678
+----
+12345678
+
+

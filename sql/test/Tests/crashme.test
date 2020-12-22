@@ -1,0 +1,5565 @@
+statement error
+set auto_commit = true
+
+statement error
+drop table crash_me
+
+statement error
+drop table crash_me cascade
+
+statement ok
+create table crash_me (a integer not null)
+
+statement ok
+drop table crash_me
+
+statement error
+drop table crash_me 
+
+statement error
+drop table crash_me2 
+
+statement error
+drop table crash_me3 
+
+statement error
+drop table crash_q 
+
+statement error
+drop table crash_q1 
+
+statement ok
+create table crash_me (a integer not null,b char(10) not null)
+
+statement ok
+insert into crash_me (a,b) values (1,'a')
+
+query I rowsort
+select 1
+----
+1
+
+query I rowsort
+select 1
+----
+1
+
+query I rowsort
+select a from crash_me where b<'b'
+----
+1
+
+query I rowsort
+select 1 
+----
+1
+
+query IT rowsort
+select crash_me.* from crash_me
+----
+1
+a
+
+statement error
+select a from crash_me where b<"c"
+
+query T rowsort
+select 'Walker''s' 
+----
+Walker's
+
+query I rowsort
+select a from crash_me where b < 'a'
+'b'
+----
+1
+
+statement error
+select "A" from crash_me
+
+statement error
+select `A` from crash_me
+
+statement error
+select [A] from crash_me
+
+statement ok
+create table crash_me1 ("abc""d" integer)
+
+statement ok
+drop table crash_me1
+
+query I rowsort
+select a as ab from crash_me
+----
+1
+
+query I rowsort
+select b.a from crash_me as b
+----
+1
+
+query I rowsort
+select 1+1 
+----
+2
+
+query I rowsort
+select count(*) from crash_me
+----
+1
+
+query I rowsort
+select count(distinct a) from crash_me
+----
+1
+
+query II rowsort
+select count(distinct a), count(distinct b) from crash_me
+----
+1
+1
+
+query I rowsort
+select a from crash_me group by a
+----
+1
+
+statement error
+select a from crash_me group by 1
+
+query I rowsort
+select a as ab from crash_me group by ab
+----
+1
+
+query I rowsort
+select count(*) from crash_me group by a
+----
+1
+
+query I rowsort
+select a from crash_me order by a
+----
+1
+
+query I rowsort
+select a from crash_me order by 1
+----
+1
+
+query I rowsort
+select a from crash_me order by a+1
+----
+1
+
+query T rowsort
+select b from crash_me order by a
+----
+a
+
+statement error
+select a from crash_me order by a compute sum(a) by a
+
+statement ok
+create table crash_q (s char(10))
+
+statement ok
+insert into crash_q values ('a'),('b')
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (a integer)
+
+statement error
+insert into crash_q SET a=1
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_me_q (a int)
+
+statement error
+insert into crash_me_q (a) values (DEFAULT)
+
+statement ok
+drop table crash_me_q 
+
+statement ok
+create table crash_me_q (a int)
+
+statement error
+insert into crash_me_q (a) values ()
+
+statement ok
+drop table crash_me_q 
+
+statement ok
+create table crash_me_q (a int)
+
+statement ok
+insert into crash_me_q  DEFAULT VALUES
+
+statement ok
+drop table crash_me_q 
+
+query IT rowsort
+select * from crash_me
+----
+1
+a
+
+query IT rowsort
+select * from crash_me limit 1
+----
+1
+a
+
+statement error
+select * from crash_me limit 1,1
+
+query IT rowsort
+select * from crash_me limit 1 offset 1
+----
+
+statement ok
+create table crash_q (a integer, b integer,c1 CHAR(10))
+
+statement ok
+alter table crash_q add d integer
+
+statement error
+alter table crash_q add (f integer,g integer)
+
+statement error
+alter table crash_q change a e char(50)
+
+statement error
+alter table crash_q modify c1 CHAR(20)
+
+statement ok
+alter table crash_q alter b set default 10
+
+statement ok
+alter table crash_q drop column b
+
+statement ok
+alter table crash_q rename to crash_q1
+
+statement ok
+drop table crash_q1 
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (a integer, b integer,c1 CHAR(10))
+
+statement error
+rename table crash_q to crash_q1
+
+statement error
+drop table crash_q1 
+
+statement error
+drop table crash_q1 
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (a integer, b integer,c1 CHAR(10))
+
+statement ok
+truncate table crash_q
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (a integer, b integer,c1 CHAR(10))
+
+statement ok
+create table crash_q1 (a integer, b integer,c1 CHAR(10) not null)
+
+statement error
+alter table crash_q add constraint c2 check(a > b)
+
+statement error
+alter table crash_q drop constraint c2
+
+statement ok
+alter table crash_q add constraint u1 unique(c1)
+
+statement ok
+alter table crash_q drop constraint u1
+
+statement ok
+alter table crash_q1 add constraint p1 primary key(c1)
+
+statement error
+alter table crash_q add constraint f1 foreign key(c1)
+
+statement error
+ references crash_q1(c1)
+
+statement error
+alter table crash_q drop constraint f1
+
+statement ok
+alter table crash_q1 drop constraint p1 restrict
+
+statement ok
+drop table crash_q 
+
+statement ok
+drop table crash_q1 
+
+query T rowsort
+select b from crash_me where b = 'A'
+----
+
+query T rowsort
+select b from crash_me where b = 'a '
+----
+
+statement ok
+create table crash_q (s char(10))
+
+statement ok
+insert into crash_q values(null)
+
+statement ok
+insert into crash_q values(null)
+
+query IT rowsort
+select count(*),s from crash_q group by s
+----
+2
+NULL
+
+statement ok
+drop table crash_q 
+
+query I rowsort
+select a from crash_me group by a having a > 0
+----
+1
+
+query I rowsort
+select a as ab from crash_me order by ab
+----
+1
+
+query I rowsort
+select 0b1001 
+----
+0
+
+query I rowsort
+select 0x41 
+----
+65
+
+statement error
+select b'0110' 
+
+query T rowsort
+select x'1ace' 
+----
+1ACE
+
+query T rowsort
+select (1=1) 
+----
+True
+
+query T rowsort
+select TRUE 
+----
+True
+
+query T rowsort
+select FALSE 
+----
+False
+
+query T rowsort
+select (1=1)=true 
+----
+True
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ABSOLUTE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ACCESS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ACTION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ADD int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ADMIN int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (AFTER int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (AGGREGATE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ALIAS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ALL int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ALLOCATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ALTER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ANALYZE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (AND int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ANY int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ARE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ARRAY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (AS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ASC int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ASSERTION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ASYNC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (AT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (AUDIT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (AUTHORIZATION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (AUTO_INCREMENT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (AVG int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BACKUP int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BDB int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (BEFORE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (BEGIN int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BERKELEYDB int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (BETWEEN int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (BIGINT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (BINARY int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BIT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BIT_LENGTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (BLOB int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BOOLEAN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BOTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BREADTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BREAK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BROWSE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BTREE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (BULK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (BY int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CALL int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CASCADE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CASCADED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CASE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CAST int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CATALOG int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CHANGE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CHAR int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CHARACTER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CHARACTER_LENGTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CHAR_LENGTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CHECK int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CHECKPOINT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CLASS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CLOB int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CLOSE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CLUSTER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CLUSTERED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (COALESCE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COLLATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COLLATION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COLUMN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COLUMNS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COMMENT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (COMMIT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COMPLETION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COMPRESS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COMPUTE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CONDITION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CONNECT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CONNECTION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CONSTRAINT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CONSTRAINTS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CONSTRUCTOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CONTAINS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CONTAINSTABLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CONTINUE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CONVERT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CORRESPONDING int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (COUNT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CREATE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CROSS int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CUBE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CURRENT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CURRENT_DATE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CURRENT_PATH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CURRENT_ROLE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CURRENT_TIME int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CURRENT_TIMESTAMP int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (CURRENT_USER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CURSOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (CYCLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DATA int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DATABASE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DATABASES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DATALINK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DAY int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DAY_HOUR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DAY_MINUTE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DAY_SECOND int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DBCC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DEALLOCATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DEC int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DECIMAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DECLARE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DEFAULT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DEFERRABLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DEFERRED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DELAYED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DELETE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DENY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DEPTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DEREF int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DESC int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DESCRIBE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DESCRIPTOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DESTROY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DESTRUCTOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DETERMINISTIC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DIAGNOSTICS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DICTIONARY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DISCONNECT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DISK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DISTINCT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DISTINCTROW int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DISTRIBUTED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DO int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DOMAIN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DOUBLE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (DROP int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DUMMY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DUMP int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (DYNAMIC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (EACH int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ELSE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ELSEIF int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ENCLOSED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (END int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (END-EXEC int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EQUALS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ERRLVL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ERRORS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ESCAPE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ESCAPED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (EVERY int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (EXCEPT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXCEPTION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXCLUSIVE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXEC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXECUTE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (EXISTS int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXIT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXPAND int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXPANDING int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (EXPLAIN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (EXTERNAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (EXTRACT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (FALSE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FETCH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FIELDS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FILE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FILLFACTOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FIRST int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (FLOAT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (FOR int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (FOREIGN int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FOUND int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FREE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FREETEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FREETEXTTABLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (FROM int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (FULL int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (FULLTEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (FUNCTION int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (GENERAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (GEOMETRY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (GET int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (GLOBAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (GO int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (GOTO int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (GRANT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (GROUP int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (GROUPING int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HANDLER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HASH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HAST int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (HAVING int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HIGH_PRIORITY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HOLDLOCK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HOST int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (HOUR int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HOUR_MINUTE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (HOUR_SECOND int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (IDENTIFIED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (IDENTITY int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (IDENTITYCOL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (IDENTITY_INSERT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (IF int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (IGNORE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (IMMEDIATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (IN int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INCREMENT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (INDEX int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INDICATOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INFILE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INITIAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INITIALIZE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INITIALLY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (INNER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INNODB int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INOUT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INPUT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INSENSITIVE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (INSERT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (INT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (INTEGER int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (INTERSECT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (INTERVAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (INTO int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (IS int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ISOLATION int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ITERATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (JOIN int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (KEY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (KEYS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (KILL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LANGUAGE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LARGE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LAST int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (LATERAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LEADING int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LEAVE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (LEFT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LESS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LEVEL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (LIKE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (LIMIT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LINENO int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LINES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LOAD int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (LOCAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (LOCALTIME int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (LOCALTIMESTAMP int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LOCATOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LOCK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LONG int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LONGBLOB int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LONGTEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LOOP int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LOWER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (LOW_PRIORITY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MASTER_SERVER_ID int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MATCH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MAX int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MAXEXTENTS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MEDIUMBLOB int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (MEDIUMINT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MEDIUMTEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MEETS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MIDDLEINT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MIN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MINUS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (MINUTE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MINUTE_SECOND int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MLSLABEL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MODE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MODIFIES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MODIFY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MODULE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (MONTH int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (MRG_MYISAM int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NAMES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NATIONAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (NATURAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NCHAR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NCLOB int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (NEW int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (NEXT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NO int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NOAUDIT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NOCHECK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NOCOMPRESS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NONCLUSTERED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NONE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NORMALIZE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (NOT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NOWAIT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (NULL int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (NULLIF int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (NUMBER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (NUMERIC int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OBJECT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OCTET_LENGTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (OF int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OFF int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OFFLINE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OFFSETS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OID int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (OLD int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ON int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ONLINE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ONLY int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPEN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPENDATASOURCE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPENQUERY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPENROWSET int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPENXML int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPERATION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPERATORS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPTIMIZE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (OPTION int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OPTIONALLY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (OR int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ORDER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ORDINALITY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (OTHERS int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OUT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (OUTER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OUTFILE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OUTPUT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (OVER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (OVERLAPS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PAD int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PARAMETER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PARAMETERS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (PARTIAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PATH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PCTFREE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PENDANT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PERCENT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PERIOD int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PLAN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (POSITION int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (POSTFIX int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PRECEDES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PRECISION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PREFIX int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PREORDER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PREPARE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (PRESERVE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (PRIMARY int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PRINT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PRIOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PRIVATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PRIVILEGES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PROC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (PROCEDURE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PROTECTED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (PUBLIC int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (PURGE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RAISERROR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RAW int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (READ int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (READS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (READTEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (REAL int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RECONFIGURE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RECURSIVE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (REDO int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (REF int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (REFERENCES int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (REFERENCING int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (REGEXP int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RELATIVE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (RENAME int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (REPEAT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (REPLACE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (REPLICATION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (REQUIRE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RESIGNAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RESOURCE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RESTORE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (RESTRICT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RESULT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (RETURN int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (RETURNS int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (REVOKE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (RIGHT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RLIKE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ROLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ROLLBACK int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ROLLUP int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ROUTINE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ROW int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ROWCOUNT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ROWGUIDCOL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ROWID int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ROWNUM int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (ROWS int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RTREE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (RULE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SAVE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SAVEPOINT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SCHEMA int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SCROLL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SEARCH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SECOND int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SECTION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SELECT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SENSITIVE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SEQUENCE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SESSION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SESSION_USER int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SET int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SETS int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SETUSER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SHARE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SHOW int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SHUTDOWN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SIGNAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SIMILAR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SIZE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SMALLINT int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SOME int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SONAME int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SPACE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SPATIAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SPECIFIC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SPECIFICTYPE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQLCODE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQLERROR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQLEXCEPTION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQLSTATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQLWARNING int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQL_BIG_RESULT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQL_CALC_FOUND_ROWS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SQL_SMALL_RESULT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SSL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (START int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (STARTING int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (STATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (STATIC int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (STATISTICS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (STRAIGHT_JOIN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (STRIPED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (STRUCTURE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (SUBSTRING int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SUCCEEDS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SUCCESSFUL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SUM int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SYNONYM int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SYSDATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (SYSTEM_USER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TABLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TABLES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TEMPORARY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TERMINATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TERMINATED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TEST int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TEXTSIZE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (THAN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (THEN int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (THERE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TIME int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TIMESTAMP int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TIMEZONE_HOUR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TIMEZONE_MINUTE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TINYBLOB int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (TINYINT int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TINYTEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (TO int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TOP int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TRAILING int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TRAN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (TRANSACTION int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TRANSLATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TRANSLATION int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TREAT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (TRIGGER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TRIM int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (TRUE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (TRUNCATE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TSEQUAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TYPE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (TYPES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UID int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UNDER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UNDO int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (UNION int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (UNIQUE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UNKNOWN int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UNLOCK int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UNSIGNED int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UNTIL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (UPDATE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UPDATETEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (UPPER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (USAGE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (USE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (USER int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (USER_RESOURCES int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (USING int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (VALIDATE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (VALUE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (VALUES int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (VARBINARY int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (VARCHAR int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (VARCHAR2 int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (VARIABLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (VARYING int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (VIEW int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (VIRTUAL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (VISIBLE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (WAIT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (WAITFOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (WARNINGS int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (WHEN int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (WHENEVER int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (WHERE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (WHILE int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (WITH int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (WITHOUT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (WORK int not null)
+
+statement error
+drop table crash_me10 
+
+statement error
+create table crash_me10 (WRITE int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (WRITETEXT int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (XOR int not null)
+
+statement ok
+drop table crash_me10 
+
+statement error
+create table crash_me10 (YEAR int not null)
+
+statement error
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (YEAR_MONTH int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ZEROFILL int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_me10 (ZONE int not null)
+
+statement ok
+drop table crash_me10 
+
+statement ok
+create table crash_q (q character(1))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q char(1))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q char varying(1))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q character varying(1))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q boolean)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q varchar(1))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q integer)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q int)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q smallint)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q numeric(9,2))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q decimal(6,2))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q dec(6,2))
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q bit)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q bit(2))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q bit varying(2))
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q float)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q float(8))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q real)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q double precision)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q date)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q time)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q timestamp)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval year)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval year to month)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval month)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval day)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval day to hour)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval day to minute)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval day to second)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval hour)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval hour to minute)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval hour to second)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval minute)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval minute to second)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q interval second)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q national character varying(20))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q national character(20))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q nchar(1))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q national char varying(20))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q nchar varying(20))
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q timestamp with time zone)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q binary(1))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q varbinary(1))
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q tinyint)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q bigint)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q datetime)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q blob)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q byte)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q long varbinary)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q image)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q text)
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q text(10))
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q mediumtext)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q long varchar(1))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q varchar2(257))
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q mediumint)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q middleint)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int unsigned)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int1)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int2)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int3)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int4)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int8)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q uint)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q money)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q smallmoney)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q float4)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q float8)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q smallfloat)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q float(6,2))
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q double)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q enum('red'))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q set('red'))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int(5) zerofill)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q serial)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q char(10) binary)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q int not null auto_increment,unique(q))
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q abstime)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q year)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q datetime)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q smalldatetime)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q timespan)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q reltime)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q int not null identity,unique(q))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q box)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q bool)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q circle)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q polygon)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q point)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q line)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q lseg)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q path)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q interval)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q inet)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q cidr)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q macaddr)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q nvarchar2(16))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q number(9,2))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q number(9))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q number)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q long)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q raw(16))
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q long raw)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q rowid)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q mlslabel)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (q clob)
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (q nclob)
+
+statement error
+drop table crash_q 
+
+statement error
+create table crash_q (q bfile)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (a char(10))
+
+statement ok
+insert into crash_q values('hello ')
+
+query T rowsort
+select a from crash_q where a = 'hello '
+----
+hello 
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (a varchar(10))
+
+statement ok
+insert into crash_q values('hello ')
+
+query T rowsort
+select a from crash_q where a = 'hello '
+----
+hello 
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q1 float(4,1))
+
+statement ok
+insert into crash_q values(1.14)
+
+query R rowsort
+select q1 from crash_q
+----
+1.140
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q1 float(4,1))
+
+statement ok
+insert into crash_q values(1.14)
+
+query R rowsort
+select q1 from crash_q
+----
+1.140
+
+statement ok
+drop table crash_q 
+
+statement ok
+create table crash_q (q1 float(4,1))
+
+statement ok
+insert into crash_q values(1.14)
+
+query R rowsort
+select q1 from crash_q
+----
+1.140
+
+statement ok
+drop table crash_q 
+
+statement error
+create table crash_q (a rowid)
+
+statement error
+drop table crash_q 
+
+statement ok
+create table crash_q (a int not null, primary key(a))
+
+statement ok
+insert into crash_q values (1)
+
+statement error
+select _rowid from crash_q
+
+statement ok
+drop table crash_q 
+
+query I rowsort
+select 5*3-4/2+1 
+----
+14
+
+query T rowsort
+select substring('abcd' from 2 for 2) 
+----
+bc
+
+statement error
+select bit_length('abc') 
+
+query T rowsort
+select case when 1 > 2 then 'false' when 2 > 1 then 'true' end 
+----
+true
+
+query T rowsort
+select case 2 when 1 then 'false' when 2 then 'true' end 
+----
+true
+
+query T rowsort
+select CAST(1 as CHAR) 
+----
+1
+
+query I rowsort
+select character_length('abcd') 
+----
+4
+
+query I rowsort
+select char_length(b) from crash_me  
+----
+1
+
+query I rowsort
+select char_length('abcd') 
+----
+4
+
+query T rowsort
+select coalesce(NULL,'bcd','qwe') 
+----
+bcd
+
+query T rowsort
+select current_date 
+----
+2020-10-05
+
+query T rowsort
+select current_time 
+----
+14:49:20.041532
+
+query T rowsort
+select current_timestamp 
+----
+2020-10-05 14:49:20.042291
+
+query I rowsort
+select extract(minute from timestamp '2000-02-23 18:43:12.987') 
+----
+43
+
+query T rowsort
+select localtime 
+----
+14:49:20.043885
+
+query T rowsort
+select localtimestamp 
+----
+2020-10-05 14:49:20.044328
+
+query T rowsort
+select LOWER('ABC') 
+----
+abc
+
+query T rowsort
+select NULLIF(NULLIF('first','second'),'first') 
+----
+NULL
+
+query I rowsort
+select NULLIF(NULLIF(1,2),1) 
+----
+NULL
+
+query I rowsort
+select octet_length('abc') 
+----
+3
+
+query I rowsort
+select position('ll' in 'hello') 
+----
+3
+
+statement error
+select trim(trailing from trim(LEADING FROM ' abc ')) 
+
+query T rowsort
+select UPPER('abc') 
+----
+ABC
+
+query T rowsort
+select 'abc' || 'def' 
+----
+abcdef
+
+query I rowsort
+select ASCII('A') 
+----
+65
+
+statement error
+select {fn ASCII('A') } 
+
+statement error
+select CHAR(65) 
+
+statement error
+select {fn CHAR(65) } 
+
+query T rowsort
+select concat('a','b') 
+----
+ab
+
+statement error
+select {fn concat('a','b') } 
+
+query I rowsort
+select difference('abc','abe') 
+----
+1
+
+statement error
+select {fn difference('abc','abe') } 
+
+query T rowsort
+select insert('abcd',2,2,'ef') 
+----
+abef
+
+statement error
+select {fn insert('abcd',2,2,'ef') } 
+
+query T rowsort
+select left('abcd',2) 
+----
+ab
+
+statement error
+select {fn left('abcd',2) } 
+
+query T rowsort
+select ltrim('   abcd') 
+----
+abcd
+
+statement error
+select {fn ltrim('   abcd') } 
+
+query I rowsort
+select length('abcd ') 
+----
+5
+
+statement error
+select {fn length('abcd ') } 
+
+query I rowsort
+select length('abcd ') 
+----
+5
+
+statement error
+select {fn length('abcd ') } 
+
+query I rowsort
+select locate('bcd','abcd') 
+----
+2
+
+statement error
+select {fn locate('bcd','abcd') } 
+
+query I rowsort
+select locate('bcd','abcd',3) 
+----
+0
+
+statement error
+select {fn locate('bcd','abcd',3) } 
+
+query T rowsort
+select lcase('ABC') 
+----
+abc
+
+statement error
+select {fn lcase('ABC') } 
+
+query T rowsort
+select repeat('ab',3) 
+----
+ababab
+
+statement error
+select {fn repeat('ab',3) } 
+
+query T rowsort
+select replace('abbaab','ab','ba') 
+----
+bababa
+
+statement error
+select {fn replace('abbaab','ab','ba') } 
+
+query T rowsort
+select right('abcd',2) 
+----
+cd
+
+statement error
+select {fn right('abcd',2) } 
+
+query T rowsort
+select rtrim(' abcd  ') 
+----
+ abcd
+
+statement error
+select {fn rtrim(' abcd  ') } 
+
+query T rowsort
+select space(5) 
+----
+     
+
+statement error
+select {fn space(5) } 
+
+query T rowsort
+select soundex('hello') 
+----
+H400
+
+statement error
+select {fn soundex('hello') } 
+
+query T rowsort
+select substring('abcd',3,2) 
+----
+cd
+
+statement error
+select {fn substring('abcd',3,2) } 
+
+query T rowsort
+select ucase('abc') 
+----
+ABC
+
+statement error
+select {fn ucase('abc') } 
+
+query I rowsort
+select abs(-5) 
+----
+5
+
+statement error
+select {fn abs(-5) } 
+
+query R rowsort
+select acos(0) 
+----
+1.571
+
+statement error
+select {fn acos(0) } 
+
+query R rowsort
+select asin(1) 
+----
+1.571
+
+statement error
+select {fn asin(1) } 
+
+query R rowsort
+select atan(1) 
+----
+0.785
+
+statement error
+select {fn atan(1) } 
+
+statement error
+select atan2(1,0) 
+
+statement error
+select {fn atan2(1,0) } 
+
+query R rowsort
+select ceiling(-4.5) 
+----
+-4.000
+
+statement error
+select {fn ceiling(-4.5) } 
+
+query R rowsort
+select cos(0) 
+----
+1.000
+
+statement error
+select {fn cos(0) } 
+
+query R rowsort
+select cot(1) 
+----
+0.642
+
+statement error
+select {fn cot(1) } 
+
+query R rowsort
+select degrees(6.283185) 
+----
+360.000
+
+statement error
+select {fn degrees(6.283185) } 
+
+query R rowsort
+select exp(1.0) 
+----
+2.718
+
+statement error
+select {fn exp(1.0) } 
+
+query R rowsort
+select floor(2.5) 
+----
+2.000
+
+statement error
+select {fn floor(2.5) } 
+
+query R rowsort
+select log(2) 
+----
+0.693
+
+statement error
+select {fn log(2) } 
+
+query R rowsort
+select log10(10) 
+----
+1.000
+
+statement error
+select {fn log10(10) } 
+
+query I rowsort
+select mod(11,7) 
+----
+4
+
+statement error
+select {fn mod(11,7) } 
+
+query R rowsort
+select pi() 
+----
+3.142
+
+statement error
+select {fn pi() } 
+
+query R rowsort
+select power(2,4) 
+----
+16.000
+
+statement error
+select {fn power(2,4) } 
+
+query I rowsort
+select rand(1) 
+----
+847553797
+
+statement error
+select {fn rand(1) } 
+
+query R rowsort
+select radians(360) 
+----
+6.283
+
+statement error
+select {fn radians(360) } 
+
+query R rowsort
+select round(5.63,2) 
+----
+5.630
+
+statement error
+select {fn round(5.63,2) } 
+
+query I rowsort
+select sign(-5) 
+----
+-1
+
+statement error
+select {fn sign(-5) } 
+
+query R rowsort
+select sin(1) 
+----
+0.841
+
+statement error
+select {fn sin(1) } 
+
+query R rowsort
+select sqrt(4) 
+----
+2.000
+
+statement error
+select {fn sqrt(4) } 
+
+query R rowsort
+select tan(1) 
+----
+1.557
+
+statement error
+select {fn tan(1) } 
+
+statement error
+select truncate(18.18,-1) 
+
+statement error
+select {fn truncate(18.18,-1) } 
+
+query T rowsort
+select now() 
+----
+2020-10-05 14:49:20.072489
+
+statement error
+select {fn now() } 
+
+query T rowsort
+select curdate() 
+----
+2020-10-05
+
+statement error
+select {fn curdate() } 
+
+query T rowsort
+select curtime() 
+----
+14:49:20.073605
+
+statement error
+select {fn curtime() } 
+
+statement error
+select timestampadd(SQL_TSI_SECOND,1,'1997-01-01 00:00:00') 
+
+statement error
+select {fn timestampadd(SQL_TSI_SECOND,1,{ts '1997-01-01 00:00:00'}) } 
+
+statement error
+select timestampdiff(SQL_TSI_SECOND,'1997-01-01 00:00:02', '1997-01-01 00:00:01') 
+
+statement error
+select {fn timestampdiff(SQL_TSI_SECOND,{ts '1997-01-01 00:00:02'}, {ts '1997-01-01 00:00:01'}) } 
+
+statement error
+select user() 
+
+statement error
+select {fn user() } 
+
+statement error
+select database() 
+
+statement error
+select {fn database() } 
+
+statement error
+select ifnull(2,3) 
+
+statement error
+select {fn ifnull(2,3) } 
+
+statement error
+select { fn LEFT( { fn RIGHT('abcd',2) },1) } 
+
+statement error
+select {fn { fn LEFT( { fn RIGHT('abcd',2) },1) } } 
+
+query I rowsort
+select 5 & 3 
+----
+1
+
+query I rowsort
+select 1 | 2 
+----
+3
+
+query I rowsort
+select (1 << 4) >> 2 
+----
+4
+
+query T rowsort
+select 1<>1 
+----
+False
+
+query T rowsort
+select (1=1) 
+----
+True
+
+statement error
+select 'hi' ~* 'HI' 
+
+query T rowsort
+select 1=1 AND 2=2 
+----
+True
+
+statement error
+select 1=1 && 2=2 
+
+statement error
+select ASCII_CHAR(65) 
+
+statement error
+select ASCII_CODE('A') 
+
+statement error
+select atn2(1,0) 
+
+query T rowsort
+select 5 between 4 and 6 
+----
+True
+
+statement error
+select bit_count(5) 
+
+query R rowsort
+select ceil(-4.5) 
+----
+-4.000
+
+query I rowsort
+select charindex('a','crash') 
+----
+3
+
+statement error
+select CHR(65) 
+
+statement error
+select concat('a','b','c','d') 
+
+statement error
+select convert(CHAR,5) 
+
+query R rowsort
+select cosh(0) 
+----
+1.000
+
+statement error
+select elt(2,'ONE','TWO','THREE') 
+
+statement error
+select encrypt('hello') 
+
+statement error
+select field('IBM','NCA','ICL','SUN','IBM','DIGITAL') 
+
+statement error
+select format(1234.5555,2) 
+
+statement error
+select getdate() 
+
+statement error
+select greatest('HARRY','HARRIOT','HAROLD') 
+
+statement error
+select if(5,6,7) 
+
+query T rowsort
+select 2 in (3,2,5,9,5,1) 
+----
+True
+
+query T rowsort
+select 'monty' in ('david','monty','allan') 
+----
+True
+
+statement error
+select initcap('the soap') 
+
+statement error
+select INSTR('CORPORATE FLOOR','OR',3,2) 
+
+statement error
+select INSTRB('CORPORATE FLOOR','OR',5,2) 
+
+statement error
+select interval(55,10,20,30,40,50,60,70,80,90,100) 
+
+statement error
+select last_insert_id() 
+
+statement error
+select least('HARRY','HARRIOT','HAROLD') 
+
+statement error
+select lengthb('CANDIDE') 
+
+query T rowsort
+select '%' like 'a%' escape 'a' 
+----
+True
+
+query T rowsort
+select 'a' like 'a%' 
+----
+True
+
+query R rowsort
+select ln(95) 
+----
+4.554
+
+statement error
+select instr('hello','ll') 
+
+query R rowsort
+select log(10,100) 
+----
+2.000
+
+statement error
+select logn(2) 
+
+query T rowsort
+select lpad('hi',4,'??') 
+----
+??hi
+
+query I rowsort
+select 10%7 
+----
+3
+
+query T rowsort
+select 5 not between 4 and 6 
+----
+False
+
+query T rowsort
+select 'a' not like 'a%' 
+----
+False
+
+statement error
+select ! 1 
+
+query T rowsort
+select not false 
+----
+True
+
+statement error
+select convert(5,SQL_CHAR) 
+
+query T rowsort
+select 1=0 || 1=1 
+----
+True
+
+statement error
+select password('hello') 
+
+statement error
+select paste('ABCDEFG',3,2,'1234') 
+
+query I rowsort
+select patindex('%a%','crash') 
+----
+3
+
+statement error
+select pow(3,2) 
+
+statement error
+select range(a) 
+
+statement error
+select 'a' regexp '^(a|b)*$' 
+
+statement error
+select replicate('a',5) 
+
+query T rowsort
+select reverse('abcd') 
+----
+dcba
+
+statement error
+select root(4) 
+
+statement error
+select round(5.63) 
+
+query T rowsort
+select rpad('hi',4,'??') 
+----
+hi??
+
+query R rowsort
+select sinh(1) 
+----
+1.175
+
+statement error
+select str(123.45,5,1) 
+
+statement error
+select strcmp('abc','adc') 
+
+statement error
+select stuff('abc',2,3,'xyz') 
+
+statement error
+select SUBSTRB('ABCDEFG',5,4.2) 
+
+statement error
+select mid('hello',3,2) 
+
+statement error
+select substring_index('www.tcx.se','.',-2) 
+
+statement error
+select sysdate() 
+
+statement error
+select tail('ABCDEFG',3) 
+
+query R rowsort
+select tanh(1) 
+----
+0.762
+
+statement error
+select translate('abc','bc','de') 
+
+statement error
+select trim(':!' FROM ':abc!') 
+
+statement error
+select trim('cb' FROM 'abccb') 
+
+statement error
+select trunc(18.18,-1) 
+
+statement error
+select uid 
+
+statement error
+select unix_timestamp() 
+
+statement error
+select userenv 
+
+statement error
+select version() 
+
+query T rowsort
+select concat('a',2) 
+----
+a2
+
+query I rowsort
+select '1'+2 
+----
+3
+
+statement error
+select 'abc' + 'def' 
+
+query T rowsort
+select substr('abcd',2) 
+----
+bcd
+
+query T rowsort
+select substr('abcd',2,2) 
+----
+bc
+
+statement error
+select lfill('abcd','.',6) 
+
+statement error
+select rfill('abcd','.',6) 
+
+statement error
+select rpad('abcd',2,'+-',8) 
+
+statement error
+select lpad('abcd',2,'+-',8) 
+
+query T rowsort
+select trim(' abcd ') 
+----
+abcd
+
+query T rowsort
+select trim('..abcd..','.') 
+----
+abcd
+
+query T rowsort
+select ltrim('..abcd..','.') 
+----
+abcd..
+
+query T rowsort
+select rtrim('..abcd..','.') 
+----
+..abcd
+
+statement error
+select expand('abcd',6) 
+
+statement error
+select replace('AbCd','bC') 
+
+statement error
+select mapchar('Aâ') 
+
+statement error
+select alpha('Aâ',2) 
+
+query I rowsort
+select ascii('a') 
+----
+97
+
+statement error
+select ebcdic('a') 
+
+statement error
+select trunc(222.6) 
+
+statement error
+select fixed(222.6666,10,2) 
+
+statement error
+select float(6666.66,4) 
+
+query I rowsort
+select length(1) 
+----
+1
+
+statement error
+select index('abcdefg','cd',1,1) 
+
+statement error
+select MICROSECOND('19630816200212111111') 
+
+statement error
+select timestamp('19630816','00200212') 
+
+statement error
+select value(NULL,'WALRUS') 
+
+statement error
+select DECODE('S-103','T72',1,'S-103',2,'Leopard',3) 
+
+statement error
+select NUM('2123') 
+
+statement error
+select CHR(67) 
+
+statement error
+select HEX('A') 
+
+query I rowsort
+select a from crash_me where b =all (select b from crash_me)
+----
+1
+
+query I rowsort
+select a from crash_me where b =any (select b from crash_me)
+----
+1
+
+query I rowsort
+select a from crash_me where b =some (select b from crash_me)
+----
+1
+
+query I rowsort
+select a from crash_me where 5 between 4 and 6
+----
+1
+
+query I rowsort
+select a from crash_me where exists (select * from crash_me)
+----
+1
+
+query I rowsort
+select a from crash_me where 2 in (3,2,5,9,5,1)
+----
+1
+
+query I rowsort
+select a from crash_me where b like '%' escape 'a'
+----
+1
+
+query I rowsort
+select a from crash_me where b like 'a%'
+----
+1
+
+statement error
+select a from crash_me where 1 match unique (select a from crash_me)
+
+statement error
+select a from crash_me where 1 match (select a from crash_me)
+
+statement error
+select a from crash_me where b matcjhes 'a*'
+
+query I rowsort
+select a from crash_me where 7 not between 4 and 6
+----
+1
+
+query I rowsort
+select a from crash_me where not exists (select * from crash_me where a = 2)
+----
+1
+
+query I rowsort
+select a from crash_me where b not like 'b%'
+----
+1
+
+statement error
+select a from crash_me where not unique (select * from crash_me where a = 2)
+
+statement error
+select a from crash_me where unique (select * from crash_me)
+
+query RI rowsort
+select avg(a),a from crash_me group by a
+----
+1.000
+1
+
+query II rowsort
+select count(*),a from crash_me group by a
+----
+1
+1
+
+query II rowsort
+select count(a),a from crash_me group by a
+----
+1
+1
+
+query II rowsort
+select count(distinct a),a from crash_me group by a
+----
+1
+1
+
+query II rowsort
+select max(a),a from crash_me group by a
+----
+1
+1
+
+query TI rowsort
+select max(b),a from crash_me group by a
+----
+a
+1
+
+query II rowsort
+select min(a),a from crash_me group by a
+----
+1
+1
+
+query TI rowsort
+select min(b),a from crash_me group by a
+----
+a
+1
+
+query II rowsort
+select sum(a),a from crash_me group by a
+----
+1
+1
+
+statement error
+select any(a),a from crash_me group by a
+
+statement error
+select every(a),a from crash_me group by a
+
+statement error
+select some(a),a from crash_me group by a
+
+statement error
+select bit_and(a),a from crash_me group by a
+
+statement error
+select bit_or(a),a from crash_me group by a
+
+statement error
+select count(distinct a,b),a from crash_me group by a
+
+statement error
+select std(a),a from crash_me group by a
+
+statement error
+select stddev(a),a from crash_me group by a
+
+statement error
+select variance(a),a from crash_me group by a
+
+query R rowsort
+select 1+1.0 
+----
+2.000
+
+query I rowsort
+select 1+NULL 
+----
+NULL
+
+query T rowsort
+select 'a' || NULL 
+----
+NULL
+
+statement error
+select noround(22.6) 
+
+statement ok
+create table crash_me_nr (a int)
+
+statement error
+insert into crash_me_nr values(noround(10.2))
+
+statement ok
+drop table crash_me_nr 
+
+query T rowsort
+select CURRENT_USER 
+----
+monetdb
+
+query T rowsort
+select SESSION_USER 
+----
+monetdb
+
+statement error
+select SYSTEM_USER 
+
+query T rowsort
+select USER 
+----
+monetdb
+
+statement error
+drop table crash_me_d 
+
+statement ok
+create table crash_me_d (a date)
+
+statement ok
+insert into crash_me_d values(CURRENT_DATE) 
+
+query T rowsort
+select a from crash_me_d
+----
+2020-10-05
+
+statement ok
+delete from crash_me_d
+
+statement ok
+insert into crash_me_d(a)  values ('1963-08-16')
+
+query T rowsort
+select a from crash_me_d
+----
+1963-08-16
+
+statement ok
+delete from crash_me_d
+
+statement ok
+insert into crash_me_d(a) values (DATE '1963-08-16')
+
+query T rowsort
+select a from crash_me_d
+----
+1963-08-16
+
+statement ok
+delete from crash_me_d
+
+statement error
+insert into crash_me_d(a) values ('16.08.1963')
+
+query T rowsort
+select a from crash_me_d
+----
+
+statement ok
+delete from crash_me_d
+
+statement error
+insert into crash_me_d(a) values (DATE '16.08.1963')
+
+query T rowsort
+select a from crash_me_d
+----
+
+statement ok
+delete from crash_me_d
+
+statement error
+insert into crash_me_d(a) values ('19630816')
+
+query T rowsort
+select a from crash_me_d
+----
+
+statement ok
+delete from crash_me_d
+
+statement error
+insert into crash_me_d(a) values (DATE '19630816')
+
+query T rowsort
+select a from crash_me_d
+----
+
+statement ok
+delete from crash_me_d
+
+statement error
+insert into crash_me_d(a) values ('08/16/1963')
+
+query T rowsort
+select a from crash_me_d
+----
+
+statement ok
+delete from crash_me_d
+
+statement error
+insert into crash_me_d(a) values (DATE '08/16/1963')
+
+query T rowsort
+select a from crash_me_d
+----
+
+statement ok
+delete from crash_me_d
+
+statement ok
+create table crash_me2 (a date not null)
+
+statement error
+insert into crash_me2 values (UNKNOWN FORMAT)
+
+query T rowsort
+select a from crash_me2
+----
+
+statement ok
+drop table crash_me2 
+
+statement ok
+create table crash_me2 (a date not null)
+
+statement error
+insert into crash_me2 values (UNKNOWN FORMAT)
+
+query T rowsort
+select a from crash_me2
+----
+
+statement ok
+drop table crash_me2 
+
+statement ok
+create table crash_me2 (a date not null)
+
+statement error
+insert into crash_me2 values (UNKNOWN FORMAT)
+
+query T rowsort
+select a from crash_me2
+----
+
+statement ok
+drop table crash_me2 
+
+statement ok
+create table crash_me2 (a date not null)
+
+statement error
+insert into crash_me2 values ('infinity')
+
+query T rowsort
+select a from crash_me2
+----
+
+statement ok
+drop table crash_me2 
+
+statement ok
+create table crash_me2 (a date not null)
+
+statement ok
+insert into crash_me2 values ('98-03-03')
+

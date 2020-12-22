@@ -1,0 +1,54 @@
+query T rowsort
+select isauuid('this is not a uuid')
+----
+False
+
+query T rowsort
+select isauuid('')
+----
+False
+
+query T rowsort
+select isauuid(4)
+----
+False
+
+query T rowsort
+select isauuid('XYZaee1a538-aca1-381b-d9f4-8c29ef3f5')
+----
+False
+
+query T rowsort
+select isauuid(uuid())
+----
+True
+
+query T rowsort
+select isauuid('aee1a538-aca1-381b-d9f4-8c29ef3f5f34')
+----
+True
+
+query T rowsort
+select isauuid('AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34')
+----
+True
+
+query T rowsort
+select isauuid(null)
+----
+NULL
+
+query T rowsort
+select cast('aee1a538-aca1-381b-d9f4-8c29ef3f5f34' as uuid)
+----
+aee1a538-aca1-381b-d9f4-8c29ef3f5f34
+
+query T rowsort
+select cast('AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34' as uuid)
+----
+aee1a538-aca1-381b-d9f4-8c29ef3f5f34
+
+statement error
+select cast('XYZaee1a538-aca1-381b-d9f4-8c29ef3f5' as uuid)
+
+

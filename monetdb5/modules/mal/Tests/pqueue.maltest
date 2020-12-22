@@ -1,0 +1,204 @@
+statement ok
+b:= bat.new(:int)
+
+statement ok
+bat.append(b,1)
+
+statement ok
+bat.append(b,0)
+
+statement ok
+bat.append(b,2)
+
+statement ok
+bat.append(b,2)
+
+statement ok
+bat.append(b,5)
+
+statement ok
+bat.append(b,5)
+
+statement ok
+bat.append(b,3)
+
+query TI rowsort
+io.print(b)
+----
+14 values hashing to 6f65e6b8b547c5732d61c715af858a15
+
+statement ok
+bp:= algebra.firstn(b,0:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+
+statement ok
+bp:= algebra.firstn(b,1:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+4
+
+statement ok
+bp:= algebra.firstn(b,2:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+4
+1
+5
+
+statement ok
+bp:= algebra.firstn(b,3:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+4
+1
+5
+2
+6
+
+statement ok
+bp:= algebra.firstn(b,4:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+3
+1
+4
+2
+5
+3
+6
+
+statement ok
+bp:= algebra.firstn(b,5:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+10 values hashing to 9366dac70a8c800c4a3ba376d3995e4b
+
+statement ok
+bp:= algebra.firstn(b,6:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+12 values hashing to 0c93b862b714640e965b921e1f8ab8ff
+
+statement ok
+bp:= algebra.firstn(b,7:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+statement ok
+bp:= algebra.firstn(b,8:lng,false,true,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+statement ok
+bp:= algebra.firstn(b,0:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+
+statement ok
+bp:= algebra.firstn(b,1:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+1
+
+statement ok
+bp:= algebra.firstn(b,2:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+0
+1
+1
+
+statement ok
+bp:= algebra.firstn(b,3:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+0
+1
+1
+2
+2
+
+statement ok
+bp:= algebra.firstn(b,4:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+0
+0
+1
+1
+2
+2
+3
+3
+
+statement ok
+bp:= algebra.firstn(b,5:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+10 values hashing to f51acd2cc63747ad3ac6c1140a98247f
+
+statement ok
+bp:= algebra.firstn(b,6:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+12 values hashing to 62c2e86589d15c4e4a7edfd67ebb2baa
+
+statement ok
+bp:= algebra.firstn(b,7:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+statement ok
+bp:= algebra.firstn(b,8:lng,true,false,false)
+
+query TT rowsort
+io.print(bp)
+----
+14 values hashing to 85ff96c644d3ad69de07d013f0043314
+
+

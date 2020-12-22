@@ -1,0 +1,50 @@
+statement ok
+start transaction
+
+statement ok
+create table copyouttest ( str VARCHAR(20), str2 VARCHAR(20))
+
+statement ok
+insert into copyouttest values ('', 'test')
+
+statement ok
+insert into copyouttest values ('test', '')
+
+statement ok
+insert into copyouttest values ('','')
+
+statement ok
+insert into copyouttest values (' Test ','')
+
+query TT rowsort
+select * from copyouttest
+----
+ Test 
+(empty)
+(empty)
+(empty)
+(empty)
+test
+test
+(empty)
+
+statement ok
+copy select * from copyouttest into E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n'
+
+statement ok
+drop table copyouttest
+
+statement ok
+create table copyintest ( str VARCHAR(20), str2 VARCHAR(20))
+
+statement ok
+copy into copyintest from E'$QTSTTRGDIR/x.dat' delimiters '[]', E'\n', '"'
+
+query I
+select count(*) from copyintest
+----
+4
+
+statement ok
+rollback
+

@@ -1,0 +1,473 @@
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+30 values hashing to 05f5d6949adcca21040db31dfa9c333a
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+30 values hashing to 05f5d6949adcca21040db31dfa9c333a
+
+query ITR rowsort
+select * from example where val1 >= 5 order by val1, val2
+----
+18 values hashing to fc27e1ad82b1d558a813722232c0c3d3
+
+query ITR rowsort
+select * from example_view where val1 > 5 order by val1, val2
+----
+12 values hashing to 114e79fdd43591d1fa4e7e332105bb39
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+delete from example where val1 >= 5
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+0
+texst
+99999.100
+1
+test
+0.100
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+delete from example where val1 = 5
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+12 values hashing to b9b03485118a26284ff8073b662019b9
+
+statement ok
+delete from example where val1 = 9
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+0
+texst
+99999.100
+1
+test
+0.100
+8
+texxst
+0.000
+
+statement ok
+delete from example where val1 = 8
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+0
+texst
+99999.100
+1
+test
+0.100
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+delete from example where val1 > 5
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+0
+texst
+99999.100
+1
+test
+0.100
+5
+xtest
+0.900
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+update example set val3=-1.0 where val1 >= 5
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to e7c24938520caa2c244f3f461d33039c
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+update example set val1 = -5 where val1 = 5
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to 5ae77929dc5b6315a792262d9f21722c
+
+statement ok
+update example set val1 = -5 where val1 = 9
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to 6e865eeca12e235506f6b0af1679428f
+
+statement ok
+update example set val1 = -5 where val1 = 8
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to 2ec48a572b5a241f3b07afe240120310
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+update example set val2 = 'updated' where val1 > 5
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to dbf48357c2913c1352e25159872c4e2a
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+
+statement ok
+START TRANSACTION
+
+statement ok
+create table example ( val1 integer, val2 varchar(10), val3 float )
+
+statement ok
+create view example_view as select * from example
+
+statement ok
+insert into example values( 1, 'test', 0.1 )
+
+statement ok
+insert into example values( 5, 'xtest', 0.9 )
+
+statement ok
+insert into example values( 9, 'testx', 9.1 )
+
+statement ok
+insert into example values( 0, 'texst', 99999.1 )
+
+statement ok
+insert into example values( 8, 'texxst', 0.0001 )
+
+statement ok
+COMMIT
+
+query ITR rowsort
+select * from example order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+query ITR rowsort
+select * from example_view order by val1, val2
+----
+15 values hashing to f34c301e90e99b940877b2196f9a011d
+
+statement ok
+drop view example_view
+
+statement ok
+drop table example
+

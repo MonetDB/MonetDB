@@ -1,0 +1,26 @@
+statement ok
+CREATE TABLE foo (dat1 DATE, dat2 DATE)
+
+statement ok
+INSERT INTO foo VALUES ('2016-01-01', '2016-01-02')
+
+statement ok
+INSERT INTO foo VALUES ('2016-01-01', '2016-01-01')
+
+statement ok
+INSERT INTO foo VALUES ('2016-01-01', '2016-01-31')
+
+query TT
+SELECT (dat2-dat1), (dat2-dat1) < interval '10' day FROM foo
+----
+1
+True
+0
+True
+30
+False
+
+statement ok
+DROP TABLE foo
+
+

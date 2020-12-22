@@ -1,0 +1,41 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE observations (subject int, age int, height int, weight int)
+
+statement ok
+insert into observations values (1, 30, 180, 75), (2, 60, 190, 85), (3, 7, 100, 40), (4, 48, 196, 597)
+
+query IIII rowsort
+SELECT * FROM observations
+----
+16 values hashing to 57b62ad466c9478a0f589a7cd5da4834
+
+statement ok
+CREATE FUNCTION widetolong(subject int, age int, height int, weight int) RETURNS TABLE (subject int, key string, value int) LANGUAGE R {
+	dd <- data.frame(subject, age, height, weight)
+	if (length(subject) < 2) stop("What do we want? Vectorization! When do we want it? Now!")
+	do.call(rbind,
+		lapply(split(dd, dd$subject),
+			function(split) data.frame(
+				subject=rep(split$subject, 3),
+				key=c("age", "height", "weight"),
+				value=c(split$age, split$height, split$weight))))
+}
+
+query ITI rowsort
+SELECT * FROM widetolong( (SELECT * FROM observations AS o) )
+----
+36 values hashing to 9e6de6474781c38131d3a94bb7b50744
+
+statement ok
+DROP FUNCTION widetolong
+
+statement ok
+DROP TABLE observations
+
+statement ok
+ROLLBACK
+
+

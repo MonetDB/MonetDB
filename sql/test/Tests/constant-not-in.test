@@ -1,0 +1,34 @@
+statement ok
+CREATE TABLE mytable (i INTEGER)
+
+statement ok
+INSERT INTO mytable VALUES (1)
+
+query T rowsort
+SELECT 'b' AS c FROM mytable
+----
+b
+
+query T rowsort
+SELECT *
+FROM (SELECT 'b' AS c FROM mytable) t
+----
+b
+
+query T rowsort
+SELECT *
+FROM (SELECT 'b' AS c FROM mytable) t
+WHERE c IN ('b')
+----
+b
+
+query T rowsort
+SELECT *
+FROM (SELECT 'b' AS c FROM mytable) t
+WHERE c NOT IN ('a')
+----
+b
+
+statement ok
+DROP TABLE mytable
+

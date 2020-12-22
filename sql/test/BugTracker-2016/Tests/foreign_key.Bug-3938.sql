@@ -16,3 +16,4 @@ create table t3 (
 insert into t1 values (1);
 insert into t2 values (1);
 insert into t3 (b) values (1);
+rollback;

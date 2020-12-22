@@ -1,0 +1,13 @@
+statement ok
+START TRANSACTION
+
+statement ok
+DROP TABLE docDict
+
+statement ok
+DROP TABLE doc_string
+
+statement ok
+COMMIT
+
+

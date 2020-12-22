@@ -1,0 +1,4 @@
+statement error
+REVOKE auth1 from user1
+
+

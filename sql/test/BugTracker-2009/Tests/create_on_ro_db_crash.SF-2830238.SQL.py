@@ -1,4 +1,6 @@
-import os, socket, sys, tempfile
+import os, socket, tempfile
+
+from MonetDBtesting.sqltest import SQLTestCase
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -12,15 +14,6 @@ def freeport():
     return port
 
 myport = freeport()
-def client(input):
-    c = process.client('sql', port=myport, dbname='db1', stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE)
-    out, err = c.communicate(input)
-    sys.stdout.write(out)
-    sys.stderr.write(err)
-
-script1 = '''\
-create table t2 (a int);
-'''
 
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
@@ -29,15 +22,13 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        out, err = s.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
+        s.communicate()
     with process.server(mapiport=myport, dbname='db1',
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         args=["--set", "gdk_readonly=yes"],
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        client(script1)
-        out, err = s.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database='db1')
+            tc.execute("create table t2 (a int);").assertFailed(err_message="Schema statements cannot be executed on a readonly database.")
+        s.communicate()

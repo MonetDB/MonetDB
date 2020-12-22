@@ -1,0 +1,34 @@
+query I rowsort
+SELECT 1 AS bla
+----
+1
+
+query I rowsort
+SELECT 1 AS BLA
+----
+1
+
+query I rowsort
+SELECT 1 AS "bla"
+----
+1
+
+query I rowsort
+SELECT 1 AS "Bla"
+----
+1
+
+query I rowsort
+SELECT 1 AS "BLA"
+----
+1
+
+statement error
+CREATE TABLE "B\"la\"" (id int)
+
+statement error
+SELECT 1 AS "B\"la\""
+
+statement error
+SELECT 1 AS "\"Bla\""
+

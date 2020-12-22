@@ -127,17 +127,17 @@ with tempfile.TemporaryDirectory() as TMPDIR:
             # Run the queries
             try:
                 c.execute("SELECT COUNT(*) FROM ratings0")
-                print("{} rows in remote table".format(c.fetchall()[0][0]))
+                if c.fetchall()[0][0] != 1000:
+                    sys.stderr.write("1000 rows in remote table expected")
             except pymonetdb.OperationalError as e1:
-                print("OperationalError:", file=sys.stderr)
-                print("# " + e1.message, file=sys.stderr)
+                sys.stderr.write("OperationalError: " + str(e1))
 
             try:
                 c.execute("SELECT COUNT(*) FROM ratings")
-                print("{} rows in merge table".format(c.fetchall()[0][0]))
+                if c.fetchall()[0][0] != 2000:
+                    sys.stderr.write("2000 rows in merge table expected")
             except pymonetdb.OperationalError as e2:
-                print("OperationalError:", file=sys.stderr)
-                print("# " + e2.message, file=sys.stderr)
+                sys.stderr.write("OperationalError: " + str(e2))
             for wrec in workers:
                 wrec['proc'].communicate()
             supervisorproc.communicate()

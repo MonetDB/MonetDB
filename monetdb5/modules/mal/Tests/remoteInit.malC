@@ -3,7 +3,7 @@ function user.remote_internal_servegetbat(type:str, o:bat[:any_2]):void;
     t := inspect.getType(o);
     barrier ifpart := type == t;
         len := aggr.count(o);
-        io.print(len);
+        #io.print(len);
         io.print(o);
     exit ifpart;
     barrier ifpart := calc.isnil(type);
