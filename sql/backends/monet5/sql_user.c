@@ -296,8 +296,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 		return ;
 	}
 
-	mvc_create_column_(m, t, "name", "varchar", 1024);
-	mvc_create_column_(m, t, "fullname", "varchar", 2024);
+	mvc_create_column_(m, t, "name", "varchar", 2048);
+	mvc_create_column_(m, t, "fullname", "varchar", 2048);
 	mvc_create_column_(m, t, "default_schema", "int", 9);
 	mvc_create_column_(m, t, "schema_path", "clob", 0);
 
