@@ -2259,7 +2259,7 @@ rollback_table(sql_trans *tr, sql_table *t)
 {
 	(void)tr;
 	(void)t;
-	fprintf(stderr, "rollback %s.%s\n", t->s->base.name, t->base.name);
+//	fprintf(stderr, "rollback %s.%s\n", t->s->base.name, t->base.name);
 	return 0;
 }
 
