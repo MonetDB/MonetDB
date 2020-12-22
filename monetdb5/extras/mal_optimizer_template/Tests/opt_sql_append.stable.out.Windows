@@ -1,57 +1,3 @@
-stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_template` itself:
-
-
-# 22:58:57 >  
-# 22:58:57 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "gdk_dbfarm=/ufs/manegold/_/Monet/HG/default/prefix/_/var/MonetDB" "--set" "mapi_open=true" "--set" "mapi_port=36275" "--set" "monet_prompt=" "--trace" "--forcemito" "--set" "mal_listing=2" "--dbname=mTests_extras_mal_optimizer_template" "--set" "mal_listing=0"
-# 22:58:57 >  
-
-# MonetDB 5 server v11.8.0
-# This is an unreleased version
-# Serving database 'mTests_monetdb5_extras_mal_optimizer_template', using 4 threads
-# Compiled for x86_64-pc-winnt/64bit
-# Found 11.991 GiB available main-memory.
-# Copyright (c) 1993-July 2008 CWI.
-# Copyright (c) August 2008-2017 MonetDB B.V., all rights reserved
-# Visit https://www.monetdb.org/ for further information
-# Listening for connection requests on mapi:monetdb://lab03:33047/
-# MonetDB/GIS module loaded
-# SQL catalog created, loading sql scripts once
-# loading sql script: 09_like.sql
-# loading sql script: 10_math.sql
-# loading sql script: 11_times.sql
-# loading sql script: 12_url.sql
-# loading sql script: 13_date.sql
-# loading sql script: 14_inet.sql
-# loading sql script: 15_querylog.sql
-# loading sql script: 16_tracelog.sql
-# loading sql script: 17_temporal.sql
-# loading sql script: 18_index.sql
-# loading sql script: 20_vacuum.sql
-# loading sql script: 21_dependency_functions.sql
-# loading sql script: 22_clients.sql
-# loading sql script: 23_skyserver.sql
-# loading sql script: 25_debug.sql
-# loading sql script: 26_sysmon.sql
-# loading sql script: 27_rejects.sql
-# loading sql script: 39_analytics.sql
-# loading sql script: 40_geom.sql
-# loading sql script: 40_json.sql
-# loading sql script: 41_md5sum.sql
-# loading sql script: 45_uuid.sql
-# loading sql script: 46_profiler.sql
-# loading sql script: 51_sys_schema_extension.sql
-# loading sql script: 60_wlcr.sql
-# loading sql script: 75_storagemodel.sql
-# loading sql script: 80_statistics.sql
-# loading sql script: 80_udf.sql
-# loading sql script: 90_generator.sql
-# loading sql script: 99_system.sql
-
-
-# 16:06:52 >  
-# 16:06:52 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-25090" "--port=39713"
-# 16:06:52 >  
-
 #set optimizer = 'sequential_pipe'; -- to get predictable errors
 #create table ttt (a int, b int, c int);
 #select optimizer;
@@ -74,7 +20,7 @@ stdout of test 'opt_sql_append` in directory 'monetdb5/extras/mal_optimizer_temp
 function user.main():void;
     X_1:void := querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0xXXXXXX:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
+    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x00000049B72361C0:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
     X_32:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_28:bat[:int]);
     X_37:int := sql.append(X_32:int, "sys":str, "ttt":str, "b":str, X_29:bat[:int]);
     X_40:int := sql.append(X_37:int, "sys":str, "ttt":str, "c":str, X_30:bat[:int]);
@@ -115,7 +61,7 @@ end user.main;
 function user.main():void;
     X_1:void := querylog.define("explain copy into ttt from E\\'a:\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0xXXXXXX:ptr, "|":str, "\n":str, nil:str, "null":str, "a:\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
+    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x00000049B72361C0:ptr, "|":str, "\n":str, nil:str, "null":str, "a:\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
     X_32:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_28:bat[:int]);
     X_37:int := sql.append(X_32:int, "sys":str, "ttt":str, "b":str, X_29:bat[:int]);
     X_40:int := sql.append(X_37:int, "sys":str, "ttt":str, "c":str, X_30:bat[:int]);
@@ -173,7 +119,7 @@ end user.main;
 function user.main():void;
     X_1:void := querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0xXXXXXX:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
+    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x00000049B72361C0:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
     X_32:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_28:bat[:int]);
     X_37:int := sql.append(X_32:int, "sys":str, "ttt":str, "b":str, X_29:bat[:int]);
     X_42:lng := aggr.count(X_30:bat[:int]);
@@ -215,7 +161,7 @@ end user.main;
 function user.main():void;
     X_1:void := querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0xXXXXXX:ptr, "|":str, "\n":str, nil:str, "null":str, "Z:/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
+    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x00000049B72361C0:ptr, "|":str, "\n":str, nil:str, "null":str, "Z:/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
     X_32:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_28:bat[:int]);
     X_37:int := sql.append(X_32:int, "sys":str, "ttt":str, "b":str, X_29:bat[:int]);
     X_42:lng := aggr.count(X_30:bat[:int]);
@@ -247,8 +193,3 @@ end user.main;
 #garbagecollector     actions= 1 time=59 usec 
 #total                actions=25 time=186 usec 
 #drop table ttt;
-
-# 22:58:58 >  
-# 22:58:58 >  "Done."
-# 22:58:58 >  
-

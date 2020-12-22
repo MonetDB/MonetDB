@@ -11,7 +11,7 @@ ERROR = !Variables cannot be declared on the global scope
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-127348/.s.monetdb.33312
 QUERY = SET "outer" = 'outer';
-ERROR = !SET: Variable 'outer' unknown
+ERROR = !SET: no such variable 'outer'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-127348/.s.monetdb.33312
 QUERY = SELECT "outer";
@@ -31,7 +31,7 @@ ERROR = !Variables cannot be declared on the global scope
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-127348/.s.monetdb.33312
 QUERY = SET "Avar" = 'Avar';
-ERROR = !SET: Variable 'Avar' unknown
+ERROR = !SET: no such variable 'Avar'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-127348/.s.monetdb.33312
 QUERY = SELECT "Avar";
@@ -43,7 +43,7 @@ ERROR = !Variables cannot be declared on the global scope
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-127348/.s.monetdb.33312
 QUERY = SET "Bvar" = 'Bvar';
-ERROR = !SET: Variable 'Bvar' unknown
+ERROR = !SET: no such variable 'Bvar'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-127348/.s.monetdb.33312
 QUERY = SELECT "Bvar";

@@ -4,6 +4,7 @@ try:
 except ImportError:
     import process
 
+xit = 0
 output = []
 
 with process.client('sql', format='csv', echo=False,
@@ -28,6 +29,8 @@ with process.client('sql', format='csv', echo=False,
 
     output.append(out)
     sys.stderr.write(err)
+    if err:
+        xit = 1
 
 with process.client('sql', interactive=True,
                      stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
@@ -59,6 +62,8 @@ with process.client('sql', interactive=True,
 
     output.append(out)
     sys.stderr.write(err)
+    if err:
+        xit = 1
 
 # add queries to dump the system tables, but avoid dumping IDs since
 # they are too volatile, and if it makes sense, dump an identifier
@@ -178,13 +183,15 @@ drop function pcre_replace(string, string, string, string);
 
 output.append(out)
 
-with process.client('sql', interactive=True,
+with process.client('sql', interactive=True, echo=False, format='test',
                      stdin=process.PIPE, stdout=process.PIPE, stderr=process.PIPE) as clt:
 
     out, err = clt.communicate(out)
 
     output.append(out)
     sys.stderr.write(err)
+    if err:
+        xit = 1
 
 if len(sys.argv) == 2 and sys.argv[1] == 'check':
     output = ''.join(output).splitlines(keepends=True)
@@ -193,5 +200,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'check':
     import difflib
     for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
         sys.stderr.write(line)
+        xit = 1
 else:
     sys.stdout.writelines(output)
+
+sys.exit(xit)

@@ -7,6 +7,7 @@ groupby_expressions
 values
 with_update_stmts
 groupby_error
+groupby_prepare
 alter_table_add_column
 view-mul-digits
 select_groupby

@@ -20,10 +20,6 @@ sql.update_prep
 1
 sql.tid
 1
-sql.bind
-1
-algebra.projection
-1
 algebra.project
 1
 sql.update_exec
@@ -49,10 +45,6 @@ sql.update_prep
 1
 sql.tid
 1
-sql.bind
-1
-algebra.projection
-1
 algebra.project
 1
 sql.update_exec
@@ -63,6 +55,7 @@ sql.append_finish
 1
 sql.affectedRows
 1
+
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET c = a * b

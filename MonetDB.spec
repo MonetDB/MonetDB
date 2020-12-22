@@ -672,30 +672,9 @@ program that uses MonetDB as an embeddable library.
 %{_includedir}/monetdb/monetdbe.h
 %{_libdir}/pkgconfig/monetdbe.pc
 
-%package testing
-Summary: MonetDB - Monet Database Management System
-Group: Applications/Databases
-
-%description testing
-MonetDB is a database management system that is developed from a
-main-memory perspective with use of a fully decomposed storage model,
-automatic index management, extensibility of data types and search
-accelerators.  It also has an SQL front end.
-
-This package contains the programs and files needed for testing the
-MonetDB packages.  You probably don't need this, unless you are a
-developer.  If you do want to test, install %{name}-testing-python.
-
-%files testing
-%license COPYING
-%defattr(-,root,root)
-%{_bindir}/Mdiff
-%{_bindir}/Mlog
-
 %package testing-python
 Summary: MonetDB - Monet Database Management System
 Group: Applications/Databases
-Requires: %{name}-testing = %{version}-%{release}
 Requires: %{name}-client-tests = %{version}-%{release}
 Requires: /usr/bin/python3
 BuildArch: noarch
@@ -2719,7 +2698,7 @@ sed -i 's|/var/run|/run|' \
   are equal to 1.1.  (The old code returned 33554432 instead of 1.1e8.)
 
 * Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
-- BZ#6460 - selinux doen't allow mmap
+- BZ#6460: selinux doen't allow mmap
 
 * Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
 - Rebuilt.

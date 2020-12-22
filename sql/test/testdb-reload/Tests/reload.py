@@ -51,9 +51,11 @@ with process.server(stdin=process.PIPE,
                             stdout='PIPE',
                             stderr=process.PIPE) as d1, \
              process.client(lang='sql',
+                            format='trash',
+                            echo=False,
                             server=s2,
                             stdin=d1.stdout,
-                            stdout=process.DEVNULL,
+                            stdout=process.PIPE,
                             stderr=process.PIPE) as c2:
             d1.stdout.close()
             d1.stdout = None
@@ -82,7 +84,7 @@ if len(sys.argv) == 2 and sys.argv[1] == 'reload':
     while len(output) > 0 and output[0].startswith('--'):
         del output[0]
     stableout = os.path.join(tstsrcdir, '../../testdb/Tests/dump-nogeom.stable.out')
-    stable = open(stableout).readlines()
+    stable = open(stableout, encoding='utf-8').readlines()
     import difflib
     for line in difflib.unified_diff(stable, output, fromfile='test', tofile=stableout):
         sys.stderr.write(line)

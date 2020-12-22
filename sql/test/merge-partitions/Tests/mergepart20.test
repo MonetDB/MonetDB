@@ -1,5 +1,5 @@
 statement ok
-CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (md5(a))
+CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (sys.md5(a))
 
 statement ok
 CREATE TABLE subtable1 (a int, b varchar(32))
@@ -76,7 +76,7 @@ statement ok
 CREATE FUNCTION iamdummy(a int) RETURNS INT BEGIN RETURN a + 1; END
 
 statement ok
-CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (iamdummy(a))
+CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (sys.iamdummy(a))
 
 statement ok
 CREATE TABLE subtable1 (a int, b varchar(32))
@@ -111,7 +111,16 @@ INSERT INTO subtable1 VALUES (2, 'seventh')
 query IT rowsort
 SELECT a, b FROM testme
 ----
-10 values hashing to 98058c0a0e81754fc8e158c85a13f554
+1
+first
+10
+second
+12
+sixth
+15
+fourth
+2
+third
 
 query IT rowsort
 SELECT a, b FROM subtable1
@@ -156,7 +165,7 @@ statement ok
 CREATE FUNCTION iamdummy(a int, b int, c int) RETURNS INT BEGIN RETURN a + b + c; END
 
 statement ok
-CREATE MERGE TABLE testme(d int, e int, f int) PARTITION BY RANGE USING (iamdummy(d, e, f))
+CREATE MERGE TABLE testme(d int, e int, f int) PARTITION BY RANGE USING (sys.iamdummy(d, e, f))
 
 query IT rowsort
 SELECT column_id, expression FROM table_partitions
@@ -171,11 +180,10 @@ statement ok
 DROP FUNCTION iamdummy
 
 statement ok
- 
 CREATE FUNCTION iamdummy(a int) RETURNS INT BEGIN RETURN SELECT a UNION ALL SELECT a; END
 
 statement ok
-CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (iamdummy(a))
+CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (sys.iamdummy(a))
 
 statement ok
 CREATE TABLE subtable1 (a int)

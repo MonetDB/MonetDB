@@ -49,11 +49,6 @@ if(HAVE_HGE)
 endif()
 
 create_include_object(
-  MAL_LANGUAGE
-  name_module "sql"
-  modules_list ${include_mal_files})
-
-create_include_object(
   SQL_LANGUAGE
   name_module "sql"
   path "${CMAKE_SOURCE_DIR}/sql/scripts/"
@@ -121,7 +116,8 @@ set_target_properties(sql
   PROPERTIES
   OUTPUT_NAME monetdbsql
   VERSION ${MONETDB_VERSION}
-  SOVERSION ${MONETDB_VERSION_MAJOR})
+  SOVERSION ${MONETDB_VERSION_MAJOR}
+  PUBLIC_HEADER "${sql_public_headers}")
 
 target_compile_definitions(sql
   PRIVATE
@@ -131,6 +127,9 @@ target_compile_definitions(sql
 install(TARGETS
   sql
   EXPORT sqlTargets
+  PUBLIC_HEADER
+  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
+  COMPONENT sql
   RUNTIME
   DESTINATION ${CMAKE_INSTALL_BINDIR}
   LIBRARY

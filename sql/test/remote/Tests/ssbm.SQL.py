@@ -612,7 +612,7 @@ masterproc = None
 workers = []
 with tempfile.TemporaryDirectory() as tmpdir:
     os.mkdir(os.path.join(tmpdir, 'master'))
-    with process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE) as masterproc:
+    with process.server(mapiport=masterport, dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE) as masterproc:
         masterconn = pymonetdb.connect(database='', port=masterport, autocommit=True)
 
         # split lineorder table into one file for each worker
@@ -656,7 +656,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 }
                 workers.append(workerrec)
                 os.mkdir(workerrec['dbfarm'])
-                workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE)
+                workerrec['proc'] = process.server(mapiport=workerrec['port'], dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE)
                 workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
                 t = threading.Thread(target=worker_load, args = [workerrec])
                 t.start()

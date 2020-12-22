@@ -14,13 +14,13 @@ create table dc.lta(
     tag timestamp
 )
 
-statement error
+statement ok
 create procedure dc.archive()
 begin
     insert into runningcatalog select  * from dc.lta;
 end
 
-statement error
+statement ok
 call dc.archive()
 
 statement ok
