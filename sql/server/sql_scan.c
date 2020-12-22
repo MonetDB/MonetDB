@@ -795,21 +795,41 @@ keyword_or_ident(mvc * c, int cur)
 			utf8_putchar(lc, cur);
 			(void)scanner_token(lc, IDENT);
 			k = find_keyword_bs(lc,s);
-			if (k)
+			if (k) {
 				lc->yyval = k->token;
-			/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
-				lc->yyval = FILTER_FUNC;
+			} else {
+				char buf[ERRSIZE];
+				int err_status = c->session->status;
+				strcpy(buf, c->errstr);
+
+				/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+				if (sql_find_func(c, "sys", lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) {
+					lc->yyval = FILTER_FUNC;
+				} else {
+					c->session->status = err_status; 
+					strcpy(c->errstr, buf);
+				}
+			}
 			return lc->yyval;
 		}
 	}
 	(void)scanner_token(lc, IDENT);
 	k = find_keyword_bs(lc,s);
-	if (k)
+	if (k) {
 		lc->yyval = k->token;
-	/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
-		lc->yyval = FILTER_FUNC;
+	} else {
+		char buf[ERRSIZE];
+		int err_status = c->session->status;
+		strcpy(buf, c->errstr);
+
+		/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+		if (sql_find_func(c, "sys", lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) {
+			lc->yyval = FILTER_FUNC;
+		} else {
+			c->session->status = err_status; 
+			strcpy(c->errstr, buf);
+		}
+	}
 	return lc->yyval;
 }
 

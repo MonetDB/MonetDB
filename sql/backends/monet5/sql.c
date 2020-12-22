@@ -519,14 +519,14 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0)) != MAL_SUCCEED)
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 	pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED)
 			return msg;
 	}
@@ -551,16 +551,16 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
 	pos = mvc_claim_slots(sql->session->tr, t, BATcount(columns[0].b));
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, pos, b)) != MAL_SUCCEED)
 			return msg;
 	}
