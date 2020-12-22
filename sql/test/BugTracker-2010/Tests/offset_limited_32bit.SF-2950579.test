@@ -1,9 +1,0 @@
-query ITITITIII rowsort
-SELECT * from tables OFFSET 2147483647
-----
-
-query ITITITIII rowsort
-SELECT * from tables OFFSET 2147483646
-----
-
-

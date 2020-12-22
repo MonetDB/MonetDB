@@ -28,7 +28,16 @@ True
 query TT rowsort
 SELECT v, convert(v, boolean) from T_BOOLEAN
 ----
-10 values hashing to ea113913f00534ff154cdcb215f8b498
+False
+False
+False
+False
+NULL
+NULL
+True
+True
+True
+True
 
 statement error
 SELECT v, convert(v, bit) from T_BOOLEAN
@@ -36,27 +45,72 @@ SELECT v, convert(v, bit) from T_BOOLEAN
 query TI rowsort
 SELECT v, convert(v, tinyint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, convert(v, smallint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, convert(v, integer) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, convert(v, bigint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, convert(v, hugeint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 statement error
 SELECT v, convert(v, float) from T_BOOLEAN
@@ -94,7 +148,16 @@ SELECT v, convert(v, decimal(15,3)) from T_BOOLEAN
 query TT rowsort
 SELECT v, convert(v, char) from T_BOOLEAN
 ----
-10 values hashing to 6944d1aeb0c92ff5659986dd8913a4c3
+False
+f
+False
+f
+NULL
+NULL
+True
+t
+True
+t
 
 statement error
 SELECT v, convert(v, varchar) from T_BOOLEAN
@@ -102,7 +165,16 @@ SELECT v, convert(v, varchar) from T_BOOLEAN
 query TT rowsort
 SELECT v, convert(v, varchar(6)) from T_BOOLEAN
 ----
-10 values hashing to 2d76d25994751ed31d357a49170d8b85
+False
+false
+False
+false
+NULL
+NULL
+True
+true
+True
+true
 
 statement error
 SELECT v, convert(v, longvarchar) from T_BOOLEAN
@@ -113,12 +185,30 @@ SELECT v, convert(v, long varchar) from T_BOOLEAN
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_BOOLEAN
 ----
-10 values hashing to 2d76d25994751ed31d357a49170d8b85
+False
+false
+False
+false
+NULL
+NULL
+True
+true
+True
+true
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_BOOLEAN
 ----
-10 values hashing to 2d76d25994751ed31d357a49170d8b85
+False
+false
+False
+false
+NULL
+NULL
+True
+true
+True
+true
 
 statement error
 SELECT v, convert(v, Binary) from T_BOOLEAN
@@ -150,7 +240,16 @@ SELECT v, convert(v, timestamp with time zone) from T_BOOLEAN
 query TT rowsort
 SELECT v, cast(v as boolean) from T_BOOLEAN
 ----
-10 values hashing to ea113913f00534ff154cdcb215f8b498
+False
+False
+False
+False
+NULL
+NULL
+True
+True
+True
+True
 
 statement error
 SELECT v, cast(v as bit) from T_BOOLEAN
@@ -158,27 +257,72 @@ SELECT v, cast(v as bit) from T_BOOLEAN
 query TI rowsort
 SELECT v, cast(v as tinyint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, cast(v as smallint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, cast(v as integer) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, cast(v as bigint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 query TI rowsort
 SELECT v, cast(v as hugeint) from T_BOOLEAN
 ----
-10 values hashing to 149b91f66bb26062b86a9aafd22775a6
+False
+0
+False
+0
+NULL
+NULL
+True
+1
+True
+1
 
 statement error
 SELECT v, cast(v as float) from T_BOOLEAN
@@ -216,7 +360,16 @@ SELECT v, cast(v as decimal(15,3)) from T_BOOLEAN
 query TT rowsort
 SELECT v, cast(v as char) from T_BOOLEAN
 ----
-10 values hashing to 6944d1aeb0c92ff5659986dd8913a4c3
+False
+f
+False
+f
+NULL
+NULL
+True
+t
+True
+t
 
 statement error
 SELECT v, cast(v as varchar) from T_BOOLEAN
@@ -224,7 +377,16 @@ SELECT v, cast(v as varchar) from T_BOOLEAN
 query TT rowsort
 SELECT v, cast(v as varchar(6)) from T_BOOLEAN
 ----
-10 values hashing to 2d76d25994751ed31d357a49170d8b85
+False
+false
+False
+false
+NULL
+NULL
+True
+true
+True
+true
 
 statement error
 SELECT v, cast(v as longvarchar) from T_BOOLEAN
@@ -235,12 +397,30 @@ SELECT v, cast(v as long varchar) from T_BOOLEAN
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_BOOLEAN
 ----
-10 values hashing to 2d76d25994751ed31d357a49170d8b85
+False
+false
+False
+false
+NULL
+NULL
+True
+true
+True
+true
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_BOOLEAN
 ----
-10 values hashing to 2d76d25994751ed31d357a49170d8b85
+False
+false
+False
+false
+NULL
+NULL
+True
+true
+True
+true
 
 statement error
 SELECT v, cast(v as Binary) from T_BOOLEAN
@@ -378,7 +558,18 @@ SELECT v, convert(v, varchar) from T_blob
 query TT rowsort
 SELECT v, convert(v, varchar(16)) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_blob
@@ -389,12 +580,34 @@ SELECT v, convert(v, long varchar) from T_blob
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_blob
@@ -408,7 +621,18 @@ SELECT v, convert(v, longvarBinary) from T_blob
 query TT rowsort
 SELECT v, convert(v, Blob) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, date) from T_blob
@@ -488,7 +712,18 @@ SELECT v, cast(v as varchar) from T_blob
 query TT rowsort
 SELECT v, cast(v as varchar(16)) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_blob
@@ -499,12 +734,34 @@ SELECT v, cast(v as long varchar) from T_blob
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_blob
@@ -518,7 +775,18 @@ SELECT v, cast(v as longvarBinary) from T_blob
 query TT rowsort
 SELECT v, cast(v as Blob) from T_blob
 ----
-12 values hashing to da4f9806e098c6d0a896b64dcdf1a32b
+(empty)
+(empty)
+00
+00
+0123456789
+0123456789
+11
+11
+A0B2C3D4F5
+A0B2C3D4F5
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as date) from T_blob
@@ -560,7 +828,18 @@ NULL
 query IT rowsort
 SELECT v, convert(v, boolean) from T_tinyint
 ----
-12 values hashing to 80c1a923132a50f3f951304c605c8988
+-1
+True
+-127
+True
+0
+False
+1
+True
+127
+True
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, bit) from T_tinyint
@@ -568,82 +847,258 @@ SELECT v, convert(v, bit) from T_tinyint
 query II rowsort
 SELECT v, convert(v, tinyint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, smallint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, integer) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, bigint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, hugeint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float(24)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, real) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double precision) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(7)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(9)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, char) from T_tinyint where v between 0 and 1
@@ -659,7 +1114,18 @@ SELECT v, convert(v, varchar) from T_tinyint
 query IT rowsort
 SELECT v, convert(v, varchar(6)) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_tinyint
@@ -670,12 +1136,34 @@ SELECT v, convert(v, long varchar) from T_tinyint
 query IT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, Clob) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_tinyint
@@ -707,7 +1195,18 @@ SELECT v, convert(v, timestamp with time zone) from T_tinyint
 query IT rowsort
 SELECT v, cast(v as boolean) from T_tinyint
 ----
-12 values hashing to 80c1a923132a50f3f951304c605c8988
+-1
+True
+-127
+True
+0
+False
+1
+True
+127
+True
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as bit) from T_tinyint
@@ -715,82 +1214,258 @@ SELECT v, cast(v as bit) from T_tinyint
 query II rowsort
 SELECT v, cast(v as tinyint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as smallint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as integer) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as bigint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as hugeint) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float(24)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as real) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double precision) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(7)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(9)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_tinyint
 ----
-12 values hashing to 74af37a70370754ec58bb54e637667fa
+-1
+-1.000
+-127
+-127.000
+0
+0.000
+1
+1.000
+127
+127.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as char) from T_tinyint where v between 0 and 1
@@ -806,7 +1481,18 @@ SELECT v, cast(v as varchar) from T_tinyint
 query IT rowsort
 SELECT v, cast(v as varchar(6)) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_tinyint
@@ -817,12 +1503,34 @@ SELECT v, cast(v as long varchar) from T_tinyint
 query IT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as Clob) from T_tinyint
 ----
-12 values hashing to a2395e67dcad7eb57275877d697408df
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_tinyint
@@ -878,7 +1586,22 @@ NULL
 query IT rowsort
 SELECT v, convert(v, boolean) from T_smallint
 ----
-16 values hashing to 71e3bb0f7635ce40e6ee77d906c7258f
+-1
+True
+-127
+True
+-32767
+True
+0
+False
+1
+True
+127
+True
+32767
+True
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, bit) from T_smallint
@@ -886,82 +1609,316 @@ SELECT v, convert(v, bit) from T_smallint
 query II rowsort
 SELECT v, convert(v, tinyint) from T_smallint where v between -127 and 127
 ----
-10 values hashing to 0011c738951623df5f9ebb78afa3ea23
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
 
 query II rowsort
 SELECT v, convert(v, smallint) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, integer) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, bigint) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, hugeint) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float(24)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, real) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double precision) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(7)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(9)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, char) from T_smallint where v between 0 and 1
@@ -977,7 +1934,22 @@ SELECT v, convert(v, varchar) from T_smallint
 query IT rowsort
 SELECT v, convert(v, varchar(6)) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_smallint
@@ -988,12 +1960,42 @@ SELECT v, convert(v, long varchar) from T_smallint
 query IT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, Clob) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_smallint
@@ -1025,7 +2027,22 @@ SELECT v, convert(v, timestamp with time zone) from T_smallint
 query IT rowsort
 SELECT v, cast(v as boolean) from T_smallint
 ----
-16 values hashing to 71e3bb0f7635ce40e6ee77d906c7258f
+-1
+True
+-127
+True
+-32767
+True
+0
+False
+1
+True
+127
+True
+32767
+True
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as bit) from T_smallint
@@ -1033,82 +2050,316 @@ SELECT v, cast(v as bit) from T_smallint
 query II rowsort
 SELECT v, cast(v as tinyint) from T_smallint where v between -127 and 127
 ----
-10 values hashing to 0011c738951623df5f9ebb78afa3ea23
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
 
 query II rowsort
 SELECT v, cast(v as smallint) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as integer) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as bigint) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as hugeint) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float(24)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as real) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double precision) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(7)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(9)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_smallint
 ----
-16 values hashing to 1648567200ab21dc44fae521ea13dafd
+-1
+-1.000
+-127
+-127.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+32767
+32767.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as char) from T_smallint where v between 0 and 1
@@ -1124,7 +2375,22 @@ SELECT v, cast(v as varchar) from T_smallint
 query IT rowsort
 SELECT v, cast(v as varchar(6)) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_smallint
@@ -1135,12 +2401,42 @@ SELECT v, cast(v as long varchar) from T_smallint
 query IT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as Clob) from T_smallint
 ----
-16 values hashing to f049c26c505986d359de7b567ec9a2fd
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_smallint
@@ -1184,12 +2480,40 @@ INSERT into T_int VALUES (null)
 query I rowsort
 SELECT v FROM T_int ORDER BY v
 ----
-10 values hashing to 999ea24ec43723e29c09302a94da3145
+-1
+-127
+-2147483647
+-32767
+0
+1
+127
+2147483647
+32767
+NULL
 
 query IT rowsort
 SELECT v, convert(v, boolean) from T_int
 ----
-20 values hashing to 823bf27101925183842f92021ba4b507
+-1
+True
+-127
+True
+-2147483647
+True
+-32767
+True
+0
+False
+1
+True
+127
+True
+2147483647
+True
+32767
+True
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, bit) from T_int
@@ -1197,82 +2521,370 @@ SELECT v, convert(v, bit) from T_int
 query II rowsort
 SELECT v, convert(v, tinyint) from T_int where v between -127 and 127
 ----
-10 values hashing to 0011c738951623df5f9ebb78afa3ea23
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
 
 query II rowsort
 SELECT v, convert(v, smallint) from T_int where v between -32767 and 32767
 ----
-14 values hashing to 452dc3075d509c4a3546511569cd1ac9
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
 
 query II rowsort
 SELECT v, convert(v, integer) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, bigint) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, hugeint) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float(24)) from T_int
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, real) from T_int
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double precision) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(10)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(11)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, char) from T_int where v between 0 and 1
@@ -1288,7 +2900,26 @@ SELECT v, convert(v, varchar) from T_int
 query IT rowsort
 SELECT v, convert(v, varchar(16)) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_int
@@ -1299,12 +2930,50 @@ SELECT v, convert(v, long varchar) from T_int
 query IT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, Clob) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_int
@@ -1336,7 +3005,26 @@ SELECT v, convert(v, timestamp with time zone) from T_int
 query IT rowsort
 SELECT v, cast(v as boolean) from T_int
 ----
-20 values hashing to 823bf27101925183842f92021ba4b507
+-1
+True
+-127
+True
+-2147483647
+True
+-32767
+True
+0
+False
+1
+True
+127
+True
+2147483647
+True
+32767
+True
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as bit) from T_int
@@ -1344,82 +3032,370 @@ SELECT v, cast(v as bit) from T_int
 query II rowsort
 SELECT v, cast(v as tinyint) from T_int where v between -127 and 127
 ----
-10 values hashing to 0011c738951623df5f9ebb78afa3ea23
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
 
 query II rowsort
 SELECT v, cast(v as smallint) from T_int where v between -32767 and 32767
 ----
-14 values hashing to 452dc3075d509c4a3546511569cd1ac9
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
 
 query II rowsort
 SELECT v, cast(v as integer) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as bigint) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as hugeint) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float(24)) from T_int
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as real) from T_int
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double precision) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(10)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(11)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_int
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as char) from T_int where v between 0 and 1
@@ -1435,7 +3411,26 @@ SELECT v, cast(v as varchar) from T_int
 query IT rowsort
 SELECT v, cast(v as varchar(16)) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_int
@@ -1446,12 +3441,50 @@ SELECT v, cast(v as long varchar) from T_int
 query IT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as Clob) from T_int
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_int
@@ -1495,12 +3528,40 @@ INSERT into T_bigint VALUES (null)
 query I rowsort
 SELECT v FROM T_bigint ORDER BY v
 ----
-10 values hashing to 999ea24ec43723e29c09302a94da3145
+-1
+-127
+-2147483647
+-32767
+0
+1
+127
+2147483647
+32767
+NULL
 
 query IT rowsort
 SELECT v, convert(v, boolean) from T_bigint
 ----
-20 values hashing to 823bf27101925183842f92021ba4b507
+-1
+True
+-127
+True
+-2147483647
+True
+-32767
+True
+0
+False
+1
+True
+127
+True
+2147483647
+True
+32767
+True
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, bit) from T_bigint
@@ -1508,82 +3569,370 @@ SELECT v, convert(v, bit) from T_bigint
 query II rowsort
 SELECT v, convert(v, tinyint) from T_bigint where v between -127 and 127
 ----
-10 values hashing to 0011c738951623df5f9ebb78afa3ea23
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
 
 query II rowsort
 SELECT v, convert(v, smallint) from T_bigint where v between -32767 and 32767
 ----
-14 values hashing to 452dc3075d509c4a3546511569cd1ac9
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
 
 query II rowsort
 SELECT v, convert(v, integer) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, bigint) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, convert(v, hugeint) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, float(24)) from T_bigint
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, real) from T_bigint
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, double precision) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(10)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(11)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, char) from T_bigint where v between 0 and 1
@@ -1599,7 +3948,26 @@ SELECT v, convert(v, varchar) from T_bigint
 query IT rowsort
 SELECT v, convert(v, varchar(16)) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_bigint
@@ -1610,12 +3978,50 @@ SELECT v, convert(v, long varchar) from T_bigint
 query IT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, convert(v, Clob) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_bigint
@@ -1647,7 +4053,26 @@ SELECT v, convert(v, timestamp with time zone) from T_bigint
 query IT rowsort
 SELECT v, cast(v as boolean) from T_bigint
 ----
-20 values hashing to 823bf27101925183842f92021ba4b507
+-1
+True
+-127
+True
+-2147483647
+True
+-32767
+True
+0
+False
+1
+True
+127
+True
+2147483647
+True
+32767
+True
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as bit) from T_bigint
@@ -1655,82 +4080,370 @@ SELECT v, cast(v as bit) from T_bigint
 query II rowsort
 SELECT v, cast(v as tinyint) from T_bigint where v between -127 and 127
 ----
-10 values hashing to 0011c738951623df5f9ebb78afa3ea23
+-1
+-1
+-127
+-127
+0
+0
+1
+1
+127
+127
 
 query II rowsort
 SELECT v, cast(v as smallint) from T_bigint where v between -32767 and 32767
 ----
-14 values hashing to 452dc3075d509c4a3546511569cd1ac9
+-1
+-1
+-127
+-127
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+32767
+32767
 
 query II rowsort
 SELECT v, cast(v as integer) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as bigint) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query II rowsort
 SELECT v, cast(v as hugeint) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as float(24)) from T_bigint
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as real) from T_bigint
 ----
-20 values hashing to cfaf92a65939844b5e91c114cf40cee2
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483600.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483600.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as double precision) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(10)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(11)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_bigint
 ----
-20 values hashing to a4ead0cb5697e5fd92fd73f79875fbcc
+-1
+-1.000
+-127
+-127.000
+-2147483647
+-2147483647.000
+-32767
+-32767.000
+0
+0.000
+1
+1.000
+127
+127.000
+2147483647
+2147483647.000
+32767
+32767.000
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as char) from T_bigint where v between 0 and 1
@@ -1746,7 +4459,26 @@ SELECT v, cast(v as varchar) from T_bigint
 query IT rowsort
 SELECT v, cast(v as varchar(16)) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_bigint
@@ -1757,12 +4489,50 @@ SELECT v, cast(v as long varchar) from T_bigint
 query IT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 query IT rowsort
 SELECT v, cast(v as Clob) from T_bigint
 ----
-20 values hashing to d27dcce18ef26a016502b2b1ecd98ca6
+-1
+-1
+-127
+-127
+-2147483647
+-2147483647
+-32767
+-32767
+0
+0
+1
+1
+127
+127
+2147483647
+2147483647
+32767
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_bigint
@@ -1806,7 +4576,16 @@ INSERT into T_float VALUES (null)
 query R rowsort
 SELECT v FROM T_float ORDER BY v
 ----
-10 values hashing to 86ed517b0dbd4530b8f615d5c7284199
+-1.000
+-127.000
+-2147483647.000
+-32767.000
+0.000
+1.000
+127.000
+2147483647.000
+32767.000
+NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_float
@@ -1817,82 +4596,370 @@ SELECT v, convert(v, bit) from T_float
 query RI rowsort
 SELECT v, convert(v, tinyint) from T_float where v between -127 and 127
 ----
-10 values hashing to 194ce8ab038117d8c78d1455171abde4
+-1.000
+-1
+-127.000
+-127
+0.000
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, convert(v, smallint) from T_float where v between -32767 and 32767
 ----
-14 values hashing to 9c3d8667a39e0a6ea38fac428f2f8267
+-1.000
+-1
+-127.000
+-127
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, convert(v, integer) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, bigint) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float(24)) from T_float
 ----
-20 values hashing to 7bef45cbed0871796f4acbeb366ae972
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, real) from T_float
 ----
-20 values hashing to 7bef45cbed0871796f4acbeb366ae972
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double precision) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(10)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(11)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, char) from T_float where v between 0 and 1
@@ -1908,7 +4975,26 @@ SELECT v, convert(v, varchar) from T_float
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_float
@@ -1919,12 +5005,50 @@ SELECT v, convert(v, long varchar) from T_float
 query RT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, Clob) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_float
@@ -1962,82 +5086,370 @@ SELECT v, cast(v as bit) from T_float
 query RI rowsort
 SELECT v, cast(v as tinyint) from T_float where v between -127 and 127
 ----
-10 values hashing to 194ce8ab038117d8c78d1455171abde4
+-1.000
+-1
+-127.000
+-127
+0.000
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, cast(v as smallint) from T_float where v between -32767 and 32767
 ----
-14 values hashing to 9c3d8667a39e0a6ea38fac428f2f8267
+-1.000
+-1
+-127.000
+-127
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, cast(v as integer) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as bigint) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float(24)) from T_float
 ----
-20 values hashing to 7bef45cbed0871796f4acbeb366ae972
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as real) from T_float
 ----
-20 values hashing to 7bef45cbed0871796f4acbeb366ae972
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double precision) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(10)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(11)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_float
 ----
-20 values hashing to fda46c6f969a91a6005872808d416529
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-32767.000
+-32767.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as char) from T_float where v between 0 and 1
@@ -2053,7 +5465,26 @@ SELECT v, cast(v as varchar) from T_float
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_float
@@ -2064,12 +5495,50 @@ SELECT v, cast(v as long varchar) from T_float
 query RT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as Clob) from T_float
 ----
-20 values hashing to fbc15657acaa20b3f6dd90d0b3377f0d
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-32767.000
+-32767
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_float
@@ -2113,7 +5582,18 @@ INSERT into T_real VALUES (null)
 query R rowsort
 SELECT v FROM T_real ORDER BY v
 ----
-12 values hashing to 2cfeaf5f539623372dd90f4aa591aa52
+-1.000
+-127.000
+-2147483600.000
+-3.142
+-32767.000
+0.000
+0.120
+1.000
+127.000
+2147483600.000
+32767.000
+NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_real
@@ -2124,12 +5604,42 @@ SELECT v, convert(v, bit) from T_real
 query RI rowsort
 SELECT v, convert(v, tinyint) from T_real where v between -127 and 127
 ----
-14 values hashing to 694ca573f80bd2b8ff37e4c13444583d
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, convert(v, smallint) from T_real where v between -32767 and 32767
 ----
-18 values hashing to 2f88891cc49d43baf2a502ae5e2a2eba
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 statement error
 SELECT v, convert(v, integer) from T_real
@@ -2137,67 +5647,366 @@ SELECT v, convert(v, integer) from T_real
 query RI rowsort
 SELECT v, convert(v, bigint) from T_real
 ----
-24 values hashing to bdbdbffa3fdafe364390b7570b359197
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2147483648
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483600.000
+2147483648
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_real
 ----
-24 values hashing to bdbdbffa3fdafe364390b7570b359197
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2147483648
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483600.000
+2147483648
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float(24)) from T_real
 ----
-24 values hashing to cc2b20adfd2ffdcbd16bca5bdf23534e
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, real) from T_real
 ----
-24 values hashing to cc2b20adfd2ffdcbd16bca5bdf23534e
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double precision) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(10)) from T_real
 ----
-24 values hashing to 72777c6366ae57fe5f5cd10f711d8b98
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(11)) from T_real
 ----
-24 values hashing to 72777c6366ae57fe5f5cd10f711d8b98
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_real
 ----
-24 values hashing to 72777c6366ae57fe5f5cd10f711d8b98
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, char) from T_real where v between 0 and 1
@@ -2208,7 +6017,30 @@ SELECT v, convert(v, varchar) from T_real
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_real
 ----
-24 values hashing to 86695e290df4e7c6cda57d56383f0f07
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_real
@@ -2219,12 +6051,58 @@ SELECT v, convert(v, long varchar) from T_real
 query RT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_real
 ----
-24 values hashing to 86695e290df4e7c6cda57d56383f0f07
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, Clob) from T_real
 ----
-24 values hashing to 86695e290df4e7c6cda57d56383f0f07
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_real
@@ -2262,12 +6140,42 @@ SELECT v, cast(v as bit) from T_real
 query RI rowsort
 SELECT v, cast(v as tinyint) from T_real where v between -127 and 127
 ----
-14 values hashing to 694ca573f80bd2b8ff37e4c13444583d
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, cast(v as smallint) from T_real where v between -32767 and 32767
 ----
-18 values hashing to 2f88891cc49d43baf2a502ae5e2a2eba
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 statement error
 SELECT v, cast(v as integer) from T_real
@@ -2275,67 +6183,366 @@ SELECT v, cast(v as integer) from T_real
 query RI rowsort
 SELECT v, cast(v as bigint) from T_real
 ----
-24 values hashing to bdbdbffa3fdafe364390b7570b359197
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2147483648
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483600.000
+2147483648
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_real
 ----
-24 values hashing to bdbdbffa3fdafe364390b7570b359197
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2147483648
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483600.000
+2147483648
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float(24)) from T_real
 ----
-24 values hashing to cc2b20adfd2ffdcbd16bca5bdf23534e
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as real) from T_real
 ----
-24 values hashing to cc2b20adfd2ffdcbd16bca5bdf23534e
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double precision) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(10)) from T_real
 ----
-24 values hashing to 72777c6366ae57fe5f5cd10f711d8b98
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(11)) from T_real
 ----
-24 values hashing to 72777c6366ae57fe5f5cd10f711d8b98
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_real
 ----
-24 values hashing to 72777c6366ae57fe5f5cd10f711d8b98
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_real
 ----
-24 values hashing to d1514ea426992cfdcb592ed7e5bae3e4
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483600.000
+-2147483648.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483600.000
+2147483648.000
+32767.000
+32767.000
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as char) from T_real where v between 0 and 1
@@ -2346,7 +6553,30 @@ SELECT v, cast(v as varchar) from T_real
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_real
 ----
-24 values hashing to 86695e290df4e7c6cda57d56383f0f07
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_real
@@ -2357,12 +6587,58 @@ SELECT v, cast(v as long varchar) from T_real
 query RT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_real
 ----
-24 values hashing to 86695e290df4e7c6cda57d56383f0f07
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as Clob) from T_real
 ----
-24 values hashing to 86695e290df4e7c6cda57d56383f0f07
+-1.000
+-1
+-127.000
+-127
+-2147483600.000
+-2.1474836e+09
+-3.142
+-3.1415627
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483600.000
+2.1474836e+09
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_real
@@ -2406,7 +6682,18 @@ INSERT into T_double VALUES (null)
 query R rowsort
 SELECT v FROM T_double ORDER BY v
 ----
-12 values hashing to e4c503dc81478f538338bd60f62b9689
+-1.000
+-127.000
+-2147483647.000
+-3.142
+-32767.000
+0.000
+0.120
+1.000
+127.000
+2147483647.000
+32767.000
+NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_double
@@ -2417,82 +6704,434 @@ SELECT v, convert(v, bit) from T_double
 query RI rowsort
 SELECT v, convert(v, tinyint) from T_double where v between -127 and 127
 ----
-14 values hashing to 694ca573f80bd2b8ff37e4c13444583d
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, convert(v, smallint) from T_double where v between -32767 and 32767
 ----
-18 values hashing to 2f88891cc49d43baf2a502ae5e2a2eba
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, convert(v, integer) from T_double
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, bigint) from T_double
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_double
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float(24)) from T_double
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, real) from T_double
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double precision) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(10)) from T_double
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(11)) from T_double
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_double
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, char) from T_double where v between 0 and 1
@@ -2503,7 +7142,30 @@ SELECT v, convert(v, varchar) from T_double
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_double
 ----
-24 values hashing to d65be3d48eab408938edb2161b68c838
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_double
@@ -2514,12 +7176,58 @@ SELECT v, convert(v, long varchar) from T_double
 query RT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_double
 ----
-24 values hashing to d65be3d48eab408938edb2161b68c838
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, Clob) from T_double
 ----
-24 values hashing to d65be3d48eab408938edb2161b68c838
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_double
@@ -2557,82 +7265,434 @@ SELECT v, cast(v as bit) from T_double
 query RI rowsort
 SELECT v, cast(v as tinyint) from T_double where v between -127 and 127
 ----
-14 values hashing to 694ca573f80bd2b8ff37e4c13444583d
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, cast(v as smallint) from T_double where v between -32767 and 32767
 ----
-18 values hashing to 2f88891cc49d43baf2a502ae5e2a2eba
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, cast(v as integer) from T_double
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as bigint) from T_double
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_double
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float(24)) from T_double
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as real) from T_double
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double precision) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(10)) from T_double
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(11)) from T_double
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_double
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_double
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as char) from T_double where v between 0 and 1
@@ -2643,7 +7703,30 @@ SELECT v, cast(v as varchar) from T_double
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_double
 ----
-24 values hashing to d65be3d48eab408938edb2161b68c838
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_double
@@ -2654,12 +7737,58 @@ SELECT v, cast(v as long varchar) from T_double
 query RT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_double
 ----
-24 values hashing to d65be3d48eab408938edb2161b68c838
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as Clob) from T_double
 ----
-24 values hashing to d65be3d48eab408938edb2161b68c838
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3.1415629
+-32767.000
+-32767
+0.000
+0
+0.120
+0.12
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_double
@@ -2703,7 +7832,18 @@ INSERT into T_num VALUES (null)
 query R rowsort
 SELECT v FROM T_num ORDER BY v
 ----
-12 values hashing to 4f3a5c915de8f908c1e89291bc147ee6
+-1.000
+-127.000
+-2147483647.000
+-3.000
+-32767.000
+0.000
+0.000
+1.000
+127.000
+2147483647.000
+32767.000
+NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_num
@@ -2714,82 +7854,434 @@ SELECT v, convert(v, bit) from T_num
 query RI rowsort
 SELECT v, convert(v, tinyint) from T_num where v between -127 and 127
 ----
-14 values hashing to 25dbec1397a2c05dc22d310b3032c7bf
+-1.000
+-1
+-127.000
+-127
+-3.000
+-3
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, convert(v, smallint) from T_num where v between -32767 and 32767
 ----
-18 values hashing to d4230b9cef5d7e9c52239862b955889d
+-1.000
+-1
+-127.000
+-127
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, convert(v, integer) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, bigint) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float(24)) from T_num
 ----
-24 values hashing to 2532f0488152e57bd5bf8b79d55dba03
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, real) from T_num
 ----
-24 values hashing to 2532f0488152e57bd5bf8b79d55dba03
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double precision) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(10)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(11)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, char) from T_num where v between 0 and 1
@@ -2807,7 +8299,30 @@ SELECT v, convert(v, varchar) from T_num
 query RT rowsort
 SELECT v, convert(v, varchar(16)) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_num
@@ -2818,12 +8333,58 @@ SELECT v, convert(v, long varchar) from T_num
 query RT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, Clob) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_num
@@ -2861,82 +8422,434 @@ SELECT v, cast(v as bit) from T_num
 query RI rowsort
 SELECT v, cast(v as tinyint) from T_num where v between -127 and 127
 ----
-14 values hashing to 25dbec1397a2c05dc22d310b3032c7bf
+-1.000
+-1
+-127.000
+-127
+-3.000
+-3
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, cast(v as smallint) from T_num where v between -32767 and 32767
 ----
-18 values hashing to d4230b9cef5d7e9c52239862b955889d
+-1.000
+-1
+-127.000
+-127
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, cast(v as integer) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as bigint) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float(24)) from T_num
 ----
-24 values hashing to 2532f0488152e57bd5bf8b79d55dba03
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as real) from T_num
 ----
-24 values hashing to 2532f0488152e57bd5bf8b79d55dba03
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double precision) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(10)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(11)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_num
 ----
-24 values hashing to 3e833d37b1139424289ead7623143acc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.000
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.000
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as char) from T_num where v between 0 and 1
@@ -2954,7 +8867,30 @@ SELECT v, cast(v as varchar) from T_num
 query RT rowsort
 SELECT v, cast(v as varchar(16)) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_num
@@ -2965,12 +8901,58 @@ SELECT v, cast(v as long varchar) from T_num
 query RT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as Clob) from T_num
 ----
-24 values hashing to 61215d46f904427c377fd5e290bccd0f
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.000
+-3
+-32767.000
+-32767
+0.000
+0
+0.000
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_num
@@ -3014,7 +8996,18 @@ INSERT into T_dec VALUES (null)
 query R rowsort
 SELECT v FROM T_dec ORDER BY v
 ----
-12 values hashing to e4c503dc81478f538338bd60f62b9689
+-1.000
+-127.000
+-2147483647.000
+-3.142
+-32767.000
+0.000
+0.120
+1.000
+127.000
+2147483647.000
+32767.000
+NULL
 
 statement error
 SELECT v, convert(v, boolean) from T_dec
@@ -3025,82 +9018,434 @@ SELECT v, convert(v, bit) from T_dec
 query RI rowsort
 SELECT v, convert(v, tinyint) from T_dec where v between -127 and 127
 ----
-14 values hashing to 694ca573f80bd2b8ff37e4c13444583d
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, convert(v, smallint) from T_dec where v between -32767 and 32767
 ----
-18 values hashing to 2f88891cc49d43baf2a502ae5e2a2eba
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, convert(v, integer) from T_dec
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, bigint) from T_dec
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, convert(v, hugeint) from T_dec
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, float(24)) from T_dec
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, real) from T_dec
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, double precision) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(10)) from T_dec
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(11)) from T_dec
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, numeric(12,0)) from T_dec
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, convert(v, decimal(15,3)) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, char) from T_dec where v between 0 and 1
@@ -3111,7 +9456,30 @@ SELECT v, convert(v, varchar) from T_dec
 query RT rowsort
 SELECT v, convert(v, varchar(20)) from T_dec
 ----
-24 values hashing to 470e61e2447a4a983cf3f28096869c61
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_dec
@@ -3122,12 +9490,58 @@ SELECT v, convert(v, long varchar) from T_dec
 query RT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_dec
 ----
-24 values hashing to 470e61e2447a4a983cf3f28096869c61
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, convert(v, Clob) from T_dec
 ----
-24 values hashing to 470e61e2447a4a983cf3f28096869c61
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_dec
@@ -3165,82 +9579,434 @@ SELECT v, cast(v as bit) from T_dec
 query RI rowsort
 SELECT v, cast(v as tinyint) from T_dec where v between -127 and 127
 ----
-14 values hashing to 694ca573f80bd2b8ff37e4c13444583d
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
 
 query RI rowsort
 SELECT v, cast(v as smallint) from T_dec where v between -32767 and 32767
 ----
-18 values hashing to 2f88891cc49d43baf2a502ae5e2a2eba
+-1.000
+-1
+-127.000
+-127
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+32767.000
+32767
 
 query RI rowsort
 SELECT v, cast(v as integer) from T_dec
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as bigint) from T_dec
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RI rowsort
 SELECT v, cast(v as hugeint) from T_dec
 ----
-24 values hashing to 17eb19b8585e589011951d1e9220ecbc
+-1.000
+-1
+-127.000
+-127
+-2147483647.000
+-2147483647
+-3.142
+-3
+-32767.000
+-32767
+0.000
+0
+0.120
+0
+1.000
+1
+127.000
+127
+2147483647.000
+2147483647
+32767.000
+32767
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as float(24)) from T_dec
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as real) from T_dec
 ----
-24 values hashing to e75e33fc6fae67ee221c9efe56c59c74
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483600.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483600.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as double precision) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(10)) from T_dec
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(11)) from T_dec
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as numeric(12,0)) from T_dec
 ----
-24 values hashing to 7d04994af90bc977b18b7a48aa391b7b
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.000
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.000
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 query RR rowsort
 SELECT v, cast(v as decimal(15,3)) from T_dec
 ----
-24 values hashing to 0df95612ae28173aec46c1c91e0f04cc
+-1.000
+-1.000
+-127.000
+-127.000
+-2147483647.000
+-2147483647.000
+-3.142
+-3.142
+-32767.000
+-32767.000
+0.000
+0.000
+0.120
+0.120
+1.000
+1.000
+127.000
+127.000
+2147483647.000
+2147483647.000
+32767.000
+32767.000
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as char) from T_dec where v between 0 and 1
@@ -3251,7 +10017,30 @@ SELECT v, cast(v as varchar) from T_dec
 query RT rowsort
 SELECT v, cast(v as varchar(20)) from T_dec
 ----
-24 values hashing to 470e61e2447a4a983cf3f28096869c61
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_dec
@@ -3262,12 +10051,58 @@ SELECT v, cast(v as long varchar) from T_dec
 query RT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_dec
 ----
-24 values hashing to 470e61e2447a4a983cf3f28096869c61
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 query RT rowsort
 SELECT v, cast(v as Clob) from T_dec
 ----
-24 values hashing to 470e61e2447a4a983cf3f28096869c61
+-1.000
+-1.0000000
+-127.000
+-127.0000000
+-2147483647.000
+-2147483647.0000000
+-3.142
+-3.1415629
+-32767.000
+-32767.0000000
+0.000
+0.0000000
+0.120
+0.1200000
+1.000
+1.0000000
+127.000
+127.0000000
+2147483647.000
+2147483647.0000000
+32767.000
+32767.0000000
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_dec
@@ -3472,7 +10307,20 @@ SELECT v, convert(v, varchar) from T_char
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_char
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, convert(v, longvarchar) from T_char
@@ -3483,12 +10331,38 @@ SELECT v, convert(v, long varchar) from T_char
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_char
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_char
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, convert(v, Binary) from T_char
@@ -3673,7 +10547,20 @@ SELECT v, cast(v as varchar) from T_char
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_char
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, cast(v as longvarchar) from T_char
@@ -3684,12 +10571,38 @@ SELECT v, cast(v as long varchar) from T_char
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_char
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_char
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, cast(v as Binary) from T_char
@@ -3897,7 +10810,20 @@ SELECT v, convert(v, varchar) from T_varchar
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_varchar
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, convert(v, longvarchar) from T_varchar
@@ -3908,12 +10834,38 @@ SELECT v, convert(v, long varchar) from T_varchar
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_varchar
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_varchar
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, convert(v, Binary) from T_varchar
@@ -4098,7 +11050,20 @@ SELECT v, cast(v as varchar) from T_varchar
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_varchar
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, cast(v as longvarchar) from T_varchar
@@ -4109,12 +11074,38 @@ SELECT v, cast(v as long varchar) from T_varchar
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_varchar
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_varchar
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, cast(v as Binary) from T_varchar
@@ -4322,7 +11313,20 @@ SELECT v, convert(v, varchar) from T_clob
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_clob
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, convert(v, longvarchar) from T_clob
@@ -4333,12 +11337,38 @@ SELECT v, convert(v, long varchar) from T_clob
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_clob
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_clob
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, convert(v, Binary) from T_clob
@@ -4523,7 +11553,20 @@ SELECT v, cast(v as varchar) from T_clob
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_clob
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, cast(v as longvarchar) from T_clob
@@ -4534,12 +11577,38 @@ SELECT v, cast(v as long varchar) from T_clob
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_clob
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_clob
 ----
-14 values hashing to a4f49dc72cb5c10cf3f26a59d3deae95
+(empty)
+(empty)
+0
+0
+0123456789
+0123456789
+1
+1
+AaZz
+AaZz
+NULL
+NULL
+~!@#$%^&*(')\_/-+=:;"<.,.>?
+~!@#$%^&*(')\_/-+=:;"<.,.>?
 
 statement error
 SELECT v, cast(v as Binary) from T_clob
@@ -4655,7 +11724,16 @@ SELECT v, convert(v, varchar) from T_date
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_date
@@ -4666,12 +11744,30 @@ SELECT v, convert(v, long varchar) from T_date
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_date
@@ -4688,7 +11784,16 @@ SELECT v, convert(v, Blob) from T_date where v in (date '2016-01-01')
 query TT rowsort
 SELECT v, convert(v, date) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, time) from T_date
@@ -4696,7 +11801,16 @@ SELECT v, convert(v, time) from T_date
 query TT rowsort
 SELECT v, convert(v, timestamp) from T_date
 ----
-10 values hashing to 1e9ac1ec78e19f8013a05c78002bf2d0
+1999-12-31
+1999-12-31 00:00:00
+2016-01-01
+2016-01-01 00:00:00
+2016-02-29
+2016-02-29 00:00:00
+2016-12-31
+2016-12-31 00:00:00
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, time with time zone) from T_date
@@ -4704,7 +11818,16 @@ SELECT v, convert(v, time with time zone) from T_date
 query TT rowsort
 SELECT v, convert(v, timestamp with time zone) from T_date
 ----
-10 values hashing to 0311472923179070fba2318b1108d17b
+1999-12-31
+1999-12-31 04:00:00
+2016-01-01
+2016-01-01 04:00:00
+2016-02-29
+2016-02-29 04:00:00
+2016-12-31
+2016-12-31 04:00:00
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as boolean) from T_date
@@ -4769,7 +11892,16 @@ SELECT v, cast(v as varchar) from T_date
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_date
@@ -4780,12 +11912,30 @@ SELECT v, cast(v as long varchar) from T_date
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_date
@@ -4802,7 +11952,16 @@ SELECT v, cast(v as Blob) from T_date where v in (date '2016-01-01')
 query TT rowsort
 SELECT v, cast(v as date) from T_date
 ----
-10 values hashing to 31f19322cabf4cd195c2bd805d2df35d
+1999-12-31
+1999-12-31
+2016-01-01
+2016-01-01
+2016-02-29
+2016-02-29
+2016-12-31
+2016-12-31
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as time) from T_date
@@ -4810,7 +11969,16 @@ SELECT v, cast(v as time) from T_date
 query TT rowsort
 SELECT v, cast(v as timestamp) from T_date
 ----
-10 values hashing to 1e9ac1ec78e19f8013a05c78002bf2d0
+1999-12-31
+1999-12-31 00:00:00
+2016-01-01
+2016-01-01 00:00:00
+2016-02-29
+2016-02-29 00:00:00
+2016-12-31
+2016-12-31 00:00:00
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as time with time zone) from T_date
@@ -4818,7 +11986,16 @@ SELECT v, cast(v as time with time zone) from T_date
 query TT rowsort
 SELECT v, cast(v as timestamp with time zone) from T_date
 ----
-10 values hashing to 0311472923179070fba2318b1108d17b
+1999-12-31
+1999-12-31 04:00:00
+2016-01-01
+2016-01-01 04:00:00
+2016-02-29
+2016-02-29 04:00:00
+2016-12-31
+2016-12-31 04:00:00
+NULL
+NULL
 
 statement ok
 DROP TABLE T_date
@@ -5197,7 +12374,16 @@ SELECT v, convert(v, varchar) from T_timestamp
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_timestamp
 ----
-10 values hashing to 91189aef304ba29c649c1c4b532075e5
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_timestamp
@@ -5208,12 +12394,30 @@ SELECT v, convert(v, long varchar) from T_timestamp
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timestamp
 ----
-10 values hashing to 91189aef304ba29c649c1c4b532075e5
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_timestamp
 ----
-10 values hashing to 91189aef304ba29c649c1c4b532075e5
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_timestamp
@@ -5230,27 +12434,72 @@ SELECT v, convert(v, Blob) from T_timestamp
 query TT rowsort
 SELECT v, convert(v, date) from T_timestamp
 ----
-10 values hashing to 474a0d00563edda09eb2fe2e86055ace
+1999-12-31 23:59:59
+1999-12-31
+2016-01-01 00:00:00
+2016-01-01
+2016-02-29 00:00:00
+2016-02-29
+2016-12-31 23:59:58
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, time) from T_timestamp
 ----
-10 values hashing to 89088b4ee12337eb451645bdcce3c9bb
+1999-12-31 23:59:59
+23:59:59
+2016-01-01 00:00:00
+00:00:00
+2016-02-29 00:00:00
+00:00:00
+2016-12-31 23:59:58
+23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, timestamp) from T_timestamp
 ----
-10 values hashing to 087e28c20e7419c7663ed834f6b8fd59
+1999-12-31 23:59:59
+1999-12-31 23:59:59
+2016-01-01 00:00:00
+2016-01-01 00:00:00
+2016-02-29 00:00:00
+2016-02-29 00:00:00
+2016-12-31 23:59:58
+2016-12-31 23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, time with time zone) from T_timestamp
 ----
-10 values hashing to 03e8eb1dddacb06bc9e1476a050e6823
+1999-12-31 23:59:59
+03:59:59
+2016-01-01 00:00:00
+04:00:00
+2016-02-29 00:00:00
+04:00:00
+2016-12-31 23:59:58
+03:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, timestamp with time zone) from T_timestamp
 ----
-10 values hashing to 5f51ffc88f59ac025c3e40edb3a70f4e
+1999-12-31 23:59:59
+2000-01-01 03:59:59
+2016-01-01 00:00:00
+2016-01-01 04:00:00
+2016-02-29 00:00:00
+2016-02-29 04:00:00
+2016-12-31 23:59:58
+2017-01-01 03:59:58
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as boolean) from T_timestamp
@@ -5315,7 +12564,16 @@ SELECT v, cast(v as varchar) from T_timestamp
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_timestamp
 ----
-10 values hashing to 91189aef304ba29c649c1c4b532075e5
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_timestamp
@@ -5326,12 +12584,30 @@ SELECT v, cast(v as long varchar) from T_timestamp
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timestamp
 ----
-10 values hashing to 91189aef304ba29c649c1c4b532075e5
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_timestamp
 ----
-10 values hashing to 91189aef304ba29c649c1c4b532075e5
+1999-12-31 23:59:59
+1999-12-31 23:59:59.000000
+2016-01-01 00:00:00
+2016-01-01 00:00:00.000000
+2016-02-29 00:00:00
+2016-02-29 00:00:00.000000
+2016-12-31 23:59:58
+2016-12-31 23:59:58.000000
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_timestamp
@@ -5348,27 +12624,72 @@ SELECT v, cast(v as Blob) from T_timestamp
 query TT rowsort
 SELECT v, cast(v as date) from T_timestamp
 ----
-10 values hashing to 474a0d00563edda09eb2fe2e86055ace
+1999-12-31 23:59:59
+1999-12-31
+2016-01-01 00:00:00
+2016-01-01
+2016-02-29 00:00:00
+2016-02-29
+2016-12-31 23:59:58
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as time) from T_timestamp
 ----
-10 values hashing to 89088b4ee12337eb451645bdcce3c9bb
+1999-12-31 23:59:59
+23:59:59
+2016-01-01 00:00:00
+00:00:00
+2016-02-29 00:00:00
+00:00:00
+2016-12-31 23:59:58
+23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as timestamp) from T_timestamp
 ----
-10 values hashing to 087e28c20e7419c7663ed834f6b8fd59
+1999-12-31 23:59:59
+1999-12-31 23:59:59
+2016-01-01 00:00:00
+2016-01-01 00:00:00
+2016-02-29 00:00:00
+2016-02-29 00:00:00
+2016-12-31 23:59:58
+2016-12-31 23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as time with time zone) from T_timestamp
 ----
-10 values hashing to 03e8eb1dddacb06bc9e1476a050e6823
+1999-12-31 23:59:59
+03:59:59
+2016-01-01 00:00:00
+04:00:00
+2016-02-29 00:00:00
+04:00:00
+2016-12-31 23:59:58
+03:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as timestamp with time zone) from T_timestamp
 ----
-10 values hashing to 5f51ffc88f59ac025c3e40edb3a70f4e
+1999-12-31 23:59:59
+2000-01-01 03:59:59
+2016-01-01 00:00:00
+2016-01-01 04:00:00
+2016-02-29 00:00:00
+2016-02-29 04:00:00
+2016-12-31 23:59:58
+2017-01-01 03:59:58
+NULL
+NULL
 
 statement ok
 DROP TABLE T_timestamp
@@ -5747,7 +13068,16 @@ SELECT v, convert(v, varchar) from T_timestamptz
 query TT rowsort
 SELECT v, convert(v, varchar(36)) from T_timestamptz
 ----
-10 values hashing to fb9e3ce681ccbdf7df67835aedd700bc
+2000-01-01 03:59:59
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 04:00:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 04:00:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 03:59:58
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, longvarchar) from T_timestamptz
@@ -5758,12 +13088,30 @@ SELECT v, convert(v, long varchar) from T_timestamptz
 query TT rowsort
 SELECT v, convert(v, CHARACTER LARGE OBJECT) from T_timestamptz
 ----
-10 values hashing to fb9e3ce681ccbdf7df67835aedd700bc
+2000-01-01 03:59:59
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 04:00:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 04:00:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 03:59:58
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, Clob) from T_timestamptz
 ----
-10 values hashing to fb9e3ce681ccbdf7df67835aedd700bc
+2000-01-01 03:59:59
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 04:00:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 04:00:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 03:59:58
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 statement error
 SELECT v, convert(v, Binary) from T_timestamptz
@@ -5780,27 +13128,72 @@ SELECT v, convert(v, Blob) from T_timestamptz
 query TT rowsort
 SELECT v, convert(v, date) from T_timestamptz
 ----
-10 values hashing to 640ec697ec0b9c14c835941633855fff
+2000-01-01 03:59:59
+1999-12-31
+2016-01-01 04:00:00
+2016-01-01
+2016-02-29 04:00:00
+2016-02-29
+2017-01-01 03:59:58
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, time) from T_timestamptz
 ----
-10 values hashing to 53cd9c5f702e8a57c82ca88f4cf33697
+2000-01-01 03:59:59
+23:59:59
+2016-01-01 04:00:00
+00:00:00
+2016-02-29 04:00:00
+00:00:00
+2017-01-01 03:59:58
+23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, timestamp) from T_timestamptz
 ----
-10 values hashing to 3697de470d7d12475c3e4d8bbad98fac
+2000-01-01 03:59:59
+1999-12-31 23:59:59
+2016-01-01 04:00:00
+2016-01-01 00:00:00
+2016-02-29 04:00:00
+2016-02-29 00:00:00
+2017-01-01 03:59:58
+2016-12-31 23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, time with time zone) from T_timestamptz
 ----
-10 values hashing to 3ed995004ae6ea57433876e577783fae
+2000-01-01 03:59:59
+03:59:59
+2016-01-01 04:00:00
+04:00:00
+2016-02-29 04:00:00
+04:00:00
+2017-01-01 03:59:58
+03:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, convert(v, timestamp with time zone) from T_timestamptz
 ----
-10 values hashing to bb7961ac5b429a46b761281609a86178
+2000-01-01 03:59:59
+2000-01-01 03:59:59
+2016-01-01 04:00:00
+2016-01-01 04:00:00
+2016-02-29 04:00:00
+2016-02-29 04:00:00
+2017-01-01 03:59:58
+2017-01-01 03:59:58
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as boolean) from T_timestamptz
@@ -5865,7 +13258,16 @@ SELECT v, cast(v as varchar) from T_timestamptz
 query TT rowsort
 SELECT v, cast(v as varchar(36)) from T_timestamptz
 ----
-10 values hashing to fb9e3ce681ccbdf7df67835aedd700bc
+2000-01-01 03:59:59
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 04:00:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 04:00:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 03:59:58
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as longvarchar) from T_timestamptz
@@ -5876,12 +13278,30 @@ SELECT v, cast(v as long varchar) from T_timestamptz
 query TT rowsort
 SELECT v, cast(v as CHARACTER LARGE OBJECT) from T_timestamptz
 ----
-10 values hashing to fb9e3ce681ccbdf7df67835aedd700bc
+2000-01-01 03:59:59
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 04:00:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 04:00:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 03:59:58
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as Clob) from T_timestamptz
 ----
-10 values hashing to fb9e3ce681ccbdf7df67835aedd700bc
+2000-01-01 03:59:59
+2000-01-01 01:59:59.000000+02:00
+2016-01-01 04:00:00
+2016-01-01 02:00:00.000000+02:00
+2016-02-29 04:00:00
+2016-02-29 02:00:00.000000+02:00
+2017-01-01 03:59:58
+2017-01-01 01:59:58.000000+02:00
+NULL
+NULL
 
 statement error
 SELECT v, cast(v as Binary) from T_timestamptz
@@ -5898,27 +13318,72 @@ SELECT v, cast(v as Blob) from T_timestamptz
 query TT rowsort
 SELECT v, cast(v as date) from T_timestamptz
 ----
-10 values hashing to 640ec697ec0b9c14c835941633855fff
+2000-01-01 03:59:59
+1999-12-31
+2016-01-01 04:00:00
+2016-01-01
+2016-02-29 04:00:00
+2016-02-29
+2017-01-01 03:59:58
+2016-12-31
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as time) from T_timestamptz
 ----
-10 values hashing to 53cd9c5f702e8a57c82ca88f4cf33697
+2000-01-01 03:59:59
+23:59:59
+2016-01-01 04:00:00
+00:00:00
+2016-02-29 04:00:00
+00:00:00
+2017-01-01 03:59:58
+23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as timestamp) from T_timestamptz
 ----
-10 values hashing to 3697de470d7d12475c3e4d8bbad98fac
+2000-01-01 03:59:59
+1999-12-31 23:59:59
+2016-01-01 04:00:00
+2016-01-01 00:00:00
+2016-02-29 04:00:00
+2016-02-29 00:00:00
+2017-01-01 03:59:58
+2016-12-31 23:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as time with time zone) from T_timestamptz
 ----
-10 values hashing to 3ed995004ae6ea57433876e577783fae
+2000-01-01 03:59:59
+03:59:59
+2016-01-01 04:00:00
+04:00:00
+2016-02-29 04:00:00
+04:00:00
+2017-01-01 03:59:58
+03:59:58
+NULL
+NULL
 
 query TT rowsort
 SELECT v, cast(v as timestamp with time zone) from T_timestamptz
 ----
-10 values hashing to bb7961ac5b429a46b761281609a86178
+2000-01-01 03:59:59
+2000-01-01 03:59:59
+2016-01-01 04:00:00
+2016-01-01 04:00:00
+2016-02-29 04:00:00
+2016-02-29 04:00:00
+2017-01-01 03:59:58
+2017-01-01 03:59:58
+NULL
+NULL
 
 statement ok
 DROP TABLE T_timestamptz

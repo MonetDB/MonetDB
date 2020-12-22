@@ -10,6 +10,7 @@ import pymonetdb
 import difflib
 from abc import ABCMeta, abstractmethod
 import MonetDBtesting.process as process
+import inspect
 
 TSTDB=os.getenv("TSTDB")
 MAPIPORT=os.getenv("MAPIPORT")
@@ -96,6 +97,21 @@ def filter_matching_blocks(a: [str] = [], b: [str] = []):
     red_b+=b[min_size:]
     return red_a, red_b
 
+def diff(stable_file, test_file):
+    diff = None
+    filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test', 'stderr of test', 'MAPI'])
+    with open(stable_file) as fstable:
+        stable = list(filter(filter_fn, fstable.read().split('\n')))
+        with open(test_file) as ftest:
+            test = list(filter(filter_fn, ftest.read().split('\n')))
+            a, b = filter_matching_blocks(stable, test)
+            diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+            if len(diff) > 0:
+                diff = '\n'.join(diff)
+            else:
+                diff = None
+    return diff
+
 class PyMonetDBConnectionContext(object):
     def __init__(self,
             username='monetdb', password='monetdb',
@@ -155,7 +171,7 @@ class RunnableTestResult(metaclass=ABCMeta):
     did_run = False
 
     @abstractmethod
-    def run(self, query:str, *args, stdin=None):
+    def run(self, query:str, *args, stdin=None, lineno=None):
         """Run query with specific client"""
         pass
 
@@ -175,16 +191,18 @@ class TestCaseResult(object):
         self.rowcount = -1
         self.description = None
         self.id = kwargs.get('id')
+        self.lineno = None
 
     def fail(self, msg, data=None):
         """ logs errors to test case err file"""
         err_file = self.test_case.err_file
         if len(self.assertion_errors) == 0:
+            lineno = self.lineno or 'N/A'
             print('', file=err_file)
             if self.query:
-                print(self.query, file=err_file)
+                print(f'ln{lineno}:', self.query, file=err_file)
             elif self.id:
-                print(self.id, file=err_file)
+                print(f'ln{lineno}:', self.id, file=err_file)
             print('----', file=err_file)
         self.assertion_errors.append(AssertionError(msg))
         print(msg, file=err_file)
@@ -308,9 +326,10 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         return count
 
 
-    def run(self, query:str, *args, stdin=None):
+    def run(self, query:str, *args, stdin=None, lineno=None):
         # ensure runs only once
         if self.did_run is False:
+            self.lineno = lineno
             conn_ctx = self.test_case.conn_ctx
             kwargs = dict(
                 host = conn_ctx.hostname,
@@ -366,7 +385,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             self.fail(msg)
         return self
 
-    def assertMatchStableError(self, ferr):
+    def assertMatchStableError(self, ferr, ignore_err_messages=False):
         stable = []
         err = []
         filter_fn = filter_lines_starting_with(['--', '#', 'stderr of test', 'MAPI'])
@@ -416,9 +435,10 @@ class PyMonetDBTestResult(TestCaseResult, RunnableTestResult):
                 err_msg = tmp[0].strip()
         return err_code, err_msg
 
-    def run(self, query:str, *args, stdin=None):
+    def run(self, query:str, *args, stdin=None, lineno=None):
         # ensure runs only once
         if self.did_run is False:
+            self.lineno = lineno
             if query:
                 self.query = query
                 try:
@@ -447,8 +467,9 @@ class MonetDBeTestResult(TestCaseResult, RunnableTestResult):
     def _parse_error(self, err: str):
         pass
 
-    def run(self, query:str, *args, stdin=None):
+    def run(self, query:str, *args, stdin=None, lineno=None):
         if self.did_run is False:
+            self.lineno = lineno
             if query:
                 self.query = query
                 try:
@@ -552,13 +573,15 @@ class SQLTestCase():
         return self._conn_ctx or self.default_conn_ctx()
 
     def execute(self, query:str, *args, client='pymonetdb', stdin=None, result_id=None):
+        frame = inspect.currentframe().f_back
+        lineno = frame.f_lineno
         if client == 'mclient':
             res = MclientTestResult(self, id=result_id)
         elif self.in_memory:
             res = MonetDBeTestResult(self, id=result_id)
         else:
             res = PyMonetDBTestResult(self, id=result_id)
-        res.run(query, *args, stdin=stdin)
+        res.run(query, *args, stdin=stdin, lineno=lineno)
         self.test_results.append(res)
         return res
 

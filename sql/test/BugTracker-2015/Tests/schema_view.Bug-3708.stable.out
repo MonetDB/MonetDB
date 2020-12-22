@@ -53,18 +53,18 @@ stdout of test 'schema_view.Bug-3708` in directory 'sql/test/BugTracker-2015` it
 % .plan # table_name
 % rel # name
 % clob # type
-% 34 # length
+% 38 # length
 project (
-| table(s1.s3) [ "s3"."x" ] COUNT 
+| table("s1"."s3") [ "s3"."x" ] COUNT 
 ) [ "s3"."x" as "s4"."x" ]
 #set schema s2;
 #plan select * from s1.s4;
 % .plan # table_name
 % rel # name
 % clob # type
-% 34 # length
+% 38 # length
 project (
-| table(s1.s3) [ "s3"."x" ] COUNT 
+| table("s1"."s3") [ "s3"."x" ] COUNT 
 ) [ "s3"."x" as "s4"."x" ]
 #set schema sys;
 #drop schema s1;

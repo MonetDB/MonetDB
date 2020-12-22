@@ -234,7 +234,7 @@ class Popen(subprocess.Popen):
 class client(Popen):
     def __init__(self, lang, args=[], stdin=None, stdout=None, stderr=None,
                  server=None, port=None, dbname=None, host=None,
-                 user='monetdb', passwd='monetdb', log=False,
+                 user='monetdb', passwd='monetdb',
                  interactive=None, echo=None, format=None,
                  input=None, communicate=False, text=None, encoding=None):
         '''Start a client process.'''
@@ -271,7 +271,8 @@ class client(Popen):
                 if cmd[i].startswith('-f') or cmd[i].startswith('--format='):
                     del cmd[i]
                     break
-            cmd.append('-f' + format)
+            if format:
+                cmd.append('-f' + format)
         if encoding is not None:
             if text and encoding.lower() != 'utf-8':
                 raise RuntimeError('text cannot be combined with encoding')
@@ -282,7 +283,8 @@ class client(Popen):
                 if cmd[i].startswith('-E') or cmd[i].startswith('--encoding='):
                     del cmd[i]
                     break
-            cmd.append('-E' + encoding)
+            if encoding:
+                cmd.append('-E' + encoding)
 
         env = None
 
@@ -299,10 +301,14 @@ class client(Popen):
                 if cmd[i].startswith('--port='):
                     del cmd[i]
                     break
-            cmd.append('--port=%d' % int(port))
+            try:
+                cmd.append('--port=%d' % int(port))
+            except ValueError:
+                if port:
+                    raise
         if dbname is None:
             dbname = os.getenv('TSTDB')
-        if dbname is not None:
+        if dbname is not None and dbname:
             cmd.append('--database=%s' % dbname)
         if user is not None or passwd is not None:
             env = copy.deepcopy(os.environ)
@@ -320,27 +326,11 @@ class client(Popen):
                 if cmd[i].startswith('--host='):
                     del cmd[i]
                     break
-            cmd.append('--host=%s' % host)
+            if host:
+                cmd.append('--host=%s' % host)
         if verbose:
             sys.stdout.write('Executing: ' + ' '.join(cmd +  args) + '\n')
             sys.stdout.flush()
-        if log:
-            prompt = time.strftime('# %H:%M:%S >  ')
-            cmdstr = ' '.join(cmd +  args)
-            if hasattr(stdin, 'name'):
-                cmdstr += ' < "%s"' % stdin.name
-            sys.stdout.write('\n')
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('%s%s\n' % (prompt, cmdstr))
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-            sys.stderr.write('\n')
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('%s%s\n' % (prompt, cmdstr))
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('\n')
-            sys.stderr.flush()
         if stdin is None:
             # if no input provided, use /dev/null as input
             stdin = open(os.devnull)
@@ -372,7 +362,7 @@ class client(Popen):
 class server(Popen):
     def __init__(self, args=[], stdin=None, stdout=None, stderr=None,
                  mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
-                 dbextra=None, bufsize=0, log=False,
+                 dbextra=None, bufsize=0,
                  notrace=False, notimeout=False, ipv6=False):
         '''Start a server process.'''
         cmd = _server[:]
@@ -457,23 +447,6 @@ class server(Popen):
                     if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
                         del cmd[j:j+2]
                         break
-        if log:
-            prompt = time.strftime('# %H:%M:%S >  ')
-            cmdstr = ' '.join(cmd +  args)
-            if hasattr(stdin, 'name'):
-                cmdstr += ' < "%s"' % stdin.name
-            sys.stdout.write('\n')
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('%s%s\n' % (prompt, cmdstr))
-            sys.stdout.write(prompt + '\n')
-            sys.stdout.write('\n')
-            sys.stdout.flush()
-            sys.stderr.write('\n')
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('%s%s\n' % (prompt, cmdstr))
-            sys.stderr.write(prompt + '\n')
-            sys.stderr.write('\n')
-            sys.stderr.flush()
         started = os.path.join(dbpath, '.started')
         try:
             os.unlink(started)

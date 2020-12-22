@@ -87,12 +87,12 @@ stdout of test 'groupby_expressions` in directory 'sql/test/miscellaneous` itsel
 % .plan # table_name
 % rel # name
 % clob # type
-% 96 # length
+% 100 # length
 project (
 | group by (
 | | project (
-| | | table(sys.groupings) [ "groupings"."aa" ] COUNT 
-| | ) [ bigint["groupings"."aa"] as "%2"."%2", sys.sql_add("%2"."%2", bigint "1") as "%1"."%1" ]
+| | | table("sys"."groupings") [ "groupings"."aa" ] COUNT 
+| | ) [ bigint["groupings"."aa"] as "%2"."%2", "sys"."sql_add"("%2"."%2", bigint "1") as "%1"."%1" ]
 | ) [ "%1"."%1" ] [ "%1"."%1" ]
 ) [ "%1"."%1" ]
 #select cast(("aa"+1) + ("bb"+1) as bigint) from "groupings" group by "aa"+1, "bb"+1;

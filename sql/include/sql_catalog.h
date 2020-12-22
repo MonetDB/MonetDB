@@ -374,7 +374,7 @@ typedef enum sql_ftype {
 #define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
 #define IS_LOADER(f)   ((f)->type == F_LOADER)
 
-#define FUNC_TYPE_STR(type) \
+#define FUNC_TYPE_STR(type, F, fn) \
 	switch (type) { \
 		case F_FUNC: \
 			F = "FUNCTION"; \
@@ -394,7 +394,7 @@ typedef enum sql_ftype {
 			break; \
 		case F_UNION: \
 			F = "UNION FUNCTION"; \
-			fn = "union function"; \
+			fn = "table returning function"; \
 			break; \
 		case F_ANALYTIC: \
 			F = "WINDOW FUNCTION"; \
@@ -755,7 +755,6 @@ extern node *find_sql_type_node(sql_schema *s, sqlid id);
 extern sql_type *sql_trans_find_type(sql_trans *tr, sqlid id);
 
 extern sql_func *find_sql_func(sql_schema * s, const char *tname);
-extern list *find_all_sql_func(sql_schema * s, const char *tname, sql_ftype type);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern node *find_sql_func_node(sql_schema *s, sqlid id);
@@ -775,5 +774,56 @@ typedef struct {
 
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
 extern sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
+
+#define outside_str 1
+#define inside_str 2
+
+#define extracting_schema 1
+#define extracting_sequence 2
+
+static inline void
+extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **schema, char **sequence)
+{
+	int status = outside_str, identifier = extracting_schema;
+	char next_identifier[1024]; /* needs one extra character for null terminator */
+	size_t bp = 0;
+
+	for (size_t i = 0; default_value[i]; i++) {
+		char next = default_value[i];
+
+		if (next == '"') {
+			if (status == inside_str && default_value[i + 1] == '"') {
+				next_identifier[bp++] = '"';
+				i++; /* has to advance two positions */
+			} else if (status == inside_str) {
+				next_identifier[bp++] = '\0';
+				if (identifier == extracting_schema) {
+					*schema = sa_strdup(sa, next_identifier);
+					identifier = extracting_sequence;
+				} else if (identifier == extracting_sequence) {
+					*sequence = sa_strdup(sa, next_identifier);
+					break; /* done extracting */
+				}
+				bp = 0;
+				status = outside_str;
+			} else {
+				assert(status == outside_str);
+				status = inside_str;
+			}
+		} else if (next == '.') {
+			if (status == outside_str && default_value[i + 1] == '"') {
+				status = inside_str;
+				i++; /* has to advance two positions */
+			} else {
+				assert(status == inside_str);
+				next_identifier[bp++] = '.'; /* used inside an identifier name */
+			}
+		} else if (status == inside_str) {
+			next_identifier[bp++] = next;
+		} else {
+			assert(status == outside_str);
+		}
+	}
+}
 
 #endif /* SQL_CATALOG_H */

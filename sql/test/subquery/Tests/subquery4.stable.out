@@ -265,8 +265,8 @@ stdout of test 'subquery4` in directory 'sql/test/subquery` itself:
 [ 3,	3	]
 [ 3,	NULL	]
 #SELECT 1 IN ((SELECT MIN(col2)), (SELECT SUM(col4))) FROM another_t;
-% .%11 # table_name
-% %11 # name
+% .%6 # table_name
+% %6 # name
 % boolean # type
 % 5 # length
 [ false	]
