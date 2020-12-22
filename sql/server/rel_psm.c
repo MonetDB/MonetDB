@@ -19,7 +19,7 @@
 #define psm_zero_or_one(exp) \
 	do { \
 		if (exp && exp->card > CARD_AGGR) { \
-			sql_subfunc *zero_or_one = sql_bind_func(sql->sa, sql->session->schema, "zero_or_one", exp_subtype(exp), NULL, F_AGGR); \
+			sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", exp_subtype(exp), NULL, F_AGGR); \
 			assert(zero_or_one); \
 			exp = exp_aggr1(sql->sa, exp, zero_or_one, 0, 0, CARD_ATOM, has_nil(exp)); \
 		} \
@@ -57,27 +57,6 @@ rel_psm_stmt(sql_allocator *sa, sql_exp *e)
 	return NULL;
 }
 
-/* vname can be
-	- 'parameter of the function' (ie in the param list)
-	- local variable, declared earlier
-	- global variable, also declared earlier
-*/
-static void*
-resolve_variable_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *vname, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *action)
-{
-	if (!sname && (*var = stack_find_var_frame(sql, vname, level))) { /* check if variable is known from the stack */
-		*tpe = &((*var)->var.tpe);
-	} else if (!sname && (*a = sql_bind_param(sql, vname))) { /* then if it is a parameter */
-		*tpe = &((*a)->type);
-		*level = 1;
-	} else if ((*var = find_global_var(sql, s, vname))) { /* then if it is a global var */
-		*tpe = &((*var)->var.tpe);
-		*level = 0;
-	} else
-		return sql_error(sql, 01, SQLSTATE(42000) "%s: Variable '%s%s%s' unknown", action, sname ? sname : "", sname ? "." : "", vname);
-	return level;
-}
-
 /* SET [ schema '.' ] variable = value and set ( [ schema1 '.' ] variable1, .., [ schemaN '.' ] variableN) = (query) */
 static sql_exp *
 psm_set_exp(sql_query *query, dnode *n)
@@ -94,14 +73,10 @@ psm_set_exp(sql_query *query, dnode *n)
 		exp_kind ek = {type_value, card_value, FALSE};
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
-		sql_schema *s = cur_schema(sql);
 		sql_var *var = NULL;
 		sql_arg *a = NULL;
 
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
-
-		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
+		if (!find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SET"))
 			return NULL;
 		if (!(e = rel_value_exp2(query, &rel, val, sql_sel | sql_psm, ek)))
 			return NULL;
@@ -134,14 +109,10 @@ psm_set_exp(sql_query *query, dnode *n)
 			const char *sname = qname_schema(nqname);
 			const char *vname = qname_schema_object(nqname);
 			sql_exp *v = n->data;
-			sql_schema *s = cur_schema(sql);
 			sql_var *var = NULL;
 			sql_arg *a = NULL;
 
-			if (sname && !(s = mvc_bind_schema(sql, sname)))
-				return sql_error(sql, 02, SQLSTATE(3F000) "SET: No such schema '%s'", sname);
-
-			if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SET"))
+			if (!find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SET"))
 				return NULL;
 
 			v = exp_ref(sql, v);
@@ -181,7 +152,6 @@ rel_psm_declare(mvc *sql, dnode *n)
 			dlist *qname = ids->data.lval;
 			const char *sname = qname_schema(qname);
 			const char *tname = qname_schema_object(qname);
-			sql_schema *s = cur_schema(sql);
 			sql_exp *r = NULL;
 			sql_arg *a;
 
@@ -192,7 +162,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' declared as a parameter", tname);
 			/* check if we overwrite a scope local variable declare x; declare x; */
 			if (frame_find_var(sql, tname))
-				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s.%s' already declared", s->base.name, tname);
+				return sql_error(sql, 01, SQLSTATE(42000) "DECLARE: Variable '%s' already declared", tname);
 			/* variables are put on stack, globals on a separate list */
 			if (!frame_push_var(sql, tname, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -387,7 +357,7 @@ rel_psm_case( sql_query *query, sql_subtype *res, list *restypelist, dnode *case
 
 			psm_zero_or_one(when_value);
 			if (!when_value ||
-			   (cond = rel_binop_(sql, rel, v, when_value, NULL, "=", card_value)) == NULL ||
+			   (cond = rel_binop_(sql, rel, v, when_value, "sys", "=", card_value)) == NULL ||
 			   (if_stmts = sequential_block(query, res, restypelist, m->next->data.lval, NULL, is_func)) == NULL ) {
 				return NULL;
 			}
@@ -459,16 +429,12 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		dlist *l = return_sym->data.lval;
 		const char *sname = qname_schema(l);
 		const char *tname = qname_schema_object(l);
-		sql_schema *s = cur_schema(sql);
-		sql_table *t;
+		sql_table *t = NULL;
 
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "RETURN: no such schema '%s'", sname);
-		if (!(t = find_table_on_scope(sql, &s, sname, tname)))
-			return sql_error(sql, 02, SQLSTATE(42S02) "RETURN: no such table '%s'", tname);
-
+		if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "RETURN", false)))
+			return NULL;
 		if (isDeclaredTable(t)) {
-			rel = rel_table(sql, ddl_create_table, s->base.name, t, SQL_DECLARED_TABLE);
+			rel = rel_table(sql, ddl_create_table, "sys", t, SQL_DECLARED_TABLE);
 		} else {
 			rel = rel_basetable(sql, t, t->base.name);
 			for (node *n = rel->exps->h ; n ; n = n->next) {
@@ -595,17 +561,13 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		dlist *qname = n->data.lval;
 		const char *sname = qname_schema(qname);
 		const char *vname = qname_schema_object(qname);
-		sql_schema *s = cur_schema(sql);
 		sql_exp *v = m->data;
 		int level;
 		sql_var *var;
 		sql_subtype *tpe;
 		sql_arg *a = NULL;
 
-		if (sname && !(s = mvc_bind_schema(sql, sname)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "SELECT INTO: No such schema '%s'", sname);
-
-		if (!resolve_variable_on_scope(sql, s, sname, vname, &var, &a, &tpe, &level, "SELECT INTO"))
+		if (!find_variable_on_scope(sql, sname, vname, &var, &a, &tpe, &level, "SELECT INTO"))
 			return NULL;
 
 		v = exp_ref(sql, v);
@@ -868,7 +830,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (res && res->token == SQL_TABLE)
 		type = F_UNION;
 
-	FUNC_TYPE_STR(type)
+	FUNC_TYPE_STR(type, F, fn)
 
 	is_func = (type != F_PROC && type != F_LOADER);
 	assert(lang != FUNC_LANG_INT);
@@ -890,13 +852,17 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss creation via external programming languages not supported", F, fn);
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 
 	type_list = create_type_list(sql, params, 1);
-	if ((type == F_FUNC || type == F_AGGR) && sql_bind_func_(sql->sa, s, fname, type_list, (type == F_FUNC) ? F_AGGR : F_FUNC))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F, (type == F_FUNC) ? "an aggregate" : "a function", fname);
+	if (type == F_FUNC || type == F_AGGR) {
+		if (sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC) ? F_AGGR : F_FUNC))
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F, (type == F_FUNC) ? "an aggregate" : "a function", fname);
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+	}
 
-	if ((sf = sql_bind_func_(sql->sa, s, fname, type_list, type)) != NULL && create) {
+	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type)) != NULL && create) {
 		if (replace) {
 			sql_func *func = sf->func;
 			if (!mvc_schema_privs(sql, s))
@@ -930,6 +896,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' already in use", F, fname);
 			}
 		}
+	} else {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
 	}
 	list_destroy(type_list);
 	if (create && !mvc_schema_privs(sql, s)) {
@@ -1092,32 +1061,37 @@ rel_drop_function(sql_allocator *sa, const char *sname, const char *name, int nr
 }
 
 sql_func *
-resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ftype type, char *op, int if_exists)
+resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql_ftype type, const char *op, int if_exists)
 {
 	sql_func *func = NULL;
 	list *list_func = NULL, *type_list = NULL;
 	char is_func = (type != F_PROC && type != F_LOADER), *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR(type)
+	FUNC_TYPE_STR(type, F, fn)
 
 	if (typelist) {
 		sql_subfunc *sub_func;
 
 		type_list = create_type_list(sql, typelist, 0);
-		sub_func = sql_bind_func_(sql->sa, s, name, type_list, type);
+		sub_func = sql_bind_func_(sql, sname, name, type_list, type);
 		if (!sub_func && type == F_FUNC) {
-			sub_func = sql_bind_func_(sql->sa, s, name, type_list, F_UNION);
+			sql->session->status = 0; /* if the function was not found clean the error */
+			sql->errstr[0] = '\0';
+			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION);
 			type = sub_func?F_UNION:F_FUNC;
 		}
 		if ( sub_func && sub_func->func->type == type)
 			func = sub_func->func;
 	} else {
-		list_func = schema_bind_func(sql, s, name, type);
-		if (!list_func && type == F_FUNC)
-			list_func = schema_bind_func(sql,s,name, F_UNION);
+		list_func = sql_find_funcs_by_name(sql, sname, name, type);
+		if (!list_func && type == F_FUNC) {
+			sql->session->status = 0; /* if the function was not found clean the error */
+			sql->errstr[0] = '\0';
+			list_func = sql_find_funcs_by_name(sql, sname, name, F_UNION);
+		}
 		if (list_func && list_func->cnt > 1) {
 			list_destroy(list_func);
-			return sql_error(sql, 02, SQLSTATE(42000) "%s %s: there are more than one %s called '%s', please use the full signature", op, F, fn, name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: there are more than one %s called '%s', please use the full signature", op, F, fn, name);
 		}
 		if (list_func && list_func->cnt == 1)
 			func = (sql_func*) list_func->h->data;
@@ -1141,24 +1115,24 @@ resolve_func( mvc *sql, sql_schema *s, const char *name, dlist *typelist, sql_ft
 				}
 				list_destroy(list_func);
 				list_destroy(type_list);
-				if(!if_exists)
-					e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
+				if (!if_exists)
+					e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
 				return e;
 			}
 			list_destroy(list_func);
 			list_destroy(type_list);
-			if(!if_exists)
-				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s' ()", op, F, fn, name);
+			if (!if_exists)
+				e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s' ()", op, F, fn, name);
 			return e;
 		} else {
-			if(!if_exists)
-				e = sql_error(sql, 02, SQLSTATE(42000) "%s %s: no such %s '%s'", op, F, fn, name);
+			if (!if_exists)
+				e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s'", op, F, fn, name);
 			return e;
 		}
 	} else if (((is_func && type != F_FILT) && !func->res) || (!is_func && func->res)) {
 		list_destroy(list_func);
 		list_destroy(type_list);
-		return sql_error(sql, 02, SQLSTATE(42000) "%s %s: cannot drop %s '%s'", op, F, fn, name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: cannot drop %s '%s'", op, F, fn, name);
 	}
 
 	list_destroy(list_func);
@@ -1171,28 +1145,24 @@ rel_drop_func(mvc *sql, dlist *qname, dlist *typelist, int drop_action, sql_ftyp
 {
 	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
-	sql_schema *s = cur_schema(sql);
 	sql_func *func = NULL;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR(type)
+	FUNC_TYPE_STR(type, F, fn)
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)) && !if_exists)
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP %s: no such schema '%s'", F, sname);
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: insufficient privileges for user '%s' in schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
-
-	if (s)
-		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
-	if (!func && !sname) {
-		s = tmp_schema(sql);
-		func = resolve_func(sql, s, name, typelist, type, "DROP", if_exists);
+	if (!(func = resolve_func(sql, sname, name, typelist, type, "DROP", if_exists))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset function not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		return NULL;
 	}
-	if (func && s)
-		return rel_drop_function(sql->sa, s->base.name, name, func->base.id, type, drop_action);
-	if (if_exists)
-		return rel_drop_function(sql->sa, sname, name, -2, type, drop_action);
-	return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: %s %s not found", F, fn, name);
+	if (!func->s) /* attempting to drop a system function */
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: cannot drop system %s '%s'", F, fn, name);
+	if (!mvc_schema_privs(sql, func->s))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP %s: insufficient privileges for user '%s' in schema '%s'", F, get_string_global_var(sql, "current_user"), func->s->base.name);
+	return rel_drop_function(sql->sa, func->s->base.name, name, func->base.id, type, drop_action);
 }
 
 static sql_rel*
@@ -1201,19 +1171,18 @@ rel_drop_all_func(mvc *sql, dlist *qname, int drop_action, sql_ftype type)
 	const char *name = qname_schema_object(qname);
 	const char *sname = qname_schema(qname);
 	sql_schema *s = cur_schema(sql);
-	list * list_func = NULL;
+	list *list_func = NULL;
 	char *F = NULL, *fn = NULL;
 
-	FUNC_TYPE_STR(type)
+	FUNC_TYPE_STR(type, F, fn)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such schema '%s'", F, sname);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP ALL %s: insufficient privileges for user '%s' in schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 
-	list_func = schema_bind_func(sql, s, name, type);
-	if (!list_func)
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP ALL %s: no such %s '%s'", F, fn, name);
+	if (!(list_func = sql_find_funcs_by_name(sql, s->base.name, name, type)))
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "DROP ALL %s: no such %s '%s'", F, fn, name);
 	list_destroy(list_func);
 	return rel_drop_function(sql->sa, s->base.name, name, -1, type, drop_action);
 }
@@ -1262,21 +1231,18 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	const char *triggername = qname_schema_object(qname);
 	const char *sname = qname_schema(tqname);
 	const char *tname = qname_schema_object(tqname);
+	int instantiate = (sql->emode == m_instantiate);
+	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	sql_schema *ss = cur_schema(sql), *old_schema = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_trigger *st = NULL;
-	int instantiate = (sql->emode == m_instantiate);
-	int create = (!instantiate && sql->emode != m_deps), event, orientation;
 	list *sq = NULL;
 	sql_rel *r = NULL;
-	char *q, *base = replace ? "CREATE OR REPLACE" : "CREATE";
+	char *q, *base = replace ? "CREATE OR REPLACE TRIGGER" : "CREATE TRIGGER";
 	dlist *columns = trigger_event->data.lval;
 	const char *old_name = NULL, *new_name = NULL;
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
-
-	if (sname && !(ss = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "%s TRIGGER: no such schema '%s'", base, sname);
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1292,53 +1258,53 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		}
 	}
 
-	if (triggerschema)
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: a trigger will be placed on the respective table's schema, specify the schema on the table reference, ie ON clause instead", base);
-	if (create && !mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
-	if (create) {
-		if (!(t = find_table_on_scope(sql, &ss, sname, tname)))
-			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: unknown table '%s'", base, tname);
-	}
-	if (create && isView(t))
-		return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: cannot create trigger on view '%s'", base, tname);
-	if (create && (st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
-		if (replace) {
-			if (mvc_drop_trigger(sql, ss, st))
-				return sql_error(sql, 02, SQLSTATE(HY013) "%s TRIGGER: %s", base, MAL_MALLOC_FAIL);
-		} else {
-			return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: name '%s' already in use", base, triggername);
-		}
-	}
+	if (sname && !(ss = mvc_bind_schema(sql, sname)))
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", base, sname);
 
 	if (create) {
+		if (triggerschema)
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: a trigger will be placed on the respective table's schema, specify the schema on the table reference, ie ON clause instead", base);
+		if (!(t = mvc_bind_table(sql, ss, tname)))
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "%s: no such table %s%s%s'%s'", base, sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+		if (!mvc_schema_privs(sql, ss))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
+		if (isView(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot create trigger on view '%s'", base, tname);
+		if ((st = mvc_bind_trigger(sql, ss, triggername)) != NULL) {
+			if (replace) {
+				if (mvc_drop_trigger(sql, ss, st))
+					return sql_error(sql, 02, SQLSTATE(HY013) "%s: %s", base, MAL_MALLOC_FAIL);
+			} else {
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
+			}
+		}
 		switch (trigger_event->token) {
 			case SQL_INSERT: {
 				if (old_name)
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old name not allowed at insert events", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old name not allowed at insert events", base);
 				event = 0;
 			}	break;
 			case SQL_DELETE: {
 				if (new_name)
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: new name not allowed at delete events", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: new name not allowed at delete events", base);
 				event = 1;
 			}	break;
 			case SQL_TRUNCATE: {
 				if (new_name)
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: new name not allowed at truncate events", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: new name not allowed at truncate events", base);
 				event = 3;
 			}	break;
 			case SQL_UPDATE: {
 				if (old_name && new_name && !strcmp(old_name, new_name))
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				if (!old_name && new_name && !strcmp("old", new_name))
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				if (!new_name && old_name && !strcmp("new", old_name))
-					return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: old and new names cannot be the same", base);
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: old and new names cannot be the same", base);
 				event = 2;
 			}	break;
 			default:
-				return sql_error(sql, 02, SQLSTATE(42000) "%s TRIGGER: invalid event: %s", base, token2string(trigger_event->token));
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: invalid event: %s", base, token2string(trigger_event->token));
 		}
 
 		assert(triggered_action->h->type == type_int);
@@ -1431,17 +1397,19 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 {
 	const char *sname = qname_schema(qname);
 	const char *tname = qname_schema_object(qname);
-	sql_schema *ss = cur_schema(sql);
+	sql_trigger *tr = NULL;
 
-	if (sname && !(ss = mvc_bind_schema(sql, sname))) {
-		if (if_exists)
-			return rel_drop_trigger(sql, sname, tname, if_exists);
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: no such schema '%s'", sname);
+	if (!(tr = find_trigger_on_scope(sql, sname, tname, "DROP TRIGGER"))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset trigger not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		return NULL;
 	}
-
-	if (!mvc_schema_privs(sql, ss))
-		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ss->base.name);
-	return rel_drop_trigger(sql, ss->base.name, tname, if_exists);
+	if (!mvc_schema_privs(sql, tr->t->s))
+		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), tr->t->s->base.name);
+	return rel_drop_trigger(sql, tr->t->s->base.name, tname, if_exists);
 }
 
 static sql_rel *
@@ -1450,7 +1418,7 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_exp *sample_exp = NULL, *call, *mm_exp = NULL;
-	const char *sname = NULL, *tname = NULL;
+	const char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
 	list *tl = sa_list(sql->sa);
 	list *exps = sa_list(sql->sa), *analyze_calls = sa_list(sql->sa);
 	sql_subfunc *f = NULL;
@@ -1469,16 +1437,14 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 	append(exps, sample_exp);
 	append(tl, exp_subtype(sample_exp));
 
-	assert(qname);
-	if (qname) {
-		if (qname->h->next)
-			sname = qname_schema(qname);
-		else
-			sname = qname_schema_object(qname);
-		if (!sname)
-			sname = cur_schema(sql)->base.name;
-		if (qname->h->next)
-			tname = qname_schema_object(qname);
+	if (sname && tname) {
+		sql_table *t = NULL;
+
+		if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "ANALYZE", false)))
+			return NULL;
+		if (isDeclaredTable(t))
+			return sql_error(sql, 02, SQLSTATE(42000) "Cannot analyze a declared table");
+		sname = t->s->base.name;
 	}
 	/* call analyze( [schema, [ table ]], opt_sample_size, opt_minmax ) */
 	if (sname) {
@@ -1497,20 +1463,16 @@ psm_analyze(sql_query *query, char *analyzeType, dlist *qname, dlist *columns, s
 			append(tl, exp_subtype(tname_exp));
 	}
 	if (!columns) {
-		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), analyzeType, tl, F_PROC);
-		if (!f)
-			return sql_error(sql, 01, SQLSTATE(42000) "Analyze procedure missing");
+		if (!(f = sql_bind_func_(sql, "sys", analyzeType, tl, F_PROC)))
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
 		call = exp_op(sql->sa, exps, f);
 		append(analyze_calls, call);
 	} else {
-		dnode *n;
-
 		if (!sname || !tname)
-			return sql_error(sql, 01, SQLSTATE(42000) "Analyze schema or table name missing");
-		f = sql_bind_func_(sql->sa, mvc_bind_schema(sql, "sys"), analyzeType, tl, F_PROC);
-		if (!f)
-			return sql_error(sql, 01, SQLSTATE(42000) "Analyze procedure missing");
-		for( n = columns->h; n; n = n->next) {
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze schema or table name missing");
+		if (!(f = sql_bind_func_(sql, "sys", analyzeType, tl, F_PROC)))
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "Analyze procedure missing");
+		for(dnode *n = columns->h; n; n = n->next) {
 			const char *cname = n->data.sval;
 			list *nexps = list_dup(exps, NULL);
 			sql_exp *cname_exp = exp_atom_clob(sql->sa, cname);
@@ -1536,17 +1498,17 @@ create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
 	sql_table *t = NULL;
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
+	if ((t = mvc_bind_table(sql, s, tname)))
+		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if ((t = find_table_on_scope(sql, &s, sname, tname)))
-		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
 
 	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
 	if (!rel || !loader)
 		return NULL;
 
-	loader->sname = sname ? sa_strdup(sql->sa, sname) : NULL;
+	loader->sname = s ? sa_strdup(sql->sa, s->base.name) : NULL;
 	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
 
 	return rel;

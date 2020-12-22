@@ -15,12 +15,12 @@
 
 typedef void (*freecode_fptr) (int clientid, char *name);
 
-typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, sqlid grantor_id);
+typedef char *(*create_user_fptr) (ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid schema_id, char *schema_path, sqlid grantor_id);
 typedef int  (*drop_user_fptr) (ptr mvc, char *user);
 typedef int  (*find_user_fptr) (ptr mvc, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s);
 typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
-typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
+typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd);
 typedef int  (*rename_user_fptr) (ptr mvc, str olduser, str newuser);
 typedef void*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 typedef void  (*create_function) (ptr mvc, str name, sql_rel *rel, sql_table *t);
@@ -44,12 +44,12 @@ typedef struct _backend_functions {
 
 extern void backend_freecode(int clientid, char *name);
 
-extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, sqlid grantor);
+extern char *backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor);
 extern int  backend_drop_user(ptr mvc, char *user);
 extern int  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
-extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, str oldpasswd);
+extern int	backend_alter_user(ptr mvc, str user, str passwd, char enc, sqlid schema_id, char *schema_path, str oldpasswd);
 extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
 extern void*	backend_schema_user_dependencies(ptr trans, sqlid schema_id);
 extern int	backend_resolve_function(ptr trans, sql_func *f);

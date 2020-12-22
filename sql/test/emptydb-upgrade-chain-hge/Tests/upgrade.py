@@ -13,6 +13,8 @@ import sys
 import os
 import zipfile
 
+xit = 0
+
 # find zipped database
 dbfarm = os.environ['GDK_DBFARM']
 db = os.path.join(dbfarm, os.environ['TSTDB'])
@@ -71,7 +73,11 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     import difflib
     for line in difflib.unified_diff(stable, srvout, fromfile='test', tofile=f):
         sys.stderr.write(line)
+        xit = 1
     if len(cltout) != 2 or cltout[0] != 'START TRANSACTION;' or cltout[1] != 'COMMIT;':
         sys.stderr.writelines(cltout)
+        xit = 1
 else:
     sys.stdout.writelines(srvout)
+
+sys.exit(xit)

@@ -69,20 +69,35 @@ directory where they reside::
   [$src_root/sql/test/json/Tests]$ Mtest.py .
 
 
-Adding a new test
------------------
+Adding sqllogic test
+--------------------
 
-Summarizing the above discussion, to add a new test, you need to write the test
-itself, create the stable output and error files, and finally add the test to the
-``All`` index. This will make ensure that the test will be picked up by
-``Mtest.py`` as part of its group.
+See `<https://www.sqlite.org/sqllogictest/doc/trunk/about.wiki/>`_ for detail information 
+on how to structure sqllogic test if you desire to make one by hand. We have extended the 
+sqllogic protocol a bit further::
 
-To create the correct stable output you can use the ``Mapprove.py`` utility.
-First create empty ``.stable.{out,err}`` files and run the test using
-``Mtest.py``. Check the output and if it is correct, run ``Mapprove.py`` with
-the same arguments. This will add the correct contents to the
-``.stable.{out,err}`` files. Commit the changes to the VCS and the test can now
-be used by other developers and the nightly testing infrastructure.
+    skipif <system>
+    onlyif <system>
+
+    statement (ok|ok rowcount|error) [arg]
+    query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
+          I: integer; T: text (string); R: real (decimal)
+          nosort: do not sort
+          rowsort: sort rows
+          valuesort: sort individual values
+          python some.python.function: run data through function (MonetDB extension)
+    hash-threshold number
+    halt
+
+Alternatively ``.sql`` scripts can be converted to sqllogic tests (.test) with ``Mconvert.py``.
+For example::
+
+    $Mconvert.py  --auto <module>/Tests <convert_me>.sql
+
+All new tests need to be placed in the appropriate test folder and their name respectively in the
+index ``All`` file.
 
 Python tests API
 ----------------
+
+See many of the examples in ``sql/test/Users/Tests``.
