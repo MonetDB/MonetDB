@@ -31,7 +31,7 @@ stderr of test 'drop-trigger-if-exists` in directory 'sql/test` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-7172/.s.monetdb.30983
 QUERY = DROP TRIGGER test9; --should fail
-ERROR = !DROP TRIGGER: unknown trigger test9
+ERROR = !DROP TRIGGER: no such trigger 'test9'
 CODE  = 3F000
 
 # 17:57:27 >  

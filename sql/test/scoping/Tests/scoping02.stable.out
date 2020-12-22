@@ -46,8 +46,8 @@ stdout of test 'scoping02` in directory 'sql/test/scoping` itself:
 #	END IF;
 #END;
 #SELECT scoping01(vals) FROM (VALUES (1), (2)) AS vals(vals);
-% . # table_name
-% %4 # name
+% .%11 # table_name
+% %11 # name
 % int # type
 % 1 # length
 [ 1	]
@@ -63,7 +63,7 @@ stdout of test 'scoping02` in directory 'sql/test/scoping` itself:
 #	RETURN i;
 #END;
 #SELECT scoping02(vals) FROM (VALUES (1), (2)) AS vals(vals);
-% . # table_name
+% .%4 # table_name
 % %4 # name
 % int # type
 % 1 # length

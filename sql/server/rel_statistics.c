@@ -530,7 +530,7 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 				if (list_length(e->l) == 0) {
 					ncountstar++;
 				} else if (list_length(e->l) == 1 && !has_nil((sql_exp*)((list*)e->l)->h->data)) {
-					sql_subfunc *cf = sql_bind_func(sql->sa, sql->session->schema, "count", sql_bind_localtype("void"), NULL, F_AGGR);
+					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
 					if (exp_name(e))
 						exp_prop_alias(sql->sa, ne, e);

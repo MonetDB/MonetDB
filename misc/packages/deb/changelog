@@ -2469,6 +2469,12 @@ monetdb (11.27.11) unstable; urgency=low
 
 monetdb (11.27.9) unstable; urgency=low
 
+  * BZ#6460: selinux doen't allow mmap
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Sun, 5 Nov 2017 09:56:39 +0100
+
+monetdb (11.27.9) unstable; urgency=low
+
   * Rebuilt.
   * BZ#6207: identifier ambiguous when grouping and selecting the same
     column twice

@@ -500,13 +500,13 @@ create_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *col
 	if ((msg = create_table_or_view(sql, sname, t->base.name, t, 0)) != MAL_SUCCEED)
 		return msg;
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind table %s", tname);
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
 			return msg;
 	}
@@ -531,15 +531,15 @@ append_to_table_from_emit(Client cntxt, char *sname, char *tname, sql_emit_col *
 	if (!sname)
 		sname = "sys";
 	if (!(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: no such schema '%s'", sname);
 	if (!(t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind table %s", tname);
 	for (i = 0; i < ncols; i++) {
 		BAT *b = columns[i].b;
 		sql_column *col = NULL;
 
 		if (!(col = mvc_bind_column(sql, t, columns[i].name)))
-			return sql_error(sql, 02, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
+			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "APPEND TABLE: could not bind column %s", columns[i].name);
 		if ((msg = mvc_append_column(sql->session->tr, col, b)) != MAL_SUCCEED)
 			return msg;
 	}
@@ -6347,10 +6347,10 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "revoke", SQLrevoke, false, "Catalog operation revoke", args(0,7, arg("sname",str),arg("tbl",str),arg("grantee",str),arg("privs",int),arg("cname",str),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "grant_function", SQLgrant_function, false, "Catalog operation grant_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
  pattern("sqlcatalog", "revoke_function", SQLrevoke_function, false, "Catalog operation revoke_function", args(0,6, arg("sname",str),arg("fcnid",int),arg("grantee",str),arg("privs",int),arg("grant",int),arg("grantor",int))),
- pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("fullname",str))),
+ pattern("sqlcatalog", "create_user", SQLcreate_user, false, "Catalog operation create_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("fullname",str))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,2, arg("sname",str),arg("action",int))),
  pattern("sqlcatalog", "drop_user", SQLdrop_user, false, "Catalog operation drop_user", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
- pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,5, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("oldpasswrd",str))),
+ pattern("sqlcatalog", "alter_user", SQLalter_user, false, "Catalog operation alter_user", args(0,6, arg("sname",str),arg("passwrd",str),arg("enc",int),arg("schema",str),arg("schemapath",str),arg("oldpasswrd",str))),
  pattern("sqlcatalog", "rename_user", SQLrename_user, false, "Catalog operation rename_user", args(0,3, arg("sname",str),arg("newnme",str),arg("action",int))),
  pattern("sqlcatalog", "create_role", SQLcreate_role, false, "Catalog operation create_role", args(0,3, arg("sname",str),arg("role",str),arg("grator",int))),
  pattern("sqlcatalog", "drop_role", SQLdrop_role, false, "Catalog operation drop_role", args(0,3, arg("auth",str),arg("role",str),arg("action",int))),
