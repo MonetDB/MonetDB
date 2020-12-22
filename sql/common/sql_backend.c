@@ -35,10 +35,10 @@ backend_freecode(int clientid, char *name)
 }
 
 char *
-backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, sqlid grantor)
+backend_create_user(ptr mvc, char *user, char *passwd, char enc, char *fullname, sqlid defschemid, char *schema_path, sqlid grantor)
 {
 	if (be_funcs.fcuser != NULL)
-		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, grantor));
+		return(be_funcs.fcuser(mvc, user, passwd, enc, fullname, defschemid, schema_path, grantor));
 	return(NULL);
 }
 
@@ -75,10 +75,10 @@ backend_schema_has_user(ptr mvc, sql_schema *s)
 
 int
 backend_alter_user(ptr mvc, str user, str passwd, char enc,
-		sqlid schema_id, str oldpasswd)
+				   sqlid schema_id, char *schema_path, str oldpasswd)
 {
 	if (be_funcs.fauser != NULL)
-		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, oldpasswd));
+		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd));
 	return(FALSE);
 }
 

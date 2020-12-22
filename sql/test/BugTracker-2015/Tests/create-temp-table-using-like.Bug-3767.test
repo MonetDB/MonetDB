@@ -1,13 +1,14 @@
 statement ok
 create table t1 (i int)
 
-statement error
+statement ok
 create temp table tmp (like t1)
 
-statement error
+query I rowsort
 select * from tmp
+----
 
-statement error
+statement ok
 drop table tmp
 
 statement ok
