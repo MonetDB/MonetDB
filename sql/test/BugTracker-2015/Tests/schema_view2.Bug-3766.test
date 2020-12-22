@@ -4,20 +4,22 @@ create table t1 (i int)
 statement ok
 create schema tst
 
-statement error
+statement ok
 create view tst.v1 (i) as select * from t1
 
-statement error
+query I rowsort
 select * from tst.v1
-
-query ITITITII rowsort
-select * from sys._tables where name like '%v1%'
 ----
 
+query T rowsort
+select "name" from sys._tables where name like '%v1%'
+----
+v1
+
 statement error
 create view tst.v1 (i) as select * from t1
 
-statement error
+statement ok
 drop view tst.v1
 
 statement ok

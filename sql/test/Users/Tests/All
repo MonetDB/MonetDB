@@ -11,6 +11,7 @@ role
 schemaRights
 table_privs
 table
+view_privs
 unknown_user
 userCallFunction
 withGrantOption

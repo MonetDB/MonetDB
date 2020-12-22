@@ -31,7 +31,7 @@ stderr of test 'rename12` in directory 'sql/test/rename` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-139031/.s.monetdb.32879
 QUERY = select "a" from "SB"."t1"; --error
-ERROR = !SELECT: no such table 't1'
+ERROR = !SELECT: no such table 'SB'.'t1'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-139031/.s.monetdb.32879
 QUERY = select "a" from "SA"."t1"; --error
@@ -47,7 +47,7 @@ ERROR = !SELECT: identifier 'c' unknown
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-139031/.s.monetdb.32879
 QUERY = select "b" from "SA"."t1"; --error
-ERROR = !SELECT: no such table 't1'
+ERROR = !SELECT: no such table 'SA'.'t1'
 CODE  = 42S02
 
 # 17:29:05 >  

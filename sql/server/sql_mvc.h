@@ -26,8 +26,9 @@
 #include "sql_symbol.h"
 
 #define ERRSIZE 8192
-#define ERR_AMBIGUOUS		050000
+#define ERR_AMBIGUOUS	050000
 #define ERR_GROUPBY		060000
+#define ERR_NOTFOUND	070000
 
 /* value vs predicate (boolean) */
 #define type_value	0
@@ -120,7 +121,9 @@ typedef struct mvc {
 	int frame;
 	struct symbol *sym;
 
-	bool use_views;
+	int8_t use_views:1,
+		   schema_path_has_sys:1, /* speed up object search */
+		   schema_path_has_tmp:1;
 	struct qc *qc;
 	int clientid;		/* id of the owner */
 
@@ -142,6 +145,7 @@ typedef struct mvc {
 	/* during query needed flags */
 	unsigned int label;	/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
+	list *schema_path; /* schema search path for object lookup */
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
@@ -178,7 +182,6 @@ extern str mvc_release(mvc *c, const char *name);
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
 extern sql_func *mvc_bind_func(mvc *sql, const char *name);
-extern list *schema_bind_func(mvc *sql, sql_schema * s, const char *name, sql_ftype type);
 
 sql_export sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 sql_export sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);

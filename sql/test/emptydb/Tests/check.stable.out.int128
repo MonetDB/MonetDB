@@ -873,7 +873,7 @@ CREATE TABLE "sys"."_tables" ("id" INTEGER, "name" VARCHAR(1024), "schema_id" IN
 CREATE TABLE "sys"."args" ("id" INTEGER, "func_id" INTEGER, "name" VARCHAR(256), "type" VARCHAR(1024), "type_digits" INTEGER, "type_scale" INTEGER, "inout" TINYINT, "number" INTEGER);
 CREATE TABLE "sys"."auths" ("id" INTEGER, "name" VARCHAR(1024), "grantor" INTEGER);
 CREATE TABLE "sys"."comments" ("id" INTEGER NOT NULL, "remark" VARCHAR(65000) NOT NULL, CONSTRAINT "comments_id_pkey" PRIMARY KEY ("id"));
-CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER);
+CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER, "schema_path" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
 CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
 CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, "language_keyword" VARCHAR(20), CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
@@ -959,7 +959,7 @@ SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" +
 create view sys."tablestorage" as select "schema", "table", max("count") as "rowcount", count(*) as "storages", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashsize, sum("imprints") as imprintsize, sum(orderidx) as orderidxsize from sys."storage" group by "schema", "table" order by "schema", "table";
 create view sys.tablestoragemodel as select "schema", "table", max("count") as "rowcount", count(*) as "storages", sum(sys.columnsize("type", "count")) as columnsize, sum(sys.heapsize("type", "count", "distinct", "atomwidth")) as heapsize, sum(sys.hashsize("reference", "count")) as hashsize, sum(case when isacolumn then sys.imprintsize("type", "count") else 0 end) as imprintsize, sum(case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end) as orderidxsize from sys.storagemodelinput group by "schema", "table" order by "schema", "table";
 create view sys.tracelog as select * from sys.tracelog();
-SELECT u."name" AS "name", ui."fullname", ui."default_schema" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name";
+create view sys.users as select u."name" as "name", ui."fullname", ui."default_schema", ui."schema_path" from db_users() as u left join "sys"."db_user_info" as ui on u."name" = ui."name";
 create view sys.var_values (var_name, value) as select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;
 create function "abbrev" (p inet) returns clob external name inet."abbrev";
 create function alpha(pdec double, pradius double) returns double external name sql.alpha;
@@ -1571,7 +1571,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._tables",	"sys",	"triggers",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"types",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"user_role",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys._tables",	"sys",	"users",	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys._tables",	"sys",	"users",	"create view sys.users as select u.\"name\" as \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\" from db_users() as u left join \"sys\".\"db_user_info\" as ui on u.\"name\" = ui.\"name\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"value_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"var_values",	"create view sys.var_values (var_name, value) as select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"tmp",	"_columns",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE"	]
@@ -1649,6 +1649,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._columns",	"db_user_info",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"db_user_info",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"db_user_info",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
+[ "sys._columns",	"db_user_info",	"schema_path",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
 [ "sys._columns",	"dependencies",	"id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"dependencies",	"depend_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"dependencies",	"depend_type",	"smallint",	16,	0,	NULL,	true,	2,	NULL	]
@@ -2164,9 +2165,10 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._columns",	"types",	"schema_id",	"int",	32,	0,	NULL,	true,	7,	NULL	]
 [ "sys._columns",	"user_role",	"login_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"user_role",	"role_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
-[ "sys._columns",	"users",	"name",	"varchar",	1024,	0,	NULL,	true,	0,	NULL	]
-[ "sys._columns",	"users",	"fullname",	"varchar",	2024,	0,	NULL,	true,	1,	NULL	]
+[ "sys._columns",	"users",	"name",	"varchar",	2048,	0,	NULL,	true,	0,	NULL	]
+[ "sys._columns",	"users",	"fullname",	"varchar",	2048,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"users",	"default_schema",	"int",	9,	0,	NULL,	true,	2,	NULL	]
+[ "sys._columns",	"users",	"schema_path",	"clob",	0,	0,	NULL,	true,	3,	NULL	]
 [ "sys._columns",	"value_partitions",	"table_id",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"value_partitions",	"partition_id",	"int",	32,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"value_partitions",	"value",	"varchar",	2048,	0,	NULL,	true,	2,	NULL	]
@@ -4500,6 +4502,7 @@ drop function pcre_replace(string, string, string, string);
 [ "column used by view",	"sys",	"db_user_info",	"default_schema",	"sys",	"users",	"VIEW"	]
 [ "column used by view",	"sys",	"db_user_info",	"fullname",	"sys",	"users",	"VIEW"	]
 [ "column used by view",	"sys",	"db_user_info",	"name",	"sys",	"users",	"VIEW"	]
+[ "column used by view",	"sys",	"db_user_info",	"schema_path",	"sys",	"users",	"VIEW"	]
 % .%1,	sys.s1,	sys.t1,	sys.c1,	sys.s2,	sys.t2,	sys.k2,	.dt # table_name
 % %1,	name,	name,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type

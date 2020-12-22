@@ -27,9 +27,9 @@ with SQLTestCase() as tc:
 
 with SQLTestCase() as tc:
     tc.connect(username="monetdb", password="monetdb")
-    tc.execute("create trigger test_6_2 after insert on t_6_2 insert into t_6_1 values(12);").assertFailed(err_message='CREATE TRIGGER: unknown table \'t_6_2\'')
-    tc.execute("drop trigger test_6_1;").assertFailed(err_message='DROP TRIGGER: unknown trigger test_6_1')
-    tc.execute("drop trigger test_6_2;").assertFailed(err_message='DROP TRIGGER: unknown trigger test_6_2')
+    tc.execute("create trigger test_6_2 after insert on t_6_2 insert into t_6_1 values(12);").assertFailed(err_message='CREATE TRIGGER: no such table \'t_6_2\'')
+    tc.execute("drop trigger test_6_1;").assertFailed(err_message='DROP TRIGGER: no such trigger \'test_6_1\'')
+    tc.execute("drop trigger test_6_2;").assertFailed(err_message='DROP TRIGGER: no such trigger \'test_6_2\'')
     tc.execute("drop table t_6_1;").assertSucceeded()
     tc.execute("drop table t_6_2;").assertFailed(err_message='DROP TABLE: no such table \'t_6_2\'')
     tc.execute("drop user user_test;").assertSucceeded()

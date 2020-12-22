@@ -40,7 +40,7 @@ QUERY = select col1
         from tab1
         where ((select r_regionkey from sys.region) is NULL)
           or ((select col0 from tab0) is not NULL);
-ERROR = !SELECT: no such table 'region'
+ERROR = !SELECT: no such table 'sys'.'region'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-32496/.s.monetdb.36380
 QUERY = select

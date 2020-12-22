@@ -50,8 +50,8 @@ stdout of test 'incorrect_cast_from_double_to_int.Bug-2579` in directory 'sql/te
 % 7 # length
 [ 0.500	]
 #select cast (1 as double)/2;
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % double # type
 % 24 # length
 [ 0.5	]
