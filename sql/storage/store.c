@@ -7343,6 +7343,15 @@ sql_trans_reset_tmp(sql_trans *tr, int commit)
 			n = nxt;
 		}
 	}
+	if (tr->tmp->funcs.set) {
+		node *n;
+		for (n = tr->tmp->funcs.nelm; n; ) {
+			node *nxt = n->next;
+			list_remove_node(tr->tmp->funcs.set, n);
+			n = nxt;
+		}
+		tr->tmp->funcs.nelm = NULL;
+	}
 }
 
 int
