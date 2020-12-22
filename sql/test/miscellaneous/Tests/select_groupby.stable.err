@@ -32,7 +32,7 @@ ERROR = !CREATE FUNCTION: external name unknown.idontexist not bound (sys.dummy)
 CODE  = 3F000
 MAPI  = (monetdb) /var/tmp/mtest-155076/.s.monetdb.39205
 QUERY = SELECT "sys"."dummy"("fortieth-second", blob '', '0') AS "alias1", "fortieth-third" FROM "myschema"."mytable"; --error, function doesn't exist
-ERROR = !SELECT: no such operator 'dummy'
+ERROR = !SELECT: no such operator 'sys'.'dummy'(blob, blob, char(1))
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-328803/.s.monetdb.34130
 QUERY = SELECT "'col26'" FROM "myschema"."mytable2" WHERE 
@@ -52,7 +52,7 @@ ERROR = !types blob(0,0) and sec_interval(13,0) are not equal
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-61110/.s.monetdb.36063
 QUERY = exec  8 (time '10:00:00' + 1); --error, no such binary operator
-ERROR = !SELECT: no such binary operator 'sql_add(time,tinyint)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_add'(time,tinyint)
 CODE  = 42000
 
 # 13:54:02 >  

@@ -12,6 +12,18 @@ stdout of test 'drop-table-with-auto_increment.Bug-7030` in directory 'sql/test/
 #create table s1.t (i int not null auto_increment);
 #drop table s1.t;
 #drop schema s1;
+#create schema "a""a";
+#create table "a""a"."nasty"(a int auto_increment);
+#insert into "a""a"."nasty";
+[ 1	]
+#select a from "a""a"."nasty";
+% a\"a.nasty # table_name
+% a # name
+% int # type
+% 1 # length
+[ 1	]
+#drop table "a""a"."nasty";
+#drop schema "a""a";
 #select cast(count(*) - (select "a" from "depend_count") as bigint) from dependencies, sequences;
 % .%3 # table_name
 % %3 # name

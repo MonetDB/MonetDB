@@ -1,14 +1,12 @@
 ###
-# Tests for roles and users
-#
-# 1. check that we cannot DROP an unexisting ROLE.
-# 2. check that it is not possible to reCREATE an existing ROLE.
-# 3. check that we cannot DROP a ROLE GRANTed TO a USER
-# 4. check that a USER can SET a GRANTed ROLE but cannot SET a non-GRANTed ROLE
-# 5. check that we can DROP a ROLE after REVOKE
-# 6. check that we cannot REVOKE a non-GRANTed ROLE
-# 7. check that afer a ROLE is REVOKEd the USER can no longer assume it.
-# 8. check that we cannot GRANT an unexisting ROLE.
+# Tests for roles and users:
+#   check that we cannot DROP an unexisting ROLE.
+#   check that it is not possible to reCREATE an existing ROLE.
+#   check that a USER can SET a GRANTed ROLE but cannot SET a non-GRANTed ROLE
+#   check that we can DROP a ROLE after REVOKE
+#   check that we cannot REVOKE a non-GRANTed ROLE
+#   check that afer a ROLE is REVOKEd the USER can no longer assume it.
+#   check that we cannot GRANT an unexisting ROLE.
 ###
 
 from MonetDBtesting.sqltest import SQLTestCase
@@ -26,7 +24,6 @@ with SQLTestCase() as tc:
     tc.execute("CREATE USER alice with password 'alice' name 'alice' schema sys;")
     tc.execute("GRANT role1 TO alice;").assertSucceeded()
     tc.execute("GRANT role2 TO alice;").assertSucceeded()
-    #tc.execute("DROP ROLE role1;").assertFailed()
 
     tc.connect(username="alice", password="alice")
     tc.execute("SET ROLE role1;").assertSucceeded()
@@ -44,7 +41,7 @@ with SQLTestCase() as tc:
     tc.execute("SET ROLE role2;").assertFailed(err_code="42000", err_message="Role (role2) missing")
 
     tc.connect(username="monetdb", password="monetdb")
-    tc.execute("GRANT non_existing_role TO alice;").assertFailed(err_code="M1M05", err_message="GRANT: Cannot grant ROLE 'non_existing_role' to user 'alice'")
+    tc.execute("GRANT non_existing_role TO alice;").assertFailed(err_code="M1M05", err_message="GRANT: no such role 'non_existing_role' or grantee 'alice'")
     tc.execute("DROP ROLE role1;").assertSucceeded()
     tc.execute("DROP ROLE role3;").assertSucceeded()
     tc.execute("DROP USER alice;").assertSucceeded()
