@@ -286,11 +286,11 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	mvc_create_func(m, NULL, s, "db_users", ops, res, F_UNION, FUNC_LANG_SQL, "sql", "db_users", "CREATE FUNCTION db_users () RETURNS TABLE( name varchar(2048)) EXTERNAL NAME sql.db_users;", FALSE, FALSE, TRUE);
 
 	t = mvc_init_create_view(m, s, "users",
-			    "SELECT u.\"name\" AS \"name\", "
+			    "create view sys.users as select u.\"name\" as \"name\", "
 			    "ui.\"fullname\", ui.\"default_schema\", "
-				"ui.\"schema_path\" FROM db_users() AS u "
-				"LEFT JOIN \"sys\".\"db_user_info\" AS ui "
-			    "ON u.\"name\" = ui.\"name\";");
+				"ui.\"schema_path\" from db_users() as u "
+				"left join \"sys\".\"db_user_info\" as ui "
+			    "on u.\"name\" = ui.\"name\";");
 	if (!t) {
 		TRC_CRITICAL(SQL_TRANS, "Failed to create 'users' view\n");
 		return ;

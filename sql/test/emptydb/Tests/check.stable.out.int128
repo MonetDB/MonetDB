@@ -959,7 +959,7 @@ SELECT "id", "name", "schema_id", "query", CAST(CASE WHEN "system" THEN "type" +
 create view sys."tablestorage" as select "schema", "table", max("count") as "rowcount", count(*) as "storages", sum(columnsize) as columnsize, sum(heapsize) as heapsize, sum(hashes) as hashsize, sum("imprints") as imprintsize, sum(orderidx) as orderidxsize from sys."storage" group by "schema", "table" order by "schema", "table";
 create view sys.tablestoragemodel as select "schema", "table", max("count") as "rowcount", count(*) as "storages", sum(sys.columnsize("type", "count")) as columnsize, sum(sys.heapsize("type", "count", "distinct", "atomwidth")) as heapsize, sum(sys.hashsize("reference", "count")) as hashsize, sum(case when isacolumn then sys.imprintsize("type", "count") else 0 end) as imprintsize, sum(case when (isacolumn and not sorted) then cast(8 * "count" as bigint) else 0 end) as orderidxsize from sys.storagemodelinput group by "schema", "table" order by "schema", "table";
 create view sys.tracelog as select * from sys.tracelog();
-SELECT u."name" AS "name", ui."fullname", ui."default_schema", ui."schema_path" FROM db_users() AS u LEFT JOIN "sys"."db_user_info" AS ui ON u."name" = ui."name";
+create view sys.users as select u."name" as "name", ui."fullname", ui."default_schema", ui."schema_path" from db_users() as u left join "sys"."db_user_info" as ui on u."name" = ui."name";
 create view sys.var_values (var_name, value) as select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;
 create function "abbrev" (p inet) returns clob external name inet."abbrev";
 create function alpha(pdec double, pradius double) returns double external name sql.alpha;
@@ -1571,7 +1571,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._tables",	"sys",	"triggers",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"types",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"user_role",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
-[ "sys._tables",	"sys",	"users",	"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\" FROM db_users() AS u LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
+[ "sys._tables",	"sys",	"users",	"create view sys.users as select u.\"name\" as \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\" from db_users() as u left join \"sys\".\"db_user_info\" as ui on u.\"name\" = ui.\"name\";",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"value_partitions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"sys",	"var_values",	"create view sys.var_values (var_name, value) as select 'current_role', current_role union all select 'current_schema', current_schema union all select 'current_timezone', current_timezone union all select 'current_user', current_user union all select 'debug', debug union all select 'last_id', last_id union all select 'optimizer', optimizer union all select 'pi', pi() union all select 'rowcnt', rowcnt;",	"VIEW",	true,	"COMMIT",	"WRITABLE"	]
 [ "sys._tables",	"tmp",	"_columns",	NULL,	"TABLE",	true,	"PRESERVE",	"WRITABLE"	]
