@@ -3793,8 +3793,8 @@ schema_dup(sql_trans *tr, int flags, sql_schema *os, sql_trans *o)
 	return s;
 }
 
-static sql_catalog *
-sql_catalog_reset(sql_trans *tr, sql_catalog *ocat)
+static void
+sql_trans_rollback(sql_trans *tr)
 {
 	for (node *n = tr->cat->schemas.set->h; n; ) {
 		node *nxt = n->next;
@@ -3814,6 +3814,12 @@ sql_catalog_reset(sql_trans *tr, sql_catalog *ocat)
 		list_destroy(tr->moved_tables);
 		tr->moved_tables = NULL;
 	}
+}
+
+static sql_catalog *
+sql_trans_reset(sql_trans *tr, sql_catalog *ocat)
+{
+	assert(list_empty(tr->cat->schemas.set));
 	if (ocat->schemas.set) {
 		for (node *n = ocat->schemas.set->h; n; n = n->next) {
 			sql_schema *s = n->data;
@@ -7455,7 +7461,7 @@ sql_trans_begin(sql_session *s)
 	if (tr->parent && tr->parent == gtrans &&
 	    (tr->stime < gtrans->wstime || tr->wtime ||
 			store_schema_number() != snr)) {
-		s->tr->cat = sql_catalog_reset(tr, gtrans->cat);
+		s->tr->cat = sql_trans_reset(tr, gtrans->cat);
 		sql_trans_reset_tmp(s->tr);
 	}
 	if (tr->parent == gtrans)
@@ -7477,6 +7483,7 @@ sql_trans_end(sql_session *s, int commit)
 {
 	TRC_DEBUG(SQL_STORE, "End of transaction: %d\n", s->tr->schema_number);
 	sql_trans_rollback_tmp(s->tr, commit);
+	sql_trans_rollback(s->tr);
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	if (s->tr->parent == gtrans) {
