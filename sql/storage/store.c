@@ -7318,7 +7318,7 @@ sql_session_destroy(sql_session *s)
 }
 
 static void
-sql_trans_reset_tmp(sql_trans *tr, int commit)
+sql_trans_rollback_tmp(sql_trans *tr, int commit)
 {
 	if (commit == 0 && tr->tmp->tables.nelm) {
 		for (node *n = tr->tmp->tables.nelm; n; ) {
@@ -7329,7 +7329,8 @@ sql_trans_reset_tmp(sql_trans *tr, int commit)
 		}
 	}
 	tr->tmp->tables.nelm = NULL;
-	if (tr->tmp->tables.set) {
+
+	if (tr->tmp && tr->tmp->tables.set) {
 		node *n;
 		for (n = tr->tmp->tables.set->h; n; ) {
 			node *nxt = n->next;
@@ -7341,6 +7342,60 @@ sql_trans_reset_tmp(sql_trans *tr, int commit)
 				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
 			}
 			n = nxt;
+		}
+	}
+}
+
+static void
+sql_trans_reset_tmp(sql_trans *tr)
+{
+	if (tr->tmp && tr->parent && tr->parent->tmp) {
+		sql_schema *fs = tr->tmp;
+		sql_schema *pfs = tr->parent->tmp;
+		if (fs->tables.set) {
+			node *n = NULL, *m = NULL;
+			if (pfs->tables.set)
+				m = pfs->tables.set->h;
+			for (n = fs->tables.set->h; m && n; ) {
+				sql_table *ftt = n->data;
+				sql_table *pftt = m->data;
+
+				/* lists ordered on id */
+				/* changes to the existing bases */
+				if (ftt->base.id == pftt->base.id) { /* global temp */
+					n = n->next;
+					m = m->next;
+				} else if (ftt->base.id < pftt->base.id) { /* local temp or old global ? */
+					node *t = n->next;
+
+					if (isGlobal(ftt)) /* remove old global */
+						cs_remove_node(&fs->tables, n);
+					n = t;
+				} else { /* a new global */
+					sql_table *ntt = table_dup(tr, 0, pftt, fs);
+
+					/* cs_add_before add ntt to fs before node n */
+					cs_add_before(&fs->tables, n, ntt);
+					m = m->next;
+				}
+			}
+			/* add new globals */
+			for (; m; m = m->next ) {
+				sql_table *pftt = m->data;
+				sql_table *ntt = table_dup(tr, 0, pftt, fs);
+
+				assert(isGlobal(ntt));
+				/* cs_add_before add ntt to fs before node n */
+				cs_add_before(&fs->tables, n, ntt);
+			}
+			while ( n) { /* remove remaining old stuff */
+				sql_table *ftt = n->data;
+				node *t = n->next;
+
+				if (isGlobal(ftt)) /* remove old global */
+					cs_remove_node(&fs->tables, n);
+				n = t;
+			}
 		}
 	}
 	if (tr->tmp->funcs.set) {
@@ -7401,6 +7456,7 @@ sql_trans_begin(sql_session *s)
 	    (tr->stime < gtrans->wstime || tr->wtime ||
 			store_schema_number() != snr)) {
 		s->tr->cat = sql_catalog_reset(tr, gtrans->cat);
+		sql_trans_reset_tmp(s->tr);
 	}
 	if (tr->parent == gtrans)
 		tr = trans_init(tr, tr->parent);
@@ -7420,7 +7476,7 @@ void
 sql_trans_end(sql_session *s, int commit)
 {
 	TRC_DEBUG(SQL_STORE, "End of transaction: %d\n", s->tr->schema_number);
-	sql_trans_reset_tmp(s->tr, commit); /* reset temp schema */
+	sql_trans_rollback_tmp(s->tr, commit);
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	if (s->tr->parent == gtrans) {
