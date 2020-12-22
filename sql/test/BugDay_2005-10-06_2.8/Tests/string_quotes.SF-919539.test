@@ -1,0 +1,11 @@
+query T rowsort
+select 'a' 'a'
+----
+aa
+
+query T rowsort
+select 'a''a'
+----
+a'a
+
+

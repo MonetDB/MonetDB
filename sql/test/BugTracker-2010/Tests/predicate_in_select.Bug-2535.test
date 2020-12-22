@@ -1,0 +1,11 @@
+query T rowsort
+select (select count(*) from sys._tables) > 5
+----
+True
+
+query T rowsort
+select 5 < (select count(*) from sys._tables)
+----
+True
+
+

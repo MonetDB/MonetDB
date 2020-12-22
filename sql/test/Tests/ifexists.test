@@ -1,0 +1,166 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE hello(i INTEGER)
+
+statement ok
+INSERT INTO hello VALUES (2), (3), (4)
+
+statement ok
+CREATE TABLE IF NOT EXISTS hello(i INTEGER)
+
+query I rowsort
+SELECT * FROM hello
+----
+2
+3
+4
+
+statement ok
+ROLLBACK
+
+query T rowsort
+SELECT name FROM tables WHERE name='hello'
+----
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE hello(i INTEGER)
+
+statement error
+CREATE TABLE hello(i INTEGER)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE hello(i INTEGER)
+
+query T rowsort
+SELECT name FROM tables WHERE name='hello'
+----
+hello
+
+statement ok
+DROP TABLE IF EXISTS hello
+
+statement ok
+DROP TABLE IF EXISTS hello
+
+query I rowsort
+SELECT 1
+----
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE hello(i INTEGER)
+
+statement ok
+DROP TABLE hello
+
+statement error
+DROP TABLE hello
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SCHEMA IF NOT EXISTS hello
+
+query T rowsort
+SELECT name FROM schemas WHERE name='hello'
+----
+hello
+
+statement ok
+CREATE SCHEMA IF NOT EXISTS hello
+
+statement ok
+CREATE TABLE hello.tbl(i INTEGER)
+
+statement ok
+INSERT INTO hello.tbl VALUES (3)
+
+query I rowsort
+SELECT * FROM hello.tbl
+----
+3
+
+statement ok
+ROLLBACK
+
+query T rowsort
+SELECT name FROM schemas WHERE name='hello'
+----
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SCHEMA hello
+
+statement error
+CREATE SCHEMA hello
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SCHEMA hello
+
+query T rowsort
+SELECT name FROM schemas WHERE name='hello'
+----
+hello
+
+statement ok
+DROP SCHEMA IF EXISTS hello
+
+statement ok
+DROP SCHEMA IF EXISTS hello
+
+query I rowsort
+SELECT 1
+----
+1
+
+query T rowsort
+SELECT name FROM schemas WHERE name='hello'
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE SCHEMA hello
+
+statement ok
+DROP SCHEMA hello
+
+statement error
+DROP SCHEMA hello
+
+statement ok
+ROLLBACK
+

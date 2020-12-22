@@ -1,0 +1,174 @@
+statement ok
+CREATE TABLE test10 (id int NOT NULL, name varchar(100) NOT NULL)
+
+statement ok
+CREATE TABLE my_tables    AS SELECT name, schema_id, query, type, system, commit_action, access, temporary FROM sys.tables WHERE name IN ('table_types', 'dependency_types', 'optimizers', 'environment', 'test10')
+
+statement ok
+CREATE VIEW user_tables   AS SELECT * FROM my_tables WHERE NOT system AND query IS NULL ORDER BY schema_id, name
+
+statement ok
+CREATE VIEW user_views    AS SELECT * FROM my_tables WHERE NOT system AND query IS NOT NULL ORDER BY schema_id, name
+
+statement ok
+CREATE VIEW system_tables AS SELECT * FROM my_tables WHERE system AND query IS NULL AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'sys') ORDER BY schema_id, name
+
+statement ok
+CREATE VIEW system_views  AS SELECT * FROM my_tables WHERE system AND query IS NOT NULL AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'sys') ORDER BY schema_id, name
+
+statement ok
+CREATE VIEW all_tables    AS SELECT * FROM user_tables UNION SELECT * FROM system_tables ORDER BY schema_id, name
+
+statement ok
+CREATE VIEW all_views     AS SELECT * FROM user_views  UNION SELECT * FROM system_views  ORDER BY schema_id, name
+
+statement ok
+CREATE VIEW all_tbl_objs  AS SELECT * FROM all_tables  UNION SELECT * FROM all_views     ORDER BY schema_id, name
+
+statement ok
+INSERT INTO my_tables
+SELECT name, schema_id, query, type, system, commit_action, access, temporary FROM sys.tables
+ WHERE name IN ('my_tables', 'user_tables', 'user_views', 'system_tables', 'system_views', 'all_tables', 'all_views', 'all_tbl_objs')
+
+query TITITIII rowsort
+select * from user_tables
+----
+16 values hashing to 3a6aeddb5ae527e0a26daaf1e93aec7e
+
+query TITITIII rowsort
+select * from user_tables ORDER BY name DESC, schema_id
+----
+16 values hashing to 3a6aeddb5ae527e0a26daaf1e93aec7e
+
+query TITITIII rowsort
+select * from user_views
+----
+56 values hashing to 00a839024291e84d2dbf3747f6c3e374
+
+query TITITIII rowsort
+select * from user_views ORDER BY query DESC, name ASC, schema_id
+----
+56 values hashing to 00a839024291e84d2dbf3747f6c3e374
+
+query TITITIII rowsort
+select * from system_tables
+----
+16 values hashing to 50303d2b540d2671989ef078149af1fb
+
+query TITITIII rowsort
+select * from system_tables ORDER BY name DESC, schema_id LIMIT 10
+----
+16 values hashing to 50303d2b540d2671989ef078149af1fb
+
+query TITITIII rowsort
+select * from system_views
+----
+16 values hashing to eee9d0e964436596773b6bcb15657668
+
+query TITITIII rowsort
+select * from system_views ORDER BY query DESC, name ASC, schema_id LIMIT 10
+----
+16 values hashing to eee9d0e964436596773b6bcb15657668
+
+query TITITIII rowsort
+select * from all_tables
+----
+32 values hashing to aad3b8931da151bf8a6446afa2581e53
+
+query TITITIII rowsort
+select * from all_tables ORDER BY name DESC, schema_id LIMIT 10
+----
+32 values hashing to aad3b8931da151bf8a6446afa2581e53
+
+query TITITIII rowsort
+select * from all_views
+----
+72 values hashing to 5ab194f7ef3878fb7e9816fd7563d811
+
+query TITITIII rowsort
+select * from all_views ORDER BY query DESC, name ASC, schema_id LIMIT 10
+----
+72 values hashing to 5ab194f7ef3878fb7e9816fd7563d811
+
+query TITITIII rowsort
+select * from all_tbl_objs
+----
+104 values hashing to 8840eda2055d684449242269f814bac1
+
+query TITITIII rowsort
+select * from all_tbl_objs ORDER BY query DESC, name ASC, schema_id LIMIT 10
+----
+80 values hashing to 4eea954237a706d0b2de80ce8222136a
+
+query TITITIII rowsort
+select * from user_tables
+UNION
+select * from user_views
+ORDER by name
+----
+72 values hashing to d66c8a81a9395bdff6401e7f76b2ec90
+
+query TITITIII rowsort
+select * from user_views
+UNION ALL
+select * from user_tables
+ORDER by query, name
+----
+72 values hashing to d66c8a81a9395bdff6401e7f76b2ec90
+
+query TITITIII rowsort
+select * from user_views
+UNION
+select * from user_tables
+UNION ALL
+select * from system_views
+UNION
+select * from system_tables
+ORDER BY system, query, name DESC
+LIMIT 10
+----
+80 values hashing to cf11af58ece39c87bbcb525ccc4c5294
+
+query TITITIII rowsort
+(select * from user_tables UNION ALL select * from user_views)
+INTERSECT
+(select * from system_tables UNION select * from system_views)
+ORDER BY name DESC
+----
+
+query TITITIII rowsort
+(select * from user_tables UNION ALL select * from user_views)
+EXCEPT
+(select * from user_views UNION select * from user_tables)
+ORDER BY name DESC
+----
+
+statement ok
+-- cleanup
+DROP VIEW all_tbl_objs
+
+statement ok
+DROP VIEW all_tables
+
+statement ok
+DROP VIEW all_views
+
+statement ok
+DROP VIEW user_tables
+
+statement ok
+DROP VIEW user_views
+
+statement ok
+DROP VIEW system_tables
+
+statement ok
+DROP VIEW system_views
+
+statement ok
+DROP TABLE my_tables
+
+statement ok
+DROP TABLE test10
+
+

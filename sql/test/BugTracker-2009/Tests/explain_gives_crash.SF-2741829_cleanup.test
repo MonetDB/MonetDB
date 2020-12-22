@@ -1,0 +1,4 @@
+statement ok
+drop table blabla
+
+

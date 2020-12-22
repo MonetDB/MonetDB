@@ -1,0 +1,26 @@
+query I rowsort
+SELECT ST_Dimension(st_GeometryFromText('POINT(0 0)'))
+----
+0
+
+query I rowsort
+SELECT ST_Dimension(st_GeometryFromText('LINESTRING(1 1,0 0)'))
+----
+1
+
+query I rowsort
+SELECT ST_Dimension(st_GeometryFromText('polygon((0 0,1 0, 0 1, 1 1, 0 0))'))
+----
+2
+
+query I rowsort
+SELECT ST_Dimension(st_GeomCollFromText('GEOMETRYCOLLECTION(LINESTRING(1 1,0 0),POINT(0 0))'))
+----
+1
+
+query TI rowsort
+SELECT DISTINCT ST_GeometryType(geom) AS "TYPE", ST_Dimension(geom) AS "DIM" FROM geometries
+----
+14 values hashing to 4ecad7f8888582fb9f06064252ca74ac
+
+

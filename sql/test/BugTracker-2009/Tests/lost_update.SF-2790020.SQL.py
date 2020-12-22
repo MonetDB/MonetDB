@@ -1,5 +1,6 @@
-import sys, os, socket, sys, tempfile
+import os, socket, tempfile
 
+from MonetDBtesting.sqltest import SQLTestCase
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -20,61 +21,47 @@ class server(process.server):
                          stdout=process.PIPE, stderr=process.PIPE)
 
     def server_stop(self):
-        out, err = self.communicate()
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-def client(input):
-    with process.client('sql', port=myport, dbname='db1', stdin=process.PIPE,
-                        stdout=process.PIPE, stderr=process.PIPE) as c:
-        out, err = c.communicate(input)
-        sys.stdout.write(out)
-        sys.stderr.write(err)
-
-script1 = '''\
-create table lost_update_t2 (a int);
-insert into lost_update_t2 values (1);
-update lost_update_t2 set a = 2;
-'''
-script2 = '''\
-update lost_update_t2 set a = 3;
-create table lost_update_t1 (a int);
-insert into lost_update_t1 values (1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-insert into lost_update_t1 (select * from lost_update_t1);
-update lost_update_t1 set a = 2;
-call sys.flush_log();
-'''
-script3 = '''\
-select a from lost_update_t2;
-'''
-cleanup = '''\
-drop table lost_update_t1;
-drop table lost_update_t2;
-'''
+        self.communicate()
 
 myport = freeport()
 
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
     with server() as s:
-        client(script1)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database="db1")
+            tc.execute("create table lost_update_t2 (a int);").assertSucceeded()
+            tc.execute("insert into lost_update_t2 values (1);").assertSucceeded().assertRowCount(1)
+            tc.execute("update lost_update_t2 set a = 2;").assertSucceeded().assertRowCount(1)
         s.server_stop()
     with server() as s:
-        client(script2)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database="db1")
+            tc.execute("update lost_update_t2 set a = 3;").assertSucceeded().assertRowCount(1)
+            tc.execute("create table lost_update_t1 (a int);").assertSucceeded()
+            tc.execute("insert into lost_update_t1 values (1);").assertSucceeded().assertRowCount(1)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(1)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(2)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(4)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(8)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(16)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(32)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(64)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(128)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(256)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(512)
+            tc.execute("insert into lost_update_t1 (select * from lost_update_t1);").assertSucceeded().assertRowCount(1024)
+            tc.execute("update lost_update_t1 set a = 2;").assertSucceeded().assertRowCount(2048)
+            tc.execute("call sys.flush_log();").assertSucceeded()
         s.server_stop()
     with server() as s:
-        client(script3)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database="db1")
+            tc.execute("select a from lost_update_t2;").assertSucceeded().assertRowCount(1).assertDataResultMatch([(3,)])
         s.server_stop()
     with server() as s:
-        client(cleanup)
+        with SQLTestCase() as tc:
+            tc.connect(username="monetdb", password="monetdb", port=myport, database="db1")
+            tc.execute("drop table lost_update_t1;").assertSucceeded()
+            tc.execute("drop table lost_update_t2;").assertSucceeded()
         s.server_stop()

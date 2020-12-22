@@ -1,37 +1,27 @@
 stdout of test 'not_null.SF-933194` in directory 'sql/test/BugDay_2005-10-06_2.9.3` itself:
 
 
-# 12:39:55 >  
-# 12:39:55 >  Mtimeout -timeout 300 Mserver "--config=/ufs/fabian/scratch/monetdb/current/program-x86_64/etc/MonetDB.conf" --debug=10 --set "monet_mod_path=/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/MonetDB:/ufs/fabian/scratch/monetdb/current/program-x86_64/lib/bin" --set "gdk_dbfarm=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/dbfarm" --set "sql_logdir=/ufs/fabian/scratch/monetdb/current/program-x86_64/var/MonetDB/log" --set mapi_port=38933 --set sql_port=45579 --set xquery_port=52530 --set monet_prompt= --trace "--dbname=mTests_src_test_BugDay_2005-10-06_2.9.3" --dbinit="module(sql_server); sql_server_start();" ; echo ; echo Over..
-# 12:39:55 >  
+# 16:48:35 >  
+# 16:48:35 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-181771" "--port=36132"
+# 16:48:35 >  
 
-# Monet Database Server V4.9.3
-# Copyright (c) 1993-2005, CWI. All rights reserved.
-# Compiled for x86_64-redhat-linux-gnu/64bit with 64bit OIDs; dynamically linked.
-# Visit http://monetdb.cwi.nl/ for further information.
+#create table test (
+#	id1 int,
+#	id2 int not null,
+#	id3 int null
+#);
+#select c.name, c.type, c.type_digits, c.type_scale, c."null", c."default", c.number from sys._columns c, sys._tables t, sys.schemas s
+#where c.table_id = t.id and t.name = 'test' and t.schema_id = s.id and s.name = 'sys' order by c.number;
+% sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c,	sys.c # table_name
+% name,	type,	type_digits,	type_scale,	null,	default,	number # name
+% varchar,	varchar,	int,	int,	boolean,	varchar,	int # type
+% 3,	3,	2,	1,	5,	0,	1 # length
+[ "id1",	"int",	32,	0,	true,	NULL,	0	]
+[ "id2",	"int",	32,	0,	false,	NULL,	1	]
+[ "id3",	"int",	32,	0,	true,	NULL,	2	]
+#drop table test;
 
-
-
-
-# 12:39:55 >  
-# 12:39:55 >  Mtimeout -timeout 180 ./not_null.SF-933194.SQL not_null.SF-933194 
-# 12:39:55 >  
-
-
-# 12:39:55 >  
-# 12:39:55 >  Mtimeout -timeout 60 java -jar /net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/build-pegasus.ins.cwi.nl/sql/src/jdbc/jdbcclient-1.2.jar -h localhost -p 45579 -f ../../../../../../../../../net/pegasus.ins.cwi.nl/export/scratch1/fabian/monetdb/current/sql/src/test/BugDay_2005-10-06_2.9.3/Tests/not_null.SF-933194-src.sql
-# 12:39:55 >  
-
-Operation successful
-CREATE TABLE "sys"."test" (
-	"id1" INTEGER,
-	"id2" INTEGER       NOT NULL,
-	"id3" INTEGER
-);
-Operation successful
-
-
-# 12:39:56 >  
-# 12:39:56 >  Done.
-# 12:39:56 >  
+# 16:48:35 >  
+# 16:48:35 >  "Done."
+# 16:48:35 >  
 

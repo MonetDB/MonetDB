@@ -557,6 +557,48 @@ stdout of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 % bigint # type
 % 19 # length
 [ 9223372036854775807	]
+#select 0x8000000000000000;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 19 # length
+[ 9223372036854775808	]
+#select 0x00000000000000008000000000000000;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 19 # length
+[ 9223372036854775808	]
+#select 0x8000000000000001;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 19 # length
+[ 9223372036854775809	]
+#select 0x00000000000000008000000000000001;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 19 # length
+[ 9223372036854775809	]
+#select 0xffffffffffffffff;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 20 # length
+[ 18446744073709551615	]
+#select 0x0000000000000000ffffffffffffffff;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 20 # length
+[ 18446744073709551615	]
+#select 0x7fffffffffffffffffffffffffffffff;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 39 # length
+[ 170141183460469231731687303715884105727	]
 #select 0x12;
 % .%2 # table_name
 % %2 # name
@@ -599,7 +641,18 @@ stdout of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 % bigint # type
 % 19 # length
 [ 1311768467463790320	]
-
+#select 0x123456789abcdef01;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 20 # length
+[ 20988295479420645121	]
+#select 0x123456789abcdef0123456789abcdef0;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 38 # length
+[ 24197857203266734864793317670504947440	]
 #select -0x0;
 % .%2 # table_name
 % %2 # name
@@ -1104,6 +1157,48 @@ stdout of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 % bigint # type
 % 20 # length
 [ -9223372036854775807	]
+#select -0x8000000000000000;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 20 # length
+[ -9223372036854775808	]
+#select -0x00000000000000008000000000000000;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 20 # length
+[ -9223372036854775808	]
+#select -0x8000000000000001;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 20 # length
+[ -9223372036854775809	]
+#select -0x00000000000000008000000000000001;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 20 # length
+[ -9223372036854775809	]
+#select -0xffffffffffffffff;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 21 # length
+[ -18446744073709551615	]
+#select -0x0000000000000000ffffffffffffffff;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 21 # length
+[ -18446744073709551615	]
+#select -0x7fffffffffffffffffffffffffffffff;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 40 # length
+[ -170141183460469231731687303715884105727	]
 #select -0x12;
 % .%2 # table_name
 % %2 # name
@@ -1146,6 +1241,18 @@ stdout of test 'hexadecimal_literals.Bug-3621` in directory 'sql/test/BugTracker
 % bigint # type
 % 20 # length
 [ -1311768467463790320	]
+#select -0x123456789abcdef01;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 21 # length
+[ -20988295479420645121	]
+#select -0x123456789abcdef0123456789abcdef0;
+% .%2 # table_name
+% %2 # name
+% hugeint # type
+% 39 # length
+[ -24197857203266734864793317670504947440	]
 
 # 17:24:30 >  
 # 17:24:30 >  "Done."

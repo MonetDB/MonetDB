@@ -1,0 +1,17 @@
+statement ok
+create function call_function( aa int ) RETURNS int
+begin
+	declare b int;
+	set b = aa;
+	return b;
+end
+
+query I rowsort
+select call_function(NULL)
+----
+NULL
+
+statement ok
+drop function call_function
+
+

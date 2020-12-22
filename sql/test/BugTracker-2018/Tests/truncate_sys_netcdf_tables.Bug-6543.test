@@ -1,0 +1,46 @@
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars
+
+statement error
+TRUNCATE TABLE sys.netcdf_vars
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim
+
+statement error
+TRUNCATE TABLE sys.netcdf_vardim
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files
+
+statement error
+TRUNCATE TABLE sys.netcdf_files
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims
+
+statement error
+TRUNCATE TABLE sys.netcdf_dims
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs
+
+statement error
+TRUNCATE TABLE sys.netcdf_attrs
+
+statement ok
+SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs
+
+

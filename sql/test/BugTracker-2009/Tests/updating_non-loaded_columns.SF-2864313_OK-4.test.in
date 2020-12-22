@@ -1,0 +1,72 @@
+statement ok
+CREATE TABLE "t0" (
+       	"d0" double
+)
+
+statement ok
+CREATE TABLE "t1" (
+        "d1" double,
+        "v1" varchar(255) default 'x',
+        "v2" varchar(255) default 'y'
+)
+
+statement ok
+COPY 1025 RECORDS INTO t0  FROM E'$QTSTSRCDIR/updating_non-loaded_columns.SF-2864313.data' USING  DELIMITERS  E'\t'
+
+query I rowsort
+select count(*) from t0
+----
+1025
+
+statement ok
+INSERT INTO t1 (d1) SELECT d0 FROM t0
+
+query I rowsort
+select count(*) from t1
+----
+1025
+
+query RTT rowsort
+select d1, v2, v1 from t1 limit 1
+----
+0.000
+y
+x
+
+statement ok
+Update t1 Set v2 = 'AA'
+
+query RTT rowsort
+select d1, v2, v1 from t1 limit 1
+----
+0.000
+AA
+x
+
+statement ok
+Update t1 Set d1 = -1.2
+
+query RTT rowsort
+select d1, v2, v1 from t1 limit 1
+----
+-1.200
+AA
+x
+
+statement ok
+Update t1 Set v1 = 'BB'
+
+query RTT rowsort
+select d1, v2, v1 from t1 limit 1
+----
+-1.200
+AA
+BB
+
+statement ok
+drop table t1
+
+statement ok
+drop table t0
+
+

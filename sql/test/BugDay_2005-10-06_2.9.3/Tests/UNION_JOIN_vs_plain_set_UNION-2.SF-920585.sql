@@ -117,3 +117,4 @@ WHERE tables.schema_id = schemas.id
 	AND tables.istable = 0
 	AND (tables.name = '_tables' or tables.name = '_columns' or tables.name = 'users') 
 ) as tables order by TABLE_NAME, TABLE_TYPE;
+rollback;

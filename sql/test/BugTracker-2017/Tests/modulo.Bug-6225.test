@@ -1,0 +1,11 @@
+query I rowsort
+select 10*10/3
+----
+33
+
+query I rowsort
+select 10*10%3
+----
+1
+
+

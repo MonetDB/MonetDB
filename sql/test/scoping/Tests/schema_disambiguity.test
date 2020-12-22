@@ -1,0 +1,120 @@
+statement ok
+CREATE SCHEMA A
+
+statement ok
+CREATE SCHEMA B
+
+statement error
+DECLARE "outer" string
+
+statement error
+SET "outer" = 'outer'
+
+statement error
+SELECT "outer"
+
+statement error
+SELECT sys."outer"
+
+statement error
+SELECT tmp."outer"
+
+statement ok
+SET SCHEMA A
+
+statement error
+DECLARE "Avar" string
+
+statement error
+SET "Avar" = 'Avar'
+
+statement error
+SELECT "Avar"
+
+statement ok
+SET SCHEMA B
+
+statement error
+DECLARE "Bvar" string
+
+statement error
+SET "Bvar" = 'Bvar'
+
+statement error
+SELECT "Bvar"
+
+statement ok
+SET SCHEMA sys
+
+statement error
+SELECT "outer"
+
+statement error
+SELECT "Avar"
+
+statement error
+SELECT "Bvar"
+
+statement error
+SELECT sys."outer"
+
+statement error
+SELECT A."outer"
+
+statement error
+SELECT B."outer"
+
+statement error
+SELECT A."Avar"
+
+statement error
+SELECT B."Avar"
+
+statement error
+SELECT A."Bvar"
+
+statement error
+SELECT B."Bvar"
+
+statement ok
+SET SCHEMA A
+
+statement error
+SELECT "outer"
+
+statement error
+SELECT "Avar"
+
+statement error
+SELECT "Bvar"
+
+statement error
+SELECT sys."outer"
+
+statement error
+SELECT A."outer"
+
+statement error
+SELECT B."outer"
+
+statement error
+SELECT A."Avar"
+
+statement error
+SELECT B."Avar"
+
+statement error
+SELECT A."Bvar"
+
+statement error
+SELECT B."Bvar"
+
+statement ok
+SET SCHEMA "sys"
+
+statement ok
+DROP SCHEMA A CASCADE
+
+statement ok
+DROP SCHEMA B CASCADE
+

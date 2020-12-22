@@ -1,0 +1,5 @@
+query I nosort
+select get_next_file_quid('fabchannel2007')
+----
+86046057
+

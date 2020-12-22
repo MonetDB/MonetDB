@@ -1,10 +1,5 @@
-import os, sys
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
+from MonetDBtesting.sqltest import SQLTestCase
 
-with process.client('sql', stdin = process.PIPE, stdout = process.PIPE, stderr = process.PIPE) as clt:
-    out, err = clt.communicate('select 1;\n')
-    sys.stdout.write(out)
-    sys.stderr.write(err)
+with SQLTestCase() as tc:
+    tc.connect(username="monetdb", password="monetdb")
+    tc.execute("select 1;").assertSucceeded().assertRowCount(1).assertDataResultMatch([(1,)])

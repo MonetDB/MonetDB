@@ -7,11 +7,6 @@ stderr of test 'auto_commit.SF-1724151` in directory 'sql/test/BugTracker` itsel
 
 
 # 13:54:46 >  
-# 13:54:46 >  Mtimeout -timeout 120 /usr/bin/python auto_commit.SF-1724151.SQL.py auto_commit.SF-1724151 
-# 13:54:46 >  
-
-
-# 13:54:46 >  
 # 13:54:46 >  Done.
 # 13:54:46 >  
 

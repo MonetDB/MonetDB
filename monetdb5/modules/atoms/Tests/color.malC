@@ -45,6 +45,9 @@ function testcolor();
     V94 := color.blue(c);	
     io.print(V94);	
 
+end testcolor;	
+user.testcolor();
+
 	bc:= bat.new(:color);
 	bat.append(bc,"0x00000000":color);
 	bat.append(bc,"0x0033ff44":color);
@@ -53,5 +56,3 @@ function testcolor();
 	z:= batcolor.red(bc);
 	io.print(z);
 
-end testcolor;	
-user.testcolor();

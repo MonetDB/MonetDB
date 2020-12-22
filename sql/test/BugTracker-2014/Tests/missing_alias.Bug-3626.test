@@ -1,0 +1,17 @@
+statement ok
+start transaction
+
+statement ok
+create table test2 (i int, b bool)
+
+statement ok
+insert into test2 values (1, true)
+
+query IT rowsort
+select cast(b as smallint), (i > 0 and b) from test2
+----
+1
+True
+
+statement ok
+rollback

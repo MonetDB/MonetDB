@@ -5,3 +5,5 @@ set optimizer = 'sequential_pipe';
    plan select id       from v1 order by id;
 
    plan select id , v1  from v1 order by id;
+
+set optimizer = 'default_pipe';

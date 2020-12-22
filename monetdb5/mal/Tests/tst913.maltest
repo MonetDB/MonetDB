@@ -1,0 +1,20 @@
+statement ok
+function foo();
+b:= bat.new(:str);
+bat.append(b,"true");
+bat.append(b,"TRUE");
+bat.append(b,"FALSE");
+bat.append(b,"false");
+bat.append(b,"");
+bat.append(b,nil:str);
+io.print(b);
+bc:= batcalc.bit_noerror(b);
+io.print(bc);
+end;
+
+query TT rowsort
+user.foo();
+----
+24 values hashing to 73a611c47192ae64e0f6bd9d0f585e20
+
+

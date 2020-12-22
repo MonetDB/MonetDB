@@ -1,0 +1,167 @@
+statement ok
+create table merging (aa int, bb clob)
+
+statement ok
+create table predata (aa int, bb int)
+
+statement ok
+start transaction
+
+statement ok
+insert into merging values (-100, 1)
+
+statement ok
+insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2)
+
+statement ok
+merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
+      when matched then delete when not matched then insert values (6, 6)
+
+query II rowsort
+select aa, bb from predata
+----
+15
+3
+3
+2
+5
+3
+NULL
+2
+
+statement ok
+delete from predata
+
+statement ok
+insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (4, 1), (6, 3)
+
+statement ok
+merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
+      when not matched then insert values (null, null) when matched then update set bb = 3
+
+query II rowsort
+select aa, bb from predata
+----
+12 values hashing to 21aa56dd77ec4302cc2641c4cfea9233
+
+statement ok
+delete from predata
+
+statement ok
+insert into predata values (15, 3), (3, 1), (2, 1), (5, 3), (8, 2), (NULL, 4)
+
+statement ok
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then update set bb = predata.bb + 1
+
+statement ok
+merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
+      when matched then update set bb = othertt.bb + sub.bb
+
+query II rowsort
+select aa, bb from predata
+----
+12 values hashing to a7c1713160be18de5a7cdd8459a12cba
+
+statement ok
+delete from predata
+
+statement ok
+insert into predata values (15, 1), (3, 1), (6, 3), (8, 2)
+
+statement ok
+insert into merging values (-500, -300)
+
+statement ok
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when not matched then insert values (sub.aa, 2)
+
+query II rowsort
+select aa, bb from predata
+----
+10 values hashing to 0a2e202603af3ce2eade6b5c5ac22611
+
+statement ok
+insert into merging values (1900, 2)
+
+statement ok
+merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
+      when not matched then insert values (sub.aa + 5, sub.bb * 2)
+
+query II rowsort
+select aa, bb from predata
+----
+12 values hashing to 63514145a98e5e67e763da075f69f364
+
+statement ok
+delete from predata
+
+statement ok
+insert into predata values (2, 2)
+
+statement ok
+merge into predata using (select aa, bb from merging) thee on predata.bb = thee.bb
+      when not matched then insert
+
+query II rowsort
+select aa, bb from predata
+----
+2
+2
+NULL
+NULL
+NULL
+NULL
+
+statement ok
+rollback
+
+statement ok
+insert into predata values (1, 1)
+
+statement ok
+insert into merging values (1, 1), (2, 1)
+
+statement error
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then update set aa = sub.aa
+
+query II rowsort
+select aa, bb from predata
+----
+1
+1
+
+statement error
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then delete
+
+query II rowsort
+select aa, bb from predata
+----
+1
+1
+
+statement error
+merge into predata othertt using (select aa, bb from merging) as sub on othertt.bb = sub.bb
+      when not matched then insert values (othertt.aa, othertt.bb)
+
+statement error
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when not matched then insert select 41, -12
+
+statement error
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when not matched then insert select aa, bb from predata
+
+statement error
+merge into predata using (select aa, bb from merging) as sub on predata.bb = sub.bb
+      when matched then update set bb = bb - 1
+
+statement ok
+drop table merging
+
+statement ok
+drop table predata
+
+

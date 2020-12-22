@@ -1,0 +1,30 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE mytable(i DOUBLE, d DOUBLE)
+
+statement ok
+INSERT INTO mytable VALUES (1, 1), (2, 2), (3, 3), (4, 4), (5, 5)
+
+statement ok
+CREATE FUNCTION myfunc() RETURNS TABLE(n STRING) LANGUAGE PYTHON_MAP {
+   res = _conn.execute("SELECT max(d) FROM mytable;")
+   result = dict()
+   result['n'] = str(res)
+   return result
+}
+
+statement error
+SELECT * FROM myfunc()
+
+statement error
+DROP TABLE mytable
+
+statement error
+DROP FUNCTION myfunc
+
+statement ok
+ROLLBACK
+
+

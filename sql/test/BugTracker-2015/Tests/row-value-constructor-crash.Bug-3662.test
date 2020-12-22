@@ -1,0 +1,20 @@
+statement ok
+CREATE TABLE een (a INTEGER, b INTEGER, C integer)
+
+statement ok
+insert into een values (1,1,1)
+
+statement ok
+UPDATE een SET (A,B,C) = (SELECT 2,2,2)
+
+query III rowsort
+SELECT * FROM een
+----
+2
+2
+2
+
+statement ok
+drop table een
+
+

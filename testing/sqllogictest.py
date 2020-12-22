@@ -9,24 +9,62 @@
 # skipif <system>
 # onlyif <system>
 
-# statement (ok|error)
-# query (I|T|R)+ (nosort|rowsort|valuesort)? [arg]
+# statement (ok|ok rowcount|error) [arg]
+# query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
 #       I: integer; T: text (string); R: real (decimal)
 #       nosort: do not sort
 #       rowsort: sort rows
 #       valuesort: sort individual values
+#       python some.python.function: run data through function (MonetDB extension)
 # hash-threshold number
 # halt
 
+# The python function that can be used instead of the various sort
+# options should be a simple function that gets a list of lists as
+# input and should produce a list of lists as output.  If the name
+# contains a period, the last part is the name of the function and
+# everything up to the last period is the module.  If the module
+# starts with a period, it is searched in the MonetDBtesting module
+# (where this file is also).
+
 import pymonetdb
+from MonetDBtesting.mapicursor import MapiCursor
+import MonetDBtesting.malmapi as malmapi
 import hashlib
 import re
 import sys
+import importlib
+import MonetDBtesting.utils as utils
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
 class SQLLogicSyntaxError(Exception):
     pass
+
+def is_copyfrom_stmt(stmt:[str]=[]):
+    try:
+        index = stmt.index('<COPY_INTO_DATA>')
+        return True
+    except ValueError:
+        pass
+    return False
+
+def prepare_copyfrom_stmt(stmt:[str]=[]):
+    try:
+        index = stmt.index('<COPY_INTO_DATA>')
+        head = stmt[:index]
+        # check for escape character (single period)
+        tail = []
+        for l in stmt[index+1:]:
+            if l.strip() == '.':
+                tail.append('')
+            else:
+                tail.append(l)
+        head = '\n'.join(head) + ';'
+        tail='\n'.join(tail)
+        return head + '\n' + tail, head
+    except ValueError:
+        return stmt
 
 class SQLLogic:
     def __init__(self, report=None, out=sys.stdout):
@@ -35,16 +73,35 @@ class SQLLogic:
         self.out = out
         self.res = None
         self.rpt = report
+        self.language = 'sql'
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
 
     def connect(self, username='monetdb', password='monetdb',
-                hostname='localhost', port=None, database='demo'):
-        self.dbh = pymonetdb.connect(username=username,
+                hostname='localhost', port=None, database='demo', language='sql'):
+        self.language = language
+        if language == 'sql':
+            self.dbh = pymonetdb.connect(username=username,
                                      password=password,
                                      hostname=hostname,
                                      port=port,
                                      database=database,
                                      autocommit=True)
-        self.crs = self.dbh.cursor()
+            self.crs = self.dbh.cursor()
+        else:
+            dbh = malmapi.Connection()
+            dbh.connect(
+                                     database=database,
+                                     username=username,
+                                     password=password,
+                                     language=language,
+                                     hostname=hostname,
+                                     port=port)
+            self.crs = MapiCursor(dbh)
 
     def close(self):
         if self.crs:
@@ -55,23 +112,86 @@ class SQLLogic:
             self.dbh = None
 
     def drop(self):
-        self.crs.execute('select name from tables where not system')
+        if self.language != 'sql':
+            return
+        self.crs.execute('select s.name, t.name, tt.table_type_name from sys.tables t, sys.schemas s, sys.table_types tt where not t.system and t.schema_id = s.id and t.type = tt.table_type_id')
         for row in self.crs.fetchall():
-            self.crs.execute('drop table "%s" cascade' % row[0])
+            try:
+                self.crs.execute('drop {} "{}"."{}" cascade'.format(row[2], row[0], row[1]))
+            except pymonetdb.Error:
+                # perhaps already dropped because of the cascade
+                pass
+        self.crs.execute('select s.name, f.name, ft.function_type_keyword from functions f, schemas s, function_types ft where not f.system and f.schema_id = s.id and f.type = ft.function_type_id')
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop all {} "{}"."{}"'.format(row[2], row[0], row[1]))
+            except pymonetdb.Error:
+                # perhaps already dropped
+                pass
+        self.crs.execute('select s.name, q.name from sys.sequences q, schemas s where q.schema_id = s.id')
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop sequence "{}"."{}"'.format(row[0], row[1]))
+            except pymonetdb.Error:
+                # perhaps already dropped
+                pass
+        self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('alter user "{}" SET SCHEMA "sys"'.format(row[0]))
+            except pymonetdb.Error:
+                pass
+        self.crs.execute('select name from sys.schemas where not system')
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop schema "{}" cascade'.format(row[0]))
+            except pymonetdb.Error:
+                pass
+        self.crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute('drop user "{}"'.format(row[0]))
+            except pymonetdb.Error:
+                pass
 
-    def exec_statement(self, statement, expectok):
+    def exec_statement(self, statement, expectok, err_stmt=None, expected_err_code=None, expected_err_msg=None, expected_rowcount=None):
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return
         try:
-            self.crs.execute(statement)
-        except pymonetdb.DatabaseError:
+            affected_rowcount = self.crs.execute(statement)
+        except (pymonetdb.Error, ValueError) as e:
+            msg = e.args[0]
             if not expectok:
+                if expected_err_code or expected_err_msg:
+                    # check whether failed as expected
+                    err_code_received, err_msg_received = utils.parse_mapi_err_msg(msg)
+                    if expected_err_code and expected_err_msg:
+                        if expected_err_code == err_code_received and expected_err_msg.lower() == err_msg_received.lower():
+                            return
+                    else:
+                        if expected_err_code:
+                            if expected_err_code == err_code_received:
+                                return
+                        if expected_err_msg:
+                            if expected_err_msg.lower() == err_msg_received.lower():
+                                return
+                    msg = "statement was expected to fail with" \
+                            + (" error code {}".format(expected_err_code) if expected_err_code else '')\
+                            + (", error message {}".format(str(expected_err_msg)) if expected_err_msg else '')
+                    self.query_error(err_stmt or statement, str(msg), str(e))
                 return
+        except ConnectionError as e:
+            self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
+            return
         else:
             if expectok:
+                if expected_rowcount:
+                    if expected_rowcount != affected_rowcount:
+                        self.query_error(err_stmt or statement, "statement was expecting to succeed with {} rows but received {} rows!".format(expected_rowcount, affected_rowcount))
                 return
-        self.query_error(statement, "statement didn't give expected result", expectok and "statement was expected to succeed but didn't" or "statement was expected to fail bat didn't")
+            msg = None
+        self.query_error(err_stmt or statement, expectok and "statement was expected to succeed but didn't" or "statement was expected to fail but didn't", msg)
 
     def convertresult(self, query, columns, data):
         ndata = []
@@ -91,15 +211,20 @@ class SQLLogic:
                     else:
                         nrow.append('%d' % row[i])
                 elif columns[i] == 'T':
-                    if row[i] == '':
+                    if row[i] == '' or row[i] == b'':
                         nrow.append('(empty)')
                     else:
                         nval = []
-                        for c in str(row[i]):
-                            if ' ' <= c <= '~':
+                        if isinstance(row[i], bytes):
+                            for c in row[i]:
+                                c = '%02X' % c
                                 nval.append(c)
-                            else:
-                                nval.append('@')
+                        else:
+                            for c in str(row[i]):
+                                if ' ' <= c <= '~':
+                                    nval.append(c)
+                                else:
+                                    nval.append('@')
                         nrow.append(''.join(nval))
                 elif columns[i] == 'R':
                     nrow.append('%.3f' % row[i])
@@ -108,7 +233,7 @@ class SQLLogic:
             ndata.append(tuple(nrow))
         return ndata
 
-    def query_error(self, query, message, exception=None):
+    def query_error(self, query, message, exception=None, data=None):
         if self.rpt:
             print(self.rpt, file=self.out)
         print(message, file=self.out)
@@ -119,21 +244,36 @@ class SQLLogic:
         print("query text:", file=self.out)
         print(query, file=self.out)
         print('', file=self.out)
+        if data is not None:
+            if len(data) < 100:
+                print('query result:', file=self.out)
+            else:
+                print('truncated query result:', file=self.out)
+            for row in data[:100]:
+                sep=''
+                for col in row:
+                    if col is None:
+                        print(sep, 'NULL', sep='', end='', file=self.out)
+                    else:
+                        print(sep, col, sep='', end='', file=self.out)
+                    sep = '|'
+                print('', file=self.out)
 
-    def exec_query(self, query, columns, sorting, hashlabel, nresult, hash, expected):
+    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected) -> bool:
         err = False
         try:
             self.crs.execute(query)
-        except pymonetdb.DatabaseError as e:
+        except (pymonetdb.Error, ValueError) as e:
             self.query_error(query, 'query failed', e.args[0])
-            return
-        if len(self.crs.description) != len(columns):
-            self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
-            return
-        if self.crs.rowcount * len(columns) != nresult:
-            self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
-            return
+            return False
         data = self.crs.fetchall()
+        if self.crs.description:
+            if len(self.crs.description) != len(columns):
+                self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)), data=data)
+                return False
+        if sorting != 'python' and self.crs.rowcount * len(columns) != nresult:
+            self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)), data=data)
+            return False
         if self.res is not None:
             for row in data:
                 sep=''
@@ -158,11 +298,58 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                         err = True
                     i += 1
                 m.update(bytes(col, encoding='ascii'))
                 m.update(b'\n')
+        elif sorting == 'python':
+            if '.' in pyscript:
+                [mod, fnc] = pyscript.rsplit('.', 1)
+                try:
+                    if mod.startswith('.'):
+                        pymod = importlib.import_module(mod, 'MonetDBtesting')
+                    else:
+                        pymod = importlib.import_module(mod)
+                except ModuleNotFoundError:
+                    self.query_error(query, 'cannot import filter function module')
+                    err = True
+                else:
+                    try:
+                        pyfnc = getattr(pymod, fnc)
+                    except AttributeError:
+                        self.query_error(query, 'cannot find filter function')
+                        err = True
+            elif re.match(r'[_a-zA-Z][_a-zA-Z0-9]*$', pyscript) is None:
+                self.query_error(query, 'filter function is not an identifier')
+                err = True
+            else:
+                try:
+                    pyfnc = eval(pyscript)
+                except NameError:
+                    self.query_error(query, 'cannot find filter function')
+                    err = True
+            if not err:
+                try:
+                    data = pyfnc(data)
+                except:
+                    self.query_error(query, 'filter function failed')
+                    err = True
+            ncols = 1
+            if (len(data)):
+                ncols = len(data[0])
+            if len(data)*ncols != nresult:
+                self.query_error(query, 'received {} rows, expected {} rows'.format(len(data)*ncols, nresult), data=data)
+                return False
+            for row in data:
+                for col in row:
+                    if expected is not None:
+                        if col != expected[i]:
+                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                            err = True
+                        i += 1
+                    m.update(bytes(col, encoding='ascii'))
+                    m.update(b'\n')
         else:
             if sorting == 'rowsort':
                 data.sort()
@@ -170,7 +357,7 @@ class SQLLogic:
                 for col in row:
                     if expected is not None:
                         if col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='ascii'))
@@ -178,20 +365,21 @@ class SQLLogic:
         h = m.hexdigest()
         if not err:
             if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
-                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1])
+                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1], data=data)
                 err = True
             elif hash is not None and h != hash:
-                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash))
+                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash), data=data)
                 err = True
         if hashlabel is not None and hashlabel not in self.hashes:
             if hash is not None:
                 self.hashes[hashlabel] = (hash, self.qline)
             elif not err:
                 self.hashes[hashlabel] = (h, self.qline)
+        return False if err else True
 
     def initfile(self, f):
         self.name = f
-        self.file = open(f)
+        self.file = open(f, 'r', encoding='utf-8', errors='replace')
         self.line = 0
         self.hashes = {}
 
@@ -206,6 +394,8 @@ class SQLLogic:
             line = self.readline()
             if not line:
                 break
+            if line[0] == '#': # skip mal comments
+                break
             line = line.split()
             if not line:
                 continue
@@ -219,7 +409,17 @@ class SQLLogic:
             if line[0] == 'hash-threshold':
                 pass
             elif line[0] == 'statement':
+                expected_err_code = None
+                expected_err_msg = None
+                expected_rowcount = None
                 expectok = line[1] == 'ok'
+                if len(line) > 2:
+                    if expectok:
+                        if line[2] == 'rowcount':
+                            expected_rowcount = int(line[3])
+                    else:
+                        err_str = " ".join(line[2:])
+                        expected_err_code, expected_err_msg = utils.parse_mapi_err_msg(err_str)
                 statement = []
                 self.qline = self.line + 1
                 while True:
@@ -228,12 +428,21 @@ class SQLLogic:
                         break
                     statement.append(line.rstrip('\n'))
                 if not skipping:
-                    self.exec_statement('\n'.join(statement), expectok)
+                    if is_copyfrom_stmt(statement):
+                        stmt, stmt_less_data = prepare_copyfrom_stmt(statement)
+                        self.exec_statement(stmt, expectok, err_stmt=stmt_less_data, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount)
+                    else:
+                        self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount)
             elif line[0] == 'query':
                 columns = line[1]
+                pyscript = None
                 if len(line) > 2:
                     sorting = line[2]  # nosort,rowsort,valuesort
-                    if len(line) > 3:
+                    if sorting == 'python':
+                        pyscript = line[3]
+                        if len(line) > 4:
+                            hashlabel = line[4]
+                    elif len(line) > 3:
                         hashlabel = line[3]
                 else:
                     sorting = 'nosort'
@@ -262,7 +471,7 @@ class SQLLogic:
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
-                    self.exec_query('\n'.join(query), columns, sorting, hashlabel, nresult, hash, expected)
+                    self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected)
 
 if __name__ == '__main__':
     import argparse

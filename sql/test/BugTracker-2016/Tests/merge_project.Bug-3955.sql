@@ -30,3 +30,4 @@ FROM (
 
 plan select * from r;
 -- END QUERY
+rollback;

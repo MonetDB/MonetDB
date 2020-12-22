@@ -1,0 +1,4 @@
+statement error
+select *
+
+

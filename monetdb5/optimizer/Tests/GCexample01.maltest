@@ -1,0 +1,27 @@
+statement ok
+function qry();
+b:= bat.new(:int);
+c:= bat.new(:int);
+d:= bat.new(:int);
+bat.append(b,1);
+barrier (x,z):= iterator.new(b);
+	io.print(x);
+exit (x,z);
+barrier (x,z):= iterator.new(c);
+	io.print(x);
+	redo (x,z):= iterator.next(c);
+exit (x,z);
+barrier go:=true;
+	io.print(d);
+	redo go:=true;
+exit go;
+end qry
+
+#mdb.List("user","qry")
+
+statement ok
+optimizer.garbageCollector("user","qry")
+
+#mdb.List("user","qry")
+
+

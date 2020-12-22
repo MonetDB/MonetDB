@@ -1,0 +1,151 @@
+statement ok
+CREATE TABLE INET_TBL (c inet, i inet)
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.226/24')
+
+statement ok
+INSERT INTO INET_TBL (c, i) VALUES ('192.168.1.0/26', '192.168.1.226')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.0/24')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.0/25')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.255/24')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('192.168.1', '192.168.1.255/25')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10', '10.1.2.3/8')
+
+statement ok
+INSERT INTO INET_TBL (c, i) VALUES ('10.0.0.0', '10.1.2.3/8')
+
+statement ok
+INSERT INTO INET_TBL (c, i) VALUES ('10.1.2.3', '10.1.2.3/32')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10.1.2', '10.1.2.3/24')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10.1', '10.1.2.3/16')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10', '10.1.2.3/8')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10', '11.1.2.3/8')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10', '9.1.2.3/8')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10:23::f1', '10:23::f1/64')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('10:23::8000/113', '10:23::ffff')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('::ffff:1.2.3.4', '::4.3.2.1/24')
+
+statement ok
+INSERT INTO INET_TBL (c, i) VALUES ('192.168.1.2/30', '192.168.1.226')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES ('1234::1234::1234', '::1.2.3.4')
+
+statement ok
+INSERT INTO INET_TBL (c, i) VALUES (cast('192.168.1.2/30' as inet), '192.168.1.226')
+
+statement error
+INSERT INTO INET_TBL (c, i) VALUES (cast('ffff:ffff:ffff:ffff::/24' as inet), '::192.168.1.226')
+
+query TTT rowsort
+SELECT '' AS ten, c AS cidr, i AS inet FROM INET_TBL
+----
+15 values hashing to 90346245d66770a7561183cf76362649
+
+statement error
+SELECT '' AS ten, i AS inet, host(i), text(i), family(i) FROM INET_TBL
+
+query TTTTT rowsort
+SELECT '' AS ten, c AS cidr, broadcast(c),
+  i AS inet, broadcast(i) FROM INET_TBL
+----
+25 values hashing to fe5588e26ba249bc3e00cc15d365a312
+
+query TTTTT rowsort
+SELECT '' AS ten, c AS cidr, network(c) AS "network(cidr)",
+  i AS inet, network(i) AS "network(inet)" FROM INET_TBL
+----
+25 values hashing to 5c6b65330dd1e3ce0c66a62283c93d41
+
+query TTITI rowsort
+SELECT '' AS ten, c AS cidr, masklen(c) AS "masklen(cidr)",
+  i AS inet, masklen(i) AS "masklen(inet)" FROM INET_TBL
+----
+25 values hashing to 7f1131afd5831f94275ea2149fc426b7
+
+query TTITI rowsort
+SELECT '' AS four, c AS cidr, masklen(c) AS "masklen(cidr)",
+  i AS inet, masklen(i) AS "masklen(inet)" FROM INET_TBL
+  WHERE masklen(c) <= 8
+----
+
+query TTT rowsort
+SELECT '' AS six, c AS cidr, i AS inet FROM INET_TBL
+  WHERE c = i
+----
+(empty)
+10.1.2.3
+10.1.2.3
+
+query TTTTTTTTTTTTT rowsort
+SELECT '' AS ten, i, c,
+  i < c AS lt, i <= c AS le, i = c AS eq
+  , i >= c AS ge, i > c AS gt, i <> c AS ne
+  , i << c AS sb, i <<= c AS sbe
+  , i >> c AS sup, i >>= c AS spe
+  FROM INET_TBL
+----
+65 values hashing to a396859a77087d034cb96801eb9b031c
+
+statement error
+SELECT '' AS ten, set_masklen(inet(text(i)), 24) FROM INET_TBL
+
+statement ok
+CREATE INDEX inet_idx1 ON inet_tbl(i)
+
+query TT rowsort
+ 
+SELECT * FROM inet_tbl WHERE i<<cast('192.168.1.0/24' as inet)
+----
+192.168.1.0/26
+192.168.1.226
+192.168.1.2/30
+192.168.1.226
+192.168.1.2/30
+192.168.1.226
+
+query TT rowsort
+SELECT * FROM inet_tbl WHERE i<<=cast('192.168.1.0/24' as inet)
+----
+192.168.1.0/26
+192.168.1.226
+192.168.1.2/30
+192.168.1.226
+192.168.1.2/30
+192.168.1.226
+
+statement ok
+ 
+DROP INDEX inet_idx1
+
+statement ok
+DROP TABLE INET_TBL
+
+
