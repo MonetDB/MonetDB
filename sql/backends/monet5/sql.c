@@ -4400,7 +4400,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cname = *getArgReference_str(stk, pci, pci->retc + 2);
 
 	/* check for limited storage tables */
-	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
+	for (nsch = tr->cat->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
 		if( sname && strcmp(b->name, sname) )

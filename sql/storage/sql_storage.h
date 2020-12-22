@@ -472,7 +472,7 @@ extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, 
 extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
-extern sql_session * sql_session_create(int autocommit);
+extern sql_session * sql_session_create(sql_allocator *sa, int autocommit);
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);

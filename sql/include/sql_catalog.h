@@ -239,26 +239,6 @@ extern void cs_remove_node(changeset * cs, node *n);
 typedef void *backend_code;
 typedef size_t backend_stack;
 
-typedef struct sql_trans {
-	char *name;
-	int stime;		/* start of transaction */
-	int wstime;		/* first write transaction time stamp */
-	int wtime;		/* timestamp of latest write performed in transaction*/
-	int schema_number;	/* schema timestamp */
-	int schema_updates;	/* set on schema changes */
-	int active;		/* active transaction */
-	int status;		/* status of the last query */
-	list *dropped;  	/* protection against recursive cascade action*/
-	list *moved_tables;
-
-	changeset schemas;
-
-	sql_allocator *sa;	/* transaction allocator */
-
-	struct sql_trans *parent;	/* multilevel transaction support */
-	backend_stack stk;
-} sql_trans;
-
 typedef struct sql_schema {
 	sql_base base;
 	sqlid auth_id;
@@ -276,8 +256,32 @@ typedef struct sql_schema {
 	list *triggers;		/* useful within a table */
 
 	char *internal; 	/* optional internal module name */
-	sql_trans *tr;
+	//sql_trans *tr;
 } sql_schema;
+
+typedef struct sql_catalog {
+	changeset schemas;
+} sql_catalog;
+
+typedef struct sql_trans {
+	char *name;
+	int stime;		/* start of transaction */
+	int wstime;		/* first write transaction time stamp */
+	int wtime;		/* timestamp of latest write performed in transaction*/
+	int schema_number;	/* schema timestamp */
+	int schema_updates;	/* set on schema changes */
+	int active;		/* active transaction */
+	int status;		/* status of the last query */
+	list *dropped;  	/* protection against recursive cascade action*/
+	list *moved_tables;
+
+	sql_catalog *cat;
+	sql_schema *tmp;	/* each session has its own tmp schema */
+	sql_allocator *sa;	/* transaction allocator */
+
+	struct sql_trans *parent;	/* multilevel transaction support */
+	backend_stack stk;
+} sql_trans;
 
 typedef enum sql_class {
 	EC_ANY,
@@ -702,6 +706,7 @@ typedef struct res_table {
 } res_table;
 
 typedef struct sql_session {
+	sql_allocator *sa;
 	sql_trans *tr; 		/* active transaction */
 
 	char *schema_name; /* transaction's schema name */

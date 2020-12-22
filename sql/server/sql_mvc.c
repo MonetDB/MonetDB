@@ -358,7 +358,7 @@ mvc_init(sql_allocator *pa, int debug, store_type store, int ro, int su)
 	}
 
 	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
-	for (node *n = m->session->tr->schemas.set->h; n; n = n->next) {
+	for (node *n = m->session->tr->cat->schemas.set->h; n; n = n->next) {
 		sql_schema *ss = (sql_schema*) n->data;
 		if (ss->tables.set) {
 			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
@@ -762,7 +762,7 @@ mvc_create(sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 	m->cascade_action = NULL;
 
 	store_lock();
-	m->session = sql_session_create(1 /*autocommit on*/);
+	m->session = sql_session_create(m->pa, 1 /*autocommit on*/);
 	store_unlock();
 	if (!m->session) {
 		qc_destroy(m->qc);

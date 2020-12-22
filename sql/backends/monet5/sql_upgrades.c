@@ -1041,7 +1041,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values");
 	ppos = pos; /* later check if found updatable database objects */
 
-	for (node *n = sql->session->tr->schemas.set->h; n; n = n->next) {
+	for (node *n = sql->session->tr->cat->schemas.set->h; n; n = n->next) {
 		sql_schema *s = (sql_schema*) n->data;
 
 		if (s->funcs.set)

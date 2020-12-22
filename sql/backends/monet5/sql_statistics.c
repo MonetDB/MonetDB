@@ -46,14 +46,14 @@ sql_drop_statistics(mvc *m, sql_table *t)
 	if (!isTable(t))
 		throw(SQL, "sql_drop_statistics", SQLSTATE(42S02) "DROP STATISTICS: %s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 	if (!table_privs(m, t, PRIV_SELECT))
-		throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to table '%s.%s'", 
+		throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to table '%s.%s'",
 			  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 	if (isTable(t) && t->columns.set) {
 		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 			sql_column *c = (sql_column *) ncol->data;
 
 			if (!column_privs(m, c, PRIV_SELECT))
-				throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to column '%s' on table '%s.%s'", 
+				throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to column '%s' on table '%s.%s'",
 					  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
 		}
 	}
@@ -122,7 +122,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
 
 	/* Do all the validations before doing any analyze */
-	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
+	for (nsch = tr->cat->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_schema *s = (sql_schema *) nsch->data;
 		if (!isalpha((unsigned char) s->base.name[0]))
 			continue;
@@ -140,7 +140,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if (tbl && !isTable(t))
 					throw(SQL, "analyze", SQLSTATE(42S02) "%s '%s' is not persistent", TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 				if (!table_privs(m, t, PRIV_SELECT))
-					throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'", 
+					throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
 						  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
 				if (isTable(t) && t->columns.set) {
 					for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
@@ -150,7 +150,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							continue;
 						cfnd = 1;
 						if (!column_privs(m, c, PRIV_SELECT))
-							throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'", 
+							throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to column '%s' on table '%s.%s'",
 								  get_string_global_var(m, "current_user"), c->base.name, t->s->base.name, t->base.name);
 					}
 				}
@@ -163,7 +163,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (col && !cfnd)
 		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 
-	for (nsch = tr->schemas.set->h; nsch; nsch = nsch->next) {
+	for (nsch = tr->cat->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
 		if (!isalpha((unsigned char) b->name[0]))
