@@ -403,8 +403,22 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             self.fail(msg)
         return self
 
-    def assertDataResultMatch(self, data=[], index=None):
-        raise NotImplementedError
+    def assertDataResultMatch(self, expected):
+        data = list(filter(filter_junk, self.data.split('\n')))
+        data = list(filter(filter_headers, data))
+        a, b = filter_matching_blocks(expected, data)
+        diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))
+        if len(diff) > 0:
+            err_file = self.test_case.err_file
+            exp = '\n'.join(expected)
+            got = '\n'.join(data)
+            msg = "Output didn't match.\n"
+            msg += f"Expected:\n{exp}\n"
+            msg += f"Got:\n{got}\n"
+            msg += "Diff:\n" + '\n'.join(s.rstrip() for s in diff)
+            self.assertion_errors.append(AssertionError(msg))
+            self.fail(msg)
+        return self
 
     def assertValue(self, row, col, val):
         raise NotImplementedError
