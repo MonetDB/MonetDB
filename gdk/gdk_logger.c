@@ -2403,7 +2403,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	return NULL;
 }
 
-static gdk_return
+gdk_return
 logger_restart(logger *lg)
 {
 	return logger_flush(lg, lg->tid);
@@ -2482,7 +2482,7 @@ logger_destroy(logger *lg)
 }
 
 static gdk_return
-logger_exit(logger *lg, lng save_id)
+logger_end(logger *lg, lng save_id)
 {
 	FILE *fp;
 	char filename[FILENAME_MAX];
@@ -2575,9 +2575,15 @@ logger_exit(logger *lg, lng save_id)
 }
 
 gdk_return
+logger_exit(logger *lg)
+{
+	return logger_end(lg, lg->tid);
+}
+
+gdk_return
 logger_flush(logger *lg, lng save_id)
 {
-	if (logger_exit(lg, save_id) == GDK_SUCCEED &&
+	if (logger_end(lg, save_id) == GDK_SUCCEED &&
 	    logger_open(lg) == GDK_SUCCEED)
 		return GDK_SUCCEED;
 	return GDK_FAIL;
