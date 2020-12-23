@@ -35,11 +35,11 @@ set(include_sql_files
   46_profiler
   51_sys_schema_extension
   52_describe
-  53_dump
   58_hot_snapshot
   60_wlcr
   61_wlcr
   75_storagemodel
+  76_dump
   80_statistics
   81_tracer)
 
