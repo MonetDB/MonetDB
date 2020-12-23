@@ -572,6 +572,7 @@ used from the MAL level.
 %files -n MonetDB5-server-devel
 %defattr(-,root,root)
 %{_includedir}/monetdb/mal*.h
+%{_includedir}/monetdb/mel.h
 %{_libdir}/libmonetdb5.so
 %{_libdir}/pkgconfig/monetdb5.pc
 
@@ -634,6 +635,24 @@ configuration.
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
+
+%package SQL-server5-devel
+Summary: MonetDB5 SQL server modules
+Group: Applications/Databases
+Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server-devel%{?_isa} = %{version}-%{release}
+
+%description SQL-server5-devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains files needed to develop SQL extensions.
+
+%files SQL-server5-devel
+%defattr(-,root,root)
+%{_includedir}/monetdb/sql*.h
 
 %package embedded
 Summary: MonetDB as an embedded library
