@@ -4576,17 +4576,17 @@ rollforward_update_part(sql_trans *tr, int oldest, sql_base *fpt, sql_base *tpt,
 
 		pt->with_nills = opt->with_nills;
 		if (isRangePartitionTable(opt->t)) {
-			pt->part.range.minvalue = sa_alloc(tr->sa, opt->part.range.minlength);
-			pt->part.range.maxvalue = sa_alloc(tr->sa, opt->part.range.maxlength);
+			pt->part.range.minvalue = sa_alloc(tr->parent->sa, opt->part.range.minlength);
+			pt->part.range.maxvalue = sa_alloc(tr->parent->sa, opt->part.range.maxlength);
 			memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
 			memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
 			pt->part.range.minlength = opt->part.range.minlength;
 			pt->part.range.maxlength = opt->part.range.maxlength;
 		} else if (isListPartitionTable(opt->t)) {
-			pt->part.values = list_new(tr->sa, (fdestroy) NULL);
+			pt->part.values = list_new(tr->parent->sa, (fdestroy) NULL);
 			for (node *n = opt->part.values->h ; n ; n = n->next) {
-				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-				nextv->value = sa_alloc(tr->sa, prev->length);
+				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->parent->sa, sql_part_value);
+				nextv->value = sa_alloc(tr->parent->sa, prev->length);
 				memcpy(nextv->value, prev->value, prev->length);
 				nextv->length = prev->length;
 				list_append(pt->part.values, nextv);
