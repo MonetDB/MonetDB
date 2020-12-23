@@ -235,9 +235,9 @@ class TestCaseResult(object):
             if err_message:
                 if self.err_message:
                     if err_message.lower() != self.err_message.lower():
-                        msgs.append("expected to fail with error message {} but failed with error message {}".format(err_message, self.err_message))
+                        msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
                 else:
-                    msgs.append("expected to fail with error message {} but got {}".format(err_message, self.err_message))
+                    msgs.append("expected to fail with error message '{}' but got '{}'".format(err_message, self.err_message))
             if len(msgs) > 0:
                 self.fail('\n'.join(msgs))
         return self
