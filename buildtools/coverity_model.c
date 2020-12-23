@@ -51,7 +51,8 @@ GDKzalloc(size_t size)
 {
 	void *p = GDKmalloc(size);
 	if (p) {
-		for (size_t i = 0; i < size; i++)
+		size_t i;
+		for (i = 0; i < size; i++)
 			((char *) p)[i] = 0;
 	}
 	return p;
