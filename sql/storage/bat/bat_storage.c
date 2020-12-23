@@ -1836,6 +1836,7 @@ tr_update_cs( sql_trans *tr, column_storage *ocs, column_storage *ccs, BUN end)
 	BAT *cur = NULL;
 
 	(void)tr;
+	(void)end;
 	assert(ATOMIC_GET(&store_nr_active)==1);
 	assert (ocs->bid != 0 || tr != gtrans);
 
@@ -1925,6 +1926,7 @@ tr_merge_cs( sql_trans *tr, column_storage *cs, BUN end)
 	BAT *cur = NULL;
 
 	(void)tr;
+	(void)end;
 	assert(ATOMIC_GET(&store_nr_active)==1);
 	assert (cs->bid != 0 || tr != gtrans);
 
