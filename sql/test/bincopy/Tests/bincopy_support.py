@@ -1,32 +1,30 @@
 
-import array
-import codecs
 import os
 import re
 import subprocess
 import sys
 
-try:
-    from MonetDBtesting import process
-except ImportError:
-    import process
-
+from MonetDBtesting.sqltest import SQLTestCase
 NRECS = 1_000_000
+
 
 # location generated test data files.
 BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
 class DataMaker:
-    def __init__(self, side):
-        self.side_clause = 'ON ' + side.upper()
+    def __init__(self):
+        self.fixed_substitutions = dict()
         self.work_list = set()
+
+    def additionally(self, key, value):
+        self.fixed_substitutions[key] = value
 
     def substitute_match(self, match):
         flags = []
         ext = ''
         var = match.group(1)
-        if var == 'ON':
-            return self.side_clause
+        if var in self.fixed_substitutions:
+            return self.fixed_substitutions[var]
         elif var.startswith('le_'):
             var = var[3:]
             ext = '.le'
@@ -63,83 +61,92 @@ class DataMaker:
 
 
 
-def run_test(side, code):
+def run_test(side, testcase):
+    code, expected_result = testcase
     # generate the query
-    data_maker = DataMaker(side)
-    code = re.sub(r'@(\w+)@', data_maker.substitute_match, code)
+    data_maker = DataMaker()
+    data_maker.additionally('ON', 'ON ' + side.upper())
+    data_maker.additionally('NRECS', NRECS)
+    data_maker.additionally('NRECS_DIV_4', NRECS / 4)
+    massage = lambda s: re.sub(r'@(\w+)@', data_maker.substitute_match, s)
+    code = massage(code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;"
     open(os.path.join(BINCOPY_FILES, 'test.sql'), "w").write(code)
 
     # generate the required data files
     data_maker.generate_files()
 
-    with process.client('sql',
-                    stdin=process.PIPE, input=code,
-                    stdout=process.PIPE, stderr=process.PIPE,
-                    log=True) as p:
-        out, err = p.communicate()
-    sys.stdout.write(out.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
-    sys.stderr.write(err.replace(os.environ['TSTTRGBASE'].replace('\\', '\\\\'),'${TSTTRGBASE}').replace('\\\\','/'))
+    with SQLTestCase() as tc:
+        tr = tc.execute(code, '-fcsv', client='mclient')
+        print(repr(tr.data), file=sys.stderr)
+        if isinstance(expected_result, list):
+            tr.assertSucceeded()
+            tr.assertDataResultMatch(expected_result)
+        else:
+            assert isinstance(expected_result, tuple)
+            err_code = expected_result[0]
+            err_msg = expected_result[1]
+            if err_msg:
+                err_msg = massage(err_msg)
+            tr.assertFailed(err_code, err_msg)
 
 
-
-INTS = """
+INTS = ("""
 CREATE TABLE foo(id INT NOT NULL);
 COPY BINARY INTO foo(id) FROM @ints@ @ON@;
 SELECT COUNT(DISTINCT id) FROM foo;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-MORE_INTS = """
+MORE_INTS = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
 COPY BINARY INTO foo(id, i) FROM @ints@, @more_ints@ @ON@;
 SELECT COUNT(id) FROM foo WHERE i = id + 1;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-STRINGS = """
+STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s VARCHAR(20));
 COPY BINARY INTO foo(id, s) FROM @ints@, @strings@ @ON@;
 SELECT COUNT(id) FROM foo WHERE s = ('int' || id);
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-NULL_INTS = """
+NULL_INTS = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
 COPY BINARY INTO foo(id, i) FROM @ints@, @null_ints@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 2 = 0 AND i IS NULL)
 OR    (id % 2 = 1 AND i = id);
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-LARGE_STRINGS = """
+LARGE_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @large_strings@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 10000 <> 0 AND LENGTH(s) = 9)
 OR    (id % 10000 = 0 AND LENGTH(s) = 280000 + 9);
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-BROKEN_STRINGS = """
+BROKEN_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
--- should fail!
-"""
+""", (None, "!GDK reported error: strPut: incorrectly encoded UTF-8"))
 
 # note that the \r\n has been normalized to \n but the lone \r has been
 # left alone.
-NEWLINE_STRINGS = r"""
+NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
 SELECT COUNT(id) FROM foo WHERE s = (E'rn\nr\r' || id);
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-NULL_STRINGS = """
+NULL_STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @null_strings@ @ON@;
 SELECT COUNT(id) FROM foo
 WHERE (id % 2 = 0 AND s IS NULL)
 OR    (id % 2 = 1 AND s = 'banana');
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-TIMESTAMPS = """
+TIMESTAMPS = ("""
 CREATE TABLE foo(
     id INT NOT NULL,
     ts TIMESTAMP,
@@ -206,40 +213,40 @@ SELECT * FROM foo
     WHERE 1000000 * EXTRACT(SECOND FROM tm) <> 1000000 * "second" + ms
     LIMIT 4;
 
-"""
+""", [f"{NRECS} affected rows"])
 
-PARTIAL = """
+PARTIAL = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT, j INT NULL);
 COPY BINARY INTO foo(id, i) FROM @ints@, @more_ints@ @ON@;
 SELECT COUNT(id) FROM foo WHERE i = id + 1 AND j IS NULL;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-BOOLS = """
+BOOLS = ("""
 CREATE TABLE foo(id INT NOT NULL, b BOOL);
 COPY BINARY INTO foo(id, b) FROM @ints@, @bools@ @ON@;
 SELECT COUNT(id) FROM foo WHERE b = (id % 2 <> 0);
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-INCONSISTENT_LENGTH = """
+INCONSISTENT_LENGTH = ("""
 CREATE TABLE foo(id INT NOT NULL, i INT);
 -- the bools file is much shorter so this will give an error:
 COPY BINARY INTO foo(id, i) FROM @ints@, @bools@ @ON@;
 SELECT COUNT(id) FROM foo WHERE i = id + 1;
-"""
+""", ('25005', None))
 
-FLOATS = """
+FLOATS = ("""
 CREATE TABLE foo(id INT NOT NULL, r REAL);
 COPY BINARY INTO foo(id, r) FROM @ints@, @floats@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = r;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-DOUBLES = """
+DOUBLES = ("""
 CREATE TABLE foo(id INT NOT NULL, d DOUBLE);
 COPY BINARY INTO foo(id, d) FROM @ints@, @doubles@ @ON@;
 SELECT COUNT(id) FROM foo WHERE CAST(id AS REAL) + 0.5 = d;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-INTEGER_TYPES = """
+INTEGER_TYPES = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT);
 COPY BINARY INTO foo FROM @tinyints@, @smallints@, @ints@, @bigints@;
 
@@ -275,9 +282,9 @@ FROM verified
 GROUP BY t_s, s_i, i_b
 ORDER BY t_s, s_i, i_b
 ;
-"""
+""", [f"{NRECS} affected rows", f"true,true,true,{NRECS}"])
 
-HUGE_INTS = """
+HUGE_INTS = ("""
 CREATE TABLE foo(b BIGINT, h HUGEINT);
 COPY BINARY INTO foo FROM @bigints@, @hugeints@;
 
@@ -308,9 +315,9 @@ FROM verified
 GROUP BY b_h
 ORDER BY b_h
 ;
-"""
+""", [f"{NRECS} affected rows", f"true,{NRECS}"])
 
-DECIMALS = """
+DECIMALS = ("""
 -- 1..2 TINYINT
 -- 3..4 SMALLINT
 -- 5..9 INT
@@ -360,9 +367,9 @@ SELECT
 FROM verified
 GROUP BY d1_1_ok, d2_1_ok, d3_2_ok, d4_2_ok, d5_2_ok, d9_2_ok, d10_2_ok, d18_2_ok
 ;
-"""
+""", [f"{NRECS} affected rows", f"true,true,true,true,true,true,true,true,{NRECS}"])
 
-HUGE_DECIMALS = """
+HUGE_DECIMALS = ("""
 -- 19..38 HUGEINT
 CREATE TABLE foo(
     i HUGEINT,
@@ -379,35 +386,35 @@ SELECT
 FROM foo
 GROUP BY d19_ok, d38_ok
 ;
-"""
+""", [f"{NRECS} affected rows", f"true,true{NRECS}"])
 
-URLS = """
+URLS = ("""
 -- currently every string is accepted as a url
 -- so we just load an existing strings file
 CREATE TABLE foo(u URL);
 COPY BINARY INTO foo FROM @strings@ @ON@;
 SELECT COUNT(*) FROM foo;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-JSON_OBJECTS = """
+JSON_OBJECTS = ("""
 CREATE TABLE foo(i INT, j JSON);
 COPY BINARY INTO foo FROM @ints@, @json_objects@ @ON@;
 SELECT COUNT(*) FROM foo
 WHERE (i % 100 = 99 AND j IS NULL)
 OR (i % 100 <> 99 AND j IS NOT NULL)
 ;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-UUIDS = """
+UUIDS = ("""
 CREATE TABLE foo(t CHAR(16), u UUID);
 COPY BINARY INTO foo FROM @text_uuids@, @binary_uuids@ @ON@;
 SELECT COUNT(*) FROM foo
 WHERE t = CAST(u AS TEXT)
 OR    u IS NULL
 ;
-"""
+""", [f"{NRECS} affected rows", f"{NRECS}"])
 
-LITTLE_ENDIANS = """
+LITTLE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
 COPY LITTLE ENDIAN BINARY INTO foo FROM @le_tinyints@, @le_smallints@, @le_ints@, @le_bigints@, @le_floats@, @le_doubles@;
 
@@ -448,9 +455,9 @@ FROM verified
 GROUP BY t_s, s_i, i_b, f_d
 ORDER BY t_s, s_i, i_b, f_d
 ;
-"""
+""", [f"{NRECS} affected rows", f"true,true,true,true,{NRECS}"])
 
-BIG_ENDIANS = """
+BIG_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
 COPY BIG ENDIAN BINARY INTO foo FROM @be_tinyints@, @be_smallints@, @be_ints@, @be_bigints@, @be_floats@, @be_doubles@;
 
@@ -491,9 +498,9 @@ FROM verified
 GROUP BY t_s, s_i, i_b, f_d
 ORDER BY t_s, s_i, i_b, f_d
 ;
-"""
+""", [f"{NRECS} affected rows", f"true,true,true,true,{NRECS}"])
 
-NATIVE_ENDIANS = """
+NATIVE_ENDIANS = ("""
 CREATE TABLE foo(t TINYINT, s SMALLINT, i INT, b BIGINT, f FLOAT(4), d DOUBLE);
 COPY NATIVE ENDIAN BINARY INTO foo FROM @ne_tinyints@, @ne_smallints@, @ne_ints@, @ne_bigints@, @ne_floats@, @ne_doubles@;
 
@@ -535,4 +542,4 @@ GROUP BY t_s, s_i, i_b, f_d
 ORDER BY t_s, s_i, i_b, f_d
 LIMIT 4;
 ;
-"""
+""", [f"{NRECS} affected rows", f"true,true,true,true,{NRECS}"])
