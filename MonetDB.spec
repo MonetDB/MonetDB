@@ -187,6 +187,8 @@ need this package, but you will also need at least the MonetDB5-server
 package, and most likely also %{name}-SQL-server5, as well as one or
 more client packages.
 
+%ldconfig_scriptlets
+
 %files
 %license COPYING
 %defattr(-,root,root)
@@ -887,10 +889,6 @@ sed -i 's|/var/run|/run|' \
     %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_properties \
     %{buildroot}%{_unitdir}/monetdbd.service
 %endif
-
-%post -p /sbin/ldconfig
-
-%postun -p /sbin/ldconfig
 
 %changelog
 * Wed Nov 18 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.7-20201118
