@@ -1857,18 +1857,17 @@ rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 	m->qc = NULL;
 
 	m->emode = emode;
-	b = (buffer*)GDKmalloc(sizeof(buffer));
+	b = malloc(sizeof(buffer));
 	len += 8; /* add 'select ;' */
-	n = GDKmalloc(len + 1 + 1);
+	n = malloc(len + 1 + 1);
 	if(!b || !n) {
-		GDKfree(b);
-		GDKfree(n);
+		free(b);
+		free(n);
 		return NULL;
 	}
 	snprintf(n, len + 2, "select %s;\n", query);
-	query = n;
 	len++;
-	buffer_init(b, query, len);
+	buffer_init(b, n, len);
 	s = buffer_rastream(b, "sqlstatement");
 	if(!s) {
 		buffer_destroy(b);
@@ -1903,8 +1902,7 @@ rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 				e = exp_check_type(m, tpe, from, e, type_cast);
 		}
 	}
-	GDKfree(query);
-	GDKfree(b);
+	buffer_destroy(b);
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;

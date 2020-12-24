@@ -420,11 +420,7 @@ generateSalt(char *buf, unsigned int len)
 	if (CCRandomGenerateBytes(&size, sizeof(size)) != kCCSuccess)
 #endif
 #endif
-#ifndef STATIC_CODE_ANALYSIS
 		size = (unsigned int)rand();
-#else
-		size = 0;
-#endif
 	fill = len * 0.75;
 	min = len * 0.42;
 	size = (size % (fill - min)) + min;
@@ -442,11 +438,7 @@ generateSalt(char *buf, unsigned int len)
 #endif
 #endif
 		for (c = 0; c < size; c++) {
-#ifndef STATIC_CODE_ANALYSIS
 			buf[c] = seedChars[rand() % 62];
-#else
-			buf[c] = seedChars[0];
-#endif
 		}
 	for ( ; c < len; c++)
 		buf[c] = '\0';

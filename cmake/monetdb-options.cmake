@@ -65,10 +65,6 @@ option(SANITIZER
   "Enable support for the GCC address sanitizer (default=OFF)"
   OFF)
 
-option(STATIC_CODE_ANALYSIS
-  "configure for static code analysis (use only if you know what you are doing) (default=OFF)"
-  OFF)
-
 option(STRICT
   "Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)"
   "${DEVELOPMENT}")
