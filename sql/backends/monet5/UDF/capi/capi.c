@@ -394,17 +394,17 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int seengrp = FALSE;
 	FILE *f = NULL;
 	void *handle = NULL;
-	jitted_function volatile func = NULL;
+	jitted_function func = NULL;
 	int ret;
 
 	FILE *compiler = NULL;
 	int compiler_return_code;
 
-	void ** volatile inputs = NULL;
-	size_t volatile input_count = 0;
-	void ** volatile outputs = NULL;
-	size_t volatile output_count = 0;
-	BAT ** volatile input_bats = NULL;
+	void **inputs = NULL;
+	size_t input_count = 0;
+	void **outputs = NULL;
+	size_t output_count = 0;
+	BAT **input_bats = NULL;
 	mprotected_region *regions = NULL, *region_iter = NULL;
 
 	lng initial_output_count = -1;
@@ -433,7 +433,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	BUN expression_hash = 0, funcname_hash = 0;
 	cached_functions *cached_function;
-	char* volatile function_parameters = NULL;
+	char *function_parameters = NULL;
 	int tid = THRgettid();
 	size_t input_size = 0;
 	bit non_grouped_aggregate = 0;
@@ -442,7 +442,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	int bat_type = 0;
 	const char* tpe = NULL;
 
-	size_t volatile extra_inputs = 0;
+	size_t extra_inputs = 0;
 
 	(void)cntxt;
 
