@@ -380,12 +380,12 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		m->reply_size = -2; /* do not clean up result tables */
 
 	/* mimic a client channel on which the query text is received */
-	b = (buffer *) GDKmalloc(sizeof(buffer));
+	b = malloc(sizeof(buffer));
 	if (b == NULL) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
 	}
-	n = GDKmalloc(len + 1 + 1);
+	n = malloc(len + 1 + 1);
 	if (n == NULL) {
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
@@ -405,6 +405,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 	bs = bstream_create(buf, b->len);
 	if (bs == NULL) {
 		mnstr_destroy(buf);
+		buffer_destroy(b);
 		b = NULL;
 		msg = createException(SQL,"sql.statement",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto endofcompile;
@@ -560,8 +561,7 @@ endofcompile:
 
 	c->sqlcontext = be;
 	backend_destroy(sql);
-	GDKfree(n);
-	GDKfree(b);
+	buffer_destroy(b);
 	bstream_destroy(m->scanner.rs);
 	if (m->sa)
 		sa_destroy(m->sa);

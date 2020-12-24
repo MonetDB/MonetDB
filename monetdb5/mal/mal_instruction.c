@@ -246,7 +246,7 @@ freeMalBlk(MalBlkPtr mb)
 	mb->help = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
-	GDKfree(mb->errors);
+	freeException(mb->errors);
 	GDKfree(mb);
 }
 

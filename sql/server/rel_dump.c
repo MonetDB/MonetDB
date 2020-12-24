@@ -971,7 +971,7 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				}
 				for (node *n = rexps->h; n; n = n->next){
 					sql_exp *e = n->data;
-	
+
 					list_append(tl, exp_subtype(e));
 				}
 
@@ -1526,7 +1526,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!update_allowed(sql, t, t->base.name, "TRUNCATE", "truncate", 2))
 			return NULL;
 
-		return rel_truncate(sql->sa, lrel, drop_action, restart_sequences);
+		return rel_truncate(sql->sa, lrel, restart_sequences, drop_action);
 	}
 
 	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {
