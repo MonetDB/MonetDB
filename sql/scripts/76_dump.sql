@@ -141,32 +141,102 @@ END;
 --Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for sys.functions and table-likes,
 --we can restart the auto-increment sequence with a sensible value for following dump statements.
 
-CREATE SEQUENCE sys._auto_increment;
-CREATE TABLE sys.dump_statements(o INT DEFAULT NEXT VALUE FOR sys._auto_increment, s STRING, PRIMARY KEY (o));
+CREATE TABLE sys.dump_statements(o INT, s STRING, PRIMARY KEY (o));
 
---Because ALTER SEQUENCE statements are not allowed in procedures,
---we have to do a really nasty hack to restart the _auto_increment sequence.
+CREATE FUNCTION current_size_dump_statements() RETURNS INT BEGIN RETURN SELECT COUNT(*) FROM dump_statements; END;
 
-CREATE FUNCTION sys.restart_sequence(sch STRING, seq STRING, val BIGINT) RETURNS BIGINT EXTERNAL NAME sql."restart";
+CREATE PROCEDURE _dump_table_data(sch STRING, tbl STRING) BEGIN
+
+    DECLARE k INT;
+    SET k = (SELECT MIN(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl);
+	IF k IS NOT NULL THEN
+
+		DECLARE cname STRING;
+		DECLARE ctype STRING;
+		SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+		SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+
+		DECLARE COPY_INTO_STMT STRING;
+		DECLARE _cnt INT;
+		SET _cnt = (SELECT MIN(s.count) FROM sys.storage() s WHERE s.schema = sch AND s.table = tbl);
+
+		IF _cnt > 0 THEN
+			SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || FQN(sch, tbl) || '(' || DQ(cname);
+
+			DECLARE SELECT_DATA_STMT STRING;
+			SET SELECT_DATA_STMT = 'SELECT current_size_dump_statements() + RANK() OVER(), ' || prepare_esc(cname, ctype);
+
+			DECLARE M INT;
+			SET M = (SELECT MAX(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl);
+
+			IF (k < M) THEN
+				SET k = (SELECT MIN(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
+			END IF;
+
+			WHILE (k < M) DO
+				SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+				SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+				SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || DQ(cname));
+				SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || prepare_esc(cname, ctype);
+				SET k = (SELECT MIN(c.id ) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
+			END WHILE;
+
+			SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
+			SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
+			SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || DQ(cname));
+			SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || prepare_esc(cname, ctype);
+
+			SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',''\\n'',''"'';');
+			SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || FQN(sch, tbl);
+
+			insert into dump_statements VALUES (current_size_dump_statements() + 1, COPY_INTO_STMT);
+
+			CALL sys.EVAL('INSERT INTO dump_statements ' || SELECT_DATA_STMT || ';');
+		END IF;
+	END IF;
+END;
+
+CREATE PROCEDURE dump_table_data() BEGIN
+
+	DECLARE i INT;
+    SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
+
+	IF i IS NOT NULL THEN
+		DECLARE M INT;
+		SET M = (SELECT MAX(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
+
+		DECLARE sch STRING;
+		DECLARE tbl STRING;
+
+		WHILE i < M DO
+			set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+			set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+			CALL _dump_table_data(sch, tbl);
+			SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);
+		END WHILE;
+
+		set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+		set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
+		CALL _dump_table_data(sch, tbl);
+	END IF;
+END;
 
 CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
 BEGIN
 
 	SET SCHEMA sys;
 	TRUNCATE dump_statements;
-	DECLARE dummy_result BIGINT; --HACK: otherwise I cannot call restart_sequence.
-	SET dummy_result = sys.restart_sequence('sys', '_auto_increment', 0);
 
-	INSERT INTO dump_statements(s) VALUES ('START TRANSACTION;');
-	INSERT INTO dump_statements(s) VALUES ('SET SCHEMA "sys";');
+	INSERT INTO dump_statements VALUES (0, 'START TRANSACTION;');
+	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'SET SCHEMA "sys";');
 
-	INSERT INTO dump_statements(s) --dump_create_roles
-		SELECT 'CREATE ROLE ' || sys.dq(name) || ';' FROM sys.auths
+	INSERT INTO dump_statements --dump_create_roles
+		SELECT current_size_dump_statements() + RANK() OVER(), 'CREATE ROLE ' || sys.dq(name) || ';' FROM sys.auths
         WHERE name NOT IN (SELECT name FROM sys.db_user_info)
         AND grantor <> 0;
 
-	INSERT INTO dump_statements(s) --dump_create_users
-		SELECT
+	INSERT INTO dump_statements --dump_create_users
+		SELECT current_size_dump_statements() + RANK() OVER(),
         'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
             sys.sq(sys.password_hash(ui.name)) ||
         ' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;'
@@ -175,16 +245,16 @@ BEGIN
             AND ui.name <> 'monetdb'
             AND ui.name <> '.snapshot';
 
-	INSERT INTO dump_statements(s) --dump_create_schemas
-        SELECT
+	INSERT INTO dump_statements --dump_create_schemas
+        SELECT current_size_dump_statements() + RANK() OVER(),
             'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';'
         FROM sys.schemas s, sys.auths a
         WHERE s.authorization = a.id AND s.system = FALSE;
 
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_user_defined_types();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_user_defined_types();
 
-    INSERT INTO dump_statements(s) --dump_add_schemas_to_users
-	    SELECT
+    INSERT INTO dump_statements --dump_add_schemas_to_users
+	    SELECT current_size_dump_statements() + RANK() OVER(),
             'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';'
         FROM sys.db_user_info ui, sys.schemas s
         WHERE ui.default_schema = s.id
@@ -192,45 +262,42 @@ BEGIN
             AND ui.name <> '.snapshot'
             AND s.name <> 'sys';
 
-    INSERT INTO dump_statements(s) --dump_grant_user_priviledges
-        SELECT
+    INSERT INTO dump_statements --dump_grant_user_priviledges
+        SELECT current_size_dump_statements() + RANK() OVER(),
             'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';'
 		FROM sys.auths a1, sys.auths a2, sys.user_role ur
 		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_sequences();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_sequences();
 
-	--START OF COMPLICATED DEPENDENCY STUFF:
 	--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
-	DECLARE offs INT;
-	SET offs = (SELECT max(o) FROM dump_statements) - (SELECT min(ids.id) FROM (select id from sys.tables union select id from sys.functions) ids(id));
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(ORDER BY stmts.o), stmts.s
+	FROM (
+			SELECT * FROM sys.dump_functions() f
+			UNION
+			SELECT * FROM sys.dump_tables() t
+		) AS stmts(o, s);
 
-	INSERT INTO dump_statements SELECT f.o + offs, f.stmt FROM sys.dump_functions() f;
-	INSERT INTO dump_statements SELECT t.o + offs, t.stmt FROM sys.dump_tables() t;
-
-	SET offs = (SELECT max(o) + 1 FROM dump_statements);
-	SET dummy_result = sys.restart_sequence('sys', '_auto_increment', offs);
-	--END OF COMPLICATED DEPENDENCY STUFF.
-
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_column_defaults();
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_table_constraint_type();
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_indices();
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_foreign_keys();
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_partition_tables();
-	INSERT INTO dump_statements(s) SELECT stmt from sys.dump_triggers();
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_comments();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_column_defaults();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_table_constraint_type();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_indices();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_foreign_keys();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_partition_tables();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt from sys.dump_triggers();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_comments();
 
 	--We are dumping ALL privileges so we need to erase existing privileges on the receiving side;
-	INSERT INTO dump_statements(s) VALUES ('TRUNCATE sys.privileges;');
-	INSERT INTO dump_statements(s) SELECT stmt FROM sys.dump_privileges();
+	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'TRUNCATE sys.privileges;');
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_privileges();
 
-	--TODO dumping table data
+	CALL dump_table_data();
+
 	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
 	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO look into order dependent group_concat
 	--TODO ADD upgrade code
 
-	INSERT INTO dump_statements(s) VALUES ('COMMIT;');
+	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'COMMIT;');
 
 	RETURN dump_statements;
 END;
