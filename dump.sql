@@ -1,5 +1,5 @@
 START TRANSACTION;
 
-SELECT * FROM sys.dump_database(TRUE);
+SELECT stmt FROM sys.dump_database(FALSE);
 
 ROLLBACK;
