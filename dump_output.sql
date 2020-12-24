@@ -87,4 +87,6 @@ COPY 3 RECORDS INTO "sys"."tbl_with_data"("c1", "c2", "c3", "c4", "c5", "c6", "c
 1234|5678|90|true|"Hello\n \\|\" World"|2020-12-20|10.000|1023.345|12345|123.45|1123.455|1122133.5|121233.45|"POINT (5.1 34.5)"|2000|4000|8000|65333.414|8000.000|4000.000|2000.000|1000.000|14:18:18|2015-05-22 14:18:17.780331|2015-05-22 00:00:00.00|2015-05-22 13:18:17.780331+01:00|"{\"price\":9}"|10.1.0.0/16|"https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example"|65950c76-a2f6-4543-660a-b849cf5f2453
 null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null
 null|null|null|null|"null"|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null
-COMMIT;
+
+SELECT stmt FROM sys.dump_database(FALSE);
+ROLLBACK;
