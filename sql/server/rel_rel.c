@@ -530,7 +530,7 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 
 	assert(is_set(rel->op) && list_length(lexps) == list_length(rexps) && list_length(exps) == list_length(lexps));
 
-	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && m && o ; n = n->next, m = m->next,o = o->next) {
+	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && n && o ; n = n->next, m = m->next,o = o->next) {
 		sql_exp *e = n->data, *f = m->data, *g = o->data;
 
 		if (is_union(rel->op)) { /* propagate set_has_no_nil only if it's applicable to both sides of the union*/
