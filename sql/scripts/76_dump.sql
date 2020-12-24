@@ -290,7 +290,9 @@ BEGIN
 	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'TRUNCATE sys.privileges;');
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_privileges();
 
-	CALL dump_table_data();
+	IF NOT DESCRIBE THEN
+		CALL dump_table_data();
+	END IF;
 
 	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
 	--TODO loaders ,procedures, window and filter sys.functions.
