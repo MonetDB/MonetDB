@@ -1,5 +1,0 @@
-START TRANSACTION;
-
-SELECT stmt FROM sys.dump_database(FALSE);
-
-ROLLBACK;
