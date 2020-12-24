@@ -52,6 +52,7 @@ CREATE TABLE "sys"."foo" ("i" INTEGER, "j" INTEGER);
 create function "sys"."f1" () returns int begin return 10; end;
 create procedure "sys"."f1" (i int) begin declare x int; end;
 create procedure "sys"."f1" () begin declare x int; end;
+CREATE TABLE "sys"."tbl_with_data" ("c1" INTEGER, "c2" BIGINT, "c3" BINARY LARGE OBJECT, "c4" BOOLEAN, "c5" CHARACTER LARGE OBJECT, "c6" DATE, "c7" INTERVAL DAY, "c8" DECIMAL(18,3), "c9" DECIMAL(5), "c10" DECIMAL(5,2), "c11" DOUBLE, "c12" FLOAT(5), "c13" FLOAT(5,4), "c14" GEOMETRY(POINT), "c18" INTERVAL YEAR, "c19" INTERVAL YEAR TO MONTH, "c20" INTERVAL MONTH, "c21" REAL, "c22" INTERVAL DAY, "c23" INTERVAL DAY TO HOUR, "c24" INTERVAL HOUR, "c25" INTERVAL HOUR TO MINUTE, "c26" TIME, "c27" TIMESTAMP, "c28" TIMESTAMP(2), "c29" TIMESTAMP WITH TIME ZONE, "c30" JSON, "c31" INET, "c32" URL, "c33" UUID);
 ALTER TABLE "sys"."yoyo" ALTER COLUMN "tsz" SET DEFAULT 'BLABOLO';
 ALTER TABLE "sys"."bolo" ADD CONSTRAINT "cpk" PRIMARY KEY ("s", "v");
 ALTER TABLE "sys"."rolo" ADD CONSTRAINT "rolo_v_pkey" PRIMARY KEY ("v");
@@ -82,4 +83,8 @@ INSERT INTO sys.privileges VALUES ((SELECT fqn.id FROM fully_qualified_functions
 INSERT INTO sys.privileges VALUES ((SELECT fqn.id FROM fully_qualified_functions() fqn WHERE fqn.nme =  'sys.f1(INTEGER)'  AND fqn.tpe =  'PROCEDURE' ),(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'EXECUTE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),false);
 INSERT INTO sys.privileges VALUES ((SELECT fqn.id FROM fully_qualified_functions() fqn WHERE fqn.nme =  'sys.f1()'  AND fqn.tpe =  'PROCEDURE' ),(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'EXECUTE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),true);
 INSERT INTO sys.privileges VALUES (0,(SELECT id FROM auths a WHERE a.name =  'voc' ),(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name =  'UPDATE' ),(SELECT id FROM auths g WHERE g.name =  'monetdb' ),false);
+COPY 3 RECORDS INTO "sys"."tbl_with_data"("c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "c18", "c19", "c20", "c21", "c22", "c23", "c24", "c25", "c26", "c27", "c28", "c29", "c30", "c31", "c32", "c33") FROM STDIN USING DELIMITERS '|','\n','"';
+1234|5678|90|true|"Hello\n \\|\" World"|2020-12-20|10.000|1023.345|12345|123.45|1123.455|1122133.5|121233.45|"POINT (5.1 34.5)"|2000|4000|8000|65333.414|8000.000|4000.000|2000.000|1000.000|14:18:18|2015-05-22 14:18:17.780331|2015-05-22 00:00:00.00|2015-05-22 13:18:17.780331+01:00|"{\"price\":9}"|10.1.0.0/16|"https://me@www.monetdb.org:458/Doc/Abc.html?lang=nl&sort=asc#example"|65950c76-a2f6-4543-660a-b849cf5f2453
+null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null
+null|null|null|null|"null"|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null|null
 COMMIT;
