@@ -2720,7 +2720,7 @@ exp_shares_exps(sql_exp *e, list *shared, uint64_t *uses)
 				uint64_t used = (uint64_t) 1 << i;
 				if (used & *uses)
 					return true;
-				*uses &= used;
+				*uses |= used;
 				return false;
 			}
 			if (ne != e && (list_position(shared, e) < 0 || list_position(shared, e) > list_position(shared, ne)))
