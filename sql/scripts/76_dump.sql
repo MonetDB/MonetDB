@@ -52,12 +52,21 @@ CREATE FUNCTION dump_sequences() RETURNS TABLE(stmt STRING) BEGIN
 RETURN
 	SELECT
 		'CREATE SEQUENCE ' || FQN(sch, seq) || ' AS BIGINT ' ||
-		CASE WHEN "s" <> 0 THEN ' START WITH ' || "s" ELSE '' END ||
+		CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
 		CASE WHEN "inc" <> 1 THEN ' INCREMENT BY ' || "inc" ELSE '' END ||
 		CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
 		CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
 		CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
 		CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';'
+	FROM describe_sequences();
+END;
+
+CREATE FUNCTION dump_start_sequences() RETURNS TABLE(stmt STRING) BEGIN
+RETURN
+	SELECT
+		'UPDATE sys.sequences seq SET start = ' || s  ||
+		' WHERE name = ' || SQ(seq) ||
+		' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || SQ(sch) || ');'
 	FROM describe_sequences();
 END;
 
@@ -227,7 +236,7 @@ BEGIN
 	SET SCHEMA sys;
 	TRUNCATE dump_statements;
 
-	INSERT INTO dump_statements VALUES (0, 'START TRANSACTION;');
+	INSERT INTO dump_statements VALUES (1, 'START TRANSACTION;');
 	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'SET SCHEMA "sys";');
 
 	INSERT INTO dump_statements --dump_create_roles
@@ -269,6 +278,7 @@ BEGIN
 		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_sequences();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_start_sequences();
 
 	--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(ORDER BY stmts.o), stmts.s
@@ -283,7 +293,7 @@ BEGIN
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_indices();
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_foreign_keys();
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_partition_tables();
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt from sys.dump_triggers();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_triggers();
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_comments();
 
 	--We are dumping ALL privileges so we need to erase existing privileges on the receiving side;
@@ -294,12 +304,9 @@ BEGIN
 		CALL dump_table_data();
 	END IF;
 
-	--TODO ALTER SEQUENCE using RESTART WITH after importing table_data.
 	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO look into order dependent group_concat
 	--TODO ADD upgrade code
-
-	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'COMMIT;');
 
 	RETURN dump_statements;
 END;
