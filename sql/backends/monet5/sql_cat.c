@@ -152,7 +152,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	if (!(rmt = mvc_bind_table(sql, ms, mtname)))
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ms->base.name, mtname);
 	if (!(rpt = mvc_bind_table(sql, ps, ptname)))
-		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ps->base.name, mtname);
+		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: no such table '%s' in schema '%s'", ps->base.name, ptname);
 
 	const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 	if (!update && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
