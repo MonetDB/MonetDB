@@ -41,7 +41,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 	 * StringLengthPtr */
 
 	switch (Attribute) {
-#ifndef STATIC_CODE_ANALYSIS
+#ifndef __COVERITY__
 	/* Coverity doesn't like the debug print in WriteData, so we
 	 * hide this whole thing */
 	case SQL_ATTR_APP_PARAM_DESC:		/* SQLHANDLE */
@@ -72,7 +72,7 @@ MNDBGetStmtAttr(ODBCStmt *stmt,
 		/* SQL_CURSOR_TYPE */
 		WriteData(ValuePtr, stmt->cursorType, SQLULEN);
 		break;
-#ifndef STATIC_CODE_ANALYSIS
+#ifndef __COVERITY__
 	/* Coverity doesn't like the debug print in WriteData, so we
 	 * hide this whole thing */
 	case SQL_ATTR_IMP_PARAM_DESC:		/* SQLHANDLE */

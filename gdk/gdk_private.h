@@ -374,7 +374,7 @@ extern MT_Lock GDKtmLock;
  * incompatible) */
 #define EXTRALEN ((SIZEOF_BUN + GDK_VARALIGN - 1) & ~(GDK_VARALIGN - 1))
 
-#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
+#if !defined(NDEBUG) && !defined(__COVERITY__)
 /* see comment in gdk.h */
 #ifdef __GNUC__
 #define GDKmremap(p, m, oa, os, ns)					\
