@@ -49,7 +49,7 @@
 #define UNLINK(x)
 #define ERRHNDL(r,s,t,u) ErrXit(s,t,u)
 #else
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 #define UNLINK(x)
 #else
 #define UNLINK(x) remove(x)

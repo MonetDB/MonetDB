@@ -90,7 +90,7 @@ static void generateChallenge(str buf, int min, int max) {
 	size_t size;
 	size_t i;
 
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	/* hide rand() calls from analysis */
 	size = (min + max) / 2;
 	for (i = 0; i < size; i++)

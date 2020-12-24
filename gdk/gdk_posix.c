@@ -373,7 +373,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	assert(mode & MMAP_WRITABLE);
 
 	if (*new_size < old_size) {
-#ifndef STATIC_CODE_ANALYSIS	/* hide this from static code analyzer */
+#ifndef __COVERITY__	/* hide this from static code analyzer */
 		/* shrink */
 		VALGRIND_RESIZEINPLACE_BLOCK(old_address, old_size, *new_size, 0);
 		if (munmap((char *) old_address + *new_size,
@@ -388,7 +388,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		if (path && truncate(path, *new_size) < 0)
 			TRC_WARNING(GDK, "MT_mremap(%s): truncate failed: %s\n",
 				    path, GDKstrerror(errno, (char[64]){0}, 64));
-#endif	/* !STATIC_CODE_ANALYSIS */
+#endif	/* !__COVERITY__ */
 		return old_address;
 	}
 	if (*new_size == old_size) {

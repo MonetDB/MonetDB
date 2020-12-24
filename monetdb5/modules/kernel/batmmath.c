@@ -443,7 +443,7 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 	}
 
 	vals = Tloc(bn, 0);
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	for (BUN i = 0; i < q; i++)
 		vals[i] = 0;
 #else

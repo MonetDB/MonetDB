@@ -934,7 +934,7 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 		snprintf(profiler_executable, executable_len, "%s%s%s",
 				 tmp_exe, profiler_filename, s + 8);
 		free(tmp_exe);
-#ifndef STATIC_CODE_ANALYSIS
+#ifndef __COVERITY__
 		/* hide for coverity: time-of-check time-of-use; it's ok to do
 		 * this since if the file were to disappear between this check
 		 * and the use, things won't fall apart */

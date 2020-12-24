@@ -72,7 +72,7 @@ extern size_t sa_size( sql_allocator *sa );
 
 #define _strlen(s) (int)strlen(s)
 
-#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS) && defined(__GNUC__)
+#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__)
 #define sa_alloc(sa, sz)					\
 	({							\
 		sql_allocator *_sa = (sa);			\
