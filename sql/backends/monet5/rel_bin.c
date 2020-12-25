@@ -5263,6 +5263,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 	if (*error)
 		return;
 
+	sqlstore *store = sql->session->tr->store;
 	if (t->keys.set) { /* Check for foreign key references */
 		for (n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
@@ -5279,8 +5280,8 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 						if (k->t != t && !cascade) {
 							node *n = t->columns.set->h;
 							sql_column *c = n->data;
-							size_t n_rows = store_funcs.count_col(sql->session->tr, c, 1);
-							size_t n_deletes = store_funcs.count_del(sql->session->tr, c->t);
+							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 1);
+							size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t);
 							assert (n_rows >= n_deletes);
 							if (n_rows - n_deletes > 0) {
 								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);

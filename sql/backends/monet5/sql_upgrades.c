@@ -68,6 +68,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 			"delete from sys.functions where id < 2000;\n"
 			"delete from sys.args where func_id not in"
 			" (select id from sys.functions);\n");
+	sqlstore *store = sql->session->tr->store;
 	for (n = funcs->h; n; n = n->next) {
 		sql_func *func = n->data;
 		int number = 0;
@@ -99,7 +100,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 						" (%d, %d, 'res_%d',"
 						" '%s', %u, %u, %d,"
 						" %d);\n",
-						store_next_oid(),
+						store_next_oid(store),
 						func->base.id,
 						number,
 						arg->type.type->sqlname,
@@ -116,7 +117,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 						" values"
 						" (%d, %d, '%s', '%s',"
 						" %u, %u, %d, %d);\n",
-						store_next_oid(),
+						store_next_oid(store),
 						func->base.id,
 						arg->name,
 						arg->type.type->sqlname,
@@ -130,7 +131,7 @@ sql_fix_system_tables(Client c, mvc *sql, const char *prev_schema)
 						" (%d, %d, 'arg_%d',"
 						" '%s', %u, %u, %d,"
 						" %d);\n",
-						store_next_oid(),
+						store_next_oid(store),
 						func->base.id,
 						number,
 						arg->type.type->sqlname,
@@ -2849,11 +2850,12 @@ SQLupgrades(Client c, mvc *m)
 	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION);
 	m->session->status = 0; /* if the function was not found clean the error */
 	m->errstr[0] = '\0';
+	sqlstore *store = m->session->tr->store;
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(s, "privileges");
 		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
 
-		table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
+		store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 	}
 
 	/* If the point type exists, but the geometry type does not

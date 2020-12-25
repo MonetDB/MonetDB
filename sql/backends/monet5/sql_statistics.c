@@ -58,13 +58,14 @@ sql_drop_statistics(mvc *m, sql_table *t)
 		}
 	}
 
+	sqlstore *store = tr->store;
 	if (isTable(t) && t->columns.set) {
 		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
 			sql_column *c = ncol->data;
 
-			rid = table_funcs.column_find_row(tr, statsid, &c->base.id, NULL);
+			rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
 			if (!is_oid_nil(rid) &&
-			    table_funcs.table_delete(tr, sysstats, rid) != LOG_OK)
+			    store->table_api.table_delete(tr, sysstats, rid) != LOG_OK)
 				throw(SQL, "sql_drop_statistics", "delete failed");
 		}
 	}
@@ -163,6 +164,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (col && !cfnd)
 		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 
+	sqlstore *store = tr->store;
 	for (nsch = tr->cat->schemas.set->h; nsch; nsch = nsch->next) {
 		sql_base *b = nsch->data;
 		sql_schema *s = (sql_schema *) nsch->data;
@@ -197,14 +199,14 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						if (c->max)
 							c->max = NULL;
 
-						if ((bn = store_funcs.bind_col(tr, c, RDONLY)) == NULL) {
+						if ((bn = store->storage_api.bind_col(tr, c, RDONLY)) == NULL) {
 							/* XXX throw error instead? */
 							continue;
 						}
 						sz = BATcount(bn);
 						tostr = BATatoms[bn->ttype].atomToStr;
 
-						rid = table_funcs.column_find_row(tr, statsid, &c->base.id, NULL);
+						rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
 						if (samplesize > 0) {
 							bsample = BATsample(bn, (BUN) samplesize);
 						} else
@@ -293,12 +295,12 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						}
 						BBPunfix(bn->batCacheid);
 						ts = timestamp_current();
-						if (!is_oid_nil(rid) && table_funcs.table_delete(tr, sysstats, rid) != LOG_OK) {
+						if (!is_oid_nil(rid) && store->table_api.table_delete(tr, sysstats, rid) != LOG_OK) {
 							GDKfree(maxval);
 							GDKfree(minval);
 							throw(SQL, "analyze", "delete failed");
 						}
-						if (table_funcs.table_insert(tr, sysstats, &c->base.id, c->type.type->sqlname, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, minval, maxval, &sorted, &revsorted) != LOG_OK) {
+						if (store->table_api.table_insert(tr, sysstats, &c->base.id, c->type.type->sqlname, &width, &ts, samplesize ? &samplesize : &sz, &sz, &uniq, &nils, minval, maxval, &sorted, &revsorted) != LOG_OK) {
 							GDKfree(maxval);
 							GDKfree(minval);
 							throw(SQL, "analyze", "insert failed");

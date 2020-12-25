@@ -19,9 +19,9 @@ sql_dbat *tobe_destroyed_dbat = NULL;
 sql_delta *tobe_destroyed_delta = NULL;
 
 static sql_trans *
-oldest_active_transaction(void)
+oldest_active_transaction(sqlstore *store)
 {
-	sql_session *s = active_sessions->h->data;
+	sql_session *s = store->active->h->data;
 	return s->tr;
 }
 
@@ -58,12 +58,13 @@ delta_bind_del(sql_dbat *bat, int access)
 static BAT *
 bind_del(sql_trans *tr, sql_table *t, int access)
 {
+	sqlstore *store = tr->store;
 	assert(tr == gtrans || access == QUICK || tr->active);
 	if (!t->data) {
 		sql_table *ot = tr_find_table(tr->parent, t);
 		t->data = timestamp_dbat(ot->data, t->base.stime);
 	}
-	assert(!store_initialized || tr != gtrans);
+	assert(!store->initialized || tr != gtrans);
 	t->s->base.rtime = t->base.rtime = tr->stime;
 	return delta_bind_del(t->data, access);
 }
@@ -1314,15 +1315,16 @@ load_delta(sql_delta *bat, int bid, int type)
 }
 
 static int
-load_bat(sql_delta *bat, int type, char tpe, oid id)
+load_bat(sql_trans *tr, sql_delta *bat, int type, char tpe, oid id)
 {
-	int bid = logger_find_bat(bat_logger, bat->name, tpe, id);
+	sqlstore *store = tr->store;
+	int bid = logger_find_bat(store->logger, bat->name, tpe, id);
 
 	return load_delta(bat, bid, type);
 }
 
 static int
-log_create_delta(sql_delta *bat, char tpe, oid id)
+log_create_delta(sql_trans *tr, sql_delta *bat, char tpe, oid id)
 {
 	int res = LOG_OK;
 	gdk_return ok;
@@ -1344,9 +1346,10 @@ log_create_delta(sql_delta *bat, char tpe, oid id)
 		return res;
 	}
 
-	ok = logger_add_bat(bat_logger, b, bat->name, tpe, id);
+	sqlstore *store = tr->store;
+	ok = logger_add_bat(store->logger, b, bat->name, tpe, id);
 	if (ok == GDK_SUCCEED)
-		ok = log_bat_persists(bat_logger, b, bat->name, tpe, id);
+		ok = log_bat_persists(store->logger, b, bat->name, tpe, id);
 	bat_destroy(b);
 	if(res != LOG_OK)
 		return res;
@@ -1446,9 +1449,10 @@ create_delta( sql_delta *d, BAT *b, BAT *i)
 }
 
 static int
-upgrade_delta( sql_delta *d, char tpe, oid id)
+upgrade_delta(sql_trans *tr, sql_delta *d, char tpe, oid id)
 {
-	return logger_upgrade_bat(bat_logger, d->name, tpe, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	sqlstore *store = tr->store;
+	return logger_upgrade_bat(store->logger, d->name, tpe, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static bat
@@ -1495,7 +1499,7 @@ create_col(sql_trans *tr, sql_column *c)
 	}
 
 	if (!isNew(c) && !isTempTable(c->t)){
-		return load_bat(bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
+		return load_bat(tr, bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
 	} else if (!bat->ibid) {
@@ -1544,12 +1548,12 @@ create_col(sql_trans *tr, sql_column *c)
 }
 
 static int
-upgrade_col(sql_column *c)
+upgrade_col(sql_trans *tr, sql_column *c)
 {
 	sql_delta *bat = c->data;
 
 	if (!c->t->bootstrap)
-		return upgrade_delta(bat, LOG_COL, c->base.id);
+		return upgrade_delta(tr, bat, LOG_COL, c->base.id);
 	return LOG_OK;
 }
 
@@ -1558,7 +1562,7 @@ log_create_col(sql_trans *tr, sql_column *c)
 {
 	(void)tr;
 	assert(tr->parent == gtrans && !isTempTable(c->t));
-	return log_create_delta( c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
+	return log_create_delta(tr,  c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
 }
 
 static int
@@ -1594,7 +1598,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	}
 
 	if (!isNew(ni) && !isTempTable(ni->t)){
-		return load_bat(bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
+		return load_bat(tr, bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
 	} else if (!bat->ibid) {
@@ -1639,12 +1643,12 @@ create_idx(sql_trans *tr, sql_idx *ni)
 }
 
 static int
-upgrade_idx(sql_idx *i)
+upgrade_idx(sql_trans *tr, sql_idx *i)
 {
 	sql_delta *bat = i->data;
 
 	if (!i->t->bootstrap && bat != NULL)
-		return upgrade_delta(bat, LOG_IDX, i->base.id);
+		return upgrade_delta(tr, bat, LOG_IDX, i->base.id);
 	return LOG_OK;
 }
 
@@ -1653,7 +1657,7 @@ log_create_idx(sql_trans *tr, sql_idx *ni)
 {
 	(void)tr;
 	assert(tr->parent == gtrans && !isTempTable(ni->t));
-	return log_create_delta( ni->data, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
+	return log_create_delta(tr, ni->data, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 }
 
 static int
@@ -1697,8 +1701,9 @@ create_del(sql_trans *tr, sql_table *t)
 			ok = LOG_ERR;
 	}
 	(void)tr;
+	sqlstore *store = tr->store;
 	if (!isNew(t) && !isTempTable(t)) {
-		log_bid bid = logger_find_bat(bat_logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
+		log_bid bid = logger_find_bat(store->logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
 
 		if (bid) {
 			return load_dbat(bat, bid);
@@ -1720,17 +1725,19 @@ create_del(sql_trans *tr, sql_table *t)
 }
 
 static int
-upgrade_del(sql_table *t)
+upgrade_del(sql_trans *tr, sql_table *t)
 {
 	sql_dbat *bat = t->data;
 
-	if (!t->bootstrap)
-		return logger_upgrade_bat(bat_logger, bat->dname, LOG_TAB, t->base.id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (!t->bootstrap) {
+		sqlstore *store = tr->store;
+		return logger_upgrade_bat(store->logger, bat->dname, LOG_TAB, t->base.id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	}
 	return LOG_OK;
 }
 
 static int
-log_create_dbat( sql_dbat *bat, char tpe, oid id)
+log_create_dbat(sql_trans *tr, sql_dbat *bat, char tpe, oid id)
 {
 	BAT *b;
 	gdk_return ok;
@@ -1742,9 +1749,10 @@ log_create_dbat( sql_dbat *bat, char tpe, oid id)
 	if (b == NULL)
 		return LOG_ERR;
 
-	ok = logger_add_bat(bat_logger, b, bat->dname, tpe, id);
+	sqlstore *store = tr->store;
+	ok = logger_add_bat(store->logger, b, bat->dname, tpe, id);
 	if (ok == GDK_SUCCEED)
-		ok = log_bat_persists(bat_logger, b, bat->dname, tpe, id);
+		ok = log_bat_persists(store->logger, b, bat->dname, tpe, id);
 	bat_destroy(b);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
@@ -1754,7 +1762,7 @@ log_create_del(sql_trans *tr, sql_table *t)
 {
 	(void)tr;
 	assert(tr->parent == gtrans && !isTempTable(t));
-	return log_create_dbat(t->data, t->bootstrap?0:LOG_TAB, t->base.id);
+	return log_create_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
 }
 
 static int
@@ -1782,13 +1790,14 @@ log_destroy_delta(sql_trans *tr, sql_delta *b, char tpe, oid id)
 	gdk_return ok = GDK_SUCCEED;
 
 	(void)tr;
+	sqlstore *store = tr->store;
 	if (!GDKinmemory(0) &&
 	    b &&
 	    b->bid &&
 	    b->name &&
-	    (ok = log_bat_transient(bat_logger, b->name, tpe, id)) == GDK_SUCCEED &&
-	    (bid = logger_find_bat(bat_logger, b->name, tpe, id)) != 0) {
-		ok = logger_del_bat(bat_logger, bid);
+	    (ok = log_bat_transient(store->logger, b->name, tpe, id)) == GDK_SUCCEED &&
+	    (bid = logger_find_bat(store->logger, b->name, tpe, id)) != 0) {
+		ok = logger_del_bat(store->logger, bid);
 	}
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
@@ -1942,13 +1951,14 @@ log_destroy_dbat(sql_trans *tr, sql_dbat *bat, char tpe, oid id)
 	gdk_return ok = GDK_SUCCEED;
 
 	(void)tr;
+	sqlstore *store = tr->store;
 	if (!GDKinmemory(0) &&
 	    bat &&
 	    bat->dbid &&
 	    bat->dname &&
-	    (ok = log_bat_transient(bat_logger, bat->dname, tpe, id)) == GDK_SUCCEED &&
-	    (bid = logger_find_bat(bat_logger, bat->dname, tpe, id)) != 0) {
-		ok = logger_del_bat(bat_logger, bid);
+	    (ok = log_bat_transient(store->logger, bat->dname, tpe, id)) == GDK_SUCCEED &&
+	    (bid = logger_find_bat(store->logger, bat->dname, tpe, id)) != 0) {
+		ok = logger_del_bat(store->logger, bid);
 	}
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
@@ -2088,18 +2098,19 @@ clear_del(sql_trans *tr, sql_table *t)
 static int
 gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 {
+	sqlstore *store = tr->store;
 	int ok = LOG_OK, cleared = 0;
 	BAT *ins, *cur;
 
 	(void)tr;
-	assert(ATOMIC_GET(&store_nr_active)==0);
+	assert(ATOMIC_GET(&store->nr_active)==0);
 
 	if (!cbat->bid) {
 		cleared = 1;
-		cbat->bid = logger_find_bat(bat_logger, cbat->name, tpe, id);
+		cbat->bid = logger_find_bat(store->logger, cbat->name, tpe, id);
 		temp_dup(cbat->bid);
 	}
-	assert(cbat->bid == logger_find_bat(bat_logger, cbat->name, tpe, id));
+	assert(cbat->bid == logger_find_bat(store->logger, cbat->name, tpe, id));
 	cur = temp_descriptor(cbat->bid);
 	ins = temp_descriptor(cbat->ibid);
 
@@ -2175,11 +2186,12 @@ gtr_update_delta( sql_trans *tr, sql_delta *cbat, int *changes, int id, int tpe)
 static int
 gtr_update_dbat(sql_trans *tr, sql_dbat *d, int *changes, char tpe, oid id)
 {
+	sqlstore *store = tr->store;
 	int ok = LOG_OK;
 	BAT *idb, *cdb;
-	int dbid = logger_find_bat(bat_logger, d->dname, tpe, id);
+	int dbid = logger_find_bat(store->logger, d->dname, tpe, id);
 
-	assert(ATOMIC_GET(&store_nr_active)==0);
+	assert(ATOMIC_GET(&store->nr_active)==0);
 	if (d->dbid == dbid) {
 		/* if set its handled by the bat clear of the dbid */
 		d->cleared = 0;
@@ -2382,12 +2394,13 @@ tr_handle_snapshot( sql_trans *tr, sql_delta *bat)
 static int
 tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 {
+	sqlstore *store = tr->store;
 	int ok = LOG_OK;
 	BAT *ins, *cur = NULL;
 	int savepoint = tr->parent != gtrans;
 
 	(void)tr;
-	assert(ATOMIC_GET(&store_nr_active)==1 || savepoint);
+	assert(ATOMIC_GET(&store->nr_active)==1 || savepoint);
 
 	/* for cleared tables the bid is reset */
 	if (cbat->bid == 0) {
@@ -2531,11 +2544,12 @@ tr_update_delta( sql_trans *tr, sql_delta *obat, sql_delta *cbat, int unique)
 static int
 tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 {
+	sqlstore *store = tr->store;
 	int ok = LOG_OK;
 	BAT *ins, *cur = NULL;
 
 	(void)tr;
-	assert(ATOMIC_GET(&store_nr_active)==1);
+	assert(ATOMIC_GET(&store->nr_active)==1);
 	assert (obat->bid != 0 || tr != gtrans);
 
 	assert(!obat->cleared);
@@ -2629,6 +2643,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat, int unique)
 static int
 tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 {
+	sqlstore *store = tr->store;
 	int ok = LOG_OK;
 	BAT *db = NULL;
 
@@ -2640,7 +2655,7 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 		bat_destroy(tdb->cached);
 		tdb->cached = NULL;
 	}
-	assert(ATOMIC_GET(&store_nr_active)==1);
+	assert(ATOMIC_GET(&store->nr_active)==1);
 	db = temp_descriptor(fdb->dbid);
 	if(!db)
 		return LOG_ERR;
@@ -2689,13 +2704,14 @@ tr_update_dbat(sql_trans *tr, sql_dbat *tdb, sql_dbat *fdb)
 static int
 tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
 {
+	sqlstore *store = tr->store;
 	int ok = LOG_OK;
 
 	if (tdb->cached) {
 		bat_destroy(tdb->cached);
 		tdb->cached = NULL;
 	}
-	assert(ATOMIC_GET(&store_nr_active)==1);
+	assert(ATOMIC_GET(&store->nr_active)==1);
 	if (tdb->next) {
 		ok = destroy_dbat(tr, tdb->next);
 		tdb->next = NULL;
@@ -2706,14 +2722,15 @@ tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
 static int
 update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 {
-	sql_trans *oldest = oldest_active_transaction();
+	sqlstore *store = tr->store;
+	sql_trans *oldest = oldest_active_transaction(store);
 	sql_table *ot = NULL;
 	int ok = LOG_OK;
 	node *n, *m, *o = NULL;
 	int savepoint = tr->parent != gtrans;
 
-	if (ATOMIC_GET(&store_nr_active) == 1 || ft->base.allocated) {
-		if (!savepoint && ATOMIC_GET(&store_nr_active) > 1 && ft->data) { /* move delta */
+	if (ATOMIC_GET(&store->nr_active) == 1 || ft->base.allocated) {
+		if (!savepoint && ATOMIC_GET(&store->nr_active) > 1 && ft->data) { /* move delta */
 			sql_dbat *b = ft->data;
 
 			if (!tt->data)
@@ -2741,7 +2758,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		} else if (tt->data && ft->base.allocated) {
 			if (tr_update_dbat(tr, tt->data, ft->data) != LOG_OK)
 				ok = LOG_ERR;
-		} else if (ATOMIC_GET(&store_nr_active) == 1 && !ft->base.allocated) {
+		} else if (ATOMIC_GET(&store->nr_active) == 1 && !ft->base.allocated) {
 			/* only insert/updates, merge earlier deletes */
 			if (!tt->data) {
 				sql_table *ot = tr_find_table(tr->parent, tt);
@@ -2764,9 +2781,9 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 		sql_column *cc = n->data; // TODO: either stick to to/from terminology or old/current terminology
 		sql_column *oc = m->data;
 
-		if (ATOMIC_GET(&store_nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
+		if (ATOMIC_GET(&store->nr_active) == 1 || (cc->base.wtime && cc->base.allocated)) {
 			assert(!cc->base.wtime || oc->base.wtime < cc->base.wtime || (oc->base.wtime == cc->base.wtime && oc->base.allocated /* alter */));
-			if (!savepoint && ATOMIC_GET(&store_nr_active) > 1 && cc->data) { /* move delta */
+			if (!savepoint && ATOMIC_GET(&store->nr_active) > 1 && cc->data) { /* move delta */
 				sql_delta *b = cc->data;
 				sql_column *oldc = NULL;
 
@@ -2797,7 +2814,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 			} else if (oc->data && cc->base.allocated) {
 				if (tr_update_delta(tr, oc->data, cc->data, cc->unique == 1) != LOG_OK)
 					ok = LOG_ERR;
-			} else if (ATOMIC_GET(&store_nr_active) == 1 && !cc->base.allocated) {
+			} else if (ATOMIC_GET(&store->nr_active) == 1 && !cc->base.allocated) {
 				/* only deletes, merge earlier changes */
 				if (!oc->data) {
 					sql_column *o = tr_find_column(tr->parent, oc);
@@ -2858,8 +2875,8 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				ci->base.allocated = 0;
 				continue;
 			}
-			if (ATOMIC_GET(&store_nr_active) == 1 || (ci->base.wtime && ci->base.allocated)) {
-				if (!savepoint && ATOMIC_GET(&store_nr_active) > 1 && ci->data) { /* move delta */
+			if (ATOMIC_GET(&store->nr_active) == 1 || (ci->base.wtime && ci->base.allocated)) {
+				if (!savepoint && ATOMIC_GET(&store->nr_active) > 1 && ci->data) { /* move delta */
 					sql_delta *b = ci->data;
 					sql_idx *oldi = NULL;
 
@@ -2889,7 +2906,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 				} else if (oi->data && ci->base.allocated) {
 					if (tr_update_delta(tr, oi->data, ci->data, 0) != LOG_OK)
 						ok = LOG_ERR;
-				} else if (ATOMIC_GET(&store_nr_active) == 1 && !ci->base.allocated) {
+				} else if (ATOMIC_GET(&store->nr_active) == 1 && !ci->base.allocated) {
 					if (!oi->data) {
 						sql_idx *o = tr_find_idx(tr->parent, oi);
 						oi->data = timestamp_delta(o->data, oi->base.stime);
@@ -2931,6 +2948,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 static int
 tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 {
+	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
 	BAT *ins;
 
@@ -2943,22 +2961,22 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 	if (ins == NULL)
 		return LOG_ERR;
 
-	if (cleared && log_bat_clear(bat_logger, cbat->name, tpe, id) != GDK_SUCCEED) {
+	if (cleared && log_bat_clear(store->logger, cbat->name, tpe, id) != GDK_SUCCEED) {
 		bat_destroy(ins);
 		return LOG_ERR;
 	}
 
 	/* any inserts */
 	if (BUNlast(ins) > 0) {
-		assert(ATOMIC_GET(&store_nr_active)>0);
+		assert(ATOMIC_GET(&store->nr_active)>0);
 		if (BUNlast(ins) > ins->batInserted &&
 		    (cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE))
-			ok = log_bat(bat_logger, ins, cbat->name, tpe, id);
+			ok = log_bat(store->logger, ins, cbat->name, tpe, id);
 		if (ok == GDK_SUCCEED &&
 		    !cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE) {
 			/* log new snapshot */
-			if ((ok = logger_add_bat(bat_logger, ins, cbat->name, tpe, id)) == GDK_SUCCEED)
-				ok = log_bat_persists(bat_logger, ins, cbat->name, tpe, id);
+			if ((ok = logger_add_bat(store->logger, ins, cbat->name, tpe, id)) == GDK_SUCCEED)
+				ok = log_bat_persists(store->logger, ins, cbat->name, tpe, id);
 		}
 	}
 	bat_destroy(ins);
@@ -2970,7 +2988,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 		if (ui == NULL || uv == NULL) {
 			ok = GDK_FAIL;
 		} else if (BUNlast(uv) > uv->batInserted || BATdirty(uv))
-			ok = log_delta(bat_logger, ui, uv, cbat->name, tpe, id);
+			ok = log_delta(store->logger, ui, uv, cbat->name, tpe, id);
 		bat_destroy(ui);
 		bat_destroy(uv);
 	}
@@ -2980,6 +2998,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 static int
 tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
 {
+	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
 	BAT *db = NULL;
 
@@ -2988,16 +3007,16 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
 
 	(void)tr;
 	assert (fdb->dname);
-	if (cleared && log_bat_clear(bat_logger, fdb->dname, tpe, id) != GDK_SUCCEED)
+	if (cleared && log_bat_clear(store->logger, fdb->dname, tpe, id) != GDK_SUCCEED)
 		return LOG_ERR;
 
 	db = temp_descriptor(fdb->dbid);
 	if(!db)
 		return LOG_ERR;
 	if (BUNlast(db) > 0) {
-		assert(ATOMIC_GET(&store_nr_active)>0);
+		assert(ATOMIC_GET(&store->nr_active)>0);
 		if (BUNlast(db) > db->batInserted)
-			ok = log_bat(bat_logger, db, fdb->dname, tpe, id);
+			ok = log_bat(store->logger, db, fdb->dname, tpe, id);
 	}
 	bat_destroy(db);
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
@@ -3081,10 +3100,11 @@ save_snapshot(sql_table *ft)
 static int
 tr_snapshot_bat( sql_trans *tr, sql_delta *cbat)
 {
+	sqlstore *store = tr->store;
 	int ok = LOG_OK;
 
 	assert(tr->parent == gtrans);
-	assert(ATOMIC_GET(&store_nr_active)>0);
+	assert(ATOMIC_GET(&store->nr_active)>0);
 
 	(void)tr;
 	if (!cbat->ibase && cbat->cnt > SNAPSHOT_MINSIZE) {

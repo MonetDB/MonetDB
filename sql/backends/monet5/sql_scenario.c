@@ -581,8 +581,6 @@ SQLtrans(mvc *m)
 			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		s = m->session;
 		if (!s->schema) {
-			if (s->schema_name)
-				GDKfree(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
 			if (!s->schema_name) {
 				mvc_cancel_session(m);

@@ -566,12 +566,14 @@ sql_bind_alias(const char *alias)
 	return NULL;
 }
 
+static sqlid local_id = 1;
+
 static sql_type *
 sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *name)
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
-	base_init(sa, &t->base, store_next_oid(), 0, name);
+	base_init(sa, &t->base, local_id++, 0, name);
 	t->sqlname = sa_strdup(sa, sqlname);
 	t->digits = digits;
 	t->scale = scale;
@@ -621,7 +623,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	}
 	if (res)
 		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	base_init(sa, &t->base, store_next_oid(), 0, name);
+	base_init(sa, &t->base, local_id++, 0, name);
 
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
@@ -1503,6 +1505,7 @@ sqltypeinit( sql_allocator *sa)
 void
 types_init(sql_allocator *sa)
 {
+	local_id = 1;
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);

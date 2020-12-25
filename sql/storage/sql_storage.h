@@ -24,26 +24,19 @@
 #define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
 
-extern int catalog_version;
-
 typedef enum store_type {
 	store_bat,	/* delta bats, ie multi user read/write */
 	store_tst,
 	store_mem
 } store_type;
 
-#define STORE_READONLY (store_readonly)
+
+struct sqlstore;
 
 /* builtin functions have ids less than this */
 #define FUNC_OIDS 2000
 
 extern sql_trans *gtrans;
-extern list *active_sessions;
-extern ATOMIC_TYPE store_nr_active;
-extern store_type active_store_type;
-extern int store_readonly;
-extern int store_singleuser;
-extern int store_initialized;
 
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);
@@ -116,8 +109,6 @@ typedef struct table_functions {
 	rids_diff_fptr rids_diff;
 } table_functions;
 
-sql_export table_functions table_funcs;
-
 /* delta table setup (ie readonly col + ins + upd + del)
 -- binds for column,idx (rdonly, inserts, updates) and delets
 */
@@ -168,9 +159,9 @@ typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 -- renames.
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*upgrade_col_fptr) (sql_column *c);
-typedef int (*upgrade_idx_fptr) (sql_idx *i);
-typedef int (*upgrade_del_fptr) (sql_table *t);
+typedef int (*upgrade_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*upgrade_idx_fptr) (sql_trans *tr, sql_idx *i);
+typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- duplicate the necessary storage resources for columns, indices and tables
@@ -309,26 +300,24 @@ typedef struct store_functions {
 	cleanup_fptr cleanup;
 } store_functions;
 
-sql_export store_functions store_funcs;
+typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
 
-typedef int (*logger_create_fptr) (int debug, const char *logdir, int catalog_version);
+typedef void (*logger_destroy_fptr) (struct sqlstore *store);
+typedef int (*logger_flush_fptr) (struct sqlstore *store, lng save_id);
+typedef int (*logger_cleanup_fptr) (struct sqlstore *store);
+typedef void (*logger_with_ids_fptr) (struct sqlstore *store);
 
-typedef void (*logger_destroy_fptr) (void);
-typedef int (*logger_flush_fptr) (lng save_id);
-typedef int (*logger_cleanup_fptr) (void);
-typedef void (*logger_with_ids_fptr) (void);
+typedef int (*logger_changes_fptr)(struct sqlstore *store);
+typedef int (*logger_get_sequence_fptr) (struct sqlstore *store, int seq, lng *id);
+typedef lng (*logger_read_last_transaction_id_fptr)(struct sqlstore store);
+typedef lng (*logger_get_transaction_drift_fptr)(struct sqlstore store);
 
-typedef int (*logger_changes_fptr)(void);
-typedef int (*logger_get_sequence_fptr) (int seq, lng *id);
-typedef lng (*logger_read_last_transaction_id_fptr)(void);
-typedef lng (*logger_get_transaction_drift_fptr)(void);
-
-typedef int (*log_isnew_fptr)(void);
-typedef bool (*log_needs_update_fptr)(void);
-typedef int (*log_tstart_fptr) (void);
-typedef int (*log_tend_fptr) (void);
-typedef lng (*log_save_id_fptr) (void);
-typedef int (*log_sequence_fptr) (int seq, lng id);
+typedef int (*log_isnew_fptr)(struct sqlstore *store);
+typedef bool (*log_needs_update_fptr)(struct sqlstore *store);
+typedef int (*log_tstart_fptr) (struct sqlstore *store);
+typedef int (*log_tend_fptr) (struct sqlstore *store);
+typedef lng (*log_save_id_fptr) (struct sqlstore *store);
+typedef int (*log_sequence_fptr) (struct sqlstore *store, int seq, lng id);
 
 /*
 -- List which parts of which files must be included in a hot snapshot.
@@ -343,9 +332,9 @@ typedef int (*log_sequence_fptr) (int seq, lng id);
 -- Using a stream (buffer) instead of a list data structure simplifies debugging
 -- and avoids a lot of tiny allocations and pointer manipulations.
 */
-typedef gdk_return (*logger_get_snapshot_files_fptr)(stream *plan);
+typedef gdk_return (*logger_get_snapshot_files_fptr)(struct sqlstore *store, stream *plan);
 
-typedef void *(*log_find_table_value_fptr)(const char *, const char *, const void *, ...);
+typedef void *(*log_find_table_value_fptr)(struct sqlstore *store, const char *, const char *, const void *, ...);
 typedef struct logger_functions {
 	logger_create_fptr create;
 	logger_destroy_fptr destroy;
@@ -369,8 +358,6 @@ typedef struct logger_functions {
 	log_find_table_value_fptr log_find_table_value;
 } logger_functions;
 
-sql_export logger_functions logger_funcs;
-
 /* we need to add an interface for result_tables later */
 
 extern res_table *res_table_create(sql_trans *tr, int res_id, oid query_id, int nr_cols, mapi_query_t querytype, res_table *next, void *order);
@@ -382,24 +369,26 @@ extern res_table *res_tables_remove(res_table *results, res_table *t);
 sql_export void res_tables_destroy(res_table *results);
 extern res_table *res_tables_find(res_table *results, int res_id);
 
-extern int store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser);
-extern void store_exit(void);
+extern struct sqlstore *store_init(sql_allocator *pa, int debug, store_type store, int readonly, int singleuser);
+extern void store_exit(struct sqlstore *store);
 
-extern int store_apply_deltas(bool locked);
-extern void store_flush_log(void);
-extern void store_suspend_log(void);
-extern void store_resume_log(void);
-extern lng store_hot_snapshot(str tarfile);
-extern lng store_hot_snapshot_to_stream(stream *s);
+extern int store_apply_deltas(struct sqlstore *store, bool locked);
+extern void store_flush_log(struct sqlstore *store);
+extern void store_suspend_log(struct sqlstore *store);
+extern void store_resume_log(struct sqlstore *store);
+extern lng store_hot_snapshot(struct sqlstore *store, str tarfile);
+extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
-extern void store_manager(void);
-extern void idle_manager(void);
+extern void store_manager(struct sqlstore *store);
+extern void idle_manager(struct sqlstore *store);
 
-extern void store_lock(void);
-extern void store_unlock(void);
-extern sqlid store_next_oid(void);
+extern void store_lock(struct sqlstore *store);
+extern void store_unlock(struct sqlstore *store);
+extern sqlid store_next_oid(struct sqlstore *store);
 
-extern sql_trans *sql_trans_create(sql_trans *parent, const char *name);
+extern int store_readonly(struct sqlstore *store);
+
+extern sql_trans *sql_trans_create(struct sqlstore *store, sql_trans *parent, const char *name);
 extern sql_trans *sql_trans_destroy(sql_trans *tr);
 extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
@@ -465,14 +454,16 @@ extern sql_trigger * sql_trans_create_trigger(sql_trans *tr, sql_table *t, const
 extern sql_trigger * sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c /*, extra options such as trunc */ );
 extern int sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 
-extern sql_sequence *create_sql_sequence(sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle);
+extern int sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor);
+
+extern sql_sequence *create_sql_sequence(struct sqlstore *store, sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle);
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
 extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
 extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
 
-extern sql_session * sql_session_create(sql_allocator *sa, int autocommit);
+extern sql_session * sql_session_create(struct sqlstore *store, sql_allocator *sa, int autocommit);
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
@@ -487,16 +478,16 @@ extern int sql_trans_get_dependency_type(sql_trans *tr, sqlid depend_id, sql_dep
 extern int sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
 extern list* sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid id);
 
-extern sql_table *create_sql_table(sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties);
-extern sql_column *create_sql_column(sql_trans *tr, sql_table *t, const char *name, sql_subtype *tpe);
-extern sql_ukey *create_sql_ukey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
-extern sql_fkey *create_sql_fkey(sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
-extern sql_key *create_sql_kc(sql_allocator *sa, sql_key *k, sql_column *c);
-extern sql_key * key_create_done(sql_allocator *sa, sql_key *k);
+extern sql_table *create_sql_table(struct sqlstore *store, sql_allocator *sa, const char *name, sht type, bit system, int persistence, int commit_action, bit properties);
+extern sql_column *create_sql_column(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *name, sql_subtype *tpe);
+extern sql_ukey *create_sql_ukey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt);
+extern sql_fkey *create_sql_fkey(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, key_type kt, sql_key *rkey, int on_delete, int on_update );
+extern sql_key *create_sql_kc(struct sqlstore *store, sql_allocator *sa, sql_key *k, sql_column *c);
+extern sql_key * key_create_done(struct sqlstore *store, sql_allocator *sa, sql_key *k);
 
-extern sql_idx *create_sql_idx(sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
-extern sql_idx *create_sql_ic(sql_allocator *sa, sql_idx *i, sql_column *c);
-extern sql_func *create_sql_func(sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
+extern sql_idx *create_sql_idx(struct sqlstore *store, sql_allocator *sa, sql_table *t, const char *nme, idx_type it);
+extern sql_idx *create_sql_ic(struct sqlstore *store, sql_allocator *sa, sql_idx *i, sql_column *c);
+extern sql_func *create_sql_func(struct sqlstore *store, sql_allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(sql_allocator *sa, sql_table *t);
@@ -512,5 +503,31 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
+
+typedef struct sqlstore {
+	int catalog_version;	/* software version of the catalog */
+	sql_catalog *cat;		/* the catalog of persistent tables (what to do with tmp tables ?) */
+	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
+	list *active;			/* list of running transactions */
+	ATOMIC_TYPE nr_active;	/* count number of transactions */
+    ATOMIC_TYPE nr_sessions;
+
+	int readonly;			/* store is readonly */
+	int singleuser;			/* store is for a single user only */
+	int first;				/* just created the db */
+	store_type active_type;
+	int debug;				/* debug mask */
+	int initialized;		/* used during bootstrap only */
+
+	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
+
+	sqlid obj_id, prev_oid;
+	store_functions storage_api;
+	table_functions table_api;
+	logger_functions logger_api;
+	void *logger;			/* space to keep logging structure of storage backend */
+
+	int catalog_nr;			/* Catalog content version number */
+} sqlstore;
 
 #endif /*SQL_STORAGE_H */
