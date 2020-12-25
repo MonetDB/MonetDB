@@ -132,16 +132,14 @@ CREATE PROCEDURE EVAL(stmt STRING) EXTERNAL NAME sql.eval;
 
 CREATE FUNCTION esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(sys.replace(sys.replace(s,'\\', '\\\\'), '\n', '\\n'), '"', '\\"') || '"'; END;
 
-CREATE FUNCTION esc_null(s STRING) RETURNS STRING BEGIN RETURN CASE WHEN s IS NULL THEN 'null' ELSE s END; END;
-
 CREATE FUNCTION prepare_esc(s STRING, t STRING) RETURNS STRING
 BEGIN
     RETURN
         CASE
             WHEN (t = 'varchar' OR t ='char' OR t = 'clob' OR t = 'json' OR t = 'geometry' OR t = 'url') THEN
-                'esc_null(esc(' || DQ(s) || '))'
+                'CASE WHEN ' || DQ(s) || ' IS NULL THEN ''null'' ELSE ' || 'esc(' || DQ(s) || ')' || ' END'
             ELSE
-                'esc_null(' || DQ(s) || ')'
+                'CASE WHEN ' || DQ(s) || ' IS NULL THEN ''null'' ELSE CAST(' || DQ(s) || ' AS STRING) END'
         END;
 END;
 
@@ -178,22 +176,13 @@ CREATE PROCEDURE _dump_table_data(sch STRING, tbl STRING) BEGIN
 			DECLARE M INT;
 			SET M = (SELECT MAX(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl);
 
-			IF (k < M) THEN
-				SET k = (SELECT MIN(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
-			END IF;
-
 			WHILE (k < M) DO
+				SET k = (SELECT MIN(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
 				SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
 				SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
 				SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || DQ(cname));
 				SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || prepare_esc(cname, ctype);
-				SET k = (SELECT MIN(c.id ) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
 			END WHILE;
-
-			SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
-			SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
-			SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || DQ(cname));
-			SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || prepare_esc(cname, ctype);
 
 			SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',''\\n'',''"'';');
 			SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || FQN(sch, tbl);
@@ -303,7 +292,7 @@ BEGIN
 	IF NOT DESCRIBE THEN
 		CALL dump_table_data();
 	END IF;
-
+	--TODO clean up code: factor in more dump functions
 	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO look into order dependent group_concat
 	--TODO ADD upgrade code
