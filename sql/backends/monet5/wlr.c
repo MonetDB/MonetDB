@@ -883,6 +883,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"WLRappend",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
+	sqlstore *store = m->session->tr->store;
 	switch(ATOMstorage(tpe)){
 	case TYPE_bit: WLRcolumn(bit); break;
 	case TYPE_bte: WLRcolumn(bte); break;
@@ -907,11 +908,11 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.append_col(m->session->tr, c, ins, TYPE_bat);
+		store->storage_api.append_col(m->session->tr, c, ins, TYPE_bat);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store_funcs.append_idx(m->session->tr, i, ins, tpe);
+			store->storage_api.append_idx(m->session->tr, i, ins, tpe);
 	}
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
@@ -939,6 +940,7 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	sqlstore *store = m->session->tr->store;
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
@@ -961,7 +963,7 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
+	store->storage_api.delete_tab(m->session->tr, t, ins, TYPE_bat);
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
 	return msg;
@@ -1003,6 +1005,8 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+
+	sqlstore *store = m->session->tr->store;
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
@@ -1054,11 +1058,11 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATmsync(tids);
 	BATmsync(upd);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+		store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+			store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
 	}
 
 cleanup:

@@ -835,7 +835,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	is_func = (type != F_PROC && type != F_LOADER);
 	assert(lang != FUNC_LANG_INT);
 
-	if (STORE_READONLY && create)
+	if (create && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
 
 	if (res && type == F_PROC)
@@ -1541,7 +1541,7 @@ rel_psm(sql_query *query, symbol *s)
 		int all = l->h->next->next->next->next->data.i_val;
 		int drop_action = l->h->next->next->next->next->next->data.i_val;
 
-		if (STORE_READONLY)
+		if (store_readonly(sql->session->tr->store))
 			return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
 
 		if (all)

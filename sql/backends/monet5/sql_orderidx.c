@@ -47,7 +47,8 @@ sql_createorderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.createorderindex", SQLSTATE(42S02) "Unknown table %s.%s", sch, tbl);
 	if (!(c = mvc_bind_column(m, t, col)))
 		throw(SQL, "sql.createorderindex", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
-	b = store_funcs.bind_col(m->session->tr, c, 0);
+	sqlstore *store = m->session->tr->store;
+	b = store->storage_api.bind_col(m->session->tr, c, 0);
 	if (b == 0)
 		throw(SQL,"sql.createorderindex", SQLSTATE(HY005) "Column can not be accessed");
 	/* create the ordered index on the column */
@@ -82,7 +83,8 @@ sql_droporderindex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.droporderindex", SQLSTATE(42S02) "Unknown table %s.%s", sch, tbl);
 	if (!(c = mvc_bind_column(m, t, col)))
 		throw(SQL, "sql.droporderindex", SQLSTATE(38000) "Unknown column %s.%s.%s", sch, tbl, col);
-	b = store_funcs.bind_col(m->session->tr, c, 0);
+	sqlstore *store = m->session->tr->store;
+	b = store->storage_api.bind_col(m->session->tr, c, 0);
 	if (b == 0)
 		throw(SQL,"sql.droporderindex", SQLSTATE(38000) "Column can not be accessed");
 	msg = OIDXdropImplementation(cntxt, b);

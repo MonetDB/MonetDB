@@ -138,6 +138,7 @@ typedef struct mvc {
 	char emod;		/* execution modifier */
 
 	sql_session *session;
+	sql_store store;
 
 	/* per query context */
 	mapi_query_t type;	/* query type */

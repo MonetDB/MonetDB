@@ -26,6 +26,7 @@ struct logger {
 	char *local_dir; /* the directory in which the log is written */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
+	void *funcdata;
 	stream *log;
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */
 	/* Store log_bids (int) to circumvent trouble with reference counting */

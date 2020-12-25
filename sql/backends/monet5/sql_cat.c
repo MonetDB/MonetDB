@@ -42,7 +42,7 @@
 		return msg;\
 	if ((msg = checkSQLContext(cntxt)) != NULL)\
 		return msg;\
-	if (STORE_READONLY)\
+	if (store_readonly(sql->session->tr->store))\
 		throw(SQL,"sql.cat",SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
 static char *
@@ -60,16 +60,17 @@ table_has_updates(sql_trans *tr, sql_table *t)
 {
 	node *n;
 	int cnt = 0;
+	sqlstore *store = tr->store;
 
 	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
 		sql_column *c = n->data;
-		BAT *b = store_funcs.bind_col(tr, c, RD_UPD_ID);
+		BAT *b = store->storage_api.bind_col(tr, c, RD_UPD_ID);
 		if ( b == 0)
 			return -1;
 		cnt |= BATcount(b) > 0;
 		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ ) &&
 		    t->persistence == SQL_PERSIST && !t->commit_action)
-			cnt |= store_funcs.count_col(tr, c, 0) > 0;
+			cnt |= store->storage_api.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);
 	}
 	return cnt;
@@ -903,12 +904,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			}
 			mvc_null(sql, nc, c->null);
 			/* for non empty check for nulls */
+			sqlstore *store = sql->session->tr->store;
 			if (c->null == 0) {
 				const void *nilptr = ATOMnilptr(c->type.type->localtype);
-				rids *nils = table_funcs.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
-				int has_nils = !is_oid_nil(table_funcs.rids_next(nils));
+				rids *nils = store->table_api.rids_select(sql->session->tr, nc, nilptr, NULL, NULL);
+				int has_nils = !is_oid_nil(store->table_api.rids_next(nils));
 
-				table_funcs.rids_destroy(nils);
+				store->table_api.rids_destroy(nils);
 				if (has_nils)
 					throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: NOT NULL constraint violated for column %s.%s", c->t->base.name, c->base.name);
 			}
@@ -1600,22 +1602,23 @@ SQLcomment_on(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	remark_col = find_sql_column(comments, "remark");
 	if (!id_col || !remark_col)
 		throw(SQL, "sql.comment_on", SQLSTATE(3F000) "no table sys.comments");
-	rid = table_funcs.column_find_row(tx, id_col, &objid, NULL);
+	sqlstore *store = tx->store;
+	rid = store->table_api.column_find_row(tx, id_col, &objid, NULL);
 	if (!strNil(remark) && *remark) {
 		if (!is_oid_nil(rid)) {
 			// have new remark and found old one, so update field
 			/* UPDATE sys.comments SET remark = %s WHERE id = %d */
-			ok = table_funcs.column_update_value(tx, remark_col, rid, remark);
+			ok = store->table_api.column_update_value(tx, remark_col, rid, remark);
 		} else {
 			// have new remark but found none so insert row
 			/* INSERT INTO sys.comments (id, remark) VALUES (%d, %s) */
-			ok = table_funcs.table_insert(tx, comments, &objid, remark);
+			ok = store->table_api.table_insert(tx, comments, &objid, remark);
 		}
 	} else {
 		if (!is_oid_nil(rid)) {
 			// have no remark but found one, so delete row
 			/* DELETE FROM sys.comments WHERE id = %d */
-			ok = table_funcs.table_delete(tx, comments, rid);
+			ok = store->table_api.table_delete(tx, comments, rid);
 		}
 	}
 	if (ok != LOG_OK)

@@ -239,6 +239,8 @@ extern void cs_remove_node(changeset * cs, node *n);
 typedef void *backend_code;
 typedef size_t backend_stack;
 
+typedef void *sql_store;
+
 typedef struct sql_schema {
 	sql_base base;
 	sqlid auth_id;
@@ -256,7 +258,7 @@ typedef struct sql_schema {
 	list *triggers;		/* useful within a table */
 
 	char *internal; 	/* optional internal module name */
-	//sql_trans *tr;
+	sql_store store;
 } sql_schema;
 
 typedef struct sql_catalog {
@@ -265,6 +267,9 @@ typedef struct sql_catalog {
 
 typedef struct sql_trans {
 	char *name;
+	int ts;				/* transaction timestamp */
+	sql_store store;	/* keep link into the global store */
+
 	int stime;		/* start of transaction */
 	int wstime;		/* first write transaction time stamp */
 	int wtime;		/* timestamp of latest write performed in transaction*/
@@ -280,7 +285,6 @@ typedef struct sql_trans {
 	sql_allocator *sa;	/* transaction allocator */
 
 	struct sql_trans *parent;	/* multilevel transaction support */
-	backend_stack stk;
 } sql_trans;
 
 typedef enum sql_class {
