@@ -1799,7 +1799,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	lng lng_store_oid;
 	sqlid id = 0;
 
-	store->sa = sa_create(pa);
+	store->sa = pa;
 	sa = sa_create(pa);
 	if (!sa || !store->sa)
 		return NULL;
@@ -2220,6 +2220,7 @@ flusher_should_run(sqlstore *store)
 void
 store_exit(sqlstore *store)
 {
+	sql_allocator *sa = store->sa;
 	MT_lock_set(&store->lock);
 
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
@@ -2239,11 +2240,10 @@ store_exit(sqlstore *store)
 	store->logger_api.destroy(store);
 
 	list_destroy(store->active);
-	if (store->sa)
-		sa_destroy(store->sa);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
 	MT_lock_unset(&store->lock);
+	sa_destroy(sa);
 }
 
 static sql_trans * trans_init(sql_trans *tr, sql_trans *otr);
