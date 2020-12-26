@@ -1841,8 +1841,14 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 #elif defined(HAVE_FSYNC)
 			     && fsync(fileno(fp)) < 0
 #endif
-				    ) ||
-			    fclose(fp) < 0) {
+				    )) {
+				remove(filename);
+				(void) fclose(fp);
+				GDKerror("flushing log file %s failed",
+					 filename);
+				goto error;
+			}
+			if (fclose(fp) < 0) {
 				remove(filename);
 				GDKerror("closing log file %s failed",
 					 filename);

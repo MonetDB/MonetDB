@@ -31,10 +31,6 @@ extern __declspec(dllexport) str MBMnormal(bat *ret, oid *base, lng *size, int *
 extern __declspec(dllexport) str MBMmix(bat *ret, bat *batid);
 extern __declspec(dllexport) str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
 
-#ifdef STATIC_CODE_ANALYSIS
-#define rand()		0
-#endif
-
 static gdk_return
 BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)
 {

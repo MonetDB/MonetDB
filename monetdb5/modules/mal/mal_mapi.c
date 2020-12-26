@@ -90,7 +90,7 @@ static void generateChallenge(str buf, int min, int max) {
 	size_t size;
 	size_t i;
 
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	/* hide rand() calls from analysis */
 	size = (min + max) / 2;
 	for (i = 0; i < size; i++)
@@ -623,9 +623,9 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			}
 			if (listen(sock, maxusers) == SOCKET_ERROR) {
 #ifdef _MSC_VER
-				err = wsaerror(WSAGetLastError());
+				e = WSAGetLastError();
 #else
-				err = GDKstrerror(errno, (char[128]){0}, 128);
+				e = errno;
 #endif
 				closesocket(sock);
 				sock = INVALID_SOCKET;
@@ -635,9 +635,9 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			SOCKLEN addrlen = (SOCKLEN) sizeof(addr);
 			if (getsockname(sock, (struct sockaddr *) &addr, &addrlen) == SOCKET_ERROR) {
 #ifdef _MSC_VER
-				err = wsaerror(WSAGetLastError());
+				e = WSAGetLastError();
 #else
-				err = GDKstrerror(errno, (char[128]){0}, 128);
+				e = errno;
 #endif
 				closesocket(sock);
 				sock = INVALID_SOCKET;
