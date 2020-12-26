@@ -878,7 +878,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 				BUNappend(task->cntxt->error_fld, &col, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_msg, buf, false) != GDK_SUCCEED ||
 				BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED) {
-				freeException(err);
+				GDKfree(err);
 				task->besteffort = 0; /* no longer best effort */
 				MT_lock_unset(&errorlock);
 				return -1;
@@ -886,7 +886,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			MT_lock_unset(&errorlock);
 		}
 		ret = -!task->besteffort; /* yep, two unary operators ;-) */
-		freeException(err);
+		GDKfree(err);
 		err = NULL;
 		/* replace it with a nil */
 		adt = fmt->nildata;
@@ -906,7 +906,7 @@ SQLinsert_val(READERtask *task, int col, int idx)
 			(err = SQLload_error(task, idx,task->as->nr_attrs)) == NULL ||
 			BUNappend(task->cntxt->error_input, err, false) != GDK_SUCCEED)
 			task->besteffort = 0;
-		freeException(err);
+		GDKfree(err);
 		task->rowerror[idx]++;
 		task->errorcnt++;
 		MT_lock_unset(&errorlock);
