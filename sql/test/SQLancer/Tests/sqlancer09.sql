@@ -19,3 +19,38 @@ CREATE TABLE "t0" ("tc0" TINYINT NOT NULL,"tc2" TINYINT NOT NULL,CONSTRAINT "t0_
 update t0 set tc2 = 119, tc0 = cast(t0.tc0 as bigint);
 update t0 set tc2 = 119, tc0 = (least(+ (cast(least(0, t0.tc0) as bigint)), sign(scale_down(100, 1)))) where true;
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" TIMESTAMP NOT NULL,"c1" DOUBLE,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3));
+COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+19522599.000
+0.638
+0.071
+12.000
+0.156
+0.902
+-546.000
+0.603
+
+CREATE TABLE "sys"."t2" ("c0" TIMESTAMP,"c1" DOUBLE);
+COPY 2 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	-869912003
+NULL	0.9641209077369987
+
+create view v0(vc0) as (with cte0(c0) as (with cte0(c0,c1) as (values (interval '2' day, ((null)%(0.3)))),
+cte1(c0,c1,c2,c3,c4) as (select all least(r'', r'2'), date '1970-01-13', ((r'')ilike(r'OF먉_')),
+((-2)+(-3)), cast(true as string(105)) where false) select distinct cast(case 1.1 when 0.2 then
+l1cte1.c1 when 0.4 then l1cte1.c1 when 1.03728474E9 then l1cte1.c1 when 0.2 then l1cte1.c1 else l1cte1.c1 end as string)
+from t0 as l1t0, t1 as l1t1,cte0 as l1cte0,cte1 as l1cte1 where not (l1cte1.c2)) select distinct least(-1, l0t0.c1)
+from t1 as l0t1, t0 as l0t0,cte0 as l0cte0 where least(cast(l0cte0.c0 as boolean), true));
+
+merge into t0 using (select * from v0) as v0 on true when not matched then insert (c1, c0) values ((select 1 from t1), timestamp '1970-01-20 08:57:27');
+
+merge into t0 using (select * from v0) as v0 on ((r'>\nAH')not like(cast(scale_up(99, 0.1) as string(278))))
+when not matched then insert (c1, c0) values (((((abs(-5))%((select -3 from t1 as l3t1, t2 as l3t2 where true))))
+>>((((values (1), (1)))>>((select distinct 2 from t1 as l3t1 where false))))), ifthenelse(abs(0.3) = 
+all(values ((select all 0.1 where true)), (case -1 when -3 then 0.1 
+when -2 then -5 end), (((1)>>(1)))), case when least(true, false) then greatest(timestamp '1970-01-15 21:14:28', timestamp '1970-01-02 15:11:23') end,
+nullif(timestamp '1970-01-20 08:57:27', sql_add(timestamp '1970-01-07 21:19:48', interval '-3' day))));
+ROLLBACK;
