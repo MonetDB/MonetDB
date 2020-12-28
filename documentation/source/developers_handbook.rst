@@ -70,7 +70,7 @@ directory where they reside::
 
 
 Adding sqllogic test
------------------
+--------------------
 
 See `<https://www.sqlite.org/sqllogictest/doc/trunk/about.wiki/>`_ for detail information 
 on how to structure sqllogic test if you desire to make one by hand. We have extended the 
