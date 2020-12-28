@@ -2780,7 +2780,6 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\"\n"
 					" FROM db_users() AS u\n"
 					" LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\";\n"
-					"GRANT SELECT ON sys.users TO PUBLIC;\n"
 					"CREATE VIEW sys.dependency_schemas_on_users AS\n"
 					" SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type\n"
 					" FROM sys.users AS u, sys.schemas AS s\n"

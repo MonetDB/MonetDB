@@ -317,7 +317,6 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 	InstrPtr sig;
 	va_list va;
 
-	va_start(va, argc);
 	assert(mod);
 	mod = putName(mod);
 	c = getModule(mod);
@@ -356,6 +355,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		}
 	}
 
+	va_start(va, argc);
 	for (i = 0; i<retc; i++ ){
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
@@ -363,6 +363,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		if (idx < 0 || sig == NULL) {
 			freeInstruction(sig);
 			freeSymbol(s);
+			va_end(va);
 			return MEL_ERR;
 		}
 		int tpe = TYPE_any;
@@ -384,6 +385,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		if (idx < 0 || sig == NULL) {
 			freeInstruction(sig);
 			freeSymbol(s);
+			va_end(va);
 			return MEL_ERR;
 		}
 		int tpe = TYPE_any;

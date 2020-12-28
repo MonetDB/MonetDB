@@ -133,7 +133,7 @@ gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
 
 
-#if !defined(NDEBUG) && !defined(STATIC_CODE_ANALYSIS)
+#if !defined(NDEBUG) && !defined(__COVERITY__)
 /* In debugging mode, replace GDKmalloc and other functions with a
  * version that optionally prints calling information.
  *

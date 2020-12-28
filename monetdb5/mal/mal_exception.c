@@ -33,14 +33,14 @@ static char *exceptionNames[] = {
 /*EOE*/	NULL
 };
 
-int
-isExceptionVariable(str nme){
-	int i;
-	if( nme)
-		for(i=0; exceptionNames[i]; i++)
-		if( strcmp(exceptionNames[i],nme)==0)
-			return 1;
-	return 0;
+bool
+isExceptionVariable(const char *nme)
+{
+	if (nme)
+		for (int i = 0; exceptionNames[i]; i++)
+			if (strcmp(exceptionNames[i], nme) == 0)
+				return true;
+	return false;
 }
 
 static char *M5OutOfMemory = MAL_MALLOC_FAIL;

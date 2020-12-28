@@ -2976,6 +2976,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ok == LOG_OK && tt->idxs.set) {
 		if (ot)
 			o = ot->idxs.set->h;
+		if (ft->idxs.set && tt->idxs.set)
 		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;
