@@ -1346,8 +1346,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         elif env.get('TRANS_INMEM'):
                             cmd.append('--dbextra=:memory:')
                         pSrvr = ServerClass(cmd,
-                                            open(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
-                                            open(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
+                                            openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out'), 'a'),
+                                            openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err'), 'a'),
                                             0,
                                             pollfile,
                                             int(env['MAPIPORT']))
@@ -1384,22 +1384,22 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             if pSrvr is not None:
                 pSrvr.terminate()
                 pSrvr = None
-                o = open(os.path.join(TSTTRGDIR, 'SingleServer.out.html'), 'w')
+                o = openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out.html'), 'w')
                 o.write('<html><head><title>{} standard output</title></head>'
                         '<body><pre>\n'.format(TSTDIR))
                 e = F_OK
-                for line in open(os.path.join(TSTTRGDIR, 'SingleServer.out')):
+                for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.out')):
                     if line != '\n' and not line.startswith('#'):
                         e = F_ERROR
                         ssout = F_ERROR
                     o.write(line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'))
                 o.write('</pre></body></html>\n')
                 o.close()
-                o = open(os.path.join(TSTTRGDIR, 'SingleServer.err.html'), 'w')
+                o = openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err.html'), 'w')
                 o.write('<html><head><title>{} standard error</title></head>'
                         '<body><pre>\n'.format(TSTDIR))
                 e = F_OK
-                for line in open(os.path.join(TSTTRGDIR, 'SingleServer.err')):
+                for line in openutf8(os.path.join(TSTTRGDIR, 'SingleServer.err')):
                     if line != '\n' and not line.startswith('#'):
                         e = F_ERROR
                         sserr = F_ERROR
