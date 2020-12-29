@@ -72,3 +72,24 @@ insert into t1 values ('');
 insert into t1(c0) values ((select 'a')), ('b');
 insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" BIGINT);
+COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1096730569
+-655229050
+1040813052
+-1340211666
+
+create view v0(vc0, vc1, vc2) as (values (uuid '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d', ((case when true then lower(r'e') end)ilike(cast(sql_sub(interval '1600798007' month, interval '854525416' month) as string(583)))),
+cast((greatest(time '12:29:42', time '00:13:46')) not between asymmetric (sql_min(time '01:00:00', time '08:31:00')) and (greatest(time '00:12:32', time '11:40:56')) as bigint)));
+
+MERGE INTO t1 USING (SELECT * FROM v0) AS v0 ON (((COALESCE(24656, 0.42848459531531180033425698638893663883209228515625, 1153747454, 0.04253046482486677604128999519161880016326904296875, 417897684))%(((-4.65033856E8)/(98)))))
+NOT BETWEEN SYMMETRIC (+ (NULLIF(-1338511329, 12))) AND (CASE WHEN CASE TIME '06:02:29' WHEN TIME '22:17:20' THEN TRUE ELSE TRUE END THEN "second"(INTERVAL '1243665924' DAY) WHEN (FALSE) = TRUE THEN CASE WHEN FALSE THEN -116446524
+WHEN TRUE THEN 1702709680 WHEN r'TRUE' THEN 1255285064 END
+WHEN (UUID 'baF49A5B-1862-19aa-E6F8-b3C5A7F4b1FF') BETWEEN SYMMETRIC (UUID '63A9aBBe-87b1-683a-2c68-eCd5cC7FE7E9') 
+AND (UUID '82eb84EF-dF3D-a45e-f92b-E42BdfFEB1B9') THEN - (1129823324) END) WHEN MATCHED THEN DELETE;
+
+-- Disable rel_simplify_ifthenelse optimizer
+SELECT 1 FROM (SELECT 1 FROM v0) AS v0(v0) inner join t1 ON 1 BETWEEN 2 AND (CASE WHEN 1 BETWEEN 2 AND 3 THEN 2 END);
+ROLLBACK;
