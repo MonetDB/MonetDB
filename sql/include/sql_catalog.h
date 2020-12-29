@@ -197,14 +197,13 @@ typedef enum commit_action_t {
 typedef int sqlid;
 
 typedef struct sql_base {
-	int wtime;
-	int rtime;
-	int stime;
 	int allocated;
 	int flags;
 	int refcnt;
 	sqlid id;
 	char *name;
+	ulng ts;				/* transaction start timestamp */
+	struct sql_base	*next;	/* older versions */
 } sql_base;
 
 #define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
@@ -267,14 +266,13 @@ typedef struct sql_catalog {
 
 typedef struct sql_trans {
 	char *name;
-	int ts;				/* transaction timestamp */
-	sql_store store;	/* keep link into the global store */
 
-	int stime;		/* start of transaction */
-	int wstime;		/* first write transaction time stamp */
-	int wtime;		/* timestamp of latest write performed in transaction*/
-	int schema_number;	/* schema timestamp */
-	int schema_updates;	/* set on schema changes */
+	ulng ts;		/* transaction start timestamp */
+	ulng tid;		/* transaction id */
+
+	sql_store store;	/* keep link into the global store */
+	list *changes;	/* list of changes */
+
 	int active;		/* active transaction */
 	int status;		/* status of the last query */
 	list *dropped;  	/* protection against recursive cascade action*/
