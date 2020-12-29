@@ -2260,7 +2260,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
         else:
             titlefmt = '-tTest <a href="%s%s">%s%s</a> (<a href="%s.%%s.diff.html">%%s</a>)' % (TST, EXT, TST, EXT, TST)
         diff_html = openutf8('%s.out.diff.html' % TST,"w")
-        out = open('%s.test.out' % TST).read()
+        out = openutf8('%s.test.out' % TST).read()
         Element('html', None,
 #                 Element('head', None,
 #                         Element('style', None,
@@ -2278,7 +2278,7 @@ def RunTest(env, TST, BusyPorts, COND, oktests, length, all_tests, pSrvr) :
             diff_html.write('<!--NoDiffs-->\n')
         diff_html.close()
         diff_html = openutf8('%s.err.diff.html' % TST,"w")
-        err = open('%s.test.err' % TST).read()
+        err = openutf8('%s.test.err' % TST).read()
         Element('html', None,
 #                 Element('head', None,
 #                         Element('style', None,
