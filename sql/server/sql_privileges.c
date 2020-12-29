@@ -104,7 +104,6 @@ schema_privs(sqlid grantor, sql_schema *s)
 str
 sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid grantor)
 {
-	sql_trans *tr = sql->session->tr;
 	bool allowed;
 	sqlid grantee_id;
 
@@ -123,14 +122,12 @@ sql_grant_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gra
 	if ((sql_privilege(sql, grantee_id, GLOBAL_OBJID, privs) >= 0))
 		throw(SQL,"sql.grant_global",SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	sql_insert_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
-	tr->schema_updates++;
 	return MAL_SUCCEED;
 }
 
 char *
 sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, sqlid grantor)
 {
-	sql_trans *tr = sql->session->tr;
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	bool allowed;
@@ -182,14 +179,12 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 	} else {
 		sql_insert_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
 	}
-	tr->schema_updates++;
 	return NULL;
 }
 
 char *
 sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid func_id, int grant, sqlid grantor)
 {
-	sql_trans *tr = sql->session->tr;
 	sql_schema *s = NULL;
 	sql_func *f = NULL;
 	bool allowed;
@@ -217,7 +212,6 @@ sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fun
 	if (sql_privilege(sql, grantee_id, f->base.id, privs) >= 0)
 		throw(SQL,"sql.grant", SQLSTATE(01007) "GRANT: User/role '%s' already has this privilege", grantee);
 	sql_insert_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
-	tr->schema_updates++;
 	return NULL;
 }
 
@@ -264,7 +258,6 @@ sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gr
 	if (grantee_id <= 0)
 		throw(SQL, "sql.revoke_global", SQLSTATE(01006) "REVOKE: User/role '%s' unknown", grantee);
 	sql_delete_priv(sql, grantee_id, GLOBAL_OBJID, privs, grantor, grant);
-	sql->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -313,7 +306,6 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 	} else {
 		sql_delete_priv(sql, grantee_id, c->base.id, privs, grantor, grant);
 	}
-	sql->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -343,7 +335,6 @@ sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid fu
 	if (grantee_id <= 0)
 		throw(SQL, "sql.revoke_func", SQLSTATE(01006) "REVOKE: User/role '%s' unknown", grantee);
 	sql_delete_priv(sql, grantee_id, f->base.id, privs, grantor, grant);
-	sql->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -360,7 +351,6 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 		return false;
 
 	store->table_api.table_insert(m->session->tr, auths, &id, auth, &grantor);
-	m->session->tr->schema_updates++;
 	return true;
 }
 
@@ -398,8 +388,6 @@ sql_drop_role(mvc *m, str auth)
 	for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A))
 		store->table_api.table_delete(tr, user_roles, rid);
 	store->table_api.rids_destroy(A);
-
-	tr->schema_updates++;
 	return NULL;
 }
 
@@ -547,7 +535,6 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 
 		store->table_api.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one);
 	}
-	m->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -590,7 +577,6 @@ sql_revoke_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 		store->table_api.table_delete(m->session->tr, privs, rid);
 	else if (admin)
 		throw(SQL,"sql.revoke_role", SQLSTATE(01006) "REVOKE: User '%s' does not have ROLE '%s'", grantee, role);
-	m->session->tr->schema_updates++;
 	return NULL;
 }
 
@@ -845,8 +831,6 @@ sql_drop_user(mvc *sql, char *user)
 		throw(SQL, "sql.drop_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	msg = sql_drop_granted_users(sql, user_id, user, deleted);
 	list_destroy(deleted);
-
-	sql->session->tr->schema_updates++;
 	return msg;
 }
 

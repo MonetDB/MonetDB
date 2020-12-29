@@ -959,7 +959,7 @@ mvc_getVersion(lng *version, const int *clientid)
 		return msg;
 	*version = -1;
 	if (m->session->tr)
-		*version = m->session->tr->stime;
+		*version = (lng)m->session->tr->ts;
 	return MAL_SUCCEED;
 }
 
@@ -1350,13 +1350,9 @@ mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT 
 		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	/* compute level using global transaction */
-	if (gtrans) {
-		sql_column *oc = tr_find_column(gtrans, c);
-
-		if (oc) {
-			for(sql_delta *d = oc->data; d; d = d->next)
+	if (c) {
+			for(sql_delta *d = c->data; d; d = d->next)
 				level++;
-		}
 	}
 	if (BUNappend(col7, &level, false) != GDK_SUCCEED) {
 		return createException(SQL,"sql.delta", SQLSTATE(HY013) MAL_MALLOC_FAIL);

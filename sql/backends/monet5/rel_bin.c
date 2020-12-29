@@ -5363,8 +5363,6 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 							error = 1;
 							goto finalize;
 						}
-						seq->base.wtime = sche->base.wtime = tr->wtime = tr->wstime;
-						tr->schema_updates++;
 					}
 				}
 			}

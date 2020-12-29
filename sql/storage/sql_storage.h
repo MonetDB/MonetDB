@@ -17,7 +17,6 @@
 #define LOG_OK		0
 #define LOG_ERR		(-1)
 
-#define isTemp(x) (isNew((x)->t)||(x)->t->persistence!=SQL_PERSIST)
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
 #define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
 #define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
@@ -117,13 +116,6 @@ typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
 
 /*
--- binds data for column, idx and delets (from the parent transaction)
-*/
-typedef void *(*bind_col_data_fptr) (sql_trans *tr, sql_column *c);
-typedef void *(*bind_idx_data_fptr) (sql_trans *tr, sql_idx *i);
-typedef void *(*bind_del_data_fptr) (sql_trans *tr, sql_table *t);
-
-/*
 -- append/update to columns and indices
 */
 typedef int (*append_col_fptr) (sql_trans *tr, sql_column *c, void *d, int t);
@@ -162,14 +154,6 @@ typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 typedef int (*upgrade_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*upgrade_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
-
-/*
--- duplicate the necessary storage resources for columns, indices and tables
--- returns LOG_OK, LOG_ERR
-*/
-typedef int (*dup_col_fptr) (sql_trans *tr, sql_column *oc, sql_column *c);
-typedef int (*dup_idx_fptr) (sql_trans *tr, sql_idx *oi, sql_idx *i );
-typedef int (*dup_del_fptr) (sql_trans *tr, sql_table *ot, sql_table *t);
 
 /*
 -- free the storage resources for columns, indices and tables
@@ -212,7 +196,6 @@ typedef int (*idx_upd_fptr) (sql_trans *tr, sql_idx *c, void *rows, void *data);
 -- returns LOG_OK, LOG_ERR
 */
 typedef int (*del_fptr) (sql_trans *tr, sql_table *c, void *rows);
-typedef int (*snapshot_fptr) ( sql_table *t );
 typedef int (*cleanup_fptr) ();
 
 /* backing struct for this interface */
@@ -221,10 +204,6 @@ typedef struct store_functions {
 	bind_col_fptr bind_col;
 	bind_idx_fptr bind_idx;
 	bind_del_fptr bind_del;
-
-	bind_col_data_fptr bind_col_data;
-	bind_idx_data_fptr bind_idx_data;
-	bind_del_data_fptr bind_del_data;
 
 	append_col_fptr append_col;
 	append_idx_fptr append_idx;
@@ -250,10 +229,6 @@ typedef struct store_functions {
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
 
-	dup_col_fptr dup_col;
-	dup_idx_fptr dup_idx;
-	dup_del_fptr dup_del;
-
 	destroy_col_fptr destroy_col;
 	destroy_idx_fptr destroy_idx;
 	destroy_del_fptr destroy_del;
@@ -261,33 +236,6 @@ typedef struct store_functions {
 	clear_col_fptr clear_col;
 	clear_idx_fptr clear_idx;
 	clear_del_fptr clear_del;
-
-	/* functions for logging */
-	create_col_fptr log_create_col;
-	create_idx_fptr log_create_idx;
-	create_del_fptr log_create_del;
-
-	destroy_col_fptr log_destroy_col;
-	destroy_idx_fptr log_destroy_idx;
-	destroy_del_fptr log_destroy_del;
-
-	/* functions for snapshots */
-	create_col_fptr snapshot_create_col;
-	create_idx_fptr snapshot_create_idx;
-	create_del_fptr snapshot_create_del;
-
-	destroy_col_fptr snapshot_destroy_col;
-	destroy_idx_fptr snapshot_destroy_idx;
-	destroy_del_fptr snapshot_destroy_del;
-
-	snapshot_fptr save_snapshot;
-
-	/* rollforward the changes, first snapshot, then log and finaly apply */
-	update_table_fptr snapshot_table;
-	update_table_fptr log_table;
-	update_table_fptr update_table;
-	gtrans_update_fptr gtrans_update;
-	gtrans_update_fptr gtrans_minmax;
 
 	col_ins_fptr col_ins;
 	col_upd_fptr col_upd;
@@ -390,9 +338,7 @@ extern int store_readonly(struct sqlstore *store);
 
 extern sql_trans *sql_trans_create(struct sqlstore *store, sql_trans *parent, const char *name);
 extern sql_trans *sql_trans_destroy(sql_trans *tr);
-extern bool sql_trans_validate(sql_trans *tr);
 extern int sql_trans_commit(sql_trans *tr);
-extern int sql_save_snapshots(sql_trans *tr);
 
 extern sql_type *sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
 extern int sql_trans_drop_type(sql_trans *tr, sql_schema * s, sqlid id, int drop_action);
@@ -467,7 +413,7 @@ extern sql_session * sql_session_create(struct sqlstore *store, sql_allocator *s
 extern void sql_session_destroy(sql_session *s);
 extern int sql_session_reset(sql_session *s, int autocommit);
 extern int sql_trans_begin(sql_session *s);
-extern void sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
+extern int sql_trans_end(sql_session *s, int commit /* rollback=0, or commit=1 temporaries */);
 
 extern list* sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id);
 extern void sql_trans_create_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type);
@@ -504,6 +450,8 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
+#define TRANSACTION_ID_BASE	(1ULL<<63)
+
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
 	sql_catalog *cat;		/* the catalog of persistent tables (what to do with tmp tables ?) */
@@ -511,6 +459,8 @@ typedef struct sqlstore {
 	list *active;			/* list of running transactions */
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
     ATOMIC_TYPE nr_sessions;
+    ATOMIC_TYPE timestamp;	/* timestamp counter */
+    ATOMIC_TYPE transaction;/* timestamp counter */
 
 	int readonly;			/* store is readonly */
 	int singleuser;			/* store is for a single user only */
@@ -526,8 +476,33 @@ typedef struct sqlstore {
 	table_functions table_api;
 	logger_functions logger_api;
 	void *logger;			/* space to keep logging structure of storage backend */
-
-	int catalog_nr;			/* Catalog content version number */
 } sqlstore;
+
+typedef enum change_obj_t {
+	schema_obj = 0,
+	table_obj = 1,
+	column_obj = 2,
+	idx_obj = 3,
+} change_obj_t;
+
+typedef enum change_kind_t {
+	kind_append = 0,
+	kind_update = 1,
+	kind_delete = 2,
+	kind_create = 3,
+	kind_destroy = 4,
+} change_kind_t;
+
+struct sql_change;
+typedef int (*log_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+
+typedef struct sql_change {
+	sql_base *obj;
+	change_obj_t type;	/* schema, table, column, idx etc kind of object, or later callback */
+	change_kind_t kind; /* create I, drop D, alter U */
+	void *data;	/* data changes */
+	ulng cnt;
+	log_fptr log;	/* callback to save in log */
+} sql_change;
 
 #endif /*SQL_STORAGE_H */

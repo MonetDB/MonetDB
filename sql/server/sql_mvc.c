@@ -445,7 +445,7 @@ void
 mvc_cancel_session(mvc *m)
 {
 	store_lock(m->store);
-	sql_trans_end(m->session, 0);
+	(void)sql_trans_end(m->session, 0);
 	store_unlock(m->store);
 }
 
@@ -466,7 +466,7 @@ mvc_trans(mvc *m)
 			/* TODO Change into recreate all */
 			m->qc = qc_create(m->pa, m->clientid, seqnr);
 			if (!m->qc) {
-				sql_trans_end(m->session, 0);
+				(void)sql_trans_end(m->session, 0);
 				store_unlock(m->store);
 				return -1;
 			}
@@ -481,7 +481,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
 	sql_trans *cur, *tr = m->session->tr, *ctr;
 	int ok = SQL_OK;
-	str msg, other;
+	str msg = NULL, other;
 	char operation[BUFSIZ];
 
 	assert(tr);
@@ -527,6 +527,18 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 
+	if (!tr->parent && !name) {
+		store_lock(m->store);
+		if (sql_trans_end(m->session, 1) != SQL_OK) {
+			store_unlock(m->store);
+			/* transaction conflict */
+			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
+			return msg;
+		}
+		store_unlock(m->store);
+		return msg;
+	}
+
 	/* first release all intermediate savepoints */
 	ctr = cur = tr;
 	tr = tr->parent;
@@ -548,9 +560,9 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 
 	store_lock(m->store);
 	/* if there is nothing to commit reuse the current transaction */
-	if (tr->wtime == 0) {
+	if (tr->changes == NULL) {
 		if (!chain)
-			sql_trans_end(m->session, 1);
+			(void)sql_trans_end(m->session, 1);
 		m->type = Q_TRANS;
 		msg = WLCcommit(m->clientid);
 		store_unlock(m->store);
@@ -564,26 +576,8 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 
-	/* validation phase */
-	bool valid = sql_trans_validate(tr);
-	if (valid) {
-		store_unlock(m->store);
-		if (sql_save_snapshots(tr) != SQL_OK) {
-			GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-		}
-		store_lock(m->store);
-	}
-	valid = sql_trans_validate(tr);
-	if (valid) {
-		if ((ok = sql_trans_commit(tr)) != SQL_OK) {
-			GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-		}
-	} else {
-		store_unlock(m->store);
-		msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
-		if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-			freeException(other);
-		return msg;
+	if ((ok = sql_trans_commit(tr)) != SQL_OK) {
+		GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
 	}
 	msg = WLCcommit(m->clientid);
 	if (msg != MAL_SUCCEED) {
@@ -592,7 +586,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			freeException(other);
 		return msg;
 	}
-	sql_trans_end(m->session, 1);
+	(void)sql_trans_end(m->session, 1);
 	if (chain)
 		sql_trans_begin(m->session);
 	store_unlock(m->store);
@@ -625,7 +619,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		tr = m->session->tr;
 		while (!tr->name || strcmp(tr->name, name) != 0) {
 			/* make sure we do not reuse changed data */
-			if (tr->wtime)
+			if (tr->changes)
 				tr->status = 1;
 			tr = sql_trans_destroy(tr);
 		}
@@ -641,9 +635,9 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		}
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
-		if (tr->wtime)
+		if (tr->changes)
 			tr->status = 1;
-		sql_trans_end(m->session, 0);
+		(void)sql_trans_end(m->session, 0);
 		if (chain)
 			sql_trans_begin(m->session);
 	}
@@ -657,7 +651,7 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 	TRC_INFO(SQL_TRANS,
 		"Commit%s%s rolled back%s\n",
 		name ? " " : "", name ? name : "",
-		tr->wtime == 0 ? " (no changes)" : "");
+		!tr->changes ? " (no changes)" : "");
 	return msg;
 }
 
@@ -858,7 +852,7 @@ mvc_destroy(mvc *m)
 	store_lock(m->store);
 	if (tr) {
 		if (m->session->tr->active)
-			sql_trans_end(m->session, 0);
+			(void)sql_trans_end(m->session, 0);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);
 		m->session->tr = NULL;

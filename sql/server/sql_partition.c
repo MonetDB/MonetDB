@@ -418,7 +418,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 		}
 		for (node *n = new->h; n; n = n->next) {
 			sql_part *next = (sql_part*) n->data;
-			sql_table *pt = find_sql_table_id(mt->s, next->base.id);
 			sql_part *err = NULL;
 
 			cs_add(&mt->s->parts, next, TR_NEW);
@@ -435,14 +434,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 									  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
 				goto finish;
 			}
-			pt->s->base.wtime = pt->base.wtime = tr->wtime = tr->wstime;
-			if (isGlobal(pt))
-				tr->schema_updates++;
 		}
 	}
-	mt->s->base.wtime = mt->base.wtime = tr->wtime = tr->wstime;
-	if (isGlobal(mt))
-		tr->schema_updates++;
 finish:
 	return res;
 }

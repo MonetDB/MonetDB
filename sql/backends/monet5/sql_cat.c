@@ -921,7 +921,6 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		if (c->storage_type != nc->storage_type) {
 			if (c->t->access == TABLE_WRITABLE)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
-			nc->base.rtime = nc->base.wtime = sql->session->tr->wtime;
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}

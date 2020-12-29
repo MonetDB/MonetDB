@@ -45,7 +45,7 @@ delta_cands(sql_trans *tr, sql_table *t)
 
 	if (!t->data) {
 		sql_table *ot = tr_find_table(tr->parent, t);
-		t->data = timestamp_dbat(ot->data, tr->stime);
+		t->data = timestamp_dbat(ot->data, tr->tid, tr->ts);
 	}
 	d = t->data;
 	if (!store->initialized && d->cached)
@@ -138,9 +138,9 @@ full_column(sql_trans *tr, sql_column *c)
 {
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->stime);
+		c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
 	}
-	return delta_full_bat(tr, c, c->data, isTemp(c));
+	return delta_full_bat(tr, c, c->data, isTempTable(c->t));
 }
 
 static void
