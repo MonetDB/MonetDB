@@ -50,6 +50,14 @@ sa_list(sql_allocator *sa)
 }
 
 list *
+sa_list_append(sql_allocator *sa, list *l, void *data)
+{
+	if (!l)
+		l = sa_list(sa);
+	return list_append(l, data);
+}
+
+list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
 	list *l = (sa)?SA_NEW(sa, list):MNEW(list);
@@ -757,6 +765,17 @@ list_flaten(list *l)
 			list_append(res, m->data);
 	}
 	return res;
+}
+
+void
+list_update_data(list *l, node *n, void *data)
+{
+	MT_lock_set(&l->ht_lock);
+	hash_delete(l->ht, n->data);
+	n->data = data;
+	int nkey = l->ht->key(data);
+	hash_add(l->ht, nkey, data);
+	MT_lock_unset(&l->ht_lock);
 }
 
 void

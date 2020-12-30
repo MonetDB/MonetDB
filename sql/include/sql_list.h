@@ -38,6 +38,8 @@ extern list *list_create(fdestroy destroy);
 sql_export list *sa_list(sql_allocator *sa);
 extern list *list_new(sql_allocator *sa, fdestroy destroy);
 
+extern list *sa_list_append( sql_allocator *sa, list *l, void *data);
+
 extern void list_destroy(list *l);
 sql_export int list_length(list *l);
 extern int list_empty(list *l);
@@ -101,5 +103,6 @@ extern list *list_flaten(list *l);
 extern void list_hash_delete(list *l, void *data, fcmp cmp);
 extern void* list_hash_add(list *l, void *data, fcmp cmp);
 extern void list_hash_clear(list *l);
+extern void list_update_data(list *l, node *n, void *data);
 
 #endif /* LIST_H */

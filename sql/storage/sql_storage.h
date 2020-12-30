@@ -31,6 +31,7 @@ typedef enum store_type {
 
 
 struct sqlstore;
+struct sql_change;
 
 /* builtin functions have ids less than this */
 #define FUNC_OIDS 2000
@@ -144,6 +145,10 @@ typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 
+typedef int (*log_create_col_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*log_create_idx_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*log_create_del_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+
 /*
 -- upgrade the necessary storage resources for columns, indices and tables
 -- needed for the upgrade of the logger structure (ie user tables are
@@ -159,10 +164,13 @@ typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
 -- free the storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*destroy_col_fptr) (sql_trans *tr, sql_column *c);
-typedef int (*destroy_idx_fptr) (sql_trans *tr, sql_idx *i);
-typedef int (*destroy_del_fptr) (sql_trans *tr, sql_table *t);
+typedef int (*destroy_col_fptr) (struct sqlstore *store, sql_column *c);
+typedef int (*destroy_idx_fptr) (struct sqlstore *store, sql_idx *i);
+typedef int (*destroy_del_fptr) (struct sqlstore *store, sql_table *t);
 
+typedef int (*log_destroy_col_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*log_destroy_idx_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*log_destroy_del_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 /*
 -- clear any storage resources for columns, indices and tables
 -- returns number of removed tuples
@@ -225,6 +233,10 @@ typedef struct store_functions {
 	create_idx_fptr create_idx;
 	create_del_fptr create_del;
 
+	log_create_col_fptr log_create_col;
+	log_create_idx_fptr log_create_idx;
+	log_create_del_fptr log_create_del;
+
 	upgrade_col_fptr upgrade_col;
 	upgrade_idx_fptr upgrade_idx;
 	upgrade_del_fptr upgrade_del;
@@ -232,6 +244,10 @@ typedef struct store_functions {
 	destroy_col_fptr destroy_col;
 	destroy_idx_fptr destroy_idx;
 	destroy_del_fptr destroy_del;
+
+	log_destroy_col_fptr log_destroy_col;
+	log_destroy_idx_fptr log_destroy_idx;
+	log_destroy_del_fptr log_destroy_del;
 
 	clear_col_fptr clear_col;
 	clear_idx_fptr clear_idx;
@@ -458,51 +474,36 @@ typedef struct sqlstore {
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	list *active;			/* list of running transactions */
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
-    ATOMIC_TYPE nr_sessions;
     ATOMIC_TYPE timestamp;	/* timestamp counter */
-    ATOMIC_TYPE transaction;/* timestamp counter */
+    ATOMIC_TYPE transaction;/* transaction id counter */
 
 	int readonly;			/* store is readonly */
-	int singleuser;			/* store is for a single user only */
+	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */
 	int first;				/* just created the db */
-	store_type active_type;
-	int debug;				/* debug mask */
 	int initialized;		/* used during bootstrap only */
+	int debug;				/* debug mask */
+	store_type active_type;
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
-
 	sqlid obj_id, prev_oid;
+
 	store_functions storage_api;
 	table_functions table_api;
 	logger_functions logger_api;
 	void *logger;			/* space to keep logging structure of storage backend */
 } sqlstore;
 
-typedef enum change_obj_t {
-	schema_obj = 0,
-	table_obj = 1,
-	column_obj = 2,
-	idx_obj = 3,
-} change_obj_t;
-
-typedef enum change_kind_t {
-	kind_append = 0,
-	kind_update = 1,
-	kind_delete = 2,
-	kind_create = 3,
-	kind_destroy = 4,
-} change_kind_t;
-
-struct sql_change;
-typedef int (*log_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+/* transaction changes */
+typedef int (*tc_validate_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_log_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_cleanup_fptr) (struct sqlstore *store, struct sql_change *c, ulng commit_ts, ulng oldest); /* garbage collection, ie cleanup structures when possible */
+/* todo add checkpointing into this. */
 
 typedef struct sql_change {
 	sql_base *obj;
-	change_obj_t type;	/* schema, table, column, idx etc kind of object, or later callback */
-	change_kind_t kind; /* create I, drop D, alter U */
 	void *data;	/* data changes */
-	ulng cnt;
-	log_fptr log;	/* callback to save in log */
+	tc_log_fptr log;	/* callback to save in log */
+	tc_cleanup_fptr cleanup;	/* callback to cleanup changes */
 } sql_change;
 
 #endif /*SQL_STORAGE_H */
