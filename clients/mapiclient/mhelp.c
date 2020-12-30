@@ -54,7 +54,7 @@ SQLhelp sqlhelp1[] = {
 	 "",
 	 "ALTER SCHEMA [ IF EXISTS ] ident RENAME TO ident",
 	 "ident",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/TableDefinitions/AlterStatement"},
+	 "See also https://www.monetdb.org/Documentation/SQLReference/DataDefinition/SchemaDefinitions"},
 	{"ALTER SEQUENCE",
 	 "",
 	 "ALTER SEQUENCE qname [ AS seq_int_datatype] [ RESTART [WITH intval]] [INCREMENT BY intval]\n"
@@ -190,7 +190,7 @@ SQLhelp sqlhelp1[] = {
 	 "",
 	 "CREATE REPLICA TABLE [ IF NOT EXISTS ] qname table_source",
 	 NULL,
-	 "See also https://www.monetdb.org/Documentation/Cookbooks/SQLrecipes/TransactionReplication"},
+	 "See also https://www.monetdb.org/Documentation/SQLReference/TableDefinitions"},
 	{"CREATE ROLE",
 	 "Create a new role. You can grant privileges to a role and next\n"
 	 "grant a role (or multiple roles) to specific users",
@@ -250,7 +250,7 @@ SQLhelp sqlhelp1[] = {
 	 "    RETURNS function_return_data_type\n"
 	 "    EXTERNAL NAME ident ',' ident",
 	 "qname,param,function_return_data_type,ident",
-	 "See also https://www.monetdb.org/Documentation/SQLreference/ProgrammingSQL/Functions"},
+	 "See also https://www.monetdb.org/Documentation/SQLReference/DataManipulation/WindowFunctions"},
 	{"CURRENT_DATE",
 	 "Pseudo column or function to get the current date",
 	 "CURRENT_DATE [ '(' ')' ]",
@@ -295,7 +295,7 @@ SQLhelp sqlhelp1[] = {
 	 "Debug a SQL statement using MAL debugger",
 	 "DEBUG statement",
 	 NULL,
-	 "https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/Debug"},
+	 "See also https://www.monetdb.org/Documentation/SQLreference/RuntimeFeatures/Debug"},
 	{"DECLARE",
 	 "Define a local variable",
 	 "DECLARE ident_list data_type",
