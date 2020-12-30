@@ -213,7 +213,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
-	return delta_bind_bat( c->data, access, isTempTable(c->t));
+	return delta_bind_bat( c->data, access, isTempTable(c->t) || inTransaction(tr, c->t));
 }
 
 static BAT *
@@ -228,7 +228,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
-	return delta_bind_bat( i->data, access, isTempTable(i->t));
+	return delta_bind_bat( i->data, access, isTempTable(i->t) || inTransaction(tr, i->t));
 }
 
 static int
