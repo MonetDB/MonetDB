@@ -450,7 +450,6 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 {
 	list *nexps = new_exp_list(sql->sa);
 	sql_subtype *atp = NULL;
-	sql_arg *aa = NULL;
 
 	/* find largest any type argument */
 	for (node *n = exps->h, *m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
@@ -458,14 +457,9 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
 
-		if (!aa && a->type.type->eclass == EC_ANY) {
+		if (a->type.type->eclass == EC_ANY && t &&
+			(!atp || (t->type->localtype > atp->type->localtype || (t->type->localtype == atp->type->localtype && t->digits > atp->digits))))
 			atp = t;
-			aa = a;
-		}
-		if (aa && a->type.type->eclass == EC_ANY && t && atp && t->type->localtype > atp->type->localtype) {
-			atp = t;
-			aa = a;
-		}
 	}
 	for (node *n = exps->h, *m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
 		sql_arg *a = m->data;
@@ -483,7 +477,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		append(nexps, e);
 	}
 	/* dirty hack */
-	if (sf->func->type != F_PROC && sf->func->type != F_UNION && sf->func->type != F_LOADER && sf->res && aa && atp)
+	if (sf->func->type != F_PROC && sf->func->type != F_UNION && sf->func->type != F_LOADER && sf->res && atp)
 		sf->res->h->data = sql_create_subtype(sql->sa, atp->type, atp->digits, atp->scale);
 	return nexps;
 }
