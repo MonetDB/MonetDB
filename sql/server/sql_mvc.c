@@ -628,11 +628,13 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		if (tr->name)
 			tr->name = NULL;
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
-	} else if (tr->parent) {
+	} else { //if (tr->parent) {
 		/* first release all intermediate savepoints */
+		/* savepoints !
 		while (tr->parent->parent != NULL) {
 			tr = sql_trans_destroy(tr);
 		}
+		*/
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
 		if (tr->changes)
