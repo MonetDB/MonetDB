@@ -3263,7 +3263,6 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	tr->sa = store->sa;
 	tr->store = store;
-	tr->active = 1;
 	tr->tid = store_transaction_id(store);
 
 	if (name)
@@ -3289,8 +3288,10 @@ sql_trans *
 sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 {
 	sql_trans *tr = sql_trans_create_(store, parent, name);
-	if (tr)
+	if (tr) {
 		tr->ts = store_timestamp(store);
+		tr->active = 1;
+	}
 	return tr;
 }
 

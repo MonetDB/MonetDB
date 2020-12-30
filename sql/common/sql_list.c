@@ -771,10 +771,12 @@ void
 list_update_data(list *l, node *n, void *data)
 {
 	MT_lock_set(&l->ht_lock);
-	hash_delete(l->ht, n->data);
-	n->data = data;
-	int nkey = l->ht->key(data);
-	hash_add(l->ht, nkey, data);
+	if (l->ht) {
+		hash_delete(l->ht, n->data);
+		n->data = data;
+		int nkey = l->ht->key(data);
+		hash_add(l->ht, nkey, data);
+	}
 	MT_lock_unset(&l->ht_lock);
 }
 
