@@ -76,7 +76,7 @@ SQLhelp sqlhelp1[] = {
 	 "ALTER TABLE [ IF EXISTS ] qname SET { INSERT ONLY | READ ONLY | READ WRITE }\n"
 	 "ALTER TABLE [ IF EXISTS ] qname SET SCHEMA ident",
 	 "qname,column_def,table_constraint,ident",
-	 "See also https://www.monetdb.org/Documentation/SQLLanguage/DataDefinition/AlterStatements"},
+	 "See also https://www.monetdb.org/Documentation/SQLreference/TableDefinitions/AlterStatement"},
 	{"ALTER USER",
 	 "Change a user's login name or password or default schema",
 	 "ALTER USER ident RENAME TO ident\n"
@@ -601,7 +601,7 @@ SQLhelp sqlhelp2[] = {
 	 "[ CONSTRAINT ident ] { NOT NULL | NULL | UNIQUE | PRIMARY KEY | CHECK '(' search_condition ')' |\n"
 	 "    REFERENCES qname [ column_list ] [ match_options ] [ reference_action ] }\n",
 	 "column_list,search_condition,match_options,reference_action",
-	 "See also https://www.monetdb.org/Documentation/SQLLanguage/DataDefinition/TableElements"},
+	 "See also https://www.monetdb.org/Documentation/SQLReference/TableDefinitions/TableIElements"},
 	{"control_statement",
 	 NULL,
 	 "call_procedure | while_statement | if_statement | case_statement | return_statement",
