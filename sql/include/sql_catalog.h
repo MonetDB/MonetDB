@@ -724,7 +724,7 @@ typedef struct sql_session {
 	backend_stack stk;
 } sql_session;
 
-extern void schema_destroy(sql_schema *s);
+//extern void schema_destroy(sql_schema *s);
 //extern void table_destroy(sql_table *t);
 extern void column_destroy(sql_column *c);
 extern void key_destroy(sql_key *k);

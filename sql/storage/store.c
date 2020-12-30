@@ -233,20 +233,65 @@ tc_log_table(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	return ok;
 }
 
-void
-schema_destroy(sql_schema *s)
+static void
+schema_destroy(sqlstore *store, sql_schema *s)
 {
-	cs_destroy(&s->parts);
-	cs_destroy(&s->tables);
-	cs_destroy(&s->funcs);
-	cs_destroy(&s->types);
-	list_destroy(s->keys);
-	list_destroy(s->idxs);
-	list_destroy(s->triggers);
+	sql_schema *older = (sql_schema*)s->base.older;
+	sql_schema *newer = (sql_schema*)s->base.newer;
+
+	assert(s->base.refcnt == 1);
+	if (--(s->base.refcnt) > 0)
+		return;
+
+	if (older)
+		schema_destroy(store, older);
+	s->base.older = NULL;
+
+	if (newer)
+		newer->base.older = NULL;
+
+	node *sn = list_find(store->cat->schemas.set, s, NULL);
+	if (sn)
+		list_remove_node(store->cat->schemas.set, sn);
+
+	if (!newer || newer->parts.set != s->parts.set)
+		cs_destroy(&s->parts);
+	if (!newer || newer->tables.set != s->tables.set)
+		cs_destroy(&s->tables);
+	if (!newer || newer->funcs.set != s->funcs.set)
+		cs_destroy(&s->funcs);
+	if (!newer || newer->types.set != s->types.set)
+		cs_destroy(&s->types);
+	if (!newer || newer->keys != s->keys)
+		list_destroy(s->keys);
+	if (!newer || newer->idxs != s->idxs)
+		list_destroy(s->idxs);
+	if (!newer || newer->triggers != s->triggers)
+		list_destroy(s->triggers);
 	s->keys = NULL;
 	s->idxs = NULL;
 	s->triggers = NULL;
 }
+
+static int
+tc_gc_schema(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_schema *s = (sql_schema*)change->obj;
+
+	(void)store;
+	if (s->base.deleted) {
+		if (s->base.ts < oldest || (s->base.ts == commit_ts && commit_ts == oldest)) {
+			int ok = LOG_OK;
+			schema_destroy(store, s);
+			if (ok == LOG_OK)
+				return 1; /* handled */
+			else
+				return LOG_ERR;
+		}
+	}
+	return 0;
+}
+
 
 sql_trans *
 sql_trans_destroy(sql_trans *tr)
@@ -4141,7 +4186,16 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	sys_drop_sequences(tr, s, drop_action);
 	sql_trans_drop_any_comment(tr, s->base.id);
 	sql_trans_drop_obj_priv(tr, s->base.id);
-	cs_del(&tr->cat->schemas, n, s->base.flags);
+
+	sql_schema *ds = SA_ZNEW(tr->sa, sql_schema);
+	*ds = *s;
+	ds->base.ts = tr->tid;
+	ds->base.deleted = 1;
+	ds->base.older = &s->base;
+	s->base.newer = &ds->base;
+	trans_add(tr, &s->base, NULL, &tc_gc_schema, NULL);
+	list_update_data(tr->cat->schemas.set, n, ds);
+	//cs_del(&tr->cat->schemas, n, s->base.flags);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
