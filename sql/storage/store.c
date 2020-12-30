@@ -161,7 +161,7 @@ column_destroy(sql_column *c)
 }
 
 static void
-table_destroy(sqlstore *store, sql_table *t)
+table_destroy(sqlstore *store, sql_table *t, ulng commit_ts)
 {
 	sql_table *older = (sql_table*)t->base.older;
 	sql_table *newer = (sql_table*)t->base.newer;
@@ -170,30 +170,42 @@ table_destroy(sqlstore *store, sql_table *t)
 	if (--(t->base.refcnt) > 0)
 		return;
 
-	if (older)
-		table_destroy(store, older);
+	if (older && commit_ts) {
+		table_destroy(store, older, commit_ts);
+		older = NULL;
+	}
 	t->base.older = NULL;
 
-	if (newer)
+	if (newer && commit_ts)
 		newer->base.older = NULL;
+	else if (newer && older)
+		newer->base.older = &older->base;
 
 	node *tn = list_find(t->s->tables.set, t, NULL);
 	if (tn)
 		list_remove_node(t->s->tables.set, tn);
 
-	if (isTable(t) && (!newer || newer->data != t->data))
+	if (isTable(t) &&
+			(!newer || newer->data != t->data) &&
+			(!older || older->data != t->data) )
 		store->storage_api.destroy_del(store, t);
-	if (t->members && (!newer || newer->members != t->members)) {
+	if (t->members &&
+			(!newer || (newer->members != t->members)) &&
+			(!older || (older->members != t->members))) {
 		list_destroy(t->members);
 		t->members = NULL;
 	}
-	if (!newer || newer->keys.set != t->keys.set)
+	if ((!newer || newer->keys.set != t->keys.set) &&
+		(!older || older->keys.set != t->keys.set))
 		cs_destroy(&t->keys);
-	if (!newer || newer->idxs.set != t->idxs.set)
+	if ((!newer || newer->idxs.set != t->idxs.set) &&
+		(!older || older->idxs.set != t->idxs.set))
 		cs_destroy(&t->idxs);
-	if (!newer || newer->triggers.set != t->triggers.set)
+	if ((!newer || newer->triggers.set != t->triggers.set) &&
+		(!older || older->triggers.set != t->triggers.set))
 		cs_destroy(&t->triggers);
-	if (!newer || newer->columns.set != t->columns.set)
+	if ((!newer || newer->columns.set != t->columns.set) &&
+		(!older || older->columns.set != t->columns.set))
 		cs_destroy(&t->columns);
 }
 
@@ -203,10 +215,10 @@ tc_gc_table(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_table *t = (sql_table*)change->obj;
 
 	(void)store;
-	if (t->base.deleted) {
-		if (t->base.ts < oldest || (t->base.ts == commit_ts && commit_ts == oldest)) {
+	if (t->base.deleted || !commit_ts) {
+		if (t->base.ts < oldest || (t->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
 			int ok = LOG_OK;
-			table_destroy(store, t);
+			table_destroy(store, t, commit_ts);
 			if (ok == LOG_OK)
 				return 1; /* handled */
 			else
@@ -223,7 +235,7 @@ tc_log_table(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_table *t = (sql_table*)change->obj;
 	sqlstore *store = tr->store;
 
-	if (isTable(t)) {
+	if (isTable(t) && !isTempTable(t)) {
 		if (t->base.deleted) {
 			ok = store->storage_api.log_destroy_del(tr, change, commit_ts, oldest);
 		} else { /* new table ? */
@@ -279,7 +291,7 @@ tc_gc_schema(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_schema *s = (sql_schema*)change->obj;
 
 	(void)store;
-	if (s->base.deleted) {
+	if (s->base.deleted || !commit_ts) {
 		if (s->base.ts < oldest || (s->base.ts == commit_ts && commit_ts == oldest)) {
 			int ok = LOG_OK;
 			schema_destroy(store, s);
@@ -2042,6 +2054,7 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	store->singleuser = singleuser;
 	store->debug = debug;
 	store->transaction = TRANSACTION_ID_BASE;
+	(void)store_timestamp(store); /* increment once */
 	MT_lock_init(&store->lock, "sqlstore_lock");
 
 	MT_lock_set(&store->lock);
@@ -3277,6 +3290,21 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 static void
 sql_trans_rollback(sql_trans *tr)
 {
+	sqlstore *store = tr->store;
+	ulng commit_ts = 0; /* invalid ts, ie rollback */
+	ulng oldest = commit_ts;
+
+	if (tr->changes) {
+		for(node *n=tr->changes->h; n; n = n->next) {
+			sql_change *c = n->data;
+
+			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest))
+				list_remove_node(tr->changes, n);
+		}
+		list_destroy(tr->changes);
+		tr->changes = NULL;
+	}
+	/*
 	for (node *n = tr->cat->schemas.set->h; n; ) {
 		node *nxt = n->next;
 		sql_schema *s = n->data;
@@ -3295,6 +3323,7 @@ sql_trans_rollback(sql_trans *tr)
 		list_destroy(tr->moved_tables);
 		tr->moved_tables = NULL;
 	}
+	*/
 }
 
 
@@ -4761,8 +4790,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	dt->base.deleted = 1;
 	dt->base.older = &t->base;
 	t->base.newer = &dt->base;
-	if (!isTempTable(t))
-		trans_add(tr, &dt->base, dt->data, &tc_gc_table, &tc_log_table);
+	trans_add(tr, &dt->base, dt->data, &tc_gc_table, &tc_log_table);
 	list_update_data(s->tables.set, n, dt);
 	//n->data = dt;
 	//cs_del(&s->tables, n, t->base.flags);
@@ -5852,8 +5880,8 @@ sql_trans_end(sql_session *s, int commit)
 		/* TODO: disabled for now */
 		if (s->tr->active == 0) {
 		sql_trans_rollback_tmp(s->tr, commit);
-		sql_trans_rollback(s->tr);
 		}
+		sql_trans_rollback(s->tr);
 	}
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
