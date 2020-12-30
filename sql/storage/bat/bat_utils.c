@@ -204,7 +204,7 @@ bat_utils_init(void)
 sql_table *
 tr_find_table( sql_trans *tr, sql_table *t)
 {
-	while (t && t->po && !t->base.allocated && tr)  {
+	while (t && t->po && tr)  {
 		t = t->po;
 		tr = tr->parent;
 	}
@@ -216,7 +216,7 @@ tr_find_table( sql_trans *tr, sql_table *t)
 sql_column *
 tr_find_column( sql_trans *tr, sql_column *c)
 {
-	while (c && c->po && !c->base.allocated && tr)  {
+	while (c && c->po && tr)  {
 		c = c->po;
 		tr = tr->parent;
 	}
@@ -228,7 +228,7 @@ tr_find_column( sql_trans *tr, sql_column *c)
 sql_idx *
 tr_find_idx( sql_trans *tr, sql_idx *i)
 {
-	while (i && i->po && !i->base.allocated && tr)  {
+	while (i && i->po && tr)  {
 		i = i->po;
 		tr = tr->parent;
 	}
