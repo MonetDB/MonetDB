@@ -3867,6 +3867,10 @@ rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 {
 	dlist *l = se->data.lval;
 
+	/* Ensure there is always a projection */
+	if (rel && !*rel)
+		*rel = rel_project(query->sql->sa, NULL, append(new_exp_list(query->sql->sa), exp_atom_bool(query->sql->sa, 1)));
+
 	if (se->token == SQL_COALESCE) {
 		return rel_complex_case(query, rel, l, f, "coalesce");
 	} else if (se->token == SQL_NULLIF) {
