@@ -449,7 +449,7 @@ static list *
 check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sql_subfunc *sf, int maybe_zero_or_one)
 {
 	list *nexps = new_exp_list(sql->sa);
-	sql_subtype *atp = NULL;
+	sql_subtype *atp = NULL, super;
 
 	/* find largest any type argument */
 	for (node *n = exps->h, *m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
@@ -457,10 +457,17 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 		sql_exp *e = n->data;
 		sql_subtype *t = exp_subtype(e);
 
-		if (a->type.type->eclass == EC_ANY && t &&
-			(!atp || (t->type->localtype > atp->type->localtype || (t->type->localtype == atp->type->localtype && t->digits > atp->digits))))
-			atp = t;
+		if (a->type.type->eclass == EC_ANY) {
+			if (t && atp) {
+				result_datatype(&super, t, atp);
+				atp = &super;
+			} else if (t) {
+				atp = t;
+			}
+		}
 	}
+	if (atp && atp->type->localtype == TYPE_void) /* NULL */
+		atp = sql_bind_localtype("str");
 	for (node *n = exps->h, *m = sf->func->ops->h; n && m; n = n->next, m = m->next) {
 		sql_arg *a = m->data;
 		sql_exp *e = n->data;
