@@ -73,7 +73,6 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 			}
 			r->argc = prefixlength;
 			getArg(r,0) = newTmpVariable(mb, newBatType(getBatType(getArgType(mb,r,r->argc-1))));
-			setVarUDFtype(mb, getArg(r,0));
 			if( r->argc == 3)
 				setFunctionId(r,projectionRef);
 			r->typechk = TYPE_UNKNOWN;
@@ -238,7 +237,6 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				}
 
 			/* fix the type */
-			setVarUDFtype(mb, getArg(q,0));
 			setVarType(mb, getArg(q,0), newBatType(getBatType(getArgType(mb,q,q->argc-1))));
 			if ( getFunctionId(q) == projectionRef )
 				setFunctionId(q,projectionpathRef);
