@@ -81,3 +81,10 @@
 [ "char",	0,	0,	NULL,	NULL,	NULL	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 [ "tinyint",	5,	0,	NULL,	NULL,	NULL	]
+#PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
+#PREPARE VALUES (CASE WHEN true THEN 5 BETWEEN 4 AND 2 END);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "boolean",	1,	0,	"",	"%1",	"%1"	]
