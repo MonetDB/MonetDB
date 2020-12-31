@@ -462,7 +462,7 @@ check_arguments_and_find_largest_any_type(mvc *sql, sql_rel *rel, list *exps, sq
 			atp = t;
 			aa = a;
 		}
-		if (aa && a->type.type->eclass == EC_ANY && t && atp && t->type->localtype > atp->type->localtype) {
+		if (aa && a->type.type->eclass == EC_ANY && t && atp && (t->type->localtype > atp->type->localtype || (t->type->localtype == atp->type->localtype && t->digits > atp->digits && t->scale == atp->scale))) {
 			atp = t;
 			aa = a;
 		}

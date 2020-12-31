@@ -52,7 +52,6 @@ pushInstruction(mb,P);
 			}\
 			setModuleId(p,generatorRef);\
 			setFunctionId(p,parametersRef);\
-			setVarUDFtype(mb,getArg(p,0));\
 			series[getArg(p,0)] = p;\
 			pushInstruction(mb,p);
 

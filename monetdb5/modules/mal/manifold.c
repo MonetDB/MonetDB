@@ -217,15 +217,12 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	setVarType(nmb,k,tpe);
 	if ( isVarFixed(nmb,k))
 		setVarFixed(nmb,k);
-	if (isVarUDFtype(nmb,k))
-		setVarUDFtype(nmb,k);
 
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
 		tpe = getBatType(getArgType(mb,pci,i));
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
-		setVarUDFtype(nmb,k);
 	}
 
 /*
