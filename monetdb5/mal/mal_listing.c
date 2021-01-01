@@ -117,7 +117,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 			len += strlen(buf+len);
 			GDKfree(cv);
 			showtype = showtype || (getBatType(getVarType(mb,varid)) >= TYPE_date && getBatType(getVarType(mb,varid)) != TYPE_str) ||
-				((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid));
+				((isVarTypedef(mb,varid)) && isVarConstant(mb,varid)) || isaBatType(getVarType(mb,varid));
 		} else{
 			if ( !isaBatType(getVarType(mb,varid)) && getBatType(getVarType(mb,varid)) >= TYPE_date && getBatType(getVarType(mb,varid)) != TYPE_str ){
 				closequote = 1;
@@ -138,7 +138,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 				strcat(buf+len,"\"");
 				len++;
 			}
-			showtype = showtype || closequote > TYPE_str || ((isVarUDFtype(mb,varid) || isVarTypedef(mb,varid) || (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb,varid)) ||
+			showtype = showtype || closequote > TYPE_str || ((isVarTypedef(mb,varid) || (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb,varid)) ||
 				(isaBatType(getVarType(mb,varid)) && idx < p->retc);
 
 			if (stk && isaBatType(getVarType(mb,varid)) && stk->stk[varid].val.bval ){
@@ -151,7 +151,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 
 	// show the type when required or frozen by the user
 	// special care should be taken with constants, they may have been casted
-	if ((flg & LIST_MAL_TYPE) || (isVarUDFtype(mb, varid) && idx < p->retc) || isVarTypedef(mb,varid) || showtype){
+	if ((flg & LIST_MAL_TYPE) || (idx < p->retc) || isVarTypedef(mb,varid) || showtype){
 		strcat(buf + len,":");
 		len++;
 		tpe = getTypeName(getVarType(mb, varid));
@@ -352,7 +352,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case ASSIGNsymbol :
 		// is any variable explicit or used
 		for (i = 0; i < p->retc; i++)
-			if ( !isTmpVar(mb,getArg(p,i)) || isVarUsed(mb, getArg(p, i)) || isVarUDFtype(mb,getArg(p,i)))
+			if ( !isTmpVar(mb,getArg(p,i)) || isVarUsed(mb, getArg(p, i)))
 				break;
 
 		if (i == p->retc)

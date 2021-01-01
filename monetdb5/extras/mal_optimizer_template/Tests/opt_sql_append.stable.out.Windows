@@ -18,7 +18,7 @@
 % clob # type
 % 235 # length
 function user.main():void;
-    X_1:void := querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
+    querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
     (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x00000049B72361C0:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
     X_32:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_28:bat[:int]);
@@ -59,7 +59,7 @@ end user.main;
 % clob # type
 % 235 # length
 function user.main():void;
-    X_1:void := querylog.define("explain copy into ttt from E\\'a:\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
+    querylog.define("explain copy into ttt from E\\'a:\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
     (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x00000049B72361C0:ptr, "|":str, "\n":str, nil:str, "null":str, "a:\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
     X_32:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_28:bat[:int]);
