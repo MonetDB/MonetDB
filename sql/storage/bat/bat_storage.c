@@ -19,6 +19,9 @@
 static int log_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
 static int log_update_idx( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
 static int log_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_col( sqlstore *store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_idx( sqlstore *store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_del( sqlstore *store, sql_change *c, ulng commit_ts, ulng oldest);
 
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
@@ -629,6 +632,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 		change->obj = &c->base;
 		change->data = delta;
 		change->log = &log_update_col;
+		change->cleanup = &tc_gc_col;
 		tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	}
 	return ok;
@@ -683,6 +687,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 		change->obj = &i->base;
 		change->data = delta;
 		change->log = &log_update_idx;
+		change->cleanup = &tc_gc_idx;
 		tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	}
 	return ok;
@@ -830,6 +835,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		change->obj = &c->base;
 		change->data = delta;
 		change->log = &log_update_col;
+		change->cleanup = &tc_gc_col;
 		tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	}
 	return ok;
@@ -858,6 +864,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		change->obj = &i->base;
 		change->data = delta;
 		change->log = &log_update_idx;
+		change->cleanup = &tc_gc_idx;
 		tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	}
 	return ok;
@@ -1043,6 +1050,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		change->obj = &t->base;
 		change->data = bat;
 		change->log = &log_update_del;
+		change->cleanup = &tc_gc_del;
 		tr->changes = sa_list_append(tr->sa, tr->changes, change);
 	}
 	return ok;
@@ -2176,7 +2184,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 	BAT *ins, *cur = NULL;
 
 	(void)store;
-	assert(!store->initialized || ATOMIC_GET(&store->nr_active)==1);
+	//assert(!store->initialized || ATOMIC_GET(&store->nr_active)==1);
 	assert(!obat->cleared);
 
 	if (obat->bid == 0) {
@@ -2259,14 +2267,14 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 static int
 tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
 {
-	sqlstore *store = tr->store;
+	//sqlstore *store = tr->store;
 	int ok = LOG_OK;
 
 	if (tdb->cached) {
 		bat_destroy(tdb->cached);
 		tdb->cached = NULL;
 	}
-	assert(ATOMIC_GET(&store->nr_active)==1);
+	//assert(ATOMIC_GET(&store->nr_active)==1);
 	if (tdb->next) {
 		ok = destroy_dbat(tr, tdb->next);
 		tdb->next = NULL;
@@ -2352,6 +2360,75 @@ log_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	return ok;
 }
 
+/* only rollback (content version) case for now */
+static int
+tc_gc_col( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_column *c = (sql_column*)change->obj;
+
+	(void)store;
+	(void)oldest;
+	if (/*c->t->base->deleted ||*/ !commit_ts) {
+		sql_delta *d = change->data;
+
+		assert(c->data == d);
+		if (d->next) {
+			c->data = d->next;
+			d->next = NULL;
+		} else {
+			assert(0); /* no data left ?? */
+			c->data = NULL;
+		}
+		destroy_delta(d);
+	}
+	return LOG_OK;
+}
+
+static int
+tc_gc_idx( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_idx *i = (sql_idx*)change->obj;
+
+	(void)store;
+	(void)oldest;
+	if (/*i->t->base->deleted ||*/ !commit_ts) {
+		sql_delta *d = change->data;
+
+		assert(i->data == d);
+		if (d->next) {
+			i->data = d->next;
+			d->next = NULL;
+		} else {
+			assert(0); /* no data left ?? */
+			i->data = NULL;
+		}
+		destroy_delta(d);
+	}
+	return LOG_OK;
+}
+
+static int
+tc_gc_del( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_table *t = (sql_table*)change->obj;
+
+	(void)store;
+	(void)oldest;
+	if (/*t->base->deleted ||*/ !commit_ts) {
+		sql_dbat *d = change->data;
+
+		assert(t->data == d);
+		if (d->next) {
+			t->data = d->next;
+			d->next = NULL;
+		} else {
+			assert(0); /* no data left ?? */
+			t->data = NULL;
+		}
+		_destroy_dbat(d);
+	}
+	return LOG_OK;
+}
 
 void
 bat_storage_init( store_functions *sf)

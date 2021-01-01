@@ -776,6 +776,8 @@ list_update_data(list *l, node *n, void *data)
 		n->data = data;
 		int nkey = l->ht->key(data);
 		hash_add(l->ht, nkey, data);
+	} else {
+		n->data = data;
 	}
 	MT_lock_unset(&l->ht_lock);
 }

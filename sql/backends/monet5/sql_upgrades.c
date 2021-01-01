@@ -2852,7 +2852,7 @@ SQLupgrades(Client c, mvc *m)
 	m->errstr[0] = '\0';
 	sqlstore *store = m->session->tr->store;
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
-		sql_table *privs = find_sql_table(s, "privileges");
+		sql_table *privs = find_sql_table(m->session->tr, s, "privileges");
 		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
 
 		store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);

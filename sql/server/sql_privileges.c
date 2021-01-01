@@ -52,7 +52,7 @@ static void
 sql_insert_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *pt = find_sql_table(ss, "privileges");
+	sql_table *pt = find_sql_table(sql->session->tr, ss, "privileges");
 	sqlstore *store = sql->session->tr->store;
 
 	store->table_api.table_insert(sql->session->tr, pt, &obj_id, &auth_id, &privilege, &grantor, &grantable);
@@ -219,7 +219,7 @@ static void
 sql_delete_priv(mvc *sql, sqlid auth_id, sqlid obj_id, int privilege, sqlid grantor, int grantable)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *privs = find_sql_table(ss, "privileges");
+	sql_table *privs = find_sql_table(sql->session->tr, ss, "privileges");
 	sql_column *priv_obj = find_sql_column(privs, "obj_id");
 	sql_column *priv_auth = find_sql_column(privs, "auth_id");
 	sql_column *priv_priv = find_sql_column(privs, "privileges");
@@ -343,7 +343,7 @@ sql_create_auth_id(mvc *m, sqlid id, str auth)
 {
 	int grantor = 0; /* no grantor */
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
 	sqlstore *store = m->session->tr->store;
 
@@ -370,8 +370,8 @@ sql_drop_role(mvc *m, str auth)
 {
 	sqlid role_id = sql_find_auth(m, auth);
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(sys, "auths");
-	sql_table *user_roles = find_sql_table(sys, "user_role");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
+	sql_table *user_roles = find_sql_table(m->session->tr, sys, "user_role");
 	sql_trans *tr = m->session->tr;
 	sqlstore *store = m->session->tr->store;
 	rids *A;
@@ -395,7 +395,7 @@ static oid
 sql_privilege_rid(mvc *m, sqlid auth_id, sqlid obj_id, int priv)
 {
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *privs = find_sql_table(sys, "privileges");
+	sql_table *privs = find_sql_table(m->session->tr, sys, "privileges");
 	sql_column *priv_obj = find_sql_column(privs, "obj_id");
 	sql_column *priv_auth = find_sql_column(privs, "auth_id");
 	sql_column *priv_priv = find_sql_column(privs, "privileges");
@@ -486,7 +486,7 @@ static bool
 role_granting_privs(mvc *m, oid role_rid, sqlid role_id, sqlid grantor_id)
 {
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auths_grantor = find_sql_column(auths, "grantor");
 	sqlid owner_id;
 	sqlstore *store = m->session->tr->store;
@@ -505,8 +505,8 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 {
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(sys, "auths");
-	sql_table *roles = find_sql_table(sys, "user_role");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
+	sql_table *roles = find_sql_table(m->session->tr, sys, "user_role");
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sql_column *auths_id = find_sql_column(auths, "id");
 	sqlid role_id, grantee_id;
@@ -531,7 +531,7 @@ sql_grant_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 	store->table_api.table_insert(m->session->tr, roles, &grantee_id, &role_id);
 	if (admin) {
 		int priv = PRIV_ROLE_ADMIN, one = 1;
-		sql_table *privs = find_sql_table(sys, "privileges");
+		sql_table *privs = find_sql_table(m->session->tr, sys, "privileges");
 
 		store->table_api.table_insert(m->session->tr, privs, &role_id, &grantee_id, &priv, &grantor, &one);
 	}
@@ -544,9 +544,9 @@ sql_revoke_role(mvc *m, str grantee, str role, sqlid grantor, int admin)
 {
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(sys, "auths");
-	sql_table *roles = find_sql_table(sys, "user_role");
-	sql_table *privs = find_sql_table(sys, "privileges");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
+	sql_table *roles = find_sql_table(m->session->tr, sys, "user_role");
+	sql_table *privs = find_sql_table(m->session->tr, sys, "privileges");
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sql_column *auths_id = find_sql_column(auths, "id");
 	sql_column *roles_role_id = find_sql_column(roles, "role_id");
@@ -586,7 +586,7 @@ sql_find_auth(mvc *m, str auth)
 	sqlid res = -1;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sqlstore *store = m->session->tr->store;
 
@@ -608,7 +608,7 @@ sql_find_schema(mvc *m, str schema)
 	sqlid schema_id = -1;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *schemas = find_sql_table(sys, "schemas");
+	sql_table *schemas = find_sql_table(m->session->tr, sys, "schemas");
 	sql_column *schemas_name = find_sql_column(schemas, "name");
 	sqlstore *store = m->session->tr->store;
 
@@ -635,7 +635,7 @@ sql_grantable_(mvc *m, sqlid grantorid, sqlid obj_id, int privs)
 {
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *prvs = find_sql_table(sys, "privileges");
+	sql_table *prvs = find_sql_table(m->session->tr, sys, "privileges");
 	sql_column *priv_obj = find_sql_column(prvs, "obj_id");
 	sql_column *priv_auth = find_sql_column(prvs, "auth_id");
 	sql_column *priv_priv = find_sql_column(prvs, "privileges");
@@ -673,7 +673,7 @@ mvc_set_role(mvc *m, char *role)
 {
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auths_name = find_sql_column(auths, "name");
 	sqlid res = 0;
 	sqlstore *store = m->session->tr->store;
@@ -689,7 +689,7 @@ mvc_set_role(mvc *m, char *role)
 			m->role_id = id;
 			res = 1;
 		} else {
-			sql_table *roles = find_sql_table(sys, "user_role");
+			sql_table *roles = find_sql_table(m->session->tr, sys, "user_role");
 			sql_column *role_id = find_sql_column(roles, "role_id");
 			sql_column *login_id = find_sql_column(roles, "login_id");
 
@@ -762,9 +762,9 @@ static char *
 sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 {
 	sql_schema *ss = mvc_bind_schema(sql, "sys");
-	sql_table *privs = find_sql_table(ss, "privileges");
-	sql_table *user_roles = find_sql_table(ss, "user_role");
-	sql_table *auths = find_sql_table(ss, "auths");
+	sql_table *privs = find_sql_table(sql->session->tr, ss, "privileges");
+	sql_table *user_roles = find_sql_table(sql->session->tr, ss, "user_role");
+	sql_table *auths = find_sql_table(sql->session->tr, ss, "auths");
 	sql_trans *tr = sql->session->tr;
 	sqlstore *store = tr->store;
 	rids *A;
@@ -876,6 +876,7 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	int pub, p, zero = 0;
 	sql_table *t, *privs;
 	sql_subfunc *f;
+	sql_trans *tr = m->session->tr;
 
 	backend_create_privileges(m, s);
 
@@ -903,50 +904,50 @@ sql_create_privileges(mvc *m, sql_schema *s)
 
 	pub = ROLE_PUBLIC;
 	p = PRIV_SELECT;
-	privs = find_sql_table(s, "privileges");
+	privs = find_sql_table(tr, s, "privileges");
 
 	sqlstore *store = m->session->tr->store;
-	t = find_sql_table(s, "schemas");
+	t = find_sql_table(tr, s, "schemas");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "types");
+	t = find_sql_table(tr, s, "types");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "functions");
+	t = find_sql_table(tr, s, "functions");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "args");
+	t = find_sql_table(tr, s, "args");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "sequences");
+	t = find_sql_table(tr, s, "sequences");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "dependencies");
+	t = find_sql_table(tr, s, "dependencies");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "_tables");
+	t = find_sql_table(tr, s, "_tables");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "_columns");
+	t = find_sql_table(tr, s, "_columns");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "keys");
+	t = find_sql_table(tr, s, "keys");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "idxs");
+	t = find_sql_table(tr, s, "idxs");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "triggers");
+	t = find_sql_table(tr, s, "triggers");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "objects");
+	t = find_sql_table(tr, s, "objects");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "tables");
+	t = find_sql_table(tr, s, "tables");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "columns");
+	t = find_sql_table(tr, s, "columns");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "comments");
+	t = find_sql_table(tr, s, "comments");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "user_role");
+	t = find_sql_table(tr, s, "user_role");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "auths");
+	t = find_sql_table(tr, s, "auths");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "privileges");
+	t = find_sql_table(tr, s, "privileges");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "table_partitions");
+	t = find_sql_table(tr, s, "table_partitions");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "range_partitions");
+	t = find_sql_table(tr, s, "range_partitions");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "value_partitions");
+	t = find_sql_table(tr, s, "value_partitions");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 
 	p = PRIV_EXECUTE;
@@ -957,19 +958,19 @@ sql_create_privileges(mvc *m, sql_schema *s)
 
 	/* owned by the users anyway
 	s = mvc_bind_schema(m, "tmp");
-	t = find_sql_table(s, "profile");
+	t = find_sql_table(tr, s, "profile");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "_tables");
+	t = find_sql_table(tr, s, "_tables");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "_columns");
+	t = find_sql_table(tr, s, "_columns");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "keys");
+	t = find_sql_table(tr, s, "keys");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "idxs");
+	t = find_sql_table(tr, s, "idxs");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "triggers");
+	t = find_sql_table(tr, s, "triggers");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
-	t = find_sql_table(s, "objects");
+	t = find_sql_table(tr, s, "objects");
 	store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 	*/
 

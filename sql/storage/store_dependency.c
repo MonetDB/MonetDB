@@ -30,7 +30,7 @@ sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_depend
 	assert(id && depend_id);
 	sqlstore *store = tr->store;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table *t = find_sql_table(s, "dependencies");
+	sql_table *t = find_sql_table(tr, s, "dependencies");
 	sql_column *c_id = find_sql_column(t, "id");
 	sql_column *c_dep_id = find_sql_column(t, "depend_id");
 	sql_column *c_dep_type = find_sql_column(t, "depend_type");
@@ -47,7 +47,7 @@ sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 	sqlstore *store = tr->store;
 	oid rid;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table* deps = find_sql_table(s, "dependencies");
+	sql_table* deps = find_sql_table(tr, s, "dependencies");
 	sql_column * dep_dep_id = find_sql_column(deps, "depend_id");
 	rids *rs;
 
@@ -64,7 +64,7 @@ sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_depe
 	sqlstore *store = tr->store;
 	oid rid;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table* deps = find_sql_table(s, "dependencies");
+	sql_table* deps = find_sql_table(tr, s, "dependencies");
 	sql_column *dep_obj_id = find_sql_column(deps, "id");
 	sql_column *dep_dep_id = find_sql_column(deps, "depend_id");
 	sql_column *dep_dep_type = find_sql_column(deps, "depend_type");
@@ -84,7 +84,7 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 	sqlstore *store = tr->store;
 	void *v;
 	sql_schema *s = find_sql_schema(tr, "sys");
-	sql_table *deps = find_sql_table(s, "dependencies");
+	sql_table *deps = find_sql_table(tr, s, "dependencies");
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type, *tri_id, *table_id;
 	list *dep_list = list_create((fdestroy) GDKfree);
 	oid rid;
@@ -112,7 +112,7 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 	store->table_api.rids_destroy(rs);
 
 	if (depend_type == TABLE_DEPENDENCY) {
-		sql_table *triggers = find_sql_table(s, "triggers");
+		sql_table *triggers = find_sql_table(tr, s, "triggers");
 		table_id = find_sql_column(triggers, "table_id");
 		tri_id = find_sql_column(triggers, "id");
 		depend_type = TRIGGER_DEPENDENCY;
@@ -147,7 +147,7 @@ sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_typ
 	sht dtype = (sht) depend_type;
 
 	s = find_sql_schema(tr, "sys");
-	dep = find_sql_table(s, "dependencies");
+	dep = find_sql_table(tr, s, "dependencies");
 	dep_id = find_sql_column(dep, "id");
 	dep_dep_id = find_sql_column(dep, "depend_id");
 	dep_dep_type = find_sql_column(dep, "depend_type");
@@ -176,7 +176,7 @@ sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_depende
 	sht dtype = (sht) depend_type;
 
 	s = find_sql_schema(tr, "sys");
-	dep = find_sql_table(s, "dependencies");
+	dep = find_sql_table(tr, s, "dependencies");
 	dep_id = find_sql_column(dep, "id");
 	dep_dep_id = find_sql_column(dep, "depend_id");
 	dep_dep_type = find_sql_column(dep, "depend_type");
@@ -195,7 +195,7 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 	sqlstore *store = tr->store;
 	void *v;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table *auths = find_sql_table(s, "auths");
+	sql_table *auths = find_sql_table(tr, s, "auths");
 	sql_column *auth_id = find_sql_column(auths, "id");
 	sql_dependency type = USER_DEPENDENCY;
 	list *l = list_create((fdestroy) GDKfree);
@@ -231,7 +231,7 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid owner_id)
 	sqlstore *store = tr->store;
 	void *v;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table *schemas = find_sql_table(s, "schemas");
+	sql_table *schemas = find_sql_table(tr, s, "schemas");
 	sql_column *schema_owner = find_sql_column(schemas, "authorization");
 	sql_column *schema_id = find_sql_column(schemas, "id");
 	sql_dependency type = SCHEMA_DEPENDENCY;
