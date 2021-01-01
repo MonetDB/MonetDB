@@ -45,7 +45,6 @@ mcrypt_getHashAlgorithms(void)
 	 * desire.
 	 */
 	static const char *algorithms =
-		"PROT10"
 #ifdef HAVE_RIPEMD160_UPDATE
 		",RIPEMD160"
 #endif

@@ -398,7 +398,6 @@ renderProfilerEvent(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int
 				return;
 			// if (!logadd(&logbuf, ",\"used\":%d", isVarUsed(mb,getArg(pci,j)))) return;
 			// if (!logadd(&logbuf, ",\"fixed\":%d", isVarFixed(mb,getArg(pci,j)))) return;
-			// if (!logadd(&logbuf, ",\"udf\":%d", isVarUDFtype(mb,getArg(pci,j)))) return;
 			if (!logadd(&logbuf, "}"))
 				return;
 		}

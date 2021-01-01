@@ -293,7 +293,6 @@ SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(
 		protocol == PROTOCOL_AUTO ||
 		protocol == PROTOCOL_9 ||
-		protocol == PROTOCOL_10 ||
 		protocol == PROTOCOL_COLUMNAR))
 	{
 		return createException(SQL, "sql.set_protocol", "unknown protocol: %d", protocol);
