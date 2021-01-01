@@ -48,7 +48,7 @@ _list_find_name(list *l, const char *name)
 			for (; he; he = he->chain) {
 				sql_base *b = he->value;
 
-				if (b->name && strcmp(b->name, name) == 0) {
+				if (b->name && strcmp(b->name, name) == 0 && !b->deleted) {
 					MT_lock_unset(&l->ht_lock);
 					return b;
 				}
@@ -61,12 +61,27 @@ _list_find_name(list *l, const char *name)
 			sql_base *b = n->data;
 
 			/* check if names match */
-			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
+			if (name[0] == b->name[0] && strcmp(name, b->name) == 0 && !b->deleted) {
 				return b;
 			}
 		}
 	}
 	return NULL;
+}
+
+static void *
+tr_find_base(sql_trans *tr, sql_base *b)
+{
+	while(b && b->ts != tr->tid && b->ts > tr->ts)
+			b = b->older;
+	return b;
+}
+
+static void *
+tr_find_name(sql_trans *tr, changeset * cs, const char *name)
+{
+	sql_base *b =  _list_find_name(cs->set, name);
+	return tr_find_base(tr, b);
 }
 
 static void *
@@ -91,7 +106,7 @@ list_find_name(list *l, const char *name)
 			sql_base *b = n->data;
 
 			/* check if names match */
-			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
+			if (name[0] == b->name[0] && strcmp(name, b->name) == 0 && !b->deleted) {
 				return n;
 			}
 		}
@@ -218,18 +233,18 @@ find_sql_part_id(sql_table *t, sqlid id)
 }
 
 sql_table *
-find_sql_table(sql_schema *s, const char *tname)
+find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 {
-	return _cs_find_name(&s->tables, tname);
+	return tr_find_name(tr, &s->tables, tname);
 }
 
 sql_table *
-find_sql_table_id(sql_schema *s, sqlid id)
+find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 {
 	node *n = cs_find_id(&s->tables, id);
 
 	if (n)
-		return n->data;
+		return tr_find_base(tr, n->data);
 	return NULL;
 }
 

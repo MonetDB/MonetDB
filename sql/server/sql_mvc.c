@@ -295,8 +295,8 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 			int pub = ROLE_PUBLIC;
 			int p = PRIV_SELECT;
 			int zero = 0;
-			sql_table *privs = find_sql_table(s, "privileges");
-			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_table *privs = find_sql_table(m->session->tr, s, "privileges");
+			sql_table *deps = find_sql_table(m->session->tr, s, "dependencies");
 			store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 			assert(tview[9].name == NULL);
 			tview[9].oldid = tid;
@@ -329,8 +329,8 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 			int pub = ROLE_PUBLIC;
 			int p = PRIV_SELECT;
 			int zero = 0;
-			sql_table *privs = find_sql_table(s, "privileges");
-			sql_table *deps = find_sql_table(s, "dependencies");
+			sql_table *privs = find_sql_table(m->session->tr, s, "privileges");
+			sql_table *deps = find_sql_table(m->session->tr, s, "dependencies");
 			store->table_api.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 			assert(cview[10].name == NULL);
 			cview[10].oldid = cid;
@@ -923,7 +923,7 @@ mvc_bind_schema(mvc *m, const char *sname)
 sql_table *
 mvc_bind_table(mvc *m, sql_schema *s, const char *tname)
 {
-	sql_table *t = find_sql_table(s, tname);
+	sql_table *t = find_sql_table(m->session->tr, s, tname);
 
 	(void) m;
 	if (!t)
