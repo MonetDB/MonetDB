@@ -12,8 +12,6 @@
 #include "sql_string.h"
 #include "gdk_atoms.h"
 
-#define SNAPSHOT_MINSIZE ((BUN) 1024*128)
-
 #define inTransaction(tr, obj) (((sql_base*)obj)->ts == tr->tid)
 
 static int log_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
@@ -2122,16 +2120,8 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 
 	/* any inserts */
 	if (BUNlast(ins) > 0) {
-		assert(ATOMIC_GET(&store->nr_active)>0);
-		if (BUNlast(ins) > ins->batInserted &&
-		    (cbat->ibase || BATcount(ins) <= SNAPSHOT_MINSIZE))
+		if (BUNlast(ins) > ins->batInserted)
 			ok = log_bat(store->logger, ins, cbat->name, tpe, id);
-		if (ok == GDK_SUCCEED &&
-		    !cbat->ibase && BATcount(ins) > SNAPSHOT_MINSIZE) {
-			/* log new snapshot */
-			if ((ok = logger_add_bat(store->logger, ins, cbat->name, tpe, id)) == GDK_SUCCEED)
-				ok = log_bat_persists(store->logger, ins, cbat->name, tpe, id);
-		}
 	}
 	bat_destroy(ins);
 
@@ -2168,7 +2158,6 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
 	if(!db)
 		return LOG_ERR;
 	if (BUNlast(db) > 0) {
-		assert(ATOMIC_GET(&store->nr_active)>0);
 		if (BUNlast(db) > db->batInserted)
 			ok = log_bat(store->logger, db, fdb->dname, tpe, id);
 	}
