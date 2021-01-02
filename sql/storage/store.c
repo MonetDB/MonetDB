@@ -238,6 +238,12 @@ tc_commit_table_(sql_trans *tr, sql_table *t, ulng commit_ts, ulng oldest)
 		sql_column *c = n->data;
 		c->base.ts = commit_ts;
 	}
+	if (t->idxs.set) {
+		for (node* n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *i = n->data;
+			i->base.ts = commit_ts;
+		}
+	}
 	return LOG_OK;
 }
 
@@ -3379,20 +3385,13 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 
 	if (name)
 		tr->name = sa_strdup(tr->sa, name);
-	if (parent)
-		fprintf(stderr, "implement savepoints again\n");
 	tr->cat = store->cat;
 	if (!tr->cat)
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
-	/* TODO for temp schema, find and recreate content with new transaction id */
 	tr->tmp = find_sql_schema(tr, "tmp");
-	/*
-	if (gtrans) {
-		tr = trans_dup((parent) ? parent : gtrans, name);
-		TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
-	}
-	tr->store = store;
-	*/
+	if (!parent)
+		tr->parent = parent;
+	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
 	return tr;
 }
 
