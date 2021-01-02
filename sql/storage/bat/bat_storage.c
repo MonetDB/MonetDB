@@ -1889,9 +1889,11 @@ log_destroy_idx_(sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 
 	int ok = LOG_OK;
 	assert(!isTempTable(i->t));
-	sql_delta *delta = i->data;
-	delta->ts = commit_ts;
-	ok = log_destroy_delta(tr, i->data, i->t->bootstrap?0:LOG_IDX, i->base.id);
+	if (i->data) {
+		sql_delta *delta = i->data;
+		delta->ts = commit_ts;
+		ok = log_destroy_delta(tr, i->data, i->t->bootstrap?0:LOG_IDX, i->base.id);
+	}
 	return ok;
 }
 
