@@ -36,7 +36,7 @@ struct sql_change;
 /* builtin functions have ids less than this */
 #define FUNC_OIDS 2000
 
-extern sql_trans *gtrans;
+//extern sql_trans *gtrans;
 
 /* relational interface */
 typedef oid (*column_find_row_fptr)(sql_trans *tr, sql_column *c, const void *value, ...);
@@ -467,6 +467,7 @@ extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
 #define TRANSACTION_ID_BASE	(1ULL<<63)
+#define inTransaction(tr, obj) (((sql_base*)obj)->ts == tr->tid)
 
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
@@ -497,7 +498,8 @@ typedef struct sqlstore {
 typedef int (*tc_validate_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 typedef int (*tc_log_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 typedef int (*tc_cleanup_fptr) (struct sqlstore *store, struct sql_change *c, ulng commit_ts, ulng oldest); /* garbage collection, ie cleanup structures when possible */
-/* todo add checkpointing into this. */
+
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log);
 
 typedef struct sql_change {
 	sql_base *obj;

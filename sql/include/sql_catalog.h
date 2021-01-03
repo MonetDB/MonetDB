@@ -730,6 +730,8 @@ extern void column_destroy(sql_column *c);
 extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
 
+extern int tr_version_of_parent(sql_trans *tr, ulng ts);
+
 extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);
 extern node *list_find_id(list *l, sqlid id);

@@ -2353,10 +2353,10 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.tid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
 	c = t->columns.set->h->data;
 
-	sqlstore *store = m->session->tr->store;
+	sqlstore *store = m->store;
 	nr = store->storage_api.count_col(tr, c, 1);
 
-	if (isTable(t) && t->access == TABLE_WRITABLE && (!isNew(t) /* alter */ ) &&
+	if (isTable(t) && t->access == TABLE_WRITABLE && (!isNew(t) /* alter */ || !inTransaction(tr, t)) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action)
 		inr = store->storage_api.count_col(tr, c, 0);
 	nr -= inr;

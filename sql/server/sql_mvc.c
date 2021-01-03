@@ -479,7 +479,7 @@ mvc_trans(mvc *m)
 str
 mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 {
-	sql_trans *cur, *tr = m->session->tr, *ctr;
+	sql_trans *tr = m->session->tr;
 	int ok = SQL_OK;
 	str msg = NULL, other;
 	char operation[BUFSIZ];
@@ -501,7 +501,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 		return msg;
 	}
 
-	/* savepoint then simply make a copy of the current transaction */
+	/* savepoint, simply make a new sub transaction */
 	if (name && name[0] != '\0') {
 		sql_trans *tr = m->session->tr;
 		TRC_DEBUG(SQL_TRANS, "Savepoint\n");
@@ -514,13 +514,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 				freeException(other);
 			return msg;
 		}
-		msg = WLCcommit(m->clientid);
 		store_unlock(m->store);
-		if (msg != MAL_SUCCEED) {
-			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
-				freeException(other);
-			return msg;
-		}
 		m->type = Q_TRANS;
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 		TRC_INFO(SQL_TRANS, "Savepoint commit '%s' done\n", name);
@@ -535,35 +529,6 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			msg = createException(SQL, "sql.commit", SQLSTATE(40000) "%s transaction is aborted because of concurrency conflicts, will ROLLBACK instead", operation);
 			return msg;
 		}
-		store_unlock(m->store);
-		return msg;
-	}
-
-	/* first release all intermediate savepoints */
-	ctr = cur = tr;
-	tr = tr->parent;
-	if (tr->parent) {
-		store_lock(m->store);
-		/* change to sql_trans_commit */
-		while (ctr->parent->parent != NULL && ok == SQL_OK) {
-			if ((ok = sql_trans_commit(ctr)) != SQL_OK) {
-				GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
-			}
-			cur = ctr = sql_trans_destroy(ctr);
-			tr = cur->parent;
-		}
-		store_unlock(m->store);
-		m->session->tr = cur;
-	}
-	cur -> parent = tr;
-	tr = cur;
-
-	store_lock(m->store);
-	/* if there is nothing to commit reuse the current transaction */
-	if (tr->changes == NULL) {
-		if (!chain)
-			(void)sql_trans_end(m->session, 1);
-		m->type = Q_TRANS;
 		msg = WLCcommit(m->clientid);
 		store_unlock(m->store);
 		if (msg != MAL_SUCCEED) {
@@ -571,6 +536,38 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 				freeException(other);
 			return msg;
 		}
+		return msg;
+	}
+
+	/* commit and cleanup nested transactions */
+	if (tr->parent) {
+		store_lock(m->store);
+		while (tr->parent != NULL && ok == SQL_OK) {
+			if ((ok = sql_trans_commit(tr)) != SQL_OK) {
+				GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
+			}
+			tr = sql_trans_destroy(tr);
+		}
+		store_unlock(m->store);
+		m->session->tr = tr;
+	}
+
+	store_lock(m->store);
+	/* if there is nothing to commit reuse the current transaction */
+	if (tr->changes == NULL) {
+		if (!chain)
+			(void)sql_trans_end(m->session, 1);
+		m->type = Q_TRANS;
+		/* save points not handled by WLC...
+		msg = WLCcommit(m->clientid);
+		store_unlock(m->store);
+		if (msg != MAL_SUCCEED) {
+			if ((other = mvc_rollback(m, chain, name, false)) != MAL_SUCCEED)
+				freeException(other);
+			return msg;
+		}
+		*/
+		store_unlock(m->store);
 		TRC_INFO(SQL_TRANS,
 			"Commit done (no changes)\n");
 		return msg;
@@ -579,6 +576,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 	if ((ok = sql_trans_commit(tr)) != SQL_OK) {
 		GDKfatal("%s transaction commit failed (perhaps your disk is full?) exiting (kernel error: %s)", operation, GDKerrbuf);
 	}
+	/*
 	msg = WLCcommit(m->clientid);
 	if (msg != MAL_SUCCEED) {
 		store_unlock(m->store);
@@ -586,6 +584,7 @@ mvc_commit(mvc *m, int chain, const char *name, bool enabling_auto_commit)
 			freeException(other);
 		return msg;
 	}
+	*/
 	(void)sql_trans_end(m->session, 1);
 	if (chain)
 		sql_trans_begin(m->session);
@@ -628,13 +627,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		if (tr->name)
 			tr->name = NULL;
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
-	} else { //if (tr->parent) {
+	} else {
 		/* first release all intermediate savepoints */
-		/* savepoints !
-		while (tr->parent->parent != NULL) {
+		while (tr->parent != NULL)
 			tr = sql_trans_destroy(tr);
-		}
-		*/
 		m->session-> tr = tr;
 		/* make sure we do not reuse changed data */
 		if (tr->changes)
