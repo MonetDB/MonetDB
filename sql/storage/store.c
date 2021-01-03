@@ -239,11 +239,27 @@ tc_commit_table_(sql_trans *tr, sql_table *t, ulng commit_ts, ulng oldest)
 	for (node* n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		c->base.ts = commit_ts;
+		c->base.flags = 0;
 	}
 	if (t->idxs.set) {
 		for (node* n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
 			i->base.ts = commit_ts;
+			i->base.flags = 0;
+		}
+	}
+	if (t->keys.set) {
+		for (node* n = t->keys.set->h; n; n = n->next) {
+			sql_key *k = n->data;
+			k->base.ts = commit_ts;
+			k->base.flags = 0;
+		}
+	}
+	if (t->triggers.set) {
+		for (node* n = t->triggers.set->h; n; n = n->next) {
+			sql_trigger *ti = n->data;
+			ti->base.ts = commit_ts;
+			ti->base.flags = 0;
 		}
 	}
 	return LOG_OK;
@@ -3513,8 +3529,10 @@ sql_trans_commit(sql_trans *tr)
 
 			if (c->log && ok == LOG_OK)
 				ok = c->log(tr, c, commit_ts, oldest);
-			else
+			else {
 				c->obj->ts = commit_ts;
+				c->obj->flags = 0;
+			}
 		}
 		if (ok == LOG_OK && store->prev_oid != store->obj_id)
 			ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
@@ -5334,6 +5352,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	list_append(t->s->keys, nk);
 
 	store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action );
+	trans_add(tr, &nk->base, NULL, NULL, NULL);
 	return nk;
 }
 
@@ -5381,6 +5400,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action);
 
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey->k.base.id, nk->base.id, FKEY_DEPENDENCY);
+	trans_add(tr, &nk->base, NULL, NULL, NULL);
 	return (sql_fkey*) nk;
 }
 
@@ -5597,6 +5617,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, const char *name, idx_type it)
 		store->storage_api.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
+	trans_add(tr, &ni->base, NULL, NULL, NULL);
 	return ni;
 }
 
@@ -5717,6 +5738,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 	store->table_api.table_insert(tr, systrigger, &ni->base.id, ni->base.name, &t->base.id, &ni->time, &ni->orientation,
 							 &ni->event, (ni->old_name)?ni->old_name:nilptr, (ni->new_name)?ni->new_name:nilptr,
 							 (ni->condition)?ni->condition:nilptr, ni->statement);
+	trans_add(tr, &ni->base, NULL, NULL, NULL);
 	return ni;
 }
 
@@ -5812,6 +5834,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	if (bedropped)
 		sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY);
 
+	trans_add(tr, &seq->base, NULL, NULL, NULL);
 	return seq;
 }
 
