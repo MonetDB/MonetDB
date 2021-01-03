@@ -256,11 +256,11 @@ tc_log_table(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_table *t = (sql_table*)change->obj;
 	sqlstore *store = tr->store;
 
+	change->obj->ts = commit_ts;
 	if (isTable(t) && !isTempTable(t)) {
 		if (t->base.deleted) {
 			ok = store->storage_api.log_destroy_del(tr, change, commit_ts, oldest);
 		} else { /* new table ? */
-			change->obj->ts = commit_ts;
 			ok = store->storage_api.log_create_del(tr, change, commit_ts, oldest);
 			if (ok == LOG_OK)
 				return tc_commit_table_(tr, t, commit_ts, oldest);
@@ -3434,9 +3434,10 @@ sql_trans_commit(sql_trans *tr)
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
-			c->obj->ts = commit_ts;
 			if (c->log && ok == LOG_OK)
 				ok = c->log(tr, c, commit_ts, oldest);
+			else
+				c->obj->ts = commit_ts;
 		}
 		if (ok == LOG_OK && store->prev_oid != store->obj_id)
 			ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
