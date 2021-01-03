@@ -68,7 +68,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 		if ( b == 0)
 			return -1;
 		cnt |= BATcount(b) > 0;
-		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ ) &&
+		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ /*|| !inTransaction(tr, t)*/) &&
 		    t->persistence == SQL_PERSIST && !t->commit_action)
 			cnt |= store->storage_api.count_col(tr, c, 0) > 0;
 		BBPunfix(b->batCacheid);

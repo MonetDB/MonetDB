@@ -20,6 +20,8 @@
 /* version 05.22.05 of catalog */
 #define CATALOG_VERSION 52205
 
+static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
+
 static sqlid *store_oids = NULL;
 static int nstore_oids = 0;
 
@@ -258,6 +260,7 @@ tc_log_table(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 		if (t->base.deleted) {
 			ok = store->storage_api.log_destroy_del(tr, change, commit_ts, oldest);
 		} else { /* new table ? */
+			change->obj->ts = commit_ts;
 			ok = store->storage_api.log_create_del(tr, change, commit_ts, oldest);
 			if (ok == LOG_OK)
 				return tc_commit_table_(tr, t, commit_ts, oldest);
@@ -339,21 +342,6 @@ tc_commit_schema(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 		for (node* n = s->tables.set->h; n; n = n->next)
 			tc_commit_table_(tr, n->data, commit_ts, oldest);
 	return LOG_OK;
-}
-
-sql_trans *
-sql_trans_destroy(sql_trans *tr)
-{
-	sql_trans *res = tr->parent;
-
-	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
-
-	if (tr->name)
-		tr->name = NULL;
-	cs_destroy(&tr->cat->schemas);
-	sa_destroy(tr->sa);
-	_DELETE(tr);
-	return res;
 }
 
 static void
@@ -1666,6 +1654,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 	sql_column *col = SA_ZNEW(sa, sql_column);
 
 	base_init(sa, &col->base, c->base.id, c->base.flags, c->base.name);
+	col->base.ts = c->base.ts;
 	col->type = c->type; /* Both types belong to the same transaction, so no dup_sql_type call is needed */
 	col->def = NULL;
 	if (c->def)
@@ -1689,6 +1678,7 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 	sql_part *p = SA_ZNEW(sa, sql_part);
 
 	base_init(sa, &p->base, op->base.id, op->base.flags, op->base.name);
+	p->base.ts = op->base.ts;
 	p->tpe = op->tpe; /* No dup_sql_type call I think */
 	p->with_nills = op->with_nills;
 
@@ -1721,6 +1711,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	sql_table *nt = create_sql_table_with_id(sa, t->base.id, t->base.name, t->type, t->system, SQL_DECLARED_TABLE, t->commit_action, t->properties);
 
 	nt->base.flags = t->base.flags;
+	nt->base.ts = t->base.ts;
 
 	nt->access = t->access;
 	nt->partition = t->partition;
@@ -1754,17 +1745,6 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	return nt;
 }
 
-static void
-trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log)
-{
-	sql_change *change = SA_ZNEW(tr->sa, sql_change);
-	change->obj = b;
-	change->data = data;
-	change->cleanup = cleanup;
-	change->log = log;
-	tr->changes = sa_list_append(tr->sa, tr->changes, change);
-}
-
 static sql_table *
 bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 {
@@ -1795,7 +1775,7 @@ bootstrap_create_table(sql_trans *tr, sql_schema *s, char *name)
 	if (isTable(t)) {
 		store->storage_api.create_del(tr, t);
 		//if (!isTempTable(t))
-		if (isGlobal(t))
+		//if (isGlobal(t))
 			trans_add(tr, &t->base, t->data, &tc_gc_table, &tc_log_table);
 	}
 	return t;
@@ -3370,6 +3350,19 @@ sql_trans_rollback(sql_trans *tr)
 	*/
 }
 
+sql_trans *
+sql_trans_destroy(sql_trans *tr)
+{
+	sql_trans *res = tr->parent;
+
+	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
+	if (tr->name)
+		tr->name = NULL;
+	if (tr->changes)
+		sql_trans_rollback(tr);
+	_DELETE(tr);
+	return res;
+}
 
 static sql_trans *
 sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
@@ -3383,16 +3376,32 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->store = store;
 	tr->tid = store_transaction_id(store);
 
-	if (name)
-		tr->name = sa_strdup(tr->sa, name);
+	if (name) {
+		if (!parent)
+			return NULL;
+		parent->name = sa_strdup(parent->sa, name);
+	}
 	tr->cat = store->cat;
 	if (!tr->cat)
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
 	tr->tmp = find_sql_schema(tr, "tmp");
-	if (!parent)
-		tr->parent = parent;
+	tr->parent = parent;
 	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
 	return tr;
+}
+
+static sql_schema *
+schema_dup(sql_trans *tr, sql_schema *s)
+{
+	sql_schema *ns = SA_ZNEW(tr->sa, sql_schema);
+
+	*ns = *s;
+	ns->base.ts = tr->tid;
+	ns->base.older = &s->base;
+	/* only needed for persistent */
+	if (tr->tmp != s)
+		s->base.newer = &ns->base;
+	return ns;
 }
 
 sql_trans *
@@ -3402,6 +3411,8 @@ sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 	if (tr) {
 		tr->ts = store_timestamp(store);
 		tr->active = 1;
+		if (tr->tmp)
+			tr->tmp = schema_dup(tr, tr->tmp);
 	}
 	return tr;
 }
@@ -3411,7 +3422,7 @@ sql_trans_commit(sql_trans *tr)
 {
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
-	ulng commit_ts = store_timestamp(store);
+	ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
 	ulng oldest = store_oldest(store, commit_ts);
 
 	/* write phase */
@@ -3441,8 +3452,29 @@ sql_trans_commit(sql_trans *tr)
 				list_remove_node(tr->changes, n);
 			n = next;
 		}
-		list_destroy(tr->changes); /* TODO move leftovers into store for later gc */
+		if (tr->parent && !list_empty(tr->changes)) {
+			if (!tr->parent->changes)
+				tr->parent->changes = tr->changes;
+			else
+				tr->parent->changes = list_merge(tr->parent->changes, tr->changes, NULL);
+		} else {
+			list_destroy(tr->changes); /* TODO move leftovers into store for later gc */
+		}
 		tr->changes = NULL;
+	}
+	if (tr->tmp && tr->tmp->tables.set) {
+		node *n;
+		for (n = tr->tmp->tables.set->h; n; ) {
+			node *nxt = n->next;
+			sql_table *tt = n->data;
+
+			if ((isGlobal(tt) && tt->commit_action != CA_PRESERVE) || tt->commit_action == CA_DELETE) {
+				sql_trans_clear_table(tr, tt);
+			} else if (tt->commit_action == CA_DROP) {
+				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+			}
+			n = nxt;
+		}
 	}
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
@@ -4603,8 +4635,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	sql_table *systable = find_sql_table(tr, syss, "_tables");
 	sht ca;
 
-	/* temps all belong to a special tmp schema and only views/remote
-	   have a query */
+	/* temps all belong to a special tmp schema and only views/remote have a query */
 	assert( (isTable(t) ||
 		(!isTempTable(t) || (strcmp(s->base.name, "tmp") == 0) || isDeclaredTable(t))) || (isView(t) && !sql) || (isRemote(t) && !sql));
 
@@ -4851,7 +4882,7 @@ sql_trans_clear_table(sql_trans *tr, sql_table *t)
 	sql_column *c = n->data;
 	BUN sz = 0, nsz = 0;
 
-	if (!isNew(t))
+	if (!isNew(t) || !inTransaction(tr, t))
 		t->cleared = 1;
 
 	if ((nsz = store->storage_api.clear_col(tr, c)) == BUN_NONE)
@@ -5864,6 +5895,7 @@ sql_session_reset(sql_session *s, int ac)
 	if (!s->tr || !def_schema_name)
 		return 0;
 
+	/*
 	if (s->tr->tmp && s->tr->tmp->tables.set) {
 		for (node *n = s->tr->tmp->tables.set->h; n; n = n->next) {
 			sql_table *t = n->data;
@@ -5872,6 +5904,7 @@ sql_session_reset(sql_session *s, int ac)
 				sql_trans_clear_table(s->tr, t);
 		}
 	}
+	*/
 	assert(s->tr && s->tr->active == 0);
 
 	s->schema_name = def_schema_name;
@@ -5888,12 +5921,6 @@ sql_trans_begin(sql_session *s)
 	sqlstore *store = tr->store;
 
 	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %ld\n", tr->tid);
-#if 0
-	if (tr->parent) {
-		s->tr->cat = sql_trans_reset(tr, gtrans->cat);
-		sql_trans_reset_tmp(s->tr);
-	}
-#endif
 	tr->ts = store_timestamp(store);
 	tr->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);

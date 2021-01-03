@@ -12,8 +12,6 @@
 #include "sql_string.h"
 #include "gdk_atoms.h"
 
-#define inTransaction(tr, obj) (((sql_base*)obj)->ts == tr->tid)
-
 static int log_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
 static int log_update_idx( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
 static int log_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
@@ -28,17 +26,17 @@ sql_dbat *tobe_destroyed_dbat = NULL;
 sql_delta *tobe_destroyed_delta = NULL;
 
 sql_delta *
-timestamp_delta( sql_delta *d, ulng tid, ulng ts)
+timestamp_delta( sql_trans *tr, sql_delta *d)
 {
-	while (d->next && d->ts != tid && d->ts > ts)
+	while (d->next && d->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
 		d = d->next;
 	return d;
 }
 
 sql_dbat *
-timestamp_dbat( sql_dbat *d, ulng tid, ulng ts)
+timestamp_dbat( sql_trans *tr, sql_dbat *d)
 {
-	while (d->next && d->ts != tid && d->ts > ts)
+	while (d->next && d->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
 		d = d->next;
 	return d;
 }
@@ -63,7 +61,7 @@ bind_del(sql_trans *tr, sql_table *t, int access)
 	assert(access == QUICK || tr->active);
 	if (!t->data) {
 		sql_table *ot = tr_find_table(tr->parent, t);
-		t->data = timestamp_dbat(ot->data, tr->tid, tr->ts);
+		t->data = timestamp_dbat(tr, ot->data);
 	}
 	return delta_bind_del(t->data, access);
 }
@@ -105,11 +103,11 @@ bind_ucol(sql_trans *tr, sql_column *c, int access)
 	assert(tr->active);
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
+		c->data = timestamp_delta(tr, oc->data);
 	}
 	if (!c->t->data) {
 		sql_table *ot = tr_find_table(tr->parent, c->t);
-		c->t->data = timestamp_dbat(ot->data, tr->tid, tr->ts);
+		c->t->data = timestamp_dbat(tr, ot->data);
 	}
 	u = delta_bind_ubat(c->data, access, c->type.type->localtype);
 	return u;
@@ -123,11 +121,11 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 	assert(tr->active);
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
-		i->data = timestamp_delta(oi->data, tr->tid, tr->ts);
+		i->data = timestamp_delta(tr, oi->data);
 	}
 	if (!i->t->data) {
 		sql_table *ot = tr_find_table(tr->parent, i->t);
-		i->t->data = timestamp_dbat(ot->data, tr->tid, tr->ts);
+		i->t->data = timestamp_dbat(tr, ot->data);
 	}
 	u = delta_bind_ubat(i->data, access, (oid_index(i->type))?TYPE_oid:TYPE_lng);
 	return u;
@@ -210,7 +208,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 		return NULL;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
+		c->data = timestamp_delta(tr, oc->data);
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
@@ -225,7 +223,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		return NULL;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
-		i->data = timestamp_delta(oi->data, tr->tid, tr->ts);
+		i->data = timestamp_delta(tr, oi->data);
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
@@ -494,7 +492,7 @@ delta_update_val( sql_delta *bat, oid rid, void *upd)
 }
 
 static int
-dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew, int c_isnew, int temp, int sz)
+dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int c_isnew, int temp, int sz)
 {
 	(void)tr;
 	if (!obat)
@@ -520,7 +518,7 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			bat->ibid = temp_copy(bat->ibid, 1);
 			if (bat->ibid == BID_NIL)
 				return LOG_ERR;
-		} else if (oc_isnew && !bat->bid) {
+		} else if (c_isnew && !bat->bid) {
 			/* move the bat to the new col, fixup the old col*/
 			b = COLnew((oid) obat->cnt, type, sz, PERSISTENT);
 			if (b == NULL)
@@ -529,20 +527,8 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 			obat->ibid = temp_create(b);
 			obat->ibase = bat->ibase = (oid) obat->cnt;
 			bat_destroy(b);
-			if (c_isnew) {
-				/* new cols are moved to gtrans and bat.bid */
-				temp_dup(bat->ibid);
-				obat->bid = bat->ibid;
-			} else if (!c_isnew) {
-				bat->bid = bat->ibid;
-
-				b = COLnew(bat->ibase, type, sz, PERSISTENT);
-				if (b == NULL)
-					return LOG_ERR;
-				bat_set_access(b, BAT_READ);
-				bat->ibid = temp_create(b);
-				bat_destroy(b);
-			}
+			temp_dup(bat->ibid);
+			obat->bid = bat->ibid;
 		} else { /* old column */
 			bat->ibid = ebat_copy(bat->ibid, bat->ibase, 0);
 			if (bat->ibid == BID_NIL)
@@ -576,10 +562,10 @@ dup_delta(sql_trans *tr, sql_delta *obat, sql_delta *bat, int type, int oc_isnew
 	return LOG_OK;
 }
 
-int
-dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, int oc_isnew, int c_isnew)
+static int
+dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, int c_isnew)
 {
-	return dup_delta( tr, obat, bat, type, oc_isnew, c_isnew, isTempTable(t), t->sz);
+	return dup_delta( tr, obat, bat, type, c_isnew, isTempTable(t), t->sz);
 }
 
 static sql_delta *
@@ -592,14 +578,14 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	assert(c == oc);
 	if (obat->ts == tr->tid)
 		return obat;
-	if (obat->ts >= TRANSACTION_ID_BASE)
+	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(c->t))
 		/* abort */
 		return NULL;
-	obat = timestamp_delta(oc->data, tr->tid, tr->ts);
+	obat = timestamp_delta(tr, oc->data);
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
-	if(dup_bat(tr, c->t, obat, bat, type, isNew(oc), isNew(c)) == LOG_ERR)
+	if(dup_bat(tr, c->t, obat, bat, type, isNew(c) && inTransaction(tr, c)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
 	bat->next = obat;
@@ -622,17 +608,11 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->ts == tr->tid);
 	if (tpe == TYPE_bat)
-		ok = delta_update_bat(delta, tids, upd, isNew(c));
+		ok = delta_update_bat(delta, tids, upd, isNew(c) && inTransaction(tr, c));
 	else
 		ok = delta_update_val(delta, *(oid*)tids, upd);
-	if (!inTransaction(tr, c->t) && !isTempTable(c->t) && odelta != delta) {
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &c->base;
-		change->data = delta;
-		change->log = &log_update_col;
-		change->cleanup = &tc_gc_col;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-	}
+	if (!inTransaction(tr, c->t) && odelta != delta)
+		trans_add(tr, &c->base, delta, &tc_gc_col, &log_update_col);
 	return ok;
 }
 
@@ -646,15 +626,15 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 
 	if (obat->ts == tr->tid)
 		return obat;
-	if (obat->ts >= TRANSACTION_ID_BASE)
+	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(i->t))
 		/* abort */
 		return NULL;
 
-	obat = timestamp_delta(oi->data, tr->tid, tr->ts);
+	obat = timestamp_delta(tr, oi->data);
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
-	if(dup_bat(tr, i->t, obat, bat, type, isNew(i), isNew(i)) == LOG_ERR)
+	if(dup_bat(tr, i->t, obat, bat, type, isNew(i) && inTransaction(tr, i)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
 	bat->next = obat;
@@ -677,17 +657,11 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->ts == tr->tid);
 	if (tpe == TYPE_bat)
-		ok = delta_update_bat(delta, tids, upd, isNew(i));
+		ok = delta_update_bat(delta, tids, upd, isNew(i) && inTransaction(tr, i));
 	else
 		assert(0);
-	if (!inTransaction(tr, i->t) && !isTempTable(i->t) && odelta != delta) {
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &i->base;
-		change->data = delta;
-		change->log = &log_update_idx;
-		change->cleanup = &tc_gc_idx;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-	}
+	if (!inTransaction(tr, i->t) && odelta != delta)
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &log_update_idx);
 	return ok;
 }
 
@@ -791,7 +765,7 @@ static int
 dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 {
 	bat->dbid = obat->dbid;
-	bat->cnt = obat->cnt;
+	bat->cnt = temp?0:obat->cnt;
 	bat->dname = _STRDUP(obat->dname);
 	bat->cleared = obat->cleared;
 	if(!bat->dname)
@@ -828,14 +802,8 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		ok = delta_append_bat(delta, i);
 	else
 		ok = delta_append_val(delta, i);
-	if (!inTransaction(tr, c->t) && !isTempTable(c->t) && odelta != delta) {
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &c->base;
-		change->data = delta;
-		change->log = &log_update_col;
-		change->cleanup = &tc_gc_col;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-	}
+	if (!inTransaction(tr, c->t) && odelta != delta)
+		trans_add(tr, &c->base, delta, &tc_gc_col, &log_update_col);
 	return ok;
 }
 
@@ -857,14 +825,8 @@ append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
 		ok = delta_append_bat(delta, ib);
 	else
 		ok = delta_append_val(delta, ib);
-	if (!inTransaction(tr, i->t) && !isTempTable(i->t) && odelta != delta) {
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &i->base;
-		change->data = delta;
-		change->log = &log_update_idx;
-		change->cleanup = &tc_gc_idx;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-	}
+	if (!inTransaction(tr, i->t) && odelta != delta)
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &log_update_idx);
 	return ok;
 }
 
@@ -969,14 +931,14 @@ bind_del_data(sql_trans *tr, sql_table *t)
 	assert(t == ot);
 	if (obat->ts == tr->tid)
 		return obat;
-	if (obat->ts >= TRANSACTION_ID_BASE)
+	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(t))
 		/* abort */
 		return NULL;
-	obat = timestamp_dbat(ot->data, tr->tid, tr->ts);
+	obat = timestamp_dbat(tr, ot->data);
 	sql_dbat *bat = ZNEW(sql_dbat);
 	if(!bat)
 		return NULL;
-	dup_dbat(tr, obat, bat, isNew(ot), isTempTable(t));
+	dup_dbat(tr, obat, bat, isNew(t) && inTransaction(tr, t), isTempTable(t));
 	bat->ts = tr->tid;
 	bat->next = obat;
 	t->data = bat;
@@ -1009,7 +971,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 
 		if (!c->data) {
 			sql_column *oc = tr_find_column(tr->parent, c);
-			c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
+			c->data = timestamp_delta(tr, oc->data);
 		}
 		bat = c->data;
 		if (bat->cached) {
@@ -1026,7 +988,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 				continue;
 			if (!i->data) {
 				sql_idx *oi = tr_find_idx(tr->parent, i);
-				i->data = timestamp_delta(oi->data, tr->tid, tr->ts);
+				i->data = timestamp_delta(tr, oi->data);
 			}
 			bat = i->data;
 			if (bat && bat->cached) {
@@ -1043,14 +1005,8 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		ok = delta_delete_bat(bat, ib);
 	else
 		ok = delta_delete_val(bat, *(oid*)ib);
-	if (!inTransaction(tr, t) && !isTempTable(t) && obat != bat) {
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &t->base;
-		change->data = bat;
-		change->log = &log_update_del;
-		change->cleanup = &tc_gc_del;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-	}
+	if (!inTransaction(tr, t) && obat != bat)
+		trans_add(tr, &t->base, bat, &tc_gc_del, &log_update_del);
 	return ok;
 }
 
@@ -1064,7 +1020,7 @@ count_col(sql_trans *tr, sql_column *c, int all)
 		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
+		c->data = timestamp_delta(tr, oc->data);
 	}
 	b = c->data;
 	if (!b)
@@ -1085,7 +1041,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 		return 0;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
+		c->data = timestamp_delta(tr, oc->data);
 	}
 	b = c->data;
 	if (!b)
@@ -1121,7 +1077,7 @@ count_idx(sql_trans *tr, sql_idx *i, int all)
 		return 0;
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
-		i->data = timestamp_delta(oi->data, tr->tid, tr->ts);
+		i->data = timestamp_delta(tr, oi->data);
 	}
 	b = i->data;
 	if (!b)
@@ -1142,7 +1098,7 @@ count_del(sql_trans *tr, sql_table *t)
 		return 0;
 	if (!t->data) {
 		sql_table *ot = tr_find_table(tr->parent, t);
-		t->data = timestamp_dbat(ot->data, tr->tid, tr->ts);
+		t->data = timestamp_dbat(tr, ot->data);
 	}
 	d = t->data;
 	if (!d)
@@ -1159,7 +1115,7 @@ count_col_upd(sql_trans *tr, sql_column *c)
 	assert (isTable(c->t)) ;
 	if (!c->data) {
 		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
+		c->data = timestamp_delta(tr, oc->data);
 	}
 	b = c->data;
 	if (!b)
@@ -1178,7 +1134,7 @@ count_idx_upd(sql_trans *tr, sql_idx *i)
 	if (!i->data) {
 		sql_idx *oi = tr_find_idx(tr->parent, i);
 		if (oi)
-			i->data = timestamp_delta(oi->data, tr->tid, tr->ts);
+			i->data = timestamp_delta(tr, oi->data);
 	}
 	b = i->data;
 	if (!b)
@@ -1461,15 +1417,9 @@ create_col(sql_trans *tr, sql_column *c)
 			ok = LOG_ERR;
 	}
 
-	if (inTransaction(tr, c) && !isTempTable(c->t)){
-	/*
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &c->base;
-		change->log = &log_create_col;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-	*/
+	if (inTransaction(tr, c) && !isTempTable(c->t))
 		bat->ts = tr->tid;
-	}
+
 	if (!inTransaction(tr, c) && !isTempTable(c->t)){
 		return load_bat(tr, bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
@@ -1575,15 +1525,9 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			ok = LOG_ERR;
 	}
 
-	if (inTransaction(tr, ni) && !isTempTable(ni->t)){
-	/*
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &ni->base;
-		change->log = &log_create_idx;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-	*/
+	if (inTransaction(tr, ni) && !isTempTable(ni->t))
 		bat->ts = tr->tid;
-	}
+
 	if (!inTransaction(tr, ni) && !isTempTable(ni->t)){
 		return load_bat(tr, bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
@@ -1594,7 +1538,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 
 		if (!c->data) {
 			sql_column *oc = tr_find_column(tr->parent, c);
-			c->data = timestamp_delta(oc->data, tr->tid, tr->ts);
+			c->data = timestamp_delta(tr, oc->data);
 		}
 		d = c->data;
 		/* Here we also handle indices created through alter stmts */
@@ -1696,15 +1640,9 @@ create_del(sql_trans *tr, sql_table *t)
 		if(!bat->dname)
 			ok = LOG_ERR;
 	}
-	if (inTransaction(tr, t) && !isTempTable(t)){
-		/*
-		sql_change *change = SA_ZNEW(tr->sa, sql_change);
-		change->obj = &t->base;
-		change->log = &log_create_del;
-		tr->changes = sa_list_append(tr->sa, tr->changes, change);
-		*/
+	if (inTransaction(tr, t) && !isTempTable(t))
 		bat->ts = tr->tid;
-	}
+
 	if (!inTransaction(tr, t) && !isTempTable(t)) {
 		log_bid bid = logger_find_bat(store->logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
 
@@ -2108,7 +2046,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 	BAT *ins;
 
 	(void)tr;
-	if (GDKinmemory(0))
+	if (GDKinmemory(0) || tr->parent)
 		return LOG_OK;
 
 	ins = temp_descriptor(cbat->ibid);
@@ -2148,7 +2086,7 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
 	gdk_return ok = GDK_SUCCEED;
 	BAT *db = NULL;
 
-	if (!fdb || GDKinmemory(0))
+	if (!fdb || GDKinmemory(0) || tr->parent)
 		return LOG_OK;
 
 	(void)tr;
@@ -2176,7 +2114,7 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 
 	(void)store;
 	//assert(!store->initialized || ATOMIC_GET(&store->nr_active)==1);
-	assert(!obat->cleared);
+	//assert(!obat->cleared);
 
 	if (obat->bid == 0) {
 		cur = temp_descriptor(obat->ibid);
@@ -2279,9 +2217,10 @@ log_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	int ok = LOG_OK;
 	sql_column *c = (sql_column*)change->obj;
 	sql_delta *delta = c->data;
-	delta->ts = commit_ts;
+	if (!isTempTable(c->t))
+		delta->ts = commit_ts;
 	ok = tr_log_delta(tr, c->data, c->t->cleared, c->t->bootstrap?0:LOG_COL, c->base.id);
-	if (ok == LOG_OK) {
+	if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
 		while (delta && delta->ts > oldest) {
@@ -2305,9 +2244,10 @@ log_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	int ok = LOG_OK;
 	sql_idx *i = (sql_idx*)change->obj;
 	sql_delta *delta = i->data;
-	delta->ts = commit_ts;
+	if (!isTempTable(i->t))
+		delta->ts = commit_ts;
 	ok = tr_log_delta(tr, i->data, i->t->cleared, i->t->bootstrap?0:LOG_COL, i->base.id);
-	if (ok == LOG_OK) {
+	if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
 		while (delta && delta->ts > oldest) {
@@ -2331,9 +2271,10 @@ log_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 	sql_dbat *dbat = t->data;
-	dbat->ts = commit_ts;
+	if (!isTempTable(t))
+		dbat->ts = commit_ts;
 	ok = tr_log_dbat(tr, t->data, t->cleared, t->bootstrap?0:LOG_TAB, t->base.id);
-	if (ok == LOG_OK) {
+	if (ok == LOG_OK && !tr->parent) {
 		sql_dbat *d = dbat;
 		/* clean up and merge deltas */
 		while (dbat && dbat->ts > oldest) {

@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "sql_catalog.h"
+#include "sql_storage.h"
 
 const char *TID = "%TID%";
 
@@ -69,10 +70,30 @@ _list_find_name(list *l, const char *name)
 	return NULL;
 }
 
+void
+trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log)
+{
+	sql_change *change = SA_ZNEW(tr->sa, sql_change);
+	change->obj = b;
+	change->data = data;
+	change->cleanup = cleanup;
+	change->log = log;
+	tr->changes = sa_list_append(tr->sa, tr->changes, change);
+}
+
+int
+tr_version_of_parent(sql_trans *tr, ulng ts)
+{
+	for( tr = tr->parent; tr; tr = tr->parent)
+		if (tr->tid == ts)
+			return 1;
+	return 0;
+}
+
 static void *
 tr_find_base(sql_trans *tr, sql_base *b)
 {
-	while(b && b->ts != tr->tid && b->ts > tr->ts)
+	while(b && b->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, b->ts)) && b->ts > tr->ts)
 			b = b->older;
 	return b;
 }
@@ -279,12 +300,16 @@ find_sql_sequence(sql_schema *s, const char *sname)
 sql_schema *
 find_sql_schema(sql_trans *tr, const char *sname)
 {
+	if (tr->tmp && strcmp(sname, "tmp")==0)
+		return tr->tmp;
 	return _cs_find_name(&tr->cat->schemas, sname);
 }
 
 sql_schema *
 find_sql_schema_id(sql_trans *tr, sqlid id)
 {
+	if (tr->tmp && tr->tmp->base.id == id)
+		return tr->tmp;
 	node *n = cs_find_id(&tr->cat->schemas, id);
 
 	if (n)
