@@ -3390,14 +3390,91 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	return tr;
 }
 
+static sql_column *
+column_dup(sql_trans *tr, sql_column *oc, sql_table *t)
+{
+	sqlstore *store = tr->store;
+	sql_allocator *sa = tr->sa;
+	sql_column *c = SA_ZNEW(sa, sql_column);
+
+	base_init(sa, &c->base, oc->base.id, 0, oc->base.name);
+	c->type = oc->type;
+	c->def = NULL;
+	if (oc->def)
+		c->def = sa_strdup(sa, oc->def);
+	c->null = oc->null;
+	c->colnr = oc->colnr;
+	c->unique = oc->unique;
+	c->t = t;
+	c->storage_type = NULL;
+	if (oc->storage_type)
+		c->storage_type = sa_strdup(sa, oc->storage_type);
+
+	if (isTable(c->t))
+		store->storage_api.create_col(tr, c);
+	return c;
+}
+
+static sql_table *
+table_dup(sql_trans *tr, sql_table *ot, sql_schema *s)
+{
+	sqlstore *store = tr->store;
+	sql_allocator *sa = tr->sa;
+	sql_table *t = SA_ZNEW(sa, sql_table);
+	node *n;
+
+	base_init(sa, &t->base, ot->base.id, 0, ot->base.name);
+	t->type = ot->type;
+	t->system = ot->system;
+	t->bootstrap = ot->bootstrap;
+	t->persistence = ot->persistence;
+	t->commit_action = ot->commit_action;
+	t->access = ot->access;
+	t->query = (ot->query) ? sa_strdup(sa, ot->query) : NULL;
+	t->properties = ot->properties;
+
+	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
+	//cs_new(&t->keys, sa, (fdestroy) &key_destroy);
+	//cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
+	//cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+
+	t->pkey = NULL;
+
+	t->s = s;
+	t->sz = ot->sz;
+	t->cleared = 0;
+
+	if (ot->columns.set)
+		for (n = ot->columns.set->h; n; n = n->next)
+			cs_add(&t->columns, column_dup(tr, n->data, t), 0);
+	/*
+	if (ot->idxs.set)
+		for (n = ot->idxs.set->h; n; n = n->next)
+			cs_add(&t->idxs, idx_dup(tr, n->data, t), 0);
+	if (ot->keys.set)
+		for (n = ot->keys.set->h; n; n = n->next)
+			cs_add(&t->keys, key_dup(tr, n->data, t), 0);
+	if (ot->triggers.set)
+		for (n = ot->triggers.set->h; n; n = n->next)
+			cs_add(&t->triggers, trigger_dup(tr, n->data, t), 0);
+	*/
+	if (isTable(t))
+		store->storage_api.create_del(tr, t);
+	return t;
+}
+
 static sql_schema *
 schema_dup(sql_trans *tr, sql_schema *s)
 {
 	sql_schema *ns = SA_ZNEW(tr->sa, sql_schema);
 
 	*ns = *s;
+	cs_new(&ns->tables, tr->sa, (fdestroy) NULL);
+	if (s->tables.set)
+		for (node *n = s->tables.set->h; n; n=n->next)
+			cs_add(&ns->tables, table_dup(tr, n->data, s), 0);
 	ns->base.ts = tr->tid;
-	ns->base.older = &s->base;
+	//ns->base.older = &s->base;
 	/* only needed for persistent */
 	if (tr->tmp != s)
 		s->base.newer = &ns->base;
@@ -5835,6 +5912,10 @@ sql_session_create(sqlstore *store, sql_allocator *sa, int ac)
 	s->tr = sql_trans_create_(store, NULL, NULL);
 	if (!s->tr) {
 		return NULL;
+	}
+	if (s->tr->tmp) {
+		s->tr->active = 1;
+		s->tr->tmp = schema_dup(s->tr, s->tr->tmp);
 	}
 	s->schema_name = NULL;
 	s->tr->active = 0;
