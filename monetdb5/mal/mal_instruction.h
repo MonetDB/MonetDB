@@ -77,10 +77,6 @@
 #define setVarTypedef(M,I)		((M)->var[I].typevar = 1)
 #define isVarTypedef(M,I)		((M)->var[I].typevar)
 
-#define clrVarUDFtype(M,I)		((M)->var[I].udftype = 0)
-#define setVarUDFtype(M,I)		((M)->var[I].udftype = 1)
-#define isVarUDFtype(M,I)		((M)->var[I].udftype)
-
 #define clrVarConstant(M,I)		((M)->var[I].constant = 0)
 #define setVarConstant(M,I)		((M)->var[I].constant = 1)
 #define isVarConstant(M,I)		((M)->var[I].constant)

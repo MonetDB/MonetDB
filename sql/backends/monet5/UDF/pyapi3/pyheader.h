@@ -43,7 +43,7 @@
 #endif
 
 // Numpy Library
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 #define _NPY_NO_DEPRECATIONS
 #endif
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION

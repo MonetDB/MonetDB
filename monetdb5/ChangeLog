@@ -2,6 +2,6 @@
 # This file is updated with Maddlog
 
 * Wed Sep  9 2020 Sjoerd Mullender <sjoerd@acm.org>
-- By using the option "--dbextra=:inmemory", mserver5 can be instructed
+- By using the option "--dbextra=:memory:", mserver5 can be instructed
   to keep transient BATs completely in memory.
 

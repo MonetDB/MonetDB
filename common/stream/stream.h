@@ -233,7 +233,6 @@ stream_export void set_prompting(stream *block_stream, const char *prompt, strea
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused
 	PROTOCOL_9 = 1, // mal_mapi.c, mal_client.c;
-	PROTOCOL_10 = 2, // mal_mapi.c, sql_result.c
 	PROTOCOL_COLUMNAR = 3 // sql_result.c
 } protocol_version;
 

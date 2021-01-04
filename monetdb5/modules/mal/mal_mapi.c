@@ -90,7 +90,7 @@ static void generateChallenge(str buf, int min, int max) {
 	size_t size;
 	size_t i;
 
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	/* hide rand() calls from analysis */
 	size = (min + max) / 2;
 	for (i = 0; i < size; i++)
@@ -181,79 +181,6 @@ doChallenge(void *data)
 		return;
 	}
 	buf[len] = 0;
-
-	if (strstr(buf, "PROT10")) {
-		char *errmsg = NULL;
-		char *buflenstrend, *buflenstr = strstr(buf, "PROT10");
-		compression_method comp;
-		protocol = PROTOCOL_10;
-		if ((buflenstr = strchr(buflenstr, ':')) == NULL ||
-			(buflenstr = strchr(buflenstr + 1, ':')) == NULL) {
-			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
-			close_stream(fdin);
-			close_stream(fdout);
-			GDKfree(buf);
-			return;
-		}
-		buflenstr++;			/* position after ':' */
-		buflenstrend = strchr(buflenstr, ':');
-
-		if (buflenstrend) buflenstrend[0] = '\0';
-		buflen = atol(buflenstr);
-		if (buflenstrend) buflenstrend[0] = ':';
-
-		if (buflen < BLOCK) {
-			mnstr_printf(fdout, "!buffer size needs to be set and bigger than %d\n", BLOCK);
-			close_stream(fdin);
-			close_stream(fdout);
-			GDKfree(buf);
-			return;
-		}
-
-		comp = COMPRESSION_NONE;
-		if (strstr(buf, "COMPRESSION_SNAPPY")) {
-#ifdef HAVE_SNAPPY
-			comp = COMPRESSION_SNAPPY;
-#else
-			errmsg = "!server does not support Snappy compression.\n";
-#endif
-		} else if (strstr(buf, "COMPRESSION_LZ4")) {
-#ifdef HAVE_LIBLZ4
-			comp = COMPRESSION_LZ4;
-#else
-			errmsg = "!server does not support LZ4 compression.\n";
-#endif
-		} else if (strstr(buf, "COMPRESSION_NONE")) {
-			comp = COMPRESSION_NONE;
-		} else {
-			errmsg = "!no compression type specified.\n";
-		}
-
-		if (errmsg) {
-			// incorrect compression type specified
-			mnstr_printf(fdout, "%s", errmsg);
-			close_stream(fdin);
-			close_stream(fdout);
-			GDKfree(buf);
-			return;
-		}
-
-		{
-			// convert the block_stream into a block_stream2
-			stream *from, *to;
-			from = block_stream2(fdin, buflen, comp);
-			to = block_stream2(fdout, buflen, comp);
-			if (from == NULL || to == NULL) {
-				GDKsyserror("SERVERlisten:"MAL_MALLOC_FAIL);
-				close_stream(fdin);
-				close_stream(fdout);
-				GDKfree(buf);
-				return;
-			}
-			fdin = from;
-			fdout = to;
-		}
-	}
 
 	bs = bstream_create(fdin, 128 * BLOCK);
 
@@ -623,9 +550,9 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			}
 			if (listen(sock, maxusers) == SOCKET_ERROR) {
 #ifdef _MSC_VER
-				err = wsaerror(WSAGetLastError());
+				e = WSAGetLastError();
 #else
-				err = GDKstrerror(errno, (char[128]){0}, 128);
+				e = errno;
 #endif
 				closesocket(sock);
 				sock = INVALID_SOCKET;
@@ -635,9 +562,9 @@ start_listen(SOCKET *sockp, int *portp, const char *listenaddr,
 			SOCKLEN addrlen = (SOCKLEN) sizeof(addr);
 			if (getsockname(sock, (struct sockaddr *) &addr, &addrlen) == SOCKET_ERROR) {
 #ifdef _MSC_VER
-				err = wsaerror(WSAGetLastError());
+				e = WSAGetLastError();
 #else
-				err = GDKstrerror(errno, (char[128]){0}, 128);
+				e = errno;
 #endif
 				closesocket(sock);
 				sock = INVALID_SOCKET;

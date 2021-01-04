@@ -980,7 +980,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		}
 		/* tailname is ignored */
 		strcpy_len(BBP_physical(bid), filename, sizeof(BBP_physical(bid)));
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 		/* help coverity */
 		BBP_physical(bid)[sizeof(BBP_physical(bid)) - 1] = 0;
 #endif

@@ -350,7 +350,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 	int t0 = GDKms();
 
 	assert(!GDKinmemory(0));
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	if (fd < 0)		/* in real life, if fd < 0, fstat will fail */
 		return GDK_FAIL;
 #endif
@@ -544,7 +544,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
 					if (n < 0)
 						GDKsyserror("GDKload: cannot read: name=%s, ext=%s, %zu bytes missing.\n", nme, ext ? ext : "", (size_t) n_expected);
-#ifndef STATIC_CODE_ANALYSIS
+#ifndef __COVERITY__
 					/* Coverity doesn't seem to
 					 * recognize that we're just
 					 * printing the value of ptr,

@@ -122,7 +122,7 @@ typedef struct VARRECORD {
     bool constant:1,
             typevar:1,
             fixedtype:1,
-            udftype:1,
+            //FREE SPOT NOW:1,
             cleanup:1,
             initialized:1,
             used:1,

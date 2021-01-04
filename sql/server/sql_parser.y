@@ -4634,7 +4634,7 @@ literal:
 		  	err = 2;
 
 		  if (!err) {
-		    if ((value >= GDK_lng_min && value <= GDK_lng_max))
+		    if (value >= (lng) GDK_oid_min && value <= (lng) GDK_oid_max)
 #if SIZEOF_OID == SIZEOF_INT
 		  	  sql_find_subtype(&t, "oid", 31, 0 );
 #else

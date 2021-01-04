@@ -20,8 +20,13 @@
  * author: Sjoerd Mullender
  */
 
+int
+rand(void)
+{
+	/* ignore */
+}
+
 typedef enum { GDK_FAIL, GDK_SUCCEED } gdk_return;
-typedef struct {} *MalBlkPtr;
 
 void
 GDKfree(void *blk)
@@ -51,7 +56,8 @@ GDKzalloc(size_t size)
 {
 	void *p = GDKmalloc(size);
 	if (p) {
-		for (size_t i = 0; i < size; i++)
+		size_t i;
+		for (i = 0; i < size; i++)
 			((char *) p)[i] = 0;
 	}
 	return p;
@@ -136,6 +142,24 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	return p;
 }
 
+typedef struct {} *MalBlkPtr;
+enum malexception {
+	MAL,
+	ILLARG /*,
+	OUTOFBNDS,
+	IO,
+	INVCRED,
+	OPTIMIZER,
+	STKOF,
+	SYNTAX,
+	TYPE,
+	LOADER,
+	PARSE,
+	ARITH,
+	PERMD,
+	SQL */
+};
+
 char *
 createException(enum malexception type, const char *fcn, const char *format, ...)
 {
@@ -177,8 +201,8 @@ freeException(char *p)
 char *
 concatErrors(char *err1, const char *err2)
 {
-	freeException(err1);
 	char *p;
+	freeException(err1);
 	p = __coverity_alloc_nosize__();
 	__coverity_mark_as_afm_allocated__(p, "freeException");
 	return p;

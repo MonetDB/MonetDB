@@ -22,12 +22,12 @@
 /*
  * The noop simply means that we keep the properties for the generator object.
  */
-#define VLTnoop(TPE)							\
-	do {								\
-		TPE s;							\
+#define VLTnoop(TPE)												\
+	do {															\
+		TPE s;														\
 		s = pci->argc == 3 ? 1: *getArgReference_##TPE(stk,pci, 3); \
-		zeroerror = (s == 0);					\
-		nullerr = is_##TPE##_nil(s);				\
+		zeroerror = (s == 0);										\
+		nullerr = is_##TPE##_nil(s);								\
 	} while (0)
 
 str
@@ -63,28 +63,28 @@ VLTgenerator_noop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /*
  * The base line consists of materializing the generator iterator value
  */
-#define VLTmaterialize(TPE)						\
-	do {								\
-		TPE *v, f, l, s;					\
-		f = *getArgReference_##TPE(stk, pci, 1);		\
-		l = *getArgReference_##TPE(stk, pci, 2);		\
-		if ( pci->argc == 3)					\
-			s = f<l? (TPE) 1: (TPE)-1;			\
-		else s =  *getArgReference_##TPE(stk,pci, 3);		\
+#define VLTmaterialize(TPE)												\
+	do {																\
+		TPE *v, f, l, s;												\
+		f = *getArgReference_##TPE(stk, pci, 1);						\
+		l = *getArgReference_##TPE(stk, pci, 2);						\
+		if ( pci->argc == 3)											\
+			s = f<l? (TPE) 1: (TPE)-1;									\
+		else s =  *getArgReference_##TPE(stk,pci, 3);					\
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
-			throw(MAL, "generator.table",			\
-			      SQLSTATE(42000) "Illegal generator range"); \
-		n = (BUN) ((l - f) / s);				\
-		if ((TPE) (n * s + f) != l)				\
-			n++;						\
-		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);		\
-		if (bn == NULL)						\
+			throw(MAL, "generator.table",								\
+			      SQLSTATE(42000) "Illegal generator range");			\
+		n = (BUN) ((l - f) / s);										\
+		if ((TPE) (n * s + f) != l)										\
+			n++;														\
+		bn = COLnew(0, TYPE_##TPE, n, TRANSIENT);						\
+		if (bn == NULL)													\
 			throw(MAL, "generator.table", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		v = (TPE*) Tloc(bn, 0);					\
-		for (c = 0; c < n; c++)					\
-			*v++ = (TPE) (f + c * s);			\
-		bn->tsorted = s > 0 || n <= 1;				\
-		bn->trevsorted = s < 0 || n <= 1;			\
+		v = (TPE*) Tloc(bn, 0);											\
+		for (c = 0; c < n; c++)											\
+			*v++ = (TPE) (f + c * s);									\
+		bn->tsorted = s > 0 || n <= 1;									\
+		bn->trevsorted = s < 0 || n <= 1;								\
 	} while (0)
 
 static str
@@ -216,77 +216,77 @@ findGeneratorDefinition(MalBlkPtr mb, InstrPtr pci, int target)
 	return p;
 }
 
-#define calculate_range(TPE, TPE2)					\
-	do {								\
-		TPE f, l, s, low, hgh;					\
-									\
-		f = * getArgReference_##TPE(stk, p, 1);			\
-		l = * getArgReference_##TPE(stk, p, 2);			\
-		if ( p->argc == 3)					\
-			s = f<l? (TPE) 1: (TPE)-1;			\
-		else s = * getArgReference_##TPE(stk, p, 3);		\
+#define calculate_range(TPE, TPE2)										\
+	do {																\
+		TPE f, l, s, low, hgh;											\
+																		\
+		f = * getArgReference_##TPE(stk, p, 1);							\
+		l = * getArgReference_##TPE(stk, p, 2);							\
+		if ( p->argc == 3)												\
+			s = f<l? (TPE) 1: (TPE)-1;									\
+		else s = * getArgReference_##TPE(stk, p, 3);					\
 		if (s == 0 || (s > 0 && f > l) || (s < 0 && f < l) || is_##TPE##_nil(f) || is_##TPE##_nil(l)) \
-			throw(MAL, "generator.select",		\
-			      SQLSTATE(42000) "Illegal generator range"); \
-		n = (BUN) (((TPE2) l - (TPE2) f) / (TPE2) s);		\
-		if ((TPE)(n * s + f) != l)				\
-			n++;						\
-									\
-		low = * getArgReference_##TPE(stk, pci, i);		\
-		hgh = * getArgReference_##TPE(stk, pci, i + 1);		\
-									\
-		if (!is_##TPE##_nil(low) && low == hgh)			\
-			hi = li;					\
-		if (is_##TPE##_nil(low) && is_##TPE##_nil(hgh)) {	\
-			if (li && hi && !anti) {			\
-				/* match NILs (of which there aren't */	\
-				/* any) */				\
-				o1 = o2 = 0;				\
-			} else {					\
-				/* match all non-NIL values, */		\
-				/* i.e. everything */			\
-				o1 = 0;					\
-				o2 = (oid) n;				\
-			}						\
-		} else if (s > 0) {					\
-			if (is_##TPE##_nil(low) || low < f)		\
-				o1 = 0;					\
-			else {						\
-				o1 = (oid) (((TPE2) low - (TPE2) f) / (TPE2) s); \
-				if ((TPE) (f + o1 * s) < low ||		\
-				    (!li && (TPE) (f + o1 * s) == low))	\
-					o1++;				\
-			}						\
-			if (is_##TPE##_nil(hgh))			\
-				o2 = (oid) n;				\
-			else if (hgh < f)				\
-				o2 = 0;					\
-			else {						\
-				o2 = (oid) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
-				if ((hi && (TPE) (f + o2 * s) == hgh) || \
-				    (TPE) (f + o2 * s) < hgh)		\
-					o2++;				\
-			}						\
-		} else {						\
-			if (is_##TPE##_nil(low))			\
-				o2 = (oid) n;				\
-			else if (low > f)				\
-				o2 = 0;					\
-			else {						\
-				o2 = (oid) (((TPE2) low - (TPE2) f) / (TPE2) s); \
-				if ((li && (TPE) (f + o2 * s) == low) || \
-				    (TPE) (f + o2 * s) > low)		\
-					o2++;				\
-			}						\
-			if (is_##TPE##_nil(hgh) || hgh > f)		\
-				o1 = 0;					\
-			else {						\
-				o1 = (oid) (((TPE2) hgh - (TPE2) f) / (TPE2) s); \
-				if ((!hi && (TPE) (f + o1 * s) == hgh) || \
-				    (TPE) (f + o1 * s) > hgh)		\
-					o1++;				\
-			}						\
-		}							\
+			throw(MAL, "generator.select",								\
+			      SQLSTATE(42000) "Illegal generator range");			\
+		n = (BUN) (((TPE2) l - (TPE2) f) / (TPE2) s);					\
+		if ((TPE)(n * s + f) != l)										\
+			n++;														\
+																		\
+		low = * getArgReference_##TPE(stk, pci, i);						\
+		hgh = * getArgReference_##TPE(stk, pci, i + 1);					\
+																		\
+		if (!is_##TPE##_nil(low) && low == hgh)							\
+			hi = li;													\
+		if (is_##TPE##_nil(low) && is_##TPE##_nil(hgh)) {				\
+			if (li && hi && !anti) {									\
+				/* match NILs (of which there aren't */					\
+				/* any) */												\
+				o1 = o2 = 0;											\
+			} else {													\
+				/* match all non-NIL values, */							\
+				/* i.e. everything */									\
+				o1 = 0;													\
+				o2 = (oid) n;											\
+			}															\
+		} else if (s > 0) {												\
+			if (is_##TPE##_nil(low) || low < f)							\
+				o1 = 0;													\
+			else {														\
+				o1 = (oid) (((TPE2) low - (TPE2) f) / (TPE2) s);		\
+				if ((TPE) (f + o1 * s) < low ||							\
+				    (!li && (TPE) (f + o1 * s) == low))					\
+					o1++;												\
+			}															\
+			if (is_##TPE##_nil(hgh))									\
+				o2 = (oid) n;											\
+			else if (hgh < f)											\
+				o2 = 0;													\
+			else {														\
+				o2 = (oid) (((TPE2) hgh - (TPE2) f) / (TPE2) s);		\
+				if ((hi && (TPE) (f + o2 * s) == hgh) ||				\
+				    (TPE) (f + o2 * s) < hgh)							\
+					o2++;												\
+			}															\
+		} else {														\
+			if (is_##TPE##_nil(low))									\
+				o2 = (oid) n;											\
+			else if (low > f)											\
+				o2 = 0;													\
+			else {														\
+				o2 = (oid) (((TPE2) low - (TPE2) f) / (TPE2) s);		\
+				if ((li && (TPE) (f + o2 * s) == low) ||				\
+				    (TPE) (f + o2 * s) > low)							\
+					o2++;												\
+			}															\
+			if (is_##TPE##_nil(hgh) || hgh > f)							\
+				o1 = 0;													\
+			else {														\
+				o1 = (oid) (((TPE2) hgh - (TPE2) f) / (TPE2) s);		\
+				if ((!hi && (TPE) (f + o1 * s) == hgh) ||				\
+				    (TPE) (f + o1 * s) > hgh)							\
+					o1++;												\
+			}															\
+		}																\
 	} while (0)
 
 str
@@ -488,47 +488,47 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 
-#define VLTthetasubselect(TPE,ABS)					\
-	do {								\
-		TPE f,l,s, low, hgh;					\
-		BUN j; oid *v;						\
-		f = *getArgReference_##TPE(stk,p, 1);			\
-		l = *getArgReference_##TPE(stk,p, 2);			\
-		if ( p->argc == 3)					\
-			s = f<l? (TPE) 1: (TPE)-1;			\
-		else s =  *getArgReference_##TPE(stk,p, 3);		\
-		if( s == 0 || (f<l && s < 0) || (f>l && s> 0))		\
+#define VLTthetasubselect(TPE,ABS)										\
+	do {																\
+		TPE f,l,s, low, hgh;											\
+		BUN j; oid *v;													\
+		f = *getArgReference_##TPE(stk,p, 1);							\
+		l = *getArgReference_##TPE(stk,p, 2);							\
+		if ( p->argc == 3)												\
+			s = f<l? (TPE) 1: (TPE)-1;									\
+		else s =  *getArgReference_##TPE(stk,p, 3);						\
+		if( s == 0 || (f<l && s < 0) || (f>l && s> 0))					\
 			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Illegal range"); \
-		cap = (BUN)(ABS(l-f)/ABS(s));				\
-		bn = COLnew(0, TYPE_oid, cap, TRANSIENT);		\
-		if( bn == NULL)						\
+		cap = (BUN)(ABS(l-f)/ABS(s));									\
+		bn = COLnew(0, TYPE_oid, cap, TRANSIENT);						\
+		if( bn == NULL)													\
 			throw(MAL,"generator.thetaselect", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		low= hgh = TPE##_nil;					\
-		v = (oid*) Tloc(bn,0);					\
-		if ( strcmp(oper,"<") == 0){				\
-			hgh= *getArgReference_##TPE(stk,pci,idx);	\
-			hgh = PREVVALUE##TPE(hgh);			\
-		} else if ( strcmp(oper,"<=") == 0){			\
-			hgh= *getArgReference_##TPE(stk,pci,idx);	\
-		} else if ( strcmp(oper,">") == 0){			\
-			low= *getArgReference_##TPE(stk,pci,idx);	\
-			low = NEXTVALUE##TPE(low);			\
-		} else if ( strcmp(oper,">=") == 0){			\
-			low= *getArgReference_##TPE(stk,pci,idx);	\
+		low= hgh = TPE##_nil;											\
+		v = (oid*) Tloc(bn,0);											\
+		if ( strcmp(oper,"<") == 0){									\
+			hgh= *getArgReference_##TPE(stk,pci,idx);					\
+			hgh = PREVVALUE##TPE(hgh);									\
+		} else if ( strcmp(oper,"<=") == 0){							\
+			hgh= *getArgReference_##TPE(stk,pci,idx);					\
+		} else if ( strcmp(oper,">") == 0){								\
+			low= *getArgReference_##TPE(stk,pci,idx);					\
+			low = NEXTVALUE##TPE(low);									\
+		} else if ( strcmp(oper,">=") == 0){							\
+			low= *getArgReference_##TPE(stk,pci,idx);					\
 		} else if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){ \
-			hgh= low= *getArgReference_##TPE(stk,pci,idx);	\
-			anti = 1;					\
-		} else if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){ \
-			hgh= low= *getArgReference_##TPE(stk,pci,idx);	\
-		} else							\
+			hgh= low= *getArgReference_##TPE(stk,pci,idx);				\
+			anti = 1;													\
+		} else if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){	\
+			hgh= low= *getArgReference_##TPE(stk,pci,idx);				\
+		} else															\
 			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");	\
-		for(j=0;j<cap;j++, f+=s, o++)				\
+		for(j=0;j<cap;j++, f+=s, o++)									\
 			if( ((is_##TPE##_nil(low) || f >= low) && (is_##TPE##_nil(hgh) || f <= hgh)) != anti){ \
-				if(cand == NULL || canditer_contains(&ci, o)) { \
-					*v++ = o;			\
-					c++;				\
-				}					\
-			}						\
+				if(cand == NULL || canditer_contains(&ci, o)) {			\
+					*v++ = o;											\
+					c++;												\
+				}														\
+			}															\
 	} while (0)
 
 
@@ -680,30 +680,32 @@ wrapup:
 	return msg;
 }
 
-#define VLTprojection(TPE) {\
-	TPE f,l,s, val;\
-	TPE *v;\
-	f = *getArgReference_##TPE(stk,p, 1);\
-	l = *getArgReference_##TPE(stk,p, 2);\
-	if ( p->argc == 3) \
-		s = f<l? (TPE) 1: (TPE)-1;\
-	else s = * getArgReference_##TPE(stk, p, 3); \
-	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
-		throw(MAL,"generator.projection", SQLSTATE(42000) "Illegal range");\
-	bn = COLnew(0, TYPE_##TPE, cnt, TRANSIENT);\
-	if( bn == NULL){\
-		BBPunfix(bid);\
-		throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
-	}\
-	v = (TPE*) Tloc(bn,0);\
-	for(; cnt-- > 0; ol ? *ol++ : o++){\
-		val = f + ((TPE) ( b->ttype == TYPE_void?o:*ol)) * s;\
-		if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val <= l || val > f))) \
-			continue;\
-		*v++ = val;\
-		c++;\
-	}\
-}
+#define VLTprojection(TPE)												\
+	do {																\
+		TPE f,l,s, val;													\
+		TPE *v;															\
+		f = *getArgReference_##TPE(stk,p, 1);							\
+		l = *getArgReference_##TPE(stk,p, 2);							\
+		if ( p->argc == 3)												\
+			s = f<l? (TPE) 1: (TPE)-1;									\
+		else															\
+			s = * getArgReference_##TPE(stk, p, 3);						\
+		if ( s == 0 || (f> l && s>0) || (f<l && s < 0))					\
+			throw(MAL,"generator.projection", SQLSTATE(42000) "Illegal range");	\
+		bn = COLnew(0, TYPE_##TPE, cnt, TRANSIENT);						\
+		if( bn == NULL){												\
+			BBPunfix(bid);												\
+			throw(MAL,"generator.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		}																\
+		v = (TPE*) Tloc(bn,0);											\
+		for(; cnt-- > 0; o++){											\
+			val = f + ((TPE) (ol == NULL  ? o : ol[o])) * s;			\
+			if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val <= l || val > f))) \
+				continue;												\
+			*v++ = val;													\
+			c++;														\
+		}																\
+	} while (0)
 
 str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -711,7 +713,7 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	bat bid = 0, *ret;
 	BAT *b, *bn = NULL;
 	BUN cnt;
-	oid *ol =0, o= 0;
+	oid *ol = NULL, o= 0;
 	InstrPtr p;
 
 	(void) cntxt;
@@ -785,8 +787,8 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 			v = (timestamp*) Tloc(bn,0);
 
-			for(; cnt-- > 0; ol ? *ol++ : o++){
-				t = ((lng) ( b->ttype == TYPE_void?o:*ol)) * s;
+			for(; cnt-- > 0; o++){
+				t = ((lng) (ol == NULL ? o : ol[o])) * s;
 				val = timestamp_add_usec(f, t);
 				if (is_timestamp_nil(val))
 					throw(MAL, "generator.projection", SQLSTATE(22003) "overflow in calculation");
@@ -817,25 +819,28 @@ str VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 }
 
 /* The operands of a join operation can either be defined on a generator */
-#define VLTjoin(TPE, ABS) \
-	{ TPE f,l,s; TPE *v; BUN w;\
-	f = *getArgReference_##TPE(stk,p, 1);\
-	l = *getArgReference_##TPE(stk,p, 2);\
-	if ( p->argc == 3) \
-		s = f<l? (TPE) 1: (TPE)-1;\
-	else s = * getArgReference_##TPE(stk, p, 3); \
-	incr = s > 0;\
-	v = (TPE*) Tloc(b,0);\
-	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
-		throw(MAL,"generator.join", SQLSTATE(42000) "Illegal range");\
-	for( ; cnt >0; cnt--,o++,v++){\
-		w = (BUN) (ABS(*v -f)/ABS(s));\
-		if ( f + (TPE)(w * s) == *v ){\
-			*ol++ = (oid) w;\
-			*or++ = o;\
-			c++;\
-		}\
-	} }\
+#define VLTjoin(TPE, ABS)												\
+	do {																\
+		TPE f,l,s; TPE *v; BUN w;										\
+		f = *getArgReference_##TPE(stk,p, 1);							\
+		l = *getArgReference_##TPE(stk,p, 2);							\
+		if ( p->argc == 3)												\
+			s = f<l? (TPE) 1: (TPE)-1;									\
+		else															\
+			s = * getArgReference_##TPE(stk, p, 3);						\
+		incr = s > 0;													\
+		v = (TPE*) Tloc(b,0);											\
+		if ( s == 0 || (f> l && s>0) || (f<l && s < 0))					\
+			throw(MAL,"generator.join", SQLSTATE(42000) "Illegal range"); \
+		for( ; cnt >0; cnt--,o++,v++){									\
+			w = (BUN) (ABS(*v -f)/ABS(s));								\
+			if ( f + (TPE)(w * s) == *v ){								\
+				*ol++ = (oid) w;										\
+				*or++ = o;												\
+				c++;													\
+			}															\
+		}																\
+	} while (0)
 
 str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -966,51 +971,56 @@ str VLTgenerator_join(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-#define VLTrangeExpand() \
-{	limit+= cnt * (limit/(done?done:1)+1);\
-	if (BATextend(bln, limit) != GDK_SUCCEED) {	\
-		BBPunfix(blow->batCacheid);\
-		BBPunfix(bhgh->batCacheid);\
-		BBPunfix(bln->batCacheid);\
-		BBPunfix(brn->batCacheid);\
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
-	}\
-	if (BATextend(brn, limit) != GDK_SUCCEED) {	\
-		BBPunfix(blow->batCacheid);\
-		BBPunfix(bhgh->batCacheid);\
-		BBPunfix(bln->batCacheid);\
-		BBPunfix(brn->batCacheid);\
-		throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL);\
-	}\
-	ol = (oid*) Tloc(bln,0) + c;\
-	or = (oid*) Tloc(brn,0) + c;\
-}
+#define VLTrangeExpand()												\
+	do {																\
+		limit+= cnt * (limit/(done?done:1)+1);							\
+		if (BATextend(bln, limit) != GDK_SUCCEED) {						\
+			BBPunfix(blow->batCacheid);									\
+			BBPunfix(bhgh->batCacheid);									\
+			BBPunfix(bln->batCacheid);									\
+			BBPunfix(brn->batCacheid);									\
+			throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		}																\
+		if (BATextend(brn, limit) != GDK_SUCCEED) {						\
+			BBPunfix(blow->batCacheid);									\
+			BBPunfix(bhgh->batCacheid);									\
+			BBPunfix(bln->batCacheid);									\
+			BBPunfix(brn->batCacheid);									\
+			throw(MAL,"generator.rangejoin", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		}																\
+		ol = (oid*) Tloc(bln,0) + c;									\
+		or = (oid*) Tloc(brn,0) + c;									\
+	} while (0)
 
 /* The operands of a join operation can either be defined on a generator */
-#define VLTrangejoin(TPE, ABS, FLOOR) \
-{ TPE f,f1,l,s; TPE *vlow,*vhgh; BUN w;\
-	f = *getArgReference_##TPE(stk,p, 1);\
-	l = *getArgReference_##TPE(stk,p, 2);\
-	if ( p->argc == 3) \
-		s = f<l? (TPE) 1: (TPE)-1;\
-	else s = * getArgReference_##TPE(stk, p, 3); \
-	incr = s > 0;\
-	if ( s == 0 || (f> l && s>0) || (f<l && s < 0))\
-		throw(MAL,"generator.rangejoin", SQLSTATE(42000) "Illegal range");\
-	vlow = (TPE*) Tloc(blow,0);\
-	vhgh = (TPE*) Tloc(bhgh,0);\
-	for( ; cnt >0; cnt--, done++, o++,vlow++,vhgh++){\
-		f1 = f + FLOOR(ABS(*vlow-f)/ABS(s)) * s;\
-		if ( f1 < *vlow ) f1+= s;\
-		w = (BUN) FLOOR(ABS(f1-f)/ABS(s));\
-		for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < *vhgh || (ri && f1 == *vhgh)); f1 += s, w++){\
-			if(c == limit)\
-				VLTrangeExpand();\
-			*ol++ = (oid) w;\
-			*or++ = o;\
-			c++;\
-		}\
-} }
+#define VLTrangejoin(TPE, ABS, FLOOR)									\
+	do {																\
+		TPE f,f1,l,s; TPE *vlow,*vhgh; BUN w;							\
+		f = *getArgReference_##TPE(stk,p, 1);							\
+		l = *getArgReference_##TPE(stk,p, 2);							\
+		if ( p->argc == 3)												\
+			s = f<l? (TPE) 1: (TPE)-1;									\
+		else															\
+			s = * getArgReference_##TPE(stk, p, 3);						\
+		incr = s > 0;													\
+		if ( s == 0 || (f> l && s>0) || (f<l && s < 0))					\
+			throw(MAL,"generator.rangejoin", SQLSTATE(42000) "Illegal range"); \
+		vlow = (TPE*) Tloc(blow,0);										\
+		vhgh = (TPE*) Tloc(bhgh,0);										\
+		for( ; cnt >0; cnt--, done++, o++,vlow++,vhgh++){				\
+			f1 = f + FLOOR(ABS(*vlow-f)/ABS(s)) * s;					\
+			if ( f1 < *vlow )											\
+				f1+= s;													\
+			w = (BUN) FLOOR(ABS(f1-f)/ABS(s));							\
+			for( ; (f1 > *vlow || (li && f1 == *vlow)) && (f1 < *vhgh || (ri && f1 == *vhgh)); f1 += s, w++){ \
+				if(c == limit)											\
+					VLTrangeExpand();									\
+				*ol++ = (oid) w;										\
+				*or++ = o;												\
+				c++;													\
+			}															\
+		}																\
+	} while (0)
 
 str VLTgenerator_rangejoin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
