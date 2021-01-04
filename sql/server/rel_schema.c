@@ -1349,6 +1349,8 @@ sql_drop_table(sql_query *query, dlist *qname, int nr, int if_exists)
 		}
 		return NULL;
 	}
+	if (isDeclaredTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "DROP TABLE: cannot drop a declared table");
 
 	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, nr, if_exists);
 }
@@ -1680,6 +1682,8 @@ rel_grant_or_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees,
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, err, false)))
 		return NULL;
+	if (isDeclaredTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "Cannot %s on a declared table", err);
 	for (dnode *gn = grantees->h; gn; gn = gn->next) {
 		char *grantee = gn->data.sval;
 
@@ -1815,6 +1819,8 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "CREATE INDEX", false)))
 		return NULL;
+	if (isDeclaredTable(t))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: cannot create index on a declared table");
 	if (!mvc_schema_privs(sql, t->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	if ((i = mvc_bind_idx(sql, t->s, iname)))
