@@ -666,7 +666,6 @@ typedef struct sql_table {
 	list *members;
 	int drop_action;	/* only needed for alter drop table */
 
-	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
 	struct sql_table *po;	/* the outer transactions table */

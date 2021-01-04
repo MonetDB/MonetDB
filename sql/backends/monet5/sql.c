@@ -1443,7 +1443,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if (nrows) {
 		if (tname) {
-			cleared = (t->cleared != 0);
+			cleared = 0;//(t->cleared != 0);
 			deletes = (lng) store->storage_api.count_del(m->session->tr, t);
 			if (cname) {
 				if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, cleared, deletes)) != NULL)
@@ -1459,7 +1459,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (n = s->tables.set->h; n ; n = n->next) {
 				t = (sql_table *) n->data;
 				if (isTable(t)) {
-					cleared = (t->cleared != 0);
+					cleared = 0;//(t->cleared != 0);
 					deletes = (lng) store->storage_api.count_del(m->session->tr, t);
 
 					for (node *nn = t->columns.set->h; nn ; nn = nn->next) {

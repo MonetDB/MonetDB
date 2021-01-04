@@ -171,13 +171,8 @@ typedef int (*destroy_del_fptr) (struct sqlstore *store, sql_table *t);
 typedef int (*log_destroy_col_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 typedef int (*log_destroy_idx_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 typedef int (*log_destroy_del_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-/*
--- clear any storage resources for columns, indices and tables
--- returns number of removed tuples
-*/
-typedef BUN (*clear_col_fptr) (sql_trans *tr, sql_column *c);
-typedef BUN (*clear_idx_fptr) (sql_trans *tr, sql_idx *i);
-typedef BUN (*clear_del_fptr) (sql_trans *tr, sql_table *t);
+
+typedef BUN (*clear_table_fptr) (sql_trans *tr, sql_table *t);
 
 /*
 -- update_table rollforward the changes made from table ft to table tt
@@ -192,18 +187,9 @@ typedef int (*update_table_fptr) (sql_trans *tr, sql_table *ft, sql_table *tt);
 typedef int (*gtrans_update_fptr) (sql_trans *tr);
 
 /*
--- handle inserts and updates of columns and indices
--- returns LOG_OK, LOG_ERR
-*/
-typedef int (*col_ins_fptr) (sql_trans *tr, sql_column *c, void *data);
-typedef int (*col_upd_fptr) (sql_trans *tr, sql_column *c, void *rows, void *data);
-typedef int (*idx_ins_fptr) (sql_trans *tr, sql_idx *c, void *data);
-typedef int (*idx_upd_fptr) (sql_trans *tr, sql_idx *c, void *rows, void *data);
-/*
 -- handle deletes
 -- returns LOG_OK, LOG_ERR
 */
-typedef int (*del_fptr) (sql_trans *tr, sql_table *c, void *rows);
 typedef int (*cleanup_fptr) ();
 
 /* backing struct for this interface */
@@ -237,10 +223,6 @@ typedef struct store_functions {
 	log_create_idx_fptr log_create_idx;
 	log_create_del_fptr log_create_del;
 
-	upgrade_col_fptr upgrade_col;
-	upgrade_idx_fptr upgrade_idx;
-	upgrade_del_fptr upgrade_del;
-
 	destroy_col_fptr destroy_col;
 	destroy_idx_fptr destroy_idx;
 	destroy_del_fptr destroy_del;
@@ -249,19 +231,13 @@ typedef struct store_functions {
 	log_destroy_idx_fptr log_destroy_idx;
 	log_destroy_del_fptr log_destroy_del;
 
-	clear_col_fptr clear_col;
-	clear_idx_fptr clear_idx;
-	clear_del_fptr clear_del;
+	clear_table_fptr clear_table;
 
-	col_ins_fptr col_ins;
-	col_upd_fptr col_upd;
-
-	idx_ins_fptr idx_ins;
-	idx_upd_fptr idx_upd;
-
-	del_fptr del;
-
+	upgrade_col_fptr upgrade_col;
+	upgrade_idx_fptr upgrade_idx;
+	upgrade_del_fptr upgrade_del;
 	cleanup_fptr cleanup;
+
 } store_functions;
 
 typedef int (*logger_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
