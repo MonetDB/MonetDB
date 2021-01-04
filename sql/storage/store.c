@@ -2161,6 +2161,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 			p = s;
 			/* now the same tables for temporaries */
 			s = bootstrap_create_schema(tr, "tmp", ROLE_SYSADMIN, USER_MONETDB);
+			store->tmp = s;
 		} else {
 			s = NULL;
 		}
@@ -3476,26 +3477,6 @@ sql_trans_rollback(sql_trans *tr)
 		list_destroy(tr->changes);
 		tr->changes = NULL;
 	}
-	/*
-	for (node *n = tr->cat->schemas.set->h; n; ) {
-		node *nxt = n->next;
-		sql_schema *s = n->data;
-
-		if (s != tr->tmp)
-			cs_del(&tr->cat->schemas, n, s->base.flags);
-		else {
-			n->data = NULL;
-			list_remove_node(tr->cat->schemas.set, n);
-		}
-		n = nxt;
-	}
-	list_destroy(tr->cat->schemas.dset);
-	tr->cat->schemas.dset=NULL;
-	if (tr->moved_tables) {
-		list_destroy(tr->moved_tables);
-		tr->moved_tables = NULL;
-	}
-	*/
 }
 
 sql_trans *
@@ -3532,7 +3513,8 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->cat = store->cat;
 	if (!tr->cat)
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
-	tr->tmp = find_sql_schema(tr, "tmp");
+	//tr->tmp = find_sql_schema(tr, "tmp");
+	tr->tmp = store->tmp;
 	tr->parent = parent;
 	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
 	return tr;
@@ -5092,16 +5074,19 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		if (sys_drop_table(tr, t, drop_action))
 			return -1;
 
-	sql_table *dt = SA_ZNEW(tr->sa, sql_table);
-	*dt = *t;
-	dt->base.ts = tr->tid;
-	dt->base.deleted = 1;
-	dt->base.older = &t->base;
-	t->base.newer = &dt->base;
-	trans_add(tr, &dt->base, dt->data, &tc_gc_table, &tc_log_table);
-	list_update_data(s->tables.set, n, dt);
+	if (isTempTable(t)) {
+		cs_del(&s->tables, n, t->base.flags);
+	} else {
+		sql_table *dt = SA_ZNEW(tr->sa, sql_table);
+		*dt = *t;
+		dt->base.ts = tr->tid;
+		dt->base.deleted = 1;
+		dt->base.older = &t->base;
+		t->base.newer = &dt->base;
+		trans_add(tr, &dt->base, dt->data, &tc_gc_table, &tc_log_table);
+		list_update_data(s->tables.set, n, dt);
 	//n->data = dt;
-	//cs_del(&s->tables, n, t->base.flags);
+	}
 
 	/* todo use changes list instead of dropped and moved_tables */
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
@@ -6134,16 +6119,6 @@ sql_session_reset(sql_session *s, int ac)
 	if (!s->tr || !def_schema_name)
 		return 0;
 
-	/*
-	if (s->tr->tmp && s->tr->tmp->tables.set) {
-		for (node *n = s->tr->tmp->tables.set->h; n; n = n->next) {
-			sql_table *t = n->data;
-
-			if (isGlobal(t) && isKindOfTable(t))
-				sql_trans_clear_table(s->tr, t);
-		}
-	}
-	*/
 	assert(s->tr && s->tr->active == 0);
 
 	s->schema_name = def_schema_name;
@@ -6182,11 +6157,10 @@ sql_trans_end(sql_session *s, int commit)
 	TRC_DEBUG(SQL_STORE, "End of transaction: %ld\n", s->tr->tid);
 	if (commit) {
 		ok = sql_trans_commit(s->tr);
+		if (s->tr->tmp)
+			s->tr->tmp->tables.nelm = NULL;
 	}  else {
-		/* TODO: disabled for now */
-		if (s->tr->active == 0) {
 		sql_trans_rollback_tmp(s->tr, commit);
-		}
 		sql_trans_rollback(s->tr);
 	}
 	s->tr->active = 0;

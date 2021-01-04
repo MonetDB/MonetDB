@@ -448,6 +448,7 @@ extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */
 	sql_catalog *cat;		/* the catalog of persistent tables (what to do with tmp tables ?) */
+	sql_schema *tmp;		/* keep pointer to default (empty) tmp schema */
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	list *active;			/* list of running transactions */
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
