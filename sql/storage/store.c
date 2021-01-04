@@ -225,6 +225,8 @@ base_destroy(sqlstore *store, sql_base *b, ulng commit_ts, list *l1, list *l2)
 	if (older && commit_ts) {
 		base_destroy(store, older, commit_ts, l1, l2);
 		older = NULL;
+	} else if (older) {
+		older->newer = newer;
 	}
 	b->older = NULL;
 
