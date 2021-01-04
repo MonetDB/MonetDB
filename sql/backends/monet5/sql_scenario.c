@@ -244,6 +244,8 @@ SQLprepareClient(Client c, int login)
 			goto bailout;
 		}
 	} else {
+		assert(0);
+#if 0
 		be = c->sqlcontext;
 		m = be->mvc;
 		/* Only reset if there is no active transaction which
@@ -256,6 +258,7 @@ SQLprepareClient(Client c, int login)
 			goto bailout;
 		}
 		backend_reset(be);
+#endif
 	}
 	if (m->session->tr)
 		reset_functions(m->session->tr);
