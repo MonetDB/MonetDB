@@ -233,15 +233,21 @@ base_destroy(sqlstore *store, sql_base *b, ulng commit_ts, list *l1, list *l2)
 	else if (newer && older)
 		newer->older = older;
 
+	if (newer) /* nothing to remove */
+		return;
 	if (l1) {
 		node *bn = list_find(l1, b, NULL);
 		if (bn)
 			list_remove_node(l1, bn);
+		if (older)
+			list_append(l1, older);
 	}
 	if (l2) {
 		node *bn = list_find(l2, b, NULL);
 		if (bn)
 			list_remove_node(l2, bn);
+		if (older)
+			list_append(l2, older);
 	}
 }
 
@@ -274,6 +280,25 @@ tc_gc_key(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 		if (k->base.ts < oldest || (k->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
 			int ok = LOG_OK;
 			base_destroy(store, &k->base, commit_ts, k->t->keys.set, k->t->s->keys);
+			if (ok == LOG_OK)
+				return 1; /* handled */
+			else
+				return LOG_ERR;
+		}
+	}
+	return 0;
+}
+
+static int
+tc_gc_column(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_column *i = (sql_column*)change->obj;
+
+	(void)store;
+	if (i->base.deleted || !commit_ts) {
+		if (i->base.ts < oldest || (i->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
+			int ok = LOG_OK;
+			base_destroy(store, &i->base, commit_ts, i->t->columns.set, NULL);
 			if (ok == LOG_OK)
 				return 1; /* handled */
 			else
@@ -5241,6 +5266,7 @@ sql_column *
 sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 {
 	sqlstore *store = tr->store;
+
 	if (col->null != isnull) {
 		sql_schema *syss = find_sql_schema(tr, isGlobal(col->t)?"sys":"tmp");
 		sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
@@ -5250,7 +5276,20 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		if (is_oid_nil(rid))
 			return NULL;
 		store->table_api.column_update_value(tr, find_sql_column(syscolumn, "null"), rid, &isnull);
-		col->null = isnull;
+		/* change */
+		sql_column *cc = SA_ZNEW(tr->sa, sql_column);
+		*cc = *col;
+		cc->base.ts = tr->tid;
+		cc->base.older = &col->base;
+		col->base.newer = &cc->base;
+		trans_add(tr, &cc->base, cc->data, &tc_gc_column, NULL);
+		node *n = list_find_base_id(col->t->columns.set, col->base.id);
+		if (n) {
+			assert(n->data == col);
+			list_update_data(col->t->columns.set, n, cc);
+		}
+		cc->null = isnull;
+		col = cc;
 	}
 	return col;
 }
