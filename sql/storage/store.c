@@ -211,6 +211,97 @@ table_destroy(sqlstore *store, sql_table *t, ulng commit_ts)
 		cs_destroy(&t->columns);
 }
 
+/* todo add destroy callback, to clean the object it self */
+static void
+base_destroy(sqlstore *store, sql_base *b, ulng commit_ts, list *l1, list *l2)
+{
+	sql_base *older = b->older;
+	sql_base *newer = b->newer;
+
+	assert(b->refcnt == 1);
+	if (--(b->refcnt) > 0)
+		return;
+
+	if (older && commit_ts) {
+		base_destroy(store, older, commit_ts, l1, l2);
+		older = NULL;
+	}
+	b->older = NULL;
+
+	if (newer && commit_ts)
+		newer->older = NULL;
+	else if (newer && older)
+		newer->older = older;
+
+	if (l1) {
+		node *bn = list_find(l1, b, NULL);
+		if (bn)
+			list_remove_node(l1, bn);
+	}
+	if (l2) {
+		node *bn = list_find(l2, b, NULL);
+		if (bn)
+			list_remove_node(l2, bn);
+	}
+}
+
+static int
+tc_gc_func(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_func *f = (sql_func*)change->obj;
+
+	(void)store;
+	if (f->base.deleted || !commit_ts) {
+		if (f->base.ts < oldest || (f->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
+			int ok = LOG_OK;
+			base_destroy(store, &f->base, commit_ts, f->s->funcs.set, NULL);
+			if (ok == LOG_OK)
+				return 1; /* handled */
+			else
+				return LOG_ERR;
+		}
+	}
+	return 0;
+}
+
+static int
+tc_gc_key(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_key *k = (sql_key*)change->obj;
+
+	(void)store;
+	if (k->base.deleted || !commit_ts) {
+		if (k->base.ts < oldest || (k->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
+			int ok = LOG_OK;
+			base_destroy(store, &k->base, commit_ts, k->t->keys.set, k->t->s->keys);
+			if (ok == LOG_OK)
+				return 1; /* handled */
+			else
+				return LOG_ERR;
+		}
+	}
+	return 0;
+}
+
+static int
+tc_gc_idx(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_idx *i = (sql_idx*)change->obj;
+
+	(void)store;
+	if (i->base.deleted || !commit_ts) {
+		if (i->base.ts < oldest || (i->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
+			int ok = LOG_OK;
+			base_destroy(store, &i->base, commit_ts, i->t->idxs.set, i->t->s->idxs);
+			if (ok == LOG_OK)
+				return 1; /* handled */
+			else
+				return LOG_ERR;
+		}
+	}
+	return 0;
+}
+
 static int
 tc_gc_table(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 {
@@ -3044,6 +3135,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 	nk->base.ts = tr->tid;
 	assert( nk->type != fkey || ((sql_fkey*)nk)->rkey);
 	store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action);
+	trans_add(tr, &nk->base, NULL, &tc_gc_key, NULL);
 
 	if (nk->type == fkey)
 		sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey->k.base.id, nk->base.id, FKEY_DEPENDENCY);
@@ -3100,6 +3192,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i)
 	}
 	list_append(t->s->idxs, ni);
 	cs_add(&t->idxs, ni, TR_NEW);
+	trans_add(tr, &ni->base, NULL, &tc_gc_idx, NULL);
 
 	if (isDeclaredTable(i->t))
 	if (!isDeclaredTable(t) && isTable(ni->t) && idx_has_column(ni->type))
@@ -4198,6 +4291,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 		sqlid id = next_oid(tr->store);
 		store->table_api.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
 	}
+	trans_add(tr, &t->base, NULL, NULL, NULL);
 	return t;
 }
 
@@ -4224,7 +4318,16 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	}
 
 	sys_drop_func(tr, func, DROP_CASCADE);
-	cs_del(&s->funcs, n, func->base.flags);
+
+	sql_func *df = SA_ZNEW(tr->sa, sql_func);
+	*df = *func;
+	df->base.ts = tr->tid;
+	df->base.deleted = 1;
+	df->base.older = &func->base;
+	func->base.newer = &df->base;
+	trans_add(tr, &df->base, NULL, &tc_gc_func, NULL);
+	list_update_data(s->funcs.set, n, df);
+	//cs_del(&s->funcs, n, func->base.flags);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
