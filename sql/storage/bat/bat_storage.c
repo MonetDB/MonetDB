@@ -1882,6 +1882,8 @@ log_destroy_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
 	sql_dbat *dbat = t->data;
+	if (dbat->ts < tr->ts) /* no changes ? */
+		return ok;
 	assert(dbat->ts == tr->tid || t->base.ts == tr->tid || (t->base.ts == commit_ts && commit_ts == oldest));
 	dbat->ts = commit_ts;
 	ok = log_destroy_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
