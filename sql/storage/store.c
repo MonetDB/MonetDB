@@ -252,6 +252,25 @@ base_destroy(sqlstore *store, sql_base *b, ulng commit_ts, list *l1, list *l2)
 }
 
 static int
+tc_gc_sequence(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_sequence *s = (sql_sequence*)change->obj;
+
+	(void)store;
+	if (s->base.deleted || !commit_ts) {
+		if (s->base.ts < oldest || (s->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
+			int ok = LOG_OK;
+			base_destroy(store, &s->base, commit_ts, s->s->seqs.set, NULL);
+			if (ok == LOG_OK)
+				return 1; /* handled */
+			else
+				return LOG_ERR;
+		}
+	}
+	return 0;
+}
+
+static int
 tc_gc_func(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_func *f = (sql_func*)change->obj;
@@ -292,13 +311,13 @@ tc_gc_key(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 static int
 tc_gc_column(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	sql_column *i = (sql_column*)change->obj;
+	sql_column *c = (sql_column*)change->obj;
 
 	(void)store;
-	if (i->base.deleted || !commit_ts) {
-		if (i->base.ts < oldest || (i->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
+	if (c->base.deleted || !commit_ts) {
+		if (c->base.ts < oldest || (c->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
 			int ok = LOG_OK;
-			base_destroy(store, &i->base, commit_ts, i->t->columns.set, NULL);
+			base_destroy(store, &c->base, commit_ts, c->t->columns.set, NULL);
 			if (ok == LOG_OK)
 				return 1; /* handled */
 			else
@@ -1469,28 +1488,6 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	}
 	return s;
 }
-
-#if 0
-static sql_trans *
-create_trans(sql_allocator *sa)
-{
-	sql_trans *tr = ZNEW(sql_trans);
-	sql_catalog *cat = SA_ZNEW(sa, sql_catalog);
-
-	if (!tr || !cat)
-		return NULL;
-
-	tr->sa = sa;
-	tr->cat = cat;
-	tr->name = NULL;
-	tr->status = 0;
-
-	tr->parent = NULL;
-
-	cs_new(&tr->cat->schemas, tr->sa, (fdestroy) &schema_destroy);
-	return tr;
-}
-#endif
 
 void
 sql_trans_update_schemas(sql_trans* tr)
@@ -5984,7 +5981,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	if (bedropped)
 		sql_trans_create_dependency(tr, seq->base.id, seq->base.id, BEDROPPED_DEPENDENCY);
 
-	trans_add(tr, &seq->base, NULL, NULL, NULL);
+	trans_add(tr, &seq->base, NULL, &tc_gc_sequence, NULL);
 	return seq;
 }
 
