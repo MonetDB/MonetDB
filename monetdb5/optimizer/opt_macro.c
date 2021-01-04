@@ -130,16 +130,12 @@ inlineMALblock(MalBlkPtr mb, int pc, MalBlkPtr mc)
 	for (n = 0; n < mc->vtop; n++) {
 		if (isExceptionVariable(getVarName(mc,n))) {
 			nv[n] = newVariable(mb, getVarName(mc,n), strlen(getVarName(mc,n)), TYPE_str);
-			if (isVarUDFtype(mc,n))
-				setVarUDFtype(mb,nv[n]);
 		} else if (isVarTypedef(mc,n)) {
 			nv[n] = newTypeVariable(mb,getVarType(mc,n));
 		} else if (isVarConstant(mc,n)) {
 			nv[n] = cpyConstant(mb,getVar(mc,n));
 		} else {
 			nv[n] = newTmpVariable(mb, getVarType(mc, n));
-			if (isVarUDFtype(mc,n))
-				setVarUDFtype(mb,nv[n]);
 		}
 	}
 

@@ -52,7 +52,7 @@ with SQLTestCase() as mdb:
         # Check that a user with no special permissions cannot rename users.
         # FIXME: might need to change the err_message (see issue #7037)
         tc2.execute("ALTER USER april2 RENAME TO april3;")\
-            .assertFailed(err_code="42M32", err_message="ALTER USER: no such user 'april2'")
+            .assertFailed(err_code="M1M05", err_message="ALTER USER: insufficient privileges to rename user 'april2'")
 
         mdb.connect(username='monetdb', password='monetdb')
         # Check that the admin cannot:

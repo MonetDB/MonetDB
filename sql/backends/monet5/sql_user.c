@@ -35,13 +35,13 @@ monet5_drop_user(ptr _mvc, str user)
 	str err;
 	Client c = MCgetClient(m->clientid);
 
-	int grant_user = c->user;
+	oid grant_user = c->user;
 	c->user = MAL_ADMIN;
 	err = AUTHremoveUser(c, user);
 	c->user = grant_user;
 	if (err !=MAL_SUCCEED) {
 		(void) sql_error(m, 02, "DROP USER: %s", getExceptionMessage(err));
-		_DELETE(err);
+		freeException(err);
 		return FALSE;
 	}
 	sys = find_sql_schema(m->session->tr, "sys");
@@ -164,7 +164,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 		pwd = passwd;
 	}
 	/* add the user to the M5 authorisation administration */
-	int grant_user = c->user;
+	oid grant_user = c->user;
 	c->user = MAL_ADMIN;
 	ret = AUTHaddUser(&uid, c, user, pwd);
 	c->user = grant_user;
@@ -191,7 +191,7 @@ monet5_find_user(ptr mp, str user)
 	str err;
 
 	if ((err = AUTHgetUsers(&uid, &nme, c)) != MAL_SUCCEED) {
-		_DELETE(err);
+		freeException(err);
 		return -1;
 	}
 	p = BUNfnd(nme, user);

@@ -150,6 +150,10 @@ gdk_export log_level_t lvl_per_component[];
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
 		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
 
+#ifdef __COVERITY__
+/* hide this for static code analysis: too many false positives */
+#define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)	((void) 0)
+#else
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
 		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
@@ -157,6 +161,7 @@ gdk_export log_level_t lvl_per_component[];
 					    ## __VA_ARGS__);		\
 		}							\
 	} while (0)
+#endif
 
 
 #define TRC_CRITICAL(COMP, MSG, ...)				\

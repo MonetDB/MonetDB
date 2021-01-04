@@ -843,7 +843,7 @@ def GetBitsAndModsAndThreads(env) :
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=:inmemory')
+        cmd.append('--dbextra=:memory:')
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
@@ -1132,7 +1132,7 @@ def RunTest(env, test, oktests, pSrvr):
                     if not env.get('NOCLEAN'):
                         raise
                 if f.endswith('.src'):
-                    with open(f) as fp:
+                    with openutf8(f) as fp:
                         src = expandvars(fp.readline().strip(), env)
                     if os.path.isfile(src):
                         f = f[:-4]
@@ -1152,8 +1152,8 @@ def RunTest(env, test, oktests, pSrvr):
             MAPIsockets = None
 
         if test.get('is_input', False) and not os.path.isfile(TST+EXT):
-            with open(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
-                with open(test.get('test_path') + test.get('tail'), 'r') as f:
+            with openutf8(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
+                with openutf8(test.get('test_path') + test.get('tail'), 'r') as f:
                     for l in f:
                         fout.write(expandvars(l, env))
         else:
@@ -1198,12 +1198,12 @@ def RunTest(env, test, oktests, pSrvr):
                         res = diff(stable_file, TestOutFile)
                     except Exception as e:
                         exit_code = F_ERROR
-                        with open(TestErrFile, 'a') as f:
+                        with openutf8(TestErrFile, 'a') as f:
                             f.write(repr(e))
                     else:
                         if res:
                             exit_code = F_ERROR
-                            with open(TestErrFile, 'a') as f:
+                            with openutf8(TestErrFile, 'a') as f:
                                 f.write(res)
 
         t1 = time.time()
@@ -1215,7 +1215,7 @@ def RunTest(env, test, oktests, pSrvr):
             prred('ERROR: ')
             print(os.path.join(TSTDIR, TST + EXT))
             print('========================================')
-            with open(TestErrFile, 'r') as f:
+            with openutf8(TestErrFile, 'r') as f:
                 print(f.read())
             print()
 
@@ -1597,8 +1597,8 @@ class ServerClass:
 def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, options=[]):
     port = int(env.get('MAPIPORT', randomPort(30000, 39999)))
     pollfile = os.path.join(dbpath, '.started')
-    outfile = open(outfile, 'a') if outfile else sys.stdout
-    errfile = open(errfile, 'a') if errfile else sys.stderr
+    outfile = openutf8(outfile, 'a') if outfile else sys.stdout
+    errfile = openutf8(errfile, 'a') if errfile else sys.stderr
     cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % dbpath] + options
     TSTPREF = env.get('TSTPREF')
     if env.get('MULTIFARM'):
@@ -1607,7 +1607,7 @@ def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, optio
                       ignore_errors = True)
         os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
     elif env.get('TRANS_INMEM'):
-        cmd.append('--dbextra=:inmemory')
+        cmd.append('--dbextra=:memory:')
     return ServerClass(cmd,
                 outfile,
                 errfile,
@@ -1720,7 +1720,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                               ignore_errors = True)
                 os.makedirs(os.path.join(env['GDK_DBFARM'], TSTDB + '_transient'))
             elif env.get('TRANS_INMEM'):
-                Srvr.append('--dbextra=:inmemory')
+                Srvr.append('--dbextra=:memory:')
             if os.path.isfile(TST + '.options5'):
                 Srvr.extend(openutf8(TST + '.options5').read().split())
             lang=""
@@ -1770,7 +1770,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                                   ignore_errors = True)
                     os.makedirs(os.path.join(env['GDK_DBFARM'], TSTPREF + '_transient'))
                 elif env.get('TRANS_INMEM'):
-                    Srvr.append('--dbextra=:inmemory')
+                    Srvr.append('--dbextra=:memory:')
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), int(env['MAPIPORT']))
                 pSrvr.LaunchIt()
             if savepath is not None:

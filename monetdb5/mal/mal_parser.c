@@ -866,7 +866,7 @@ binding(Client cntxt, MalBlkPtr curBlk, InstrPtr curInstr, int flag)
 static int
 term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 {
-	int i, idx, flag, free = 1;
+	int i, idx, free = 1;
 	ValRecord cst;
 	int cstidx = -1;
 	malType tpe = TYPE_any;
@@ -885,14 +885,11 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 				tpe = typeElm(cntxt, getVarType(curBlk, cstidx));
 				if (tpe < 0)
 					return 3;
-				if(tpe == getVarType(curBlk,cstidx) ){
-					setVarUDFtype(curBlk, cstidx);
-				} else {
+				if(tpe != getVarType(curBlk,cstidx) ){
 					cstidx = defConstant(curBlk, tpe, &cst);
 					if (cstidx < 0)
 						return 3;
 					setPolymorphic(*curInstr, tpe, FALSE);
-					setVarUDFtype(curBlk, cstidx);
 					free = 0;
 				}
 			} else if (cst.vtype != getVarType(curBlk, cstidx)) {
@@ -909,7 +906,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			return ret;
 		} else {
 			/* add a new constant literal, the :type could be erroneously be a coltype */
-			flag = currChar(cntxt) == ':';
 			tpe = typeElm(cntxt, cst.vtype);
 			if (tpe < 0 )
 				return 3;
@@ -917,8 +913,6 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 			if (cstidx < 0)
 				return 3;
 			setPolymorphic(*curInstr, tpe, FALSE);
-			if (flag)
-				setVarUDFtype(curBlk, cstidx);
 			*curInstr = pushArgument(curBlk, *curInstr, cstidx);
 			return ret;
 		}
@@ -1590,7 +1584,6 @@ parseAssign(Client cntxt, int cntrl)
 			}
 			GETvariable(freeInstruction(curInstr));
 			if (currChar(cntxt) == ':') {
-				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
 				if (type < 0)
 					goto part3;
@@ -1647,7 +1640,6 @@ parseAssign(Client cntxt, int cntrl)
 		if (!(currChar(cntxt) == ':' && CURRENT(cntxt)[1] == '=')) {
 			curInstr->argv[0] = varid;
 			if (currChar(cntxt) == ':') {
-				setVarUDFtype(curBlk, varid);
 				type = typeElm(cntxt, getVarType(curBlk, varid));
 				if (type < 0)
 					goto part3;
