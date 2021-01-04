@@ -1005,7 +1005,6 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		t->persistence = SQL_GLOBAL_TEMP;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
-	t->cleared = 0;
 	v = store->table_api.column_find_value(tr, find_sql_column(tables, "access"),rid);
 	t->access = *(sht*)v;	_DELETE(v);
 
@@ -1761,7 +1760,6 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 		t->members = list_new(sa, (fdestroy) NULL);
 	t->pkey = NULL;
 	t->sz = COLSIZE;
-	t->cleared = 0;
 	t->s = NULL;
 	t->properties = properties;
 	memset(&t->part, 0, sizeof(t->part));
@@ -3592,7 +3590,6 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s)
 
 	t->s = s;
 	t->sz = ot->sz;
-	t->cleared = 0;
 
 	if (ot->columns.set)
 		for (n = ot->columns.set->h; n; n = n->next)
@@ -5118,36 +5115,7 @@ BUN
 sql_trans_clear_table(sql_trans *tr, sql_table *t)
 {
 	sqlstore *store = tr->store;
-	node *n = t->columns.set->h;
-	sql_column *c = n->data;
-	BUN sz = 0, nsz = 0;
-
-	if (!isNew(t) || !inTransaction(tr, t))
-		t->cleared = 1;
-
-	if ((nsz = store->storage_api.clear_col(tr, c)) == BUN_NONE)
-		return BUN_NONE;
-	sz += nsz;
-	if ((nsz = store->storage_api.clear_del(tr, t)) == BUN_NONE)
-		return BUN_NONE;
-	sz -= nsz;
-
-	for (n = n->next; n; n = n->next) {
-		c = n->data;
-
-		if (store->storage_api.clear_col(tr, c) == BUN_NONE)
-			return BUN_NONE;
-	}
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
-			sql_idx *ci = n->data;
-
-			if (isTable(ci->t) && idx_has_column(ci->type) &&
-				store->storage_api.clear_idx(tr, ci) == BUN_NONE)
-				return BUN_NONE;
-		}
-	}
-	return sz;
+	return store->storage_api.clear_table(tr, t);
 }
 
 sql_column *

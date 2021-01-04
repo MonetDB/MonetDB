@@ -21,10 +21,6 @@ static int tc_gc_del( sqlstore *store, sql_change *c, ulng commit_ts, ulng oldes
 
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
-static MT_Lock destroy_lock = MT_LOCK_INITIALIZER(destroy_lock);
-sql_dbat *tobe_destroyed_dbat = NULL;
-sql_delta *tobe_destroyed_delta = NULL;
-
 sql_delta *
 timestamp_delta( sql_trans *tr, sql_delta *d)
 {
@@ -1846,17 +1842,6 @@ static int
 cleanup(void)
 {
 	int ok = LOG_OK;
-
-	MT_lock_set(&destroy_lock);
-	if (tobe_destroyed_delta) {
-		ok = destroy_bat(tobe_destroyed_delta);
-		tobe_destroyed_delta = NULL;
-	}
-	if (ok == LOG_OK && tobe_destroyed_dbat) {
-		ok = destroy_dbat(NULL, tobe_destroyed_dbat);
-		tobe_destroyed_dbat = NULL;
-	}
-	MT_lock_unset(&destroy_lock);
 	return ok;
 }
 
@@ -1942,9 +1927,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 	if (bat->bid) {
 		b = temp_descriptor(bat->bid);
 		if (b) {
-			assert(!isEbat(b));
 			sz += BATcount(b);
-			/* for transactions we simple switch to ibid only */
 			temp_destroy(bat->bid);
 			bat->bid = 0;
 			bat_destroy(b);
@@ -1979,10 +1962,12 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 static BUN
 clear_col(sql_trans *tr, sql_column *c)
 {
-	sql_delta *delta;
+	sql_delta *delta, *odelta = c->data;
 
 	if ((delta = bind_col_data(tr, c)) == NULL)
 		return BUN_NONE;
+	if (delta && !inTransaction(tr, c->t) && odelta != delta)
+		trans_add(tr, &c->base, delta, &tc_gc_col, &log_update_col);
 	if (delta)
 		return clear_delta(tr, delta);
 	return 0;
@@ -1991,12 +1976,14 @@ clear_col(sql_trans *tr, sql_column *c)
 static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
-	sql_delta *delta;
+	sql_delta *delta, *odelta = i->data;
 
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
 	if ((delta = bind_idx_data(tr, i)) == NULL)
 		return BUN_NONE;
+	if (delta && !inTransaction(tr, i->t) && odelta != delta)
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &log_update_idx);
 	if (delta)
 		return clear_delta(tr, delta);
 	return 0;
@@ -2031,15 +2018,50 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
-	sql_dbat *bat;
+	sql_dbat *bat, *obat = t->data;
 
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
+
+	if (!inTransaction(tr, t) && obat != bat)
+		trans_add(tr, &t->base, bat, &tc_gc_del, &log_update_del);
 	return clear_dbat(tr, bat);
 }
 
+static BUN
+clear_table(sql_trans *tr, sql_table *t)
+{
+	node *n = t->columns.set->h;
+	sql_column *c = n->data;
+	BUN sz = 0, nsz = 0;
+
+	if ((nsz = clear_col(tr, c)) == BUN_NONE)
+		return BUN_NONE;
+	sz += nsz;
+	if ((nsz = clear_del(tr, t)) == BUN_NONE)
+		return BUN_NONE;
+	sz -= nsz;
+
+	for (n = n->next; n; n = n->next) {
+		c = n->data;
+
+		if (clear_col(tr, c) == BUN_NONE)
+			return BUN_NONE;
+	}
+	if (t->idxs.set) {
+		for (n = t->idxs.set->h; n; n = n->next) {
+			sql_idx *ci = n->data;
+
+			if (isTable(ci->t) && idx_has_column(ci->type) &&
+				clear_idx(tr, ci) == BUN_NONE)
+				return BUN_NONE;
+		}
+	}
+	return sz;
+}
+
 static int
-tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
+tr_log_delta( sql_trans *tr, sql_delta *cbat, char tpe, oid id)
 {
 	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
@@ -2053,7 +2075,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 	if (ins == NULL)
 		return LOG_ERR;
 
-	if (cleared && log_bat_clear(store->logger, cbat->name, tpe, id) != GDK_SUCCEED) {
+	if (cbat->cleared && log_bat_clear(store->logger, cbat->name, tpe, id) != GDK_SUCCEED) {
 		bat_destroy(ins);
 		return LOG_ERR;
 	}
@@ -2080,7 +2102,7 @@ tr_log_delta( sql_trans *tr, sql_delta *cbat, int cleared, char tpe, oid id)
 }
 
 static int
-tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
+tr_log_dbat(sql_trans *tr, sql_dbat *fdb, char tpe, oid id)
 {
 	sqlstore *store = tr->store;
 	gdk_return ok = GDK_SUCCEED;
@@ -2091,7 +2113,7 @@ tr_log_dbat(sql_trans *tr, sql_dbat *fdb, int cleared, char tpe, oid id)
 
 	(void)tr;
 	assert (fdb->dname);
-	if (cleared && log_bat_clear(store->logger, fdb->dname, tpe, id) != GDK_SUCCEED)
+	if (fdb->cleared && log_bat_clear(store->logger, fdb->dname, tpe, id) != GDK_SUCCEED)
 		return LOG_ERR;
 
 	db = temp_descriptor(fdb->dbid);
@@ -2135,6 +2157,18 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 		cur = temp_descriptor(obat->bid);
 		if(!cur)
 			return LOG_ERR;
+		if (isEbat(cur)) {
+			temp_destroy(obat->bid);
+			obat->bid = ebat2real(cur->batCacheid, 0);
+			bat_destroy(cur);
+			if(obat->bid != BID_NIL) {
+				cur = temp_descriptor(obat->bid);
+				if (cur == NULL)
+					return LOG_ERR;
+			} else {
+				return LOG_ERR;
+			}
+		}
 	}
 	ins = temp_descriptor(obat->ibid);
 	if(!ins) {
@@ -2219,7 +2253,7 @@ log_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_delta *delta = c->data;
 	if (!isTempTable(c->t))
 		delta->ts = commit_ts;
-	ok = tr_log_delta(tr, c->data, c->t->cleared, c->t->bootstrap?0:LOG_COL, c->base.id);
+	ok = tr_log_delta(tr, c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
 	if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
@@ -2246,7 +2280,7 @@ log_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_delta *delta = i->data;
 	if (!isTempTable(i->t))
 		delta->ts = commit_ts;
-	ok = tr_log_delta(tr, i->data, i->t->cleared, i->t->bootstrap?0:LOG_COL, i->base.id);
+	ok = tr_log_delta(tr, i->data, i->t->bootstrap?0:LOG_COL, i->base.id);
 	if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
@@ -2273,7 +2307,7 @@ log_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_dbat *dbat = t->data;
 	if (!isTempTable(t))
 		dbat->ts = commit_ts;
-	ok = tr_log_dbat(tr, t->data, t->cleared, t->bootstrap?0:LOG_TAB, t->base.id);
+	ok = tr_log_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
 	if (ok == LOG_OK && !tr->parent) {
 		sql_dbat *d = dbat;
 		/* clean up and merge deltas */
@@ -2405,9 +2439,7 @@ bat_storage_init( store_functions *sf)
 	sf->log_destroy_idx = (log_destroy_idx_fptr)&log_destroy_idx;
 	sf->log_destroy_del = (log_destroy_del_fptr)&log_destroy_del;
 
-	sf->clear_col = (clear_col_fptr)&clear_col;
-	sf->clear_idx = (clear_idx_fptr)&clear_idx;
-	sf->clear_del = (clear_del_fptr)&clear_del;
+	sf->clear_table = (clear_table_fptr)&clear_table;
 
 	sf->cleanup = (cleanup_fptr)&cleanup;
 }
