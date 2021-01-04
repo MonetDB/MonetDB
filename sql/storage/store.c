@@ -290,6 +290,25 @@ tc_gc_func(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 }
 
 static int
+tc_gc_trigger(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+{
+	sql_trigger *t = (sql_trigger*)change->obj;
+
+	(void)store;
+	if (t->base.deleted || !commit_ts) {
+		if (t->base.ts < oldest || (t->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
+			int ok = LOG_OK;
+			base_destroy(store, &t->base, commit_ts, t->t->triggers.set, t->t->s->triggers);
+			if (ok == LOG_OK)
+				return 1; /* handled */
+			else
+				return LOG_ERR;
+		}
+	}
+	return 0;
+}
+
+static int
 tc_gc_key(sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_key *k = (sql_key*)change->obj;
@@ -4313,7 +4332,7 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 		sqlid id = next_oid(tr->store);
 		store->table_api.table_insert(tr, sysarg, &id, &t->base.id, a->name, a->type.type->sqlname, &a->type.digits, &a->type.scale, &a->inout, &number);
 	}
-	trans_add(tr, &t->base, NULL, NULL, NULL);
+	trans_add(tr, &t->base, NULL, &tc_gc_func, NULL);
 	return t;
 }
 
@@ -5491,7 +5510,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	list_append(t->s->keys, nk);
 
 	store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action );
-	trans_add(tr, &nk->base, NULL, NULL, NULL);
+	trans_add(tr, &nk->base, NULL, &tc_gc_key, NULL);
 	return nk;
 }
 
@@ -5539,7 +5558,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey->k.base.id : &neg, &action);
 
 	sql_trans_create_dependency(tr, ((sql_fkey *) nk)->rkey->k.base.id, nk->base.id, FKEY_DEPENDENCY);
-	trans_add(tr, &nk->base, NULL, NULL, NULL);
+	trans_add(tr, &nk->base, NULL, &tc_gc_key, NULL);
 	return (sql_fkey*) nk;
 }
 
@@ -5756,7 +5775,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, const char *name, idx_type it)
 		store->storage_api.create_idx(tr, ni);
 	if (!isDeclaredTable(t))
 		store->table_api.table_insert(tr, sysidx, &ni->base.id, &t->base.id, &ni->type, ni->base.name);
-	trans_add(tr, &ni->base, NULL, NULL, NULL);
+	trans_add(tr, &ni->base, NULL, &tc_gc_idx, NULL);
 	return ni;
 }
 
@@ -5885,7 +5904,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 	store->table_api.table_insert(tr, systrigger, &ni->base.id, ni->base.name, &t->base.id, &ni->time, &ni->orientation,
 							 &ni->event, (ni->old_name)?ni->old_name:nilptr, (ni->new_name)?ni->new_name:nilptr,
 							 (ni->condition)?ni->condition:nilptr, ni->statement);
-	trans_add(tr, &ni->base, NULL, NULL, NULL);
+	trans_add(tr, &ni->base, NULL, &tc_gc_trigger, NULL);
 	return ni;
 }
 

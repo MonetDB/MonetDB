@@ -464,8 +464,10 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 	if (ops && ops->h)
 		input_type = ops->h->data;
 
-	if (ff)
-		for (node *n = ff->h; n; n = n->next) {
+	if (ff) {
+		node *n;
+		//for (node *n = ff->h; n; n = n->next) {
+		sql_base_loop( ff, n) {
 			sql_func *f = n->data;
 
 			if (f->type != type && f->type != filt)
@@ -473,6 +475,7 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 			if (strcmp(f->base.name, fname) == 0 && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
 				return (type == F_AGGR) ? _dup_subaggr(sql->sa, f, input_type) : sql_dup_subfunc(sql->sa, f, ops, NULL);
 		}
+	}
 	return NULL;
 }
 
@@ -665,7 +668,7 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
 				sql_func *f = he->value;
 
-				if (f->type != type)
+				if (f->base.deleted || f->type != type)
 					continue;
 				if (strcmp(f->base.name, fname) == 0) {
 					if (!res)
@@ -677,7 +680,7 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 			for (node *n = ff->h; n; n = n->next) {
 				sql_func *f = n->data;
 
-				if (f->type != type)
+				if (f->base.deleted || f->type != type)
 					continue;
 				if (strcmp(f->base.name, fname) == 0) {
 					if (!res)
