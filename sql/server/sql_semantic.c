@@ -308,7 +308,7 @@ sql_find_func_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_ft
 			for (; he; he = he->chain) {
 				sql_func *f = he->value;
 
-				if (f->type != type && f->type != filt)
+				if (f->base.deleted || (f->type != type && f->type != filt))
 					continue;
 				if ((res = func_cmp(sql->sa, f, fname, nrargs)) != NULL) {
 					MT_lock_unset(&ff->ht_lock);
@@ -327,7 +327,7 @@ sql_find_func_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_ft
 			for (; n; n = n->next) {
 				sql_func *f = n->data;
 
-				if (f->type != type && f->type != filt)
+				if (f->base.deleted || (f->type != type && f->type != filt))
 					continue;
 				if ((res = func_cmp(sql->sa, f, fname, nrargs)) != NULL)
 					return res;
@@ -397,7 +397,7 @@ sql_bind_member_internal(mvc *sql, list *ff, const char *fname, sql_subtype *tp,
 		for (; n; n = n->next) {
 			sql_func *f = n->data;
 
-			if (!f->res && !IS_FILT(f))
+			if (f->base.deleted || (!f->res && !IS_FILT(f)))
 				continue;
 			if (strcmp(f->base.name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
 				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
@@ -466,7 +466,6 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 	if (ff) {
 		node *n;
-		//for (node *n = ff->h; n; n = n->next) {
 		sql_base_loop( ff, n) {
 			sql_func *f = n->data;
 
@@ -504,8 +503,9 @@ sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype t
 {
 	sql_subtype *tp = sql_bind_localtype("bit");
 
-	if (ff)
-		for (node *n = ff->h; n; n = n->next) {
+	if (ff) {
+		node *n;
+		sql_base_loop( ff, n) {
 			sql_func *f = n->data;
 			sql_arg *firstres = NULL;
 
@@ -515,6 +515,7 @@ sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype t
 			if (strcmp(f->base.name, fname) == 0 && f->type == type && (is_subtype(&firstres->type, res) || firstres->type.type->eclass == EC_ANY) && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0)
 				return (type == F_AGGR) ? _dup_subaggr(sql->sa, f, NULL) : sql_dup_subfunc(sql->sa, f, ops, NULL);
 		}
+	}
 	return NULL;
 }
 
@@ -562,8 +563,9 @@ sql_resolve_function_with_undefined_parameters_internal(mvc *sql, list *ff, cons
 {
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
-	if (ff)
-		for (node *n = ff->h; n; n = n->next) {
+	if (ff) {
+		node *n;
+		sql_base_loop( ff, n) {
 			sql_func *f = n->data;
 
 			if (f->type != type && f->type != filt)
@@ -573,6 +575,7 @@ sql_resolve_function_with_undefined_parameters_internal(mvc *sql, list *ff, cons
 					return (type == F_AGGR) ? _dup_subaggr(sql->sa, f, NULL) : sql_dup_subfunc(sql->sa, f, ops, NULL);
 			}
 		}
+	}
 	return NULL;
 }
 
@@ -610,7 +613,7 @@ sql_find_funcs_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_f
 			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
 				sql_func *f = he->value;
 
-				if (f->type != type && f->type != filt)
+				if (f->base.deleted || (f->type != type && f->type != filt))
 					continue;
 				if ((fres = func_cmp(sql->sa, f, fname, nrargs )) != NULL) {
 					if (!res)
@@ -619,7 +622,8 @@ sql_find_funcs_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_f
 				}
 			}
 		} else {
-			for (node *n = ff->h; n; n = n->next) {
+			node *n;
+			sql_base_loop( ff, n) {
 				sql_func *f = n->data;
 
 				if (f->type != type && f->type != filt)
@@ -677,7 +681,8 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 				}
 			}
 		} else {
-			for (node *n = ff->h; n; n = n->next) {
+			node *n;
+			sql_base_loop( ff, n) {
 				sql_func *f = n->data;
 
 				if (f->base.deleted || f->type != type)
