@@ -724,6 +724,8 @@ typedef struct sql_session {
 	backend_stack stk;
 } sql_session;
 
+#define sql_base_loop(l, n) for (n=l->h; n; n=n->next) if (!((sql_base*)n->data)->deleted)
+
 //extern void schema_destroy(sql_schema *s);
 //extern void table_destroy(sql_table *t);
 extern void column_destroy(sql_column *c);

@@ -5835,9 +5835,17 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if (!isTempTable(i->t))
 		sys_drop_idx(tr, i, drop_action);
 
+	sql_idx *di = SA_ZNEW(tr->sa, sql_idx);
+	*di = *i;
+	di->base.ts = tr->tid;
+	di->base.deleted = 1;
+	di->base.older = &i->base;
+	i->base.newer = &di->base;
+	trans_add(tr, &di->base, di->data, &tc_gc_idx, NULL);
 	n = cs_find_name(&i->t->idxs, i->base.name);
 	if (n)
-		cs_del(&i->t->idxs, n, i->base.flags);
+		list_update_data(i->t->idxs.set, n, di);
+		//cs_del(&i->t->idxs, n, i->base.flags);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);

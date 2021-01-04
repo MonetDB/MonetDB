@@ -802,7 +802,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 
 	if (isRemote(t))
 		tname = mapiuri_table(t->query, sql->sa, tname);
-	for (cn = t->columns.set->h; cn; cn = cn->next) {
+	sql_base_loop(t->columns.set, cn) {
 		sql_column *c = cn->data;
 		sql_exp *e = exp_alias(sa, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
@@ -823,7 +823,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
 	if (t->idxs.set) {
-		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+		sql_base_loop(t->idxs.set, cn) {
 			sql_exp *e;
 			sql_idx *i = cn->data;
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
