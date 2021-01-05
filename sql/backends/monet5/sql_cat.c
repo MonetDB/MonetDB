@@ -1075,7 +1075,8 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str
 SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{	mvc *sql = NULL;
+{
+	mvc *sql = NULL;
 	str msg= MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1);
 	str notused = *getArgReference_str(stk, pci, 2);
@@ -1091,6 +1092,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL,"sql.drop_schema",SQLSTATE(3F000) "DROP SCHEMA: name %s does not exist", sname);
 		return MAL_SUCCEED;
 	}
+	sql_trans *tr = sql->session->tr;
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_schema",SQLSTATE(42000) "DROP SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	if (s == cur_schema(sql))
@@ -1100,8 +1102,8 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sql_schema_has_user(sql, s))
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	if (!action /* RESTRICT */ && (
-		!list_empty(s->tables.set) || !list_empty(s->types.set) ||
-		!list_empty(s->funcs.set) || !list_empty(s->seqs.set)))
+		!tr_empty(tr, s->tables.set) || !tr_empty(tr, s->types.set) ||
+		!tr_empty(tr, s->funcs.set) || !tr_empty(tr, s->seqs.set)))
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 
 	if (mvc_drop_schema(sql, s, action))

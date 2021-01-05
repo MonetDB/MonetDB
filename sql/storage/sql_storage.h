@@ -442,6 +442,8 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
+extern int tr_empty(sql_trans *tr, list *l);
+
 #define TRANSACTION_ID_BASE	(1ULL<<63)
 #define inTransaction(tr, obj) (((sql_base*)obj)->ts == tr->tid)
 
