@@ -70,6 +70,32 @@ _list_find_name(list *l, const char *name)
 	return NULL;
 }
 
+static sql_base *
+tr_get_object(sql_trans *tr, sql_base *b)
+{
+	while (b) {
+		if (b->ts == tr->tid || b->ts < tr->ts)
+			return b;
+		else
+			b = b->older;
+	}
+	return b;
+}
+
+int
+tr_empty(sql_trans *tr, list *l)
+{
+	if (list_empty(l))
+		return 1;
+	for(node *n = l->h; n; n=n->next) {
+		sql_base *b = tr_get_object(tr, n->data);
+
+		if (b && !b->deleted)
+			return 0;
+	}
+	return 1;
+}
+
 void
 trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log)
 {

@@ -433,7 +433,8 @@ tc_log_table(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 		if (t->base.deleted) {
 			ok = store->storage_api.log_destroy_del(tr, change, commit_ts, oldest);
 		} else { /* new table ? */
-			ok = store->storage_api.log_create_del(tr, change, commit_ts, oldest);
+			if (t->base.flags == TR_NEW)
+				ok = store->storage_api.log_create_del(tr, change, commit_ts, oldest);
 			if (ok == LOG_OK)
 				return tc_commit_table_(tr, t, commit_ts, oldest);
 		}
@@ -4020,7 +4021,8 @@ sys_drop_part(sql_trans *tr, sql_table *t, int drop_action)
 		sql_part *pt = partition_find_part(tr, t, NULL);
 
 		assert(pt);
-		sql_trans_del_table(tr, pt->t, t, drop_action);
+		if (!sql_trans_del_table(tr, pt->t, t, drop_action))
+			break;
 	}
 }
 
@@ -5045,6 +5047,22 @@ create_sql_column(sqlstore *store, sql_allocator *sa, sql_table *t, const char *
 	return create_sql_column_with_id(sa, next_oid(store), t, name, tpe);
 }
 
+static sql_table*
+new_table( sql_trans *tr, sql_table *t, node *n)
+{
+	if (t->base.ts == tr->tid)
+		return t;
+	sql_table *dt = SA_ZNEW(tr->sa, sql_table);
+	*dt = *t;
+	dt->base.ts = tr->tid;
+	dt->base.older = &t->base;
+	t->base.newer = &dt->base;
+	trans_add(tr, &dt->base, dt->data, &tc_gc_table, &tc_log_table);
+	//n->data = dt;
+	list_update_data(t->s->tables.set, n, dt);
+	return dt;
+}
+
 int
 sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
@@ -5079,15 +5097,9 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if (isTempTable(t)) {
 		cs_del(&s->tables, n, t->base.flags);
 	} else {
-		sql_table *dt = SA_ZNEW(tr->sa, sql_table);
-		*dt = *t;
-		dt->base.ts = tr->tid;
+		sql_table *dt = new_table(tr, t, n);
+
 		dt->base.deleted = 1;
-		dt->base.older = &t->base;
-		t->base.newer = &dt->base;
-		trans_add(tr, &dt->base, dt->data, &tc_gc_table, &tc_log_table);
-		list_update_data(s->tables.set, n, dt);
-	//n->data = dt;
 	}
 
 	/* todo use changes list instead of dropped and moved_tables */
@@ -5233,6 +5245,25 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 	return 0;
 }
 
+static sql_column*
+new_column( sql_trans *tr, sql_column *col)
+{
+	if (col->base.ts == tr->tid)
+		return col;
+	sql_column *cc = SA_ZNEW(tr->sa, sql_column);
+	*cc = *col;
+	cc->base.ts = tr->tid;
+	cc->base.older = &col->base;
+	col->base.newer = &cc->base;
+	node *n = list_find_base_id(col->t->columns.set, col->base.id);
+	if (n) {
+		assert(n->data == col);
+		list_update_data(col->t->columns.set, n, cc);
+	}
+	trans_add(tr, &cc->base, cc->data, &tc_gc_column, NULL);
+	return cc;
+}
+
 sql_column *
 sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 {
@@ -5247,20 +5278,9 @@ sql_trans_alter_null(sql_trans *tr, sql_column *col, int isnull)
 		if (is_oid_nil(rid))
 			return NULL;
 		store->table_api.column_update_value(tr, find_sql_column(syscolumn, "null"), rid, &isnull);
-		/* change */
-		sql_column *cc = SA_ZNEW(tr->sa, sql_column);
-		*cc = *col;
-		cc->base.ts = tr->tid;
-		cc->base.older = &col->base;
-		col->base.newer = &cc->base;
-		trans_add(tr, &cc->base, cc->data, &tc_gc_column, NULL);
-		node *n = list_find_base_id(col->t->columns.set, col->base.id);
-		if (n) {
-			assert(n->data == col);
-			list_update_data(col->t->columns.set, n, cc);
-		}
-		cc->null = isnull;
-		col = cc;
+
+		col = new_column(tr, col);
+		col->null = isnull;
 	}
 	return col;
 }
@@ -5278,6 +5298,7 @@ sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access)
 		if (is_oid_nil(rid))
 			return NULL;
 		store->table_api.column_update_value(tr, find_sql_column(systable, "access"), rid, &access);
+		t = new_table(tr, t, find_sql_table_node(t->s, t->base.id));
 		t->access = access;
 	}
 	return t;
@@ -5303,6 +5324,8 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 		if (sys_drop_default_object(tr, col, 0) == -1)
 			return NULL;
 		store->table_api.column_update_value(tr, col_dfs, rid, p);
+
+		col = new_column(tr, col);
 		col->def = NULL;
 		if (val)
 			col->def = sa_strdup(tr->sa, val);
@@ -5328,6 +5351,8 @@ sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage)
 		if (is_oid_nil(rid))
 			return NULL;
 		store->table_api.column_update_value(tr, col_dfs, rid, p);
+
+		col = new_column(tr, col);
 		col->storage_type = NULL;
 		if (storage)
 			col->storage_type = sa_strdup(tr->sa, storage);
