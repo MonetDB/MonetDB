@@ -78,7 +78,6 @@ def run_test(side, testcase):
 
     with SQLTestCase() as tc:
         tr = tc.execute(code, '-fcsv', client='mclient')
-        print(repr(tr.data), file=sys.stderr)
         if isinstance(expected_result, list):
             tr.assertSucceeded()
             tr.assertDataResultMatch(expected_result)
