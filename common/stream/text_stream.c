@@ -70,6 +70,7 @@ static void
 put_byte(inner_state_t *ist, char byte)
 {
 	*ist->dst_win.start++ = byte;
+	assert(ist->dst_win.count > 0);
 	ist->dst_win.count--;
 }
 
