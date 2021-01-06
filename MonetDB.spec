@@ -41,24 +41,14 @@
 %global fedpkgs 1
 %endif
 
-%if %{?rhel:1}%{!?rhel:0} && 0%{?rhel} < 7
-# RedHat Enterprise Linux < 7
-# There is no macro _rundir, and no directory /run, instead use /var/run.
-%global _rundir %{_localstatedir}/run
-%endif
-
 # On Fedora, the geos library is available, and so we can require it
 # and build the geom modules.  On RedHat Enterprise Linux and
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
-# Packages for Enterprise Linux (EPEL).  However, On RHEL 6, the geos
-# library is too old for us, so we need an extra check for an
-# up-to-date version of RHEL.
+# Packages for Enterprise Linux (EPEL).
 %if %{fedpkgs}
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # By default create the MonetDB-geom-MonetDB5 package on Fedora and RHEL 7
 %bcond_without geos
-%endif
 %endif
 
 # By default use PCRE for the implementation of the SQL LIKE and ILIKE
@@ -73,11 +63,8 @@
 %bcond_without rintegration
 %endif
 
-%if 0%{?rhel} >= 7 || 0%{?fedora} > 0
-# On RHEL 6, Python 3 is too old.  On RHEL 7, Python 3 was too old
-# when RHEL 7 was released, but now it is ok.
+# By default, include Python 3 integration.
 %bcond_without py3integration
-%endif
 
 %if %{fedpkgs}
 # By default, create the MonetDB-cfitsio package.
@@ -104,13 +91,10 @@ Source: https://www.monetdb.org/downloads/sources/Oct2020-SP1/%{name}-%{version}
 # that doesn't exist and we need systemd, so instead we just require
 # the macro file that contains the definitions.
 # We need checkpolicy and selinux-policy-devel for the SELinux policy.
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# RHEL >= 7, and all current Fedora
 BuildRequires: /usr/lib/rpm/macros.d/macros.systemd
 BuildRequires: checkpolicy
 BuildRequires: selinux-policy-devel
 BuildRequires: hardlink
-%endif
 BuildRequires: cmake3 >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
@@ -497,9 +481,7 @@ Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
 # versions up to 1.0.5 don't accept the queryid field in the result set
 Conflicts: python-pymonetdb < 1.0.6
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 Requires(pre): systemd
-%endif
 
 %description -n MonetDB5-server
 MonetDB is a database management system that is developed from a
@@ -535,9 +517,7 @@ exit 0
 
 %files -n MonetDB5-server
 %defattr(-,root,root)
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %{_sysusersdir}/monetdb.conf
-%endif
 %attr(2750,monetdb,monetdb) %dir %{_localstatedir}/lib/monetdb
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5
 %attr(2770,monetdb,monetdb) %dir %{_localstatedir}/monetdb5/dbfarm
@@ -589,9 +569,7 @@ Provides: %{name}-SQL-server5-hugeint%{?_isa} = %{version}-%{release}
 %if (0%{?fedora} >= 22)
 Suggests: %{name}-client%{?_isa} = %{version}-%{release}
 %endif
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %{?systemd_requires}
-%endif
 
 %description SQL-server5
 MonetDB is a database management system that is developed from a
@@ -602,7 +580,6 @@ accelerators.  It also has an SQL front end.
 This package contains the monetdb and monetdbd programs and the systemd
 configuration.
 
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %post SQL-server5
 %systemd_post monetdbd.service
 
@@ -611,7 +588,6 @@ configuration.
 
 %postun SQL-server5
 %systemd_postun_with_restart monetdbd.service
-%endif
 
 %files SQL-server5
 %defattr(-,root,root)
@@ -619,16 +595,9 @@ configuration.
 %{_bindir}/monetdbd
 %dir %attr(775,monetdb,monetdb) %{_localstatedir}/log/monetdb
 %dir %attr(775,monetdb,monetdb) %{_rundir}/monetdb
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 # RHEL >= 7, and all current Fedora
 %{_tmpfilesdir}/monetdbd.conf
 %{_unitdir}/monetdbd.service
-%else
-# RedHat Enterprise Linux < 7
-%exclude %{_sysconfdir}/tmpfiles.d/monetdbd.conf
-# no _unitdir macro
-%exclude %{_prefix}/lib/systemd/system/monetdbd.service
-%endif
 %config(noreplace) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_properties
 %verify(not mtime) %attr(664,monetdb,monetdb) %{_localstatedir}/monetdb5/dbfarm/.merovingian_lock
 %config(noreplace) %attr(644,root,root) %{_sysconfdir}/logrotate.d/monetdbd
@@ -738,7 +707,6 @@ developer, but if you do want to test, this is the package you need.
 %dir %{python3_sitelib}/MonetDBtesting
 %{python3_sitelib}/MonetDBtesting/*
 
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 %package selinux
 Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
@@ -801,8 +769,6 @@ fi
 %{_datadir}/doc/MonetDB-selinux/*
 %{_datadir}/selinux/*/monetdb.pp
 
-%endif
-
 %prep
 %setup -q
 
@@ -847,14 +813,12 @@ for d in etc var; do mkdir "%{buildroot}/$d"; ln -s ../$d "%{buildroot}/usr/$d";
 rm "%{buildroot}/usr/var" "%{buildroot}/usr/etc"
 
 # move file to correct location
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 mkdir -p %{buildroot}%{_tmpfilesdir} %{buildroot}%{_sysusersdir}
 mv %{buildroot}%{_sysconfdir}/tmpfiles.d/monetdbd.conf %{buildroot}%{_tmpfilesdir}
 cat > %{buildroot}%{_sysusersdir}/monetdb.conf << EOF
 u monetdb - "MonetDB Server" /var/lib/monetdb
 EOF
 rmdir %{buildroot}%{_sysconfdir}/tmpfiles.d
-%endif
 
 install -d -m 0750 %{buildroot}%{_localstatedir}/lib/monetdb
 install -d -m 0770 %{buildroot}%{_localstatedir}/monetdb5/dbfarm
@@ -873,14 +837,12 @@ rm -f %{buildroot}%{_libdir}/monetdb5/lib_microbenchmark*.so
 rm -f %{buildroot}%{_bindir}/monetdb_mtest.sh
 rm -rf %{buildroot}%{_datadir}/monetdb # /cmake
 
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
 if [ -x /usr/sbin/hardlink ]; then
     /usr/sbin/hardlink -cv %{buildroot}%{_datadir}/selinux
 else
     # Fedora 31
     /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
 fi
-%endif
 
 %changelog
 * Wed Nov 18 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.7-20201118
