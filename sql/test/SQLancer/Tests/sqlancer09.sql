@@ -173,6 +173,8 @@ where "isauuid"(r'V[')) as sub0 on case when "isauuid"(r'sXq') then (121) in (v2
 least(true, false) then least(true, true) else ((true)and(false)) end) as res;
 ROLLBACK;
 
+values (0.51506835), (2), (least('a', 0.5667308));
+
 START TRANSACTION;
 CREATE TABLE "sys"."t2" ("c0" BIGINT,"c1" BIGINT,"c2" REAL);
 COPY 21 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
