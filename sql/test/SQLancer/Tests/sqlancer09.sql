@@ -68,9 +68,9 @@ COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 04:26:50	NULL
 
 CREATE TABLE "sys"."t1" ("c0" CHAR(375) NOT NULL, CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c1"));
-insert into t1 values ('');
-insert into t1(c0) values ((select 'a')), ('b');
-insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
+--insert into t1 values ('');
+--insert into t1(c0) values ((select 'a')), ('b');
+--insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
 ROLLBACK;
 
 START TRANSACTION;
@@ -106,4 +106,40 @@ INSERT INTO t2(c0) VALUES((((((((least(r' ]', r'3''')) IS NULL)OR((((TIMESTAMP '
 ((0.26488915)>(1.345373227E9)), sql_min(FALSE, TRUE)))))AND("isauuid"(r'45456452')))), (TRUE);
 
 INSERT INTO t2 VALUES (COALESCE(1 BETWEEN 2 AND 3, 1));
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" DOUBLE NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.19726593583228624
+0.3617077941904526
+0.09499147053563461
+0.9165351565675044
+0.4849843626674083
+-788116199
+-2039978642
+0.1344643786448907
+0
+1
+
+create view v0(vc0, vc1, vc2) as (values (+ (((0.55)*(2))),
+case when ((r'ꠔJ''6H*')=(r'\_fhsQh1?')) then case when true then -32 else 77 end else + (-1) end, (least(33.0,
+0.34670544)) not between symmetric (cast(-2 as smallint)) and (((0.33)/(48)))));
+create view v2(vc0) as (select scale_down(- (-1.2), greatest(0.54, 5)) where ((((((false)or(true)))
+and(false)))and(false)));
+create view v5(vc0, vc1) as (select distinct ifthenelse(case when false then false when false then false end, r'YK隆', r'᳖g# .&'),
+round(+ (-5), scale_down(0.4, 5)) where "isauuid"(r'')) with check option;
+create view v6(vc0) as (values (- (((61)-(2))))) with check option;
+create view v7(vc0) as (values (case when case when true then true when true then false when true then false else false end
+then lower(r'mEqP') when (1549) is null then upper(r'o]hUWA쪬') end));
+
+select cast(sum(count) as bigint) from (select all cast(((case when v0.vc2 then v0.vc2 end)or((v7.vc0) not between
+symmetric (v7.vc0) and (v7.vc0))) as int) as count from v2, v7 right outer join v0 on
+((nullif(v7.vc0, v7.vc0))not ilike(cast(v0.vc0 as string(804)))) join
+(values (greatest(110, -2)), (((least(2, 9942))%(cast(r'1' as int)))),
+(case true when "isauuid"(r'H}m0YfN') then 0.3 else sign(0.4) end))
+as sub0 on v0.vc2 full outer join (select scale_up(least(0.4, -3),
+scale_down(v2.vc0, 0.4)), 0.4, 0.4
+from v2, v5, v6 where greatest(true, true)) as sub1 on true right outer join
+(select r'-1216996046' from t1 where (true) is null) as sub2 on (v0.vc2) not in (v0.vc2, v0.vc2, false, v0.vc2)) as res;
 ROLLBACK;

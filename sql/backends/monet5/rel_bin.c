@@ -1199,7 +1199,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 			r = stmt_list(be, ops);
 
-			if (left && right && exps_card(e->r) > CARD_ATOM) {
+			if (left && right && (exps_card(e->r) != CARD_ATOM || !exps_are_atoms(e->r))) {
 				sql_subfunc *f = e->f;
 				return stmt_genjoin(be, l, r, f, is_anti(e), swapped);
 			}
