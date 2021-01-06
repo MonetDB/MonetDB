@@ -808,6 +808,7 @@ fi
 
 %build
 %cmake3 \
+	-DCMAKE_INSTALL_RUNSTATEDIR=/run \
 	-DRELEASE_VERSION=ON \
 	-DASSERT=OFF \
 	-DCINTEGRATION=%{?with_cintegration:ON}%{!?with_cintegration:OFF} \
@@ -879,15 +880,6 @@ else
     # Fedora 31
     /usr/bin/hardlink -cv %{buildroot}%{_datadir}/selinux
 fi
-%endif
-
-%if %{?rhel:0}%{!?rhel:1} || 0%{?rhel} >= 7
-# fix up some paths (/var/run -> /run)
-# needed because CMAKE_INSTALL_RUNSTATEDIR refers to /var/run
-sed -i 's|/var/run|/run|' \
-    %{buildroot}%{_tmpfilesdir}/monetdbd.conf \
-    %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_properties \
-    %{buildroot}%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
