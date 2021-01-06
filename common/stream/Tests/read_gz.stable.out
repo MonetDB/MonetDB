@@ -18,6 +18,12 @@ Test: read rstream sherlock_bom.txt.gz
 Test: read rastream sherlock_bom.txt.gz
 	OK
 
+Test: read rstream sherlock_cr.txt.gz
+	OK
+
+Test: read rastream sherlock_cr.txt.gz
+	OK
+
 Test: read rstream empty.txt.gz
 	OK
 
@@ -246,6 +252,12 @@ Test: read ['rstream', 'blocksize:2'] sherlock.txt.gz
 Test: read ['rastream', 'blocksize:2'] sherlock.txt.gz
 	OK
 
+Test: read ['rstream', 'blocksize:1'] sherlock.txt.gz
+	OK
+
+Test: read ['rastream', 'blocksize:1'] sherlock.txt.gz
+	OK
+
 Test: read ['rstream', 'blocksize:1000000'] sherlock.txt.gz
 	OK
 
@@ -258,13 +270,37 @@ Test: read ['rstream', 'blocksize:2'] sherlock_bom.txt.gz
 Test: read ['rastream', 'blocksize:2'] sherlock_bom.txt.gz
 	OK
 
+Test: read ['rstream', 'blocksize:1'] sherlock_bom.txt.gz
+	OK
+
+Test: read ['rastream', 'blocksize:1'] sherlock_bom.txt.gz
+	OK
+
 Test: read ['rstream', 'blocksize:1000000'] sherlock_bom.txt.gz
 	OK
 
 Test: read ['rastream', 'blocksize:1000000'] sherlock_bom.txt.gz
 	OK
 
-# 14:28:00 >  
-# 14:28:00 >  "Done."
-# 14:28:00 >  
+Test: read ['rstream', 'blocksize:2'] sherlock_cr.txt.gz
+	OK
+
+Test: read ['rastream', 'blocksize:2'] sherlock_cr.txt.gz
+	OK
+
+Test: read ['rstream', 'blocksize:1'] sherlock_cr.txt.gz
+	OK
+
+Test: read ['rastream', 'blocksize:1'] sherlock_cr.txt.gz
+	OK
+
+Test: read ['rstream', 'blocksize:1000000'] sherlock_cr.txt.gz
+	OK
+
+Test: read ['rastream', 'blocksize:1000000'] sherlock_cr.txt.gz
+	OK
+
+# 16:14:36 >  
+# 16:14:36 >  "Done."
+# 16:14:36 >  
 
