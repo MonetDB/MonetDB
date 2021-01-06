@@ -68,9 +68,9 @@ COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 04:26:50	NULL
 
 CREATE TABLE "sys"."t1" ("c0" CHAR(375) NOT NULL, CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c1"));
---insert into t1 values ('');
---insert into t1(c0) values ((select 'a')), ('b');
---insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
+insert into t1 values ('');
+insert into t1(c0) values ((select 'a')), ('b');
+insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
 ROLLBACK;
 
 START TRANSACTION;
