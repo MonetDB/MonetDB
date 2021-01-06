@@ -172,3 +172,50 @@ select cast(sum(count) as bigint) from (select all cast(least((25994) is null, (
 where "isauuid"(r'V[')) as sub0 on case when "isauuid"(r'sXq') then (121) in (v21.vc0, 1157448792) when
 least(true, false) then least(true, true) else ((true)and(false)) end) as res;
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("c0" BIGINT,"c1" BIGINT,"c2" REAL);
+COPY 21 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	46	NULL
+NULL	978792098	NULL
+NULL	-209719663	NULL
+NULL	-1594519521	NULL
+NULL	1440437651	NULL
+NULL	NULL	0.7521466
+NULL	NULL	-9.6071763e+08
+NULL	NULL	0.5561435
+NULL	867710451	-9.6071763e+08
+NULL	-160941982	NULL
+NULL	1990736519	NULL
+NULL	-103481269	NULL
+NULL	1811733944	NULL
+1976443849	NULL	NULL
+1998125136	NULL	NULL
+1387808544	NULL	NULL
+-978792098	666383819	NULL
+NULL	0	-1.6970901e+08
+NULL	1	0.07074437
+-2027341916	NULL	NULL
+239480113	NULL	NULL
+
+create view v2(vc0, vc1, vc2) as (values (((((+ (0.51506835))&(-2)))<<(scale_down(least(31552,
+0.3), cast(1500294098 as int)))),
+((- (((44257622)-(0.6))))>=(least(-15958291, -1534974396))), case - (sql_min(0.632858,
+0.3)) when ((((0.5)^(0.4)))+(((0.4)/(5))))
+then sql_max(cast(5293 as decimal), ((0.5)-
+(0.5))) end),(charindex(r'934079707', r'35305325'), not (false),
+sql_max(((+ (102))|(case 0.028362095 when 458003921 then 28118 end)), cast(least(0.3,
+0.79115176) as double))), (least(((((0.5)%(0.40122834)))||(2)),
+0.5667308), false, 45));
+
+create view v3(vc0) as (values (least(least(cast(0.3 as bigint), 0.9), 0.5)));
+
+select 1 from v2, v3;
+
+select cast(sum(count) as bigint) from (select cast((cast(sin(3) as double)) is null as int) as count from 
+t2 cross join v3 full outer join (select distinct sql_max(case when cast(v2.vc1 as boolean) then cast(-3 as string)
+when case when v2.vc1 then v2.vc1 when v2.vc1 then v2.vc1 end then sql_max(r'()', r'1574131922') end,
+coalesce(cast(t2.c2 as string), case 2 when v3.vc0 then r'0.8941967611205319' end, case when v2.vc1 then r''
+when v2.vc1 then r'-1402390265' else r't࿕}rj}&' end, greatest(r'1', r'I'''))) from t2, v2, v3) as sub0 on
+greatest("isauuid"(r'-209719663'), ((((((false)or(true)))or(false)))or(false)))) as res;
+ROLLBACK;
