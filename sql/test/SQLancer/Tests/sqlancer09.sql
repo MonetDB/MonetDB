@@ -143,3 +143,32 @@ scale_down(v2.vc0, 0.4)), 0.4, 0.4
 from v2, v5, v6 where greatest(true, true)) as sub1 on true right outer join
 (select r'-1216996046' from t1 where (true) is null) as sub2 on (v0.vc2) not in (v0.vc2, v0.vc2, false, v0.vc2)) as res;
 ROLLBACK;
+
+START TRANSACTION;
+create or replace view v21(vc0) as (select case false when false then -1.3 else 0.72 end);
+select 1 from v21 left outer join (select 2) as sub0 on case when false then (121) in (v21.vc0) when false then true end;
+
+create or replace view v21(vc0) as (select all sql_min(case false when false then -1.42090022E9 else 0.7246177 end,
+0.30544159200423870448304342062328942120075225830078125) where ((false)or(true)));
+create view v59(vc0) as (select all ((degrees(0.92038196))^(0.20652191739572556)) where (0.7852820956901502835734163454617373645305633544921875)
+not between symmetric (-1878062655) and (0.557693883106285870354668077197857201099395751953125)) with check option;
+create view v73(vc0) as (values (((case 0 when 0.014728126 then 2078894493 when 0.655345293356149 then 1918067190 when 0.31097686
+then null when 0.6990680751827474 then -1489648984 else 12740 end)+(((-1377193484)+(-831664290))))));
+create view v75(vc0, vc1) as (values ((((((((((0.49780716224667365121803186411852948367595672607421875)
+not between asymmetric (-1556197959) and (0.940909957253724282821849556057713925838470458984375))or(true)))or((r'1') = false)))
+or(((r'')not ilike(r'RL8h')))))and(((r'EB')not ilike(r'1160721162')))), "isauuid"(r'0.0')));
+
+select 1 from v21 left outer join
+(select distinct cast(cast(25062.0 as real) as bigint), 4 from v75 full outer join
+(select 1, 0.4, -3, false, 0 where true) as sub0 on least(false, v75.vc1)
+where false) as sub0 on case when false then (121) in (v21.vc0, 2) when
+least(true, false) then least(true, true) end;
+
+select cast(sum(count) as bigint) from (select all cast(least((25994) is null, (2032937942) not in
+(0.752756998581524339186898941989056766033172607421875)) as int) as count from v21 left outer join
+(select distinct cast(cast(25062.0 as real) as bigint), 1464375587 from v59, v73, v75 full outer join
+(select all nullif(1052664530, 828978012), greatest(-1.83663834E9, 0.5279449), cast(-1806633613 as bigint),
+((((true)and(false)))or(false)), ((481046022)-(740726948)) where true) as sub0 on least(false, v75.vc1)
+where "isauuid"(r'V[')) as sub0 on case when "isauuid"(r'sXq') then (121) in (v21.vc0, 1157448792) when
+least(true, false) then least(true, true) else ((true)and(false)) end) as res;
+ROLLBACK;
