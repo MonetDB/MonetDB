@@ -4672,7 +4672,7 @@ literal:
 
 		  /* find the most suitable data type for the given number */
 		  if (!err) {
-		    int bits = digits2bits(digits), obits = bits;
+		    int bits = (int) digits2bits(digits), obits = bits;
 
 		    while (bits > 0 &&
 			   (bits == sizeof(value) * 8 ||

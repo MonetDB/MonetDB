@@ -8361,7 +8361,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 								lng val = 1;
 #endif
 								/* multiply with smallest value, then scale and (round) */
-								int scale = tt->scale - ft->scale;
+								int scale = (int) tt->scale - (int) ft->scale;
 								int rs = reduce_scale(a);
 
 								scale -= rs;

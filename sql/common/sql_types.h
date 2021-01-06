@@ -21,8 +21,8 @@ extern list *aliases;
 extern list *types;
 extern list *funcs;
 
-extern int bits2digits(int b);
-extern int digits2bits(int d);
+extern unsigned int bits2digits(unsigned int b);
+extern unsigned int digits2bits(unsigned int d);
 
 extern int sql_type_convert(int form, int to); /* return 1, convert possible but it's a down cast, 2 convert possible can be done savely */
 extern bool is_commutative(const char *fnm); 	/* return true if commutative */

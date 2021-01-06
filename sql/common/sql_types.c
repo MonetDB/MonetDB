@@ -29,7 +29,7 @@ list *funcs = NULL;
 static sql_type *BIT = NULL;
 static list *localtypes = NULL;
 
-int digits2bits(int digits)
+unsigned int digits2bits(unsigned int digits)
 {
 	if (digits < 3)
 		return 8;
@@ -56,7 +56,7 @@ int digits2bits(int digits)
 #endif
 }
 
-int bits2digits(int bits)
+unsigned int bits2digits(unsigned int bits)
 {
 	if (bits < 4)
 		return 1;
