@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1141,7 +1141,7 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 	void *v;
 	sql_arg *a = SA_ZNEW(tr->sa, sql_arg);
 	char *tpe;
-	int digits, scale;
+	unsigned int digits, scale;
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *args = find_sql_table(tr, syss, "args");
 
@@ -1695,7 +1695,7 @@ table_next_column_nr(sql_table *t)
 }
 
 static sql_column *
-bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, int digits)
+bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, char *sqltype, unsigned int digits)
 {
 	sqlstore *store = tr->store;
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
@@ -4185,7 +4185,7 @@ sys_drop_sequences(sql_trans *tr, sql_schema *s, int drop_action)
 }
 
 sql_type *
-sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl)
+sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl)
 {
 	sqlstore *store = tr->store;
 	sql_type *t;
