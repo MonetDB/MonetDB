@@ -407,7 +407,7 @@ UUIDhash(const void *v)
 		(ulng) u->u[10] << 40 | (ulng) u->u[11] << 32 |
 		(ulng) u->u[12] << 24 | (ulng) u->u[13] << 16 |
 		(ulng) u->u[14] << 8 | (ulng) u->u[15];
-	/* we're not using mix_hge since this we way get the same result
+	/* we're not using mix_hge since this way we get the same result
 	 * on systems with and without 128 bit integer support */
 	return (BUN) (mix_lng(u1) ^ mix_lng(u2));
 }

@@ -162,6 +162,9 @@ WHEN TRUE THEN 1702709680 WHEN r'TRUE' THEN 1255285064 END
 WHEN (UUID 'baF49A5B-1862-19aa-E6F8-b3C5A7F4b1FF') BETWEEN SYMMETRIC (UUID '63A9aBBe-87b1-683a-2c68-eCd5cC7FE7E9')
 AND (UUID '82eb84EF-dF3D-a45e-f92b-E42BdfFEB1B9') THEN - (1129823324) END) WHEN MATCHED THEN DELETE
 
+statement ok
+create or replace view v0(vc0) as (values (1 between 1 and 2))
+
 query I rowsort
 SELECT 1 FROM (SELECT 1 FROM v0) AS v0(v0) inner join t1 ON 1 BETWEEN 2 AND 1
 ----
@@ -187,6 +190,113 @@ INSERT INTO t2(c0) VALUES((((((((least(r' ]', r'3''')) IS NULL)OR((((TIMESTAMP '
 
 statement error
 INSERT INTO t2 VALUES (COALESCE(1 BETWEEN 2 AND 3, 1))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" DOUBLE NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.19726593583228624
+0.3617077941904526
+0.09499147053563461
+0.9165351565675044
+0.4849843626674083
+-788116199
+-2039978642
+0.1344643786448907
+0
+1
+
+statement ok
+create view v0(vc0, vc1, vc2) as (values (+ (((0.55)*(2))),
+case when ((r'ꠔJ''6H*')=(r'\_fhsQh1?')) then case when true then -32 else 77 end else + (-1) end, (least(33.0,
+0.34670544)) not between symmetric (cast(-2 as smallint)) and (((0.33)/(48)))))
+
+statement ok
+create view v2(vc0) as (select scale_down(- (-1.2), greatest(0.54, 5)) where ((((((false)or(true)))
+and(false)))and(false)))
+
+statement ok
+create view v5(vc0, vc1) as (select distinct ifthenelse(case when false then false when false then false end, r'YK隆', r'᳖g# .&'),
+round(+ (-5), scale_down(0.4, 5)) where "isauuid"(r'')) with check option
+
+statement ok
+create view v6(vc0) as (values (- (((61)-(2))))) with check option
+
+statement ok
+create view v7(vc0) as (values (case when case when true then true when true then false when true then false else false end
+then lower(r'mEqP') when (1549) is null then upper(r'o]hUWA쪬') end))
+
+query I rowsort
+select cast(sum(count) as bigint) from (select all cast(((case when v0.vc2 then v0.vc2 end)or((v7.vc0) not between
+symmetric (v7.vc0) and (v7.vc0))) as int) as count from v2, v7 right outer join v0 on
+((nullif(v7.vc0, v7.vc0))not ilike(cast(v0.vc0 as string(804)))) join
+(values (greatest(110, -2)), (((least(2, 9942))%(cast(r'1' as int)))),
+(case true when "isauuid"(r'H}m0YfN') then 0.3 else sign(0.4) end))
+as sub0 on v0.vc2 full outer join (select scale_up(least(0.4, -3),
+scale_down(v2.vc0, 0.4)), 0.4, 0.4
+from v2, v5, v6 where greatest(true, true)) as sub1 on true right outer join
+(select r'-1216996046' from t1 where (true) is null) as sub2 on (v0.vc2) not in (v0.vc2, v0.vc2, false, v0.vc2)) as res
+----
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace view v21(vc0) as (select case false when false then -1.3 else 0.72 end)
+
+query I rowsort
+select 1 from v21 left outer join (select 2) as sub0 on case when false then (121) in (v21.vc0) when false then true end
+----
+1
+
+statement ok
+create or replace view v21(vc0) as (select all sql_min(case false when false then -1.42090022E9 else 0.7246177 end,
+0.30544159200423870448304342062328942120075225830078125) where ((false)or(true)))
+
+statement ok
+create view v59(vc0) as (select all ((degrees(0.92038196))^(0.20652191739572556)) where (0.7852820956901502835734163454617373645305633544921875)
+not between symmetric (-1878062655) and (0.557693883106285870354668077197857201099395751953125)) with check option
+
+statement ok
+create view v73(vc0) as (values (((case 0 when 0.014728126 then 2078894493 when 0.655345293356149 then 1918067190 when 0.31097686
+then null when 0.6990680751827474 then -1489648984 else 12740 end)+(((-1377193484)+(-831664290))))))
+
+statement ok
+create view v75(vc0, vc1) as (values ((((((((((0.49780716224667365121803186411852948367595672607421875)
+not between asymmetric (-1556197959) and (0.940909957253724282821849556057713925838470458984375))or(true)))or((r'1') = false)))
+or(((r'')not ilike(r'RL8h')))))and(((r'EB')not ilike(r'1160721162')))), "isauuid"(r'0.0')))
+
+query I rowsort
+select 1 from v21 left outer join
+(select distinct cast(cast(25062.0 as real) as bigint), 4 from v75 full outer join
+(select 1, 0.4, -3, false, 0 where true) as sub0 on least(false, v75.vc1)
+where false) as sub0 on case when false then (121) in (v21.vc0, 2) when
+least(true, false) then least(true, true) end
+----
+1
+
+query I rowsort
+select cast(sum(count) as bigint) from (select all cast(least((25994) is null, (2032937942) not in
+(0.752756998581524339186898941989056766033172607421875)) as int) as count from v21 left outer join
+(select distinct cast(cast(25062.0 as real) as bigint), 1464375587 from v59, v73, v75 full outer join
+(select all nullif(1052664530, 828978012), greatest(-1.83663834E9, 0.5279449), cast(-1806633613 as bigint),
+((((true)and(false)))or(false)), ((481046022)-(740726948)) where true) as sub0 on least(false, v75.vc1)
+where "isauuid"(r'V[')) as sub0 on case when "isauuid"(r'sXq') then (121) in (v21.vc0, 1157448792) when
+least(true, false) then least(true, true) else ((true)and(false)) end) as res
+----
+0
 
 statement ok
 ROLLBACK

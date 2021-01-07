@@ -159,7 +159,8 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		break;
 	case op_project:
 	case op_groupby:
-		rel->l = rel_copy(sql, i->l, deep);
+		if (i->l)
+			rel->l = rel_copy(sql, i->l, deep);
 		if (i->r) {
 			if (!deep) {
 				rel->r = list_dup(i->r, (fdup) NULL);
