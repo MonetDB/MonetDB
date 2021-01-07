@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /* // TODO: Complete it when documentation is accepted
@@ -150,6 +150,10 @@ gdk_export log_level_t lvl_per_component[];
 	GDKtracer_log(__FILE__, __func__, __LINE__,			\
 		      LOG_LEVEL, COMP, NULL, MSG, ##__VA_ARGS__)
 
+#ifdef __COVERITY__
+/* hide this for static code analysis: too many false positives */
+#define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)	((void) 0)
+#else
 #define GDK_TRACER_LOG(LOG_LEVEL, COMP, MSG, ...)			\
 	do {								\
 		if (GDK_TRACER_TEST(LOG_LEVEL, COMP)) {			\
@@ -157,6 +161,7 @@ gdk_export log_level_t lvl_per_component[];
 					    ## __VA_ARGS__);		\
 		}							\
 	} while (0)
+#endif
 
 
 #define TRC_CRITICAL(COMP, MSG, ...)				\

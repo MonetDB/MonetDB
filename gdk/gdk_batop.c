@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -53,10 +53,6 @@ unshare_string_heap(BAT *b)
  * it makes sense to just quickly copy the whole string heap instead
  * of inserting individual strings.  See the comments in the code for
  * more information. */
-#ifdef STATIC_CODE_ANALYSIS
-#define rand()		0
-#endif
-
 static gdk_return
 insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 {

@@ -2,7 +2,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 import os
 import sys
 import unittest
@@ -32,6 +32,16 @@ def sequence_match(left=[], right=[], index=0):
         if not equals(left[i], right[i]):
             return False
     return True
+
+def get_index_mismatch(left=[], right=[]):
+    ll = len(left)
+    rl = len(right)
+    index = None
+    for i in range(min(ll, rl)):
+        if not equals(left[i], right[i]):
+            index = i
+            break
+    return index
 
 def piped_representation(data=[]):
     def mapfn(next):
@@ -250,6 +260,7 @@ class TestCaseResult(object):
         return self
 
     def assertRowCount(self, rowcount):
+        '''Assert on the affected row count'''
         if self.rowcount != int(rowcount):
             msg = "received {} rows, expected {} rows".format(self.rowcount, rowcount)
             self.fail(msg)
@@ -259,7 +270,7 @@ class TestCaseResult(object):
         raise NotImplementedError
 
     def assertValue(self, row, col, val):
-        """assert on a value matched against row, col in the result"""
+        """Assert on a value matched against row, col in the result"""
         received = None
         row = int(row)
         col = int(col)
@@ -279,7 +290,7 @@ class TestCaseResult(object):
 
     def assertDataResultMatch(self, data=[], index=None):
         """Assert on a match of a subset of the result. When index is provided it
-        starts comparig from that row index onward.
+        starts comparing from that row index onward.
         """
         def mapfn(next):
             if type(next) is list:
@@ -293,13 +304,20 @@ class TestCaseResult(object):
                     if first == v:
                         index = i
                         break
-        if not sequence_match(data, self.data, index):
-            msg = '{}\nexpected to match query result starting at index={}, but it didn\'t'.format(piped_representation(data), index or 0)
+        index = index or 0
+        # align sequences
+        idx_mis = get_index_mismatch(data, self.data[index:])
+        if idx_mis is not None:
+            exp_v = data[idx_mis]
+            exp_t = type(exp_v)
+            res_v = self.data[idx_mis]
+            res_t = type(res_v)
+            msg = 'expected to match query result at index {} but it didn\'t as {} not equals {}'.format(idx_mis, repr(exp_v), repr(res_v))
             self.fail(msg, data=self.data)
         return self
 
 class MclientTestResult(TestCaseResult, RunnableTestResult):
-    """Holder of a sql execution result as returned from mclinet"""
+    """Holder of a sql execution result as returned from mclient"""
 
     def __init__(self, test_case, **kwargs):
         super().__init__(test_case, **kwargs)
@@ -573,6 +591,7 @@ class SQLTestCase():
         return self._conn_ctx or self.default_conn_ctx()
 
     def execute(self, query:str, *args, client='pymonetdb', stdin=None, result_id=None):
+        '''Execute query with specified client. Default client is pymonetbd.'''
         frame = inspect.currentframe().f_back
         lineno = frame.f_lineno
         if client == 'mclient':

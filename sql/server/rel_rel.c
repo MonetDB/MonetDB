@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -159,7 +159,8 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 		break;
 	case op_project:
 	case op_groupby:
-		rel->l = rel_copy(sql, i->l, deep);
+		if (i->l)
+			rel->l = rel_copy(sql, i->l, deep);
 		if (i->r) {
 			if (!deep) {
 				rel->r = list_dup(i->r, (fdup) NULL);
@@ -530,7 +531,7 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 
 	assert(is_set(rel->op) && list_length(lexps) == list_length(rexps) && list_length(exps) == list_length(lexps));
 
-	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && m && o ; n = n->next, m = m->next,o = o->next) {
+	for (node *n = exps->h, *m = lexps->h, *o = rexps->h ; m && n && o ; n = n->next, m = m->next,o = o->next) {
 		sql_exp *e = n->data, *f = m->data, *g = o->data;
 
 		if (is_union(rel->op)) { /* propagate set_has_no_nil only if it's applicable to both sides of the union*/

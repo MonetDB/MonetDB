@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -217,15 +217,12 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 	setVarType(nmb,k,tpe);
 	if ( isVarFixed(nmb,k))
 		setVarFixed(nmb,k);
-	if (isVarUDFtype(nmb,k))
-		setVarUDFtype(nmb,k);
 
 	// extract their scalar argument type
 	for ( i = pci->retc+2; i < pci->argc; i++){
 		tpe = getBatType(getArgType(mb,pci,i));
 		q= pushArgument(nmb,q, k= newTmpVariable(nmb, tpe));
 		setVarFixed(nmb,k);
-		setVarUDFtype(nmb,k);
 	}
 
 /*

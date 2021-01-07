@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -249,10 +249,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			q = pushInt(mb, q, pieces);
 
 			qv = getArg(q, 0) = newTmpVariable(mb, qtpe);
-			setVarUDFtype(mb, qv);
 			if (upd) {
 				rv = getArg(q, 1) = newTmpVariable(mb, rtpe);
-				setVarUDFtype(mb, rv);
 			}
 			pushInstruction(mb, q);
 			matq = addArgument(mb, matq, qv);

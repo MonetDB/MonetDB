@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -34,12 +34,7 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	if( p->retc > 1) strcat(msg,"(");
 	len = strlen(msg);
 	for (k = 0; k < p->retc; k++) {
-		if( isVarUDFtype(mb, getArg(p,k)) ){
-			str tpe = getTypeName(getVarType(mb, getArg(p, k)));
-			sprintf(msg+len, "%s:%s ", getVarName(mb, getArg(p,k)), tpe);
-			GDKfree(tpe);
-		} else
-			sprintf(msg+len, "%s", getVarName(mb,getArg(p,k)));
+		sprintf(msg+len, "%s", getVarName(mb,getArg(p,k)));
 		if (k < p->retc - 1)
 			strcat(msg,",");
 		len = strlen(msg);
@@ -194,7 +189,6 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 		if( (getModuleId(p)== mapiRef && getFunctionId(p)==bindRef)){
 			if( p->argc == 3 && getArgType(mb,p,1) == TYPE_int ) {
 				int tpe;
-				setVarUDFtype(mb,getArg(p,0));
 				j = getArg(p,1); /* lookupServer with key */
 				tpe = getArgType(mb,p,0);
 				/* result is remote */
@@ -237,7 +231,6 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrP
 
 			if( p->argc == 6 && getArgType(mb,p,4) == TYPE_str ) {
 				int tpe;
-				setVarUDFtype(mb,getArg(p,0));
 				j = getArg(p,1); /* lookupServer with key */
 				tpe = getArgType(mb,p,0);
 

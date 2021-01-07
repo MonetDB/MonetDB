@@ -1,2 +1,1 @@
-debian/tmp/usr/lib/x86_64-linux-gnu/libstream.so.14 usr/lib/x86_64-linux-gnu
-debian/tmp/usr/lib/x86_64-linux-gnu/libstream.so.14.* usr/lib/x86_64-linux-gnu
+debian/tmp/usr/lib/x86_64-linux-gnu/libstream.so.* usr/lib/x86_64-linux-gnu

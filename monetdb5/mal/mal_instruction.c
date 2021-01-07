@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -246,7 +246,7 @@ freeMalBlk(MalBlkPtr mb)
 	mb->help = 0;
 	mb->inlineProp = 0;
 	mb->unsafeProp = 0;
-	GDKfree(mb->errors);
+	freeException(mb->errors);
 	GDKfree(mb);
 }
 
@@ -769,7 +769,6 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 	clrVarUsed(mb, n);
 	clrVarInit(mb, n);
 	clrVarDisabled(mb, n);
-	clrVarUDFtype(mb, n);
 	clrVarConstant(mb, n);
 	clrVarCleanup(mb, n);
 }
@@ -822,8 +821,6 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 		setVarInit(tm, res);
 	if (isVarDisabled(mb, x))
 		setVarDisabled(tm, res);
-	if (isVarUDFtype(mb, x))
-		setVarUDFtype(tm, res);
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
 	getVarSTC(tm,x) = getVarSTC(mb,x);
@@ -863,7 +860,6 @@ clearVariable(MalBlkPtr mb, int varid)
 	v->constant= 0;
 	v->typevar= 0;
 	v->fixedtype= 0;
-	v->udftype= 0;
 	v->cleanup= 0;
 	v->initialized= 0;
 	v->used= 0;

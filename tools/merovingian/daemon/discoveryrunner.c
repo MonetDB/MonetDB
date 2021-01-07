@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -489,7 +489,7 @@ discoveryRunner(void *d)
 			Mfprintf(_mero_discout, "new neighbour %s (%s)\n", buf + 5, host);
 			/* sleep a random amount of time to avoid an avalanche of
 			 * ANNC messages flooding the network */
-#ifndef STATIC_CODE_ANALYSIS	/* hide rand() from Coverity */
+#ifndef __COVERITY__			/* hide rand() from Coverity */
 			sleep_ms(1 + (int)(2500.0 * (rand() / (RAND_MAX + 1.0))));
 #endif
 			/* force an announcement round by dropping the deadline */

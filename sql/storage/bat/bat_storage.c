@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -2179,6 +2179,7 @@ update_table(sql_trans *tr, sql_table *ft, sql_table *tt)
 	if (ok == LOG_OK && tt->idxs.set) {
 		if (ot)
 			o = ot->idxs.set->h;
+		if (ft->idxs.set && tt->idxs.set)
 		for (n = ft->idxs.set->h, m = tt->idxs.set->h; ok == LOG_OK && n && m; n = n->next, m = m->next, o=(o?o->next:NULL)) {
 			sql_idx *ci = n->data;
 			sql_idx *oi = m->data;

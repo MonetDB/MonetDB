@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1511,9 +1511,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
-			if (!is_simple_project(l->op))
+			if (!is_simple_project(l->op) || !l->l)
 				rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (is_joinop(rel->op) && !is_simple_project(r->op))
+			if (is_joinop(rel->op) && (!is_simple_project(r->op) || !r->l))
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
@@ -1537,9 +1537,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			sql_rel *l = pl->l, *r = pl->r;
 			list *nexps = new_exp_list(v->sql->sa);
 
-			if (!is_simple_project(l->op))
+			if (!is_simple_project(l->op) || !l->l)
 				pl->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (is_joinop(rel->op) && !is_simple_project(r->op))
+			if (is_joinop(rel->op) && (!is_simple_project(r->op) || !r->l))
 				pl->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
@@ -2675,24 +2675,24 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static int exp_shares_exps(sql_exp *e, list *shared, lng *uses);
+static bool exp_shares_exps(sql_exp *e, list *shared, uint64_t *uses);
 
-static int
-exps_shares_exps(list *exps, list *shared, lng *uses)
+static bool
+exps_shares_exps(list *exps, list *shared, uint64_t *uses)
 {
 	if (!exps || !shared)
-		return 0;
+		return false;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (exp_shares_exps(e, shared, uses))
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
-static int
-exp_shares_exps(sql_exp *e, list *shared, lng *uses)
+static bool
+exp_shares_exps(sql_exp *e, list *shared, uint64_t *uses)
 {
 	switch(e->type) {
 	case e_cmp:
@@ -2703,7 +2703,7 @@ exp_shares_exps(sql_exp *e, list *shared, lng *uses)
 		else
 			return exp_shares_exps(e->l, shared, uses) || exp_shares_exps(e->r, shared, uses) || (e->f && exp_shares_exps(e->f, shared, uses));
 	case e_atom:
-		return 0;
+		return false;
 	case e_column:
 		{
 			sql_exp *ne = NULL;
@@ -2712,18 +2712,21 @@ exp_shares_exps(sql_exp *e, list *shared, lng *uses)
 			if (!ne && !e->l)
 				ne = exps_bind_column(shared, e->r, NULL, NULL, 1);
 			if (!ne)
-				return 0;
-			if (ne && ne->type != e_column) {
-				lng used = (lng) 1 << list_position(shared, ne);
+				return false;
+			if (ne->type != e_column) {
+				int i = list_position(shared, ne);
+				if (i < 0)
+					return false;
+				uint64_t used = (uint64_t) 1 << i;
 				if (used & *uses)
-					return 1;
-				*uses &= used;
-				return 0;
+					return true;
+				*uses |= used;
+				return false;
 			}
-			if (ne && ne != e && (list_position(shared, e) < 0 || list_position(shared, e) > list_position(shared, ne)))
+			if (ne != e && (list_position(shared, e) < 0 || list_position(shared, e) > list_position(shared, ne)))
 				/* maybe ne refers to a local complex exp */
 				return exp_shares_exps(ne, shared, uses);
-			return 0;
+			return false;
 		}
 	case e_convert:
 		return exp_shares_exps(e->l, shared, uses);
@@ -2733,41 +2736,41 @@ exp_shares_exps(sql_exp *e, list *shared, lng *uses)
 	case e_psm:
 		assert(0);  /* not in projection list */
 	}
-	return 0;
+	return false;
 }
 
-static int
+static bool
 exps_share_expensive_exp(list *exps, list *shared )
 {
-	lng uses = 0;
+	uint64_t uses = 0;
 
 	if (!exps || !shared)
-		return 0;
+		return false;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
 		if (exp_shares_exps(e, shared, &uses))
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
-static int ambigious_ref( list *exps, sql_exp *e);
-static int
+static bool ambigious_ref( list *exps, sql_exp *e);
+static bool
 ambigious_refs( list *exps, list *refs)
 {
 	node *n;
 
 	if (!refs)
-		return 0;
+		return false;
 	for(n=refs->h; n; n = n->next) {
 		if (ambigious_ref(exps, n->data))
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 }
 
-static int
+static bool
 ambigious_ref( list *exps, sql_exp *e)
 {
 	sql_exp *ne = NULL;
@@ -2778,11 +2781,11 @@ ambigious_ref( list *exps, sql_exp *e)
 		if (!ne && !e->l)
 			ne = exps_bind_column(exps, e->r, NULL, NULL, 1);
 		if (ne && e != ne)
-			return 1;
+			return true;
 	}
 	if (e->type == e_func)
 		return ambigious_refs(exps, e->l);
-	return 0;
+	return false;
 }
 
 /* merge 2 projects into the lower one */
@@ -8299,7 +8302,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 								lng val = 1;
 #endif
 								/* multiply with smallest value, then scale and (round) */
-								int scale = tt->scale - ft->scale;
+								int scale = (int) tt->scale - (int) ft->scale;
 								int rs = reduce_scale(a);
 
 								scale -= rs;

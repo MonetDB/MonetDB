@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #ifndef _STREAM_H_
@@ -232,7 +232,6 @@ stream_export stream *bs_stream(stream *s); // unused
 typedef enum {
 	PROTOCOL_AUTO = 0, // unused
 	PROTOCOL_9 = 1, // mal_mapi.c, mal_client.c;
-	PROTOCOL_10 = 2, // mal_mapi.c, sql_result.c
 	PROTOCOL_COLUMNAR = 3 // sql_result.c
 } protocol_version;
 

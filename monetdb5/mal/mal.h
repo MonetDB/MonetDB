@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -122,7 +122,7 @@ typedef struct VARRECORD {
     bool constant:1,
             typevar:1,
             fixedtype:1,
-            udftype:1,
+            //FREE SPOT NOW:1,
             cleanup:1,
             initialized:1,
             used:1,

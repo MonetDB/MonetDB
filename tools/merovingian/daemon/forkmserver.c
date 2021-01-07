@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -934,7 +934,7 @@ fork_profiler(const char *dbname, sabdb **stats, char **log_path)
 		snprintf(profiler_executable, executable_len, "%s%s%s",
 				 tmp_exe, profiler_filename, s + 8);
 		free(tmp_exe);
-#ifndef STATIC_CODE_ANALYSIS
+#ifndef __COVERITY__
 		/* hide for coverity: time-of-check time-of-use; it's ok to do
 		 * this since if the file were to disappear between this check
 		 * and the use, things won't fall apart */

@@ -17,7 +17,7 @@
 % clob # type
 % 245 # length
 function user.main():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
+    querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
     (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7f85501da060:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
     X_30:lng := aggr.count(X_27:bat[:int]);
@@ -75,7 +75,7 @@ end user.main;
 % clob # type
 % 245 # length
 function user.main():void;
-    X_1:void := querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 22:int);
+    querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
     (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7f85501da060:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
     X_30:lng := aggr.count(X_27:bat[:int]);

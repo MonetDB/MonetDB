@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -164,7 +164,6 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	timestamp tsn;
 	str msg = MAL_SUCCEED;
 
-	(void) cntxt;
 	(void) mb;
 	sz = (BUN) qsize;	// reserve space for all tuples in QRYqueue
 	tag = COLnew(0, TYPE_lng, sz, TRANSIENT);
@@ -196,7 +195,8 @@ SYSMONqueue(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if( i == qhead)
 				break;
 		}
-		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || cntxt->idx == QRYqueue[i].idx) ){
+		if( QRYqueue[i].query && (cntxt->user == MAL_ADMIN || 
+					strcmp(cntxt->username, QRYqueue[i].username) == 0) ){
 			qtag = (lng) QRYqueue[i].tag;
 			if (BUNappend(tag, &qtag, false) != GDK_SUCCEED)
 				goto bailout;
@@ -272,11 +272,8 @@ SYSMONpause(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bool set = false;
 	lng tag = 0;
-	(void) mb;
-	(void) stk;
-	(void) pci;
 
-	switch( getArgType(mb,pci,1)){
+	switch(getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
@@ -308,11 +305,8 @@ SYSMONresume(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bool set = false;
 	lng tag = 0;
-	(void) mb;
-	(void) stk;
-	(void) pci;
 
-	switch( getArgType(mb,pci,1)){
+	switch(getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
@@ -344,11 +338,8 @@ SYSMONstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bool set = false;
 	lng tag = 0;
-	(void) mb;
-	(void) stk;
-	(void) pci;
 
-	switch( getArgType(mb,pci,1)){
+	switch(getArgType(mb,pci,1)){
 	case TYPE_bte: tag = *getArgReference_bte(stk,pci,1); break;
 	case TYPE_sht: tag = *getArgReference_sht(stk,pci,1); break;
 	case TYPE_int: tag = *getArgReference_int(stk,pci,1); break;
