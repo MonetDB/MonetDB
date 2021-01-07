@@ -4453,6 +4453,22 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	return s;
 }
 
+static sql_schema*
+new_schema( sql_trans *tr, sql_schema *s, node *n)
+{
+	if (n && s->base.ts == tr->tid)
+		return s;
+	sql_schema *ds = SA_ZNEW(tr->sa, sql_schema);
+	*ds = *s;
+	ds->base.ts = tr->tid;
+	ds->base.older = &s->base;
+	s->base.newer = &ds->base;
+	trans_add(tr, &ds->base, NULL, &tc_gc_schema, &tc_commit_schema);
+	if (n) //n->data = ds;
+		list_update_data(tr->cat->schemas.set, n, ds);
+	return ds;
+}
+
 sql_schema*
 sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 {
@@ -4464,10 +4480,19 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 
 	assert(!strNil(new_name));
 
+	/* delete schema, add schema */
+	sql_schema *ds = new_schema(tr, s, n);
+	ds->base.deleted = 1;
+	sql_schema *ns = new_schema(tr, s, NULL);
+	ns->base.name = sa_strdup(tr->sa, new_name);
+	cs_add(&tr->cat->schemas, ns, 0);
+
+#if 0
 	list_hash_delete(tr->cat->schemas.set, s, NULL); /* has to re-hash the entry in the changeset */
 	s->base.name = sa_strdup(tr->sa, new_name);
 	if (!list_hash_add(tr->cat->schemas.set, s, NULL))
 		return NULL;
+#endif
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 	assert(!is_oid_nil(rid));
@@ -4511,14 +4536,8 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	sql_trans_drop_any_comment(tr, s->base.id);
 	sql_trans_drop_obj_priv(tr, s->base.id);
 
-	sql_schema *ds = SA_ZNEW(tr->sa, sql_schema);
-	*ds = *s;
-	ds->base.ts = tr->tid;
-	ds->base.deleted = 1;
-	ds->base.older = &s->base;
-	s->base.newer = &ds->base;
-	trans_add(tr, &ds->base, NULL, &tc_gc_schema, &tc_commit_schema);
-	list_update_data(tr->cat->schemas.set, n, ds);
+	s = new_schema(tr, s, n);
+	s->base.deleted = 1;
 	//cs_del(&tr->cat->schemas, n, s->base.flags);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
