@@ -42,8 +42,8 @@ with process.client('sql', text=False, stdin=process.PIPE, stdout=process.PIPE, 
 
     if retcode == 0:
         sys.stderr.write("Expected nonzero return code")
-    if not err or b'syntax error in' not in err:
-        sys.stderr.write("Expected stderr to contain 'syntax error in', instead got '%s'" % (err))
+    if not err or b'syntax error' not in err:
+        sys.stderr.write("Expected stderr to contain 'syntax error', instead got '%s'" % (err))
 
 # More than one BOM scattered over the entire statement
 INPUT4 = b"\x53\x45\xEF\xBB\xBF\x4C\x45\xEF\xBB\xBF\x43\x54\xEF\xBB\xBF\x20\x31\xEF\xBB\xBF\x3B\xEF\xBB\xBF\x0A"

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1268,10 +1268,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		else if (re2)
  			r2 = exp_bin(be, re2, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 
-		if (!l || !r || (re2 && !r2)) {
-			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", be->client->query);
+		if (!l || !r || (re2 && !r2))
 			return NULL;
-		}
 
 		(void)is_select;
 		if (reduce && left && right) {
