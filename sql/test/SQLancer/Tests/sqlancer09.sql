@@ -68,9 +68,9 @@ COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 04:26:50	NULL
 
 CREATE TABLE "sys"."t1" ("c0" CHAR(375) NOT NULL, CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c1"));
-insert into t1 values ('');
-insert into t1(c0) values ((select 'a')), ('b');
-insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
+--insert into t1 values ('');
+--insert into t1(c0) values ((select 'a')), ('b');
+--insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
 ROLLBACK;
 
 START TRANSACTION;
@@ -239,4 +239,37 @@ when case when true then 0.33 end then (6363) not in (3,
 
 create or replace view v27(vc0) as (values (4.3), (63));
 select 1 from v27 full outer join (select 1) as sub0 on case 3 when 0.33 then (2) in (v27.vc0, 9) end;
+ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3),"c1" VARCHAR(253));
+COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-804767602.000	".c("
+0.799	".c("
+0.763	".c("
+0.957	NULL
+NULL	"5"
+NULL	"j"
+NULL	"UXNW/#綒"
+
+CREATE TABLE "sys"."t2" ("c0" DECIMAL(18,3),"c1" VARCHAR(253),CONSTRAINT "t2_c1_unique" UNIQUE ("c1"));
+COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+0.120	"0.2251036314022229"
+0.120	"-677904380"
+NULL	"['퓵h'iI"
+NULL	"3128"
+1.000	"+EUSP1"
+0.968	"1403896159"
+0.565	"0.8224972062481081"
+
+SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
+
+SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
+(t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
+((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
+(SELECT DISTINCT CASE (-809462446) IN (2020241275, 2116461308) WHEN CASE WHEN FALSE THEN TRUE WHEN FALSE THEN
+FALSE WHEN TRUE THEN TRUE WHEN TRUE THEN FALSE WHEN FALSE THEN FALSE WHEN FALSE THEN FALSE END THEN
+CAST(1847496204 AS BOOLEAN) WHEN CASE WHEN FALSE THEN FALSE WHEN FALSE THEN FALSE ELSE TRUE END THEN (t2.c0) IS NULL
+WHEN ((t2.c1)LIKE(t2.c1)) THEN (t1.c0) IN (t2.c0, t1.c0) ELSE (t2.c1) NOT BETWEEN SYMMETRIC (t1.c1) AND (t2.c1) END
+FROM t2, t1 WHERE CAST(20726 AS BOOLEAN)) AS sub0 ON ((CAST(t1.c1 AS STRING))ILIKE(t1.c1));
 ROLLBACK;
