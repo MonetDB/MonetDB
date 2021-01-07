@@ -1,40 +1,31 @@
-CREATE FUNCTION dump_table_constraint_type() RETURNS TABLE(stmt STRING) BEGIN
-	RETURN
-		SELECT
-			'ALTER TABLE ' || DQ(s) || '.' || DQ("table") ||
-			' ADD CONSTRAINT ' || DQ(con) || ' '||
-			type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');'
-		FROM describe_constraints GROUP BY s, "table", con, type;
-END;
+CREATE VIEW dump_table_constraint_type AS
+	SELECT
+		'ALTER TABLE ' || DQ(s) || '.' || DQ("table") ||
+		' ADD CONSTRAINT ' || DQ(con) || ' '||
+		type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');' stmt
+	FROM describe_constraints GROUP BY s, "table", con, type;
 
-CREATE FUNCTION dump_indices() RETURNS TABLE(stmt STRING) BEGIN
-	RETURN
-		SELECT
-			'CREATE ' || it || ' ' ||
-			DQ(i) || ' ON ' || DQ(s) || '.' || DQ(t) ||
-			'(' || GROUP_CONCAT(c) || ');'
-		FROM describe_indices GROUP BY i, it, s, t;
-END;
+CREATE VIEW dump_indices AS
+	SELECT
+		'CREATE ' || it || ' ' ||
+		DQ(i) || ' ON ' || DQ(s) || '.' || DQ(t) ||
+		'(' || GROUP_CONCAT(c) || ');' stmt
+	FROM describe_indices GROUP BY i, it, s, t;
 
-CREATE FUNCTION dump_column_defaults() RETURNS TABLE(stmt STRING) BEGIN
-	RETURN
-		SELECT 'ALTER TABLE ' || FQN(sch, tbl) || ' ALTER COLUMN ' || DQ(col) || ' SET DEFAULT ' || def || ';'
-		FROM describe_column_defaults;
-END;
+CREATE VIEW dump_column_defaults AS
+	SELECT 'ALTER TABLE ' || FQN(sch, tbl) || ' ALTER COLUMN ' || DQ(col) || ' SET DEFAULT ' || def || ';' stmt
+	FROM describe_column_defaults;
 
-CREATE FUNCTION dump_foreign_keys() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
+CREATE FUNCTION dump_foreign_keys AS
 	SELECT
 		'ALTER TABLE ' || DQ(fk_s) || '.'|| DQ(fk_t) || ' ADD CONSTRAINT ' || DQ(fk) || ' ' ||
 		'FOREIGN KEY(' || GROUP_CONCAT(DQ(fk_c), ',') ||') ' ||
 		'REFERENCES ' || DQ(pk_s) || '.' || DQ(pk_t) || '(' || GROUP_CONCAT(DQ(pk_c), ',') || ') ' ||
 		'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
-		';'
+		';' stmt
 	FROM describe_foreign_keys GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
-END;
 
-CREATE FUNCTION dump_partition_tables() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
+CREATE FUNCTION dump_partition_tables AS
 	SELECT
 		ALTER_TABLE(m_sname, m_tname) || ' ADD TABLE ' || FQN(p_sname, p_tname) ||
 		CASE 
@@ -44,9 +35,8 @@ RETURN
 			ELSE '' --'READ ONLY'
 		END ||
 		CASE WHEN p_type in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
-		';' 
+		';' stmt
 	FROM describe_partition_tables;
-END;
 
 CREATE FUNCTION dump_sequences() RETURNS TABLE(stmt STRING) BEGIN
 RETURN
@@ -277,11 +267,11 @@ BEGIN
 			SELECT * FROM sys.dump_tables() t
 		) AS stmts(o, s);
 
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_column_defaults();
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_table_constraint_type();
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_indices();
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_foreign_keys();
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_partition_tables();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_indices;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_partition_tables;
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_triggers();
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_comments();
 
