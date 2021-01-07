@@ -608,13 +608,13 @@ atom2sql(sql_allocator *sa, atom *a, int timezone)
 		case EC_TIME:
 		case EC_TIME_TZ: {
 			daytime dt = a->data.val.lval;
-			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			unsigned int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
 			char *s = val2;
 			ssize_t lens;
 
 			if (ec == EC_TIME_TZ)
 				dt = daytime_add_usec_modulo(dt, timezone * 1000);
-			if ((lens = daytime_precision_tostr(&s, &len, dt, digits, true)) < 0)
+			if ((lens = daytime_precision_tostr(&s, &len, dt, (int) digits, true)) < 0)
 				assert(0);
 
 			if (ec == EC_TIME_TZ) {
@@ -633,7 +633,7 @@ atom2sql(sql_allocator *sa, atom *a, int timezone)
 		case EC_TIMESTAMP:
 		case EC_TIMESTAMP_TZ: {
 			timestamp ts = a->data.val.lval;
-			int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
+			unsigned int digits = a->tpe.digits ? a->tpe.digits - 1 : 0;
 			char *s = val2;
 			size_t nlen;
 			ssize_t lens;
@@ -652,7 +652,7 @@ atom2sql(sql_allocator *sa, atom *a, int timezone)
 			assert(nlen < len);
 
 			usecs = timestamp_daytime(ts);
-			if ((lens = daytime_precision_tostr(&s, &nlen, usecs, digits, true)) < 0)
+			if ((lens = daytime_precision_tostr(&s, &nlen, usecs, (int) digits, true)) < 0)
 				assert(0);
 
 			if (ec == EC_TIMESTAMP_TZ) {

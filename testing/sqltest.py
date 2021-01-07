@@ -43,7 +43,6 @@ def get_index_mismatch(left=[], right=[]):
             break
     return index
 
-
 def piped_representation(data=[]):
     def mapfn(next):
         if type(next) is tuple:
@@ -261,6 +260,7 @@ class TestCaseResult(object):
         return self
 
     def assertRowCount(self, rowcount):
+        '''Assert on the affected row count'''
         if self.rowcount != int(rowcount):
             msg = "received {} rows, expected {} rows".format(self.rowcount, rowcount)
             self.fail(msg)
@@ -270,7 +270,7 @@ class TestCaseResult(object):
         raise NotImplementedError
 
     def assertValue(self, row, col, val):
-        """assert on a value matched against row, col in the result"""
+        """Assert on a value matched against row, col in the result"""
         received = None
         row = int(row)
         col = int(col)
@@ -290,7 +290,7 @@ class TestCaseResult(object):
 
     def assertDataResultMatch(self, data=[], index=None):
         """Assert on a match of a subset of the result. When index is provided it
-        starts comparig from that row index onward.
+        starts comparing from that row index onward.
         """
         def mapfn(next):
             if type(next) is list:
@@ -317,7 +317,7 @@ class TestCaseResult(object):
         return self
 
 class MclientTestResult(TestCaseResult, RunnableTestResult):
-    """Holder of a sql execution result as returned from mclinet"""
+    """Holder of a sql execution result as returned from mclient"""
 
     def __init__(self, test_case, **kwargs):
         super().__init__(test_case, **kwargs)
@@ -591,6 +591,7 @@ class SQLTestCase():
         return self._conn_ctx or self.default_conn_ctx()
 
     def execute(self, query:str, *args, client='pymonetdb', stdin=None, result_id=None):
+        '''Execute query with specified client. Default client is pymonetbd.'''
         frame = inspect.currentframe().f_back
         lineno = frame.f_lineno
         if client == 'mclient':

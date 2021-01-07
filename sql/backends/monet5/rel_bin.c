@@ -31,6 +31,13 @@ static stmt * subrel_bin(backend *be, sql_rel *rel, list *refs);
 
 static stmt *check_types(backend *be, sql_subtype *ct, stmt *s, check_type tpe);
 
+static void
+clean_mal_statements(backend *be, int oldstop, int oldvtop)
+{
+	MSresetInstructions(be->mb, oldstop);
+	freeVariables(be->client, be->mb, NULL, oldvtop);
+}
+
 static stmt *
 stmt_selectnil( backend *be, stmt *col)
 {
@@ -429,6 +436,8 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 
 		/* The actual in-value-list should not contain duplicates to ensure that final join results are unique. */
 		s = distinct_value_list(be, nl, &last_null_value);
+		if (!s)
+			return NULL;
 
 		if (last_null_value) {
 			/* The actual in-value-list should not contain null values. */
@@ -1164,7 +1173,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 	}	break;
 	case e_cmp: {
 		stmt *l = NULL, *r = NULL, *r2 = NULL;
-		int swapped = 0, is_select = 0;
+		int swapped = 0, is_select = 0, oldvtop, oldstop;
 		sql_exp *re = e->r, *re2 = e->f;
 
 		/* general predicate, select and join */
@@ -1177,10 +1186,13 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			ops = sa_list(sql->sa);
 			args = e->l;
 			for( n = args->h; n; n = n->next ) {
+				oldvtop = be->mb->vtop;
+				oldstop = be->mb->stop;
 				s = NULL;
 				if (!swapped)
 					s = exp_bin(be, n->data, left, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 				if (!s && (first || swapped)) {
+					clean_mal_statements(be, oldstop, oldvtop);
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 					swapped = 1;
 				}
@@ -1202,7 +1214,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 			r = stmt_list(be, ops);
 
-			if (left && right && exps_card(e->r) > CARD_ATOM) {
+			if (left && right && (exps_card(e->r) != CARD_ATOM || !exps_are_atoms(e->r))) {
 				sql_subfunc *f = e->f;
 				return stmt_genjoin(be, l, r, f, is_anti(e), swapped);
 			}
@@ -1223,23 +1235,31 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		if (right && find_prop(e->p, PROP_JOINIDX) != NULL)
 			be->join_idx++;
 
+		oldvtop = be->mb->vtop;
+		oldstop = be->mb->stop;
 		if (!l) {
 			l = exp_bin(be, e->l, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 0;
 		}
 		if (!l && right) {
+			clean_mal_statements(be, oldstop, oldvtop);
  			l = exp_bin(be, e->l, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			swapped = 1;
 		}
+
+		oldvtop = be->mb->vtop;
+		oldstop = be->mb->stop;
 		if (swapped || !right || !reduce)
  			r = exp_bin(be, re, left, (!reduce)?right:NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		else
  			r = exp_bin(be, re, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 		if (!r && !swapped) {
+			clean_mal_statements(be, oldstop, oldvtop);
  			r = exp_bin(be, re, left, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			is_select = 1;
 		}
 		if (!r && swapped) {
+			clean_mal_statements(be, oldstop, oldvtop);
  			r = exp_bin(be, re, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 			is_select = 1;
 		}
@@ -1248,10 +1268,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		else if (re2)
  			r2 = exp_bin(be, re2, right, NULL, grp, ext, cnt, sel, depth+1, 0, push);
 
-		if (!l || !r || (re2 && !r2)) {
-			TRC_ERROR(SQL_EXECUTION, "Query: '%s'\n", be->client->query);
+		if (!l || !r || (re2 && !r2))
 			return NULL;
-		}
 
 		(void)is_select;
 		if (reduce && left && right) {
@@ -2610,11 +2628,12 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					break;
 
 				if (equality_only) {
+					int oldvtop = be->mb->vtop, oldstop = be->mb->stop, swap = 0;
 					stmt *r, *l = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-					int swap = 0;
 
 					if (!l) {
 						swap = 1;
+						clean_mal_statements(be, oldstop, oldvtop);
 						l = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 					}
 					r = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -3174,10 +3193,13 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 	psub = stmt_list(be, pl);
 	for( en = rel->exps->h; en; en = en->next ) {
 		sql_exp *exp = en->data;
+		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 		stmt *s = exp_bin(be, exp, sub, NULL /*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
 
-		if (!s) /* try with own projection as well */
+		if (!s) { /* try with own projection as well, but first clean leftover statements */
+			clean_mal_statements(be, oldstop, oldvtop);
 			s = exp_bin(be, exp, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
+		}
 		if (!s) /* error */
 			return NULL;
 		/* single value with limit */
@@ -3428,8 +3450,8 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 	cursub = stmt_list(be, l);
 	for( n = aggrs->h; n; n = n->next ) {
 		sql_exp *aggrexp = n->data;
-
 		stmt *aggrstmt = NULL;
+		int oldvtop, oldstop;
 
 		/* first look in the current aggr list (l) and group by column list */
 		if (l && !aggrstmt && aggrexp->type == e_column)
@@ -3443,13 +3465,17 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 			}
 		}
 
+		oldvtop = be->mb->vtop;
+		oldstop = be->mb->stop;
 		if (!aggrstmt)
 			aggrstmt = exp_bin(be, aggrexp, sub, NULL, grp, ext, cnt, NULL, 0, 0, 0);
 		/* maybe the aggr uses intermediate results of this group by,
 		   therefore we pass the group by columns too
 		 */
-		if (!aggrstmt)
+		if (!aggrstmt) {
+			clean_mal_statements(be, oldstop, oldvtop);
 			aggrstmt = exp_bin(be, aggrexp, sub, cursub, grp, ext, cnt, NULL, 0, 0, 0);
+		}
 		if (!aggrstmt) {
 			assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
 			return NULL;
@@ -3495,16 +3521,23 @@ rel2bin_topn(backend *be, sql_rel *rel, list *refs)
 		const char *cname = column_name(sql->sa, sc);
 		const char *tname = table_name(sql->sa, sc);
 		list *newl = sa_list(sql->sa);
+		int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
 
 		if (le)
 			l = exp_bin(be, le, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		if (!l) {
+			clean_mal_statements(be, oldstop, oldvtop);
+			l = stmt_atom_lng_nil(be);
+		}
+
+		oldvtop = be->mb->vtop;
+		oldstop = be->mb->stop;
 		if (oe)
 			o = exp_bin(be, oe, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-
-		if (!l)
-			l = stmt_atom_lng_nil(be);
-		if (!o)
+		if (!o) {
+			clean_mal_statements(be, oldstop, oldvtop);
 			o = stmt_atom_lng(be, 0);
+		}
 		if (!l || !o)
 			return NULL;
 

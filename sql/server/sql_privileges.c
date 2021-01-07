@@ -138,6 +138,8 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "GRANT", false)))
 		throw(SQL,"sql.grant_table", "%s", sql->errstr);
+	if (isDeclaredTable(t))
+		throw(SQL,"sql.grant_table", SQLSTATE(42000) "GRANT: cannot grant on a declared table");
 
 	allowed = schema_privs(grantor, t->s);
 
@@ -277,6 +279,8 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "REVOKE", false)))
 		throw(SQL,"sql.revoke_table","%s", sql->errstr);
+	if (isDeclaredTable(t))
+		throw(SQL,"sql.revoke_table", SQLSTATE(42000) "REVOKE: cannot revoke on a declared table");
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)

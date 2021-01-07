@@ -1182,7 +1182,7 @@ def RunTest(env, test, oktests, pSrvr):
             MAPIsockets = None
 
         if test.get('is_src_link', False) and not os.path.isfile(TST + EXT):
-            with open(test.get('test_path') + test.get('tail'), 'r') as f:
+            with openutf8(test.get('test_path') + test.get('tail'), 'r') as f:
                 TSTSRC = expandvars(f.readline().strip(), env)
             if os.path.isfile(TSTSRC):
                 try:
@@ -1199,8 +1199,8 @@ def RunTest(env, test, oktests, pSrvr):
                     MAPIsockets[1].close()
                 return TX,F_SKIP,reason,links
         elif test.get('is_input', False) and not os.path.isfile(TST+EXT):
-            with open(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
-                with open(test.get('test_path') + test.get('tail'), 'r') as f:
+            with openutf8(os.path.join(TSTTRGDIR, TST + EXT), 'w') as fout:
+                with openutf8(test.get('test_path') + test.get('tail'), 'r') as f:
                     for l in f:
                         fout.write(expandvars(l, env))
         else:
@@ -1248,7 +1248,7 @@ def RunTest(env, test, oktests, pSrvr):
             prred('ERROR: ')
             print(os.path.join(TSTDIR, TST + EXT))
             print('========================================')
-            with open(TestErrFile, 'r') as f:
+            with openutf8(TestErrFile, 'r') as f:
                 print(f.read())
             print()
 
@@ -1626,8 +1626,8 @@ class ServerClass:
 def create_mserver5(dbpath, timeout=0, env={}, outfile=None, errfile=None, options=[]):
     port = int(env.get('MAPIPORT', randomPort(30000, 39999)))
     pollfile = os.path.join(dbpath, '.started')
-    outfile = open(outfile, 'a') if outfile else sys.stdout
-    errfile = open(errfile, 'a') if errfile else sys.stderr
+    outfile = openutf8(outfile, 'a') if outfile else sys.stdout
+    errfile = openutf8(errfile, 'a') if errfile else sys.stderr
     cmd = splitcommand(env['exe']['mserver5'][1]) + ['--dbpath=%s' % dbpath] + options
     TSTPREF = env.get('TSTPREF')
     if env.get('MULTIFARM'):
@@ -1718,7 +1718,7 @@ def RunSQLLogicTest(env, Test, TestOut, TestErr, is_reqtest=False, has_reqtests=
     import MonetDBtesting.sqllogictest as sqllogictest
     exit_code = None
     msg = None
-    with open(TestErr, 'w') as f:
+    with openutf8(TestErr, 'w') as f:
         sql = sqllogictest.SQLLogic(out=f)
         if TestOut:
             sql.res = openutf8(TestOut, 'w')
