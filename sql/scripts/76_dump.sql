@@ -1,3 +1,40 @@
+CREATE VIEW dump_create_roles AS
+	SELECT
+		'CREATE ROLE ' || sys.dq(name) || ';' stmt FROM sys.auths
+	WHERE name NOT IN (SELECT name FROM sys.db_user_info)
+	AND grantor <> 0;
+
+CREATE VIEW dump_create_users AS
+	SELECT
+		'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
+		sys.sq(sys.password_hash(ui.name)) ||
+	' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;' stmt
+	FROM sys.db_user_info ui, sys.schemas s
+	WHERE ui.default_schema = s.id
+		AND ui.name <> 'monetdb'
+		AND ui.name <> '.snapshot';
+
+CREATE VIEW dump_create_schemas AS
+	SELECT
+		'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' stmt
+	FROM sys.schemas s, sys.auths a
+	WHERE s.authorization = a.id AND s.system = FALSE;
+
+CREATE VIEW dump_add_schemas_to_users AS
+	SELECT
+		'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';' stmt
+	FROM sys.db_user_info ui, sys.schemas s
+	WHERE ui.default_schema = s.id
+		AND ui.name <> 'monetdb'
+		AND ui.name <> '.snapshot'
+		AND s.name <> 'sys';
+
+CREATE VIEW dump_grant_user_priviledges AS
+	SELECT
+		'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';' stmt
+	FROM sys.auths a1, sys.auths a2, sys.user_role ur
+	WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
+
 CREATE VIEW dump_table_constraint_type AS
 	SELECT
 		'ALTER TABLE ' || DQ(s) || '.' || DQ("table") ||
@@ -16,7 +53,7 @@ CREATE VIEW dump_column_defaults AS
 	SELECT 'ALTER TABLE ' || FQN(sch, tbl) || ' ALTER COLUMN ' || DQ(col) || ' SET DEFAULT ' || def || ';' stmt
 	FROM describe_column_defaults;
 
-CREATE FUNCTION dump_foreign_keys AS
+CREATE VIEW dump_foreign_keys AS
 	SELECT
 		'ALTER TABLE ' || DQ(fk_s) || '.'|| DQ(fk_t) || ' ADD CONSTRAINT ' || DQ(fk) || ' ' ||
 		'FOREIGN KEY(' || GROUP_CONCAT(DQ(fk_c), ',') ||') ' ||
@@ -25,7 +62,7 @@ CREATE FUNCTION dump_foreign_keys AS
 		';' stmt
 	FROM describe_foreign_keys GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
 
-CREATE FUNCTION dump_partition_tables AS
+CREATE VIEW dump_partition_tables AS
 	SELECT
 		ALTER_TABLE(m_sname, m_tname) || ' ADD TABLE ' || FQN(p_sname, p_tname) ||
 		CASE 
@@ -38,8 +75,7 @@ CREATE FUNCTION dump_partition_tables AS
 		';' stmt
 	FROM describe_partition_tables;
 
-CREATE FUNCTION dump_sequences() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
+CREATE VIEW dump_sequences AS
 	SELECT
 		'CREATE SEQUENCE ' || FQN(sch, seq) || ' AS BIGINT ' ||
 		CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
@@ -47,54 +83,40 @@ RETURN
 		CASE WHEN "mi" <> 0 THEN ' MINVALUE ' || "mi" ELSE '' END ||
 		CASE WHEN "ma" <> 0 THEN ' MAXVALUE ' || "ma" ELSE '' END ||
 		CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
-		CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';'
+		CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';' stmt
 	FROM describe_sequences;
-END;
 
-CREATE FUNCTION dump_start_sequences() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
+CREATE VIEW dump_start_sequences AS
 	SELECT
 		'UPDATE sys.sequences seq SET start = ' || s  ||
 		' WHERE name = ' || SQ(seq) ||
-		' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || SQ(sch) || ');'
+		' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || SQ(sch) || ');' stmt
 	FROM describe_sequences;
-END;
 
-CREATE FUNCTION dump_functions() RETURNS TABLE (o INT, stmt STRING) BEGIN
-	RETURN SELECT f.o, schema_guard(f.sch, f.fun, f.def)  FROM describe_functions f;
-END;
+CREATE VIEW dump_functions AS
+	SELECT f.o o, schema_guard(f.sch, f.fun, f.def) stmt FROM describe_functions f;
 
-CREATE FUNCTION dump_tables() RETURNS TABLE (o INT, stmt STRING) BEGIN
-RETURN
+CREATE VIEW dump_tables AS
 	SELECT
-		t.o,
+		t.o o,
 		CASE
 			WHEN t.typ <> 'VIEW' THEN
 				'CREATE ' || t.typ || ' ' || FQN(t.sch, t.tab) || t.col || t.opt || ';'
 			ELSE
 				t.opt
-		END
+		END stmt
 	FROM describe_tables t;
-END;
 
-CREATE FUNCTION dump_triggers() RETURNS TABLE (stmt STRING) BEGIN
-	RETURN
-		SELECT schema_guard(sch, tab, def) FROM describe_triggers;
-END;
+CREATE VIEW dump_triggers AS
+	SELECT schema_guard(sch, tab, def) stmt FROM describe_triggers;
 
-CREATE FUNCTION dump_comments() RETURNS TABLE(stmt STRING) BEGIN
-RETURN
-	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || SQ(c.rem) || ';' FROM describe_comments c;
-END;
+CREATE VIEW dump_comments AS
+	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || SQ(c.rem) || ';' stmt FROM describe_comments c;
 
---CREATE FUNCTION sys.describe_user_defined_types RETURNS TABLE(sch STRING, sql_tpe STRING, ext_tpe STRING)  BEGIN
-CREATE FUNCTION sys.dump_user_defined_types() RETURNS TABLE(stmt STRING)  BEGIN
-	RETURN
-		SELECT 'CREATE TYPE ' || FQN(sch, sql_tpe) || ' EXTERNAL NAME ' || DQ(ext_tpe) || ';' FROM sys.describe_user_defined_types;
-END;
+CREATE VIEW sys.dump_user_defined_types AS
+		SELECT 'CREATE TYPE ' || FQN(sch, sql_tpe) || ' EXTERNAL NAME ' || DQ(ext_tpe) || ';' stmt FROM sys.describe_user_defined_types;
 
-CREATE FUNCTION dump_privileges() RETURNS TABLE (stmt STRING) BEGIN
-RETURN
+CREATE VIEW dump_privileges AS
 	SELECT
 		'INSERT INTO sys.privileges VALUES (' ||
 			CASE
@@ -114,9 +136,8 @@ RETURN
 			'(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name = ' || SQ(p_nme) || '),'
 			'(SELECT id FROM auths g WHERE g.name = ' || SQ(dp.g_nme) || '),' ||
 			dp.grantable ||
-		');'
+		');' stmt
 	FROM describe_privileges dp;
-END;
 
 CREATE PROCEDURE EVAL(stmt STRING) EXTERNAL NAME sql.eval;
 
@@ -217,54 +238,21 @@ BEGIN
 
 	INSERT INTO dump_statements VALUES (1, 'START TRANSACTION;');
 	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'SET SCHEMA "sys";');
-
-	INSERT INTO dump_statements --dump_create_roles
-		SELECT current_size_dump_statements() + RANK() OVER(), 'CREATE ROLE ' || sys.dq(name) || ';' FROM sys.auths
-        WHERE name NOT IN (SELECT name FROM sys.db_user_info)
-        AND grantor <> 0;
-
-	INSERT INTO dump_statements --dump_create_users
-		SELECT current_size_dump_statements() + RANK() OVER(),
-        'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
-            sys.sq(sys.password_hash(ui.name)) ||
-        ' NAME ' || sys.sq(ui.fullname) ||  ' SCHEMA sys;'
-        FROM sys.db_user_info ui, sys.schemas s
-        WHERE ui.default_schema = s.id
-            AND ui.name <> 'monetdb'
-            AND ui.name <> '.snapshot';
-
-	INSERT INTO dump_statements --dump_create_schemas
-        SELECT current_size_dump_statements() + RANK() OVER(),
-            'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';'
-        FROM sys.schemas s, sys.auths a
-        WHERE s.authorization = a.id AND s.system = FALSE;
-
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_user_defined_types();
-
-    INSERT INTO dump_statements --dump_add_schemas_to_users
-	    SELECT current_size_dump_statements() + RANK() OVER(),
-            'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';'
-        FROM sys.db_user_info ui, sys.schemas s
-        WHERE ui.default_schema = s.id
-            AND ui.name <> 'monetdb'
-            AND ui.name <> '.snapshot'
-            AND s.name <> 'sys';
-
-    INSERT INTO dump_statements --dump_grant_user_priviledges
-        SELECT current_size_dump_statements() + RANK() OVER(),
-            'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';'
-		FROM sys.auths a1, sys.auths a2, sys.user_role ur
-		WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
-
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_sequences();
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_start_sequences();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_create_roles;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_create_users;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_grant_user_priviledges;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_sequences;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_start_sequences;
 
 	--functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(ORDER BY stmts.o), stmts.s
 	FROM (
-			SELECT * FROM sys.dump_functions() f
+			SELECT * FROM sys.dump_functions f
 			UNION
-			SELECT * FROM sys.dump_tables() t
+			SELECT * FROM sys.dump_tables t
 		) AS stmts(o, s);
 
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_column_defaults;
@@ -272,20 +260,21 @@ BEGIN
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_indices;
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
 	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_partition_tables;
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_triggers();
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_comments();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_triggers;
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_comments;
 
 	--We are dumping ALL privileges so we need to erase existing privileges on the receiving side;
 	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'TRUNCATE sys.privileges;');
-	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_privileges();
+	INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_privileges;
 
 	IF NOT DESCRIBE THEN
 		CALL dump_table_data();
 	END IF;
-	--TODO clean up code: factor in more dump functions
+	--TODO Improve performance of dump_table_data.
 	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO look into order dependent group_concat
-	--TODO ADD upgrade code
+	--TODO add upgrade code
+	--TODO add COMMIT statement once everything is fine.
 
 	RETURN dump_statements;
 END;
