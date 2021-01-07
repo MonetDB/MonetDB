@@ -774,7 +774,7 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 	/* case a strings */
 	if (EC_VARCHAR(lclass) || EC_VARCHAR(rclass)) {
 		char *tpe = "varchar";
-		int digits = 0;
+		unsigned int digits = 0;
 		if (!EC_VARCHAR(lclass)) {
 				tpe = r->type->sqlname;
 				digits = (!l->digits)?0:r->digits;
@@ -796,7 +796,7 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 	} else if (EC_EXACTNUM(lclass) && EC_EXACTNUM(rclass)) {
 		char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
 		unsigned int digits = sql_max(l->digits, r->digits);
-		int scale = sql_max(l->scale, r->scale);
+		unsigned int scale = sql_max(l->scale, r->scale);
 		if (l->type->radix == 10 || r->type->radix == 10) {
 			digits = 0;
 			/* change to radix 10 */
@@ -819,7 +819,7 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 				*super = *l;
 		} else { /* both */
 				char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
-				int digits = sql_max(l->digits, r->digits); /* bits precision */
+				unsigned int digits = sql_max(l->digits, r->digits); /* bits precision */
 				sql_find_subtype(super, tpe, digits, 0);
 		}
 	/* now its getting serious, ie e any 'case e' datetime data type */
@@ -837,10 +837,11 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 {
 	/* first find super type */
 	char *tpe = r->type->sqlname;
-	int radix = r->type->radix;
-	int digits = 0;
-	int idigits = i->digits;
-	int rdigits = r->digits;
+	sql_class eclass = r->type->eclass;
+	unsigned int radix = (unsigned int) r->type->radix;
+	unsigned int digits = 0;
+	unsigned int idigits = i->digits;
+	unsigned int rdigits = r->digits;
 	unsigned int scale = sql_max(i->scale, r->scale);
 	sql_subtype lsuper;
 
@@ -850,9 +851,14 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
+		eclass = i->type->eclass;
 	}
-	if (!lsuper.type->localtype)
+	if (EC_VARCHAR(lsuper.type->eclass))
+		scale = 0; /* strings don't have scale */
+	if (!lsuper.type->localtype) {
 		tpe = "smallint";
+		eclass = EC_NUM;
+	}
 	/*
 	 * In case of different radix we should change one.
 	 */
@@ -871,12 +877,16 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		}
 	}
 	/* handle OID horror */
-	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0)
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0) {
 		tpe = i->type->sqlname;
-	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
+		eclass = i->type->eclass;
+	}
+	if (scale == 0 && (idigits == 0 || rdigits == 0)) { /* clob falls here */
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
-		digits = sql_max(idigits - i->scale, rdigits - r->scale);
+		/* for strings use the max of both */
+		digits = EC_VARCHAR(eclass) ? sql_max(idigits, rdigits) :
+				 sql_max(idigits - i->scale, rdigits - r->scale);
 		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
 	}
 	*super = lsuper;

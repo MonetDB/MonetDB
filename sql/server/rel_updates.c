@@ -1248,7 +1248,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
 	sql_table *t = NULL;
-	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL;
+	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL, *no_tid = NULL;
 	int processed = 0;
 	const char *bt_name;
 
@@ -1351,7 +1351,9 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 			//project joined values which didn't match on the join and insert them
 			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
-			extra_project = rel_setop(sql->sa, rel_dup(joined), extra_project, op_except);
+			no_tid = rel_project(sql->sa, rel_dup(joined), rel_projections(sql, joined, NULL, 1, 0));
+			extra_project = rel_setop(sql->sa, no_tid, extra_project, op_except);
+			rel_setop_set_exps(sql, extra_project, rel_projections(sql, extra_project, NULL, 1, 0));
 
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;

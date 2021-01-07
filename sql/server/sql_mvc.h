@@ -192,7 +192,7 @@ extern sql_key *mvc_bind_key(mvc *c, sql_schema *s, const char *kname);
 extern sql_key *mvc_bind_ukey(sql_table *t, list *cols);
 extern sql_trigger *mvc_bind_trigger(mvc *c, sql_schema *s, const char *tname);
 
-extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl);
+extern sql_type *mvc_create_type(mvc *sql, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl);
 extern int mvc_drop_type(mvc *sql, sql_schema *s, sql_type *t, int drop_action);
 
 extern sql_func *mvc_create_func(mvc *sql, sql_allocator *sa, sql_schema *s, const char *name, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod, const char *impl, const char *query, bit varres, bit vararg, bit system);
@@ -209,7 +209,7 @@ extern sql_table *mvc_create_remote(mvc *c, sql_schema *s, const char *name, int
 
 extern int mvc_drop_column(mvc *c, sql_table *t, sql_column *col, int drop_action);
 sql_export sql_column *mvc_create_column(mvc *c, sql_table *t, const char *name, sql_subtype *type);
-extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, const char *type, int digits);
+extern sql_column *mvc_create_column_(mvc *c, sql_table *t, const char *name, const char *type, unsigned int digits);
 extern sql_column *mvc_null(mvc *c, sql_column *col, int flag);
 extern sql_column *mvc_default(mvc *c, sql_column *col, char *val);
 extern sql_column *mvc_drop_default(mvc *c, sql_column *col);
