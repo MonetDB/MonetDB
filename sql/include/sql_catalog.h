@@ -255,6 +255,7 @@ typedef struct objectlist {
 #endif
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
+extern changeset* cs_dup(changeset * cs);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
 extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
@@ -283,7 +284,6 @@ typedef struct sql_schema {
 	changeset types;
 	changeset funcs;
 	changeset seqs;
-	changeset parts;/* merge/replica tables can only contain parts from the same schema */
 	list *keys;		/* Names for keys, idxs and triggers are */
 	list *idxs;		/* global, but these objects are only */
 	list *triggers;		/* useful within a table */
@@ -694,7 +694,7 @@ typedef struct sql_table {
 	changeset idxs;
 	changeset keys;
 	changeset triggers;
-	list *members;
+	changeset members;	/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
 	void *data;
@@ -779,7 +779,7 @@ extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
-extern sql_part *find_sql_part_id(sql_table *t, sqlid id);
+extern sql_part *find_sql_part_id(sql_trans *tr, sql_table *t, sqlid id);
 
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
