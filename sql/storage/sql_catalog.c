@@ -272,11 +272,13 @@ find_sql_column(sql_table *t, const char *cname)
 }
 
 sql_part *
-find_sql_part_id(sql_table *t, sqlid id)
+find_sql_part_id(sql_trans *tr, sql_table *t, sqlid id)
 {
-	node *n = list_find_base_id(t->members, id);
+	node *n = cs_find_id(&t->members, id);
 
-	return n ? n->data : NULL;
+	if (n)
+		return tr_find_base(tr, n->data);
+	return NULL;
 }
 
 sql_table *
@@ -589,17 +591,23 @@ partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp)
 	sql_schema *s = pt->s;
 
 	(void)tr;
-	for(node *m = s->parts.set->h; m; m=m->next) {
-		sql_part *p = m->data;
+	//for(node *m = s->parts.set->h; m; m=m->next) {
+	for(node *n = s->tables.set->h; n; n=n->next){
+		sql_table *t = n->data;
 
-		if (pp) {
-			if (p == pp)
-				pp = NULL;
+		if (!isMergeTable(t) || !t->members.set)
 			continue;
-		}
+		for(node *m = t->members.set->h; m; m=m->next) {
+			sql_part *p = m->data;
 
-		if (p->base.id == pt->base.id)
+			if (pp) {
+				if (p == pp)
+					pp = NULL;
+				continue;
+			}
+			if (p->base.id == pt->base.id)
 				return p;
+		}
 	}
 	return NULL;
 }

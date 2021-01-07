@@ -975,7 +975,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
 			return rel;
 		}
-		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members))
+		if ((isMergeTable(t) || isReplicaTable(t)) && cs_size(&t->members)==0)
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {
@@ -3097,7 +3097,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 		l = ol;
 		r = or;
 	}
-	res = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such binary operator %s%s%s'%s'(%s,%s)", 
+	res = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such binary operator %s%s%s'%s'(%s,%s)",
 					sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, exp_subtype(l)->type->sqlname, exp_subtype(r)->type->sqlname);
 	return res;
 }
@@ -3711,7 +3711,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			type = exp_subtype(e)->type->sqlname;
 		}
 
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s: no such aggregate %s%s%s'%s'(%s)", toUpperCopy(uaname, aname), 
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s: no such aggregate %s%s%s'%s'(%s)", toUpperCopy(uaname, aname),
 						 sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, type);
 	}
 }
