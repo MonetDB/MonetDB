@@ -159,7 +159,7 @@ END;
 --Because we need to explicitly overwrite the creation order column "o" in those cases. After inserting the dump statements for sys.functions and table-likes,
 --we can restart the auto-increment sequence with a sensible value for following dump statements.
 
-CREATE TABLE sys.dump_statements(o INT, s STRING, PRIMARY KEY (o));
+CREATE TABLE sys.dump_statements(o INT, s STRING);
 
 CREATE FUNCTION sys.current_size_dump_statements() RETURNS INT BEGIN RETURN SELECT COUNT(*) FROM dump_statements; END;
 
