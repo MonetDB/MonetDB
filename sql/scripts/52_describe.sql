@@ -157,28 +157,31 @@ RETURN
 	SELECT replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || FQN(sch, nme) || ' ', 'imsx');
 END;
 
-CREATE FUNCTION describe_constraints() RETURNS TABLE(s STRING, "table" STRING, nr INT, col STRING, con STRING, type STRING) BEGIN
-	RETURN
-		SELECT s.name, t.name, kc.nr, kc.name, k.name, CASE WHEN k.type = 0 THEN 'PRIMARY KEY' WHEN k.type = 1 THEN 'UNIQUE' END
-		FROM sys.schemas s, sys._tables t, sys.objects kc, sys.keys k
-		WHERE kc.id = k.id
-			AND k.table_id = t.id
-			AND s.id = t.schema_id
-			AND t.system = FALSE
-			AND k.type in (0, 1)
-			AND t.type IN (0, 6);
-END;
+CREATE VIEW describe_constraints AS
+	SELECT
+		s.name s,
+		t.name "table",
+		kc.nr nr,
+		kc.name col,
+		k.name con,
+		CASE WHEN k.type = 0 THEN 'PRIMARY KEY' WHEN k.type = 1 THEN 'UNIQUE' END "type"
+	FROM sys.schemas s, sys._tables t, sys.objects kc, sys.keys k
+	WHERE kc.id = k.id
+		AND k.table_id = t.id
+		AND s.id = t.schema_id
+		AND t.system = FALSE
+		AND k.type in (0, 1)
+		AND t.type IN (0, 6);
 
-CREATE FUNCTION describe_indices() RETURNS TABLE (i STRING, o INT, s STRING, t STRING, c STRING, it STRING) BEGIN
-RETURN
+CREATE VIEW describe_indices AS
 	WITH it (id, idx) AS (VALUES (0, 'INDEX'), (4, 'IMPRINTS INDEX'), (5, 'ORDERED INDEX')) --UNIQUE INDEX wraps to INDEX.
 	SELECT
-		i.name,
-		kc.nr, --TODO: Does this determine the concatenation order?
-		s.name,
-		t.name,
-		c.name,
-		it.idx
+		i.name i,
+		kc.nr o, --TODO: Does this determine the concatenation order?
+		s.name s,
+		t.name t,
+		c.name c,
+		it.idx it
 	FROM
 		sys.idxs AS i LEFT JOIN sys.keys AS k ON i.name = k.name,
 		sys.objects AS kc,
@@ -195,15 +198,13 @@ RETURN
 		AND k.type IS NULL
 		AND i.type = it.id
 	ORDER BY i.name, kc.nr;
-END;
 
-CREATE FUNCTION describe_column_defaults() RETURNS TABLE(sch STRING, tbl STRING, col STRING, def STRING) BEGIN
-RETURN
+CREATE VIEW describe_column_defaults AS
 	SELECT
-		s.name,
-		t.name,
-		c.name,
-		c."default"
+		s.name sch,
+		t.name tbl,
+		c.name col,
+		c."default" def
 	FROM schemas s, tables t, columns c
 	WHERE
 		s.id = t.schema_id AND
@@ -211,15 +212,8 @@ RETURN
 		s.name <> 'tmp' AND
 		NOT t.system AND
 		c."default" IS NOT NULL;
-END;
 
-CREATE FUNCTION describe_foreign_keys() RETURNS TABLE(
-	fk_s STRING, fk_t STRING, fk_c STRING,
-	o INT, fk STRING,
-	pk_s STRING, pk_t STRING, pk_c STRING,
-	on_update STRING, on_delete STRING) BEGIN
-
-	RETURN
+CREATE VIEW describe_foreign_keys AS
 		WITH action_type (id, act) AS (VALUES
 			(0, 'NO ACTION'),
 			(1, 'CASCADE'),
@@ -227,33 +221,37 @@ CREATE FUNCTION describe_foreign_keys() RETURNS TABLE(
 			(3, 'SET NULL'),
 			(4, 'SET DEFAULT'))
 		SELECT
-		fs.name AS fsname, fkt.name AS ktname, fkkc.name AS fcname,
-		fkkc.nr AS o, fkk.name AS fkname,
-		ps.name AS psname, pkt.name AS ptname, pkkc.name AS pcname,
-		ou.act as on_update, od.act as on_delete
-					FROM sys._tables fkt,
-						sys.objects fkkc,
-						sys.keys fkk,
-						sys._tables pkt,
-						sys.objects pkkc,
-						sys.keys pkk,
-						sys.schemas ps,
-						sys.schemas fs,
-						action_type ou,
-						action_type od
-
-					WHERE fkt.id = fkk.table_id
-					AND pkt.id = pkk.table_id
-					AND fkk.id = fkkc.id
-					AND pkk.id = pkkc.id
-					AND fkk.rkey = pkk.id
-					AND fkkc.nr = pkkc.nr
-					AND pkt.schema_id = ps.id
-					AND fkt.schema_id = fs.id
-					AND (fkk."action" & 255)         = od.id
-					AND ((fkk."action" >> 8) & 255)  = ou.id
-					ORDER BY fkk.name, fkkc.nr;
-END;
+			fs.name fk_s,
+			fkt.name fk_t,
+			fkkc.name fk_c,
+			fkkc.nr o,
+			fkk.name fk,
+			ps.name pk_s,
+			pkt.name pk_t,
+			pkkc.name pk_c,
+			ou.act on_update,
+			od.act on_delete
+		FROM sys._tables fkt,
+			sys.objects fkkc,
+			sys.keys fkk,
+			sys._tables pkt,
+			sys.objects pkkc,
+			sys.keys pkk,
+			sys.schemas ps,
+			sys.schemas fs,
+			action_type ou,
+			action_type od
+		WHERE fkt.id = fkk.table_id
+		AND pkt.id = pkk.table_id
+		AND fkk.id = fkkc.id
+		AND pkk.id = pkkc.id
+		AND fkk.rkey = pkk.id
+		AND fkkc.nr = pkkc.nr
+		AND pkt.schema_id = ps.id
+		AND fkt.schema_id = fs.id
+		AND (fkk."action" & 255)         = od.id
+		AND ((fkk."action" >> 8) & 255)  = ou.id
+		ORDER BY fkk.name, fkkc.nr;
 
 --TODO: CRASHES when this function gets inlined into describe_tables
 CREATE FUNCTION get_merge_table_partition_expressions(tid INT) RETURNS STRING
@@ -283,13 +281,12 @@ CREATE FUNCTION get_remote_table_expressions(s STRING, t STRING) RETURNS STRING 
 	RETURN SELECT ' ON ' || SQ(uri) || ' WITH USER ' || SQ(username) || ' ENCRYPTED PASSWORD ' || SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
 END;
 
-CREATE FUNCTION describe_tables() RETURNS TABLE(o INT, sch STRING, tab STRING, typ STRING,  col STRING, opt STRING) BEGIN
-RETURN
+CREATE VIEW describe_tables AS
 	SELECT
-		t.id,
-		s.name,
-		t.name,
-		ts.table_type_name,
+		t.id o,
+		s.name sch,
+		t.name tab,
+		ts.table_type_name typ,
 		(SELECT
 			' (' ||
 			GROUP_CONCAT(
@@ -298,7 +295,7 @@ RETURN
 				ifthenelse(c."null" = 'false', ' NOT NULL', '')
 			, ', ') || ')'
 		FROM sys._columns c
-		WHERE c.table_id = t.id),
+		WHERE c.table_id = t.id) col,
 		CASE
 			WHEN ts.table_type_name = 'REMOTE TABLE' THEN
 				get_remote_table_expressions(s.name, t.name)
@@ -308,26 +305,30 @@ RETURN
 				schema_guard(s.name, t.name, t.query)
 			ELSE
 				''
-		END
+		END opt
 	FROM sys.schemas s, table_types ts, sys.tables t
 	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
 		AND t.system = FALSE
 		AND s.id = t.schema_id
 		AND ts.table_type_id = t.type
 		AND s.name <> 'tmp';
-END;
 
-CREATE FUNCTION describe_triggers() RETURNS TABLE (sch STRING, tab STRING, tri STRING, def STRING) BEGIN
-	RETURN
-		SELECT s.name, t.name, tr.name, tr.statement
+CREATE VIEW describe_triggers AS
+		SELECT
+			s.name sch,
+			t.name tab,
+			tr.name tri,
+			tr.statement def
 		FROM sys.schemas s, sys.tables t, sys.triggers tr
 		WHERE s.id = t.schema_id AND t.id = tr.table_id AND NOT t.system;
-END;
 
-CREATE FUNCTION describe_comments() RETURNS TABLE(id INT, tpe STRING, fqn STRING, rem STRING) BEGIN
-	RETURN
-		SELECT o.id, o.tpe, o.nme, c.remark FROM (
-
+CREATE VIEW describe_comments AS
+		SELECT
+			o.id id,
+			o.tpe tpe,
+			o.nme fqn,
+			c.remark rem
+		FROM (
 			SELECT id, 'SCHEMA', DQ(name) FROM schemas
 
 			UNION ALL
@@ -354,10 +355,8 @@ CREATE FUNCTION describe_comments() RETURNS TABLE(id INT, tpe STRING, fqn STRING
 
 			) AS o(id, tpe, nme)
 			JOIN comments c ON c.id = o.id;
-END;
 
-CREATE FUNCTION fully_qualified_functions() RETURNS TABLE(id INT, tpe STRING, nme STRING) BEGIN
-RETURN
+CREATE VIEW fully_qualified_functions AS
 	WITH fqn(id, tpe, sig, num) AS
 	(
 		SELECT
@@ -373,59 +372,57 @@ RETURN
 		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
 	)
 	SELECT
-		fqn1.id,
-		fqn1.tpe,
-		fqn1.sig
+		fqn1.id id,
+		fqn1.tpe tpe,
+		fqn1.sig nme
 	FROM
 		fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
 		ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
-END;
 
-CREATE FUNCTION describe_privileges() RETURNS TABLE(o_id INT, o_nme STRING, o_tpe STRING, p_nme STRING, a_nme STRING, g_nme STRING, grantable BOOLEAN) BEGIN
-RETURN SELECT
-	CASE
-		WHEN o.id IS NULL THEN
-			0
-		ELSE
-			o.id
-	END,
-	CASE
-		WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN --GLOBAL privileges: SELECT maps to COPY FROM
-			'COPY FROM'
-		WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN --GLOBAL privileges: UPDATE maps to COPY INTO
-			'COPY INTO'
-		ELSE
-			o.nme
-	END,
-	CASE
-		WHEN o.tpe IS NOT NULL THEN
-			o.tpe
-		ELSE
-			'GLOBAL'
-	END,
-	pc.privilege_code_name,
-	a.name,
-	g.name,
-	p.grantable
-FROM
-	privileges p LEFT JOIN
-	(
-    SELECT t.id, s.name || '.' || t.name , 'TABLE'
-		from sys.schemas s, sys.tables t where s.id = t.schema_id
-	UNION ALL
-		SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'
-		FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
-	UNION ALL
-		SELECT f.id, f.nme, f.tpe
-		FROM fully_qualified_functions() f
-    ) o(id, nme, tpe) ON o.id = p.obj_id,
-	sys.privilege_codes pc,
-	auths a, auths g
-WHERE
-	p.privileges = pc.privilege_code_id AND
-	p.auth_id = a.id AND
-	p.grantor = g.id;
-END;
+CREATE VIEW describe_privileges AS
+	SELECT
+		CASE
+			WHEN o.id IS NULL THEN
+				0
+			ELSE
+				o.id
+		END o,
+		CASE
+			WHEN o.tpe IS NULL AND pc.privilege_code_name = 'SELECT' THEN --GLOBAL privileges: SELECT maps to COPY FROM
+				'COPY FROM'
+			WHEN o.tpe IS NULL AND pc.privilege_code_name = 'UPDATE' THEN --GLOBAL privileges: UPDATE maps to COPY INTO
+				'COPY INTO'
+			ELSE
+				o.nme
+		END o_nme,
+		CASE
+			WHEN o.tpe IS NOT NULL THEN
+				o.tpe
+			ELSE
+				'GLOBAL'
+		END o_tpe,
+		pc.privilege_code_name p_nme,
+		a.name a_nme,
+		g.name g_nme,
+		p.grantable grantable
+	FROM
+		privileges p LEFT JOIN
+		(
+		SELECT t.id, s.name || '.' || t.name , 'TABLE'
+			from sys.schemas s, sys.tables t where s.id = t.schema_id
+		UNION ALL
+			SELECT c.id, s.name || '.' || t.name || '.' || c.name, 'COLUMN'
+			FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
+		UNION ALL
+			SELECT f.id, f.nme, f.tpe
+			FROM fully_qualified_functions f
+		) o(id, nme, tpe) ON o.id = p.obj_id,
+		sys.privilege_codes pc,
+		auths a, auths g
+	WHERE
+		p.privileges = pc.privilege_code_id AND
+		p.auth_id = a.id AND
+		p.grantor = g.id;
 
 CREATE FUNCTION sys.describe_table(schemaName string, tableName string)
   RETURNS TABLE(name string, query string, type string, id integer, remark string)
@@ -439,39 +436,35 @@ BEGIN
 			AND t.type = tt.table_type_id;
 END;
 
-CREATE FUNCTION sys.describe_user_defined_types() RETURNS TABLE(sch STRING, sql_tpe STRING, ext_tpe STRING)  BEGIN
-	RETURN
-		SELECT s.name, t.sqlname, t.systemname FROM sys.types t JOIN sys.schemas s ON t.schema_id = s.id
-		WHERE t.eclass = 18 AND ((s.name = 'sys' and t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml')) OR (s.name <> 'sys'));
-END;
+CREATE VIEW sys.describe_user_defined_types AS
+	SELECT
+		s.name sch,
+		t.sqlname sql_tpe,
+		t.systemname ext_tpe
+	FROM sys.types t JOIN sys.schemas s ON t.schema_id = s.id
+	WHERE
+		t.eclass = 18 AND
+		(
+			(s.name = 'sys' AND t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml')) OR
+			(s.name <> 'sys')
+		);
 
-CREATE FUNCTION describe_partition_tables()
-RETURNS TABLE(
-	m_sname STRING,
-	m_tname STRING,
-	p_sname STRING,
-	p_tname STRING,
-	p_type  STRING,
-	pvalues STRING,
-	minimum STRING,
-	maximum STRING,
-	with_nulls BOOLEAN) BEGIN
-RETURN
-  SELECT 
-        m_sname,
-        m_tname,
-        p_sname,
-        p_tname,
-        CASE
-            WHEN p_raw_type IS NULL THEN 'READ ONLY'
-            WHEN (p_raw_type = 'VALUES' AND pvalues IS NULL) OR (p_raw_type = 'RANGE' AND minimum IS NULL AND maximum IS NULL AND with_nulls) THEN 'FOR NULLS'
-            ELSE p_raw_type
-        END AS p_type,
-        pvalues,
-        minimum,
-        maximum,
-        with_nulls
-    FROM 
+CREATE VIEW describe_partition_tables AS
+	SELECT 
+		m_sname,
+		m_tname,
+		p_sname,
+		p_tname,
+		CASE
+			WHEN p_raw_type IS NULL THEN 'READ ONLY'
+			WHEN (p_raw_type = 'VALUES' AND pvalues IS NULL) OR (p_raw_type = 'RANGE' AND minimum IS NULL AND maximum IS NULL AND with_nulls) THEN 'FOR NULLS'
+			ELSE p_raw_type
+		END AS p_type,
+		pvalues,
+		minimum,
+		maximum,
+		with_nulls
+	FROM 
     (WITH
 		tp("type", table_id) AS
 		(SELECT CASE WHEN (table_partitions."type" & 2) = 2 THEN 'VALUES' ELSE 'RANGE' END, table_partitions.table_id FROM table_partitions),
@@ -511,40 +504,30 @@ RETURN
 	FROM 
 		subq LEFT OUTER JOIN tp
 		ON subq.m_tid = tp.table_id) AS tmp_pi;
-END;
 
-CREATE FUNCTION describe_sequences()
-	RETURNS TABLE(
-		sch STRING,
-		seq STRING,
-		s BIGINT,
-		rs BIGINT,
-		mi BIGINT,
-		ma BIGINT,
-		inc BIGINT,
-		cache BIGINT,
-		cycle BOOLEAN)
-BEGIN
-	RETURN SELECT
-	s.name as sch,
-	seq.name as seq,
-	seq."start",
-	get_value_for(s.name, seq.name) AS "restart",
-	seq."minvalue",
-	seq."maxvalue",
-	seq."increment",
-	seq."cacheinc",
-	seq."cycle"
+CREATE VIEW describe_sequences AS
+	SELECT
+		s.name as sch,
+		seq.name as seq,
+		seq."start" s,
+		get_value_for(s.name, seq.name) AS rs,
+		seq."minvalue" mi,
+		seq."maxvalue" ma,
+		seq."increment" inc,
+		seq."cacheinc" cache,
+		seq."cycle" cycle
 	FROM sys.sequences seq, sys.schemas s
 	WHERE s.id = seq.schema_id
 	AND s.name <> 'tmp'
 	ORDER BY s.name, seq.name;
-END;
 
-CREATE FUNCTION describe_functions() RETURNS TABLE (o INT, sch STRING, fun STRING, def STRING) BEGIN
-RETURN
-	SELECT f.id, s.name, f.name, f.func from functions f JOIN schemas s ON f.schema_id = s.id WHERE s.name <> 'tmp' AND NOT f.system;
-END;
+CREATE VIEW describe_functions AS
+	SELECT
+		f.id o,
+		s.name sch,
+		f.name fun,
+		f.func def
+	FROM functions f JOIN schemas s ON f.schema_id = s.id WHERE s.name <> 'tmp' AND NOT f.system;
 
 CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)
 	RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
