@@ -1602,7 +1602,7 @@ dumpGeometriesSingle(BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geosGeometry,
 		snprintf(newPath, lvlDigitsNum + 1, "%u", *lvl);
 	} else {
 		//remove the comma at the end of the path
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 		/* coverity complains about the allocated space being
 		 * too small, but we just want to reduce the length of
 		 * the string by one, so the length in the #else part

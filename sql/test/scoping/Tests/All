@@ -2,6 +2,9 @@ scoping01
 scoping02
 scoping03
 
+# This test includes schema path changes
+scoping04
+
 schema_disambiguity
 ambiguity
 predefinedvariable

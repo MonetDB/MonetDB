@@ -256,7 +256,7 @@ MATHprelude(void *ret)
 static str
 MATHrandint(int *res)
 {
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	*res = 0;
 #else
 	MT_lock_set(&mmath_rse_lock);
@@ -270,7 +270,7 @@ static str
 MATHrandintarg(int *res, const int *dummy)
 {
 	(void) dummy;
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	*res = 0;
 #else
 	MT_lock_set(&mmath_rse_lock);
@@ -293,7 +293,7 @@ MATHsrandint(void *ret, const int *seed)
 static str
 MATHsqlrandint(int *res, const int *seed)
 {
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	(void) seed;
 	*res = 0;
 #else

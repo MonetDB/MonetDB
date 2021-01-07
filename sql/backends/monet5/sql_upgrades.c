@@ -2516,7 +2516,10 @@ sql_update_oct2020_sp1(Client c, mvc *sql, const char *prev_schema, bool *systab
 	size_t bufsize = 1024, pos = 0;
 	char *buf = NULL, *err = NULL;
 
-	if (!sql_bind_func(sql->sa, mvc_bind_schema(sql, "sys"), "uuid", sql_bind_localtype("int"), NULL, F_FUNC)) {
+	if (!sql_bind_func(sql, "sys", "uuid", sql_bind_localtype("int"), NULL, F_FUNC)) {
+		sql->session->status = 0; /* if the function was not found clean the error */
+		sql->errstr[0] = '\0';
+
 		if ((buf = GDKmalloc(bufsize)) == NULL)
 			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -2550,6 +2553,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	char *buf = NULL, *err = NULL;
 	res_table *output = NULL;
 	BAT *b = NULL;
+	sql_schema *s = mvc_bind_schema(sql, "sys");
+	sql_table *t;
 
 	if ((buf = GDKmalloc(bufsize)) == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2586,170 +2591,203 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"    CASE ctype\n"
 					"      WHEN 'bigint' THEN 'BIGINT'\n"
 					"      WHEN 'blob' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 0 THEN 'BINARY LARGE OBJECT'\n"
-					"      ELSE 'BINARY LARGE OBJECT(' || CAST(digits AS string) || ')'\n"
-					"    END\n"
+					"        CASE digits\n"
+					"          WHEN 0 THEN 'BINARY LARGE OBJECT'\n"
+					"          ELSE 'BINARY LARGE OBJECT(' || digits || ')'\n"
+					"        END\n"
 					"      WHEN 'boolean' THEN 'BOOLEAN'\n"
 					"      WHEN 'char' THEN\n"
 					"        CASE digits\n"
 					"          WHEN 1 THEN 'CHARACTER'\n"
-					"          ELSE 'CHARACTER(' || CAST(digits AS string) || ')'\n"
+					"          ELSE 'CHARACTER(' || digits || ')'\n"
 					"        END\n"
 					"      WHEN 'clob' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 0 THEN 'CHARACTER LARGE OBJECT'\n"
-					"      ELSE 'CHARACTER LARGE OBJECT(' || CAST(digits AS string) || ')'\n"
-					"    END\n"
+					"        CASE digits\n"
+					"          WHEN 0 THEN 'CHARACTER LARGE OBJECT'\n"
+					"          ELSE 'CHARACTER LARGE OBJECT(' || digits || ')'\n"
+					"        END\n"
 					"      WHEN 'date' THEN 'DATE'\n"
 					"      WHEN 'day_interval' THEN 'INTERVAL DAY'\n"
-					"      WHEN 'decimal' THEN 'DECIMAL(' || CAST(digits AS string) || ',' || CAST(tscale AS string) || ')'\n"
+					"      WHEN ctype = 'decimal' THEN\n"
+					"        CASE\n"
+					"          WHEN (digits = 1 AND tscale = 0) OR digits = 0 THEN 'DECIMAL'\n"
+					"          WHEN tscale = 0 THEN 'DECIMAL(' || digits || ')'\n"
+					"          WHEN digits = 39 THEN 'DECIMAL(' || 38 || ',' || tscale || ')'\n"
+					"          WHEN digits = 19 AND (SELECT COUNT(*) = 0 FROM sys.types WHERE sqlname = 'hugeint' ) THEN 'DECIMAL(' || 18 || ',' || tscale || ')'\n"
+					"          ELSE 'DECIMAL(' || digits || ',' || tscale || ')'\n"
+					"        END\n"
 					"      WHEN 'double' THEN\n"
-					"    CASE\n"
-					"      WHEN digits = 53 and tscale = 0 THEN 'DOUBLE'\n"
-					"      WHEN tscale = 0 THEN 'FLOAT(' || CAST(digits AS string) || ')'\n"
-					"      ELSE 'FLOAT(' || CAST(digits AS string) || ',' || CAST(tscale AS string) || ')'\n"
-					"    END\n"
+					"        CASE\n"
+					"          WHEN digits = 53 and tscale = 0 THEN 'DOUBLE'\n"
+					"          WHEN tscale = 0 THEN 'FLOAT(' || digits || ')'\n"
+					"          ELSE 'FLOAT(' || digits || ',' || tscale || ')'\n"
+					"        END\n"
 					"      WHEN 'geometry' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 4 THEN 'GEOMETRY(POINT' ||\n"
+					"        CASE digits\n"
+					"          WHEN 4 THEN 'GEOMETRY(POINT' ||\n"
 					"            CASE tscale\n"
 					"              WHEN 0 THEN ''\n"
-					"              ELSE ',' || CAST(tscale AS string)\n"
+					"              ELSE ',' || tscale\n"
 					"            END || ')'\n"
-					"      WHEN 8 THEN 'GEOMETRY(LINESTRING' ||\n"
+					"          WHEN 8 THEN 'GEOMETRY(LINESTRING' ||\n"
 					"            CASE tscale\n"
 					"              WHEN 0 THEN ''\n"
-					"              ELSE ',' || CAST(tscale AS string)\n"
+					"              ELSE ',' || tscale\n"
 					"            END || ')'\n"
-					"      WHEN 16 THEN 'GEOMETRY(POLYGON' ||\n"
+					"          WHEN 16 THEN 'GEOMETRY(POLYGON' ||\n"
 					"            CASE tscale\n"
 					"              WHEN 0 THEN ''\n"
-					"              ELSE ',' || CAST(tscale AS string)\n"
+					"              ELSE ',' || tscale\n"
 					"            END || ')'\n"
-					"      WHEN 20 THEN 'GEOMETRY(MULTIPOINT' ||\n"
+					"          WHEN 20 THEN 'GEOMETRY(MULTIPOINT' ||\n"
 					"            CASE tscale\n"
 					"              WHEN 0 THEN ''\n"
-					"              ELSE ',' || CAST(tscale AS string)\n"
+					"              ELSE ',' || tscale\n"
 					"            END || ')'\n"
-					"      WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' ||\n"
+					"          WHEN 24 THEN 'GEOMETRY(MULTILINESTRING' ||\n"
 					"            CASE tscale\n"
 					"              WHEN 0 THEN ''\n"
-					"              ELSE ',' || CAST(tscale AS string)\n"
+					"              ELSE ',' || tscale\n"
 					"            END || ')'\n"
-					"      WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' ||\n"
+					"          WHEN 28 THEN 'GEOMETRY(MULTIPOLYGON' ||\n"
 					"            CASE tscale\n"
 					"              WHEN 0 THEN ''\n"
-					"              ELSE ',' || CAST(tscale AS string)\n"
+					"              ELSE ',' || tscale\n"
 					"            END || ')'\n"
-					"      WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' ||\n"
+					"          WHEN 32 THEN 'GEOMETRY(GEOMETRYCOLLECTION' ||\n"
 					"            CASE tscale\n"
 					"              WHEN 0 THEN ''\n"
-					"              ELSE ',' || CAST(tscale AS string)\n"
+					"              ELSE ',' || tscale\n"
 					"            END || ')'\n"
-					"      ELSE 'GEOMETRY'\n"
+					"          ELSE 'GEOMETRY'\n"
 					"        END\n"
 					"      WHEN 'hugeint' THEN 'HUGEINT'\n"
 					"      WHEN 'int' THEN 'INTEGER'\n"
 					"      WHEN 'month_interval' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 1 THEN 'INTERVAL YEAR'\n"
-					"      WHEN 2 THEN 'INTERVAL YEAR TO MONTH'\n"
-					"      WHEN 3 THEN 'INTERVAL MONTH'\n"
-					"    END\n"
+					"        CASE digits\n"
+					"          WHEN 1 THEN 'INTERVAL YEAR'\n"
+					"          WHEN 2 THEN 'INTERVAL YEAR TO MONTH'\n"
+					"          WHEN 3 THEN 'INTERVAL MONTH'\n"
+					"        END\n"
 					"      WHEN 'real' THEN\n"
-					"    CASE\n"
-					"      WHEN digits = 24 and tscale = 0 THEN 'REAL'\n"
-					"      WHEN tscale = 0 THEN 'FLOAT(' || CAST(digits AS string) || ')'\n"
-					"      ELSE 'FLOAT(' || CAST(digits AS string) || ',' || CAST(tscale AS string) || ')'\n"
-					"    END\n"
+					"        CASE\n"
+					"          WHEN digits = 24 and tscale = 0 THEN 'REAL'\n"
+					"          WHEN tscale = 0 THEN 'FLOAT(' || digits || ')'\n"
+					"          ELSE 'FLOAT(' || digits || ',' || tscale || ')'\n"
+					"        END\n"
 					"      WHEN 'sec_interval' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 4 THEN 'INTERVAL DAY'\n"
-					"      WHEN 5 THEN 'INTERVAL DAY TO HOUR'\n"
-					"      WHEN 6 THEN 'INTERVAL DAY TO MINUTE'\n"
-					"      WHEN 7 THEN 'INTERVAL DAY TO SECOND'\n"
-					"      WHEN 8 THEN 'INTERVAL HOUR'\n"
-					"      WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'\n"
-					"      WHEN 10 THEN 'INTERVAL HOUR TO SECOND'\n"
-					"      WHEN 11 THEN 'INTERVAL MINUTE'\n"
-					"      WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'\n"
-					"      WHEN 13 THEN 'INTERVAL SECOND'\n"
-					"    END\n"
+					"        CASE digits\n"
+					"          WHEN 4 THEN 'INTERVAL DAY'\n"
+					"          WHEN 5 THEN 'INTERVAL DAY TO HOUR'\n"
+					"          WHEN 6 THEN 'INTERVAL DAY TO MINUTE'\n"
+					"          WHEN 7 THEN 'INTERVAL DAY TO SECOND'\n"
+					"          WHEN 8 THEN 'INTERVAL HOUR'\n"
+					"          WHEN 9 THEN 'INTERVAL HOUR TO MINUTE'\n"
+					"          WHEN 10 THEN 'INTERVAL HOUR TO SECOND'\n"
+					"          WHEN 11 THEN 'INTERVAL MINUTE'\n"
+					"          WHEN 12 THEN 'INTERVAL MINUTE TO SECOND'\n"
+					"          WHEN 13 THEN 'INTERVAL SECOND'\n"
+					"        END\n"
 					"      WHEN 'smallint' THEN 'SMALLINT'\n"
 					"      WHEN 'time' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 1 THEN 'TIME'\n"
-					"      ELSE 'TIME(' || CAST(digits - 1 AS string) || ')'\n"
-					"    END\n"
+					"        CASE digits\n"
+					"          WHEN 1 THEN 'TIME'\n"
+					"          ELSE 'TIME(' || (digits - 1) || ')'\n"
+					"        END\n"
 					"      WHEN 'timestamp' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 7 THEN 'TIMESTAMP'\n"
-					"      ELSE 'TIMESTAMP(' || CAST(digits - 1 AS string) || ')'\n"
-					"    END\n"
+					"        CASE digits\n"
+					"          WHEN 7 THEN 'TIMESTAMP'\n"
+					"          ELSE 'TIMESTAMP(' || (digits - 1) || ')'\n"
+					"        END\n"
 					"      WHEN 'timestamptz' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 7 THEN 'TIMESTAMP'\n"
-					"      ELSE 'TIMESTAMP(' || CAST(digits - 1 AS string) || ')'\n"
-					"    END || ' WITH TIME ZONE'\n"
+					"        CASE digits\n"
+					"          WHEN 7 THEN 'TIMESTAMP'\n"
+					"          ELSE 'TIMESTAMP(' || (digits - 1) || ')'\n"
+					"        END || ' WITH TIME ZONE'\n"
 					"      WHEN 'timetz' THEN\n"
-					"    CASE digits\n"
-					"      WHEN 1 THEN 'TIME'\n"
-					"      ELSE 'TIME(' || CAST(digits - 1 AS string) || ')'\n"
-					"    END || ' WITH TIME ZONE'\n"
+					"        CASE digits\n"
+					"          WHEN 1 THEN 'TIME'\n"
+					"          ELSE 'TIME(' || (digits - 1) || ')'\n"
+					"        END || ' WITH TIME ZONE'\n"
 					"      WHEN 'tinyint' THEN 'TINYINT'\n"
-					"      WHEN 'varchar' THEN 'CHARACTER VARYING(' || CAST(digits AS string) || ')'\n"
+					"      WHEN 'varchar' THEN 'CHARACTER VARYING(' || digits || ')'\n"
 					"      ELSE\n"
 					"        CASE\n"
 					"          WHEN lower(ctype) = ctype THEN upper(ctype)\n"
 					"          ELSE '\"' || ctype || '\"'\n"
 					"        END || CASE digits\n"
-					"      WHEN 0 THEN ''\n"
-					"          ELSE '(' || CAST(digits AS string) || CASE tscale\n"
-					"        WHEN 0 THEN ''\n"
-					"            ELSE ',' || CAST(tscale AS string)\n"
+					"          WHEN 0 THEN ''\n"
+					"          ELSE '(' || digits || CASE tscale\n"
+					"            WHEN 0 THEN ''\n"
+					"            ELSE ',' || tscale\n"
 					"          END || ')'\n"
-					"    END\n"
+					"        END\n"
 					"    END;\n"
 					"END;\n"
 					"CREATE FUNCTION sys.describe_table(schemaName string, tableName string)\n"
 					"  RETURNS TABLE(name string, query string, type string, id integer, remark string)\n"
 					"BEGIN\n"
-					"    RETURN SELECT t.name, t.query, tt.table_type_name, t.id, c.remark\n"
-					"        FROM sys.schemas s, sys.table_types tt, sys._tables t\n"
-					"        LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
-					"            WHERE s.name = schemaName\n"
-					"            AND t.schema_id = s.id\n"
-					"            AND t.name = tableName\n"
-					"            AND t.type = tt.table_type_id;\n"
+					"  RETURN SELECT t.name, t.query, tt.table_type_name, t.id, c.remark\n"
+					"    FROM sys.schemas s, sys.table_types tt, sys._tables t\n"
+					"    LEFT OUTER JOIN sys.comments c ON t.id = c.id\n"
+					"      WHERE s.name = schemaName\n"
+					"      AND t.schema_id = s.id\n"
+					"      AND t.name = tableName\n"
+					"      AND t.type = tt.table_type_id;\n"
 					"END;\n"
 					"CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)\n"
-					"    RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)\n"
+					"  RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)\n"
 					"BEGIN\n"
-					"    RETURN SELECT c.name, c.\"type\", c.type_digits, c.type_scale, c.\"null\", c.\"default\", c.number, describe_type(c.\"type\", c.type_digits, c.type_scale), com.remark\n"
-					"        FROM sys._tables t, sys.schemas s, sys._columns c\n"
-					"        LEFT OUTER JOIN sys.comments com ON c.id = com.id\n"
-					"            WHERE c.table_id = t.id\n"
-					"            AND t.name = tableName\n"
-					"            AND t.schema_id = s.id\n"
-					"            AND s.name = schemaName\n"
-					"        ORDER BY c.number;\n"
+					"  RETURN SELECT c.name, c.\"type\", c.type_digits, c.type_scale, c.\"null\", c.\"default\", c.number, describe_type(c.\"type\", c.type_digits, c.type_scale), com.remark\n"
+					"    FROM sys._tables t, sys.schemas s, sys._columns c\n"
+					"    LEFT OUTER JOIN sys.comments com ON c.id = com.id\n"
+					"      WHERE c.table_id = t.id\n"
+					"      AND t.name = tableName\n"
+					"      AND t.schema_id = s.id\n"
+					"      AND s.name = schemaName\n"
+					"    ORDER BY c.number;\n"
 					"END;\n"
 					"CREATE FUNCTION sys.describe_function(schemaName string, functionName string)\n"
-					"    RETURNS TABLE(id integer, name string, type string, language string, remark string)\n"
+					"  RETURNS TABLE(id integer, name string, type string, language string, remark string)\n"
 					"BEGIN\n"
-					"    RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark\n"
-					"        FROM sys.functions f\n"
-					"        JOIN sys.schemas s ON f.schema_id = s.id\n"
-					"        JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
-					"        LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id\n"
-					"        LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
-					"        WHERE f.name=functionName AND s.name = schemaName;\n"
+					"  RETURN SELECT f.id, f.name, ft.function_type_keyword, fl.language_keyword, c.remark\n"
+					"    FROM sys.functions f\n"
+					"    JOIN sys.schemas s ON f.schema_id = s.id\n"
+					"    JOIN sys.function_types ft ON f.type = ft.function_type_id\n"
+					"    LEFT OUTER JOIN sys.function_languages fl ON f.language = fl.language_id\n"
+					"    LEFT OUTER JOIN sys.comments c ON f.id = c.id\n"
+					"    WHERE f.name=functionName AND s.name = schemaName;\n"
 					"END;\n");
 
 			pos += snprintf(buf + pos, bufsize - pos,
 					"update sys.functions set system = true where system <> true and schema_id = (select id from sys.schemas where name = 'sys') and "
 					"((name = 'describe_type' and type = %d) or (name in ('describe_table', 'describe_columns', 'describe_function') and type = %d));\n", (int) F_FUNC, (int) F_UNION);
+
+			/* scoping2 branch changes, the 'users' view has to be re-created because of the 'schema_path' addition on 'db_user_info' table
+			   However 'dependency_schemas_on_users' has a dependency on 'users', so it has to be re-created as well */
+			t = mvc_bind_table(sql, s, "users");
+			t->system = 0;	/* make it non-system else the drop view will fail */
+			t = mvc_bind_table(sql, s, "dependency_schemas_on_users");
+			t->system = 0;	/* make it non-system else the drop view will fail */
+			pos += snprintf(buf + pos, bufsize - pos,
+					"DROP VIEW sys.dependency_schemas_on_users;\n"
+					"DROP VIEW sys.users;\n"
+
+					"ALTER TABLE sys.db_user_info ADD COLUMN schema_path CLOB;\n"
+					"UPDATE sys.db_user_info SET schema_path = '\"sys\"';\n"
+
+					"CREATE VIEW sys.users AS\n"
+					"SELECT u.\"name\" AS \"name\", ui.\"fullname\", ui.\"default_schema\", ui.\"schema_path\"\n"
+					" FROM db_users() AS u\n"
+					" LEFT JOIN \"sys\".\"db_user_info\" AS ui ON u.\"name\" = ui.\"name\";\n"
+					"CREATE VIEW sys.dependency_schemas_on_users AS\n"
+					" SELECT s.id AS schema_id, s.name AS schema_name, u.name AS user_name, CAST(6 AS smallint) AS depend_type\n"
+					" FROM sys.users AS u, sys.schemas AS s\n"
+					" WHERE u.default_schema = s.id\n"
+					" ORDER BY s.name, u.name;\n"
+					"GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;\n"
+					"update sys._tables set system = true where system <> true and name in ('users','dependency_schemas_on_users')"
+					" and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n", (int) tt_view);
 
 			pos += snprintf(buf + pos, bufsize - pos, "commit;\n");
 			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
@@ -2796,7 +2834,9 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "var_pop", &tp, NULL, F_AGGR)) {
+	if (!sql_bind_func(m, s->base.name, "var_pop", &tp, NULL, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2806,7 +2846,9 @@ SQLupgrades(Client c, mvc *m)
 	}
 #endif
 
-	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
+	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION);
+	m->session->status = 0; /* if the function was not found clean the error */
+	m->errstr[0] = '\0';
 	if (f && sql_privilege(m, ROLE_PUBLIC, f->func->base.id, PRIV_EXECUTE) != PRIV_EXECUTE) {
 		sql_table *privs = find_sql_table(s, "privileges");
 		int pub = ROLE_PUBLIC, p = PRIV_EXECUTE, zero = 0;
@@ -2830,8 +2872,9 @@ SQLupgrades(Client c, mvc *m)
 	} else if (geomsqlfix_get() != NULL) {
 		/* the geom module is loaded... */
 		sql_find_subtype(&tp, "clob", 0, 0);
-		if (!sql_bind_func(m->sa, s, "st_wkttosql",
-				   &tp, NULL, F_FUNC)) {
+		if (!sql_bind_func(m, s->base.name, "st_wkttosql", &tp, NULL, F_FUNC)) {
+			m->session->status = 0; /* if the function was not found clean the error */
+			m->errstr[0] = '\0';
 			/* ... but the database is not geom-enabled */
 			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
 				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
@@ -2843,7 +2886,9 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	sql_find_subtype(&tp, "clob", 0, 0);
-	if (sql_bind_func(m->sa, s, "group_concat", &tp, NULL, F_AGGR) == NULL) {
+	if (!sql_bind_func(m, s->base.name, "group_concat", &tp, NULL, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2852,29 +2897,32 @@ SQLupgrades(Client c, mvc *m)
 		}
 	}
 
-	if (sql_bind_func(m->sa, s, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_views", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_tables_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_views", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_keys", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_indexes", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_columns_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_views_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_views_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_functions_on_functions", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
-	 && sql_bind_func(m->sa, s, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
+	if (sql_bind_func(m, s->base.name, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_foreignkeys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_tables_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_views", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_keys", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_indexes", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_columns_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_views_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_views_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_functions", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_functions_on_triggers", NULL, NULL, F_UNION)
+	 && sql_bind_func(m, s->base.name, "dependencies_keys_on_foreignkeys", NULL, NULL, F_UNION)	) {
 		if ((err = sql_drop_functions_dependencies_Xs_on_Ys(c, prev_schema)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			GDKfree(prev_schema);
 			return -1;
 		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	if ((err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
@@ -2905,7 +2953,7 @@ SQLupgrades(Client c, mvc *m)
 	/* when function storagemodel() exists and views tablestorage
 	 * and schemastorage don't, then upgrade storagemodel to match
 	 * 75_storagemodel.sql */
-	if (sql_bind_func(m->sa, s, "storagemodel", NULL, NULL, F_UNION)
+	if (sql_bind_func(m, s->base.name, "storagemodel", NULL, NULL, F_UNION)
 	 && (t = mvc_bind_table(m, s, "tablestorage")) == NULL
 	 && (t = mvc_bind_table(m, s, "schemastorage")) == NULL ) {
 		if ((err = sql_update_storagemodel(c, m, prev_schema, false)) != NULL) {
@@ -2914,6 +2962,9 @@ SQLupgrades(Client c, mvc *m)
 			GDKfree(prev_schema);
 			return -1;
 		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	if ((err = sql_update_apr2019_sp1(c)) != NULL) {
@@ -2923,17 +2974,22 @@ SQLupgrades(Client c, mvc *m)
 		return -1;
 	}
 
-	if (sql_bind_func(m->sa, s, "times", NULL, NULL, F_PROC)) {
+	if (sql_bind_func(m, s->base.name, "times", NULL, NULL, F_PROC)) {
 		if ((err = sql_update_apr2019_sp2(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
 			GDKfree(prev_schema);
 			return -1;
 		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
-	if (!sql_bind_func3(m->sa, s, "deltas", &tp, &tp, &tp, F_UNION)) {
+	if (!sql_bind_func3(m, s->base.name, "deltas", &tp, &tp, &tp, F_UNION)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_nov2019_missing_dependencies(c, m)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2958,7 +3014,9 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "median_avg", &tp, NULL, F_AGGR)) {
+	if (!sql_bind_func(m, s->base.name, "median_avg", &tp, NULL, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_nov2019_sp1_hugeint(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2968,7 +3026,9 @@ SQLupgrades(Client c, mvc *m)
 	}
 #endif
 
-	if (!sql_bind_func(m->sa, s, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+	if (!sql_bind_func(m, s->base.name, "suspend_log_flushing", NULL, NULL, F_PROC)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 		if ((err = sql_update_jun2020(c, m, prev_schema, &systabfixed)) != NULL) {
 			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
 			freeException(err);
@@ -2986,12 +3046,15 @@ SQLupgrades(Client c, mvc *m)
 
 #ifdef HAVE_HGE
 	sql_find_subtype(&tp, "hugeint", 0, 0);
-	if (!sql_bind_func(m->sa, s, "covar_pop", &tp, &tp, F_AGGR) &&
-		(err = sql_update_jun2020_sp1_hugeint(c, prev_schema)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		GDKfree(prev_schema);
-		return -1;
+	if (!sql_bind_func(m, s->base.name, "covar_pop", &tp, &tp, F_AGGR)) {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
+		if ((err = sql_update_jun2020_sp1_hugeint(c, prev_schema)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+			freeException(err);
+			GDKfree(prev_schema);
+			return -1;
+		}
 	}
 #endif
 
@@ -3003,12 +3066,16 @@ SQLupgrades(Client c, mvc *m)
 	}
 
 	sql_find_subtype(&tp, "varchar", 0, 0);
-	if (sql_bind_func(m->sa, s, "lidarattach", &tp, NULL, F_PROC) &&
-	    (err = sql_update_oscar_lidar(c)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		GDKfree(prev_schema);
-		return -1;
+	if (sql_bind_func(m, s->base.name, "lidarattach", &tp, NULL, F_PROC)) {
+		if ((err = sql_update_oscar_lidar(c)) != NULL) {
+			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
+			freeException(err);
+			GDKfree(prev_schema);
+			return -1;
+		}
+	} else {
+		m->session->status = 0; /* if the function was not found clean the error */
+		m->errstr[0] = '\0';
 	}
 
 	if ((err = sql_update_oscar(c, m, prev_schema, &systabfixed)) != NULL) {

@@ -187,6 +187,8 @@ need this package, but you will also need at least the MonetDB5-server
 package, and most likely also %{name}-SQL-server5, as well as one or
 more client packages.
 
+%ldconfig_scriptlets
+
 %files
 %license COPYING
 %defattr(-,root,root)
@@ -572,6 +574,7 @@ used from the MAL level.
 %files -n MonetDB5-server-devel
 %defattr(-,root,root)
 %{_includedir}/monetdb/mal*.h
+%{_includedir}/monetdb/mel.h
 %{_libdir}/libmonetdb5.so
 %{_libdir}/pkgconfig/monetdb5.pc
 
@@ -634,6 +637,24 @@ configuration.
 %dir %{_datadir}/doc/MonetDB-SQL
 %docdir %{_datadir}/doc/MonetDB-SQL
 %{_datadir}/doc/MonetDB-SQL/*
+
+%package SQL-server5-devel
+Summary: MonetDB5 SQL server modules
+Group: Applications/Databases
+Requires: %{name}-SQL-server5%{?_isa} = %{version}-%{release}
+Requires: MonetDB5-server-devel%{?_isa} = %{version}-%{release}
+
+%description SQL-server5-devel
+MonetDB is a database management system that is developed from a
+main-memory perspective with use of a fully decomposed storage model,
+automatic index management, extensibility of data types and search
+accelerators.  It also has an SQL front end.
+
+This package contains files needed to develop SQL extensions.
+
+%files SQL-server5-devel
+%defattr(-,root,root)
+%{_includedir}/monetdb/sql*.h
 
 %package embedded
 Summary: MonetDB as an embedded library
@@ -846,10 +867,6 @@ sed -i 's|/var/run|/run|' \
     %{buildroot}%{_localstatedir}/monetdb5/dbfarm/.merovingian_properties \
     %{buildroot}%{_unitdir}/monetdbd.service
 %endif
-
-%post -p /sbin/ldconfig
-
-%postun -p /sbin/ldconfig
 
 %changelog
 * Wed Nov 18 2020 Sjoerd Mullender <sjoerd@acm.org> - 11.39.7-20201118
@@ -2698,7 +2715,7 @@ sed -i 's|/var/run|/run|' \
   are equal to 1.1.  (The old code returned 33554432 instead of 1.1e8.)
 
 * Sun Nov  5 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171105
-- BZ#6460 - selinux doen't allow mmap
+- BZ#6460: selinux doen't allow mmap
 
 * Mon Oct 23 2017 Sjoerd Mullender <sjoerd@acm.org> - 11.27.9-20171023
 - Rebuilt.

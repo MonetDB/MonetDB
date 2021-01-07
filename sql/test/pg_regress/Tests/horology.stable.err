@@ -31,11 +31,11 @@ stderr of test 'horology` in directory 'sql/test/pg_regress` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-18336/.s.monetdb.30933
 QUERY = SET australian_timezones = 'off';
-ERROR = !SET: Variable 'australian_timezones' unknown
+ERROR = !SET: no such variable 'australian_timezones'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'Postgres, MDY';
-ERROR = !SET: Variable 'datestyle' unknown
+ERROR = !SET: no such variable 'datestyle'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '20011227 040506+08';
@@ -83,7 +83,7 @@ ERROR = !Incorrect timestamp value (27/12/2001 04:05:06.789-08) in: "select time
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = set datestyle to dmy;
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+ERROR = !syntax error in: "set datestyle to"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '27/12/2001 04:05:06.789-08';
@@ -91,7 +91,7 @@ ERROR = !Incorrect timestamp value (27/12/2001 04:05:06.789-08) in: "select time
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = reset datestyle;
-ERROR = !syntax error, unexpected IDENT in: "reset"
+ERROR = !syntax error in: "reset"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone 'Y2001M12D27H04M05S06.789+08';
@@ -159,7 +159,7 @@ ERROR = !Incorrect timestamp value (12.27.2001 04:05:06.789-08) in: "select time
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'German';
-ERROR = !SET: Variable 'datestyle' unknown
+ERROR = !SET: no such variable 'datestyle'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '27.12.2001 04:05:06.789+08';
@@ -171,23 +171,23 @@ ERROR = !Incorrect timestamp value (27.12.2001 04:05:06.789-08) in: "select time
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'ISO';
-ERROR = !SET: Variable 'datestyle' unknown
+ERROR = !SET: no such variable 'datestyle'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time without time zone '040506.789+08';
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select time without time"
+ERROR = !syntax error in: "select time without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time without time zone '040506.789-08';
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select time without time"
+ERROR = !syntax error in: "select time without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time without time zone 'T040506.789+08';
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select time without time"
+ERROR = !syntax error in: "select time without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time without time zone 'T040506.789-08';
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select time without time"
+ERROR = !syntax error in: "select time without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time with time zone '040506.789+08';
@@ -215,211 +215,211 @@ ERROR = !Incorrect time value (T040506.789 -08) in: "select time with time zone 
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle = 'Postgres, MDY';
-ERROR = !SET: Variable 'datestyle' unknown
+ERROR = !SET: no such variable 'datestyle'
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1981-02-03' + time '04:05:06' AS "Date + Time";
-ERROR = !SELECT: no such binary operator 'sql_add(date,time)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_add'(date,time)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1991-02-03' + time with time zone '04:05:06 PST' AS "Date + Time PST";
-ERROR = !SELECT: no such binary operator 'sql_add(date,timetz)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_add'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '2001-02-03' + time with time zone '04:05:06 UTC' AS "Date + Time UTC";
-ERROR = !SELECT: no such binary operator 'sql_add(date,timetz)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_add'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1991-02-03' + interval '2 years' AS "Add Two Years";
-ERROR = !syntax error, unexpected AS in: "select date '1991-02-03' + interval '2 years' as"
+ERROR = !syntax error in: "select date '1991-02-03' + interval '2 years' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '2001-12-13' - interval '2 years' AS "Subtract Two Years";
-ERROR = !syntax error, unexpected AS in: "select date '2001-12-13' - interval '2 years' as"
+ERROR = !syntax error in: "select date '2001-12-13' - interval '2 years' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1991-02-03' - time '04:05:06' AS "Subtract Time";
-ERROR = !SELECT: no such binary operator 'sql_sub(date,time)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_sub'(date,time)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1991-02-03' - time with time zone '04:05:06 UTC' AS "Subtract Time UTC";
-ERROR = !SELECT: no such binary operator 'sql_sub(date,timetz)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_sub'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone '1996-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone '1999-03-01' - interval '1 second' AS "Feb 28";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone '2000-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone '1999-12-01' + interval '1 month - 1 second' AS "Dec 31";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone 'Jan 1, 4713 BC' + interval '106000000 days' AS "Feb 23, 285506";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone 'Jan 1, 4713 BC' + interval '107000000 days' AS "Jan 20, 288244";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone 'Jan 1, 4713 BC' + interval '109203489 days' AS "Dec 31, 294276";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp without time zone '12/31/294276' - timestamp without time zone '12/23/1999' AS "106751991 Days";
-ERROR = !syntax error, unexpected TIME, expecting SCOLON in: "select timestamp without time"
+ERROR = !syntax error in: "select timestamp without time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone 'today' = (timestamp without time zone 'yesterday' + interval '1 day')) as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone 'today' = (timestamp without time zone 'tomorrow' - interval '1 day')) as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone 'tomorrow' = (timestamp without time zone 'yesterday' + interval '2 days')) as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone 'tomorrow' > 'now') as "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1994-01-01' + time '11:00' AS "Jan_01_1994_11am";
-ERROR = !SELECT: no such binary operator 'sql_add(date,time)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_add'(date,time)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1994-01-01' + time '10:00' AS "Jan_01_1994_10am";
-ERROR = !SELECT: no such binary operator 'sql_add(date,time)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_add'(date,time)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT date '1994-01-01' + timetz '11:00-5' AS "Jan_01_1994_8am";
-ERROR = !SELECT: no such binary operator 'sql_add(date,timetz)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_add'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '11:00-5') AS "Jan_01_1994_8am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
+ERROR = !SELECT: no such binary operator 'timestamptz'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "64", d1 + interval '1 year' AS one_year FROM TIMESTAMP_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 + interval '1 year' as"
+ERROR = !syntax error in: "select '' as "64", d1 + interval '1 year' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "64", d1 - interval '1 year' AS one_year FROM TIMESTAMP_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 - interval '1 year' as"
+ERROR = !syntax error in: "select '' as "64", d1 - interval '1 year' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '1996-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '1996-03-01' - interval '1 second' as"
+ERROR = !syntax error in: "select timestamp with time zone '1996-03-01' - interval '1 second' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '1999-03-01' - interval '1 second' AS "Feb 28";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '1999-03-01' - interval '1 second' as"
+ERROR = !syntax error in: "select timestamp with time zone '1999-03-01' - interval '1 second' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '2000-03-01' - interval '1 second' AS "Feb 29";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '2000-03-01' - interval '1 second' as"
+ERROR = !syntax error in: "select timestamp with time zone '2000-03-01' - interval '1 second' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamp with time zone '1999-12-01' + interval '1 month - 1 second' AS "Dec 31";
-ERROR = !syntax error, unexpected AS in: "select timestamp with time zone '1999-12-01' + interval '1 month - 1 second' as"
+ERROR = !syntax error in: "select timestamp with time zone '1999-12-01' + interval '1 month - 1 second' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'today' = (timestamp with time zone 'yesterday' + interval '1 day')) as "True";
 ERROR = !Incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' or VALUES in: "(timestamp"
+        !syntax error in: "(timestamp"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'today' = (timestamp with time zone 'tomorrow' - interval '1 day')) as "True";
 ERROR = !Incorrect timestamp value (today) in: "select (timestamp with time zone 'today' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' or VALUES in: "(timestamp"
+        !syntax error in: "(timestamp"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'tomorrow' = (timestamp with time zone 'yesterday' + interval '2 days')) as "True";
 ERROR = !Incorrect timestamp value (tomorrow) in: "select (timestamp with time zone 'tomorrow' ="
-        !syntax error, unexpected TIMESTAMP, expecting SELECT or '(' or VALUES in: "(timestamp"
+        !syntax error in: "(timestamp"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone 'tomorrow' > 'now') as "True";
 ERROR = !Incorrect timestamp value (tomorrow) in: "select (timestamp with time zone 'tomorrow' >"
-        !syntax error, unexpected STRING in: "'now'"
+        !syntax error in: "'now'"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamptz(date '1994-01-01', time '11:00') AS "Jan_01_1994_10am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,time)'
+ERROR = !SELECT: no such binary operator 'timestamptz'(date,time)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamptz(date '1994-01-01', time '10:00') AS "Jan_01_1994_9am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,time)'
+ERROR = !SELECT: no such binary operator 'timestamptz'(date,time)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '11:00-8') AS "Jan_01_1994_11am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
+ERROR = !SELECT: no such binary operator 'timestamptz'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '10:00-8') AS "Jan_01_1994_10am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
+ERROR = !SELECT: no such binary operator 'timestamptz'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT timestamptz(date '1994-01-01', time with time zone '11:00-5') AS "Jan_01_1994_8am";
-ERROR = !SELECT: no such binary operator 'timestamptz(date,timetz)'
+ERROR = !SELECT: no such binary operator 'timestamptz'(date,timetz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "64", d1 + interval '1 year' AS one_year FROM TIMESTAMPTZ_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 + interval '1 year' as"
+ERROR = !syntax error in: "select '' as "64", d1 + interval '1 year' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "64", d1 - interval '1 year' AS one_year FROM TIMESTAMPTZ_TBL;
-ERROR = !syntax error, unexpected AS in: "select '' as "64", d1 - interval '1 year' as"
+ERROR = !syntax error in: "select '' as "64", d1 - interval '1 year' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(time '01:02' AS interval) AS "+01:02";
-ERROR = !syntax error, unexpected ')' in: "select cast(time '01:02' as interval)"
+ERROR = !syntax error in: "select cast(time '01:02' as interval)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(interval '02:03' AS time) AS "02:03:00";
-ERROR = !syntax error, unexpected AS in: "select cast(interval '02:03' as"
+ERROR = !syntax error in: "select cast(interval '02:03' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time '01:30' + interval '02:01' AS "03:31:00";
-ERROR = !syntax error, unexpected AS in: "select time '01:30' + interval '02:01' as"
+ERROR = !syntax error in: "select time '01:30' + interval '02:01' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time '01:30' - interval '02:01' AS "23:29:00";
-ERROR = !syntax error, unexpected AS in: "select time '01:30' - interval '02:01' as"
+ERROR = !syntax error in: "select time '01:30' - interval '02:01' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time '02:30' + interval '36:01' AS "14:31:00";
-ERROR = !syntax error, unexpected AS in: "select time '02:30' + interval '36:01' as"
+ERROR = !syntax error in: "select time '02:30' + interval '36:01' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time '03:30' + interval '1 month 04:01' AS "07:31:00";
-ERROR = !syntax error, unexpected AS in: "select time '03:30' + interval '1 month 04:01' as"
+ERROR = !syntax error in: "select time '03:30' + interval '1 month 04:01' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(time with time zone '01:02-08' AS interval) AS "+00:01";
-ERROR = !syntax error, unexpected ')' in: "select cast(time with time zone '01:02-08' as interval)"
+ERROR = !syntax error in: "select cast(time with time zone '01:02-08' as interval)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(interval '02:03' AS time with time zone) AS "02:03:00-08";
-ERROR = !syntax error, unexpected AS in: "select cast(interval '02:03' as"
+ERROR = !syntax error in: "select cast(interval '02:03' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time with time zone '01:30-08' - interval '02:01' AS "23:29:00-08";
-ERROR = !syntax error, unexpected AS in: "select time with time zone '01:30-08' - interval '02:01' as"
+ERROR = !syntax error in: "select time with time zone '01:30-08' - interval '02:01' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT time with time zone '02:30-08' + interval '36:01' AS "14:31:00-08";
-ERROR = !syntax error, unexpected AS in: "select time with time zone '02:30-08' + interval '36:01' as"
+ERROR = !syntax error in: "select time with time zone '02:30-08' + interval '36:01' as"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(CAST(date 'today' + time with time zone '01:30'
@@ -428,7 +428,7 @@ CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(CAST(date 'today' + time with time zone '01:30'
                     + interval '02:01' AS time with time zone) AS time) AS "03:31:00";
-ERROR = !syntax error, unexpected TIME in: "time"
+ERROR = !syntax error in: "time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(cast(date 'today' + time with time zone '03:30'
@@ -437,7 +437,7 @@ CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT CAST(cast(date 'today' + time with time zone '03:30'
           + interval '1 month 04:01' as timestamp without time zone) AS time) AS "07:31:00";
-ERROR = !syntax error, unexpected TIME in: "time"
+ERROR = !syntax error in: "time"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT t.d1 + i.f1 AS "102" FROM TIMESTAMP_TBL t, INTERVAL_TBL i
@@ -470,83 +470,83 @@ CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11-28')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', timestamp with time zone '2000-11-30') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
+ERROR = !syntax error in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone '2000-11-26', timestamp with time zone '2000-11-27')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', timestamp with time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (timestamp with time zone '2000-11-26', timestamp with time zone '2000-11"
+ERROR = !syntax error in: "select (timestamp with time zone '2000-11-26', timestamp with time zone '2000-11"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11-28')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', interval '1 day') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
+ERROR = !syntax error in: "select (timestamp with time zone '2000-11-27', timestamp with time zone '2000-11"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', timestamp with time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
+ERROR = !syntax error in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp with time zone '2000-11-27', interval '12 hours') AS "True";
-ERROR = !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
+ERROR = !syntax error in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp with time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp with time zone '2000-11-27 12:00', interval '12 hours') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
+ERROR = !syntax error in: "select (timestamp with time zone '2000-11-27', interval '12 hours')"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone '2000-11-27', timestamp without time zone '2000-11-28')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone '2000-11-26', timestamp without time zone '2000-11-27')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone '2000-11-27', timestamp without time zone '2000-11-28')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', interval '1 day') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', timestamp without time zone '2000-11-30') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27', interval '12 hours') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (timestamp without time zone '2000-11-27', interval '12 hours')
           OVERLAPS (timestamp without time zone '2000-11-27 12:00', interval '12 hours') AS "False";
-ERROR = !syntax error, unexpected IDENT, expecting ')' or OR in: "select (timestamp without"
+ERROR = !syntax error in: "select (timestamp without"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (time '00:00', time '01:00')
           OVERLAPS (time '00:30', time '01:30') AS "True";
-ERROR = !syntax error, unexpected IDENT, expecting NOT_IN or sqlIN in: "select (time '00:00', time '01:00')
+ERROR = !syntax error in: "select (time '00:00', time '01:00')
         !  overlaps"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (time '00:00', interval '1 hour')
           OVERLAPS (time '00:30', interval '1 hour') AS "True";
-ERROR = !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
+ERROR = !syntax error in: "select (time '00:00', interval '1 hour')"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (time '00:00', interval '1 hour')
           OVERLAPS (time '01:30', interval '1 hour') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
+ERROR = !syntax error in: "select (time '00:00', interval '1 hour')"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT (time '00:00', interval '1 hour')
           OVERLAPS (time '01:30', interval '1 day') AS "False";
-ERROR = !syntax error, unexpected ')' in: "select (time '00:00', interval '1 hour')"
+ERROR = !syntax error in: "select (time '00:00', interval '1 hour')"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO TEMP_TIMESTAMP (f1)
@@ -574,7 +574,7 @@ QUERY = SELECT '' AS ten, ABSTIME_TBL.f1 AS abstime, RELTIME_TBL.f1 AS reltime
            ORDER BY abstime, reltime;
 ERROR = !type (abstime) unknown in: "select '' as ten, abstime_tbl.f1 as abstime, reltime_tbl.f1 as reltime
         !   where "
-        !syntax error, unexpected BY in: "by"
+        !syntax error in: "by"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
@@ -584,7 +584,7 @@ ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = < abstime 'Jan 14 14:00:00 1977';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
+ERROR = !syntax error in: "<"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
@@ -594,7 +594,7 @@ ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = < abstime 'Jan 14 14:00:00 1971';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
+ERROR = !syntax error in: "<"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
@@ -604,7 +604,7 @@ ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = < abstime 'Jan 14 14:00:00 1971';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
+ERROR = !syntax error in: "<"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS three, ABSTIME_TBL.*
@@ -614,7 +614,7 @@ ERROR = !type (reltime) unknown in: "select '' as three, abstime_tbl.*
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = < abstime 'Jan 14 14:00:00 1977';
-ERROR = !syntax error, unexpected COMPARISON in: "<"
+ERROR = !syntax error in: "<"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "16", f1 AS "timestamp", date(f1) AS date
@@ -624,13 +624,13 @@ QUERY = SELECT '' AS "16", f1 AS "timestamp", date(f1) AS date
 ERROR = !Incorrect timestamp value (now) in: "select '' as "16", f1 as "timestamp", date(f1) as date
         !  from temp_timestamp
         !  w"
-        !syntax error, unexpected BY in: "by"
+        !syntax error in: "by"
 CODE  = 22007
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "16", f1 AS "timestamp", abstime(f1) AS abstime
           FROM TEMP_TIMESTAMP
           ORDER BY abstime;
-ERROR = !SELECT: no such unary operator 'abstime(timestamptz)'
+ERROR = !SELECT: no such unary operator 'abstime'(timestamptz)
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS four, f1 AS abstime, date(f1) AS date
@@ -640,7 +640,7 @@ QUERY = SELECT '' AS four, f1 AS abstime, date(f1) AS date
 ERROR = !type (abstime) unknown in: "select '' as four, f1 as abstime, date(f1) as date
         !  from abstime_tbl
         !  where is"
-        !syntax error, unexpected BY in: "by"
+        !syntax error in: "by"
 CODE  = 22000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS two, d1 AS "timestamp", abstime(d1) AS abstime
@@ -660,15 +660,15 @@ CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS six, f1 as reltime, CAST(f1 AS interval) AS interval
           FROM RELTIME_TBL;
-ERROR = !syntax error, unexpected ')' in: "select '' as six, f1 as reltime, cast(f1 as interval)"
+ERROR = !syntax error in: "select '' as six, f1 as reltime, cast(f1 as interval)"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle TO 'US,Postgres';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+ERROR = !syntax error in: "set datestyle to"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
+ERROR = !syntax error in: "show"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "64", d1 AS us_postgres FROM TIMESTAMP_TBL;
@@ -680,7 +680,7 @@ ERROR = !SELECT: no such table 'abstime_tbl'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle TO 'US,ISO';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+ERROR = !syntax error in: "set datestyle to"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "64", d1 AS us_iso FROM TIMESTAMP_TBL;
@@ -692,11 +692,11 @@ ERROR = !SELECT: no such table 'abstime_tbl'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle TO 'US,SQL';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+ERROR = !syntax error in: "set datestyle to"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
+ERROR = !syntax error in: "show"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "64", d1 AS us_sql FROM TIMESTAMP_TBL;
@@ -708,11 +708,11 @@ ERROR = !SELECT: no such table 'abstime_tbl'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle TO 'European,Postgres';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+ERROR = !syntax error in: "set datestyle to"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
+ERROR = !syntax error in: "show"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = INSERT INTO TIMESTAMP_TBL VALUES('13/06/1957');
@@ -732,11 +732,11 @@ ERROR = !SELECT: no such table 'abstime_tbl'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle TO 'European,ISO';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+ERROR = !syntax error in: "set datestyle to"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
+ERROR = !syntax error in: "show"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "65", d1 AS european_iso FROM TIMESTAMP_TBL;
@@ -748,11 +748,11 @@ ERROR = !SELECT: no such table 'abstime_tbl'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SET DateStyle TO 'European,SQL';
-ERROR = !syntax error, unexpected TO, expecting '=' in: "set datestyle to"
+ERROR = !syntax error in: "set datestyle to"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SHOW DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "show"
+ERROR = !syntax error in: "show"
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = SELECT '' AS "65", d1 AS european_sql FROM TIMESTAMP_TBL;
@@ -764,7 +764,7 @@ ERROR = !SELECT: no such table 'abstime_tbl'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-30274/.s.monetdb.37685
 QUERY = RESET DateStyle;
-ERROR = !syntax error, unexpected IDENT in: "reset"
+ERROR = !syntax error in: "reset"
 CODE  = 42000
 
 

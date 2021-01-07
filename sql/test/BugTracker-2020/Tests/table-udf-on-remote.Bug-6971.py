@@ -59,6 +59,15 @@ with tempfile.TemporaryDirectory() as farm_dir:
             node2_cur.execute("select * from mudf((select * from fofo))")
             if node2_cur.fetchall() != [(0.5,)]:
                 sys.stderr.write("Just row (0.5,) expected")
+            try:
+                node2_cur.execute("select * from mudf((select sx,sxx,sxy,sy,syy,'\"' from fofo))")
+                sys.stderr.write('Exception expected')
+            except pymonetdb.OperationalError as e:
+                if 'to type int failed' not in str(e):
+                    sys.stderr.write(str(e))
+            node2_cur.execute("select * from mudf((select sx,sxx,sxy,sy,syy,1 as \"a\"\"a\" from fofo))")
+            if node2_cur.fetchall() != [(0.5,)]:
+                sys.stderr.write("Just row (0.5,) expected")
             node2_cur.execute("select * from mudf2((select * from fofo))")
             if node2_cur.fetchall() != [(0.5, 0.6)]:
                 sys.stderr.write("Just row (0.5, 0.6) expected")

@@ -24,7 +24,7 @@
 #include <ctype.h>
 
 sql_rel *
-rel_parse(mvc *m, sql_schema *s, char *query, char emode)
+rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 {
 	mvc o = *m;
 	sql_rel *rel = NULL;
@@ -42,17 +42,15 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	if (s)
 		m->session->schema = s;
 
-	if (!(b = (buffer*)GDKmalloc(sizeof(buffer))))
+	if ((b = malloc(sizeof(buffer))) == NULL)
 		return NULL;
-	n = GDKmalloc(len + 1 + 1);
-	if (!n) {
-		GDKfree(b);
+	if ((n = malloc(len + 1 + 1)) == NULL) {
+		free(b);
 		return NULL;
 	}
 	snprintf(n, len + 2, "%s\n", query);
-	query = n;
 	len++;
-	buffer_init(b, query, len);
+	buffer_init(b, n, len);
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
@@ -71,15 +69,14 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	m->sym = NULL;
 	m->errstr[0] = '\0';
 	/* via views we give access to protected objects */
-	if (emode != m_instantiate)
-		m->user_id = USER_MONETDB;
+	assert(emode == m_instantiate || emode == m_deps);
+	m->user_id = USER_MONETDB;
 
 	(void) sqlparse(m);     /* blindly ignore errors */
 	qc = query_create(m);
 	rel = rel_semantic(qc, m->sym);
 
-	GDKfree(query);
-	GDKfree(b);
+	buffer_destroy(b);
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;
@@ -99,27 +96,6 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 		*m = o;
 		m->label = label;
 	}
-#if 0
-	{
-		unsigned int label = m->label;
-		int status = m->session->status;
-		list *global_vars = m->global_vars;
-		int sizeframes = m->sizeframes, topframes = m->topframes;
-		sql_frame **frames = m->frames;
-		/* cascade list maybe removed */
-		list *cascade_action = m->cascade_action;
-
-		strcpy(o->errstr, m->errstr);
-		*m = *o;
-		m->label = label;
-		m->global_vars = global_vars;
-		m->sizeframes = sizeframes;
-		m->topframes = topframes;
-		m->frames = frames;
-		m->session->status = status;
-		m->cascade_action = cascade_action;
-	}
-#endif
 	m->session->schema = c;
 	return rel;
 }

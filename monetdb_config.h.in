@@ -214,8 +214,6 @@
 #cmakedefine LIBDIR "@LIBDIR@"
 #cmakedefine LOCALSTATEDIR "@LOCALSTATEDIR@"
 
-#cmakedefine STATIC_CODE_ANALYSIS 1
-
 // End Section: monetdb macro variables
 
 // Section: monetdb configure misc

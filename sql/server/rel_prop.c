@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "sql_relation.h"
 #include "rel_prop.h"
+#include "sql_string.h"
 
 prop *
 prop_create( sql_allocator *sa, rel_prop kind, prop *pre )
@@ -90,7 +91,8 @@ propvalue2string(sql_allocator *sa, prop *p)
 		case PROP_JOINIDX: {
 		   sql_idx *i = p->value;
 
-		   snprintf(buf, BUFSIZ, "%s.%s.%s", i->t->s->base.name, i->t->base.name, i->base.name);
+		   snprintf(buf, BUFSIZ, "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
+		   			sql_escape_ident(sa, i->t->base.name), sql_escape_ident(sa, i->base.name));
 		   return sa_strdup(sa, buf);
 		}
 		case PROP_REMOTE: {

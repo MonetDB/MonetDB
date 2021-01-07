@@ -691,7 +691,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 		size_t pos = 0;
 		const size_t yycur = rs->pos + lc->yycur;
 
-		while (cur != EOF && pos < limit &&
+		while (cur != EOF && (quote != '"' || cur != 0xFEFF) && pos < limit &&
 		       (((cur = rs->buf[yycur + pos++]) & 0x80) == 0) &&
 		       cur && (cur != quote || escape)) {
 			if (escapes && cur == '\\')
@@ -703,8 +703,9 @@ scanner_string(mvc *c, int quote, bool escapes)
 			(void) sql_error(c, 2, SQLSTATE(42000) "string too long");
 			return LEX_ERROR;
 		}
-		if (cur == EOF)
-			break;
+		/* BOM character not allowed as an identifier */
+		if (cur == EOF || (quote == '"' && cur == 0xFEFF))
+			return scanner_error(c, cur);
 		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && rs->buf[yycur + pos] == quote) {
@@ -796,21 +797,41 @@ keyword_or_ident(mvc * c, int cur)
 			utf8_putchar(lc, cur);
 			(void)scanner_token(lc, IDENT);
 			k = find_keyword_bs(lc,s);
-			if (k)
+			if (k) {
 				lc->yyval = k->token;
-			/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-			else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
-				lc->yyval = FILTER_FUNC;
+			} else {
+				char buf[ERRSIZE];
+				int err_status = c->session->status;
+				strcpy(buf, c->errstr);
+
+				/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+				if (sql_find_func(c, "sys", lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) {
+					lc->yyval = FILTER_FUNC;
+				} else {
+					c->session->status = err_status; 
+					strcpy(c->errstr, buf);
+				}
+			}
 			return lc->yyval;
 		}
 	}
 	(void)scanner_token(lc, IDENT);
 	k = find_keyword_bs(lc,s);
-	if (k)
+	if (k) {
 		lc->yyval = k->token;
-	/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-	else if (sql_find_func(c->sa, cur_schema(c), lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL))
-		lc->yyval = FILTER_FUNC;
+	} else {
+		char buf[ERRSIZE];
+		int err_status = c->session->status;
+		strcpy(buf, c->errstr);
+
+		/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
+		if (sql_find_func(c, "sys", lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) {
+			lc->yyval = FILTER_FUNC;
+		} else {
+			c->session->status = err_status; 
+			strcpy(c->errstr, buf);
+		}
+	}
 	return lc->yyval;
 }
 

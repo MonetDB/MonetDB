@@ -236,6 +236,9 @@ select 1, null except select 1, null;
 select 1, null intersect select 1, null;
 	-- 1 NULL
 
+select ifthenelse(false, 'abc', 'abcd'), ifthenelse(false, 1.23, 12.3);
+	-- abcd 12.30
+
 start transaction;
 create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end;
 select ups();
