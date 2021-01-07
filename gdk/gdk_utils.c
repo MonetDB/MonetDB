@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -628,7 +628,7 @@ MT_init(void)
 static int THRinit(void);
 static gdk_return GDKlockHome(int farmid);
 
-#ifndef STATIC_CODE_ANALYSIS
+#ifndef __COVERITY__
 #ifndef NDEBUG
 static MT_Lock mallocsuccesslock = MT_LOCK_INITIALIZER(mallocsuccesslock);
 #endif
@@ -1308,7 +1308,7 @@ GDKfatal(const char *format, ...)
 	vsnprintf(message + len, sizeof(message) - (len + 2), format, ap);
 	va_end(ap);
 
-#ifndef STATIC_CODE_ANALYSIS
+#ifndef __COVERITY__
 	if (GDKfataljumpenable) {
 		// in embedded mode, we really don't want to kill our host
 		GDKfatalmsg = GDKstrdup(message);
@@ -1663,8 +1663,6 @@ GDKvm_cursize(void)
 #define memdec(vmdelta)							\
 	(void) ATOMIC_SUB(&GDK_vm_cursize, (ssize_t) SEG_SIZE((vmdelta), MT_VMUNITLOG))
 
-#ifndef STATIC_CODE_ANALYSIS
-
 /* Memory allocation
  *
  * The functions GDKmalloc, GDKzalloc, GDKrealloc, GDKstrdup, and
@@ -1903,66 +1901,6 @@ GDKrealloc(void *s, size_t size)
 
 	return s;
 }
-
-#else
-
-void *
-GDKmalloc(size_t size)
-{
-	void *p = malloc(size);
-	if (p == NULL)
-		GDKsyserror("failed for %zu bytes", size);
-	return p;
-}
-
-void
-GDKfree(void *ptr)
-{
-	if (ptr)
-		free(ptr);
-}
-
-void *
-GDKzalloc(size_t size)
-{
-	void *ptr = calloc(size, 1);
-	if (ptr == NULL)
-		GDKerror("failed for %zu bytes", size);
-	return ptr;
-}
-
-void *
-GDKrealloc(void *ptr, size_t size)
-{
-	void *p = realloc(ptr, size);
-	if (p == NULL)
-		GDKerror("failed for %zu bytes", size);
-	return p;
-}
-
-char *
-GDKstrdup(const char *s)
-{
-	char *p = strdup(s);
-	if (p == NULL)
-		GDKerror("failed for %s\n", s);
-	return p;
-}
-
-char *
-GDKstrndup(const char *s, size_t size)
-{
-	char *p = malloc(size + 1);
-	if (p == NULL) {
-		GDKsyserror("failed for %s\n", s);
-		return NULL;
-	}
-	memcpy(p, s, size);
-	p[size] = 0;
-	return p;
-}
-
-#endif	/* STATIC_CODE_ANALYSIS */
 
 void
 GDKsetmallocsuccesscount(lng count)

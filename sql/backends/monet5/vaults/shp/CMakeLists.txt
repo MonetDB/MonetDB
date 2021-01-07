@@ -3,7 +3,7 @@
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
-# Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+# Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 #]]
 
 if(GDAL_FOUND)
@@ -32,7 +32,7 @@ if(GDAL_FOUND)
     $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
     $<TARGET_PROPERTY:geomlib,INTERFACE_INCLUDE_DIRECTORIES>
-    $<$<VERSION_LESS:${CMAKE_VERSION},3.14.0>:${GDAL_INCLUDE_DIRS}>
+    $<$<VERSION_LESS:${CMAKE_VERSION},3.14.0>:${GDAL_INCLUDE_DIR}>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
@@ -43,6 +43,7 @@ if(GDAL_FOUND)
     bat
     monetdb5
     sqlinclude
+    $<$<VERSION_LESS:${CMAKE_VERSION},3.14.0>:${GDAL_LIBRARY}>
     $<$<VERSION_GREATER_EQUAL:${CMAKE_VERSION},3.14.0>:GDAL::GDAL>)
 
   set_target_properties(shp 

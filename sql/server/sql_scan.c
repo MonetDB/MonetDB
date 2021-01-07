@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -690,7 +690,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 		size_t pos = 0;
 		const size_t yycur = rs->pos + lc->yycur;
 
-		while (cur != EOF && pos < limit &&
+		while (cur != EOF && (quote != '"' || cur != 0xFEFF) && pos < limit &&
 		       (((cur = rs->buf[yycur + pos++]) & 0x80) == 0) &&
 		       cur && (cur != quote || escape)) {
 			if (escapes && cur == '\\')
@@ -702,8 +702,9 @@ scanner_string(mvc *c, int quote, bool escapes)
 			(void) sql_error(c, 2, SQLSTATE(42000) "string too long");
 			return LEX_ERROR;
 		}
-		if (cur == EOF)
-			break;
+		/* BOM character not allowed as an identifier */
+		if (cur == EOF || (quote == '"' && cur == 0xFEFF))
+			return scanner_error(c, cur);
 		lc->yycur += pos;
 		/* check for quote escaped quote: Obscure SQL Rule */
 		if (cur == quote && rs->buf[yycur + pos] == quote) {

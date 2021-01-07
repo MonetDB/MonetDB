@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /* Author(s) M.L. Kersten, N. Nes
@@ -318,7 +318,6 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 	InstrPtr sig;
 	va_list va;
 
-	va_start(va, argc);
 	assert(mod);
 	mod = putName(mod);
 	c = getModule(mod);
@@ -357,6 +356,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		}
 	}
 
+	va_start(va, argc);
 	for (i = 0; i<retc; i++ ){
 		mel_func_arg a = va_arg(va, mel_func_arg);
 		idx = makeFuncArgument(mb, &a);
@@ -364,6 +364,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		if (idx < 0 || sig == NULL) {
 			freeInstruction(sig);
 			freeSymbol(s);
+			va_end(va);
 			return MEL_ERR;
 		}
 		int tpe = TYPE_any;
@@ -385,6 +386,7 @@ melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsa
 		if (idx < 0 || sig == NULL) {
 			freeInstruction(sig);
 			freeSymbol(s);
+			va_end(va);
 			return MEL_ERR;
 		}
 		int tpe = TYPE_any;

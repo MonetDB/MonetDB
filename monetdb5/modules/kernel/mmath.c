@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -256,7 +256,7 @@ MATHprelude(void *ret)
 static str
 MATHrandint(int *res)
 {
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	*res = 0;
 #else
 	MT_lock_set(&mmath_rse_lock);
@@ -270,7 +270,7 @@ static str
 MATHrandintarg(int *res, const int *dummy)
 {
 	(void) dummy;
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	*res = 0;
 #else
 	MT_lock_set(&mmath_rse_lock);
@@ -293,7 +293,7 @@ MATHsrandint(void *ret, const int *seed)
 static str
 MATHsqlrandint(int *res, const int *seed)
 {
-#ifdef STATIC_CODE_ANALYSIS
+#ifdef __COVERITY__
 	(void) seed;
 	*res = 0;
 #else

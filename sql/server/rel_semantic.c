@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -24,7 +24,7 @@
 #include <ctype.h>
 
 sql_rel *
-rel_parse(mvc *m, sql_schema *s, char *query, char emode)
+rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 {
 	mvc o = *m;
 	sql_rel *rel = NULL;
@@ -42,17 +42,15 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	if (s)
 		m->session->schema = s;
 
-	if (!(b = (buffer*)GDKmalloc(sizeof(buffer))))
+	if ((b = malloc(sizeof(buffer))) == NULL)
 		return NULL;
-	n = GDKmalloc(len + 1 + 1);
-	if (!n) {
-		GDKfree(b);
+	if ((n = malloc(len + 1 + 1)) == NULL) {
+		free(b);
 		return NULL;
 	}
 	snprintf(n, len + 2, "%s\n", query);
-	query = n;
 	len++;
-	buffer_init(b, query, len);
+	buffer_init(b, n, len);
 	buf = buffer_rastream(b, "sqlstatement");
 	if(buf == NULL) {
 		buffer_destroy(b);
@@ -78,8 +76,7 @@ rel_parse(mvc *m, sql_schema *s, char *query, char emode)
 	qc = query_create(m);
 	rel = rel_semantic(qc, m->sym);
 
-	GDKfree(query);
-	GDKfree(b);
+	buffer_destroy(b);
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -158,7 +158,6 @@ newCatchStmt(MalBlkPtr mb, str nme)
 			freeException(msg);
 		}else{
 			getArg(q,0) = k;
-			setVarUDFtype(mb,getArg(q,0));
 		}
 	} else getArg(q,0) = i;
 	return q;
@@ -621,7 +620,6 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 	}
 	if( _t >= 0){
 		q= pushArgument(mb, q, _t);
-		setVarUDFtype(mb,getArg(q,q->argc-1)); /* needed */
 	}
 	return q;
 }
@@ -651,7 +649,6 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 		} else {
 			_t = defConstant(mb,idx,&cst);
 			if( _t >= 0){
-				setVarUDFtype(mb,_t);
 				return pushArgument(mb, q, _t);
 			}
 		}
@@ -678,7 +675,6 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	} else {
 		_t = defConstant(mb,tpe,&cst);
 		if( _t >= 0){
-			setVarUDFtype(mb,_t);
 			return pushArgument(mb, q, _t);
 		}
 	}

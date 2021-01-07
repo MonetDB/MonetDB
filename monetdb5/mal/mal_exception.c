@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -33,14 +33,14 @@ static char *exceptionNames[] = {
 /*EOE*/	NULL
 };
 
-int
-isExceptionVariable(str nme){
-	int i;
-	if( nme)
-		for(i=0; exceptionNames[i]; i++)
-		if( strcmp(exceptionNames[i],nme)==0)
-			return 1;
-	return 0;
+bool
+isExceptionVariable(const char *nme)
+{
+	if (nme)
+		for (int i = 0; exceptionNames[i]; i++)
+			if (strcmp(exceptionNames[i], nme) == 0)
+				return true;
+	return false;
 }
 
 static char *M5OutOfMemory = MAL_MALLOC_FAIL;

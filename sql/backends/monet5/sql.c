@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -281,7 +281,6 @@ SQLset_protocol(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(
 		protocol == PROTOCOL_AUTO ||
 		protocol == PROTOCOL_9 ||
-		protocol == PROTOCOL_10 ||
 		protocol == PROTOCOL_COLUMNAR))
 	{
 		return createException(SQL, "sql.set_protocol", "unknown protocol: %d", protocol);

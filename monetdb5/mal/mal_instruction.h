@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #ifndef _MAL_INSTR_H
@@ -76,10 +76,6 @@
 #define clrVarTypedef(M,I)		((M)->var[I].typevar = 0)
 #define setVarTypedef(M,I)		((M)->var[I].typevar = 1)
 #define isVarTypedef(M,I)		((M)->var[I].typevar)
-
-#define clrVarUDFtype(M,I)		((M)->var[I].udftype = 0)
-#define setVarUDFtype(M,I)		((M)->var[I].udftype = 1)
-#define isVarUDFtype(M,I)		((M)->var[I].udftype)
 
 #define clrVarConstant(M,I)		((M)->var[I].constant = 0)
 #define setVarConstant(M,I)		((M)->var[I].constant = 1)

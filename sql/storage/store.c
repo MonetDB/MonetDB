@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1038,7 +1038,7 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 	void *v;
 	sql_arg *a = SA_ZNEW(tr->sa, sql_arg);
 	char *tpe;
-	int digits, scale;
+	unsigned int digits, scale;
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *args = find_sql_table(syss, "args");
 
@@ -1573,7 +1573,7 @@ table_next_column_nr(sql_table *t)
 }
 
 static sql_column *
-bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, sqlid id, char *sqltype, int digits)
+bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, sqlid id, char *sqltype, unsigned int digits)
 {
 	sql_column *col = SA_ZNEW(tr->sa, sql_column);
 
@@ -4354,17 +4354,17 @@ rollforward_update_part(sql_trans *tr, int oldest, sql_base *fpt, sql_base *tpt,
 
 		pt->with_nills = opt->with_nills;
 		if (isRangePartitionTable(opt->t)) {
-			pt->part.range.minvalue = sa_alloc(tr->sa, opt->part.range.minlength);
-			pt->part.range.maxvalue = sa_alloc(tr->sa, opt->part.range.maxlength);
+			pt->part.range.minvalue = sa_alloc(tr->parent->sa, opt->part.range.minlength);
+			pt->part.range.maxvalue = sa_alloc(tr->parent->sa, opt->part.range.maxlength);
 			memcpy(pt->part.range.minvalue, opt->part.range.minvalue, opt->part.range.minlength);
 			memcpy(pt->part.range.maxvalue, opt->part.range.maxvalue, opt->part.range.maxlength);
 			pt->part.range.minlength = opt->part.range.minlength;
 			pt->part.range.maxlength = opt->part.range.maxlength;
 		} else if (isListPartitionTable(opt->t)) {
-			pt->part.values = list_new(tr->sa, (fdestroy) NULL);
+			pt->part.values = list_new(tr->parent->sa, (fdestroy) NULL);
 			for (node *n = opt->part.values->h ; n ; n = n->next) {
-				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-				nextv->value = sa_alloc(tr->sa, prev->length);
+				sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->parent->sa, sql_part_value);
+				nextv->value = sa_alloc(tr->parent->sa, prev->length);
 				memcpy(nextv->value, prev->value, prev->length);
 				nextv->length = prev->length;
 				list_append(pt->part.values, nextv);
@@ -5515,7 +5515,7 @@ sys_drop_sequences(sql_trans *tr, sql_schema *s, int drop_action)
 }
 
 sql_type *
-sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, int digits, int scale, int radix, const char *impl)
+sql_trans_create_type(sql_trans *tr, sql_schema *s, const char *sqlname, unsigned int digits, unsigned int scale, int radix, const char *impl)
 {
 	sql_type *t;
 	sql_table *systype;

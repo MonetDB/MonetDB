@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -1244,7 +1244,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname), *tname = qname_schema_object(qname);
 	sql_table *t = NULL;
-	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL;
+	sql_rel *bt, *joined, *join_rel = NULL, *extra_project, *insert = NULL, *upd_del = NULL, *res = NULL, *no_tid = NULL;
 	int processed = 0;
 	const char *bt_name;
 
@@ -1347,7 +1347,9 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 			//project joined values which didn't match on the join and insert them
 			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
-			extra_project = rel_setop(sql->sa, rel_dup(joined), extra_project, op_except);
+			no_tid = rel_project(sql->sa, rel_dup(joined), rel_projections(sql, joined, NULL, 1, 0));
+			extra_project = rel_setop(sql->sa, no_tid, extra_project, op_except);
+			rel_setop_set_exps(sql, extra_project, rel_projections(sql, extra_project, NULL, 1, 0));
 
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
@@ -1822,18 +1824,17 @@ rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 	m->qc = NULL;
 
 	m->emode = emode;
-	b = (buffer*)GDKmalloc(sizeof(buffer));
+	b = malloc(sizeof(buffer));
 	len += 8; /* add 'select ;' */
-	n = GDKmalloc(len + 1 + 1);
+	n = malloc(len + 1 + 1);
 	if(!b || !n) {
-		GDKfree(b);
-		GDKfree(n);
+		free(b);
+		free(n);
 		return NULL;
 	}
 	snprintf(n, len + 2, "select %s;\n", query);
-	query = n;
 	len++;
-	buffer_init(b, query, len);
+	buffer_init(b, n, len);
 	s = buffer_rastream(b, "sqlstatement");
 	if(!s) {
 		buffer_destroy(b);
@@ -1868,8 +1869,7 @@ rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from)
 				e = exp_check_type(m, tpe, from, e, type_cast);
 		}
 	}
-	GDKfree(query);
-	GDKfree(b);
+	buffer_destroy(b);
 	bstream_destroy(m->scanner.rs);
 
 	m->sym = NULL;

@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #ifndef _REL_UPDATES_H_
@@ -20,7 +20,7 @@ extern sql_rel *rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updat
 
 extern sql_rel *rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts);
 extern sql_rel *rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes);
-extern sql_rel *rel_truncate(sql_allocator *sa, sql_rel *t, int drop_action, int check_identity);
+extern sql_rel *rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_action);
 
 extern sql_exp *rel_parse_val(mvc *m, char *query, sql_subtype *tpe, char emode, sql_rel *from);
 

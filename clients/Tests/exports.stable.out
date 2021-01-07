@@ -1310,7 +1310,7 @@ str io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 str io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 int isBlocking(InstrPtr p);
 int isDelta(InstrPtr q);
-int isExceptionVariable(str nme);
+bool isExceptionVariable(const char *nme);
 int isFragmentGroup(InstrPtr q);
 int isFragmentGroup2(InstrPtr q);
 int isIdentifier(str s);

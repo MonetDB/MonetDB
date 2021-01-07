@@ -2,7 +2,7 @@
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
 .. file, You can obtain one at http://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+.. Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 
 ********************
 Developer's Handbook
@@ -100,4 +100,21 @@ index ``All`` file.
 Python tests API
 ----------------
 
-See many of the examples in ``sql/test/Users/Tests``.
+We are using ``pymonetdb`` client in our testing infrastructure heavily. All .py tests needs to log errors in ``stderror``
+and exit abnormally if failure is present. To ease up writing testing scripts the ``SQLTestCase`` class from ``MonetDBtesting`` 
+module can be utilized. Following is an example of the ``SQLTestCase`` API::
+
+    from MonetDBtesting.sqltest import SQLTestCase
+
+    from decimal import Decimal
+
+    with SQLTestCase() as tc:
+        # using default connection context
+        tc.connect()
+        # insert into non-existing table
+        tc.execute('insert into foo values (888.42), (444.42);').assertFailed(err_code='42S02')
+        tc.execute('create table foo (salary decimal(10,2));').assertSucceeded()
+        tc.execute('insert into foo values (888.42), (444.42);').assertSucceeded().assertRowCount(2)
+        tc.execute('select * from foo;').assertSucceeded().assertDataResultMatch([(Decimal('888.42'),), (Decimal('444.42'),)])
+
+For more examples check out tests in ``sql/test/Users/Tests``.

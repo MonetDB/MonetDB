@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -59,7 +59,6 @@ multiplex2(MalBlkPtr mb, const char *mod, const char *name, int o1, int o2, int 
 	if (q == NULL)
 		return NULL;
 	setVarType(mb, getArg(q, 0), newBatType(rtype));
-	setVarUDFtype(mb, getArg(q, 0));
 	q = pushStr(mb, q, convertMultiplexMod(mod, name));
 	q = pushStr(mb, q, convertMultiplexFcn(name));
 	q = pushArgument(mb, q, o1);
@@ -313,7 +312,6 @@ create_bat(MalBlkPtr mb, int tt)
 	if (q == NULL)
 		return -1;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
-	setVarUDFtype(mb, getArg(q, 0));
 	q = pushType(mb, q, tt);
 	return getDestVar(q);
 }
@@ -359,7 +357,6 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), tt);
-		setVarUDFtype(mb, getArg(q, 0));
 	} else if (!declare) {
 		char levelstr[16];
 
@@ -510,7 +507,6 @@ stmt_temp(backend *be, sql_subtype *t)
 	if (q == NULL)
 		return NULL;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
-	setVarUDFtype(mb, getArg(q, 0));
 	q = pushType(mb, q, tt);
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_temp);
@@ -553,7 +549,6 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	if (q == NULL)
 		return NULL;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
-	setVarUDFtype(mb, getArg(q, 0));
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
@@ -611,11 +606,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		return NULL;
 	if (access == RD_UPD_ID) {
 		q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
-		setVarUDFtype(mb, getArg(q, 0));
-		setVarUDFtype(mb, getArg(q, 1));
 	} else {
 		setVarType(mb, getArg(q, 0), newBatType(tt));
-		setVarUDFtype(mb, getArg(q, 0));
 	}
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, c->t);
@@ -627,7 +619,6 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
-		setVarUDFtype(mb, getArg(q, 1));
 	}
 	if (partition) {
 		sql_trans *tr = be->mvc->session->tr;
@@ -671,7 +662,6 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		q = pushReturn(mb, q, newTmpVariable(mb, newBatType(tt)));
 	} else {
 		setVarType(mb, getArg(q, 0), newBatType(tt));
-		setVarUDFtype(mb, getArg(q, 0));
 	}
 
 	q = pushArgument(mb, q, be->mvc_var);
@@ -684,7 +674,6 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
-		setVarUDFtype(mb, getArg(q, 1));
 	}
 	if (partition) {
 		sql_trans *tr = be->mvc->session->tr;
@@ -1085,7 +1074,6 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(tt));
-		setVarUDFtype(mb, getArg(q, 0));
 		q = pushType(mb, q, tt);
 		if (q == NULL)
 			return NULL;
@@ -1367,7 +1355,6 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 			narg++;
 		q = newStmtArgs(mb, malRef, multiplexRef, narg);
 		setVarType(mb, getArg(q, 0), newBatType(TYPE_bit));
-		setVarUDFtype(mb, getArg(q, 0));
 		q = pushStr(mb, q, convertMultiplexMod(mod, op));
 		q = pushStr(mb, q, convertMultiplexFcn(op));
 		for (n = lops->op4.lval->h; n; n = n->next) {
@@ -1434,6 +1421,7 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		s->op1 = lops;
 		s->op2 = rops;
 		s->op3 = sub;
+		s->key = lops->nrcols == 0 && rops->nrcols == 0;
 		s->flag = cmp_filter;
 		s->nrcols = lops->nrcols;
 		s->nr = getDestVar(q);
@@ -1598,6 +1586,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		s->op2 = op2;
 		s->op3 = sub;
 		s->flag = cmptype;
+		s->key = op1->nrcols == 0 && op2->nrcols == 0;
 		s->nrcols = op1->nrcols;
 		s->nr = getDestVar(q);
 		s->q = q;
@@ -1853,6 +1842,7 @@ stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, 
 		s->op4.stval = sub;
 		s->flag = cmp;
 		s->nrcols = op1->nrcols;
+		s->key = op1->nrcols == 0 && op2->nrcols == 0 && op3->nrcols == 0;
 		s->nr = getDestVar(q);
 		s->q = q;
 		s->cand = sub;
@@ -3185,7 +3175,6 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(type));
-		setVarUDFtype(mb, getArg(q, 0));
 		q = pushStr(mb, q, convertMultiplexMod(calcRef, convert));
 		q = pushStr(mb, q, convertMultiplexFcn(convert));
 	} else {
@@ -3355,12 +3344,10 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 				if (q == NULL)
 					return NULL;
 				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
-				setVarUDFtype(mb, getArg(q, 0));
 				q = pushStr(mb, q, mod);
 				q = pushStr(mb, q, fimp);
 			} else {
 				setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
-				setVarUDFtype(mb, getArg(q, 0));
 			}
 		} else {
 			fimp = convertOperator(fimp);
@@ -3370,7 +3357,6 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 				sql_subtype *res = f->res->h->data;
 
 				setVarType(mb, getArg(q, 0), res->type->localtype);
-				setVarUDFtype(mb, getArg(q, 0));
 			}
 		}
 		if (LANG_EXT(f->func->lang))
@@ -3401,9 +3387,7 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		/* special case for round function on decimals */
 		if (strcmp(fimp, "round") == 0 && tpe && tpe->type->eclass == EC_DEC && ops->op4.lval->h && ops->op4.lval->h->data) {
 			q = pushInt(mb, q, tpe->digits);
-			setVarUDFtype(mb, getArg(q, q->argc-1));
 			q = pushInt(mb, q, tpe->scale);
-			setVarUDFtype(mb, getArg(q, q->argc-1));
 		}
 	}
 
@@ -3578,7 +3562,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		if (q == NULL)
 			return NULL;
 		setVarType(mb, getArg(q, 0), newBatType(restype));
-		setVarUDFtype(mb, getArg(q, 0));
 		if (avg) { /* for avg also return rest and count */
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
@@ -3589,12 +3572,9 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 			return NULL;
 		if (complex_aggr) {
 			setVarType(mb, getArg(q, 0), restype);
-			setVarUDFtype(mb, getArg(q, 0));
 			if (avg) { /* for avg also return rest and count */
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
-				setVarUDFtype(mb, getArg(q, 1));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
-				setVarUDFtype(mb, getArg(q, 1));
 			}
 		}
 	}
@@ -3607,7 +3587,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		op->func->lang == FUNC_LANG_CPP) {
 		if (!grp) {
 			setVarType(mb, getArg(q, 0), restype);
-			setVarUDFtype(mb, getArg(q, 0));
 		}
 		if (op->func->lang == FUNC_LANG_C) {
 			q = pushBit(mb, q, 0);

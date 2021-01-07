@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -30,10 +30,6 @@ extern __declspec(dllexport) str MBMuniform(bat *ret, oid *base, lng *size, int 
 extern __declspec(dllexport) str MBMnormal(bat *ret, oid *base, lng *size, int *domain, int *stddev, int *mean);
 extern __declspec(dllexport) str MBMmix(bat *ret, bat *batid);
 extern __declspec(dllexport) str MBMskewed(bat *ret, oid *base, lng *size, int *domain, int *skew);
-
-#ifdef STATIC_CODE_ANALYSIS
-#define rand()		0
-#endif
 
 static gdk_return
 BATrandom(BAT **bn, oid *base, lng *size, int *domain, int seed)

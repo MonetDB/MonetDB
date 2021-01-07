@@ -666,6 +666,12 @@ select 1, null intersect select 1, null
 1
 NULL
 
+query TR rowsort
+select ifthenelse(false, 'abc', 'abcd'), ifthenelse(false, 1.23, 12.3)
+----
+abcd
+12.300
+
 statement ok
 start transaction
 

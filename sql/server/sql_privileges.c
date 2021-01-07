@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -138,6 +138,8 @@ sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tn
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "GRANT", false)))
 		throw(SQL,"sql.grant_table", "%s", sql->errstr);
+	if (isDeclaredTable(t))
+		throw(SQL,"sql.grant_table", SQLSTATE(42000) "GRANT: cannot grant on a declared table");
 
 	allowed = schema_privs(grantor, t->s);
 
@@ -277,6 +279,8 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "REVOKE", false)))
 		throw(SQL,"sql.revoke_table","%s", sql->errstr);
+	if (isDeclaredTable(t))
+		throw(SQL,"sql.revoke_table", SQLSTATE(42000) "REVOKE: cannot revoke on a declared table");
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
@@ -858,11 +862,12 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 	if (strNil(user))
 		user = NULL;
 	/* USER == NULL -> current_user */
-	if (user != NULL && backend_find_user(sql, user) < 0)
-		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && user != NULL && strcmp(user, get_string_global_var(sql, "current_user")) != 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(M1M05) "Insufficient privileges to change user '%s'", user);
+
+	if (user != NULL && backend_find_user(sql, user) < 0)
+		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
 	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)
@@ -873,13 +878,13 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 char *
 sql_rename_user(mvc *sql, char *olduser, char *newuser)
 {
+	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
+		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "ALTER USER: insufficient privileges to rename user '%s'", olduser);
+
 	if (backend_find_user(sql, olduser) < 0)
 		throw(SQL,"sql.rename_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", olduser);
 	if (backend_find_user(sql, newuser) >= 0)
 		throw(SQL,"sql.rename_user", SQLSTATE(42M31) "ALTER USER: user '%s' already exists", newuser);
-	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
-		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "ALTER USER: insufficient privileges to rename user '%s'", olduser);
-
 	if (backend_rename_user(sql, olduser, newuser) == FALSE)
 		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "%s", sql->errstr);
 	return NULL;
