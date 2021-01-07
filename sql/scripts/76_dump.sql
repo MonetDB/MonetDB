@@ -1,10 +1,10 @@
-CREATE VIEW dump_create_roles AS
+CREATE VIEW sys.dump_create_roles AS
 	SELECT
 		'CREATE ROLE ' || sys.dq(name) || ';' stmt FROM sys.auths
 	WHERE name NOT IN (SELECT name FROM sys.db_user_info)
 	AND grantor <> 0;
 
-CREATE VIEW dump_create_users AS
+CREATE VIEW sys.dump_create_users AS
 	SELECT
 		'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
 		sys.sq(sys.password_hash(ui.name)) ||
@@ -14,13 +14,13 @@ CREATE VIEW dump_create_users AS
 		AND ui.name <> 'monetdb'
 		AND ui.name <> '.snapshot';
 
-CREATE VIEW dump_create_schemas AS
+CREATE VIEW sys.dump_create_schemas AS
 	SELECT
 		'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' stmt
 	FROM sys.schemas s, sys.auths a
 	WHERE s.authorization = a.id AND s.system = FALSE;
 
-CREATE VIEW dump_add_schemas_to_users AS
+CREATE VIEW sys.dump_add_schemas_to_users AS
 	SELECT
 		'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';' stmt
 	FROM sys.db_user_info ui, sys.schemas s
@@ -29,31 +29,31 @@ CREATE VIEW dump_add_schemas_to_users AS
 		AND ui.name <> '.snapshot'
 		AND s.name <> 'sys';
 
-CREATE VIEW dump_grant_user_priviledges AS
+CREATE VIEW sys.dump_grant_user_priviledges AS
 	SELECT
 		'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';' stmt
 	FROM sys.auths a1, sys.auths a2, sys.user_role ur
 	WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
 
-CREATE VIEW dump_table_constraint_type AS
+CREATE VIEW sys.dump_table_constraint_type AS
 	SELECT
-		'ALTER TABLE ' || DQ(s) || '.' || DQ("table") ||
+		'ALTER TABLE ' || DQ(sch) || '.' || DQ(tbl) ||
 		' ADD CONSTRAINT ' || DQ(con) || ' '||
-		type || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');' stmt
-	FROM describe_constraints GROUP BY s, "table", con, type;
+		tpe || ' (' || GROUP_CONCAT(DQ(col), ', ') || ');' stmt
+	FROM describe_constraints GROUP BY sch, tbl, con, tpe;
 
-CREATE VIEW dump_indices AS
+CREATE VIEW sys.dump_indices AS
 	SELECT
-		'CREATE ' || it || ' ' ||
-		DQ(i) || ' ON ' || DQ(s) || '.' || DQ(t) ||
-		'(' || GROUP_CONCAT(c) || ');' stmt
-	FROM describe_indices GROUP BY i, it, s, t;
+		'CREATE ' || tpe || ' ' ||
+		DQ(ind) || ' ON ' || DQ(sch) || '.' || DQ(tbl) ||
+		'(' || GROUP_CONCAT(col) || ');' stmt
+	FROM describe_indices GROUP BY ind, tpe, sch, tbl;
 
-CREATE VIEW dump_column_defaults AS
+CREATE VIEW sys.dump_column_defaults AS
 	SELECT 'ALTER TABLE ' || FQN(sch, tbl) || ' ALTER COLUMN ' || DQ(col) || ' SET DEFAULT ' || def || ';' stmt
 	FROM describe_column_defaults;
 
-CREATE VIEW dump_foreign_keys AS
+CREATE VIEW sys.dump_foreign_keys AS
 	SELECT
 		'ALTER TABLE ' || DQ(fk_s) || '.'|| DQ(fk_t) || ' ADD CONSTRAINT ' || DQ(fk) || ' ' ||
 		'FOREIGN KEY(' || GROUP_CONCAT(DQ(fk_c), ',') ||') ' ||
@@ -62,20 +62,20 @@ CREATE VIEW dump_foreign_keys AS
 		';' stmt
 	FROM describe_foreign_keys GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
 
-CREATE VIEW dump_partition_tables AS
+CREATE VIEW sys.dump_partition_tables AS
 	SELECT
-		ALTER_TABLE(m_sname, m_tname) || ' ADD TABLE ' || FQN(p_sname, p_tname) ||
+		ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || FQN(p_sch, p_tbl) ||
 		CASE 
-			WHEN p_type = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
-			WHEN p_type = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, SQ(maximum), 'RANGE MAXVALUE')
-			WHEN p_type = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
+			WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
+			WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, SQ(maximum), 'RANGE MAXVALUE')
+			WHEN tpe = 'FOR NULLS' THEN ' AS PARTITION FOR NULL VALUES'
 			ELSE '' --'READ ONLY'
 		END ||
-		CASE WHEN p_type in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
+		CASE WHEN tpe in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
 		';' stmt
 	FROM describe_partition_tables;
 
-CREATE VIEW dump_sequences AS
+CREATE VIEW sys.dump_sequences AS
 	SELECT
 		'CREATE SEQUENCE ' || FQN(sch, seq) || ' AS BIGINT ' ||
 		CASE WHEN "s" <> 0 THEN 'START WITH ' || "rs" ELSE '' END ||
@@ -86,17 +86,17 @@ CREATE VIEW dump_sequences AS
 		CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';' stmt
 	FROM describe_sequences;
 
-CREATE VIEW dump_start_sequences AS
+CREATE VIEW sys.dump_start_sequences AS
 	SELECT
 		'UPDATE sys.sequences seq SET start = ' || s  ||
 		' WHERE name = ' || SQ(seq) ||
 		' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || SQ(sch) || ');' stmt
 	FROM describe_sequences;
 
-CREATE VIEW dump_functions AS
+CREATE VIEW sys.dump_functions AS
 	SELECT f.o o, schema_guard(f.sch, f.fun, f.def) stmt FROM describe_functions f;
 
-CREATE VIEW dump_tables AS
+CREATE VIEW sys.dump_tables AS
 	SELECT
 		t.o o,
 		CASE
@@ -107,16 +107,16 @@ CREATE VIEW dump_tables AS
 		END stmt
 	FROM describe_tables t;
 
-CREATE VIEW dump_triggers AS
+CREATE VIEW sys.dump_triggers AS
 	SELECT schema_guard(sch, tab, def) stmt FROM describe_triggers;
 
-CREATE VIEW dump_comments AS
+CREATE VIEW sys.dump_comments AS
 	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || SQ(c.rem) || ';' stmt FROM describe_comments c;
 
 CREATE VIEW sys.dump_user_defined_types AS
 		SELECT 'CREATE TYPE ' || FQN(sch, sql_tpe) || ' EXTERNAL NAME ' || DQ(ext_tpe) || ';' stmt FROM sys.describe_user_defined_types;
 
-CREATE VIEW dump_privileges AS
+CREATE VIEW sys.dump_privileges AS
 	SELECT
 		'INSERT INTO sys.privileges VALUES (' ||
 			CASE
@@ -139,11 +139,11 @@ CREATE VIEW dump_privileges AS
 		');' stmt
 	FROM describe_privileges dp;
 
-CREATE PROCEDURE EVAL(stmt STRING) EXTERNAL NAME sql.eval;
+CREATE PROCEDURE sys.EVAL(stmt STRING) EXTERNAL NAME sql.eval;
 
-CREATE FUNCTION esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(sys.replace(sys.replace(s,'\\', '\\\\'), '\n', '\\n'), '"', '\\"') || '"'; END;
+CREATE FUNCTION sys.esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(sys.replace(sys.replace(s,'\\', '\\\\'), '\n', '\\n'), '"', '\\"') || '"'; END;
 
-CREATE FUNCTION prepare_esc(s STRING, t STRING) RETURNS STRING
+CREATE FUNCTION sys.prepare_esc(s STRING, t STRING) RETURNS STRING
 BEGIN
     RETURN
         CASE
@@ -161,9 +161,9 @@ END;
 
 CREATE TABLE sys.dump_statements(o INT, s STRING, PRIMARY KEY (o));
 
-CREATE FUNCTION current_size_dump_statements() RETURNS INT BEGIN RETURN SELECT COUNT(*) FROM dump_statements; END;
+CREATE FUNCTION sys.current_size_dump_statements() RETURNS INT BEGIN RETURN SELECT COUNT(*) FROM dump_statements; END;
 
-CREATE PROCEDURE _dump_table_data(sch STRING, tbl STRING) BEGIN
+CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
 
     DECLARE k INT;
     SET k = (SELECT MIN(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl);
@@ -205,7 +205,7 @@ CREATE PROCEDURE _dump_table_data(sch STRING, tbl STRING) BEGIN
 	END IF;
 END;
 
-CREATE PROCEDURE dump_table_data() BEGIN
+CREATE PROCEDURE sys.dump_table_data() BEGIN
 
 	DECLARE i INT;
     SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
