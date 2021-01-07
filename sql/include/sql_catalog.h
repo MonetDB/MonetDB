@@ -221,6 +221,39 @@ typedef struct changeset {
 	node *nelm;
 } changeset;
 
+typedef void *sql_store;
+
+#if 0
+extern void (destroy_fptr*)(sql_store *store, sql_base *b);
+
+/* unordered object set */
+typedef struct objectset {
+	int refcnt;
+	sql_allocator *sa;
+	destroy_fptr destroy;
+	struct list *objs;
+	struct sql_hash *map;
+} objectset;
+
+extern int /*ok, error (name existed) and conflict (added before) */ os_add(objectset *os, sql_trans *tr, const char *name, sql_base *b);
+extern int os_del(objectset *os, sql_trans *tr, const char *name, sql_base *b);
+extern int os_size(objectset *os, sql_trans *tr);
+extern int os_empty(objectset *os, sql_trans *tr);
+extern sql_base *os_find_name(objectset *os, sql_trans *tr, const char *name);
+extern sql_base *os_find_id(objectset *os, sql_trans *tr, sqlid id);
+/* iterating (for example for location functinos) */
+extern node *os_first(objectset *os, sql_trans *tr, const char *name);
+extern node *os_next(objectset *os, sql_trans *tr, node *cur, const char *name);
+
+/* ordered object list */
+typedef struct objectlist {
+	sql_allocator *sa;
+	destroy_fptr destroy;
+	struct list *objs;
+	struct sql_hash *map;
+} objectlist;
+#endif
+
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs);
 extern void cs_add(changeset * cs, void *elm, int flag);
@@ -238,8 +271,6 @@ extern void cs_remove_node(changeset * cs, node *n);
 
 typedef void *backend_code;
 typedef size_t backend_stack;
-
-typedef void *sql_store;
 
 typedef struct sql_schema {
 	sql_base base;

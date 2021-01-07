@@ -328,7 +328,7 @@ find_sql_schema(sql_trans *tr, const char *sname)
 {
 	if (tr->tmp && strcmp(sname, "tmp")==0)
 		return tr->tmp;
-	return _cs_find_name(&tr->cat->schemas, sname);
+	return tr_find_name(tr, &tr->cat->schemas, sname);
 }
 
 sql_schema *
