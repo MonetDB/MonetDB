@@ -203,7 +203,6 @@ OPTevaluateImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 				p->barrier = barrier;
 				/* freeze the type */
 				setVarFixed(mb,getArg(p,1));
-				setVarUDFtype(mb,getArg(p,1));
 			} else {
 				/* if there is an error, we should postpone message handling,
 					as the actual error (eg. division by zero ) may not happen) */

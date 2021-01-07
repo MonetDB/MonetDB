@@ -89,7 +89,6 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 					return NULL;
 			} else
 				setVarType(mb, getArg(q, 0), type);
-			setVarUDFtype(mb, getArg(q, i));
 		}
 	} else {
 		for (i = 0, n = f->res->h; n; n = n->next, i++) {
@@ -102,7 +101,6 @@ table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes)
 					return NULL;
 			} else
 				setVarType(mb, getArg(q, 0), type);
-			setVarUDFtype(mb, getArg(q, i));
 		}
 	}
 	return q;
@@ -158,7 +156,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
-	setVarUDFtype(curBlk, 0);
 
 	/* ops */
 	if (call && call->type == st_list) {
@@ -187,7 +184,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			setVarUDFtype(curBlk, varid);
 		}
 	} else if (rel_ops) {
 		node *n;
@@ -216,7 +212,6 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			setVarUDFtype(curBlk, varid);
 		}
 	}
 	if (curBlk->errors) {
@@ -353,7 +348,6 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return -1;
 	}
-	setVarUDFtype(curBlk, 0);
 
 	/* ops */
 	if (call && call->type == st_list) {
@@ -376,7 +370,6 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 			varid = newVariable(curBlk, buf,strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			setVarUDFtype(curBlk, varid);
 		}
 	}
 
@@ -718,7 +711,6 @@ backend_dumpstmt(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, co
 			return -1;
 		}
 		setVarType(mb, getArg(q, 0), TYPE_void);
-		setVarUDFtype(mb, getArg(q, 0));
 		if (!(escaped_q = sql_escape_str(m->ta, (char*) query))) {
 			sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			return -1;
@@ -809,7 +801,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	curInstr = getInstrPtr(mb, 0);
 	/* we do not return anything */
 	setVarType(mb, 0, TYPE_void);
-	setVarUDFtype(mb, 0);
 	setModuleId(curInstr, userRef);
 
 	if (m->params) {	/* needed for prepare statements */
@@ -837,7 +828,6 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 				goto cleanup;
 			}
 			setVarType(mb, varid, type);
-			setVarUDFtype(mb, varid);
 		}
 	}
 
@@ -1187,7 +1177,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	} else {
 		setArgType(curBlk, curInstr, 0, TYPE_void);
 	}
-	setVarUDFtype(curBlk, 0);
 
 	if (f->vararg && ops) {
 		int argc = 0;
@@ -1203,7 +1192,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			setVarUDFtype(curBlk, varid);
 		}
 	} else if (f->ops) {
 		int argc = 0;
@@ -1231,7 +1219,6 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			varid = newVariable(curBlk, buf, strlen(buf), type);
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
-			setVarUDFtype(curBlk, varid);
 		}
 	}
 	/* announce the transaction mode */

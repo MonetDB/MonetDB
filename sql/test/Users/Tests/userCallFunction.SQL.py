@@ -1,72 +1,45 @@
-import os, sys, pymonetdb
+###
+# Check that a user can only execute a function after the user has been granted
+#   the EXECUTE rights.
+# Also check that function signature matters.
+###
 
+from MonetDBtesting.sqltest import SQLTestCase
 
-port = int(os.environ['MAPIPORT'])
-db = os.environ['TSTDB']
+with SQLTestCase() as mdb:
+    mdb.connect(username="monetdb", password="monetdb")
+    mdb.execute("""
+        start transaction;
+        create schema s1;
+        CREATE USER u1 WITH PASSWORD '1' NAME 'u1' SCHEMA s1;
+        CREATE FUNCTION s1.f1(a int) RETURNS INT BEGIN RETURN 10 + a; END;
+        CREATE FUNCTION s1.f1() RETURNS INT BEGIN RETURN 10; END;
+        commit;
+    """).assertSucceeded()
 
-conn1 = pymonetdb.connect(port=port,database=db,autocommit=True,username='monetdb',password='monetdb')
-cur1 = conn1.cursor()
-cur1.execute("""
-start transaction;
-create schema s1;
-CREATE USER u1 WITH PASSWORD '1' NAME 'u1' SCHEMA s1;
-CREATE FUNCTION s1.f1() RETURNS INT BEGIN RETURN 10; END;
-CREATE FUNCTION s1.f1(a int) RETURNS INT BEGIN RETURN 10 + a; END;
-commit;
-""")
-cur1.close()
-conn1.close()
+    with SQLTestCase() as tc:
+        tc.connect(username="u1", password="1")
+        tc.execute('SELECT s1.f1();').assertFailed(err_code="42000", err_message="SELECT: no such operator 's1'.'f1'()")
+        tc.execute('SELECT s1.f1(1);').assertFailed(err_code="42000", err_message="SELECT: no such unary operator 's1'.'f1'(tinyint)")
+        tc.execute('SELECT s1.f1(cast(1 as int));').assertFailed(err_code="42000", err_message="SELECT: no such unary operator 's1'.'f1'(int)")
+        tc.execute('CALL sys.flush_log();').assertFailed(err_code="42000", err_message="SELECT: no such operator 'sys'.'flush_log'()")
 
-conn1 = pymonetdb.connect(port=port,database=db,autocommit=True,username='u1',password='1')
-cur1 = conn1.cursor()
-try:
-    cur1.execute('SELECT s1.f1();') # error, not allowed
-    sys.stderr.write("Exception expected")
-except pymonetdb.DatabaseError as e:
-    if "SELECT: no such operator 'f1'" not in str(e):
-        sys.stderr.write('Wrong error %s, expected SELECT: no such operator \'f1\'' % (str(e)))
-try:
-    cur1.execute('SELECT s1.f1(1);') # error, not allowed
-    sys.stderr.write("Exception expected")
-except pymonetdb.DatabaseError as e:
-    if "SELECT: no such unary operator 'f1(tinyint)'" not in str(e):
-        sys.stderr.write('Wrong error %s, expected SELECT: no such unary operator \'f1(tinyint)\'' % (str(e)))
-try:
-    cur1.execute('CALL sys.flush_log();') # error, not allowed
-    sys.stderr.write("Exception expected")
-except pymonetdb.DatabaseError as e:
-    if "SELECT: no such operator 'flush_log'" not in str(e):
-        sys.stderr.write('Wrong error %s, expected SELECT: no such operator \'flush_log\'' % (str(e)))
-cur1.close()
-conn1.close()
+        mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1 TO u1;').assertFailed(err_code="42000", err_message="GRANT FUNCTION: there are more than one function called 'f1', please use the full signature")
 
-conn1 = pymonetdb.connect(port=port,database=db,autocommit=True,username='monetdb',password='monetdb')
-cur1 = conn1.cursor()
-cur1.execute('GRANT EXECUTE ON FUNCTION s1.f1() TO u1;')
-cur1.close()
-conn1.close()
+        mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1() TO u1;').assertSucceeded()
+        tc.execute('SELECT s1.f1();').assertDataResultMatch([(10,)])
+        tc.execute('SELECT s1.f1(1);').assertFailed(err_code="42000", err_message="SELECT: no such unary operator 's1'.'f1'(tinyint)")
+        tc.execute('SELECT s1.f1(cast(1 as int));').assertFailed(err_code="42000", err_message="SELECT: no such unary operator 's1'.'f1'(int)")
 
-conn1 = pymonetdb.connect(port=port,database=db,autocommit=True,username='u1',password='1')
-cur1 = conn1.cursor()
-cur1.execute('SELECT s1.f1();')
-if cur1.fetchall() != [(10,)]:
-    sys.stderr.write("[(10,)] expected")
-try:
-    cur1.execute('SELECT s1.f1(1);') # error, not allowed
-    sys.stderr.write("Exception expected")
-except pymonetdb.DatabaseError as e:
-    if "SELECT: no such unary operator 'f1(tinyint)'" not in str(e):
-        sys.stderr.write('Wrong error %s, expected SELECT: no such unary operator \'f1(tinyint)\'' % (str(e)))
-cur1.close()
-conn1.close()
+        mdb.execute('REVOKE EXECUTE ON FUNCTION s1.f1() FROM u1;').assertSucceeded()
+        tc.execute('SELECT s1.f1();').assertFailed(err_code="42000", err_message="SELECT: no such operator 's1'.'f1'()")
+        mdb.execute('GRANT EXECUTE ON FUNCTION s1.f1(int) TO u1;').assertSucceeded()
+        tc.execute('SELECT s1.f1(1);').assertDataResultMatch([(11,)])
+        tc.execute('SELECT s1.f1(cast(1 as int));').assertDataResultMatch([(11,)])
 
-conn1 = pymonetdb.connect(port=port,database=db,autocommit=True,username='monetdb',password='monetdb')
-cur1 = conn1.cursor()
-cur1.execute("""
-start transaction;
-drop user u1;
-drop schema s1 cascade;
-commit;
-""")
-cur1.close()
-conn1.close()
+    mdb.execute("""
+        start transaction;
+        drop user u1;
+        drop schema s1 cascade;
+        commit;
+    """)

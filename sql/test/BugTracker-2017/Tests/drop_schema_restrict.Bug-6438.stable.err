@@ -53,11 +53,11 @@ ERROR = !DROP SCHEMA: unable to drop schema 'xyz2' (there are database objects w
 CODE  = 2BM37
 MAPI  = (monetdb) /var/tmp/mtest-10026/.s.monetdb.37719
 QUERY = SELECT * FROM xyz2.t1;
-ERROR = !SELECT: no such table 't1'
+ERROR = !SELECT: no such table 'xyz2'.'t1'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-10026/.s.monetdb.37719
 QUERY = SELECT * FROM xyz2.v1;
-ERROR = !SELECT: no such table 'v1'
+ERROR = !SELECT: no such table 'xyz2'.'v1'
 CODE  = 42S02
 
 # 17:29:20 >  

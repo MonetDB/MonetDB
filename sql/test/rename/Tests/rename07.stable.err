@@ -32,11 +32,11 @@ stderr of test 'rename07` in directory 'sql/test/rename` itself:
 
 MAPI  = (monetdb) /var/tmp/mtest-24376/.s.monetdb.34226
 QUERY = select "a" from "newtables"."atable"; --error
-ERROR = !SELECT: no such table 'atable'
+ERROR = !SELECT: no such table 'newtables'.'atable'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-24376/.s.monetdb.34226
 QUERY = select "a" from "oldtables"."atable"; --error
-ERROR = !SELECT: no such table 'atable'
+ERROR = !SELECT: no such table 'oldtables'.'atable'
 CODE  = 42S02
 
 # 17:01:59 >  

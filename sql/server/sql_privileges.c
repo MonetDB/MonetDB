@@ -130,17 +130,16 @@ char *
 sql_grant_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, sqlid grantor)
 {
 	sql_trans *tr = sql->session->tr;
-	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.grant_table",SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
-		throw(SQL,"sql.grant_table",SQLSTATE(42S02) "GRANT: no such table '%s'", tname);
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "GRANT", false)))
+		throw(SQL,"sql.grant_table", "%s", sql->errstr);
+	if (isDeclaredTable(t))
+		throw(SQL,"sql.grant_table", SQLSTATE(42000) "GRANT: cannot grant on a declared table");
 
 	allowed = schema_privs(grantor, t->s);
 
@@ -192,13 +191,14 @@ char *
 sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid func_id, int grant, sqlid grantor)
 {
 	sql_trans *tr = sql->session->tr;
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_func *f = NULL;
 	bool allowed;
 	sqlid grantee_id;
 	node *n;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	assert(sname);
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.grant_func",SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
 	if ((n = find_sql_func_node(s, func_id)))
 		f = n->data;
@@ -271,17 +271,16 @@ sql_revoke_global_privs( mvc *sql, char *grantee, int privs, int grant, sqlid gr
 char *
 sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *tname, char *cname, int grant, sqlid grantor)
 {
-	sql_schema *s = cur_schema(sql);
 	sql_table *t = NULL;
 	sql_column *c = NULL;
 	bool allowed;
 	sqlid grantee_id;
 	int all = PRIV_SELECT | PRIV_UPDATE | PRIV_INSERT | PRIV_DELETE | PRIV_TRUNCATE;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		throw(SQL,"sql.revoke_table", SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
-	if (!(t = find_table_on_scope(sql, &s, sname, tname)))
-		throw(SQL,"sql.revoke_table",SQLSTATE(42S02) "REVOKE: no such table '%s'", tname);
+	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "REVOKE", false)))
+		throw(SQL,"sql.revoke_table","%s", sql->errstr);
+	if (isDeclaredTable(t))
+		throw(SQL,"sql.revoke_table", SQLSTATE(42000) "REVOKE: cannot revoke on a declared table");
 
 	allowed = schema_privs(grantor, t->s);
 	if (!allowed)
@@ -323,13 +322,14 @@ sql_revoke_table_privs( mvc *sql, char *grantee, int privs, char *sname, char *t
 char *
 sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid func_id, int grant, sqlid grantor)
 {
-	sql_schema *s = cur_schema(sql);
+	sql_schema *s = NULL;
 	sql_func *f = NULL;
 	bool allowed;
 	sqlid grantee_id;
 	node *n;
 
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
+	assert(sname);
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.revoke_func", SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
 	if ((n = find_sql_func_node(s, func_id)))
 		f = n->data;
@@ -740,7 +740,7 @@ mvc_set_schema(mvc *m, char *schema)
 }
 
 char *
-sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema)
+sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, char *schema, char *schema_path)
 {
 	char *err;
 	sqlid schema_id = 0;
@@ -752,7 +752,7 @@ sql_create_user(mvc *sql, char *user, char *passwd, char enc, char *fullname, ch
 		throw(SQL,"sql.create_user", SQLSTATE(42M31) "CREATE USER: user '%s' already exists", user);
 	if ((schema_id = sql_find_schema(sql, schema)) < 0)
 		throw(SQL,"sql.create_user", SQLSTATE(3F000) "CREATE USER: no such schema '%s'", schema);
-	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, sql->user_id)) != NULL)
+	if ((err = backend_create_user(sql, user, passwd, enc, fullname, schema_id, schema_path, sql->user_id)) != NULL)
 	{
 		/* strip off MAL exception decorations */
 		char *r;
@@ -855,21 +855,22 @@ sql_drop_user(mvc *sql, char *user)
 }
 
 char *
-sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *oldpasswd)
+sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char *schema_path, char *oldpasswd)
 {
 	sqlid schema_id = 0;
 	/* we may be called from MAL (nil) */
 	if (strNil(user))
 		user = NULL;
 	/* USER == NULL -> current_user */
-	if (user != NULL && backend_find_user(sql, user) < 0)
-		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
 
 	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id) && user != NULL && strcmp(user, get_string_global_var(sql, "current_user")) != 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(M1M05) "Insufficient privileges to change user '%s'", user);
+
+	if (user != NULL && backend_find_user(sql, user) < 0)
+		throw(SQL,"sql.alter_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", user);
 	if (schema && (schema_id = sql_find_schema(sql, schema)) < 0)
 		throw(SQL,"sql.alter_user", SQLSTATE(3F000) "ALTER USER: no such schema '%s'", schema);
-	if (backend_alter_user(sql, user, passwd, enc, schema_id, oldpasswd) == FALSE)
+	if (backend_alter_user(sql, user, passwd, enc, schema_id, schema_path, oldpasswd) == FALSE)
 		throw(SQL,"sql.alter_user", SQLSTATE(M0M27) "%s", sql->errstr);
 	return NULL;
 }
@@ -877,13 +878,13 @@ sql_alter_user(mvc *sql, char *user, char *passwd, char enc, char *schema, char 
 char *
 sql_rename_user(mvc *sql, char *olduser, char *newuser)
 {
+	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
+		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "ALTER USER: insufficient privileges to rename user '%s'", olduser);
+
 	if (backend_find_user(sql, olduser) < 0)
 		throw(SQL,"sql.rename_user", SQLSTATE(42M32) "ALTER USER: no such user '%s'", olduser);
 	if (backend_find_user(sql, newuser) >= 0)
 		throw(SQL,"sql.rename_user", SQLSTATE(42M31) "ALTER USER: user '%s' already exists", newuser);
-	if (!admin_privs(sql->user_id) && !admin_privs(sql->role_id))
-		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "ALTER USER: insufficient privileges to rename user '%s'", olduser);
-
 	if (backend_rename_user(sql, olduser, newuser) == FALSE)
 		throw(SQL,"sql.rename_user", SQLSTATE(M1M05) "%s", sql->errstr);
 	return NULL;
@@ -968,9 +969,9 @@ sql_create_privileges(mvc *m, sql_schema *s)
 	table_funcs.table_insert(m->session->tr, privs, &t->base.id, &pub, &p, &zero, &zero);
 
 	p = PRIV_EXECUTE;
-	f = sql_bind_func_(m->sa, s, "env", NULL, F_UNION);
+	f = sql_bind_func_(m, s->base.name, "env", NULL, F_UNION);
 	table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
-	f = sql_bind_func_(m->sa, s, "var", NULL, F_UNION);
+	f = sql_bind_func_(m, s->base.name, "var", NULL, F_UNION);
 	table_funcs.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 
 	/* owned by the users anyway

@@ -37,7 +37,7 @@ ERROR = !INSERT INTO: no such table 'x'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-192174/.s.monetdb.36616
 QUERY = SELECT a FROM iambroken(); --error
-ERROR = !SELECT: no such table returning function 'iambroken'
+ERROR = !SELECT: no such table returning function 'iambroken'()
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-467228/.s.monetdb.35826
 QUERY = CREATE OR REPLACE FUNCTION iambroken() RETURNS TABLE(a int) 
@@ -61,7 +61,7 @@ QUERY = CREATE OR REPLACE FUNCTION iambroken() RETURNS INT
         	DECLARE TABLE mytable (a int);
         	RETURN SELECT a FROM sys.mytable; --error table sys.mytable doesn't exist
         END;
-ERROR = !SELECT: no such table 'mytable'
+ERROR = !SELECT: no such table 'sys'.'mytable'
 CODE  = 42S02
 MAPI  = (monetdb) /var/tmp/mtest-461996/.s.monetdb.34756
 QUERY = set "current_schema" = null; --error, cannot be null

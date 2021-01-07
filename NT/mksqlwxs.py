@@ -173,9 +173,10 @@ def main():
     print(r'            <Directory Id="include" Name="include">')
     print(r'              <Directory Id="monetdb" Name="monetdb">')
     id = comp(extend, id, 16,
-              sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
+              sorted([r'include\monetdb\{}'.format(x) for x in filter(lambda x: (x.startswith('gdk') or x.startswith('monet') or x.startswith('mal') or x.startswith('sql')) and x.endswith('.h'), os.listdir(os.path.join(sys.argv[3], 'include', 'monetdb')))] +
                      [r'include\monetdb\mapi.h',
                       r'include\monetdb\matomic.h',
+                      r'include\monetdb\mel.h',
                       r'include\monetdb\mstring.h',
                       r'include\monetdb\stream.h',
                       r'include\monetdb\stream_socket.h']),

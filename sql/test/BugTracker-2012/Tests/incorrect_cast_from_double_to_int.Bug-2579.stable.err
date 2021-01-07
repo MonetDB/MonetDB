@@ -7,7 +7,7 @@ stderr of test 'incorrect_cast_from_double_to_int.Bug-2579` in directory 'sql/te
 
 MAPI  = (monetdb) /var/tmp/mtest-2179869/.s.monetdb.37655
 QUERY = SELECT '3.1'/'5.1';
-ERROR = !SELECT: no such binary operator 'sql_div(char,char)'
+ERROR = !SELECT: no such binary operator 'sys'.'sql_div'(char,char)
 CODE  = 42000
 
 # 11:13:50 >  
