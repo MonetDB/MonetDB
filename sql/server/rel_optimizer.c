@@ -1511,9 +1511,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
-			if (!is_simple_project(l->op))
+			if (!is_simple_project(l->op) || !l->l)
 				rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (is_joinop(rel->op) && !is_simple_project(r->op))
+			if (is_joinop(rel->op) && (!is_simple_project(r->op) || !r->l))
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
@@ -1537,9 +1537,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			sql_rel *l = pl->l, *r = pl->r;
 			list *nexps = new_exp_list(v->sql->sa);
 
-			if (!is_simple_project(l->op))
+			if (!is_simple_project(l->op) || !l->l)
 				pl->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (is_joinop(rel->op) && !is_simple_project(r->op))
+			if (is_joinop(rel->op) && (!is_simple_project(r->op) || !r->l))
 				pl->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;

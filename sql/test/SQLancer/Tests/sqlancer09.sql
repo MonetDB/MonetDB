@@ -228,12 +228,15 @@ nullif(0.322, 4.3)), 0.31),
 (abs(6363), -34)) with check option;
 create view v32(vc0, vc1) as (select distinct cast(((-4)*(-4)) as tinyint), coalesce(nullif(r'p', r'E]T'),
 sql_max(r'f)6_', r'.u'), cast(true as string(679)), case -3 when -5 then r'94' end)
-group by substr(r'FALSE', 6318585747));
+group by substr(r'FALSE', 2));
 
 select sum(all abs(interval '-27135172' second)) from v27 full outer join (select all scale_up(0.131, 12375.0)
-from v32 cross join (values (round(0.23, 24055))) as sub0
+from v32 cross join (values (round(0.23, 10))) as sub0
 where ((v32.vc0)=(0.32))) as sub0 on case 3 when
 case 21 when 12524 then -3 when r'1092027064' then 3692 else 18 end then case when true then true else true end
 when case when true then 0.33 end then (6363) not in (3,
 -3, v27.vc0, -3) end;
+
+create or replace view v27(vc0) as (values (4.3), (63));
+select 1 from v27 full outer join (select 1) as sub0 on case 3 when 0.33 then (2) in (v27.vc0, 9) end;
 ROLLBACK;
