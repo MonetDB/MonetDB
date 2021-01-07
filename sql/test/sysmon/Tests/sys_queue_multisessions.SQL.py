@@ -35,11 +35,11 @@ try:
     # Check that the sys.queue() output of each user contains queries from both
     # connections
     usrcursor1.execute('select username, sessionid  from sys.queue() group by username, sessionid order by sessionid;')
-    for row in usrcursor1.fetchall():
-        print(row)
+    if usrcursor1.fetchall() != [('u1', 1), ('u1', 2)]:
+        print('Expected: [(\'u1\', 1), (\'u1\', 2)]')
     usrcursor2.execute('select username, sessionid from sys.queue() group by username, sessionid order by sessionid;')
-    for row in usrcursor2.fetchall():
-        print(row)
+    if usrcursor2.fetchall() != [('u1', 1), ('u1', 2)]:
+        print('Expected: [(\'u1\', 1), (\'u1\', 2)]')
 except pymonetdb.exceptions.Error as e:
     print(e)
 finally:
