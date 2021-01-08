@@ -273,7 +273,6 @@ BEGIN
 	--TODO Improve performance of dump_table_data.
 	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO look into order dependent group_concat
-	--TODO add upgrade code
 	--TODO add COMMIT statement once everything is fine.
 
 	RETURN dump_statements;
