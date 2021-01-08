@@ -227,7 +227,9 @@ START TRANSACTION;
 create or replace view v74(vc0, vc1) as (values (-1, 0.014)) with check option;
 create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10)) with check option;
 select 1 from v74 cross join v84 join (values ('b'), ('a'), (1)) as sub0 on (v84.vc0)^(-9223372036854775807) is not null;
+ROLLBACK;
 
+START TRANSACTION;
 create or replace view v74(vc0, vc1) as (values (cosh(case 0.82292664 when 0.3286772 then least(-1542994811, 28216) end),
 abs(round(0.014417256786389054, 1390068457)))) with check option;
 
@@ -243,7 +245,7 @@ end as string)), (case ((+ (0.07023401))/(- (1190953480))) when ((((-1138638151)
 then r'n%y]' when cast(case 599601669 when 993501855 then 934684161 when 1426216310 then -46477174
 when 0.326376321343257114193647794309072196483612060546875 then 1762363571 else 1836924027 end as int) then ltrim(r'<>?')
 else splitpart(cast(126 as string), cast(1768691589 as string), 21) end)) as sub0 on (((((v84.vc0)^(-9223372036854775807)))
-is not null)and(cast(lower(r'2') as boolean)));
+is not null)and(cast(true as boolean)));
 ROLLBACK;
 
 START TRANSACTION;
