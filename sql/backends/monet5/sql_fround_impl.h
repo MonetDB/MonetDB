@@ -165,6 +165,8 @@ round_wrap(TYPE *res, const TYPE *v, const bte *r)
 		throw(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 
 	*res = round_body(*v, rr);
+	if (isinf(*res))
+		throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
 	return MAL_SUCCEED;
 }
 
@@ -207,8 +209,14 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 
 	nonil = TRUE;
 	if (v->tnonil) {
-		for (i = 0; i < cnt; i++)
+		for (i = 0; i < cnt; i++) {
 			dst[i] = round_body_nonil(src[i], rr);
+			if (isinf(dst[i])) {
+				BBPunfix(v->batCacheid);
+				BBPreclaim(res);
+				throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
+			}
+		}
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (ISNIL(TYPE)(src[i])) {
@@ -216,6 +224,11 @@ bat_round_wrap(bat *_res, const bat *_v, const bte *r)
 				dst[i] = NIL(TYPE);
 			} else {
 				dst[i] = round_body_nonil(src[i], rr);
+				if (isinf(dst[i])) {
+					BBPunfix(v->batCacheid);
+					BBPreclaim(res);
+					throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
+				}
 			}
 		}
 	}

@@ -39,6 +39,10 @@ MAPI  = (monetdb) /var/tmp/mtest-117811/.s.monetdb.30533
 QUERY = select (-1.7976931348623157E308)/(0.98067827792867723335490381941781379282474517822265625); --error, overflow
 ERROR = !overflow in calculation -1.7976931348623157e+308/0.98067827792867723.
 CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-164664/.s.monetdb.34087
+QUERY = values (round(-1.4999792343698102e+308, 15)),(1.2); --error, overflow?
+ERROR = !Overflow in round
+CODE  = 22003
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."
