@@ -224,6 +224,29 @@ select 1 from v27 full outer join (select 1) as sub0 on case 3 when 0.33 then (2
 ROLLBACK;
 
 START TRANSACTION;
+create or replace view v74(vc0, vc1) as (values (-1, 0.014)) with check option;
+create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10)) with check option;
+select 1 from v74 cross join v84 join (values ('b'), ('a'), (1)) as sub0 on (v84.vc0)^(-9223372036854775807) is not null;
+
+create or replace view v74(vc0, vc1) as (values (cosh(case 0.82292664 when 0.3286772 then least(-1542994811, 28216) end),
+abs(round(0.014417256786389054, 1390068457)))) with check option;
+
+create or replace view v84(vc0, vc1) as (values (cast(not (least(false, false)) as int), case when nullif(((-763905586)=(0.8063365267447331)),
+"isauuid"(r'87')) then case ((-1573098947)%(0.22336472349933323)) when nullif(7159, 26015) then ((-1216247830)*(-580027885))
+when - (0.17724898013816237) then -1847868202 else - (-7.96515311E8) end else 0.854441498295166 end), (cast(not (false) as int),
+greatest(scale_up(+ (48), 0.9562314161003085), ((- (85))+(- (-1290129393)))))) with check option;
+
+select all count(all least(((null)*(v74.vc1)), cast(0.7407841 as bigint))) from v74 cross join v84 join (values
+(cast(cast(((-1660927937)+(-1322418229)) as bigint) as string)), (cast(case upper(r'#+6') when least(r'', r'l9O+,s5?')
+then r'0.8101890506861533' when greatest(r'', r'B+') then sql_max(r'?''', r'E|!H4p') else cast(0.6526341396196464 as string(381))
+end as string)), (case ((+ (0.07023401))/(- (1190953480))) when ((((-1138638151)>>(31055)))*(least(-1433171609, 0.67441124)))
+then r'n%y]' when cast(case 599601669 when 993501855 then 934684161 when 1426216310 then -46477174
+when 0.326376321343257114193647794309072196483612060546875 then 1762363571 else 1836924027 end as int) then ltrim(r'<>?')
+else splitpart(cast(126 as string), cast(1768691589 as string), 21) end)) as sub0 on (((((v84.vc0)^(-9223372036854775807)))
+is not null)and(cast(lower(r'2') as boolean)));
+ROLLBACK;
+
+START TRANSACTION;
 CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3),"c1" VARCHAR(253));
 COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 -804767602.000	".c("
@@ -243,6 +266,8 @@ NULL	"3128"
 1.000	"+EUSP1"
 0.968	"1403896159"
 0.565	"0.8224972062481081"
+
+SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
 
 SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
 
