@@ -25,6 +25,15 @@ QUERY = select all count(all least(((null)*(v74.vc1)), cast(0.7407841 as bigint)
         then r'n%y]' when cast(case 599601669 when 993501855 then 934684161 when 1426216310 then -46477174
 ERROR = !overflow in calculation 1XOR-9223372036854775807.
 CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-346605/.s.monetdb.38453
+QUERY = select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>(least(cast(26 as bigint),
+        cast(-507871984 as bigint)))), round(least(-342, 69), ((((-33)%(-32)))*(((-32)&(-43))))) from v21
+        join v18 on ((scale_down(+ (-290196938), scale_down(v18.vc0, null)))>(cast(((0.33)
+        -(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim(r'便竼E*P'),
+        "concat"(r'?X', r'沈pJqd')), replace(r'w', r'95', r'580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24
+        where ((scale_down(v24.vc0, v24.vc0))=(scale_down(v24.vc0, v24.vc0)))) as sub0 on ((least(342, v18.vc0))<>(round(v21.vc0, 107)))
+ERROR = !Argument 2 to round function cannot be null
+CODE  = 42000
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."

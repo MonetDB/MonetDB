@@ -42,6 +42,8 @@ dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 	/* basic sanity checks */
 	assert(res && v);
 
+	if (ISNIL(TYPE)(rr))
+		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
 	if (rr <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 	*res = dec_round_body(*v, rr);
@@ -59,6 +61,8 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 	/* basic sanity checks */
 	assert(_res && _v && r);
 
+	if (ISNIL(TYPE)(rr))
+		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
 	if (rr <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 	/* get argument BAT descriptor */

@@ -282,3 +282,22 @@ CAST(1847496204 AS BOOLEAN) WHEN CASE WHEN FALSE THEN FALSE WHEN FALSE THEN FALS
 WHEN ((t2.c1)LIKE(t2.c1)) THEN (t1.c0) IN (t2.c0, t1.c0) ELSE (t2.c1) NOT BETWEEN SYMMETRIC (t1.c1) AND (t2.c1) END
 FROM t2, t1 WHERE CAST(20726 AS BOOLEAN)) AS sub0 ON ((CAST(t1.c1 AS STRING))ILIKE(t1.c1));
 ROLLBACK;
+
+START TRANSACTION;
+create view v18(vc0) as (values (cast(((r'-W<~>頃')not like(r'8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
+then true when false then true when false then false when true then true else true end) then ((least(0.5,
+343))/(abs(2.017526512E9))) else cast(greatest(-23, 33) as decimal) end)) with check option;
+
+create view v21(vc0) as (values (greatest(cast(42 as real), ((0.353)*(-3))))) with check option;
+
+create view v24(vc0) as (values (0.22)) with check option;
+
+select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>(least(cast(26 as bigint),
+cast(-507871984 as bigint)))), round(least(-342, 69), ((((-33)%(-32)))*(((-32)&(-43))))) from v21
+join v18 on ((scale_down(+ (-290196938), scale_down(v18.vc0, null)))>(cast(((0.33)
+-(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim(r'便竼E*P'),
+"concat"(r'?X', r'沈pJqd')), replace(r'w', r'95', r'580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24
+where ((scale_down(v24.vc0, v24.vc0))=(scale_down(v24.vc0, v24.vc0)))) as sub0 on ((least(342, v18.vc0))<>(round(v21.vc0, 107)))
+group by greatest(-432, ((24)|(32))), least(((((r'RJᦈ4[[h\340\272\246')like(r'9804')))and(not (false))),
+"isauuid"(cast(v18.vc0 as string(979))));
+ROLLBACK;
