@@ -1037,7 +1037,8 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 
 	p = lookupRemoteTableKey(local_table);
 	if (p == BUN_NONE) {
-		throw(MAL, "getRemoteTableCredentials", "No credentials for remote table %s found", local_table);
+		// No credentials for remote table with name local_table.
+		return MAL_SUCCEED;
 	}
 
 	assert(rt_key);

@@ -3764,8 +3764,8 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *uname = getArgReference_bat(stk, pci, 1);
 	bat *hash = getArgReference_bat(stk, pci, 2);
 	str *table = getArgReference_str(stk, pci, 3);
-	str uris;
-	str unames;
+	str uris = NULL;
+	str unames = NULL;
 	str hashs = NULL;
 	str msg = MAL_SUCCEED;
 	(void)mb;
@@ -3784,11 +3784,11 @@ sql_rt_credentials_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		goto bailout;
 
 	MT_lock_set(&mal_contextLock);
-	if (BUNappend(urib, uris, false) != GDK_SUCCEED)
+	if (BUNappend(urib, uris? uris: str_nil, false) != GDK_SUCCEED)
 		goto lbailout;
-	if (BUNappend(unameb, unames, false) != GDK_SUCCEED)
+	if (BUNappend(unameb, unames? unames: str_nil , false) != GDK_SUCCEED)
 		goto lbailout;
-	if (BUNappend(hashb, hashs, false) != GDK_SUCCEED)
+	if (BUNappend(hashb, hashs? hashs: str_nil, false) != GDK_SUCCEED)
 		goto lbailout;
 	MT_lock_unset(&mal_contextLock);
 	BBPkeepref(*uri = urib->batCacheid);
