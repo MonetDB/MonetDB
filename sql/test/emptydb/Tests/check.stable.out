@@ -1045,49 +1045,22 @@ create view sys.describe_sequences as select s.name as sch, seq.name as seq, seq
 create view sys.describe_tables as select t.id o, s.name sch, t.name tab, ts.table_type_name typ, (select ' (' || group_concat(dq(c.name) || ' ' || sys.describe_type(c.type, c.type_digits, c.type_scale) || ifthenelse(c."null" = 'false', ' NOT NULL', '') , ', ') || ')' from sys._columns c where c.table_id = t.id) col, case when ts.table_type_name = 'REMOTE TABLE' then get_remote_table_expressions(s.name, t.name) when ts.table_type_name = 'MERGE TABLE' then get_merge_table_partition_expressions(t.id) when ts.table_type_name = 'VIEW' then schema_guard(s.name, t.name, t.query) else '' end opt from sys.schemas s, table_types ts, sys.tables t where ts.table_type_name in ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE') and t.system = false and s.id = t.schema_id and ts.table_type_id = t.type and s.name <> 'tmp';
 create view sys.describe_triggers as select s.name sch, t.name tab, tr.name tri, tr.statement def from sys.schemas s, sys.tables t, sys.triggers tr where s.id = t.schema_id and t.id = tr.table_id and not t.system;
 create view sys.describe_user_defined_types as select s.name sch, t.sqlname sql_tpe, t.systemname ext_tpe from sys.types t join sys.schemas s on t.schema_id = s.id where t.eclass = 18 and ((s.name = 'sys' and t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml')) or (s.name <> 'sys'));
-create view sys.dump_add_schemas_to_users as select 'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';' stmt
-from sys.db_user_info ui, sys.schemas s
-where ui.default_schema = s.id
-and ui.name <> 'monetdb'
-and ui.name <> '.snapshot'
-and s.name <> 'sys';
-create view sys.dump_column_defaults as select 'ALTER TABLE ' || fqn(sch, tbl) || ' ALTER COLUMN ' || dq(col) || ' SET DEFAULT ' || def || ';' stmt
-from describe_column_defaults;
+create view sys.dump_add_schemas_to_users as select 'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';' stmt from sys.db_user_info ui, sys.schemas s where ui.default_schema = s.id and ui.name <> 'monetdb' and ui.name <> '.snapshot' and s.name <> 'sys';
+create view sys.dump_column_defaults as select 'ALTER TABLE ' || fqn(sch, tbl) || ' ALTER COLUMN ' || dq(col) || ' SET DEFAULT ' || def || ';' stmt from describe_column_defaults;
 create view sys.dump_comments as select 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sq(c.rem) || ';' stmt from describe_comments c;
-create view sys.dump_create_roles as select 'CREATE ROLE ' || sys.dq(name) || ';' stmt from sys.auths
-where name not in (select name from sys.db_user_info)
-and grantor <> 0;
-create view sys.dump_create_schemas as select 'CREATE SCHEMA ' || sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' stmt
-from sys.schemas s, sys.auths a
-where s.authorization = a.id and s.system = false;
-create view sys.dump_create_users as select 'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' || sys.sq(sys.password_hash(ui.name)) || ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys;' stmt
-from sys.db_user_info ui, sys.schemas s
-where ui.default_schema = s.id
-and ui.name <> 'monetdb'
-and ui.name <> '.snapshot';
-create view sys.dump_foreign_keys as select 'ALTER TABLE ' || dq(fk_s) || '.'|| dq(fk_t) || ' ADD CONSTRAINT ' || dq(fk) || ' ' || 'FOREIGN KEY(' || group_concat(dq(fk_c), ',') ||') ' || 'REFERENCES ' || dq(pk_s) || '.' || dq(pk_t) || '(' || group_concat(dq(pk_c), ',') || ') ' || 'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update || ';' stmt
-from describe_foreign_keys group by fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
+create view sys.dump_create_roles as select 'CREATE ROLE ' || sys.dq(name) || ';' stmt from sys.auths where name not in (select name from sys.db_user_info) and grantor <> 0;
+create view sys.dump_create_schemas as select 'CREATE SCHEMA ' || sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' stmt from sys.schemas s, sys.auths a where s.authorization = a.id and s.system = false;
+create view sys.dump_create_users as select 'CREATE USER ' || sys.dq(ui.name) || ' WITH ENCRYPTED PASSWORD ' || sys.sq(sys.password_hash(ui.name)) || ' NAME ' || sys.sq(ui.fullname) || ' SCHEMA sys;' stmt from sys.db_user_info ui, sys.schemas s where ui.default_schema = s.id and ui.name <> 'monetdb' and ui.name <> '.snapshot';
+create view sys.dump_foreign_keys as select 'ALTER TABLE ' || dq(fk_s) || '.'|| dq(fk_t) || ' ADD CONSTRAINT ' || dq(fk) || ' ' || 'FOREIGN KEY(' || group_concat(dq(fk_c), ',') ||') ' || 'REFERENCES ' || dq(pk_s) || '.' || dq(pk_t) || '(' || group_concat(dq(pk_c), ',') || ') ' || 'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update || ';' stmt from describe_foreign_keys group by fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
 create view sys.dump_functions as select f.o o, schema_guard(f.sch, f.fun, f.def) stmt from describe_functions f;
-create view sys.dump_grant_user_priviledges as select 'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';' stmt
-from sys.auths a1, sys.auths a2, sys.user_role ur
-where a1.id = ur.login_id and a2.id = ur.role_id;
-create view sys.dump_indices as select 'CREATE ' || tpe || ' ' || dq(ind) || ' ON ' || dq(sch) || '.' || dq(tbl) || '(' || group_concat(col) || ');' stmt
-from describe_indices group by ind, tpe, sch, tbl;
-create view sys.dump_partition_tables as select alter_table(m_sch, m_tbl) || ' ADD TABLE ' || fqn(p_sch, p_tbl) || case when tpe = 'VALUES' then ' AS PARTITION IN (' || pvalues || ')' when tpe = 'RANGE' then ' AS PARTITION FROM ' || ifthenelse(minimum is not null, sq(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum is not null, sq(maximum), 'RANGE MAXVALUE') when tpe = 'FOR NULLS' then ' AS PARTITION FOR NULL VALUES' else '' end || case when tpe in ('VALUES', 'RANGE') and with_nulls then ' WITH NULL VALUES' else '' end || ';' stmt
-from describe_partition_tables;
-create view sys.dump_privileges as select 'INSERT INTO sys.privileges VALUES (' || case when dp.o_tpe = 'GLOBAL' then '0,' when dp.o_tpe = 'TABLE' then '(SELECT t.id FROM sys.schemas s, tables t WHERE s.id = t.schema_id' || ' AND s.name || \'.\' || t.name =' || sq(dp.o_nme) || '),' when dp.o_tpe = 'COLUMN' then '(SELECT c.id FROM sys.schemas s, tables t, columns c WHERE s.id = t.schema_id AND t.id = c.table_id' || ' AND s.name || \'.\' || t.name || \'.\' || c.name =' || sq(dp.o_nme) || '),' else '(SELECT fqn.id FROM fully_qualified_functions fqn WHERE' || ' fqn.nme = ' || sq(dp.o_nme) || ' AND fqn.tpe = ' || sq(dp.o_tpe) || '),' end || '(SELECT id FROM auths a WHERE a.name = ' || sq(dp.a_nme) || '),' || '(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name = ' || sq(p_nme) || '),' '(SELECT id FROM auths g WHERE g.name = ' || sq(dp.g_nme) || '),' || dp.grantable || ');' stmt
-from describe_privileges dp;
-create view sys.dump_sequences as select 'CREATE SEQUENCE ' || fqn(sch, seq) || ' AS BIGINT ' || case when "s" <> 0 then 'START WITH ' || "rs" else '' end || case when "inc" <> 1 then ' INCREMENT BY ' || "inc" else '' end || case when "mi" <> 0 then ' MINVALUE ' || "mi" else '' end || case when "ma" <> 0 then ' MAXVALUE ' || "ma" else '' end || case when "cache" <> 1 then ' CACHE ' || "cache" else '' end || case when "cycle" then ' CYCLE' else '' end || ';' stmt
-from describe_sequences;
-create view sys.dump_start_sequences as select 'UPDATE sys.sequences seq SET start = ' || s || ' WHERE name = ' || sq(seq) || ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sq(sch) || ');' stmt
-from describe_sequences;
-create view sys.dump_table_constraint_type as select 'ALTER TABLE ' || dq(sch) || '.' || dq(tbl) || ' ADD CONSTRAINT ' || dq(con) || ' '|| tpe || ' (' || group_concat(dq(col), ', ') || ');' stmt
-from describe_constraints group by sch, tbl, con, tpe;
-create view sys.dump_tables as select t.o o, case when t.typ <> 'VIEW' then 'CREATE ' || t.typ || ' ' || fqn(t.sch, t.tab) || t.col || t.opt || ';'
-else
-t.opt
-end stmt
-from describe_tables t;
+create view sys.dump_grant_user_priviledges as select 'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';' stmt from sys.auths a1, sys.auths a2, sys.user_role ur where a1.id = ur.login_id and a2.id = ur.role_id;
+create view sys.dump_indices as select 'CREATE ' || tpe || ' ' || dq(ind) || ' ON ' || dq(sch) || '.' || dq(tbl) || '(' || group_concat(col) || ');' stmt from describe_indices group by ind, tpe, sch, tbl;
+create view sys.dump_partition_tables as select alter_table(m_sch, m_tbl) || ' ADD TABLE ' || fqn(p_sch, p_tbl) || case when tpe = 'VALUES' then ' AS PARTITION IN (' || pvalues || ')' when tpe = 'RANGE' then ' AS PARTITION FROM ' || ifthenelse(minimum is not null, sq(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum is not null, sq(maximum), 'RANGE MAXVALUE') when tpe = 'FOR NULLS' then ' AS PARTITION FOR NULL VALUES' else '' end || case when tpe in ('VALUES', 'RANGE') and with_nulls then ' WITH NULL VALUES' else '' end || ';' stmt from describe_partition_tables;
+create view sys.dump_privileges as select 'INSERT INTO sys.privileges VALUES (' || case when dp.o_tpe = 'GLOBAL' then '0,' when dp.o_tpe = 'TABLE' then '(SELECT t.id FROM sys.schemas s, tables t WHERE s.id = t.schema_id' || ' AND s.name || \'.\' || t.name =' || sq(dp.o_nme) || '),' when dp.o_tpe = 'COLUMN' then '(SELECT c.id FROM sys.schemas s, tables t, columns c WHERE s.id = t.schema_id AND t.id = c.table_id' || ' AND s.name || \'.\' || t.name || \'.\' || c.name =' || sq(dp.o_nme) || '),' else '(SELECT fqn.id FROM fully_qualified_functions fqn WHERE' || ' fqn.nme = ' || sq(dp.o_nme) || ' AND fqn.tpe = ' || sq(dp.o_tpe) || '),' end || '(SELECT id FROM auths a WHERE a.name = ' || sq(dp.a_nme) || '),' || '(SELECT pc.privilege_code_id FROM privilege_codes pc WHERE pc.privilege_code_name = ' || sq(p_nme) || '),' '(SELECT id FROM auths g WHERE g.name = ' || sq(dp.g_nme) || '),' || dp.grantable || ');' stmt from describe_privileges dp;
+create view sys.dump_sequences as select 'CREATE SEQUENCE ' || fqn(sch, seq) || ' AS BIGINT ' || case when "s" <> 0 then 'START WITH ' || "rs" else '' end || case when "inc" <> 1 then ' INCREMENT BY ' || "inc" else '' end || case when "mi" <> 0 then ' MINVALUE ' || "mi" else '' end || case when "ma" <> 0 then ' MAXVALUE ' || "ma" else '' end || case when "cache" <> 1 then ' CACHE ' || "cache" else '' end || case when "cycle" then ' CYCLE' else '' end || ';' stmt from describe_sequences;
+create view sys.dump_start_sequences as select 'UPDATE sys.sequences seq SET start = ' || s || ' WHERE name = ' || sq(seq) || ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sq(sch) || ');' stmt from describe_sequences;
+create view sys.dump_table_constraint_type as select 'ALTER TABLE ' || dq(sch) || '.' || dq(tbl) || ' ADD CONSTRAINT ' || dq(con) || ' '|| tpe || ' (' || group_concat(dq(col), ', ') || ');' stmt from describe_constraints group by sch, tbl, con, tpe;
+create view sys.dump_tables as select t.o o, case when t.typ <> 'VIEW' then 'CREATE ' || t.typ || ' ' || fqn(t.sch, t.tab) || t.col || t.opt || ';' else t.opt end stmt from describe_tables t;
 create view sys.dump_triggers as select schema_guard(sch, tab, def) stmt from describe_triggers;
 create view sys.dump_user_defined_types as select 'CREATE TYPE ' || fqn(sch, sql_tpe) || ' EXTERNAL NAME ' || dq(ext_tpe) || ';' stmt from sys.describe_user_defined_types;
 create view sys.environment as select * from sys.env();
