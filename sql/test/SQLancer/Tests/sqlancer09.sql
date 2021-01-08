@@ -301,3 +301,5 @@ as sub0 on ((least(342, v18.vc0))<>(1))
 group by greatest(-432, ((24)|(32))), least(((((r'RJᦈ4[[h\340\272\246')like(r'9804')))and(not (false))),
 "isauuid"(cast(v18.vc0 as string(979))));
 ROLLBACK;
+
+select (-1.7976931348623157E308)/(0.98067827792867723335490381941781379282474517822265625); --error, overflow
