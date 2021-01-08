@@ -39,6 +39,7 @@ set(include_sql_files
   60_wlcr
   61_wlcr
   75_storagemodel
+  76_dump
   80_statistics
   81_tracer)
 
