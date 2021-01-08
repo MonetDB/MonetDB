@@ -63,20 +63,6 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 [ 0	]
 #ROLLBACK;
 #START TRANSACTION;
-#CREATE TABLE "sys"."t0" ("c0" TIME NOT NULL, "c1" VARCHAR(143),
-#	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t0_c0_unique" UNIQUE ("c0"), CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
-#COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
-#21:19:08	""
-#13:02:49	NULL
-#01:02:11	NULL
-#16:34:25	NULL
-#12:11:43	NULL
-#10:35:38	NULL
-#04:26:50	NULL
-[ 7	]
-#CREATE TABLE "sys"."t1" ("c0" CHAR(375) NOT NULL, CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c1"));
-#ROLLBACK;
-#START TRANSACTION;
 #CREATE TABLE "sys"."t1" ("c0" BIGINT);
 #COPY 4 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 #1096730569
@@ -261,6 +247,40 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 [ 1	]
 [ 1	]
+#ROLLBACK;
+#START TRANSACTION;
+#create or replace view v74(vc0, vc1) as (values (-1, 0.014)) with check option;
+#create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10)) with check option;
+#ROLLBACK;
+#START TRANSACTION;
+#create or replace view v74(vc0, vc1) as (values (cosh(case 0.82292664 when 0.3286772 then least(-1542994811, 28216) end),
+#abs(round(0.014417256786389054, 1390068457)))) with check option;
+#create or replace view v84(vc0, vc1) as (values (cast(not (least(false, false)) as int), case when nullif(((-763905586)=(0.8063365267447331)),
+#"isauuid"(r'87')) then case ((-1573098947)%(0.22336472349933323)) when nullif(7159, 26015) then ((-1216247830)*(-580027885))
+#when - (0.17724898013816237) then -1847868202 else - (-7.96515311E8) end else 0.854441498295166 end), (cast(not (false) as int),
+#greatest(scale_up(+ (48), 0.9562314161003085), ((- (85))+(- (-1290129393)))))) with check option;
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3),"c1" VARCHAR(253));
+#COPY 7 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#-804767602.000	".c("
+#0.799	".c("
+#0.763	".c("
+#0.957	NULL
+#NULL	"5"
+#NULL	"j"
+#NULL	"UXNW/#綒"
+[ 7	]
+#CREATE TABLE "sys"."t2" ("c0" DECIMAL(18,3),"c1" VARCHAR(253),CONSTRAINT "t2_c1_unique" UNIQUE ("c1"));
+#COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#0.120	"0.2251036314022229"
+#0.120	"-677904380"
+#NULL	"['퓵h'iI"
+#NULL	"3128"
+#1.000	"+EUSP1"
+#0.968	"1403896159"
+#0.565	"0.8224972062481081"
+[ 7	]
 #ROLLBACK;
 
 # 14:35:03 >  

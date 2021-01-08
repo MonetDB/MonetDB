@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*
@@ -1037,7 +1037,8 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 
 	p = lookupRemoteTableKey(local_table);
 	if (p == BUN_NONE) {
-		throw(MAL, "getRemoteTableCredentials", "No credentials for remote table %s found", local_table);
+		// No credentials for remote table with name local_table.
+		return MAL_SUCCEED;
 	}
 
 	assert(rt_key);

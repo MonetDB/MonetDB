@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 #include "monetdb_config.h"
@@ -3875,16 +3875,18 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	 * of doing searches on r, we swap */
 	swap = (lcost < rcost);
 
-	if ((BATordered(r) || BATordered_rev(r)) &&
-	    (lci.ncand * (log2((double) rci.ncand) + 1) < (swap ? lcost : rcost))) {
+	if ((r->ttype == TYPE_void && r->tvheap != NULL) ||
+	    ((BATordered(r) || BATordered_rev(r)) &&
+	     (lci.ncand * (log2((double) rci.ncand) + 1) < (swap ? lcost : rcost)))) {
 		/* r is sorted and it is cheaper to do multiple binary
 		 * searches than it is to use a hash */
 		return mergejoin(r1p, r2p, l, r, &lci, &rci,
 				 nil_matches, false, false, false, false, false,
 				 estimate, t0, false, __func__);
 	}
-	if ((BATordered(l) || BATordered_rev(l)) &&
-	    (rci.ncand * (log2((double) lci.ncand) + 1) < (swap ? lcost : rcost))) {
+	if ((l->ttype == TYPE_void && l->tvheap != NULL) ||
+	    ((BATordered(l) || BATordered_rev(l)) &&
+	     (rci.ncand * (log2((double) lci.ncand) + 1) < (swap ? lcost : rcost)))) {
 		/* l is sorted and it is cheaper to do multiple binary
 		 * searches than it is to use a hash */
 		rc = mergejoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,
