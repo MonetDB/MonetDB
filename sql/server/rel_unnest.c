@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /*#define DEBUG*/
@@ -1805,7 +1805,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				sql_subtype *rt = exp_subtype(re);
 
 				if (rt->type->eclass == EC_DEC && rt->scale) {
-					int scale = rt->scale; /* shift with scale */
+					int scale = (int) rt->scale; /* shift with scale */
 					sql_subtype *it = sql_bind_localtype(lt->type->base.name);
 					sql_subfunc *c = sql_bind_func(v->sql, "sys", "scale_down", lt, it, F_FUNC);
 
@@ -1831,7 +1831,7 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				sql_subtype *rt = exp_subtype(re);
 
 				if (rt->type->eclass == EC_DEC && rt->scale) {
-					int scale = rt->scale; /* shift with scale */
+					int scale = (int) rt->scale; /* shift with scale */
 #ifdef HAVE_HGE
 					hge val = scale2value(scale);
 #else
