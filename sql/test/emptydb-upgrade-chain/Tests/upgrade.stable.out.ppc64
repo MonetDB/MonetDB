@@ -4299,7 +4299,7 @@ CREATE VIEW sys.dump_privileges AS
 
 CREATE PROCEDURE sys.EVAL(stmt STRING) EXTERNAL NAME sql.eval;
 
-CREATE FUNCTION sys.esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(sys.replace(sys.replace(s,'\\', '\\\\'), '\n', '\\n'), '"', '\\"') || '"'; END;
+CREATE FUNCTION sys.esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(sys.replace(sys.replace(s,E'\\', E'\\\\'), E'\n', E'\\n'), '"', E'\\"') || '"'; END;
 
 CREATE FUNCTION sys.prepare_esc(s STRING, t STRING) RETURNS STRING
 BEGIN
@@ -4348,7 +4348,7 @@ CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
                 SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || prepare_esc(cname, ctype);
             END WHILE;
 
-            SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',''\\n'',''"'';');
+            SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
             SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || FQN(sch, tbl);
 
             insert into dump_statements VALUES (current_size_dump_statements() + 1, COPY_INTO_STMT);
