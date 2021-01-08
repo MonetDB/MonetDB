@@ -293,11 +293,15 @@ create view v21(vc0) as (values (greatest(cast(42 as real), ((0.353)*(-3))))) wi
 create view v24(vc0) as (values (0.22)) with check option;
 
 select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>(least(cast(26 as bigint),
-cast(-507871984 as bigint)))), round(least(-342, 69), ((((-33)%(-32)))*(((-32)&(-43))))) from v21
-join v18 on ((scale_down(+ (-290196938), scale_down(v18.vc0, null)))>(cast(((0.33)
+cast(-507871984 as bigint)))), 1 from v21
+join v18 on ((scale_down(v18.vc0, null))>(cast(((0.33)
 -(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim(r'便竼E*P'),
-"concat"(r'?X', r'沈pJqd')), replace(r'w', r'95', r'580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24
-where ((scale_down(v24.vc0, v24.vc0))=(scale_down(v24.vc0, v24.vc0)))) as sub0 on ((least(342, v18.vc0))<>(round(v21.vc0, 107)))
+"concat"(r'?X', r'沈pJqd')), replace(r'w', r'95', r'580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
+as sub0 on ((least(342, v18.vc0))<>(1))
 group by greatest(-432, ((24)|(32))), least(((((r'RJᦈ4[[h\340\272\246')like(r'9804')))and(not (false))),
 "isauuid"(cast(v18.vc0 as string(979))));
 ROLLBACK;
+
+select (-1.7976931348623157E308)/(0.98067827792867723335490381941781379282474517822265625); --error, overflow
+
+values (round(-1.4999792343698102e+308, 15)),(1.2); --error, overflow?
