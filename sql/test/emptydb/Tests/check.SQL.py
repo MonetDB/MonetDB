@@ -54,7 +54,7 @@ with process.client('sql', interactive=True,
 
     pos = 0
     nout = ''
-    for res in re.finditer(r'(?<=\n)(?:create|select)\b.*?;', out, flags=re.DOTALL | re.IGNORECASE):
+    for res in re.finditer(r"(?<=\n)(?:create|select)\b[^';]*(?:'[^\']*(?:\\.[^\']*)*'[^';]*)*;", out, flags=re.DOTALL | re.IGNORECASE):
         nout += out[pos:res.start(0)] + wsre.sub(' ', res.group(0)).replace('( ', '(').replace(' )', ')')
         pos = res.end(0)
     nout += out[pos:]
