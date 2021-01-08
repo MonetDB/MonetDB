@@ -970,7 +970,7 @@ CREATE TABLE "sys"."comments" ("id" INTEGER NOT NULL, "remark" VARCHAR(65000) NO
 CREATE TABLE "sys"."db_user_info" ("name" VARCHAR(1024), "fullname" VARCHAR(2048), "default_schema" INTEGER, "schema_path" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."dependencies" ("id" INTEGER, "depend_id" INTEGER, "depend_type" SMALLINT);
 CREATE TABLE "sys"."dependency_types" ("dependency_type_id" SMALLINT NOT NULL, "dependency_type_name" VARCHAR(15) NOT NULL, CONSTRAINT "dependency_types_dependency_type_id_pkey" PRIMARY KEY ("dependency_type_id"), CONSTRAINT "dependency_types_dependency_type_name_unique" UNIQUE ("dependency_type_name"));
-CREATE TABLE "sys"."dump_statements" ("o" INTEGER NOT NULL, "s" CHARACTER LARGE OBJECT, CONSTRAINT "dump_statements_o_pkey" PRIMARY KEY ("o"));
+CREATE TABLE "sys"."dump_statements" ("o" INTEGER, "s" CHARACTER LARGE OBJECT);
 CREATE TABLE "sys"."function_languages" ("language_id" SMALLINT NOT NULL, "language_name" VARCHAR(20) NOT NULL, "language_keyword" VARCHAR(20), CONSTRAINT "function_languages_language_id_pkey" PRIMARY KEY ("language_id"), CONSTRAINT "function_languages_language_name_unique" UNIQUE ("language_name"));
 CREATE TABLE "sys"."function_types" ("function_type_id" SMALLINT NOT NULL, "function_type_name" VARCHAR(30) NOT NULL, "function_type_keyword" VARCHAR(30) NOT NULL, CONSTRAINT "function_types_function_type_id_pkey" PRIMARY KEY ("function_type_id"), CONSTRAINT "function_types_function_type_name_unique" UNIQUE ("function_type_name"));
 CREATE TABLE "sys"."functions" ("id" INTEGER, "name" VARCHAR(256), "func" VARCHAR(8196), "mod" VARCHAR(8196), "language" INTEGER, "type" INTEGER, "side_effect" BOOLEAN, "varres" BOOLEAN, "vararg" BOOLEAN, "schema_id" INTEGER, "system" BOOLEAN, "semantics" BOOLEAN);
@@ -2129,7 +2129,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys._columns",	"dump_privileges",	"stmt",	"varchar",	0,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"dump_sequences",	"stmt",	"varchar",	0,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"dump_start_sequences",	"stmt",	"varchar",	0,	0,	NULL,	true,	0,	NULL	]
-[ "sys._columns",	"dump_statements",	"o",	"int",	32,	0,	NULL,	false,	0,	NULL	]
+[ "sys._columns",	"dump_statements",	"o",	"int",	32,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"dump_statements",	"s",	"clob",	0,	0,	NULL,	true,	1,	NULL	]
 [ "sys._columns",	"dump_table_constraint_type",	"stmt",	"varchar",	0,	0,	NULL,	true,	0,	NULL	]
 [ "sys._columns",	"dump_tables",	"o",	"int",	32,	0,	NULL,	true,	0,	NULL	]
@@ -5357,7 +5357,6 @@ drop function pcre_replace(string, string, string, string);
 [ "column used by key",	"sys",	"comments",	"id",	"sys",	"comments",	"comments_id_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"KEY"	]
-[ "column used by key",	"sys",	"dump_statements",	"o",	"sys",	"dump_statements",	"dump_statements_o_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"function_languages",	"language_id",	"sys",	"function_languages",	"function_languages_language_id_pkey",	"KEY"	]
 [ "column used by key",	"sys",	"function_languages",	"language_name",	"sys",	"function_languages",	"function_languages_language_name_unique",	"KEY"	]
 [ "column used by key",	"sys",	"function_types",	"function_type_id",	"sys",	"function_types",	"function_types_function_type_id_pkey",	"KEY"	]
@@ -5379,7 +5378,6 @@ drop function pcre_replace(string, string, string, string);
 [ "column used by index",	"sys",	"comments",	"id",	"sys",	"comments",	"comments_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"dependency_types",	"dependency_type_id",	"sys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"dependency_types",	"dependency_type_name",	"sys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"INDEX"	]
-[ "column used by index",	"sys",	"dump_statements",	"o",	"sys",	"dump_statements",	"dump_statements_o_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"function_languages",	"language_id",	"sys",	"function_languages",	"function_languages_language_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"function_languages",	"language_name",	"sys",	"function_languages",	"function_languages_language_name_unique",	"INDEX"	]
 [ "column used by index",	"sys",	"function_types",	"function_type_id",	"sys",	"function_types",	"function_types_function_type_id_pkey",	"INDEX"	]
@@ -5449,7 +5447,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.idxs",	"comments",	"comments_id_pkey",	"Hash"	]
 [ "sys.idxs",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"Hash"	]
 [ "sys.idxs",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"Hash"	]
-[ "sys.idxs",	"dump_statements",	"dump_statements_o_pkey",	"Hash"	]
 [ "sys.idxs",	"function_languages",	"function_languages_language_id_pkey",	"Hash"	]
 [ "sys.idxs",	"function_languages",	"function_languages_language_name_unique",	"Hash"	]
 [ "sys.idxs",	"function_types",	"function_types_function_type_id_pkey",	"Hash"	]
@@ -5471,7 +5468,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.keys",	"comments",	"comments_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"dependency_types",	"dependency_types_dependency_type_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"dependency_types",	"dependency_types_dependency_type_name_unique",	"Unique Key",	NULL,	-1	]
-[ "sys.keys",	"dump_statements",	"dump_statements_o_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"function_languages",	"function_languages_language_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"function_languages",	"function_languages_language_name_unique",	"Unique Key",	NULL,	-1	]
 [ "sys.keys",	"function_types",	"function_types_function_type_id_pkey",	"Primary Key",	NULL,	-1	]
@@ -5514,8 +5510,6 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.objects",	"language_id",	0	]
 [ "sys.objects",	"language_name",	0	]
 [ "sys.objects",	"language_name",	0	]
-[ "sys.objects",	"o",	0	]
-[ "sys.objects",	"o",	0	]
 [ "sys.objects",	"privilege_code_id",	0	]
 [ "sys.objects",	"privilege_code_id",	0	]
 [ "sys.objects",	"privilege_code_name",	0	]
