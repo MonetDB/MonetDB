@@ -3,7 +3,7 @@
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  *
- * Copyright 1997 - July 2008 CWI, August 2008 - 2020 MonetDB B.V.
+ * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
 /* multi version catalog */
@@ -93,7 +93,7 @@ mvc_init_create_view(mvc *m, sql_schema *s, const char *name, const char *query)
 struct view_t {
 	const char *name;
 	const char *type;
-	int digits;
+	unsigned int digits;
 	sqlid oldid;
 	sqlid newid;
 };
@@ -1052,7 +1052,7 @@ mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 }
 
 sql_type *
-mvc_create_type(mvc *sql, sql_schema *s, const char *name, int digits, int scale, int radix, const char *impl)
+mvc_create_type(mvc *sql, sql_schema *s, const char *name, unsigned int digits, unsigned int scale, int radix, const char *impl)
 {
 	sql_type *t = NULL;
 
@@ -1328,7 +1328,7 @@ mvc_clear_table(mvc *m, sql_table *t)
 }
 
 sql_column *
-mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, int digits)
+mvc_create_column_(mvc *m, sql_table *t, const char *name, const char *type, unsigned int digits)
 {
 	sql_subtype tpe;
 
