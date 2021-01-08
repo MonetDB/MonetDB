@@ -318,6 +318,8 @@ round_wrap(TYPE *res, const TYPE *v, const bte *r)
 	if (is_bte_nil(rr) || (size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
 		throw(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 	*res = (ISNIL(TYPE)(*v)) ? NIL(TYPE) : round_body(*v, rr);
+	if (isinf(*res))
+		throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
 	return MAL_SUCCEED;
 }
 
@@ -372,6 +374,10 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	} else {
@@ -384,6 +390,10 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	}
@@ -443,6 +453,10 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	} else {
@@ -458,6 +472,10 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	}
@@ -531,6 +549,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, rr);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	} else {
@@ -547,6 +569,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, rr);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	}
