@@ -273,7 +273,8 @@ BEGIN
 	--TODO Improve performance of dump_table_data.
 	--TODO loaders ,procedures, window and filter sys.functions.
 	--TODO look into order dependent group_concat
-	--TODO add COMMIT statement once everything is fine.
+
+	INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'COMMIT;');
 
 	RETURN dump_statements;
 END;

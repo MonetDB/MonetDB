@@ -3396,6 +3396,8 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"        CALL dump_table_data();\n"
 					"    END IF;\n"
 					"\n"
+					"    INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'COMMIT;');\n"
+					"\n"
 					"    RETURN dump_statements;\n"
 					"END;\n");
 
