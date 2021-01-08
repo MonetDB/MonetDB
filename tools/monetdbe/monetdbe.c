@@ -1284,7 +1284,7 @@ monetdbe_query(monetdbe_database dbhdl, char* query, monetdbe_result** result, m
 		return NULL;
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
-	if (mdbe->mid) {O
+	if (mdbe->mid) {
 		mdbe->msg = monetdbe_query_remote(mdbe, query, result, affected_rows, NULL);
 	}
 	else {
