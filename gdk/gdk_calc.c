@@ -7956,7 +7956,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				nils++;					\
 			} else if (rgt[j] == 0 ||			\
 				   (ABSOLUTE(rgt[j]) < 1 &&		\
-				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < ABSOLUTE(lft[i]))) { \
 				/* only check for overflow, not for underflow */ \
 				if (abort_on_error) {			\
 					if (rgt[j] == 0)		\
@@ -7986,7 +7986,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				nils++;					\
 			} else if (rgt[j] == 0 ||			\
 				   (ABSOLUTE(rgt[j]) < 1 &&		\
-				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < ABSOLUTE(lft[i]))) { \
 				/* only check for overflow, not for underflow */ \
 				if (abort_on_error) {			\
 					if (rgt[j] == 0)		\
