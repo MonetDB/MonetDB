@@ -323,30 +323,45 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
 						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) /* escape is a value */
 						) {
-					InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
+					bool has_null_semantics = false;
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0;
 					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
 
-					getArg(r,0) = getArg(p,0);
-					r = addArgument(mb, r, getArg(q, 1));
-					if (has_cand) {
-						r = addArgument(mb, r, getArg(p, 2));
-						offset = 1;
-					} else if (isaBatType(getArgType(mb, q, 1))) { /* likeselect calls have a candidate parameter */
-						r = pushNil(mb, r, TYPE_bat);
-						offset = 1;
+					/* TODO at the moment we cannot convert if the select statement has NULL semantics
+						we can convert it into VAL is NULL or PATERN is NULL or ESCAPE is NULL
+					*/
+					if (getFunctionId(p) == selectRef && isVarConstant(mb,getArg(p, 2 + has_cand)) && isVarConstant(mb,getArg(p, 3 + has_cand))
+						&& isVarConstant(mb,getArg(p, 4 + has_cand)) && isVarConstant(mb,getArg(p, 5 + has_cand))) {
+						ValRecord low = getVarConstant(mb, getArg(p, 2 + has_cand)), high = getVarConstant(mb, getArg(p, 3 + has_cand));
+						bit li = *(bit*)getVarValue(mb, getArg(p, 4 + has_cand)), hi = *(bit*)getVarValue(mb, getArg(p, 5 + has_cand));
+
+						if (li && hi && VALisnil(&low) && VALisnil(&high))
+							has_null_semantics = true;
 					}
-					for(a = 2; a<q->argc; a++)
-						r = addArgument(mb, r, getArg(q, a));
-					if (r->argc < (4+offset))
-						r = pushStr(mb, r, ""); /* default esc */
-					if (r->argc < (5+offset))
-						r = pushBit(mb, r, ignore_case);
-					if (r->argc < (6+offset))
-						r = pushBit(mb, r, anti);
-					freeInstruction(p);
-					p = r;
-					actions++;
+
+					if (!has_null_semantics) {
+						InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
+						getArg(r,0) = getArg(p,0);
+						r = addArgument(mb, r, getArg(q, 1));
+						if (has_cand) {
+							r = addArgument(mb, r, getArg(p, 2));
+							offset = 1;
+						} else if (isaBatType(getArgType(mb, q, 1))) { /* likeselect calls have a candidate parameter */
+							r = pushNil(mb, r, TYPE_bat);
+							offset = 1;
+						}
+						for(a = 2; a<q->argc; a++)
+							r = addArgument(mb, r, getArg(q, a));
+						if (r->argc < (4+offset))
+							r = pushStr(mb, r, ""); /* default esc */
+						if (r->argc < (5+offset))
+							r = pushBit(mb, r, ignore_case);
+						if (r->argc < (6+offset))
+							r = pushBit(mb, r, anti);
+						freeInstruction(p);
+						p = r;
+						actions++;
+					}
 				}
 			}
 

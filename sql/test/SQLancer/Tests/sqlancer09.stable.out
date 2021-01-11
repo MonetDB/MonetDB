@@ -377,8 +377,8 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 % .%145 # table_name
 % %145 # name
 % bigint # type
-% 2 # length
-[ 12	]
+% 1 # length
+[ 6	]
 #create or replace view v11(vc0) as (values ('<'), ('a'));
 #SELECT 1 FROM v11 WHERE v11.vc0 LIKE '' IS NULL;
 % .%4 # table_name
@@ -386,6 +386,11 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 % tinyint # type
 % 1 # length
 #ROLLBACK;
+#SELECT 1 HAVING group_concat('') NOT LIKE '3' IS NULL;
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."
