@@ -4401,7 +4401,6 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 		if (updates[c->c->colnr]) {
 			upd = updates[c->c->colnr];
 		} else {
-			assert(0);
 			upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
 		}
 		if (c->c->null) {	/* new nulls (MATCH SIMPLE) */
