@@ -2156,6 +2156,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	sql_schema *s;
 	sql_rel *rel;
 	list *exps;
+	sql_trans *tr = sql->session->tr;
 
 	assert(old_name && new_name);
 	if (!(s = mvc_bind_schema(sql, old_name))) {
@@ -2167,7 +2168,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
 	if (s->system)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
+	if (os_size(s->tables, tr) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || os_size(s->seqs, tr))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");

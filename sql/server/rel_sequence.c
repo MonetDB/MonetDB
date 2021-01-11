@@ -94,7 +94,7 @@ rel_create_seq(
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
-	if (find_sql_sequence(s, name))
+	if (find_sql_sequence(sql->session->tr, s, name))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "

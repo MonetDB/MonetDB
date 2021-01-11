@@ -1030,6 +1030,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	char *err = NULL, *buf = GDKmalloc(bufsize);
 	sql_allocator *old_sa = sql->sa;
 	bool first = true;
+	sql_trans *tr = sql->session->tr;
 
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1079,9 +1080,10 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 					}
 				}
 			}
-		if (s->tables.set)
-			for (node *m = s->tables.set->h; m; m = m->next) {
-				sql_table *t = (sql_table*) m->data;
+		if (s->tables) {
+            struct os_iter *oi = os_iterator(s->tables, tr, NULL);
+            for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+				sql_table *t = (sql_table*) b;
 
 				if (t->query && isView(t)) {
 					char *relt;
@@ -1138,6 +1140,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						}
 					}
 			}
+		}
 	}
 
 	if (ppos != pos) { /* found updatable functions */

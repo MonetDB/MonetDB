@@ -586,14 +586,14 @@ sql_column_kc_cmp(sql_column *c, sql_kc *kc)
 }
 
 static sql_idx *
-find_fk_index(sql_table *l, list *lcols, sql_table *r, list *rcols)
+find_fk_index(mvc *sql, sql_table *l, list *lcols, sql_table *r, list *rcols)
 {
 	if (l->idxs.set) {
 		node *in;
 		for (in = l->idxs.set->h; in; in = in->next){
 			sql_idx *li = in->data;
 			if (li->type == join_idx) {
-				sql_key *rk = &((sql_fkey*)li->key)->rkey->k;
+				sql_key *rk = (sql_key*)os_find_id(li->t->s->keys, sql->session->tr, ((sql_fkey*)li->key)->rkey);
 				fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
 				if (rk->t == r &&
@@ -779,9 +779,9 @@ find_fk( mvc *sql, list *rels, list *exps)
 			if (list_length(lcols) != list_length(rcols))
 				continue;
 
-			idx = find_fk_index(l, lcols, r, rcols);
+			idx = find_fk_index(sql, l, lcols, r, rcols);
 			if (!idx) {
-				idx = find_fk_index(r, rcols, l, lcols);
+				idx = find_fk_index(sql, r, rcols, l, lcols);
 				swapped = 1;
 			}
 
@@ -2476,7 +2476,7 @@ rel_remove_redundant_join(visitor *v, sql_rel *rel)
 }
 
 static sql_column *
-is_fk_column_of_pk(sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a foreing key column for the pk on pkc */
+is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a foreing key column for the pk on pkc */
 {
 	sql_column *c = exp_find_column(rel, e, -2);
 
@@ -2491,7 +2491,7 @@ is_fk_column_of_pk(sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a 
 					sql_kc *fkc = m->data;
 
 					if (strcmp(fkc->c->base.name, c->base.name) == 0) { /* same fkey column */
-						sql_key *fkey = &((sql_fkey*)li->key)->rkey->k;
+						sql_key *fkey = (sql_key*)os_find_id(li->t->s->keys, sql->session->tr, ((sql_fkey*)li->key)->rkey);
 
 						if (strcmp(fkey->t->base.name, pkc->t->base.name) == 0) { /* to same pk table */
 							for (node *o = fkey->columns->h ; o ; o = n->next) {
@@ -2572,8 +2572,8 @@ rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 
 		if (all_exps_atoms && found) { /* rel must have the same primary key on the projection list */
 			/* if the foreign key has no selectivity, the join can be removed */
-			if (!(rel_is_ref(l)) && ((rel_find_exp(l->l, fk) && is_fk_column_of_pk(l->l, pkc, fk) && has_no_selectivity(v->sql, l->l)) ||
-				(l->r && rel_find_exp(l->r, fk) && is_fk_column_of_pk(l->r, pkc, fk) && has_no_selectivity(v->sql, l->r)))) {
+			if (!(rel_is_ref(l)) && ((rel_find_exp(l->l, fk) && is_fk_column_of_pk(v->sql, l->l, pkc, fk) && has_no_selectivity(v->sql, l->l)) ||
+				(l->r && rel_find_exp(l->r, fk) && is_fk_column_of_pk(v->sql, l->r, pkc, fk) && has_no_selectivity(v->sql, l->r)))) {
 				sql_rel *side = (rel_find_exp(l->l, pk) != NULL)?l->l:l->r;
 
 				rel->l = rel_dup(side);

@@ -359,16 +359,15 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
 	for (node *n = m->session->tr->cat->schemas.set->h; n; n = n->next) {
 		sql_schema *ss = (sql_schema*) n->data;
-		if (ss->tables.set) {
-			for (node *nn = ss->tables.set->h; nn; nn = nn->next) {
-				sql_table *tt = (sql_table*) nn->data;
-				if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
-					char *err;
-					if ((err = initialize_sql_parts(m, tt)) != NULL) {
-						TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
-						freeException(err);
-						return NULL;
-					}
+		struct os_iter *oi = os_iterator(ss->tables, m->session->tr, NULL);
+		for(sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+			sql_table *tt = (sql_table*)b;
+			if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
+				char *err;
+				if ((err = initialize_sql_parts(m, tt)) != NULL) {
+					TRC_CRITICAL(SQL_TRANS, "Unable to start partitioned table: %s.%s: %s\n", ss->base.name, tt->base.name, err);
+					freeException(err);
+					return NULL;
 				}
 			}
 		}
@@ -966,13 +965,11 @@ mvc_first_column(mvc *m, sql_table *t)
 sql_key *
 mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 {
-	node *n = list_find_name(s->keys, kname);
-	sql_key *k;
+	sql_base *b = os_find_name(s->keys, m->session->tr, kname);
+	sql_key *k = (sql_key*)b;
 
-	(void) m;
-	if (!n)
+	if (!b)
 		return NULL;
-	k = n->data;
 	TRC_DEBUG(SQL_TRANS, "Bind key: %s.%s\n", s->base.name, kname);
 	return k;
 }
@@ -980,13 +977,11 @@ mvc_bind_key(mvc *m, sql_schema *s, const char *kname)
 sql_idx *
 mvc_bind_idx(mvc *m, sql_schema *s, const char *iname)
 {
-	node *n = list_find_name(s->idxs, iname);
-	sql_idx *i;
+	sql_base *b = os_find_name(s->idxs, m->session->tr, iname);
 
-	(void) m;
-	if (!n)
+	if (!b)
 		return NULL;
-	i = n->data;
+	sql_idx *i = (sql_idx*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind index: %s.%s\n", s->base.name, iname);
 	return i;
 }
@@ -1031,13 +1026,11 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 sql_trigger *
 mvc_bind_trigger(mvc *m, sql_schema *s, const char *tname)
 {
-	node *n = list_find_name(s->triggers, tname);
-	sql_trigger *trigger;
+	sql_base *b = os_find_name(s->triggers, m->session->tr, tname);
 
-	(void) m;
-	if (!n)
+	if (!b)
 		return NULL;
-	trigger = n->data;
+	sql_trigger *trigger = (sql_trigger*)b;
 	TRC_DEBUG(SQL_TRANS, "Bind trigger: %s.%s\n", s->base.name, tname);
 	return trigger;
 }

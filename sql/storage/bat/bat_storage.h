@@ -13,6 +13,7 @@
 #include "bat_logger.h"
 
 typedef struct sql_delta {
+	int refcnt;
 	char *name;		/* name of the main bat */
 	int bid;
 	oid ibase;		/* ibase: first id of inserts */
@@ -28,6 +29,7 @@ typedef struct sql_delta {
 } sql_delta;
 
 typedef struct sql_dbat {
+	int refcnt;
 	char *dname;		/* name of the persistent deletes bat */
 	int dbid;		/* bat with deletes */
 	int cleared;

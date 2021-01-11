@@ -169,7 +169,7 @@ find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char
 	const char *objstr = "sequence";
 	sql_sequence *res = NULL;
 
-	search_object_on_path(res = find_sql_sequence(next, name), DO_NOTHING, ;, SQLSTATE(42000));
+	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ;, SQLSTATE(42000));
 	return res;
 }
 

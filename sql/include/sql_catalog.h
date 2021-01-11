@@ -223,36 +223,30 @@ typedef struct changeset {
 
 typedef void *sql_store;
 
-#if 0
-extern void (destroy_fptr*)(sql_store *store, sql_base *b);
+struct sql_trans;
+struct sql_change;
+struct objectset;
+struct os_iter;
 
-/* unordered object set */
-typedef struct objectset {
-	int refcnt;
-	sql_allocator *sa;
-	destroy_fptr destroy;
-	struct list *objs;
-	struct sql_hash *map;
-} objectset;
+/* transaction changes */
+typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng commit_ts, ulng oldest); /* garbage collection, ie cleanup structures when possible */
+typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 
-extern int /*ok, error (name existed) and conflict (added before) */ os_add(objectset *os, sql_trans *tr, const char *name, sql_base *b);
-extern int os_del(objectset *os, sql_trans *tr, const char *name, sql_base *b);
-extern int os_size(objectset *os, sql_trans *tr);
-extern int os_empty(objectset *os, sql_trans *tr);
-extern sql_base *os_find_name(objectset *os, sql_trans *tr, const char *name);
-extern sql_base *os_find_id(objectset *os, sql_trans *tr, sqlid id);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary);
+extern struct objectset *os_dup(struct objectset *os);
+extern void os_destroy(struct objectset *os, sql_store store);
+extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
+extern int os_del(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
+extern int os_size(struct objectset *os, struct sql_trans *tr);
+extern int os_empty(struct objectset *os, struct sql_trans *tr);
+extern int os_remove(struct objectset *os, struct sql_trans *tr, const char *name);
+extern sql_base *os_find_name(struct objectset *os, struct sql_trans *tr, const char *name);
+extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id);
 /* iterating (for example for location functinos) */
-extern node *os_first(objectset *os, sql_trans *tr, const char *name);
-extern node *os_next(objectset *os, sql_trans *tr, node *cur, const char *name);
-
-/* ordered object list */
-typedef struct objectlist {
-	sql_allocator *sa;
-	destroy_fptr destroy;
-	struct list *objs;
-	struct sql_hash *map;
-} objectlist;
-#endif
+extern struct os_iter *os_iterator(struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
+extern sql_base *oi_next(struct os_iter *oi);
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern changeset* cs_dup(changeset * cs);
@@ -280,13 +274,14 @@ typedef struct sql_schema {
 	bit system;		/* system or user schema */
 	// TODO? int type;	/* persistent, session local, transaction local */
 
-	changeset tables;
+	struct objectset *tables;
 	changeset types;
 	changeset funcs;
-	changeset seqs;
-	list *keys;		/* Names for keys, idxs and triggers are */
-	list *idxs;		/* global, but these objects are only */
-	list *triggers;		/* useful within a table */
+	struct objectset *seqs;
+	struct objectset *keys;		/* Names for keys, idxs, and triggers and parts are */
+	struct objectset *idxs;		/* global, but these objects are only */
+	struct objectset *triggers;	/* useful within a table */
+	struct objectset *parts;
 
 	char *internal; 	/* optional internal module name */
 	sql_store store;
@@ -309,7 +304,6 @@ typedef struct sql_trans {
 	int status;			/* status of the last query */
 
 	list *dropped;  	/* protection against recursive cascade action*/
-	list *moved_tables;
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
@@ -559,7 +553,7 @@ typedef struct sql_key {	/* pkey, ukey, fkey */
 
 typedef struct sql_ukey {	/* pkey, ukey */
 	sql_key k;
-	list *keys;
+	//list *keys;
 } sql_ukey;
 
 typedef struct sql_fkey {	/* fkey */
@@ -567,7 +561,7 @@ typedef struct sql_fkey {	/* fkey */
 	/* no action, restrict (default), cascade, set null, set default */
 	int on_delete;
 	int on_update;
-	struct sql_ukey *rkey;	/* only set for fkey and rkey */
+	sqlid rkey;
 } sql_fkey;
 
 typedef struct sql_trigger {
@@ -708,12 +702,6 @@ typedef struct sql_table {
 	} part;
 } sql_table;
 
-typedef struct sql_moved_table {
-	sql_schema *from;
-	sql_schema *to;
-	sql_table *t;
-} sql_moved_table;
-
 typedef struct res_col {
 	char *tn;
 	char *name;
@@ -783,10 +771,9 @@ extern sql_part *find_sql_part_id(sql_trans *tr, sql_table *t, sqlid id);
 
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
-extern node *find_sql_table_node(sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
 
-extern sql_sequence *find_sql_sequence(sql_schema *s, const char *sname);
+extern sql_sequence *find_sql_sequence(sql_trans *tr, sql_schema *s, const char *sname);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);
