@@ -1046,40 +1046,40 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	for (node *n = sql->session->tr->cat->schemas.set->h; n; n = n->next) {
 		sql_schema *s = (sql_schema*) n->data;
 
-		if (s->funcs.set)
-			for (node *m = s->funcs.set->h; m; m = m->next) {
-				sql_func *f = (sql_func*) m->data;
+		struct os_iter *oi = os_iterator(s->funcs, sql->session->tr, NULL);
+		for (sql_base *b = oi_next(oi); b; oi_next(oi)) {
+			sql_func *f = (sql_func*)b;
 
-				if (f->query && f->lang == FUNC_LANG_SQL) {
-					char *relt;
-					sql_rel *r = NULL;
+			if (f->query && f->lang == FUNC_LANG_SQL) {
+				char *relt;
+				sql_rel *r = NULL;
 
-					if (!(relt = sa_strdup(sql->sa, f->query))) {
-						err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
+				if (!(relt = sa_strdup(sql->sa, f->query))) {
+					err = createException(SQL, "sql.catalog", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto bailout;
+				}
 
-					r = rel_parse(sql, s, relt, m_deps);
-					if (r)
-						r = sql_processrelation(sql, r, 0, 0);
-					if (r) {
-						list *id_l = rel_dependencies(sql, r);
+				r = rel_parse(sql, s, relt, m_deps);
+				if (r)
+					r = sql_processrelation(sql, r, 0, 0);
+				if (r) {
+					list *id_l = rel_dependencies(sql, r);
 
-						for (node *o = id_l->h ; o ; o = o->next) {
-							sqlid next = *(sqlid*) o->data;
-							if (next != f->base.id) {
-								pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
-												f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
-								first = false;
-								FLUSH_INSERTS_IF_BUFFERFILLED
-							}
+					for (node *o = id_l->h ; o ; o = o->next) {
+						sqlid next = *(sqlid*) o->data;
+						if (next != f->base.id) {
+							pos += snprintf(buf + pos, bufsize - pos, "%s(%d,%d,%d)", first ? "" : ",", next,
+											f->base.id, (int)(!IS_PROC(f) ? FUNC_DEPENDENCY : PROC_DEPENDENCY));
+							first = false;
+							FLUSH_INSERTS_IF_BUFFERFILLED
 						}
-					} else if (sql->session->status == -1) {
-						sql->session->status = 0;
-						sql->errstr[0] = 0;
 					}
+				} else if (sql->session->status == -1) {
+					sql->session->status = 0;
+					sql->errstr[0] = 0;
 				}
 			}
+		}
 		if (s->tables) {
             struct os_iter *oi = os_iterator(s->tables, tr, NULL);
             for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
@@ -2865,7 +2865,7 @@ SQLupgrades(Client c, mvc *m)
 	 * exist any more at the "sys" schema (i.e., the first part of
 	 * the upgrade has been completed succesfully), then move on
 	 * to the second part */
-	if (find_sql_type(s, "point") != NULL) {
+	if (find_sql_type(m->session->tr, s, "point") != NULL) {
 		/* type sys.point exists: this is an old geom-enabled
 		 * database */
 		if ((err = sql_update_geom(c, m, 1, prev_schema)) != NULL) {

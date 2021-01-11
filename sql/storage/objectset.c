@@ -31,6 +31,7 @@ typedef struct objectset {
 	destroy_fptr destroy;
 	struct list *objs;
 	bool temporary;
+	bool unique;	/* names are unique */
 } objectset;
 
 static node *
@@ -110,7 +111,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 }
 
 objectset *
-os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary)
+os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
 {
 	objectset *os = SA_NEW(sa, objectset);
 	os->refcnt = 1;
@@ -118,6 +119,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary)
 	os->destroy = destroy;
 	os->objs = list_new(sa, NULL);
 	os->temporary = temporary;
+	os->unique = unique;
 	return os;
 }
 
@@ -221,7 +223,11 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->older = ov->newer = NULL;
 	ov->os = os;
 
-	node *n = find_name(os->objs, name);
+	node *n = NULL;
+	if (os->unique)
+		n = find_name(os->objs, name);
+	else
+		n = find_id(os->objs, b->id);
 
 	if (n) {
 		objectversion *co = n->data;
@@ -255,7 +261,11 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->older = ov->newer = NULL;
 	ov->os = os;
 
-	node *n = find_name(os->objs, name);
+	node *n = NULL;
+	if (os->unique)
+		n = find_name(os->objs, name);
+	else
+		n = find_id(os->objs, b->id);
 
 	if (n) {
 		objectversion *co = n->data;
@@ -351,9 +361,11 @@ os_iterator(objectset *os, struct sql_trans *tr, const char *name /*optional*/)
 	oi->os = os;
 	oi->tr = tr;
 	oi->name = name;
+	/*
 	if (name)
 		oi->n = find_name(os->objs, name);
 	else
+	*/
 		oi->n = os->objs->h;
 	return oi;
 }

@@ -882,7 +882,7 @@ mvc_bind_type(mvc *sql, const char *name)
 sql_type *
 schema_bind_type(mvc *sql, sql_schema *s, const char *name)
 {
-	sql_type *t = find_sql_type(s, name);
+	sql_type *t = find_sql_type(sql->session->tr, s, name);
 
 	(void) sql;
 	if (!t)
