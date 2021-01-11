@@ -282,6 +282,49 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 #0.565	"0.8224972062481081"
 [ 7	]
 #ROLLBACK;
+#START TRANSACTION;
+#create view v18(vc0) as (values (cast(((r'-W<~>頃')not like(r'8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
+#then true when false then true when false then false when true then true else true end) then ((least(0.5,
+#343))/(abs(2.017526512E9))) else cast(greatest(-23, 33) as decimal) end)) with check option;
+#create view v21(vc0) as (values (greatest(cast(42 as real), ((0.353)*(-3))))) with check option;
+#create view v24(vc0) as (values (0.22)) with check option;
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("c0" REAL NOT NULL, "c1" DECIMAL(15,3),
+#	CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),
+#	CONSTRAINT "t2_c0_unique" UNIQUE ("c0"),
+#	CONSTRAINT "t2_c0_c1_unique" UNIQUE ("c0", "c1")
+#);
+#COPY 33 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#26	0.991
+#0.13630049	37.000
+#0.51769805	0.784
+#-1.6852343e+09	NULL
+#0.21530622	NULL
+#113.135216	NULL
+#1.0975889	0.000
+#0.5668781	0.163
+#0.07123395	0.808
+#0.8320952	NULL
+#0.35641629	NULL
+#1.4285428e+12	NULL
+#0.5716349	0.925
+#-1.1734946e+08	0.000
+#0.030607125	0.874
+#0.83317256	0.000
+#-1.7515901e+09	0.246
+#5.855687e+08	0.630
+#0.6815483	NULL
+#0.0059321974	NULL
+#0.8218823	0.960
+#-4.015704e+08	0.000
+#0.34888306	NULL
+#-0.5051734	NULL
+#0.34162566	NULL
+#-1.0525191e+09	-1697412576.000
+[ 33	]
+#ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCES "sys"."t2" ("c0", "c1");
+#ROLLBACK;
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."
