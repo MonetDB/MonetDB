@@ -31,7 +31,6 @@ typedef enum store_type {
 
 
 struct sqlstore;
-struct sql_change;
 
 /* builtin functions have ids less than this */
 #define FUNC_OIDS 2000
@@ -149,6 +148,10 @@ typedef int (*log_create_col_fptr) (sql_trans *tr, struct sql_change *c, ulng co
 typedef int (*log_create_idx_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 typedef int (*log_create_del_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
 
+typedef void *(*col_dup_fptr) (sql_column *c);
+typedef void *(*idx_dup_fptr) (sql_idx *i);
+typedef void *(*del_dup_fptr) (sql_table *t);
+
 /*
 -- upgrade the necessary storage resources for columns, indices and tables
 -- needed for the upgrade of the logger structure (ie user tables are
@@ -214,6 +217,10 @@ typedef struct store_functions {
 	prop_col_fptr sorted_col;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
+
+	col_dup_fptr col_dup;
+	idx_dup_fptr idx_dup;
+	del_dup_fptr del_dup;
 
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;
@@ -473,18 +480,13 @@ typedef struct sqlstore {
 	void *logger;			/* space to keep logging structure of storage backend */
 } sqlstore;
 
-/* transaction changes */
-typedef int (*tc_validate_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*tc_log_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*tc_cleanup_fptr) (struct sqlstore *store, struct sql_change *c, ulng commit_ts, ulng oldest); /* garbage collection, ie cleanup structures when possible */
-
-extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log);
-
 typedef struct sql_change {
 	sql_base *obj;
 	void *data;	/* data changes */
 	tc_log_fptr log;	/* callback to save in log */
 	tc_cleanup_fptr cleanup;	/* callback to cleanup changes */
 } sql_change;
+
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log);
 
 #endif /*SQL_STORAGE_H */

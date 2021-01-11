@@ -543,6 +543,8 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 		throw(SQL,"sql.drop_table", SQLSTATE(42000) "DROP TABLE: cannot drop system table '%s'", tname);
 	if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
 		throw(SQL,"sql.drop_table", SQLSTATE(42000) "DROP TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+	/* to be checked via dependencies */
+#if 0
 	if (!drop_action && t->keys.set) {
 		for (node *n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
@@ -563,6 +565,7 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 			}
 		}
 	}
+#endif
 
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		throw (SQL,"sql.drop_table",SQLSTATE(42000) "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
@@ -661,7 +664,7 @@ create_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq)
 		throw(SQL,"sql.create_seq", SQLSTATE(3F000) "CREATE SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (find_sql_sequence(s, seq->base.name))
+	if (find_sql_sequence(sql->session->tr, s, seq->base.name))
 		throw(SQL,"sql.create_seq", SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", seq->base.name);
 	if (is_lng_nil(seq->start) || is_lng_nil(seq->minvalue) || is_lng_nil(seq->maxvalue) ||
 			   is_lng_nil(seq->increment) || is_lng_nil(seq->cacheinc) || is_bit_nil(seq->cycle))
@@ -687,7 +690,7 @@ alter_seq(mvc *sql, char *sname, char *seqname, sql_sequence *seq, const lng *va
 		throw(SQL,"sql.alter_seq", SQLSTATE(3F000) "ALTER SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: insufficient privileges for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (!(nseq = find_sql_sequence(s, seq->base.name)))
+	if (!(nseq = find_sql_sequence(sql->session->tr, s, seq->base.name)))
 		throw(SQL,"sql.alter_seq", SQLSTATE(42000) "ALTER SEQUENCE: no such sequence '%s'", seq->base.name);
 	/* if seq properties hold NULL values, then they should be ignored during the update */
 	/* first alter the known values */
@@ -717,7 +720,7 @@ drop_seq(mvc *sql, char *sname, char *name)
 		throw(SQL,"sql.drop_seq", SQLSTATE(3F000) "DROP SEQUENCE: no such schema '%s'", sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_seq", SQLSTATE(42000) "DROP SEQUENCE: insufficient privileges for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	if (!(seq = find_sql_sequence(s, name)))
+	if (!(seq = find_sql_sequence(sql->session->tr, s, name)))
 		throw(SQL,"sql.drop_seq", SQLSTATE(42M35) "DROP SEQUENCE: no such sequence '%s'", name);
 	if (mvc_check_dependency(sql, seq->base.id, BEDROPPED_DEPENDENCY, NULL))
 		throw(SQL,"sql.drop_seq", SQLSTATE(2B000) "DROP SEQUENCE: unable to drop sequence %s (there are database objects which depend on it)\n", seq->base.name);
@@ -1102,8 +1105,8 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sql_schema_has_user(sql, s))
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	if (!action /* RESTRICT */ && (
-		!tr_empty(tr, s->tables.set) || !tr_empty(tr, s->types.set) ||
-		!tr_empty(tr, s->funcs.set) || !tr_empty(tr, s->seqs.set)))
+		os_size(s->tables, tr) || !tr_empty(tr, s->types.set) ||
+		!tr_empty(tr, s->funcs.set) || os_size(s->seqs, tr)))
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 
 	if (mvc_drop_schema(sql, s, action))
@@ -1637,13 +1640,14 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_schema *s;
 
 	initcontext();
+	sql_trans *tr = sql->session->tr;
 	if (!(s = mvc_bind_schema(sql, old_name)))
 		throw(SQL, "sql.rename_schema", SQLSTATE(42S02) "ALTER SCHEMA: no such schema '%s'", old_name);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL, "sql.rename_schema", SQLSTATE(42000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
 	if (s->system)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
+	if (os_size(s->tables, tr) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || os_size(s->seqs, tr))
 		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");

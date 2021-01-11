@@ -1753,7 +1753,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 				char *sch_name = ((atom*)schname->l)->data.val.sval;
 				char *seq_name = ((atom*)seqname->l)->data.val.sval;
 				sql_schema *sche = mvc_bind_schema(sql, sch_name);
-				sql_sequence *seq = find_sql_sequence(sche, seq_name);
+				sql_sequence *seq = find_sql_sequence(sql->session->tr, sche, seq_name);
 				assert(sche && seq);
 
 				cond_append(l, &seq->base.id);

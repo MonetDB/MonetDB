@@ -787,7 +787,7 @@ mvc_next_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.next_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(be->mvc, s))
 		throw(SQL, "sql.next_value", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(be->mvc, "current_user"), s->base.name);
-	if (!(seq = find_sql_sequence(s, seqname)))
+	if (!(seq = find_sql_sequence(be->mvc->session->tr, s, seqname)))
 		throw(SQL, "sql.next_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_next_value(be->mvc->session->tr->store, seq, res)) {
@@ -816,7 +816,7 @@ mvc_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if (!(s = mvc_bind_schema(m, sname)))
 		throw(SQL, "sql.get_value", SQLSTATE(3F000) "Cannot find the schema %s", sname);
-	if (!(seq = find_sql_sequence(s, seqname)))
+	if (!(seq = find_sql_sequence(m->session->tr, s, seqname)))
 		throw(SQL, "sql.get_value", SQLSTATE(HY050) "Cannot find the sequence %s.%s", sname, seqname);
 
 	if (seq_get_value(m->session->tr->store, seq, res))
@@ -904,7 +904,7 @@ mvc_bat_next_get_value(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, 
 				msg = createException(SQL, call, SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
 				goto bailout;
 			}
-			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
+			if (!(seq = find_sql_sequence(m->session->tr, s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
 				msg = createException(SQL, call, SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
 				goto bailout;
 			}
@@ -983,7 +983,7 @@ mvc_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.restart", SQLSTATE(3F000) "Cannot find the schema %s", sname);
 	if (!mvc_schema_privs(m, s))
 		throw(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
-	if (!(seq = find_sql_sequence(s, seqname)))
+	if (!(seq = find_sql_sequence(m->session->tr, s, seqname)))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Failed to fetch sequence %s.%s", sname, seqname);
 	if (is_lng_nil(start))
 		throw(SQL, "sql.restart", SQLSTATE(HY050) "Cannot (re)start sequence %s.%s with NULL", sname, seqname);
@@ -1093,7 +1093,7 @@ mvc_bat_restart_seq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				msg = createException(SQL, "sql.restart", SQLSTATE(42000) "Access denied for %s to schema '%s'", get_string_global_var(m, "current_user"), s->base.name);
 				goto bailout;
 			}
-			if (!(seq = find_sql_sequence(s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
+			if (!(seq = find_sql_sequence(m->session->tr, s, nseqname)) || !(sb = seqbulk_create(store, seq, BATcount(it)))) {
 				msg = createException(SQL, "sql.restart", SQLSTATE(HY050) "Cannot find the sequence %s.%s", nsname, nseqname);
 				goto bailout;
 			}
@@ -1385,7 +1385,9 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
-	sqlstore *store = m->session->tr->store;
+
+	sqlstore *store = m->store;
+	sql_trans *tr = m->session->tr;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		goto cleanup;
 
@@ -1404,9 +1406,10 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else {
 			nrows = (BUN) t->columns.set->cnt;
 		}
-	} else if (s->tables.set) {
-		for (n = s->tables.set->h; n ; n = n->next) {
-			t = (sql_table *) n->data;
+	} else if (s->tables) {
+		struct os_iter *oi = os_iterator(s->tables, tr, NULL);
+		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+			t = (sql_table *)b;
 			if (isTable(t))
 				nrows += t->columns.set->cnt;
 		}
@@ -1455,9 +1458,10 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						goto cleanup;
 				}
 			}
-		} else if (s->tables.set) {
-			for (n = s->tables.set->h; n ; n = n->next) {
-				t = (sql_table *) n->data;
+		} else if (s->tables) {
+			struct os_iter *oi = os_iterator(s->tables, tr, NULL);
+			for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+				t = (sql_table *)b;
 				if (isTable(t)) {
 					cleared = 0;//(t->cleared != 0);
 					deletes = (lng) store->storage_api.count_del(m->session->tr, t);
@@ -4350,7 +4354,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
-	node *nsch, *ntab, *ncol;
+	node *nsch, *ncol;
 	int w;
 	bit bitval;
 	bat *rsch = getArgReference_bat(stk, pci, 0);
@@ -4418,9 +4422,10 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if( sname && strcmp(b->name, sname) )
 			continue;
 		if (isalpha((unsigned char) b->name[0]))
-			if (s->tables.set)
-				for (ntab = (s)->tables.set->h; ntab; ntab = ntab->next) {
-					sql_base *bt = ntab->data;
+			if (s->tables) {
+				struct os_iter *oi = os_iterator(s->tables, tr, NULL);
+
+				for (sql_base *bt = oi_next(oi); bt; bt = oi_next(oi)) {
 					sql_table *t = (sql_table *) bt;
 					if( tname && strcmp(bt->name, tname) )
 						continue;
@@ -4652,6 +4657,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 
 				}
+			}
 	}
 
 	BBPkeepref(*rsch = sch->batCacheid);

@@ -1367,7 +1367,7 @@ stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 	stmt *sc = stmt_idxbat(be, i, RDONLY, part);
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
-	   (!isNew(i) || !inTransaction(tr, i) || !isNew(i->t) /* alter */) &&
+	   (!isNew(i) || !inTransaction(tr, i) || !isNew(i->t)/* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->s) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
@@ -4380,7 +4380,7 @@ join_updated_pkey(backend *be, sql_key * k, stmt *tids, stmt **updates)
 	char *msg = NULL;
 	int nulls = 0;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey*)k)->rkey->k;
+	sql_key *rk = (sql_key*)os_find_id(k->t->s->keys, be->mvc->session->tr, ((sql_fkey*)k)->rkey);
 	stmt *s = NULL, *dels = stmt_tid(be, rk->t, 0), *fdels, *cnteqjoin;
 	stmt *null = NULL, *rows;
 	sql_subtype *lng = sql_bind_localtype("lng");
@@ -4446,7 +4446,7 @@ sql_delete_set_Fkeys(backend *be, sql_key *k, stmt *ftids /* to be updated rows 
 	list *l = NULL;
 	int len = 0;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey*)k)->rkey->k;
+	sql_key *rk = (sql_key*)os_find_id(k->t->s->keys, be->mvc->session->tr, ((sql_fkey*)k)->rkey);
 	stmt **new_updates;
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
 
@@ -4488,7 +4488,7 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 	list *l = NULL;
 	int len = 0;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey*)k)->rkey->k;
+	sql_key *rk = (sql_key*)os_find_id(k->t->s->keys, be->mvc->session->tr, ((sql_fkey*)k)->rkey);
 	stmt **new_updates;
 	stmt *rows;
 	sql_table *t = mvc_bind_table(sql, k->t->s, k->t->base.name);
@@ -4544,30 +4544,32 @@ sql_update_cascade_Fkeys(backend *be, sql_key *k, stmt *utids, stmt **updates, i
 static int
 cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids)
 {
-	sql_ukey *uk = (sql_ukey*)k;
+	/* now iterate over all keys */
+	sql_trans *tr = be->mvc->session->tr;
+	struct os_iter *oi = os_iterator(k->t->s->keys, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		sql_key *fk = (sql_key*)b;
+		sql_fkey *rk = (sql_fkey*)b;
 
-	if (uk->keys && list_length(uk->keys) > 0) {
-		node *n;
-		for(n = uk->keys->h; n; n = n->next) {
-			sql_key *fk = n->data;
+		if (fk->type != fkey || rk->rkey != k->base.id)
+			continue;
 
-			/* All rows of the foreign key table which are
-			   affected by the primary key update should all
-			   match one of the updated primary keys again.
-			 */
-			switch (((sql_fkey*)fk)->on_update) {
-				case ACT_NO_ACTION:
-					break;
-				case ACT_SET_NULL:
-				case ACT_SET_DEFAULT:
-				case ACT_CASCADE:
-					if (!sql_update_cascade_Fkeys(be, fk, tids, updates, ((sql_fkey*)fk)->on_update))
-						return -1;
-					break;
-				default:	/*RESTRICT*/
-					if (!join_updated_pkey(be, fk, tids, updates))
-						return -1;
-			}
+		/* All rows of the foreign key table which are
+		   affected by the primary key update should all
+		   match one of the updated primary keys again.
+		 */
+		switch (((sql_fkey*)fk)->on_update) {
+			case ACT_NO_ACTION:
+				break;
+			case ACT_SET_NULL:
+			case ACT_SET_DEFAULT:
+			case ACT_CASCADE:
+				if (!sql_update_cascade_Fkeys(be, fk, tids, updates, ((sql_fkey*)fk)->on_update))
+					return -1;
+				break;
+			default:	/*RESTRICT*/
+				if (!join_updated_pkey(be, fk, tids, updates))
+					return -1;
 		}
 	}
 	return 0;
@@ -4646,7 +4648,7 @@ join_idx_update(backend *be, sql_idx * i, stmt *ftids, stmt **updates, int updco
 {
 	mvc *sql = be->mvc;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
+	sql_key *rk = (sql_key*)os_find_id(i->t->s->keys, be->mvc->session->tr, ((sql_fkey*)i->key)->rkey);
 	stmt *s = NULL, *ptids = stmt_tid(be, rk->t, 0), *l, *r;
 	list *lje = sa_list(sql->sa);
 	list *rje = sa_list(sql->sa);
@@ -5121,47 +5123,49 @@ static void
 sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql_key *k, list *l, char* which, int cascade)
 {
 	mvc *sql = be->mvc;
-	sql_ukey *uk = (sql_ukey*)k;
+	sql_subtype *lng = sql_bind_localtype("lng");
+	sql_subtype *bt = sql_bind_localtype("bit");
+	sql_trans *tr = be->mvc->session->tr;
+	struct os_iter *oi = os_iterator(k->t->s->keys, tr, NULL);
 
-	if (uk->keys && list_length(uk->keys) > 0) {
-		sql_subtype *lng = sql_bind_localtype("lng");
-		sql_subtype *bt = sql_bind_localtype("bit");
-		node *n;
-		for(n = uk->keys->h; n; n = n->next) {
-			char *msg = NULL;
-			sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
-			sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
-			sql_key *fk = n->data;
-			stmt *s, *tids;
+	for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		sql_key *fk = (sql_key*)b;
+		sql_fkey *rk = (sql_fkey*)b;
 
-			tids = stmt_tid(be, fk->idx->t, 0);
-			s = stmt_idx(be, fk->idx, tids, tids->partition);
-			s = stmt_join(be, s, utids, 0, cmp_equal, 0, 0, false); /* join over the join index */
-			s = stmt_result(be, s, 0);
-			tids = stmt_project(be, s, tids);
-			if(cascade) { /* for truncate statements with the cascade option */
-				s = sql_delete_cascade_Fkeys(be, fk, tids);
-				list_prepend(l, s);
-			} else {
-				switch (((sql_fkey*)fk)->on_delete) {
-					case ACT_NO_ACTION:
-						break;
-					case ACT_SET_NULL:
-					case ACT_SET_DEFAULT:
-						s = sql_delete_set_Fkeys(be, fk, tids, ((sql_fkey*)fk)->on_delete);
-						list_prepend(l, s);
-						break;
-					case ACT_CASCADE:
-						s = sql_delete_cascade_Fkeys(be, fk, tids);
-						list_prepend(l, s);
-						break;
-					default:	/*RESTRICT*/
-						/* The overlap between deleted primaries and foreign should be empty */
-						s = stmt_binop(be, stmt_aggr(be, tids, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
-						msg = sa_message(sql->sa, SQLSTATE(40002) "%s: FOREIGN KEY constraint '%s.%s' violated", which, fk->t->base.name, fk->base.name);
-						s = stmt_exception(be, s, msg, 00001);
-						list_prepend(l, s);
-				}
+		if (fk->type != fkey || rk->rkey != k->base.id)
+			continue;
+		char *msg = NULL;
+		sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
+		sql_subfunc *ne = sql_bind_func_result(sql, "sys", "<>", F_FUNC, bt, 2, lng, lng);
+		stmt *s, *tids;
+
+		tids = stmt_tid(be, fk->idx->t, 0);
+		s = stmt_idx(be, fk->idx, tids, tids->partition);
+		s = stmt_join(be, s, utids, 0, cmp_equal, 0, 0, false); /* join over the join index */
+		s = stmt_result(be, s, 0);
+		tids = stmt_project(be, s, tids);
+		if(cascade) { /* for truncate statements with the cascade option */
+			s = sql_delete_cascade_Fkeys(be, fk, tids);
+			list_prepend(l, s);
+		} else {
+			switch (((sql_fkey*)fk)->on_delete) {
+				case ACT_NO_ACTION:
+					break;
+				case ACT_SET_NULL:
+				case ACT_SET_DEFAULT:
+					s = sql_delete_set_Fkeys(be, fk, tids, ((sql_fkey*)fk)->on_delete);
+					list_prepend(l, s);
+					break;
+				case ACT_CASCADE:
+					s = sql_delete_cascade_Fkeys(be, fk, tids);
+					list_prepend(l, s);
+					break;
+				default:	/*RESTRICT*/
+					/* The overlap between deleted primaries and foreign should be empty */
+					s = stmt_binop(be, stmt_aggr(be, tids, NULL, NULL, cnt, 1, 0, 1), stmt_atom_lng(be, 0), ne);
+					msg = sa_message(sql->sa, SQLSTATE(40002) "%s: FOREIGN KEY constraint '%s.%s' violated", which, fk->t->base.name, fk->base.name);
+					s = stmt_exception(be, s, msg, 00001);
+					list_prepend(l, s);
 			}
 		}
 	}
@@ -5289,6 +5293,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 	node *n;
 	int found;
 	struct tablelist* new_node, *node_check;
+	sql_trans *tr = sql->session->tr;
 
 	if (THRhighwater()) {
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -5305,42 +5310,42 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
-				sql_ukey *uk = (sql_ukey *) k;
+				struct os_iter *oi = os_iterator(k->t->s->keys, tr, NULL);
+				for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+					sql_key *fk = (sql_key*)b;
+					sql_fkey *rk = (sql_fkey*)b;
 
-				if (uk->keys && list_length(uk->keys)) {
-					node *l = uk->keys->h;
-
-					for (; l; l = l->next) {
-						k = l->data;
-						/* make sure it is not a self referencing key */
-						if (k->t != t && !cascade) {
-							node *n = t->columns.set->h;
-							sql_column *c = n->data;
-							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 1);
-							size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t);
-							assert (n_rows >= n_deletes);
-							if (n_rows - n_deletes > 0) {
-								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+					if (fk->type != fkey || rk->rkey != k->base.id)
+						continue;
+					k = fk;
+					/* make sure it is not a self referencing key */
+					if (k->t != t && !cascade) {
+						node *n = t->columns.set->h;
+						sql_column *c = n->data;
+						size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 1);
+						size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t);
+						assert (n_rows >= n_deletes);
+						if (n_rows - n_deletes > 0) {
+							sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
+							*error = 1;
+							return;
+						}
+					} else if (k->t != t) {
+						found = 0;
+						for (node_check = list; node_check; node_check = node_check->next) {
+							if (node_check->table == k->t)
+								found = 1;
+						}
+						if (!found) {
+							if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
+								sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								*error = 1;
 								return;
 							}
-						} else if (k->t != t) {
-							found = 0;
-							for (node_check = list; node_check; node_check = node_check->next) {
-								if (node_check->table == k->t)
-									found = 1;
-							}
-							if (!found) {
-								if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
-									sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-									*error = 1;
-									return;
-								}
-								new_node->table = k->t;
-								new_node->next = NULL;
-								next_append->next = new_node;
-								check_for_foreign_key_references(sql, list, new_node, k->t, cascade, error);
-							}
+							new_node->table = k->t;
+							new_node->next = NULL;
+							next_append->next = new_node;
+							check_for_foreign_key_references(sql, list, new_node, k->t, cascade, error);
 						}
 					}
 				}
@@ -5393,7 +5398,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 						continue;
 
 					assert(s->base.id == sche->base.id);
-					if ((seq = find_sql_sequence(s, seq_name))) {
+					if ((seq = find_sql_sequence(tr, s, seq_name))) {
 						if (!sql_trans_sequence_restart(tr, seq, seq->start)) {
 							sql_error(sql, 02, SQLSTATE(HY005) "Could not restart sequence %s.%s", sche->base.name, seq_name);
 							error = 1;

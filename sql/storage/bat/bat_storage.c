@@ -15,9 +15,9 @@
 static int log_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
 static int log_update_idx( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
 static int log_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_col( sqlstore *store, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_idx( sqlstore *store, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_del( sqlstore *store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_col( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_idx( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
 
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
@@ -35,6 +35,41 @@ timestamp_dbat( sql_trans *tr, sql_dbat *d)
 	while (d->next && d->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
 		d = d->next;
 	return d;
+}
+
+static sql_delta*
+delta_dup(sql_delta *d)
+{
+	d->refcnt++;
+	return d;
+}
+
+static void *
+col_dup(sql_column *c)
+{
+	assert(c->data);
+	return delta_dup(c->data);
+}
+
+static void *
+idx_dup(sql_idx *i)
+{
+	assert(i->data);
+	return delta_dup(i->data);
+}
+
+static sql_dbat*
+dbat_dup(sql_dbat *d)
+{
+	d->refcnt++;
+	return d;
+}
+
+static void *
+del_dup(sql_table *t)
+{
+	assert(t->data);
+	return dbat_dup(t->data);
 }
 
 static BAT *
@@ -208,7 +243,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
-	return delta_bind_bat( c->data, access, isTempTable(c->t) || inTransaction(tr, c->t));
+	return delta_bind_bat( c->data, access, isTempTable(c->t) || isNew(c->t));
 }
 
 static BAT *
@@ -223,7 +258,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	}
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
-	return delta_bind_bat( i->data, access, isTempTable(i->t) || inTransaction(tr, i->t));
+	return delta_bind_bat( i->data, access, isTempTable(i->t) || isNew(i->t));
 }
 
 static int
@@ -581,7 +616,8 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
-	if(dup_bat(tr, c->t, obat, bat, type, isNew(c) && inTransaction(tr, c)) == LOG_ERR)
+	bat->refcnt = 1;
+	if(dup_bat(tr, c->t, obat, bat, type, isNew(c)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
 	bat->next = obat;
@@ -604,7 +640,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->ts == tr->tid);
 	if (tpe == TYPE_bat)
-		ok = delta_update_bat(delta, tids, upd, isNew(c) && inTransaction(tr, c));
+		ok = delta_update_bat(delta, tids, upd, isNew(c));
 	else
 		ok = delta_update_val(delta, *(oid*)tids, upd);
 	if (!inTransaction(tr, c->t) && odelta != delta)
@@ -630,7 +666,8 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
-	if(dup_bat(tr, i->t, obat, bat, type, isNew(i) && inTransaction(tr, i)) == LOG_ERR)
+	bat->refcnt = 1;
+	if(dup_bat(tr, i->t, obat, bat, type, isNew(i)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
 	bat->next = obat;
@@ -653,7 +690,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 
 	assert(delta && delta->ts == tr->tid);
 	if (tpe == TYPE_bat)
-		ok = delta_update_bat(delta, tids, upd, isNew(i) && inTransaction(tr, i));
+		ok = delta_update_bat(delta, tids, upd, isNew(i));
 	else
 		assert(0);
 	if (!inTransaction(tr, i->t) && odelta != delta)
@@ -907,6 +944,8 @@ _destroy_dbat(sql_dbat *bat)
 static int
 destroy_dbat(sql_trans *tr, sql_dbat *bat)
 {
+	if (--bat->refcnt > 0)
+		return LOG_OK;
 	sql_dbat *n;
 
 	(void)tr;
@@ -934,7 +973,8 @@ bind_del_data(sql_trans *tr, sql_table *t)
 	sql_dbat *bat = ZNEW(sql_dbat);
 	if(!bat)
 		return NULL;
-	dup_dbat(tr, obat, bat, isNew(t) && inTransaction(tr, t), isTempTable(t));
+	bat->refcnt = 1;
+	dup_dbat(tr, obat, bat, isNew(t), isTempTable(t));
 	bat->ts = tr->tid;
 	bat->next = obat;
 	t->data = bat;
@@ -1406,6 +1446,7 @@ create_col(sql_trans *tr, sql_column *c)
 		c->data = bat = ZNEW(sql_delta);
 		if(!bat)
 			return LOG_ERR;
+		bat->refcnt = 1;
 	}
 	if (!bat->name) {
 		bat->name = sql_message("%s_%s_%s", c->t->s->base.name, c->t->base.name, c->base.name);
@@ -1416,7 +1457,7 @@ create_col(sql_trans *tr, sql_column *c)
 	if (inTransaction(tr, c) && !isTempTable(c->t))
 		bat->ts = tr->tid;
 
-	if (!inTransaction(tr, c) && !isTempTable(c->t)){
+	if (!isNew(c) && !isTempTable(c->t)){
 		return load_bat(tr, bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
 		return new_persistent_bat(tr, c->data, c->t->sz);
@@ -1514,6 +1555,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		ni->data = bat = ZNEW(sql_delta);
 		if(!bat)
 			return LOG_ERR;
+		bat->refcnt = 1;
 	}
 	if (!bat->name) {
 		bat->name = sql_message("%s_%s@%s", ni->t->s->base.name, ni->t->base.name, ni->base.name);
@@ -1524,7 +1566,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	if (inTransaction(tr, ni) && !isTempTable(ni->t))
 		bat->ts = tr->tid;
 
-	if (!inTransaction(tr, ni) && !isTempTable(ni->t)){
+	if (!isNew(ni) && !isTempTable(ni->t)){
 		return load_bat(tr, bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
 		return new_persistent_bat( tr, ni->data, ni->t->sz);
@@ -1630,6 +1672,7 @@ create_del(sql_trans *tr, sql_table *t)
 		t->data = bat = ZNEW(sql_dbat);
 		if(!bat)
 			return LOG_ERR;
+		bat->refcnt = 1;
 	}
 	if (!bat->dname) {
 		bat->dname = sql_message("D_%s_%s", t->s->base.name, t->base.name);
@@ -1639,7 +1682,7 @@ create_del(sql_trans *tr, sql_table *t)
 	if (inTransaction(tr, t) && !isTempTable(t))
 		bat->ts = tr->tid;
 
-	if (!inTransaction(tr, t) && !isTempTable(t)) {
+	if (!isNew(t) && !isTempTable(t)) {
 		log_bid bid = logger_find_bat(store->logger, bat->dname, t->bootstrap?0:LOG_TAB, t->base.id);
 
 		if (bid) {
@@ -1764,6 +1807,8 @@ destroy_delta(sql_delta *b)
 static int
 destroy_bat(sql_delta *b)
 {
+	if (--b->refcnt > 0)
+		return LOG_OK;
 	sql_delta *n;
 
 	while(b) {
@@ -2330,8 +2375,9 @@ log_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 
 /* only rollback (content version) case for now */
 static int
-tc_gc_col( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	sqlstore *store = Store;
 	sql_column *c = (sql_column*)change->obj;
 
 	(void)store;
@@ -2353,8 +2399,9 @@ tc_gc_col( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 }
 
 static int
-tc_gc_idx( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	sqlstore *store = Store;
 	sql_idx *i = (sql_idx*)change->obj;
 
 	(void)store;
@@ -2376,8 +2423,9 @@ tc_gc_idx( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
 }
 
 static int
-tc_gc_del( sqlstore *store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	sqlstore *store = Store;
 	sql_table *t = (sql_table*)change->obj;
 
 	(void)store;
@@ -2404,6 +2452,10 @@ bat_storage_init( store_functions *sf)
 	sf->bind_col = (bind_col_fptr)&bind_col;
 	sf->bind_idx = (bind_idx_fptr)&bind_idx;
 	sf->bind_del = (bind_del_fptr)&bind_del;
+
+	sf->col_dup = (col_dup_fptr)&col_dup;
+	sf->idx_dup = (idx_dup_fptr)&idx_dup;
+	sf->del_dup = (del_dup_fptr)&del_dup;
 
 	sf->append_col = (append_col_fptr)&append_col;
 	sf->append_idx = (append_idx_fptr)&append_idx;
