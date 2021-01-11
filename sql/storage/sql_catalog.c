@@ -326,78 +326,53 @@ find_sql_schema_node(sql_trans *tr, sqlid id)
 	return cs_find_id(&tr->cat->schemas, id);
 }
 
-static sql_type *
-find_sqlname(list *l, const char *name)
-{
-	if (l) {
-		node *n;
-
-		for (n = l->h; n; n = n->next) {
-			sql_type *t = n->data;
-
-			if (strcmp(t->sqlname, name) == 0)
-				return t;
-		}
-	}
-	return NULL;
-}
-
-node *
-find_sql_type_node(sql_schema *s, sqlid id)
-{
-	return cs_find_id(&s->types, id);
-}
-
 sql_type *
-find_sql_type(sql_schema *s, const char *tname)
+find_sql_type(sql_trans *tr, sql_schema *s, const char *tname)
 {
-	return find_sqlname(s->types.set, tname);
+	return (sql_type*)os_find_name(s->types, tr, tname);
 }
 
 sql_type *
 sql_trans_bind_type(sql_trans *tr, sql_schema *c, const char *name)
 {
-	node *n;
 	sql_type *t = NULL;
 
 	if (tr->cat->schemas.set)
-		for (n = tr->cat->schemas.set->h; n && !t; n = n->next) {
+		for (node *n = tr->cat->schemas.set->h; n && !t; n = n->next) {
 			sql_schema *s = n->data;
 
-			t = find_sql_type(s, name);
+			t = find_sql_type(tr, s, name);
 		}
 
 	if (!t && c)
-		t = find_sql_type(c, name);
+		t = find_sql_type(tr, c, name);
 	return t;
 }
 
 sql_type *
-sql_trans_find_type(sql_trans *tr, sqlid id)
+sql_trans_find_type(sql_trans *tr, sql_schema *s, sqlid id)
 {
-	node *n, *m;
-	sql_type *t = NULL;
-
-	if (tr->cat->schemas.set) {
-		for (n = tr->cat->schemas.set->h; n && !t; n = n->next) {
-			m = find_sql_type_node(n->data, id);
-			if (m)
-				t = m->data;
+	if (s) {
+		sql_base *b = os_find_id(s->types, tr, id);
+		if (b)
+			return (sql_type*)b;
+	} else {
+		if (tr->cat->schemas.set) {
+			for (node *n = tr->cat->schemas.set->h; n; n = n->next) {
+				sql_schema *s = n->data;
+				sql_base *b = os_find_id(s->types, tr, id);
+				if (b)
+					return (sql_type*)b;
+			}
 		}
 	}
-	return t;
-}
-
-node *
-find_sql_func_node(sql_schema *s, sqlid id)
-{
-	return cs_find_id(&s->funcs, id);
+	return NULL;
 }
 
 sql_func *
-find_sql_func(sql_schema *s, const char *tname)
+find_sql_func(sql_trans *tr, sql_schema *s, const char *tname)
 {
-	return _cs_find_name(&s->funcs, tname);
+	return (sql_func*)os_find_name(s->funcs, tr, tname);
 }
 
 sql_func *
@@ -410,7 +385,7 @@ sql_trans_bind_func(sql_trans *tr, const char *name)
 		for (n = tr->cat->schemas.set->h; n && !t; n = n->next) {
 			sql_schema *s = n->data;
 
-			t = find_sql_func(s, name);
+			t = find_sql_func(tr, s, name);
 		}
 	if (!t)
 		return NULL;
@@ -420,17 +395,15 @@ sql_trans_bind_func(sql_trans *tr, const char *name)
 sql_func *
 sql_trans_find_func(sql_trans *tr, sqlid id)
 {
-	node *n, *m;
-	sql_func *t = NULL;
-
 	if (tr->cat->schemas.set) {
-		for (n = tr->cat->schemas.set->h; n && !t; n = n->next) {
-			m = find_sql_func_node(n->data, id);
-			if (m)
-				t = m->data;
+		for (node *n = tr->cat->schemas.set->h; n; n = n->next) {
+			sql_schema *s = n->data;
+			sql_base *b = os_find_id(s->funcs, tr, id);
+			if (b)
+				return (sql_func*)b;
 		}
 	}
-	return t;
+	return NULL;
 }
 
 sql_trigger *

@@ -745,9 +745,9 @@ drop_func(mvc *sql, char *sname, char *name, sqlid fid, sql_ftype type, int acti
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: access denied for %s to schema '%s'", F, get_string_global_var(sql, "current_user"), s->base.name);
 	if (fid >= 0) {
-		node *n = find_sql_func_node(s, fid);
-		if (n) {
-			sql_func *func = n->data;
+		sql_base *b = os_find_id(s->funcs, sql->session->tr, fid);
+		if (b) {
+			sql_func *func = (sql_func*)b;
 
 			if (!action && mvc_check_dependency(sql, func->base.id, !IS_PROC(func) ? FUNC_DEPENDENCY : PROC_DEPENDENCY, NULL))
 				throw(SQL,"sql.drop_func", SQLSTATE(42000) "DROP %s: there are database objects dependent on %s %s;", F, fn, func->base.name);
@@ -1105,8 +1105,7 @@ SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (sql_schema_has_user(sql, s))
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 	if (!action /* RESTRICT */ && (
-		os_size(s->tables, tr) || !tr_empty(tr, s->types.set) ||
-		!tr_empty(tr, s->funcs.set) || os_size(s->seqs, tr)))
+		os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr)))
 		throw(SQL,"sql.drop_schema",SQLSTATE(2BM37) "DROP SCHEMA: unable to drop schema '%s' (there are database objects which depend on it)", sname);
 
 	if (mvc_drop_schema(sql, s, action))
@@ -1647,7 +1646,7 @@ SQLrename_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.rename_schema", SQLSTATE(42000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
 	if (s->system)
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (os_size(s->tables, tr) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || os_size(s->seqs, tr))
+	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
 		throw(SQL, "sql.rename_schema", SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
 		throw(SQL, "sql.rename_schema", SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");

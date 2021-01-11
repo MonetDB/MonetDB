@@ -2168,7 +2168,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
 	if (s->system)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (os_size(s->tables, tr) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || os_size(s->seqs, tr))
+	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");

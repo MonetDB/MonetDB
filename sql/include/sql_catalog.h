@@ -234,7 +234,7 @@ typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c, ulng com
 typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng commit_ts, ulng oldest); /* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 
-extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary);
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique);
 extern struct objectset *os_dup(struct objectset *os);
 extern void os_destroy(struct objectset *os, sql_store store);
 extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
@@ -275,8 +275,8 @@ typedef struct sql_schema {
 	// TODO? int type;	/* persistent, session local, transaction local */
 
 	struct objectset *tables;
-	changeset types;
-	changeset funcs;
+	struct objectset *types;
+	struct objectset *funcs;
 	struct objectset *seqs;
 	struct objectset *keys;		/* Names for keys, idxs, and triggers and parts are */
 	struct objectset *idxs;		/* global, but these objects are only */
@@ -758,11 +758,9 @@ extern node *list_find_id(list *l, sqlid id);
 extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
-extern node *find_sql_key_node(sql_schema *s, sqlid id);
 extern sql_key *sql_trans_find_key(sql_trans *tr, sqlid id);
 
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
-extern node *find_sql_idx_node(sql_schema *s, sqlid id);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
@@ -779,17 +777,14 @@ extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);
 extern node *find_sql_schema_node(sql_trans *t, sqlid id);
 
-extern sql_type *find_sql_type(sql_schema * s, const char *tname);
+extern sql_type *find_sql_type(sql_trans *tr, sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
-extern node *find_sql_type_node(sql_schema *s, sqlid id);
-extern sql_type *sql_trans_find_type(sql_trans *tr, sqlid id);
+extern sql_type *sql_trans_find_type(sql_trans *tr, sql_schema *s /*optional */, sqlid id);
 
-extern sql_func *find_sql_func(sql_schema * s, const char *tname);
+extern sql_func *find_sql_func(sql_trans *tr, sql_schema * s, const char *tname);
 extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
-extern node *find_sql_func_node(sql_schema *s, sqlid id);
 
-extern node *find_sql_trigger_node(sql_schema *s, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
 
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);

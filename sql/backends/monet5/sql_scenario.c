@@ -260,8 +260,6 @@ SQLprepareClient(Client c, int login)
 		backend_reset(be);
 #endif
 	}
-	if (m->session->tr)
-		reset_functions(m->session->tr);
 	MT_lock_unset(&sql_contextLock);
 	if (login) {
 		str schema = monet5_user_set_def_schema(m, c->user);

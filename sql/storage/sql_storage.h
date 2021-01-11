@@ -350,8 +350,6 @@ extern int sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func
 extern void sql_trans_update_tables(sql_trans *tr, sql_schema *s);
 extern void sql_trans_update_schemas(sql_trans *tr);
 
-extern void reset_functions(sql_trans *tr);
-
 extern sql_schema *sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid owner);
 extern sql_schema *sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name);
 extern int sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action);

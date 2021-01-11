@@ -188,16 +188,14 @@ char *
 sql_grant_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid func_id, int grant, sqlid grantor)
 {
 	sql_schema *s = NULL;
-	sql_func *f = NULL;
 	bool allowed;
 	sqlid grantee_id;
-	node *n;
 
 	assert(sname);
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.grant_func",SQLSTATE(3F000) "GRANT: no such schema '%s'", sname);
-	if ((n = find_sql_func_node(s, func_id)))
-		f = n->data;
+	sql_base *b = os_find_id(s->funcs, sql->session->tr, func_id);
+	sql_func *f = (sql_func*)b;
 	assert(f);
 	allowed = schema_privs(grantor, f->s);
 
@@ -317,16 +315,14 @@ char *
 sql_revoke_func_privs( mvc *sql, char *grantee, int privs, char *sname, sqlid func_id, int grant, sqlid grantor)
 {
 	sql_schema *s = NULL;
-	sql_func *f = NULL;
 	bool allowed;
 	sqlid grantee_id;
-	node *n;
 
 	assert(sname);
 	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.revoke_func", SQLSTATE(3F000) "REVOKE: no such schema '%s'", sname);
-	if ((n = find_sql_func_node(s, func_id)))
-		f = n->data;
+	sql_base *b = os_find_id(s->funcs, sql->session->tr, func_id);
+	sql_func *f = (sql_func*)b;
 	assert(f);
 	allowed = schema_privs(grantor, f->s);
 	if (!allowed)
