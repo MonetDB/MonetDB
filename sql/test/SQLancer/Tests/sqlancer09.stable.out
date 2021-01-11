@@ -325,6 +325,41 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 [ 33	]
 #ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCES "sys"."t2" ("c0", "c1");
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" REAL NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+#COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#4.2328605e+08
+#0.69732165
+#0.71200204
+#4.466514e+07
+#0
+#1.3677554e+09
+#0.36787975
+#0.961471
+#0.6692194
+#0.3954379
+[ 10	]
+#create or replace view v64(vc0, vc1, vc2, vc3) as (select -34, 'A',
+#((0.2457749548974355047192830170388333499431610107421875)*(5)), cast(-43 as int)) with check option;
+#create or replace view v110(vc0) as (values ('a'), ('8'), ('g'), (null)) with check option;
+#select 1 from v64, t1, v110 where t1.c0 > v64.vc2;
+% .%10 # table_name
+% %10 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#ROLLBACK;
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."
