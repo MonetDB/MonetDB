@@ -43,6 +43,11 @@ MAPI  = (monetdb) /var/tmp/mtest-164664/.s.monetdb.34087
 QUERY = values (round(-1.4999792343698102e+308, 15)),(1.2); --error, overflow?
 ERROR = !Overflow in round
 CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-24399/.s.monetdb.36745
+QUERY = update t2 set c1 = 0.012427403386733981704992402228526771068572998046875 where (((t2.c0)%(t2.c1))) between symmetric 
+        (coalesce(-1053775800, 991217471)) and (((0.6974006550632457)+(1832026960)));
+ERROR = !division by zero.
+CODE  = 22012
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."
