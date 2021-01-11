@@ -398,3 +398,6 @@ SELECT CAST(SUM(agg0) as BIGINT) FROM (
 create or replace view v11(vc0) as (values ('<'), ('a'));
 SELECT 1 FROM v11 WHERE v11.vc0 LIKE '' IS NULL;
 ROLLBACK;
+
+SELECT 1 HAVING group_concat('') NOT LIKE '3' IS NULL;
+	-- empty
