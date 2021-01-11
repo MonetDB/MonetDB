@@ -372,3 +372,29 @@ create or replace view v110(vc0) as (values ('a'), ('8'), ('g'), (null)) with ch
 
 select 1 from v64, t1, v110 where t1.c0 > v64.vc2;
 ROLLBACK;
+
+START TRANSACTION;
+create or replace view v11(vc0, vc1) as (values (cast(r'<' as string), ((((356910743)||(324718164)))<<(sql_max(962062904, -1226062612)))),
+(r'e]+)Nik', ((cast(-1267863719 as tinyint))&(- (340796877)))), (case when ((r'24060')not like(r'f')) then r'vyA,R' else r'68' end,
++ (greatest(113, 0.61746233049203114173764106453745625913143157958984375))));
+
+create or replace view v13(vc0, vc1) as (values (((0.9896616954779023)<(greatest(-1982788333, 0.76584341990855342441335551484371535480022430419921875)))
+, cast(1938193505 as boolean)), (greatest(false, false), cast(cast(r'rHIVNz' as int) as boolean))) with check option;
+
+create or replace view v23(vc0, vc1) as (values (case when ((false)and(true)) then ((25922)*(697298603)) when not (false) then - (2909) end,
+cast(case r'17841' when r'155' then 2909 when r'116' then 17275 end as int)));
+
+SELECT CAST(SUM(agg0) as BIGINT) FROM (
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE ((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))
+	UNION ALL
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE NOT (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299)))))
+	UNION ALL
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))) IS NULL
+	) as asdf;
+
+create or replace view v11(vc0) as (values ('<'), ('a'));
+SELECT 1 FROM v11 WHERE v11.vc0 LIKE '' IS NULL;
+ROLLBACK;

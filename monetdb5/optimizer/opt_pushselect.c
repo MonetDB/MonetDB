@@ -324,20 +324,25 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) /* escape is a value */
 						) {
 					InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
-					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid));
+					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0;
 					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
 
 					getArg(r,0) = getArg(p,0);
 					r = addArgument(mb, r, getArg(q, 1));
-					if (has_cand)
+					if (has_cand) {
 						r = addArgument(mb, r, getArg(p, 2));
+						offset = 1;
+					} else if (isaBatType(getArgType(mb, q, 1))) { /* likeselect calls have a candidate parameter */
+						r = pushNil(mb, r, TYPE_bat);
+						offset = 1;
+					}
 					for(a = 2; a<q->argc; a++)
 						r = addArgument(mb, r, getArg(q, a));
-					if (r->argc < (4+has_cand))
+					if (r->argc < (4+offset))
 						r = pushStr(mb, r, ""); /* default esc */
-					if (r->argc < (5+has_cand))
+					if (r->argc < (5+offset))
 						r = pushBit(mb, r, ignore_case);
-					if (r->argc < (6+has_cand))
+					if (r->argc < (6+offset))
 						r = pushBit(mb, r, anti);
 					freeInstruction(p);
 					p = r;
