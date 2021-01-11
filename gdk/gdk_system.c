@@ -342,7 +342,7 @@ void *
 MT_thread_getdata(void)
 {
 	if (threadslot == TLS_OUT_OF_INDEXES)
-		return;
+		return NULL;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	return w ? w->data : NULL;
