@@ -391,6 +391,20 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 % %3 # name
 % tinyint # type
 % 1 # length
+#START TRANSACTION;
+#create or replace view v0(vc0, vc1, vc2) as (values (3, true, 0.3));
+#create or replace view v1(vc0, vc1) as (select 0.80, 'a');
+#select 1 from v0, v1
+#inner join (values (88), (3), (59)) as sub0 on true natural join 
+#(select distinct v0.vc0 from v1, v0 group by v0.vc1) as sub1
+#where v0.vc0 = 0.06683239;
+% .%23 # table_name
+% %23 # name
+% tinyint # type
+% 1 # length
+#create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as smallint), case 0.04487378302689426501359548637992702424526214599609375 when 126710153 then 0.6929207132873739 when 26968 then 26968.0 when 1679982115 then 29 else 0.8204445662571608 end), cast(sql_min(r'', r'#Ts9.H') as boolean), 0.45182237213592768565462165497592650353908538818359375));
+#create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), r'䝀i8jPo' where not (false));
+#ROLLBACK;
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."
