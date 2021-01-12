@@ -5322,21 +5322,18 @@ static sql_rel*
 rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek, int group_totals)
 {
 	mvc *sql = query->sql;
+	sql_rel *inner = NULL;
+	int single_value = 1;
+
+	if (is_project(rel->op) && rel->l) {
+		inner = rel->l;
+		single_value = 0;
+	}
 
 	if (sn->having) {
-		sql_rel *inner = NULL;
-		int single_value = 1;
-
-		if (is_project(rel->op) && rel->l) {
-			inner = rel->l;
-			single_value = 0;
-		}
-
 		if (inner && is_groupby(inner->op))
 			set_processed(inner);
-		inner = rel_logical_exp(query, inner, sn->having, sql_having | group_totals);
-
-		if (!inner)
+		if (!(inner = rel_logical_exp(query, inner, sn->having, sql_having | group_totals)))
 			return NULL;
 		if (inner->exps && exps_card(inner->exps) > CARD_AGGR)
 			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: cannot compare sets with values, probably an aggregate function missing");
@@ -5419,6 +5416,9 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 		rel = rel_sample(sql->sa, rel, exps);
 	}
 
+	/* after parsing the current query, set the group by relation as processed */
+	if (!sn->having && inner && is_groupby(inner->op))
+		set_processed(inner);
 	if (rel)
 		set_processed(rel);
 	return rel;
