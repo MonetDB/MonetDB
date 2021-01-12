@@ -25,20 +25,31 @@ typedef struct objectversion {
 	struct objectset *os;
 } objectversion;
 
+typedef struct object_node {
+    struct object_node* prev;
+    struct object_node* next;
+    void* data;
+} object_node;
+
 typedef struct objectset {
 	int refcnt;
 	sql_allocator *sa;
 	destroy_fptr destroy;
-	struct list *objs;
+	MT_Lock ht_lock;	/* latch protecting ht */
+	object_node *h;
+	object_node *t;
+	int cnt;
+	struct sql_hash *name_map;
+	struct sql_hash *id_map;
 	bool temporary;
 	bool unique;	/* names are unique */
 } objectset;
 
-static node *
-find_id(list *l, sqlid id)
+static object_node *
+find_id(objectset *os, sqlid id)
 {
-	if (l) {
-		for (node *n = l->h; n; n = n->next) {
+	if (os) {
+		for (object_node *n = os->h; n; n = n->next) {
 			objectversion *ov = n->data;
 
 			/* check if ids match */
@@ -48,6 +59,132 @@ find_id(list *l, sqlid id)
 		}
 	}
 	return NULL;
+}
+
+// TODO copy of static function from sql_list.c. Needs to be made external
+static void
+hash_delete(sql_hash *h, void *data)
+{
+	int key = h->key(data);
+	sql_hash_e *e, *p = h->buckets[key&(h->size-1)];
+
+	e = p;
+	for (;  p && p->value != data ; p = p->chain)
+		e = p;
+	if (p && p->value == data) {
+		if (p == e)
+			h->buckets[key&(h->size-1)] = p->chain;
+		else
+			e->chain = p->chain;
+	}
+}
+
+// TODO: check double hash_delete and fix prev pointer
+static object_node *
+os_remove_node_(objectset *os, object_node *n)
+{
+	void *data = n->data;
+	object_node *p = os->h;
+
+	if (p != n)
+		while (p && p->next != n)
+			p = p->next;
+	assert(p==n||(p && p->next == n));
+	if (p == n) {
+		os->h = n->next;
+		p = NULL;
+	} else if ( p != NULL)  {
+		p->next = n->next;
+	}
+	if (n == os->t)
+		os->t = p;
+	if (data) {
+		MT_lock_set(&os->ht_lock);
+		if (os->id_map && data)
+			hash_delete(os->id_map, data);
+		if (os->name_map && data)
+			hash_delete(os->name_map, data);
+		MT_lock_unset(&os->ht_lock);
+	}
+	os->cnt--;
+	assert(os->cnt > 0 || os->h == NULL);
+	return p;
+}
+
+static void
+node_destroy(objectset *os, object_node *n)
+{
+	if (n->data && os->destroy) {
+		os->destroy(NULL, n->data);
+		n->data = NULL;
+	}
+	if (!os->sa)
+		_DELETE(n);
+}
+
+static object_node *
+os_remove_node(objectset *l, object_node *n)
+{
+	object_node *p = os_remove_node_(l, n);
+
+	node_destroy(l, n);
+	return p;
+}
+
+static object_node *
+node_create(sql_allocator *sa, void *data)
+{
+	object_node *n = (sa)?SA_NEW(sa, object_node):MNEW(object_node);
+
+	if (n == NULL)
+		return NULL;
+	*n = (object_node) {
+		.data = data,
+	};
+	return n;
+}
+
+static objectset *
+os_append_node(objectset *os, object_node *n)
+{
+	if (os->cnt) {
+		os->t->next = n;
+	} else {
+		os->h = n;
+	}
+	os->t = n;
+	os->cnt++;
+	if (n->data) {
+		MT_lock_set(&os->ht_lock);
+		if (os->name_map) {
+			int key = os->name_map->key(n->data);
+
+			if (hash_add(os->name_map, key, n->data) == NULL) {
+				MT_lock_unset(&os->ht_lock);
+				return NULL;
+			}
+		}
+		if (os->id_map) {
+			int key = os->id_map->key(n->data);
+
+			if (hash_add(os->id_map, key, n->data) == NULL) {
+				MT_lock_unset(&os->ht_lock);
+				return NULL;
+			}
+		}
+		MT_lock_unset(&os->ht_lock);
+	}
+	return os;
+}
+
+static objectset *
+os_append(objectset *os, void *data)
+{
+	object_node *n = node_create(os->sa, data);
+
+	if (n == NULL)
+		return NULL;
+	return os_append_node(os, n);
 }
 
 static void
@@ -70,12 +207,12 @@ objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng o
 		newer->older = older;
 
 	if (!newer && ov->os) {
-		node *on = find_id(ov->os->objs, ov->obj->id);
+		object_node *on = find_id(ov->os, ov->obj->id);
 		assert(on->data == ov);
 		if (on)
-			list_remove_node(ov->os->objs, on);
+			os_remove_node(ov->os, on);
 		if (older)
-			list_append(ov->os->objs, older);
+			os_append(ov->os, older);
 	}
 	if (ov && ov->os && ov->os->destroy)
 		ov->os->destroy(store, ov->obj);
@@ -117,7 +254,7 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
 	os->refcnt = 1;
 	os->sa = sa;
 	os->destroy = destroy;
-	os->objs = list_new(sa, NULL);
+	MT_lock_init(&os->ht_lock, "sa_ht_lock");
 	os->temporary = temporary;
 	os->unique = unique;
 	return os;
@@ -130,17 +267,38 @@ os_dup(objectset *os)
 	return os;
 }
 
+// TODO: Look into cohesion between os_destroy, os->destroy and and node_destroy
 void
 os_destroy(objectset *os, sql_store store)
 {
 	if (--os->refcnt > 0)
 		return;
 	if (os->destroy) {
-		for(node *n=os->objs->h; n; n=n->next) {
+		for(object_node *n=os->h; n; n=n->next) {
 			os->destroy(store, n->data);
 		}
 	}
-	list_destroy(os->objs);
+	object_node *n = os->h;
+
+	MT_lock_destroy(&os->ht_lock);
+	os->h = NULL;
+	if (os->destroy || os->sa == NULL) {
+		while (n) {
+			object_node *t = n;
+
+			n = t->next;
+			node_destroy(os, t);
+		}
+	}
+
+	if (os->name_map && !os->name_map->sa)
+		hash_destroy(os->name_map);
+
+	if (os->id_map && !os->id_map->sa)
+		hash_destroy(os->id_map);
+
+	if (!os->sa)
+		_DELETE(os);
 }
 
 static int
@@ -149,46 +307,68 @@ ov_key(objectversion *ov)
 	return base_key(ov->obj);
 }
 
-static node *
-find_name(list *l, const char *name)
+static object_node *
+os_find(objectset *os, void *key, fcmp cmp)
 {
-	node *n;
+	object_node *n = NULL;
 
-	if (l) {
-		MT_lock_set(&l->ht_lock);
-		if ((!l->ht || l->ht->size*16 < list_length(l)) && list_length(l) > HASH_MIN_SIZE && l->sa) {
-			l->ht = hash_new(l->sa, list_length(l), (fkeyvalue)&ov_key);
-			if (l->ht == NULL) {
-				MT_lock_unset(&l->ht_lock);
+	if (key) {
+		if (cmp) {
+			for (n = os->h; n; n = n->next) {
+				if (cmp(n->data, key) == 0) {
+					return n;
+				}
+			}
+		} else {
+			for (n = os->h; n; n = n->next) {
+				if (n->data == key)
+					return n;
+			}
+		}
+	}
+	return NULL;
+}
+
+static object_node *
+find_name(objectset *os, const char *name)
+{
+	object_node *n;
+
+	if (os) {
+		MT_lock_set(&os->ht_lock);
+		if ((!os->name_map || os->name_map->size*16 < os->cnt) && os->cnt > HASH_MIN_SIZE && os->sa) {
+			os->name_map = hash_new(os->sa, os->cnt, (fkeyvalue)&ov_key);
+			if (os->name_map == NULL) {
+				MT_lock_unset(&os->ht_lock);
 				return NULL;
 			}
 
-			for (n = l->h; n; n = n->next ) {
+			for (n = os->h; n; n = n->next ) {
 				int key = ov_key(n->data);
 
-				if (hash_add(l->ht, key, n->data) == NULL) {
-					MT_lock_unset(&l->ht_lock);
+				if (hash_add(os->name_map, key, n->data) == NULL) {
+					MT_lock_unset(&os->ht_lock);
 					return NULL;
 				}
 			}
 		}
-		if (l->ht) {
+		if (os->name_map) {
 			int key = hash_key(name);
-			sql_hash_e *he = l->ht->buckets[key&(l->ht->size-1)];
+			sql_hash_e *he = os->name_map->buckets[key&(os->name_map->size-1)];
 
 			for (; he; he = he->chain) {
 				objectversion *ov = he->value;
 
 				if (ov && ov->obj->name && strcmp(ov->obj->name, name) == 0) {
-					MT_lock_unset(&l->ht_lock);
-					return list_find(l, ov, NULL);
+					MT_lock_unset(&os->ht_lock);
+					return os_find(os, ov, NULL);
 				}
 			}
-			MT_lock_unset(&l->ht_lock);
+			MT_lock_unset(&os->ht_lock);
 			return NULL;
 		}
-		MT_lock_unset(&l->ht_lock);
-		for (n = l->h; n; n = n->next) {
+		MT_lock_unset(&os->ht_lock);
+		for (n = os->h; n; n = n->next) {
 			objectversion *ov = n->data;
 
 			/* check if names match */
@@ -212,6 +392,30 @@ get_valid_object(sql_trans *tr, objectversion *ov)
 	return ov;
 }
 
+static void
+os_update_data(objectset *os, object_node *n, void *data)
+{
+	MT_lock_set(&os->ht_lock);
+
+	if (os->name_map) {
+		hash_delete(os->name_map, n->data);
+		n->data = data;
+		int nkey = os->name_map->key(data);
+		hash_add(os->name_map, nkey, data);
+	}
+
+	if (os->id_map) {
+		hash_delete(os->id_map, n->data);
+		n->data = data;
+		int nkey = os->id_map->key(data);
+		hash_add(os->id_map, nkey, data);
+	}
+
+	n->data = data;
+
+	MT_lock_unset(&os->ht_lock);
+}
+
 int /*ok, error (name existed) and conflict (added before) */
 os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
@@ -223,11 +427,11 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->older = ov->newer = NULL;
 	ov->os = os;
 
-	node *n = NULL;
+	object_node *n = NULL;
 	if (os->unique)
-		n = find_name(os->objs, name);
+		n = find_name(os, name);
 	else
-		n = find_id(os->objs, b->id);
+		n = find_id(os, b->id);
 
 	if (n) {
 		objectversion *co = n->data;
@@ -238,12 +442,12 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		ov->older = oo;
 		if (oo)
 			oo->newer = ov;
-		list_update_data(os->objs, n, ov);
+		os_update_data(os, n, ov);
 		if (!os->temporary)
 			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
 		return 0;
 	} else { /* new */
-		list_append(os->objs, ov);
+		os_append(os, ov);
 		if (!os->temporary)
 			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
 		return 0;
@@ -261,11 +465,11 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->older = ov->newer = NULL;
 	ov->os = os;
 
-	node *n = NULL;
+	object_node *n = NULL;
 	if (os->unique)
-		n = find_name(os->objs, name);
+		n = find_name(os, name);
 	else
-		n = find_id(os->objs, b->id);
+		n = find_id(os, b->id);
 
 	if (n) {
 		objectversion *co = n->data;
@@ -276,7 +480,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		ov->older = oo;
 		if (oo)
 			oo->newer = ov;
-		list_update_data(os->objs, n, ov);
+		os_update_data(os, n, ov);
 		if (!os->temporary)
 			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
 		return 0;
@@ -290,8 +494,8 @@ int
 os_size(objectset *os, struct sql_trans *tr)
 {
 	int cnt = 0;
-	if (os->objs) {
-		for(node *n = os->objs->h; n; n=n->next) {
+	if (os) {
+		for(object_node *n = os->h; n; n=n->next) {
 			objectversion *ov = n->data;
 			if ((ov=get_valid_object(tr, ov)) && !ov->deleted)
 				cnt++;
@@ -309,7 +513,7 @@ os_empty(objectset *os, struct sql_trans *tr)
 int
 os_remove(objectset *os, sql_trans *tr, const char *name)
 {
-	node *n = find_name(os->objs, name);
+	object_node *n = find_name(os, name);
 
 	if (n)
 		objectversion_destroy(tr->store, n->data, 0, 0);
@@ -321,7 +525,7 @@ os_find_name(objectset *os, struct sql_trans *tr, const char *name)
 {
 	if (!os)
 		return NULL;
-	node *n = find_name(os->objs, name);
+	object_node *n = find_name(os, name);
 
 	if (n) {
 		 objectversion *ov = get_valid_object(tr, n->data);
@@ -336,7 +540,7 @@ os_find_id(objectset *os, struct sql_trans *tr, sqlid id)
 {
 	if (!os)
 		return NULL;
-	node *n = find_id(os->objs, id);
+	object_node *n = find_id(os, id);
 
 	if (n) {
 		 objectversion *ov = get_valid_object(tr, n->data);
@@ -350,7 +554,7 @@ typedef struct os_iter {
 	objectset *os;
 	sql_trans *tr;
 	const char *name;
-	node *n;
+	object_node *n;
 } os_iter;
 
 os_iter *
@@ -363,17 +567,17 @@ os_iterator(objectset *os, struct sql_trans *tr, const char *name /*optional*/)
 	oi->name = name;
 	/*
 	if (name)
-		oi->n = find_name(os->objs, name);
+		oi->n = find_name(os, name);
 	else
 	*/
-		oi->n = os->objs->h;
+		oi->n = os->h;
 	return oi;
 }
 
 sql_base *
 oi_next(os_iter *oi)
 {
-	node *n = oi->n;
+	object_node *n = oi->n;
 	sql_base *b = NULL;
 
 	while (n && !b) {
