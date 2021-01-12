@@ -62,38 +62,12 @@ _list_find_name(list *l, const char *name)
 			sql_base *b = n->data;
 
 			/* check if names match */
-			if (name[0] == b->name[0] && strcmp(name, b->name) == 0 && !b->deleted) {
+			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
 				return b;
 			}
 		}
 	}
 	return NULL;
-}
-
-static sql_base *
-tr_get_object(sql_trans *tr, sql_base *b)
-{
-	while (b) {
-		if (b->ts == tr->tid || b->ts < tr->ts)
-			return b;
-		else
-			b = b->older;
-	}
-	return b;
-}
-
-int
-tr_empty(sql_trans *tr, list *l)
-{
-	if (list_empty(l))
-		return 1;
-	for(node *n = l->h; n; n=n->next) {
-		sql_base *b = tr_get_object(tr, n->data);
-
-		if (b && !b->deleted)
-			return 0;
-	}
-	return 1;
 }
 
 void
@@ -105,15 +79,6 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_lo
 	change->cleanup = cleanup;
 	change->log = log;
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
-}
-
-int
-tr_version_of_parent(sql_trans *tr, ulng ts)
-{
-	for( tr = tr->parent; tr; tr = tr->parent)
-		if (tr->tid == ts)
-			return 1;
-	return 0;
 }
 
 static void *
@@ -138,7 +103,7 @@ list_find_name(list *l, const char *name)
 			sql_base *b = n->data;
 
 			/* check if names match */
-			if (name[0] == b->name[0] && strcmp(name, b->name) == 0 && !b->deleted) {
+			if (name[0] == b->name[0] && strcmp(name, b->name) == 0) {
 				return n;
 			}
 		}
@@ -238,21 +203,13 @@ find_sql_column(sql_table *t, const char *cname)
 	return _cs_find_name(&t->columns, cname);
 }
 
-static void *
-tr_find_base(sql_trans *tr, sql_base *b)
-{
-	while(b && b->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, b->ts)) && b->ts > tr->ts)
-			b = b->older;
-	return b;
-}
-
 sql_part *
-find_sql_part_id(sql_trans *tr, sql_table *t, sqlid id)
+find_sql_part_id(sql_table *t, sqlid id)
 {
 	node *n = cs_find_id(&t->members, id);
 
 	if (n)
-		return tr_find_base(tr, n->data);
+		return n->data;
 	return NULL;
 }
 

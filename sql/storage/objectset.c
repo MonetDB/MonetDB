@@ -590,3 +590,16 @@ oi_next(os_iter *oi)
 	}
 	return b;
 }
+
+bool
+os_obj_intransaction(objectset *os, struct sql_trans *tr, sql_base *b)
+{
+	object_node *n = find_id(os, b->id);
+
+	if (n) {
+		 objectversion *ov = get_valid_object(tr, n->data);
+		 if (ov && !ov->deleted && ov->ts == tr->tid)
+			 return true;
+	}
+	return false;
+}
