@@ -93,7 +93,7 @@ node_destroy(objectset *os, object_node *n)
 static object_node *
 os_remove_node(objectset *os, object_node *n)
 {
-	void *data = n->data;
+	assert(n);
 	object_node *p = os->h;
 
 	if (p != n)
@@ -112,14 +112,14 @@ os_remove_node(objectset *os, object_node *n)
 	}
 	if (n == os->t)
 		os->t = p;
-	if (data) {
-		MT_lock_set(&os->ht_lock);
-		if (os->id_map && data)
-			hash_delete(os->id_map, data);
-		if (os->name_map && data)
-			hash_delete(os->name_map, data);
-		MT_lock_unset(&os->ht_lock);
-	}
+
+	MT_lock_set(&os->ht_lock);
+	if (os->id_map && n)
+		hash_delete(os->id_map, n);
+	if (os->name_map && n)
+		hash_delete(os->name_map, n);
+	MT_lock_unset(&os->ht_lock);
+
 	os->cnt--;
 	assert(os->cnt > 0 || os->h == NULL);
 
@@ -154,17 +154,17 @@ os_append_node(objectset *os, object_node *n)
 	if (n->data) {
 		MT_lock_set(&os->ht_lock);
 		if (os->name_map) {
-			int key = os->name_map->key(n->data);
+			int key = os->name_map->key(n);
 
-			if (hash_add(os->name_map, key, n->data) == NULL) {
+			if (hash_add(os->name_map, key, n) == NULL) {
 				MT_lock_unset(&os->ht_lock);
 				return NULL;
 			}
 		}
 		if (os->id_map) {
-			int key = os->id_map->key(n->data);
+			int key = os->id_map->key(n);
 
-			if (hash_add(os->id_map, key, n->data) == NULL) {
+			if (hash_add(os->id_map, key, n) == NULL) {
 				MT_lock_unset(&os->ht_lock);
 				return NULL;
 			}
@@ -302,51 +302,27 @@ os_destroy(objectset *os, sql_store store)
 }
 
 static int
-ov_key(objectversion *ov)
+os_name_key(object_node *n)
 {
-	return base_key(ov->obj);
-}
-
-static object_node *
-os_find(objectset *os, void *key, fcmp cmp)
-{
-	object_node *n = NULL;
-
-	if (key) {
-		if (cmp) {
-			for (n = os->h; n; n = n->next) {
-				if (cmp(n->data, key) == 0) {
-					return n;
-				}
-			}
-		} else {
-			for (n = os->h; n; n = n->next) {
-				if (n->data == key)
-					return n;
-			}
-		}
-	}
-	return NULL;
+	return hash_key(n->data->obj->name);
 }
 
 static object_node *
 find_name(objectset *os, const char *name)
 {
-	object_node *n;
-
 	if (os) {
 		MT_lock_set(&os->ht_lock);
 		if ((!os->name_map || os->name_map->size*16 < os->cnt) && os->cnt > HASH_MIN_SIZE && os->sa) {
-			os->name_map = hash_new(os->sa, os->cnt, (fkeyvalue)&ov_key);
+			os->name_map = hash_new(os->sa, os->cnt, (fkeyvalue)&os_name_key);
 			if (os->name_map == NULL) {
 				MT_lock_unset(&os->ht_lock);
 				return NULL;
 			}
 
-			for (n = os->h; n; n = n->next ) {
-				int key = ov_key(n->data);
+			for (object_node *n = os->h; n; n = n->next ) {
+				int key = os_name_key(n);
 
-				if (hash_add(os->name_map, key, n->data) == NULL) {
+				if (hash_add(os->name_map, key, n) == NULL) {
 					MT_lock_unset(&os->ht_lock);
 					return NULL;
 				}
@@ -357,18 +333,19 @@ find_name(objectset *os, const char *name)
 			sql_hash_e *he = os->name_map->buckets[key&(os->name_map->size-1)];
 
 			for (; he; he = he->chain) {
-				objectversion *ov = he->value;
+				object_node *n = he->value;
 
-				if (ov && ov->obj->name && strcmp(ov->obj->name, name) == 0) {
+				if (n && n->data->obj->name && strcmp(n->data->obj->name, name) == 0) {
 					MT_lock_unset(&os->ht_lock);
-					return os_find(os, ov, NULL);
+					return n;
 				}
 			}
 			MT_lock_unset(&os->ht_lock);
 			return NULL;
 		}
 		MT_lock_unset(&os->ht_lock);
-		for (n = os->h; n; n = n->next) {
+		// TODO: can we actually reach this point?
+		for (object_node *n = os->h; n; n = n->next) {
 			objectversion *ov = n->data;
 
 			/* check if names match */
@@ -396,16 +373,16 @@ static void
 os_update_data(objectset *os, object_node *n, void *data)
 {
 	MT_lock_set(&os->ht_lock);
-
+	// TODO: who should free the old data.
 	if (os->name_map) {
-		hash_delete(os->name_map, n->data);
+		hash_delete(os->name_map, n);
 		n->data = data;
 		int nkey = os->name_map->key(data);
 		hash_add(os->name_map, nkey, data);
 	}
 
 	if (os->id_map) {
-		hash_delete(os->id_map, n->data);
+		hash_delete(os->id_map, n);
 		n->data = data;
 		int nkey = os->id_map->key(data);
 		hash_add(os->id_map, nkey, data);
