@@ -1708,6 +1708,9 @@ store_load(sqlstore *store, sql_allocator *pa)
 		tr->active = 0;
 		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(sqlid), 0, TYPE_int, false, false);
 		store->obj_id = store_oids[nstore_oids - 1] + 1;
+
+		if (sql_trans_commit(tr) != SQL_OK)
+			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
 	}
 
 	id = store->obj_id; /* db objects up till id are already created */
