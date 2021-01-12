@@ -92,9 +92,12 @@ os_remove_node_(objectset *os, object_node *n)
 	assert(p==n||(p && p->next == n));
 	if (p == n) {
 		os->h = n->next;
+		os->h->prev = NULL;
 		p = NULL;
 	} else if ( p != NULL)  {
 		p->next = n->next;
+		if (p->next) // node in the middle
+			p->next->prev = p;
 	}
 	if (n == os->t)
 		os->t = p;
@@ -152,6 +155,7 @@ os_append_node(objectset *os, object_node *n)
 	} else {
 		os->h = n;
 	}
+	n->prev = os->t; // aka the double linked list.
 	os->t = n;
 	os->cnt++;
 	if (n->data) {
