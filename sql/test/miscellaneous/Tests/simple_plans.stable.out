@@ -354,20 +354,21 @@ end user.main;
 % clob # type
 % 192 # length
 function user.main():void;
-    X_1:void := querylog.define("explain select 1 from tbl_productsales t1 inner join tbl_productsales t2 on t1.product_category like t2.product_category;":str, "sequential_pipe":str, 23:int);
-    X_32:bat[:str] := bat.pack(".%1":str);
-    X_33:bat[:str] := bat.pack("%1":str);
-    X_34:bat[:str] := bat.pack("tinyint":str);
-    X_35:bat[:int] := bat.pack(1:int);
-    X_36:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select 1 from tbl_productsales t1 inner join tbl_productsales t2 on t1.product_category like t2.product_category;":str, "sequential_pipe":str, 24:int);
+    X_33:bat[:str] := bat.pack(".%1":str);
+    X_34:bat[:str] := bat.pack("%1":str);
+    X_35:bat[:str] := bat.pack("tinyint":str);
+    X_36:bat[:int] := bat.pack(1:int);
+    X_37:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "tbl_productsales":str);
     X_11:bat[:str] := sql.bind(X_4:int, "sys":str, "tbl_productsales":str, "product_category":str, 0:int);
     X_15:bat[:str] := algebra.projection(C_5:bat[:oid], X_11:bat[:str]);
-    X_19:bat[:oid] := algebra.likejoin(X_15:bat[:str], X_15:bat[:str], "":str, nil:BAT, nil:BAT, true:bit, nil:lng, false:bit);
-    X_26:bat[:str] := algebra.projection(X_19:bat[:oid], X_15:bat[:str]);
-    X_30:bat[:bte] := algebra.project(X_26:bat[:str], 1:bte);
-    sql.resultSet(X_32:bat[:str], X_33:bat[:str], X_34:bat[:str], X_35:bat[:int], X_36:bat[:int], X_30:bat[:bte]);
+    X_19:bat[:str] := bat.single("":str);
+    X_20:bat[:oid] := algebra.likejoin(X_15:bat[:str], X_15:bat[:str], X_19:bat[:str], nil:BAT, nil:BAT, true:bit, nil:lng, false:bit);
+    X_27:bat[:str] := algebra.projection(X_20:bat[:oid], X_15:bat[:str]);
+    X_31:bat[:bte] := algebra.project(X_27:bat[:str], 1:bte);
+    sql.resultSet(X_33:bat[:str], X_34:bat[:str], X_35:bat[:str], X_36:bat[:int], X_37:bat[:int], X_31:bat[:bte]);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
