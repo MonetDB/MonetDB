@@ -43,6 +43,8 @@ dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 	/* basic sanity checks */
 	assert(res && v && r);
 
+	if (ISNIL(TYPE)(*r))
+		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
 	if (*r <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 
@@ -65,6 +67,10 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
+	if (ISNIL(TYPE)(r)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+		goto bailout;
+	}
 	if (r <= 0) {
 		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 		goto bailout;
@@ -162,7 +168,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			r = src[p1];
 
-			if (r <= 0) {
+			if (ISNIL(TYPE)(r)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {
@@ -177,7 +186,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1);
 			r = src[p1];
 
-			if (r <= 0) {
+			if (ISNIL(TYPE)(r)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {
@@ -245,7 +257,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			x = src1[p1];
 			rr = src2[p2];
 
-			if (rr <= 0) {
+			if (ISNIL(TYPE)(rr)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {
@@ -261,7 +276,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			x = src1[p1];
 			rr = src2[p2];
 
-			if (rr <= 0) {
+			if (ISNIL(TYPE)(rr)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {

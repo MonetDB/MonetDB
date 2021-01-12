@@ -33,7 +33,9 @@ dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 	assert(res && v);
 	TYPE rr = *r;
 
-	if (ISNIL(TYPE)(rr) || rr <= 0)
+	if (ISNIL(TYPE)(rr))
+		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+	if (rr <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 	*res = ISNIL(TYPE)(*v) ? NIL(TYPE) : dec_round_body(*v, rr);
 	return MAL_SUCCEED;
@@ -54,7 +56,11 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) cntxt;
 	(void) mb;
-	if (ISNIL(TYPE)(r) || r <= 0) {
+	if (ISNIL(TYPE)(r)) {
+		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+		goto bailout;
+	}
+	if (r <= 0) {
 		msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 		goto bailout;
 	}
@@ -151,7 +157,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1);
 			r = src[p1];
 
-			if (ISNIL(TYPE)(r) || r <= 0) {
+			if (ISNIL(TYPE)(r)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {
@@ -166,7 +175,10 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1);
 			r = src[p1];
 
-			if (ISNIL(TYPE)(r) || r <= 0) {
+			if (ISNIL(TYPE)(r)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (r <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {
@@ -234,7 +246,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			x = src1[p1];
 			rr = src2[p2];
 
-			if (ISNIL(TYPE)(rr) || rr <= 0) {
+			if (ISNIL(TYPE)(rr)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {
@@ -250,7 +265,10 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 			x = src1[p1];
 			rr = src2[p2];
 
-			if (ISNIL(TYPE)(rr) || rr <= 0) {
+			if (ISNIL(TYPE)(rr)) {
+				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function cannot be null");
+				goto bailout;
+			} else if (rr <= 0) {
 				msg = createException(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 				goto bailout;
 			} else if (ISNIL(TYPE)(x)) {
@@ -300,6 +318,8 @@ round_wrap(TYPE *res, const TYPE *v, const bte *r)
 	if (is_bte_nil(rr) || (size_t) abs(rr) >= sizeof(scales) / sizeof(scales[0]))
 		throw(MAL, "round", SQLSTATE(42000) "Digits out of bounds");
 	*res = (ISNIL(TYPE)(*v)) ? NIL(TYPE) : round_body(*v, rr);
+	if (isinf(*res))
+		throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
 	return MAL_SUCCEED;
 }
 
@@ -354,6 +374,10 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	} else {
@@ -366,6 +390,10 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	}
@@ -425,6 +453,10 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	} else {
@@ -440,6 +472,10 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, r);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	}
@@ -513,6 +549,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, rr);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	} else {
@@ -529,6 +569,10 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				nils = true;
 			} else {
 				dst[i] = round_body(x, rr);
+				if (isinf(dst[i])) {
+					msg = createException(MAL, "round", SQLSTATE(22003) "Overflow in round");
+					goto bailout;
+				}
 			}
 		}
 	}
