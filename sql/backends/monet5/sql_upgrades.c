@@ -1031,6 +1031,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	sql_allocator *old_sa = sql->sa;
 	bool first = true;
 	sql_trans *tr = sql->session->tr;
+	struct os_iter *si = NULL;
 
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1043,8 +1044,9 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values");
 	ppos = pos; /* later check if found updatable database objects */
 
-	for (node *n = sql->session->tr->cat->schemas.set->h; n; n = n->next) {
-		sql_schema *s = (sql_schema*) n->data;
+	si = os_iterator(sql->session->tr->cat->schemas, sql->session->tr, NULL);
+	for (sql_base *b = oi_next(si); b; oi_next(si)) {
+		sql_schema *s = (sql_schema*)b;
 
 		struct os_iter *oi = os_iterator(s->funcs, sql->session->tr, NULL);
 		for (sql_base *b = oi_next(oi); b; oi_next(oi)) {

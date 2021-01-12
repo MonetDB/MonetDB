@@ -4354,7 +4354,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg;
 	sql_trans *tr;
-	node *nsch, *ncol;
+	node *ncol;
 	int w;
 	bit bitval;
 	bat *rsch = getArgReference_bat(stk, pci, 0);
@@ -4377,6 +4377,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = 0;
 	str tname = 0;
 	str cname = 0;
+	struct os_iter *si = NULL;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4416,9 +4417,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cname = *getArgReference_str(stk, pci, pci->retc + 2);
 
 	/* check for limited storage tables */
-	for (nsch = tr->cat->schemas.set->h; nsch; nsch = nsch->next) {
-		sql_base *b = nsch->data;
-		sql_schema *s = (sql_schema *) nsch->data;
+	si = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(si); b; b = oi_next(si)) {
+		sql_schema *s = (sql_schema *) b;
 		if( sname && strcmp(b->name, sname) )
 			continue;
 		if (isalpha((unsigned char) b->name[0]))

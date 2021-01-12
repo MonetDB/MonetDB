@@ -307,31 +307,12 @@ tc_log_table(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	return ok;
 }
 
+/*
 static void
-schema_destroy(sqlstore *store, sql_schema *s, ulng commit_ts)
+schema_destroy(sql_schema *s, sqlstore *store)
 {
-	sql_schema *older = (sql_schema*)s->base.older;
-	sql_schema *newer = (sql_schema*)s->base.newer;
-
 	if (--(s->base.refcnt) > 0)
 		return;
-
-	if (older && commit_ts) {
-		schema_destroy(store, older, commit_ts);
-		older = NULL;
-	}
-	s->base.older = NULL;
-
-	if (newer && commit_ts)
-		newer->base.older = NULL;
-	else if (newer && older)
-		newer->base.older = &older->base;
-
-	node *sn = list_find(store->cat->schemas.set, s, NULL);
-	if (sn)
-		list_remove_node(store->cat->schemas.set, sn);
-	if (older)
-		list_append(store->cat->schemas.set, older);
 
 	os_destroy(s->tables, store);
 	os_destroy(s->funcs, store);
@@ -346,37 +327,7 @@ schema_destroy(sqlstore *store, sql_schema *s, ulng commit_ts)
 	s->idxs = NULL;
 	s->triggers = NULL;
 }
-
-static int
-tc_gc_schema(sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
-{
-	sqlstore *store = Store;
-	sql_schema *s = (sql_schema*)change->obj;
-
-	if (s->base.deleted || !commit_ts) {
-		if (s->base.ts < oldest || (s->base.ts == commit_ts && commit_ts == oldest) || !commit_ts) {
-			int ok = LOG_OK;
-			schema_destroy(store, s, commit_ts);
-			if (ok == LOG_OK)
-				return 1; /* handled */
-			else
-				return LOG_ERR;
-		}
-	}
-	return 0;
-}
-
-static int
-tc_commit_schema(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
-{
-	sql_schema *s = (sql_schema*)change->obj;
-
-	s->base.ts = commit_ts;
-	struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi))
-		tc_commit_table_(tr, (sql_table*)b, commit_ts, oldest);
-	return LOG_OK;
-}
+*/
 
 static void
 load_keycolumn(sql_trans *tr, sql_key *k, oid rid)
@@ -1330,7 +1281,7 @@ load_trans(sql_trans* tr, sqlid id)
 		if (ns == NULL)
 			return false;
 		if (!instore(ns->base.id, id)) {
-			cs_add(&tr->cat->schemas, ns, 0);
+			os_add(tr->cat->schemas, tr, ns->base.name, &ns->base);
 			if (isTempSchema(ns))
 				tr->tmp = ns;
 		}
@@ -1343,9 +1294,11 @@ static int
 store_upgrade_ids(sql_trans* tr)
 {
 	sqlstore *store = tr->store;
-	node *n, *o;
-	for (n = tr->cat->schemas.set->h; n; n = n->next) {
-		sql_schema *s = n->data;
+	node *o;
+
+	struct os_iter *si = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(si); b; b = oi_next(si)) {
+		sql_schema *s = (sql_schema*)b;
 
 		if (isDeclaredSchema(s))
 			continue;
@@ -1402,10 +1355,11 @@ insert_schemas(sql_trans *tr)
 	sql_table *sysschema = find_sql_table(tr, syss, "schemas");
 	sql_table *systable = find_sql_table(tr, syss, "_tables");
 	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
-	node *n, *o;
+	node *o;
 
-	for (n = tr->cat->schemas.set->h; n; n = n->next) {
-		sql_schema *s = n->data;
+	struct os_iter *si = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(si); b; b = oi_next(si)) {
+		sql_schema *s = (sql_schema*)b;
 
 		if (isDeclaredSchema(s))
 			continue;
@@ -1743,13 +1697,12 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 	s->keys = os_new(tr->sa, (destroy_fptr) NULL, false, true);
 	s->idxs = os_new(tr->sa, (destroy_fptr) NULL, false, true);
 	s->triggers = os_new(tr->sa, (destroy_fptr) NULL, false, true);
-	cs_add(&tr->cat->schemas, s, TR_NEW);
+	os_add(tr->cat->schemas, tr, s->base.name, &s->base);
 	if (isTempSchema(s))
 		tr->tmp = s;
 
 	if (store->first)
 		s->base.ts = tr->tid;
-	trans_add(tr, &s->base, NULL, &tc_gc_schema, &tc_commit_schema);
 	s->store = tr->store;
 	return s;
 }
@@ -2041,10 +1994,10 @@ static int
 store_needs_vacuum( sqlstore *store )
 {
 	//size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
-	sql_schema *s = store->cat->schemas.set->h->data; /* sys schema if first */
 
 	return 0;
 
+	sql_schema *s = (sql_schema*)os_find_name(store->cat->schemas, NULL, "sys"); /* sys schema if first */
 	struct os_iter *oi = os_iterator(s->tables, NULL, NULL);
 	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
 		sql_table *t = (sql_table*)b;
@@ -3249,8 +3202,10 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 		parent->name = sa_strdup(parent->sa, name);
 	}
 	tr->cat = store->cat;
-	if (!tr->cat)
+	if (!tr->cat) {
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
+		store->cat->schemas = os_new(tr->sa, (destroy_fptr) NULL, false, true);
+	}
 	//tr->tmp = find_sql_schema(tr, "tmp");
 	tr->tmp = store->tmp;
 	tr->parent = parent;
@@ -4177,27 +4132,15 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->triggers = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
 	s->store = tr->store;
 
-	cs_add(&tr->cat->schemas, s, TR_NEW);
+	os_add(tr->cat->schemas, tr, s->base.name, &s->base);
 	store->table_api.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner, &s->system);
-	trans_add(tr, &s->base, NULL, &tc_gc_schema, NULL);
 	return s;
 }
 
 static sql_schema*
-new_schema( sql_trans *tr, sql_schema *s, node *n)
+new_schema( sql_trans *tr, sql_schema *s)
 {
-	if (n && s->base.ts == tr->tid)
-		return s;
-	sql_schema *ds = schema_dup(tr, s, 0);
-	//*ds = *s;
-	ds->base.ts = tr->tid;
-	if (n) {
-		ds->base.older = &s->base;
-		s->base.newer = &ds->base;
-		list_update_data(tr->cat->schemas.set, n, ds);
-	}
-	trans_add(tr, &ds->base, NULL, &tc_gc_schema, &tc_commit_schema);
-	return ds;
+	return schema_dup(tr, s, 0);
 }
 
 sql_schema*
@@ -4205,18 +4148,16 @@ sql_trans_rename_schema(sql_trans *tr, sqlid id, const char *new_name)
 {
 	sqlstore *store = tr->store;
 	sql_table *sysschema = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
-	node *n = find_sql_schema_node(tr, id);
-	sql_schema *s = n->data;
+	sql_schema *s = find_sql_schema_id(tr, id);
 	oid rid;
 
 	assert(!strNil(new_name));
 
 	/* delete schema, add schema */
-	sql_schema *ds = new_schema(tr, s, n);
-	ds->base.deleted = 1;
-	sql_schema *ns = new_schema(tr, s, NULL);
+	os_del(tr->cat->schemas, tr, s->base.name, &s->base);
+	sql_schema *ns = new_schema(tr, s);
 	ns->base.name = sa_strdup(tr->sa, new_name);
-	cs_add(&tr->cat->schemas, ns, 0);
+	os_add(tr->cat->schemas, tr, ns->base.name, &ns->base);
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 	assert(!is_oid_nil(rid));
@@ -4228,8 +4169,7 @@ int
 sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 {
 	sqlstore *store = tr->store;
-	node *n = find_sql_schema_node(tr, id);
-	sql_schema *s = n->data;
+	sql_schema *s = find_sql_schema_id(tr, id);
 	sql_table *sysschema = find_sql_table(tr, find_sql_schema(tr, "sys"), "schemas");
 	oid rid = store->table_api.column_find_row(tr, find_sql_column(sysschema, "id"), &s->base.id, NULL);
 
@@ -4260,9 +4200,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	sql_trans_drop_any_comment(tr, s->base.id);
 	sql_trans_drop_obj_priv(tr, s->base.id);
 
-	s = new_schema(tr, s, n);
-	s->base.deleted = 1;
-	//cs_del(&tr->cat->schemas, n, s->base.flags);
+	os_del(tr->cat->schemas, tr, s->base.name, &s->base);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);

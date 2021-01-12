@@ -288,7 +288,7 @@ typedef struct sql_schema {
 } sql_schema;
 
 typedef struct sql_catalog {
-	changeset schemas;
+	struct objectset *schemas;
 } sql_catalog;
 
 typedef struct sql_trans {
@@ -775,7 +775,6 @@ extern sql_sequence *find_sql_sequence(sql_trans *tr, sql_schema *s, const char 
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);
-extern node *find_sql_schema_node(sql_trans *t, sqlid id);
 
 extern sql_type *find_sql_type(sql_trans *tr, sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);

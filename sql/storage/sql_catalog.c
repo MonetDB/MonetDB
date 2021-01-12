@@ -49,7 +49,7 @@ _list_find_name(list *l, const char *name)
 			for (; he; he = he->chain) {
 				sql_base *b = he->value;
 
-				if (b->name && strcmp(b->name, name) == 0 && !b->deleted) {
+				if (b->name && strcmp(b->name, name) == 0) {
 					MT_lock_unset(&l->ht_lock);
 					return b;
 				}
@@ -114,21 +114,6 @@ tr_version_of_parent(sql_trans *tr, ulng ts)
 		if (tr->tid == ts)
 			return 1;
 	return 0;
-}
-
-static void *
-tr_find_base(sql_trans *tr, sql_base *b)
-{
-	while(b && b->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, b->ts)) && b->ts > tr->ts)
-			b = b->older;
-	return b;
-}
-
-static void *
-tr_find_name(sql_trans *tr, changeset * cs, const char *name)
-{
-	sql_base *b =  _list_find_name(cs->set, name);
-	return tr_find_base(tr, b);
 }
 
 static void *
@@ -218,13 +203,12 @@ find_sql_key(sql_table *t, const char *kname)
 sql_key *
 sql_trans_find_key(sql_trans *tr, sqlid id)
 {
-	if (tr->cat->schemas.set) {
-		for (node *n = tr->cat->schemas.set->h; n; n = n->next) {
-			sql_schema *s = n->data;
-			sql_base *b = os_find_id(s->keys, tr, id);
-			if (b)
-				return (sql_key*)b;
-		}
+	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		sql_schema *s = (sql_schema*)b;
+		sql_base *bk = os_find_id(s->keys, tr, id);
+		if (bk)
+				return (sql_key*)bk;
 	}
 	return NULL;
 }
@@ -238,13 +222,12 @@ find_sql_idx(sql_table *t, const char *iname)
 sql_idx *
 sql_trans_find_idx(sql_trans *tr, sqlid id)
 {
-	if (tr->cat->schemas.set) {
-		for (node *n = tr->cat->schemas.set->h; n; n = n->next) {
-			sql_schema *s = n->data;
-			sql_base *b = os_find_id(s->idxs, tr, id);
-			if (b)
-				return (sql_idx*)b;
-		}
+	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		sql_schema *s = (sql_schema*)b;
+		sql_base *bi = os_find_id(s->idxs, tr, id);
+		if (bi)
+			return (sql_idx*)bi;
 	}
 	return NULL;
 }
@@ -253,6 +236,14 @@ sql_column *
 find_sql_column(sql_table *t, const char *cname)
 {
 	return _cs_find_name(&t->columns, cname);
+}
+
+static void *
+tr_find_base(sql_trans *tr, sql_base *b)
+{
+	while(b && b->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, b->ts)) && b->ts > tr->ts)
+			b = b->older;
+	return b;
 }
 
 sql_part *
@@ -280,18 +271,14 @@ find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 sql_table *
 sql_trans_find_table(sql_trans *tr, sqlid id)
 {
-	node *n;
-	sql_table *t = NULL;
-
-	if (tr->cat->schemas.set) {
-		for (n = tr->cat->schemas.set->h; n && !t; n = n->next) {
-			sql_schema *s = n->data;
-			sql_base *m = os_find_id(s->tables, tr, id);
-			if (m)
-				t = (sql_table*)m;
-		}
+	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		sql_schema *s = (sql_schema*)b;
+		sql_base *bt = os_find_id(s->tables, tr, id);
+		if (bt)
+			return (sql_table*)bt;
 	}
-	return t;
+	return NULL;
 }
 
 sql_sequence *
@@ -305,7 +292,7 @@ find_sql_schema(sql_trans *tr, const char *sname)
 {
 	if (tr->tmp && strcmp(sname, "tmp")==0)
 		return tr->tmp;
-	return tr_find_name(tr, &tr->cat->schemas, sname);
+	return (sql_schema*)os_find_name(tr->cat->schemas, tr, sname);
 }
 
 sql_schema *
@@ -313,17 +300,7 @@ find_sql_schema_id(sql_trans *tr, sqlid id)
 {
 	if (tr->tmp && tr->tmp->base.id == id)
 		return tr->tmp;
-	node *n = cs_find_id(&tr->cat->schemas, id);
-
-	if (n)
-		return n->data;
-	return NULL;
-}
-
-node *
-find_sql_schema_node(sql_trans *tr, sqlid id)
-{
-	return cs_find_id(&tr->cat->schemas, id);
+	return (sql_schema*)os_find_id(tr->cat->schemas, tr, id);
 }
 
 sql_type *
@@ -335,18 +312,16 @@ find_sql_type(sql_trans *tr, sql_schema *s, const char *tname)
 sql_type *
 sql_trans_bind_type(sql_trans *tr, sql_schema *c, const char *name)
 {
-	sql_type *t = NULL;
-
-	if (tr->cat->schemas.set)
-		for (node *n = tr->cat->schemas.set->h; n && !t; n = n->next) {
-			sql_schema *s = n->data;
-
-			t = find_sql_type(tr, s, name);
-		}
-
-	if (!t && c)
-		t = find_sql_type(tr, c, name);
-	return t;
+	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		sql_schema *s = (sql_schema*)b;
+		sql_type *t = find_sql_type(tr, s, name);
+		if (t)
+				return t;
+	}
+	if (c)
+		return find_sql_type(tr, c, name);
+	return NULL;
 }
 
 sql_type *
@@ -357,13 +332,12 @@ sql_trans_find_type(sql_trans *tr, sql_schema *s, sqlid id)
 		if (b)
 			return (sql_type*)b;
 	} else {
-		if (tr->cat->schemas.set) {
-			for (node *n = tr->cat->schemas.set->h; n; n = n->next) {
-				sql_schema *s = n->data;
-				sql_base *b = os_find_id(s->types, tr, id);
-				if (b)
-					return (sql_type*)b;
-			}
+		struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+			sql_schema *s = (sql_schema*)b;
+			sql_base *bt = os_find_id(s->types, tr, id);
+			if (bt)
+				return (sql_type*)bt;
 		}
 	}
 	return NULL;
@@ -378,30 +352,25 @@ find_sql_func(sql_trans *tr, sql_schema *s, const char *tname)
 sql_func *
 sql_trans_bind_func(sql_trans *tr, const char *name)
 {
-	node *n;
-	sql_func *t = NULL;
-
-	if (tr->cat->schemas.set)
-		for (n = tr->cat->schemas.set->h; n && !t; n = n->next) {
-			sql_schema *s = n->data;
-
-			t = find_sql_func(tr, s, name);
-		}
-	if (!t)
-		return NULL;
-	return t;
+	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		sql_schema *s = (sql_schema*)b;
+		sql_func *f = find_sql_func(tr, s, name);
+		if (f)
+			return f;
+	}
+	return NULL;
 }
 
 sql_func *
 sql_trans_find_func(sql_trans *tr, sqlid id)
 {
-	if (tr->cat->schemas.set) {
-		for (node *n = tr->cat->schemas.set->h; n; n = n->next) {
-			sql_schema *s = n->data;
-			sql_base *b = os_find_id(s->funcs, tr, id);
-			if (b)
-				return (sql_func*)b;
-		}
+	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		sql_schema *s = (sql_schema*)b;
+		sql_base *bf = os_find_id(s->funcs, tr, id);
+		if (bf)
+			return (sql_func*)bf;
 	}
 	return NULL;
 }
@@ -409,13 +378,12 @@ sql_trans_find_func(sql_trans *tr, sqlid id)
 sql_trigger *
 sql_trans_find_trigger(sql_trans *tr, sqlid id)
 {
-	if (tr->cat->schemas.set) {
-		for (node *n = tr->cat->schemas.set->h; n; n = n->next) {
-			sql_schema *s = n->data;
-			sql_base *b = os_find_id(s->idxs, tr, id);
-			if (b)
-				return (sql_trigger*)b;
-		}
+	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		sql_schema *s = (sql_schema*)b;
+		sql_base *bt = os_find_id(s->triggers, tr, id);
+		if (bt)
+			return (sql_trigger*)bt;
 	}
 	return NULL;
 }
