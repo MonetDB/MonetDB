@@ -1347,7 +1347,7 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 	stmt *sc = stmt_bat(be, c, RDONLY, part);
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
-	   (!isNew(c) || !inTransaction(tr, c->t) || !isNew(c->t) /* alter */) &&
+	   (!isNew(c) || (c->t->s && !inTransaction(tr, c->t)) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) && !c->t->commit_action) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
@@ -1367,7 +1367,7 @@ stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 	stmt *sc = stmt_idxbat(be, i, RDONLY, part);
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
-	   (!isNew(i) || !inTransaction(tr, i->t) || !isNew(i->t)/* alter */) &&
+	   (!isNew(i) || (i->t->s && !inTransaction(tr, i->t)) || !isNew(i->t)/* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->s) && !i->t->commit_action) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
