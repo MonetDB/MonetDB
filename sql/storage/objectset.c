@@ -79,9 +79,19 @@ hash_delete(sql_hash *h, void *data)
 	}
 }
 
-// TODO: check double hash_delete and fix prev pointer
+static void
+node_destroy(objectset *os, object_node *n)
+{
+	if (n->data && os->destroy) {
+		os->destroy(NULL, n->data);
+		n->data = NULL;
+	}
+	if (!os->sa)
+		_DELETE(n);
+}
+
 static object_node *
-os_remove_node_(objectset *os, object_node *n)
+os_remove_node(objectset *os, object_node *n)
 {
 	void *data = n->data;
 	object_node *p = os->h;
@@ -92,7 +102,8 @@ os_remove_node_(objectset *os, object_node *n)
 	assert(p==n||(p && p->next == n));
 	if (p == n) {
 		os->h = n->next;
-		os->h->prev = NULL;
+		if (os->h) // i.e. non-empty os
+			os->h->prev = NULL;
 		p = NULL;
 	} else if ( p != NULL)  {
 		p->next = n->next;
@@ -111,26 +122,8 @@ os_remove_node_(objectset *os, object_node *n)
 	}
 	os->cnt--;
 	assert(os->cnt > 0 || os->h == NULL);
-	return p;
-}
 
-static void
-node_destroy(objectset *os, object_node *n)
-{
-	if (n->data && os->destroy) {
-		os->destroy(NULL, n->data);
-		n->data = NULL;
-	}
-	if (!os->sa)
-		_DELETE(n);
-}
-
-static object_node *
-os_remove_node(objectset *l, object_node *n)
-{
-	object_node *p = os_remove_node_(l, n);
-
-	node_destroy(l, n);
+	node_destroy(os, n);
 	return p;
 }
 
