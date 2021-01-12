@@ -351,3 +351,53 @@ ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCE
 update t2 set c1 = 0.012427403386733981704992402228526771068572998046875 where (((t2.c0)%(t2.c1))) between symmetric 
 (coalesce(-1053775800, 991217471)) and (((0.6974006550632457)+(1832026960)));
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t1" ("c0" REAL NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+4.2328605e+08
+0.69732165
+0.71200204
+4.466514e+07
+0
+1.3677554e+09
+0.36787975
+0.961471
+0.6692194
+0.3954379
+
+create or replace view v64(vc0, vc1, vc2, vc3) as (select -34, 'A',
+((0.2457749548974355047192830170388333499431610107421875)*(5)), cast(-43 as int)) with check option;
+create or replace view v110(vc0) as (values ('a'), ('8'), ('g'), (null)) with check option;
+
+select 1 from v64, t1, v110 where t1.c0 > v64.vc2;
+ROLLBACK;
+
+START TRANSACTION;
+create or replace view v11(vc0, vc1) as (values (cast(r'<' as string), ((((356910743)||(324718164)))<<(sql_max(962062904, -1226062612)))),
+(r'e]+)Nik', ((cast(-1267863719 as tinyint))&(- (340796877)))), (case when ((r'24060')not like(r'f')) then r'vyA,R' else r'68' end,
++ (greatest(113, 0.61746233049203114173764106453745625913143157958984375))));
+
+create or replace view v13(vc0, vc1) as (values (((0.9896616954779023)<(greatest(-1982788333, 0.76584341990855342441335551484371535480022430419921875)))
+, cast(1938193505 as boolean)), (greatest(false, false), cast(cast(r'rHIVNz' as int) as boolean))) with check option;
+
+create or replace view v23(vc0, vc1) as (values (case when ((false)and(true)) then ((25922)*(697298603)) when not (false) then - (2909) end,
+cast(case r'17841' when r'155' then 2909 when r'116' then 17275 end as int)));
+
+SELECT CAST(SUM(agg0) as BIGINT) FROM (
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE ((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))
+	UNION ALL
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE NOT (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299)))))
+	UNION ALL
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))) IS NULL
+	) as asdf;
+
+create or replace view v11(vc0) as (values ('<'), ('a'));
+SELECT 1 FROM v11 WHERE v11.vc0 LIKE '' IS NULL;
+ROLLBACK;
+
+SELECT 1 HAVING group_concat('') NOT LIKE '3' IS NULL;
+	-- empty
