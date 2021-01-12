@@ -22,20 +22,21 @@ project (
 % clob # type
 % 200 # length
 function user.main():void;
-    X_1:void := querylog.define("explain select 1 from (values (\\'one\\'), (\\'two\\')) as l(s), (values (\\'three\\'), (\\'four\\')) as r(s) where l.s like r.s;":str, "sequential_pipe":str, 23:int);
-    X_33:bat[:str] := bat.pack(".%7":str);
-    X_34:bat[:str] := bat.pack("%7":str);
-    X_35:bat[:str] := bat.pack("tinyint":str);
-    X_36:bat[:int] := bat.pack(1:int);
-    X_37:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select 1 from (values (\\'one\\'), (\\'two\\')) as l(s), (values (\\'three\\'), (\\'four\\')) as r(s) where l.s like r.s;":str, "sequential_pipe":str, 24:int);
+    X_34:bat[:str] := bat.pack(".%7":str);
+    X_35:bat[:str] := bat.pack("%7":str);
+    X_36:bat[:str] := bat.pack("tinyint":str);
+    X_37:bat[:int] := bat.pack(1:int);
+    X_38:bat[:int] := bat.pack(0:int);
     X_9:bat[:str] := bat.new(nil:str);
     X_11:bat[:str] := bat.appendBulk(X_9:bat[:str], true:bit, "one":str, "two":str);
     X_17:bat[:str] := bat.new(nil:str);
     X_18:bat[:str] := bat.appendBulk(X_17:bat[:str], true:bit, "three":str, "four":str);
-    X_21:bat[:oid] := algebra.likejoin(X_11:bat[:str], X_18:bat[:str], "":str, nil:BAT, nil:BAT, true:bit, nil:lng, false:bit);
-    X_27:bat[:str] := algebra.projection(X_21:bat[:oid], X_11:bat[:str]);
-    X_31:bat[:bte] := algebra.project(X_27:bat[:str], 1:bte);
-    sql.resultSet(X_33:bat[:str], X_34:bat[:str], X_35:bat[:str], X_36:bat[:int], X_37:bat[:int], X_31:bat[:bte]);
+    X_21:bat[:str] := bat.single("":str);
+    X_22:bat[:oid] := algebra.likejoin(X_11:bat[:str], X_18:bat[:str], X_21:bat[:str], nil:BAT, nil:BAT, true:bit, nil:lng, false:bit);
+    X_28:bat[:str] := algebra.projection(X_22:bat[:oid], X_11:bat[:str]);
+    X_32:bat[:bte] := algebra.project(X_28:bat[:str], 1:bte);
+    sql.resultSet(X_34:bat[:str], X_35:bat[:str], X_36:bat[:str], X_37:bat[:int], X_38:bat[:int], X_32:bat[:bte]);
 end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=1 usec 

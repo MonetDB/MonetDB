@@ -358,7 +358,7 @@ create view v3(vc0, vc1) as (select distinct r'', cast(cast(-1197336362 as int) 
 with check option;
 
 create view v7(vc0, vc1, vc2) as (values (1307331776, ((0.8065742163429374)||(0.1829829)),
-((floor(23898.0))-(cast(16268 as double)))), (least(cast(r'' as bigint), ifthenelse(true, 7769,
+((floor(23898.0))-(cast(16268 as double)))), (least(cast(r'1' as bigint), ifthenelse(true, 7769,
 0.52628413232100446084160694226738996803760528564453125)), 2092106435, case when ((((((((r'TRUE')or(true)))and(false)))
 or(false)))and(false)) then pi() when false then sql_max(10246889, 0.038412724) else cast(1556011470 as bigint) end))
 with check option;
@@ -376,6 +376,8 @@ create view v38(vc0) as (select all cast(cast(11149 as bigint) as real) where "i
 create view v43(vc0, vc1) as (select distinct cast(case 0.635420284843984273237538218381814658641815185546875 when
 0.94514286975825123615635448004468344151973724365234375 then 0.8788786 end as bigint), null
 where ((-1975284152)<=(17772))) with check option;
+
+SELECT 1 FROM v7, v43 WHERE v7.vc1 ILIKE v43.vc1;
 
 SELECT median(ALL least(+ (0.26910993823565487748084024133277125656604766845703125),
 ((0.5744001734384440727154697015066631138324737548828125)&(-1283341470)))), CASE WHEN NOT (FALSE) THEN
