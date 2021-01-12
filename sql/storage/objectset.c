@@ -28,7 +28,7 @@ typedef struct objectversion {
 typedef struct object_node {
     struct object_node* prev;
     struct object_node* next;
-    void* data;
+    objectversion* data;
 } object_node;
 
 typedef struct objectset {
@@ -83,7 +83,7 @@ static void
 node_destroy(objectset *os, object_node *n)
 {
 	if (n->data && os->destroy) {
-		os->destroy(NULL, n->data);
+		os->destroy(n->data, NULL);
 		n->data = NULL;
 	}
 	if (!os->sa)
@@ -275,7 +275,7 @@ os_destroy(objectset *os, sql_store store)
 		return;
 	if (os->destroy) {
 		for(object_node *n=os->h; n; n=n->next) {
-			os->destroy(store, n->data);
+			os->destroy(n->data, store);
 		}
 	}
 	object_node *n = os->h;
