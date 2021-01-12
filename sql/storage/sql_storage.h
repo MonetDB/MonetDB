@@ -144,10 +144,6 @@ typedef int (*create_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*create_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*create_del_fptr) (sql_trans *tr, sql_table *t);
 
-typedef int (*log_create_col_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*log_create_idx_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*log_create_del_fptr) (sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-
 typedef void *(*col_dup_fptr) (sql_column *c);
 typedef void *(*idx_dup_fptr) (sql_idx *i);
 typedef void *(*del_dup_fptr) (sql_table *t);
@@ -225,10 +221,6 @@ typedef struct store_functions {
 	create_col_fptr create_col;
 	create_idx_fptr create_idx;
 	create_del_fptr create_del;
-
-	log_create_col_fptr log_create_col;
-	log_create_idx_fptr log_create_idx;
-	log_create_del_fptr log_create_del;
 
 	destroy_col_fptr destroy_col;
 	destroy_idx_fptr destroy_idx;
@@ -447,10 +439,8 @@ extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
-extern int tr_empty(sql_trans *tr, list *l);
-
+#define inTransaction(tr,t) (os_obj_intransaction(t->s->tables, tr, &t->base))
 #define TRANSACTION_ID_BASE	(1ULL<<63)
-#define inTransaction(tr, obj) (((sql_base*)obj)->ts == tr->tid)
 
 typedef struct sqlstore {
 	int catalog_version;	/* software version of the catalog */

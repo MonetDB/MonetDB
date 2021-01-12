@@ -18,8 +18,20 @@ static int log_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng ol
 static int tc_gc_col( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
 static int tc_gc_idx( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
 static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
+static int log_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
+static int log_create_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
+static int log_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
 
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
+
+static int
+tr_version_of_parent(sql_trans *tr, ulng ts)
+{
+	for( tr = tr->parent; tr; tr = tr->parent)
+		if (tr->tid == ts)
+			return 1;
+	return 0;
+}
 
 sql_delta *
 timestamp_delta( sql_trans *tr, sql_delta *d)
@@ -1438,11 +1450,12 @@ copyBat (bat i, int type, oid seq)
 static int
 create_col(sql_trans *tr, sql_column *c)
 {
-	int ok = LOG_OK;
+	int ok = LOG_OK, new = 0;
 	int type = c->type.type->localtype;
 	sql_delta *bat = c->data;
 
 	if (!bat) {
+		new = 1;
 		c->data = bat = ZNEW(sql_delta);
 		if(!bat)
 			return LOG_ERR;
@@ -1454,7 +1467,7 @@ create_col(sql_trans *tr, sql_column *c)
 			ok = LOG_ERR;
 	}
 
-	if (inTransaction(tr, c) && !isTempTable(c->t))
+	if (new && !isTempTable(c->t))
 		bat->ts = tr->tid;
 
 	if (!isNew(c) && !isTempTable(c->t)){
@@ -1502,6 +1515,8 @@ create_col(sql_trans *tr, sql_column *c)
 				bat_destroy(b);
 			}
 		}
+		if (new && !isTempTable(c->t) && !isNew(c->t) /* alter */)
+			trans_add(tr, &c->base, bat, &tc_gc_col, &log_create_col);
 	}
 	return ok;
 }
@@ -1544,7 +1559,7 @@ log_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 static int
 create_idx(sql_trans *tr, sql_idx *ni)
 {
-	int ok = LOG_OK;
+	int ok = LOG_OK, new = 0;
 	sql_delta *bat = ni->data;
 	int type = TYPE_lng;
 
@@ -1552,6 +1567,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		type = TYPE_oid;
 
 	if (!bat) {
+		new = 1;
 		ni->data = bat = ZNEW(sql_delta);
 		if(!bat)
 			return LOG_ERR;
@@ -1563,7 +1579,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			ok = LOG_ERR;
 	}
 
-	if (inTransaction(tr, ni) && !isTempTable(ni->t))
+	if (new && !isTempTable(ni->t))
 		bat->ts = tr->tid;
 
 	if (!isNew(ni) && !isTempTable(ni->t)){
@@ -1607,6 +1623,8 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			if(bat->uvbid == BID_NIL)
 				ok = LOG_ERR;
 		}
+		if (new && !isTempTable(ni->t) && !isNew(ni->t) /* alter */)
+			trans_add(tr, &ni->base, bat, &tc_gc_idx, &log_create_idx);
 	}
 	return ok;
 }
@@ -1664,11 +1682,12 @@ create_del(sql_trans *tr, sql_table *t)
 {
 	sqlstore *store = tr->store;
 
-	int ok = LOG_OK;
+	int ok = LOG_OK, new = 0;
 	BAT *b;
 	sql_dbat *bat = t->data;
 
 	if (!bat) {
+		new = 1;
 		t->data = bat = ZNEW(sql_dbat);
 		if(!bat)
 			return LOG_ERR;
@@ -1700,6 +1719,8 @@ create_del(sql_trans *tr, sql_table *t)
 		} else {
 			ok = LOG_ERR;
 		}
+		if (new && !isTempTable(t))
+			trans_add(tr, &t->base, bat, &tc_gc_del, &log_create_del);
 	}
 	return ok;
 }
@@ -1929,7 +1950,6 @@ log_destroy_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_dbat *dbat = t->data;
 	if (dbat->ts < tr->ts) /* no changes ? */
 		return ok;
-	assert(dbat->ts == tr->tid || t->base.ts == tr->tid || (t->base.ts == commit_ts && commit_ts == oldest));
 	dbat->ts = commit_ts;
 	ok = log_destroy_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
 
@@ -2438,7 +2458,6 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 			t->data = d->next;
 			d->next = NULL;
 		} else {
-			assert(0); /* no data left ?? */
 			t->data = NULL;
 		}
 		_destroy_dbat(d);
@@ -2476,10 +2495,6 @@ bat_storage_init( store_functions *sf)
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;
 	sf->create_del = (create_del_fptr)&create_del;
-
-	sf->log_create_col = (log_create_col_fptr)&log_create_col;
-	sf->log_create_idx = (log_create_idx_fptr)&log_create_idx;
-	sf->log_create_del = (log_create_del_fptr)&log_create_del;
 
 	sf->upgrade_col = (upgrade_col_fptr)&upgrade_col;
 	sf->upgrade_idx = (upgrade_idx_fptr)&upgrade_idx;

@@ -420,7 +420,7 @@ sql_bind_member_internal(mvc *sql, list *ff, const char *fname, sql_subtype *tp,
 		for (; n; n = n->next) {
 			sql_func *f = n->data;
 
-			if (f->base.deleted || (!f->res && !IS_FILT(f)))
+			if (!f->res && !IS_FILT(f))
 				continue;
 			if (strcmp(f->base.name, fname) == 0 && f->type == type && list_length(f->ops) == nrargs) {
 				sql_subtype *ft = &((sql_arg *) f->ops->h->data)->type;
@@ -724,7 +724,7 @@ sql_find_funcs_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_f
 			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
 				sql_func *f = he->value;
 
-				if (f->base.deleted || (f->type != type && f->type != filt))
+				if (f->type != type && f->type != filt)
 					continue;
 				if ((fres = func_cmp(sql->sa, f, fname, nrargs )) != NULL) {
 					if (!res)
@@ -807,7 +807,7 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
 				sql_func *f = he->value;
 
-				if (f->base.deleted || f->type != type)
+				if (f->type != type)
 					continue;
 				if (strcmp(f->base.name, fname) == 0) {
 					if (!res)
@@ -820,7 +820,7 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 			sql_base_loop( ff, n) {
 				sql_func *f = n->data;
 
-				if (f->base.deleted || f->type != type)
+				if (f->type != type)
 					continue;
 				if (strcmp(f->base.name, fname) == 0) {
 					if (!res)

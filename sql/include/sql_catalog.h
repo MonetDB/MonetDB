@@ -197,14 +197,10 @@ typedef enum commit_action_t {
 typedef int sqlid;
 
 typedef struct sql_base {
-	int deleted;
-	int flags;
+	int flags;			/* todo change into bool new */
 	int refcnt;
 	sqlid id;
 	char *name;
-	ulng ts;				/* transaction start timestamp */
-	struct sql_base	*older;	/* older versions */
-	struct sql_base	*newer;	/* newer version */
 } sql_base;
 
 #define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
@@ -247,6 +243,7 @@ extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id
 /* iterating (for example for location functinos) */
 extern struct os_iter *os_iterator(struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
 extern sql_base *oi_next(struct os_iter *oi);
+extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern changeset* cs_dup(changeset * cs);
@@ -742,15 +739,13 @@ typedef struct sql_session {
 	backend_stack stk;
 } sql_session;
 
-#define sql_base_loop(l, n) for (n=l->h; n; n=n->next) if (!((sql_base*)n->data)->deleted)
+#define sql_base_loop(l, n) for (n=l->h; n; n=n->next)
 
 //extern void schema_destroy(sql_schema *s);
 //extern void table_destroy(sql_table *t);
 extern void column_destroy(sql_column *c);
 extern void key_destroy(sql_key *k);
 extern void idx_destroy(sql_idx * i);
-
-extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);
@@ -764,8 +759,7 @@ extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
-
-extern sql_part *find_sql_part_id(sql_trans *tr, sql_table *t, sqlid id);
+extern sql_part *find_sql_part_id(sql_table *t, sqlid id);
 
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
