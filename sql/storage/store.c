@@ -3825,7 +3825,7 @@ build_drop_func_list_item(sql_trans *tr, sql_schema *s, sqlid id)
 {
 	sql_base *b = os_find_id(s->funcs, tr, id);
 
-	if (!b) {
+	if (b) {
 		sql_func *func = (sql_func*)b;
 		sys_drop_func(tr, func, DROP_CASCADE);
 		os_del(s->funcs, tr, func->base.name, &func->base);
