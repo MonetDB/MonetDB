@@ -8294,8 +8294,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 							sql_subtype *fst = exp_subtype(args->h->data);
 							atom *a;
 
-							if (fst->scale == ft->scale &&
-							   (a = exp_value(v->sql, ce)) != NULL) {
+							if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
 #ifdef HAVE_HGE
 								hge val = 1;
 #else
