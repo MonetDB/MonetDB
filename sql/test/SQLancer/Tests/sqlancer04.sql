@@ -352,3 +352,35 @@ then 0.8350239383024128 when r'6r' then 932574625 when r'[]' then 9 when r'' the
 from v40, v3 where (0.4906208915598539999081140194903127849102020263671875) not in (1654919043, 6)) as sub1
 on ((trim(v37.vc0))>=(substr(v37.vc0, 9, 8)))) as res;
 ROLLBACK;
+
+START TRANSACTION;
+create view v3(vc0, vc1) as (select distinct r'', cast(cast(-1197336362 as int) as decimal) where greatest(false, true))
+with check option;
+
+create view v7(vc0, vc1, vc2) as (values (1307331776, ((0.8065742163429374)||(0.1829829)),
+((floor(23898.0))-(cast(16268 as double)))), (least(cast(r'' as bigint), ifthenelse(true, 7769,
+0.52628413232100446084160694226738996803760528564453125)), 2092106435, case when ((((((((r'TRUE')or(true)))and(false)))
+or(false)))and(false)) then pi() when false then sql_max(10246889, 0.038412724) else cast(1556011470 as bigint) end))
+with check option;
+
+create view v28(vc0, vc1, vc2) as (values (-595506138, ((nullif(-1.09922038E8, 24510))*(coalesce(-1802237644,
+0.7125421032644879, 662707145))), "week"(greatest(timestamp '1970-01-11 12:58:57', timestamp '1969-12-24 00:21:39'))))
+with check option;
+
+create view v32(vc0, vc1) as (values (cast(-330282362 as bigint), ((((674023637)||(-1856487129)))<=(case -1983844154
+when 122 then 11 when 1381635703 then -367942232 when -1208650057 then 713851705 else 0.40289348 end))),
+(sql_max(((10)>>(18833)), - (-1088048958)), (not (true)) = true));
+
+create view v38(vc0) as (select all cast(cast(11149 as bigint) as real) where "isauuid"(r'0.962687263902831'));
+
+create view v43(vc0, vc1) as (select distinct cast(case 0.635420284843984273237538218381814658641815185546875 when
+0.94514286975825123615635448004468344151973724365234375 then 0.8788786 end as bigint), null
+where ((-1975284152)<=(17772))) with check option;
+
+SELECT median(ALL least(+ (0.26910993823565487748084024133277125656604766845703125),
+((0.5744001734384440727154697015066631138324737548828125)&(-1283341470)))), CASE WHEN NOT (FALSE) THEN
+least(-650735786, -1123683253) ELSE 1414135574 END FROM v7, v38, v43 RIGHT OUTER JOIN 
+(SELECT ALL sql_max(CAST(v28.vc0 AS REAL), ifthenelse(v32.vc1, 56, 104)), ((CAST(v28.vc1 AS DOUBLE))*
+(CAST(TRUE AS TINYINT))), r'u''A#{' FROM v28, v32, v3) AS sub0 ON (((TRUE)AND(TRUE))) = TRUE
+WHERE ((v7.vc1)ILIKE(upper(v43.vc1))) GROUP BY "second"(TIME '10:50:47');
+ROLLBACK;
