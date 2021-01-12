@@ -47,6 +47,8 @@ dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 	if (rr <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 	*res = dec_round_body(*v, rr);
+	if (isinf(*res))
+		throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
 	return MAL_SUCCEED;
 }
 
@@ -89,8 +91,14 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 
 	nonil = TRUE;
 	if (v->tnonil) {
-		for (i = 0; i < cnt; i++)
+		for (i = 0; i < cnt; i++) {
 			dst[i] = dec_round_body_nonil(src[i], rr);
+			if (isinf(dst[i])) {
+				BBPunfix(v->batCacheid);
+				BBPreclaim(res);
+				throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
+			}
+		}
 	} else {
 		for (i = 0; i < cnt; i++) {
 			if (ISNIL(TYPE)(src[i])) {
@@ -98,6 +106,11 @@ bat_dec_round_wrap(bat *_res, const bat *_v, const TYPE *r)
 				dst[i] = NIL(TYPE);
 			} else {
 				dst[i] = dec_round_body_nonil(src[i], rr);
+				if (isinf(dst[i])) {
+					BBPunfix(v->batCacheid);
+					BBPreclaim(res);
+					throw(MAL, "round", SQLSTATE(22003) "Overflow in round");
+				}
 			}
 		}
 	}
