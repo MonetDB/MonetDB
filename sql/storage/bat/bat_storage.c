@@ -2410,7 +2410,6 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 			c->data = d->next;
 			d->next = NULL;
 		} else {
-			assert(0); /* no data left ?? */
 			c->data = NULL;
 		}
 		destroy_delta(d);
@@ -2434,7 +2433,6 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 			i->data = d->next;
 			d->next = NULL;
 		} else {
-			assert(0); /* no data left ?? */
 			i->data = NULL;
 		}
 		destroy_delta(d);
