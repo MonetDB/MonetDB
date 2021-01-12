@@ -798,6 +798,11 @@ monetdbe_dump_database(monetdbe_database dbhdl, const char *filename)
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
 
+	if (mdbe->mid) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_dump_database", PROGRAM_NYI);
+		return mdbe->msg;
+	}
+
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
 
 		return mdbe->msg;
@@ -815,6 +820,11 @@ monetdbe_dump_table(monetdbe_database dbhdl, const char *sname, const char *tnam
 		return NULL;
 
 	monetdbe_database_internal *mdbe = (monetdbe_database_internal*)dbhdl;
+
+	if (mdbe->mid) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_dump_database", PROGRAM_NYI);
+		return mdbe->msg;
+	}
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_table")) != MAL_SUCCEED) {
 
