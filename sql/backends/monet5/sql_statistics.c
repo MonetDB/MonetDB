@@ -78,7 +78,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mvc *m = NULL;
 	str msg = getSQLContext(cntxt, mb, &m, NULL);
 	sql_trans *tr = m->session->tr;
-	node *nsch, *ncol;
+	node *ncol;
 	char *maxval = NULL, *minval = NULL;
 	size_t minlen = 0, maxlen = 0;
 	str sch = 0, tbl = 0, col = 0;
@@ -123,8 +123,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
 
 	/* Do all the validations before doing any analyze */
-	for (nsch = tr->cat->schemas.set->h; nsch; nsch = nsch->next) {
-		sql_schema *s = (sql_schema *) nsch->data;
+	struct os_iter *si = os_iterator(tr->cat->schemas, tr, NULL);
+	for(sql_base *b = oi_next(si); b; b = oi_next(si)) {
+		sql_schema *s = (sql_schema *)b;
 		if (!isalpha((unsigned char) s->base.name[0]))
 			continue;
 
@@ -165,9 +166,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 
 	sqlstore *store = tr->store;
-	for (nsch = tr->cat->schemas.set->h; nsch; nsch = nsch->next) {
-		sql_base *b = nsch->data;
-		sql_schema *s = (sql_schema *) nsch->data;
+	si = os_iterator(tr->cat->schemas, tr, NULL);
+	for(sql_base *b = oi_next(si); b; b = oi_next(si)) {
+		sql_schema *s = (sql_schema *)b;
 		if (!isalpha((unsigned char) b->name[0]))
 			continue;
 
