@@ -1704,6 +1704,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 
 		if (sql_trans_commit(tr) != SQL_OK)
 			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
+		tr->ts = store_timestamp(store);
 	} else {
 		tr->active = 0;
 		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(sqlid), 0, TYPE_int, false, false);
@@ -1711,6 +1712,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 
 		if (sql_trans_commit(tr) != SQL_OK)
 			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
+		tr->ts = store_timestamp(store);
 	}
 
 	id = store->obj_id; /* db objects up till id are already created */
@@ -3179,6 +3181,7 @@ sql_trans_commit(sql_trans *tr)
 			b->flags = 0;
 		}
 	}
+	tr->ts = commit_ts;
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
 }
 
