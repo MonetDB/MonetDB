@@ -157,7 +157,47 @@ between asymmetric (t0.c0) and (t0.c0)))) union all
 select all t0.c0 from t0 where (((((cast(0.8800821070828266368124559448915533721446990966796875 as string))like(cast(greatest(r'0.29269552476776495', r'Aṵ\tmmz\\v/p*Q2Q5') as string(667)))))and((0.7706295839241474876502024926594458520412445068359375)
 between asymmetric (t0.c0) and (t0.c0)))) is null
 ----
-41 values hashing to 9ab266981e61de6d27b0395bbbdacfa7
+0.027
+0.034
+0.048
+0.061
+0.078
+0.087
+0.113
+0.148
+0.189
+0.227
+0.283
+0.362
+0.364
+0.371
+0.388
+0.440
+0.446
+0.453
+0.453
+0.493
+0.501
+0.506
+0.559
+0.560
+0.579
+0.622
+0.627
+0.722
+0.728
+0.759
+0.768
+0.790
+0.819
+0.819
+0.829
+0.838
+0.839
+0.841
+0.854
+0.920
+0.939
 
 query RRI rowsort
 SELECT ALL CAST((- (- (VAR_POP(ALL ((CAST(CAST(abs(709845242) AS INT) AS INT))%(abs(CAST((931144491) NOT IN (-587881807) AS INT))))))))^(- (+ (- (char_length(r'>])'))))) as decimal(10,3)), CAST(0.5186927954967 as decimal(14,13)), CAST("locate"(lower(r'[]'), rtrim(r'..ۄUH*6鉡q'), ((((-233289450)&(-476676450)))-(- (236876413)))) AS INT)
@@ -439,6 +479,29 @@ INSERT INTO "t2" VALUES (59), (-3), (5), (0), (1), (-6)
 
 statement ok
 UPDATE t2 SET c0 = 5 WHERE least(((3)=(round(0.55, t2.c0))), true)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c1" DOUBLE NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+-3.1207632e+08
+1
+0
+-903197136
+0.3672199296718357
+-1.7976931348623157e+308
+
+statement error
+update t2 set c1 = (scale_down(t2.c1, 0.39861114390109142480156378951505757868289947509765625))
+where (scale_up(-1155480997, 0.5434124050282382)) is not null
 
 statement ok
 ROLLBACK
