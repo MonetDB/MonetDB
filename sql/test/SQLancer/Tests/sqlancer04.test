@@ -57,7 +57,7 @@ else coalesce (case coalesce (dayofmonth(timestamp '1970-01-15 10:08:18'), coale
 cast(t0.c3 as double)) then case least(t0.c1, t0.c1) when case t0.c2 when interval '5' month then r'*pf6/+}öq壚,j2\302\205K]sNKk,_%Tu' when 1016331084 then r'0.4'
 else r'*' end then 0.8 end when sql_min(t0.c3, t0.c3) then coalesce (cast(t0.c2 as decimal), "second"(t0.c3), cast(t0.c2 as decimal),
 0.9) when coalesce (cast(t0.c1 as double), 0.2) then 0.0 else 0.0 end, 0.2) end from t0 where (interval '6' month)
-is not null group by cast(dayofmonth(t0.c0) as string(679)), 0.2
+is not null group by cast(dayofmonth(t0.c0) as string(679)), 0.2; --error, types sec_interval(0,0) and tinyint(8,0) are not equal
 
 statement ok
 ROLLBACK
@@ -514,7 +514,26 @@ query TT rowsort
 SELECT t0.c1, t0.c0 FROM t1 FULL OUTER JOIN t0 ON CASE WHEN CASE t1.c1 WHEN t1.c1 THEN CAST(FALSE AS INT) ELSE abs(-1677579573) END
 THEN NOT (COALESCE(FALSE, FALSE)) WHEN ((COALESCE(1985884175, 53875539, r'-427000320'))/(- (-936496635))) THEN (((((FALSE)OR(TRUE)))OR(TRUE))) = FALSE ELSE (t1.c1) BETWEEN ASYMMETRIC (t0.c1) AND (t1.c1) END
 ----
-20 values hashing to f961f68f46f2f57239a7736c3877bafc
+124642631
+20818 days, 2:39:33
+124642631
+20818 days, 2:39:33
+1519431547
+NULL
+1519431547
+NULL
+1575918952
+23602 days, 9:28:51
+1575918952
+23602 days, 9:28:51
+557549613
+NULL
+557549613
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 ROLLBACK
@@ -622,7 +641,7 @@ r'XCWVB	' end, cast(false as string)))) with check option
 statement ok
 create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then r'F&' when 0 then r'&' end)))
 
-statement ok
+query I rowsort
 select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
 (select all ((((1074663557)%(0.8367095941704169)))%(scale_up(v20.vc0, 0.25281408194923194))), 0.573499282341099
 from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
@@ -634,7 +653,58 @@ then 0.78255921469665923329017687137820757925510406494140625 end) is null, + (ca
 then 0.8350239383024128 when r'6r' then 932574625 when r'[]' then 9 when r'' then 5 when r'LnP/Amb9' then 2 end)
 from v40, v3 where (0.4906208915598539999081140194903127849102020263671875) not in (1654919043, 6)) as sub1
 on ((trim(v37.vc0))>=(substr(v37.vc0, 9, 8)))) as res
+----
+8
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create view v3(vc0, vc1) as (select distinct r'', cast(cast(-1197336362 as int) as decimal) where greatest(false, true))
+with check option
+
+statement ok
+create view v7(vc0, vc1, vc2) as (values (1307331776, ((0.8065742163429374)||(0.1829829)),
+((floor(23898.0))-(cast(16268 as double)))), (least(cast(r'1' as bigint), ifthenelse(true, 7769,
+0.52628413232100446084160694226738996803760528564453125)), 2092106435, case when ((((((((r'TRUE')or(true)))and(false)))
+or(false)))and(false)) then pi() when false then sql_max(10246889, 0.038412724) else cast(1556011470 as bigint) end))
+with check option
+
+statement ok
+create view v28(vc0, vc1, vc2) as (values (-595506138, ((nullif(-1.09922038E8, 24510))*(coalesce(-1802237644,
+0.7125421032644879, 662707145))), "week"(greatest(timestamp '1970-01-11 12:58:57', timestamp '1969-12-24 00:21:39'))))
+with check option
+
+statement ok
+create view v32(vc0, vc1) as (values (cast(-330282362 as bigint), ((((674023637)||(-1856487129)))<=(case -1983844154
+when 122 then 11 when 1381635703 then -367942232 when -1208650057 then 713851705 else 0.40289348 end))),
+(sql_max(((10)>>(18833)), - (-1088048958)), (not (true)) = true))
+
+statement ok
+create view v38(vc0) as (select all cast(cast(11149 as bigint) as real) where "isauuid"(r'0.962687263902831'))
+
+statement ok
+create view v43(vc0, vc1) as (select distinct cast(case 0.635420284843984273237538218381814658641815185546875 when
+0.94514286975825123615635448004468344151973724365234375 then 0.8788786 end as bigint), null
+where ((-1975284152)<=(17772))) with check option
+
+query I rowsort
+SELECT 1 FROM v7, v43 WHERE v7.vc1 ILIKE v43.vc1
+----
+
+query RI rowsort
+SELECT median(ALL least(+ (0.26910993823565487748084024133277125656604766845703125),
+((0.5744001734384440727154697015066631138324737548828125)&(-1283341470)))), CASE WHEN NOT (FALSE) THEN
+least(-650735786, -1123683253) ELSE 1414135574 END FROM v7, v38, v43 RIGHT OUTER JOIN
+(SELECT ALL sql_max(CAST(v28.vc0 AS REAL), ifthenelse(v32.vc1, 56, 104)), ((CAST(v28.vc1 AS DOUBLE))*
+(CAST(TRUE AS TINYINT))), r'u''A#{' FROM v28, v32, v3) AS sub0 ON (((TRUE)AND(TRUE))) = TRUE
+WHERE ((v7.vc1)ILIKE(upper(v43.vc1))) GROUP BY "second"(TIME '10:50:47')
+----
+
+statement ok
+ROLLBACK
+
 
