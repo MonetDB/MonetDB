@@ -26,6 +26,11 @@ MAPI  = (monetdb) /var/tmp/mtest-817278/.s.monetdb.31783
 QUERY = SELECT 1 WHERE scale_up(CAST(0.89767724 AS REAL), 1); --error function scale_up not available for real,tinyint
 ERROR = !types real(24,0) and boolean(1,0) are not equal
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-1783405/.s.monetdb.39729
+QUERY = update t2 set c1 = (scale_down(t2.c1, 0.39861114390109142480156378951505757868289947509765625))
+        where (scale_up(-1155480997, 0.5434124050282382)) is not null;
+ERROR = !Overflow in round
+CODE  = 22003
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."
