@@ -251,12 +251,15 @@ objectset *
 os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
 {
 	objectset *os = SA_NEW(sa, objectset);
-	os->refcnt = 1;
-	os->sa = sa;
+	*os = (objectset) {
+		.refcnt = 1,
+		.sa = sa,
+		.destroy = destroy,
+		.temporary = temporary,
+		.unique = unique
+	};
 	os->destroy = destroy;
 	MT_lock_init(&os->ht_lock, "sa_ht_lock");
-	os->temporary = temporary;
-	os->unique = unique;
 	return os;
 }
 
