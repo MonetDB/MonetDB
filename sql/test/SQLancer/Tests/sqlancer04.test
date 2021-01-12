@@ -604,4 +604,37 @@ select cast(interval '29578044' second as time)
 ----
 08:07:24
 
+statement ok
+START TRANSACTION
+
+statement ok
+create view v3(vc0) as (values (not ((r'%') is not null)), (least(cast(1 as boolean), not (true))), (case sql_min(r'vFP*鱍', r'&G*')
+when cast(0 as string) then (true) is null when cast(9 as string(678)) then ((true)or(false)) end), (false)) with check option
+
+statement ok
+create view v20(vc0) as (values (((sql_max(2, 0.8207251106243245164506561195594258606433868408203125))&(abs(0.25579435)))))
+
+statement ok
+create view v37(vc0) as (values (r'1837521830'), (replace(coalesce(r'4', r'', r'20', r'0.5074455058602168'),
+case 1108638173 when 1 then r'PS	' when 0.4804786358649317801194911226048134267330169677734375 then r'' else
+r'XCWVB	' end, cast(false as string)))) with check option
+
+statement ok
+create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then r'F&' when 0 then r'&' end)))
+
+statement ok
+select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
+(select all ((((1074663557)%(0.8367095941704169)))%(scale_up(v20.vc0, 0.25281408194923194))), 0.573499282341099
+from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
+((case 0.28276833606549456323620006514829583466053009033203125 when 1 then v37.vc0 when 1436332976 then r'FALSE'
+when 0.4573545 then v37.vc0 else r'G1hw7' end)not ilike(sql_min(r'46', v37.vc0))) inner join (select (case v3.vc0
+when v40.vc0 then -2078582481 when v40.vc0 then 0.26386297637506184177169643589877523481845855712890625 when v3.vc0
+then 6 when v40.vc0 then 0.37311851701627662958316022923099808394908905029296875 when v40.vc0
+then 0.78255921469665923329017687137820757925510406494140625 end) is null, + (case r'14' when r'p.e4xf'
+then 0.8350239383024128 when r'6r' then 932574625 when r'[]' then 9 when r'' then 5 when r'LnP/Amb9' then 2 end)
+from v40, v3 where (0.4906208915598539999081140194903127849102020263671875) not in (1654919043, 6)) as sub1
+on ((trim(v37.vc0))>=(substr(v37.vc0, 9, 8)))) as res
+
+statement ok
+ROLLBACK
 
