@@ -1021,8 +1021,9 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 	}
 	store->table_api.rids_destroy(rs);
 
-	struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->tables, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = (sql_table*)b;
 		if (isMergeTable(t) || isReplicaTable(t)) {
 			sql_table *objects = find_sql_table(tr, syss, "objects");
@@ -1095,14 +1096,16 @@ store_upgrade_ids(sql_trans* tr)
 	sqlstore *store = tr->store;
 	node *o;
 
-	struct os_iter *si = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(si); b; b = oi_next(si)) {
+	struct os_iter si;
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema*)b;
 
 		if (isDeclaredSchema(s))
 			continue;
-		struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table*)b;
 
 			if (!isTable(t))
@@ -1156,15 +1159,17 @@ insert_schemas(sql_trans *tr)
 	sql_table *syscolumn = find_sql_table(tr, syss, "_columns");
 	node *o;
 
-	struct os_iter *si = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(si); b; b = oi_next(si)) {
+	struct os_iter si;
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema*)b;
 
 		if (isDeclaredSchema(s))
 			continue;
 		store->table_api.table_insert(tr, sysschema, &s->base.id, s->base.name, &s->auth_id, &s->owner, &s->system);
-		struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table*)b;
 			sht ca = t->commit_action;
 
@@ -1795,8 +1800,9 @@ store_needs_vacuum( sqlstore *store )
 	return 0;
 
 	sql_schema *s = (sql_schema*)os_find_name(store->cat->schemas, NULL, "sys"); /* sys schema if first */
-	struct os_iter *oi = os_iterator(s->tables, NULL, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->tables, NULL, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = (sql_table*)b;
 		sql_column *c = t->columns.set->h->data;
 
@@ -1822,8 +1828,9 @@ store_vacuum( sql_trans *tr )
 	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
 	sql_schema *s = find_sql_schema(tr, "sys");
 
-	struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->tables, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = (sql_table*)b;
 		sql_column *c = t->columns.set->h->data;
 
@@ -3113,8 +3120,9 @@ schema_dup(sql_trans *tr, sql_schema *s, int deep)
 	*ns = *s;
 	/* TODO handle other resources on schema level, such a names etc */
 	ns->tables = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
-	struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi))
+	struct os_iter oi;
+	os_iterator(&oi, s->tables, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi))
 		os_add(ns->tables, tr, b->name, (deep)?(sql_base*)table_dup(tr, (sql_table*)b, s, deep):base_incref(b));
 	if (!deep && s->keys)
 		ns->keys = os_dup(s->keys);
@@ -3182,8 +3190,9 @@ sql_trans_commit(sql_trans *tr)
 		tr->changes = NULL;
 	}
 	if (tr->tmp) {
-		struct os_iter *oi = os_iterator(tr->tmp->tables, tr, NULL);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->tmp->tables, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *tt = (sql_table*)b;
 
 			if ((isGlobal(tt) && tt->commit_action != CA_PRESERVE) || tt->commit_action == CA_DELETE) {
@@ -3633,8 +3642,9 @@ sys_drop_func(sql_trans *tr, sql_func *func, int drop_action)
 static void
 sys_drop_types(sql_trans *tr, sql_schema *s, int drop_action)
 {
-	struct os_iter *oi = os_iterator(s->types, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->types, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_type *t = (sql_type*)b;
 
 		sys_drop_type(tr, t, drop_action);
@@ -3644,8 +3654,9 @@ sys_drop_types(sql_trans *tr, sql_schema *s, int drop_action)
 static int
 sys_drop_tables(sql_trans *tr, sql_schema *s, int drop_action)
 {
-	struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->tables, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = (sql_table*)b;
 
 		if (sys_drop_table(tr, t, drop_action))
@@ -3657,8 +3668,9 @@ sys_drop_tables(sql_trans *tr, sql_schema *s, int drop_action)
 static void
 sys_drop_funcs(sql_trans *tr, sql_schema *s, int drop_action)
 {
-	struct os_iter *oi = os_iterator(s->funcs, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->funcs, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_func *f = (sql_func*)b;
 
 		sys_drop_func(tr, f, drop_action);
@@ -3668,8 +3680,9 @@ sys_drop_funcs(sql_trans *tr, sql_schema *s, int drop_action)
 static void
 sys_drop_sequences(sql_trans *tr, sql_schema *s, int drop_action)
 {
-	struct os_iter *oi = os_iterator(s->seqs, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->seqs, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_sequence *seq = (sql_sequence*)b;
 
 		sys_drop_sequence(tr, seq, drop_action);
@@ -5562,8 +5575,9 @@ sql_trans_rollback_tmp(sql_trans *tr, int commit)
 	(void)commit;
 
 	if (commit == 0) {
-		struct os_iter *oi = os_iterator(tr->tmp->tables, tr, NULL);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->tmp->tables, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *tt = (sql_table*)b;
 
 			if (tt->base.flags == TR_NEW)
@@ -5572,8 +5586,9 @@ sql_trans_rollback_tmp(sql_trans *tr, int commit)
 	}
 
 	if (tr->tmp) {
-		struct os_iter *oi = os_iterator(tr->tmp->tables, tr, NULL);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->tmp->tables, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *tt = (sql_table*)b;
 
 			if ((isGlobal(tt) && tt->commit_action != CA_PRESERVE) || tt->commit_action == CA_DELETE) {
@@ -5708,4 +5723,3 @@ sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor)
 	store->table_api.table_insert(tr, auths, &id, auth, &grantor);
 	return 0;
 }
-

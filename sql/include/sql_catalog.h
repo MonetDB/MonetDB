@@ -222,7 +222,13 @@ typedef void *sql_store;
 struct sql_trans;
 struct sql_change;
 struct objectset;
-struct os_iter;
+struct object_node;
+struct os_iter {
+	struct objectset *os;
+	struct sql_trans *tr;
+	struct object_node *n;
+	const char *name;
+};
 
 /* transaction changes */
 typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
@@ -241,7 +247,7 @@ extern int os_remove(struct objectset *os, struct sql_trans *tr, const char *nam
 extern sql_base *os_find_name(struct objectset *os, struct sql_trans *tr, const char *name);
 extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id);
 /* iterating (for example for location functinos) */
-extern struct os_iter *os_iterator(struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
+extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
 
