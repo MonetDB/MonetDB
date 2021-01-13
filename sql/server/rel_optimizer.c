@@ -9081,7 +9081,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					memset(pos, 0, sizeof(int)*nr);
 					for (nt = t->members->h; nt; nt = nt->next) {
 						sql_part *pd = nt->data;
-						sql_table *pt = find_sql_table_id(t->s, pd->base.id);
+						sql_table *pt = find_sql_table_id(t->s, pd->member->base.id);
 						sql_rel *prel = rel_basetable(v->sql, pt, tname);
 						node *n;
 						int skip = 0, j;

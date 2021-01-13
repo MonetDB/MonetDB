@@ -286,7 +286,6 @@ extern sql_column *mvc_copy_column(mvc *m, sql_table *t, sql_column *c);
 extern sql_key *mvc_copy_key(mvc *m, sql_table *t, sql_key *k);
 extern sql_idx *mvc_copy_idx(mvc *m, sql_table *t, sql_idx *i);
 extern sql_trigger *mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr);
-extern sql_part *mvc_copy_part(mvc *m, sql_table *t, sql_part *pt);
 
 extern sql_rel *sql_processrelation(mvc *m, sql_rel* rel, int value_based_opt);
 
