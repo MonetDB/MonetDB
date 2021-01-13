@@ -422,8 +422,8 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		if (oo)
 			oo->newer = ov;
 		n->data = ov;
-		if (!os->temporary)
 		MT_lock_unset(&os->ht_lock);
+		if (!os->temporary)
 			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
 		return 0;
 	} else { /* new */
@@ -464,9 +464,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		if (oo)
 			oo->newer = ov;
 		n->data = ov;
-		if (!os->temporary)
 		MT_lock_unset(&os->ht_lock);
-
 		if (!os->temporary)
 			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
 		return 0;
