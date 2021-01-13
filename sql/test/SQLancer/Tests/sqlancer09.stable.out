@@ -281,6 +281,83 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 #0.968	"1403896159"
 #0.565	"0.8224972062481081"
 [ 7	]
+#SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
+#(t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
+#((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
+#(SELECT DISTINCT CASE (-809462446) IN (2020241275, 2116461308) WHEN CASE WHEN FALSE THEN TRUE WHEN FALSE THEN
+#FALSE WHEN TRUE THEN TRUE WHEN TRUE THEN FALSE WHEN FALSE THEN FALSE WHEN FALSE THEN FALSE END THEN
+% .t2,	.t2 # table_name
+% c0,	c1 # name
+% decimal,	varchar # type
+% 20,	0 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
 #ROLLBACK;
 #START TRANSACTION;
 #create view v18(vc0) as (values (cast(((r'-W<~>頃')not like(r'8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
