@@ -184,6 +184,8 @@ os_append(objectset *os, void *data)
 	return os_append_node(os, n);
 }
 
+static object_node * find_name(objectset *os, const char *name);
+
 static void
 objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng oldest)
 {
@@ -204,7 +206,11 @@ objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng o
 		newer->older = older;
 
 	if (!newer && ov->os) {
-		object_node *on = find_id(ov->os, ov->obj->id);
+		object_node *on = NULL;
+		if (ov->os->unique)
+			on = find_name(ov->os, ov->obj->name);
+		else
+			on = find_id(ov->os, ov->obj->id);
 		assert(on->data == ov);
 		if (on)
 			os_remove_node(ov->os, on);

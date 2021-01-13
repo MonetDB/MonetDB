@@ -3124,6 +3124,7 @@ schema_dup(sql_trans *tr, sql_schema *s, int deep)
 	os_iterator(&oi, s->tables, tr, NULL);
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi))
 		os_add(ns->tables, tr, b->name, (deep)?(sql_base*)table_dup(tr, (sql_table*)b, s, deep):base_incref(b));
+	/* TODO copy all the other objects, types, funcs, idxs, keys, triggers and parts */
 	if (!deep && s->keys)
 		ns->keys = os_dup(s->keys);
 	return ns;
