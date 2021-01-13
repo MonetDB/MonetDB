@@ -444,11 +444,71 @@ NULL	"3128"
 0.968	"1403896159"
 0.565	"0.8224972062481081"
 
-query I nosort
+query I rowsort
+SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END
+----
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
 SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END
 ----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
-query II nosort
+query RT rowsort
 SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
 (t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
 ((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
@@ -458,6 +518,10 @@ CAST(1847496204 AS BOOLEAN) WHEN CASE WHEN FALSE THEN FALSE WHEN FALSE THEN FALS
 WHEN ((t2.c1)LIKE(t2.c1)) THEN (t1.c0) IN (t2.c0, t1.c0) ELSE (t2.c1) NOT BETWEEN SYMMETRIC (t1.c1) AND (t2.c1) END
 FROM t2, t1 WHERE CAST(20726 AS BOOLEAN)) AS sub0 ON ((CAST(t1.c1 AS STRING))ILIKE(t1.c1))
 ----
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 ROLLBACK
