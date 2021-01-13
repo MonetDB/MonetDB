@@ -3212,34 +3212,34 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 }
 
 stmt *
-stmt_unop(backend *be, stmt *op1, sql_subfunc *op)
+stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op)
 {
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
-	stmt *r = stmt_Nop(be, stmt_list(be, ops), op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
 	r->cand = op1->cand;
 	return r;
 }
 
 stmt *
-stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op)
+stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op)
 {
 	list *ops = sa_list(be->mvc->sa);
 	list_append(ops, op1);
 	list_append(ops, op2);
-	stmt *r = stmt_Nop(be, stmt_list(be, ops), op);
+	stmt *r = stmt_Nop(be, stmt_list(be, ops), sel, op);
 	r->cand = op1->cand?op1->cand:op2->cand;
 	return r;
 }
 
 stmt *
-stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
+stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *mod, *fimp;
 	sql_subtype *tpe = NULL;
-	int special = 0;
+	int special = 0, push_cands = can_push_cands(sel, f);
 
 	node *n;
 	stmt *o = NULL;
@@ -3338,17 +3338,28 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		for (n = ops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
-			if (!op)
-				q = pushNil(mb, q, TYPE_bat);
-			else
-				q = pushArgument(mb, q, op->nr);
-			if (op && special) {
+			q = pushArgument(mb, q, op->nr);
+			if (special) {
 				q = pushInt(mb, q, tpe->digits);
 				setVarUDFtype(mb, getArg(q, q->argc-1));
 				q = pushInt(mb, q, tpe->scale);
 				setVarUDFtype(mb, getArg(q, q->argc-1));
+				special = 0;
 			}
-			special = 0;
+		}
+		/* push candidate lists if that's the case */
+		if (f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT && push_cands) {
+			for (n = ops->op4.lval->h; n; n = n->next) {
+				stmt *op = n->data;
+	
+				if (op->nrcols > 0) {
+					if (op->cand && op->cand == sel) {
+						q = pushNil(mb, q, TYPE_bat);
+					} else {
+						q = pushArgument(mb, q, sel->nr);
+					}
+				}
+			}
 		}
 	}
 
@@ -3370,6 +3381,8 @@ stmt_Nop(backend *be, stmt *ops, sql_subfunc *f)
 		s->op4.funcval = f;
 		s->nr = getDestVar(q);
 		s->q = q;
+		if (sel && push_cands && s->nrcols)
+			s->cand = sel;
 		return s;
 	}
 	return NULL;
@@ -3923,8 +3936,8 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		sql_subfunc *or = sql_bind_func(be->mvc->sa, NULL, "or", bt, bt, F_FUNC);
 		sql_subfunc *isnull = sql_bind_func(be->mvc->sa, NULL, "isnull", bt, NULL, F_FUNC);
 		cond = stmt_binop(be,
-			stmt_unop(be, cond, not),
-			stmt_unop(be, cond, isnull), or);
+			stmt_unop(be, cond, NULL, not),
+			stmt_unop(be, cond, NULL, isnull), NULL, or);
 	}
 	if (!loop) {	/* if */
 		q = newAssignment(mb);
