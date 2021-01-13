@@ -491,7 +491,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((p = strchr(buffer, '\n')) != NULL)
 		*p = '\0';
 
-	if (comp == GDK && (level == M_CRITICAL || level == M_ERROR)) {
+	if (comp == GDK && level <= M_ERROR) {
 		/* append message to GDKerrbuf (if set) */
 		char *buf = GDKerrbuf;
 		if (buf) {
@@ -504,7 +504,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		}
 	}
 
-	if (level == M_CRITICAL || level == M_ERROR || level == M_WARNING) {
+	if (level <= M_WARNING) {
 		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
@@ -527,7 +527,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// like mserver5 refusing to start due to allocated port
 	// and the error is never reported to the user because it
 	// is still in the buffer which it never gets flushed.
-	if (level == cur_flush_level || level == M_CRITICAL || level == M_ERROR)
+	if (level == cur_flush_level || level <= M_ERROR)
 		fflush(active_tracer);
 }
 
