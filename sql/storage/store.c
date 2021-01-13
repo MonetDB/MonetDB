@@ -5139,6 +5139,13 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
 	sql_base *b = os_find_id(s->keys, tr, id);
 	sql_key *k = (sql_key*)b;
+	sql_table *t = k->t;
+
+	if (!inTransaction(tr, t)) {
+		t = new_table(tr, t);
+		os_add(t->s->tables, tr, t->base.name, &t->base);
+	}
+	k = (sql_key*)os_find_id(s->keys, tr, id); /* fetch updated key */
 
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		sqlid *local_id = MNEW(sqlid);
@@ -5252,6 +5259,13 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		return 0;
 
 	sql_idx *i = (sql_idx*)b;
+	sql_table *t = i->t;
+	if (!inTransaction(tr, t)) {
+		t = new_table(tr, t);
+		os_add(t->s->tables, tr, t->base.name, &t->base);
+	}
+	i = (sql_idx*)os_find_id(s->idxs, tr, id); /* fetch updated idx */
+
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
 		sqlid *local_id = MNEW(sqlid);
 		if (!local_id) {
