@@ -1725,6 +1725,10 @@ store_load(sqlstore *store, sql_allocator *pa)
 		nstore_oids = 0;
 		return NULL;
 	}
+	if (!store->first) {
+		if (sql_trans_commit(tr) != SQL_OK)
+			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
+	}
 	tr->active = 0;
 	GDKfree(store_oids);
 	store_oids = NULL;
