@@ -1004,7 +1004,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		list *l = sa_list(sql->sa), *exps = e->l;
 		sql_subfunc *f = e->f;
 		stmt *rows = NULL;
-		int nrcands = 0, push_cands = can_push_cands(sel, f);
+		int push_cands = can_push_cands(sel, f);
 
 		if (f->func->side_effect && left && left->nrcols > 0) {
 			sql_subfunc *f1 = NULL;
@@ -1014,7 +1014,6 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					f = f1;
 				list_append(l, stmt_const(be, bin_first_column(be, left),
 										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
-				nrcands++; /* increment cands */
 			} else if (exps_card(exps) < CARD_MULTI) {
 				rows = bin_first_column(be, left);
 			}
