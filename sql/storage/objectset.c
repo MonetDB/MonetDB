@@ -10,6 +10,8 @@
 #include "sql_catalog.h"
 #include "sql_storage.h"
 
+#include "gdk_atoms.h"
+
 
 /* TODO
  * implement new double linked list
@@ -45,10 +47,51 @@ typedef struct objectset {
 	bool unique;	/* names are unique */
 } objectset;
 
+static int
+os_id_key(object_node *n)
+{
+	return BATatoms[TYPE_int].atomHash(&n->data->obj->id);
+}
+
 static object_node *
 find_id(objectset *os, sqlid id)
 {
 	if (os) {
+		MT_lock_set(&os->ht_lock);
+		if ((!os->id_map || os->id_map->size*16 < os->cnt) && os->cnt > HASH_MIN_SIZE && os->sa) {
+			// TODO: This leaks the old map
+			os->id_map = hash_new(os->sa, os->cnt, (fkeyvalue)&os_id_key);
+			if (os->id_map == NULL) {
+				MT_lock_unset(&os->ht_lock);
+				return NULL;
+			}
+
+			for (object_node *n = os->h; n; n = n->next ) {
+				int key = os_id_key(n);
+
+				if (hash_add(os->id_map, key, n) == NULL) {
+					MT_lock_unset(&os->ht_lock);
+					return NULL;
+				}
+			}
+		}
+		if (os->id_map) {
+			int key = BATatoms[TYPE_int].atomHash(&id);
+			sql_hash_e *he = os->id_map->buckets[key&(os->id_map->size-1)];
+
+			for (; he; he = he->chain) {
+				object_node *n = he->value;
+
+				if (n && n->data->obj->id == id) {
+					MT_lock_unset(&os->ht_lock);
+					return n;
+				}
+			}
+			MT_lock_unset(&os->ht_lock);
+			return NULL;
+		}
+		MT_lock_unset(&os->ht_lock);
+		// TODO: can we actually reach this point?
 		for (object_node *n = os->h; n; n = n->next) {
 			objectversion *ov = n->data;
 
@@ -319,6 +362,7 @@ find_name(objectset *os, const char *name)
 	if (os) {
 		MT_lock_set(&os->ht_lock);
 		if ((!os->name_map || os->name_map->size*16 < os->cnt) && os->cnt > HASH_MIN_SIZE && os->sa) {
+			// TODO: This leaks the old map
 			os->name_map = hash_new(os->sa, os->cnt, (fkeyvalue)&os_name_key);
 			if (os->name_map == NULL) {
 				MT_lock_unset(&os->ht_lock);
