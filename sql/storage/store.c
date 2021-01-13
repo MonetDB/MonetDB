@@ -2642,18 +2642,118 @@ key_dup_(sql_trans *tr, int flags, sql_key *k, sql_table *t, int copy)
 	return nk;
 }
 
+static sql_column *
+column_dup(sql_trans *tr, sql_column *oc, sql_table *t, int deep)
+{
+	sqlstore *store = tr->store;
+	sql_allocator *sa = tr->sa;
+	sql_column *c = SA_ZNEW(sa, sql_column);
+
+	base_init(sa, &c->base, oc->base.id, 0, oc->base.name);
+	c->type = oc->type;
+	c->def = NULL;
+	if (oc->def)
+		c->def = sa_strdup(sa, oc->def);
+	c->null = oc->null;
+	c->colnr = oc->colnr;
+	c->unique = oc->unique;
+	c->t = t;
+	c->storage_type = NULL;
+	if (oc->storage_type)
+		c->storage_type = sa_strdup(sa, oc->storage_type);
+
+	if (isTable(c->t)) {
+		if (deep)
+			store->storage_api.create_col(tr, c);
+		else
+			c->data = store->storage_api.col_dup(oc);
+	}
+	return c;
+}
+
+static sql_base *
+base_incref(sql_base *b)
+{
+	b->refcnt++;
+	return b;
+}
+
+static sql_table *
+table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, int deep)
+{
+	sqlstore *store = tr->store;
+	sql_allocator *sa = tr->sa;
+	sql_table *t = SA_ZNEW(sa, sql_table);
+	node *n;
+
+	base_init(sa, &t->base, ot->base.id, 0, ot->base.name);
+	t->type = ot->type;
+	t->system = ot->system;
+	t->bootstrap = ot->bootstrap;
+	t->persistence = ot->persistence;
+	t->commit_action = ot->commit_action;
+	t->access = ot->access;
+	t->query = (ot->query) ? sa_strdup(sa, ot->query) : NULL;
+	t->properties = ot->properties;
+
+	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
+	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
+	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
+	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+	if (ot->members.set)
+		cs_new(&t->members, sa, (fdestroy) NULL);
+
+	t->pkey = NULL;
+	t->s = s;
+	t->sz = ot->sz;
+
+	if (ot->columns.set)
+		for (n = ot->columns.set->h; n; n = n->next)
+			cs_add(&t->columns, column_dup(tr, n->data, t, deep), 0);
+	if (ot->idxs.set)
+		for (n = ot->idxs.set->h; n; n = n->next)
+			cs_add(&t->idxs, base_incref(n->data), 0);
+	if (ot->keys.set)
+		for (n = ot->keys.set->h; n; n = n->next)
+			cs_add(&t->keys, key_dup_(tr, 0, n->data, t, deep), 0);
+	if (ot->triggers.set)
+		for (n = ot->triggers.set->h; n; n = n->next)
+			cs_add(&t->triggers, base_incref(n->data), 0);
+	if (ot->members.set)
+		for (n = ot->members.set->h; n; n = n->next)
+			cs_add(&t->members, base_incref(n->data), 0);
+	if (isTable(t)) {
+		if (deep)
+			store->storage_api.create_del(tr, t);
+		else
+			t->data = store->storage_api.del_dup(ot);
+	}
+	return t;
+}
+
+static sql_table*
+new_table( sql_trans *tr, sql_table *t)
+{
+	return table_dup(tr, t, t->s, 0);
+}
+
 sql_key *
 sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 {
 	sqlstore *store = tr->store;
-	sql_key *nk = key_dup_(tr, TR_NEW, k, t, 1);
-	sql_fkey *fk = (sql_fkey*)nk;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
 	sql_table *syskey = find_sql_table(tr, syss, "keys");
 	sql_table *syskc = find_sql_table(tr, syss, "objects");
 	int neg = -1, action = -1, nr;
 	node *n;
+	t = find_sql_table_id(tr, t->s, t->base.id); /* could have changed by depending changes */
 
+	if (!inTransaction(tr, t)) {
+		t = new_table(tr, t);
+		os_add(t->s->tables, tr, t->base.name, &t->base);
+	}
+	sql_key *nk = key_dup_(tr, TR_NEW, k, t, 1);
+	sql_fkey *fk = (sql_fkey*)nk;
 	cs_add(&t->keys, nk, TR_NEW);
 
 	if (nk->type == fkey)
@@ -2692,6 +2792,10 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i)
 	int nr, unique = 0;
 	sql_idx *ni = SA_ZNEW(tr->sa, sql_idx);
 
+	if (!inTransaction(tr, t)) {
+		t = new_table(tr, t);
+		os_add(t->s->tables, tr, t->base.name, &t->base);
+	}
 	base_init(tr->sa, &ni->base, i->base.id?i->base.id:next_oid(tr->store), TR_NEW, i->base.name);
 
 	ni->columns = list_new(tr->sa, (fdestroy) NULL);
@@ -2999,96 +3103,6 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->parent = parent;
 	TRC_DEBUG(SQL_STORE, "New transaction: %p\n", tr);
 	return tr;
-}
-
-static sql_column *
-column_dup(sql_trans *tr, sql_column *oc, sql_table *t, int deep)
-{
-	sqlstore *store = tr->store;
-	sql_allocator *sa = tr->sa;
-	sql_column *c = SA_ZNEW(sa, sql_column);
-
-	base_init(sa, &c->base, oc->base.id, 0, oc->base.name);
-	c->type = oc->type;
-	c->def = NULL;
-	if (oc->def)
-		c->def = sa_strdup(sa, oc->def);
-	c->null = oc->null;
-	c->colnr = oc->colnr;
-	c->unique = oc->unique;
-	c->t = t;
-	c->storage_type = NULL;
-	if (oc->storage_type)
-		c->storage_type = sa_strdup(sa, oc->storage_type);
-
-	if (isTable(c->t)) {
-		if (deep)
-			store->storage_api.create_col(tr, c);
-		else
-			c->data = store->storage_api.col_dup(oc);
-	}
-	return c;
-}
-
-static sql_base *
-base_incref(sql_base *b)
-{
-	b->refcnt++;
-	return b;
-}
-
-static sql_table *
-table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, int deep)
-{
-	sqlstore *store = tr->store;
-	sql_allocator *sa = tr->sa;
-	sql_table *t = SA_ZNEW(sa, sql_table);
-	node *n;
-
-	base_init(sa, &t->base, ot->base.id, 0, ot->base.name);
-	t->type = ot->type;
-	t->system = ot->system;
-	t->bootstrap = ot->bootstrap;
-	t->persistence = ot->persistence;
-	t->commit_action = ot->commit_action;
-	t->access = ot->access;
-	t->query = (ot->query) ? sa_strdup(sa, ot->query) : NULL;
-	t->properties = ot->properties;
-
-	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
-	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
-	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
-	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
-	if (ot->members.set)
-		cs_new(&t->members, sa, (fdestroy) NULL);
-
-	t->pkey = NULL;
-
-	t->s = s;
-	t->sz = ot->sz;
-
-	if (ot->columns.set)
-		for (n = ot->columns.set->h; n; n = n->next)
-			cs_add(&t->columns, column_dup(tr, n->data, t, deep), 0);
-	if (ot->idxs.set)
-		for (n = ot->idxs.set->h; n; n = n->next)
-			cs_add(&t->idxs, base_incref(n->data), 0);
-	if (ot->keys.set)
-		for (n = ot->keys.set->h; n; n = n->next)
-			cs_add(&t->keys, key_dup_(tr, 0, n->data, t, deep), 0);
-	if (ot->triggers.set)
-		for (n = ot->triggers.set->h; n; n = n->next)
-			cs_add(&t->triggers, base_incref(n->data), 0);
-	if (ot->members.set)
-		for (n = ot->members.set->h; n; n = n->next)
-			cs_add(&t->members, base_incref(n->data), 0);
-	if (isTable(t)) {
-		if (deep)
-			store->storage_api.create_del(tr, t);
-		else
-			t->data = store->storage_api.del_dup(ot);
-	}
-	return t;
 }
 
 static sql_schema *
@@ -4221,12 +4235,6 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	return 0;
 }
 
-static sql_table*
-new_table( sql_trans *tr, sql_table *t)
-{
-	return table_dup(tr, t, t->s, 0);
-}
-
 sql_table*
 sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name)
 {
@@ -4762,7 +4770,10 @@ sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val)
 
 		sql_table *t = col->t;
 		os_del(t->s->tables, tr, t->base.name, &t->base);
-		t = new_table(tr, t);
+		if (!inTransaction(tr, t)) {
+			t = new_table(tr, t);
+			os_add(t->s->tables, tr, t->base.name, &t->base);
+		}
 		col = new_column(tr, col, NULL);
 		col->def = NULL;
 		if (val)
@@ -4907,7 +4918,10 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	if (isTempTable(t))
 		return NULL;
 
-	t = new_table(tr, t);
+	if (!inTransaction(tr, t)) {
+		t = new_table(tr, t);
+		os_add(t->s->tables, tr, t->base.name, &t->base);
+	}
 	nk = (kt != fkey) ? (sql_key *) SA_ZNEW(tr->sa, sql_ukey)
 	: (sql_key *) SA_ZNEW(tr->sa, sql_fkey);
 
