@@ -358,11 +358,13 @@ mvc_init(sql_allocator *pa, int debug, store_type store_tpe, int ro, int su)
 
 	//as the sql_parser is not yet initialized in the storage, we determine the sql type of the sql_parts here
 
-	struct os_iter *si = os_iterator(m->session->tr->cat->schemas, m->session->tr, NULL);
-	for(sql_base *b = oi_next(si); b; b = oi_next(si)) {
+	struct os_iter si;
+	os_iterator(&si, m->session->tr->cat->schemas, m->session->tr, NULL);
+	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *ss = (sql_schema*)b;
-		struct os_iter *oi = os_iterator(ss->tables, m->session->tr, NULL);
-		for(sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ss->tables, m->session->tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *tt = (sql_table*)b;
 			if (isPartitionedByColumnTable(tt) || isPartitionedByExpressionTable(tt)) {
 				char *err;

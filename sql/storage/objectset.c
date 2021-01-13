@@ -534,32 +534,19 @@ os_find_id(objectset *os, struct sql_trans *tr, sqlid id)
 	return NULL;
 }
 
-typedef struct os_iter {
-	objectset *os;
-	sql_trans *tr;
-	const char *name;
-	object_node *n;
-} os_iter;
-
-os_iter *
-os_iterator(objectset *os, struct sql_trans *tr, const char *name /*optional*/)
+void
+os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/)
 {
-	os_iter *oi = SA_NEW(os->sa, os_iter);
-
-	oi->os = os;
-	oi->tr = tr;
-	oi->name = name;
-	/*
-	if (name)
-		oi->n = find_name(os, name);
-	else
-	*/
-		oi->n = os->h;
-	return oi;
+	*oi = (struct os_iter) {
+		.os = os,
+		.tr = tr,
+		.name = name,
+		.n = /* name ? find_name(os, name) : */ os->h,
+	};
 }
 
 sql_base *
-oi_next(os_iter *oi)
+oi_next(struct os_iter *oi)
 {
 	object_node *n = oi->n;
 	sql_base *b = NULL;

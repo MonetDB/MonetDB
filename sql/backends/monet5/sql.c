@@ -1407,8 +1407,9 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nrows = (BUN) t->columns.set->cnt;
 		}
 	} else if (s->tables) {
-		struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			t = (sql_table *)b;
 			if (isTable(t))
 				nrows += t->columns.set->cnt;
@@ -1459,8 +1460,9 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 			}
 		} else if (s->tables) {
-			struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-			for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+			struct os_iter oi;
+			os_iterator(&oi, s->tables, tr, NULL);
+			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 				t = (sql_table *)b;
 				if (isTable(t)) {
 					cleared = 0;//(t->cleared != 0);
@@ -4377,7 +4379,7 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str sname = 0;
 	str tname = 0;
 	str cname = 0;
-	struct os_iter *si = NULL;
+	struct os_iter si = {0};
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
@@ -4417,16 +4419,17 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		cname = *getArgReference_str(stk, pci, pci->retc + 2);
 
 	/* check for limited storage tables */
-	si = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(si); b; b = oi_next(si)) {
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *) b;
 		if( sname && strcmp(b->name, sname) )
 			continue;
 		if (isalpha((unsigned char) b->name[0]))
 			if (s->tables) {
-				struct os_iter *oi = os_iterator(s->tables, tr, NULL);
+				struct os_iter oi;
 
-				for (sql_base *bt = oi_next(oi); bt; bt = oi_next(oi)) {
+				os_iterator(&oi, s->tables, tr, NULL);
+				for (sql_base *bt = oi_next(&oi); bt; bt = oi_next(&oi)) {
 					sql_table *t = (sql_table *) bt;
 					if( tname && strcmp(bt->name, tname) )
 						continue;

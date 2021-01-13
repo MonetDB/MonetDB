@@ -344,8 +344,9 @@ os_find_func_internal(mvc *sql, struct objectset *ff, const char *fname, int nra
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	if (ff) {
-		struct os_iter *oi = os_iterator(ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ff, sql->session->tr, fname);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 			if (prev && prev->func != f)
 				continue;
@@ -437,8 +438,9 @@ os_bind_member_internal(mvc *sql, struct objectset *ff, const char *fname, sql_s
 {
 	assert(nrargs);
 	if (ff) {
-		struct os_iter *oi = os_iterator(ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ff, sql->session->tr, fname);
+		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 			if (prev && prev->func != f)
 				continue;
@@ -535,8 +537,9 @@ os_bind_func__(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql
 		input_type = ops->h->data;
 
 	if (ff) {
-		struct os_iter *oi = os_iterator(ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ff, sql->session->tr, fname);
+		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 
 			if (f->type != type && f->type != filt)
@@ -595,8 +598,9 @@ os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, 
 	sql_subtype *tp = sql_bind_localtype("bit");
 
 	if (ff) {
-		struct os_iter *oi = os_iterator(ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ff, sql->session->tr, fname);
+		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 			sql_arg *firstres = NULL;
 
@@ -675,8 +679,9 @@ os_resolve_function_with_undefined_parameters_internal(mvc *sql, struct objectse
 	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
 
 	if (ff) {
-		struct os_iter *oi = os_iterator(ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ff, sql->session->tr, fname);
+		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 
 			if (f->type != type && f->type != filt)
@@ -759,8 +764,9 @@ os_find_funcs_internal(mvc *sql, struct objectset *ff, const char *fname, int nr
 	list *res = NULL;
 
 	if (ff) {
-		struct os_iter *oi = os_iterator(ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ff, sql->session->tr, fname);
+		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 
 			if (f->type != type && f->type != filt)
@@ -840,8 +846,9 @@ os_find_funcs_by_name_internal(mvc *sql, struct objectset *ff, const char *fname
 	list *res = NULL;
 
 	if (ff) {
-		struct os_iter *oi = os_iterator(ff, sql->session->tr, fname);
-		for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, ff, sql->session->tr, fname);
+		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 
 			if (f->type != type)

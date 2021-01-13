@@ -4545,8 +4545,9 @@ cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids)
 {
 	/* now iterate over all keys */
 	sql_trans *tr = be->mvc->session->tr;
-	struct os_iter *oi = os_iterator(k->t->s->keys, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, k->t->s->keys, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 		sql_key *fk = (sql_key*)b;
 		sql_fkey *rk = (sql_fkey*)b;
 
@@ -5125,9 +5126,10 @@ sql_delete_ukey(backend *be, stmt *utids /* deleted tids from ukey table */, sql
 	sql_subtype *lng = sql_bind_localtype("lng");
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_trans *tr = be->mvc->session->tr;
-	struct os_iter *oi = os_iterator(k->t->s->keys, tr, NULL);
+	struct os_iter oi;
 
-	for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+	os_iterator(&oi, k->t->s->keys, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 		sql_key *fk = (sql_key*)b;
 		sql_fkey *rk = (sql_fkey*)b;
 
@@ -5309,8 +5311,9 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* list, struct tablel
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
-				struct os_iter *oi = os_iterator(k->t->s->keys, tr, NULL);
-				for (sql_base *b = oi_next(oi); b; b=oi_next(oi)) {
+				struct os_iter oi;
+				os_iterator(&oi, k->t->s->keys, tr, NULL);
+				for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 					sql_key *fk = (sql_key*)b;
 					sql_fkey *rk = (sql_fkey*)b;
 
