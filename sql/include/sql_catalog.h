@@ -11,6 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
+#include "sql_hash.h"
 #include "mapi_querytype.h"
 #include "stream.h"
 
@@ -227,6 +228,7 @@ struct os_iter {
 	struct objectset *os;
 	struct sql_trans *tr;
 	struct object_node *n;
+	struct sql_hash_e *e;
 	const char *name;
 };
 

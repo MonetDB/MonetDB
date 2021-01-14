@@ -356,6 +356,38 @@ os_name_key(object_node *n)
 	return hash_key(n->data->obj->name);
 }
 
+static sql_hash*
+os_hash_create(objectset *os)
+{
+	MT_lock_set(&os->ht_lock);
+	if ((!os->name_map || os->name_map->size*16 < os->cnt) && os->sa) {
+		os->name_map = hash_new(os->sa, os->cnt, (fkeyvalue)&os_name_key);
+		if (os->name_map == NULL) {
+			MT_lock_unset(&os->ht_lock);
+			return NULL;
+		}
+
+		for (object_node *n = os->h; n; n = n->next ) {
+			int key = os_name_key(n);
+			if (hash_add(os->name_map, key, n) == NULL) {
+				MT_lock_unset(&os->ht_lock);
+				return NULL;
+			}
+		}
+	}
+	MT_lock_unset(&os->ht_lock);
+	return os->name_map;
+}
+
+static sql_hash_e *
+find_hash_entry(sql_hash *map, const char *name)
+{
+	int key = hash_key(name);
+	sql_hash_e *he = map->buckets[key&(map->size-1)];
+
+	return he;
+}
+
 static object_node *
 find_name(objectset *os, const char *name)
 {
@@ -591,23 +623,48 @@ os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, cons
 		.os = os,
 		.tr = tr,
 		.name = name,
-		.n = /* name ? find_name(os, name) : */ os->h,
 	};
+	if (os->cnt && name) {
+		if (!os->name_map)
+			os->name_map = os_hash_create(os);
+		oi->e = find_hash_entry(os->name_map, name);
+	} else
+		oi->n =	os->h;
 }
 
 sql_base *
 oi_next(struct os_iter *oi)
 {
-	object_node *n = oi->n;
 	sql_base *b = NULL;
 
-	while (n && !b) {
-		objectversion *ov = n->data;
-		n = oi->n = n->next;
+	if (oi->name) {
+		sql_hash_e *e = oi->e;
 
-		ov = get_valid_object(oi->tr, ov);
-		if (ov)
-			b = ov->obj;
+		while (e && !b) {
+			object_node *n = e->value;
+
+			if (n && n->data->obj->name && strcmp(n->data->obj->name, oi->name) == 0) {
+				objectversion *ov = n->data;
+				e = oi->e = e->chain;
+
+				ov = get_valid_object(oi->tr, ov);
+				if (ov)
+					b = ov->obj;
+			} else {
+				e = e->chain;
+			}
+		}
+	} else {
+		object_node *n = oi->n;
+
+		while (n && !b) {
+			objectversion *ov = n->data;
+			n = oi->n = n->next;
+
+			ov = get_valid_object(oi->tr, ov);
+			if (ov)
+				b = ov->obj;
+		}
 	}
 	return b;
 }
