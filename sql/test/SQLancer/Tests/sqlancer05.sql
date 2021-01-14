@@ -397,3 +397,22 @@ select cast(sum(count) as bigint) from (select cast(not (not (true)) as int) as 
 select cast(interval '-1' second as time);
 	--23:59:59
 ROLLBACK;
+
+START TRANSACTION;
+create view v5(vc0, vc1, vc2) as (values (2090916872, -1.850350369280157e-11, 566614814)) with check option;
+
+create view v29(vc0, vc1) as (values (0.2, 0.2), (0.4, 0.5)) with check option;
+
+create view v57(vc0, vc1) as (values (0.6, 0.7), (0.8, 0.9)) with check option;
+
+create view v76(vc0) as (with cte0(c0,c1,c2,c3) as (select 0.32, 1, true, 1), cte1(c0,c1) as (select -0.50347245, 23.2)
+select distinct true from (values(1),(2)) l0v54,cte0 as l0cte0,cte1 as l0cte1) with check option;
+
+create view v82(vc0, vc1) as (with cte1(c0,c1,c2) as (select 1, case when false
+then true when false then false end, 1 from v29 as l1v29)
+select case l0cte1.c1 when true then least(null, l0cte1.c0) end, 1 from cte1 as l0cte1
+join (select 1, '1', cast(l1v57.vc1 as bigint) from v57 as l1v57,
+v5 as l1v5, v76 as l1v76) as sub1 on false) with check option;
+
+WITH cte0(c0,c1,c2) AS (SELECT CAST('1' AS INT), 1, 0.82 FROM v82 AS l1v82) SELECT 1 FROM cte0 AS l0cte0;
+ROLLBACK;
