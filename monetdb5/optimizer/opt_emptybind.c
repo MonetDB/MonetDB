@@ -35,21 +35,6 @@
 	}  } while (0)
 
 
-static int
-withoutMitosis(MalBlkPtr mb)
-{
-	InstrPtr p;
-
-	for(int i = mb->stop-1; i>=0; i--) {
-		p = mb->stmt[i];
-		if (p->token == ENDsymbol)
-			break;
-		if (getFunctionId(p) == mitosisRef)
-			return (p->token == REMsymbol);
-    }
-	return 0;
-}
-
 str
 OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -62,7 +47,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str sch,tbl;
 	int etop= 0, esize= 256;
 	str msg = MAL_SUCCEED;
-	int no_mitosis = withoutMitosis(mb);
 
 	(void) stk;
 	(void) cntxt;
@@ -210,19 +194,6 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 					empty[getArg(p,0)] = i;
 				continue;
 			}
-		}
-		// delta operations without updates can be replaced by an pack of base and inserts
-		if (getModuleId(p)== sqlRef && getFunctionId(p) == deltaRef  && p->argc == 5){
-			if (no_mitosis && empty[getArg(p,2)] && empty[getArg(p,3)]){
-				actions++;
-				clrFunction(p);
-				setModuleId(p,matRef);
-				setFunctionId(p,packRef);
-				p->argc = 3;
-				getArg(p, 2) = getArg(p, 4);
-				p->typechk= TYPE_UNKNOWN;
-			}
-			continue;
 		}
 
 		if (getModuleId(p)== sqlRef && getFunctionId(p) == projectdeltaRef) {
