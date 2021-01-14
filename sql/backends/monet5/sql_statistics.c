@@ -123,8 +123,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	TRC_DEBUG(SQL_PARSER, "analyze %s.%s.%s sample " LLFMT "%s\n", (sch ? sch : ""), (tbl ? tbl : " "), (col ? col : " "), samplesize, (minmax)?"MinMax":"");
 
 	/* Do all the validations before doing any analyze */
-	struct os_iter *si = os_iterator(tr->cat->schemas, tr, NULL);
-	for(sql_base *b = oi_next(si); b; b = oi_next(si)) {
+	struct os_iter si;
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *)b;
 		if (!isalpha((unsigned char) s->base.name[0]))
 			continue;
@@ -132,8 +133,9 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (sch && strcmp(s->base.name, sch))
 			continue;
 		sfnd = 1;
-		struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-		for(sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *)b;
 
 			if (tbl && strcmp(t->base.name, tbl))
@@ -166,16 +168,17 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "analyze", SQLSTATE(38000) "Column '%s' does not exist", col);
 
 	sqlstore *store = tr->store;
-	si = os_iterator(tr->cat->schemas, tr, NULL);
-	for(sql_base *b = oi_next(si); b; b = oi_next(si)) {
+	os_iterator(&si, tr->cat->schemas, tr, NULL);
+	for(sql_base *b = oi_next(&si); b; b = oi_next(&si)) {
 		sql_schema *s = (sql_schema *)b;
 		if (!isalpha((unsigned char) b->name[0]))
 			continue;
 
 		if (sch && strcmp(sch, b->name))
 			continue;
-		struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-		for(sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, s->tables, tr, NULL);
+		for(sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *t = (sql_table *) b;
 
 			if (tbl && strcmp(b->name, tbl))
