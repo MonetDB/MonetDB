@@ -24,6 +24,18 @@ typedef struct global_props {
 
 static sql_subfunc *find_func(mvc *sql, char *name, list *exps);
 
+static int
+find_member_pos(list *l, sql_table *t)
+{
+	int i = 0;
+	for (node *n = l->h; n ; n = n->next, i++) {
+		sql_part *pt = n->data;
+		if (pt->member->base.id == t->base.id)
+			return i;
+	}
+	return -1;
+}
+
 /* The important task of the relational optimizer is to optimize the
    join order.
 
@@ -67,7 +79,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			if (strcmp(c->base.name, name) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (mt &&
-					list_position(mt->members, c->t) == pnr))
+					find_member_pos(mt->members, c->t) == pnr))
 					return c;
 			}
 		}
@@ -77,7 +89,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (mt &&
-					list_position(mt->members, i->t) == pnr)) {
+					find_member_pos(mt->members, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
 					return c->c;
 				}
@@ -4941,7 +4953,7 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 		return -1;
 	sql_table *pp = c->t;
 	sql_table *mt = bt->r;
-	return list_position(mt->members, pp);
+	return find_member_pos(mt->members, pp);
 }
 
 static int
@@ -4964,7 +4976,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	if (c && bt && bt->r) {
 		sql_table *pp = c->t;
 		sql_table *mt = bt->r;
-		if (list_position(mt->members, pp) == pnr)
+		if (find_member_pos(mt->members, pp) == pnr)
 			return 1;
 	}
 	/* for projects we may need to do a rename! */
