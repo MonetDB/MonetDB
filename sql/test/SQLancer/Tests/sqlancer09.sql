@@ -348,8 +348,7 @@ COPY 33 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 10098	0.846
 
 ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCES "sys"."t2" ("c0", "c1");
-update t2 set c1 = 0.012427403386733981704992402228526771068572998046875 where (((t2.c0)%(t2.c1))) between symmetric 
-(coalesce(-1053775800, 991217471)) and (((0.6974006550632457)+(1832026960)));
+update t2 set c1 = 0.012 where (((t2.c0)%(t2.c1))) between symmetric (coalesce(-1053, 991)) and (((0.6974)+(183)));
 ROLLBACK;
 
 START TRANSACTION;
@@ -407,7 +406,7 @@ create or replace view v0(vc0, vc1, vc2) as (values (3, true, 0.3));
 create or replace view v1(vc0, vc1) as (select 0.80, 'a');
 
 select 1 from v0, v1
-inner join (values (88), (3), (59)) as sub0 on true natural join 
+inner join (values (88), (3), (59)) as sub0 on true natural join
 (select distinct v0.vc0 from v1, v0 group by v0.vc1) as sub1
 where v0.vc0 = 0.06683239;
 
