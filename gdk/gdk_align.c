@@ -284,7 +284,7 @@ VIEWreset(BAT *b)
 
 	if (tp == 0) {
 		/* only sharing the vheap */
-		assert(ATOMstorage(b->ttype) == TYPE_str);
+		assert(ATOMvarsized(b->ttype));
 		return unshare_string_heap(b);
 	}
 
