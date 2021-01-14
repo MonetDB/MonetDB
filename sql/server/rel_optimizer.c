@@ -3169,7 +3169,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					}
 				}
 			}
-			if (exp_equal(le,re) == 0) { /* a - a = 0 */
+			if (exp_is_not_null(le) && exp_is_not_null(re) && exp_equal(le,re) == 0) { /* a - a = 0 */
 				atom *a;
 				sql_exp *ne;
 
