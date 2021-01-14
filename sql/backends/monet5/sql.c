@@ -1719,6 +1719,173 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str mvc_modify_prep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, modify_col_prep_fptr colprep, modify_idx_prep_fptr idxprep);
+
+// chain_out, cookie_1, ..., cookie_N := sql.append_prep(chain_in, s, t, c_1, ... c_N);
+str
+mvc_append_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_modify_prep(cntxt, mb, stk, pci, store_funcs.append_col_prep, store_funcs.append_idx_prep);
+}
+
+// chain_out, cookie_1, ..., cookie_N := sql.update_prep(chain_in, s, t, c_1, ... c_N);
+str
+mvc_update_prep_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	return mvc_modify_prep(cntxt, mb, stk, pci, store_funcs.update_col_prep, store_funcs.update_idx_prep);
+}
+
+// chain_out, cookie_1, ..., cookie_N := sql.{update,modify}_prep(chain_in, s, t, c_1, ... c_N);
+static str
+mvc_modify_prep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, modify_col_prep_fptr colprep, modify_idx_prep_fptr idxprep)
+{
+	int *chain_out = getArgReference_int(stk, pci, 0);
+	int chain_in = *getArgReference_int(stk, pci, pci->retc);
+	mvc *m = NULL;
+	str msg;
+	const char *sname = *getArgReference_str(stk, pci, pci->retc + 1);
+	const char *tname = *getArgReference_str(stk, pci, pci->retc + 2);
+	sql_schema *s;
+	sql_table *t;
+
+	// for N columns, we ought to have N + 1 return values and N + 3 parameters.
+	int first_col = pci->retc + 3;
+	int first_ret = 1;
+	int ncolumns = pci->retc - first_ret;
+	if (pci->argc - first_col != ncolumns)
+		throw(SQL, "sql.append_prep",
+			SQLSTATE(42000) "sql.append_prep inconsistent argument count argc=%d retc=%d", pci->argc, pci->retc);
+
+	*chain_out = chain_in;
+
+	if (strNil(sname))
+		throw(SQL, "sql.modify_prep", SQLSTATE(42000) "schema name is nil");
+	if (strNil(tname))
+		throw(SQL, "sql.modify_prep", SQLSTATE(42000) "table name is nil");
+
+	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
+		return msg;
+	if ((msg = checkSQLContext(cntxt)) != NULL)
+		return msg;
+	s = mvc_bind_schema(m, sname);
+	if (s == NULL)
+		throw(SQL, "sql.modify_prep", SQLSTATE(3F000) "Schema missing %s", sname);
+	t = mvc_bind_table(m, s, tname);
+	if (t == NULL)
+		throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Table missing %s.%s", sname, tname);
+
+	for (int i = 0; i < ncolumns; i++) {
+		const char *cname = *getArgReference_str(stk, pci, first_col + i);
+		ptr *cookie_out = getArgReference_ptr(stk, pci, first_ret + i);
+
+		if (strNil(cname))
+			throw(SQL, "sql.modify_prep", SQLSTATE(42000) "column name %d is nil", i);
+
+		bool is_column = cname[0] != '%';
+		if (is_column) {
+			sql_column *c = mvc_bind_column(m, t, cname);
+			if (c == NULL)
+				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
+			*cookie_out = colprep(m->session->tr, c);
+		} else {
+			sql_idx *i = mvc_bind_idx(m, s, cname + 1);
+			if (i == NULL)
+				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Index missing %s.%s.%s", sname, tname, cname);
+			*cookie_out = idxprep(m->session->tr, i);
+		}
+	}
+
+	return MAL_SUCCEED;
+}
+
+// sql.append_exec(cookie_1, bat_1);
+str
+mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	int ret;
+	ptr cookie = *getArgReference_ptr(stk, pci, 1);
+	ptr incoming = getArgReference(stk, pci, 2);
+	int incoming_type = getArgType(mb, pci, 2);
+
+	if (incoming_type > GDKatomcnt)
+		incoming_type = TYPE_bat;
+
+	if (incoming_type == TYPE_bat) {
+		bat batid = *(bat*)incoming;
+		BAT *b = BATdescriptor(batid);
+		if (b == NULL)
+			throw(SQL, "sql.append_exec", SQLSTATE(HY005) "Cannot access column descriptor");
+		if (BATcount(b) > 4096 && !b->batTransient)
+			BATmsync(b);
+
+		ret = store_funcs.append_col_exec(cookie, b, true);
+		BBPunfix(b->batCacheid);
+	} else {
+		if (ATOMextern(incoming_type))
+			incoming = *(ptr*)incoming;
+
+		ret = store_funcs.append_col_exec(cookie, incoming, false);
+	}
+
+	if (ret != LOG_OK)
+		throw(SQL, "sql_append_exec", GDK_EXCEPTION);
+
+	return MAL_SUCCEED;
+}
+
+// sql.update_exec(cookie_1, cand_1, bat_1);
+str
+mvc_update_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	int ret;
+	ptr cookie = *getArgReference_ptr(stk, pci, 1);
+	bat tids_bat = *getArgReference_bat(stk, pci, 2);
+	bat incoming_bat = *getArgReference_bat(stk, pci, 3);
+
+	BAT *data = BATdescriptor(incoming_bat);
+	if (data == NULL)
+		throw(SQL, "sql.update_exec", SQLSTATE(HY005) "Cannot access column descriptor");
+	if (BATcount(data) > 4096 && !data->batTransient)
+		BATmsync(data);
+
+	BAT *tids = BATdescriptor(tids_bat);
+	if (tids == NULL) {
+		BBPunfix(data->batCacheid);
+		throw(SQL, "sql.update_exec", SQLSTATE(HY005) "Cannot access column descriptor");
+	}
+	if (BATcount(tids) > 4096 && !tids->batTransient)
+		BATmsync(tids);
+
+	ret = store_funcs.update_col_exec(cookie, tids, data, true);
+	BBPunfix(data->batCacheid);
+	BBPunfix(tids->batCacheid);
+
+	if (ret != LOG_OK)
+		throw(SQL, "sql_update_exec", GDK_EXCEPTION);
+
+	return MAL_SUCCEED;
+}
+
+
+// chain_out := sql.append_prep(chain_in, cookie_1, ... cookie_N);
+str
+mvc_append_finish_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	int *chain_out = getArgReference_int(stk, pci, 0);
+	int chain_in = *getArgReference_int(stk, pci, 1);
+
+	*chain_out = chain_in;
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
+	return MAL_SUCCEED;
+}
+
+
 /*mvc_update_wrap(int *bid, str *sname, str *tname, str *cname, ptr d) */
 str
 mvc_update_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -3170,291 +3337,6 @@ mvc_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "importTable", SQLSTATE(42000) "Failed to import table '%s', %s", t->base.name, be->mvc->errstr);
 	bat2return(stk, pci, b);
 	GDKfree(b);
-	return msg;
-}
-
-static bool
-read_more(bstream *in, stream *out)
-{
-	do {
-		if (bstream_next(in) < 0)
-			return false;
-		if (in->eof) {
-			if (mnstr_write(out, PROMPT2, sizeof(PROMPT2) - 1, 1) != 1
-			    || mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
-				return false;
-			in->eof = false;
-			if (bstream_next(in) <= 0)
-				return false;
-		}
-	} while (in->len <= in->pos);
-	return true;
-}
-
-static BAT *
-BATattach_bstream(int tt, bstream *in, stream *out, BUN size)
-{
-	BAT *bn;
-	size_t n;
-	size_t asz = (size_t) ATOMsize(tt);
-
-	bn = COLnew(0, tt, size, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-
-	if (ATOMstorage(tt) < TYPE_str) {
-		while (read_more(in, out)) {
-			n = (in->len - in->pos) / asz;
-			if (BATextend(bn, bn->batCount + n) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				return NULL;
-			}
-			memcpy(Tloc(bn, bn->batCount), in->buf + in->pos, n * asz);
-			bn->batCount += (BUN) n;
-			in->pos += n * asz;
-		}
-		BATsetcount(bn, bn->batCount);
-		bn->tseqbase = oid_nil;
-		bn->tnonil = bn->batCount == 0;
-		bn->tnil = false;
-		if (bn->batCount <= 1) {
-			bn->tsorted = true;
-			bn->trevsorted = true;
-			bn->tkey = true;
-		} else {
-			bn->tsorted = false;
-			bn->trevsorted = false;
-			bn->tkey = false;
-		}
-	} else {
-		assert(ATOMstorage(tt) == TYPE_str);
-		while (read_more(in, out)) {
-			int u;
-			for (n = in->pos, u = 0; n < in->len; n++) {
-				int c = in->buf[n];
-				if (u) {
-					if ((c & 0xC0) == 0x80)
-						u--;
-					else
-						goto bailout;
-				} else if ((c & 0xF8) == 0xF0) {
-					u = 3;
-				} else if ((c & 0xF0) == 0xE0) {
-					u = 2;
-				} else if ((c & 0xE0) == 0xC0) {
-					u = 1;
-				} else if ((c & 0xC0) == 0x80) {
-					goto bailout;
-				} else if (c == '\r') {
-					if (n + 1 < in->len
-					    && in->buf[n + 1] == '\n') {
-						in->buf[n] = 0;
-						if (BUNappend(bn, in->buf + in->pos, false) != GDK_SUCCEED)
-							goto bailout;
-						in->buf[n] = '\r';
-						in->pos = n + 2;
-						n++;
-					}
-				} else if (c == '\n' || c == '\0') {
-					in->buf[n] = 0;
-					if (BUNappend(bn, in->buf + in->pos, false) != GDK_SUCCEED)
-						goto bailout;
-					in->buf[n] = c;
-					in->pos = n + 1;
-				}
-			}
-		}
-	}
-	return bn;
-
-  bailout:
-	BBPreclaim(bn);
-	return NULL;
-}
-
-/* str mvc_bin_import_table_wrap(.., str *sname, str *tname, str *fname..);
- * binary attachment only works for simple binary types.
- * Non-simple types require each line to contain a valid ascii representation
- * of the text terminate by a new-line. These strings are passed to the corresponding
- * atom conversion routines to fill the column.
- */
-str
-mvc_bin_import_table_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	mvc *m = NULL;
-	str msg;
-	BUN cnt = 0;
-	bool init = false;
-	int i;
-	const char *sname = *getArgReference_str(stk, pci, 0 + pci->retc);
-	const char *tname = *getArgReference_str(stk, pci, 1 + pci->retc);
-	int onclient = *getArgReference_int(stk, pci, 2 + pci->retc);
-	sql_schema *s;
-	sql_table *t;
-	node *n;
-
-	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
-		return msg;
-	if ((msg = checkSQLContext(cntxt)) != NULL)
-		return msg;
-
-	if ((s = mvc_bind_schema(m, sname)) == NULL)
-		throw(SQL, "sql.import_table", SQLSTATE(3F000) "Schema missing %s",sname);
-	t = mvc_bind_table(m, s, tname);
-	if (!t)
-		throw(SQL, "sql", SQLSTATE(42S02) "Table missing %s", tname);
-	if (list_length(t->columns.set) != (pci->argc - (3 + pci->retc)))
-		throw(SQL, "sql", SQLSTATE(42000) "Not enough columns found in input file");
-	if (2 * pci->retc + 3 != pci->argc)
-		throw(SQL, "sql", SQLSTATE(42000) "Not enough output values");
-
-	if (onclient && !cntxt->filetrans) {
-		throw(MAL, "sql.copy_from", "cannot transfer files from client");
-	}
-
-	backend *be = cntxt->sqlcontext;
-
-	for (i = 0; i < pci->retc; i++)
-		*getArgReference_bat(stk, pci, i) = 0;
-
-	for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
-		sql_column *col = n->data;
-		BAT *c = NULL;
-		int tpe = col->type.type->localtype;
-		const char *fname = *getArgReference_str(stk, pci, i);
-
-		/* handle the various cases */
-		if (strNil(fname)) {
-			// no filename for this column, skip for now because we potentially don't know the count yet
-			continue;
-		}
-		if (ATOMvarsized(tpe) && tpe != TYPE_str) {
-			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", *getArgReference_str(stk, pci, i));
-			goto bailout;
-		}
-
-		if (tpe <= TYPE_str || tpe == TYPE_date || tpe == TYPE_daytime || tpe == TYPE_timestamp) {
-			if (onclient) {
-				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_printf(be->mvc->scanner.ws, "rb %s\n", fname);
-				msg = MAL_SUCCEED;
-				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-				while (!be->mvc->scanner.rs->eof)
-					bstream_next(be->mvc->scanner.rs);
-				stream *ss = be->mvc->scanner.rs->s;
-				char buf[80];
-				if (mnstr_readline(ss, buf, sizeof(buf)) > 1) {
-					msg = createException(IO, "sql.attach", "%s", buf);
-					goto bailout;
-				}
-				bstream *s = bstream_create(ss, 1 << 20);
-				if (!s) {
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				if (!(c = BATattach_bstream(col->type.type->localtype, s, be->mvc->scanner.ws, cnt))) {
-					bstream_destroy(s);
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				mnstr_write(be->mvc->scanner.ws, PROMPT3, sizeof(PROMPT3)-1, 1);
-				mnstr_flush(be->mvc->scanner.ws, MNSTR_FLUSH_DATA);
-				be->mvc->scanner.rs->eof = s->eof;
-				s->s = NULL;
-				bstream_destroy(s);
-			} else if (tpe == TYPE_str) {
-				/* get the BAT and fill it with the strings */
-				c = COLnew(0, TYPE_str, 0, TRANSIENT);
-				if (c == NULL) {
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				/* this code should be extended to
-				 * deal with larger text strings. */
-				FILE *f = fopen(fname, "r");
-				if (f == NULL) {
-					BBPreclaim(c);
-					msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to re-open file %s", fname);
-					goto bailout;
-				}
-
-#define bufsiz	(128 * BLOCK)
-				char *buf = GDKmalloc(bufsiz);
-				if (buf == NULL) {
-					fclose(f);
-					BBPreclaim(c);
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				while (fgets(buf, bufsiz, f) != NULL) {
-					char *t = strrchr(buf, '\n');
-					if (t)
-						*t = 0;
-					if (BUNappend(c, buf, false) != GDK_SUCCEED) {
-						BBPreclaim(c);
-						fclose(f);
-						msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto bailout;
-					}
-				}
-#undef bufsiz
-				fclose(f);
-				GDKfree(buf);
-			} else {
-				c = BATattach(tpe, fname, TRANSIENT);
-			}
-			if (c == NULL) {
-				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
-				goto bailout;
-			}
-			if (BATsetaccess(c, BAT_READ) != GDK_SUCCEED) {
-				BBPreclaim(c);
-				msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to set internal access while attaching file %s", fname);
-				goto bailout;
-			}
-		} else {
-			msg = createException(SQL, "sql", SQLSTATE(42000) "Failed to attach file %s", fname);
-			goto bailout;
-		}
-		if (init && cnt != BATcount(c)) {
-			BBPunfix(c->batCacheid);
-			msg = createException(SQL, "sql", SQLSTATE(42000) "Binary files for table '%s' have inconsistent counts", tname);
-			goto bailout;
-		}
-		cnt = BATcount(c);
-		init = true;
-		*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
-		BBPkeepref(c->batCacheid);
-	}
-	if (init) {
-		for (i = pci->retc + 3, n = t->columns.set->h; i < pci->argc && n; i++, n = n->next) {
-			// now that we know the BAT count, we can fill in the columns for which no parameters were passed
-			sql_column *col = n->data;
-			BAT *c = NULL;
-			int tpe = col->type.type->localtype;
-
-			const char *fname = *getArgReference_str(stk, pci, i);
-			if (strNil(fname)) {
-				// fill the new BAT with NULL values
-				c = BATconstant(0, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
-				if (c == NULL) {
-					msg = createException(SQL, "sql", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
-				*getArgReference_bat(stk, pci, i - (3 + pci->retc)) = c->batCacheid;
-				BBPkeepref(c->batCacheid);
-			}
-		}
-	}
-	return MAL_SUCCEED;
-  bailout:
-	for (i = 0; i < pci->retc; i++) {
-		bat bid;
-		if ((bid = *getArgReference_bat(stk, pci, i)) != 0) {
-			BBPrelease(bid);
-			*getArgReference_bat(stk, pci, i) = 0;
-		}
-	}
 	return msg;
 }
 
@@ -5518,8 +5400,50 @@ static mel_func sql_init_funcs[] = {
  command("sql", "project", BATleftproject, false, "Last step of a left outer join, ie project the inner join (l,r) over the left input side (col)", args(1,4, batarg("",oid),batarg("col",oid),batarg("l",oid),batarg("r",oid))),
  command("sql", "getVersion", mvc_getVersion, false, "Return the database version identifier for a client.", args(1,2, arg("",lng),arg("clientid",int))),
  pattern("sql", "grow", mvc_grow_wrap, false, "Resize the tid column of a declared table.", args(1,3, arg("",int),batarg("tid",oid),argany("",1))),
- pattern("sql", "append", mvc_append_wrap, false, "Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.", args(1,6, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
- pattern("sql", "update", mvc_update_wrap, false, "Update the values of the column tname.cname. Returns sequence number for order dependence)", args(1,7, arg("",int),arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
+
+
+ pattern("sql", "append", mvc_append_wrap, false,
+	"Append to the column tname.cname (possibly optimized to replace the insert bat of tname.cname. Returns sequence number for order dependence.",
+ 	args(1,6,
+		arg("",int),
+		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("ins",0))),
+
+ pattern("sql", "append_prep", mvc_append_prep_wrap, false,
+ 	"Prepare to append to the column. Return new mvc state and cookie to pass to append_exec",
+    args(2,6,
+		arg("",int),vararg("",ptr),
+		arg("mvc",int),arg("sname",str),arg("tname",str),vararg("cname",str))),
+
+ pattern("sql", "append_exec", mvc_append_exec_wrap, false, "Perform the actual append",
+    args(1,3,
+		arg("",ptr),
+		arg("cookie",ptr),argany("ins",1))),
+
+ pattern("sql", "append_finish", mvc_append_finish_wrap, false,
+ 	"Reconvene the sql.append_prep/sql.append_exec workflow",
+    args(1,3,
+		arg("",int),
+		arg("mvc",int),vararg("cookie",ptr))),
+
+
+ pattern("sql", "update", mvc_update_wrap, false,
+	"Update the values of the column tname.cname. Returns sequence number for order dependence)",
+	args(1,7,
+		arg("",int),
+		arg("mvc",int),arg("sname",str),arg("tname",str),arg("cname",str),argany("rids",0),argany("upd",0))),
+
+
+ pattern("sql", "update_prep", mvc_update_prep_wrap, false,
+ 	"Prepare to append to the column. Return new mvc state and cookie to pass to update_exec",
+    args(2,6,
+		arg("",int),vararg("",ptr),
+		arg("mvc",int),arg("sname",str),arg("tname",str),vararg("cname",str))),
+
+ pattern("sql", "update_exec", mvc_update_exec_wrap, false, "Perform the actual update",
+    args(1,4,
+		arg("",ptr),
+		arg("cookie",ptr),batarg("rids",oid), batargany("values",1))),
+
  pattern("sql", "clear_table", mvc_clear_table_wrap, true, "Clear the table sname.tname.", args(1,3, arg("",lng),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return a column with the valid tuple identifiers associated with the table sname.tname.", args(1,4, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str))),
  pattern("sql", "tid", SQLtid, false, "Return the tables tid column.", args(1,6, batarg("",oid),arg("mvc",int),arg("sname",str),arg("tname",str),arg("part_nr",int),arg("nr_parts",int))),
@@ -5538,7 +5462,8 @@ static mel_func sql_init_funcs[] = {
  pattern("sql", "copy_from", mvc_import_table_wrap, true, "Import a table from bstream s with the \ngiven tuple and seperators (sep/rsep)", args(1,14, batvarargany("",0),arg("t",ptr),arg("sep",str),arg("rsep",str),arg("ssep",str),arg("ns",str),arg("fname",str),arg("nr",lng),arg("offset",lng),arg("locked",int),arg("best",int),arg("fwf",str),arg("onclient",int),arg("escape",int))),
  //we use bat.single now
  //pattern("sql", "single", CMDBATsingle, false, "", args(1,2, batargany("",2),argany("x",2))),
- pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,5, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),vararg("fname",str))),
+ pattern("sql", "importTable", mvc_bin_import_table_wrap, true, "Import a table from the files (fname)", args(1,6, batvarargany("",0),arg("sname",str),arg("tname",str),arg("onclient",int),arg("bswap",bit),vararg("fname",str))),
+ pattern("sql", "importColumn", mvc_bin_import_column_wrap, false, "Import a column from the given file", args(2, 7, batargany("", 0),arg("", oid), arg("method",str),arg("bswap",bit),arg("path",str),arg("onclient",int),arg("nrows",oid))),
  command("aggr", "not_unique", not_unique, false, "check if the tail sorted bat b doesn't have unique tail values", args(1,2, arg("",bit),batarg("b",oid))),
  command("sql", "optimizers", getPipeCatalog, false, "", args(3,3, batarg("",str),batarg("",str),batarg("",str))),
  pattern("sql", "optimizer_updates", SQLoptimizersUpdate, false, "", noargs),

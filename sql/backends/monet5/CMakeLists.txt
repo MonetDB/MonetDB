@@ -79,6 +79,7 @@ target_sources(sql
   sql_fround.c sql_fround_impl.h
   sql_orderidx.c sql_orderidx.h
   sql_time.c
+  sql_bincopyfrom.c
   wlr.c wlr.h
   sql_datetrunc.c
   sql_rank.c sql_rank.h
@@ -109,7 +110,8 @@ target_link_libraries(sql
   sqlcommon
   batstore
   sqlserver
-  sqlinclude)
+  sqlinclude
+  copybinary)
 
 set_target_properties(sql
   PROPERTIES

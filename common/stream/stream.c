@@ -54,6 +54,8 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include <stdio.h>
+
 
 #ifdef HAVE_PTHREAD_H
 #include <pthread.h>

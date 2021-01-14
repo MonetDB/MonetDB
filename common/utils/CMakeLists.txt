@@ -145,6 +145,13 @@ set_target_properties(mprompt
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER mprompt.h)
 
+add_library(copybinary INTERFACE)
+
+target_include_directories(copybinary
+  INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
+
 # We need to define the matomic target because it is a public
 # dependency of gdk.
 install(TARGETS
@@ -172,6 +179,7 @@ install(EXPORT mstringTargets
 install(FILES
   matomic.h
   mstring.h
+  copybinary.h
   DESTINATION
   ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT
