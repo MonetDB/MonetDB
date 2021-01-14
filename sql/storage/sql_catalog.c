@@ -168,8 +168,9 @@ find_sql_key(sql_table *t, const char *kname)
 sql_key *
 sql_trans_find_key(sql_trans *tr, sqlid id)
 {
-	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_schema *s = (sql_schema*)b;
 		sql_base *bk = os_find_id(s->keys, tr, id);
 		if (bk)
@@ -187,8 +188,9 @@ find_sql_idx(sql_table *t, const char *iname)
 sql_idx *
 sql_trans_find_idx(sql_trans *tr, sqlid id)
 {
-	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_schema *s = (sql_schema*)b;
 		sql_base *bi = os_find_id(s->idxs, tr, id);
 		if (bi)
@@ -228,8 +230,9 @@ find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 sql_table *
 sql_trans_find_table(sql_trans *tr, sqlid id)
 {
-	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_schema *s = (sql_schema*)b;
 		sql_base *bt = os_find_id(s->tables, tr, id);
 		if (bt)
@@ -269,8 +272,9 @@ find_sql_type(sql_trans *tr, sql_schema *s, const char *tname)
 sql_type *
 sql_trans_bind_type(sql_trans *tr, sql_schema *c, const char *name)
 {
-	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_schema *s = (sql_schema*)b;
 		sql_type *t = find_sql_type(tr, s, name);
 		if (t)
@@ -289,8 +293,9 @@ sql_trans_find_type(sql_trans *tr, sql_schema *s, sqlid id)
 		if (b)
 			return (sql_type*)b;
 	} else {
-		struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-		for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->cat->schemas, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_schema *s = (sql_schema*)b;
 			sql_base *bt = os_find_id(s->types, tr, id);
 			if (bt)
@@ -309,8 +314,9 @@ find_sql_func(sql_trans *tr, sql_schema *s, const char *tname)
 sql_func *
 sql_trans_bind_func(sql_trans *tr, const char *name)
 {
-	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_schema *s = (sql_schema*)b;
 		sql_func *f = find_sql_func(tr, s, name);
 		if (f)
@@ -322,8 +328,9 @@ sql_trans_bind_func(sql_trans *tr, const char *name)
 sql_func *
 sql_trans_find_func(sql_trans *tr, sqlid id)
 {
-	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_schema *s = (sql_schema*)b;
 		sql_base *bf = os_find_id(s->funcs, tr, id);
 		if (bf)
@@ -335,8 +342,9 @@ sql_trans_find_func(sql_trans *tr, sqlid id)
 sql_trigger *
 sql_trans_find_trigger(sql_trans *tr, sqlid id)
 {
-	struct os_iter *oi = os_iterator(tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, tr->cat->schemas, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_schema *s = (sql_schema*)b;
 		sql_base *bt = os_find_id(s->triggers, tr, id);
 		if (bt)
@@ -455,8 +463,9 @@ partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp)
 {
 	sql_schema *s = pt->s;
 
-	struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-	for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+	struct os_iter oi;
+	os_iterator(&oi, s->tables, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_table *t = (sql_table*)b;
 
 		if (!isMergeTable(t) || !t->members.set)

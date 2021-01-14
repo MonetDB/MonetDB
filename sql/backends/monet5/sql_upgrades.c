@@ -1031,7 +1031,7 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	sql_allocator *old_sa = sql->sa;
 	bool first = true;
 	sql_trans *tr = sql->session->tr;
-	struct os_iter *si = NULL;
+	struct os_iter si;
 
 	if (buf == NULL)
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1044,12 +1044,13 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 	pos += snprintf(buf + pos, bufsize - pos, "insert into sys.dependencies select c1, c2, c3 from (values");
 	ppos = pos; /* later check if found updatable database objects */
 
-	si = os_iterator(sql->session->tr->cat->schemas, sql->session->tr, NULL);
-	for (sql_base *b = oi_next(si); b; oi_next(si)) {
+	os_iterator(&si, sql->session->tr->cat->schemas, sql->session->tr, NULL);
+	for (sql_base *b = oi_next(&si); b; oi_next(&si)) {
 		sql_schema *s = (sql_schema*)b;
 
-		struct os_iter *oi = os_iterator(s->funcs, sql->session->tr, NULL);
-		for (sql_base *b = oi_next(oi); b; oi_next(oi)) {
+		struct os_iter oi;
+		os_iterator(&oi, s->funcs, sql->session->tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 
 			if (f->query && f->lang == FUNC_LANG_SQL) {
@@ -1083,8 +1084,9 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 			}
 		}
 		if (s->tables) {
-            struct os_iter *oi = os_iterator(s->tables, tr, NULL);
-            for (sql_base *b = oi_next(oi); b; b = oi_next(oi)) {
+            struct os_iter oi;
+			os_iterator(&oi, s->tables, tr, NULL);
+            for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 				sql_table *t = (sql_table*) b;
 
 				if (t->query && isView(t)) {
