@@ -18,19 +18,22 @@
  * keep hash/map of names -> objectversion
  */
 
+struct object_node;
+
 typedef struct objectversion {
 	bool deleted;
 	ulng ts;
 	sql_base *obj;
 	struct objectversion *older;
 	struct objectversion *newer;
-	struct objectset *os;
+	struct object_node *on;
 } objectversion;
 
 typedef struct object_node {
     struct object_node* prev;
     struct object_node* next;
     objectversion* data;
+	struct objectset* os;
 } object_node;
 
 typedef struct objectset {
@@ -171,15 +174,16 @@ os_remove_node(objectset *os, object_node *n)
 }
 
 static object_node *
-node_create(sql_allocator *sa, void *data)
+node_create(sql_allocator *sa, objectversion *ov)
 {
 	object_node *n = (sa)?SA_NEW(sa, object_node):MNEW(object_node);
 
 	if (n == NULL)
 		return NULL;
 	*n = (object_node) {
-		.data = data,
+		.data = ov,
 	};
+	ov->on = n;
 	return n;
 }
 
@@ -191,6 +195,7 @@ os_append_node(objectset *os, object_node *n)
 	} else {
 		os->h = n;
 	}
+	n->os = os;
 	n->prev = os->t; // aka the double linked list.
 	os->t = n;
 	os->cnt++;
@@ -218,16 +223,16 @@ os_append_node(objectset *os, object_node *n)
 }
 
 static objectset *
-os_append(objectset *os, void *data)
+os_append(objectset *os, objectversion *ov)
 {
-	object_node *n = node_create(os->sa, data);
+	object_node *n = node_create(os->sa, ov);
 
 	if (n == NULL)
 		return NULL;
 	return os_append_node(os, n);
 }
 
-static object_node * find_name(objectset *os, const char *name);
+static object_node* find_name(objectset *os, const char *name);
 
 static void
 objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng oldest)
@@ -248,20 +253,21 @@ objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng o
 	else if (newer && older)
 		newer->older = older;
 
-	if (!newer && ov->os) {
+	objectset* os = ov->on->os;
+	if (!newer) {
 		object_node *on = NULL;
-		if (ov->os->unique)
-			on = find_name(ov->os, ov->obj->name);
+		if (os->unique)
+			on = find_name(os, ov->obj->name);
 		else
-			on = find_id(ov->os, ov->obj->id);
+			on = find_id(os, ov->obj->id);
 		assert(on->data == ov);
 		if (on)
-			os_remove_node(ov->os, on);
+			os_remove_node(os, on);
 		if (older)
-			os_append(ov->os, older);
+			os_append(os, older);
 	}
-	if (ov && ov->os && ov->os->destroy)
-		ov->os->destroy(store, ov->obj);
+	if (ov && os && os->destroy)
+		os->destroy(store, ov->obj);
 	/* free ov */
 }
 
@@ -483,7 +489,6 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->ts = tr->tid;
 	ov->obj = b;
 	ov->older = ov->newer = NULL;
-	ov->os = os;
 
 	object_node *n = NULL;
 	if (os->unique)
@@ -494,6 +499,7 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	if (n) {
 		objectversion *co = n->data;
 		objectversion *oo = get_valid_object(tr, co);
+		ov->on = oo->on;
 		if (co != oo) { /* conflict ? */
 			return -1;
 		}
@@ -525,7 +531,6 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->ts = tr->tid;
 	ov->obj = b;
 	ov->older = ov->newer = NULL;
-	ov->os = os;
 
 	object_node *n = NULL;
 	if (os->unique)
@@ -536,6 +541,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	if (n) {
 		objectversion *co = n->data;
 		objectversion *oo = get_valid_object(tr, co);
+		ov->on = oo->on;
 		if (co != oo) { /* conflict ? */
 			return -1;
 		}
