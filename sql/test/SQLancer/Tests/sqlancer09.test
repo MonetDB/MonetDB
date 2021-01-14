@@ -610,8 +610,7 @@ statement ok
 ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCES "sys"."t2" ("c0", "c1")
 
 statement error
-update t2 set c1 = 0.012427403386733981704992402228526771068572998046875 where (((t2.c0)%(t2.c1))) between symmetric
-(coalesce(-1053775800, 991217471)) and (((0.6974006550632457)+(1832026960)))
+update t2 set c1 = 0.012 where (((t2.c0)%(t2.c1))) between symmetric (coalesce(-1053, 991)) and (((0.6974)+(183)))
 
 statement ok
 ROLLBACK

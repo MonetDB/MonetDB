@@ -743,7 +743,8 @@ gdk_return
 GDKinit(opt *set, int setlen, bool embedded)
 {
 	static bool first = true;
-	char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
+	const char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
+	const char *dbtrace = mo_find_option(set, setlen, "gdk_dbtrace");
 	const char *p;
 	opt *n;
 	int i, nlen = 0;
@@ -807,7 +808,7 @@ GDKinit(opt *set, int setlen, bool embedded)
 		/* BBP was locked by BBPexit() */
 		BBPunlock();
 	}
-	GDKtracer_init();
+	GDKtracer_init(dbpath, dbtrace);
 	errno = 0;
 	if (!GDKinmemory(0) && !GDKenvironment(dbpath))
 		return GDK_FAIL;
