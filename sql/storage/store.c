@@ -6326,29 +6326,24 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 sql_table *
 sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action)
 {
+	node *n = members_find_child_id(mt->members, pt->base.id);
+	sql_part *p = n ? (sql_part*) n->data : NULL;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
-	oid rid, partid, obj_oid = table_funcs.column_find_row(tr, find_sql_column(sysobj, "nr"), &mt->base.id,
-														   find_sql_column(sysobj, "sub"), &pt->base.id, NULL);
+	oid obj_oid = p ? table_funcs.column_find_row(tr, find_sql_column(sysobj, "id"), &p->base.id, NULL) : oid_nil;
 
 	if (is_oid_nil(obj_oid))
 		return NULL;
 
-	void *v = table_funcs.column_find_value(tr, find_sql_column(sysobj, "id"), obj_oid);
-	partid = *(sqlid*)v; _DELETE(v);
-	node *n = cs_find_id(&mt->s->parts, partid);
-	sql_part *p = (sql_part*) n->data;
-
 	if (isRangePartitionTable(mt)) {
 		sql_table *ranges = find_sql_table(syss, "range_partitions");
-		rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
+		oid rid = table_funcs.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
 		table_funcs.table_delete(tr, ranges, rid);
 	} else if (isListPartitionTable(mt)) {
 		sql_table *values = find_sql_table(syss, "value_partitions");
 		rids *rs = table_funcs.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
-		for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
+		for (oid rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs))
 			table_funcs.table_delete(tr, values, rid);
-		}
 		table_funcs.rids_destroy(rs);
 	}
 	/* merge table depends on part table */
