@@ -399,6 +399,37 @@ select cast(interval '-1' second as time);
 ROLLBACK;
 
 START TRANSACTION;
+CREATE TABLE "sys"."t2" ("c0" INTERVAL MONTH,"c1" BINARY LARGE OBJECT);
+COPY 11 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	E0
+NULL	A0B0
+NULL	00
+NULL	NULL
+1655951380	NULL
+1624060581	NULL
+503097283	NULL
+1181487537	NULL
+NULL	
+NULL	4D3ABFB0
+1233829956	0C
+
+create view v0(vc0, vc1, vc2) as (values (length(r'-165227345'), greatest(interval '773370894' second, interval '-320486280' second),
+sql_add(cast(date '1970-01-06' as timestamp), case 0.34182486343556306440660819134791381657123565673828125 when 20419
+then interval '-359816023' second else interval '413001394' second end))) with check option;
+
+select t2.c1 from (values (10, 773370894.000, timestamp '1983-02-07 02:36:34')) v0, t2
+right outer join (values (47940718, null)) as sub0 on nullif(true, (t2.c1) between (t2.c1) and (t2.c1));
+
+select t2.c1 from v0, t2 right outer join (values (least(ifthenelse(false, r'', r'47940718'), sql_max(r'栩', r'U*>Kz0')),
+case cast(interval '-165227345' month as string) when "insert"(r'f3', 0.57506007, -1550051844, r'0.06527867754732408')
+then r'u' when r'2033856974' then case when true then r'' when false then r'-1543387917' when true then r'0.4055556886118663'
+when false then r'c' else r'E\n' end end)) as sub0 on nullif(not (false), (t2.c1) not between asymmetric (t2.c1) and (t2.c1))
+where case ((50)*(1836147184)) when least(5110, 1303739364) then (false) = false when scale_down(0.07871449894764926,
+0.26471586054989171277185278086108155548572540283203125) then least(true, true) when
+cast(0.92609287116711858089956876938231289386749267578125 as double) then greatest(true, false) end;
+ROLLBACK;
+
+START TRANSACTION;
 create view v5(vc0, vc1, vc2) as (values (2090916872, -1.850350369280157e-11, 566614814)) with check option;
 
 create view v29(vc0, vc1) as (values (0.2, 0.2), (0.4, 0.5)) with check option;
