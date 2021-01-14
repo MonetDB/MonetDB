@@ -395,9 +395,9 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 			if(!i)
 				return NULL;
 
-			i = stmt_binop(be, c, i, sel, cmp);
+			i = stmt_binop(be, c, i, NULL, cmp);
 			if (s)
-				s = stmt_binop(be, s, i, sel, a);
+				s = stmt_binop(be, s, i, NULL, a);
 			else
 				s = i;
 

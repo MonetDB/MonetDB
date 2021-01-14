@@ -488,6 +488,52 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % double,	int # type
 % 24,	1 # length
 #ROLLBACK;
+#CREATE TABLE t2(c0 DOUBLE);
+#INSERT INTO t2(c0) VALUES(852.0), (-0.31015700674852054), (45), (null), (-1.936408526E9), (0.12208305626734062), (-1.707045885E9);
+[ 7	]
+#INSERT INTO t2(c0) VALUES(1660989841);
+[ 1	]
+#DELETE FROM t2 WHERE TRUE;
+[ 8	]
+#INSERT INTO t2(c0) VALUES(null);
+[ 1	]
+#UPDATE t2 SET c0 = 0.2818413675323882 WHERE sql_min((0.0194696766772712859250304973102174699306488037109375)
+#BETWEEN (t2.c0) AND (0.8918001896191873), (t2.c0) NOT IN (-682776732));
+[ 0	]
+#DROP TABLE t2;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" BOOLEAN,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "sys"."t0" VALUES (true), (false);
+[ 2	]
+#create view v3(vc0) as (values (least(909916901, - (1451705231))));
+#create view v4(vc0, vc1, vc2, vc3) as (select case sql_min(true, r'TRUE') when (-1243138496) not between
+#asymmetric (-1723862249) and (253857921) then least(-1523235132, -1.04665549E9) end, cast(nullif(r'', r'') as bigint),
+#weekofyear(sql_sub(date '1970-01-10', interval '58931850' month)), 0.16610325448814467 where least(false, false));
+#create view v6(vc0, vc1, vc2) as (values (cast((true) = true as int), cast(((1576421008)&(null)) as decimal),
+#((((0.15598454)-(-235033638)))<<(((0.50459784)/(1078999181))))), (abs(20223), + (cast(0.6995354 as real)),
+#cast(-1695180722 as bigint)));
+#SELECT v3.vc0 FROM v3, v6 CROSS JOIN (SELECT ALL ((sign(0.9241489178039545))*
+#(scale_down(0.74460343372682225027148206208948977291584014892578125, 0.33816958610011738084466514919768087565898895263671875)))
+#FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper(r'bŀ') WHERE FALSE) AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0
+#LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4 WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE)
+#RIGHT OUTER JOIN (VALUES (CAST(greatest(r'77', 0.10216334194461484941029993933625519275665283203125) AS STRING(478)))) AS sub2
+% .v3 # table_name
+% vc0 # name
+% int # type
+% 11 # length
+[ -1451705231	]
+[ -1451705231	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((((v6.vc1)-(v6.vc1))) IS NOT NULL AS INT) as count FROM v3, v6 CROSS JOIN
+#(SELECT ((sign(0.9241489178039545))*(scale_down(0.74460343372682225027148206208948977291584014892578125,
+#0.33816958610011738084466514919768087565898895263671875))) FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper(r'bŀ') WHERE FALSE)
+#AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0 LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4
+#WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE) RIGHT OUTER JOIN (VALUES (CAST(greatest(r'77',
+% .%34 # table_name
+% %34 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#ROLLBACK;
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."

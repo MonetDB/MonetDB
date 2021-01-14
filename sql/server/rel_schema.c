@@ -1512,9 +1512,6 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
 	}
 
-	if (t->s && !nt->s)
-		nt->s = t->s;
-
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 
 	if (!isTable(nt))
@@ -1831,8 +1828,6 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	if (t->persistence != SQL_DECLARED_TABLE)
 		sname = t->s->base.name;
-	if (t->s && !nt->s)
-		nt->s = t->s;
 
 	/* add index here */
 	i = mvc_create_idx(sql, nt, iname, itype);
