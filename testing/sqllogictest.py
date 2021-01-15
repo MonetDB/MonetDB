@@ -353,15 +353,19 @@ class SQLLogic:
         else:
             if sorting == 'rowsort':
                 data.sort()
+            err_msg_buff = []
             for row in data:
                 for col in row:
                     if expected is not None:
                         if col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
+                            err_msg_buff.append('unexpected value;\nreceived "%s"\nexpected "%s"' % (col, expected[i]))
+                            #self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='ascii'))
                     m.update(b'\n')
+            if err:
+                self.query_error(query, '\n'.join(err_msg_buff), data=data)
         h = m.hexdigest()
         if not err:
             if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:

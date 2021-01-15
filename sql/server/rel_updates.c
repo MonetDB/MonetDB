@@ -1676,7 +1676,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 }
 
 static sql_rel *
-bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int constraint, int onclient)
+bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int constraint, int onclient, endianness endian)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1707,12 +1707,20 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	if (!collist)
 		return NULL;
 
+	bool do_byteswap =
+		#ifdef WORDS_BIGENDIAN
+			endian == endian_little;
+		#else
+			endian == endian_big;
+		#endif
+
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&strtpe, "varchar", 0, 0);
-	args = append( append( append( new_exp_list(sql->sa),
+	args = append( append( append( append( new_exp_list(sql->sa),
 		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)),
 		exp_atom_str(sql->sa, t->base.name, &strtpe)),
-		exp_atom_int(sql->sa, onclient));
+		exp_atom_int(sql->sa, onclient)),
+		exp_atom_bool(sql->sa, do_byteswap));
 
 	// create the list of files that is passed to the function as parameter
 	for (i = 0; i < list_length(t->columns.set); i++) {
@@ -1970,7 +1978,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
+		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val, l->h->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

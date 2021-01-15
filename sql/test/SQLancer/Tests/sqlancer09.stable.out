@@ -281,6 +281,206 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 #0.968	"1403896159"
 #0.565	"0.8224972062481081"
 [ 7	]
+#SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
+#(t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
+#((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
+#(SELECT DISTINCT CASE (-809462446) IN (2020241275, 2116461308) WHEN CASE WHEN FALSE THEN TRUE WHEN FALSE THEN
+#FALSE WHEN TRUE THEN TRUE WHEN TRUE THEN FALSE WHEN FALSE THEN FALSE WHEN FALSE THEN FALSE END THEN
+% .t2,	.t2 # table_name
+% c0,	c1 # name
+% decimal,	varchar # type
+% 20,	0 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
+#ROLLBACK;
+#START TRANSACTION;
+#create view v18(vc0) as (values (cast(((r'-W<~>頃')not like(r'8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
+#then true when false then true when false then false when true then true else true end) then ((least(0.5,
+#343))/(abs(2.017526512E9))) else cast(greatest(-23, 33) as decimal) end)) with check option;
+#create view v21(vc0) as (values (greatest(cast(42 as real), ((0.353)*(-3))))) with check option;
+#create view v24(vc0) as (values (0.22)) with check option;
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("c0" REAL NOT NULL, "c1" DECIMAL(15,3),
+#	CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),
+#	CONSTRAINT "t2_c0_unique" UNIQUE ("c0"),
+#	CONSTRAINT "t2_c0_c1_unique" UNIQUE ("c0", "c1")
+#);
+#COPY 33 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#26	0.991
+#0.13630049	37.000
+#0.51769805	0.784
+#-1.6852343e+09	NULL
+#0.21530622	NULL
+#113.135216	NULL
+#1.0975889	0.000
+#0.5668781	0.163
+#0.07123395	0.808
+#0.8320952	NULL
+#0.35641629	NULL
+#1.4285428e+12	NULL
+#0.5716349	0.925
+#-1.1734946e+08	0.000
+#0.030607125	0.874
+#0.83317256	0.000
+#-1.7515901e+09	0.246
+#5.855687e+08	0.630
+#0.6815483	NULL
+#0.0059321974	NULL
+#0.8218823	0.960
+#-4.015704e+08	0.000
+#0.34888306	NULL
+#-0.5051734	NULL
+#0.34162566	NULL
+#-1.0525191e+09	-1697412576.000
+[ 33	]
+#ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCES "sys"."t2" ("c0", "c1");
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c0" REAL NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+#COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#4.2328605e+08
+#0.69732165
+#0.71200204
+#4.466514e+07
+#0
+#1.3677554e+09
+#0.36787975
+#0.961471
+#0.6692194
+#0.3954379
+[ 10	]
+#create or replace view v64(vc0, vc1, vc2, vc3) as (select -34, 'A',
+#((0.2457749548974355047192830170388333499431610107421875)*(5)), cast(-43 as int)) with check option;
+#create or replace view v110(vc0) as (values ('a'), ('8'), ('g'), (null)) with check option;
+#select 1 from v64, t1, v110 where t1.c0 > v64.vc2;
+% .%10 # table_name
+% %10 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#ROLLBACK;
+#START TRANSACTION;
+#create or replace view v11(vc0, vc1) as (values (cast(r'<' as string), ((((356910743)||(324718164)))<<(sql_max(962062904, -1226062612)))),
+#(r'e]+)Nik', ((cast(-1267863719 as tinyint))&(- (340796877)))), (case when ((r'24060')not like(r'f')) then r'vyA,R' else r'68' end,
+#+ (greatest(113, 0.61746233049203114173764106453745625913143157958984375))));
+#create or replace view v13(vc0, vc1) as (values (((0.9896616954779023)<(greatest(-1982788333, 0.76584341990855342441335551484371535480022430419921875)))
+#, cast(1938193505 as boolean)), (greatest(false, false), cast(cast(r'rHIVNz' as int) as boolean))) with check option;
+#create or replace view v23(vc0, vc1) as (values (case when ((false)and(true)) then ((25922)*(697298603)) when not (false) then - (2909) end,
+#cast(case r'17841' when r'155' then 2909 when r'116' then 17275 end as int)));
+#SELECT CAST(SUM(agg0) as BIGINT) FROM (
+#	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+#	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE ((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))
+#	UNION ALL
+#	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+#	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE NOT (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299)))))
+% .%145 # table_name
+% %145 # name
+% bigint # type
+% 1 # length
+[ 6	]
+#create or replace view v11(vc0) as (values ('<'), ('a'));
+#SELECT 1 FROM v11 WHERE v11.vc0 LIKE '' IS NULL;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
+#SELECT 1 HAVING group_concat('') NOT LIKE '3' IS NULL;
+% .%3 # table_name
+% %3 # name
+% tinyint # type
+% 1 # length
+#START TRANSACTION;
+#create or replace view v0(vc0, vc1, vc2) as (values (3, true, 0.3));
+#create or replace view v1(vc0, vc1) as (select 0.80, 'a');
+#select 1 from v0, v1
+#inner join (values (88), (3), (59)) as sub0 on true natural join 
+#(select distinct v0.vc0 from v1, v0 group by v0.vc1) as sub1
+#where v0.vc0 = 0.06683239;
+% .%23 # table_name
+% %23 # name
+% tinyint # type
+% 1 # length
+#create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as smallint), case 0.04487378302689426501359548637992702424526214599609375 when 126710153 then 0.6929207132873739 when 26968 then 26968.0 when 1679982115 then 29 else 0.8204445662571608 end), cast(sql_min(r'', r'#Ts9.H') as boolean), 0.45182237213592768565462165497592650353908538818359375));
+#create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), r'䝀i8jPo' where not (false));
 #ROLLBACK;
 
 # 14:35:03 >  

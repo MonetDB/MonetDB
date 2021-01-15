@@ -384,6 +384,17 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 #UPDATE t2 SET c0 = 5 WHERE least(((3)=(round(0.55, t2.c0))), true);
 [ 0	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t2" ("c1" DOUBLE NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"));
+#COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#-3.1207632e+08
+#1
+#0
+#-903197136
+#0.3672199296718357
+#-1.7976931348623157e+308
+[ 6	]
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."
