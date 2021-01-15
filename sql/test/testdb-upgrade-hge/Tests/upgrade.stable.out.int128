@@ -4206,6 +4206,7 @@ Running database upgrade commands:
 set schema "sys";
 ALTER TABLE sys.keywords SET READ WRITE;
 DELETE FROM sys.keywords where keyword = 'STREAM';
+INSERT INTO sys.keywords VALUES ('BIG'), ('LITTLE'), ('NATIVE'), ('ENDIAN');
 ALTER TABLE sys.table_types SET READ WRITE;
 DELETE FROM sys.table_types where table_type_id = 4;
 ALTER TABLE sys.function_types SET READ WRITE;
