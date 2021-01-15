@@ -247,7 +247,7 @@ ssize_t strToStr(char **restrict dst, size_t *restrict len, const char *restrict
 	__attribute__((__visibility__("hidden")));
 gdk_return strWrite(const char *a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
-gdk_return unshare_string_heap(BAT *b)
+gdk_return unshare_varsized_heap(BAT *b)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 void VIEWdestroy(BAT *b)

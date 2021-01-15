@@ -19,10 +19,10 @@
 #include "gdk_private.h"
 
 gdk_return
-unshare_string_heap(BAT *b)
+unshare_varsized_heap(BAT *b)
 {
 	assert(b->batCacheid > 0);
-	if (ATOMstorage(b->ttype) == TYPE_str &&
+	if (ATOMvarsized(b->ttype) &&
 	    b->tvheap->parentid != b->batCacheid) {
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
@@ -116,7 +116,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				   ci->tpe == cand_dense) {
 				toff = 0;
 			} else if (b->tvheap->parentid != bid &&
-				   unshare_string_heap(b) != GDK_SUCCEED) {
+				   unshare_varsized_heap(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 		}
@@ -191,7 +191,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool force, bool mayshare
 				}
 			}
 		}
-	} else if (unshare_string_heap(b) != GDK_SUCCEED)
+	} else if (unshare_varsized_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 	if (toff == 0 && n->twidth == b->twidth && ci->tpe == cand_dense) {
 		/* we don't need to do any translation of offset
