@@ -140,9 +140,7 @@ gdk_export log_level_t lvl_per_component[];
 // ERROR or WARNING it is logged no matter the component. In any other
 // case the component is taken into account
 #define GDK_TRACER_TEST(LOG_LEVEL, COMP)	\
-	(LOG_LEVEL == M_CRITICAL ||		\
-	 LOG_LEVEL == M_ERROR    ||		\
-	 LOG_LEVEL == M_WARNING  ||		\
+	(LOG_LEVEL <= M_WARNING  ||		\
 	 lvl_per_component[COMP] >= LOG_LEVEL)
 
 

@@ -12,17 +12,6 @@
 #include "sql_string.h"
 #include "gdk_atoms.h"
 
-static int log_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
-static int log_update_idx( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
-static int log_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_col( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_idx( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
-static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
-static int log_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
-static int log_create_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
-static int log_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
-
-
 /*
  * The sql data is stored using 2 structure
  * sql_delta and sql_dbat. The dbat keeps the deleted rows and
@@ -37,6 +26,38 @@ static int log_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, uln
  * temporary tables, the chain holds a version per transaction.
  * save points these need too look at the parent transaction (and are private too one transaction).
  */
+
+static int log_update_col( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
+static int log_update_idx( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
+static int log_update_del( sql_trans *tr, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_col( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_idx( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
+static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
+static int log_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
+static int log_create_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
+static int log_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
+
+/* used for communication between {append,update}_prepare and {append,update}_execute */
+struct prep_exec_cookie {
+	sql_delta *delta;
+	bool is_new; // only used for updates
+};
+
+/* creates a new cookie, backed by sql allocator memory so it is
+ * automatically freed even if errors occur
+ */
+static struct prep_exec_cookie *
+make_cookie(sql_trans *tr, sql_delta *delta, bool is_new)
+{
+	struct prep_exec_cookie *cookie;
+	cookie = sa_alloc(tr->sa, sizeof(*cookie));
+	if (!cookie)
+		return NULL;
+	cookie->delta = delta;
+	cookie->is_new = is_new;
+	return cookie;
+}
+
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
 static int
@@ -686,26 +707,45 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	return bat;
 }
 
+static void*
+update_col_prepare(sql_trans *tr, sql_column *c)
+{
+	sql_delta *delta, *odelta = c->data;
+
+	if ((delta = bind_col_data(tr, c)) == NULL)
+		return NULL;
+
+	assert(delta && delta->ts == tr->tid);
+	if (!isTempTable(c->t) && !inTransaction(tr, c->t) && odelta != delta)
+		trans_add(tr, &c->base, delta, &tc_gc_col, &log_update_col);
+	return make_cookie(tr, delta, isNew(c));
+}
+
+static int
+update_col_execute(void *incoming_cookie, void *incoming_tids, void *incoming_values, bool is_bat)
+{
+	struct prep_exec_cookie *cookie = incoming_cookie;
+
+	if (is_bat) {
+		BAT *tids = incoming_tids;
+		BAT *values = incoming_values;
+		if (BATcount(tids) == 0)
+			return LOG_OK;
+		return delta_update_bat(cookie->delta, tids, values, cookie->is_new);
+	}
+	else
+		return delta_update_val(cookie->delta, *(oid*)incoming_tids, incoming_values);
+}
+
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
-	int ok = LOG_OK;
-	BAT *b = tids;
-	sql_delta *delta, *odelta = c->data;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return LOG_OK;
-
-	if ((delta = bind_col_data(tr, c)) == NULL)
+	void *cookie = update_col_prepare(tr, c);
+	if (cookie == NULL)
 		return LOG_ERR;
 
-	assert(delta && delta->ts == tr->tid);
-	if (tpe == TYPE_bat)
-		ok = delta_update_bat(delta, tids, upd, isNew(c));
-	else
-		ok = delta_update_val(delta, *(oid*)tids, upd);
-	if (!isTempTable(c->t) && !inTransaction(tr, c->t) && odelta != delta)
-		trans_add(tr, &c->base, delta, &tc_gc_col, &log_update_col);
+	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
+
 	return ok;
 }
 
@@ -738,26 +778,28 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 	return bat;
 }
 
+static void*
+update_idx_prepare(sql_trans *tr, sql_idx *i)
+{
+	sql_delta *delta, *odelta = i->data;
+
+	if ((delta = bind_idx_data(tr, i)) == NULL)
+		return NULL;
+
+	assert(delta && delta->ts == tr->tid);
+	if (!isTempTable(i->t) && !inTransaction(tr, i->t) && odelta != delta)
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &log_update_idx);
+	return make_cookie(tr, delta, isNew(i));
+}
+
 static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
-	int ok = LOG_OK;
-	BAT *b = tids;
-	sql_delta *delta, *odelta = i->data;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return LOG_OK;
-
-	if ((delta = bind_idx_data(tr, i)) == NULL)
+	void *cookie = update_idx_prepare(tr, i);
+	if (cookie == NULL)
 		return LOG_ERR;
 
-	assert(delta && delta->ts == tr->tid);
-	if (tpe == TYPE_bat)
-		ok = delta_update_bat(delta, tids, upd, isNew(i));
-	else
-		assert(0);
-	if (!isTempTable(i->t) && !inTransaction(tr, i->t) && odelta != delta)
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &log_update_idx);
+	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
 	return ok;
 }
 
@@ -880,49 +922,74 @@ dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 	return LOG_OK;
 }
 
-static int
-append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
+static void*
+append_col_prepare(sql_trans *tr, sql_column *c)
 {
-	int ok = LOG_OK;
-	BAT *b = i;
 	sql_delta *delta, *odelta = c->data;
 
-	if (tpe == TYPE_bat && !BATcount(b))
-		return ok;
-
 	if ((delta = bind_col_data(tr, c)) == NULL)
-		return LOG_ERR;
+		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if (tpe == TYPE_bat)
-		ok = delta_append_bat(delta, i);
-	else
-		ok = delta_append_val(delta, i);
 	if (!isTempTable(c->t) && !inTransaction(tr, c->t) && odelta != delta)
 		trans_add(tr, &c->base, delta, &tc_gc_col, &log_update_col);
+	return make_cookie(tr, delta, false);
+}
+
+static int
+append_col_execute(void *incoming_cookie, void *incoming_data, bool is_bat)
+{
+	struct prep_exec_cookie *cookie = incoming_cookie;
+	int ok;
+
+	if (is_bat) {
+		BAT *bat = incoming_data;
+
+		if (!BATcount(bat))
+			return LOG_OK;
+		ok = delta_append_bat(cookie->delta, bat);
+	} else {
+		ok = delta_append_val(cookie->delta, incoming_data);
+	}
+
 	return ok;
 }
 
 static int
-append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
+append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
-	int ok = LOG_OK;
-	BAT *b = ib;
-	sql_delta *delta, *odelta = i->data;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return ok;
-
-	if ((delta = bind_idx_data(tr, i)) == NULL)
+	void *cookie = append_col_prepare(tr, c);
+	if (cookie == NULL)
 		return LOG_ERR;
 
+	int ok = append_col_execute(cookie, i, tpe == TYPE_bat);
+
+	return ok;
+}
+
+static void*
+append_idx_prepare(sql_trans *tr, sql_idx *i)
+{
+	sql_delta *delta, *odelta = i->data;
+
+	if ((delta = bind_idx_data(tr, i)) == NULL)
+		return NULL;
+
 	assert(delta && delta->ts == tr->tid);
-	if (tpe == TYPE_bat)
-		ok = delta_append_bat(delta, ib);
-	else
-		ok = delta_append_val(delta, ib);
 	if (!isTempTable(i->t) && !inTransaction(tr, i->t) && odelta != delta)
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &log_update_idx);
+	return make_cookie(tr, delta, false);
+}
+
+static int
+append_idx(sql_trans *tr, sql_idx * i, void *data, int tpe)
+{
+	void *cookie = append_idx_prepare(tr, i);
+	if (cookie == NULL)
+		return LOG_ERR;
+
+	int ok = append_col_execute(cookie, data, tpe == TYPE_bat);
+
 	return ok;
 }
 
@@ -2461,14 +2528,19 @@ bat_storage_init( store_functions *sf)
 	sf->bind_idx = (bind_idx_fptr)&bind_idx;
 	sf->bind_del = (bind_del_fptr)&bind_del;
 
-	sf->col_dup = (col_dup_fptr)&col_dup;
-	sf->idx_dup = (idx_dup_fptr)&idx_dup;
-	sf->del_dup = (del_dup_fptr)&del_dup;
-
 	sf->append_col = (append_col_fptr)&append_col;
 	sf->append_idx = (append_idx_fptr)&append_idx;
+
+	sf->append_col_prep = (modify_col_prep_fptr)&append_col_prepare;
+	sf->append_idx_prep = (modify_idx_prep_fptr)&append_idx_prepare;
+	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
 	sf->update_col = (update_col_fptr)&update_col;
 	sf->update_idx = (update_idx_fptr)&update_idx;
+
+	sf->update_col_prep = (modify_col_prep_fptr)&update_col_prepare;
+	sf->update_idx_prep = (modify_idx_prep_fptr)&update_idx_prepare;
+	sf->update_col_exec = (update_col_exec_fptr)&update_col_execute;
+
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
 	sf->count_del = (count_del_fptr)&count_del;
@@ -2481,13 +2553,13 @@ bat_storage_init( store_functions *sf)
 	sf->unique_col = (prop_col_fptr)&unique_col;
 	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
 
+	sf->col_dup = (col_dup_fptr)&col_dup;
+	sf->idx_dup = (idx_dup_fptr)&idx_dup;
+	sf->del_dup = (del_dup_fptr)&del_dup;
+
 	sf->create_col = (create_col_fptr)&create_col;
 	sf->create_idx = (create_idx_fptr)&create_idx;
 	sf->create_del = (create_del_fptr)&create_del;
-
-	sf->upgrade_col = (upgrade_col_fptr)&upgrade_col;
-	sf->upgrade_idx = (upgrade_idx_fptr)&upgrade_idx;
-	sf->upgrade_del = (upgrade_del_fptr)&upgrade_del;
 
 	sf->destroy_col = (destroy_col_fptr)&destroy_col;
 	sf->destroy_idx = (destroy_idx_fptr)&destroy_idx;
@@ -2499,5 +2571,8 @@ bat_storage_init( store_functions *sf)
 
 	sf->clear_table = (clear_table_fptr)&clear_table;
 
+	sf->upgrade_col = (upgrade_col_fptr)&upgrade_col;
+	sf->upgrade_idx = (upgrade_idx_fptr)&upgrade_idx;
+	sf->upgrade_del = (upgrade_del_fptr)&upgrade_del;
 	sf->cleanup = (cleanup_fptr)&cleanup;
 }

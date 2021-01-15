@@ -1389,6 +1389,8 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 	}
 	cs_add(&mt->members, p, 0);
 	p->t = mt;
+	p->member = op->member;
+	assert(p->member);
 	return p;
 }
 
@@ -1403,6 +1405,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	nt->access = t->access;
 	nt->partition = t->partition;
 	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
+	nt->s = t->s;
 
 	if (isPartitionedByExpressionTable(nt)) {
 		nt->part.pexp = SA_ZNEW(sa, sql_expression);
@@ -2704,7 +2707,7 @@ part_dup(sql_trans *tr, sql_part *op, sql_table *mt)
 {
 	sql_allocator *sa = tr->sa;
 	sql_part *p = SA_ZNEW(sa, sql_part);
-	sql_table *member = find_sql_table_id(tr, mt->s, op->base.id);
+	sql_table *member = find_sql_table_id(tr, mt->s, op->member->base.id);
 
 	base_init(sa, &p->base, op->base.id, 0, op->base.name);
 	p->tpe = op->tpe;

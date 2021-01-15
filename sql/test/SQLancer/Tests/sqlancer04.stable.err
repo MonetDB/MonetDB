@@ -55,6 +55,10 @@ MAPI  = (monetdb) /var/tmp/mtest-13844/.s.monetdb.32436
 QUERY = select coalesce(-1129107763, '1415606329') from (values(1),(2)) as t0(c0);
 ERROR = !value too long for type (var)char(10)
 CODE  = 22001
+MAPI  = (monetdb) /var/tmp/mtest-150622/.s.monetdb.34547
+QUERY = select cast(count(1) as interval second) from (values (false)) as v6(vc0); --error
+ERROR = !types bigint(64,0) and sec_interval(13,0) are not equal
+CODE  = 42000
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."

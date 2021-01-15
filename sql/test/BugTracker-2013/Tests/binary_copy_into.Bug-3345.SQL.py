@@ -19,7 +19,9 @@ try:
             os.path.join(dst, 'n_regionkey.sorted').replace('\\', '\\\\')))
     sys.stderr.write('Exception expected')
 except pymonetdb.exceptions.DatabaseError as e:
-    if 'Binary files for table \'bug\' have inconsistent counts' not in str(e):
-         sys.stderr.write('Exception: Binary files for table \'bug\' have inconsistent counts expected')
+    expected = "42000!inconsistent row count"
+    if expected not in str(e):
+        print(f'Got exception: {str(e).rstrip()}', file=sys.stderr)
+        print(f'Expected something containing: {expected}', file=sys.stderr)
 cur.close()
 cli.close()
