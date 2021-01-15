@@ -424,3 +424,5 @@ WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE) RIGHT OUTE
 0.10216334194461484941029993933625519275665283203125) AS STRING(478)))) AS sub2 ON ((greatest(r'', r'32228'))NOT
 ILIKE(CAST(30792 AS STRING(381))))) as res;
 ROLLBACK;
+
+select cast(count(1) as interval second) from (values (false)) as v6(vc0); --error
