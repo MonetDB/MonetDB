@@ -13,7 +13,6 @@
 #include "sql_hash.h"
 
 typedef struct node {
-	struct sql_hash_e e;
 	struct node *next;
 	void *data;
 } node;

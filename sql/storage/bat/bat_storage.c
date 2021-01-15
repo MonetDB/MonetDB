@@ -18,6 +18,27 @@ static MT_Lock destroy_lock = MT_LOCK_INITIALIZER(destroy_lock);
 sql_dbat *tobe_destroyed_dbat = NULL;
 sql_delta *tobe_destroyed_delta = NULL;
 
+/* used for communication between {append,update}_prepare and {append,update}_execute */
+struct prep_exec_cookie {
+	sql_delta *delta;
+	bool is_new; // only used for updates
+};
+
+/* creates a new cookie, backed by sql allocator memory so it is
+ * automatically freed even if errors occur
+ */
+static struct prep_exec_cookie *
+make_cookie(sql_trans *tr, sql_delta *delta, bool is_new)
+{
+	struct prep_exec_cookie *cookie;
+	cookie = sa_alloc(tr->sa, sizeof(*cookie));
+	if (!cookie)
+		return NULL;
+	cookie->delta = delta;
+	cookie->is_new = is_new;
+	return cookie;
+}
+
 static sql_trans *
 oldest_active_transaction(void)
 {
@@ -610,26 +631,46 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	return LOG_OK;
 }
 
+static void*
+update_col_prepare(sql_trans *tr, sql_column *c)
+{
+	if (bind_col_data(tr, c) == LOG_ERR)
+		return NULL;
+
+	sql_delta *delta = c->data;
+	delta->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
+	assert(tr != gtrans);
+	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
+
+	return make_cookie(tr, delta, isNew(c));
+}
+
+static int
+update_col_execute(void *incoming_cookie, void *incoming_tids, void *incoming_values, bool is_bat)
+{
+	struct prep_exec_cookie *cookie = incoming_cookie;
+
+	if (is_bat) {
+		BAT *tids = incoming_tids;
+		BAT *values = incoming_values;
+		if (BATcount(tids) == 0)
+			return LOG_OK;
+		return delta_update_bat(cookie->delta, tids, values, cookie->is_new);
+	}
+	else
+		return delta_update_val(cookie->delta, *(oid*)incoming_tids, incoming_values);
+}
+
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
-	BAT *b = tids;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return LOG_OK;
-
-	if (bind_col_data(tr, c) == LOG_ERR)
+	void *cookie = update_col_prepare(tr, c);
+	if (cookie == NULL)
 		return LOG_ERR;
 
-	bat = c->data;
-	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
-	assert(tr != gtrans);
-	c->base.rtime = c->t->base.rtime = c->t->s->base.rtime = tr->stime;
-	if (tpe == TYPE_bat)
-		return delta_update_bat(bat, tids, upd, isNew(c));
-	else
-		return delta_update_val(bat, *(oid*)tids, upd);
+	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
+
+	return ok;
 }
 
 static int
@@ -650,27 +691,29 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 	return LOG_OK;
 }
 
+static void*
+update_idx_prepare(sql_trans *tr, sql_idx *i)
+{
+	if (bind_idx_data(tr, i) == LOG_ERR)
+		return NULL;
+
+	sql_delta *delta = i->data;
+	delta->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
+	assert(tr != gtrans);
+	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
+
+	return make_cookie(tr, delta, isNew(i));
+}
+
 static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
-	BAT *b = tids;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return LOG_OK;
-
-	if (bind_idx_data(tr, i) == LOG_ERR)
+	void *cookie = update_idx_prepare(tr, i);
+	if (cookie == NULL)
 		return LOG_ERR;
 
-	bat = i->data;
-	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
-	assert(tr != gtrans);
-	i->base.rtime = i->t->base.rtime = i->t->s->base.rtime = tr->stime;
-	if (tpe == TYPE_bat)
-		return delta_update_bat(bat, tids, upd, isNew(i));
-	else
-		assert(0);
-	return LOG_OK;
+	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
+	return ok;
 }
 
 static int
@@ -847,53 +890,78 @@ dup_del(sql_trans *tr, sql_table *ot, sql_table *t)
 	return ok;
 }
 
-static int
-append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
+static void*
+append_col_prepare(sql_trans *tr, sql_column *c)
 {
-	int ok = LOG_OK;
-	BAT *b = i;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return ok;
-
 	if (bind_col_data(tr, c) == LOG_ERR)
-		return LOG_ERR;
+		return NULL;
 
-	bat = c->data;
+	sql_delta *delta = c->data;
+
 	/* appends only write */
-	bat->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
+	delta->wtime = c->base.wtime = c->t->base.wtime = c->t->s->base.wtime = tr->wtime = tr->wstime;
 	/* inserts are ordered with the current delta implementation */
 	/* therefor mark appends as reads */
 	assert(tr != gtrans);
 	c->t->s->base.rtime = c->t->base.rtime = tr->stime;
-	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, i);
-	else
-		ok = delta_append_val(bat, i);
+
+	return make_cookie(tr, delta, false);
+}
+
+static int
+append_col_execute(void *incoming_cookie, void *incoming_data, bool is_bat)
+{
+	struct prep_exec_cookie *cookie = incoming_cookie;
+	int ok;
+
+	if (is_bat) {
+		BAT *bat = incoming_data;
+
+		if (!BATcount(bat))
+			return LOG_OK;
+		ok = delta_append_bat(cookie->delta, bat);
+	} else {
+		ok = delta_append_val(cookie->delta, incoming_data);
+	}
+
 	return ok;
 }
 
 static int
-append_idx(sql_trans *tr, sql_idx * i, void *ib, int tpe)
+append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
-	int ok = LOG_OK;
-	BAT *b = ib;
-	sql_delta *bat;
-
-	if (tpe == TYPE_bat && !BATcount(b))
-		return ok;
-
-	if (bind_idx_data(tr, i) == LOG_ERR)
+	void *cookie = append_col_prepare(tr, c);
+	if (cookie == NULL)
 		return LOG_ERR;
 
-	bat = i->data;
+	int ok = append_col_execute(cookie, i, tpe == TYPE_bat);
+
+	return ok;
+}
+
+static void*
+append_idx_prepare(sql_trans *tr, sql_idx *i)
+{
+	if (bind_idx_data(tr, i) == LOG_ERR)
+		return NULL;
+
+	sql_delta *delta = i->data;
+
 	/* appends only write */
-	bat->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
-	if (tpe == TYPE_bat)
-		ok = delta_append_bat(bat, ib);
-	else
-		ok = delta_append_val(bat, ib);
+	delta->wtime = i->base.wtime = i->t->base.wtime = i->t->s->base.wtime = tr->wtime = tr->wstime;
+
+	return make_cookie(tr, delta, false);
+}
+
+static int
+append_idx(sql_trans *tr, sql_idx * i, void *data, int tpe)
+{
+	void *cookie = append_idx_prepare(tr, i);
+	if (cookie == NULL)
+		return LOG_ERR;
+
+	int ok = append_col_execute(cookie, data, tpe == TYPE_bat);
+
 	return ok;
 }
 
@@ -3274,8 +3342,18 @@ bat_storage_init( store_functions *sf)
 
 	sf->append_col = (append_col_fptr)&append_col;
 	sf->append_idx = (append_idx_fptr)&append_idx;
+	sf->append_col_prep = (modify_col_prep_fptr)&append_col_prepare;
+	sf->append_idx_prep = (modify_idx_prep_fptr)&append_idx_prepare;
+	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
+
 	sf->update_col = (update_col_fptr)&update_col;
 	sf->update_idx = (update_idx_fptr)&update_idx;
+
+
+	sf->update_col_prep = (modify_col_prep_fptr)&update_col_prepare;
+	sf->update_idx_prep = (modify_idx_prep_fptr)&update_idx_prepare;
+	sf->update_col_exec = (update_col_exec_fptr)&update_col_execute;
+
 	sf->delete_tab = (delete_tab_fptr)&delete_tab;
 
 	sf->count_del = (count_del_fptr)&count_del;
