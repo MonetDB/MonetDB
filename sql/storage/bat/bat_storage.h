@@ -42,8 +42,5 @@ typedef struct sql_dbat {
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
 
-extern sql_delta * timestamp_delta( sql_trans *tr, sql_delta *d);
-extern sql_dbat * timestamp_dbat( sql_trans *tr, sql_dbat *d);
-
 #endif /*BATSTORAGE_H */
 

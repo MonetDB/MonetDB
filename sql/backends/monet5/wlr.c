@@ -244,7 +244,7 @@ WLRprocessBatch(Client cntxt)
 	}
 
 	/* Cook a log file into a concreate MAL function for multiple transactions */
-	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
+	prev = newFunction(putName(sql_private_module_name), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
 		MCcloseClient(c);
 		throw(MAL, "wlr.batch", "Could not create user for WLR process\n");

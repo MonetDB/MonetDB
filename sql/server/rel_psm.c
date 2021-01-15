@@ -985,7 +985,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 			if (create) { /* needed for recursive functions */
 				q = query_cleaned(sql->ta, q);
-				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
+				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE);
 			}
 			sql->session->schema = s;
 			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);

@@ -417,10 +417,12 @@ SQLinit(Client c)
 		/* check whether table sys.systemfunctions exists: if
 		 * it doesn't, this is probably a restart of the
 		 * server after an incomplete initialization */
-		sql_schema *s = mvc_bind_schema(m, "sys");
-		sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
-		if (t == NULL)
-			store->first = 1;
+		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
+			sql_schema *s = mvc_bind_schema(m, "sys");
+			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
+			if (t == NULL)
+				store->first = 1;
+		}
 	}
 	if (store->first > 0) {
 		store->first = 0;

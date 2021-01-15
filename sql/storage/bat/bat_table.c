@@ -43,10 +43,7 @@ delta_cands(sql_trans *tr, sql_table *t)
 	sql_dbat *d;
 	BAT *tids;
 
-	if (!t->data) {
-		sql_table *ot = tr_find_table(tr->parent, t);
-		t->data = timestamp_dbat(tr, ot->data);
-	}
+	assert(t->data);
 	d = t->data;
 	if (!store->initialized && d->cached)
 		return temp_descriptor(d->cached->batCacheid);
@@ -136,10 +133,7 @@ delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 static BAT *
 full_column(sql_trans *tr, sql_column *c)
 {
-	if (!c->data) {
-		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(tr, oc->data);
-	}
+	assert(c->data);
 	return delta_full_bat(tr, c, c->data, isTempTable(c->t));
 }
 
