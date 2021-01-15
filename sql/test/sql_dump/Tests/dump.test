@@ -291,7 +291,7 @@ statement ok
 COMMIT
 
 query T nosort
-SELECT o, stmt FROM sys.dump_database(FALSE) ORDER BY o ASC
+SELECT stmt FROM sys.dump_database(FALSE) ORDER BY o ASC
 ----
 START TRANSACTION;
 SET SCHEMA "sys";
