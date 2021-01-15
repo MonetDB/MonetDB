@@ -81,6 +81,15 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_lo
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
 }
 
+int
+tr_version_of_parent(sql_trans *tr, ulng ts)
+{
+	for( tr = tr->parent; tr; tr = tr->parent)
+		if (tr->tid == ts)
+			return 1;
+	return 0;
+}
+
 static void *
 _cs_find_name(changeset * cs, const char *name)
 {
