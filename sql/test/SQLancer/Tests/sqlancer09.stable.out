@@ -281,6 +281,83 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 #0.968	"1403896159"
 #0.565	"0.8224972062481081"
 [ 7	]
+#SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END;
+% .%4 # table_name
+% %4 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
+#(t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
+#((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
+#(SELECT DISTINCT CASE (-809462446) IN (2020241275, 2116461308) WHEN CASE WHEN FALSE THEN TRUE WHEN FALSE THEN
+#FALSE WHEN TRUE THEN TRUE WHEN TRUE THEN FALSE WHEN FALSE THEN FALSE WHEN FALSE THEN FALSE END THEN
+% .t2,	.t2 # table_name
+% c0,	c1 # name
+% decimal,	varchar # type
+% 20,	0 # length
+[ NULL,	NULL	]
+[ NULL,	NULL	]
 #ROLLBACK;
 #START TRANSACTION;
 #create view v18(vc0) as (values (cast(((r'-W<~>頃')not like(r'8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
@@ -391,6 +468,20 @@ stdout of test 'sqlancer09` in directory 'sql/test/SQLancer` itself:
 % %3 # name
 % tinyint # type
 % 1 # length
+#START TRANSACTION;
+#create or replace view v0(vc0, vc1, vc2) as (values (3, true, 0.3));
+#create or replace view v1(vc0, vc1) as (select 0.80, 'a');
+#select 1 from v0, v1
+#inner join (values (88), (3), (59)) as sub0 on true natural join 
+#(select distinct v0.vc0 from v1, v0 group by v0.vc1) as sub1
+#where v0.vc0 = 0.06683239;
+% .%23 # table_name
+% %23 # name
+% tinyint # type
+% 1 # length
+#create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as smallint), case 0.04487378302689426501359548637992702424526214599609375 when 126710153 then 0.6929207132873739 when 26968 then 26968.0 when 1679982115 then 29 else 0.8204445662571608 end), cast(sql_min(r'', r'#Ts9.H') as boolean), 0.45182237213592768565462165497592650353908538818359375));
+#create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), r'䝀i8jPo' where not (false));
+#ROLLBACK;
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."

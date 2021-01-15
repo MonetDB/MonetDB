@@ -52,23 +52,23 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #SELECT 1 FROM t1 LEFT OUTER JOIN t0 ON TRUE 
 #LEFT OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON TRUE 
 #WHERE (TIME '00:25:07') IN (TIME '07:29:34', CASE 2 WHEN 2 THEN TIME '17:23:46' ELSE TIME '05:14:30' END);
-% .%21 # table_name
-% %21 # name
+% .%6 # table_name
+% %6 # name
 % tinyint # type
 % 1 # length
 #SELECT 1 FROM t1 LEFT OUTER JOIN t0 ON TRUE 
 #LEFT OUTER JOIN (SELECT 1 FROM t0) AS sub0 ON TRUE 
 #WHERE t0.c0 <= t0.c0 AND (TIME '00:25:07') IN (TIME '07:29:34', CASE 2 WHEN 2 THEN TIME '17:23:46' ELSE TIME '05:14:30' END);
-% .%21 # table_name
-% %21 # name
+% .%6 # table_name
+% %6 # name
 % tinyint # type
 % 1 # length
 #SELECT ALL COUNT(TIME '06:32:50') FROM t1 LEFT OUTER JOIN t0 ON TRUE 
 #LEFT OUTER JOIN (SELECT t1.c1, t0.c1, 0.43 FROM t0, t1) AS sub0 ON TRUE 
 #WHERE ((NOT ((TIME '00:25:07') IN (TIME '07:29:34', TIME '05:21:58', CASE 0.54 WHEN 0.65 THEN TIME '17:23:46' ELSE TIME '05:14:30' END)))) 
 #GROUP BY TIMESTAMP '1969-12-08 01:47:58';
-% .%13 # table_name
-% %13 # name
+% .%7 # table_name
+% %7 # name
 % bigint # type
 % 1 # length
 [ 3	]
@@ -121,15 +121,15 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 [ 11	]
 #SELECT CAST(SUM(ALL 0.14) AS DECIMAL(10,2)) FROM sys.t0 JOIN sys.t1 ON CAST(CASE t0.c1 WHEN t1.c1 THEN NOT (FALSE) WHEN t1.c1 THEN (t0.c0) NOT  BETWEEN ASYMMETRIC (t1.c0) AND (t0.c0) WHEN t0.c1 
 #THEN (0.2) IN (0.3) END AS BOOLEAN) GROUP BY NOT (FALSE), COALESCE(((COALESCE(2, 4, 1))<<(COALESCE(5, -6))), ((COALESCE('-8', -4, 6))|(COALESCE(-2, 3, 4, 5, -6))));
-% .%10 # table_name
-% %10 # name
+% .%6 # table_name
+% %6 # name
 % decimal # type
 % 12 # length
 [ 0.42	]
 #SELECT PROD(ALL 0.14) FROM t0 JOIN t1 ON CAST(CASE t0.c1 WHEN t1.c1 THEN NOT (FALSE) WHEN t1.c1 THEN (t0.c0) NOT  BETWEEN ASYMMETRIC (t1.c0) AND (t0.c0) WHEN t0.c1 
 #THEN (0.2) IN (0.3) END AS BOOLEAN) GROUP BY NOT (FALSE), COALESCE(((COALESCE(2, 4, 1))<<(COALESCE(5, -6))), ((COALESCE(r'-8', -4, 6))|(COALESCE(-2, 3, 4, 5, -6))));
-% .%7 # table_name
-% %7 # name
+% .%5 # table_name
+% %5 # name
 % double # type
 % 24 # length
 [ 0.002744	]
@@ -191,8 +191,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #SELECT ALL MAX(ALL CASE WHEN (DATE '1970-01-04') IS NULL THEN CAST(CASE t1.c0 WHEN t1.c0 THEN TIME '11:33:56' END AS VARCHAR(524)) ELSE sql_max(r'iDfwsFjp藖1J洅ៅR-?0OT^.', r'0.6') END) FROM t1 
 #JOIN (SELECT ALL t0.c0, greatest(CAST(INTERVAL '6' SECOND AS TIME), TIME '10:25:00') FROM t1, t0) AS sub0 ON (COALESCE(-3, -6, 3)) NOT IN (CASE WHEN TRUE THEN -3 END, ((-4)&(-5)), - (6))
 #WHERE ((r'%')ILIKE(r'6')) GROUP BY COALESCE(CAST(least(0.4, 0.7) AS VARCHAR(506)), CAST(nullif(TIME '14:14:35', TIME '02:49:23') AS VARCHAR(388))), abs(0.6);
-% .%16 # table_name
-% %16 # name
+% .%14 # table_name
+% %14 # name
 % varchar # type
 % 0 # length
 #ROLLBACK;
@@ -214,8 +214,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #0.6220338267946794	1689393833
 [ 4	]
 #SELECT 1 FROM t0 WHERE 'b' = COALESCE('1', CASE WHEN 2 THEN 'a' END);
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 #SELECT MAX(ALL 0.47279814) FROM t0 WHERE ((r'Vቕ*2DGj!K-?')NOT ILIKE(COALESCE(r'뷿', upper(r'1285890467'), r'R B+ ]%''?E}%<[cöjö媘թ丅MJV%r&伉', 
@@ -239,8 +239,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #"2m^OqPm/3DḞZ02"
 [ 5	]
 #SELECT 1 FROM t1 WHERE COALESCE(FALSE, t1.c0 = '0' AND t1.c0 LIKE t1.c0);
-% .%2 # table_name
-% %2 # name
+% .%1 # table_name
+% %1 # name
 % tinyint # type
 % 1 # length
 #SELECT SUM(agg0) FROM (
@@ -266,8 +266,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #0.6479886625655562
 [ 7	]
 #SELECT 1 FROM t1 WHERE COALESCE(1, CAST(t1.c1 AS INT) & COALESCE(1101847419, 2)); --inputs not same size error
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -292,14 +292,14 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #	CONSTRAINT "t1_c0_unique" UNIQUE ("c0")
 #);
 #SELECT count(*) FROM t1 CROSS JOIN t0;
-% .%3 # table_name
-% %3 # name
+% .%1 # table_name
+% %1 # name
 % bigint # type
 % 1 # length
 [ 0	]
 #SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2;
-% .%4 # table_name
-% %4 # name
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 #SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))) 
@@ -307,8 +307,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING NOT (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32)))))
 #UNION ALL
 #SELECT count(*) FROM t1 CROSS JOIN t0 GROUP BY 0.2 HAVING (max((ltrim(')''+')) NOT IN (CAST(t0.c1 AS VARCHAR(32)), CAST(INTERVAL '6' MONTH AS VARCHAR(32)), CAST(INTERVAL '7' MONTH AS VARCHAR(32))))) IS NULL;
-% .%56 # table_name
-% %4 # name
+% .%50 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 #ROLLBACK;
@@ -316,8 +316,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #CREATE TABLE IF NOT EXISTS t0(c0 FLOAT, c1 DECIMAL NULL UNIQUE);
 #CREATE TEMP TABLE t1 (c0 TIME);
 #SELECT 1 FROM t1 INNER JOIN (SELECT 2 FROM t0) AS sub0 ON CASE 8 WHEN 3 THEN (4) IN (5, 6, 7) END;
-% .%17 # table_name
-% %17 # name
+% .%7 # table_name
+% %7 # name
 % tinyint # type
 % 1 # length
 #SELECT t1.c0 FROM t1 INNER JOIN (SELECT ALL CAST(TIMESTAMP '1970-01-07 06:59:48' AS TIMESTAMP) FROM t0) AS sub0 ON CASE t1.c0 WHEN sql_min(t1.c0, t1.c0) 
@@ -349,8 +349,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #125146072.000	NULL
 [ 4	]
 #SELECT 1 FROM t1 WHERE CASE WHEN CASE t1.c1 WHEN t1.c1 THEN FALSE ELSE TRUE END THEN COALESCE(FALSE, FALSE) END;
-% .%3 # table_name
-% %3 # name
+% .%2 # table_name
+% %2 # name
 % tinyint # type
 % 1 # length
 #SELECT t0.c1, t0.c0 FROM t1 FULL OUTER JOIN t0 ON CASE WHEN CASE t1.c1 WHEN t1.c1 THEN CAST(FALSE AS INT) ELSE abs(-1677579573) END 
@@ -424,8 +424,8 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 #1699639666.000
 [ 5	]
 #select interval '-1680612084' second from t3 natural join (select t4.c0, (cast(r'*' as boolean)) = false from t2, t0, t4) as sub0 group by t3.c0;
-% .%13 # table_name
-% %13 # name
+% .%3 # table_name
+% %3 # name
 % sec_interval # type
 % 5 # length
 #ROLLBACK;
@@ -435,6 +435,105 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % time # type
 % 8 # length
 [ 08:07:24	]
+#START TRANSACTION;
+#create view v3(vc0) as (values (not ((r'%') is not null)), (least(cast(1 as boolean), not (true))), (case sql_min(r'vFP*鱍', r'&G*')
+#when cast(0 as string) then (true) is null when cast(9 as string(678)) then ((true)or(false)) end), (false)) with check option;
+#create view v20(vc0) as (values (((sql_max(2, 0.8207251106243245164506561195594258606433868408203125))&(abs(0.25579435)))));
+#create view v37(vc0) as (values (r'1837521830'), (replace(coalesce(r'4', r'', r'20', r'0.5074455058602168'),
+#case 1108638173 when 1 then r'PS	' when 0.4804786358649317801194911226048134267330169677734375 then r'' else
+#r'XCWVB	' end, cast(false as string)))) with check option;
+#create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then r'F&' when 0 then r'&' end)));
+#select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
+#(select all ((((1074663557)%(0.8367095941704169)))%(scale_up(v20.vc0, 0.25281408194923194))), 0.573499282341099
+#from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
+#((case 0.28276833606549456323620006514829583466053009033203125 when 1 then v37.vc0 when 1436332976 then r'FALSE'
+#when 0.4573545 then v37.vc0 else r'G1hw7' end)not ilike(sql_min(r'46', v37.vc0))) inner join (select (case v3.vc0
+% .%37 # table_name
+% %37 # name
+% bigint # type
+% 1 # length
+[ 8	]
+#ROLLBACK;
+#START TRANSACTION;
+#create view v3(vc0, vc1) as (select distinct r'', cast(cast(-1197336362 as int) as decimal) where greatest(false, true))
+#with check option;
+#create view v7(vc0, vc1, vc2) as (values (1307331776, ((0.8065742163429374)||(0.1829829)),
+#((floor(23898.0))-(cast(16268 as double)))), (least(cast(r'1' as bigint), ifthenelse(true, 7769,
+#0.52628413232100446084160694226738996803760528564453125)), 2092106435, case when ((((((((r'TRUE')or(true)))and(false)))
+#or(false)))and(false)) then pi() when false then sql_max(10246889, 0.038412724) else cast(1556011470 as bigint) end))
+#with check option;
+#create view v28(vc0, vc1, vc2) as (values (-595506138, ((nullif(-1.09922038E8, 24510))*(coalesce(-1802237644,
+#0.7125421032644879, 662707145))), "week"(greatest(timestamp '1970-01-11 12:58:57', timestamp '1969-12-24 00:21:39'))))
+#with check option;
+#create view v32(vc0, vc1) as (values (cast(-330282362 as bigint), ((((674023637)||(-1856487129)))<=(case -1983844154
+#when 122 then 11 when 1381635703 then -367942232 when -1208650057 then 713851705 else 0.40289348 end))),
+#(sql_max(((10)>>(18833)), - (-1088048958)), (not (true)) = true));
+#create view v38(vc0) as (select all cast(cast(11149 as bigint) as real) where "isauuid"(r'0.962687263902831'));
+#create view v43(vc0, vc1) as (select distinct cast(case 0.635420284843984273237538218381814658641815185546875 when
+#0.94514286975825123615635448004468344151973724365234375 then 0.8788786 end as bigint), null
+#where ((-1975284152)<=(17772))) with check option;
+#SELECT 1 FROM v7, v43 WHERE v7.vc1 ILIKE v43.vc1;
+% .%15 # table_name
+% %15 # name
+% tinyint # type
+% 1 # length
+#SELECT median(ALL least(+ (0.26910993823565487748084024133277125656604766845703125),
+#((0.5744001734384440727154697015066631138324737548828125)&(-1283341470)))), CASE WHEN NOT (FALSE) THEN
+#least(-650735786, -1123683253) ELSE 1414135574 END FROM v7, v38, v43 RIGHT OUTER JOIN 
+#(SELECT ALL sql_max(CAST(v28.vc0 AS REAL), ifthenelse(v32.vc1, 56, 104)), ((CAST(v28.vc1 AS DOUBLE))*
+#(CAST(TRUE AS TINYINT))), r'u''A#{' FROM v28, v32, v3) AS sub0 ON (((TRUE)AND(TRUE))) = TRUE
+#WHERE ((v7.vc1)ILIKE(upper(v43.vc1))) GROUP BY "second"(TIME '10:50:47');
+% .%40,	.%47 # table_name
+% %40,	%47 # name
+% double,	int # type
+% 24,	1 # length
+#ROLLBACK;
+#CREATE TABLE t2(c0 DOUBLE);
+#INSERT INTO t2(c0) VALUES(852.0), (-0.31015700674852054), (45), (null), (-1.936408526E9), (0.12208305626734062), (-1.707045885E9);
+[ 7	]
+#INSERT INTO t2(c0) VALUES(1660989841);
+[ 1	]
+#DELETE FROM t2 WHERE TRUE;
+[ 8	]
+#INSERT INTO t2(c0) VALUES(null);
+[ 1	]
+#UPDATE t2 SET c0 = 0.2818413675323882 WHERE sql_min((0.0194696766772712859250304973102174699306488037109375)
+#BETWEEN (t2.c0) AND (0.8918001896191873), (t2.c0) NOT IN (-682776732));
+[ 0	]
+#DROP TABLE t2;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" BOOLEAN,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "sys"."t0" VALUES (true), (false);
+[ 2	]
+#create view v3(vc0) as (values (least(909916901, - (1451705231))));
+#create view v4(vc0, vc1, vc2, vc3) as (select case sql_min(true, r'TRUE') when (-1243138496) not between
+#asymmetric (-1723862249) and (253857921) then least(-1523235132, -1.04665549E9) end, cast(nullif(r'', r'') as bigint),
+#weekofyear(sql_sub(date '1970-01-10', interval '58931850' month)), 0.16610325448814467 where least(false, false));
+#create view v6(vc0, vc1, vc2) as (values (cast((true) = true as int), cast(((1576421008)&(null)) as decimal),
+#((((0.15598454)-(-235033638)))<<(((0.50459784)/(1078999181))))), (abs(20223), + (cast(0.6995354 as real)),
+#cast(-1695180722 as bigint)));
+#SELECT v3.vc0 FROM v3, v6 CROSS JOIN (SELECT ALL ((sign(0.9241489178039545))*
+#(scale_down(0.74460343372682225027148206208948977291584014892578125, 0.33816958610011738084466514919768087565898895263671875)))
+#FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper(r'bŀ') WHERE FALSE) AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0
+#LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4 WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE)
+#RIGHT OUTER JOIN (VALUES (CAST(greatest(r'77', 0.10216334194461484941029993933625519275665283203125) AS STRING(478)))) AS sub2
+% .v3 # table_name
+% vc0 # name
+% int # type
+% 11 # length
+[ -1451705231	]
+[ -1451705231	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((((v6.vc1)-(v6.vc1))) IS NOT NULL AS INT) as count FROM v3, v6 CROSS JOIN
+#(SELECT ((sign(0.9241489178039545))*(scale_down(0.74460343372682225027148206208948977291584014892578125,
+#0.33816958610011738084466514919768087565898895263671875))) FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper(r'bŀ') WHERE FALSE)
+#AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0 LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4
+#WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE) RIGHT OUTER JOIN (VALUES (CAST(greatest(r'77',
+% .%34 # table_name
+% %34 # name
+% bigint # type
+% 1 # length
+[ 2	]
+#ROLLBACK;
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."
