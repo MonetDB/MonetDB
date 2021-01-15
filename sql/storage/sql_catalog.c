@@ -218,13 +218,22 @@ find_sql_part_id(sql_table *t, sqlid id)
 sql_table *
 find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 {
-	return (sql_table*)os_find_name(s->tables, tr, tname);
+	sql_table *t = (sql_table*)os_find_name(s->tables, tr, tname);
+	if (!t && tr->tmp == s)
+		t = (sql_table*)_cs_find_name(&tr->localtmps, tname);
+	return t;
 }
 
 sql_table *
 find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 {
-	return (sql_table*)os_find_id(s->tables, tr, id);
+	sql_table *t = (sql_table*)os_find_id(s->tables, tr, id);
+	if (!t && tr->tmp == s) {
+		node *n = cs_find_id(&tr->localtmps, id);
+		if (n)
+			return (sql_table*)n->data;
+	}
+	return t;
 }
 
 sql_table *

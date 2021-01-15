@@ -787,9 +787,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	if (argc < MAXARG)
 		argc = MAXARG;
 	if (cq)
-		c->curprg = newFunctionArgs(userRef, putName(cq->name), FUNCTIONsymbol, argc);
+		c->curprg = newFunctionArgs(putName(sql_private_module_name), putName(cq->name), FUNCTIONsymbol, argc);
 	else
-		c->curprg = newFunctionArgs(userRef, "tmp", FUNCTIONsymbol, argc);
+		c->curprg = newFunctionArgs(putName(sql_private_module_name), "tmp", FUNCTIONsymbol, argc);
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
@@ -801,7 +801,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	curInstr = getInstrPtr(mb, 0);
 	/* we do not return anything */
 	setVarType(mb, 0, TYPE_void);
-	setModuleId(curInstr, userRef);
+	setModuleId(curInstr, putName(sql_private_module_name));
 
 	if (m->params) {	/* needed for prepare statements */
 
@@ -1154,7 +1154,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 
 	backup = c->curprg;
-	curPrg = c->curprg = newFunctionArgs(userRef, putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
+	curPrg = c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
 	if( curPrg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;
