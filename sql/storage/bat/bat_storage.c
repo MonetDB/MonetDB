@@ -60,15 +60,6 @@ make_cookie(sql_trans *tr, sql_delta *delta, bool is_new)
 
 static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
-static int
-tr_version_of_parent(sql_trans *tr, ulng ts)
-{
-	for( tr = tr->parent; tr; tr = tr->parent)
-		if (tr->tid == ts)
-			return 1;
-	return 0;
-}
-
 static sql_delta *
 temp_dup_delta(ulng tid, int type)
 {

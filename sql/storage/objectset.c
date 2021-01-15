@@ -277,6 +277,7 @@ tc_gc_objectversion(sql_store Store, sql_change *change, ulng commit_ts, ulng ol
 	objectversion *ov = (objectversion*)change->data;
 
 	if (ov->deleted || !commit_ts) {
+		/* TODO handle savepoints */
 		if (ov->ts < oldest || (ov->ts == commit_ts && commit_ts == oldest) || !commit_ts) {
 			int ok = LOG_OK;
 			objectversion_destroy(Store, ov, commit_ts, oldest);
@@ -445,11 +446,12 @@ find_name(objectset *os, const char *name)
 	return NULL;
 }
 
+
 static objectversion*
 get_valid_object(sql_trans *tr, objectversion *ov)
 {
 	while(ov) {
-		if (ov->ts == tr->tid || ov->ts < tr->ts)
+		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts)) || ov->ts < tr->ts)
 			return ov;
 		else
 			ov = ov->older;
