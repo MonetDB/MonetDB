@@ -3151,11 +3151,12 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
-	if (sel && !pushed && !v->cand)
+	if (sel && !pushed && !v->cand) {
 		q = pushArgument(mb, q, sel->nr);
-	else if (v->nrcols > 0 && t->type->eclass != EC_EXTERNAL)
+		pushed = 1;
+	} else if (v->nrcols > 0 && t->type->eclass != EC_EXTERNAL) {
 		q = pushNil(mb, q, TYPE_bat);
-
+	}
 	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
 		q = pushInt(mb, q, t->digits);
@@ -3196,14 +3197,13 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 			return NULL;
 		}
 		s->op1 = v;
-		s->nrcols = 0;	/* function without arguments returns single value */
 		s->key = v->key;
 		s->nrcols = v->nrcols;
 		s->aggr = v->aggr;
 		s->op4.typeval = *t;
 		s->nr = getDestVar(q);
 		s->q = q;
-		s->cand = sel;
+		s->cand = pushed ? sel : NULL;
 		return s;
 	}
 	return NULL;
@@ -3336,7 +3336,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		if (f->func->type == F_FUNC && f->func->lang == FUNC_LANG_INT && push_cands) {
 			for (n = ops->op4.lval->h; n; n = n->next) {
 				stmt *op = n->data;
-	
+
 				if (op->nrcols > 0) {
 					if (op->cand && op->cand == sel) {
 						q = pushNil(mb, q, TYPE_bat);
