@@ -23,6 +23,7 @@ struct versionchain;// TODO: rename to object_version_chain
 typedef struct objectversion {
 	bool deleted;
 	ulng ts;
+	ulng tombstone; // ts of latest active transaction at the time of funeral
 	sql_base *obj;
 	struct objectversion	*name_based_older;
 	struct objectversion	*name_based_newer;
@@ -49,6 +50,7 @@ typedef struct objectset {
 	versionchain *name_based_t;
 	versionchain *id_based_h;
 	versionchain *id_based_t;
+	versionchain * graveyard;
 	int name_based_cnt;
 	int id_based_cnt;
 	struct sql_hash *name_map;
@@ -135,16 +137,12 @@ hash_delete(sql_hash *h, void *data)
 static void
 node_destroy(objectset *os, versionchain *n)
 {
-	if (n->data && os->destroy) {
-		os->destroy(n->data, NULL);
-		n->data = NULL;
-	}
 	if (!os->sa)
 		_DELETE(n);
 }
 
 static versionchain *
-os_remove_node(objectset *os, versionchain *n)
+os_remove_name_based_chain(objectset *os, versionchain *n)
 {
 	assert(n);
 	versionchain *p = os->name_based_h;
@@ -167,10 +165,40 @@ os_remove_node(objectset *os, versionchain *n)
 		os->name_based_t = p;
 
 	MT_lock_set(&os->ht_lock);
-	if (os->id_map && n)
-		hash_delete(os->id_map, n);
 	if (os->name_map && n)
 		hash_delete(os->name_map, n);
+	MT_lock_unset(&os->ht_lock);
+
+	node_destroy(os, n);
+	return p;
+}
+
+static versionchain *
+os_remove_id_based_chain(objectset *os, versionchain *n)
+{
+	assert(n);
+	versionchain *p = os->id_based_h;
+
+	if (p != n)
+		while (p && p->next != n)
+			p = p->next;
+	assert(p==n||(p && p->next == n));
+	if (p == n) {
+		os->id_based_h = n->next;
+		if (os->id_based_h) // i.e. non-empty os
+			os->id_based_h->prev = NULL;
+		p = NULL;
+	} else if ( p != NULL)  {
+		p->next = n->next;
+		if (p->next) // node in the middle
+			p->next->prev = p;
+	}
+	if (n == os->id_based_t)
+		os->id_based_t = p;
+
+	MT_lock_set(&os->ht_lock);
+	if (os->id_map && n)
+		hash_delete(os->id_map, n);
 	MT_lock_unset(&os->ht_lock);
 
 	node_destroy(os, n);
@@ -269,6 +297,33 @@ os_append_id(objectset *os, objectversion *ov)
 
 static versionchain* find_name(objectset *os, const char *name);
 
+
+
+static void
+mark_objectversion_to_be_destroyed(sqlstore *store, objectset* os, objectversion *ov)
+{
+	// For the moment we (mis)use a newly allocated objectversion to represent a tombstone.
+	objectversion* tombstone = SA_ZNEW(os->sa, objectversion);
+	ov->ts = store->timestamp;
+
+	MT_lock_set(&os->ht_lock);
+	if (!ov->name_based_newer) {
+		os_remove_name_based_chain(os, ov->name_based_chain);
+	}
+
+	if (!ov->id_based_newer) {
+		os_remove_id_based_chain(os, ov->name_based_chain);
+	}
+
+	if (os->graveyard->data) {
+		os->graveyard->data->id_based_newer = tombstone;
+		tombstone->name_based_older = os->graveyard->data;
+	}
+
+	os->graveyard->data = tombstone;
+	MT_lock_unset(&os->ht_lock);
+}
+
 static void
 objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng oldest)
 {
@@ -350,6 +405,9 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
 	};
 	os->destroy = destroy;
 	MT_lock_init(&os->ht_lock, "sa_ht_lock");
+
+	os->graveyard = SA_ZNEW(sa, versionchain);
+
 	return os;
 }
 
@@ -360,7 +418,7 @@ os_dup(objectset *os)
 	return os;
 }
 
-// TODO: Look into cohesion between os_destroy, os->destroy and and node_destroy
+// TODO: Look into cohesion between os_destroy, os->destroy and node_destroy
 void
 os_destroy(objectset *os, sql_store store)
 {
@@ -389,6 +447,14 @@ os_destroy(objectset *os, sql_store store)
 
 	if (os->id_map && !os->id_map->sa)
 		hash_destroy(os->id_map);
+
+	for (objectversion* tb = os->graveyard->data; tb; tb->name_based_newer) {
+		objectversion* ov = tb;
+		tb = ov->name_based_newer;
+		// TODO destroy ov cascading allong side id direction.
+	}
+
+	node_destroy(os, os->graveyard);
 
 	if (!os->sa)
 		_DELETE(os);
@@ -602,6 +668,34 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 	}
 }
 
+static void
+os_clean_up(objectset *os, objectversion *ov)
+{
+	MT_lock_set(&os->ht_lock);
+	if (ov->id_based_older) {
+			ov->id_based_chain->data = ov->id_based_older;
+			ov->id_based_older->id_based_newer = NULL;
+		}
+	else {
+		if (ov->id_based_chain) {
+			// This was a newly created node, but due to concurrency issues, it has to be destroyed again.
+			_DELETE(ov->id_based_chain);
+		}
+	}
+
+
+	if (ov->name_based_older) {
+			ov->name_based_chain->data = ov->name_based_older;
+			ov->name_based_older->name_based_newer = NULL;
+		}
+	else {
+		if (ov->name_based_chain) {
+			// This was a newly created node, but due to concurrency issues, it has to be destroyed again.
+			_DELETE(ov->name_based_chain);
+		}
+	}
+}
+
 int /*ok, error (name existed) and conflict (added before) */
 os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
@@ -611,13 +705,11 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 
 	if (os_add_id_based(os, tr, b->id, ov)) {
 		// TODO clean up ov
-		assert(0);
 		return -1;
 	}
 
 	if (os_add_name_based(os, tr, name, ov)) {
 		// TODO clean up ov
-		assert(0);
 		return -1;
 	}
 
@@ -696,13 +788,11 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 
 	if (os_del_id_based(os, tr, b->id, ov)) {
 		// TODO clean up ov
-		assert(0);
 		return -1;
 	}
 
 	if (os_del_name_based(os, tr, name, ov)) {
 		// TODO clean up ov
-		assert(0);
 		return -1;
 	}
 
