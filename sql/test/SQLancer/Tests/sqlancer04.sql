@@ -330,3 +330,99 @@ ROLLBACK;
 
 select cast(interval '29578044' second as time);
 	-- 08:07:24
+
+START TRANSACTION;
+create view v3(vc0) as (values (not ((r'%') is not null)), (least(cast(1 as boolean), not (true))), (case sql_min(r'vFP*鱍', r'&G*')
+when cast(0 as string) then (true) is null when cast(9 as string(678)) then ((true)or(false)) end), (false)) with check option;
+create view v20(vc0) as (values (((sql_max(2, 0.8207251106243245164506561195594258606433868408203125))&(abs(0.25579435)))));
+create view v37(vc0) as (values (r'1837521830'), (replace(coalesce(r'4', r'', r'20', r'0.5074455058602168'),
+case 1108638173 when 1 then r'PS	' when 0.4804786358649317801194911226048134267330169677734375 then r'' else
+r'XCWVB	' end, cast(false as string)))) with check option;
+create view v40(vc0) as (values ((true) not in (false, false)), ("isauuid"(case 8 when 4 then r'F&' when 0 then r'&' end)));
+
+select cast(sum(count) as bigint) from (select cast(greatest(false, true) as int) as count from v37 full outer join
+(select all ((((1074663557)%(0.8367095941704169)))%(scale_up(v20.vc0, 0.25281408194923194))), 0.573499282341099
+from v20 where ((((true)or(true)))or(true)) group by 2) as sub0 on
+((case 0.28276833606549456323620006514829583466053009033203125 when 1 then v37.vc0 when 1436332976 then r'FALSE'
+when 0.4573545 then v37.vc0 else r'G1hw7' end)not ilike(sql_min(r'46', v37.vc0))) inner join (select (case v3.vc0
+when v40.vc0 then -2078582481 when v40.vc0 then 0.26386297637506184177169643589877523481845855712890625 when v3.vc0
+then 6 when v40.vc0 then 0.37311851701627662958316022923099808394908905029296875 when v40.vc0
+then 0.78255921469665923329017687137820757925510406494140625 end) is null, + (case r'14' when r'p.e4xf'
+then 0.8350239383024128 when r'6r' then 932574625 when r'[]' then 9 when r'' then 5 when r'LnP/Amb9' then 2 end)
+from v40, v3 where (0.4906208915598539999081140194903127849102020263671875) not in (1654919043, 6)) as sub1
+on ((trim(v37.vc0))>=(substr(v37.vc0, 9, 8)))) as res;
+ROLLBACK;
+
+START TRANSACTION;
+create view v3(vc0, vc1) as (select distinct r'', cast(cast(-1197336362 as int) as decimal) where greatest(false, true))
+with check option;
+
+create view v7(vc0, vc1, vc2) as (values (1307331776, ((0.8065742163429374)||(0.1829829)),
+((floor(23898.0))-(cast(16268 as double)))), (least(cast(r'1' as bigint), ifthenelse(true, 7769,
+0.52628413232100446084160694226738996803760528564453125)), 2092106435, case when ((((((((r'TRUE')or(true)))and(false)))
+or(false)))and(false)) then pi() when false then sql_max(10246889, 0.038412724) else cast(1556011470 as bigint) end))
+with check option;
+
+create view v28(vc0, vc1, vc2) as (values (-595506138, ((nullif(-1.09922038E8, 24510))*(coalesce(-1802237644,
+0.7125421032644879, 662707145))), "week"(greatest(timestamp '1970-01-11 12:58:57', timestamp '1969-12-24 00:21:39'))))
+with check option;
+
+create view v32(vc0, vc1) as (values (cast(-330282362 as bigint), ((((674023637)||(-1856487129)))<=(case -1983844154
+when 122 then 11 when 1381635703 then -367942232 when -1208650057 then 713851705 else 0.40289348 end))),
+(sql_max(((10)>>(18833)), - (-1088048958)), (not (true)) = true));
+
+create view v38(vc0) as (select all cast(cast(11149 as bigint) as real) where "isauuid"(r'0.962687263902831'));
+
+create view v43(vc0, vc1) as (select distinct cast(case 0.635420284843984273237538218381814658641815185546875 when
+0.94514286975825123615635448004468344151973724365234375 then 0.8788786 end as bigint), null
+where ((-1975284152)<=(17772))) with check option;
+
+SELECT 1 FROM v7, v43 WHERE v7.vc1 ILIKE v43.vc1;
+
+SELECT median(ALL least(+ (0.26910993823565487748084024133277125656604766845703125),
+((0.5744001734384440727154697015066631138324737548828125)&(-1283341470)))), CASE WHEN NOT (FALSE) THEN
+least(-650735786, -1123683253) ELSE 1414135574 END FROM v7, v38, v43 RIGHT OUTER JOIN 
+(SELECT ALL sql_max(CAST(v28.vc0 AS REAL), ifthenelse(v32.vc1, 56, 104)), ((CAST(v28.vc1 AS DOUBLE))*
+(CAST(TRUE AS TINYINT))), r'u''A#{' FROM v28, v32, v3) AS sub0 ON (((TRUE)AND(TRUE))) = TRUE
+WHERE ((v7.vc1)ILIKE(upper(v43.vc1))) GROUP BY "second"(TIME '10:50:47');
+ROLLBACK;
+
+CREATE TABLE t2(c0 DOUBLE);
+INSERT INTO t2(c0) VALUES(852.0), (-0.31015700674852054), (45), (null), (-1.936408526E9), (0.12208305626734062), (-1.707045885E9);
+INSERT INTO t2(c0) VALUES(1660989841);
+DELETE FROM t2 WHERE TRUE;
+INSERT INTO t2(c0) VALUES(null);
+UPDATE t2 SET c0 = 0.2818413675323882 WHERE sql_min((0.0194696766772712859250304973102174699306488037109375)
+BETWEEN (t2.c0) AND (0.8918001896191873), (t2.c0) NOT IN (-682776732));
+DROP TABLE t2;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" BOOLEAN,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+INSERT INTO "sys"."t0" VALUES (true), (false);
+create view v3(vc0) as (values (least(909916901, - (1451705231))));
+
+create view v4(vc0, vc1, vc2, vc3) as (select case sql_min(true, r'TRUE') when (-1243138496) not between
+asymmetric (-1723862249) and (253857921) then least(-1523235132, -1.04665549E9) end, cast(nullif(r'', r'') as bigint),
+weekofyear(sql_sub(date '1970-01-10', interval '58931850' month)), 0.16610325448814467 where least(false, false));
+
+create view v6(vc0, vc1, vc2) as (values (cast((true) = true as int), cast(((1576421008)&(null)) as decimal),
+((((0.15598454)-(-235033638)))<<(((0.50459784)/(1078999181))))), (abs(20223), + (cast(0.6995354 as real)),
+cast(-1695180722 as bigint)));
+
+SELECT v3.vc0 FROM v3, v6 CROSS JOIN (SELECT ALL ((sign(0.9241489178039545))*
+(scale_down(0.74460343372682225027148206208948977291584014892578125, 0.33816958610011738084466514919768087565898895263671875)))
+FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper(r'bŀ') WHERE FALSE) AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0
+LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4 WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE)
+RIGHT OUTER JOIN (VALUES (CAST(greatest(r'77', 0.10216334194461484941029993933625519275665283203125) AS STRING(478)))) AS sub2
+ON ((greatest(r'', r'32228'))NOT ILIKE(CAST(30792 AS STRING(381)))) WHERE (((v6.vc1)-(v6.vc1))) IS NOT NULL;
+
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((((v6.vc1)-(v6.vc1))) IS NOT NULL AS INT) as count FROM v3, v6 CROSS JOIN
+(SELECT ((sign(0.9241489178039545))*(scale_down(0.74460343372682225027148206208948977291584014892578125,
+0.33816958610011738084466514919768087565898895263671875))) FROM t0 LEFT OUTER JOIN (SELECT DISTINCT upper(r'bŀ') WHERE FALSE)
+AS sub0 ON TRUE WHERE greatest(t0.c0, TRUE)) AS sub0 LEFT OUTER JOIN (SELECT DISTINCT 5688 FROM v4
+WHERE (v4.vc0) IN (-2081865947, 30436)) AS sub1 ON least(FALSE, TRUE) RIGHT OUTER JOIN (VALUES (CAST(greatest(r'77',
+0.10216334194461484941029993933625519275665283203125) AS STRING(478)))) AS sub2 ON ((greatest(r'', r'32228'))NOT
+ILIKE(CAST(30792 AS STRING(381))))) as res;
+ROLLBACK;
+
+select cast(count(1) as interval second) from (values (false)) as v6(vc0); --error

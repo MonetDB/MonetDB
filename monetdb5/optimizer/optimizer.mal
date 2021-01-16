@@ -193,11 +193,11 @@ address OPTwrapper
 comment "Modify the plan to exploit parallel processing on multiple cores";
 
 #opt_multiplex.mal
-pattern optimizer.multiplex():void
+pattern optimizer.multiplex():str
 address OPTwrapper
 comment "Compiler for multiplexed instructions.";
 
-pattern optimizer.multiplex(mod:str,fcn:str):void
+pattern optimizer.multiplex(mod:str,fcn:str):str
 address OPTwrapper
 comment "Compiler for multiplexed instructions.";
 

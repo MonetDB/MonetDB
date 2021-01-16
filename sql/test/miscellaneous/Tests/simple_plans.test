@@ -283,6 +283,8 @@ sql.bind
 1
 algebra.projection
 2
+bat.single
+1
 algebra.likejoin
 1
 algebra.project
