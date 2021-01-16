@@ -1062,7 +1062,7 @@ BUNappend(BAT *b, const void *t, bool force)
 		}
 	}
 
-	if (unshare_string_heap(b) != GDK_SUCCEED) {
+	if (unshare_varsized_heap(b) != GDK_SUCCEED) {
 		return GDK_FAIL;
 	}
 

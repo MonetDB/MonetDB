@@ -223,11 +223,11 @@ typedef void *sql_store;
 struct sql_trans;
 struct sql_change;
 struct objectset;
-struct object_node;
+struct versionchain;
 struct os_iter {
 	struct objectset *os;
 	struct sql_trans *tr;
-	struct object_node *n;
+	struct versionchain *n;
 	struct sql_hash_e *e;
 	const char *name;
 };
@@ -312,6 +312,7 @@ typedef struct sql_trans {
 
 	sql_catalog *cat;
 	sql_schema *tmp;	/* each session has its own tmp schema */
+	changeset localtmps;
 	sql_allocator *sa;	/* transaction allocator */
 
 	struct sql_trans *parent;	/* multilevel transaction support */
