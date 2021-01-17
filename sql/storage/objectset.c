@@ -363,10 +363,19 @@ objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng o
 	/* free ov */
 }
 
+static int rollback_objectversion(sql_store Store, objectversion *ov)
+{
+		assert(ov->ts > TRANSACTION_ID_BASE);
+}
+
 static int
 tc_gc_objectversion(sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	objectversion *ov = (objectversion*)change->data;
+
+	if (!commit_ts) {
+		rollback_objectversion(Store, ov);
+	}
 
 	if (ov->deleted || !commit_ts) {
 		/* TODO handle savepoints */
