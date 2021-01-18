@@ -59,6 +59,7 @@ def gen_docs():
     # Whole file
     yield 'sherlock.txt', Doc(text)
     yield 'sherlock_bom.txt', Doc(text, prepend_bom=True)
+    yield 'sherlock_cr.txt', Doc(text.replace(b'\n', b'\r'))
 
     # Empty file
     yield 'empty.txt', Doc(b'')
@@ -97,6 +98,8 @@ def gen_tests():
                 continue
             yield TestCase(name, doc, compr, ["rstream", "blocksize:2"], doc)
             yield TestCase(name, doc, compr, ["rastream", "blocksize:2"], doc.without_bom().to_unix())
+            yield TestCase(name, doc, compr, ["rstream", "blocksize:1"], doc)
+            yield TestCase(name, doc, compr, ["rastream", "blocksize:1"], doc.without_bom().to_unix())
             yield TestCase(name, doc, compr, ["rstream", "blocksize:1000000"], doc)
             yield TestCase(name, doc, compr, ["rastream", "blocksize:1000000"], doc.without_bom().to_unix())
 
