@@ -93,7 +93,7 @@ newReturnStmt(MalBlkPtr mb)
 }
 
 InstrPtr
-newFcnCallArgs(MalBlkPtr mb, char *mod, char *fcn, int args)
+newFcnCallArgs(MalBlkPtr mb, const char *mod, const char *fcn, int args)
 {
 	InstrPtr q = newAssignmentArgs(mb, args);
 	str fcnName, modName;
@@ -106,7 +106,7 @@ newFcnCallArgs(MalBlkPtr mb, char *mod, char *fcn, int args)
 }
 
 InstrPtr
-newFcnCall(MalBlkPtr mb, char *mod, char *fcn)
+newFcnCall(MalBlkPtr mb, const char *mod, const char *fcn)
 {
 	return newFcnCallArgs(mb, mod, fcn, MAXARG);
 }

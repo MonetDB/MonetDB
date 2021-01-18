@@ -121,8 +121,8 @@
 
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
-mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme, str fcnnme);
-mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme, str fcnnme, int args);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme);
+mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int args);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export InstrPtr copyInstructionArgs(InstrPtr p, int args);
 mal_export void clrInstruction(InstrPtr p);
