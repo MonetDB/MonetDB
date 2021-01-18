@@ -3236,6 +3236,7 @@ sql_trans_rollback(sql_trans *tr)
 		list_destroy(nl);
 		list_destroy(tr->changes);
 		tr->changes = NULL;
+		tr->logchanges = 0;
 	}
 }
 
@@ -3325,60 +3326,38 @@ sql_trans_commit(sql_trans *tr)
 	ulng oldest = store_oldest(store, commit_ts);
 
 	/* write phase */
-	/* first drop temp tables with commit action CA_DROP */
+	/* first drop local temp tables with commit action CA_DROP */
 	if (cs_size(&tr->localtmps)) {
 		for(node *n=tr->localtmps.set->h; n; ) {
 			node *next = n->next;
 			sql_table *tt = n->data;
 
-			if (tt->commit_action == CA_DROP) {
+			if (tt->commit_action == CA_DROP)
 				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
-				/*
-			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
-				sql_trans_clear_table(tr, tt);
-				*/
-			}
 			n = next;
 		}
 		tr->localtmps.nelm = NULL;
 	}
-	/*
-	if (tr->tmp) {
-		struct os_iter oi;
-		os_iterator(&oi, tr->tmp->tables, tr, NULL);
-		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-			sql_table *tt = (sql_table*)b;
-
-			if (tt->commit_action == CA_DROP) {
-				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
-			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
-				sql_trans_clear_table(tr, tt);
-			}
-			b->flags = 0;
-		}
-	}
-	*/
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (%ld, %ld) -> %ld\n", tr->tid, tr->ts, commit_ts);
 	if (tr->changes) {
-		/* log changes */
-		/* TODO this block should only be done if there is something to log */
-		if (!tr->parent && tr->active) /* only active transactions need loging (not savepoints and during reload) */
+		/* log changes should only be done if there is something to log */
+		if (tr->logchanges > 0) {
 			ok = store->logger_api.log_tstart(store);
-		/* log */
-		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
-			sql_change *c = n->data;
+			/* log */
+			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
+				sql_change *c = n->data;
 
-			if (c->log && ok == LOG_OK)
-				ok = c->log(tr, c);
-		}
-		//saved_id = store->logger_api.log_save_id(store);
-		if (!tr->parent && tr->active) {
+				if (c->log && ok == LOG_OK)
+					ok = c->log(tr, c);
+			}
+			//saved_id = store->logger_api.log_save_id(store);
 			if (ok == LOG_OK && store->prev_oid != store->obj_id)
 				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
 			store->prev_oid = store->obj_id;
 			if (ok == LOG_OK)
 				ok = store->logger_api.log_tend(store);
 		}
+		tr->logchanges = 0;
 		/* apply committed changes */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;

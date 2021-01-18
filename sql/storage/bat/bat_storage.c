@@ -1628,7 +1628,7 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 
 		assert(delta->next == NULL);
 		ok = tr_merge_delta(tr, delta);
-		c->t->base.flags = 0;
+		c->base.flags = 0;
 	}
 	return ok;
 }
@@ -1745,7 +1745,7 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 
 		assert(delta->next == NULL);
 		ok = tr_merge_delta(tr, delta);
-		i->t->base.flags = 0;
+		i->base.flags = 0;
 	}
 	return ok;
 }
@@ -1902,6 +1902,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 						ok = commit_create_idx_(tr, i, commit_ts, oldest);
 				}
 			}
+			t->base.flags = 0;
 		}
 	}
 	return ok;

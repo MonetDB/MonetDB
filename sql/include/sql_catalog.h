@@ -305,6 +305,7 @@ typedef struct sql_trans {
 
 	sql_store store;	/* keep link into the global store */
 	list *changes;		/* list of changes */
+	int logchanges;		/* count number of changes to be applied too the wal */
 
 	int active;			/* is active transaction */
 	int status;			/* status of the last query */
