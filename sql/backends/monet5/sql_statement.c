@@ -1518,6 +1518,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushArgument(mb, q, sub->nr);
 			} else {
 				assert(!sub || op1->cand == sub);
+				q = pushNil(mb, q, TYPE_bat);
 				sub = NULL;
 			}
 			q = pushArgument(mb, q, r);
