@@ -126,12 +126,13 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	n->type = type;
 	n->count = 1;
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
-	n->name = sa_alloc(sa, namelen);
+	char *name = sa_alloc(sa, namelen);
 	n->no_mitosis = no_mitosis;
 	n->created = timestamp_current();
-	if (!n->name)
+	if (!name)
 		return NULL;
-	(void) snprintf(n->name, namelen, "p%d_%d", n->id, cache->clientid);
+	(void) snprintf(name, namelen, "p%d_%d", n->id, cache->clientid);
+	n->name = name;
 	cache->q = n;
 
 	if (r && is_project(r->op) && !list_empty(r->exps)) {
@@ -159,7 +160,7 @@ qc_insert(qc *cache, sql_allocator *sa, sql_rel *r, symbol *s, list *params, map
 	};
 	base_init(sa, &f->base, 0, TR_NEW, NULL);
 	f->base.id = n->id;
-	f->base.name = f->imp = n->name;
+	f->base.name = f->imp = name;
 	n->f = f;
 	return n;
 }

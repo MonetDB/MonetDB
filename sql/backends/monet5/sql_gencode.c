@@ -866,7 +866,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 	Client c;
 	Module m;
 	int clientID = *(int*) M;
-	str mname = getName(f->mod), fname = getName(f->imp);
+	const char *mname = getName(f->mod), *fname = getName(f->imp);
 
 	if (!mname || !fname)
 		return 0;

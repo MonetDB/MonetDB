@@ -17,12 +17,12 @@ mal_export InstrPtr newStmtArgs(MalBlkPtr mb, const char *module, const char *na
 mal_export InstrPtr newAssignment(MalBlkPtr mb);
 mal_export InstrPtr newAssignmentArgs(MalBlkPtr mb, int args);
 mal_export InstrPtr newComment(MalBlkPtr mb, const char *val);
-mal_export InstrPtr newCatchStmt(MalBlkPtr mb, str nme);
-mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, str nme);
-mal_export InstrPtr newExitStmt(MalBlkPtr mb, str nme);
+mal_export InstrPtr newCatchStmt(MalBlkPtr mb, const char *nme);
+mal_export InstrPtr newRaiseStmt(MalBlkPtr mb, const char *nme);
+mal_export InstrPtr newExitStmt(MalBlkPtr mb, const char *nme);
 mal_export InstrPtr newReturnStmt(MalBlkPtr mb);
-mal_export InstrPtr newFcnCall(MalBlkPtr mb, char *mod, char *fcn);
-mal_export InstrPtr newFcnCallArgs(MalBlkPtr mb, char *mod, char *fcn, int args);
+mal_export InstrPtr newFcnCall(MalBlkPtr mb, const char *mod, const char *fcn);
+mal_export InstrPtr newFcnCallArgs(MalBlkPtr mb, const char *mod, const char *fcn, int args);
 mal_export InstrPtr pushSht(MalBlkPtr mb, InstrPtr q, sht val);
 mal_export InstrPtr pushEndInstruction(MalBlkPtr mb);
 mal_export InstrPtr pushInt(MalBlkPtr mb, InstrPtr q, int val);

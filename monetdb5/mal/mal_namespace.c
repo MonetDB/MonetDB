@@ -74,7 +74,7 @@ void mal_namespace_reset(void) {
  * is conflict free.
  */
 
-static str findName(const char *nme, size_t len, bool allocate)
+static const char *findName(const char *nme, size_t len, bool allocate)
 {
 	NamePtr *n, m;
 	size_t key;
@@ -137,11 +137,11 @@ static str findName(const char *nme, size_t len, bool allocate)
 	return (*n)->nme;
 }
 
-str getName(const char *nme) {
+const char *getName(const char *nme) {
 	return findName(nme, strlen(nme), false);
 }
 
-str getNameLen(const char *nme, size_t len)
+const char *getNameLen(const char *nme, size_t len)
 {
 	return findName(nme, len, false);
 }
@@ -155,17 +155,17 @@ str getNameLen(const char *nme, size_t len)
  * deep into the kernel to access the context.
  */
 void delName(const char *nme, size_t len){
-	str n;
+	const char *n;
 	n= getNameLen(nme,len);
 	if( nme[0]==0 || n == 0) return ;
 	/*Namespace garbage collection not available yet */
 }
 
-str putName(const char *nme) {
+const char *putName(const char *nme) {
 	return findName(nme, strlen(nme), true);
 }
 
-str putNameLen(const char *nme, size_t len)
+const char *putNameLen(const char *nme, size_t len)
 {
 	return findName(nme, len, true);
 }

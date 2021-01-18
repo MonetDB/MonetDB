@@ -43,7 +43,7 @@ str callFactory(Client cntxt, MalBlkPtr mb, ValPtr argv[],char flag)
 	__attribute__((__visibility__("hidden")));
 #endif
 
-str malAtomDefinition(str name,int tpe)
+str malAtomDefinition(const char *name,int tpe)
 	__attribute__((__visibility__("hidden")));
 str malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 	__attribute__((__visibility__("hidden")));
