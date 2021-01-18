@@ -436,7 +436,7 @@ prepareMalBlk(MalBlkPtr mb, str s)
  * Allocation of an instruction should always succeed.
  */
 InstrPtr
-newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
+newInstructionArgs(MalBlkPtr mb, const char *modnme, str fcnnme, int args)
 {
 	InstrPtr p = NULL;
 
@@ -466,7 +466,7 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 }
 
 InstrPtr
-newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
+newInstruction(MalBlkPtr mb, const char *modnme, str fcnnme)
 {
 	return newInstructionArgs(mb, modnme, fcnnme, MAXARG);
 }

@@ -28,7 +28,7 @@
 /* Allocation of space assumes a rather exotic number of
  * arguments. Access to module and function name are cast in macros to
  * prepare for separate name space management. */
-#define getModuleId(P)		(P)->modname
+#define getModuleId(P)		((P)->modname)
 #define setModuleId(P,S)	(P)->modname= S
 #define setModuleScope(P,S)	do {(P)->modname= (S)==NULL?NULL: (S)->name;} while (0)
 
@@ -121,8 +121,8 @@
 
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
-mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
-mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme, str fcnnme);
+mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme, str fcnnme, int args);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export InstrPtr copyInstructionArgs(InstrPtr p, int args);
 mal_export void clrInstruction(InstrPtr p);
