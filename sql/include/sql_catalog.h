@@ -223,19 +223,20 @@ typedef void *sql_store;
 struct sql_trans;
 struct sql_change;
 struct objectset;
-struct versionchain;
+struct object_node;
 struct os_iter {
 	struct objectset *os;
 	struct sql_trans *tr;
-	struct versionchain *n;
+	struct object_node *n;
 	struct sql_hash_e *e;
 	const char *name;
 };
 
 /* transaction changes */
 typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
-typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng commit_ts, ulng oldest); /* garbage collection, ie cleanup structures when possible */
+typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c);								/* write changes to the log */
+typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);/* commit/rollback changes */
+typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng commit_ts, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
 typedef void (*destroy_fptr)(sql_store store, sql_base *b);
 
 extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique);
@@ -643,7 +644,6 @@ typedef enum table_types {
 #define isRemote(x)                       ((x)->type==tt_remote)
 #define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)                    ((x)->partition)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -701,7 +701,6 @@ typedef struct sql_table {
 	struct sql_schema *s;
 	struct sql_table *po;	/* the outer transactions table */
 
-	char partition;		/* number of times this table is part of some hierachy of tables */
 	union {
 		struct sql_column *pcol; /* If it is partitioned on a column */
 		struct sql_expression *pexp; /* If it is partitioned by an expression */

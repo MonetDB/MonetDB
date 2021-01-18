@@ -684,7 +684,7 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return 0;
 }
 
@@ -767,7 +767,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if (!os->temporary)
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return 0;
 }
 

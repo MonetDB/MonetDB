@@ -272,7 +272,7 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 	sql_part *it = NULL;
 
 	for (sql_table *prev = mt ; prev; prev = it?it->t:NULL) {
-		if (!isPartition(prev) || (it=partition_find_part(sql->session->tr, prev, NULL)) == NULL)
+		if ((it=partition_find_part(sql->session->tr, prev, NULL)) == NULL)
 			break;
 		sql_part *spt = it;
 		if (spt) {
@@ -1056,7 +1056,7 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 	if (l->op == op_basetable) {
 		sql_table *t = l->l;
 
-		if (isPartition(t) && !find_prop(l->p, PROP_USED)) {
+		if (partition_find_part(sql->session->tr, t, NULL) && !find_prop(l->p, PROP_USED)) {
 			isSubtable = true;
 			if (is_insert(rel->op)) { /* insertion directly to sub-table (must do validation) */
 				sql_rel *nrel = rel_subtable_insert(query, rel, t, changes);
