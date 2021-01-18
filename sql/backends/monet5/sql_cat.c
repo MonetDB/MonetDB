@@ -214,7 +214,7 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 									"ALTER TABLE: cannot add range partition into a %s table",
 									(isListPartitionTable(mt))?"list partition":"merge");
 		goto finish;
-	} else if (!update && isPartition(pt)) {
+	} else if (!update && partition_find_part(sql->session->tr, pt, NULL)) {
 		msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
 							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);
@@ -337,7 +337,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 									"ALTER TABLE: cannot add value partition into a %s table",
 									(isRangePartitionTable(mt))?"range partition":"merge");
 		goto finish;
-	} else if (!update && isPartition(pt)) {
+	} else if (!update && partition_find_part(sql->session->tr, pt, NULL)) {
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 							  "ALTER TABLE: table '%s.%s' is already part of another table",
 							  psname, ptname);

@@ -20,6 +20,7 @@
 #define isTempTable(x)   ((x)->persistence!=SQL_PERSIST)
 #define isGlobal(x)      ((x)->persistence!=SQL_LOCAL_TEMP && (x)->persistence!=SQL_DECLARED_TABLE)
 #define isGlobalTemp(x)  ((x)->persistence==SQL_GLOBAL_TEMP)
+#define isLocalTemp(x)   ((x)->persistence==SQL_LOCAL_TEMP)
 #define isTempSchema(x)  (strcmp((x)->base.name, "tmp") == 0)
 #define isDeclaredTable(x)  ((x)->persistence==SQL_DECLARED_TABLE)
 
@@ -486,11 +487,12 @@ typedef struct sqlstore {
 typedef struct sql_change {
 	sql_base *obj;
 	void *data;	/* data changes */
-	tc_log_fptr log;	/* callback to save in log */
-	tc_cleanup_fptr cleanup;	/* callback to cleanup changes */
+	tc_log_fptr log;		/* callback to log changes */
+	tc_commit_fptr commit;	/* callback to commit or rollback the changes */
+	tc_cleanup_fptr cleanup;/* callback to cleanup changes */
 } sql_change;
 
-extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log);
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 
 #endif /*SQL_STORAGE_H */

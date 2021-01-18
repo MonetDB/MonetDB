@@ -511,7 +511,6 @@ load_part(sql_trans *tr, sql_table *mt, oid rid)
 	assert(member);
 	pt->t = mt;
 	pt->member = member;
-	member->partition++;
 	cs_add(&mt->members, pt, 0);
 	return pt;
 }
@@ -526,8 +525,7 @@ sql_trans_update_tables(sql_trans* tr, sql_schema *s)
 static void
 part_destroy(sql_part *p)
 {
-	if (p && p->member)
-		p->member->partition--;
+	(void)p;
 }
 
 static sql_table *
@@ -928,6 +926,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		s->types = os_new(tr->sa, (destroy_fptr) NULL, false, true);
 		s->funcs = os_new(tr->sa, (destroy_fptr) NULL, false, false);
 		s->seqs = os_new(tr->sa, (destroy_fptr) NULL, false, true);
+		s->parts = os_new(tr->sa, (destroy_fptr) NULL, false, true);
 	}
 
 	TRC_DEBUG(SQL_STORE, "Load schema: %s %d\n", s->base.name, s->base.id);
@@ -1403,7 +1402,6 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 	nt->base.flags = t->base.flags;
 
 	nt->access = t->access;
-	nt->partition = t->partition;
 	nt->query = (t->query) ? sa_strdup(sa, t->query) : NULL;
 	nt->s = t->s;
 
@@ -1495,6 +1493,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 	s->keys = os_new(tr->sa, (destroy_fptr) NULL, false, true);
 	s->idxs = os_new(tr->sa, (destroy_fptr) NULL, false, true);
 	s->triggers = os_new(tr->sa, (destroy_fptr) NULL, false, true);
+	s->parts = os_new(tr->sa, (destroy_fptr) NULL, false, true);
 	os_add(tr->cat->schemas, tr, s->base.name, &s->base);
 	if (isTempSchema(s))
 		tr->tmp = s;
@@ -1705,6 +1704,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 		insert_types(tr, types);
 		insert_functions(tr, functions, funcs, arguments);
 		insert_schemas(tr);
+
 	} else {
 		tr->active = 0;
 		GDKqsort(store_oids, NULL, NULL, nstore_oids, sizeof(sqlid), 0, TYPE_int, false, false);
@@ -1730,6 +1730,8 @@ store_load(sqlstore *store, sql_allocator *pa)
 		return NULL;
 	}
 	if (!store->first) {
+		tr->active = 0;
+		/* commit with in-active transaction, ie just cleanup the changes */
 		if (sql_trans_commit(tr) != SQL_OK)
 			TRC_CRITICAL(SQL_STORE, "Cannot commit initial transaction\n");
 	}
@@ -2716,7 +2718,6 @@ part_dup(sql_trans *tr, sql_part *op, sql_table *mt)
 	p->t = mt;
 	assert(member);
 	p->member = member;
-	member->partition++; /* todo remove */
 
 	if (isRangePartitionTable(mt)) {
 		p->part.range.minvalue = sa_alloc(sa, op->part.range.minlength);
@@ -3165,9 +3166,10 @@ sql_trans_rollback(sql_trans *tr)
 		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_table *tt = (sql_table*)b;
 
+			/*
 			if ((isGlobal(tt) && tt->commit_action != CA_PRESERVE) || tt->commit_action == CA_DELETE) {
 				sql_trans_clear_table(tr, tt);
-			} else if (tt->commit_action == CA_DROP) {
+			} else*/ if (tt->commit_action == CA_DROP) {
 				//(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
 				os_remove(tr->tmp->tables, tr, tt->base.name);
 			}
@@ -3202,8 +3204,10 @@ sql_trans_rollback(sql_trans *tr)
 
 			if (tt->commit_action == CA_DROP) {
 				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+				/*
 			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
 				sql_trans_clear_table(tr, tt);
+				*/
 			}
 			n = next;
 		}
@@ -3213,6 +3217,14 @@ sql_trans_rollback(sql_trans *tr)
 		list *nl = sa_list(tr->sa);
 		for(node *n=tr->changes->h; n; n = n->next)
 			list_prepend(nl, n->data);
+
+		/* rollback */
+		for(node *n=nl->h; n; n = n->next) {
+			sql_change *c = n->data;
+
+			if (c->commit)
+			   	c->commit(tr, c, commit_ts, oldest);
+		}
 
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
@@ -3312,25 +3324,69 @@ sql_trans_commit(sql_trans *tr)
 	ulng oldest = store_oldest(store, commit_ts);
 
 	/* write phase */
+	/* first drop temp tables with commit action CA_DROP */
+	if (cs_size(&tr->localtmps)) {
+		for(node *n=tr->localtmps.set->h; n; ) {
+			node *next = n->next;
+			sql_table *tt = n->data;
+
+			if (tt->commit_action == CA_DROP) {
+				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+				/*
+			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
+				sql_trans_clear_table(tr, tt);
+				*/
+			}
+			n = next;
+		}
+		tr->localtmps.nelm = NULL;
+	}
+	/*
+	if (tr->tmp) {
+		struct os_iter oi;
+		os_iterator(&oi, tr->tmp->tables, tr, NULL);
+		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			sql_table *tt = (sql_table*)b;
+
+			if (tt->commit_action == CA_DROP) {
+				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
+				sql_trans_clear_table(tr, tt);
+			}
+			b->flags = 0;
+		}
+	}
+	*/
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (%ld, %ld) -> %ld\n", tr->tid, tr->ts, commit_ts);
 	if (tr->changes) {
 		/* log changes */
-		ok = store->logger_api.log_tstart(store);
-		//saved_id = store->logger_api.log_save_id(store);
+		/* TODO this block should only be done if there is something to log */
+		if (!tr->parent && tr->active) /* only active transactions need loging (not savepoints and during reload) */
+			ok = store->logger_api.log_tstart(store);
+		/* log */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 			sql_change *c = n->data;
 
 			if (c->log && ok == LOG_OK)
-				ok = c->log(tr, c, commit_ts, oldest);
-			else {
-				c->obj->flags = 0;
-			}
+				ok = c->log(tr, c);
 		}
-		if (ok == LOG_OK && store->prev_oid != store->obj_id)
-			ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
-		store->prev_oid = store->obj_id;
-		if (ok == LOG_OK)
-			ok = store->logger_api.log_tend(store);
+		//saved_id = store->logger_api.log_save_id(store);
+		if (!tr->parent && tr->active) {
+			if (ok == LOG_OK && store->prev_oid != store->obj_id)
+				ok = store->logger_api.log_sequence(store, OBJ_SID, store->obj_id);
+			store->prev_oid = store->obj_id;
+			if (ok == LOG_OK)
+				ok = store->logger_api.log_tend(store);
+		}
+		/* apply committed changes */
+		for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
+			sql_change *c = n->data;
+
+			if (c->commit && ok == LOG_OK)
+				ok = c->commit(tr, c, commit_ts, oldest);
+			else
+				c->obj->flags = 0;
+		}
 		/* garbage collect */
 		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
 			node *next = n->next;
@@ -3349,33 +3405,6 @@ sql_trans_commit(sql_trans *tr)
 			list_destroy(tr->changes); /* TODO move leftovers into store for later gc */
 		}
 		tr->changes = NULL;
-	}
-	if (cs_size(&tr->localtmps)) {
-		for(node *n=tr->localtmps.set->h; n; ) {
-			node *next = n->next;
-			sql_table *tt = n->data;
-
-			if (tt->commit_action == CA_DROP) {
-				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
-			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
-				sql_trans_clear_table(tr, tt);
-			}
-			n = next;
-		}
-	}
-	if (tr->tmp) {
-		struct os_iter oi;
-		os_iterator(&oi, tr->tmp->tables, tr, NULL);
-		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-			sql_table *tt = (sql_table*)b;
-
-			if (tt->commit_action == CA_DROP) {
-				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
-			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
-				sql_trans_clear_table(tr, tt);
-			}
-			b->flags = 0;
-		}
 	}
 	tr->ts = commit_ts;
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
@@ -3695,13 +3724,12 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 static void
 sys_drop_part(sql_trans *tr, sql_table *t, int drop_action)
 {
-	while(t->partition>0) {
-		sql_part *pt = partition_find_part(tr, t, NULL);
-
-		assert(pt);
-		if (!sql_trans_del_table(tr, pt->t, t, drop_action))
-			break;
-	}
+	sql_part *pt = NULL;
+	do {
+		pt = partition_find_part(tr, t, NULL);
+		if (pt)
+			sql_trans_del_table(tr, pt->t, t, drop_action);
+	} while(pt);
 }
 
 static void
@@ -3736,7 +3764,7 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sys_drop_keys(tr, t, drop_action);
 	sys_drop_idxs(tr, t, drop_action);
 
-	if (isPartition(t))
+	if (partition_find_part(tr, t, NULL))
 		sys_drop_part(tr, t, drop_action);
 
 	if (isMergeTable(t) || isReplicaTable(t))
@@ -4111,6 +4139,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->keys = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
 	s->idxs = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
 	s->triggers = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
+	s->parts = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
 	s->store = tr->store;
 
 	os_add(tr->cat->schemas, tr, s->base.name, &s->base);
@@ -4203,7 +4232,6 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 	p->t = mt;
 	p->member = pt;
-	pt->partition++;
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	cs_add(&mt->members, p, TR_NEW);
 	store->table_api.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
@@ -4319,10 +4347,8 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		store->table_api.column_update_value(tr, wnulls, rid, &to_insert);
 	}
 
-	if (!update) {
-		pt->partition++;
+	if (!update)
 		cs_add(&mt->members, p, TR_NEW);
-	}
 finish:
 	VALclear(&vmin);
 	VALclear(&vmax);
@@ -4415,7 +4441,6 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		/* add merge table dependency */
 		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 		store->table_api.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
-		pt->partition++;
 		cs_add(&mt->members, p, TR_NEW);
 	}
 	return 0;
@@ -4487,7 +4512,6 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 
 	cs_del(&mt->members, n, p->base.flags);
-	pt->partition--;/* check other hierarchies? */
 	p->member = NULL;
 	store->table_api.table_delete(tr, sysobj, obj_oid);
 

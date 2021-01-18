@@ -682,10 +682,9 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		(isView(t) ||
 		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->members))) ||
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
-		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)) ||
-		(isPartition(t) &&
-		(s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL ||
-		 s->token == SQL_DROP_CONSTRAINT)))){
+		(partition_find_part(sql->session->tr, t, NULL) &&
+			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
+			  s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))){
 		char *msg = "";
 
 		switch (s->token) {
@@ -726,7 +725,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s %s '%s'%s\n",
 				action,
 				msg,
-				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
+				partition_find_part(sql->session->tr, t, NULL)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
 				isRemote(t)?"REMOTE TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
