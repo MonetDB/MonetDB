@@ -2548,7 +2548,7 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlstore *store = m->store;
 	nr = store->storage_api.count_col(tr, c, 1);
 
-	if (isTable(t) && t->access == TABLE_WRITABLE && (!isNew(t) /* alter */ || !inTransaction(tr, t)) &&
+	if (isTable(t) && t->access == TABLE_WRITABLE && (!isNew(t) /* alter *//* || !inTransaction(tr, t)*/) &&
 	    t->persistence == SQL_PERSIST && !t->commit_action)
 		inr = store->storage_api.count_col(tr, c, 0);
 	nr -= inr;
