@@ -420,3 +420,11 @@ inner join (values (+ (88)), (greatest(0.8732546822607857, greatest(1933292715, 
 or(v0.vc1)) group by v0.vc1) as sub1 where (v0.vc0) in (0.06683239) group by least(-1913343924, 10622),
 ((v1.vc1)not ilike(least(v1.vc1, v1.vc1)));
 ROLLBACK;
+
+CREATE TABLE t1(c0 BOOLEAN, c1 DOUBLE);
+INSERT INTO t1(c0) VALUES(true);
+TRUNCATE t1;
+ALTER TABLE t1 ADD PRIMARY KEY(c0, c1);
+INSERT INTO t1(c1, c0) VALUES(7,true),(5,false),(2,true),(4,false);
+UPDATE t1 SET c1 = 0 WHERE t1.c1 BETWEEN SYMMETRIC 3 AND t1.c1;
+DROP TABLE t1;

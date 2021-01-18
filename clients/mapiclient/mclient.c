@@ -1893,6 +1893,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 
 			switch (formatter) {
 			case TRASHformatter:
+				mapi_finish(hdl);
 				break;
 			case XMLformatter:
 				XMLrenderer(hdl);
@@ -1917,6 +1918,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 				rows = mapi_get_row_count(hdl);
 				mnstr_printf(toConsole,
 						"%" PRId64 " tuple%s\n", rows, rows != 1 ? "s" : "");
+				mapi_finish(hdl);
 				break;
 			case EXPANDEDformatter:
 				EXPANDEDrenderer(hdl);

@@ -24,7 +24,7 @@ install(FILES
   27_rejects.sql
   39_analytics.sql
   40_json.sql
-  41_md5sum.sql
+  42_md5sum.sql
   45_uuid.sql
   46_profiler.sql
   51_sys_schema_extension.sql
@@ -42,7 +42,7 @@ install(FILES
 if(HAVE_HGE)
   install(FILES
     39_analytics_hge.sql
-    40_json_hge.sql DESTINATION
+    41_json_hge.sql DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5/createdb)
 endif()
 #]]
