@@ -2834,7 +2834,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 static sql_table*
 new_table( sql_trans *tr, sql_table *t)
 {
-	t = find_sql_table_id(tr, t->s, t->base.id); /* could have changed by depending changes */
+//	t = find_sql_table_id(tr, t->s, t->base.id); /* could have changed by depending changes */
+	t = find_sql_table(tr, t->s, t->base.name); /* could have changed by depending changes */
 	if (!inTransaction(tr, t))
 		t = table_dup(tr, t, t->s, NULL);
 	return t;
@@ -3170,7 +3171,7 @@ sql_trans_rollback(sql_trans *tr)
 			if ((isGlobal(tt) && tt->commit_action != CA_PRESERVE) || tt->commit_action == CA_DELETE) {
 				sql_trans_clear_table(tr, tt);
 			} else*/ if (tt->commit_action == CA_DROP) {
-				//(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+				//(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
 				os_remove(tr->tmp->tables, tr, tt->base.name);
 			}
 		}
@@ -3192,7 +3193,7 @@ sql_trans_rollback(sql_trans *tr)
 			for(node *n=tr->localtmps.nelm; n; ) {
 				node *next = n->next;
 				sql_table *tt = n->data;
-				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
 				n = next;
 			}
 			tr->localtmps.nelm = NULL;
@@ -3203,7 +3204,7 @@ sql_trans_rollback(sql_trans *tr)
 			sql_table *tt = n->data;
 
 			if (tt->commit_action == CA_DROP) {
-				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
 				/*
 			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
 				sql_trans_clear_table(tr, tt);
@@ -3331,7 +3332,7 @@ sql_trans_commit(sql_trans *tr)
 			sql_table *tt = n->data;
 
 			if (tt->commit_action == CA_DROP) {
-				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
 				/*
 			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
 				sql_trans_clear_table(tr, tt);
@@ -3349,7 +3350,7 @@ sql_trans_commit(sql_trans *tr)
 			sql_table *tt = (sql_table*)b;
 
 			if (tt->commit_action == CA_DROP) {
-				(void) sql_trans_drop_table(tr, tt->s, tt->base.id, DROP_RESTRICT);
+				(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
 			} else if (tt->commit_action != CA_PRESERVE || tt->commit_action == CA_DELETE) {
 				sql_trans_clear_table(tr, tt);
 			}
@@ -3437,7 +3438,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 				case TABLE_DEPENDENCY:
 				case VIEW_DEPENDENCY: {
 					sql_table *t = sql_trans_find_table(tr, dep_id);
-					(void) sql_trans_drop_table(tr, t->s, dep_id, DROP_CASCADE);
+					(void) sql_trans_drop_table_id(tr, t->s, dep_id, DROP_CASCADE);
 				} break;
 				case COLUMN_DEPENDENCY: {
 					if ((t_id = sql_trans_get_dependency_type(tr, dep_id, TABLE_DEPENDENCY)) > 0) {
@@ -4516,7 +4517,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	store->table_api.table_delete(tr, sysobj, obj_oid);
 
 	if (drop_action == DROP_CASCADE)
-		sql_trans_drop_table(tr, mt->s, pt->base.id, drop_action);
+		sql_trans_drop_table_id(tr, mt->s, pt->base.id, drop_action);
 	return mt;
 }
 
@@ -4714,9 +4715,9 @@ create_sql_column(sqlstore *store, sql_allocator *sa, sql_table *t, const char *
 }
 
 int
-sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
+sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action)
 {
-	sql_table *t = find_sql_table_id(tr, s, id);
+	sql_table *t = find_sql_table(tr, s, name);
 	int ok = LOG_OK, is_global = isGlobal(t);
 	node *n = NULL;
 
@@ -4758,6 +4759,17 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		tr->dropped = NULL;
 	}
 	return ok;
+}
+
+int
+sql_trans_drop_table_id(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
+{
+	sql_table *t = find_sql_table_id(tr, s, id);
+
+	if (t)
+		return sql_trans_drop_table(tr, s, t->base.name, drop_action);
+	else
+		return SQL_ERR;
 }
 
 BUN
