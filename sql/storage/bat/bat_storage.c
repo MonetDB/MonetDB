@@ -1898,7 +1898,8 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 				for(node *n = t->idxs.set->h; n && ok == LOG_OK; n = n->next) {
 					sql_idx *i = n->data;
 
-					ok = commit_create_idx_(tr, i, commit_ts, oldest);
+					if (i->data)
+						ok = commit_create_idx_(tr, i, commit_ts, oldest);
 				}
 			}
 		}
