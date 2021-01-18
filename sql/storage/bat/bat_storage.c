@@ -163,7 +163,8 @@ col_dup(sql_column *c)
 static void *
 idx_dup(sql_idx *i)
 {
-	assert(i->data);
+	if (!i->data)
+		return NULL;
 	return delta_dup(i->data);
 }
 
@@ -1884,6 +1885,8 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 
+	if (!commit_ts) /* rollback handled by ? */
+		return ok;
 	if(!isTempTable(t)) {
 		sql_dbat *dbat = t->data;
 		assert(dbat->ts == tr->tid);
