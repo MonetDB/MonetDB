@@ -33,11 +33,11 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-explain-0join-query
 % clob # type
 % 103 # length
 function user.main():void;
-    X_1:void := querylog.define("explain select count(*) from fk;":str, "sequential_pipe":str, 15:int);
+    X_1:void := querylog.define("explain select count(*) from fk;":str, "sequential_pipe":str, 11:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
-    X_23:lng := aggr.count(C_5:bat[:oid]);
-    sql.resultSet(".%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_23:lng);
+    X_18:lng := aggr.count(C_5:bat[:oid]);
+    sql.resultSet(".%1":str, "%1":str, "bigint":str, 64:int, 0:int, 7:int, X_18:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
@@ -71,19 +71,19 @@ end user.main;
 % clob # type
 % 126 # length
 function user.main():void;
-    X_1:void := querylog.define("explain select id from fk order by id;":str, "sequential_pipe":str, 21:int);
-    X_30:bat[:str] := bat.pack("sys.fk":str);
-    X_31:bat[:str] := bat.pack("id":str);
-    X_32:bat[:str] := bat.pack("int":str);
-    X_33:bat[:int] := bat.pack(32:int);
-    X_34:bat[:int] := bat.pack(0:int);
+    X_1:void := querylog.define("explain select id from fk order by id;":str, "sequential_pipe":str, 17:int);
+    X_25:bat[:str] := bat.pack("sys.fk":str);
+    X_26:bat[:str] := bat.pack("id":str);
+    X_27:bat[:str] := bat.pack("int":str);
+    X_28:bat[:int] := bat.pack(32:int);
+    X_29:bat[:int] := bat.pack(0:int);
     X_4:int := sql.mvc();
     C_5:bat[:oid] := sql.tid(X_4:int, "sys":str, "fk":str);
-    X_17:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
-    X_22:bat[:int] := algebra.projection(C_5:bat[:oid], X_17:bat[:int]);
-    (X_23:bat[:int], X_24:bat[:oid]) := algebra.sort(X_22:bat[:int], false:bit, false:bit, false:bit);
-    X_28:bat[:int] := algebra.projection(X_24:bat[:oid], X_22:bat[:int]);
-    sql.resultSet(X_30:bat[:str], X_31:bat[:str], X_32:bat[:str], X_33:bat[:int], X_34:bat[:int], X_28:bat[:int]);
+    X_8:bat[:int] := sql.bind(X_4:int, "sys":str, "fk":str, "id":str, 0:int);
+    X_17:bat[:int] := algebra.projection(C_5:bat[:oid], X_8:bat[:int]);
+    (X_18:bat[:int], X_19:bat[:oid]) := algebra.sort(X_17:bat[:int], false:bit, false:bit, false:bit);
+    X_23:bat[:int] := algebra.projection(X_19:bat[:oid], X_17:bat[:int]);
+    sql.resultSet(X_25:bat[:str], X_26:bat[:str], X_27:bat[:str], X_28:bat[:int], X_29:bat[:int], X_23:bat[:int]);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=1 usec 
