@@ -55,6 +55,10 @@ QUERY = select all v0.vc2, greatest(min(all least(-266013300, 864326131)), -1183
         or(v0.vc1)) group by v0.vc1) as sub1 where (v0.vc0) in (0.06683239) group by least(-1913343924, 10622),
 ERROR = !overflow in conversion of 220424338 to sht.
 CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-19665/.s.monetdb.32608
+QUERY = UPDATE t1 SET c1 = 0 WHERE t1.c1 BETWEEN SYMMETRIC 3 AND t1.c1;
+ERROR = !UPDATE: PRIMARY KEY constraint 't1.t1_c0_c1_pkey' violated
+CODE  = 40002
 
 # 14:35:03 >  
 # 14:35:03 >  "Done."
