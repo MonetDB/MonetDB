@@ -23,7 +23,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	char buf[1024];
 	int i, retc = pci->retc;
 	InstrPtr p;
-	str bufName, fcnName;
+	const char *bufName, *fcnName;
 
 	(void) cntxt;
 	(void) stk;
@@ -351,7 +351,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 	for(i=0;OperatorMap[i].src;i++)
 	if( strcmp(fcn,OperatorMap[i].src)==0){
 		/* found a candidate for a switch */
-		getVarConstant(mb, getArg(pci, 2)).val.sval = putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
+		getVarConstant(mb, getArg(pci, 2)).val.sval = (char *) putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
 		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
 		r= OPTremapDirect(cntxt,mb, stk, pci, idx, scope);

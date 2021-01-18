@@ -89,7 +89,7 @@ typedef struct CLIENT {
 	 * It is perfectly legal to have a client without input stream.
 	 * It will simply terminate after consuming the input buffer.
 	 */
-	str       srcFile;  /* NULL for stdin, or file name */
+	const char *srcFile;  /* NULL for stdin, or file name */
 	bstream  *fdin;
 	size_t    yycur;    /* the scanners current position */
 	/*

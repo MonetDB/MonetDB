@@ -18,7 +18,7 @@
 #include "mal_namespace.h"
 #include "mal_private.h"
 
-Symbol newFunctionArgs(str mod, str nme, int kind, int args)
+Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 {
 	Symbol s;
 	InstrPtr p;
@@ -49,7 +49,7 @@ Symbol newFunctionArgs(str mod, str nme, int kind, int args)
 	return s;
 }
 
-Symbol newFunction(str mod, str nme, int kind)
+Symbol newFunction(const char *mod, const char *nme, int kind)
 {
 	return newFunctionArgs(mod, nme, kind, MAXARG);
 }

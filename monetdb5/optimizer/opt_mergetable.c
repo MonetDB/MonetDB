@@ -1102,8 +1102,8 @@ mat_joinNxM(Client cntxt, MalBlkPtr mb, InstrPtr p, matlist_t *ml, int args)
 }
 
 
-static char *
-aggr_phase2(char *aggr, int type_dbl)
+static const char *
+aggr_phase2(const char *aggr, int type_dbl)
 {
 	if (aggr == countRef || aggr == count_no_nilRef || (aggr == avgRef && type_dbl))
 		return sumRef;
@@ -1331,7 +1331,7 @@ static int
 mat_group_aggr(MalBlkPtr mb, InstrPtr p, mat_t *mat, int b, int g, int e)
 {
 	int tp = getArgType(mb,p,0), k, tp2 = 0, tpe = getBatType(tp);
-	char *aggr2 = aggr_phase2(getFunctionId(p), tpe == TYPE_dbl);
+	const char *aggr2 = aggr_phase2(getFunctionId(p), tpe == TYPE_dbl);
 	int isAvg = (getFunctionId(p) == subavgRef);
 	InstrPtr ai1 = newInstructionArgs(mb, matRef, packRef, mat[b].mi->argc), ai10 = NULL, ai11 = NULL, ai2;
 
