@@ -2539,8 +2539,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (ok == LOG_OK && delta == d && oldest == commit_ts)
 			ok = tr_merge_delta(tr, delta);
-	}
-	if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
+	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
 		c->data = savepoint_commit_delta(delta, commit_ts);
 	return ok;
 }
@@ -2618,8 +2617,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (ok == LOG_OK && delta == d && oldest == commit_ts)
 			ok = tr_merge_delta(tr, delta);
-	}
-	if (ok == LOG_OK && tr->parent) /* cleanup older save points */
+	} else if (ok == LOG_OK && tr->parent) /* cleanup older save points */
 		i->data = savepoint_commit_delta(delta, commit_ts);
 	return ok;
 }
@@ -2719,8 +2717,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
 			ok = tr_merge_dbat(tr, dbat);
-	}
-	if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
+	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
 		t->data = savepoint_commit_dbat(dbat, commit_ts);
 	}
 	return ok;

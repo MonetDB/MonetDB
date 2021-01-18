@@ -3146,7 +3146,6 @@ sql_trans_rollback(sql_trans *tr)
 {
 	sqlstore *store = tr->store;
 	ulng commit_ts = 0; /* invalid ts, ie rollback */
-	ulng oldest = commit_ts;
 
 	/* global's are done via changes ?
 	if (0 && commit == 0) {
@@ -3220,6 +3219,7 @@ sql_trans_rollback(sql_trans *tr)
 			list_prepend(nl, n->data);
 
 		/* rollback */
+		ulng oldest = store_oldest(store, TRANSACTION_ID_BASE);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
