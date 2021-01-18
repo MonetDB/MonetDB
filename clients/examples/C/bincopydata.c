@@ -2,6 +2,7 @@
 
 #ifdef _MSC_VER
 #include <io.h>
+#include <fcntl.h>
 #endif
 
 static char *exe_name = "<to_be_filled_in>";
