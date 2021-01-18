@@ -1,3 +1,10 @@
+monetdb (11.39.11) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#3772: Any user can grant a role.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 18 Jan 2021 14:48:19 +0100
+
 monetdb (11.39.9) unstable; urgency=low
 
   * Rebuilt.
