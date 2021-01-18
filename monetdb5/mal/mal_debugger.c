@@ -24,8 +24,8 @@ typedef struct {
 	MalBlkPtr brkBlock[MAXBREAKS];
 	int brkPc[MAXBREAKS];
 	int brkVar[MAXBREAKS];
-	str brkMod[MAXBREAKS];
-	str brkFcn[MAXBREAKS];
+	const char *brkMod[MAXBREAKS];
+	const char *brkFcn[MAXBREAKS];
 	char brkCmd[MAXBREAKS];
 	str brkRequest[MAXBREAKS];
 	int brkTop;

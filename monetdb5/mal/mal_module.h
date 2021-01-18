@@ -24,7 +24,7 @@ typedef struct SCOPEDEF {
 
 mal_export Module   userModule(void);
 mal_export Module   globalModule(const char *nme);
-mal_export Module   fixModule(str nme);
+mal_export Module   fixModule(const char *nme);
 mal_export Module   getModule(const char *nme);
 mal_export void     freeModule(Module cur);
 mal_export void     insertSymbol(Module scope, Symbol prg);

@@ -91,7 +91,7 @@ OPTcoercionImplementation(Client cntxt,MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 	int i, k, t;
 	InstrPtr p;
 	int actions = 0;
-	str calcRef= putName("calc");
+	const char *calcRef= putName("calc");
 	Coercion *coerce = GDKzalloc(sizeof(Coercion) * mb->vtop);
 	char buf[256];
 	lng usec = GDKusec();

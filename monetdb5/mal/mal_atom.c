@@ -162,7 +162,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
  */
 
 str
-malAtomDefinition(str name, int tpe)
+malAtomDefinition(const char *name, int tpe)
 {
 	int i;
 

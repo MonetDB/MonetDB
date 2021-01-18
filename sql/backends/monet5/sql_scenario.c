@@ -77,7 +77,7 @@ static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
 static void
-monet5_freecode(int clientid, char *name)
+monet5_freecode(int clientid, const char *name)
 {
 	str msg;
 
@@ -1243,7 +1243,7 @@ SQLengine(Client c)
 }
 
 str
-SQLCacheRemove(Client c, str nme)
+SQLCacheRemove(Client c, const char *nme)
 {
 	Symbol s;
 
