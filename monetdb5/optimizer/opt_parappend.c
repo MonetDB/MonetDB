@@ -20,8 +20,8 @@ typedef struct parstate {
 	InstrPtr finish_stmt;
 } parstate;
 
-static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable, str execRef, str prepRef, int *actions);
-static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str prepRef);
+static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable, const char *execRef, const char *prepRef, int *actions);
+static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char *prepRef);
 static void flush_finish_stmt(parstate *state, MalBlkPtr mb);
 static void pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr instr);
 static bool needs_chain_var(parstate *state, InstrPtr instr);
@@ -115,7 +115,7 @@ end:
 }
 
 static str
-transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str opRef, str prepRef, int *actions)
+transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char *opRef, const char *prepRef, int *actions)
 {
 	int sname_var;
 	int tname_var;
@@ -175,7 +175,7 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str opRef, 
 }
 
 static int
-setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, str prepRef)
+setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char *prepRef)
 {
 	// take the old instruction apart
 	assert(old->retc == 1);

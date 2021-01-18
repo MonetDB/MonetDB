@@ -56,7 +56,7 @@ InstrPtr
 newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 {
 	InstrPtr q;
-	str mName = putName(module), nName = putName(name);
+	const char *mName = putName(module), *nName = putName(name);
 
 	q = newInstructionArgs(mb, mName, nName, args);
 	if (q == NULL)
@@ -96,7 +96,7 @@ InstrPtr
 newFcnCallArgs(MalBlkPtr mb, const char *mod, const char *fcn, int args)
 {
 	InstrPtr q = newAssignmentArgs(mb, args);
-	str fcnName, modName;
+	const char *fcnName, *modName;
 
 	modName = putName(mod);
 	fcnName = putName(fcn);
@@ -141,7 +141,7 @@ newComment(MalBlkPtr mb, const char *val)
 }
 
 InstrPtr
-newCatchStmt(MalBlkPtr mb, str nme)
+newCatchStmt(MalBlkPtr mb, const char *nme)
 {
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
@@ -164,7 +164,7 @@ newCatchStmt(MalBlkPtr mb, str nme)
 }
 
 InstrPtr
-newRaiseStmt(MalBlkPtr mb, str nme)
+newRaiseStmt(MalBlkPtr mb, const char *nme)
 {
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);
@@ -187,7 +187,7 @@ newRaiseStmt(MalBlkPtr mb, str nme)
 }
 
 InstrPtr
-newExitStmt(MalBlkPtr mb, str nme)
+newExitStmt(MalBlkPtr mb, const char *nme)
 {
 	InstrPtr q = newAssignment(mb);
 	int i= findVariable(mb,nme);

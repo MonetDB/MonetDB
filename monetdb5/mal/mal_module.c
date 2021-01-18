@@ -234,7 +234,7 @@ Module userModule(void){
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
  */
-Module fixModule(str nme) {
+Module fixModule(const char *nme) {
 	Module m;
 
 	m = getModule(nme);

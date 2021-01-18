@@ -951,7 +951,7 @@ term(Client cntxt, MalBlkPtr curBlk, InstrPtr *curInstr, int ret)
 static int
 parseAtom(Client cntxt)
 {
-	str modnme = 0;
+	const char *modnme = 0;
 	int l, tpe;
 	char *nxt = CURRENT(cntxt);
 
@@ -987,7 +987,7 @@ parseAtom(Client cntxt)
 static int
 parseModule(Client cntxt)
 {
-	str modnme = 0;
+	const char *modnme = 0;
 	int l;
 	char *nxt;
 
@@ -1022,7 +1022,8 @@ parseModule(Client cntxt)
 static int
 parseInclude(Client cntxt)
 {
-	str modnme = 0, s;
+	const char *modnme = 0;
+	char *s;
 	int x;
 	char *nxt;
 
@@ -1085,7 +1086,7 @@ fcnHeader(Client cntxt, int kind)
 {
 	int l;
 	malType tpe;
-	str fnme;
+	const char *fnme;
 	const char *modnme = NULL;
 	char ch;
 	Symbol curPrg;
@@ -1554,7 +1555,7 @@ parseAssign(Client cntxt, int cntrl)
 	MalBlkPtr curBlk;
 	Symbol curPrg;
 	int i = 0, l, type = TYPE_any, varid = -1;
-	str arg = 0;
+	const char *arg = 0;
 	ValRecord cst;
 
 	curPrg = cntxt->curprg;

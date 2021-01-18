@@ -111,7 +111,7 @@ typedef str (*MALfcn) ();
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
-	str name;
+	const char *name;
 	int kind;					/* what kind of symbol */
 	struct MALBLK *def;			/* the details of the MAL fcn */
 } *Symbol, SymRecord;

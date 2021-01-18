@@ -203,7 +203,7 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 static str
 addFunctions(mel_func *fcn){
 	str msg = MAL_SUCCEED;
-	str mod;
+	const char *mod;
 	int idx;
 	Module c;
 	Symbol s;
@@ -310,7 +310,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 }
 
 int
-melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ... )
+melFunction(bool command, const char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ... )
 {
 	int i, idx;
 	Module c;

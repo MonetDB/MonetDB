@@ -104,7 +104,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int i,lck;
 	int clk, wait= GDKms();
 	lng now;
-	str sql,cpy;
+	const char *sql, *cpy;
 
 	(void) stk;
 	if ( oltp_delay == FALSE )

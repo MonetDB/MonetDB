@@ -13,9 +13,9 @@
 #include "mal_client.h"
 #include "mal_prelude.h"
 
-mal_export str malIncludeString(Client c, const str name, const str mal, int listing, MALfcn address);
+mal_export str malIncludeString(Client c, const char *name, str mal, int listing, MALfcn address);
 
-mal_export str malInclude(Client c, str name, int listing);
+mal_export str malInclude(Client c, const char *name, int listing);
 mal_export void slash_2_dir_sep(str fname);
 mal_export str evalFile(str fname, int listing);
 mal_export str compileString(Symbol *fcn, Client c, str s);
