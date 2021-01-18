@@ -80,6 +80,8 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 	change->commit = commit;
 	change->log = log;
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
+	if (log)
+		tr->logchanges++;
 }
 
 int
