@@ -631,7 +631,7 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 	versionchain *name_based_node;
 	if (ov->id_based_older && strcmp(ov->id_based_older->obj->name, name) == 0)
 		name_based_node = ov->id_based_older->name_based_chain;
-	else if (os->unique) // Previous name based objectversion is of a different id, so now we do have to perform an extensive look up
+	else
 		name_based_node = find_name(os, name);
 
 	if (name_based_node) {
@@ -661,7 +661,7 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 	versionchain *id_based_node;
 	if (ov->name_based_older && ov->name_based_older->obj->id == id)
 		id_based_node = ov->name_based_older->id_based_chain;
-	else // Previous id based objectversion is of a different name, so now we do have to perform an extensive look up
+	else
 		id_based_node = find_id(os, id);
 
 	if (id_based_node) {
@@ -694,13 +694,15 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->ts = tr->tid;
 	ov->obj = b;
 
-	if (os_del_id_based(os, tr, b->id, ov)) {
-		// TODO clean up ov
-		assert(0);
-		return -1;
+	if (os->unique) {
+		if (os_del_name_based(os, tr, name, ov)) {
+			// TODO clean up ov
+			assert(0);
+			return -1;
+		}
 	}
 
-	if (os_del_name_based(os, tr, name, ov)) {
+	if (os_del_id_based(os, tr, b->id, ov)) {
 		// TODO clean up ov
 		assert(0);
 		return -1;
