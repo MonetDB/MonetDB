@@ -25,11 +25,13 @@
 
 #define MAX_MAL_MODULES 128
 static int mel_modules = 0;
-static str mel_module_name[MAX_MAL_MODULES] = {0};
-static mel_atom *mel_module_atoms[MAX_MAL_MODULES] = {0};
-static mel_func *mel_module_funcs[MAX_MAL_MODULES] = {0};
-static mel_init  mel_module_inits[MAX_MAL_MODULES] = {0};
-static const char*mel_module_code[MAX_MAL_MODULES] = {0};
+static struct mel_module {
+	char *name;
+	mel_atom *atoms;
+	mel_func *funcs;
+	mel_init inits;
+	const char *code;
+} mel_module[MAX_MAL_MODULES];
 
 int
 mal_startup(void)
@@ -48,11 +50,11 @@ void
 mal_module2(str name, mel_atom *atoms, mel_func *funcs, mel_init initfunc, const char *code)
 {
 	assert (mel_modules < MAX_MAL_MODULES);
-	mel_module_name[mel_modules] = name;
-	mel_module_atoms[mel_modules] = atoms;
-	mel_module_funcs[mel_modules] = funcs;
-	mel_module_inits[mel_modules] = initfunc;
-	mel_module_code[mel_modules] = code;
+	mel_module[mel_modules].name = name;
+	mel_module[mel_modules].atoms = atoms;
+	mel_module[mel_modules].funcs = funcs;
+	mel_module[mel_modules].inits = initfunc;
+	mel_module[mel_modules].code = code;
 	mel_modules++;
 }
 
@@ -60,11 +62,11 @@ void
 mal_module(str name, mel_atom *atoms, mel_func *funcs)
 {
 	assert (mel_modules < MAX_MAL_MODULES);
-	mel_module_name[mel_modules] = name;
-	mel_module_atoms[mel_modules] = atoms;
-	mel_module_funcs[mel_modules] = funcs;
-	mel_module_inits[mel_modules] = NULL;
-	mel_module_code[mel_modules] = NULL;
+	mel_module[mel_modules].name = name;
+	mel_module[mel_modules].atoms = atoms;
+	mel_module[mel_modules].funcs = funcs;
+	mel_module[mel_modules].inits = NULL;
+	mel_module[mel_modules].code = NULL;
 	mel_modules++;
 }
 
@@ -415,8 +417,8 @@ malPrelude(Client c, int listing, int no_mapi_server)
 	(void) listing;
 	/* Add all atom definitions */
 	for(i = 0; i<mel_modules; i++) {
-		if (mel_module_atoms[i]) {
-			msg = addAtom(mel_module_atoms[i]);
+		if (mel_module[i].atoms) {
+			msg = addAtom(mel_module[i].atoms);
 			if (msg)
 				return msg;
 		}
@@ -424,32 +426,32 @@ malPrelude(Client c, int listing, int no_mapi_server)
 
 	/* Add the signatures, where we now have access to all atoms */
 	for(i = 0; i<mel_modules; i++) {
-		if (!malLibraryEnabled(mel_module_name[i]))
+		if (!malLibraryEnabled(mel_module[i].name))
 			continue;
-		if (mel_module_funcs[i]) {
-			msg = addFunctions(mel_module_funcs[i]);
-			if (!msg && mel_module_code[i]) /* some modules may also have some function definitions */
-				msg = malIncludeString(c, mel_module_name[i], (str)mel_module_code[i], listing, NULL);
+		if (mel_module[i].funcs) {
+			msg = addFunctions(mel_module[i].funcs);
+			if (!msg && mel_module[i].code) /* some modules may also have some function definitions */
+				msg = malIncludeString(c, mel_module[i].name, (str)mel_module[i].code, listing, NULL);
 			if (msg)
 				return msg;
 
 			/* skip sql should be last to startup and mapi if configured without mapi server */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (no_mapi_server && strcmp(mel_module_name[i], "mapi") == 0))
+			if (strcmp(mel_module[i].name, "sql") == 0 || (no_mapi_server && strcmp(mel_module[i].name, "mapi") == 0))
 				continue;
-			if (!mel_module_inits[i]) {
-				msg = initModule(c, mel_module_name[i]);
+			if (!mel_module[i].inits) {
+				msg = initModule(c, mel_module[i].name);
 				if (msg)
 					return msg;
 			}
 		}
-		if (mel_module_inits[i]) {
-			msg = mel_module_inits[i]();
+		if (mel_module[i].inits) {
+			msg = mel_module[i].inits();
 			if (msg)
 				return msg;
 			/* skip sql should be last to startup and mapi if configured without mapi server */
-			if (strcmp(mel_module_name[i], "sql") == 0 || (no_mapi_server && strcmp(mel_module_name[i], "mapi") == 0))
+			if (strcmp(mel_module[i].name, "sql") == 0 || (no_mapi_server && strcmp(mel_module[i].name, "mapi") == 0))
 				continue;
-			msg = initModule(c, mel_module_name[i]);
+			msg = initModule(c, mel_module[i].name);
 			if (msg)
 				return msg;
 		}

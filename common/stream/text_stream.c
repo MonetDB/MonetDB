@@ -70,6 +70,7 @@ static void
 put_byte(inner_state_t *ist, char byte)
 {
 	*ist->dst_win.start++ = byte;
+	assert(ist->dst_win.count > 0);
 	ist->dst_win.count--;
 }
 
@@ -85,11 +86,14 @@ text_pump_in(inner_state_t *ist, pump_action action)
 {
 	bool crlf_pending = ist->crlf_pending;
 
-	// not the most efficient loop but easy to verify
 	while (ist->src_win.count > 0 && ist->dst_win.count > 0) {
 		char c = take_byte(ist);
 		switch (c) {
 			case '\r':
+				if (crlf_pending) {
+					// put the previous one, which is clearly not followed by an \n
+					put_byte(ist, '\r');
+				}
 				crlf_pending = true;
 				continue;
 			case '\n':
@@ -97,10 +101,20 @@ text_pump_in(inner_state_t *ist, pump_action action)
 				crlf_pending = false;
 				continue;
 			default:
-				if (crlf_pending)
+				if (crlf_pending) {
 					put_byte(ist, '\r');
-				put_byte(ist, c);
-				crlf_pending = false;
+					crlf_pending = false;
+					// if dst_win.count was 1, there is no room for another put_byte().
+					if (ist->dst_win.count > 0) {
+						put_byte(ist, c);
+					} else {
+						// no room anymore for char c, put it back!
+						ist->src_win.start--;
+						ist->src_win.count++;
+					}
+				} else {
+					put_byte(ist, c);
+				}
 				continue;
 		}
 	}

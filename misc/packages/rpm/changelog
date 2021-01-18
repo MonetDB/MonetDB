@@ -1,3 +1,7 @@
+* Mon Jan 18 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.11-20210118
+- Rebuilt.
+- GH#3772: Any user can grant a role.
+
 * Mon Jan 11 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.9-20210111
 - Rebuilt.
 - GH#6862: mserver5: crashes under update_table() when calling lib_sql.so

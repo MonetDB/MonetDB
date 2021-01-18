@@ -5534,8 +5534,8 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			return rel;
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
 			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) ||
-					((v->parent && is_project(v->parent->op)) && (is_set(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op))) ||
-					is_topn(l->op) || is_sample(l->op)) {
+				((v->parent && is_project(v->parent->op)) &&
+				 (is_set(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)))) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;

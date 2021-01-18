@@ -20,10 +20,10 @@
 #define RTLD_GLOBAL 4
 #endif
 
-mal_export MALfcn getAddress(str modname, str fcnname);
+mal_export MALfcn getAddress(const char *modname, const char *fcnname);
 mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
-mal_export str loadLibrary(str modulename, int flag);
+mal_export str loadLibrary(const char *modulename, int flag);
 mal_export char *locate_file(const char *basename, const char *ext, bit recurse);
-mal_export int malLibraryEnabled(str name);
-mal_export char* malLibraryHowToEnable(str name);
+mal_export int malLibraryEnabled(const char *name);
+mal_export char* malLibraryHowToEnable(const char *name);
 #endif /* _MAL_LINKER_H */

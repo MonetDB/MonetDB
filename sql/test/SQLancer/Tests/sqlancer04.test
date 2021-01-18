@@ -779,4 +779,22 @@ ROLLBACK
 statement error
 select cast(count(1) as interval second) from (values (false)) as v6(vc0)
 
+statement ok
+CREATE TABLE t1(c0 BOOLEAN, c1 DOUBLE)
+
+statement ok
+ALTER TABLE t1 ADD PRIMARY KEY(c0, c1)
+
+statement ok
+INSERT INTO t1(c1, c0) VALUES(0.3, FALSE), (0.5, true), (0.0, true), (4, false), (1, true), (4, true)
+
+statement ok
+DELETE FROM t1 WHERE NOT t1.c0
+
+statement ok
+UPDATE t1 SET c1 = 0 WHERE t1.c1 > 3
+
+statement ok
+DROP TABLE t1
+
 
