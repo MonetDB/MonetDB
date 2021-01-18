@@ -20,13 +20,16 @@
 
 struct object_node;// TODO: rename to object_version_chain
 
+#define id_based_rollbacked 1
+#define name_based_rollbacked (1<<1)
+
 typedef struct objectversion {
 	bool deleted;
 	ulng ts;
-	ulng tombstone; // ts of latest active transaction at the time of funeral
-	sql_base *obj;
+	bte rollbacked;
+	sql_base *obj;	
 	struct objectversion	*name_based_older;
-	struct objectversion	*name_based_newer;
+	struct objectversion	*name_based_newer; // TODO: must become atomic pointer
 	struct object_node		*name_based_chain;
 
 	struct objectversion	*id_based_older;
@@ -336,63 +339,149 @@ objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng o
 	/* free ov */
 }
 
-static int rollback_objectversion(sql_store Store, objectversion *ov)
+static void os_rollback_id_based_terminal_decendant(objectversion *ov);
+static void os_rollback_name_based_terminal_decendant(objectversion *ov);
+
+static void
+os_rollback_os_id_based_cascading(objectversion *ov) {
+	assert(ov->rollbacked & id_based_rollbacked);
+
+	if (ov->id_based_older) {
+		if (ov->id_based_older->ts < TRANSACTION_ID_BASE) {
+			// older is last committed state. Restore object_node pointer to that.
+			// TODO START ATOMIC()
+			ov->id_based_chain->data = ov->id_based_older;
+			// END ATOMIC()
+		}
+		else {
+			// id based cascaded rollback along the parents
+			os_rollback_name_based_terminal_decendant(ov->name_based_chain->data);
+
+			ov->id_based_older->rollbacked |= id_based_rollbacked;
+			os_rollback_os_id_based_cascading(ov->id_based_older);
+		}
+	}
+	else {
+		// this is a terminal node. i.e. this objectversion does not have id based committed history
+		os_remove_id_based_chain(ov->id_based_chain->os, ov->id_based_chain);
+	}
+}
+
+static void
+os_rollback_os_name_based_cascading(objectversion *ov) {
+	assert(ov->rollbacked & name_based_rollbacked);
+
+	if (ov->name_based_older) {
+		if (ov->name_based_older->ts < TRANSACTION_ID_BASE) {
+			// older is last committed state. Restore object_node pointer to that.
+			// TODO START ATOMIC()
+			ov->name_based_chain->data = ov->name_based_older;
+			// END ATOMIC()
+		}
+		else {
+			// name based cascaded rollback along the parents
+			os_rollback_id_based_terminal_decendant(ov->id_based_chain->data);
+
+			ov->name_based_older->rollbacked |= name_based_rollbacked;
+			os_rollback_os_name_based_cascading(ov->name_based_older);
+		}
+	}
+	else {
+		// this is a terminal node. i.e. this objectversion does not have name based committed history
+		os_remove_name_based_chain(ov->name_based_chain->os, ov->name_based_chain);
+	}
+}
+
+static void
+os_rollback_name_based_terminal_decendant(objectversion *ov) {
+	if (ov->rollbacked & name_based_rollbacked) {
+		return;
+	}
+
+	ov->rollbacked |= name_based_rollbacked;
+
+	os_rollback_id_based_terminal_decendant(ov->id_based_chain->data);
+	os_rollback_os_name_based_cascading(ov);
+
+}
+
+static void
+os_rollback_id_based_terminal_decendant(objectversion *ov) {
+	if (ov->rollbacked & id_based_rollbacked) {
+		return;
+	}
+
+	ov->rollbacked |= id_based_rollbacked;
+
+	os_rollback_name_based_terminal_decendant(ov->name_based_chain->data);
+	os_rollback_os_id_based_cascading(ov);
+}
+
+static int
+os_rollback(objectversion *ov)
 {
-		objectset* os = ov->name_based_chain->os;
-		assert(ov->ts > TRANSACTION_ID_BASE);
+	os_rollback_name_based_terminal_decendant(ov->name_based_chain->data);
 
-		if (ov->name_based_older && ov->name_based_older->ts < TRANSACTION_ID_BASE) {
-			// ov has a committed parent.
-			assert(!ov->id_based_older || ov->name_based_older == ov->id_based_older);
+	// TODO: label objectversion with a latest timestamp of tid.
 
-			// TODO: ATOMIC OP
-			ov->name_based_older->name_based_older = NULL;
-		}
+	return LOG_OK;
+}
 
-		if (ov->name_based_older == NULL) {
-			os_remove_name_based_chain(os, ov->name_based_chain);
-		}
+static int
+os_cleanup(objectversion *ov, ulng oldest) {
+	(void) oldest;
+	(void) ov;
+#if 0
+	if (ov->name_based_older)
+	{
+		(void) os_cleanup(ov->name_based_older, oldest);
+		if (ov->id_based_older && ov->id_based_older != ov->name_based_older)
+			(void) os_cleanup(ov->id_based_older, oldest);
+	}
 
-		if (ov->id_based_older == NULL) {
-			os_remove_id_based_chain(os, ov->name_based_chain);
-		}
+	// TODO ATOMIC GET
+	objectversion* newer = ov->name_based_newer;
 
-		os->destroy(Store, ov->obj);
-		// destroy objectversion ov.
+	if (ov->ts < oldest && newer && (newer->ts < oldest && !newer->rollbacked)) {
+		// ov has a committed name based parent
+		assert(ov->id_based_newer || ov->deleted /*can only happen because of a drop followed by  create*/);
 
-		return LOG_OK;
+		if (ov->id_based_newer)
+			ov->id_based_newer->id_based_older = NULL;
+
+		// TODO: destroy objectversion ov.
+	}
+#endif
+	return LOG_OK;
 }
 
 static int
 tc_gc_objectversion(sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	(void) Store;
+	if (commit_ts != oldest) {
+		// TODO: for now only oldest is allowed to do clean up
+		return LOG_OK;
+	}
+
 	objectversion *ov = (objectversion*)change->data;
 
-	if (!commit_ts) {
-		rollback_objectversion(Store, ov);
-	}
-
-	if (ov->deleted) {
-		/* TODO handle savepoints */
-		if (ov->ts < oldest || (ov->ts == commit_ts && commit_ts == oldest)) {
-			int ok = LOG_OK;
-			objectversion_destroy(Store, ov, commit_ts, oldest);
-			if (ok == LOG_OK)
-				return 1; /* handled */
-			else
-				return LOG_ERR;
-		}
-	}
-	return LOG_OK;
+	return os_cleanup(ov, oldest);
 }
 
 static int
 tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	objectversion *ov = (objectversion*)change->data;
-	assert(ov->ts == tr->tid);
-	ov->ts = commit_ts;
-	(void)oldest;
+	if (commit_ts) {
+		assert(ov->ts == tr->tid);
+		ov->ts = commit_ts;
+		(void)oldest;
+	}
+	else {
+		os_rollback(ov);
+	}
+
 	return LOG_OK;
 }
 
@@ -552,7 +641,7 @@ static objectversion*
 get_valid_object_name(sql_trans *tr, objectversion *ov)
 {
 	while(ov) {
-		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts)) || ov->ts < tr->ts)
+		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts)) || (!ov->rollbacked && ov->ts < tr->ts))
 			return ov;
 		else
 			ov = ov->name_based_older;
@@ -564,7 +653,7 @@ static objectversion*
 get_valid_object_id(sql_trans *tr, objectversion *ov)
 {
 	while(ov) {
-		if (ov->ts == tr->tid || ov->ts < tr->ts)
+		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts))  || (!ov->rollbacked && ov->ts < tr->ts))
 			return ov;
 		else
 			ov = ov->id_based_older;
