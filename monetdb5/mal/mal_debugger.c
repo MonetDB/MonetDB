@@ -1264,7 +1264,7 @@ retryRead:
 				if ( m == 0)
 					m = mb;
 				if ( m ){
-					str nme = getFunctionId(mb->stmt[0]);
+					const char *nme = getFunctionId(mb->stmt[0]);
 					str s = strstr(b, nme);
 					if( s ){
 						b = s + strlen(nme);
