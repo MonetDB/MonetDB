@@ -1085,7 +1085,8 @@ fcnHeader(Client cntxt, int kind)
 {
 	int l;
 	malType tpe;
-	str fnme, modnme = NULL;
+	str fnme;
+	const char *modnme = NULL;
 	char ch;
 	Symbol curPrg;
 	MalBlkPtr curBlk = 0;
@@ -1263,7 +1264,7 @@ parseCommandPattern(Client cntxt, int kind, MALfcn address)
 	MalBlkPtr curBlk = 0;
 	Symbol curPrg = 0;
 	InstrPtr curInstr = 0;
-	str modnme = NULL;
+	const char *modnme = NULL;
 	size_t l = 0;
 	str msg = MAL_SUCCEED;
 

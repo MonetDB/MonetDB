@@ -451,7 +451,7 @@ RMTfindconn(connection *ret, const char *conn) {
 static inline str
 RMTgetId(char *buf, MalBlkPtr mb, InstrPtr p, int arg) {
 	InstrPtr f;
-	char *mod;
+	const char *mod;
 	char *var;
 	str rt;
 	static ATOMIC_TYPE idtag = ATOMIC_VAR_INIT(0);

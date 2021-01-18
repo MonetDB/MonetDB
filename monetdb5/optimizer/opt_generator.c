@@ -60,7 +60,6 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 {
 	InstrPtr p,q, *old, *series;
 	int i, k, limit, slimit, actions=0;
-	str m;
 	str bteRef = getName("bte");
 	str shtRef = getName("sht");
 	str intRef = getName("int");
@@ -138,7 +137,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 			// check for use without conversion
 			for(k = p->retc; k < p->argc; k++)
 			if( series[getArg(p,k)]){
-				m = getModuleId(p);
+				const char *m = getModuleId(p);
 				setModuleId(p, generatorRef);
 				typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 				if(p->typechk == TYPE_UNKNOWN){

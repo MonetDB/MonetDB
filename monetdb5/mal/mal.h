@@ -161,7 +161,7 @@ typedef struct {
 	lng totticks;				/* total time spent on this instruction. */
 	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */
-	str modname;				/* module context, reference into namespace */
+	const char *modname;				/* module context, reference into namespace */
 	str fcnname;				/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
 	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
