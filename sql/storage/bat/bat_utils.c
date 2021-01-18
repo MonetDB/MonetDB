@@ -158,7 +158,7 @@ ebat_copy(log_bid b, oid ibase, int temp)
 			return BID_NIL;
 	}
 
-	if (!temp && BATcount(o)) {
+	if (!temp) {
 		c = COLcopy(o, o->ttype, true, PERSISTENT);
 		if (!c)
 			return BID_NIL;

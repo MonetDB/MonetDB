@@ -459,16 +459,17 @@ get_valid_object(sql_trans *tr, objectversion *ov)
 	return ov;
 }
 
-#if 0
 static void
 os_update_hash(objectset *os, object_node *n, /*new*/ objectversion *ov)
 {
 	MT_lock_set(&os->ht_lock);
+#if 0
 	if (os->name_map) {
 		hash_delete(os->name_map, n);
 		int nkey = os->name_map->key(ov);
 		hash_add(os->name_map, nkey, ov);
 	}
+#endif
 
 	if (os->id_map) {
 		hash_delete(os->id_map, n);
@@ -476,11 +477,10 @@ os_update_hash(objectset *os, object_node *n, /*new*/ objectversion *ov)
 		hash_add(os->id_map, nkey, ov);
 	}
 
-	n->data = ov;
+//	n->data = ov;
 
 	MT_lock_unset(&os->ht_lock);
 }
-#endif
 
 int /*ok, error (name existed) and conflict (added before) */
 os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
@@ -513,13 +513,16 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 			oo->newer = ov;
 		n->data = ov;
 		MT_lock_unset(&os->ht_lock);
+		if (oo && oo->obj->id != ov->obj->id) {
+			os_update_hash(os, n, ov);
+		}
 		if (!os->temporary)
-			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
+			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 		return 0;
 	} else { /* new */
 		os_append(os, ov);
 		if (!os->temporary)
-			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
+			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 		return 0;
 	}
 }
@@ -556,7 +559,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		n->data = ov;
 		MT_lock_unset(&os->ht_lock);
 		if (!os->temporary)
-			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion);
+			trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 		return 0;
 	} else {
 		/* missing */

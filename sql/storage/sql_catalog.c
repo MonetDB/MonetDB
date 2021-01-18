@@ -71,12 +71,13 @@ _list_find_name(list *l, const char *name)
 }
 
 void
-trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_log_fptr log)
+trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
 {
 	sql_change *change = SA_ZNEW(tr->sa, sql_change);
 	change->obj = b;
 	change->data = data;
 	change->cleanup = cleanup;
+	change->commit = commit;
 	change->log = log;
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
 }
@@ -479,26 +480,19 @@ sql_values_part_validate_and_insert(void *v1, void *v2)
 sql_part *
 partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp)
 {
-	sql_schema *s = pt->s;
-
 	struct os_iter oi;
-	os_iterator(&oi, s->tables, tr, NULL);
+
+	os_iterator(&oi, pt->s->parts, tr, NULL);
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-		sql_table *t = (sql_table*)b;
+		sql_part *p = (sql_part*)b;
 
-		if (!isMergeTable(t) || !t->members.set)
+		if (pp) {
+			if (p == pp)
+				pp = NULL;
 			continue;
-		for(node *m = t->members.set->h; m; m=m->next) {
-			sql_part *p = m->data;
-
-			if (pp) {
-				if (p == pp)
-					pp = NULL;
-				continue;
-			}
-			if (p->base.id == pt->base.id)
-				return p;
 		}
+		if (p->base.id == pt->base.id)
+			return p;
 	}
 	return NULL;
 }
@@ -508,11 +502,10 @@ nested_mergetable(sql_trans *tr, sql_table *mt, const char *sname, const char *t
 {
 	if (strcmp(mt->s->base.name, sname) == 0 && strcmp(mt->base.name, tname) == 0)
 		return 1;
-	if (isPartition(mt)) {
-		for( sql_part *parent = partition_find_part(tr, mt, NULL); parent; parent = partition_find_part(tr, mt, parent)) {
-			if (nested_mergetable(tr, parent->t, sname, tname))
-				return 1;
-		}
+	/* try if this is also a partition */
+	for( sql_part *parent = partition_find_part(tr, mt, NULL); parent; parent = partition_find_part(tr, mt, parent)) {
+		if (nested_mergetable(tr, parent->t, sname, tname))
+			return 1;
 	}
 	return 0;
 }
