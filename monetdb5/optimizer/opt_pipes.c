@@ -413,7 +413,7 @@ validatePipe(MalBlkPtr mb)
 
 	for (i = 1; i < mb->stop - 1; i++){
 		p = getInstrPtr(mb, i);
-		char *fname = getFunctionId(p);
+		const char *fname = getFunctionId(p);
 		if (fname != NULL) {
 			if (strcmp(fname, "deadcode") == 0)
 				deadcode = TRUE;

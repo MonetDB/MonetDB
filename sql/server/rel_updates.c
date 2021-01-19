@@ -1973,7 +1973,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val, l->h->next->next->next->next->next->data.i_val);
+		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val, (endianness) l->h->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

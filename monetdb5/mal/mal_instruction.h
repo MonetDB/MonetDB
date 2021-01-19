@@ -28,7 +28,7 @@
 /* Allocation of space assumes a rather exotic number of
  * arguments. Access to module and function name are cast in macros to
  * prepare for separate name space management. */
-#define getModuleId(P)		(P)->modname
+#define getModuleId(P)		((P)->modname)
 #define setModuleId(P,S)	(P)->modname= S
 #define setModuleScope(P,S)	do {(P)->modname= (S)==NULL?NULL: (S)->name;} while (0)
 
@@ -121,14 +121,14 @@
 
 mal_export void addMalException(MalBlkPtr mb, str msg);
 mal_export void mal_instruction_reset(void);
-mal_export InstrPtr newInstruction(MalBlkPtr mb, str modnme, str fcnnme);
-mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args);
+mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme);
+mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int args);
 mal_export InstrPtr copyInstruction(InstrPtr p);
 mal_export InstrPtr copyInstructionArgs(InstrPtr p, int args);
 mal_export void clrInstruction(InstrPtr p);
 mal_export void freeInstruction(InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
-mal_export Symbol newSymbol(str nme, int kind);
+mal_export Symbol newSymbol(const char *nme, int kind);
 mal_export void freeSymbol(Symbol s);
 mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
@@ -143,7 +143,7 @@ mal_export void freeMalBlk(MalBlkPtr mb);
 mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void addtoMalBlkHistory(MalBlkPtr mb);
 mal_export MalBlkPtr getMalBlkHistory(MalBlkPtr mb, int idx);
-mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, str name);
+mal_export MalBlkPtr getMalBlkOptimized(MalBlkPtr mb, const char *name);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
@@ -152,8 +152,8 @@ mal_export void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str operatorName(int i);
 
 mal_export int findVariable(MalBlkPtr mb, const char *name);
-mal_export int findVariableLength(MalBlkPtr mb, str name, int len);
-mal_export malType getType(MalBlkPtr mb, str nme);
+mal_export int findVariableLength(MalBlkPtr mb, const char *name, int len);
+mal_export malType getType(MalBlkPtr mb, const char *nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);

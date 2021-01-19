@@ -803,7 +803,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 			sql_exp *del;
 			dup = rel_project(sql->sa, dup, rel_projections(sql, dup, NULL, 1, 1));
 			del = list_fetch(dup->exps, list_length(dup->exps) - 1);
-			list_remove_data(dup->exps, del);
+			list_remove_data(dup->exps, NULL, del);
 		}
 
 		s1 = rel_insert(query->sql, new_table, dup);

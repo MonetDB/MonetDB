@@ -43,7 +43,7 @@ OPTcandidatesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		else if( getModuleId(p) == algebraRef ){
 			if(getFunctionId(p) == selectRef || getFunctionId(p) == thetaselectRef)
 				setVarCList(mb,getArg(p,0));
-			else if(getFunctionId(p) == likeselectRef || getFunctionId(p) == likethetaselectRef)
+			else if(getFunctionId(p) == likeselectRef)
 				setVarCList(mb,getArg(p,0));
 			else if(getFunctionId(p) == intersectRef || getFunctionId(p) == differenceRef )
 				setVarCList(mb,getArg(p,0));

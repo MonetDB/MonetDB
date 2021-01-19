@@ -33,7 +33,7 @@ addMalException(MalBlkPtr mb, str msg)
 }
 
 Symbol
-newSymbol(str nme, int kind)
+newSymbol(const char *nme, int kind)
 {
 	Symbol cur;
 
@@ -373,7 +373,7 @@ getMalBlkHistory(MalBlkPtr mb, int idx)
 
 // Localize the plan using the optimizer name
 MalBlkPtr
-getMalBlkOptimized(MalBlkPtr mb, str name)
+getMalBlkOptimized(MalBlkPtr mb, const char *name)
 {
 	MalBlkPtr h = mb->history;
 	InstrPtr p;
@@ -436,7 +436,7 @@ prepareMalBlk(MalBlkPtr mb, str s)
  * Allocation of an instruction should always succeed.
  */
 InstrPtr
-newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
+newInstructionArgs(MalBlkPtr mb, const char *modnme, const char *fcnnme, int args)
 {
 	InstrPtr p = NULL;
 
@@ -466,7 +466,7 @@ newInstructionArgs(MalBlkPtr mb, str modnme, str fcnnme, int args)
 }
 
 InstrPtr
-newInstruction(MalBlkPtr mb, str modnme, str fcnnme)
+newInstruction(MalBlkPtr mb, const char *modnme, const char *fcnnme)
 {
 	return newInstructionArgs(mb, modnme, fcnnme, MAXARG);
 }
@@ -618,7 +618,7 @@ findVariable(MalBlkPtr mb, const char *name)
  * parsing, because most variables are already defined. This way we
  * safe GDKmalloc/GDKfree. */
 int
-findVariableLength(MalBlkPtr mb, str name, int len)
+findVariableLength(MalBlkPtr mb, const char *name, int len)
 {
 	int i;
 
@@ -634,7 +634,7 @@ findVariableLength(MalBlkPtr mb, str name, int len)
 /* Note that getType also checks for type names directly. They have
  * preference over variable names. */
 malType
-getType(MalBlkPtr mb, str nme)
+getType(MalBlkPtr mb, const char *nme)
 {
 	int i;
 

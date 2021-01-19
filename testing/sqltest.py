@@ -394,13 +394,14 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             stable = list(filter(filter_headers, stable))
             data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(stable, data)
-        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
-        if len(diff) > 0:
-            err_file = self.test_case.err_file
-            msg = "expected to match stable output {} but it didnt\'t\n".format(fout)
-            msg+='\n'.join(diff)
-            self.assertion_errors.append(AssertionError(msg))
-            self.fail(msg)
+        if a or b:
+            diff = list(difflib.unified_diff(stable, data, fromfile='stable', tofile='test'))
+            if len(diff) > 0:
+                err_file = self.test_case.err_file
+                msg = "expected to match stable output {} but it didnt\'t\n".format(fout)
+                msg+='\n'.join(diff)
+                self.assertion_errors.append(AssertionError(msg))
+                self.fail(msg)
         return self
 
     def assertMatchStableError(self, ferr, ignore_err_messages=False):
@@ -675,4 +676,3 @@ class SQLTestCase():
 
         except (pymonetdb.Error, ValueError) as e:
             pass
-
