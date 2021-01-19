@@ -354,9 +354,9 @@ os_rollback_os_id_based_cascading(objectversion *ov) {
 			// END ATOMIC()
 		}
 		else {
-			// id based cascaded rollback along the parents
 			os_rollback_name_based_terminal_decendant(ov->name_based_chain->data);
 
+			// id based cascaded rollback along the parents
 			ov->id_based_older->rollbacked |= id_based_rollbacked;
 			os_rollback_os_id_based_cascading(ov->id_based_older);
 		}
@@ -379,9 +379,9 @@ os_rollback_os_name_based_cascading(objectversion *ov) {
 			// END ATOMIC()
 		}
 		else {
-			// name based cascaded rollback along the parents
 			os_rollback_id_based_terminal_decendant(ov->id_based_chain->data);
 
+			// name based cascaded rollback along the parents
 			ov->name_based_older->rollbacked |= name_based_rollbacked;
 			os_rollback_os_name_based_cascading(ov->name_based_older);
 		}

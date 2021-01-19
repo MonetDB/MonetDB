@@ -1998,7 +1998,7 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 					sql_rel *r = rel_dup(rel);
 					list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 
-					list_remove_node(rel->exps, n); /* remove or expression */
+					list_remove_node(rel->exps, NULL, n); /* remove or expression */
 
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
@@ -2054,7 +2054,7 @@ rewrite_split_select_exps(visitor *v, sql_rel *rel)
 
 				if (!complex_exps[i]) {
 					rel_select_add_exp(v->sql->sa, nsel, n->data);
-					list_remove_node(rel->exps, n);
+					list_remove_node(rel->exps, NULL, n);
 				}
 				n = nxt;
 				i++;
@@ -2211,7 +2211,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		rel->l = rell;
 
 		/* remove obe argument, so this function won't be called again on this expression */
-		list_remove_node(r, r->t);
+		list_remove_node(r, NULL, r->t);
 
 		/* add project with rank */
 		rell = rel->l = rel_project(v->sql->sa, rel->l, rel_projections(v->sql, rell->l, NULL, 1, 1));
@@ -2291,7 +2291,7 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		e = exp_ref(v->sql, e);
 	} else {
 		/* remove obe argument, so this function won't be called again on this expression */
-		list_remove_node(r, r->t);
+		list_remove_node(r, NULL, r->t);
 	}
 	return e;
 }

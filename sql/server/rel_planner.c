@@ -908,7 +908,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 			op_join);
 		if (mi->level == 2) {
 			rel_join_add_exp(sql->sa, top, mi->data);
-			list_remove_data(sdje, mi->data);
+			list_remove_data(sdje, NULL, mi->data);
 		} else {
 			node *djn;
 
@@ -917,7 +917,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				sql_exp *e = djn->data;
 
 				rel_join_add_exp(sql->sa, top, e);
-				list_remove_data(sdje, e);
+				list_remove_data(sdje, NULL, e);
 			}
 
 			/* all other join expressions on these 2 relations */
@@ -925,7 +925,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				sql_exp *e = djn->data;
 
 				rel_join_add_exp(sql->sa, top, e);
-				list_remove_data(exps, e);
+				list_remove_data(exps, NULL, e);
 			}
 		}
 		return top;

@@ -373,7 +373,8 @@ extern sql_table *sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id,
 extern sql_table *sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
 extern sql_table *sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action);
 
-extern int sql_trans_drop_table(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
+extern int sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action);
+extern int sql_trans_drop_table_id(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
 extern BUN sql_trans_clear_table(sql_trans *tr, sql_table *t);
 extern sql_table *sql_trans_alter_access(sql_trans *tr, sql_table *t, sht access);
 

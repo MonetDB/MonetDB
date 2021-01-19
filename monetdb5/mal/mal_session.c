@@ -84,7 +84,7 @@ malBootstrap(char *modules[], int embedded)
  * BATs introduced.
  */
 static str
-MSresetClientPrg(Client cntxt, str mod, str fcn)
+MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
 {
 	MalBlkPtr mb;
 	InstrPtr p;

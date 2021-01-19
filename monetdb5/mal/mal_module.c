@@ -119,7 +119,7 @@ mal_module_reset(void)
 	}
 }
 
-static int getModuleIndex(str name) {
+static int getModuleIndex(const char *name) {
 	return (int) (strHash(name) % MODULE_HASH_SIZE);
 }
 
@@ -147,7 +147,7 @@ static void addModuleToIndex(Module cur){
 	moduleIndex[index] = cur;
 }
 
-Module getModule(str name) {
+Module getModule(const char *name) {
 	int index = getModuleIndex(name);
 	Module m = moduleIndex[index];
 	while(m) {
@@ -192,7 +192,7 @@ void freeModuleList(Module* list) {
  * Module scope management
  * It will contain the symbol table of all globally accessible functions.
  */
-Module globalModule(str nme)
+Module globalModule(const char *nme)
 {	Module cur;
 
 	// Global modules are not named 'user'
@@ -234,7 +234,7 @@ Module userModule(void){
  * The scope can be fixed. This is used by the parser.
  * Reading a module often calls for creation first.
  */
-Module fixModule(str nme) {
+Module fixModule(const char *nme) {
 	Module m;
 
 	m = getModule(nme);
@@ -373,7 +373,7 @@ void deleteSymbol(Module scope, Symbol prg){
  * The 'user' module is an alias for the scope attached
  * to the current user.
  */
-Module findModule(Module scope, str name){
+Module findModule(Module scope, const char *name){
 	Module def = scope;
 	Module m;
 	if (name == NULL) return scope;
@@ -396,7 +396,7 @@ Module findModule(Module scope, str name){
  * The variation on this routine is to dump the definition of
  * all matching definitions.
  */
-Symbol findSymbolInModule(Module v, str fcn) {
+Symbol findSymbolInModule(Module v, const char *fcn) {
 	Symbol s;
 	if (v == NULL || fcn == NULL) return NULL;
 	s = v->space[(int)(*fcn)];
@@ -407,7 +407,7 @@ Symbol findSymbolInModule(Module v, str fcn) {
 	return NULL;
 }
 
-Symbol findSymbol(Module usermodule, str mod, str fcn) {
+Symbol findSymbol(Module usermodule, const char *mod, const char *fcn) {
 	Module m = findModule(usermodule, mod);
 	return findSymbolInModule(m, fcn);
 }

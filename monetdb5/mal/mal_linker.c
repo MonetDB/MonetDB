@@ -65,7 +65,7 @@ fileexists(const char *path)
 
 /* Search for occurrence of the function in the library identified by the filename.  */
 MALfcn
-getAddress(str modname, str fcnname)
+getAddress(const char *modname, const char *fcnname)
 {
 	void *dl;
 	MALfcn adr;
@@ -157,12 +157,12 @@ getAddress(str modname, str fcnname)
  */
 
 str
-loadLibrary(str filename, int flag)
+loadLibrary(const char *filename, int flag)
 {
 	int mode = RTLD_NOW | RTLD_GLOBAL;
 	char nme[FILENAME_MAX];
 	void *handle = NULL;
-	str s;
+	const char *s;
 	int idx;
 	const char *mod_path = GDKgetenv("monet_mod_path");
 	int is_mod;
@@ -483,7 +483,7 @@ MSP_locate_sqlscript(const char *filename, bit recurse)
 }
 
 int
-malLibraryEnabled(str name)
+malLibraryEnabled(const char *name)
 {
 	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
 		const char *val = GDKgetenv("embedded_py");
@@ -513,7 +513,7 @@ malLibraryEnabled(str name)
 	} while (0)
 
 char *
-malLibraryHowToEnable(str name)
+malLibraryHowToEnable(const char *name)
 {
 	if (strcmp(name, "pyapi3") == 0 || strcmp(name, "pyapi3map") == 0) {
 		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3");

@@ -64,7 +64,7 @@ grantMonetdbToRegularUser.Bug-3771 # NEW
 grantMonetdbToSchemaOwner.Bug-3771 # NEW
 grantRole.Bug-3772 # NEW
 quantile_function_resolution.Bug-3773
-msqldump-merge-and-remote-tables.Bug-3774
+#msqldump-merge-and-remote-tables.Bug-3774
 backslash_predecing_separator.Bug-3775
 schemadiff.Bug-3778
 sum_interval.Bug-3785

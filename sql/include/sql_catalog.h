@@ -256,11 +256,11 @@ extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern changeset* cs_dup(changeset * cs);
-extern void cs_destroy(changeset * cs);
+extern void cs_destroy(changeset * cs, void *data);
 extern void cs_add(changeset * cs, void *elm, int flag);
 extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
-extern void cs_del(changeset * cs, node *elm, int flag);
+extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
 extern void cs_move(changeset *from, changeset *to, void *data);
 extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
 extern int cs_size(changeset * cs);
@@ -268,7 +268,6 @@ extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, sqlid id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
-extern void cs_remove_node(changeset * cs, node *n);
 
 typedef void *backend_code;
 typedef size_t backend_stack;
@@ -305,6 +304,7 @@ typedef struct sql_trans {
 
 	sql_store store;	/* keep link into the global store */
 	list *changes;		/* list of changes */
+	int logchanges;		/* count number of changes to be applied too the wal */
 
 	int active;			/* is active transaction */
 	int status;			/* status of the last query */
@@ -748,12 +748,6 @@ typedef struct sql_session {
 } sql_session;
 
 #define sql_base_loop(l, n) for (n=l->h; n; n=n->next)
-
-//extern void schema_destroy(sql_schema *s);
-//extern void table_destroy(sql_table *t);
-extern void column_destroy(sql_column *c);
-extern void key_destroy(sql_key *k);
-extern void idx_destroy(sql_idx * i);
 
 extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);

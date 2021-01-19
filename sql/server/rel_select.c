@@ -530,7 +530,7 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 			node *nn = n->next;
 
 			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, n);
+				list_remove_node(funcs, NULL, n);
 			n = nn;
 		}
 		len = list_length(ff);
@@ -1752,7 +1752,7 @@ _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps,
 			node *nn = n->next;
 
 			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, n);
+				list_remove_node(funcs, NULL, n);
 			n = nn;
 		}
 
@@ -5433,7 +5433,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			}
 			exp_setname(sql->sa, le, rname, name);
 			append(outexps, le);
-			list_remove_data(r_exps, re);
+			list_remove_data(r_exps, NULL, re);
 		} else {
 			if (l_nil)
 				set_has_nil(le);

@@ -80,6 +80,8 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 	change->commit = commit;
 	change->log = log;
 	tr->changes = sa_list_append(tr->sa, tr->changes, change);
+	if (log)
+		tr->logchanges++;
 }
 
 int
@@ -482,6 +484,8 @@ partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp)
 {
 	struct os_iter oi;
 
+	if (!pt->s) /* declared table */
+		return NULL;
 	os_iterator(&oi, pt->s->parts, tr, NULL);
 	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 		sql_part *p = (sql_part*)b;
