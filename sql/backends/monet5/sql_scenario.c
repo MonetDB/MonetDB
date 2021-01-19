@@ -49,15 +49,24 @@
 
 #define MAX_SQL_MODULES 128
 static int sql_modules = 0;
-static const char *sql_module_name[MAX_SQL_MODULES] = {0};
-static const unsigned char *sql_module_code[MAX_SQL_MODULES] = {0};
+static struct sql_module {
+	const char *name;
+	const unsigned char *code;
+} sql_module[MAX_SQL_MODULES];
+
+static int
+sql_module_compare(const void *a, const void *b)
+{
+	const struct sql_module *l = a, *r = b;
+	return strcmp(l->name, r->name);
+}
 
 void
 sql_register(const char *name, const unsigned char *code)
 {
 	assert (sql_modules < MAX_SQL_MODULES);
-	sql_module_name[sql_modules] = name;
-	sql_module_code[sql_modules] = code;
+	sql_module[sql_modules].name = name;
+	sql_module[sql_modules].code = code;
 	sql_modules++;
 }
 
@@ -68,7 +77,7 @@ static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
 
 static void
-monet5_freecode(int clientid, char *name)
+monet5_freecode(int clientid, const char *name)
 {
 	str msg;
 
@@ -426,8 +435,9 @@ SQLinit(Client c)
 		SQLnewcatalog = 0;
 		maybeupgrade = 0;
 
+		qsort(sql_module, sql_modules, sizeof(sql_module[0]), sql_module_compare);
 		for (int i = 0; i < sql_modules && !msg; i++) {
-			const char *createdb_inline = (const char*)sql_module_code[i];
+			const char *createdb_inline = (const char*)sql_module[i].code;
 
 			msg = SQLstatementIntern(c, createdb_inline, "sql.init", TRUE, FALSE, NULL);
 			if (m->sa)
@@ -1233,7 +1243,7 @@ SQLengine(Client c)
 }
 
 str
-SQLCacheRemove(Client c, str nme)
+SQLCacheRemove(Client c, const char *nme)
 {
 	Symbol s;
 

@@ -446,4 +446,5 @@ join (select 1, '1', cast(l1v57.vc1 as bigint) from v57 as l1v57,
 v5 as l1v5, v76 as l1v76) as sub1 on false) with check option;
 
 WITH cte0(c0,c1,c2) AS (SELECT CAST('1' AS INT), 1, 0.82 FROM v82 AS l1v82) SELECT 1 FROM cte0 AS l0cte0;
+	--rel_push_project_down optimizer issue
 ROLLBACK;

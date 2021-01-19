@@ -31,7 +31,7 @@ sql5_export str handle_error(mvc *m, int pstatus, str msg);
 sql5_export str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLcompile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-sql5_export str SQLCacheRemove(Client c, str nme);
+sql5_export str SQLCacheRemove(Client c, const char *nme);
 sql5_export str SQLescapeString(str s);
 
 sql5_export str SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
