@@ -9381,14 +9381,13 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 static sql_rel *
 out2inner(visitor *v, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, operator_type new_type) {
 
-    list* select_predicates = exps_copy(v->sql, sel->exps);
-
     if (!is_base(inner_join_side->op) && !is_simple_project(inner_join_side->op)) {
         // Nothing to do here.
         return sel;
     }
 
     list* inner_join_column_references = inner_join_side->exps;
+    list* select_predicates = exps_copy(v->sql, sel->exps);
 
     for(node* n = select_predicates->h; n; n=n->next) {
         sql_exp* e = n->data;
@@ -9532,6 +9531,8 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 		return rel;
 	if (exp_is_zero_rows(v->sql, rel->l, NULL)) {
 		sql_rel *r = rel->r;
+		if (!is_project(r->op))
+			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 		rel_rename_exps(v->sql, rel->exps, r->exps);
 		rel->r = NULL;
 		rel_destroy(rel);
@@ -9540,6 +9541,8 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 	}
 	if (exp_is_zero_rows(v->sql, rel->r, NULL)) {
 		sql_rel *l = rel->l;
+		if (!is_project(l->op))
+			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
 		rel_rename_exps(v->sql, rel->exps, l->exps);
 		rel->l = NULL;
 		rel_destroy(rel);
