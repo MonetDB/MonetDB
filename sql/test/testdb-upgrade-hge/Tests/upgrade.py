@@ -9,9 +9,7 @@ try:
 except ImportError:
     import process
 
-import sys
-import os
-import zipfile
+import sys, os, zipfile, platform
 
 xit = 0
 
@@ -51,7 +49,7 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
         bits = ['.' + bits, '']
     else:
         bits = ['']
-    arch = os.uname()[4]
+    arch = platform.machine()
     arch = ['.' + arch, '']
     hge = os.getenv('HAVE_HGE')
     if hge:

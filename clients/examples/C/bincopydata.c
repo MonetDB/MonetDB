@@ -158,6 +158,7 @@ gen_large_strings(FILE *f, bool byteswap, long nrecs)
 			fwrite(buf, n, 1, f);
 		fputc(0, f);
 	}
+	free(buf);
 	(void)byteswap;
 }
 
@@ -173,7 +174,7 @@ gen_broken_strings(FILE *f, bool byteswap, long nrecs)
 		if (i == 123456)
 			fwrite(latin1, sizeof(latin1), 1, f);
 		else
-			fwrite(latin1, sizeof(utf8), 1, f);
+			fwrite(utf8, sizeof(utf8), 1, f);
 	}
 }
 

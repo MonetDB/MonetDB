@@ -7,9 +7,11 @@ CREATE INDEX allnewtriples_predicate_idx ON allnewtriples (predicate);
 CREATE INDEX allnewtriples_object_idx ON allnewtriples ("object");
 
 SELECT idxs.name, idxs."type", keys.name, keys."type" 
-FROM sys.idxs LEFT JOIN sys.keys on idxs.name = keys.name;
+FROM sys.idxs LEFT JOIN sys.keys on idxs.name = keys.name
+ORDER BY idxs.name, keys.name;
 SELECT idxs.name, idxs."type", keys.name, keys."type" 
-FROM sys.idxs JOIN sys.keys on idxs.name = keys.name;
+FROM sys.idxs JOIN sys.keys on idxs.name = keys.name
+ORDER BY idxs.name, keys.name;
 
 /* test elimination of distinct restriction on aggregates */
 create table dummyme (a int primary key, b int);
