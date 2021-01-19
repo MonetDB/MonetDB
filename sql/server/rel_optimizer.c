@@ -9387,14 +9387,13 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 static sql_rel *
 out2inner(visitor *v, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, operator_type new_type) {
 
-    list* select_predicates = exps_copy(v->sql, sel->exps);
-
     if (!is_base(inner_join_side->op) && !is_simple_project(inner_join_side->op)) {
         // Nothing to do here.
         return sel;
     }
 
     list* inner_join_column_references = inner_join_side->exps;
+    list* select_predicates = exps_copy(v->sql, sel->exps);
 
     for(node* n = select_predicates->h; n; n=n->next) {
         sql_exp* e = n->data;
