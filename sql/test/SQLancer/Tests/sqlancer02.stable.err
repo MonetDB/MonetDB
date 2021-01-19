@@ -31,6 +31,12 @@ QUERY = update t2 set c1 = (scale_down(t2.c1, 0.39861114390109142480156378951505
         where (scale_up(-1155480997, 0.5434124050282382)) is not null;
 ERROR = !Overflow in round
 CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-658427/.s.monetdb.32418
+QUERY = SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT 1 FROM t2)
+        EXCEPT (SELECT ALL ((CASE 0.1 WHEN 0.2 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2)) AS sub0
+        WHERE (3.0) IS NOT NULL; --error
+ERROR = !types boolean(1,0) and tinyint(1,0) are not equal
+CODE  = 42000
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."
