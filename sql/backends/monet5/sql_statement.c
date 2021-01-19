@@ -281,6 +281,7 @@ stmt_unique(backend *be, stmt *s)
 		return NULL;
 
 	q = pushArgument(mb, q, s->nr);
+	q = pushNil(mb, q, TYPE_bat); /* candidate list */
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_unique);
 		if (ns == NULL) {
