@@ -144,7 +144,7 @@ malLoadScript(str name, bstream **fdin)
 	restoreClient2
 
 str
-malIncludeString(Client c, const str name, const str mal, int listing, MALfcn address)
+malIncludeString(Client c, const char *name, str mal, int listing, MALfcn address)
 {
 	str msg = MAL_SUCCEED;
 
@@ -155,7 +155,7 @@ malIncludeString(Client c, const str name, const str mal, int listing, MALfcn ad
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
 	str oldprompt = c->prompt;
-	str oldsrcFile = c->srcFile;
+	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
 	Module oldusermodule = c->usermodule;
@@ -201,7 +201,7 @@ malIncludeString(Client c, const str name, const str mal, int listing, MALfcn ad
  * leaves the MAL code behind in the 'main' function.
  */
 str
-malInclude(Client c, str name, int listing)
+malInclude(Client c, const char *name, int listing)
 {
 	str msg = MAL_SUCCEED;
 	str filename;
@@ -214,7 +214,7 @@ malInclude(Client c, str name, int listing)
 	int oldblkmode = c->blkmode;
 	ClientInput *oldbak = c->bak;
 	str oldprompt = c->prompt;
-	str oldsrcFile = c->srcFile;
+	const char *oldsrcFile = c->srcFile;
 
 	MalStkPtr oldglb = c->glb;
 	Module oldusermodule = c->usermodule;
@@ -227,7 +227,7 @@ malInclude(Client c, str name, int listing)
 	c->fdin = NULL;
 
 	if ((filename = malResolveFile(name)) != NULL) {
-		name = filename;
+		char *fname = filename;
 		do {
 			p = strchr(filename, PATH_SEP);
 			if (p)
@@ -246,7 +246,7 @@ malInclude(Client c, str name, int listing)
 			if (p)
 				filename = p + 1;
 		} while (p);
-		GDKfree(name);
+		GDKfree(fname);
 		c->fdin = NULL;
 	}
 	restoreClient;

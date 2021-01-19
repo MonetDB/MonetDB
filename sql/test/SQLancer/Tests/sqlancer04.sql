@@ -426,3 +426,10 @@ ILIKE(CAST(30792 AS STRING(381))))) as res;
 ROLLBACK;
 
 select cast(count(1) as interval second) from (values (false)) as v6(vc0); --error
+
+CREATE TABLE t1(c0 BOOLEAN, c1 DOUBLE);
+ALTER TABLE t1 ADD PRIMARY KEY(c0, c1);
+INSERT INTO t1(c1, c0) VALUES(0.3, FALSE), (0.5, true), (0.0, true), (4, false), (1, true), (4, true);
+DELETE FROM t1 WHERE NOT t1.c0;
+UPDATE t1 SET c1 = 0 WHERE t1.c1 > 3;
+DROP TABLE t1;

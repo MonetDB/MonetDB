@@ -30,7 +30,7 @@ set(include_sql_files
   27_rejects
   39_analytics
   40_json
-  41_md5sum
+  42_md5sum
   45_uuid
   46_profiler
   51_sys_schema_extension
@@ -46,7 +46,7 @@ set(include_sql_files
 if(HAVE_HGE)
   list(APPEND include_sql_files
     39_analytics_hge
-    40_json_hge)
+    41_json_hge)
 endif()
 
 create_include_object(

@@ -99,7 +99,7 @@ struct{
 
 str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	str modnme = "(NONE)";
-	str fcnnme = "(NONE)";
+	const char *fcnnme = "(NONE)";
 	Symbol s= NULL;
 	int i;
 	char optimizer[256];

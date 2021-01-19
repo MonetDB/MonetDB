@@ -1,44 +1,11 @@
 #include "bincopydata.h"
 
+#ifdef _MSC_VER
+#include <io.h>
+#include <fcntl.h>
+#endif
+
 static char *exe_name = "<to_be_filled_in>";
-
-static struct gen {
-	char *name;
-	void (*gen)(FILE *f, bool byteswap, long nrecs);
-} generators[];
-
-_Noreturn static void croak(int status, const char *msg, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-
-/* Format the message and write it to stderr. Then exit with the given status.
- * If status is 1, include USAGE in the message.
- * Otherwise, if errno is set, include the error message.
- */
-static void
-croak(int status, const char *ctx, ...)
-{
-	va_list ap;
-
-	fprintf(stderr, "Error: ");
-	if (ctx != NULL) {
-		fprintf(stderr, " ");
-		va_start(ap, ctx);
-		vfprintf(stderr, ctx, ap);
-		va_end(ap);
-	}
-	fprintf(stderr, "\n");
-	if (errno) {
-		fprintf(stderr, "Possibly due to: %s\n", strerror(errno));
-	} else if (status == 1) {
-		fprintf(stderr, "USAGE: %s TYPE NRECS DESTFILE\n", exe_name);
-		fprintf(stderr, "TYPE:\n");
-		for (struct gen *g = generators; g->name != NULL; g++) {
-			fprintf(stderr, "  - %s\n", g->name);
-		}
-	}
-	exit(status);
-}
-
 
 static void
 gen_tinyints(FILE *f, bool byteswap, long nrecs)
@@ -191,6 +158,7 @@ gen_large_strings(FILE *f, bool byteswap, long nrecs)
 			fwrite(buf, n, 1, f);
 		fputc(0, f);
 	}
+	free(buf);
 	(void)byteswap;
 }
 
@@ -206,7 +174,7 @@ gen_broken_strings(FILE *f, bool byteswap, long nrecs)
 		if (i == 123456)
 			fwrite(latin1, sizeof(latin1), 1, f);
 		else
-			fwrite(latin1, sizeof(utf8), 1, f);
+			fwrite(utf8, sizeof(utf8), 1, f);
 	}
 }
 
@@ -247,7 +215,10 @@ gen_json(FILE *f, bool byteswap, long nrecs)
 	}
 }
 
-static struct gen generators[] = {
+static struct gen {
+	char *name;
+	void (*gen)(FILE *f, bool byteswap, long nrecs);
+} generators[] = {
 	{ "ints", gen_ints },
 	{ "more_ints", gen_more_ints },
 	{ "null_ints", gen_null_ints },
@@ -285,6 +256,38 @@ static struct gen generators[] = {
 
 	{ NULL, NULL },
 };
+
+_Noreturn static void croak(int status, const char *msg, ...)
+	__attribute__((__format__(__printf__, 2, 3)));
+
+/* Format the message and write it to stderr. Then exit with the given status.
+ * If status is 1, include USAGE in the message.
+ * Otherwise, if errno is set, include the error message.
+ */
+static void
+croak(int status, const char *ctx, ...)
+{
+	va_list ap;
+
+	fprintf(stderr, "Error: ");
+	if (ctx != NULL) {
+		fprintf(stderr, " ");
+		va_start(ap, ctx);
+		vfprintf(stderr, ctx, ap);
+		va_end(ap);
+	}
+	fprintf(stderr, "\n");
+	if (errno) {
+		fprintf(stderr, "Possibly due to: %s\n", strerror(errno));
+	} else if (status == 1) {
+		fprintf(stderr, "USAGE: %s TYPE NRECS DESTFILE\n", exe_name);
+		fprintf(stderr, "TYPE:\n");
+		for (struct gen *g = generators; g->name != NULL; g++) {
+			fprintf(stderr, "  - %s\n", g->name);
+		}
+	}
+	exit(status);
+}
 
 int
 main(int argc, char *argv[])

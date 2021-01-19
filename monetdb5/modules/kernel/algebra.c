@@ -359,12 +359,6 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val, co
 }
 
 static str
-ALGthetaselect1(bat *result, const bat *bid, const void *val, const char **op)
-{
-	return ALGthetaselect2(result, bid, NULL, val, op);
-}
-
-static str
 ALGselectNotNil(bat *result, const bat *bid)
 {
 	BAT *b;
@@ -756,7 +750,7 @@ ALGcopy(bat *result, const bat *bid)
 }
 
 static str
-ALGunique2(bat *result, const bat *bid, const bat *sid)
+ALGunique(bat *result, const bat *bid, const bat *sid)
 {
 	BAT *b, *s = NULL, *bn = NULL;
 
@@ -776,12 +770,6 @@ ALGunique2(bat *result, const bat *bid, const bat *sid)
 	*result = bn->batCacheid;
 	BBPkeepref(*result);
 	return MAL_SUCCEED;
-}
-
-static str
-ALGunique1(bat *result, const bat *bid)
-{
-	return ALGunique2(result, bid, NULL);
 }
 
 static str
@@ -1405,7 +1393,6 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "select", ALGselect2, false, "Select all head values of the first input BAT for which the tail value\nis in range and for which the head value occurs in the tail of the\nsecond input BAT.\nThe first input is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed BAT\nwith in the tail the head value of the input BAT for which the\ntail value is between the values low and high (inclusive if li\nrespectively hi is set).  The output BAT is sorted on the tail\nvalue.  If low or high is nil, the boundary is not considered\n(effectively - and + infinity).  If anti is set, the result is the\ncomplement.  Nil values in the tail are never matched, unless\nlow=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are\nreturned if low=nil, high=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for this\nfunction.", args(1,8, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  command("algebra", "select", ALGselect1nil, false, "With unknown set, each nil != nil", args(1,8, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
  command("algebra", "select", ALGselect2nil, false, "With unknown set, each nil != nil", args(1,9, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
- command("algebra", "thetaselect", ALGthetaselect1, false, "Select all head values for which the tail value obeys the relation\nvalue OP VAL.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,4, batarg("",oid),batargany("b",1),argany("val",1),arg("op",str))),
  command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value\nobeys the relation value OP VAL and for which the head value occurs in\nthe tail of the second input BAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",2),batargany("b",2))),
  command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
@@ -1417,8 +1404,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "sort", ALGsort31, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,7, batargany("",1),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
  command("algebra", "sort", ALGsort32, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,8, batargany("",1),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
  command("algebra", "sort", ALGsort33, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies\nhow the input was reordered, and a BAT with group information.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(3,9, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "unique", ALGunique2, false, "Select all unique values from the tail of the first input.\nInput is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed\nBAT with in the tail the head value of the input BAT that was\nselected.  The output BAT is sorted on the tail value.  The\nsecond input BAT is a list of candidates.", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
- command("algebra", "unique", ALGunique1, false, "Select all unique values from the tail of the input.\nInput is a dense-headed BAT, output is a dense-headed BAT with\nin the tail the head value of the input BAT that was selected.\nThe output BAT is sorted on the tail value.", args(1,2, batarg("",oid),batargany("b",1))),
+ command("algebra", "unique", ALGunique, false, "Select all unique values from the tail of the first input.\nInput is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed\nBAT with in the tail the head value of the input BAT that was\nselected.  The output BAT is sorted on the tail value.  The\nsecond input BAT is a list of candidates.", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
  command("algebra", "crossproduct", ALGcrossproduct2, false, "Returns 2 columns with all BUNs, consisting of the head-oids\nfrom 'left' and 'right' for which there are BUNs in 'left'\nand 'right' with equal tails", args(2,5, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
  command("algebra", "crossproduct", ALGcrossproduct1, false, "Compute the cross product of both input bats; but only produce left output", args(1,4, batarg("",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
  command("algebra", "join", ALGjoin, false, "Join", args(2,8, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng))),

@@ -1731,25 +1731,22 @@ exp_is_true(sql_exp *e)
 }
 
 static inline bool
-exp_is_cmp_exp_is_false(sql_exp* e) {
-    assert(e->type == e_cmp);
-    assert(e->semantics && (e->flag == cmp_equal || e->flag == cmp_notequal));
-    assert(e->f == NULL);
-    sql_exp* l = e->l;
-    sql_exp* r = e->r;
-    assert (l && r);
+exp_is_cmp_exp_is_false(sql_exp* e)
+{
+	sql_exp *l = e->l;
+	sql_exp *r = e->r;
+	assert(e->type == e_cmp && e->f == NULL && l && r);
 
-    /* Handle 'v is x' and 'v is not x' expressions.
-     * Other cases in is-semantics are unspecified.
-     */
-    if (e->flag == cmp_equal && !e->anti) {
-        return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
-    }
-    if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) ) {
-        return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
-    }
-
-    return false;
+	/* Handle 'v is x' and 'v is not x' expressions.
+	* Other cases in is-semantics are unspecified.
+	*/
+	if (e->flag != cmp_equal && e->flag != cmp_notequal)
+		return false;
+	if (e->flag == cmp_equal && !e->anti)
+		return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
+	if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) )
+		return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
+	return false;
 }
 
 static inline bool

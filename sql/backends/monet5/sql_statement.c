@@ -281,6 +281,7 @@ stmt_unique(backend *be, stmt *s)
 		return NULL;
 
 	q = pushArgument(mb, q, s->nr);
+	q = pushNil(mb, q, TYPE_bat); /* candidate list */
 	if (q) {
 		stmt *ns = stmt_create(be->mvc->sa, st_unique);
 		if (ns == NULL) {
@@ -1518,6 +1519,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 				q = pushArgument(mb, q, sub->nr);
 			} else {
 				assert(!sub || op1->cand == sub);
+				q = pushNil(mb, q, TYPE_bat);
 				sub = NULL;
 			}
 			q = pushArgument(mb, q, r);
@@ -3261,7 +3263,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f)
 		nrcols = e1->nrcols>e2->nrcols ? e1->nrcols:e2->nrcols;
 		/* nullif(e1,e2) -> ifthenelse(e1==e2),NULL,e1) */
 		if (strcmp(f->func->base.name, "nullif") == 0) {
-			str mod = (!nrcols)?calcRef:batcalcRef;
+			const char *mod = (!nrcols)?calcRef:batcalcRef;
 			sql_subtype *t = tail_type(e1);
 			int tt = t->type->localtype;
 			q = newStmt(mb, mod, "==");
