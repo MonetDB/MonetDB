@@ -3894,6 +3894,8 @@ def main(argv) :
         a = opts.data_path
         if a is not None:
             env['TSTDATAPATH'] = a
+        elif os.getenv('TSTDATAPATH'):
+            env['TSTDATAPATH'] = os.getenv('TSTDATAPATH')
         global initdb
         initdb = opts.initdb
         global single_in_memory
