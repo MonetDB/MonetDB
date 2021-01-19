@@ -189,7 +189,7 @@ SELECT * FROM foo
     WHERE EXTRACT(MINUTE FROM ts) <> "minute"
     LIMIT 4;
 SELECT * FROM foo
-    WHERE 1000000 * EXTRACT(SECOND FROM ts) <> 1000000 * "second" + ms
+    WHERE 1000000 * CAST(EXTRACT(SECOND FROM ts) AS DECIMAL(13,6)) <> 1000000 * "second" + ms
     LIMIT 4;
 
 SELECT * FROM foo
@@ -209,7 +209,7 @@ SELECT * FROM foo
     WHERE EXTRACT(MINUTE FROM tm) <> "minute"
     LIMIT 4;
 SELECT * FROM foo
-    WHERE 1000000 * EXTRACT(SECOND FROM tm) <> 1000000 * "second" + ms
+    WHERE 1000000 * CAST(EXTRACT(SECOND FROM tm) AS DECIMAL(13,6)) <> 1000000 * "second" + ms
     LIMIT 4;
 
 """, [f"{NRECS} affected rows"])
