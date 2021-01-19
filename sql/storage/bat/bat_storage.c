@@ -1296,9 +1296,6 @@ sorted_col(sql_trans *tr, sql_column *col)
 	assert(tr->active);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
-	/* fallback to central bat */
-	if (tr && tr->parent && !col->data && col->po)
-		col = col->po;
 
 	if (col && col->data) {
 		BAT *b = bind_col(tr, col, QUICK);
@@ -1317,9 +1314,6 @@ unique_col(sql_trans *tr, sql_column *col)
 	assert(tr->active);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
-	/* fallback to central bat */
-	if (tr && tr->parent && !col->data && col->po)
-		col = col->po;
 
 	if (col && col->data) {
 		BAT *b = bind_col(tr, col, QUICK);
@@ -1338,9 +1332,6 @@ double_elim_col(sql_trans *tr, sql_column *col)
 	assert(tr->active);
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
-	/* fallback to central bat */
-	if (tr && tr->parent && !col->data && col->po)
-		col = col->po;
 
 	if (col && col->data) {
 		BAT *b = bind_col(tr, col, QUICK);

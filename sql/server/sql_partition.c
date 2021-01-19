@@ -318,8 +318,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
-	if (isPartitionedByExpressionTable(mt)) /* Propagate type to outer transaction table */
-		mt->po->part.pexp->type = mt->part.pexp->type;
 
 	if (localtype != TYPE_str && mt->members.set && cs_size(&mt->members)) {
 		list *new = sa_list(tr->sa), *old = sa_list(tr->sa);

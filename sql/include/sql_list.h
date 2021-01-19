@@ -103,6 +103,5 @@ extern list *list_flaten(list *l);
 extern void list_hash_delete(list *l, void *data, fcmp cmp);
 extern void* list_hash_add(list *l, void *data, fcmp cmp);
 extern void list_hash_clear(list *l);
-extern void list_update_data(list *l, node *n, void *data);
 
 #endif /* LIST_H */
