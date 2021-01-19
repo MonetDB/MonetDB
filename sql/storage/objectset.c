@@ -137,14 +137,15 @@ hash_delete(sql_hash *h, void *data)
 }
 
 static void
-node_destroy(objectset *os, object_node *n)
+node_destroy(objectset *os, sqlstore *store, object_node *n)
 {
 	if (!os->sa)
 		_DELETE(n);
+	(void)store; /* todo destroy obj */
 }
 
 static object_node *
-os_remove_name_based_chain(objectset *os, object_node *n)
+os_remove_name_based_chain(objectset *os, sqlstore *store, object_node *n)
 {
 	assert(n);
 	object_node *p = os->name_based_h;
@@ -171,12 +172,12 @@ os_remove_name_based_chain(objectset *os, object_node *n)
 		hash_delete(os->name_map, n);
 	MT_lock_unset(&os->ht_lock);
 
-	node_destroy(os, n);
+	node_destroy(os, store, n);
 	return p;
 }
 
 static object_node *
-os_remove_id_based_chain(objectset *os, object_node *n)
+os_remove_id_based_chain(objectset *os, sqlstore *store, object_node *n)
 {
 	assert(n);
 	object_node *p = os->id_based_h;
@@ -203,7 +204,7 @@ os_remove_id_based_chain(objectset *os, object_node *n)
 		hash_delete(os->id_map, n);
 	MT_lock_unset(&os->ht_lock);
 
-	node_destroy(os, n);
+	node_destroy(os, store, n);
 	return p;
 }
 
@@ -329,7 +330,7 @@ objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng o
 			on = find_id(os, ov->obj->id);
 		assert(on->data == ov);
 		if (on)
-			os_remove_name_based_chain(os, on);
+			os_remove_name_based_chain(os, store, on);
 		if (name_based_older)
 			os_append_name(os, name_based_older);
 	}
@@ -338,11 +339,11 @@ objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng o
 	/* free ov */
 }
 
-static void os_rollback_id_based_terminal_decendant(objectversion *ov);
-static void os_rollback_name_based_terminal_decendant(objectversion *ov);
+static void os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store);
+static void os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store);
 
 static void
-os_rollback_os_id_based_cascading(objectversion *ov) {
+os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(ov->rollbacked & id_based_rollbacked);
 
 	if (ov->id_based_older) {
@@ -353,21 +354,21 @@ os_rollback_os_id_based_cascading(objectversion *ov) {
 			// END ATOMIC()
 		}
 		else {
-			os_rollback_name_based_terminal_decendant(ov->name_based_chain->data);
+			os_rollback_name_based_terminal_decendant(ov->name_based_chain->data, store);
 
 			// id based cascaded rollback along the parents
 			ov->id_based_older->rollbacked |= id_based_rollbacked;
-			os_rollback_os_id_based_cascading(ov->id_based_older);
+			os_rollback_os_id_based_cascading(ov->id_based_older, store);
 		}
 	}
 	else {
 		// this is a terminal node. i.e. this objectversion does not have id based committed history
-		os_remove_id_based_chain(ov->id_based_chain->os, ov->id_based_chain);
+		os_remove_id_based_chain(ov->id_based_chain->os, store, ov->id_based_chain);
 	}
 }
 
 static void
-os_rollback_os_name_based_cascading(objectversion *ov) {
+os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(ov->rollbacked & name_based_rollbacked);
 
 	if (ov->name_based_older) {
@@ -378,48 +379,48 @@ os_rollback_os_name_based_cascading(objectversion *ov) {
 			// END ATOMIC()
 		}
 		else {
-			os_rollback_id_based_terminal_decendant(ov->id_based_chain->data);
+			os_rollback_id_based_terminal_decendant(ov->id_based_chain->data, store);
 
 			// name based cascaded rollback along the parents
 			ov->name_based_older->rollbacked |= name_based_rollbacked;
-			os_rollback_os_name_based_cascading(ov->name_based_older);
+			os_rollback_os_name_based_cascading(ov->name_based_older, store);
 		}
 	}
 	else {
 		// this is a terminal node. i.e. this objectversion does not have name based committed history
-		os_remove_name_based_chain(ov->name_based_chain->os, ov->name_based_chain);
+		os_remove_name_based_chain(ov->name_based_chain->os, store, ov->name_based_chain);
 	}
 }
 
 static void
-os_rollback_name_based_terminal_decendant(objectversion *ov) {
+os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 	if (ov->rollbacked & name_based_rollbacked) {
 		return;
 	}
 
 	ov->rollbacked |= name_based_rollbacked;
 
-	os_rollback_id_based_terminal_decendant(ov->id_based_chain->data);
-	os_rollback_os_name_based_cascading(ov);
+	os_rollback_id_based_terminal_decendant(ov->id_based_chain->data, store);
+	os_rollback_os_name_based_cascading(ov, store);
 
 }
 
 static void
-os_rollback_id_based_terminal_decendant(objectversion *ov) {
+os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 	if (ov->rollbacked & id_based_rollbacked) {
 		return;
 	}
 
 	ov->rollbacked |= id_based_rollbacked;
 
-	os_rollback_name_based_terminal_decendant(ov->name_based_chain->data);
-	os_rollback_os_id_based_cascading(ov);
+	os_rollback_name_based_terminal_decendant(ov->name_based_chain->data, store);
+	os_rollback_os_id_based_cascading(ov, store);
 }
 
 static int
-os_rollback(objectversion *ov)
+os_rollback(objectversion *ov, sqlstore *store)
 {
-	os_rollback_name_based_terminal_decendant(ov->name_based_chain->data);
+	os_rollback_name_based_terminal_decendant(ov->name_based_chain->data, store);
 
 	// TODO: label objectversion with a latest timestamp of tid.
 
@@ -478,7 +479,7 @@ tc_commit_objectversion(sql_trans *tr, sql_change *change, ulng commit_ts, ulng 
 		(void)oldest;
 	}
 	else {
-		os_rollback(ov);
+		os_rollback(ov, tr->store);
 	}
 
 	return LOG_OK;
@@ -528,7 +529,7 @@ os_destroy(objectset *os, sql_store store)
 			object_node *t = n;
 
 			n = t->next;
-			node_destroy(os, t);
+			node_destroy(os, store, t);
 		}
 	}
 
@@ -745,7 +746,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 
 		// TODO: can fail i.e. returns NULL
 		os_append_id(os, ov);
-		
+
 		return 0;
 	}
 }
