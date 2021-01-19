@@ -75,9 +75,10 @@ instore(sqlid id, sqlid maxid)
 	return store_oids[lo] == id;
 }
 
-void
-key_destroy(sql_key *k)
+static void
+key_destroy(sqlstore *store, sql_key *k)
 {
+	(void)store;
 	/* remove key from schema */
 	list_destroy(k->columns);
 	k->columns = NULL;
@@ -85,27 +86,23 @@ key_destroy(sql_key *k)
 		k->t->pkey = NULL;
 }
 
-void
-idx_destroy(sql_idx * i)
+static void
+idx_destroy(sqlstore *store, sql_idx * i)
 {
 	if (--(i->base.refcnt) > 0)
 		return;
-	if (i->po)
-		idx_destroy(i->po);
 	/* remove idx from schema */
 	list_destroy(i->columns);
 	i->columns = NULL;
-	/*
-	if (isTable(i->t)) {
-		sqlstore *store = i->t->s->store;
-		store->storage_api.destroy_idx(NULL, i);
-	}
-	*/
+
+	if (isTable(i->t))
+		store->storage_api.destroy_idx(store, i);
 }
 
 static void
-trigger_destroy(sql_trigger *tr)
+trigger_destroy(sqlstore *store, sql_trigger *tr)
 {
+	(void)store;
 	/* remove trigger from schema */
 	if (tr->columns) {
 		list_destroy(tr->columns);
@@ -113,19 +110,13 @@ trigger_destroy(sql_trigger *tr)
 	}
 }
 
-void
-column_destroy(sql_column *c)
+static void
+column_destroy(sqlstore *store, sql_column *c)
 {
 	if (--(c->base.refcnt) > 0)
 		return;
-	if (c->po)
-		column_destroy(c->po);
-	/*
-	if (isTable(c->t)) {
-		sqlstore *store = c->t->s->store;
+	if (isTable(c->t))
 		store->storage_api.destroy_col(store, c);
-	}
-	*/
 }
 
 static void
@@ -523,9 +514,10 @@ sql_trans_update_tables(sql_trans* tr, sql_schema *s)
 }
 
 static void
-part_destroy(sql_part *p)
+part_destroy(sql_store *store, sql_part *p)
 {
 	(void)p;
+	(void)store;
 }
 
 static sql_table *
@@ -2711,12 +2703,12 @@ part_dup(sql_trans *tr, sql_part *op, sql_table *mt)
 	sql_part *p = SA_ZNEW(sa, sql_part);
 	sql_table *member = find_sql_table_id(tr, mt->s, op->member->base.id);
 
+	assert(member);
+	assert(isMergeTable(mt) || isReplicaTable(mt));
 	base_init(sa, &p->base, op->base.id, 0, op->base.name);
 	p->tpe = op->tpe;
 	p->with_nills = op->with_nills;
-	assert(isMergeTable(mt) || isReplicaTable(mt));
 	p->t = mt;
-	assert(member);
 	p->member = member;
 
 	if (isRangePartitionTable(mt)) {
@@ -2792,11 +2784,11 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 	t->properties = ot->properties;
 
 	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
-	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
+	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
 	if (ot->members.set)
-		cs_new(&t->members, sa, (fdestroy) NULL);
+		cs_new(&t->members, sa, (fdestroy) &part_destroy);
 
 	t->pkey = NULL;
 	t->s = s;
@@ -2805,9 +2797,24 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 	if (isGlobal(t))
 		os_add(t->s->tables, tr, t->base.name, &t->base);
 
+	if (isPartitionedByExpressionTable(ot)) {
+		t->part.pexp = SA_ZNEW(sa, sql_expression);
+		t->part.pexp->exp = sa_strdup(sa, ot->part.pexp->exp);
+		t->part.pexp->type = ot->part.pexp->type;
+		t->part.pexp->cols = sa_list(sa);
+		for (n = ot->part.pexp->cols->h; n; n = n->next) {
+			int *nid = sa_alloc(sa, sizeof(int));
+			*nid = *(int *) n->data;
+			list_append(t->part.pexp->cols, nid);
+		}
+	}
 	if (ot->columns.set)
-		for (n = ot->columns.set->h; n; n = n->next)
-			cs_add(&t->columns, column_dup(tr, n->data, t), 0);
+		for (n = ot->columns.set->h; n; n = n->next) {
+			sql_column *c = n->data, *col = column_dup(tr, c, t);
+			if (isPartitionedByColumnTable(ot) && ot->part.pcol->base.id == c->base.id)
+				t->part.pcol = col;
+			cs_add(&t->columns, col, 0);
+		}
 	if (ot->idxs.set)
 		for (n = ot->idxs.set->h; n; n = n->next)
 			cs_add(&t->idxs, idx_dup(tr, n->data, t), 0);
@@ -2828,6 +2835,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 			t->data = store->storage_api.del_dup(ot);
 		}
 	}
+
 	return t;
 }
 
@@ -3373,7 +3381,7 @@ sql_trans_commit(sql_trans *tr)
 			sql_change *c = n->data;
 
 			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest))
-				list_remove_node(tr->changes, n);
+				list_remove_node(tr->changes, store, n);
 			n = next;
 		}
 		if (tr->parent && !list_empty(tr->changes)) {
@@ -4212,8 +4220,10 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 	p->t = mt;
 	p->member = pt;
+	/* TODO parts should have a unique name - id ? */
 	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
 	cs_add(&mt->members, p, TR_NEW);
+	os_add(mt->s->parts, tr, p->base.name, &p->base);
 	store->table_api.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
 	return mt;
 }
@@ -4469,12 +4479,16 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sqlstore *store = tr->store;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(tr, syss, "objects");
-	node *n = cs_find_id(&mt->members, pt->base.id);
 	oid obj_oid = store->table_api.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
-	sql_part *p = (sql_part*) n->data;
 
 	if (is_oid_nil(obj_oid))
 		return NULL;
+
+	os_del(mt->s->tables, tr, mt->base.name, &mt->base);
+	mt = table_dup(tr, mt, mt->s, NULL);
+
+	node *n = cs_find_id(&mt->members, pt->base.id);
+	sql_part *p = n?(sql_part*) n->data:NULL;
 
 	if (isRangePartitionTable(mt)) {
 		sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
@@ -4491,7 +4505,8 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	/* merge table depends on part table */
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 
-	cs_del(&mt->members, n, p->base.flags);
+	cs_del(&mt->members, store, n, p->base.flags);
+	os_del(mt->s->parts, tr, p->base.name, &p->base);
 	p->member = NULL;
 	store->table_api.table_delete(tr, sysobj, obj_oid);
 
@@ -4730,7 +4745,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 	if (is_global)
 		os_del(s->tables, tr, t->base.name, &t->base);
 	else if (n)
-		cs_del(&tr->localtmps, n, TR_NEW);
+		cs_del(&tr->localtmps, tr->store, n, TR_NEW);
 
 	/* todo use changes list instead of dropped */
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
@@ -4791,7 +4806,7 @@ drop_sql_column(sql_table *t, sqlid id, int drop_action)
 	sql_column *col = n->data;
 
 	col->drop_action = drop_action;
-	cs_del(&t->columns, n, 0);
+	cs_del(&t->columns, t->s->store, n, 0);
 }
 
 void
@@ -4799,7 +4814,7 @@ drop_sql_idx(sql_table *t, sqlid id)
 {
 	node *n = list_find_base_id(t->idxs.set, id);
 
-	cs_del(&t->idxs, n, 0);
+	cs_del(&t->idxs, t->s->store, n, 0);
 }
 
 void
@@ -4809,7 +4824,7 @@ drop_sql_key(sql_table *t, sqlid id, int drop_action)
 	sql_key *k = n->data;
 
 	k->drop_action = drop_action;
-	cs_del(&t->keys, n, 0);
+	cs_del(&t->keys, t->s->store, n, 0);
 }
 
 sql_column*
@@ -4887,7 +4902,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 	if (sys_drop_column(tr, col, drop_action))
 		return -1;
 
-	cs_del(&t->columns, n, col->base.flags);
+	cs_del(&t->columns, store, n, col->base.flags);
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;
@@ -5315,6 +5330,7 @@ sql_trans_key_done(sql_trans *tr, sql_key *k)
 int
 sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
+	sqlstore *store = tr->store;
 	sql_base *b = os_find_id(s->keys, tr, id);
 	sql_key *k = (sql_key*)b;
 	sql_table *t = k->t;
@@ -5348,7 +5364,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	/*Clean the key from the keys*/
 	node *n = cs_find_name(&k->t->keys, k->base.name);
 	if (n)
-		cs_del(&k->t->keys, n, k->base.flags);
+		cs_del(&k->t->keys, store, n, k->base.flags);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
@@ -5523,6 +5539,7 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c )
 int
 sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 {
+	sqlstore *store = tr->store;
 	sql_base *b = os_find_id(s->triggers, tr, id);
 
 	if (!b) /* already dropped */
@@ -5548,7 +5565,7 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	sys_drop_trigger(tr, i);
 	node *n = cs_find_name(&i->t->triggers, i->base.name);
 	if (n)
-		cs_del(&i->t->triggers, n, i->base.flags);
+		cs_del(&i->t->triggers, store, n, i->base.flags);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
@@ -5771,7 +5788,7 @@ sql_trans_end(sql_session *s, int commit)
 	s->auto_commit = s->ac_on_commit;
 	sqlstore *store = s->tr->store;
 	//if (s->tr->parent == gtrans) {
-		list_remove_data(store->active, s);
+		list_remove_data(store->active, NULL, s);
 		(void) ATOMIC_DEC(&store->nr_active);
 	//}
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));

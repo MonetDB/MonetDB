@@ -78,7 +78,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 
 	if (build) {
 		while (l->t) /* if building, empty schema_path list */
-			(void) list_remove_node(l, l->t);
+			(void) list_remove_node(l, NULL, l->t);
 		m->schema_path_has_sys = 0;
 		m->schema_path_has_tmp = 0;
 	}
