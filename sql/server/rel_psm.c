@@ -441,7 +441,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 				sql_exp *e = (sql_exp *) n->data;
 
 				if (!strcmp(exp_name(e), TID)) { /* The TID column must not be in the return projection */
-					list_remove_node(rel->exps, n);
+					list_remove_node(rel->exps, NULL, n);
 					break;
 				}
 			}

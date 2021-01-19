@@ -285,7 +285,7 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 				if (*(sqlid *) n->data == mt->base.id)
 					found = n;
 			assert(found);
-			list_remove_node(id_l, found);
+			list_remove_node(id_l, NULL, found);
 			mvc_create_dependencies(sql, id_l, mt->base.id, TABLE_DEPENDENCY);
 		}
 	}
@@ -411,7 +411,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			list_append(old, next);
 		}
 		for (node *n = old->h; n; n = n->next) { /* remove the old */
-			list_remove_data(mt->members.set, n->data);
+			//list_remove_data(mt->members.set, n->data);
 			if (!mt->members.dset)
 				mt->members.dset = sa_list(tr->sa);
 			list_move_data(mt->members.set, mt->members.dset, n->data);

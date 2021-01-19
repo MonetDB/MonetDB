@@ -260,6 +260,11 @@ alter_table_add_range_partition(mvc *sql, char *msname, char *mtname, char *psna
 				const void *nil = ATOMnilptr(tp1);
 				sql_table *errt = mvc_bind_table(sql, mt->s, err->base.name);
 
+				if (!errt) {
+					msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(42000)
+									  "ALTER TABLE: cannot find partition table %s.%s", err->t->s->base.name, err->base.name);
+					goto finish;
+				}
 				if (!ATOMcmp(tp1, nil, err->part.range.minvalue)) {
 					if (!(conflict_err_min = GDKstrdup("absolute min value")))
 						msg = createException(SQL,"sql.alter_table_add_range_partition",SQLSTATE(HY013) MAL_MALLOC_FAIL);

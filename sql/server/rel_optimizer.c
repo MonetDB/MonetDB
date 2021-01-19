@@ -832,14 +832,14 @@ find_fk( mvc *sql, list *rels, list *exps)
 
 					/* Remove all join expressions */
 					for (n = eje->h; n; n = n->next)
-						list_remove_data(exps, n->data);
+						list_remove_data(exps, NULL, n->data);
 					append(exps, je);
 					djn->data = je;
 				} else if (swapped) { /* else keep je for single column expressions */
 					je = exp_compare(sql->sa, je->r, je->l, cmp_equal);
 					/* Remove all join expressions */
 					for (n = eje->h; n; n = n->next)
-						list_remove_data(exps, n->data);
+						list_remove_data(exps, NULL, n->data);
 					append(exps, je);
 					djn->data = je;
 				}
@@ -869,7 +869,7 @@ order_joins(visitor *v, list *rels, list *exps)
 	if (list_length(rels) > 2 && mvc_debug_on(v->sql, 256)) {
 		for(djn = sdje->h; djn; djn = djn->next ) {
 			sql_exp *e = djn->data;
-			list_remove_data(exps, e);
+			list_remove_data(exps, NULL, e);
 		}
 		top =  rel_planner(v->sql, rels, sdje, exps);
 		return top;
@@ -893,13 +893,13 @@ order_joins(visitor *v, list *rels, list *exps)
 		}
 
 		if (l && r && l != r) {
-			list_remove_data(sdje, cje);
-			list_remove_data(exps, cje);
+			list_remove_data(sdje, NULL, cje);
+			list_remove_data(exps, NULL, cje);
 		}
 	}
 	if (l && r && l != r) {
-		list_remove_data(rels, l);
-		list_remove_data(rels, r);
+		list_remove_data(rels, NULL, l);
+		list_remove_data(rels, NULL, r);
 		list_append(n_rels, l);
 		list_append(n_rels, r);
 
@@ -917,7 +917,7 @@ order_joins(visitor *v, list *rels, list *exps)
 			sql_exp *e = en->data;
 			if (rel_rebind_exp(v->sql, top, e)) {
 				rel_join_add_exp(v->sql->sa, top, e);
-				list_remove_data(exps, e);
+				list_remove_data(exps, NULL, e);
 			}
 			en = next;
 		}
@@ -926,7 +926,7 @@ order_joins(visitor *v, list *rels, list *exps)
 			node *next = en->next;
 			sql_exp *e = en->data;
 			if (rel_rebind_exp(v->sql, top, e))
-				list_remove_data(sdje, en->data);
+				list_remove_data(sdje, NULL, en->data);
 			en = next;
 		}
 		fnd = 1;
@@ -959,15 +959,15 @@ order_joins(visitor *v, list *rels, list *exps)
 				}
 				if (!r) {
 					fnd = 1; /* not really, but this bails out */
-					list_remove_data(sdje, cje); /* handle later as select */
+					list_remove_data(sdje, NULL, cje); /* handle later as select */
 					continue;
 				}
 
 				/* remove the expression from the lists */
-				list_remove_data(sdje, cje);
-				list_remove_data(exps, cje);
+				list_remove_data(sdje, NULL, cje);
+				list_remove_data(exps, NULL, cje);
 
-				list_remove_data(rels, r);
+				list_remove_data(rels, NULL, r);
 				append(n_rels, r);
 
 				/* create a join using the current expression */
@@ -980,7 +980,7 @@ order_joins(visitor *v, list *rels, list *exps)
 					sql_exp *e = en->data;
 					if (rel_rebind_exp(v->sql, top, e)) {
 						rel_join_add_exp(v->sql->sa, top, e);
-						list_remove_data(exps, e);
+						list_remove_data(exps, NULL, e);
 					}
 					en = next;
 				}
@@ -990,7 +990,7 @@ order_joins(visitor *v, list *rels, list *exps)
 					node *next = en->next;
 					sql_exp *e = en->data;
 					if (rel_rebind_exp(v->sql, top, e))
-						list_remove_data(sdje, en->data);
+						list_remove_data(sdje, NULL, en->data);
 					en = next;
 				}
 				fnd = 1;
@@ -1088,9 +1088,9 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 
 					rel_join_add_exp(sql->sa, nr, je);
 					list_append(rels, nr);
-					list_remove_data(rels, l);
-					list_remove_data(rels, r);
-					list_remove_data(exps, je);
+					list_remove_data(rels, NULL, l);
+					list_remove_data(rels, NULL, r);
+					list_remove_data(exps, NULL, je);
 					restart = 1;
 					break;
 				}
@@ -8087,8 +8087,8 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					else
 						ne = exp_compare2(sa, le, rf, re, CMP_BETWEEN|compare2range(f->flag, e->flag));
 
-					list_remove_data(exps, e);
-					list_remove_data(exps, f);
+					list_remove_data(exps, NULL, e);
+					list_remove_data(exps, NULL, f);
 					list_append(exps, ne);
 					return exp_merge_range(sa, exps);
 				}
@@ -8151,8 +8151,8 @@ exp_merge_range(sql_allocator *sa, list *exps)
 					else
 						ne = exp_compare2(sa, le, rf, re, CMP_BETWEEN|compare2range(ff, ef));
 
-					list_remove_data(exps, e);
-					list_remove_data(exps, f);
+					list_remove_data(exps, NULL, e);
+					list_remove_data(exps, NULL, f);
 					list_append(exps, ne);
 					return exp_merge_range(sa, exps);
 				}
