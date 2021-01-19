@@ -7741,6 +7741,59 @@ rel_simplify_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	return e;
 }
 
+/* optimize (a = b) or (a is null and b is null) -> a = b with null semantics */
+static sql_exp *
+try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
+{
+	if (list_length(l1) == 1) {
+		bool valid = true, first_is_null_found = false, second_is_null_found = false;
+		sql_exp *cmp = l1->h->data;
+		sql_exp *first = cmp->l, *second = cmp->r;
+
+		if (is_compare(cmp->type) && !is_anti(cmp) && !cmp->f && cmp->flag == cmp_equal) {
+			for(node *n = l2->h ; n && valid; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (is_compare(e->type) && e->flag == cmp_equal && !e->f &&
+					!is_anti(e) && is_semantics(e) && exp_is_null(e->r)) {
+					if (exp_match_exp(first, e->l))
+						first_is_null_found = true;
+					else if (exp_match_exp(second, e->l))
+						second_is_null_found = true;
+					else
+						valid = false;
+				} else {
+					valid = false;
+				}
+			}
+			if (valid && first_is_null_found && second_is_null_found) {
+				sql_exp *res = exp_compare(sql->sa, first, second, cmp->flag);
+				set_semantics(res);
+				if (exp_name(or))
+					exp_prop_alias(sql->sa, res, or);
+				return res;
+			}
+		}
+	}
+	return or;
+}
+
+static sql_exp *
+rel_merge_cmp_or_null(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void) rel;
+	(void) depth;
+	if (is_compare(e->type) && e->flag == cmp_or && !is_anti(e)) {
+		sql_exp *ne = try_rewrite_equal_or_is_null(v->sql, e, e->l, e->r);
+		if (ne != e)
+			return ne;
+		ne = try_rewrite_equal_or_is_null(v->sql, e, e->r, e->l);
+		if (ne != e)
+			return ne;
+	}
+	return e;
+}
+
 static void split_exps(mvc *sql, list *exps, sql_rel *rel);
 
 static int
@@ -9331,14 +9384,13 @@ replace_column_references_with_nulls_2(mvc *sql, list* crefs, sql_exp* e) {
 static sql_rel *
 out2inner(visitor *v, sql_rel* sel, sql_rel* join, sql_rel* inner_join_side, operator_type new_type) {
 
-    list* select_predicates = exps_copy(v->sql, sel->exps);
-
     if (!is_base(inner_join_side->op) && !is_simple_project(inner_join_side->op)) {
         // Nothing to do here.
         return sel;
     }
 
     list* inner_join_column_references = inner_join_side->exps;
+    list* select_predicates = exps_copy(v->sql, sel->exps);
 
     for(node* n = select_predicates->h; n; n=n->next) {
         sql_exp* e = n->data;
@@ -9482,6 +9534,8 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 		return rel;
 	if (exp_is_zero_rows(v->sql, rel->l, NULL)) {
 		sql_rel *r = rel->r;
+		if (!is_project(r->op))
+			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 		rel_rename_exps(v->sql, rel->exps, r->exps);
 		rel->r = NULL;
 		rel_destroy(rel);
@@ -9490,6 +9544,8 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 	}
 	if (exp_is_zero_rows(v->sql, rel->r, NULL)) {
 		sql_rel *l = rel->l;
+		if (!is_project(l->op))
+			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
 		rel_rename_exps(v->sql, rel->exps, l->exps);
 		rel->l = NULL;
 		rel_destroy(rel);
@@ -9561,6 +9617,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 		gp.cnt[op_semi] || gp.cnt[op_anti] ||
 		gp.cnt[op_select]) {
+		
+		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_cmp_or_null, false);
 		rel = rel_visitor_bottomup(&v, rel, &rel_find_range);
 		if (value_based_opt) {
 			rel = rel_project_reduce_casts(&v, rel);
@@ -9598,14 +9656,13 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
 
-	if (gp.cnt[op_select])
-		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_union);
-
-	if (gp.cnt[op_union] && gp.cnt[op_select])
-		rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
-
-	if (gp.cnt[op_select])
+	if (gp.cnt[op_select]) {
+		if (gp.cnt[op_union]) {
+			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_union);
+			rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
+		}
 		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+	}
 
 	if (gp.cnt[op_groupby]) {
 		rel = rel_visitor_topdown(&v, rel, &rel_push_aggr_down);
