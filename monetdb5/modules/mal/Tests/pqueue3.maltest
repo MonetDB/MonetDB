@@ -57,14 +57,14 @@ io.print(a)
 14 values hashing to 24bb5ad1f1a8d95b0be1e3c7406fa3b7
 
 statement ok
-bp:= algebra.firstn(a,0:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,0:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
 ----
 
 statement ok
-bp:= algebra.firstn(a,1:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,1:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -73,7 +73,7 @@ io.print(bp)
 6
 
 statement ok
-bp:= algebra.firstn(a,2:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,2:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -84,7 +84,7 @@ io.print(bp)
 6
 
 statement ok
-bp:= algebra.firstn(a,3:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,3:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -97,7 +97,7 @@ io.print(bp)
 6
 
 statement ok
-bp:= algebra.firstn(a,4:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,4:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -112,7 +112,7 @@ io.print(bp)
 6
 
 statement ok
-bp:= algebra.firstn(a,5:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,5:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -120,7 +120,7 @@ io.print(bp)
 10 values hashing to f51acd2cc63747ad3ac6c1140a98247f
 
 statement ok
-bp:= algebra.firstn(a,6:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,6:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -128,7 +128,7 @@ io.print(bp)
 12 values hashing to 62c2e86589d15c4e4a7edfd67ebb2baa
 
 statement ok
-bp:= algebra.firstn(a,7:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,7:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -136,7 +136,7 @@ io.print(bp)
 14 values hashing to 85ff96c644d3ad69de07d013f0043314
 
 statement ok
-bp:= algebra.firstn(a,8:lng,false,true,false)
+bp:= algebra.firstn(a,nil:bat,nil:bat,8:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -149,7 +149,7 @@ io.print("Start of compound")
 "Start of compound"
 
 statement ok
-(bp,bg):= algebra.firstn(b,0:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,0:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -167,7 +167,7 @@ io.print(cp)
 ----
 
 statement ok
-(bp,bg):= algebra.firstn(b,1:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,1:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -201,7 +201,7 @@ io.print(cg)
 0
 
 statement ok
-(bp,bg):= algebra.firstn(b,2:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,2:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -239,7 +239,7 @@ io.print(cg)
 1
 
 statement ok
-(bp,bg):= algebra.firstn(b,3:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,3:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -285,7 +285,7 @@ io.print(cg)
 2
 
 statement ok
-(bp,bg):= algebra.firstn(b,4:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,4:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -311,7 +311,7 @@ io.print(cg)
 10 values hashing to b98a13ce6d69bd865ae4e48c9203532a
 
 statement ok
-(bp,bg):= algebra.firstn(b,5:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,5:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -337,7 +337,7 @@ io.print(cg)
 10 values hashing to b98a13ce6d69bd865ae4e48c9203532a
 
 statement ok
-(bp,bg):= algebra.firstn(b,6:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,6:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -363,7 +363,7 @@ io.print(cg)
 12 values hashing to e6802a1612b71f46e39cfc1ae12ae173
 
 statement ok
-(bp,bg):= algebra.firstn(b,7:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,7:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
@@ -389,7 +389,7 @@ io.print(cg)
 14 values hashing to 22b3ec6253c4f13e02af78cfe8068a60
 
 statement ok
-(bp,bg):= algebra.firstn(b,8:lng,false,true,false)
+(bp,bg):= algebra.firstn(b,nil:bat,nil:bat,8:lng,false,true,false)
 
 query TT rowsort
 io.print(bp)
