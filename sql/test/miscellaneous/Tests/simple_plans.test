@@ -382,6 +382,71 @@ project (
 ) [ tinyint "1" ]
 
 statement ok
+CREATE TABLE integers(i INTEGER, j INTEGER)
+
+statement ok
+INSERT INTO integers VALUES (1,4), (2,5), (3,6), (NULL,NULL)
+
+query T nosort
+plan select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null)
+----
+project (
+| join (
+| | table("sys"."integers") [ "integers"."i" as "i1"."i" ] COUNT ,
+| | table("sys"."integers") [ "integers"."i" as "i2"."i" ] COUNT 
+| ) [ "i1"."i" * = "i2"."i" ]
+) [ "i1"."i", "i2"."i" ]
+
+query II rowsort
+select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null)
+----
+1
+1
+2
+2
+3
+3
+NULL
+NULL
+
+query T nosort
+plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
+----
+project (
+| full outer join (
+| | table("sys"."integers") [ "integers"."i" as "i1"."i" ] COUNT ,
+| | table("sys"."integers") [ "integers"."i" as "i2"."i" ] COUNT 
+| ) [ "i1"."i" * = "i2"."i" ]
+) [ "i1"."i", "i2"."i" ]
+
+query II rowsort
+select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i
+----
+1
+1
+2
+2
+3
+3
+NULL
+NULL
+
+query T nosort
+plan select i, j from integers where i = j or (i is null and j is null)
+----
+project (
+| select (
+| | table("sys"."integers") [ "integers"."i", "integers"."j" ] COUNT 
+| ) [ "integers"."i" * = "integers"."j" ]
+) [ "integers"."i", "integers"."j" ]
+
+query II rowsort
+select i, j from integers where i = j or (i is null and j is null)
+----
+NULL
+NULL
+
+statement ok
 rollback
 
 statement ok

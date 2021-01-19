@@ -75,6 +75,18 @@ create view view2 as SELECT * FROM tabel2 as a;
 create view view3 as SELECT * FROM tabel3 as a;
 PLAN SELECT 1 FROM view1 s INNER JOIN view2 h ON s.id_nr = h.id_nr LEFT JOIN view2 h2 ON h.id_nr = h2.id_nr INNER JOIN view3 a ON a.id_nr = s.id_nr;
 
+-- optimize (a = b) or (a is null and b is null) -> a = b with null semantics
+CREATE TABLE integers(i INTEGER, j INTEGER);
+INSERT INTO integers VALUES (1,4), (2,5), (3,6), (NULL,NULL);
+
+plan select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null);
+select i1.i, i2.i from integers i1 inner join integers i2 on i1.i = i2.i or (i1.i is null and i2.i is null);
+
+plan select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i;
+select i1.i, i2.i from integers i1 full outer join integers i2 on (i1.i is null and i2.i is null) or i1.i = i2.i;
+
+plan select i, j from integers where i = j or (j is null and i is null);
+select i, j from integers where i = j or (j is null and i is null);
 rollback;
 
 set optimizer='default_pipe';
