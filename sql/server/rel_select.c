@@ -5748,22 +5748,22 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	}
 
 	lateral = check_is_lateral(tab2);
-	t1 = table_ref(query, NULL, tab1, 0, NULL);
+	t1 = table_ref(query, NULL, tab1, 0, refs);
 	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
-		t1 = table_ref(query, NULL, tab1, 0, NULL);
+		t1 = table_ref(query, NULL, tab1, 0, refs);
 	}
 	if (t1) {
-		t2 = table_ref(query, NULL, tab2, 0, NULL);
+		t2 = table_ref(query, NULL, tab2, 0, refs);
 		if (lateral && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
 
 			query_push_outer(query, t1, sql_from);
-			t2 = table_ref(query, NULL, tab2, 0, NULL);
+			t2 = table_ref(query, NULL, tab2, 0, refs);
 			t1 = query_pop_outer(query);
 		}
 	}
@@ -5771,9 +5771,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		rel_destroy(rel);
 	if (!t1 || !t2)
 		return NULL;
-
-	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
 
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
 	inner->op = op;
@@ -5862,17 +5859,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	}
 	if (!rel)
 		return NULL;
-	if (!lateral) { /* if this relation is under a FROM clause, check for duplicate names */
-		const char *rname1 = rel_name(t1), *rname2 = rel_name(t2);
-		if (refs) {
-			if (list_find(refs, (char *)rname1, (fcmp) &strcmp))
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname1);
-			if (list_find(refs, (char *)rname2, (fcmp) &strcmp))
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname2);
-			list_append(refs, (char *)rname1);
-			list_append(refs, (char *)rname2);
-		}
-	}
 	if (inner && is_outerjoin(inner->op))
 		set_processed(inner);
 	set_processed(rel);
@@ -5900,28 +5886,12 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 	mvc *sql = query->sql;
 	dnode *n = q->data.lval->h;
 	symbol *tab1 = n->data.sym, *tab2 = n->next->data.sym;
-	sql_rel *t1 = table_ref(query, rel, tab1, 0, NULL), *t2 = NULL;
-	const char *rname1, *rname2;
+	sql_rel *t1 = table_ref(query, rel, tab1, 0, refs), *t2 = NULL;
 
 	if (t1)
-		t2 = table_ref(query, rel, tab2, 0, NULL);
+		t2 = table_ref(query, rel, tab2, 0, refs);
 	if (!t1 || !t2)
 		return NULL;
-
-	rname1 = rel_name(t1);
-	rname2 = rel_name(t2);
-	if (rname1 && rname2 && strcmp(rname1, rname2) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the CROSS JOIN expression", rname1);
-
-	if (refs) {
-		if (list_find(refs, (char *)rname1, (fcmp) &strcmp))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname1);
-		if (list_find(refs, (char *)rname2, (fcmp) &strcmp))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname2);
-		list_append(refs, (char *)rname1);
-		list_append(refs, (char *)rname2);
-	}
-
 	return rel_crossproduct(sql->sa, t1, t2, op_join);
 }
 
