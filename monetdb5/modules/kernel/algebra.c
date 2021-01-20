@@ -679,7 +679,7 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	assert(pci->retc == 1 || pci->retc == 2);
 	assert(pci->argc - pci->retc >= 5 && pci->argc - pci->retc <= 7);
 
-	n = * getArgReference_lng(stk, pci, pci->argc - 4);
+	n = *getArgReference_lng(stk, pci, pci->argc - 4);
 	if (n < 0 || (lng) n >= (lng) BUN_MAX)
 		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 	ret1 = getArgReference_bat(stk, pci, 0);
@@ -696,16 +696,16 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (pci->argc - pci->retc > 6) {
 			gid = *getArgReference_bat(stk, pci, pci->retc + 2);
-			if ((g = BATdescriptor(gid)) == NULL) {
+			if (!is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL) {
 				BBPunfix(bid);
 				BBPunfix(sid);
 				throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 			}
 		}
 	}
-	asc = * getArgReference_bit(stk, pci, pci->argc - 3);
-	nilslast = * getArgReference_bit(stk, pci, pci->argc - 2);
-	distinct = * getArgReference_bit(stk, pci, pci->argc - 1);
+	asc = *getArgReference_bit(stk, pci, pci->argc - 3);
+	nilslast = *getArgReference_bit(stk, pci, pci->argc - 2);
+	distinct = *getArgReference_bit(stk, pci, pci->argc - 1);
 	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, nilslast, distinct);
 	BBPunfix(b->batCacheid);
 	if (s)
@@ -1422,11 +1422,7 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "rangejoin", ALGrangejoin1, false, "Range join: values in l and r1/r2 match if r1 <[=] l <[=] r2; only produce left output", args(1,11,batarg("",oid),batargany("l",1),batargany("r1",1),batargany("r2",1),batarg("sl",oid),batarg("sr",oid),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("symmetric",bit),arg("estimate",lng))),
  command("algebra", "difference", ALGdifference, false, "Difference of l and r with candidate lists", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("nil_clears",bit),arg("estimate",lng))),
  command("algebra", "intersect", ALGintersect, false, "Intersection of l and r with candidate lists (i.e. half of semi-join)", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
- pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B", args(1,6, batarg("",oid),batargany("b",0),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
- pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,7, batarg("",oid),batargany("b",0),batarg("s",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,8, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
- pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B", args(2,7, batarg("",oid),batarg("",oid),batargany("b",0),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
- pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,8, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,9, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise,\nallocate enough storage to accept result of an\noperation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "slice", ALGslice_oid, false, "Return the slice based on head oid x till y (exclusive).", args(1,4, batargany("",1),batargany("b",1),arg("x",oid),arg("y",oid))),
