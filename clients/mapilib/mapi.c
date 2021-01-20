@@ -2586,191 +2586,192 @@ mapi_reconnect(Mapi mid)
 		mapi_setError(mid, buf, __func__, MERROR);
 		close_connection(mid);
 		return mid->error;
-	} else {
-		char *hash = NULL;
-		char *hashes = NULL;
-		char *byteo = NULL;
-		char *serverhash = NULL;
-		char *algsv[] = {
+	}
+
+	char *hash = NULL;
+	char *hashes = NULL;
+	char *byteo = NULL;
+	char *serverhash = NULL;
+	char *algsv[] = {
 #ifdef HAVE_RIPEMD160_UPDATE
-			"RIPEMD160",
+		"RIPEMD160",
 #endif
 #ifdef HAVE_SHA512_UPDATE
-			"SHA512",
+		"SHA512",
 #endif
 #ifdef HAVE_SHA384_UPDATE
-			"SHA384",
+		"SHA384",
 #endif
 #ifdef HAVE_SHA256_UPDATE
-			"SHA256",
+		"SHA256",
 #endif
 #ifdef HAVE_SHA224_UPDATE
-			"SHA224",
+		"SHA224",
 #endif
 #ifdef HAVE_SHA1_UPDATE
-			"SHA1",
+		"SHA1",
 #endif
-			NULL
-		};
-		char **algs = algsv;
-		char *p;
+		NULL
+	};
+	char **algs = algsv;
+	char *p;
 
-		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
+	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 
-		if (mid->username == NULL || mid->password == NULL) {
-			mapi_setError(mid, "username and password must be set",
-				      __func__, MERROR);
-			close_connection(mid);
-			return mid->error;
-		}
+	if (mid->username == NULL || mid->password == NULL) {
+		mapi_setError(mid, "username and password must be set",
+				__func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	}
 
-		/* the database has sent a list of supported hashes to us, it's
-		 * in the form of a comma separated list and in the variable
-		 * rest.  We try to use the strongest algorithm. */
-		if (rest == NULL) {
-			/* protocol violation, not enough fields */
-			mapi_setError(mid, "Not enough fields in challenge string",
-				      __func__, MERROR);
-			close_connection(mid);
-			return mid->error;
-		}
-		hashes = rest;
-		hash = strchr(hashes, ':');	/* temp misuse hash */
-		if (hash) {
-			*hash = '\0';
-			rest = hash + 1;
-		}
-		/* in rest now should be the byte order of the server */
-		byteo = rest;
-		hash = strchr(byteo, ':');
-		if (hash) {
-			*hash = '\0';
-			rest = hash + 1;
-		}
-		hash = NULL;
+	/* the database has sent a list of supported hashes to us, it's
+		* in the form of a comma separated list and in the variable
+		* rest.  We try to use the strongest algorithm. */
+	if (rest == NULL) {
+		/* protocol violation, not enough fields */
+		mapi_setError(mid, "Not enough fields in challenge string",
+				__func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	}
+	hashes = rest;
+	hash = strchr(hashes, ':');	/* temp misuse hash */
+	if (hash) {
+		*hash = '\0';
+		rest = hash + 1;
+	}
+	/* in rest now should be the byte order of the server */
+	byteo = rest;
+	hash = strchr(byteo, ':');
+	if (hash) {
+		*hash = '\0';
+		rest = hash + 1;
+	}
+	hash = NULL;
 
-		/* Proto v9 is like v8, but mandates that the password is a
-		 * hash, that is salted like in v8.  The hash algorithm is
-		 * specified in the 6th field.  If we don't support it, we
-		 * can't login. */
-		serverhash = rest;
-		hash = strchr(serverhash, ':');
-		if (hash) {
-			*hash = '\0';
-			/* rest = hash + 1; -- rest of string ignored */
-		}
-		hash = NULL;
-		/* hash password, if not already */
-		if (mid->password[0] != '\1') {
-			char *pwdhash = NULL;
+	/* Proto v9 is like v8, but mandates that the password is a
+		* hash, that is salted like in v8.  The hash algorithm is
+		* specified in the 6th field.  If we don't support it, we
+		* can't login. */
+	serverhash = rest;
+	hash = strchr(serverhash, ':');
+	if (hash) {
+		*hash = '\0';
+		/* rest = hash + 1; -- rest of string ignored */
+	}
+	hash = NULL;
+	/* hash password, if not already */
+	if (mid->password[0] != '\1') {
+		char *pwdhash = NULL;
 #ifdef HAVE_RIPEMD160_UPDATE
-			if (strcmp(serverhash, "RIPEMD160") == 0) {
-				pwdhash = mcrypt_RIPEMD160Sum(mid->password,
-							      strlen(mid->password));
-			} else
+		if (strcmp(serverhash, "RIPEMD160") == 0) {
+			pwdhash = mcrypt_RIPEMD160Sum(mid->password,
+							strlen(mid->password));
+		} else
 #endif
 #ifdef HAVE_SHA512_UPDATE
-			if (strcmp(serverhash, "SHA512") == 0) {
-				pwdhash = mcrypt_SHA512Sum(mid->password,
-							   strlen(mid->password));
-			} else
+		if (strcmp(serverhash, "SHA512") == 0) {
+			pwdhash = mcrypt_SHA512Sum(mid->password,
+							strlen(mid->password));
+		} else
 #endif
 #ifdef HAVE_SHA384_UPDATE
-			if (strcmp(serverhash, "SHA384") == 0) {
-				pwdhash = mcrypt_SHA384Sum(mid->password,
-							   strlen(mid->password));
-			} else
+		if (strcmp(serverhash, "SHA384") == 0) {
+			pwdhash = mcrypt_SHA384Sum(mid->password,
+							strlen(mid->password));
+		} else
 #endif
 #ifdef HAVE_SHA256_UPDATE
-			if (strcmp(serverhash, "SHA256") == 0) {
-				pwdhash = mcrypt_SHA256Sum(mid->password,
-							   strlen(mid->password));
-			} else
+		if (strcmp(serverhash, "SHA256") == 0) {
+			pwdhash = mcrypt_SHA256Sum(mid->password,
+							strlen(mid->password));
+		} else
 #endif
 #ifdef HAVE_SHA224_UPDATE
-			if (strcmp(serverhash, "SHA224") == 0) {
-				pwdhash = mcrypt_SHA224Sum(mid->password,
-							   strlen(mid->password));
-			} else
+		if (strcmp(serverhash, "SHA224") == 0) {
+			pwdhash = mcrypt_SHA224Sum(mid->password,
+							strlen(mid->password));
+		} else
 #endif
 #ifdef HAVE_SHA1_UPDATE
-			if (strcmp(serverhash, "SHA1") == 0) {
-				pwdhash = mcrypt_SHA1Sum(mid->password,
-							 strlen(mid->password));
-			} else
+		if (strcmp(serverhash, "SHA1") == 0) {
+			pwdhash = mcrypt_SHA1Sum(mid->password,
+							strlen(mid->password));
+		} else
 #endif
-			{
-				(void)pwdhash;
-				snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
-					 serverhash);
-				close_connection(mid);
-				return mapi_setError(mid, buf, __func__, MERROR);
-			}
-
-#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
-			if (pwdhash == NULL) {
-				snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
-					 serverhash);
-				close_connection(mid);
-				return mapi_setError(mid, buf, __func__, MERROR);
-			}
-
-			free(mid->password);
-			mid->password = malloc(1 + strlen(pwdhash) + 1);
-			sprintf(mid->password, "\1%s", pwdhash);
-			free(pwdhash);
-#endif
-		}
-
-		p = mid->password + 1;
-
-		for (; *algs != NULL; algs++) {
-			/* TODO: make this actually obey the separation by
-			 * commas, and only allow full matches */
-			if (strstr(hashes, *algs) != NULL) {
-				char *pwh = mcrypt_hashPassword(*algs, p, chal);
-				size_t len;
-				if (pwh == NULL)
-					continue;
-				len = strlen(pwh) + strlen(*algs) + 3 /* {}\0 */;
-				hash = malloc(len);
-				if (hash == NULL) {
-					close_connection(mid);
-					free(pwh);
-					return mapi_setError(mid, "malloc failure", __func__, MERROR);
-				}
-				snprintf(hash, len, "{%s}%s", *algs, pwh);
-				free(pwh);
-				break;
-			}
-		}
-		if (hash == NULL) {
-			/* the server doesn't support what we can */
-			snprintf(buf, sizeof(buf), "unsupported hash algorithms: %.100s", hashes);
+		{
+			(void)pwdhash;
+			snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
+					serverhash);
 			close_connection(mid);
 			return mapi_setError(mid, buf, __func__, MERROR);
 		}
 
-		mnstr_set_bigendian(mid->from, strcmp(byteo, "BIG") == 0);
-
-		/* note: if we make the database field an empty string, it
-		 * means we want the default.  However, it *should* be there. */
-		if (snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:FILETRANS:\n",
-#ifdef WORDS_BIGENDIAN
-			     "BIG",
-#else
-			     "LIT",
-#endif
-			     mid->username, hash, mid->language,
-			     mid->database == NULL ? "" : mid->database) >= (int) sizeof(buf)) {;
-			mapi_setError(mid, "combination of database name and user name too long", __func__, MERROR);
-			free(hash);
+#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
+		if (pwdhash == NULL) {
+			snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
+					serverhash);
 			close_connection(mid);
-			return mid->error;
+			return mapi_setError(mid, buf, __func__, MERROR);
 		}
 
-		free(hash);
+		free(mid->password);
+		mid->password = malloc(1 + strlen(pwdhash) + 1);
+		sprintf(mid->password, "\1%s", pwdhash);
+		free(pwdhash);
+#endif
 	}
+
+	p = mid->password + 1;
+
+	for (; *algs != NULL; algs++) {
+		/* TODO: make this actually obey the separation by
+			* commas, and only allow full matches */
+		if (strstr(hashes, *algs) != NULL) {
+			char *pwh = mcrypt_hashPassword(*algs, p, chal);
+			size_t len;
+			if (pwh == NULL)
+				continue;
+			len = strlen(pwh) + strlen(*algs) + 3 /* {}\0 */;
+			hash = malloc(len);
+			if (hash == NULL) {
+				close_connection(mid);
+				free(pwh);
+				return mapi_setError(mid, "malloc failure", __func__, MERROR);
+			}
+			snprintf(hash, len, "{%s}%s", *algs, pwh);
+			free(pwh);
+			break;
+		}
+	}
+	if (hash == NULL) {
+		/* the server doesn't support what we can */
+		snprintf(buf, sizeof(buf), "unsupported hash algorithms: %.100s", hashes);
+		close_connection(mid);
+		return mapi_setError(mid, buf, __func__, MERROR);
+	}
+
+	mnstr_set_bigendian(mid->from, strcmp(byteo, "BIG") == 0);
+
+	/* note: if we make the database field an empty string, it
+		* means we want the default.  However, it *should* be there. */
+	if (snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:FILETRANS:\n",
+#ifdef WORDS_BIGENDIAN
+			"BIG",
+#else
+			"LIT",
+#endif
+			mid->username, hash, mid->language,
+			mid->database == NULL ? "" : mid->database) >= (int) sizeof(buf)) {;
+		mapi_setError(mid, "combination of database name and user name too long", __func__, MERROR);
+		free(hash);
+		close_connection(mid);
+		return mid->error;
+	}
+
+	free(hash);
+
 	if (mid->trace) {
 		printf("sending first request [%zu]:%s", sizeof(buf), buf);
 		fflush(stdout);
