@@ -27,6 +27,13 @@ typedef int MapiMsg;
 #define MMORE		(-3)
 #define MSERVER		(-4)
 
+enum mapi_handshake_options_levels {
+	MAPI_HANDSHAKE_AUTOCOMMIT,
+	MAPI_HANDSHAKE_REPLY_SIZE,
+	// this must always be the last one:
+	MAPI_HANDSHAKE_OPTIONS_LEVEL,
+};
+
 /*
  * The table field information is extracted from the table headers
  * obtained from the server. This list may be extended in the future.
