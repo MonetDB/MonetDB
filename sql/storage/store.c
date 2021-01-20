@@ -3724,18 +3724,39 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 }
 
 static void
-sys_drop_part(sql_trans *tr, sql_table *t, int drop_action)
+sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 {
-	sql_part *pt = NULL;
-	do {
-		pt = partition_find_part(tr, t, NULL);
-		if (pt)
-			sql_trans_del_table(tr, pt->t, t, drop_action);
-	} while(pt);
+	sqlstore *store = tr->store;
+	sql_table *mt = pt->t;
+	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
+	sql_table *sysobj = find_sql_table(tr, syss, "objects");
+	oid obj_oid = store->table_api.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
+
+	(void)drop_action;
+	if (is_oid_nil(obj_oid))
+		return ;
+
+	if (isRangePartitionTable(mt)) {
+		sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
+		rid = store->table_api.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
+		store->table_api.table_delete(tr, ranges, rid);
+	} else if (isListPartitionTable(mt)) {
+		sql_table *values = find_sql_table(tr, syss, "value_partitions");
+		rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
+		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
+			store->table_api.table_delete(tr, values, rid);
+		}
+		store->table_api.rids_destroy(rs);
+	}
+	/* merge table depends on part table */
+	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+
+	os_del(mt->s->parts, tr, pt->base.name, &pt->base);
+	store->table_api.table_delete(tr, sysobj, obj_oid);
 }
 
 static void
-sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
+sys_drop_members(sql_trans *tr, sql_table *t, int drop_action)
 {
 	if (!list_empty(t->members.set)) {
 		for (node *n = t->members.set->h; n; ) {
@@ -3746,8 +3767,16 @@ sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
 				tr->dropped && list_find_id(tr->dropped, pt->base.id))
 				continue;
 
-			sql_trans_del_table(tr, t, find_sql_table_id(tr, t->s, pt->base.id), drop_action);
+			sys_drop_part(tr, pt, drop_action);
 		}
+	}
+}
+
+static void
+sys_drop_parts(sql_trans *tr, sql_table *t, int drop_action)
+{
+	for(sql_part *pt = partition_find_part(tr, t, NULL); pt; pt = partition_find_part(tr, t, pt)) {
+		sql_trans_del_table(tr, pt->t, t, drop_action);
 	}
 }
 
@@ -3767,10 +3796,10 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	sys_drop_idxs(tr, t, drop_action);
 
 	if (partition_find_part(tr, t, NULL))
-		sys_drop_part(tr, t, drop_action);
+		sys_drop_parts(tr, t, drop_action);
 
 	if (isMergeTable(t) || isReplicaTable(t))
-		sys_drop_parts(tr, t, drop_action);
+		sys_drop_members(tr, t, drop_action);
 
 	if (isRangePartitionTable(t) || isListPartitionTable(t)) {
 		sql_table *partitions = find_sql_table(tr, syss, "table_partitions");
@@ -4491,42 +4520,21 @@ sql_table *
 sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action)
 {
 	sqlstore *store = tr->store;
-	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
-	sql_table *sysobj = find_sql_table(tr, syss, "objects");
-	oid obj_oid = store->table_api.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
 
-	if (is_oid_nil(obj_oid))
-		return NULL;
+	mt = new_table(tr, mt);
+	sql_base *b = os_find_id(mt->s->parts, tr, pt->base.id); /* fetch updated part */
+	sql_part *p = (sql_part*)b;
 
-	os_del(mt->s->tables, tr, mt->base.name, &mt->base);
-	mt = table_dup(tr, mt, mt->s, NULL);
+	sys_drop_part(tr, p, drop_action);
 
-	node *n = cs_find_id(&mt->members, pt->base.id);
-	sql_part *p = n?(sql_part*) n->data:NULL;
-
-	if (isRangePartitionTable(mt)) {
-		sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
-		rid = store->table_api.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
-		store->table_api.table_delete(tr, ranges, rid);
-	} else if (isListPartitionTable(mt)) {
-		sql_table *values = find_sql_table(tr, syss, "value_partitions");
-		rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
-		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-			store->table_api.table_delete(tr, values, rid);
-		}
-		store->table_api.rids_destroy(rs);
-	}
-	/* merge table depends on part table */
-	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
-
-	cs_del(&mt->members, store, n, p->base.flags);
-	os_del(mt->s->parts, tr, p->base.name, &p->base);
-	p->member = NULL;
-	store->table_api.table_delete(tr, sysobj, obj_oid);
+	/*Clean the part from members*/
+	node *n = cs_find_id(&mt->members, p->base.id);
+	if (n)
+		cs_del(&mt->members, store, n, p->base.flags);
 
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table_id(tr, mt->s, pt->base.id, drop_action);
-	return mt;
+	return 0;
 }
 
 sql_table *
