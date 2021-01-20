@@ -870,7 +870,7 @@ def GetBitsAndModsAndThreads(env) :
                                  stderr=process.PIPE, text=True)
             input = '''\
                 c := mdb.modules();
-                modsid := algebra.unique(c);
+                modsid := algebra.unique(c,nil:bat);
                 mods := algebra.projection(modsid,c);
                 s := "\\nModules: ";
                 sep := "";
