@@ -2577,7 +2577,16 @@ mapi_reconnect(Mapi mid)
 	}
 	pversion = atoi(protover);
 
-	if (pversion == 9) {
+	if (pversion != 9) {
+		/* because the headers changed, and because it makes no sense to
+		 * try and be backwards (or forwards) compatible, we bail out
+		 * with a friendly message saying so */
+		snprintf(buf, sizeof(buf), "unsupported protocol version: %d, "
+			 "this client only supports version 9", pversion);
+		mapi_setError(mid, buf, __func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	} else {
 		char *hash = NULL;
 		char *hashes = NULL;
 		char *byteo = NULL;
@@ -2761,15 +2770,6 @@ mapi_reconnect(Mapi mid)
 		}
 
 		free(hash);
-	} else {
-		/* because the headers changed, and because it makes no sense to
-		 * try and be backwards (or forwards) compatible, we bail out
-		 * with a friendly message saying so */
-		snprintf(buf, sizeof(buf), "unsupported protocol version: %d, "
-			 "this client only supports version 9", pversion);
-		mapi_setError(mid, buf, __func__, MERROR);
-		close_connection(mid);
-		return mid->error;
 	}
 	if (mid->trace) {
 		printf("sending first request [%zu]:%s", sizeof(buf), buf);
