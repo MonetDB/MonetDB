@@ -70,7 +70,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute('ALTER TABLE anothertest DROP TABLE subtable4;').assertSucceeded()
             tc.execute('SELECT "minimum", "maximum" FROM range_partitions;').assertSucceeded().assertDataResultMatch([])
             tc.execute('ALTER TABLE testme DROP COLUMN "a";').assertFailed(err_message='ALTER TABLE: cannot drop column \'a\': is the partitioned column on the table \'testme\'') # error, a is a partition column
-            tc.execute('ALTER TABLE anothertest DROP COLUMN "a";').assertFailed(err_message='ALTER TABLE: cannot drop column \'a\': there are database objects which depend on it') # error, a is used on partition expression
+            tc.execute('ALTER TABLE anothertest DROP COLUMN "a";').assertFailed(err_message='ALTER TABLE: cannot drop column \'a\': the expression used in \'anothertest\' depends on it') # error, a is used on partition expression
             tc.execute('DROP TABLE testme;').assertSucceeded()
             tc.execute('DROP TABLE subtable1;').assertSucceeded()
             tc.execute('DROP TABLE subtable2;').assertSucceeded()
