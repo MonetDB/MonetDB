@@ -9,6 +9,13 @@
 #include "monetdb_config.h"
 #include "store_dependency.h"
 
+static void
+_free(void *dummy, void *data)
+{
+	(void)dummy;
+	GDKfree(data);
+}
+
 static sqlid
 list_find_func_id(list *ids, sqlid id)
 {
@@ -86,7 +93,7 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 	sql_schema *s = find_sql_schema(tr, "sys");
 	sql_table *deps = find_sql_table(tr, s, "dependencies");
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type, *tri_id, *table_id;
-	list *dep_list = list_create((fdestroy) GDKfree);
+	list *dep_list = list_create((fdestroy) _free);
 	oid rid;
 	rids *rs;
 
@@ -198,7 +205,7 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 	sql_table *auths = find_sql_table(tr, s, "auths");
 	sql_column *auth_id = find_sql_column(auths, "id");
 	sql_dependency type = USER_DEPENDENCY;
-	list *l = list_create((fdestroy) GDKfree);
+	list *l = list_create((fdestroy) _free);
 	rids *users;
 	oid rid;
 
@@ -235,7 +242,7 @@ sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid owner_id)
 	sql_column *schema_owner = find_sql_column(schemas, "authorization");
 	sql_column *schema_id = find_sql_column(schemas, "id");
 	sql_dependency type = SCHEMA_DEPENDENCY;
-	list *l = list_create((fdestroy) GDKfree);
+	list *l = list_create((fdestroy) _free);
 	rids *rs;
 	oid rid;
 
