@@ -549,6 +549,9 @@ os_name_key(object_node *n)
 	return hash_key(n->data->obj->name);
 }
 
+// disabled because we need functions a in order (need some insert - order preserving hash) ..
+//#define USE_HASH
+#ifdef USE_HASH
 static sql_hash*
 os_hash_create(objectset *os)
 {
@@ -580,6 +583,7 @@ find_hash_entry(sql_hash *map, const char *name)
 
 	return he;
 }
+#endif
 
 static object_node *
 find_name(objectset *os, const char *name)
@@ -924,11 +928,13 @@ os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, cons
 		.tr = tr,
 		.name = name,
 	};
+#ifdef USE_HASH
 	if (os->name_based_h && name) {
 		if (!os->name_map)
 			os->name_map = os_hash_create(os);
 		oi->e = find_hash_entry(os->name_map, name);
 	} else
+#endif
 		oi->n =	os->name_based_h;
 }
 
@@ -937,6 +943,7 @@ oi_next(struct os_iter *oi)
 {
 	sql_base *b = NULL;
 
+#ifdef USE_HASH
 	if (oi->name) {
 		sql_hash_e *e = oi->e;
 
@@ -953,7 +960,25 @@ oi_next(struct os_iter *oi)
 			} else {
 				e = e->chain;
 			}
-		}
+	 	}
+#else
+	if (oi->name) {
+		object_node *n = oi->n;
+
+		while (n && !b) {
+
+			if (n->data->obj->name && strcmp(n->data->obj->name, oi->name) == 0) {
+				objectversion *ov = n->data;
+
+				n = oi->n = n->next;
+				ov = get_valid_object_name(oi->tr, ov);
+				if (ov && !ov->deleted)
+					b = ov->obj;
+			} else {
+				n = oi->n = n->next;
+			}
+	 	}
+#endif
 	} else {
 		object_node *n = oi->n;
 

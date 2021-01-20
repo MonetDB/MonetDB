@@ -348,9 +348,12 @@ os_find_func_internal(mvc *sql, struct objectset *ff, const char *fname, int nra
 		os_iterator(&oi, ff, sql->session->tr, fname);
 		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
-			if (prev && prev->func != f)
+			if (prev && prev->func != f) {
 				continue;
-			prev = NULL;
+			} else if (prev) {
+				prev = NULL;
+				continue;
+			}
 
 			if (f->type != type && f->type != filt)
 				continue;
@@ -444,6 +447,10 @@ os_bind_member_internal(mvc *sql, struct objectset *ff, const char *fname, sql_s
 			sql_func *f = (sql_func*)b;
 			if (prev && prev->func != f)
 				continue;
+			else if (prev) {
+				prev = NULL;
+				continue;
+			}
 
 			if (!f->res && !IS_FILT(f))
 				continue;
