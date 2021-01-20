@@ -9233,7 +9233,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "remote",	"batbincopy",	"pattern remote.batbincopy(X_1:bat[:any]):void ",	"RMTbincopyto;",	""	]
 [ "remote",	"batload",	"pattern remote.batload(X_1:any_1, X_2:int):bat[:any_1] ",	"RMTbatload;",	""	]
 [ "remote",	"bintype",	"pattern remote.bintype():void ",	"RMTbintype;",	""	]
-[ "remote",	"connect",	"command remote.connect(X_1:str, X_2:str, X_3:str, X_4:str):str ",	"RMTconnect;",	""	]
+[ "remote",	"connect",	"pattern remote.connect(X_1:str, X_2:str, X_3:str, X_4:str):str ",	"RMTconnect;",	""	]
 [ "remote",	"connect",	"command remote.connect(X_1:str, X_2:str, X_3:str, X_4:str, X_5:bit):str ",	"RMTconnectScen;",	""	]
 [ "remote",	"connect",	"pattern remote.connect(X_1:str, X_2:str):str ",	"RMTconnectTable;",	""	]
 [ "remote",	"disconnect",	"command remote.disconnect(X_1:str):void ",	"RMTdisconnect;",	""	]
