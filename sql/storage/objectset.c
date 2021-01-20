@@ -948,7 +948,7 @@ oi_next(struct os_iter *oi)
 				e = oi->e = e->chain;
 
 				ov = get_valid_object_name(oi->tr, ov);
-				if (ov)
+				if (ov && !ov->deleted)
 					b = ov->obj;
 			} else {
 				e = e->chain;
@@ -962,7 +962,7 @@ oi_next(struct os_iter *oi)
 			n = oi->n = n->next;
 
 			ov = get_valid_object_id(oi->tr, ov);
-			if (ov)
+			if (ov && !ov->deleted)
 				b = ov->obj;
 		}
 	}
