@@ -274,21 +274,16 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 
 	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
-		exp = rel_project_add_exp(sql, r, exp);
+		sql_rel *base = r->l, *nr = r;
+		r->l = NULL; /* omit table from list of dependencies */
+		(void) rel_project_add_exp(sql, r, exp);
 
-		if (r)
-			r = sql_processrelation(sql, r, 0, 0);
-		if (r) {
-			list *id_l = rel_dependencies(sql, r);
-			/* remove the table itself from the list of dependencies */
-			for (node *n = id_l->h ; n ; ) {
-				node *m = n->next;
-				if (*(sqlid *) n->data == mt->base.id)
-					list_remove_node(id_l, n);
-				n = m;
-			}
+		nr = sql_processrelation(sql, nr, 0, 0);
+		if (nr) {
+			list *id_l = rel_dependencies(sql, nr);
 			mvc_create_dependencies(sql, id_l, mt->base.id, FUNC_DEPENDENCY);
 		}
+		r->l = base;
 	}
 
 	return msg;
@@ -319,8 +314,15 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
-	if (isPartitionedByExpressionTable(mt)) /* Propagate type to outer transaction table */
+	if (isPartitionedByExpressionTable(mt)) { /* Propagate type and columns to outer transaction table */
 		mt->po->part.pexp->type = mt->part.pexp->type;
+		assert(list_empty(mt->po->part.pexp->cols));
+		for (node *n = mt->part.pexp->cols->h ; n ; n = n->next) {
+			int *cnr = sa_alloc(mt->po->part.pexp->cols->sa, sizeof(int));
+			*cnr = *(int*)n->data;
+			list_append(mt->po->part.pexp->cols, cnr);
+		}
+	}
 
 	if (localtype != TYPE_str && mt->members && list_length(mt->members)) {
 		list *new = sa_list(tr->sa), *old = sa_list(tr->sa);
