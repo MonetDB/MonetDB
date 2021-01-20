@@ -82,8 +82,8 @@ odecls = {}
 pdecls = {}
 
 def process(f):
-    data = open(f).read()
     if f.endswith('.mal'):
+        data = open(f).read()
         data = re.sub(r'[ \t]*#.*', '', data) # remove comments
         for res in comreg.finditer(data):
             malf, args, rets, func = res.groups()
@@ -121,7 +121,7 @@ def process(f):
             malf, args, rets, func = res.groups()
             malpats.append((malf, func, f))
     elif f.endswith('.h') or f.endswith('.c'):
-        data = exportutils.preprocess(data)
+        data = exportutils.preprocess(f)
 
         for res in expre.finditer(data):
             pos = res.end(0)
