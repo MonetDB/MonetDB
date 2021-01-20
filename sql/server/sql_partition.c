@@ -279,14 +279,15 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 		if (r)
 			r = sql_processrelation(sql, r, 0, 0);
 		if (r) {
-			node *n, *found = NULL;
 			list *id_l = rel_dependencies(sql, r);
-			for (n = id_l->h ; n ; n = n->next) //remove the table itself from the list of dependencies
+			/* remove the table itself from the list of dependencies */
+			for (node *n = id_l->h ; n ; ) {
+				node *m = n->next;
 				if (*(sqlid *) n->data == mt->base.id)
-					found = n;
-			assert(found);
-			list_remove_node(id_l, found);
-			mvc_create_dependencies(sql, id_l, mt->base.id, TABLE_DEPENDENCY);
+					list_remove_node(id_l, n);
+				n = m;
+			}
+			mvc_create_dependencies(sql, id_l, mt->base.id, FUNC_DEPENDENCY);
 		}
 	}
 

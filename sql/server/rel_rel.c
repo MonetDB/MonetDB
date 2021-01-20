@@ -1682,12 +1682,10 @@ static int exp_deps(mvc *sql, sql_exp *e, list *refs, list *l);
 static int
 exps_deps(mvc *sql, list *exps, list *refs, list *l)
 {
-	node *n;
 
-	for(n = exps->h; n; n = n->next) {
+	for(node *n = exps->h; n; n = n->next)
 		if (exp_deps(sql, n->data, refs, l) != 0)
 			return -1;
-	}
 	return 0;
 }
 
@@ -1724,8 +1722,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		} else if (e->flag & PSM_VAR) {
 			return 0;
 		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			if (exp_deps(sql, e->l, refs, l) != 0 ||
-		            exps_deps(sql, e->r, refs, l) != 0)
+			if (exp_deps(sql, e->l, refs, l) != 0 || exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
 			if (e->flag & PSM_IF && e->f)
 				return exps_deps(sql, e->f, refs, l);
@@ -1739,53 +1736,56 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 	case e_convert:
 		return exp_deps(sql, e->l, refs, l);
 	case e_func: {
-			sql_subfunc *f = e->f;
+		sql_subfunc *f = e->f;
 
-			if (e->l && exps_deps(sql, e->l, refs, l) != 0)
-				return -1;
-			cond_append(l, &f->func->base.id);
-			if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
-				/* add dependency on seq nr */
-				list *nl = e->l;
-				sql_exp *schname = nl->h->data;
-				sql_exp *seqname = nl->t->data;
+		if (e->l && exps_deps(sql, e->l, refs, l) != 0)
+			return -1;
+		cond_append(l, &f->func->base.id);
+		if (e->l && list_length(e->l) == 2 && strcmp(f->func->base.name, "next_value_for") == 0) {
+			/* add dependency on seq nr */
+			list *nl = e->l;
+			sql_exp *schname = nl->h->data, *seqname = nl->t->data;
+			char *sch_name = is_atom(schname->type) && schname->l ? ((atom*)schname->l)->data.val.sval : NULL;
+			char *seq_name = is_atom(seqname->type) && seqname->l ? ((atom*)seqname->l)->data.val.sval : NULL;
 
-				char *sch_name = ((atom*)schname->l)->data.val.sval;
-				char *seq_name = ((atom*)seqname->l)->data.val.sval;
+			if (sch_name && seq_name) {
 				sql_schema *sche = mvc_bind_schema(sql, sch_name);
-				sql_sequence *seq = find_sql_sequence(sche, seq_name);
-
-				cond_append(l, &seq->base.id);
-			}
-		} break;
-	case e_aggr: {
-			sql_subfunc *a = e->f;
-
-			if (e->l &&exps_deps(sql, e->l, refs, l) != 0)
-				return -1;
-			cond_append(l, &a->func->base.id);
-		} break;
-	case e_cmp: {
-			if (e->flag == cmp_or || e->flag == cmp_filter) {
-				if (e->flag == cmp_filter) {
-					sql_subfunc *f = e->f;
-					cond_append(l, &f->func->base.id);
+				if (sche) {
+					sql_sequence *seq = find_sql_sequence(sche, seq_name);
+					if (seq)
+						cond_append(l, &seq->base.id);
 				}
-				if (exps_deps(sql, e->l, refs, l) != 0 ||
-			    	    exps_deps(sql, e->r, refs, l) != 0)
-					return -1;
-			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-				if (exp_deps(sql, e->l, refs, l) != 0 ||
-			            exps_deps(sql, e->r, refs, l) != 0)
-					return -1;
-			} else {
-				if (exp_deps(sql, e->l, refs, l) != 0 ||
-				    exp_deps(sql, e->r, refs, l) != 0)
-					return -1;
-				if (e->f)
-					return exp_deps(sql, e->f, refs, l);
 			}
-		}	break;
+		}
+	} break;
+	case e_aggr: {
+		sql_subfunc *a = e->f;
+
+		if (e->l && exps_deps(sql, e->l, refs, l) != 0)
+			return -1;
+		cond_append(l, &a->func->base.id);
+	} break;
+	case e_cmp: {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			if (e->flag == cmp_filter) {
+				sql_subfunc *f = e->f;
+				cond_append(l, &f->func->base.id);
+			}
+			if (exps_deps(sql, e->l, refs, l) != 0 ||
+				exps_deps(sql, e->r, refs, l) != 0)
+				return -1;
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			if (exp_deps(sql, e->l, refs, l) != 0 ||
+				exps_deps(sql, e->r, refs, l) != 0)
+				return -1;
+		} else {
+			if (exp_deps(sql, e->l, refs, l) != 0 ||
+				exp_deps(sql, e->r, refs, l) != 0)
+				return -1;
+			if (e->f)
+				return exp_deps(sql, e->f, refs, l);
+		}
+	}	break;
 	}
 	return 0;
 }
@@ -1850,7 +1850,7 @@ rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 	case op_update:
 	case op_delete:
 		if (rel_deps(sql, r->l, refs, l) != 0 ||
-		    rel_deps(sql, r->r, refs, l) != 0)
+			rel_deps(sql, r->r, refs, l) != 0)
 			return -1;
 		break;
 	case op_project:

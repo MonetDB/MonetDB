@@ -1307,6 +1307,46 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % 3 # length
 [ 896	]
 #ROLLBACK;
+#CREATE TEMP TABLE mycount(cc BIGINT) ON COMMIT PRESERVE ROWS;
+#INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies;
+[ 1	]
+#CREATE TABLE t0(c0 int AUTO_INCREMENT,c1 STRING);
+#SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ true	]
+#ALTER TABLE t0 DROP c0 CASCADE;
+#DROP TABLE t0;
+#SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#TRUNCATE mycount;
+[ 1	]
+#INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies;
+[ 1	]
+#CREATE FUNCTION myfunc() returns int return 1;
+#CREATE TABLE t0(c0 int default myfunc(),c1 STRING);
+#SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies;
+% .%3 # table_name
+% %3 # name
+% boolean # type
+% 5 # length
+[ true	]
+#ALTER TABLE t0 DROP c0 CASCADE;
+#DROP TABLE t0;
+#DROP FUNCTION myfunc();
+#SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies;
+% .%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#DROP TABLE mycount;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

@@ -316,8 +316,9 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		sql_column *c = n->data;
 
 		if (c->def) {
+			/* TODO please don't place an auto incremented sequence in the default value */
+			const char *next_value_for = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
-			list *id_l;
 
 			sql->sa = sql->ta;
 			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
@@ -332,8 +333,12 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 				else
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 			}
-			id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+			/* For a self incremented column, it's sequence will get a BEDROPPED_DEPENDENCY,
+				so no additional dependencies are needed */
+			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
+				list *id_l = rel_dependencies(sql, r);
+				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+			}
 			rel_destroy(r);
 			sa_reset(sql->sa);
 		}

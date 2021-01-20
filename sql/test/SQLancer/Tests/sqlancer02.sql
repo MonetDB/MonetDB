@@ -314,6 +314,30 @@ EXCEPT (SELECT ALL ((CASE 0.1 WHEN 0.2 THEN t2.c2 END)>(greatest(t2.c2, t2.c0)))
 WHERE (3.0) IS NOT NULL; --error
 ROLLBACK;
 
+CREATE TEMP TABLE mycount(cc BIGINT) ON COMMIT PRESERVE ROWS;
+INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies;
+
 CREATE TABLE t0(c0 int AUTO_INCREMENT,c1 STRING);
+SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies;
+	-- True
 ALTER TABLE t0 DROP c0 CASCADE;
 DROP TABLE t0;
+
+SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies;
+	-- 0
+
+TRUNCATE mycount;
+INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies;
+
+CREATE FUNCTION myfunc() returns int return 1;
+CREATE TABLE t0(c0 int default myfunc(),c1 STRING);
+SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies;
+	-- True
+ALTER TABLE t0 DROP c0 CASCADE;
+DROP TABLE t0;
+DROP FUNCTION myfunc();
+
+SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies;
+	-- 0
+
+DROP TABLE mycount;
