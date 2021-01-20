@@ -274,20 +274,16 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 
 	if (instantiate) {
 		r = rel_project(sql->sa, r, NULL);
-		exp = rel_project_add_exp(sql, r, exp);
+		sql_rel *base = r->l, *nr = r;
+		r->l = NULL; /* omit table from list of dependencies */
+		(void) rel_project_add_exp(sql, r, exp);
 
-		if (r)
-			r = sql_processrelation(sql, r, 0, 0);
-		if (r) {
-			node *n, *found = NULL;
-			list *id_l = rel_dependencies(sql, r);
-			for (n = id_l->h ; n ; n = n->next) //remove the table itself from the list of dependencies
-				if (*(sqlid *) n->data == mt->base.id)
-					found = n;
-			assert(found);
-			list_remove_node(id_l, NULL, found);
-			mvc_create_dependencies(sql, id_l, mt->base.id, TABLE_DEPENDENCY);
+		nr = sql_processrelation(sql, nr, 0, 0);
+		if (nr) {
+			list *id_l = rel_dependencies(sql, nr);
+			mvc_create_dependencies(sql, id_l, mt->base.id, FUNC_DEPENDENCY);
 		}
+		r->l = base;
 	}
 
 	return msg;
@@ -409,6 +405,10 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			list_append(old, next);
 		}
 		for (node *n = old->h; n; n = n->next) { /* remove the old */
+			//list_remove_data(mt->members, n->data);
+			//if (!mt->s->parts.dset)
+		//		mt->s->parts.dset = sa_list(tr->sa);
+		//	list_move_data(mt->s->parts.set, mt->s->parts.dset, n->data);
 			//list_remove_data(mt->members.set, n->data);
 			if (!mt->members.dset)
 				mt->members.dset = sa_list(tr->sa);
@@ -416,10 +416,13 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 		}
 		for (node *n = new->h; n; n = n->next) {
 			sql_part *next = (sql_part*) n->data;
+			//sql_table *pt = find_sql_table_id(mt->s, next->base.id);
 			sql_part *err = NULL;
 
+			//cs_add(&mt->s->parts, next, TR_NEW);
 			assert(isMergeTable(mt) || isReplicaTable(mt));
 			if (isRangePartitionTable(mt) || isListPartitionTable(mt)) {
+				//err = list_append_with_validate(mt->members, next,
 				err = cs_add_with_validate(&mt->members, next, TR_NEW,
 										   isRangePartitionTable(mt) ?
 										   sql_range_part_validate_and_insert : sql_values_part_validate_and_insert);
