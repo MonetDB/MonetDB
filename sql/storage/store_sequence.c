@@ -20,8 +20,9 @@ typedef struct store_sequence {
 static list *sql_seqs = NULL;
 
 static void
-sequence_destroy( store_sequence *s )
+sequence_destroy( void *dummy, store_sequence *s )
 {
+	(void)dummy;
 	_DELETE(s);
 }
 

@@ -700,6 +700,13 @@ mvc_release(mvc *m, const char *name)
 	return msg;
 }
 
+static void
+_free(void *dummy, void *data)
+{
+	(void)dummy;
+	GDKfree(data);
+}
+
 mvc *
 mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws)
 {
@@ -755,7 +762,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->label = 0;
 	m->cascade_action = NULL;
 
-	if (!(m->schema_path = list_create((fdestroy)GDKfree))) {
+	if (!(m->schema_path = list_create((fdestroy)_free))) {
 		qc_destroy(m->qc);
 		list_destroy(m->global_vars);
 		return NULL;

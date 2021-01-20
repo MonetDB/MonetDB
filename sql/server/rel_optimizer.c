@@ -1045,6 +1045,12 @@ rel_neg_in_size(sql_rel *r)
 	return 0;
 }
 
+static void _rel_destroy(void *dummy, sql_rel *rel)
+{
+	(void)dummy;
+	rel_destroy(rel);
+}
+
 static list *
 push_in_join_down(mvc *sql, list *rels, list *exps)
 {
@@ -1056,7 +1062,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 	nrels = list_sort(rels, (fkeyvalue)&rel_neg_in_size, (fdup)&rel_dup);
 
 	/* we need to cleanup, the new refs ! */
-	rels->destroy = (fdestroy)rel_destroy;
+	rels->destroy = (fdestroy)_rel_destroy;
 	list_destroy(rels);
 	rels = nrels;
 
@@ -9617,7 +9623,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 		gp.cnt[op_semi] || gp.cnt[op_anti] ||
 		gp.cnt[op_select]) {
-		
+
 		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_cmp_or_null, false);
 		rel = rel_visitor_bottomup(&v, rel, &rel_find_range);
 		if (value_based_opt) {
