@@ -18,8 +18,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 #    (SELECT MIN(col1) WHERE SUM(col2) > 1),
 #    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) AS BIGINT)
 #FROM another_T GROUP BY col2;
-% .%2,	.%4 # table_name
-% %2,	%4 # name
+% .%2,	.%5 # table_name
+% %2,	%5 # name
 % int,	bigint # type
 % 4,	4 # length
 [ 1,	1	]
@@ -30,8 +30,8 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 #    CAST(SUM((SELECT col1 FROM tbl_ProductSales GROUP BY col2)) OVER () AS BIGINT), 
 #    CAST(SUM((SELECT SUM(ColID) FROM tbl_ProductSales GROUP BY col2)) OVER () AS BIGINT)
 #FROM another_T;
-% .%10,	.%20 # table_name
-% %10,	%20 # name
+% .%11,	.%22 # table_name
+% %11,	%22 # name
 % bigint,	bigint # type
 % 4,	2 # length
 [ 1234,	40	]
@@ -275,21 +275,21 @@ stdout of test 'subquery5` in directory 'sql/test/subquery` itself:
 [ NULL	]
 #SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i 
 #HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1);
-% .%54 # table_name
-% %54 # name
+% .%53 # table_name
+% %53 # name
 % boolean # type
 % 5 # length
 [ true	]
 [ true	]
 #SELECT (VALUES (SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) FROM integers i1;
-% .%16 # table_name
-% %16 # name
+% .%15 # table_name
+% %15 # name
 % double # type
 % 24 # length
 [ 2	]
-#SELECT SUM(i1.i) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) > 0;
-% .%1 # table_name
-% %1 # name
+#SELECT CAST(SUM(i1.i) AS BIGINT) FROM integers i1 HAVING (VALUES(SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) > 0;
+% .%2 # table_name
+% %2 # name
 % bigint # type
 % 1 # length
 [ 6	]

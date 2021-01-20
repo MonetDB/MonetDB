@@ -861,11 +861,14 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 		cname = sa_strdup(sql->sa, cname);
 		*e = old;
 		skipWS(r, pos);
-		if (pexps) {
-			exp = exps_bind_column2(pexps, tname, cname);
-			if (exp)
-				exp = exp_alias_or_copy(sql, tname, cname, lrel, exp);
-		}
+ 		if (pexps) {
+			int mul = 0;
+			exp = exps_bind_column2(pexps, tname, cname, &mul);
+ 			if (exp)
+ 				exp = exp_alias_or_copy(sql, tname, cname, lrel, exp);
+			(void) mul;
+			assert(mul == 0);
+ 		}
 		if (!exp && lrel) {
 			exp = rel_bind_column2(sql, lrel, tname, cname, 0);
 			if (!exp && rrel)
@@ -1112,18 +1115,19 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *pexps, char *r, int *pos,
 			*e = old;
 		}
 		if (!exp && lrel) {
-			int amb = 0;
+			int amb = 0, mul = 0;
 
 			old = *e;
 			*e = 0;
 			var_cname = sa_strdup(sql->sa, b);
 			if (pexps) {
-				exp = exps_bind_column(pexps, var_cname, &amb, 1);
+				exp = exps_bind_column(pexps, var_cname, &amb, &mul, 1);
 				if (exp)
 					exp = exp_alias_or_copy(sql, exp_relname(exp), var_cname, lrel, exp);
 			}
 			(void)amb;
-			assert(amb == 0);
+			(void)mul;
+			assert(amb == 0 && mul == 0);
 			if (!exp && lrel)
 				exp = rel_bind_column(sql, lrel, var_cname, 0, 1);
 			if (!exp && rrel)

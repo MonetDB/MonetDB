@@ -5,7 +5,7 @@ stderr of test 'global_table_propagation.Bug-6846` in directory 'sql/test/BugTra
 # 19:18:33 >  "/usr/bin/python3" "global_table_propagation.Bug-6846.py" "global_table_propagation.Bug-6846"
 # 19:18:33 >  
 
-SELECT: no such table 'close_d'
+42S02!SELECT: no such table 'close_d'
 
 # 19:18:34 >  
 # 19:18:34 >  "Done."

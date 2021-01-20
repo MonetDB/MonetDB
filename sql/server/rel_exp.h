@@ -170,9 +170,9 @@ extern int rel_has_all_exps(sql_rel *rel, list *e);
 extern sql_rel *find_rel(list *rels, sql_exp *e);
 extern sql_rel *find_one_rel(list *rels, sql_exp *e);
 
-extern sql_exp *exps_bind_column( list *exps, const char *cname, int *ambiguous, int no_tname /* set if expressions should be without a tname */);
-extern sql_exp *exps_bind_column2( list *exps, const char *rname, const char *cname);
-extern sql_exp *exps_bind_alias( list *exps, const char *rname, const char *cname);
+extern sql_exp *exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname /* set if expressions should be without a tname */);
+extern sql_exp *exps_bind_column2(list *exps, const char *rname, const char *cname, int *multiple);
+extern sql_exp *exps_bind_alias(list *exps, const char *rname, const char *cname);
 
 extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);

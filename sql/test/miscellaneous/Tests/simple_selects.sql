@@ -175,3 +175,14 @@ SELECT t.schema_id AS table_schema_id, t.id AS table_id, t.name AS table_name, f
  ORDER BY t.schema_id, t.name, fk.name;
 select * from myv limit 1;
 rollback;
+
+start transaction;
+create table t1("kk" int);
+create table t2("kk" int);
+create table t3("tkey" int);
+
+SELECT 1 FROM (((t1 t10 INNER JOIN t2 t20 ON t10."kk" = t20."kk") INNER JOIN t2 t20 ON t10."kk" = t20."kk")
+INNER JOIN t3 t31 ON t20."kk" = t31."tkey"); --error, multiple references to relation t20
+rollback;
+
+SELECT sub0.c0 FROM (SELECT 1 AS c0, 2 AS c0) as sub0; --error, ambiguous

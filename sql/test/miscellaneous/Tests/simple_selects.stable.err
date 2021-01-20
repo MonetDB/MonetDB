@@ -201,6 +201,15 @@ MAPI  = (monetdb) /var/tmp/mtest-107867/.s.monetdb.37815
 QUERY = select cast(92233720368547750 as interval second); --error, overflow in conversion for interval second
 ERROR = !Overflow in convertion of 92233720368547750 to sec_interval
 CODE  = 22003
+MAPI  = (monetdb) /var/tmp/mtest-585339/.s.monetdb.37521
+QUERY = SELECT 1 FROM (((t1 t10 INNER JOIN t2 t20 ON t10."kk" = t20."kk") INNER JOIN t2 t20 ON t10."kk" = t20."kk")
+        INNER JOIN t3 t31 ON t20."kk" = t31."tkey"); --error, multiple references to relation t20
+ERROR = !SELECT: relation name "t20" specified more than once
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-594647/.s.monetdb.33356
+QUERY = SELECT sub0.c0 FROM (SELECT 1 AS c0, 2 AS c0) as sub0; --error, ambiguous
+ERROR = !SELECT: identifier 'sub0.c0' ambiguous
+CODE  = 42000
 
 # 17:31:38 >  
 # 17:31:38 >  "Done."
