@@ -296,8 +296,8 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 [ 5	]
 #create view v0(c0) as (select t0.c2 from t0 where (t0.c2) not between asymmetric (date '1970-01-23') and (case when r'true' then t0.c2 when case true when (true) = true then substr(r' x+㶴9rr7긬X0陷?F5{W>gg0N*#Sꖿs', 1) end then nullif(t0.c2, t0.c2) end));
 #SELECT 1 FROM v0 JOIN t0 ON '4321901' LIKE CAST(COALESCE(TIME '21:08:38', TIME '14:42:56') AS STRING);
-% .%2 # table_name
-% %2 # name
+% .%3 # table_name
+% %3 # name
 % tinyint # type
 % 1 # length
 #SELECT ALL t0.c0, v0.c0 FROM v0 JOIN t0 ON ((upper(COALESCE(r'', r'4321901')))ILIKE(CAST(COALESCE(sql_max(TIME '05:11:41', TIME '21:08:38'), COALESCE(TIME '05:10:13', TIME '14:42:56'), sql_min(TIME '16:14:39', TIME '03:01:13')) AS STRING(586))));
@@ -1347,6 +1347,22 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 0	]
 #DROP TABLE mycount;
+#START TRANSACTION;
+#create view v20(vc0) as (values (-214362849));
+#create view v40(vc0) as (values (false), (true));
+#create view v43(vc0) as (values (null), (true));
+#create view v54(vc0, vc1, vc2) as (values ('S12^h)y{[]', false, 9.000000000000),('0.9516513734508343', true, null));
+#create view v1(vc0) as (with cte0(c0,c1,c2) as ((select 7, 0, 2.00000000) union all
+#(select 5, 5.1, 4)) select '8#<Fk#]R' from v40 as l0v40, v43 as l0v43, cte0 as l0cte0);
+#create view v27(vc0, vc1, vc2, vc3, vc4) as (select 1, 2, 1, 0.920, -4 from v40 as l0v40 right outer join (
+#select true, case l1v54.vc0 when 'a' then -1 when 'b' then 3 end, 1
+#from v54 as l1v54, v1 as l1v1 where l1v54.vc1) as sub1 on not l0v40.vc0 where l0v40.vc0);
+#select 1 from v20 as l0v20, v27 as l0v27, v1 as l0v1 where (l0v20.vc0) in (-3, l0v20.vc0, l0v27.vc1);
+% .%70 # table_name
+% %70 # name
+% tinyint # type
+% 1 # length
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

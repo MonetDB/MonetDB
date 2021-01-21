@@ -5718,8 +5718,11 @@ rel_setquery(sql_query *query, symbol *q)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except );
 	else if ( q->token == SQL_INTERSECT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_inter );
-	if (res && distinct)
-		res = rel_distinct(res);
+	if (res) {
+		set_processed(res);
+		if (distinct)
+			res = rel_distinct(res);
+	}
 	return res;
 }
 

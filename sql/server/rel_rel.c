@@ -378,6 +378,9 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
+	} else if (is_set(rel->op)) {
+		assert(is_processed(rel));
+		return NULL;
 	} else if (is_join(rel->op)) {
 		sql_exp *e = rel_bind_column2(sql, rel->l, tname, cname, f);
 
@@ -389,9 +392,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 				set_has_nil(e);
 		}
 		return e;
-	} else if (is_set(rel->op) ||
-		   is_sort(rel) ||
-		   is_semi(rel->op) ||
+	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||
 		   is_topn(rel->op) ||
 		   is_sample(rel->op)) {
@@ -1564,17 +1565,27 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		if (e && !ambiguous && !multi)
 			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}
-	if (is_project(rel->op) && rel->l && !is_processed(rel)) {
-		return rel_find_column(sa, rel->l, tname, cname);
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+		if (!is_processed(rel))
+			return rel_find_column(sa, rel->l, tname, cname);
+	} else if (is_set(rel->op)) {
+		assert(is_processed(rel));
+		return NULL;
 	} else if (is_join(rel->op)) {
 		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
-		if (!e)
+
+		if (e && (is_right(rel->op) || is_full(rel->op)))
+			set_has_nil(e);
+		if (!e) {
 			e = rel_find_column(sa, rel->r, tname, cname);
+			if (e && (is_left(rel->op) || is_full(rel->op)))
+				set_has_nil(e);
+		}
 		return e;
-	} else if (is_set(rel->op) ||
-		   is_sort(rel) ||
-		   is_semi(rel->op) ||
-		   is_select(rel->op)) {
+	} else if (is_semi(rel->op) ||
+		   is_select(rel->op) ||
+		   is_topn(rel->op) ||
+		   is_sample(rel->op)) {
 		if (rel->l)
 			return rel_find_column(sa, rel->l, tname, cname);
 	}
