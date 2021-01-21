@@ -1363,6 +1363,30 @@ stdout of test 'sqlancer02` in directory 'sql/test/SQLancer` itself:
 % tinyint # type
 % 1 # length
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "t1" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "t1" VALUES (false), (true);
+[ 2	]
+#create view v5(vc0) as (values (1), (4));
+#create view v8(vc1) as ((select l0t1.c0 from t1 as l0t1) union distinct (select false));
+#SELECT v5.vc0 FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON 
+#true WHERE least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true);
+% .v5 # table_name
+% vc0 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 4	]
+[ 4	]
+#SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true) AS INT) as count
+#FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON true) as res;
+% .%22 # table_name
+% %22 # name
+% bigint # type
+% 1 # length
+[ 4	]
+#ROLLBACK;
 
 # 17:04:12 >  
 # 17:04:12 >  "Done."

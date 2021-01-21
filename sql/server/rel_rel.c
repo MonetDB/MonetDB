@@ -417,18 +417,15 @@ rel_first_column(mvc *sql, sql_rel *r)
 }
 
 sql_rel *
-rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
+rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
 {
 	rel_destroy_(rel);
 	rel->l = l;
 	rel->r = r;
 	rel->op = setop;
-	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
-	if (l && r)
-		rel->nrcols = l->nrcols + r->nrcols;
-	rel->exps = exps;
+	rel_setop_set_exps(sql, rel, exps);
 	set_processed(rel);
 	return rel;
 }
@@ -540,6 +537,7 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
+			e->p = NULL; /* remove all the properties on unions */
 			e->card = MAX(f->card, g->card);
 		} else
 			e->card = f->card;
@@ -1452,7 +1450,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 	if (!rel)
 		return NULL;
-	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
 	set_processed(rel);
 	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);

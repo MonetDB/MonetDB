@@ -2007,9 +2007,9 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 					list *rs = rel_projections(v->sql, rel, NULL, 1, 1);
 					if (!(rel = rel_setop_check_types(v->sql, l, r, ls, rs, op_union)))
 						return NULL;
+					rel_setop_set_exps(v->sql, rel, exps);
 					set_processed(rel);
 					rel = rel_distinct(rel);
-					rel_set_exps(rel, exps);
 					v->changes++;
 					return rel;
 				}
@@ -3183,7 +3183,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
-			rel_set_exps(nrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			set_processed(nrel);
 			return nrel;
 		} else if (is_right(rel->op)) {
@@ -3200,7 +3200,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					prel,
 					rel_project(v->sql->sa, nrel, rel_projections(v->sql, nrel, NULL, 1, 1)),
 					op_union);
-			rel_set_exps(nrel, rel_projections(v->sql, rel, NULL, 1, 1));
+			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			set_processed(nrel);
 			return nrel;
 		} else if (is_full(rel->op)) {
@@ -3292,7 +3292,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 			}
 			if (cur) {
 				nrel = rel_setop(v->sql->sa, cur, nrel, op_union);
-				rel_set_exps(nrel, exps);
+				rel_setop_set_exps(v->sql, nrel, exps);
 				set_processed(nrel);
 			}
 			cur = nrel;
