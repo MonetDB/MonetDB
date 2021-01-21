@@ -376,7 +376,7 @@ XMLparse(xml *x, str *doccont, str *val, str *option)
 }
 
 str
-XMLpi(str *ret, str *target, str *value)
+XMLpi(xml *ret, str *target, str *value)
 {
 	size_t len;
 	str buf;
