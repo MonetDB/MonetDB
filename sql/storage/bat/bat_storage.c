@@ -1863,7 +1863,8 @@ log_create_del(sql_trans *tr, sql_change *change)
 			for(node *n = t->idxs.set->h; n && ok == LOG_OK; n = n->next) {
 				sql_idx *i = n->data;
 
-				ok = log_create_idx_(tr, i);
+				if (i->data)
+					ok = log_create_idx_(tr, i);
 			}
 		}
 	}
