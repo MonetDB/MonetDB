@@ -1,6 +1,0 @@
-CREATE FUNCTION my_avg(total INT, cnt INT) RETURNS INT
-BEGIN
-    RETURN CASE WHEN cnt <> 0 THEN total / cnt ELSE -1 END;
-END;
-SELECT my_avg(0, 0);
-DROP FUNCTION my_avg;

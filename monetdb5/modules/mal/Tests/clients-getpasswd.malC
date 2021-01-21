@@ -1,2 +1,0 @@
-p := clients.getPasswordHash("monetdb");
-io.print(p);
