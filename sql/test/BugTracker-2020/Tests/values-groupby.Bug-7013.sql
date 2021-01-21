@@ -1,8 +1,0 @@
-START TRANSACTION;
-CREATE VIEW v AS SELECT a1, a2 FROM (VALUES (1,2)) as (a1,a2) GROUP BY a1, a2;
-
-SELECT a1 from v;
-SELECT a2 from v;
-SELECT a1, a2 from v;
-SELECT * from v;
-ROLLBACK;

@@ -1,7 +1,0 @@
-# test variable scope resolution
-
-pi:= 3.147:flt;
-
-function dummy();
-	pi:=0:int;
-end dummy;

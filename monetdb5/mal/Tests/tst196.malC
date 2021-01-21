@@ -1,7 +1,0 @@
-function welcome5(lim:int)(:str,:int);
-    i:= 2;
-    return (w,i):=("hello",2); 
-end welcome5;
-
-y:= user.welcome5(1);
-io.print(y);

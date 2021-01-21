@@ -1,8 +1,0 @@
-function welcome2(lim:int):str;
-    i:= 2;
-    w:="hello"; 
-    return w;
-end welcome2;
-
-y:= user.welcome2(1);
-io.print(y);
