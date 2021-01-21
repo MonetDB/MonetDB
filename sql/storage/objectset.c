@@ -317,15 +317,13 @@ static void
 os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 	// TODO ATOMIC GET
 	bte state = ov->state;
-	// END ATOMIC GET
 	assert(state & id_based_rollbacked);
 
 	if (ov->id_based_older) {
 		if (ov->id_based_older->ts < TRANSACTION_ID_BASE) {
 			// older is last committed state. Restore versionhead  pointer to that.
-			// TODO START ATOMIC()
+			// TODO START ATOMIC SET
 			ov->id_based_head->ov = ov->id_based_older;
-			// END ATOMIC()
 		}
 		else {
 			os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
@@ -335,7 +333,6 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 			state |= id_based_rollbacked;
 			//TODO ATOMIC SET
 			ov->id_based_older->state = state;
-			// END ATOMIC SET
 
 			// id based cascaded rollback along the parents
 			os_rollback_os_id_based_cascading(ov->id_based_older, store);
@@ -351,15 +348,13 @@ static void
 os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 	// TODO ATOMIC GET
 	bte state = ov->state;
-	// END ATOMIC GET
 	assert(state & name_based_rollbacked);
 
 	if (ov->name_based_older) {
 		if (ov->name_based_older->ts < TRANSACTION_ID_BASE) {
 			// older is last committed state. Restore versionhead  pointer to that.
-			// TODO START ATOMIC()
+			// TODO START ATOMIC SET
 			ov->name_based_head->ov = ov->name_based_older;
-			// END ATOMIC()
 		}
 		else {
 			os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
@@ -369,7 +364,6 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 			state |= name_based_rollbacked;
 			//TODO ATOMIC SET
 			ov->name_based_older->state = state;
-			// END ATOMIC SET
 
 			// name based cascaded rollback along the parents
 			os_rollback_os_name_based_cascading(ov->name_based_older, store);
@@ -385,7 +379,6 @@ static void
 os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 	// TODO ATOMIC GET
 	bte state = ov->state;
-	// END ATOMIC GET
 
 	if (state & name_based_rollbacked) {
 		return;
@@ -395,7 +388,6 @@ os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 
 	//TODO ATOMIC SET
 	ov->state = state;
-	// END ATOMIC SET
 
 	os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
 	os_rollback_os_name_based_cascading(ov, store);
@@ -405,7 +397,6 @@ static void
 os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 	// TODO ATOMIC GET
 	bte state = ov->state;
-	// END ATOMIC GET
 
 	if (state & id_based_rollbacked) {
 		return;
@@ -415,7 +406,6 @@ os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 
 	//TODO ATOMIC SET
 	ov->state = state;
-	// END ATOMIC SET
 
 	os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
 	os_rollback_os_id_based_cascading(ov, store);
@@ -454,7 +444,6 @@ put_under_destruction(sqlstore* store, objectversion *ov, ulng oldest)
 
 		// TODO ATOMIC GET
 		ov->ts = store->timestamp+1;
-		// END ATOMIC GET
 
 		if (ov->id_based_older) {
 			put_under_destruction(store, ov->id_based_older, oldest);
@@ -486,7 +475,6 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
 			 */
 			// TODO ATOMIC GET
 			ov->ts = store->timestamp+2;
-			// END ATOMIC GET
 		}
 
 		// not yet old enough to be safely removed. Try later.
@@ -506,7 +494,6 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
 
 	// TODO ATOMIC GET
 	objectversion* newer = ov->name_based_newer;
-	// END ATOMIC GET
 
 	if (ov->ts < oldest && newer && (newer->ts < oldest && !newer->state)) {
 		assert(newer == ov->id_based_newer);
@@ -757,7 +744,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			else {
 				return -1; /*conflict with cleaner*/
 			}
-			//END ATOMIC
+			//END ATOMIC CAS
 		}
 
 		MT_lock_set(&os->ht_lock);
@@ -770,7 +757,6 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			oo->name_based_newer = ov;
 			 // TODO ATOMIC SET
 			oo->state = 0;
-			// END ATOMIC
 		}
 		MT_lock_unset(&os->ht_lock);
 		return 0;
@@ -808,7 +794,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 			else {
 				return -1; /*conflict with cleaner*/
 			}
-			//END ATOMIC
+			//END ATOMIC CAS
 		}
 
 		MT_lock_set(&os->ht_lock);
@@ -820,7 +806,6 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 			oo->id_based_newer = ov;
 			 // TODO ATOMIC SET
 			oo->state = 0;
-			// END ATOMIC
 		}
 		MT_lock_unset(&os->ht_lock);
 		return 0;
