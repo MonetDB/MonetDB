@@ -17,7 +17,7 @@ inclre = re.compile(r'\s*#\s*include\s+"(?P<file>[^"]*)"')
 # comments (/* ... */ where ... is as short as possible)
 cmtre = re.compile(r'/\*[^*]*(\*(?=[^/])[^*]*)*\*/|//.*')
 # horizontal white space
-spcre = re.compile(r'[ \t]+')
+horspcre = re.compile(r'[ \t]+')
 # identifier
 identre = re.compile(r'\b(?P<ident>[a-zA-Z_]\w*)\b')
 # undef
@@ -79,12 +79,12 @@ def process(line, funmac, macros, infunmac=False):
     nline += line[pos:]
     return nline
 
-def readfile(f, funmac=None, macros=None, files=None, printdef=False):
+def readfile(f, funmac=None, macros=None, files=None, printdef=False, include=False):
     data = open(f).read()
     dirname, f = os.path.split(f)
     data = cmtre.sub(' ', data)
     data = data.replace('\\\n', '')
-    data = spcre.sub(' ', data)
+    data = horspcre.sub(' ', data)
     data = data.splitlines()
     if funmac is None:
         funmac = {}
@@ -110,7 +110,7 @@ def readfile(f, funmac=None, macros=None, files=None, printdef=False):
         if elifre.match(line) or elsere.match(line):
             if printdef:
                 ndata.append(line)
-            if skip:
+            if include and skip:
                 skip[-1] = True
             continue
         if skip and skip[-1]:
@@ -130,13 +130,14 @@ def readfile(f, funmac=None, macros=None, files=None, printdef=False):
                     args = ()   # empty argument list
                 funmac[name] = (args, repl)
                 continue
-            macros[name] = repl
+            if include:
+                macros[name] = repl
             continue
         res = inclre.match(line)
         if res is not None:
             fn = res.group('file')
-            if '/' not in fn and os.path.exists(os.path.join(dirname, fn)) and fn not in files:
-                incdata = readfile(os.path.join(dirname, fn), funmac, macros, files, printdef)
+            if include and '/' not in fn and os.path.exists(os.path.join(dirname, fn)) and fn not in files:
+                incdata = readfile(os.path.join(dirname, fn), funmac, macros, files, printdef, include)
                 ndata.extend(incdata)
                 continue
             ndata.append(line)
@@ -154,8 +155,13 @@ def readfile(f, funmac=None, macros=None, files=None, printdef=False):
     files.remove(f)
     return ndata
 
-def preprocess(f, printdef=False):
-    return '\n'.join(readfile(f, printdef=printdef))
+def preprocess(f, printdef=False, include=True):
+    return '\n'.join(readfile(f, printdef=printdef, include=include))
+
+# some regexps helping to normalize a declaration
+spcre = re.compile(r'\s+')
+strre = re.compile(r'([^ *])\*')
+comre = re.compile(r',\s*')
 
 def normalize(decl):
     decl = spcre.sub(' ', decl) \
@@ -175,4 +181,4 @@ def normalize(decl):
 if __name__ == '__main__':
     import sys
     for f in sys.argv[1:]:
-        print(preprocess(f, printdef=True))
+        print(preprocess(f, printdef=False))

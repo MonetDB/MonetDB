@@ -1,0 +1,100 @@
+stdout of test 'rtrim_bug` in directory 'sql/test/bugs` itself:
+
+
+# 21:35:26 >  
+# 21:35:26 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-8351" "--port=36425"
+# 21:35:26 >  
+
+#CREATE TABLE t1 (m varchar (1) NOT NULL);
+#INSERT into t1 values ('0');
+[ 1	]
+#INSERT into t1 values ('2');
+[ 1	]
+#SELECT * FROM sys.t1;
+% sys.t1 # table_name
+% m # name
+% varchar # type
+% 1 # length
+[ "0"	]
+[ "2"	]
+#SELECT length("m") as data_length, "m" as data_value FROM "sys"."t1" WHERE "m" IS NOT NULL AND length("m") > 1;
+% sys.,	sys. # table_name
+% data_length,	data_value # name
+% int,	varchar # type
+% 1,	0 # length
+#CREATE VIEW v1 as select "m" from t1 where m in (select m from sys.t1);
+#SELECT * FROM v1;
+% sys.v1 # table_name
+% m # name
+% varchar # type
+% 1 # length
+[ "0"	]
+[ "2"	]
+#SELECT length("m") as data_length, "m" as data_value FROM "sys"."v1" WHERE "m" IS NOT NULL AND length("m") > 1;
+% sys.,	sys. # table_name
+% data_length,	data_value # name
+% int,	varchar # type
+% 1,	0 # length
+#CREATE VIEW v2 as select "m" from t1 where rtrim(m) in (select rtrim(m) from sys.t1);
+#SELECT * FROM v2;
+% sys.v2 # table_name
+% m # name
+% varchar # type
+% 1 # length
+[ "0"	]
+[ "2"	]
+#PLAN SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1;
+% .plan # table_name
+% rel # name
+% clob # type
+% 112 # length
+project (
+| semijoin (
+| | project (
+| | | select (
+| | | | table("sys"."t1") [ "t1"."m" NOT NULL ] COUNT 
+| | | ) [ "sys"."length"("t1"."m" NOT NULL) NOT NULL > int "1" ]
+| | ) [ "t1"."m" NOT NULL, "sys"."rtrim"("t1"."m" NOT NULL) NOT NULL as "%5"."%5" ],
+| | project (
+| | | project (
+| | | | table("sys"."t1") [ "t1"."m" NOT NULL ] COUNT 
+| | | ) [ "sys"."rtrim"("t1"."m" NOT NULL) NOT NULL as "%1"."%1" ]
+| | ) [ "%1"."%1" NOT NULL as "%4"."%4" ]
+| ) [ "%5"."%5" NOT NULL any = "%4"."%4" NOT NULL ]
+) [ "sys"."length"("t1"."m" NOT NULL as "v2"."m") NOT NULL as "data_length", "t1"."m" NOT NULL as "data_value" ]
+#set optimizer = 'sequential_pipe';
+#create procedure profiler.starttrace() external name profiler."starttrace";
+#create procedure profiler.stoptrace() external name profiler.stoptrace;
+#SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1;
+% sys.,	sys. # table_name
+% data_length,	data_value # name
+% int,	varchar # type
+% 1,	0 # length
+#select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'; -- don't do crossjoin
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#select count(*) from sys.tracelog() where stmt like '% algebra.join%'; -- do inner join
+% .%2 # table_name
+% %2 # name
+% bigint # type
+% 1 # length
+[ 1	]
+#drop procedure profiler.starttrace();
+#drop procedure profiler.stoptrace();
+#set optimizer = 'default_pipe';
+#SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1;
+% sys.,	sys. # table_name
+% data_length,	data_value # name
+% int,	varchar # type
+% 1,	0 # length
+#DROP VIEW v1;
+#DROP VIEW v2;
+#DROP TABLE t1;
+
+# 21:35:26 >  
+# 21:35:26 >  "Done."
+# 21:35:26 >  
+

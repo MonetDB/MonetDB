@@ -18,7 +18,7 @@ patreg = r'^\s*(?P<cmdpat>pattern|command)\s*\(\s*"(?P<mod>[^"]*)"\s*,\s*"(?P<fc
 argre = re.compile(argreg)
 patre = re.compile(patreg, re.MULTILINE)
 
-fcnargreg = r'\s*,\s*(?:const\s+)?(?:(?P<type>\w+)\s*\*(?:\s*(?:const\s*)?\*)*|ptr\s)\s*(?P<argname>\w+)'
+fcnargreg = r'\s*,\s*(?:const\s+)?(?:(?P<type>\w+)\s*\*(?:\s*(?:const\s*)?\*)*(?:\s*restrict\s)?|ptr\s)\s*(?P<argname>\w+)'
 fcnreg = r'(?:static\s+)?(?:str|char\s*\*)\s+(?P<name>\w+)\s*\(\s*(?:(?P<pattern>Client\s+\w+\s*,\s*MalBlkPtr\s+\w+\s*,\s*MalStkPtr\s+\w+\s*,\s*InstrPtr\s+\w+)|(?P<command>(?:\w+\s*\*+|ptr\s)\s*\w+(?:'+ fcnargreg + r')*))\s*\)\s*{'
 
 fcnre = re.compile(fcnreg)
@@ -76,7 +76,7 @@ def checkcommand(imp, mod, fcn, decl, retc, argc, args):
         cpos = cres.end(0)
 
 def process1(f):
-    data = exportutils.preprocess(f)
+    data = exportutils.preprocess(f, include=True)
     pats = {}
     cmds = {}
     res = fcnre.search(data)
@@ -115,13 +115,13 @@ def process2():
         if cmdpat == 'pattern':
             if imp not in gpats:
                 if imp in gcmds:
-                    print('command implementation {} for pattern {}.{}'.format(imp, res.group('mod'), res.group('fcn')))
+                    print('command implementation {} for pattern {}.{}'.format(imp, mod, fcn))
                 else:
                     print('pattern implementation {} for {}.{} is missing'.format(imp, mod, fcn))
         else:
             if imp not in gcmds:
                 if imp in gpats:
-                    print('pattern implementation {} for command {}.{}'.format(imp, res.group('mod'), res.group('fcn')))
+                    print('pattern implementation {} for command {}.{}'.format(imp, mod, fcn))
                 else:
                     print('command implementation {} for {}.{} is missing'.format(imp, mod, fcn))
             else:

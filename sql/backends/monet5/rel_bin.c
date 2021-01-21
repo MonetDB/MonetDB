@@ -2563,10 +2563,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			int idx = 0, equality_only = 1;
 
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
-			if (!equality_only || list_length(jexps) > 1) {
+			if (!equality_only || list_length(jexps) > 1 || exp_has_func((sql_exp*)jexps->h->data))
 				left = subrel_project(be, left, refs, rel->l);
-				equality_only = 0;
-			}
 			right = subrel_project(be, right, refs, rel->r);
 
 			for( en = jexps->h; en; en = en->next ) {
@@ -2575,8 +2573,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				stmt *s = NULL;
 
 				/* only handle simple joins here */
-				if ((exp_has_func(e) && e->flag != cmp_filter) ||
-					e->flag == cmp_or || (e->f && e->anti)) {
+				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && e->anti)) {
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_first_column(be, left);
 						stmt *r = bin_first_column(be, right);
