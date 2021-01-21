@@ -54,7 +54,7 @@ delta_cands(sql_trans *tr, sql_table *t)
 }
 
 static BAT *
-delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
+delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int is_new)
 {
 	/* return full normalized column bat
 	 * 	b := b.copy()
@@ -68,7 +68,7 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 	if (!i)
 		return NULL;
 	r = i;
-	if (temp)
+	if (is_new)
 		return r;
 	b = temp_descriptor(bat->bid);
 	if (!b) {
@@ -122,19 +122,19 @@ delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
 }
 
 static BAT *
-delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int temp)
+delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int is_new)
 {
 	sqlstore *store = tr->store;
 	if (!store->initialized && bat->cached)
 		return bat->cached;
-	return delta_full_bat_( tr, c, bat, temp);
+	return delta_full_bat_( tr, c, bat, is_new);
 }
 
 static BAT *
 full_column(sql_trans *tr, sql_column *c)
 {
 	assert(c->data);
-	return delta_full_bat(tr, c, c->data, isTempTable(c->t));
+	return delta_full_bat(tr, c, timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t)), isNew(c->t));
 }
 
 static void

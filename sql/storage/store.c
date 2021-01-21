@@ -4487,14 +4487,21 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 {
 	sqlstore *store = tr->store;
 	sql_table *systable = find_sql_table(tr, find_sql_schema(tr, isTempSchema(s) ? "tmp":"sys"), "_tables");
-	sql_base *b = os_find_id(s->tables, tr, id);
-	sql_table *t = (sql_table*)b;
+	sql_table *t = find_sql_table_id(tr, s, id);
 	oid rid;
 
 	assert(!strNil(new_name));
 
-	os_del(s->tables, tr, t->base.name, &t->base);
+	if (isGlobal(t))
+		os_del(s->tables, tr, t->base.name, &t->base);
+	else {
+		node *n = cs_find_id(&tr->localtmps, t->base.id);
+		if (n)
+			cs_del(&tr->localtmps, tr->store, n, t->base.flags);
+	}
 	t = table_dup(tr, t, t->s, new_name);
+	if (!isGlobal(t))
+		cs_add(&tr->localtmps, t, TR_NEW);
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(systable, "id"), &t->base.id, NULL);
 	assert(!is_oid_nil(rid));
