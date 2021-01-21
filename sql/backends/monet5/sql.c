@@ -6485,7 +6485,7 @@ static mel_func sql_init_funcs[] = {
  command("sql", "round", hge_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, arg("",hge),arg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
  command("batsql", "round", hge_bat_round_wrap, false, "round off the decimal v(d,s) to r digits behind the dot (if r < 0, before the dot)", args(1,5, batarg("",hge),batarg("v",hge),arg("d",int),arg("s",int),arg("r",bte))),
  command("calc", "second_interval", hge_dec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, arg("",lng),arg("sc",int),arg("v",hge),arg("ek",int),arg("sk",int))),
- command("batcalc", "second_interval", hge_batdec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",hge),arg("ek",int),arg("sk",int))),
+ pattern("batcalc", "second_interval", hge_batdec2second_interval, false, "cast hge decimal to a second_interval", args(1,5, batarg("",lng),arg("sc",int),batarg("v",hge),arg("ek",int),arg("sk",int))),
  pattern("batcalc", "second_interval", hge_batdec2second_interval, false, "cast hge decimal to a second_interval", args(1,6, batarg("",lng),arg("sc",int),batarg("v",hge),batarg("s",oid),arg("ek",int),arg("sk",int))),
  command("calc", "hge", nil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, arg("",hge),arg("v",void),arg("digits",int),arg("scale",int))),
  command("batcalc", "hge", batnil_2dec_hge, false, "cast to dec(hge) and check for overflow", args(1,4, batarg("",hge),batarg("v",void),arg("digits",int),arg("scale",int))),
