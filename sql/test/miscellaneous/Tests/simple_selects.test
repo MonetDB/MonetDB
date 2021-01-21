@@ -676,6 +676,25 @@ statement ok
 start transaction
 
 statement ok
+create table t1("kk" int)
+
+statement ok
+create table t2("kk" int)
+
+statement ok
+create table t3("tkey" int)
+
+statement error
+SELECT 1 FROM (((t1 t10 INNER JOIN t2 t20 ON t10."kk" = t20."kk") INNER JOIN t2 t20 ON t10."kk" = t20."kk")
+INNER JOIN t3 t31 ON t20."kk" = t31."tkey"); --error, multiple references to relation t20
+
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
 create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end
 
 query I rowsort

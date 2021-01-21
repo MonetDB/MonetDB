@@ -127,7 +127,7 @@ ERROR = !SELECT: relation name "integers" specified more than once
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-146231/.s.monetdb.30793
 QUERY = SELECT 1 FROM integers CROSS JOIN integers; --error table integers specified more than once
-ERROR = !SELECT: 'integers' on both sides of the CROSS JOIN expression
+ERROR = !SELECT: relation name "integers" specified more than once
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-108024/.s.monetdb.38590
 QUERY = SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON i1.i = 1) = (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1;

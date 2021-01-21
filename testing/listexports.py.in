@@ -38,7 +38,7 @@ nmere = re.compile(r'\b(?P<name>[a-zA-Z_][a-zA-Z_0-9]*)\s*[([;]')
 def extract(f):
     decls = []
 
-    data = exportutils.preprocess(f)
+    data = exportutils.preprocess(f, include=False)
 
     res = expre.search(data)
     while res is not None:
@@ -81,8 +81,7 @@ def findfiles(dirlist, skipfiles = [], skipdirs = []):
                     decls.extend(extract(os.path.join(root, f)))
                     done[f] = True
     decls.sort()
-    names, decls = list(zip(*decls))
-    return decls
+    return [decl for name, decl in decls]
 
 def listexports():
     output = []
