@@ -223,11 +223,11 @@ typedef void *sql_store;
 struct sql_trans;
 struct sql_change;
 struct objectset;
-struct object_node;
+struct versionhead;
 struct os_iter {
 	struct objectset *os;
 	struct sql_trans *tr;
-	struct object_node *n;
+	struct versionhead *n;
 	struct sql_hash_e *e;
 	const char *name;
 };
