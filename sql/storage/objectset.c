@@ -20,14 +20,18 @@
 
 struct object_node;// TODO: rename to object_version_chain
 
-#define id_based_rollbacked 1
-#define name_based_rollbacked (1<<1)
+#define id_based_rollbacked		(1)
+#define name_based_rollbacked	(1<<1)
+#define under_destruction		(1<<2)
+#define under_construction		(1<<3)
 
 typedef struct objectversion {
 	bool deleted;
 	ulng ts;
 	bte rollbacked;
+	bte life_cycle;
 	sql_base *obj;
+	struct objectset* os;
 	struct objectversion	*name_based_older;
 	struct objectversion	*name_based_newer; // TODO: must become atomic pointer
 	struct object_node		*name_based_chain;
@@ -41,7 +45,6 @@ typedef struct object_node {
     struct object_node* prev;
     struct object_node* next;
     objectversion* data;
-	struct objectset* os;
 } object_node;
 
 typedef struct objectset {
@@ -229,7 +232,6 @@ os_append_node_name(objectset *os, object_node *n)
 	} else {
 		os->name_based_h = n;
 	}
-	n->os = os;
 	n->prev = os->name_based_t; // aka the double linked list.
 	os->name_based_t = n;
 	if (n->data) {
@@ -268,7 +270,6 @@ os_append_node_id(objectset *os, object_node *n)
 	} else {
 		os->id_based_h = n;
 	}
-	n->os = os;
 	n->prev = os->id_based_t; // aka the double linked list.
 	os->id_based_t = n;
 	if (n->data) {
@@ -301,42 +302,12 @@ os_append_id(objectset *os, objectversion *ov)
 static object_node* find_name(objectset *os, const char *name);
 
 static void
-objectversion_destroy(sqlstore *store, objectversion *ov, ulng commit_ts, ulng oldest)
+objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 {
-	// TODO: clean this up once the add and del functions are working
-	// TODO: handle name_based_cnt s and id_based_cnt s
-	objectversion *name_based_older = ov->name_based_older;
-	objectversion *name_based_newer = ov->name_based_newer;
-
-	if (name_based_older && commit_ts) {
-		objectversion_destroy(store, name_based_older, commit_ts, oldest);
-		name_based_older = NULL;
-	} else if (name_based_older) {
-		name_based_older->name_based_newer = name_based_newer;
-	}
-	ov->name_based_older = NULL;
-
-	if (name_based_newer && commit_ts)
-		name_based_newer->name_based_older = NULL;
-	else if (name_based_newer && name_based_older)
-		name_based_newer->name_based_older = name_based_older;
-
-	objectset* os = ov->name_based_chain->os;
-	if (!name_based_newer) {
-		object_node *on = NULL;
-		if (os->unique)
-			on = find_name(os, ov->obj->name);
-		else
-			on = find_id(os, ov->obj->id);
-		assert(on->data == ov);
-		if (on)
-			os_remove_name_based_chain(os, store, on);
-		if (name_based_older)
-			os_append_name(os, name_based_older);
-	}
-	if (ov && os && os->destroy)
+	if (os->destroy)
 		os->destroy(store, ov->obj);
-	/* free ov */
+
+	_DELETE(ov);
 }
 
 static void os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store);
@@ -363,7 +334,7 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 	}
 	else {
 		// this is a terminal node. i.e. this objectversion does not have id based committed history
-		os_remove_id_based_chain(ov->id_based_chain->os, store, ov->id_based_chain);
+		os_remove_id_based_chain(ov->os, store, ov->id_based_chain);
 	}
 }
 
@@ -388,7 +359,7 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 	}
 	else {
 		// this is a terminal node. i.e. this objectversion does not have name based committed history
-		os_remove_name_based_chain(ov->name_based_chain->os, store, ov->name_based_chain);
+		os_remove_name_based_chain(ov->os, store, ov->name_based_chain);
 	}
 }
 
@@ -427,46 +398,99 @@ os_rollback(objectversion *ov, sqlstore *store)
 	return LOG_OK;
 }
 
+static void
+put_under_destruction(sqlstore* store, objectversion *ov, ulng oldest)
+{
+	//TODO ATOMIC CAS
+	if (ov->life_cycle == 0) {
+		ov->life_cycle = under_destruction;
+
+		if (!ov->name_based_newer) {
+			os_remove_name_based_chain(ov->os, store, ov->name_based_chain);
+		}
+		else {
+			ov->name_based_newer->name_based_older = NULL;
+		}
+
+		if (!ov->id_based_newer) {
+			os_remove_id_based_chain(ov->os, store, ov->id_based_chain);
+		}
+		else {
+			ov->id_based_newer->id_based_older = NULL;
+		}
+
+		// TODO ATOMIC GET
+		ov->ts = store->timestamp+1;
+		// END ATOMIC GET
+
+		if (ov->id_based_older) {
+			put_under_destruction(store, ov->id_based_older, oldest);
+		}
+
+		if (ov->name_based_older) {
+			put_under_destruction(store, ov->name_based_older, oldest);
+		}
+	}
+	//END ATOMIC CAS
+}
+
 static int
-os_cleanup(objectversion *ov, ulng oldest) {
-	(void) oldest;
-	(void) ov;
-#if 0
-	if (ov->name_based_older)
-	{
-		(void) os_cleanup(ov->name_based_older, oldest);
-		if (ov->id_based_older && ov->id_based_older != ov->name_based_older)
-			(void) os_cleanup(ov->id_based_older, oldest);
+os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
+
+	// TODO ATOMIC GET life_cycle
+	if (ov->life_cycle == under_destruction) {
+	 	if (ov->ts < oldest) {
+			// This one is ready to be freed
+			objectversion_destroy(store, ov->os, ov);
+			return LOG_ERR;
+		}
+
+		// not yet old enough to be safely removed.
+		return LOG_OK;
+	}
+
+	if (ov->deleted) {
+		if (ov->ts < oldest) {
+			// the oldest relevant state is deleted so lets try to mark it as destroyed
+			put_under_destruction(store, ov, oldest);
+		}
+
+		// reinsert it into the queue, either because it is now marked for destruction or
+		// we want to retry marking it for destruction later.
+		return LOG_OK;
 	}
 
 	// TODO ATOMIC GET
 	objectversion* newer = ov->name_based_newer;
+	// END ATOMIC GET
 
 	if (ov->ts < oldest && newer && (newer->ts < oldest && !newer->rollbacked)) {
+		assert(newer == ov->id_based_newer);
 		// ov has a committed name based parent
-		assert(ov->id_based_newer || ov->deleted /*can only happen because of a drop followed by  create*/);
 
-		if (ov->id_based_newer)
-			ov->id_based_newer->id_based_older = NULL;
+		put_under_destruction(store, ov, oldest);
 
-		// TODO: destroy objectversion ov.
+		// Since this objectversion has two committed oldest parents it is unreachable.
+		// So we can directly destroy it.
+		objectversion_destroy(store, ov->os, ov);
+		return LOG_ERR;
 	}
-#endif
+
 	return LOG_OK;
 }
 
 static int
-tc_gc_objectversion(sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
+tc_gc_objectversion(sql_store store, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	(void) Store;
+	(void) store;
 	if (commit_ts != oldest) {
 		// TODO: for now only oldest is allowed to do clean up
-		return LOG_OK;
+		return LOG_ERR;
 	}
 
 	objectversion *ov = (objectversion*)change->data;
 
-	return os_cleanup(ov, oldest);
+	return os_cleanup( (sqlstore*) store, ov, oldest);
 }
 
 static int
@@ -702,14 +726,31 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 		assert(ov != oo); // Time loops are not allowed
 
+		if (oo->deleted) {
+			// Since our parent oo is comitted deleted objectversion, we might have a conflict with
+			// another transaction that tries to clean up oo.
+			//TODO ATOMIC CAS
+			if (oo->life_cycle == 0) {
+				oo->life_cycle = under_construction;
+			}
+			else {
+				return -1; /*conflict with cleaner*/
+			}
+			//END ATOMIC
+		}
+
 		MT_lock_set(&os->ht_lock);
 		ov->name_based_chain = oo->name_based_chain;
 		ov->name_based_older = oo;
 
 		// TODO: double check/refine locking rationale
-		if (oo)
-			oo->name_based_newer = ov;
 		name_based_node->data = ov;
+		if (oo) {
+			oo->name_based_newer = ov;
+			 // TODO ATOMIC SET
+			oo->life_cycle = 0;
+			// END ATOMIC
+		}
 		MT_lock_unset(&os->ht_lock);
 		return 0;
 	} else { /* new */
@@ -736,14 +777,30 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 
 		assert(ov != oo); // Time loops are not allowed
 
+		if (oo->deleted) {
+			// Since our parent oo is comitted deleted objectversion, we might have a conflict with
+			// another transaction that tries to clean up oo.
+			//TODO ATOMIC CAS
+			if (oo->life_cycle == 0) {
+				oo->life_cycle = under_construction;
+			}
+			else {
+				return -1; /*conflict with cleaner*/
+			}
+			//END ATOMIC
+		}
+
 		MT_lock_set(&os->ht_lock);
 		ov->id_based_chain = oo->id_based_chain;
 		ov->id_based_older = oo;
 
-		// TODO: double check/refine locking rationale
-		if (oo)
-			oo->id_based_newer = ov;
 		id_based_node->data = ov;
+		if (oo) {
+			oo->id_based_newer = ov;
+			 // TODO ATOMIC SET
+			oo->life_cycle = 0;
+			// END ATOMIC
+		}
 		MT_lock_unset(&os->ht_lock);
 		return 0;
 	} else { /* new */
@@ -761,6 +818,7 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	objectversion *ov = SA_ZNEW(os->sa, objectversion);
 	ov->ts = tr->tid;
 	ov->obj = b;
+	ov->os = os;
 
 	if (os_add_id_based(os, tr, b->id, ov)) {
 		// TODO clean up ov
@@ -796,8 +854,10 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 		MT_lock_set(&os->ht_lock);
 		// TODO: double check/refine locking rationale
-		if (oo)
+		if (oo) {
 			oo->name_based_newer = ov;
+			assert(!oo->deleted);
+		}
 		name_based_node->data = ov;
 		MT_lock_unset(&os->ht_lock);
 		return 0;
@@ -826,8 +886,10 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 
 		MT_lock_set(&os->ht_lock);
 		// TODO: double check/refine locking rationale
-		if (oo)
+		if (oo) {
 			oo->id_based_newer = ov;
+			assert(!oo->deleted);
+		}
 		id_based_node->data = ov;
 		MT_lock_unset(&os->ht_lock);
 		return 0;
@@ -844,6 +906,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->deleted = 1;
 	ov->ts = tr->tid;
 	ov->obj = b;
+	ov->os = os;
 
 	if (os_del_id_based(os, tr, b->id, ov)) {
 		// TODO clean up ov
@@ -883,10 +946,12 @@ os_empty(objectset *os, struct sql_trans *tr)
 int
 os_remove(objectset *os, sql_trans *tr, const char *name)
 {
-	object_node *n = find_name(os, name);
+	(void) os;
+	(void) tr;
+	(void) name;
+	// TODO remove entire object_node corresponding to this name.
 
-	if (n)
-		objectversion_destroy(tr->store, n->data, 0, 0);
+	// TODO assert os->unique?s
 	return LOG_OK;
 }
 
