@@ -360,3 +360,23 @@ from v54 as l1v54, v1 as l1v1 where l1v54.vc1) as sub1 on not l0v40.vc0 where l0
 
 select 1 from v20 as l0v20, v27 as l0v27, v1 as l0v1 where (l0v20.vc0) in (-3, l0v20.vc0, l0v27.vc1);
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "t1" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+INSERT INTO "t1" VALUES (false), (true);
+
+create view v5(vc0) as (values (1), (4));
+
+create view v8(vc1) as ((select l0t1.c0 from t1 as l0t1) union distinct (select false));
+
+SELECT v5.vc0 FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON 
+true WHERE least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true);
+	-- 1
+	-- 1
+	-- 4
+	-- 4
+
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true) AS INT) as count
+FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON true) as res;
+	-- 4
+ROLLBACK;
