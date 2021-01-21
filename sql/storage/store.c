@@ -4261,6 +4261,7 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	/* merge table depends on part table */
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	assert(isMergeTable(mt) || isReplicaTable(mt));
+	mt = new_table(tr, mt);
 	p->t = mt;
 	p->member = pt;
 	/* TODO parts should have a unique name - id ? */
@@ -4291,6 +4292,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
+	mt = new_table(tr, mt);
 	if (min) {
 		ok = VALinit(&vmin, localtype, min);
 		if (ok && localtype != TYPE_str)
@@ -4381,7 +4383,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	}
 
 	if (!update)
-		cs_add(&mt->members, p, TR_NEW);
+		os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
 finish:
 	VALclear(&vmin);
 	VALclear(&vmax);
@@ -4402,6 +4404,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	int localtype = tpe.type->localtype, i = 0;
 	sqlid *v;
 
+	mt = new_table(tr, mt);
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
 		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
@@ -4474,7 +4477,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		/* add merge table dependency */
 		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 		store->table_api.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
-		cs_add(&mt->members, p, TR_NEW);
+		os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
 	}
 	return 0;
 }
