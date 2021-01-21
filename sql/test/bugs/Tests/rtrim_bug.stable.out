@@ -47,7 +47,7 @@ stdout of test 'rtrim_bug` in directory 'sql/test/bugs` itself:
 % sys.,	sys. # table_name
 % data_length,	data_value # name
 % int,	varchar # type
-% 1,	1 # length
+% 1,	0 # length
 #DROP VIEW v1;
 #DROP VIEW v2;
 #DROP TABLE t1;

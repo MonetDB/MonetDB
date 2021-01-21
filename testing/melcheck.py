@@ -76,7 +76,7 @@ def checkcommand(imp, mod, fcn, decl, retc, argc, args):
         cpos = cres.end(0)
 
 def process1(f):
-    data = exportutils.preprocess(f)
+    data = exportutils.preprocess(f, include=True)
     pats = {}
     cmds = {}
     res = fcnre.search(data)
