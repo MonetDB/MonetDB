@@ -1,8 +1,0 @@
-function welcome0(lim:int):str;
-    i:= 2;
-    w:="hello";
-    return (w,i);   # should produce a type error
-end welcome0;
-
-y:= user.welcome0(1);
-io.print(y);
