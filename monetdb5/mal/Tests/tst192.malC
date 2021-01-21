@@ -1,6 +1,0 @@
-function welcome1(lim:int):str;
-    i:= 2;
-    return w:="hello"; 
-end welcome1;
-y:= user.welcome1(1);
-io.print(y);

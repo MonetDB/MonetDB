@@ -1,5 +1,0 @@
-function foo();
-i:=32;
-io.printi;
-io.print(i);
-end foo;

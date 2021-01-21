@@ -1,5 +1,0 @@
-SELECT LOG(2.0, 64.0); -- 6.0
-SELECT LOG(2,65536); -- 16.0
-SELECT LOG(10,100); -- 2.0
-SELECT LOG(2,42); -- 5.392317423
-SELECT LOG(1,100); -- error, divide by 0
