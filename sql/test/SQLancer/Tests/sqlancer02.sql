@@ -364,3 +364,22 @@ SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies
 	-- 0
 
 DROP TABLE mycount;
+
+START TRANSACTION;
+create view v20(vc0) as (values (-214362849));
+
+create view v40(vc0) as (values (false), (true));
+
+create view v43(vc0) as (values (null), (true));
+
+create view v54(vc0, vc1, vc2) as (values ('S12^h)y{[]', false, 9.000000000000),('0.9516513734508343', true, null));
+
+create view v1(vc0) as (with cte0(c0,c1,c2) as ((select 7, 0, 2.00000000) union all
+(select 5, 5.1, 4)) select '8#<Fk#]R' from v40 as l0v40, v43 as l0v43, cte0 as l0cte0);
+
+create view v27(vc0, vc1, vc2, vc3, vc4) as (select 1, 2, 1, 0.920, -4 from v40 as l0v40 right outer join (
+select true, case l1v54.vc0 when 'a' then -1 when 'b' then 3 end, 1
+from v54 as l1v54, v1 as l1v1 where l1v54.vc1) as sub1 on not l0v40.vc0 where l0v40.vc0);
+
+select 1 from v20 as l0v20, v27 as l0v27, v1 as l0v1 where (l0v20.vc0) in (-3, l0v20.vc0, l0v27.vc1);
+ROLLBACK;
