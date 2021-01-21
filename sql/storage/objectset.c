@@ -685,29 +685,6 @@ get_valid_object_id(sql_trans *tr, objectversion *ov)
 	return ov;
 }
 
-#if 0
-static void
-os_update_hash(objectset *os, object_node *n, /*new*/ objectversion *ov)
-{
-	MT_lock_set(&os->ht_lock);
-	if (os->name_map) {
-		hash_delete(os->name_map, n);
-		int nkey = os->name_map->key(ov);
-		hash_add(os->name_map, nkey, ov);
-	}
-
-	if (os->id_map) {
-		hash_delete(os->id_map, n);
-		int nkey = os->id_map->key(ov);
-		hash_add(os->id_map, nkey, ov);
-	}
-
-	n->data = ov;
-
-	MT_lock_unset(&os->ht_lock);
-}
-#endif
-
 static int
 os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectversion *ov) {
 	object_node *name_based_node = NULL;
