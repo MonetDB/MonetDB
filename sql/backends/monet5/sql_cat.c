@@ -548,29 +548,28 @@ drop_table(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 		throw(SQL,"sql.drop_table", SQLSTATE(42000) "DROP TABLE: cannot drop system table '%s'", tname);
 	if (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && t->persistence == SQL_LOCAL_TEMP))
 		throw(SQL,"sql.drop_table", SQLSTATE(42000) "DROP TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-	/* to be checked via dependencies */
-#if 0
+
 	if (!drop_action && t->keys.set) {
 		for (node *n = t->keys.set->h; n; n = n->next) {
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {
-				sql_ukey *uk = (sql_ukey *) k;
+				struct os_iter oi;
+				os_iterator(&oi, k->t->s->keys, sql->session->tr, NULL);
+				for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
+					sql_key *fk = (sql_key*)b;
+					sql_fkey *rk = (sql_fkey*)b;
 
-				if (uk->keys && list_length(uk->keys)) {
-					node *l = uk->keys->h;
+					if (fk->type != fkey || rk->rkey != k->base.id)
+						continue;
 
-					for (; l; l = l->next) {
-						k = l->data;
-						/* make sure it is not a self referencing key */
-						if (k->t != t)
-							throw(SQL,"sql.drop_table", SQLSTATE(40000) "DROP TABLE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, tname);
-					}
+					/* make sure it is not a self referencing key */
+					if (fk->t != t)
+						throw(SQL,"sql.drop_table", SQLSTATE(40000) "DROP TABLE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, tname);
 				}
 			}
 		}
 	}
-#endif
 
 	if (!drop_action && mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL))
 		throw (SQL,"sql.drop_table",SQLSTATE(42000) "DROP TABLE: unable to drop table %s (there are database objects which depend on it)\n", t->base.name);
