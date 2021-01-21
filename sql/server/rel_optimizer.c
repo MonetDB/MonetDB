@@ -1350,16 +1350,16 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 {
 	switch(e->type) {
 	case e_cmp: {
+		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
-		int res = 1, lmust = 0;
 
-		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
+		if (is_project(rel->op) || e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
-		res = can_push_func(l, rel, &lmust) && can_push_func(r, rel, &lmust) && (!f || can_push_func(f, rel, &lmust));
-		if (res && !lmust)
-			return 1;
-		(*must) |= lmust;
-		return res;
+		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
+				(!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) ||
+			(f &&
+				(r->type == e_column || can_push_func(r, rel, &mustr)) &&
+			(f->type == e_column || can_push_func(f, rel, &mustf)) && (*must = (mustr || mustf)));
 	}
 	case e_convert:
 		return can_push_func(e->l, rel, must);
@@ -1378,8 +1378,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		return res;
 	}
 	case e_column:
-		 /* aliases cannot be bound on the same level, ie same projection */
-		if ((exp_name(e) && !has_label(e)) || (rel && !rel_find_exp(rel, e)))
+		if (rel && !rel_find_exp(rel, e))
 			return 0;
 		(*must) = 1;
 		/* fall through */
