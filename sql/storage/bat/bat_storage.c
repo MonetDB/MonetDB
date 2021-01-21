@@ -126,7 +126,7 @@ get_dbat(sql_dbat *d, ulng tid, int is_temp)
 	return d;
 }
 
-static sql_delta *
+sql_delta *
 timestamp_delta( sql_trans *tr, sql_delta *d, int type, int is_temp)
 {
 	if (is_temp)
@@ -343,7 +343,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 		return bind_uidx(tr, i, access);
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
 	sql_delta *d = timestamp_delta(tr, i->data, type, isTempTable(i->t));
-	return delta_bind_bat( d, access, isTempTable(i->t) || isNew(i->t));
+	return delta_bind_bat( d, access, isNew(i->t));
 }
 
 static int
