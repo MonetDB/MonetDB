@@ -29,9 +29,10 @@ static bool OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	Symbol s;
 	str mod,fcn;
 
-	mod = VALget(&getVar(mb, getArg(p, 1))->value);
-	fcn = VALget(&getVar(mb, getArg(p, 2))->value);
-	if( (s= findSymbol(cntxt->usermodule, mod,fcn)) ==0 )
+	mod = VALget(&getVar(mb, getArg(p, p->retc+0))->value);
+	fcn = VALget(&getVar(mb, getArg(p, p->retc+1))->value);
+	//if( (s= findSymbol(cntxt->usermodule, mod,fcn)) ==0 )
+	if( (s= findSymbolInModule(getModule(putName(mod)), putName(fcn))) ==0 )
 		return false;
 	if (s->def == mb)			/* avoid infinite recursion */
 		return false;
