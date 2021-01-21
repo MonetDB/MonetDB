@@ -5519,6 +5519,8 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 	const char *nilptr = ATOMnilptr(TYPE_str);
 
 	assert(name);
+
+	t = new_table(tr, t);
 	base_init(tr->sa, &nt->base, next_oid(tr->store), TR_NEW, name);
 	nt->columns = list_new(tr->sa, (fdestroy) NULL);
 	nt->t = t;

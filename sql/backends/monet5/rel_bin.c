@@ -1324,11 +1324,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 static stmt *
 stmt_col( backend *be, sql_column *c, stmt *del, int part)
 {
-	//sql_trans *tr = be->mvc->session->tr;
 	stmt *sc = stmt_bat(be, c, RDONLY, part);
 
 	if (isTable(c->t) && c->t->access != TABLE_READONLY &&
-	   (!isNew(c) /*|| (c->t->s && !inTransaction(tr, c->t))*/ || !isNew(c->t) /* alter */) &&
+	   (!isNew(c) || !isNew(c->t) /* alter */) &&
 	   (c->t->persistence == SQL_PERSIST || c->t->s) /*&& !c->t->commit_action*/) {
 		stmt *i = stmt_bat(be, c, RD_INS, 0);
 		stmt *u = stmt_bat(be, c, RD_UPD_ID, part);
@@ -1344,11 +1343,10 @@ stmt_col( backend *be, sql_column *c, stmt *del, int part)
 static stmt *
 stmt_idx( backend *be, sql_idx *i, stmt *del, int part)
 {
-	//sql_trans *tr = be->mvc->session->tr;
 	stmt *sc = stmt_idxbat(be, i, RDONLY, part);
 
 	if (isTable(i->t) && i->t->access != TABLE_READONLY &&
-	   (!isNew(i) /*|| (i->t->s && !inTransaction(tr, i->t))*/ || !isNew(i->t)/* alter */) &&
+	   (!isNew(i) || !isNew(i->t) /* alter */) &&
 	   (i->t->persistence == SQL_PERSIST || i->t->s) /*&& !i->t->commit_action*/) {
 		stmt *ic = stmt_idxbat(be, i, RD_INS, 0);
 		stmt *u = stmt_idxbat(be, i, RD_UPD_ID, part);
@@ -4052,7 +4050,6 @@ static stmt *
 update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol)
 {
 	mvc *sql = be->mvc;
-	//sql_trans *tr = sql->session->tr;
 	char *msg = NULL;
 	stmt *res = NULL;
 
@@ -4073,7 +4070,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			This is done using a relation join and a count (which
 			should be zero)
 	 	*/
-		if (!isNew(k) /*|| !inTransaction(tr, k)*/) {
+		if (!isNew(k)) {
 			stmt *nu_tids = stmt_tdiff(be, dels, tids, NULL); /* not updated ids */
 			list *lje = sa_list(sql->sa);
 			list *rje = sa_list(sql->sa);
@@ -4186,7 +4183,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 		stmt *s = NULL, *h = NULL, *o;
 
 		/* s should be empty */
-		if (!isNew(k) /*|| !inTransaction(tr, k)*/) {
+		if (!isNew(k)) {
 			stmt *nu_tids = stmt_tdiff(be, dels, tids, NULL); /* not updated ids */
 			assert (updates);
 
