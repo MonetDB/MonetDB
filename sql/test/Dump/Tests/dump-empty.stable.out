@@ -1,0 +1,34 @@
+stdout of test 'dump-empty` in directory 'sql/test/Dump` itself:
+
+
+# 17:33:41 >  
+# 17:33:41 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=31345" "--set" "mapi_usock=/var/tmp/mtest-4412/.s.monetdb.31345" "--set" "monet_prompt=" "--forcemito" "--dbpath=/home/niels/scratch/rc-clean/Linux-x86_64/var/MonetDB/mTests_sql_test_Dump" "--set" "embedded_c=true"
+# 17:33:41 >  
+
+# MonetDB 5 server v11.30.0
+# This is an unreleased version
+# Serving database 'mTests_sql_test_Dump', using 8 threads
+# Compiled for x86_64-unknown-linux-gnu/64bit with 128bit integers
+# Found 15.386 GiB available main-memory.
+# Copyright (c) 1993 - July 2008 CWI.
+# Copyright (c) August 2008 - 2018 MonetDB B.V., all rights reserved
+# Visit https://www.monetdb.org/ for further information
+# Listening for connection requests on mapi:monetdb://xps13:31345/
+# Listening for UNIX domain connection requests on mapi:monetdb:///var/tmp/mtest-4412/.s.monetdb.31345
+# MonetDB/GIS module loaded
+# SQL catalog created, loading sql scripts once
+
+
+# 10:50:27 >  
+# 10:50:27 >  /usr/bin/python dump-empty.SQL.py dump-empty 
+# 10:50:27 >  
+
+#msqldump tables Wed Sep  8 10:50:27 2010
+
+START TRANSACTION;
+COMMIT;
+
+# 10:50:28 >  
+# 10:50:28 >  Done.
+# 10:50:28 >  
+
