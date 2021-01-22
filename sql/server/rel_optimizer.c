@@ -1378,7 +1378,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		return res;
 	}
 	case e_column:
-		if (rel && !rel_find_exp(rel, e))
+		if ((exp_name(e) && !has_label(e)) || (rel && !rel_find_exp(rel, e)))
 			return 0;
 		(*must) = 1;
 		/* fall through */
