@@ -602,12 +602,14 @@ sql_column_kc_cmp(sql_column *c, sql_kc *kc)
 static sql_idx *
 find_fk_index(mvc *sql, sql_table *l, list *lcols, sql_table *r, list *rcols)
 {
+	sql_trans *tr = sql->session->tr;
+
 	if (l->idxs.set) {
 		node *in;
 		for (in = l->idxs.set->h; in; in = in->next){
 			sql_idx *li = in->data;
 			if (li->type == join_idx) {
-				sql_key *rk = (sql_key*)os_find_id(li->t->s->keys, sql->session->tr, ((sql_fkey*)li->key)->rkey);
+				sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)li->key)->rkey);
 				fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
 				if (rk->t == r &&
@@ -2497,6 +2499,7 @@ rel_remove_redundant_join(visitor *v, sql_rel *rel)
 static sql_column *
 is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test if e is a foreing key column for the pk on pkc */
 {
+	sql_trans *tr = sql->session->tr;
 	sql_column *c = exp_find_column(rel, e, -2);
 
 	if (c) {
@@ -2510,7 +2513,7 @@ is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test 
 					sql_kc *fkc = m->data;
 
 					if (strcmp(fkc->c->base.name, c->base.name) == 0) { /* same fkey column */
-						sql_key *fkey = (sql_key*)os_find_id(li->t->s->keys, sql->session->tr, ((sql_fkey*)li->key)->rkey);
+						sql_key *fkey = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)li->key)->rkey);
 
 						if (strcmp(fkey->t->base.name, pkc->t->base.name) == 0) { /* to same pk table */
 							for (node *o = fkey->columns->h ; o ; o = n->next) {

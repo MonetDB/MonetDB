@@ -660,6 +660,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 
 		cs_add(&t->keys, k, 0);
 		os_add(s->keys, tr, k->base.name, dup_base(&k->base));
+		os_add(tr->cat->objects, tr, k->base.name, dup_base(&k->base));
 	}
 	store->table_api.rids_destroy(rs);
 
@@ -1771,7 +1772,7 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	store->readonly = readonly;
 	store->singleuser = singleuser;
 	store->debug = debug;
-	store->transaction = TRANSACTION_ID_BASE;
+	store->transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE);
 	(void)store_timestamp(store); /* increment once */
 	MT_lock_init(&store->lock, "sqlstore_lock");
 
@@ -2676,7 +2677,9 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 		list_append(nk->columns, kc_dup(tr, okc, t));
 	}
 
-	if (isGlobal(t) && os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base)))
+	if (isGlobal(t) &&
+			(os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base)) ||
+			 os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))))
 		return NULL;
 	return nk;
 }
@@ -3295,6 +3298,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	if (!tr->cat) {
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
 		store->cat->schemas = os_new(tr->sa, (destroy_fptr) NULL, false, true);
+		store->cat->objects = os_new(tr->sa, (destroy_fptr) NULL, false, false);
 	}
 	tr->tmp = store->tmp;
 	tr->parent = parent;
@@ -3552,6 +3556,7 @@ sys_drop_key(sql_trans *tr, sql_key *k, int drop_action)
 	}
 	/* remove key from schema */
 	os_del(k->t->s->keys, tr, k->base.name, dup_base(&k->base));
+	os_del(tr->cat->objects, tr, k->base.name, dup_base(&k->base));
 	if (k->t->pkey == (sql_ukey*)k)
 		k->t->pkey = NULL;
 
@@ -5164,6 +5169,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 
 	cs_add(&t->keys, nk, TR_NEW);
 	os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base));
+	os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base));
 
 	store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action );
 	return nk;
@@ -5204,6 +5210,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 
 	cs_add(&t->keys, nk, TR_NEW);
 	os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base));
+	os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base));
 
 	store->table_api.table_insert(tr, syskey, &nk->base.id, &t->base.id, &nk->type, nk->base.name, (nk->type == fkey) ? &((sql_fkey *) nk)->rkey : &neg, &action);
 

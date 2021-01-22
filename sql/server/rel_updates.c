@@ -135,7 +135,8 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	int need_nulls = 0;
 	node *m, *o;
-	sql_key *rk = (sql_key*)os_find_id(i->t->s->keys, sql->session->tr, ((sql_fkey*)i->key)->rkey);
+	sql_trans *tr = sql->session->tr;
+	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name);
 
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -723,7 +724,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 	int need_nulls = 0;
 	node *m, *o;
-	sql_key *rk = (sql_key*)os_find_id(i->t->s->keys, sql->session->tr, ((sql_fkey*)i->key)->rkey);
+	sql_trans *tr = sql->session->tr;
+	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme));
 
 	sql_subtype *bt = sql_bind_localtype("bit");
