@@ -330,8 +330,9 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(state & id_based_rollbacked);
 
 	if (ov->id_based_older) {
-		if (ov->id_based_older->ts < TRANSACTION_ID_BASE) {
-			// older is last committed state. Restore versionhead  pointer to that.
+		if (ov->ts != ov->id_based_older->ts) {
+			// older is last committed state or belongs to parent transaction.
+			// In any case, we restore versionhead pointer to that.
 			// TODO START ATOMIC SET
 			ov->id_based_head->ov = ov->id_based_older;
 		}
@@ -359,8 +360,9 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(state & name_based_rollbacked);
 
 	if (ov->name_based_older) {
-		if (ov->name_based_older->ts < TRANSACTION_ID_BASE) {
-			// older is last committed state. Restore versionhead  pointer to that.
+		if (ov->ts != ov->name_based_older->ts) {
+			// older is last committed state or belongs to parent transaction.
+			// In any case, we restore versionhead pointer to that.
 			// TODO START ATOMIC SET
 			ov->name_based_head->ov = ov->name_based_older;
 		}
