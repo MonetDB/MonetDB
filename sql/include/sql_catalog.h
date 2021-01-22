@@ -294,6 +294,7 @@ typedef struct sql_schema {
 
 typedef struct sql_catalog {
 	struct objectset *schemas;
+	struct objectset *objects;
 } sql_catalog;
 
 typedef struct sql_trans {
