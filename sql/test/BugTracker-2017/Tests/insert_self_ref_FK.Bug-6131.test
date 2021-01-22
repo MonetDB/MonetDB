@@ -1,0 +1,114 @@
+statement ok
+CREATE TABLE test101(
+  A INT NOT NULL PRIMARY KEY,
+  B INT NOT NULL,
+  C INT NOT NULL,
+  CONSTRAINT "fC" FOREIGN KEY (C) REFERENCES test101(A)
+)
+
+statement ok
+INSERT INTO test101 VALUES (101, 101, 101)
+
+statement ok
+ALTER TABLE test101 ALTER C SET NULL
+
+statement ok
+INSERT INTO test101 VALUES (100, 100, NULL)
+
+statement ok
+INSERT INTO test101 VALUES (102, 102, 102)
+
+statement ok
+INSERT INTO test101 VALUES (103, 103, 101)
+
+statement ok
+UPDATE test101 SET C = 100 WHERE C IS NULL
+
+query III rowsort
+select * from test101
+----
+100
+100
+100
+101
+101
+101
+102
+102
+102
+103
+103
+103
+
+statement ok
+ALTER TABLE test101 ALTER C SET NOT NULL
+
+statement ok
+INSERT INTO test101 VALUES (104, 104, 104)
+
+statement ok
+DROP TABLE test101
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" DOUBLE,CONSTRAINT "t1_c0_unique" UNIQUE ("c0"),CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t1" ("c0"))
+
+statement ok
+COPY 9 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.21248182395969406
+0.6307796692265083
+2059310235
+-6.5457821e+08
+0.743704157497456
+0.4001718453135127
+0.3935743494971655
+0.5299192301063729
+0.7609386265982908
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0"("tc0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),
+CONSTRAINT "t0_tc0_fkey" FOREIGN KEY ("tc0") REFERENCES "sys"."t0" ("tc0"))
+
+statement ok
+INSERT INTO t0(tc0) VALUES('b' BETWEEN 'a' AND 'c')
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t1(c0 FLOAT)
+
+statement ok
+ALTER TABLE t1 ADD UNIQUE(c0)
+
+statement ok
+INSERT INTO t1(c0) VALUES(13.38)
+
+statement ok
+DELETE FROM t1 WHERE true
+
+statement ok
+INSERT INTO t1(c0) VALUES(0.9), (0.5), (-3), (0.4)
+
+statement ok
+ALTER TABLE t1 ADD FOREIGN KEY (c0) REFERENCES t1(c0)
+
+statement ok
+INSERT INTO t1(c0) VALUES(null)
+
+statement ok
+DELETE FROM t1
+
+statement ok
+DROP TABLE t1
+
+
