@@ -2087,6 +2087,7 @@ rel_push_topn_and_sample_down(visitor *v, sql_rel *rel)
 			ur = func(v->sql->sa, ur, sum_limit_offset(v->sql, rel));
 
 			u = rel_setop(v->sql->sa, ul, ur, op_union);
+			/* TODO the list of expressions of u don't match ul and ur */
 			u->exps = exps_alias(v->sql, r->exps);
 			u->nrcols = list_length(u->exps);
 			set_processed(u);
@@ -4111,7 +4112,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 					sql_table *mt = (bt)?bt->r:NULL;
 					if (c && mt && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
 						v->changes++;
-						return rel_inplace_setop(rel, ul, ur, op_union,
+						return rel_inplace_setop(v->sql, rel, ul, ur, op_union,
 					       	       rel_projections(v->sql, rel, NULL, 1, 1));
 					}
 				}
@@ -5069,7 +5070,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
 			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
-			return rel_inplace_setop(rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
+			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (is_union(l->op) && !need_distinct(l) &&
 			   is_union(r->op) && !need_distinct(r)) {
 			sql_rel *nl, *nr;
@@ -5112,7 +5113,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
 			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
-			return rel_inplace_setop(rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
+			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_union(l->op) &&
 			   is_union(r->op) && !need_distinct(r) &&
 			   !is_semi(rel->op)) {
@@ -5141,7 +5142,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nl = rel_project(v->sql->sa, nl, rel_projections(v->sql, nl, NULL, 1, 1));
 			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
-			return rel_inplace_setop(rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
+			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 		/* {semi}join ( A1, union (A2, B)) [A1.partkey = A2.partkey] ->
 		 * {semi}join ( A1, A2 )
 		 * and
@@ -5471,7 +5472,7 @@ rel_push_select_down_union(visitor *v, sql_rel *rel)
 		ul->exps = exps_copy(v->sql, s->exps);
 		ur->exps = exps_copy(v->sql, s->exps);
 
-		rel = rel_inplace_setop(rel, ul, ur, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
+		rel = rel_inplace_setop(v->sql, rel, ul, ur, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 		v->changes++;
 		return rel;
 	}
@@ -5600,7 +5601,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		ul->exps = exps_copy(v->sql, p->exps);
 		ur->exps = exps_copy(v->sql, p->exps);
 
-		rel = rel_inplace_setop(rel, ul, ur, op_union,
+		rel = rel_inplace_setop(v->sql, rel, ul, ur, op_union,
 			rel_projections(v->sql, rel, NULL, 1, 1));
 		if (need_distinct)
 			set_distinct(rel);

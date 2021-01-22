@@ -434,59 +434,6 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE "sys"."t0" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"))
-
-statement ok
-COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-<COPY_INTO_DATA>
-"1970-01-07 15:47:59.000000"
-"1970-01-01 01:00:00.000000"
-"1970-01-15 16:36:07.000000"
-"1970-01-01 13:45:44.000000"
-
-statement ok
-CREATE TABLE "sys"."t2" ("tc2" BOOLEAN NOT NULL,CONSTRAINT "t2_tc2_pkey" PRIMARY KEY ("tc2"),CONSTRAINT "t2_tc2_unique" UNIQUE ("tc2"))
-
-statement ok
-COPY 2 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-<COPY_INTO_DATA>
-false
-true
-
-query T rowsort
-SELECT substr(ltrim('1Yc',''), CAST(t2.tc2 AS INT), "second"(CAST(t0.tc0 AS TIMESTAMP))) FROM t2, t0
-----
-(empty)
-(empty)
-1Yc
-1Yc
-1Yc
-1Yc
-1Yc
-1Yc
-
-statement ok
-ROLLBACK
-
-statement ok
-START TRANSACTION
-
-statement ok
-CREATE TABLE "sys"."t2" ("c0" INTEGER NOT NULL)
-
-statement ok
-INSERT INTO "t2" VALUES (59), (-3), (5), (0), (1), (-6)
-
-statement ok
-UPDATE t2 SET c0 = 5 WHERE least(((3)=(round(0.55, t2.c0))), true)
-
-statement ok
-ROLLBACK
-
-statement ok
-START TRANSACTION
-
-statement ok
 CREATE TABLE "sys"."t2" ("c1" DOUBLE NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
 
 statement ok
@@ -664,9 +611,94 @@ select true, case l1v54.vc0 when 'a' then -1 when 'b' then 3 end, 1
 from v54 as l1v54, v1 as l1v1 where l1v54.vc1) as sub1 on not l0v40.vc0 where l0v40.vc0)
 
 query I rowsort
-select 1 from v20 as l0v20, v27 as l0v27, v1 as l0v1 where (l0v20.vc0) in (-3, l0v20.vc0, l0v27.vc1);
+select 1 from v20 as l0v20, v27 as l0v27, v1 as l0v1 where (l0v20.vc0) in (-3, l0v20.vc0, l0v27.vc1)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+INSERT INTO "t1" VALUES (false), (true)
+
+statement ok
+create view v5(vc0) as (values (1), (4))
+
+statement ok
+create view v8(vc1) as ((select l0t1.c0 from t1 as l0t1) union distinct (select false))
+
+query I rowsort
+SELECT v5.vc0 FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON
+true WHERE least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true)
 ----
 1
+1
+4
+4
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true) AS INT) as count
+FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON true) as res
+----
+4
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"))
+
+statement ok
+COPY 4 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+"1970-01-07 15:47:59.000000"
+"1970-01-01 01:00:00.000000"
+"1970-01-15 16:36:07.000000"
+"1970-01-01 13:45:44.000000"
+
+statement ok
+CREATE TABLE "sys"."t2" ("tc2" BOOLEAN NOT NULL,CONSTRAINT "t2_tc2_pkey" PRIMARY KEY ("tc2"),CONSTRAINT "t2_tc2_unique" UNIQUE ("tc2"))
+
+statement ok
+COPY 2 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+false
+true
+
+query T rowsort
+SELECT substr(ltrim('1Yc',''), CAST(t2.tc2 AS INT), "second"(CAST(t0.tc0 AS TIMESTAMP))) FROM t2, t0
+----
+(empty)
+(empty)
+1Yc
+1Yc
+1Yc
+1Yc
+1Yc
+1Yc
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" INTEGER NOT NULL)
+
+statement ok
+INSERT INTO "t2" VALUES (59), (-3), (5), (0), (1), (-6)
+
+statement ok
+UPDATE t2 SET c0 = 5 WHERE least(((3)=(round(0.55, t2.c0))), true)
 
 statement ok
 ROLLBACK
