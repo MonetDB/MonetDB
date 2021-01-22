@@ -1353,7 +1353,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-		if (is_project(rel->op) || e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
+		if ((is_project(rel->op) && e->f) || e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
 		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
 				(!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) ||
@@ -1388,17 +1388,20 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 }
 
 static int
-exps_can_push_func(list *exps, sql_rel *rel)
+exps_can_push_func(list *exps, sql_rel *rel, bool *push_left, bool *push_right)
 {
-	for(node *n = exps->h; n; n = n->next) {
+	for(node *n = exps->h; n && !*push_left && !*push_right; n = n->next) {
 		sql_exp *e = n->data;
-		int must = 0, mustl = 0, mustr = 0;
+		int mustl = 0, mustr = 0;
 
-		if (is_joinop(rel->op) && ((can_push_func(e, rel->l, &mustl) && mustl) || (can_push_func(e, rel->r, &mustr) && mustr)))
-			return 1;
-		else if (is_select(rel->op) && can_push_func(e, rel->l, &must) && must)
-			return 1;
+		if ((is_joinop(rel->op) || is_select(rel->op)) && ((can_push_func(e, rel->l, &mustl) && mustl)))
+			*push_left = true;
+		
+		if (is_joinop(rel->op) && can_push_func(e, rel->r, &mustr) && mustr)
+			*push_right = true;
 	}
+	if (*push_left || *push_right)
+		return 1;
 	return 0;
 }
 
@@ -1512,19 +1515,20 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 	if ((is_select(rel->op) || is_joinop(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
 		list *exps = rel->exps;
 		sql_rel *l = rel->l, *r = rel->r;
+		bool push_left = false, push_right = false;
 
 		/* only push down when is useful */
 		if ((is_select(rel->op) && list_length(rel->exps) <= 1) || rel_is_ref(l) || (is_joinop(rel->op) && rel_is_ref(r)))
 			return rel;
-		if (exps_can_push_func(exps, rel) && exps_need_push_down(exps)) {
+		if (exps_can_push_func(exps, rel, &push_left, &push_right) && exps_need_push_down(exps)) {
 			sql_rel *nrel, *ol = l, *or = r;
 			visitor nv = { .sql = v->sql, .parent = v->parent, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
-			if (!is_simple_project(l->op) || !l->l)
+			if (push_left && (!is_simple_project(l->op) || !l->l))
 				rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (is_joinop(rel->op) && (!is_simple_project(r->op) || !r->l))
+			if (push_right && (!is_simple_project(r->op)|| !r->l))
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
@@ -1543,14 +1547,15 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 	}
 	if (is_simple_project(rel->op) && rel->l && rel->exps) {
 		sql_rel *pl = rel->l;
+		bool push_left = false, push_right = false;
 
-		if (is_joinop(pl->op) && exps_can_push_func(rel->exps, rel)) {
+		if (is_joinop(pl->op) && exps_can_push_func(rel->exps, rel, &push_left, &push_right)) {
 			sql_rel *l = pl->l, *r = pl->r;
 			list *nexps = new_exp_list(v->sql->sa);
 
-			if (!is_simple_project(l->op) || !l->l)
+			if (push_left && !is_simple_project(l->op))
 				pl->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (is_joinop(rel->op) && (!is_simple_project(r->op) || !r->l))
+			if (push_right && !is_simple_project(r->op))
 				pl->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
