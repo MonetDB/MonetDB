@@ -1353,7 +1353,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-		if (is_project(rel->op) || e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
+		if ((is_project(rel->op) && e->f) || e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
 		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
 				(!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) ||
@@ -1378,7 +1378,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		return res;
 	}
 	case e_column:
-		if ((exp_name(e) && !has_label(e)) || (rel && !rel_find_exp(rel, e)))
+		if (rel && !rel_find_exp(rel, e))
 			return 0;
 		(*must) = 1;
 		/* fall through */
@@ -1526,9 +1526,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
-			if (push_left && !is_simple_project(l->op))
+			if (push_left && (!is_simple_project(l->op) || !l->l))
 				rel->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (push_right && !is_simple_project(r->op))
+			if (push_right && (!is_simple_project(r->op)|| !r->l))
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
