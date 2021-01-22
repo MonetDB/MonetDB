@@ -861,7 +861,7 @@ static bte os_get_state(objectversion *ov) {
 
 static int
 os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectversion *ov) {
-	versionhead  *name_based_node;
+	versionhead  *name_based_node = NULL;
 	if (ov->id_based_older && strcmp(ov->id_based_older->b->name, name) == 0)
 		name_based_node = ov->id_based_older->name_based_head;
 	else if (os->unique) // Previous name based objectversion is of a different id, so now we do have to perform an extensive look up
