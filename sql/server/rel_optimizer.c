@@ -1553,9 +1553,9 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			sql_rel *l = pl->l, *r = pl->r;
 			list *nexps = new_exp_list(v->sql->sa);
 
-			if (push_left && !is_simple_project(l->op))
+			if (push_left && (!is_simple_project(l->op) || !l->l))
 				pl->l = l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 1, 1));
-			if (push_right && !is_simple_project(r->op))
+			if (push_right && (!is_simple_project(r->op)|| !r->l))
 				pl->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
