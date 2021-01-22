@@ -90,6 +90,11 @@ type_destroy(sqlstore *store, sql_type *t)
 	assert(t->base.refcnt > 0);
 	if (--(t->base.refcnt) > 0)
 		return;
+	/*
+	_DELETE(t->sqlname);
+	_DELETE(t->base.name);
+	_DELETE(t);
+	 */
 }
 
 static void
@@ -99,6 +104,13 @@ func_destroy(sqlstore *store, sql_type *f)
 	assert(f->base.refcnt > 0);
 	if (--(f->base.refcnt) > 0)
 		return;
+	/*
+	list_destroy(f->ops, store);
+	_DELETE(f->imp);
+	_DELETE(f->mod);
+	_DELETE(f->base.name);
+	_DELETE(f);
+	 */
 }
 
 static void
@@ -108,6 +120,10 @@ seq_destroy(sqlstore *store, sql_type *s)
 	assert(s->base.refcnt > 0);
 	if (--(s->base.refcnt) > 0)
 		return;
+	/*
+	_DELETE(s->base.name);
+	_DELETE(s);
+	 */
 }
 
 static void
@@ -122,6 +138,11 @@ key_destroy(sqlstore *store, sql_key *k)
 	if ((k->type == pkey) && (k->t->pkey == (sql_ukey *) k))
 		k->t->pkey = NULL;
 	(void)store;
+	/*
+	list_destroy(k->columns);
+	_DELETE(k->base.name);
+	_DELETE(k);
+	 */
 }
 
 static void
@@ -136,6 +157,11 @@ idx_destroy(sqlstore *store, sql_idx * i)
 
 	if (isTable(i->t))
 		store->storage_api.destroy_idx(store, i);
+	/*
+	list_destroy(i->columns);
+	_DELETE(i->base.name);
+	_DELETE(i);
+	 */
 }
 
 static void
@@ -150,15 +176,72 @@ trigger_destroy(sqlstore *store, sql_trigger *t)
 		t->columns = NULL;
 	}
 	(void)store;
+	/*
+	list_destroy(t->columns);
+	_DELETE(t->old_name);
+	_DELETE(t->new_name);
+	_DELETE(t->condition);
+	_DELETE(t->statement);
+	_DELETE(t->base.name);
+	_DELETE(t);
+	 */
 }
 
 static void
 column_destroy(sqlstore *store, sql_column *c)
 {
+	assert(c->base.refcnt > 0);
 	if (--(c->base.refcnt) > 0)
 		return;
 	if (isTable(c->t))
 		store->storage_api.destroy_col(store, c);
+	/*
+	_DELETE(c->def);
+	_DELETE(c->base.name);
+	_DELETE(c);
+	 */
+}
+
+static void
+table_destroy(sqlstore *store, sql_table *t)
+{
+	(void)store;
+	assert(t->base.refcnt > 0);
+	if (--(t->base.refcnt) > 0)
+		return;
+	/* cleanup its parts */
+	cs_destroy(&t->members, store);
+	cs_destroy(&t->idxs, store);
+	cs_destroy(&t->keys, store);
+	cs_destroy(&t->triggers, store);
+	cs_destroy(&t->columns, store);
+	/*
+	_DELETE(t->part);
+	_DELETE(t->query);
+	_DELETE(t->base.name);
+	_DELETE(t);
+	 */
+}
+
+static void
+schema_destroy(sqlstore *store, sql_schema *s)
+{
+	assert(s->base.refcnt > 0);
+	if (--(s->base.refcnt) > 0)
+		return;
+	/* cleanup its parts */
+	os_destroy(s->parts, store);
+	os_destroy(s->triggers, store);
+	os_destroy(s->idxs, store);
+	os_destroy(s->keys, store);
+	os_destroy(s->seqs, store);
+	os_destroy(s->tables, store);
+	os_destroy(s->funcs, store);
+	os_destroy(s->types, store);
+	/*
+	_DELETE(s->base.name);
+	_DELETE(s);
+	 */
 }
 
 static void
@@ -967,7 +1050,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		v = store->table_api.column_find_value(tr, find_sql_column(ss, "owner"), rid);
 		s->owner = *(sqlid *)v;		_DELETE(v);
 
-		s->tables = os_new(tr->sa, (destroy_fptr) NULL, false, true);
+		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true);
 		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true);
 		s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false);
 		s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true);
@@ -1534,7 +1617,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = TRUE;
-	s->tables = os_new(tr->sa, (destroy_fptr) NULL, false, true);
+	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true);
 	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true);
@@ -3334,7 +3417,7 @@ sql_trans_create_(sqlstore *store, sql_trans *parent, const char *name)
 	tr->cat = store->cat;
 	if (!tr->cat) {
 		store->cat = tr->cat = SA_ZNEW(tr->sa, sql_catalog);
-		store->cat->schemas = os_new(tr->sa, (destroy_fptr) NULL, false, true);
+		store->cat->schemas = os_new(tr->sa, (destroy_fptr) &schema_destroy, false, true);
 		store->cat->objects = os_new(tr->sa, (destroy_fptr) &key_destroy, false, false);
 	}
 	tr->tmp = store->tmp;
@@ -3349,7 +3432,7 @@ schema_dup(sql_trans *tr, sql_schema *s)
 	sql_schema *ns = SA_ZNEW(tr->sa, sql_schema);
 
 	*ns = *s;
-	ns->tables = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
+	ns->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true);
 	ns->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true);
 	ns->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true);
 	ns->idxs = os_new(tr->sa, (destroy_fptr) &idx_destroy, isTempSchema(s), true);
@@ -4205,7 +4288,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->auth_id = auth_id;
 	s->owner = owner;
 	s->system = FALSE;
-	s->tables = os_new(tr->sa, (destroy_fptr) NULL, isTempSchema(s), true);
+	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true);
 	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, isTempSchema(s), true);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, isTempSchema(s), false);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true);
