@@ -310,13 +310,23 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	_DELETE(ov);
 }
 
+static bte os_atmc_get_state(objectversion *ov) {
+	// ATOMIC GET
+	bte state = ov->state;
+	return state;
+}
+
+static void os_atmc_set_state(objectversion *ov, bte state) {
+	// ATOMIC SET
+	ov->state = state;
+}
+
 static void os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store);
 static void os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store);
 
 static void
 os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
-	// TODO ATOMIC GET
-	bte state = ov->state;
+	bte state = os_atmc_get_state(ov);
 	assert(state & id_based_rollbacked);
 
 	if (ov->id_based_older) {
@@ -328,12 +338,10 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 		else {
 			if (!(state & name_based_rollbacked))
 				os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
-			// TODO ATOMIC GET
-			state = ov->id_based_older->state;
+			state = os_atmc_get_state(ov->id_based_older);
 
 			state |= id_based_rollbacked;
-			//TODO ATOMIC SET
-			ov->id_based_older->state = state;
+			os_atmc_set_state(ov->id_based_older, state);
 
 			// id based cascaded rollback along the parents
 			os_rollback_os_id_based_cascading(ov->id_based_older, store);
@@ -347,8 +355,7 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 
 static void
 os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
-	// TODO ATOMIC GET
-	bte state = ov->state;
+	bte state = os_atmc_get_state(ov);
 	assert(state & name_based_rollbacked);
 
 	if (ov->name_based_older) {
@@ -360,12 +367,10 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 		else {
 			if (!(state & id_based_rollbacked))
 				os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
-			// TODO ATOMIC GET
-			state = ov->name_based_older->state;
+			state = os_atmc_get_state(ov->name_based_older);
 
 			state |= name_based_rollbacked;
-			//TODO ATOMIC SET
-			ov->name_based_older->state = state;
+			os_atmc_set_state(ov->name_based_older, state);
 
 			// name based cascaded rollback along the parents
 			os_rollback_os_name_based_cascading(ov->name_based_older, store);
@@ -379,18 +384,14 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 
 static void
 os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
-	// TODO ATOMIC GET
-	bte state = ov->state;
+	bte state = os_atmc_get_state(ov);
 
 	if (state & name_based_rollbacked) {
 		return;
 	}
 
 	state |= name_based_rollbacked;
-
-	//TODO ATOMIC SET
-	ov->state = state;
-
+	os_atmc_set_state(ov, state);
 
 	if (!(state & id_based_rollbacked))
 		os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
@@ -400,17 +401,14 @@ os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 
 static void
 os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store) {
-	// TODO ATOMIC GET
-	bte state = ov->state;
+	bte state = os_atmc_get_state(ov);
 
 	if (state & id_based_rollbacked) {
 		return;
 	}
 
 	state |= id_based_rollbacked;
-
-	//TODO ATOMIC SET
-	ov->state = state;
+	os_atmc_set_state(ov, state);
 
 	if (!(state & name_based_rollbacked))
 		os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
@@ -449,7 +447,6 @@ put_under_destruction(sqlstore* store, objectversion *ov, ulng oldest)
 			ov->id_based_newer->id_based_older = NULL;
 		}
 
-		// TODO ATOMIC GET
 		ov->ts = store_get_timestamp(store)+1;
 
 		if (ov->id_based_older) {
@@ -464,10 +461,9 @@ put_under_destruction(sqlstore* store, objectversion *ov, ulng oldest)
 }
 
 static int
-os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
-
-	// TODO ATOMIC GET life_cycle
-	if (ov->state == under_destruction) {
+os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
+{
+	if (os_atmc_get_state(ov) == under_destruction) {
 	 	if (ov->ts < oldest) {
 			// This one is ready to be freed
 			objectversion_destroy(store, ov->os, ov);
@@ -480,7 +476,6 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
 			 * We mark it with the latest possible starttime and reinsert it into the cleanup queue.
 			 * This will cause a safe eventual destruction of this rollbacked ov.
 			 */
-			// TODO ATOMIC GET
 			ov->ts = store_get_timestamp(store)+2;
 		}
 
@@ -488,8 +483,7 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
 		return LOG_OK;
 	}
 
-	// TODO ATOMIC GET
-	if (ov->state == deleted) {
+	if (os_atmc_get_state(ov) == deleted) {
 		if (ov->ts < oldest) {
 			// the oldest relevant state is deleted so lets try to mark it as destroyed
 			put_under_destruction(store, ov, oldest);
@@ -503,9 +497,9 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
 	// TODO ATOMIC GET
 	objectversion* newer = ov->name_based_newer;
 
-	if (ov->ts < oldest && newer && (newer->ts < oldest && !newer->state)) {
-		assert(newer == ov->id_based_newer);
-		// ov has a committed name based parent
+	if (ov->ts < oldest && newer && newer->ts < oldest && os_atmc_get_state(newer) == active) {
+		// if ov is active and one of its parents is also active then both parents must be the same.
+		assert(newer == ov->id_based_newer);		
 
 		put_under_destruction(store, ov, oldest);
 
@@ -742,8 +736,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 		assert(ov != oo); // Time loops are not allowed
 
-		//TODO ATOMIC GET
-		bte state = oo->state;
+		bte state = os_atmc_get_state(oo);
 		if (state != active) {
 			// This can only happen if the parent oo was a comitted deleted at some point.
 			assert(state == deleted || state == under_destruction);
@@ -768,8 +761,8 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		name_based_node->ov = ov;
 		if (oo) {
 			oo->name_based_newer = ov;
-			 // TODO ATOMIC SET
-			oo->state = state; // if the parent was originally deleted, we restore it to that state.
+			// if the parent was originally deleted, we restore it to that state.
+			os_atmc_set_state(oo, state);
 		}
 		MT_lock_unset(&os->ht_lock);
 		return 0;
@@ -823,8 +816,9 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		id_based_node->ov = ov;
 		if (oo) {
 			oo->id_based_newer = ov;
-			 // TODO ATOMIC SET
-			oo->state = state; // if the parent was originally deleted, we restore it to that state.
+			// if the parent was originally deleted, we restore it to that state.
+			oo->state = state;
+			os_atmc_set_state(oo, state);
 		}
 		MT_lock_unset(&os->ht_lock);
 		return 0;
@@ -860,12 +854,6 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	return 0;
 }
 
-static bte os_get_state(objectversion *ov) {
-	// ATOMIC GET
-	bte state = ov->state;
-	return state;
-}
-
 static int
 os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectversion *ov) {
 	versionhead  *name_based_node = NULL;
@@ -887,7 +875,7 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		// TODO: double check/refine locking rationale
 		if (oo) {
 			oo->name_based_newer = ov;
-			assert(os_get_state(oo) == active);
+			assert(os_atmc_get_state(oo) == active);
 		}
 		name_based_node->ov = ov;
 		MT_lock_unset(&os->ht_lock);
@@ -919,7 +907,7 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		// TODO: double check/refine locking rationale
 		if (oo) {
 			oo->id_based_newer = ov;
-			assert(os_get_state(oo) == active);
+			assert(os_atmc_get_state(oo) == active);
 		}
 		id_based_node->ov = ov;
 		MT_lock_unset(&os->ht_lock);
@@ -934,8 +922,7 @@ int
 os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
 	objectversion *ov = SA_ZNEW(os->sa, objectversion);
-	//TODO ATOMIC SET
-	ov->state = deleted;
+	os_atmc_set_state(ov, deleted);
 	ov->ts = tr->tid;
 	ov->b = b;
 	ov->os = os;
@@ -962,7 +949,7 @@ os_size(objectset *os, struct sql_trans *tr)
 	if (os) {
 		for(versionhead  *n = os->name_based_h; n; n=n->next) {
 			objectversion *ov = n->ov;
-			if ((ov=get_valid_object_name(tr, ov)) && os_get_state(ov) == active)
+			if ((ov=get_valid_object_name(tr, ov)) && os_atmc_get_state(ov) == active)
 				cnt++;
 		}
 	}
@@ -996,7 +983,7 @@ os_find_name(objectset *os, struct sql_trans *tr, const char *name)
 
 	if (n) {
 		 objectversion *ov = get_valid_object_name(tr, n->ov);
-		 if (ov && os_get_state(ov) == active)
+		 if (ov && os_atmc_get_state(ov) == active)
 			 return ov->b;
 	}
 	return NULL;
@@ -1011,7 +998,7 @@ os_find_id(objectset *os, struct sql_trans *tr, sqlid id)
 
 	if (n) {
 		 objectversion *ov = get_valid_object_id(tr, n->ov);
-		 if (ov && os_get_state(ov) == active)
+		 if (ov && os_atmc_get_state(ov) == active)
 			 return ov->b;
 	}
 	return NULL;
@@ -1052,7 +1039,7 @@ oi_next(struct os_iter *oi)
 				e = oi->e = e->chain;
 
 				ov = get_valid_object_name(oi->tr, ov);
-				if (ov && os_get_state(ov) == active)
+				if (ov && os_atmc_get_state(ov) == active)
 					b = ov->b;
 			} else {
 				e = e->chain;
@@ -1069,7 +1056,7 @@ oi_next(struct os_iter *oi)
 
 				n = oi->n = n->next;
 				ov = get_valid_object_name(oi->tr, ov);
-				if (ov && os_get_state(ov) == active)
+				if (ov && os_atmc_get_state(ov) == active)
 					b = ov->b;
 			} else {
 				n = oi->n = n->next;
@@ -1084,7 +1071,7 @@ oi_next(struct os_iter *oi)
 			n = oi->n = n->next;
 
 			ov = get_valid_object_id(oi->tr, ov);
-			if (ov && os_get_state(ov) == active)
+			if (ov && os_atmc_get_state(ov) == active)
 				b = ov->b;
 		}
 	}
@@ -1098,7 +1085,7 @@ os_obj_intransaction(objectset *os, struct sql_trans *tr, sql_base *b)
 
 	if (n) {
 		 objectversion *ov = get_valid_object_id(tr, n->ov);
-		 if (ov && os_get_state(ov) == active && ov->ts == tr->tid)
+		 if (ov && os_atmc_get_state(ov) == active && ov->ts == tr->tid)
 			 return true;
 	}
 	return false;
