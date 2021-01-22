@@ -217,16 +217,6 @@ find_sql_column(sql_table *t, const char *cname)
 	return _cs_find_name(&t->columns, cname);
 }
 
-sql_part *
-find_sql_part_id(sql_table *t, sqlid id)
-{
-	node *n = cs_find_id(&t->members, id);
-
-	if (n)
-		return n->data;
-	return NULL;
-}
-
 sql_table *
 find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 {
@@ -495,8 +485,23 @@ partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp)
 				pp = NULL;
 			continue;
 		}
-		if (p->base.id == pt->base.id)
+		if (p->member->base.id == pt->base.id)
 			return p;
+	}
+	return NULL;
+}
+
+node *
+members_find_child_id(list *l, sqlid id)
+{
+	if (l) {
+		node *n;
+		for (n = l->h; n; n = n->next) {
+			sql_part *p = n->data;
+
+			if (id == p->member->base.id)
+				return n;
+		}
 	}
 	return NULL;
 }

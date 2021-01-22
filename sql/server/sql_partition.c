@@ -320,9 +320,9 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 
 		for (node *n = mt->members.set->h; n; n = n->next) {
 			sql_part *next = (sql_part*) n->data, *p = SA_ZNEW(tr->sa, sql_part);
-			sql_table *pt = find_sql_table_id(tr, mt->s, next->base.id);
+			sql_table *pt = find_sql_table_id(tr, mt->s, next->member->base.id);
 
-			base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+			base_init(tr->sa, &p->base, next->base.id, TR_NEW, pt->base.name);
 			p->t = mt;
 			p->member = pt;
 			assert(isMergeTable(mt) || isReplicaTable(mt));
@@ -416,7 +416,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 		}
 		for (node *n = new->h; n; n = n->next) {
 			sql_part *next = (sql_part*) n->data;
-			//sql_table *pt = find_sql_table_id(mt->s, next->base.id);
+			//sql_table *pt = find_sql_table_id(tr, mt->s, next->member->base.id);
 			sql_part *err = NULL;
 
 			//cs_add(&mt->s->parts, next, TR_NEW);

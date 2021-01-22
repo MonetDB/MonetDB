@@ -517,7 +517,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	sqlstore *store = tr->store;
 
 	pt->tpe = *empty;
-	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->base.id, &pt->base.id, NULL);
+	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->member->base.id, &pt->member->base.id, NULL);
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
 		void *v1, *v2, *v3;
 		ValRecord vmin, vmax;
@@ -562,7 +562,7 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	sql_table *values = find_sql_table(tr, syss, "value_partitions");
 	list *vals = NULL;
 	oid rid;
-	rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
+	rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member->base.id, &pt->member->base.id, NULL);
 	int i = 0;
 	sql_subtype *empty = sql_bind_localtype("void");
 
@@ -615,15 +615,17 @@ load_part(sql_trans *tr, sql_table *mt, oid rid)
 	sql_part *pt = SA_ZNEW(tr->sa, sql_part);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *objects = find_sql_table(tr, syss, "objects");
-	sqlid id;
+	sqlid id, childid;
 	sqlstore *store = tr->store;
 
 	assert(isMergeTable(mt) || isReplicaTable(mt));
-	v = store->table_api.column_find_value(tr, find_sql_column(objects, "nr"), rid);
+	v = store->table_api.column_find_value(tr, find_sql_column(objects, "id"), rid);
 	id = *(sqlid*)v; _DELETE(v);
 	v = store->table_api.column_find_value(tr, find_sql_column(objects, "name"), rid);
 	base_init(tr->sa, &pt->base, id, 0, v);	_DELETE(v);
-	sql_table *member = find_sql_table_id(tr, mt->s, pt->base.id);
+	v = store->table_api.column_find_value(tr, find_sql_column(objects, "sub"), rid);
+	childid = *(sqlid*)v; _DELETE(v);
+	sql_table *member = find_sql_table_id(tr, mt->s, childid);
 	assert(member);
 	pt->t = mt;
 	pt->member = member;
@@ -1157,11 +1159,11 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		sql_table *t = (sql_table*)b;
 		if (isMergeTable(t) || isReplicaTable(t)) {
 			sql_table *objects = find_sql_table(tr, syss, "objects");
-			sql_column *mt_id = find_sql_column(objects, "id");
 			sql_column *mt_nr = find_sql_column(objects, "nr");
-			rids *rs = store->table_api.rids_select(tr, mt_id, &t->base.id, &t->base.id, NULL);
+			sql_column *mt_sub = find_sql_column(objects, "sub");
+			rids *rs = store->table_api.rids_select(tr, mt_nr, &t->base.id, &t->base.id, NULL);
 
-			rs = store->table_api.rids_orderby(tr, rs, mt_nr);
+			rs = store->table_api.rids_orderby(tr, rs, mt_sub);
 			for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 				sql_part *pt = load_part(tr, t, rid);
 				if (isRangePartitionTable(t)) {
@@ -1820,6 +1822,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 		bootstrap_create_column(tr, t, "id", "int", 32);
 		bootstrap_create_column(tr, t, "name", "varchar", 1024);
 		bootstrap_create_column(tr, t, "nr", "int", 32);
+		bootstrap_create_column(tr, t, "sub", "int", 32);
 
 		if (!p) {
 			p = s;
@@ -3018,7 +3021,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 	for (n = nk->columns->h, nr = 0; n; n = n->next, nr++) {
 		sql_kc *kc = n->data;
 
-		store->table_api.table_insert(tr, syskc, &nk->base.id, kc->c->base.name, &nr);
+		store->table_api.table_insert(tr, syskc, &nk->base.id, kc->c->base.name, &nr, ATOMnilptr(TYPE_int));
 
 		if (nk->type == fkey)
 			sql_trans_create_dependency(tr, kc->c->base.id, nk->base.id, FKEY_DEPENDENCY);
@@ -3060,7 +3063,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i)
 		if (ic->c->unique != (unique & !okc->c->null))
 			okc->c->unique = ic->c->unique = (unique & (!okc->c->null));
 
-		store->table_api.table_insert(tr, sysic, &ni->base.id, ic->c->base.name, &nr);
+		store->table_api.table_insert(tr, sysic, &ni->base.id, ic->c->base.name, &nr, ATOMnilptr(TYPE_int));
 
 		sql_trans_create_dependency(tr, ic->c->base.id, ni->base.id, INDEX_DEPENDENCY);
 	}
@@ -3108,7 +3111,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri)
 		sql_kc *okc = n->data, *ic;
 
 		list_append(nt->columns, ic = kc_dup(tr, okc, t));
-		store->table_api.table_insert(tr, sysic, &nt->base.id, ic->c->base.name, &nr);
+		store->table_api.table_insert(tr, sysic, &nt->base.id, ic->c->base.name, &nr, ATOMnilptr(TYPE_int));
 		sql_trans_create_dependency(tr, ic->c->base.id, nt->base.id, TRIGGER_DEPENDENCY);
 	}
 	cs_add(&t->triggers, nt, TR_NEW);
@@ -3119,49 +3122,6 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri)
 								 &nt->event, (nt->old_name)?nt->old_name:nilptr, (nt->new_name)?nt->new_name:nilptr,
 								 (nt->condition)?nt->condition:nilptr, nt->statement);
 	return nt;
-}
-
-sql_part *
-sql_trans_copy_part( sql_trans *tr, sql_table *t, sql_part *pt)
-{
-	sqlstore *store = tr->store;
-	sql_schema *syss = find_sql_schema(tr, isGlobal(t)?"sys":"tmp");
-	sql_table *sysic = find_sql_table(tr, syss, "objects");
-	sql_part *npt = SA_ZNEW(tr->sa, sql_part);
-
-	base_init(tr->sa, &npt->base, pt->base.id?pt->base.id:next_oid(tr->store), TR_NEW, pt->base.name);
-
-	if (isRangePartitionTable(t) || isListPartitionTable(t))
-		dup_sql_type(tr, t->s, &(pt->tpe), &(npt->tpe));
-	else
-		npt->tpe = pt->tpe;
-	npt->with_nills = pt->with_nills;
-	npt->t = t;
-
-	assert(isMergeTable(npt->t) || isReplicaTable(npt->t));
-	if (isRangePartitionTable(t)) {
-		npt->part.range.minvalue = sa_alloc(tr->sa, pt->part.range.minlength);
-		npt->part.range.maxvalue = sa_alloc(tr->sa, pt->part.range.maxlength);
-		memcpy(npt->part.range.minvalue, pt->part.range.minvalue, pt->part.range.minlength);
-		memcpy(npt->part.range.maxvalue, pt->part.range.maxvalue, pt->part.range.maxlength);
-		npt->part.range.minlength = pt->part.range.minlength;
-		npt->part.range.maxlength = pt->part.range.maxlength;
-	} else if (isListPartitionTable(t)) {
-		npt->part.values = list_new(tr->sa, (fdestroy) NULL);
-		for (node *n = pt->part.values->h ; n ; n = n->next) {
-			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(tr->sa, sql_part_value);
-			nextv->value = sa_alloc(tr->sa, prev->length);
-			memcpy(nextv->value, prev->value, prev->length);
-			nextv->length = prev->length;
-			list_append(npt->part.values, nextv);
-		}
-	}
-
-	cs_add(&t->members, npt, 0);
-
-	sql_trans_create_dependency(tr, npt->base.id, t->base.id, TABLE_DEPENDENCY);
-	store->table_api.table_insert(tr, sysic, &t->base.id, npt->base.name, &npt->base.id);
-	return npt;
 }
 
 static int
@@ -3855,7 +3815,7 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 	sql_table *mt = pt->t;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(tr, syss, "objects");
-	oid obj_oid = store->table_api.column_find_row(tr, find_sql_column(sysobj, "nr"), &pt->base.id, NULL), rid;
+	oid obj_oid = store->table_api.column_find_row(tr, find_sql_column(sysobj, "id"), &pt->base.id, NULL);
 
 	(void)drop_action;
 	if (is_oid_nil(obj_oid))
@@ -3863,18 +3823,17 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 
 	if (isRangePartitionTable(mt)) {
 		sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
-		rid = store->table_api.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->base.id, NULL);
+		oid rid = store->table_api.column_find_row(tr, find_sql_column(ranges, "table_id"), &pt->member->base.id, NULL);
 		store->table_api.table_delete(tr, ranges, rid);
 	} else if (isListPartitionTable(mt)) {
 		sql_table *values = find_sql_table(tr, syss, "value_partitions");
-		rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
-		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
+		rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member->base.id, &pt->member->base.id, NULL);
+		for (oid rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs))
 			store->table_api.table_delete(tr, values, rid);
-		}
 		store->table_api.rids_destroy(rs);
 	}
 	/* merge table depends on part table */
-	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
+	sql_trans_drop_dependency(tr, pt->member->base.id, mt->base.id, TABLE_DEPENDENCY);
 
 	os_del(mt->s->parts, tr, pt->base.name, &pt->base);
 	store->table_api.table_delete(tr, sysobj, obj_oid);
@@ -4390,10 +4349,10 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	p->t = mt;
 	p->member = pt;
 	/* TODO parts should have a unique name - id ? */
-	base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+	base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
 	cs_add(&mt->members, p, TR_NEW);
 	os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
-	store->table_api.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+	store->table_api.table_insert(tr, sysobj, &p->base.id, p->base.name, &mt->base.id, &pt->base.id);
 	return mt;
 }
 
@@ -4456,14 +4415,15 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
-		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+		base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		p->t = mt;
 		assert(pt);
 		p->member = pt;
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
-		p = find_sql_part_id(mt, pt->base.id);
+		node *n = members_find_child_id(mt->members.set, pt->base.id);
+		p = (sql_part*) n->data;
 	}
 
 	/* add range partition values */
@@ -4492,7 +4452,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		/* add merge table dependency */
 		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 		v = (sqlid*) store->table_api.column_find_value(tr, find_sql_column(partitions, "id"), rid);
-		store->table_api.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+		store->table_api.table_insert(tr, sysobj, &p->base.id, p->base.name, &mt->base.id, &pt->base.id);
 		store->table_api.table_insert(tr, ranges, &pt->base.id, v, VALget(&vmin), VALget(&vmax), &to_insert);
 		_DELETE(v);
 	} else {
@@ -4532,7 +4492,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	mt = new_table(tr, mt);
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
-		base_init(tr->sa, &p->base, pt->base.id, TR_NEW, pt->base.name);
+		base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
 		assert(isMergeTable(mt) || isReplicaTable(mt));
 		p->t = mt;
 		assert(pt);
@@ -4540,7 +4500,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
 		rids *rs;
-		p = find_sql_part_id(mt, pt->base.id);
+		node *n = members_find_child_id(mt->members.set, pt->base.id);
+		p = (sql_part*) n->data;
 
 		rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
 		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
@@ -4601,7 +4562,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if (!update) {
 		/* add merge table dependency */
 		sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
-		store->table_api.table_insert(tr, sysobj, &mt->base.id, p->base.name, &p->base.id);
+		store->table_api.table_insert(tr, sysobj, &p->base.id, p->base.name, &mt->base.id, &pt->base.id);
 		os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base));
 	}
 	return 0;
@@ -4657,15 +4618,15 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sqlstore *store = tr->store;
 
 	mt = new_table(tr, mt);
-	sql_base *b = os_find_id(mt->s->parts, tr, pt->base.id); /* fetch updated part */
+	node *n = members_find_child_id(mt->members.set, pt->base.id); /* get sqlpart id*/
+	sqlid part_id = ((sql_part*)n->data)->base.id;
+	sql_base *b = os_find_id(mt->s->parts, tr, part_id); /* fetch updated part */
 	sql_part *p = (sql_part*)b;
 
 	sys_drop_part(tr, p, drop_action);
 
 	/*Clean the part from members*/
-	node *n = cs_find_id(&mt->members, p->base.id);
-	if (n)
-		cs_del(&mt->members, store, n, p->base.flags);
+	cs_del(&mt->members, store, n, p->base.flags);
 
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table_id(tr, mt->s, pt->base.id, drop_action);
@@ -5358,7 +5319,7 @@ sql_trans_create_kc(sql_trans *tr, sql_key *k, sql_column *c )
 		sql_trans_alter_null(tr, c, 0);
 	}
 
-	store->table_api.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &nr);
+	store->table_api.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &nr, ATOMnilptr(TYPE_int));
 	return k;
 }
 
@@ -5380,7 +5341,7 @@ sql_trans_create_fkc(sql_trans *tr, sql_fkey *fk, sql_column *c )
 
 	sql_trans_create_dependency(tr, c->base.id, k->base.id, FKEY_DEPENDENCY);
 
-	store->table_api.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &nr);
+	store->table_api.table_insert(tr, syskc, &k->base.id, kc->c->base.name, &nr, ATOMnilptr(TYPE_int));
 	return (sql_fkey*)k;
 }
 
@@ -5596,7 +5557,7 @@ sql_trans_create_ic(sql_trans *tr, sql_idx * i, sql_column *c)
 		store->table_api.column_update_value(tr, sysidxtype, rid, &i->type);
 	}
 #endif
-	store->table_api.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &nr);
+	store->table_api.table_insert(tr, sysic, &i->base.id, ic->c->base.name, &nr, ATOMnilptr(TYPE_int));
 	return i;
 }
 
@@ -5694,7 +5655,7 @@ sql_trans_create_tc(sql_trans *tr, sql_trigger * i, sql_column *c )
 	assert(c);
 	ic->c = c;
 	list_append(i->columns, ic);
-	store->table_api.table_insert(tr, systc, &i->base.id, ic->c->base.name, &nr);
+	store->table_api.table_insert(tr, systc, &i->base.id, ic->c->base.name, &nr, ATOMnilptr(TYPE_int));
 	return i;
 }
 

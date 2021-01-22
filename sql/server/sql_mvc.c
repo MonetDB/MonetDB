@@ -1519,12 +1519,6 @@ mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr)
 	return sql_trans_copy_trigger(m->session->tr, t, tr);
 }
 
-sql_part *
-mvc_copy_part(mvc *m, sql_table *t, sql_part *pt)
-{
-	return sql_trans_copy_part(m->session->tr, t, pt);
-}
-
 sql_rel *
 sql_processrelation(mvc *sql, sql_rel* rel, int value_based_opt, int storage_based_opt)
 {

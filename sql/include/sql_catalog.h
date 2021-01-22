@@ -759,7 +759,6 @@ extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
-extern sql_part *find_sql_part_id(sql_table *t, sqlid id);
 
 extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
 extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
@@ -792,6 +791,7 @@ typedef struct {
 
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
 extern sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
+extern node *members_find_child_id(list *l, sqlid id);
 
 #define outside_str 1
 #define inside_str 2

@@ -158,7 +158,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 	if (!update && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	node *n = cs_find_id(&rmt->members, rpt->base.id);
+	node *n = members_find_child_id(rmt->members.set, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
 	if (isDeclaredTable(rpt))
@@ -421,7 +421,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	const char *errtable = TABLE_TYPE_DESCRIPTION(mt->type, mt->properties);
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	if (!(n = cs_find_id(&mt->members, pt->base.id)))
+	if (!(n = members_find_child_id(mt->members.set, pt->base.id)))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
 	sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
