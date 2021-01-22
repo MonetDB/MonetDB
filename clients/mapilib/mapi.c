@@ -879,6 +879,7 @@ struct MapiStruct {
 	struct BlockCache blk;
 	bool connected;
 	bool trace;		/* Trace Mapi interaction */
+	int handshake_options;	/* which settings can be sent during challenge/response? */
 	bool auto_commit;
 	bool columnar_protocol;
 	MapiHdl first;		/* start of doubly-linked list */
@@ -2614,7 +2615,6 @@ mapi_reconnect(Mapi mid)
 		NULL
 	};
 	char **algs = algsv;
-	char *p;
 
 	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 
@@ -2638,6 +2638,16 @@ mapi_reconnect(Mapi mid)
 		* specified in the 6th field.  If we don't support it, we
 		* can't login. */
 	char *serverhash = strtok_r(NULL, ":", &strtok_state);
+
+	char *handshake_options = strtok_r(NULL, ":", &strtok_state);
+	if (handshake_options) {
+		if (sscanf(handshake_options, "sql=%d", &mid->handshake_options) != 1) {
+			mapi_setError(mid, "invalid handshake options",
+					__func__, MERROR);
+			close_connection(mid);
+			return mid->error;
+		}
+	}
 
 	/* hash password, if not already */
 	if (mid->password[0] != '\1') {
@@ -2701,14 +2711,15 @@ mapi_reconnect(Mapi mid)
 #endif
 	}
 
-	p = mid->password + 1;
+
+	char *pw = mid->password + 1;
 
 	char *hash = NULL;
 	for (; *algs != NULL; algs++) {
 		/* TODO: make this actually obey the separation by
 			* commas, and only allow full matches */
 		if (strstr(hashes, *algs) != NULL) {
-			char *pwh = mcrypt_hashPassword(*algs, p, chal);
+			char *pwh = mcrypt_hashPassword(*algs, pw, chal);
 			size_t len;
 			if (pwh == NULL)
 				continue;
@@ -2733,21 +2744,45 @@ mapi_reconnect(Mapi mid)
 
 	mnstr_set_bigendian(mid->from, strcmp(byteo, "BIG") == 0);
 
+	char *p = buf;
+	int remaining = sizeof(buf);
+	int n;
+#define CHECK_SNPRINTF(...) \
+	do { \
+		n = snprintf(p, remaining, __VA_ARGS__); \
+		if (n < remaining) { \
+			remaining -= n; \
+			p += n; \
+		} else { \
+			mapi_setError(mid, "combination of database name and user name too long", __func__, MERROR); \
+			free(hash); \
+			close_connection(mid); \
+			return mid->error; \
+		} \
+	} while (0)
+
+#ifdef WORDS_BIGENDIAN
+	char *our_endian = "BIG";
+#else
+	char *our_endian = "LIT";
+#endif
 	/* note: if we make the database field an empty string, it
 		* means we want the default.  However, it *should* be there. */
-	if (snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:FILETRANS:\n",
-#ifdef WORDS_BIGENDIAN
-			"BIG",
-#else
-			"LIT",
-#endif
+	CHECK_SNPRINTF("%s:%s:%s:%s:%s:FILETRANS:",
+			our_endian,
 			mid->username, hash, mid->language,
-			mid->database == NULL ? "" : mid->database) >= (int) sizeof(buf)) {;
-		mapi_setError(mid, "combination of database name and user name too long", __func__, MERROR);
-		free(hash);
-		close_connection(mid);
-		return mid->error;
+			mid->database == NULL ? "" : mid->database);
+
+	if (mid->handshake_options > MAPI_HANDSHAKE_AUTOCOMMIT) {
+		CHECK_SNPRINTF("auto_commit=%d", mid->auto_commit);
 	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_REPLY_SIZE) {
+		CHECK_SNPRINTF(",reply_size=%d", mid->cachelimit);
+	}
+	if (mid->handshake_options > 0) {
+		CHECK_SNPRINTF(":");
+	}
+	CHECK_SNPRINTF("\n");
 
 	free(hash);
 

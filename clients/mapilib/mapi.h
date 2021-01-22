@@ -28,7 +28,7 @@ typedef int MapiMsg;
 #define MSERVER		(-4)
 
 enum mapi_handshake_options_levels {
-	MAPI_HANDSHAKE_AUTOCOMMIT,
+	MAPI_HANDSHAKE_AUTOCOMMIT = 1,
 	MAPI_HANDSHAKE_REPLY_SIZE,
 	// this must always be the last one:
 	MAPI_HANDSHAKE_OPTIONS_LEVEL,
