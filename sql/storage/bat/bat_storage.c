@@ -2323,6 +2323,10 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 		obat->ibase = obat->cnt;
 		obat->ibid = e_bat(cur->ttype);
 		obat->cleared = 0;
+		if (!obat->uibid)
+			obat->uibid = e_bat(TYPE_oid);
+		if (!obat->uvbid)
+			obat->uvbid = e_bat(cur->ttype);
 		assert(BATcount(cur) == obat->cnt);
 		bat_destroy(cur);
 		return ok;
