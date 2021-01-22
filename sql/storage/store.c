@@ -32,6 +32,13 @@ store_timestamp(sqlstore *store)
 	return ts;
 }
 
+ulng
+store_get_timestamp(sqlstore *store)
+{
+	ulng ts = ATOMIC_GET(&store->timestamp);
+	return ts;
+}
+
 static ulng
 store_transaction_id(sqlstore *store)
 {

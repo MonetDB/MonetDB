@@ -450,7 +450,7 @@ put_under_destruction(sqlstore* store, objectversion *ov, ulng oldest)
 		}
 
 		// TODO ATOMIC GET
-		ov->ts = store->timestamp+1;
+		ov->ts = store_get_timestamp(store)+1;
 
 		if (ov->id_based_older) {
 			put_under_destruction(store, ov->id_based_older, oldest);
@@ -481,7 +481,7 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest) {
 			 * This will cause a safe eventual destruction of this rollbacked ov.
 			 */
 			// TODO ATOMIC GET
-			ov->ts = store->timestamp+2;
+			ov->ts = store_get_timestamp(store)+2;
 		}
 
 		// not yet old enough to be safely removed. Try later.
