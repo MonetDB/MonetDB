@@ -8963,7 +8963,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 					for (node *nt = t->members.set->h; nt; nt = nt->next) {
 						sql_part *pd = nt->data;
-						sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, pd->base.id);
+						sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, pd->member->base.id);
 						sql_rel *prel = rel_basetable(v->sql, pt, tname), *bt = NULL;
 						int skip = 0;
 						list *exps = NULL;

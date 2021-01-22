@@ -452,7 +452,6 @@ extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column
 extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
 extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri);
-extern sql_part *sql_trans_copy_part(sql_trans *tr, sql_table *t, sql_part *pt);
 
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
