@@ -378,6 +378,9 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
 		if (!is_processed(rel))
 			return rel_bind_column2(sql, rel->l, tname, cname, f);
+	} else if (is_set(rel->op)) {
+		assert(is_processed(rel));
+		return NULL;
 	} else if (is_join(rel->op)) {
 		sql_exp *e = rel_bind_column2(sql, rel->l, tname, cname, f);
 
@@ -389,9 +392,7 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 				set_has_nil(e);
 		}
 		return e;
-	} else if (is_set(rel->op) ||
-		   is_sort(rel) ||
-		   is_semi(rel->op) ||
+	} else if (is_semi(rel->op) ||
 		   is_select(rel->op) ||
 		   is_topn(rel->op) ||
 		   is_sample(rel->op)) {
@@ -416,18 +417,15 @@ rel_first_column(mvc *sql, sql_rel *r)
 }
 
 sql_rel *
-rel_inplace_setop(sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
+rel_inplace_setop(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, operator_type setop, list *exps)
 {
 	rel_destroy_(rel);
 	rel->l = l;
 	rel->r = r;
 	rel->op = setop;
-	rel->exps = NULL;
 	rel->card = CARD_MULTI;
 	rel->flag = 0;
-	if (l && r)
-		rel->nrcols = l->nrcols + r->nrcols;
-	rel->exps = exps;
+	rel_setop_set_exps(sql, rel, exps);
 	set_processed(rel);
 	return rel;
 }
@@ -539,6 +537,7 @@ rel_setop_set_exps(mvc *sql, sql_rel *rel, list *exps)
 				set_has_nil(e);
 			else
 				set_has_no_nil(e);
+			e->p = NULL; /* remove all the properties on unions */
 			e->card = MAX(f->card, g->card);
 		} else
 			e->card = f->card;
@@ -1451,7 +1450,7 @@ rel_or(mvc *sql, sql_rel *rel, sql_rel *l, sql_rel *r, list *oexps, list *lexps,
 	rel = rel_setop_check_types(sql, l, r, ls, rs, op_union);
 	if (!rel)
 		return NULL;
-	rel->exps = rel_projections(sql, rel, NULL, 1, 1);
+	rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 1, 1));
 	set_processed(rel);
 	rel->nrcols = list_length(rel->exps);
 	rel = rel_distinct(rel);
@@ -1564,17 +1563,27 @@ rel_find_column( sql_allocator *sa, sql_rel *rel, const char *tname, const char 
 		if (e && !ambiguous && !multi)
 			return exp_alias(sa, exp_relname(e), exp_name(e), exp_relname(e), cname, exp_subtype(e), e->card, has_nil(e), is_intern(e));
 	}
-	if (is_project(rel->op) && rel->l && !is_processed(rel)) {
-		return rel_find_column(sa, rel->l, tname, cname);
+	if ((is_simple_project(rel->op) || is_groupby(rel->op)) && rel->l) {
+		if (!is_processed(rel))
+			return rel_find_column(sa, rel->l, tname, cname);
+	} else if (is_set(rel->op)) {
+		assert(is_processed(rel));
+		return NULL;
 	} else if (is_join(rel->op)) {
 		sql_exp *e = rel_find_column(sa, rel->l, tname, cname);
-		if (!e)
+
+		if (e && (is_right(rel->op) || is_full(rel->op)))
+			set_has_nil(e);
+		if (!e) {
 			e = rel_find_column(sa, rel->r, tname, cname);
+			if (e && (is_left(rel->op) || is_full(rel->op)))
+				set_has_nil(e);
+		}
 		return e;
-	} else if (is_set(rel->op) ||
-		   is_sort(rel) ||
-		   is_semi(rel->op) ||
-		   is_select(rel->op)) {
+	} else if (is_semi(rel->op) ||
+		   is_select(rel->op) ||
+		   is_topn(rel->op) ||
+		   is_sample(rel->op)) {
 		if (rel->l)
 			return rel_find_column(sa, rel->l, tname, cname);
 	}
