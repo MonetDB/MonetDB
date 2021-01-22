@@ -1768,11 +1768,13 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	if (!store)
 		return NULL;
 
-	store->initialized = 0;
-	store->readonly = readonly;
-	store->singleuser = singleuser;
-	store->debug = debug;
-	store->transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE);
+	*store = (sqlstore) {
+		.readonly = readonly,
+		.singleuser = singleuser,
+		.debug = debug,
+		.transaction = ATOMIC_VAR_INIT(TRANSACTION_ID_BASE),
+	};
+
 	(void)store_timestamp(store); /* increment once */
 	MT_lock_init(&store->lock, "sqlstore_lock");
 
