@@ -326,7 +326,8 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 			ov->id_based_head->ov = ov->id_based_older;
 		}
 		else {
-			os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
+			if (!(state & name_based_rollbacked))
+				os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
 			// TODO ATOMIC GET
 			state = ov->id_based_older->state;
 
@@ -357,7 +358,8 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 			ov->name_based_head->ov = ov->name_based_older;
 		}
 		else {
-			os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
+			if (!(state & id_based_rollbacked))
+				os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
 			// TODO ATOMIC GET
 			state = ov->name_based_older->state;
 
@@ -389,7 +391,10 @@ os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 	//TODO ATOMIC SET
 	ov->state = state;
 
-	os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
+
+	if (!(state & id_based_rollbacked))
+		os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
+
 	os_rollback_os_name_based_cascading(ov, store);
 }
 
@@ -407,7 +412,9 @@ os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 	//TODO ATOMIC SET
 	ov->state = state;
 
-	os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
+	if (!(state & name_based_rollbacked))
+		os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
+
 	os_rollback_os_id_based_cascading(ov, store);
 }
 
