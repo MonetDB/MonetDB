@@ -1813,11 +1813,15 @@ mvc_modify_prep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, modify_
 			if (c == NULL)
 				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
 			*cookie_out = colprep(m->session->tr, c);
+			if (!(*cookie_out))
+				throw(SQL, "sql.modify_prep", SQLSTATE(42000) "Transaction conflict on %s.%s.%s", sname, tname, cname);
 		} else {
 			sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 			if (i == NULL)
 				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Index missing %s.%s.%s", sname, tname, cname);
 			*cookie_out = idxprep(m->session->tr, i);
+			if (!(*cookie_out))
+				throw(SQL, "sql.modify_prep", SQLSTATE(42000) "Transaction conflict on %s.%s.%s", sname, tname, cname);
 		}
 	}
 
