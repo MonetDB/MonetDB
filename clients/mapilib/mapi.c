@@ -2205,11 +2205,6 @@ mapi_reconnect(Mapi mid)
 	char buf[BLOCK];
 	size_t len;
 	MapiHdl hdl;
-	int pversion = 0;
-	char *chal;
-	char *server;
-	char *protover;
-	char *rest;
 
 	if (mid->connected)
 		close_connection(mid);
@@ -2556,27 +2551,29 @@ mapi_reconnect(Mapi mid)
 		return mid->error;
 	}
 	/* buf at this point looks like "challenge:servertype:protover[:.*]" */
-	chal = buf;
-	server = strchr(chal, ':');
+
+	char *strtok_state = NULL;
+	char *chal = strtok_r(buf, ":", &strtok_state);
+	if (chal == NULL) {
+		mapi_setError(mid, "Challenge string is not valid, challenge not found", __func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	}
+
+	char *server = strtok_r(NULL, ":", &strtok_state);
 	if (server == NULL) {
 		mapi_setError(mid, "Challenge string is not valid, server not found", __func__, MERROR);
 		close_connection(mid);
 		return mid->error;
 	}
-	*server++ = '\0';
-	protover = strchr(server, ':');
+
+	char *protover = strtok_r(NULL, ":", &strtok_state);
 	if (protover == NULL) {
 		mapi_setError(mid, "Challenge string is not valid, protocol not found", __func__, MERROR);
 		close_connection(mid);
 		return mid->error;
 	}
-	*protover++ = '\0';
-	rest = strchr(protover, ':');
-	if (rest != NULL) {
-		*rest++ = '\0';
-	}
-	pversion = atoi(protover);
-
+	int pversion = atoi(protover);
 	if (pversion != 9) {
 		/* because the headers changed, and because it makes no sense to
 		 * try and be backwards (or forwards) compatible, we bail out
@@ -2588,10 +2585,13 @@ mapi_reconnect(Mapi mid)
 		return mid->error;
 	}
 
-	char *hash = NULL;
-	char *hashes = NULL;
-	char *byteo = NULL;
-	char *serverhash = NULL;
+	char *hashes = strtok_r(NULL, ":", &strtok_state);
+	if (hashes == NULL) {
+		/* protocol violation, not enough fields */
+		mapi_setError(mid, "Not enough fields in challenge string", __func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	}
 	char *algsv[] = {
 #ifdef HAVE_RIPEMD160_UPDATE
 		"RIPEMD160",
@@ -2628,39 +2628,17 @@ mapi_reconnect(Mapi mid)
 	/* the database has sent a list of supported hashes to us, it's
 		* in the form of a comma separated list and in the variable
 		* rest.  We try to use the strongest algorithm. */
-	if (rest == NULL) {
-		/* protocol violation, not enough fields */
-		mapi_setError(mid, "Not enough fields in challenge string",
-				__func__, MERROR);
-		close_connection(mid);
-		return mid->error;
-	}
-	hashes = rest;
-	hash = strchr(hashes, ':');	/* temp misuse hash */
-	if (hash) {
-		*hash = '\0';
-		rest = hash + 1;
-	}
+
+
 	/* in rest now should be the byte order of the server */
-	byteo = rest;
-	hash = strchr(byteo, ':');
-	if (hash) {
-		*hash = '\0';
-		rest = hash + 1;
-	}
-	hash = NULL;
+	char *byteo = strtok_r(NULL, ":", &strtok_state);
 
 	/* Proto v9 is like v8, but mandates that the password is a
 		* hash, that is salted like in v8.  The hash algorithm is
 		* specified in the 6th field.  If we don't support it, we
 		* can't login. */
-	serverhash = rest;
-	hash = strchr(serverhash, ':');
-	if (hash) {
-		*hash = '\0';
-		/* rest = hash + 1; -- rest of string ignored */
-	}
-	hash = NULL;
+	char *serverhash = strtok_r(NULL, ":", &strtok_state);
+
 	/* hash password, if not already */
 	if (mid->password[0] != '\1') {
 		char *pwdhash = NULL;
@@ -2725,6 +2703,7 @@ mapi_reconnect(Mapi mid)
 
 	p = mid->password + 1;
 
+	char *hash = NULL;
 	for (; *algs != NULL; algs++) {
 		/* TODO: make this actually obey the separation by
 			* commas, and only allow full matches */
