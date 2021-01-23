@@ -185,7 +185,6 @@ extern str mvc_release(mvc *c, const char *name);
 
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
 extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
-extern sql_func *mvc_bind_func(mvc *sql, const char *name);
 
 sql_export sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 sql_export sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
