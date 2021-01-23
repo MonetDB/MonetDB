@@ -1934,8 +1934,9 @@ store_needs_vacuum( sqlstore *store )
 {
 	//size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
 
+	(void)store;
 	return 0;
-
+#if 0
 	sql_schema *s = (sql_schema*)os_find_name(store->cat->schemas, NULL, "sys"); /* sys schema if first */
 	struct os_iter oi;
 	os_iterator(&oi, s->tables, NULL, NULL);
@@ -1955,6 +1956,7 @@ store_needs_vacuum( sqlstore *store )
 			*/
 	}
 	return 0;
+#endif
 }
 
 static int
