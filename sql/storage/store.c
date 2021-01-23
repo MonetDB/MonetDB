@@ -1171,6 +1171,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 				} else if (isListPartitionTable(t)) {
 					load_value_partition(tr, syss, pt);
 				}
+				os_add(s->parts, tr, pt->base.name, &pt->base);
 			}
 			store->table_api.rids_destroy(rs);
 		}
