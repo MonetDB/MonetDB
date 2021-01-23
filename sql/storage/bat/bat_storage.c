@@ -1569,6 +1569,7 @@ create_col(sql_trans *tr, sql_column *c)
 				if(bat->uvbid == BID_NIL)
 					ok = LOG_ERR;
 			}
+			bat->alter = 1;
 		} else {
 			BAT *b = bat_new(type, c->t->sz, PERSISTENT);
 			if (!b) {
@@ -1619,7 +1620,9 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 		delta->ts = commit_ts;
 
 		assert(delta->next == NULL);
-		ok = tr_merge_delta(tr, delta);
+		if (!delta->alter)
+			ok = tr_merge_delta(tr, delta);
+		delta->alter = 0;
 		c->base.flags = 0;
 	}
 	return ok;
@@ -1684,6 +1687,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat->ibase = d->ibase;
 		bat->cnt = d->cnt;
 		bat->ucnt = 0;
+		bat->alter = 1;
 
 		if (d->uibid) {
 			bat->uibid = e_bat(TYPE_oid);
