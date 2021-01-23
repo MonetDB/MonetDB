@@ -772,11 +772,7 @@ extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);
 extern sql_type *find_sql_type(sql_trans *tr, sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
 extern sql_type *sql_trans_find_type(sql_trans *tr, sql_schema *s /*optional */, sqlid id);
-
-extern sql_func *find_sql_func(sql_trans *tr, sql_schema * s, const char *tname);
-extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
-
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
 
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);

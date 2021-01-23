@@ -1053,7 +1053,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 		s->owner = *(sqlid *)v;		_DELETE(v);
 
 		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true);
-		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true);
+		s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, false);
 		s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false);
 		s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true);
 		s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true);
@@ -1460,13 +1460,13 @@ dup_sql_type(sql_trans *tr, sql_schema *s, sql_subtype *oc, sql_subtype *nc)
 
 		if (s->base.id == nc->type->s->base.id) {
 			/* Current user type belongs to current schema. So search there for current user type. */
-			lt = find_sql_type(tr, s, nc->type->base.name);
+			lt = find_sql_type(tr, s, nc->type->sqlname);
 		} else {
 			/* Current user type belongs to another schema in the current transaction. Search there for current user type. */
-			lt = sql_trans_bind_type(tr, NULL, nc->type->base.name);
+			lt = sql_trans_bind_type(tr, NULL, nc->type->sqlname);
 		}
 		if (lt == NULL)
-			GDKfatal("SQL type %s missing", nc->type->base.name);
+			GDKfatal("SQL type %s missing", nc->type->sqlname);
 		sql_init_subtype(nc, lt, nc->digits, nc->scale);
 	}
 }
@@ -1621,7 +1621,7 @@ bootstrap_create_schema(sql_trans *tr, char *name, sqlid auth_id, int owner)
 	s->owner = owner;
 	s->system = TRUE;
 	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true);
-	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, true);
+	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, false, false);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, false, false);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, false, true);
 	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, false, true);
@@ -4251,7 +4251,7 @@ sql_trans_create_schema(sql_trans *tr, const char *name, sqlid auth_id, sqlid ow
 	s->owner = owner;
 	s->system = FALSE;
 	s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true);
-	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, isTempSchema(s), true);
+	s->types = os_new(tr->sa, (destroy_fptr) &type_destroy, isTempSchema(s), false);
 	s->funcs = os_new(tr->sa, (destroy_fptr) &func_destroy, isTempSchema(s), false);
 	s->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true);
 	s->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true);

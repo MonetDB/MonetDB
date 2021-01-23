@@ -277,7 +277,16 @@ find_sql_schema_id(sql_trans *tr, sqlid id)
 sql_type *
 find_sql_type(sql_trans *tr, sql_schema *s, const char *tname)
 {
-	return (sql_type*)os_find_name(s->types, tr, tname);
+	struct os_iter oi;
+
+	os_iterator(&oi, s->types, tr, NULL);
+	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+		sql_type *t = (sql_type*)b;
+
+		if (strcmp(t->sqlname, tname) == 0)
+			return t;
+	}
+	return NULL;
 }
 
 sql_type *
@@ -312,26 +321,6 @@ sql_trans_find_type(sql_trans *tr, sql_schema *s, sqlid id)
 			if (bt)
 				return (sql_type*)bt;
 		}
-	}
-	return NULL;
-}
-
-sql_func *
-find_sql_func(sql_trans *tr, sql_schema *s, const char *tname)
-{
-	return (sql_func*)os_find_name(s->funcs, tr, tname);
-}
-
-sql_func *
-sql_trans_bind_func(sql_trans *tr, const char *name)
-{
-	struct os_iter oi;
-	os_iterator(&oi, tr->cat->schemas, tr, NULL);
-	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-		sql_schema *s = (sql_schema*)b;
-		sql_func *f = find_sql_func(tr, s, name);
-		if (f)
-			return f;
 	}
 	return NULL;
 }

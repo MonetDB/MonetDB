@@ -902,14 +902,6 @@ schema_bind_type(mvc *sql, sql_schema *s, const char *name)
 	return t;
 }
 
-sql_func *
-mvc_bind_func(mvc *sql, const char *name)
-{
-	sql_func *t = sql_trans_bind_func(sql->session->tr, name);
-	TRC_DEBUG(SQL_TRANS, "Bind function: %s\n", name);
-	return t;
-}
-
 sql_schema *
 mvc_bind_schema(mvc *m, const char *sname)
 {
