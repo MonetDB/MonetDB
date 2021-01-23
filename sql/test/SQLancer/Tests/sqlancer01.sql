@@ -339,3 +339,23 @@ ROLLBACK;
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" CHAR(89) NOT NULL,"c1" BOOLEAN,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
+	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c1_c0_unique" UNIQUE ("c1", "c0"));
+COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"熡U"	false
+"3"	NULL
+"6"	NULL
+"0.6714721480805466"	NULL
+"true"	true
+"OD6N綥"	false
+"흷)%^Ae+c蝢"	true
+"9"	false
+"']iq"	true
+"E"	true
+"0.5036928534407451"	false
+
+update t0 set c1 = true where t0.c0 = t0.c0 and t0.c1 = t0.c1;
+update t0 set c1 = true, c0 = r'.+' where (((("isauuid"(t0.c0))and(((t0.c0)=(t0.c0)))))and(((t0.c1)=(t0.c1))));
+ROLLBACK;
