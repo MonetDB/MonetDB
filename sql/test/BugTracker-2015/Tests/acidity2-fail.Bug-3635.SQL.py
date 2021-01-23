@@ -32,7 +32,8 @@ run(c1, 'create view bar as select * from foo_2017')
 run(c2, 'create table baz (a int);drop table baz')
 try:
     run(c1, 'commit')
-    print("shouldn't get here")
+    #print("shouldn't get here")
+    # perfectly fine changing independent parts of the schema
 except pymonetdb.IntegrityError:
     pass
 
