@@ -380,3 +380,29 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE v5.vc0 WHEN v5.vc
 FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON true) as res;
 	-- 4
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" INTEGER,"c1" INTEGER NOT NULL,"c3" DECIMAL(18,3),"c4" DOUBLE,"c5" BOOLEAN,
+	"c6" CHARACTER LARGE OBJECT,"c7" DOUBLE NOT NULL,"c8" DOUBLE,"c9" DECIMAL(18,3));
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+-1581661246	8	0.000	0.5757982106353843	false	"?h\t*B/"	0.5947494687969431	6.835094360268594	0.317
+-8	3	1.000	0.46282961313792403	false	"*Cn"	0.5643561072026775	1	0.524
+5	6	0.277	0.6299672734345518	false	"v*?g"	-1102035617	1317540012	-2.000
+-570443752	0	0.000	2	NULL	"]#퟈!Nv"	0.6681382286865544	0.5840009532283835	0.540
+-1808926980	9	0.646	0.2983007748066492	true	"P^"	-221084136	4	0.028
+
+create view v14(vc1, vc2) as (values (0.42, 0.34));
+
+create view v12(vc1) as (values (NULL),(-49.17));
+
+create view v22(vc0, vc1, vc2) as ((select 1, 0.3, true) union all (
+select greatest(l0v12.vc1, 3.2), -9.3976294E8, true from v12 as l0v12));
+
+create view v59(vc0) as (select 1);
+
+create view v85(vc0, vc1) as ((select -9.397294E8, ifthenelse(l0v22.vc2, 7, -5) from v22 as l0v22
+where l0v22.vc0 < l0v22.vc0) intersect (select 1, 8));
+
+insert into t0(c5, c0, c4)(select true, 3, 1 from v14 as l0v14
+join ((select 1) except all (select 3 from v85 as l1v85)) as sub0 on case l0v14.vc2 when l0v14.vc1 then false end);
+ROLLBACK;
