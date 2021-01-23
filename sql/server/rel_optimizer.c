@@ -6770,8 +6770,32 @@ exp_used(sql_exp *e)
 {
 	if (e) {
 		e->used = 1;
-		if ((e->type == e_func || e->type == e_aggr) && e->l)
+
+		switch (e->type) {
+		case e_convert:
+			exp_used(e->l);
+			break;
+		case e_func:
+		case e_aggr:
 			exps_used(e->l);
+			break;
+		case e_cmp:
+			if (e->flag == cmp_or || e->flag == cmp_filter) {
+				exps_used(e->l);
+				exps_used(e->r);
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+				exp_used(e->l);
+				exps_used(e->r);
+			} else {
+				exp_used(e->l);
+				exp_used(e->r);
+				if (e->f)
+					exp_used(e->f);
+			}
+			break;
+		default:
+			break;
+		}
 	}
 }
 
@@ -6779,9 +6803,7 @@ static void
 exps_used(list *l)
 {
 	if (l) {
-		node *n;
-
-		for (n = l->h; n; n = n->next)
+		for (node *n = l->h; n; n = n->next)
 			exp_used(n->data);
 	}
 }
@@ -6826,7 +6848,10 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 
 	switch(rel->op) {
 	case op_basetable:
+	case op_truncate:
+	case op_insert:
 		break;
+
 	case op_table:
 
 		if (rel->l && rel->flag != TRIGGER_WRAPPER) {
@@ -6867,9 +6892,6 @@ rel_mark_used(mvc *sql, sql_rel *rel, int proj)
 		}
 		break;
 
-	case op_insert:
-	case op_truncate:
-		break;
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
 			if (rel->l)
@@ -7241,20 +7263,17 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 
 	switch(rel->op) {
 	case op_basetable:
-	case op_table:
-
+	case op_truncate:
+		return rel;
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_truncate:
-	case op_ddl:
-
+		if (rel->r)
+			rel->r = rel_add_projects(sql, rel->r);
 		return rel;
-
 	case op_union:
 	case op_inter:
 	case op_except:
-
 		/* We can only reduce the list of expressions of an set op
 		 * if the projection under it can also be reduced.
 		 */
@@ -7273,16 +7292,15 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 			rel->r = rel_add_projects(sql, r);
 		}
 		return rel;
-
 	case op_topn:
 	case op_sample:
 	case op_project:
 	case op_groupby:
 	case op_select:
-		if (rel->l)
+	case op_table:
+		if (rel->l && (rel->op != op_table || rel->flag != TRIGGER_WRAPPER))
 			rel->l = rel_add_projects(sql, rel->l);
 		return rel;
-
 	case op_join:
 	case op_left:
 	case op_right:
@@ -7293,6 +7311,17 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 			rel->l = rel_add_projects(sql, rel->l);
 		if (rel->r)
 			rel->r = rel_add_projects(sql, rel->r);
+		return rel;
+	case op_ddl:
+		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
+			if (rel->l)
+				rel->l = rel_add_projects(sql, rel->l);
+		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
+			if (rel->l)
+				rel->l = rel_add_projects(sql, rel->l);
+			if (rel->r)
+				rel->r = rel_add_projects(sql, rel->r);
+		}
 		return rel;
 	}
 	return rel;

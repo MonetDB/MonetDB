@@ -403,6 +403,8 @@ create view v59(vc0) as (select 1);
 create view v85(vc0, vc1) as ((select -9.397294E8, ifthenelse(l0v22.vc2, 7, -5) from v22 as l0v22
 where l0v22.vc0 < l0v22.vc0) intersect (select 1, 8));
 
-insert into t0(c5, c0, c4)(select true, 3, 1 from v14 as l0v14
-join ((select 1) except all (select 3 from v85 as l1v85)) as sub0 on case l0v14.vc2 when l0v14.vc1 then false end);
+select true, 3, 1 from v14 as l0v14 join ((select 1) except all (select 3 from v85 as l1v85)) as
+sub0 on case l0v14.vc2 when l0v14.vc1 then false end;
+insert into t0(c5, c0, c4)(select true, 3, 1 from v14 as l0v14 join ((select 1) except all
+(select 3 from v85 as l1v85)) as sub0 on case l0v14.vc2 when l0v14.vc1 then false end);
 ROLLBACK;
