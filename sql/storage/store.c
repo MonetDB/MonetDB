@@ -2170,7 +2170,7 @@ store_manager(sqlstore *store)
 	for (;;) {
 		int res;
 
-		if (1 || !flusher_should_run(store)) {
+		if (/* DISABLES CODE */ (1) || !flusher_should_run(store)) {
 			if (GDKexiting())
 				break;
 			const int sleeptime = 100;
