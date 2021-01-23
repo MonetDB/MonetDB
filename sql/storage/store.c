@@ -3444,7 +3444,7 @@ sql_trans_commit(sql_trans *tr)
 		}
 		tr->localtmps.nelm = NULL;
 	}
-	TRC_DEBUG(SQL_STORE, "Forwarding changes (%ld, %ld) -> %ld\n", tr->tid, tr->ts, commit_ts);
+	TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
 	if (tr->changes) {
 		/* log changes should only be done if there is something to log */
 		if (tr->logchanges > 0) {
@@ -5883,7 +5883,7 @@ sql_trans_begin(sql_session *s)
 	sql_trans *tr = s->tr;
 	sqlstore *store = tr->store;
 
-	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: %ld\n", tr->tid);
+	TRC_DEBUG(SQL_STORE, "Enter sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	tr->ts = store_timestamp(store);
 	tr->active = 1;
 	s->schema = find_sql_schema(tr, s->schema_name);
@@ -5893,7 +5893,7 @@ sql_trans_begin(sql_session *s)
 	list_append(store->active, s);
 
 	s->status = 0;
-	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: %ld\n", tr->tid);
+	TRC_DEBUG(SQL_STORE, "Exit sql_trans_begin for transaction: " ULLFMT "\n", tr->tid);
 	return 0;
 }
 
@@ -5901,7 +5901,7 @@ int
 sql_trans_end(sql_session *s, int commit)
 {
 	int ok = SQL_OK;
-	TRC_DEBUG(SQL_STORE, "End of transaction: %ld\n", s->tr->tid);
+	TRC_DEBUG(SQL_STORE, "End of transaction: " ULLFMT "\n", s->tr->tid);
 	if (commit) {
 		ok = sql_trans_commit(s->tr);
 	}  else {
