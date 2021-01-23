@@ -16,7 +16,7 @@ GROUP BY a.name, b.name
 HAVING COUNT(*) >= 1
 ORDER BY a.name, b.name
 ----
-81 values hashing to 5464689ee8163f6aeaf4fec86753f820
+81 values hashing to 7e14c830ba404a3f20dcbfa3bea01e26
 
 statement error
 select name from tables where "type" = 10 and "system" = true

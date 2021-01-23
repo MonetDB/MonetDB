@@ -326,15 +326,15 @@ query IIIITII rowsort
 SELECT "action", * FROM "sys"."keys" WHERE "action" IS NULL
 ----
 
-query IITI rowsort
+query IITII rowsort
 SELECT "id", * FROM "sys"."objects" WHERE "id" IS NULL
 ----
 
-query TITI rowsort
+query TITII rowsort
 SELECT "name", * FROM "sys"."objects" WHERE "name" IS NULL
 ----
 
-query IITI rowsort
+query IITII rowsort
 SELECT "nr", * FROM "sys"."objects" WHERE "nr" IS NULL
 ----
 

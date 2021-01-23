@@ -86,7 +86,7 @@ query ITTIIIII rowsort
 SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas) AND schema_id <> 0
 ----
 
-query ITI rowsort
+query ITII rowsort
 SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids)
 ----
 
