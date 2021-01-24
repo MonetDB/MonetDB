@@ -331,6 +331,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 
 	nt = sql_trans_create_table(sql->session->tr, s, tname, t->query, t->type, t->system, temp, t->commit_action,
 								t->sz, t->properties);
+	if (!nt)
+		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' name conflicts", action, t->base.name);
 
 	/* first check default values */
 	for (n = t->columns.set->h; n; n = n->next) {
@@ -399,7 +401,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	if (t->idxs.set) {
 		for (n = t->idxs.set->h; n; n = n->next) {
 			sql_idx *i = n->data;
-			mvc_copy_idx(sql, nt, i);
+			if (!mvc_copy_idx(sql, nt, i))
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s index conflicts", s->base.name, t->base.name, i->base.name);
 		}
 	}
 	if (t->keys.set) {
@@ -413,13 +416,15 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 				sql->sa = osa;
 				return err;
 			}
-			mvc_copy_key(sql, nt, k);
+			if (!mvc_copy_key(sql, nt, k))
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s constraint conflicts", s->base.name, t->base.name, k->base.name);
 		}
 	}
 	if (t->triggers.set) {
 		for (n = t->triggers.set->h; n; n = n->next) {
 			sql_trigger *tr = n->data;
-			mvc_copy_trigger(sql, nt, tr);
+			if (mvc_copy_trigger(sql, nt, tr))
+				throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s_%s trigger conflicts", s->base.name, t->base.name, nt->base.name);
 		}
 	}
 	/* also create dependencies when not renaming */
