@@ -131,7 +131,7 @@ timestamp_delta( sql_trans *tr, sql_delta *d, int type, int is_temp)
 {
 	if (is_temp)
 		return get_delta(d, tr->tid, type, is_temp);
-	while (d->next && d->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
+	while (d->next && d->ts != tr->tid && (!tr->parent || !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
 		d = d->next;
 	return d;
 }
@@ -141,7 +141,7 @@ timestamp_dbat( sql_trans *tr, sql_dbat *d, int is_temp)
 {
 	if (is_temp)
 		return get_dbat(d, tr->tid, is_temp);
-	while (d->next && d->ts != tr->tid && (tr->parent && !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
+	while (d->next && d->ts != tr->tid && (!tr->parent || !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
 		d = d->next;
 	return d;
 }
