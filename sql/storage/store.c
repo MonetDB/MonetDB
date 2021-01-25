@@ -3546,8 +3546,11 @@ sql_trans_commit(sql_trans *tr)
 		if (tr->parent && !list_empty(tr->changes)) {
 			if (!tr->parent->changes)
 				tr->parent->changes = tr->changes;
-			else
+			else {
 				tr->parent->changes = list_merge(tr->parent->changes, tr->changes, NULL);
+				tr->changes->destroy = NULL;
+				list_destroy(tr->changes);
+			}
 		} else {
 			list_destroy(tr->changes); /* TODO move leftovers into store for later gc */
 		}

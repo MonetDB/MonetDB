@@ -49,11 +49,18 @@ sa_list(sql_allocator *sa)
 	return list_init(l, sa, NULL);
 }
 
+static void
+_free(void *dummy, void *data)
+{
+	(void)dummy;
+	GDKfree(data);
+}
+
 list *
 sa_list_append(sql_allocator *sa, list *l, void *data)
 {
 	if (!l)
-		l = sa_list(sa);
+		l = SA_LIST(sa, _free);
 	return list_append(l, data);
 }
 

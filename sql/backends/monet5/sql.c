@@ -1920,10 +1920,15 @@ mvc_append_finish_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int chain_in = *getArgReference_int(stk, pci, 1);
 
 	*chain_out = chain_in;
+
+	/* cleanup */
+	for( int i = 2; i < pci->argc; i++){
+		ptr p = *getArgReference_ptr(stk, pci, i);
+
+		_DELETE(p);
+	}
 	(void)cntxt;
 	(void)mb;
-	(void)stk;
-	(void)pci;
 	return MAL_SUCCEED;
 }
 

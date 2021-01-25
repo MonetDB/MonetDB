@@ -751,7 +751,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 		return LOG_ERR;
 
 	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
-
+	_DELETE(cookie);
 	return ok;
 }
 
@@ -806,6 +806,7 @@ update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 		return LOG_ERR;
 
 	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
+	_DELETE(cookie);
 	return ok;
 }
 
@@ -970,7 +971,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 		return LOG_ERR;
 
 	int ok = append_col_execute(cookie, i, tpe == TYPE_bat);
-
+	_DELETE(cookie);
 	return ok;
 }
 
@@ -996,7 +997,7 @@ append_idx(sql_trans *tr, sql_idx * i, void *data, int tpe)
 		return LOG_ERR;
 
 	int ok = append_col_execute(cookie, data, tpe == TYPE_bat);
-
+	_DELETE(cookie);
 	return ok;
 }
 
