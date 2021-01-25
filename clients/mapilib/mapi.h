@@ -30,6 +30,7 @@ typedef int MapiMsg;
 enum mapi_handshake_options_levels {
 	MAPI_HANDSHAKE_AUTOCOMMIT = 1,
 	MAPI_HANDSHAKE_REPLY_SIZE,
+	MAPI_HANDSHAKE_SIZE_HEADER,
 	// this must always be the last one:
 	MAPI_HANDSHAKE_OPTIONS_LEVEL,
 };

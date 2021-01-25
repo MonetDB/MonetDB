@@ -294,8 +294,10 @@ SQLprepareClient(Client c, int login)
 					goto bailout;
 				}
 				m->reply_size = value;
+			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
+					be->sizeheader = value != 0;
 			} else {
-				msg = createException(SQL, "SQLprepareClent", SQLSTATE(42000) "unexpected handshake option: %s", tok);
+				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
 				goto bailout;
 			}
 
@@ -1048,7 +1050,7 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
-		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) {
+		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) { // no underscore
 			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
 			be->sizeheader = v != 0;
 			in->pos = in->len;	/* HACK: should use parsed length */

@@ -882,6 +882,7 @@ struct MapiStruct {
 	int handshake_options;	/* which settings can be sent during challenge/response? */
 	bool auto_commit;
 	bool columnar_protocol;
+	bool sizeheader;
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -2782,6 +2783,10 @@ mapi_reconnect(Mapi mid)
 	if (mid->handshake_options > MAPI_HANDSHAKE_REPLY_SIZE) {
 		CHECK_SNPRINTF(",reply_size=%d", mid->cachelimit);
 	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_SIZE_HEADER) {
+		CHECK_SNPRINTF(",size_header=%d", mid->sizeheader); // with underscore, despite X command without
+	}
+	}
 	if (mid->handshake_options > 0) {
 		CHECK_SNPRINTF(":");
 	}
@@ -2994,6 +2999,13 @@ mapi_reconnect(Mapi mid)
 		char buf[50];
 		sprintf(buf, "%d", mid->cachelimit);
 		MapiMsg result = mapi_Xcommand(mid, "reply_size", buf);
+		if (result != MOK)
+			return mid->error;
+	}
+	if (mid->handshake_options <= MAPI_HANDSHAKE_SIZE_HEADER && mid->sizeheader != MapiStructDefaults.sizeheader) {
+		char buf[50];
+		sprintf(buf, "%d", !!mid->sizeheader);
+		MapiMsg result = mapi_Xcommand(mid, "sizeheader", buf); // no underscore!
 		if (result != MOK)
 			return mid->error;
 	}
@@ -3711,6 +3723,9 @@ mapi_set_size_header(Mapi mid, bool value)
 		mapi_setError(mid, "size header only supported in SQL", __func__, MERROR);
 		return MERROR;
 	}
+	mid->sizeheader = value;
+	if (!mid->connected)
+		return MOK;
 	if (value)
 		return mapi_Xcommand(mid, "sizeheader", "1");
 	else
