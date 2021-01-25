@@ -67,7 +67,7 @@ typedef struct objectset {
 static int
 os_id_key(versionhead  *n)
 {
-	return BATatoms[TYPE_int].atomHash(&n->ov->b->id);
+	return (int) BATatoms[TYPE_int].atomHash(&n->ov->b->id);
 }
 
 static versionhead  *
@@ -93,7 +93,7 @@ find_id(objectset *os, sqlid id)
 			}
 		}
 		if (os->id_map) {
-			int key = BATatoms[TYPE_int].atomHash(&id);
+			int key = (int) BATatoms[TYPE_int].atomHash(&id);
 			sql_hash_e *he = os->id_map->buckets[key&(os->id_map->size-1)];
 
 			for (; he; he = he->chain) {
