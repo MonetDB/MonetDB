@@ -279,6 +279,31 @@ SQLprepareClient(Client c, int login)
 		_DELETE(schema);
 	}
 
+	if (c->handshake_options) {
+		char *strtok_state = NULL;
+		char *tok = strtok_r(c->handshake_options, ",", &strtok_state);
+		while (tok != NULL) {
+			int value;
+			if (sscanf(tok, "auto_commit=%d", &value) == 1) {
+				bool auto_commit= value != 0;
+				m->session->auto_commit = auto_commit;
+				m->session->ac_on_commit = auto_commit;
+			} else if (sscanf(tok, "reply_size=%d", &value) == 1) {
+				if (value < -1) {
+					msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "Reply_size cannot be negative");
+					goto bailout;
+				}
+				m->reply_size = value;
+			} else {
+				msg = createException(SQL, "SQLprepareClent", SQLSTATE(42000) "unexpected handshake option: %s", tok);
+				goto bailout;
+			}
+
+			tok = strtok_r(NULL, ",", &strtok_state);
+		}
+	}
+
+
 bailout:
 	MT_lock_set(&sql_contextLock);
 	/* expect SQL text first */
