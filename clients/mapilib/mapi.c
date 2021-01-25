@@ -996,6 +996,7 @@ static int mapi_extend_bindings(MapiHdl hdl, int minbindings);
 static int mapi_extend_params(MapiHdl hdl, int minparams);
 static void close_connection(Mapi mid);
 static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
+static MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 static int unquote(const char *msg, char **start, const char **next, int endchar, size_t *lenp);
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
@@ -1864,6 +1865,17 @@ mapi_close_handle(MapiHdl hdl)
 	return MOK;
 }
 
+static const struct MapiStruct MapiStructDefaults = {
+	.auto_commit = true,
+	.error = MOK,
+	.languageId = LANG_SQL,
+	.mapiversion = "mapi 1.0",
+	.cachelimit = 100,
+	.redirmax = 10,
+	.blk.eos = false,
+	.blk.lim = BLOCK,
+};
+
 /* Allocate a new connection handle. */
 static Mapi
 mapi_new(void)
@@ -1876,17 +1888,8 @@ mapi_new(void)
 		return NULL;
 
 	/* then fill in some details */
-	*mid = (struct MapiStruct) {
-		.index = (uint32_t) ATOMIC_ADD(&index, 1),	/* for distinctions in log records */
-		.auto_commit = true,
-		.error = MOK,
-		.languageId = LANG_SQL,
-		.mapiversion = "mapi 1.0",
-		.cachelimit = 100,
-		.redirmax = 10,
-		.blk.eos = false,
-		.blk.lim = BLOCK,
-	};
+	*mid = MapiStructDefaults;
+	mid->index =  (uint32_t) ATOMIC_ADD(&index, 1); /* for distinctions in log records */
 	if ((mid->blk.buf = malloc(mid->blk.lim + 1)) == NULL) {
 		mapi_destroy(mid);
 		return NULL;
@@ -2975,8 +2978,26 @@ mapi_reconnect(Mapi mid)
 	if (mid->languageId != LANG_SQL)
 		return mid->error;
 
-	/* tell server about cachelimit */
-	mapi_cache_limit(mid, mid->cachelimit);
+	if (mid->error != MOK)
+		return mid->error;
+
+	/* use X commands to send options that couldn't be sent in the handshake */
+	/* tell server about auto_complete and cache limit if handshake options weren't used */
+	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && mid->auto_commit != MapiStructDefaults.auto_commit) {
+		char buf[2];
+		sprintf(buf, "%d", !!mid->auto_commit);
+		MapiMsg result = mapi_Xcommand(mid, "auto_commit", buf);
+		if (result != MOK)
+			return mid->error;
+	}
+	if (mid->handshake_options <= MAPI_HANDSHAKE_REPLY_SIZE && mid->cachelimit != MapiStructDefaults.cachelimit) {
+		char buf[50];
+		sprintf(buf, "%d", mid->cachelimit);
+		MapiMsg result = mapi_Xcommand(mid, "reply_size", buf);
+		if (result != MOK)
+			return mid->error;
+	}
+
 	return mid->error;
 }
 
@@ -3663,6 +3684,8 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 		return MERROR;
 	}
 	mid->auto_commit = autocommit;
+	if (!mid->connected)
+		return MOK;
 	if (autocommit)
 		return mapi_Xcommand(mid, "auto_commit", "1");
 	else
@@ -4566,8 +4589,10 @@ MapiMsg
 mapi_cache_limit(Mapi mid, int limit)
 {
 	/* clean out superflous space TODO */
-	mapi_check(mid);
 	mid->cachelimit = limit;
+	if (!mid->connected)
+		return MOK;
+	mapi_check(mid);
 /* 	if (hdl->cache.rowlimit < hdl->cache.limit) { */
 	/* TODO: decide what to do here */
 	/*              hdl->cache.limit = hdl->cache.rowlimit; *//* arbitrarily throw away cache lines */

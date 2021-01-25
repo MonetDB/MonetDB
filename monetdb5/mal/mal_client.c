@@ -274,6 +274,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->protocol = PROTOCOL_9;
 
 	c->filetrans = false;
+	c->handshake_options = NULL;
 	c->query = NULL;
 
 	char name[MT_NAME_LEN];
@@ -457,6 +458,8 @@ MCfreeClient(Client c)
 	c->sqlprofiler = 0;
 	c->wlc_kind = 0;
 	c->wlc = NULL;
+	free(c->handshake_options);
+	c->handshake_options = NULL;
 	MT_sema_destroy(&c->s);
 	c->mode = MCshutdowninprogress()? BLOCKCLIENT: FREECLIENT;
 }

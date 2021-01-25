@@ -172,7 +172,7 @@ is_exiting(void *data)
 void
 MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protocol_version protocol, size_t blocksize)
 {
-	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL;
+	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL, *handshake_opts = NULL;
 	char *database = NULL, *s;
 	const char *dbname;
 	str msg = MAL_SUCCEED;
@@ -251,6 +251,11 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 		filetrans = true;
 	}
 
+	if (s && strchr(s, ':') != NULL) {
+		handshake_opts = s;
+		s = strchr(s, ':');
+		*s++ = '\0';
+	}
 	dbname = GDKgetenv("gdk_dbname");
 	if (database != NULL && database[0] != '\0' &&
 		strcmp(database, dbname) != 0)
@@ -320,6 +325,7 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 			return;
 		}
 		c->filetrans = filetrans;
+		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
 		/* move this back !! */
 		if (c->usermodule == 0) {
 			c->curmodule = c->usermodule = userModule();

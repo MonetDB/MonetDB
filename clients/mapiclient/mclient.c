@@ -3538,6 +3538,10 @@ main(int argc, char **argv)
 	if (dbname)
 		free(dbname);
 	dbname = NULL;
+
+	mapi_cache_limit(mid, -1);
+	mapi_setAutocommit(mid, autocommit);
+
 	if (mid && mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 
@@ -3553,7 +3557,6 @@ main(int argc, char **argv)
 			mnstr_printf(stderr_stream, "%s\n", mapi_error_str(mid));
 		exit(2);
 	}
-	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
 			exit(dump_database(mid, toConsole, 0, useinserts, false));
@@ -3566,9 +3569,6 @@ main(int argc, char **argv)
 	struct privdata priv;
 	priv = (struct privdata) {0};
 	mapi_setfilecallback(mid, getfile, putfile, &priv);
-
-	if (!autocommit)
-		mapi_setAutocommit(mid, autocommit);
 
 	if (logfile)
 		mapi_log(mid, logfile);
