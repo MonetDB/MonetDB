@@ -214,7 +214,7 @@ os_remove_id_based_chain(objectset *os, sqlstore *store, versionhead  *n)
 static versionhead  *
 node_create(sql_allocator *sa, objectversion *ov)
 {
-	versionhead  *n = (sa)?SA_NEW(sa, versionhead ):MNEW(versionhead );
+	versionhead  *n = SA_NEW(sa, versionhead );
 
 	if (n == NULL)
 		return NULL;
@@ -330,7 +330,7 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(state & id_based_rollbacked);
 
 	if (ov->id_based_older) {
-		if (ov->ts != ov->id_based_older->ts) {
+		if (1 || ov->ts != ov->id_based_older->ts || state & deleted) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
 			// TODO START ATOMIC SET
@@ -360,7 +360,7 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(state & name_based_rollbacked);
 
 	if (ov->name_based_older) {
-		if (ov->ts != ov->name_based_older->ts) {
+		if (1 || ov->ts != ov->name_based_older->ts || state & deleted) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
 			// TODO START ATOMIC SET
@@ -501,7 +501,7 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 
 	if (ov->ts < oldest && newer && newer->ts < oldest && os_atmc_get_state(newer) == active) {
 		// if ov is active and one of its parents is also active then both parents must be the same.
-		assert(newer == ov->id_based_newer);		
+		assert(newer == ov->id_based_newer);
 
 		put_under_destruction(store, ov, oldest);
 
@@ -754,6 +754,9 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			}
 			// END ATOMIC CAS
 		}
+		if (state == active && oo->ts == ov->ts && !(ov->state & deleted)) {
+			return -1; /* new object with same name within transaction, should have a delete in between */
+		}
 
 		MT_lock_set(&os->ht_lock);
 		ov->name_based_head = oo->name_based_head;
@@ -847,7 +850,10 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if (os_add_name_based(os, tr, name, ov)) {
-		// TODO clean up ov
+		bte state = os_atmc_get_state(ov);
+		state |= name_based_rollbacked;
+		os_atmc_set_state(ov, state);
+		os_rollback_id_based_terminal_decendant(ov, tr->store);
 		return -1;
 	}
 

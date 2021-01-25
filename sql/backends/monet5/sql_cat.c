@@ -368,7 +368,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		}
 
 		nextv = SA_ZNEW(sql->session->tr->sa, sql_part_value); /* instantiate the part value */
-		nextv->value = sa_alloc(sql->session->tr->sa, len);
+		nextv->value = SA_NEW_ARRAY(sql->session->tr->sa, char, len);
 		memcpy(nextv->value, pnext, len);
 		nextv->length = len;
 

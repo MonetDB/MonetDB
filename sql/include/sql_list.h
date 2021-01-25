@@ -12,6 +12,8 @@
 #include "sql_mem.h"
 #include "sql_hash.h"
 
+#define SA_LIST(sa, destroy) ((sa)?sa_list(sa):list_create(destroy))
+
 typedef struct node {
 	struct node *next;
 	void *data;
