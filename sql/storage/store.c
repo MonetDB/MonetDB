@@ -90,11 +90,9 @@ type_destroy(sqlstore *store, sql_type *t)
 	assert(t->base.refcnt > 0);
 	if (--(t->base.refcnt) > 0)
 		return;
-	/*
 	_DELETE(t->sqlname);
 	_DELETE(t->base.name);
 	_DELETE(t);
-	 */
 }
 
 static void
@@ -104,13 +102,11 @@ func_destroy(sqlstore *store, sql_func *f)
 	assert(f->base.refcnt > 0);
 	if (--(f->base.refcnt) > 0)
 		return;
-	/*
-	list_destroy(f->ops, store);
+	list_destroy2(f->ops, store);
 	_DELETE(f->imp);
 	_DELETE(f->mod);
 	_DELETE(f->base.name);
 	_DELETE(f);
-	 */
 }
 
 static void
@@ -120,10 +116,8 @@ seq_destroy(sqlstore *store, sql_sequence *s)
 	assert(s->base.refcnt > 0);
 	if (--(s->base.refcnt) > 0)
 		return;
-	/*
 	_DELETE(s->base.name);
 	_DELETE(s);
-	 */
 }
 
 static void
@@ -132,17 +126,12 @@ key_destroy(sqlstore *store, sql_key *k)
 	assert(k->base.refcnt > 0);
 	if (--(k->base.refcnt) > 0)
 		return;
-	/* remove key from schema */
-	list_destroy(k->columns);
+	list_destroy2(k->columns, store);
 	k->columns = NULL;
 	if ((k->type == pkey) && (k->t->pkey == (sql_ukey *) k))
 		k->t->pkey = NULL;
-	(void)store;
-	/*
-	list_destroy(k->columns);
 	_DELETE(k->base.name);
 	_DELETE(k);
-	 */
 }
 
 static void
@@ -151,17 +140,13 @@ idx_destroy(sqlstore *store, sql_idx * i)
 	assert(i->base.refcnt > 0);
 	if (--(i->base.refcnt) > 0)
 		return;
-	/* remove idx from schema */
-	list_destroy(i->columns);
+	list_destroy2(i->columns, store);
 	i->columns = NULL;
 
 	if (isTable(i->t))
 		store->storage_api.destroy_idx(store, i);
-	/*
-	list_destroy(i->columns);
 	_DELETE(i->base.name);
 	_DELETE(i);
-	 */
 }
 
 static void
@@ -172,19 +157,15 @@ trigger_destroy(sqlstore *store, sql_trigger *t)
 		return;
 	/* remove trigger from schema */
 	if (t->columns) {
-		list_destroy(t->columns);
+		list_destroy2(t->columns, store);
 		t->columns = NULL;
 	}
-	(void)store;
-	/*
-	list_destroy(t->columns);
 	_DELETE(t->old_name);
 	_DELETE(t->new_name);
 	_DELETE(t->condition);
 	_DELETE(t->statement);
 	_DELETE(t->base.name);
 	_DELETE(t);
-	 */
 }
 
 static void
@@ -195,32 +176,29 @@ column_destroy(sqlstore *store, sql_column *c)
 		return;
 	if (isTable(c->t))
 		store->storage_api.destroy_col(store, c);
-	/*
 	_DELETE(c->def);
 	_DELETE(c->base.name);
 	_DELETE(c);
-	 */
 }
 
 static void
 table_destroy(sqlstore *store, sql_table *t)
 {
-	(void)store;
 	assert(t->base.refcnt > 0);
 	if (--(t->base.refcnt) > 0)
 		return;
+	if (isTable(t))
+		store->storage_api.destroy_del(store, t);
 	/* cleanup its parts */
 	cs_destroy(&t->members, store);
 	cs_destroy(&t->idxs, store);
 	cs_destroy(&t->keys, store);
 	cs_destroy(&t->triggers, store);
 	cs_destroy(&t->columns, store);
-	/*
-	_DELETE(t->part);
+	//_DELETE(t->part);
 	_DELETE(t->query);
 	_DELETE(t->base.name);
 	_DELETE(t);
-	 */
 }
 
 static void
@@ -238,10 +216,8 @@ schema_destroy(sqlstore *store, sql_schema *s)
 	os_destroy(s->tables, store);
 	os_destroy(s->funcs, store);
 	os_destroy(s->types, store);
-	/*
 	_DELETE(s->base.name);
 	_DELETE(s);
-	 */
 }
 
 static void
