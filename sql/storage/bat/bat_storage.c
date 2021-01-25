@@ -56,10 +56,10 @@ struct prep_exec_cookie {
  * automatically freed even if errors occur
  */
 static struct prep_exec_cookie *
-make_cookie(sql_trans *tr, sql_delta *delta, bool is_new)
+make_cookie(sql_delta *delta, bool is_new)
 {
 	struct prep_exec_cookie *cookie;
-	cookie = sa_alloc(tr->sa, sizeof(*cookie));
+	cookie = MNEW(struct prep_exec_cookie);
 	if (!cookie)
 		return NULL;
 	cookie->delta = delta;
@@ -724,7 +724,7 @@ update_col_prepare(sql_trans *tr, sql_column *c)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || isLocalTemp(c->t))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
-	return make_cookie(tr, delta, isNew(c));
+	return make_cookie(delta, isNew(c));
 }
 
 static int
@@ -795,7 +795,7 @@ update_idx_prepare(sql_trans *tr, sql_idx *i)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || isLocalTemp(i->t))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
-	return make_cookie(tr, delta, isNew(i));
+	return make_cookie(delta, isNew(i));
 }
 
 static int
@@ -940,7 +940,7 @@ append_col_prepare(sql_trans *tr, sql_column *c)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || isLocalTemp(c->t))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
-	return make_cookie(tr, delta, false);
+	return make_cookie(delta, false);
 }
 
 static int
@@ -985,7 +985,7 @@ append_idx_prepare(sql_trans *tr, sql_idx *i)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || isLocalTemp(i->t))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
-	return make_cookie(tr, delta, false);
+	return make_cookie(delta, false);
 }
 
 static int

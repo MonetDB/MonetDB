@@ -127,12 +127,11 @@ bool is_commutative(const char *fnm)
 void
 base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name)
 {
-	assert(sa);
 	*b = (sql_base) {
 		.id = id,
 		.flags = flags,
 		.refcnt = 1,
-		.name = (name) ? sa_strdup(sa, name) : NULL,
+		.name = (name) ? SA_STRDUP(sa, name) : NULL,
 	};
 }
 

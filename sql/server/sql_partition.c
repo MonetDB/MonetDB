@@ -202,7 +202,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 			if (!strcmp(e->l, t->base.name)) {
 				sql_column *col = find_sql_column(t, e->r);
 				if (col) {
-					int *cnr = sa_alloc(cols->sa, sizeof(int));
+					int *cnr = SA_NEW(cols->sa, int);
 					*cnr = col->colnr;
 					list_append(cols, cnr);
 				}
@@ -256,7 +256,7 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 	}
 
 	if (!mt->part.pexp->cols)
-		mt->part.pexp->cols = sa_list(rsa);
+		mt->part.pexp->cols = SA_LIST(rsa, (fdestroy) NULL);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
 	mt->part.pexp->type = *exp_subtype(exp);
@@ -316,7 +316,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	localtype = found.type->localtype;
 
 	if (localtype != TYPE_str && mt->members.set && cs_size(&mt->members)) {
-		list *new = sa_list(tr->sa), *old = sa_list(tr->sa);
+		list *new = SA_LIST(tr->sa, (fdestroy) NULL), *old = SA_LIST(tr->sa, (fdestroy) NULL);
 
 		for (node *n = mt->members.set->h; n; n = n->next) {
 			sql_part *next = (sql_part*) n->data, *p = SA_ZNEW(tr->sa, sql_part);
@@ -330,7 +330,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			p->with_nills = next->with_nills;
 
 			if (isListPartitionTable(mt)) {
-				p->part.values = sa_list(tr->sa);
+				p->part.values = SA_LIST(tr->sa, (fdestroy) NULL);
 
 				for (node *m = next->part.values->h; m; m = m->next) {
 					sql_part_value *v = (sql_part_value*) m->data, *nv = SA_ZNEW(tr->sa, sql_part_value);
@@ -342,7 +342,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
-						nv->value = sa_alloc(tr->sa, vvalue.len);
+						nv->value = SA_NEW_ARRAY(tr->sa, char, vvalue.len);
 						memcpy(nv->value, VALget(&vvalue), vvalue.len);
 						nv->length = vvalue.len;
 					}
@@ -373,8 +373,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 						const void *nil_ptr = ATOMnilptr(tpe);
 						size_t nil_len = ATOMlen(tpe, nil_ptr);
 
-						p->part.range.minvalue = sa_alloc(tr->sa, nil_len);
-						p->part.range.maxvalue = sa_alloc(tr->sa, nil_len);
+						p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);
+						p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);
 						memcpy(p->part.range.minvalue, nil_ptr, nil_len);
 						memcpy(p->part.range.maxvalue, nil_ptr, nil_len);
 						p->part.range.minlength = nil_len;
@@ -384,8 +384,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 						if (ok)
 							ok = VALconvert(localtype, &vmax);
 						if (ok) {
-							p->part.range.minvalue = sa_alloc(tr->sa, vmin.len);
-							p->part.range.maxvalue = sa_alloc(tr->sa, vmax.len);
+							p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, vmin.len);
+							p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, vmax.len);
 							memcpy(p->part.range.minvalue, VALget(&vmin), vmin.len);
 							memcpy(p->part.range.maxvalue, VALget(&vmax), vmax.len);
 							p->part.range.minlength = vmin.len;
@@ -407,11 +407,11 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 		for (node *n = old->h; n; n = n->next) { /* remove the old */
 			//list_remove_data(mt->members, n->data);
 			//if (!mt->s->parts.dset)
-		//		mt->s->parts.dset = sa_list(tr->sa);
+		//		mt->s->parts.dset = SA_LIST(tr->sa, (fdestroy) NULL);
 		//	list_move_data(mt->s->parts.set, mt->s->parts.dset, n->data);
 			//list_remove_data(mt->members.set, n->data);
 			if (!mt->members.dset)
-				mt->members.dset = sa_list(tr->sa);
+				mt->members.dset = SA_LIST(tr->sa, (fdestroy) NULL);
 			list_move_data(mt->members.set, mt->members.dset, n->data);
 		}
 		for (node *n = new->h; n; n = n->next) {

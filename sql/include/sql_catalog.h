@@ -812,10 +812,10 @@ extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **
 			} else if (status == inside_str) {
 				next_identifier[bp++] = '\0';
 				if (identifier == extracting_schema) {
-					*schema = sa_strdup(sa, next_identifier);
+					*schema = SA_STRDUP(sa, next_identifier);
 					identifier = extracting_sequence;
 				} else if (identifier == extracting_sequence) {
-					*sequence = sa_strdup(sa, next_identifier);
+					*sequence = SA_STRDUP(sa, next_identifier);
 					break; /* done extracting */
 				}
 				bp = 0;
