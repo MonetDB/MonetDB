@@ -363,6 +363,7 @@ developer.
 %files client-tests
 %defattr(-,root,root)
 %{_bindir}/arraytest
+%{_bindir}/bincopydata
 %{_bindir}/odbcsample1
 %{_bindir}/sample0
 %{_bindir}/sample1
@@ -681,7 +682,11 @@ developer, but if you do want to test, this is the package you need.
 
 %files testing-python
 %defattr(-,root,root)
+%{_bindir}/Mconvert.py
 %{_bindir}/Mtest.py
+%{_bindir}/Mz.py
+%{_bindir}/mktest.py
+%{_bindir}/sqllogictest.py
 %dir %{python3_sitelib}/MonetDBtesting
 %{python3_sitelib}/MonetDBtesting/*
 
