@@ -60,7 +60,7 @@ target_link_libraries(mcrypt
   monetdb_config_header)
 
 if(WIN32)
-  target_compile_definitions(mcrypt 
+  target_compile_definitions(mcrypt
     PRIVATE
     LIBMONETDB5
     LIBMAPI
@@ -179,7 +179,6 @@ install(EXPORT mstringTargets
 install(FILES
   matomic.h
   mstring.h
-  copybinary.h
   DESTINATION
   ${CMAKE_INSTALL_INCLUDEDIR}/monetdb
   COMPONENT
