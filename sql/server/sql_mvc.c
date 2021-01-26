@@ -863,7 +863,6 @@ mvc_destroy(mvc *m)
 			(void)sql_trans_end(m->session, 0);
 		while (tr->parent)
 			tr = sql_trans_destroy(tr);
-		m->session->tr = NULL;
 	}
 	sql_session_destroy(m->session);
 	store_unlock(m->store);

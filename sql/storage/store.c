@@ -95,16 +95,25 @@ type_destroy(sqlstore *store, sql_type *t)
 	_DELETE(t);
 }
 
+void
+arg_destroy(sql_store store, sql_arg *a)
+{
+	(void)store;
+	_DELETE(a);
+}
+
 static void
 func_destroy(sqlstore *store, sql_func *f)
 {
-	(void)store;
 	assert(f->base.refcnt > 0);
 	if (--(f->base.refcnt) > 0)
 		return;
+	if (f->res)
+		list_destroy2(f->res, store);
 	list_destroy2(f->ops, store);
 	_DELETE(f->imp);
 	_DELETE(f->mod);
+	_DELETE(f->query);
 	_DELETE(f->base.name);
 	_DELETE(f);
 }
@@ -912,7 +921,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 
 	TRC_DEBUG(SQL_STORE, "Load function: %s\n", t->base.name);
 
-	t->ops = list_new(tr->sa, (fdestroy)NULL);
+	t->ops = list_new(tr->sa, (fdestroy) &arg_destroy);
 	if (rs) {
 		for (rid = store->table_api.subrids_next(rs); !is_oid_nil(rid); rid = store->table_api.subrids_next(rs)) {
 			sql_arg *a = load_arg(tr, t, rid);
@@ -921,7 +930,7 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 				return NULL;
 			if (a->inout == ARG_OUT) {
 				if (!t->res)
-					t->res = SA_LIST(tr->sa, (fdestroy) NULL);
+					t->res = list_new(tr->sa, (fdestroy) &arg_destroy);
 				list_append(t->res, a);
 			} else {
 				list_append(t->ops, a);
@@ -1684,9 +1693,9 @@ store_load(sqlstore *store, sql_allocator *pa)
 	if (!sequences_init())
 		return NULL;
 	tr = sql_trans_create(store, NULL, NULL);
-	tr->store = store;
 	if (!tr)
 		return NULL;
+	tr->store = store;
 
 	/* for now use malloc and free */
 	store->active = list_create(NULL);
@@ -1695,7 +1704,6 @@ store_load(sqlstore *store, sql_allocator *pa)
 		/* cannot initialize database in readonly mode */
 		if (store->readonly)
 			return NULL;
-		tr = sql_trans_create(store, NULL, NULL);
 		if (!tr) {
 			TRC_CRITICAL(SQL_STORE, "Failed to start a transaction while loading the storage\n");
 			return NULL;
@@ -1899,6 +1907,7 @@ store_load(sqlstore *store, sql_allocator *pa)
 	if (store->logger_api.log_needs_update(store))
 		if (store_upgrade_ids(tr) != SQL_OK)
 			TRC_CRITICAL(SQL_STORE, "Cannot commit upgrade transaction\n");
+	sql_trans_destroy(tr);
 	store->initialized = 1;
 	return store;
 }
@@ -2119,8 +2128,9 @@ store_exit(sqlstore *store)
 	}
 
 	if (store->cat) {
-		/* todo add catalog destroy */
 		MT_lock_unset(&store->lock);
+		os_destroy(store->cat->objects, store);
+		os_destroy(store->cat->schemas, store);
 		sequences_exit();
 		MT_lock_set(&store->lock);
 	}
@@ -2131,6 +2141,7 @@ store_exit(sqlstore *store)
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
 	MT_lock_unset(&store->lock);
 	sa_destroy(sa);
+	_DELETE(store);
 }
 
 /* call locked! */
@@ -3403,8 +3414,10 @@ sql_trans_destroy(sql_trans *tr)
 	sql_trans *res = tr->parent;
 
 	TRC_DEBUG(SQL_STORE, "Destroy transaction: %p\n", tr);
-	if (tr->name)
+	if (tr->name) {
+		_DELETE(tr->name);
 		tr->name = NULL;
+	}
 	if (tr->changes)
 		sql_trans_rollback(tr);
 	_DELETE(tr);
@@ -4173,13 +4186,13 @@ sql_trans_create_func(sql_trans *tr, sql_schema *s, const char *func, list *args
 	se = t->side_effect = (type==F_FILT || (res && (lang==FUNC_LANG_SQL || !list_empty(args))))?FALSE:TRUE;
 	t->varres = varres;
 	t->vararg = vararg;
-	t->ops = SA_LIST(tr->sa, (fdestroy) NULL);
+	t->ops = SA_LIST(tr->sa, (fdestroy) &arg_destroy);
 	t->fix_scale = SCALE_EQ;
 	t->system = system;
 	for (n=args->h; n; n = n->next)
 		list_append(t->ops, arg_dup(tr, s, n->data));
 	if (res) {
-		t->res = SA_LIST(tr->sa, (fdestroy) NULL);
+		t->res = SA_LIST(tr->sa, (fdestroy) &arg_destroy);
 		for (n=res->h; n; n = n->next)
 			list_append(t->res, arg_dup(tr, s, n->data));
 	}
@@ -5937,7 +5950,7 @@ sql_session_create(sqlstore *store, sql_allocator *sa, int ac)
 	if (store->singleuser > 1)
 		return NULL;
 
-	s = SA_ZNEW(sa, sql_session);
+	s = SA_ZNEW(/*sa*/NULL, sql_session);
 	if (!s)
 		return NULL;
 	s->sa = sa;
@@ -5966,6 +5979,7 @@ sql_session_destroy(sql_session *s)
 	assert(!s->tr || s->tr->active == 0);
 	if (s->tr)
 		sql_trans_destroy(s->tr);
+	_DELETE(s);
 }
 
 int
