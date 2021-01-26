@@ -934,14 +934,14 @@ backend_create_r_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "rapi";
-		f->imp = "eval_aggr";
+		f->mod = GDKstrdup("rapi");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "rapi";
-		f->imp = "eval";
+		f->mod = GDKstrdup("rapi");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
@@ -954,18 +954,18 @@ backend_create_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapi3";
-		f->imp = "eval_aggr";
+		f->mod = GDKstrdup("pyapi3");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
-		f->mod = "pyapi3";
-		f->imp = "eval_loader";
+		f->mod = GDKstrdup("pyapi3");
+		f->imp = GDKstrdup("eval_loader");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapi3";
-		f->imp = "eval";
+		f->mod = GDKstrdup("pyapi3");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
@@ -977,14 +977,14 @@ backend_create_map_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapi3map";
-		f->imp = "eval_aggr";
+		f->mod = GDKstrdup("pyapi3map");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapi3map";
-		f->imp = "eval";
+		f->mod = GDKstrdup("pyapi3map");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
@@ -994,7 +994,7 @@ static int
 backend_create_py3_func(backend *be, sql_func *f)
 {
 	backend_create_py_func(be, f);
-	f->mod = "pyapi3";
+	f->mod = GDKstrdup("pyapi3");
 	return 0;
 }
 
@@ -1002,7 +1002,7 @@ static int
 backend_create_map_py3_func(backend *be, sql_func *f)
 {
 	backend_create_map_py_func(be, f);
-	f->mod = "pyapi3map";
+	f->mod = GDKstrdup("pyapi3map");
 	return 0;
 }
 
@@ -1013,15 +1013,15 @@ backend_create_c_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "capi";
-		f->imp = "eval_aggr";
+		f->mod = GDKstrdup("capi");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
 	case F_PROC: /* no output */
 	case F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "capi";
-		f->imp = "eval";
+		f->mod = GDKstrdup("capi");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
