@@ -1019,9 +1019,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			} else {
 				sql_func *f = sf->func;
 				if (!f->mod || strcmp(f->mod, fmod))
-					f->mod = (f->sa)?sa_strdup(f->sa, fmod):sa_strdup(sql->pa, fmod);
+					f->mod = SA_STRDUP(NULL, fmod) ;//(f->sa)?sa_strdup(f->sa, fmod):sa_strdup(sql->pa, fmod);
 				if (!f->imp || strcmp(f->imp, fnme))
-					f->imp = (f->sa)?sa_strdup(f->sa, fnme):sa_strdup(sql->pa, fnme);
+					f->imp = SA_STRDUP(NULL, fnme);//(f->sa)?sa_strdup(f->sa, fnme):sa_strdup(sql->pa, fnme);
 				if (!f->mod || !f->imp)
 					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
 				f->sql = 0; /* native */
