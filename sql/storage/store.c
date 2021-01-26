@@ -2139,6 +2139,7 @@ store_exit(sqlstore *store)
 		MT_lock_unset(&store->lock);
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
+		_DELETE(store->cat);
 		sequences_exit();
 		MT_lock_set(&store->lock);
 	}
