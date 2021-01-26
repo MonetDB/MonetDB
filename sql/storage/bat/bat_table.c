@@ -134,7 +134,7 @@ static BAT *
 full_column(sql_trans *tr, sql_column *c)
 {
 	assert(c->data);
-	return delta_full_bat(tr, c, timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t)), isNew(c->t));
+	return delta_full_bat(tr, c, col_timestamp_delta(tr, c), isNew(c->t));
 }
 
 static void

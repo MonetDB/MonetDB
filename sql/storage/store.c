@@ -1000,6 +1000,7 @@ sql_trans_update_schema(sql_trans *tr, oid rid)
 	TRC_DEBUG(SQL_STORE, "Update schema: %s %d\n", s->base.name, s->base.id);
 
 	v = store->table_api.column_find_value(tr, find_sql_column(ss, "name"), rid);
+	_DELETE(s->base.name);
 	base_init(tr->sa, &s->base, sid, 0, v); _DELETE(v);
 	v = store->table_api.column_find_value(tr, find_sql_column(ss, "authorization"), rid);
 	s->auth_id = *(sqlid *)v; 	_DELETE(v);

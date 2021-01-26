@@ -89,11 +89,18 @@ temp_dup_delta(ulng tid, int type)
 }
 
 static sql_delta *
+temp_delta(sql_delta *d, ulng tid)
+{
+	while (d && d->ts != tid)
+		d = d->next;
+	return d;
+}
+
+static sql_delta *
 get_delta(sql_delta *d, ulng tid, int type, int is_temp)
 {
 	if (is_temp) {
-		while (d && d->ts != tid)
-			d = d->next;
+		d = temp_delta(d, tid);
 		if (!d)
 			return temp_dup_delta(tid, type);
 	}
@@ -126,14 +133,48 @@ get_dbat(sql_dbat *d, ulng tid, int is_temp)
 	return d;
 }
 
-sql_delta *
+static sql_delta *
 timestamp_delta( sql_trans *tr, sql_delta *d, int type, int is_temp)
 {
+	assert(!is_temp);
 	if (is_temp)
 		return get_delta(d, tr->tid, type, is_temp);
 	while (d->next && d->ts != tr->tid && (!tr->parent || !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
 		d = d->next;
 	return d;
+}
+
+sql_delta *
+col_timestamp_delta( sql_trans *tr, sql_column *c)
+{
+	int is_temp = isTempTable(c->t);
+	if (is_temp) {
+		sql_delta *d = temp_delta(c->data, tr->tid);
+		if (!d) {
+			d = temp_dup_delta(tr->tid, c->type.type->localtype);
+			d->next = c->data;
+			c->data = d;
+		}
+		return d;
+	}
+	return timestamp_delta( tr, c->data, c->type.type->localtype, is_temp);
+}
+
+static sql_delta *
+idx_timestamp_delta( sql_trans *tr, sql_idx *i)
+{
+	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
+	int is_temp = isTempTable(i->t);
+	if (is_temp) {
+		sql_delta *d = temp_delta(i->data, tr->tid);
+		if (!d) {
+			d = temp_dup_delta(tr->tid, type);
+			d->next = i->data;
+			i->data = d;
+		}
+		return d;
+	}
+	return timestamp_delta( tr, i->data, type, is_temp);
 }
 
 static sql_dbat *
@@ -237,7 +278,7 @@ static BAT *
 bind_ucol(sql_trans *tr, sql_column *c, int access)
 {
 	assert(tr->active);
-	sql_delta *d = timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t));
+	sql_delta *d = col_timestamp_delta(tr, c);
 	return delta_bind_ubat(d, access, c->type.type->localtype);
 }
 
@@ -246,7 +287,7 @@ bind_uidx(sql_trans *tr, sql_idx * i, int access)
 {
 	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
 	assert(tr->active);
-	sql_delta *d = timestamp_delta(tr, i->data, type, isTempTable(i->t));
+	sql_delta *d = idx_timestamp_delta(tr, i);
 	return delta_bind_ubat(d, access, type);
 }
 
@@ -328,7 +369,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	assert(c->data);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
-	sql_delta *d = timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t));
+	sql_delta *d = col_timestamp_delta(tr, c);
 	return delta_bind_bat( d, access, isNew(c->t));
 }
 
@@ -341,8 +382,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	assert(i->data);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
-	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	sql_delta *d = timestamp_delta(tr, i->data, type, isTempTable(i->t));
+	sql_delta *d = idx_timestamp_delta(tr, i);
 	return delta_bind_bat( d, access, isNew(i->t));
 }
 
@@ -700,7 +740,7 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(c->t))
 		/* abort */
 		return NULL;
-	obat = timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t));
+	obat = col_timestamp_delta(tr, c);
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
@@ -1160,7 +1200,7 @@ count_col(sql_trans *tr, sql_column *c, int all)
 	assert(tr->active);
 	if (!isTable(c->t))
 		return 0;
-	b = timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t));
+	b = col_timestamp_delta(tr, c);
 	if (!b)
 		return 1;
 	if (all)
@@ -1177,7 +1217,7 @@ dcount_col(sql_trans *tr, sql_column *c)
 	assert(tr->active);
 	if (!isTable(c->t))
 		return 0;
-	b = timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t));
+	b = col_timestamp_delta(tr, c);
 	if (!b)
 		return 1;
 	if (b->cnt > 1024) {
@@ -1209,8 +1249,7 @@ count_idx(sql_trans *tr, sql_idx *i, int all)
 	assert(tr->active);
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
-	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	b = timestamp_delta(tr, i->data, type, isTempTable(i->t));
+	b = idx_timestamp_delta(tr, i);
 	if (!b)
 		return 0;
 	if (all)
@@ -1241,7 +1280,7 @@ count_col_upd(sql_trans *tr, sql_column *c)
 
 	assert(tr->active);
 	assert (isTable(c->t)) ;
-	b = timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t));
+	b = col_timestamp_delta(tr, c);
 	if (!b)
 		return 1;
 	return b->ucnt;
@@ -1255,8 +1294,7 @@ count_idx_upd(sql_trans *tr, sql_idx *i)
 	assert(tr->active);
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
-	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	b = timestamp_delta(tr, i->data, type, isTempTable(i->t));
+	b = idx_timestamp_delta(tr, i);
 	if (!b)
 		return 0;
 	return b->ucnt;
