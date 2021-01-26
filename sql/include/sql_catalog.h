@@ -840,4 +840,6 @@ extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **
 	}
 }
 
+extern void arg_destroy(sql_store store, sql_arg *a);
+
 #endif /* SQL_CATALOG_H */

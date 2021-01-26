@@ -612,7 +612,7 @@ static sql_func *
 sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_ftype type, bit semantics, bit side_effect,
 				 int fix_scale, unsigned int res_scale, sql_type *res, int nargs, va_list valist)
 {
-	list *ops = sa_list(sa);
+	list *ops = SA_LIST(sa, (fdestroy) &arg_destroy);
 	sql_arg *fres = NULL;
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -631,7 +631,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	if (fres) {
 		if (res_scale)
 			fres->type.scale = res_scale;
-		t->res = list_append(sa_list(sa), fres);
+		t->res = list_append(SA_LIST(sa, (fdestroy) &arg_destroy), fres);
 	} else
 		t->res = NULL;
 	t->nr = list_length(funcs);
