@@ -247,6 +247,12 @@ INNER JOIN t3 t31 ON t20."kk" = t31."tkey"); --error, multiple references to rel
 rollback;
 
 start transaction;
+CREATE TABLE "t0" ("c0" int NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+CREATE TABLE "t1" ("c1" int NOT NULL,CONSTRAINT "t1_c1_pkey" PRIMARY KEY ("c1"));
+alter table t1 drop constraint "t0_c0_pkey"; --error, constraint "t0_c0_pkey" not available on table t1
+rollback;
+
+start transaction;
 create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end;
 select ups();
 	-- 2

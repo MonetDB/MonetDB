@@ -1106,7 +1106,7 @@ mel_func wlc_init_funcs[] = {
  pattern("wlc", "create_view", WLCgeneric, false, "Catalog operation create_view", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
  pattern("wlc", "drop_table", WLCgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlc", "drop_view", WLCgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlc", "drop_constraint", WLCgeneric, false, "Catalog operation drop_constraint", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("wlc", "drop_constraint", WLCgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlc", "alter_table", WLCgeneric, false, "Catalog operation alter_table", args(0,3, arg("sname",str),arg("tname",str),arg("action",int))),
  pattern("wlc", "create_type", WLCgeneric, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
  pattern("wlc", "drop_type", WLCgeneric, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),

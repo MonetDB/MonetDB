@@ -5688,7 +5688,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	stmt *table = NULL, *sname, *tname = NULL, *ifexists = NULL;
+	stmt *table = NULL, *sname, *tname = NULL, *kname = NULL, *ifexists = NULL;
 	list *l = sa_list(sql->sa);
 
 	if (!action)
@@ -5709,6 +5709,15 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	append(l, sname);
 	assert(tname);
 	append(l, tname);
+	if (rel->flag == ddl_drop_constraint) { /* needs extra string parameter for constraint name */
+		if (en) {
+			kname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			if (!kname)
+				return NULL;
+			en = en->next;
+		}
+		append(l, kname);
+	}
 	if (rel->flag != ddl_drop_table && rel->flag != ddl_drop_view && rel->flag != ddl_drop_constraint) {
 		if (en) {
 			table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);

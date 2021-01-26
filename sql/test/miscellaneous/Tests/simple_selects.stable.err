@@ -279,7 +279,11 @@ QUERY = SELECT 1 FROM (((t1 t10 INNER JOIN t2 t20 ON t10."kk" = t20."kk") INNER 
         INNER JOIN t3 t31 ON t20."kk" = t31."tkey"); --error, multiple references to relation t20
 ERROR = !SELECT: relation name "t20" specified more than once
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-536652/.s.monetdb.37826
+MAPI  = (monetdb) /var/tmp/mtest-335808/.s.monetdb.36356
+QUERY = alter table t1 drop constraint "t0_c0_pkey"; --error, constraint "t0_c0_pkey" not available on table t1
+ERROR = !ALTER TABLE: no such constraint 't0_c0_pkey'
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-335808/.s.monetdb.36356
 QUERY = create or replace function ups() returns int begin if 1 > 1 then return 1; end if; end; --error, return missing
 ERROR = !CREATE FUNCTION: missing return statement
 CODE  = 42000

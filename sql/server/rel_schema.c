@@ -1304,14 +1304,16 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr, int exists_check)
+rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, auth));
+	append(exps, exp_atom_clob(sa, first_val));
+	if (second_val)
+		append(exps, exp_atom_clob(sa, second_val));
 	append(exps, exp_atom_int(sa, exists_check));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1551,7 +1553,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		int drop_action = l->h->next->data.i_val;
 
 		sname = get_schema_name(sql, sname, tname);
-		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
+		return rel_drop(sql->sa, ddl_drop_constraint, sname, tname, kname, drop_action, 0);
 	}
 
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
@@ -2662,6 +2664,7 @@ rel_schemas(sql_query *query, symbol *s)
 		ret = rel_drop(sql->sa, ddl_drop_schema,
 			   dlist_get_schema_name(auth_name),
 			   NULL,
+			   NULL,
 			   l->h->next->data.i_val, 	/* drop_action */
 			   l->h->next->next->data.i_val); /* if exists */
 	} 	break;
@@ -2715,7 +2718,7 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
 
-		ret = rel_drop(sql->sa, ddl_drop_table, sname, tname,
+		ret = rel_drop(sql->sa, ddl_drop_table, sname, tname, NULL,
 						 l->h->next->data.i_val,
 						 l->h->next->next->data.i_val); /* if exists */
 	} 	break;
@@ -2727,7 +2730,7 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		sname = get_schema_name(sql, sname, tname);
-		ret = rel_drop(sql->sa, ddl_drop_view, sname, tname,
+		ret = rel_drop(sql->sa, ddl_drop_view, sname, tname, NULL,
 						 l->h->next->data.i_val,
 						 l->h->next->next->data.i_val); /* if exists */
 	} 	break;
