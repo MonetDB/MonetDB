@@ -1068,7 +1068,7 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 	auth_id = sql->role_id;
-	if (name && (auth_id = sql_find_auth(sql, name)) < 0)
+	if (!strNil(name) && (auth_id = sql_find_auth(sql, name)) < 0)
 		throw(SQL,"sql.create_schema", SQLSTATE(42M32) "CREATE SCHEMA: no such authorization '%s'", name);
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
 		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")));
@@ -1081,14 +1081,12 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str notused = *getArgReference_str(stk, pci, 2);
-	int if_exists = *getArgReference_int(stk, pci, 3);
-	int action = *getArgReference_int(stk, pci, 4);
+	int if_exists = *getArgReference_int(stk, pci, 2);
+	int action = *getArgReference_int(stk, pci, 3);
 	sql_schema *s;
 
-	(void) notused;
 	initcontext();
 	s = mvc_bind_schema(sql, sname);
 	if (!s) {

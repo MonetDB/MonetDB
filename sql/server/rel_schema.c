@@ -1311,7 +1311,8 @@ rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *se
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, first_val));
+	if (first_val)
+		append(exps, exp_atom_clob(sa, first_val));
 	if (second_val)
 		append(exps, exp_atom_clob(sa, second_val));
 	append(exps, exp_atom_int(sa, exists_check));
@@ -1335,7 +1336,6 @@ rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-
 	if (auth)
 		append(exps, exp_atom_clob(sa, auth));
 	rel->l = NULL;

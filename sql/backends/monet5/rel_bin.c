@@ -5645,7 +5645,7 @@ rel2bin_trans(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel2bin_catalog(backend *be, sql_rel *rel, list *refs)
+rel2bin_catalog_schema(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
@@ -5661,23 +5661,24 @@ rel2bin_catalog(backend *be, sql_rel *rel, list *refs)
 	sname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 	if (!sname)
 		return NULL;
-	if (en->next) {
-		name = exp_bin(be, en->next->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		if (!name)
-			return NULL;
+	append(l, sname);
+	en = en->next;
+	if (rel->flag == ddl_create_schema) {
+		if (en) {
+			name = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			if (!name)
+				return NULL;
+		} else {
+			name = stmt_atom_string_nil(be);
+		}
+		append(l, name);
 	} else {
-		name = stmt_atom_string_nil(be);
-	}
-	if (en->next && en->next->next) {
-		ifexists = exp_bin(be, en->next->next->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(rel->flag == ddl_drop_schema);
+		ifexists = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		if (!ifexists)
 			return NULL;
-	} else {
-		ifexists = stmt_atom_int(be, 0);
+		append(l, ifexists);
 	}
-	append(l, sname);
-	append(l, name);
-	append(l, ifexists);
 	append(l, action);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }
@@ -5802,7 +5803,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 			break;
 		case ddl_create_schema:
 		case ddl_drop_schema:
-			s = rel2bin_catalog(be, rel, refs);
+			s = rel2bin_catalog_schema(be, rel, refs);
 			sql->type = Q_SCHEMA;
 			break;
 		case ddl_create_table:
