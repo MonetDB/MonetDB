@@ -321,45 +321,20 @@ static void os_atmc_set_state(objectversion *ov, bte state) {
 	ov->state = state;
 }
 
-static void os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store);
-static void os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store);
-
 static void
-os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
+_os_rollback(objectversion *ov, sqlstore *store)
+{
+	assert(ov->ts >= TRANSACTION_ID_BASE);
+
 	bte state = os_atmc_get_state(ov);
-	assert(state & id_based_rollbacked);
-
-	if (ov->id_based_older) {
-		if (ov->ts != ov->id_based_older->ts) {
-			// older is last committed state or belongs to parent transaction.
-			// In any case, we restore versionhead pointer to that.
-			// TODO START ATOMIC SET
-			ov->id_based_head->ov = ov->id_based_older;
-		}
-		else {
-			if (!(state & name_based_rollbacked))
-				os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
-			state = os_atmc_get_state(ov->id_based_older);
-
-			state |= id_based_rollbacked;
-			os_atmc_set_state(ov->id_based_older, state);
-
-			// id based cascaded rollback along the parents
-			os_rollback_os_id_based_cascading(ov->id_based_older, store);
-		}
+	if (state & under_destruction) {
+		return;
 	}
-	else {
-		// this is a terminal node. i.e. this objectversion does not have id based committed history
-		os_remove_id_based_chain(ov->os, store, ov->id_based_head);
-	}
-}
 
-static void
-os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
-	bte state = os_atmc_get_state(ov);
-	assert(state & name_based_rollbacked);
+	state |= under_destruction;
+	os_atmc_set_state(ov, state);
 
-	if (ov->name_based_older) {
+	if (ov->name_based_older && !(os_atmc_get_state(ov->name_based_older) & under_destruction)) {
 		if (ov->ts != ov->name_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
@@ -367,69 +342,43 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 			ov->name_based_head->ov = ov->name_based_older;
 		}
 		else {
-			if (!(state & id_based_rollbacked))
-				os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
-			state = os_atmc_get_state(ov->name_based_older);
-
-			state |= name_based_rollbacked;
-			os_atmc_set_state(ov->name_based_older, state);
-
-			// name based cascaded rollback along the parents
-			os_rollback_os_name_based_cascading(ov->name_based_older, store);
+			_os_rollback(ov->name_based_older, store);
 		}
 	}
-	else {
+	else if (!ov->name_based_older) {
 		// this is a terminal node. i.e. this objectversion does not have name based committed history
-		os_remove_name_based_chain(ov->os, store, ov->name_based_head);
-	}
-}
-
-static void
-os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store)
-{
-	assert(ov->ts >= TRANSACTION_ID_BASE);
-
-	bte state = os_atmc_get_state(ov);
-	if (state & name_based_rollbacked) {
-		return;
+		if (ov->name_based_head) // The oposite can happen during an early conflict in os_add or os_del.
+			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
 	}
 
-	state |= name_based_rollbacked;
-	os_atmc_set_state(ov, state);
-
-	if (!(state & id_based_rollbacked))
-		os_rollback_id_based_terminal_decendant(ov->id_based_head->ov, store);
-
-	os_rollback_os_name_based_cascading(ov, store);
-}
-
-static void
-os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store)
-{
-	assert(ov->ts >= TRANSACTION_ID_BASE);
-
-	bte state = os_atmc_get_state(ov);
-	if (state & id_based_rollbacked) {
-		return;
+	if (ov->id_based_older && !(os_atmc_get_state(ov->id_based_older) & under_destruction)) {
+		if (ov->ts != ov->id_based_older->ts) {
+			// older is last committed state or belongs to parent transaction.
+			// In any case, we restore versionhead pointer to that.
+			// TODO START ATOMIC SET
+			ov->id_based_head->ov = ov->id_based_older;
+		}
+		else if (ov->id_based_older != ov->name_based_older)
+			_os_rollback(ov->id_based_older, store);
+	}
+	else if (!ov->id_based_older) {
+		// this is a terminal node. i.e. this objectversion does not have id based committed history
+		os_remove_id_based_chain(ov->os, store, ov->id_based_head);
 	}
 
-	state |= id_based_rollbacked;
-	os_atmc_set_state(ov, state);
+	if (ov->name_based_newer && !(os_atmc_get_state(ov->name_based_newer) & under_destruction)) {
+		_os_rollback(ov->id_based_older, store);
+	}
 
-	if (!(state & name_based_rollbacked))
-		os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
-
-	os_rollback_os_id_based_cascading(ov, store);
+	if (ov->id_based_newer && ov->id_based_newer != ov->name_based_newer && !(os_atmc_get_state(ov->id_based_newer) & under_destruction)) {
+		_os_rollback(ov->id_based_older, store);
+	}
 }
 
 static int
 os_rollback(objectversion *ov, sqlstore *store)
 {
-	if (ov->state & name_based_rollbacked) {
-		return LOG_OK;
-	}
-
-	os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
+	_os_rollback(ov, store);
 
 	return LOG_OK;
 }
@@ -857,10 +806,7 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if (os_add_name_based(os, tr, name, ov)) {
-		bte state = os_atmc_get_state(ov);
-		state |= name_based_rollbacked;
-		os_atmc_set_state(ov, state);
-		os_rollback_id_based_terminal_decendant(ov, tr->store);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 		return -1;
 	}
 
@@ -948,10 +894,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if (os_del_name_based(os, tr, name, ov)) {
-		bte state = os_atmc_get_state(ov);
-		state |= name_based_rollbacked;
-		os_atmc_set_state(ov, state);
-		os_rollback_id_based_terminal_decendant(ov, tr->store);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 		return -1;
 	}
 
