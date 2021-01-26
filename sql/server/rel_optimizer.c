@@ -591,10 +591,10 @@ matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je)
 }
 
 static int
-sql_column_kc_cmp(sql_column *c, sql_kc *kc)
+sql_kc_column_cmp(sql_kc *kc, sql_column *c)
 {
 	/* return on equality */
-	return (c->colnr - kc->c->colnr);
+	return (kc->c->colnr - c->colnr);
 }
 
 static sql_idx *
@@ -606,11 +606,11 @@ find_fk_index(sql_table *l, list *lcols, sql_table *r, list *rcols)
 			sql_idx *li = in->data;
 			if (li->type == join_idx) {
 				sql_key *rk = &((sql_fkey*)li->key)->rkey->k;
-				fcmp cmp = (fcmp)&sql_column_kc_cmp;
+				fcmp cmp = (fcmp)&sql_kc_column_cmp;
 
 				if (rk->t == r &&
-					list_match(lcols, li->columns, cmp) == 0 &&
-					list_match(rcols, rk->columns, cmp) == 0) {
+					list_match(li->columns, lcols, cmp) == 0 &&
+					list_match(rk->columns, rcols, cmp) == 0) {
 					return li;
 				}
 			}
@@ -7389,23 +7389,23 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 		if ((p = find_prop(e->p, PROP_HASHIDX)) != NULL) {
 			list *exps, *cols;
 			sql_idx *i = p->value;
-			fcmp cmp = (fcmp)&sql_column_kc_cmp;
+			fcmp cmp = (fcmp)&sql_kc_column_cmp;
 
 			/* join indices are only interesting for joins */
 			if (i->type == join_idx || list_length(i->columns) <= 1)
 				continue;
 			/* based on the index type, find qualifying exps */
 			exps = list_select(rel->exps, i, (fcmp) &index_exp, (fdup)NULL);
-			if (!exps || !list_length(exps))
+			if (list_empty(exps))
 				continue;
-			/* now we obtain the columns, move into sql_column_kc_cmp! */
+			/* now we obtain the columns, move into sql_kc_column_cmp! */
 			cols = list_map(exps, sub, (fmap) &sjexp_col);
 
 			/* TODO check that at most 2 relations are involved */
 
 			/* Match the index columns with the expression columns.
 			   TODO, Allow partial matches ! */
-			if (list_match(cols, i->columns, cmp) == 0) {
+			if (list_match(i->columns, cols, cmp) == 0) {
 				/* re-order exps in index order */
 				node *n, *m;
 				list *es = sa_list(sa);
@@ -7413,7 +7413,7 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 				for(n = i->columns->h; n; n = n->next) {
 					int i = 0;
 					for(m = cols->h; m; m = m->next, i++) {
-						if (cmp(m->data, n->data) == 0){
+						if (cmp(n->data, m->data) == 0){
 							sql_exp *e = list_fetch(exps, i);
 							list_append(es, e);
 							break;
@@ -7447,13 +7447,11 @@ rel_use_index(visitor *v, sql_rel *rel)
 
 		if (i) {
 			prop *p;
-			node *n;
 			int single_table = 1;
 			sql_exp *re = NULL;
 
-			for( n = exps->h; n && single_table; n = n->next) {
-				sql_exp *e = n->data;
-				sql_exp *nre = e->r;
+			for( node *n = exps->h; n && single_table; n = n->next) {
+				sql_exp *e = n->data, *nre = e->r;
 
 				if (is_join(rel->op) &&
 				 	((left && !rel_find_exp(rel->l, e->l)) ||
@@ -7463,8 +7461,11 @@ rel_use_index(visitor *v, sql_rel *rel)
 				re = nre;
 			}
 			if (single_table) { /* add PROP_HASHCOL to all column exps */
-				for( n = exps->h; n; n = n->next) {
+				fcmp cmp = (fcmp)&sql_kc_column_cmp;
+
+				for( node *n = exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
+					sql_column *col = NULL;
 					int anti = is_anti(e);
 
 					/* swapped ? */
@@ -7473,15 +7474,23 @@ rel_use_index(visitor *v, sql_rel *rel)
 					 	(!left && !rel_find_exp(rel->r, e->l))))
 						n->data = e = exp_compare(v->sql->sa, e->r, e->l, cmp_equal);
 					if (anti) set_anti(e);
-					p = find_prop(e->p, PROP_HASHCOL);
-					if (!p)
-						e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);
-					p->value = i;
+
+					sql_exp *el = e->l, *er = e->r; /* add to both left and right expressions if that's the case */
+					if ((col = exp_find_column(rel, el, -2)) && list_find(i->columns, col, cmp)) {
+						if (!(p = find_prop(el->p, PROP_HASHCOL)))
+							el->p = p = prop_create(v->sql->sa, PROP_HASHCOL, el->p);
+						p->value = i;
+					}
+					if ((col = exp_find_column(rel, er, -2)) && list_find(i->columns, col, cmp)) {
+						if (!(p = find_prop(er->p, PROP_HASHCOL)))
+							er->p = p = prop_create(v->sql->sa, PROP_HASHCOL, er->p);
+						p->value = i;
+					}
 				}
 			}
 			/* add the remaining exps to the new exp list */
 			if (list_length(rel->exps) > list_length(exps)) {
-				for( n = rel->exps->h; n; n = n->next) {
+				for( node *n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
 					if (!list_find(exps, e, (fcmp)&exp_cmp))
 						list_append(exps, e);
