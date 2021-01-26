@@ -324,7 +324,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
 		}
-		if (name && mvc_bind_key(sql, ss, name)) {
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
@@ -362,7 +362,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42S02) "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 			return res;
 		}
-		if (name && mvc_bind_key(sql, ss, name)) {
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
@@ -525,9 +525,6 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	if (!ft) {
 		sql_error(sql, 02, SQLSTATE(42S02) "CONSTRAINT FOREIGN KEY: no such table '%s'\n", rtname);
 		return SQL_ERR;
-	} else if (list_find_name(t->keys.set, name)) {
-		sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
-		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
 		sql_fkey *fk;
@@ -536,8 +533,8 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
-		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, SQLSTATE(42000) "Create Key failed, key '%s' already exists", name);
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -604,7 +601,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return SQL_ERR;
 		}
-		if (name && mvc_bind_key(sql, ss, name)) {
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists",
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;

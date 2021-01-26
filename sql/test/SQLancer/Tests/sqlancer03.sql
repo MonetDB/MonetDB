@@ -219,8 +219,11 @@ CREATE TEMPORARY TABLE t0(c0 integer AUTO_INCREMENT UNIQUE NOT NULL, c1 FLOAT DE
 select t0.c0 from t0 where -t0.c0 <= 1 and t0.c0 between t0.c0 and -t0.c0;
 ROLLBACK;
 
-START TRANSACTION; --Bug 6927
 CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+	--error, duplicated constraint 't0_c0_unique'
+
+START TRANSACTION; --Bug 6927
+CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
 COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 "1970-01-19"
 "0.9940522485469018"
