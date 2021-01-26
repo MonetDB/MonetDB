@@ -7440,8 +7440,6 @@ rel_use_index(visitor *v, sql_rel *rel)
 		sql_idx *i = find_index(v->sql->sa, rel, rel->l, &exps);
 		int left = 1;
 
-		if (!i && is_join(rel->op))
-			i = find_index(v->sql->sa, rel, rel->l, &exps);
 		if (!i && is_join(rel->op)) {
 			left = 0;
 			i = find_index(v->sql->sa, rel, rel->r, &exps);
