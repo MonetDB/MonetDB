@@ -33,8 +33,12 @@ CREATE TABLE TABLE_C (
     CONSTRAINT FK_TABLE_C_TABLE_D_ID FOREIGN KEY ( TABLE_D_ID ) REFERENCES TABLE_B ( TABLE_B_ID )
 )
 
-statement ok
+statement error
 ALTER TABLE TABLE_B
+    DROP CONSTRAINT UNQ_VALUE_C; -- error, no such constraint
+
+statement ok
+ALTER TABLE TABLE_C
     DROP CONSTRAINT UNQ_VALUE_C
 
 statement ok

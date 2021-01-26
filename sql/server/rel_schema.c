@@ -1243,14 +1243,17 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr, int exists_check)
+rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, auth));
+	if (first_val)
+		append(exps, exp_atom_clob(sa, first_val));
+	if (second_val)
+		append(exps, exp_atom_clob(sa, second_val));
 	append(exps, exp_atom_int(sa, exists_check));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1272,7 +1275,6 @@ rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-
 	if (auth)
 		append(exps, exp_atom_clob(sa, auth));
 	rel->l = NULL;
@@ -1349,7 +1351,7 @@ sql_drop_table(sql_query *query, dlist *qname, int nr, int if_exists)
 	if (isDeclaredTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP TABLE: cannot drop a declared table");
 
-	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, NULL, nr, if_exists);
 }
 
 static sql_rel *
@@ -1369,7 +1371,7 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 		return NULL;
 	}
 
-	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, NULL, nr, if_exists);
 }
 
 static sql_rel *
@@ -1506,7 +1508,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		char *kname = l->h->data.sval;
 		int drop_action = l->h->next->data.i_val;
 
-		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
+		return rel_drop(sql->sa, ddl_drop_constraint, sname, tname, kname, drop_action, 0);
 	}
 
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
@@ -2345,6 +2347,7 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->type == type_int);
 		ret = rel_drop(sql->sa, ddl_drop_schema,
 			   dlist_get_schema_name(auth_name),
+			   NULL,
 			   NULL,
 			   l->h->next->data.i_val, 	/* drop_action */
 			   l->h->next->next->data.i_val); /* if exists */
