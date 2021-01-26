@@ -1346,23 +1346,33 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 }
 
 static int
-can_push_func(sql_exp *e, sql_rel *rel, int *must)
+can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 {
 	switch(e->type) {
 	case e_cmp: {
-		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-		if ((is_project(rel->op) && e->f) || e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
-		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
-				(!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) ||
-			(f &&
-				(r->type == e_column || can_push_func(r, rel, &mustr)) &&
-			(f->type == e_column || can_push_func(f, rel, &mustf)) && (*must = (mustr || mustf)));
+		if (depth > 0) { /* for comparisons under the top ones, they become functions */
+			int lmust = 0;
+			int res = can_push_func(l, rel, &lmust, depth + 1) && can_push_func(r, rel, &lmust, depth + 1) &&
+					(!f || can_push_func(f, rel, &lmust, depth + 1));
+			if (res && !lmust)
+				return 1;
+			(*must) |= lmust;
+			return res;
+		} else {
+			int mustl = 0, mustr = 0, mustf = 0;
+			return ((l->type == e_column || can_push_func(l, rel, &mustl, depth + 1)) && (*must = mustl)) ||
+					(!f && (r->type == e_column || can_push_func(r, rel, &mustr, depth + 1)) && (*must = mustr)) ||
+				(f &&
+					(r->type == e_column || can_push_func(r, rel, &mustr, depth + 1)) &&
+				(f->type == e_column || can_push_func(f, rel, &mustf, depth + 1)) && (*must = (mustr || mustf)));
+		}
 	}
 	case e_convert:
-		return can_push_func(e->l, rel, must);
+		return can_push_func(e->l, rel, must, depth + 1);
 	case e_aggr:
 	case e_func: {
 		list *l = e->l;
@@ -1371,7 +1381,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		if (exp_unsafe(e, 0))
 			return 0;
 		if (l) for (node *n = l->h; n && res; n = n->next)
-			res &= can_push_func(n->data, rel, &lmust);
+			res &= can_push_func(n->data, rel, &lmust, depth + 1);
 		if (res && !lmust)
 			return 1;
 		(*must) |= lmust;
@@ -1394,15 +1404,12 @@ exps_can_push_func(list *exps, sql_rel *rel, bool *push_left, bool *push_right)
 		sql_exp *e = n->data;
 		int mustl = 0, mustr = 0;
 
-		if ((is_joinop(rel->op) || is_select(rel->op)) && ((can_push_func(e, rel->l, &mustl) && mustl)))
+		if ((is_joinop(rel->op) || is_select(rel->op)) && ((can_push_func(e, rel->l, &mustl, 0) && mustl)))
 			*push_left = true;
-		
-		if (is_joinop(rel->op) && can_push_func(e, rel->r, &mustr) && mustr)
+		if (is_joinop(rel->op) && can_push_func(e, rel->r, &mustr, 0) && mustr)
 			*push_right = true;
 	}
-	if (*push_left || *push_right)
-		return 1;
-	return 0;
+	return *push_left || *push_right;
 }
 
 static int
@@ -1437,22 +1444,22 @@ exps_need_push_down( list *exps )
 	return 0;
 }
 
-static sql_exp *exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e);
+static sql_exp *exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e, int depth);
 
 static list *
-exps_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, list *exps)
+exps_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, list *exps, int depth)
 {
 	if (THRhighwater())
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (node *n = exps->h; n; n = n->next)
-		if ((n->data = exp_push_single_func_down(v, rel, l, r, n->data)) == NULL)
+		if ((n->data = exp_push_single_func_down(v, rel, l, r, n->data, depth)) == NULL)
 			return NULL;
 	return exps;
 }
 
 static sql_exp *
-exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e)
+exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e, int depth)
 {
 	if (THRhighwater())
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1460,26 +1467,26 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_
 	switch(e->type) {
 	case e_cmp: {
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			if ((e->l = exps_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+			if ((e->l = exps_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 				return NULL;
-			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r)) == NULL)
+			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r, depth + 1)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 				return NULL;
-			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r)) == NULL)
+			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r, depth + 1)) == NULL)
 				return NULL;
 		} else {
-			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 				return NULL;
-			if ((e->r = exp_push_single_func_down(v, rel, l, r, e->r)) == NULL)
+			if ((e->r = exp_push_single_func_down(v, rel, l, r, e->r, depth + 1)) == NULL)
 				return NULL;
-			if (e->f && (e->f = exp_push_single_func_down(v, rel, l, r, e->f)) == NULL)
+			if (e->f && (e->f = exp_push_single_func_down(v, rel, l, r, e->f, depth + 1)) == NULL)
 				return NULL;
 		}
 	} break;
 	case e_convert:
-		if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+		if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 			return NULL;
 		break;
 	case e_aggr:
@@ -1490,8 +1497,8 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_
 			return e;
 		if (!e->l || exps_are_atoms(e->l))
 			return e;
-		if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
-			(is_select(rel->op) && can_push_func(e, l, &must) && must)) {
+		if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl, depth + 1) && mustl) || (can_push_func(e, r, &mustr, depth + 1) && mustr))) ||
+			(is_select(rel->op) && can_push_func(e, l, &must, depth + 1) && must)) {
 			exp_label(v->sql->sa, e, ++v->sql->label);
 			if (mustr)
 				append(r->exps, e);
@@ -1532,7 +1539,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
-			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps)))
+			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps, 0)))
 				return NULL;
 			if (nv.changes) {
 				rel = nrel;
@@ -1561,8 +1568,8 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				sql_exp *e = n->data;
 				int mustl = 0, mustr = 0;
 
-				if ((can_push_func(e, l, &mustl) && mustl) ||
-				    (can_push_func(e, r, &mustr) && mustr)) {
+				if ((can_push_func(e, l, &mustl, 0) && mustl) ||
+				    (can_push_func(e, r, &mustr, 0) && mustr)) {
 					if (mustl)
 						append(l->exps, e);
 					else
