@@ -4789,10 +4789,11 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 							if (!re || (list_length(jes) == 0 && !find_prop(le->p, PROP_HASHCOL))) {
 								fnd = 0;
 							} else {
-								int anti = is_anti(je);
+								int anti = is_anti(je), semantics = is_semantics(je);
 
 								je = exp_compare(v->sql->sa, le, re, je->flag);
 								if (anti) set_anti(je);
+								if (semantics) set_semantics(je);
 								list_append(jes, je);
 							}
 						}
@@ -7466,7 +7467,7 @@ rel_use_index(visitor *v, sql_rel *rel)
 				for( node *n = exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
 					sql_column *col = NULL;
-					int anti = is_anti(e);
+					int anti = is_anti(e), semantics = is_semantics(e);
 
 					/* swapped ? */
 					if (is_join(rel->op) &&
@@ -7474,6 +7475,7 @@ rel_use_index(visitor *v, sql_rel *rel)
 					 	(!left && !rel_find_exp(rel->r, e->l))))
 						n->data = e = exp_compare(v->sql->sa, e->r, e->l, cmp_equal);
 					if (anti) set_anti(e);
+					if (semantics) set_semantics(e);
 
 					sql_exp *el = e->l, *er = e->r; /* add to both left and right expressions if that's the case */
 					if ((col = exp_find_column(rel, el, -2)) && list_find(i->columns, col, cmp)) {
@@ -7638,6 +7640,7 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 					sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, cmp_equal);
 
 					if (is_anti(e)) set_anti(ne);
+					if (is_semantics(e)) set_semantics(ne);
 					list_append(exps, ne);
 					v->changes++;
 				} else {
@@ -8380,6 +8383,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 			sql_exp *le = e->l;
 			sql_exp *re = e->r;
 			int anti = is_anti(e);
+			int semantics = is_semantics(e);
 
 			/* handle the and's in the or lists */
 			if (e->type != e_cmp || !is_theta_exp(e->flag) || e->f)
@@ -8438,6 +8442,7 @@ rel_reduce_casts(visitor *v, sql_rel *rel)
 				}
 			}
 			if (anti) set_anti(e);
+			if (semantics) set_semantics(e);
 			n->data = e;
 		}
 	}
