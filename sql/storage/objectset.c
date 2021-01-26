@@ -330,7 +330,7 @@ os_rollback_os_id_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(state & id_based_rollbacked);
 
 	if (ov->id_based_older) {
-		if (1 || ov->ts != ov->id_based_older->ts || state & deleted) {
+		if (ov->ts != ov->id_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
 			// TODO START ATOMIC SET
@@ -360,7 +360,7 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 	assert(state & name_based_rollbacked);
 
 	if (ov->name_based_older) {
-		if (1 || ov->ts != ov->name_based_older->ts || state & deleted) {
+		if (ov->ts != ov->name_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
 			// TODO START ATOMIC SET
@@ -385,9 +385,11 @@ os_rollback_os_name_based_cascading(objectversion *ov, sqlstore *store) {
 }
 
 static void
-os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
-	bte state = os_atmc_get_state(ov);
+os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store)
+{
+	assert(ov->ts >= TRANSACTION_ID_BASE);
 
+	bte state = os_atmc_get_state(ov);
 	if (state & name_based_rollbacked) {
 		return;
 	}
@@ -402,9 +404,11 @@ os_rollback_name_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 }
 
 static void
-os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store) {
-	bte state = os_atmc_get_state(ov);
+os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store)
+{
+	assert(ov->ts >= TRANSACTION_ID_BASE);
 
+	bte state = os_atmc_get_state(ov);
 	if (state & id_based_rollbacked) {
 		return;
 	}
@@ -421,9 +425,11 @@ os_rollback_id_based_terminal_decendant(objectversion *ov, sqlstore *store) {
 static int
 os_rollback(objectversion *ov, sqlstore *store)
 {
-	os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
+	if (ov->state & name_based_rollbacked) {
+		return LOG_OK;
+	}
 
-	// TODO: label objectversion with a latest timestamp of tid.
+	os_rollback_name_based_terminal_decendant(ov->name_based_head->ov, store);
 
 	return LOG_OK;
 }
@@ -941,7 +947,10 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if (os_del_name_based(os, tr, name, ov)) {
-		// TODO clean up ov
+		bte state = os_atmc_get_state(ov);
+		state |= name_based_rollbacked;
+		os_atmc_set_state(ov, state);
+		os_rollback_id_based_terminal_decendant(ov, tr->store);
 		return -1;
 	}
 
