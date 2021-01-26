@@ -99,6 +99,7 @@ void
 arg_destroy(sql_store store, sql_arg *a)
 {
 	(void)store;
+	_DELETE(a->name);
 	_DELETE(a);
 }
 
@@ -127,6 +128,13 @@ seq_destroy(sqlstore *store, sql_sequence *s)
 		return;
 	_DELETE(s->base.name);
 	_DELETE(s);
+}
+
+static void
+kc_destroy(sqlstore *store, sql_kc *kc)
+{
+	(void)store;
+	_DELETE(kc);
 }
 
 static void
@@ -267,7 +275,7 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 	v = store->table_api.column_find_value(tr, find_sql_column(keys, "name"), rid);
 	base_init(tr->sa, &nk->base, kid, 0, v);	_DELETE(v);
 	nk->type = ktype;
-	nk->columns = list_new(tr->sa, (fdestroy) NULL);
+	nk->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	nk->t = t;
 
 	if (ktype == ukey || ktype == pkey) {
@@ -349,7 +357,7 @@ load_idx(sql_trans *tr, sql_table *t, oid rid)
 	base_init(tr->sa, &ni->base, iid, 0, v);	_DELETE(v);
 	v = store->table_api.column_find_value(tr, find_sql_column(idxs, "type"), rid);
 	ni->type = (idx_type) *(int*)v;		_DELETE(v);
-	ni->columns = list_new(tr->sa, (fdestroy) NULL);
+	ni->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	ni->t = t;
 	ni->key = NULL;
 
@@ -424,7 +432,7 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	_DELETE(v);
 
 	nt->t = t;
-	nt->columns = list_new(tr->sa, (fdestroy) NULL);
+	nt->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 
 	kc_id = find_sql_column(objects, "id");
 	kc_nr = find_sql_column(objects, "nr");
@@ -2803,7 +2811,7 @@ key_dup(sql_trans *tr, sql_key *k, sql_table *t)
 
 	base_init(sa, &nk->base, k->base.id?k->base.id:next_oid(tr->store), 0, k->base.name);
 	nk->type = k->type;
-	nk->columns = list_new(sa, (fdestroy) NULL);
+	nk->columns = list_new(sa, (fdestroy) &kc_destroy);
 	nk->t = t;
 	nk->idx = NULL;
 
@@ -2856,7 +2864,7 @@ idx_dup(sql_trans *tr, sql_idx * i, sql_table *t)
 
 	base_init(sa, &ni->base, i->base.id, 0, i->base.name);
 
-	ni->columns = list_new(sa, (fdestroy) NULL);
+	ni->columns = list_new(sa, (fdestroy) &kc_destroy);
 	ni->t = t;
 	ni->type = i->type;
 	ni->key = NULL;
@@ -2929,7 +2937,7 @@ trigger_dup(sql_trans *tr, sql_trigger * i, sql_table *t)
 
 	base_init(sa, &nt->base, i->base.id, 0, i->base.name);
 
-	nt->columns = list_new(sa, (fdestroy) NULL);
+	nt->columns = list_new(sa, (fdestroy) &kc_destroy);
 	nt->t = t;
 	nt->time = i->time;
 	nt->orientation = i->orientation;
@@ -3095,7 +3103,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i)
 	t = new_table(tr, t);
 	base_init(tr->sa, &ni->base, i->base.id?i->base.id:next_oid(tr->store), TR_NEW, i->base.name);
 
-	ni->columns = list_new(tr->sa, (fdestroy) NULL);
+	ni->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	ni->t = t;
 	ni->type = i->type;
 	ni->key = NULL;
@@ -3142,7 +3150,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri)
 
 	base_init(tr->sa, &nt->base, tri->base.id?tri->base.id:next_oid(tr->store), TR_NEW, tri->base.name);
 
-	nt->columns = list_new(tr->sa, (fdestroy) NULL);
+	nt->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	nt->t = t;
 	nt->time = tri->time;
 	nt->orientation = tri->orientation;
@@ -5344,7 +5352,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	assert(name);
 	base_init(tr->sa, &nk->base, next_oid(tr->store), TR_NEW, name);
 	nk->type = kt;
-	nk->columns = list_new(tr->sa, (fdestroy) NULL);
+	nk->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	nk->t = t;
 	nk->idx = NULL;
 
@@ -5385,7 +5393,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	assert(name);
 	base_init(tr->sa, &nk->base, next_oid(tr->store), TR_NEW, name);
 	nk->type = kt;
-	nk->columns = list_new(tr->sa, (fdestroy) NULL);
+	nk->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	nk->t = t;
 	nk->idx = sql_trans_create_idx(tr, t, name, (nk->type == fkey) ? join_idx : hash_idx);
 	nk->idx->key = nk;
@@ -5616,7 +5624,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, const char *name, idx_type it)
 	assert(name);
 	base_init(tr->sa, &ni->base, next_oid(tr->store), TR_NEW, name);
 	ni->type = it;
-	ni->columns = list_new(tr->sa, (fdestroy) NULL);
+	ni->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	ni->t = t;
 	ni->key = NULL;
 
@@ -5734,7 +5742,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 
 	t = new_table(tr, t);
 	base_init(tr->sa, &nt->base, next_oid(tr->store), TR_NEW, name);
-	nt->columns = list_new(tr->sa, (fdestroy) NULL);
+	nt->columns = list_new(tr->sa, (fdestroy) &kc_destroy);
 	nt->t = t;
 	nt->time = time;
 	nt->orientation = orientation;
