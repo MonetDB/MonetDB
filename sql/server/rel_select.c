@@ -3149,7 +3149,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	for (; ops; ops = ops->next, nr_args++) {
 		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
-			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
+			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
 			if (!e) {
 				err = 1;
 				continue;
@@ -4726,7 +4726,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				exp_kind ek = {type_value, card_column, FALSE};
 				sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
-				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
+				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window | sql_farg, ek);
 				if (!in)
 					return NULL;
 				if (!exp_subtype(in)) { /* we also do not expect parameters here */
@@ -4757,7 +4757,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			exp_kind ek = {type_value, card_column, FALSE};
 			sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
-			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
+			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window | sql_farg, ek);
 			if (!in)
 				return NULL;
 			if (!exp_subtype(in)) { /* we also do not expect parameters here */

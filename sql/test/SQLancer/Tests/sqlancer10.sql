@@ -16,3 +16,12 @@ union (select 2, -0.18, 'a', 2 from t2 as l0t2 join (values (0.23), (-0.24)) as 
 
 select 1 from v1, t2, t0 join (select false) as sub0 on true where cast(t0.c0 as clob) between lower(v1.vc0) and v1.vc2;
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t2" ("c0" BOOLEAN,"c2" INTEGER);
+INSERT INTO "sys"."t2" VALUES (true, NULL), (NULL, 4), (NULL, 1);
+
+UPDATE t2 SET c0 = TRUE WHERE COALESCE(t2.c0, (t2.c0) IN (FALSE));
+UPDATE t2 SET c0 = TRUE WHERE COALESCE(t2.c0, (t2.c0) NOT IN (FALSE), t2.c0, least(t2.c0, t2.c0), (t2.c0) = FALSE, t2.c0, CASE t2.c2
+WHEN t2.c2 THEN t2.c0 ELSE t2.c0 END, ((r'n')LIKE(r'')), ((r'PQ Q<!')LIKE(r'왋di5Xf%N')), (r'cZ') IN (r'0.49842616303390397'));
+ROLLBACK;
