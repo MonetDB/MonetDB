@@ -5,13 +5,13 @@
 % %2 # name
 % varchar # type
 % 15 # length
-[ "sequential_pipe"     ]
+[ "sequential_pipe"	]
 #select def from optimizers() where name = optimizer;
 % .%1 # table_name
 % def # name
 % clob # type
 % 626 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();"	]
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();"	]
 #explain copy into ttt from E'\\tmp/xyz';
 % .explain # table_name
 % mal # name
@@ -99,7 +99,7 @@ end user.main;
 #start transaction;
 #create local temp table "opt_pipe_name" ("opt_pipe_name" string);
 #insert into "opt_pipe_name" values ((select optimizer));
-[ 1     ]
+[ 1	]
 #set optimizer = substring((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")),0,
 #                length((select def from optimizers() where name = (select opt_pipe_name from "opt_pipe_name")))-length('optimizer.garbageCollector();')) || 'optimizer.sql_append();optimizer.garbageCollector();';
 #select optimizer;
@@ -107,7 +107,7 @@ end user.main;
 % %2 # name
 % varchar # type
 % 6 # length
-[ "user_0"      ]
+[ "user_0"	]
 #select def from optimizers() where name = optimizer;
 % .%1 # table_name
 % def # name
