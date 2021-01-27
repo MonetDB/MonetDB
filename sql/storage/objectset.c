@@ -76,7 +76,7 @@ find_id(objectset *os, sqlid id)
 	if (os) {
 		MT_lock_set(&os->ht_lock);
 		if ((!os->id_map || os->id_map->size*16 < os->id_based_cnt) && os->id_based_cnt > HASH_MIN_SIZE && os->sa) {
-			// TODO: This leaks the old map
+			hash_destroy(os->id_map);
 			os->id_map = hash_new(os->sa, os->id_based_cnt, (fkeyvalue)&os_id_key);
 			if (os->id_map == NULL) {
 				MT_lock_unset(&os->ht_lock);
@@ -225,8 +225,18 @@ node_create(sql_allocator *sa, objectversion *ov)
 }
 
 static objectset *
+
 os_append_node_name(objectset *os, versionhead  *n)
 {
+	MT_lock_set(&os->ht_lock);
+	if (os->name_map) {
+		int key = os->name_map->key(n);
+
+		if (hash_add(os->name_map, key, n) == NULL) {
+			MT_lock_unset(&os->ht_lock);
+			return NULL;
+		}
+	}
 	if (os->name_based_t) {
 		os->name_based_t->next = n;
 	} else {
@@ -234,18 +244,7 @@ os_append_node_name(objectset *os, versionhead  *n)
 	}
 	n->prev = os->name_based_t; // aka the double linked list.
 	os->name_based_t = n;
-	if (n->ov) {
-		MT_lock_set(&os->ht_lock);
-		if (os->name_map) {
-			int key = os->name_map->key(n);
-
-			if (hash_add(os->name_map, key, n) == NULL) {
-				MT_lock_unset(&os->ht_lock);
-				return NULL;
-			}
-		}
-		MT_lock_unset(&os->ht_lock);
-	}
+	MT_lock_unset(&os->ht_lock);
 	os->name_based_cnt++;
 	return os;
 }
@@ -259,12 +258,26 @@ os_append_name(objectset *os, objectversion *ov)
 		return NULL;
 
 	ov->name_based_head = n;
-	return os_append_node_name(os, n);
+	if (!(os = os_append_node_name(os, n))){
+		_DELETE(n);
+		return NULL;
+	}
+
+	return os;
 }
 
 static objectset *
 os_append_node_id(objectset *os, versionhead  *n)
 {
+	MT_lock_set(&os->ht_lock);
+	if (os->id_map) {
+		int key = os->id_map->key(n);
+
+		if (hash_add(os->id_map, key, n) == NULL) {
+			MT_lock_unset(&os->ht_lock);
+			return NULL;
+		}
+	}
 	if (os->id_based_t) {
 		os->id_based_t->next = n;
 	} else {
@@ -272,18 +285,7 @@ os_append_node_id(objectset *os, versionhead  *n)
 	}
 	n->prev = os->id_based_t; // aka the double linked list.
 	os->id_based_t = n;
-	if (n->ov) {
-		MT_lock_set(&os->ht_lock);
-		if (os->id_map) {
-			int key = os->id_map->key(n);
-
-			if (hash_add(os->id_map, key, n) == NULL) {
-				MT_lock_unset(&os->ht_lock);
-				return NULL;
-			}
-		}
-		MT_lock_unset(&os->ht_lock);
-	}
+	MT_lock_unset(&os->ht_lock);
 	os->id_based_cnt++;
 	return os;
 }
@@ -296,7 +298,12 @@ os_append_id(objectset *os, objectversion *ov)
 	if (n == NULL)
 		return NULL;
 	ov->id_based_head = n;
-	return os_append_node_id(os, n);
+	if (!(os = os_append_node_id(os, n))){
+		_DELETE(n);
+		return NULL;
+	}
+
+	return os;
 }
 
 static versionhead * find_name(objectset *os, const char *name);
@@ -610,7 +617,7 @@ find_name(objectset *os, const char *name)
 	if (os) {
 		MT_lock_set(&os->ht_lock);
 		if ((!os->name_map || os->name_map->size*16 < os->name_based_cnt) && os->name_based_cnt > HASH_MIN_SIZE && os->sa) {
-			// TODO: This leaks the old map
+			hash_destroy(os->name_map);
 			os->name_map = hash_new(os->sa, os->name_based_cnt, (fkeyvalue)&os_name_key);
 			if (os->name_map == NULL) {
 				MT_lock_unset(&os->ht_lock);
@@ -732,8 +739,8 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		MT_lock_unset(&os->ht_lock);
 		return 0;
 	} else { /* new */
-		// TODO: can fail i.e. returns NULL
-		os_append_name(os, ov);
+		if (os_append_name(os, ov) == NULL)
+			return -1; // MALLOC_FAIL
 		return 0;
 	}
 }
@@ -788,9 +795,8 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		MT_lock_unset(&os->ht_lock);
 		return 0;
 	} else { /* new */
-
-		// TODO: can fail i.e. returns NULL
-		os_append_id(os, ov);
+		if (os_append_id(os, ov) == NULL)
+			return -1; // MALLOC_FAIL
 
 		return 0;
 	}
@@ -805,7 +811,7 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->os = os;
 
 	if (os_add_id_based(os, tr, b->id, ov)) {
-		// TODO clean up ov
+		_DELETE(ov);
 		return -1;
 	}
 
@@ -893,7 +899,7 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	ov->os = os;
 
 	if (os_del_id_based(os, tr, b->id, ov)) {
-		// TODO clean up ov
+		_DELETE(ov);
 		return -1;
 	}
 
