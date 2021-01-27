@@ -82,6 +82,12 @@ instore(sqlid id, sqlid maxid)
 	return store_oids[lo] == id;
 }
 
+static void
+id_destroy(sqlstore *store, int *id)
+{
+	(void)store;
+	GDKfree(id);
+}
 
 static void
 type_destroy(sqlstore *store, sql_type *t)
@@ -4243,7 +4249,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 			return -1;
 
 		if (! tr->dropped) {
-			tr->dropped = list_create((fdestroy) GDKfree);
+			tr->dropped = list_create((fdestroy) &id_destroy);
 			if (!tr->dropped) {
 				_DELETE(local_id);
 				return -1;
@@ -4285,7 +4291,7 @@ sql_trans_drop_all_func(sql_trans *tr, sql_schema *s, list *list_func, int drop_
 	(void) drop_action;
 
 	if (!tr->dropped) {
-		tr->dropped = list_create((fdestroy) GDKfree);
+		tr->dropped = list_create((fdestroy) &id_destroy);
 		if (!tr->dropped)
 			return -1;
 	}
@@ -4407,7 +4413,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 			return -1;
 
 		if (!tr->dropped) {
-			tr->dropped = list_create((fdestroy) GDKfree);
+			tr->dropped = list_create((fdestroy) &id_destroy);
 			if (!tr->dropped) {
 				_DELETE(local_id);
 				return -1;
@@ -4960,7 +4966,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 			return -1;
 
 		if (! tr->dropped) {
-			tr->dropped = list_create((fdestroy) GDKfree);
+			tr->dropped = list_create((fdestroy) &id_destroy);
 			if (!tr->dropped) {
 				_DELETE(local_id);
 				return -1;
@@ -5122,7 +5128,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 			return -1;
 
 		if (! tr->dropped) {
-			tr->dropped = list_create((fdestroy) GDKfree);
+			tr->dropped = list_create((fdestroy) &id_destroy);
 			if (!tr->dropped) {
 				_DELETE(local_id);
 				return -1;
@@ -5586,7 +5592,7 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		}
 
 		if (!tr->dropped) {
-			tr->dropped = list_create((fdestroy) GDKfree);
+			tr->dropped = list_create((fdestroy) &id_destroy);
 			if (!tr->dropped) {
 				_DELETE(local_id);
 				return -1;
@@ -5705,7 +5711,7 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		}
 
 		if (!tr->dropped) {
-			tr->dropped = list_create((fdestroy) GDKfree);
+			tr->dropped = list_create((fdestroy) &id_destroy);
 			if (!tr->dropped) {
 				_DELETE(local_id);
 				return -1;
@@ -5797,12 +5803,13 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	sql_trigger *i = (sql_trigger*)b;
 	if (drop_action == DROP_CASCADE_START || drop_action == DROP_CASCADE) {
+		/* TODO this could change into a check in the list of changes if the given object is deleted */
 		sqlid *local_id = MNEW(sqlid);
 		if (!local_id)
 			return -1;
 
 		if (! tr->dropped) {
-			tr->dropped = list_create((fdestroy) GDKfree);
+			tr->dropped = list_create((fdestroy) &id_destroy);
 			if (!tr->dropped) {
 				_DELETE(local_id);
 				return -1;
