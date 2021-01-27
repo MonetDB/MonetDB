@@ -31,6 +31,7 @@ enum mapi_handshake_options_levels {
 	MAPI_HANDSHAKE_AUTOCOMMIT = 1,
 	MAPI_HANDSHAKE_REPLY_SIZE,
 	MAPI_HANDSHAKE_SIZE_HEADER,
+	MAPI_HANDSHAKE_TIME_ZONE,
 	// this must always be the last one:
 	MAPI_HANDSHAKE_OPTIONS_LEVEL,
 };
@@ -111,11 +112,15 @@ mapi_export stream *mapi_get_to(Mapi mid)
 #endif
 mapi_export bool mapi_get_trace(Mapi mid)
 	__attribute__((__nonnull__(1)));
+mapi_export int mapi_get_time_zone(Mapi mid)
+	__attribute__((__nonnull__(1)));
 mapi_export bool mapi_get_autocommit(Mapi mid)
 	__attribute__((__nonnull__(1)));
 mapi_export bool mapi_get_columnar_protocol(Mapi mid)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme)
+	__attribute__((__nonnull__(1)));
+mapi_export MapiMsg mapi_set_time_zone(Mapi mid, int seconds_east_of_utc)
 	__attribute__((__nonnull__(1)));
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit)
 	__attribute__((__nonnull__(1)));
