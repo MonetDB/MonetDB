@@ -795,9 +795,9 @@ find_fk( mvc *sql, list *rels, list *exps)
 			if (list_length(lcols) != list_length(rcols))
 				continue;
 
-			idx = find_fk_index(l, lcols, r, rcols);
+			idx = find_fk_index(sql, l, lcols, r, rcols);
 			if (!idx) {
-				idx = find_fk_index(r, rcols, l, lcols);
+				idx = find_fk_index(sql, r, rcols, l, lcols);
 				swapped = 1;
 			}
 
