@@ -1,1 +1,0 @@
-select * where bla = "whatever";

@@ -83,7 +83,70 @@ create view v0(c0) as (select distinct - (tbl_productsales.totalsales) from tbl_
 query I rowsort
 select another_t.col1 from another_t, tbl_productsales cross join v0
 ----
-64 values hashing to eb6fb44b762596dc08e5dcdf32cd22d5
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+11
+11
+11
+11
+11
+11
+11
+11
+11
+11
+11
+11
+11
+11
+11
+11
+111
+111
+111
+111
+111
+111
+111
+111
+111
+111
+111
+111
+111
+111
+111
+111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
+1111
 
 statement ok
 ROLLBACK
@@ -292,7 +355,31 @@ NULL	0.5798864736610635
 query R rowsort
 SELECT t0.c0 FROM t0 WHERE NOT (CAST((t0.c1) IS NULL AS BOOLEAN)) UNION ALL SELECT t0.c0 FROM t0 WHERE NOT (NOT (CAST((t0.c1) IS NULL AS BOOLEAN))) UNION ALL SELECT ALL t0.c0 FROM t0 WHERE (NOT (CAST((t0.c1) IS NULL AS BOOLEAN))) IS NULL
 ----
-25 values hashing to bd84519df4621df466f5f160a093ced6
+0.001
+0.041
+0.162
+0.164
+0.189
+0.219
+0.232
+0.234
+0.316
+0.329
+0.413
+0.493
+0.566
+0.604
+0.662
+0.736
+0.776
+0.805
+0.861
+0.923
+0.924
+0.988
+NULL
+NULL
+NULL
 
 query I rowsort
 SELECT count(*) FROM t0 WHERE (NOT (CAST((t0.c1) IS NULL AS BOOLEAN))) IS NULL
@@ -447,17 +534,65 @@ NULL	"-174251119"
 query R rowsort
 SELECT AVG(t0.c0) FROM t0 GROUP BY CAST(t0.c0 AS VARCHAR(32))
 ----
-12 values hashing to 2ba0011d186055ab02f2216ce17eb30e
+-939120682.000
+0.144
+0.177
+0.376
+0.522
+0.525
+0.535
+0.926
+0.994
+1.000
+1511423462.000
+NULL
 
 query RR rowsort
 SELECT ALL 0.1002352, AVG(ALL t0.c0) FROM t0 GROUP BY CAST(t0.c0 AS STRING(799)), 0.4665444117594173, ((sql_min(+ ("locate"('', 'F', 150648381)), (((-1039870396))*(length(r'u')))))>>(CAST(0.588018201374832 AS INT)))
 ----
-24 values hashing to 8bf2b1bbf119dd081ef29bd4bd720402
+0.100
+-939120682.000
+0.100
+0.144
+0.100
+0.177
+0.100
+0.376
+0.100
+0.522
+0.100
+0.525
+0.100
+0.535
+0.100
+0.926
+0.100
+0.994
+0.100
+1.000
+0.100
+1511423462.000
+0.100
+NULL
 
 query R rowsort
 SELECT ALL VAR_SAMP(ALL abs(t0.c0)) FROM t0 GROUP BY t0.c1 || '2', t0.c1
 ----
-15 values hashing to 1f6dfb4abeed0f15a58c4d603b363f60
+0.001
+456880175859267840.000
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement error
 SELECT ALL CAST(VAR_SAMP(ALL abs(CAST(t0.c1 AS INT))) AS INT) FROM t0 GROUP BY CAST(t0.c1 AS INT), t0.c1
@@ -497,7 +632,16 @@ SELECT t0.c0 FROM t0 WHERE (0.9952398693354088) IN (t0.c1, t0.c1)
 query I rowsort
 SELECT ALL t0.c0 FROM t0 WHERE NOT ((0.9952398693354088) IN (t0.c1, t0.c1))
 ----
-10 values hashing to 28b352ad8fdb3339b55378fe6c69f834
+-101868623
+-1498252621
+-1608947797
+-539579569
+0
+0
+1
+1
+1493854316
+1493854316
 
 query I rowsort
 SELECT t0.c0 FROM t0 WHERE ((0.9952398693354088) IN (t0.c1, t0.c1)) IS NULL
@@ -641,5 +785,4 @@ SELECT 1 FROM t1 where "truncate"(CAST(ifthenelse(TRUE, INTERVAL '5' DAY, INTERV
 
 statement ok
 ROLLBACK
-
 

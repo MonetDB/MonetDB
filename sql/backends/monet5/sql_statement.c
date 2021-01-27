@@ -1086,8 +1086,12 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 		q = pushArgument(mb, q, c);
 		if (p)
 			q = pushArgument(mb, q, p);
+		else
+			q = pushNil(mb, q, TYPE_bat);
 		if (g)
 			q = pushArgument(mb, q, g);
+		else
+			q = pushNil(mb, q, TYPE_bat);
 		q = pushArgument(mb, q, topn);
 		q = pushBit(mb, q, dir);
 		q = pushBit(mb, q, nullslast);

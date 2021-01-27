@@ -2965,6 +2965,7 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		}
 	}
 	if (err) {
+		const char *name = (exp->type == e_column && !has_label(exp)) ? exp_name(exp) : "%";
 		sql_exp *res = sql_error( sql, 03, SQLSTATE(42000) "types %s(%u,%u) and %s(%u,%u) are not equal%s%s%s",
 			fromtype->type->sqlname,
 			fromtype->digits,
@@ -2972,9 +2973,9 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 			t->type->sqlname,
 			t->digits,
 			t->scale,
-			(exp->type == e_column && !has_label(exp) ? " for column '" : ""),
-			(exp->type == e_column && !has_label(exp) ? exp_name(exp) : ""),
-			(exp->type == e_column && !has_label(exp) ? "'" : "")
+			(name[0] != '%' ? " for column '" : ""),
+			(name[0] != '%' ? name : ""),
+			(name[0] != '%' ? "'" : "")
 		);
 		return res;
 	}

@@ -1354,6 +1354,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			no_tid = rel_project(sql->sa, rel_dup(joined), rel_projections(sql, joined, NULL, 1, 0));
 			extra_project = rel_setop(sql->sa, no_tid, extra_project, op_except);
 			rel_setop_set_exps(sql, extra_project, rel_projections(sql, extra_project, NULL, 1, 0));
+			set_processed(extra_project);
 
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;

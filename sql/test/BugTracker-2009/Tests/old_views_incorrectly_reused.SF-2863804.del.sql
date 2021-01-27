@@ -1,4 +1,0 @@
-START TRANSACTION;
-DROP TABLE docDict;
-DROP TABLE doc_string;
-COMMIT;

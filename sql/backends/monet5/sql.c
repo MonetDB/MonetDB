@@ -341,8 +341,9 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		sql_column *c = n->data;
 
 		if (c->def) {
+			/* TODO please don't place an auto incremented sequence in the default value */
+			const char *next_value_for = "next value for \"sys\".\"seq_";
 			sql_rel *r = NULL;
-			list *id_l;
 
 			sql->sa = sql->ta;
 			r = rel_parse(sql, s, sa_message(sql->ta, "select %s;", c->def), m_deps);
@@ -357,8 +358,12 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 				else
 					throw(SQL, "sql.catalog", SQLSTATE(42000) "%s", sql->errstr);
 			}
-			id_l = rel_dependencies(sql, r);
-			mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+			/* For a self incremented column, it's sequence will get a BEDROPPED_DEPENDENCY,
+				so no additional dependencies are needed */
+			if (strncmp(c->def, next_value_for, strlen(next_value_for)) != 0) {
+				list *id_l = rel_dependencies(sql, r);
+				mvc_create_dependencies(sql, id_l, nt->base.id, FUNC_DEPENDENCY);
+			}
 			rel_destroy(r);
 			sa_reset(sql->sa);
 		}
@@ -6206,13 +6211,13 @@ static mel_func sql_init_funcs[] = {
  pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("val",lng))),
  pattern("wlr", "alter_seq", WLRgeneric, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),batarg("val",lng))),
  pattern("wlr", "drop_seq", WLRgeneric, false, "Catalog operation drop_seq", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
- pattern("wlr", "create_schema", WLRgeneric, false, "Catalog operation create_schema", args(0,4, arg("sname",str),arg("auth",str),arg("ifnotexists",int),arg("action",int))),
- pattern("wlr", "drop_schema", WLRgeneric, false, "Catalog operation drop_schema", args(0,4, arg("sname",str),arg("s",str),arg("ifexists",int),arg("action",int))),
+ pattern("wlr", "create_schema", WLRgeneric, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
+ pattern("wlr", "drop_schema", WLRgeneric, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("wlr", "create_table", WLRgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
  pattern("wlr", "create_view", WLRgeneric, false, "Catalog operation create_view", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
  pattern("wlr", "drop_table", WLRgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlr", "drop_view", WLRgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlr", "drop_constraint", WLRgeneric, false, "Catalog operation drop_constraint", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("wlr", "drop_constraint", WLRgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlr", "alter_table", WLRgeneric, false, "Catalog operation alter_table", args(0,3, arg("sname",str),arg("tname",str),arg("action",int))),
  pattern("wlr", "create_type", WLRgeneric, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
  pattern("wlr", "drop_type", WLRgeneric, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
@@ -6255,13 +6260,13 @@ static mel_func sql_init_funcs[] = {
  pattern("sqlcatalog", "alter_seq", SQLalter_seq, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),arg("val",lng))),
  pattern("sqlcatalog", "alter_seq", SQLalter_seq, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),batarg("val",lng))),
  pattern("sqlcatalog", "drop_seq", SQLdrop_seq, false, "Catalog operation drop_seq", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
- pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,4, arg("sname",str),arg("auth",str),arg("ifnotexists",int),arg("action",int))),
- pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,4, arg("sname",str),arg("s",str),arg("ifexists",int),arg("action",int))),
+ pattern("sqlcatalog", "create_schema", SQLcreate_schema, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
+ pattern("sqlcatalog", "drop_schema", SQLdrop_schema, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("sqlcatalog", "create_table", SQLcreate_table, false, "Catalog operation create_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("temp",int))),
  pattern("sqlcatalog", "create_view", SQLcreate_view, false, "Catalog operation create_view", args(0,4, arg("sname",str),arg("vname",str),arg("tbl",ptr),arg("temp",int))),
  pattern("sqlcatalog", "drop_table", SQLdrop_table, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "drop_view", SQLdrop_view, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("sqlcatalog", "drop_constraint", SQLdrop_constraint, false, "Catalog operation drop_constraint", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("sqlcatalog", "drop_constraint", SQLdrop_constraint, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("sqlcatalog", "alter_table", SQLalter_table, false, "Catalog operation alter_table", args(0,4, arg("sname",str),arg("tname",str),arg("tbl",ptr),arg("action",int))),
  pattern("sqlcatalog", "create_type", SQLcreate_type, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
  pattern("sqlcatalog", "drop_type", SQLdrop_type, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),

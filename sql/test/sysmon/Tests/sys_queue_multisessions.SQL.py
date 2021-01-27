@@ -1,58 +1,36 @@
 ###
 # Check that an ordinary user can see queries in all its sessions
 ###
-import pymonetdb
-import os
+from MonetDBtesting.sqltest import SQLTestCase
 
-DB = os.environ['TSTDB']
-PORT = int(os.environ['MAPIPORT'])
-HOST = os.environ['MAPIHOST']
-USR = 'u1'
-PSWD = 'u1'
-
-try:
-    mdbdbh = pymonetdb.connect(database=DB, port=PORT, hostname=HOST, autocommit=True)
-    mdbcursor = mdbdbh.cursor()
-    mdbcursor.execute('create role r1;')
-    mdbcursor.execute('create schema s1 authorization r1;')
-    mdbcursor.execute('create user u1 with password \'u1\' name \'u1\' schema s1;')
-    mdbcursor.execute('grant r1 to u1;')
+with SQLTestCase() as mdb:
+    mdb.connect(username="monetdb", password="monetdb")
+    mdb.execute('create role r1;').assertSucceeded()
+    mdb.execute('create schema s1 authorization r1;').assertSucceeded()
+    mdb.execute('create user u1 with password \'u1\' name \'u1\' schema s1;').assertSucceeded()
+    mdb.execute('grant r1 to u1;').assertSucceeded()
 
     # Let the user establish several connections to the server
-    usrdbh1 = pymonetdb.connect(database=DB, port=PORT, hostname=HOST,
-                            username=USR, password=PSWD, autocommit=True)
-    usrcursor1 = usrdbh1.cursor()
+    with SQLTestCase() as tc1:
+        tc1.connect(username="u1", password="u1")
 
-    usrdbh2 = pymonetdb.connect(database=DB, port=PORT, hostname=HOST,
-                            username=USR, password=PSWD, autocommit=True)
-    usrcursor2 = usrdbh2.cursor()
+        with SQLTestCase() as tc2:
+            tc2.connect(username="u1", password="u1")
 
-    # NB, we only have 4-1 slots in sys.queue to use because of the
-    # SingleServer config in this test
-    usrcursor1.execute('select \'u1 session_1\';')
-    usrcursor2.execute('select \'u1 session_2\';')
+            # NB, we only have 4-1 slots in sys.queue to use because of the
+            # SingleServer config in this test
+            tc1.execute('select \'u1 session_1\';').assertSucceeded()\
+                    .assertDataResultMatch([("u1 session_1",)])
+            tc2.execute('select \'u1 session_2\';').assertSucceeded()\
+                    .assertDataResultMatch([("u1 session_2",)])
 
-    # Check that the sys.queue() output of each user contains queries from both
-    # connections
-    usrcursor1.execute('select username, sessionid  from sys.queue() group by username, sessionid order by sessionid;')
-    if usrcursor1.fetchall() != [('u1', 1), ('u1', 2)]:
-        print('Expected: [(\'u1\', 1), (\'u1\', 2)]')
-    usrcursor2.execute('select username, sessionid from sys.queue() group by username, sessionid order by sessionid;')
-    if usrcursor2.fetchall() != [('u1', 1), ('u1', 2)]:
-        print('Expected: [(\'u1\', 1), (\'u1\', 2)]')
-except pymonetdb.exceptions.Error as e:
-    print(e)
-finally:
-    # clean up and don't stop by an error
-    try:
-        if usrdbh1:
-            usrdbh1.close()
-        if usrdbh2:
-            usrdbh2.close()
-        mdbcursor.execute('drop user u1')
-        mdbcursor.execute('drop role r1')
-        mdbcursor.execute('drop schema s1')
-        mdbdbh.close()
-    except pymonetdb.exceptions.Error as e:
-        print(e)
+            # Check that the sys.queue() output of each user contains queries from both
+            # connections
+            tc1.execute('select username, sessionid from sys.queue() group by username, sessionid order by sessionid;')\
+                    .assertSucceeded().assertDataResultMatch([('u1', 1), ('u1', 2)])
+            tc2.execute('select username, sessionid from sys.queue() group by username, sessionid order by sessionid;')\
+                    .assertSucceeded().assertDataResultMatch([('u1', 1), ('u1', 2)])
 
+    mdb.execute('drop user u1').assertSucceeded()
+    mdb.execute('drop role r1').assertSucceeded()
+    mdb.execute('drop schema s1').assertSucceeded()

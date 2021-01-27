@@ -1,4 +1,11 @@
 statement ok
+	--  dropped initialization of DATETIME,  taiObs TIMESTAMP NOT NULL,
+	-- name clashes: offset ->offs, second ->scnd, start ->startduration
+	-- FLOAT(0) -> FLOAT
+	-- incomplete foreign reference: ALTER TABLE _mops_MoidQueue ADD CONSTRAINT FK__mops_MoidQueue_MovingObject
+	--      FOREIGN KEY (movingObjectId,movingObjectVersion) REFERENCES MovingObject (movingObjectId,movingObjectVersion)
+
+statement ok
 	CREATE TABLE AAA_Version_3_1_88 (version CHAR)
 
 statement ok
@@ -16,7 +23,7 @@ statement ok
 	CREATE TABLE prv_cnf_PolicyKey
 	(
 	        policyKeyId INTEGER NOT NULL,
-	        value STRING NULL,
+	        value STRING NULL, -- TEXT NULL,
 	        validityBegin TIMESTAMP NULL,
 	        validityEnd TIMESTAMP NULL,
 	        PRIMARY KEY (policyKeyId)
@@ -43,6 +50,8 @@ statement ok
 	        clam FLOAT NOT NULL,
 	        bw FLOAT NOT NULL,
 	        PRIMARY KEY (filterId)
+	        --UNIQUE name(name),
+	        --INDEX focalPlaneId (focalPlaneId ASC)
 	) 
 
 statement ok
@@ -63,14 +72,16 @@ statement ok
 	        keyName VARCHAR(255) NOT NULL,
 	        keyType VARCHAR(16) NOT NULL,
 	        PRIMARY KEY (policyKeyId)
+	        -- KEY (policyFileId)
 	) 
 
 statement ok
 	CREATE TABLE prv_Run
 	(
-	        offs INTEGER NOT NULL AUTO_INCREMENT,
+	        offs INTEGER NOT NULL AUTO_INCREMENT, --MEDIUMINT NOT NULL AUTO_INCREMENT,
 	        runId VARCHAR(255) UNIQUE NOT NULL,
 	        PRIMARY KEY (offs)
+	        --UNIQUE UQ_prv_Run_runId(runId)
 	) 
 
 statement ok
@@ -87,6 +98,8 @@ statement ok
 	        movingObjectId BIGINT UNIQUE NOT NULL,
 	        typeId SMALLINT UNIQUE NOT NULL,
 	        probability TINYINT NULL DEFAULT 100
+	        -- KEY (typeId),
+	        -- KEY (movingObjectId)
 	) 
 
 statement ok
@@ -95,6 +108,8 @@ statement ok
 	        objectId BIGINT UNIQUE NOT NULL,
 	        typeId SMALLINT UNIQUE NOT NULL,
 	        probability TINYINT NULL DEFAULT 100
+	        --KEY (typeId),
+	        --KEY (objectId)
 	) 
 
 statement ok
@@ -178,6 +193,9 @@ statement ok
 	        userduration BIGINT NULL,
 	        systemduration BIGINT NULL,
 	        PRIMARY KEY (id)
+	        --INDEX dur_runid (RUNID ASC),
+	        --INDEX idx_durations_pipeline (PIPELINE ASC),
+	        --INDEX idx_durations_name (name ASC)
 	) 
 
 statement ok
@@ -217,6 +235,7 @@ statement ok
 	        usertime BIGINT NULL,
 	        systemtime BIGINT NULL,
 	        PRIMARY KEY (id)
+	        --INDEX a (RUNID ASC)
 	) 
 
 statement ok
@@ -240,11 +259,12 @@ statement ok
 	CREATE TABLE sdqa_Metric
 	(
 	        sdqa_metricId SMALLINT NOT NULL AUTO_INCREMENT,
-	        metricName VARCHAR(30) UNIQUE UNIQUE NOT NULL,
+	        metricName VARCHAR(30) UNIQUE NOT NULL,
 	        physicalUnits VARCHAR(30) NOT NULL,
 	        dataType CHAR(1) NOT NULL,
 	        definition VARCHAR(255) NOT NULL,
 	        PRIMARY KEY (sdqa_metricId)
+	        --UNIQUE UQ_sdqaMetric_metricName(metricName)
 	) 
 
 statement ok
@@ -257,6 +277,10 @@ statement ok
 	        metricValue DOUBLE NOT NULL,
 	        metricSigma DOUBLE NOT NULL,
 	        PRIMARY KEY (sdqa_ratingId)
+	        --?? UNIQUE UQ_sdqaRating_ForScienceAmpExposure_metricId_ampExposureId(sdqa_metricId, ampExposureId),
+	        --KEY (sdqa_metricId),
+	        --KEY (sdqa_thresholdId),
+	        --KEY (ampExposureId)
 	) 
 
 statement ok
@@ -269,6 +293,10 @@ statement ok
 	        metricValue DOUBLE NOT NULL,
 	        metricSigma DOUBLE NOT NULL,
 	        PRIMARY KEY (sdqa_ratingId)
+	        --?? UNIQUE UQ_sdqa_Rating_ForScienceCCDExposure_metricId_ccdExposureId(sdqa_metricId, ccdExposureId),
+	        --KEY (sdqa_metricId),
+	        --KEY (sdqa_thresholdId),
+	        --KEY (ccdExposureId)
 	) 
 
 statement ok
@@ -280,6 +308,8 @@ statement ok
 	        lowerThreshold DOUBLE NULL,
 	        createdDate TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	        PRIMARY KEY (sdqa_thresholdId)
+	        --?? UNIQUE UQ_sdqa_Threshold_sdqa_metricId(sdqa_metricId),
+	        --KEY (sdqa_metricId)
 	) 
 
 statement ok
@@ -299,6 +329,7 @@ statement ok
 	        insertTime TIMESTAMP NOT NULL,
 	        status CHAR(1) NULL DEFAULT 'I',
 	        PRIMARY KEY (movingObjectId,movingObjectVersion)
+	        --INDEX idx__mopsEonQueue_eventId (eventId ASC)
 	) 
 
 statement ok
@@ -309,6 +340,8 @@ statement ok
 	        eventId BIGINT NOT NULL,
 	        insertTime TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	        PRIMARY KEY (movingObjectId, movingObjectVersion)
+	        --KEY (movingObjectId),
+	        --INDEX idx_mopsMoidQueue_eventId (eventId ASC)
 	) 
 
 statement ok
@@ -323,6 +356,7 @@ statement ok
 	        smaa DOUBLE NULL,
 	        pa DOUBLE NULL,
 	        mag DOUBLE NULL
+	        --INDEX idx_mopsEphemeris_movingObjectId (movingObjectId ASC)
 	) 
 
 statement ok
@@ -356,6 +390,11 @@ statement ok
 	        classification CHAR(1) NULL,
 	        ssmId BIGINT NULL,
 	        PRIMARY KEY (eventId)
+	        -- KEY (movingObjectId)
+	        --INDEX idx_mopsEvent_ccdExposureId (ccdExposureId ASC),
+	        --INDEX idx_mopsEvent_movingObjectId (movingObjectId ASC, movingObjectVersion ASC),
+	        --INDEX idx_mopsEvent_procHistoryId (procHistoryId ASC),
+	        --INDEX idx_mopsEvent_ssmId (ssmId ASC)
 	) 
 
 statement ok
@@ -364,6 +403,8 @@ statement ok
 	        eventId BIGINT UNIQUE NOT NULL,
 	        trackletId BIGINT NOT NULL,
 	        PRIMARY KEY (eventId, trackletId)
+	        --INDEX idx_mopsEventDerivation_trackletId (trackletId ASC),
+	        --KEY (eventId)
 	) 
 
 statement ok
@@ -372,6 +413,7 @@ statement ok
 	        eventId BIGINT NOT NULL,
 	        childObjectId BIGINT NOT NULL,
 	        PRIMARY KEY (eventId)
+	        --INDEX idx_mopsEventOrbitIdentification2MovingObject_childObjectId (childObjectId ASC)
 	) 
 
 statement ok
@@ -382,6 +424,7 @@ statement ok
 	        ephemerisDistance FLOAT NOT NULL,
 	        ephemerisUncertainty FLOAT NULL,
 	        PRIMARY KEY (eventId)
+	        --INDEX idx_mopsEventTrackletAttribution_trackletId (trackletId ASC)
 	) 
 
 statement ok
@@ -392,6 +435,7 @@ statement ok
 	        ephemerisDistance FLOAT NOT NULL,
 	        ephemerisUncertainty FLOAT NULL,
 	        PRIMARY KEY (eventId)
+	        --INDEX idx_mopsEventTrackletPrecovery_trackletId (trackletId ASC)
 	) 
 
 statement ok
@@ -400,6 +444,7 @@ statement ok
 	        eventId BIGINT NOT NULL,
 	        trackletId BIGINT NOT NULL,
 	        PRIMARY KEY (eventId)
+	        --INDEX idx_mopsEventTrackletRemoval_trackletId (trackletId ASC)
 	) 
 
 statement ok
@@ -407,6 +452,8 @@ statement ok
 	(
 	        movingObjectId BIGINT NOT NULL,
 	        trackletId BIGINT NOT NULL
+	        --INDEX idx_mopsMovingObjectToTracklets_movingObjectId (movingObjectId ASC),
+	        --INDEX idx_mopsMovingObjectToTracklets_trackletId (trackletId ASC)
 	) 
 
 statement ok
@@ -427,6 +474,9 @@ statement ok
 	        albedo DOUBLE NULL,
 	        ssmObjectName VARCHAR(32) NOT NULL,
 	        PRIMARY KEY (ssmId)
+	        --??UNIQUE UQ_mopsSSM_ssmObjectName(ssmObjectName),
+	        --INDEX idx_mopsSSM_ssmDescId (ssmDescId ASC),
+	        --INDEX idx_mopsSSM_epoch (epoch ASC)
 	) 
 
 statement ok
@@ -465,6 +515,10 @@ statement ok
 	        status CHAR(1) NULL,
 	        classification CHAR(1) NULL,
 	        PRIMARY KEY (trackletId)
+	        --INDEX idx_mopsTracklets_ccdExposureId (ccdExposureId ASC),
+	        --INDEX idx_mopsTracklets_ssmId (ssmId ASC),
+	        --INDEX idx_mopsTracklets_classification (classification ASC),
+	        --INDEX idx_mopsTracklets_extEpoch (extEpoch ASC)
 	) 
 
 statement ok
@@ -473,6 +527,8 @@ statement ok
 	        trackletId BIGINT UNIQUE NOT NULL,
 	        diaSourceId BIGINT NOT NULL,
 	        PRIMARY KEY (trackletId, diaSourceId)
+	        --INDEX idx_mopsTrackletsToDIASource_diaSourceId (diaSourceId ASC),
+	        --KEY (trackletId)
 	) 
 
 statement ok
@@ -481,6 +537,7 @@ statement ok
 	        trackId BIGINT NOT NULL,
 	        trackletId BIGINT NOT NULL,
 	        PRIMARY KEY (trackId, trackletId)
+	        --INDEX IDX_mopsTrackToTracklet_trackletId (trackletId ASC)
 	) 
 
 statement ok
@@ -488,6 +545,8 @@ statement ok
 	(
 	        visitId INTEGER UNIQUE NOT NULL,
 	        ccdExposureId BIGINT UNIQUE NOT NULL
+	        --KEY (ccdExposureId),
+	        --KEY (visitId)
 	) 
 
 statement ok
@@ -516,6 +575,7 @@ statement ok
 	        rawCcdExposureId BIGINT UNIQUE NOT NULL,
 	        ampId INTEGER NOT NULL,
 	        PRIMARY KEY (rawAmpExposureId)
+	        -- KEY (rawCcdExposureId)
 	) 
 
 statement ok
@@ -537,7 +597,7 @@ statement ok
 	        filterId INTEGER NOT NULL,
 	        equinox FLOAT NOT NULL,
 	        radecSys VARCHAR(20) NULL,
-	        dateObs TIMESTAMP NOT NULL,
+	        dateObs TIMESTAMP NOT NULL, -- DEFAULT 0,
 	        url VARCHAR(255) NOT NULL,
 	        ctype1 VARCHAR(20) NOT NULL,
 	        ctype2 VARCHAR(20) NOT NULL,
@@ -553,7 +613,7 @@ statement ok
 	        cd12 DOUBLE NOT NULL,
 	        zd FLOAT NULL,
 	        cd22 DOUBLE NOT NULL,
-	        taiObs TIMESTAMP NOT NULL,
+	        taiObs TIMESTAMP NOT NULL, -- DEFAULT 0,
 	        expTime FLOAT NOT NULL,
 	        PRIMARY KEY (rawCcdExposureId)
 	) 
@@ -576,6 +636,8 @@ statement ok
 	        rawAmpExposureId BIGINT UNIQUE NULL,
 	        ampId INTEGER NULL,
 	        PRIMARY KEY (scienceAmpExposureId)
+	        --KEY (scienceCcdExposureId),
+	        --KEY (rawAmpExposureId)
 	) 
 
 statement ok
@@ -609,7 +671,7 @@ statement ok
 	        cd2_2 DOUBLE NULL,
 	        taiMjd DOUBLE NULL,
 	        ccdSize VARCHAR(50) NULL,
-	        dateObs TIMESTAMP NULL,
+	        dateObs TIMESTAMP NULL, -- DEFAULT 0,
 	        expTime FLOAT NULL,
 	        photoFlam FLOAT NULL,
 	        photoZP FLOAT NULL,
@@ -621,6 +683,7 @@ statement ok
 	        dataSection VARCHAR(24) NULL,
 	        gain DOUBLE NULL,
 	        PRIMARY KEY (scienceCcdExposureId)
+	        --KEY (rawCcdExposureId)
 	) 
 
 statement ok
@@ -670,6 +733,9 @@ statement ok
 	        _chunkId INTEGER NULL,
 	        _subChunkId INTEGER NULL,
 	        PRIMARY KEY (calibSourceId)
+	        --KEY (ccdExposureId),
+	        --KEY (filterId),
+	        --KEY (xAstromSigma)
 	) 
 
 statement ok
@@ -728,7 +794,11 @@ statement ok
 	        _chunkId INTEGER NULL,
 	        _subChunkId INTEGER NULL,
 	        PRIMARY KEY (diaSourceId)
-	) 
+	        --KEY (ccdExposureId),
+	        --KEY (filterId),
+	        --KEY (movingObjectId),
+	        --KEY (objectId)
+	)
 
 statement ok
 	CREATE TABLE ForcedSource
@@ -839,6 +909,11 @@ statement ok
 	        moidLong2 DOUBLE NULL,
 	        arcLengthDays DOUBLE NULL,
 	        PRIMARY KEY (movingObjectId, movingObjectVersion)
+	        --KEY (procHistoryId),
+	        --INDEX idx_MovingObject_taxonomicTypeId (taxonomicTypeId ASC),
+	        --INDEX idx_MovingObject_ssmId (ssmId ASC),
+	        --INDEX idx_MovingObject_ssmObjectName (ssmObjectName ASC),
+	        --INDEX idx_MovingObject_status (mopsStatus ASC)
 	) 
 
 statement ok
@@ -1323,6 +1398,11 @@ statement ok
 	        flagForDetection INTEGER NULL,
 	        flagForWcs SMALLINT NULL,
 	        PRIMARY KEY (sourceId)
+	        --INDEX ampExposureId (ampExposureId ASC),
+	        --INDEX filterId (filterId ASC),
+	        --INDEX movingObjectId (movingObjectId ASC),
+	        --INDEX objectId (objectId ASC),
+	        --INDEX procHistoryId (procHistoryId ASC)
 	) 
 
 statement ok
@@ -1389,6 +1469,11 @@ statement ok
 	        _chunkId INTEGER NULL,
 	        _subChunkId INTEGER NULL,
 	        PRIMARY KEY (sourceId)
+	        --KEY (objectId),
+	        --KEY (ccdExposureId),
+	        --KEY (filterId),
+	        --KEY (movingObjectId),
+	        --KEY (objectId)
 	) 
 
 statement ok
