@@ -591,10 +591,10 @@ matching_joins(sql_allocator *sa, list *rels, list *exps, sql_exp *je)
 }
 
 static int
-sql_kc_column_cmp(sql_kc *kc, sql_column *c)
+sql_column_kc_cmp(sql_column *c, sql_kc *kc)
 {
 	/* return on equality */
-	return (kc->c->colnr - c->colnr);
+	return (c->colnr - kc->c->colnr);
 }
 
 static sql_idx *
@@ -606,11 +606,11 @@ find_fk_index(sql_table *l, list *lcols, sql_table *r, list *rcols)
 			sql_idx *li = in->data;
 			if (li->type == join_idx) {
 				sql_key *rk = &((sql_fkey*)li->key)->rkey->k;
-				fcmp cmp = (fcmp)&sql_kc_column_cmp;
+				fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
 				if (rk->t == r &&
-					list_match(li->columns, lcols, cmp) == 0 &&
-					list_match(rk->columns, rcols, cmp) == 0) {
+					list_match(lcols, li->columns, cmp) == 0 &&
+					list_match(rcols, rk->columns, cmp) == 0) {
 					return li;
 				}
 			}
@@ -1346,23 +1346,33 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 }
 
 static int
-can_push_func(sql_exp *e, sql_rel *rel, int *must)
+can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 {
 	switch(e->type) {
 	case e_cmp: {
-		int mustl = 0, mustr = 0, mustf = 0;
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
-		if ((is_project(rel->op) && e->f) || e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
+		if (e->flag == cmp_or || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter)
 			return 0;
-		return ((l->type == e_column || can_push_func(l, rel, &mustl)) && (*must = mustl)) ||
-				(!f && (r->type == e_column || can_push_func(r, rel, &mustr)) && (*must = mustr)) ||
-			(f &&
-				(r->type == e_column || can_push_func(r, rel, &mustr)) &&
-			(f->type == e_column || can_push_func(f, rel, &mustf)) && (*must = (mustr || mustf)));
+		if (depth > 0) { /* for comparisons under the top ones, they become functions */
+			int lmust = 0;
+			int res = can_push_func(l, rel, &lmust, depth + 1) && can_push_func(r, rel, &lmust, depth + 1) &&
+					(!f || can_push_func(f, rel, &lmust, depth + 1));
+			if (res && !lmust)
+				return 1;
+			(*must) |= lmust;
+			return res;
+		} else {
+			int mustl = 0, mustr = 0, mustf = 0;
+			return ((l->type == e_column || can_push_func(l, rel, &mustl, depth + 1)) && (*must = mustl)) ||
+					(!f && (r->type == e_column || can_push_func(r, rel, &mustr, depth + 1)) && (*must = mustr)) ||
+				(f &&
+					(r->type == e_column || can_push_func(r, rel, &mustr, depth + 1)) &&
+				(f->type == e_column || can_push_func(f, rel, &mustf, depth + 1)) && (*must = (mustr || mustf)));
+		}
 	}
 	case e_convert:
-		return can_push_func(e->l, rel, must);
+		return can_push_func(e->l, rel, must, depth + 1);
 	case e_aggr:
 	case e_func: {
 		list *l = e->l;
@@ -1371,7 +1381,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must)
 		if (exp_unsafe(e, 0))
 			return 0;
 		if (l) for (node *n = l->h; n && res; n = n->next)
-			res &= can_push_func(n->data, rel, &lmust);
+			res &= can_push_func(n->data, rel, &lmust, depth + 1);
 		if (res && !lmust)
 			return 1;
 		(*must) |= lmust;
@@ -1394,15 +1404,12 @@ exps_can_push_func(list *exps, sql_rel *rel, bool *push_left, bool *push_right)
 		sql_exp *e = n->data;
 		int mustl = 0, mustr = 0;
 
-		if ((is_joinop(rel->op) || is_select(rel->op)) && ((can_push_func(e, rel->l, &mustl) && mustl)))
+		if ((is_joinop(rel->op) || is_select(rel->op)) && ((can_push_func(e, rel->l, &mustl, 0) && mustl)))
 			*push_left = true;
-		
-		if (is_joinop(rel->op) && can_push_func(e, rel->r, &mustr) && mustr)
+		if (is_joinop(rel->op) && can_push_func(e, rel->r, &mustr, 0) && mustr)
 			*push_right = true;
 	}
-	if (*push_left || *push_right)
-		return 1;
-	return 0;
+	return *push_left || *push_right;
 }
 
 static int
@@ -1437,22 +1444,22 @@ exps_need_push_down( list *exps )
 	return 0;
 }
 
-static sql_exp *exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e);
+static sql_exp *exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e, int depth);
 
 static list *
-exps_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, list *exps)
+exps_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, list *exps, int depth)
 {
 	if (THRhighwater())
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	for (node *n = exps->h; n; n = n->next)
-		if ((n->data = exp_push_single_func_down(v, rel, l, r, n->data)) == NULL)
+		if ((n->data = exp_push_single_func_down(v, rel, l, r, n->data, depth)) == NULL)
 			return NULL;
 	return exps;
 }
 
 static sql_exp *
-exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e)
+exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_exp *e, int depth)
 {
 	if (THRhighwater())
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1460,26 +1467,26 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_
 	switch(e->type) {
 	case e_cmp: {
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			if ((e->l = exps_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+			if ((e->l = exps_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 				return NULL;
-			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r)) == NULL)
+			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r, depth + 1)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 				return NULL;
-			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r)) == NULL)
+			if ((e->r = exps_push_single_func_down(v, rel, l, r, e->r, depth + 1)) == NULL)
 				return NULL;
 		} else {
-			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+			if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 				return NULL;
-			if ((e->r = exp_push_single_func_down(v, rel, l, r, e->r)) == NULL)
+			if ((e->r = exp_push_single_func_down(v, rel, l, r, e->r, depth + 1)) == NULL)
 				return NULL;
-			if (e->f && (e->f = exp_push_single_func_down(v, rel, l, r, e->f)) == NULL)
+			if (e->f && (e->f = exp_push_single_func_down(v, rel, l, r, e->f, depth + 1)) == NULL)
 				return NULL;
 		}
 	} break;
 	case e_convert:
-		if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l)) == NULL)
+		if ((e->l = exp_push_single_func_down(v, rel, l, r, e->l, depth + 1)) == NULL)
 			return NULL;
 		break;
 	case e_aggr:
@@ -1490,8 +1497,8 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_
 			return e;
 		if (!e->l || exps_are_atoms(e->l))
 			return e;
-		if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl) && mustl) || (can_push_func(e, r, &mustr) && mustr))) ||
-			(is_select(rel->op) && can_push_func(e, l, &must) && must)) {
+		if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl, depth + 1) && mustl) || (can_push_func(e, r, &mustr, depth + 1) && mustr))) ||
+			(is_select(rel->op) && can_push_func(e, l, &must, depth + 1) && must)) {
 			exp_label(v->sql->sa, e, ++v->sql->label);
 			if (mustr)
 				append(r->exps, e);
@@ -1532,7 +1539,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
  			nrel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
 
-			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps)))
+			if (!(exps = exps_push_single_func_down(&nv, rel, l, r, exps, 0)))
 				return NULL;
 			if (nv.changes) {
 				rel = nrel;
@@ -1561,8 +1568,8 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 				sql_exp *e = n->data;
 				int mustl = 0, mustr = 0;
 
-				if ((can_push_func(e, l, &mustl) && mustl) ||
-				    (can_push_func(e, r, &mustr) && mustr)) {
+				if ((can_push_func(e, l, &mustl, 0) && mustl) ||
+				    (can_push_func(e, r, &mustr, 0) && mustr)) {
 					if (mustl)
 						append(l->exps, e);
 					else
@@ -7331,23 +7338,23 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 		if ((p = find_prop(e->p, PROP_HASHIDX)) != NULL) {
 			list *exps, *cols;
 			sql_idx *i = p->value;
-			fcmp cmp = (fcmp)&sql_kc_column_cmp;
+			fcmp cmp = (fcmp)&sql_column_kc_cmp;
 
 			/* join indices are only interesting for joins */
 			if (i->type == join_idx || list_length(i->columns) <= 1)
 				continue;
 			/* based on the index type, find qualifying exps */
 			exps = list_select(rel->exps, i, (fcmp) &index_exp, (fdup)NULL);
-			if (list_empty(exps))
+			if (!exps || !list_length(exps))
 				continue;
-			/* now we obtain the columns, move into sql_kc_column_cmp! */
+			/* now we obtain the columns, move into sql_column_kc_cmp! */
 			cols = list_map(exps, sub, (fmap) &sjexp_col);
 
 			/* TODO check that at most 2 relations are involved */
 
 			/* Match the index columns with the expression columns.
 			   TODO, Allow partial matches ! */
-			if (list_match(i->columns, cols, cmp) == 0) {
+			if (list_match(cols, i->columns, cmp) == 0) {
 				/* re-order exps in index order */
 				node *n, *m;
 				list *es = sa_list(sa);
@@ -7355,7 +7362,7 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 				for(n = i->columns->h; n; n = n->next) {
 					int i = 0;
 					for(m = cols->h; m; m = m->next, i++) {
-						if (cmp(n->data, m->data) == 0){
+						if (cmp(m->data, n->data) == 0){
 							sql_exp *e = list_fetch(exps, i);
 							list_append(es, e);
 							break;
@@ -7389,11 +7396,13 @@ rel_use_index(visitor *v, sql_rel *rel)
 
 		if (i) {
 			prop *p;
+			node *n;
 			int single_table = 1;
 			sql_exp *re = NULL;
 
-			for( node *n = exps->h; n && single_table; n = n->next) {
-				sql_exp *e = n->data, *nre = e->r;
+			for( n = exps->h; n && single_table; n = n->next) {
+				sql_exp *e = n->data;
+				sql_exp *nre = e->r;
 
 				if (is_join(rel->op) &&
 				 	((left && !rel_find_exp(rel->l, e->l)) ||
@@ -7403,11 +7412,8 @@ rel_use_index(visitor *v, sql_rel *rel)
 				re = nre;
 			}
 			if (single_table) { /* add PROP_HASHCOL to all column exps */
-				fcmp cmp = (fcmp)&sql_kc_column_cmp;
-
-				for( node *n = exps->h; n; n = n->next) {
+				for( n = exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
-					sql_column *col = NULL;
 					int anti = is_anti(e), semantics = is_semantics(e);
 
 					/* swapped ? */
@@ -7417,23 +7423,15 @@ rel_use_index(visitor *v, sql_rel *rel)
 						n->data = e = exp_compare(v->sql->sa, e->r, e->l, cmp_equal);
 					if (anti) set_anti(e);
 					if (semantics) set_semantics(e);
-
-					sql_exp *el = e->l, *er = e->r; /* add to both left and right expressions if that's the case */
-					if ((col = exp_find_column(rel, el, -2)) && list_find(i->columns, col, cmp)) {
-						if (!(p = find_prop(el->p, PROP_HASHCOL)))
-							el->p = p = prop_create(v->sql->sa, PROP_HASHCOL, el->p);
-						p->value = i;
-					}
-					if ((col = exp_find_column(rel, er, -2)) && list_find(i->columns, col, cmp)) {
-						if (!(p = find_prop(er->p, PROP_HASHCOL)))
-							er->p = p = prop_create(v->sql->sa, PROP_HASHCOL, er->p);
-						p->value = i;
-					}
+					p = find_prop(e->p, PROP_HASHCOL);
+					if (!p)
+						e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);
+					p->value = i;
 				}
 			}
 			/* add the remaining exps to the new exp list */
 			if (list_length(rel->exps) > list_length(exps)) {
-				for( node *n = rel->exps->h; n; n = n->next) {
+				for( n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
 					if (!list_find(exps, e, (fcmp)&exp_cmp))
 						list_append(exps, e);

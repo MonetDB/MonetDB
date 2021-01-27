@@ -3312,7 +3312,6 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_idx *i = p->value;
 
-			assert(0);
 			sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en);
 		}
 	}
