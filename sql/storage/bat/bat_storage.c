@@ -122,11 +122,18 @@ temp_dup_dbat(ulng tid)
 }
 
 static sql_dbat *
+temp_dbat(sql_dbat *d, ulng tid)
+{
+	while (d && d->ts != tid)
+		d = d->next;
+	return d;
+}
+
+static sql_dbat *
 get_dbat(sql_dbat *d, ulng tid, int is_temp)
 {
 	if (is_temp) {
-		while (d && d->ts != tid)
-			d = d->next;
+		d = temp_dbat(d, tid);
 		if (!d)
 			return temp_dup_dbat(tid);
 	}
@@ -187,6 +194,22 @@ timestamp_dbat( sql_trans *tr, sql_dbat *d, int is_temp)
 	return d;
 }
 
+static sql_dbat *
+tab_timestamp_dbat( sql_trans *tr, sql_table *t)
+{
+	int is_temp = isTempTable(t);
+	if (is_temp) {
+		sql_dbat *d = temp_dbat(t->data, tr->tid);
+		if (!d) {
+			d = temp_dup_dbat(tr->tid);
+			d->next = t->data;
+			t->data = d;
+		}
+		return d;
+	}
+	return timestamp_dbat( tr, t->data, is_temp);
+}
+
 static sql_delta*
 delta_dup(sql_delta *d)
 {
@@ -241,7 +264,7 @@ static BAT *
 bind_del(sql_trans *tr, sql_table *t, int access)
 {
 	assert(access == QUICK || tr->active);
-	sql_dbat *d = timestamp_dbat(tr, t->data, isTempTable(t));
+	sql_dbat *d = tab_timestamp_dbat(tr, t);
 	return delta_bind_del(d, access);
 }
 
@@ -1266,7 +1289,7 @@ count_del(sql_trans *tr, sql_table *t)
 	assert(tr->active);
 	if (!isTable(t))
 		return 0;
-	d = timestamp_dbat(tr, t->data, isTempTable(t));
+	d = tab_timestamp_dbat(tr, t);
 	assert(d);
 	if (!d)
 		return 0;

@@ -531,8 +531,12 @@ os_destroy(objectset *os, sql_store store)
 		return;
 	if (os->destroy) {
 		for(versionhead  *n=os->name_based_h; n; n=n->next) {
+			objectversion *ov = n->ov;
 			/* TODO destroy objectversion */
-			os->destroy(store, n->ov->b);
+			while(ov) { /* how about id based older ? */
+				os->destroy(store, ov->b);
+				ov = ov->name_based_older;
+			}
 		}
 	}
 	versionhead  *n = os->name_based_h;
