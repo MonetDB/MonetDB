@@ -49,7 +49,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					sql_exp *comp = n->data;
 
 					if (comp->type == e_cmp) {
-						int flag = comp->flag & ~(CMP_BETWEEN|CMP_SYMMETRIC);
+						int flag = comp->flag & ~CMP_BETWEEN;
 
 						switch (flag) {
 						case cmp_equal: {
@@ -110,7 +110,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 										set_min_property(sql, e, lval);
 								} else if (lne) {
 									if (fe) { /* range case */
-										if (comp->flag & ~CMP_SYMMETRIC) {
+										if (comp->flag & CMP_SYMMETRIC) {
 											if ((lval = find_prop_and_get(re->p, PROP_MIN)) && (rval = find_prop_and_get(fe->p, PROP_MIN)))
 												set_max_property(sql, e, atom_min(lval, rval));
 											if ((lval = find_prop_and_get(re->p, PROP_MAX)) && (rval = find_prop_and_get(fe->p, PROP_MAX)))
@@ -129,7 +129,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 									}
 								} else if (rne) {
 									if (fe) { /* range case */
-										if (comp->flag & ~CMP_SYMMETRIC) {
+										if (comp->flag & CMP_SYMMETRIC) {
 											if ((lval = find_prop_and_get(le->p, PROP_MIN)) && (rval = find_prop_and_get(fe->p, PROP_MIN)))
 												set_max_property(sql, e, atom_min(lval, rval));
 											if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(fe->p, PROP_MAX)))
@@ -148,7 +148,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 									}
 								} else { /* range case */
 									assert(fe);
-									if (comp->flag & ~CMP_SYMMETRIC) {
+									if (comp->flag & CMP_SYMMETRIC) {
 										if ((lval = find_prop_and_get(le->p, PROP_MIN)) && (rval = find_prop_and_get(re->p, PROP_MIN)))
 											set_max_property(sql, e, atom_min(lval, rval));
 										if ((lval = find_prop_and_get(le->p, PROP_MAX)) && (rval = find_prop_and_get(re->p, PROP_MAX)))
