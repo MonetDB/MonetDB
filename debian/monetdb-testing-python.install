@@ -1,2 +1,2 @@
-debian/tmp/usr/bin/Mtest.py usr/bin
+debian/tmp/usr/bin/*.py usr/bin
 debian/tmp/usr/lib/python3*/*-packages/MonetDBtesting/*
