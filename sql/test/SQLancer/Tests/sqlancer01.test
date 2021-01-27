@@ -786,34 +786,3 @@ SELECT 1 FROM t1 where "truncate"(CAST(ifthenelse(TRUE, INTERVAL '5' DAY, INTERV
 statement ok
 ROLLBACK
 
-statement ok
-START TRANSACTION
-
-statement ok
-CREATE TABLE "sys"."t0" ("c0" CHAR(89) NOT NULL,"c1" BOOLEAN,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
-	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c1_c0_unique" UNIQUE ("c1", "c0"))
-
-statement ok
-COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
-<COPY_INTO_DATA>
-"熡U"	false
-"3"	NULL
-"6"	NULL
-"0.6714721480805466"	NULL
-"true"	true
-"OD6N綥"	false
-"흷)%^Ae+c蝢"	true
-"9"	false
-"']iq"	true
-"E"	true
-"0.5036928534407451"	false
-
-statement ok
-update t0 set c1 = true where t0.c0 = t0.c0 and t0.c1 = t0.c1
-
-statement ok
-update t0 set c1 = true, c0 = r'.+' where (((("isauuid"(t0.c0))and(((t0.c0)=(t0.c0)))))and(((t0.c1)=(t0.c1))))
-
-statement ok
-ROLLBACK
-
