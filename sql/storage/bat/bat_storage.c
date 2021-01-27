@@ -763,7 +763,7 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(c->t))
 		/* abort */
 		return NULL;
-	obat = col_timestamp_delta(tr, c);
+	obat = timestamp_delta(tr, c->data, type, isTempTable(c->t));
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
@@ -1126,9 +1126,15 @@ delta_delete_val( sql_dbat *bat, oid rid )
 	return LOG_OK;
 }
 
-static void
-_destroy_dbat(sql_dbat *bat)
+static int
+destroy_dbat(sql_dbat *bat)
 {
+	int ok = LOG_OK;
+
+	if (--bat->refcnt > 0)
+		return LOG_OK;
+	if (bat->next)
+		ok = destroy_dbat(bat->next);
 	if (bat->dname)
 		_DELETE(bat->dname);
 	if (bat->dbid)
@@ -1140,22 +1146,7 @@ _destroy_dbat(sql_dbat *bat)
 	bat->dbid = 0;
 	bat->dname = NULL;
 	_DELETE(bat);
-}
-
-static int
-destroy_dbat(sql_trans *tr, sql_dbat *bat)
-{
-	if (--bat->refcnt > 0)
-		return LOG_OK;
-	sql_dbat *n;
-
-	(void)tr;
-	while(bat) {
-		n = bat->next;
-		_destroy_dbat(bat);
-		bat = n;
-	}
-	return LOG_OK;
+	return ok;
 }
 
 static sql_dbat *
@@ -1733,7 +1724,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		sql_column *c = ni->t->columns.set->h->data;
 		sql_delta *d;
 
-		d = timestamp_delta(tr, c->data, c->type.type->localtype, isTempTable(c->t));
+		d = col_timestamp_delta(tr, c);
 		/* Here we also handle indices created through alter stmts */
 		/* These need to be created aligned to the existing data */
 		if (d->bid) {
@@ -1991,6 +1982,12 @@ log_destroy_delta(sql_trans *tr, sql_delta *b, char tpe, oid id)
 static int
 destroy_delta(sql_delta *b)
 {
+	int ok = LOG_OK;
+
+	if (--b->refcnt > 0)
+		return LOG_OK;
+	if (b->next)
+		ok = destroy_delta(b->next);
 	if (b->name)
 		_DELETE(b->name);
 	if (b->ibid)
@@ -2006,23 +2003,8 @@ destroy_delta(sql_delta *b)
 	b->bid = b->ibid = b->uibid = b->uvbid = 0;
 	b->name = NULL;
 	b->cached = NULL;
-	return LOG_OK;
-}
-
-static int
-destroy_bat(sql_delta *b)
-{
-	if (--b->refcnt > 0)
-		return LOG_OK;
-	sql_delta *n;
-
-	while(b) {
-		n = b->next;
-		destroy_delta(b);
-		_DELETE(b);
-		b = n;
-	}
-	return LOG_OK;
+	_DELETE(b);
+	return ok;
 }
 
 static int
@@ -2031,7 +2013,7 @@ destroy_col(sqlstore *store, sql_column *c)
 	(void)store;
 	int ok = LOG_OK;
 	if (c->data)
-		ok = destroy_bat(c->data);
+		ok = destroy_delta(c->data);
 	c->data = NULL;
 	return ok;
 }
@@ -2059,7 +2041,7 @@ destroy_idx(sqlstore *store, sql_idx *i)
 	(void)store;
 	int ok = LOG_OK;
 	if (i->data)
-		ok = destroy_bat(i->data);
+		ok = destroy_delta(i->data);
 	i->data = NULL;
 	return ok;
 }
@@ -2097,7 +2079,7 @@ destroy_del(sqlstore *store, sql_table *t)
 	(void)store;
 	int ok = LOG_OK;
 	if (t->data)
-		ok = destroy_dbat(NULL, t->data);
+		ok = destroy_dbat(t->data);
 	t->data = NULL;
 	return ok;
 }
@@ -2477,18 +2459,16 @@ tr_merge_delta( sql_trans *tr, sql_delta *obat)
 }
 
 static int
-tr_merge_dbat(sql_trans *tr, sql_dbat *tdb)
+tr_merge_dbat(sql_dbat *tdb)
 {
-	//sqlstore *store = tr->store;
 	int ok = LOG_OK;
 
 	if (tdb->cached) {
 		bat_destroy(tdb->cached);
 		tdb->cached = NULL;
 	}
-	//assert(ATOMIC_GET(&store->nr_active)==1);
 	if (tdb->next) {
-		ok = destroy_dbat(tr, tdb->next);
+		ok = destroy_dbat(tdb->next);
 		tdb->next = NULL;
 	}
 	return ok;
@@ -2600,7 +2580,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (delta && delta != d) {
 			if (delta->next) {
-				ok = destroy_bat(delta->next);
+				ok = destroy_delta(delta->next);
 				delta->next = NULL;
 			}
 		}
@@ -2670,7 +2650,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			o->next = d->next;
 		d->next = NULL;
 		destroy_delta(d);
-	} if (ok == LOG_OK && !tr->parent) {
+	} else if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
 		while (delta && delta->ts > oldest) {
@@ -2678,7 +2658,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (delta && delta != d) {
 			if (delta->next) {
-				ok = destroy_bat(delta->next);
+				ok = destroy_delta(delta->next);
 				delta->next = NULL;
 			}
 		}
@@ -2700,7 +2680,7 @@ savepoint_commit_dbat( sql_dbat *dbat, ulng commit_ts)
 			od->next = n;
 			*dbat = t;
 			dbat->next = NULL;
-			_destroy_dbat(dbat);
+			destroy_dbat(dbat);
 			return od;
 		}
 	}
@@ -2769,7 +2749,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		else
 			o->next = d->next;
 		d->next = NULL;
-		_destroy_dbat(d);
+		destroy_dbat(d);
 	} else if (ok == LOG_OK && !tr->parent) {
 		sql_dbat *d = dbat;
 		/* clean up and merge deltas */
@@ -2778,12 +2758,12 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (dbat && dbat != d) {
 			if (dbat->next) {
-				ok = destroy_dbat(tr, dbat->next);
+				ok = destroy_dbat(dbat->next);
 				dbat->next = NULL;
 			}
 		}
 		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
-			ok = tr_merge_dbat(tr, dbat);
+			ok = tr_merge_dbat(dbat);
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
 		t->data = savepoint_commit_dbat(dbat, commit_ts);
 	}
@@ -2873,7 +2853,7 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 		else
 			o->next = d->next;
 		d->next = NULL;
-		_destroy_dbat(d);
+		destroy_dbat(d);
 	}
 #endif
 	if (t->data != change->data) /* data is freed by commit */

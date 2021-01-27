@@ -3822,7 +3822,7 @@ sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 		seq = find_sql_sequence(tr, s, seq_name);
 		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY) > 0) {
 			sys_drop_sequence(tr, seq, drop_action);
-			if (os_del(s->seqs, tr, seq->base.name, &seq->base))
+			if (os_del(s->seqs, tr, seq->base.name, dup_base(&seq->base)))
 				return -2;
 		}
 	}
@@ -3923,7 +3923,7 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 	/* merge table depends on part table */
 	sql_trans_drop_dependency(tr, pt->member->base.id, mt->base.id, TABLE_DEPENDENCY);
 
-	os_del(mt->s->parts, tr, pt->base.name, &pt->base);
+	os_del(mt->s->parts, tr, pt->base.name, dup_base(&pt->base));
 	store->table_api.table_delete(tr, sysobj, obj_oid);
 }
 
@@ -4130,7 +4130,7 @@ sql_trans_drop_type(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	sql_type *t = sql_trans_find_type(tr, s, id);
 
 	sys_drop_type(tr, t, drop_action);
-	os_del(s->types, tr, t->base.name, &t->base);
+	os_del(s->types, tr, t->base.name, dup_base(&t->base));
 	return 1;
 }
 
@@ -4254,7 +4254,7 @@ sql_trans_drop_func(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	}
 
 	sys_drop_func(tr, func, DROP_CASCADE);
-	os_del(s->funcs, tr, func->base.name, &func->base);
+	os_del(s->funcs, tr, func->base.name, dup_base(&func->base));
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
@@ -4271,7 +4271,7 @@ build_drop_func_list_item(sql_trans *tr, sql_schema *s, sqlid id)
 	if (b) {
 		sql_func *func = (sql_func*)b;
 		sys_drop_func(tr, func, DROP_CASCADE);
-		os_del(s->funcs, tr, func->base.name, &func->base);
+		os_del(s->funcs, tr, func->base.name, dup_base(&func->base));
 	}
 }
 
@@ -4426,7 +4426,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	sql_trans_drop_any_comment(tr, s->base.id);
 	sql_trans_drop_obj_priv(tr, s->base.id);
 
-	os_del(tr->cat->schemas, tr, s->base.name, &s->base);
+	os_del(tr->cat->schemas, tr, s->base.name, dup_base(&s->base));
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
@@ -4688,7 +4688,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	assert(!strNil(new_name));
 
 	if (isGlobal(t)) {
-		if (os_del(s->tables, tr, t->base.name, &t->base))
+		if (os_del(s->tables, tr, t->base.name, dup_base(&t->base)))
 			return NULL;
 	} else {
 		node *n = cs_find_id(&tr->localtmps, t->base.id);
@@ -4718,7 +4718,7 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	assert(!is_oid_nil(rid));
 	store->table_api.column_update_value(tr, find_sql_column(systable, "schema_id"), rid, &(ns->base.id));
 
-	if (os_del(os->tables, tr, t->base.name, &t->base))
+	if (os_del(os->tables, tr, t->base.name, dup_base(&t->base)))
 		return NULL;
 	return table_dup(tr, t, ns, NULL);
 }
@@ -4975,7 +4975,7 @@ sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_ac
 			return -1;
 
 	if (is_global) {
-		if (os_del(s->tables, tr, t->base.name, &t->base))
+		if (os_del(s->tables, tr, t->base.name, dup_base(&t->base)))
 			return -2;
 	} else if (n)
 		cs_del(&tr->localtmps, tr->store, n, TR_NEW);
@@ -5875,7 +5875,7 @@ void
 sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action)
 {
 	sys_drop_sequence(tr, seq, drop_action);
-	os_del(s->seqs, tr, seq->base.name, &seq->base);
+	os_del(s->seqs, tr, seq->base.name, dup_base(&seq->base));
 }
 
 sql_sequence *

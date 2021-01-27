@@ -1842,10 +1842,12 @@ mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlstore *store = m->session->tr->store;
 
 	int ret;
+	ptr *res_cookie = getArgReference_ptr(stk, pci, 0);
 	ptr cookie = *getArgReference_ptr(stk, pci, 1);
 	ptr incoming = getArgReference(stk, pci, 2);
 	int incoming_type = getArgType(mb, pci, 2);
 
+	*res_cookie = cookie;
 	if (incoming_type > GDKatomcnt)
 		incoming_type = TYPE_bat;
 
@@ -1883,10 +1885,12 @@ mvc_update_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sqlstore *store = m->session->tr->store;
 	(void) mb;
 	int ret;
+	ptr *res_cookie = getArgReference_ptr(stk, pci, 0);
 	ptr cookie = *getArgReference_ptr(stk, pci, 1);
 	bat tids_bat = *getArgReference_bat(stk, pci, 2);
 	bat incoming_bat = *getArgReference_bat(stk, pci, 3);
 
+	*res_cookie = cookie;
 	BAT *data = BATdescriptor(incoming_bat);
 	if (data == NULL)
 		throw(SQL, "sql.update_exec", SQLSTATE(HY005) "Cannot access column descriptor");
