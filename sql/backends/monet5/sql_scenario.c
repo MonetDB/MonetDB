@@ -296,6 +296,8 @@ SQLprepareClient(Client c, int login)
 				m->reply_size = value;
 			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
 					be->sizeheader = value != 0;
+			} else if (sscanf(tok, "time_zone=%d", &value) == 1) {
+				m->timezone = 1000 * value;
 			} else {
 				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
 				goto bailout;

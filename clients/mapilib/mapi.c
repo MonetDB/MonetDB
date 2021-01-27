@@ -883,6 +883,7 @@ struct MapiStruct {
 	bool auto_commit;
 	bool columnar_protocol;
 	bool sizeheader;
+	int time_zone;		/* seconds EAST of UTC */
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -1380,6 +1381,13 @@ mapi_get_columnar_protocol(Mapi mid)
 {
 	mapi_check0(mid);
 	return mid->columnar_protocol;
+}
+
+int
+mapi_get_time_zone(Mapi mid)
+{
+	mapi_check0(mid);
+	return mid->time_zone;
 }
 
 static int64_t
@@ -1897,6 +1905,16 @@ mapi_new(void)
 	}
 	mid->blk.buf[0] = 0;
 	mid->blk.buf[mid->blk.lim] = 0;
+
+	/* also the current timezone, seconds EAST of UTC */
+	time_t t = time(NULL);
+	struct tm *gm_tm = gmtime_r(&t, &(struct tm){0});
+	time_t gt = mktime(gm_tm);
+	struct tm *local_tm = localtime_r(&t, &(struct tm){0});
+	local_tm->tm_isdst=0; /* We need the difference without dst */
+	time_t lt = mktime(local_tm);
+	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
+	mid->time_zone = (int) (lt - gt);
 
 	return mid;
 }
@@ -2786,6 +2804,8 @@ mapi_reconnect(Mapi mid)
 	if (mid->handshake_options > MAPI_HANDSHAKE_SIZE_HEADER) {
 		CHECK_SNPRINTF(",size_header=%d", mid->sizeheader); // with underscore, despite X command without
 	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_TIME_ZONE) {
+		CHECK_SNPRINTF(",time_zone=%d", mid->time_zone);
 	}
 	if (mid->handshake_options > 0) {
 		CHECK_SNPRINTF(":");
@@ -3008,6 +3028,9 @@ mapi_reconnect(Mapi mid)
 		MapiMsg result = mapi_Xcommand(mid, "sizeheader", buf); // no underscore!
 		if (result != MOK)
 			return mid->error;
+	}
+	if (mid->handshake_options <= MAPI_HANDSHAKE_TIME_ZONE) {
+		mapi_set_time_zone(mid, mid->time_zone);
 	}
 
 	return mid->error;
@@ -3702,6 +3725,31 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 		return mapi_Xcommand(mid, "auto_commit", "1");
 	else
 		return mapi_Xcommand(mid, "auto_commit", "0");
+}
+
+MapiMsg
+mapi_set_time_zone(Mapi mid, int time_zone)
+{
+	mid->time_zone = time_zone;
+	if (!mid->connected)
+		return MOK;
+
+	char buf[100];
+	if (time_zone < 0)
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
+			 -time_zone / 3600, (-time_zone % 3600) / 60);
+	else
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '+%02d:%02d' HOUR TO MINUTE",
+			 time_zone / 3600, (time_zone % 3600) / 60);
+
+	MapiHdl hdl = mapi_query(mid, buf);
+	if (hdl == NULL)
+		return mid->error;
+	mapi_close_handle(hdl);
+
+	return MOK;
 }
 
 MapiMsg
