@@ -25,3 +25,23 @@ UPDATE t2 SET c0 = TRUE WHERE COALESCE(t2.c0, (t2.c0) IN (FALSE));
 UPDATE t2 SET c0 = TRUE WHERE COALESCE(t2.c0, (t2.c0) NOT IN (FALSE), t2.c0, least(t2.c0, t2.c0), (t2.c0) = FALSE, t2.c0, CASE t2.c2
 WHEN t2.c2 THEN t2.c0 ELSE t2.c0 END, ((r'n')LIKE(r'')), ((r'PQ Q<!')LIKE(r'왋di5Xf%N')), (r'cZ') IN (r'0.49842616303390397'));
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" CHAR(89) NOT NULL,"c1" BOOLEAN,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),
+	CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c1_c0_unique" UNIQUE ("c1", "c0"));
+COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+"熡U"	false
+"3"	NULL
+"6"	NULL
+"0.6714721480805466"	NULL
+"true"	true
+"OD6N綥"	false
+"흷)%^Ae+c蝢"	true
+"9"	false
+"']iq"	true
+"E"	true
+"0.5036928534407451"	false
+
+update t0 set c1 = true where t0.c0 = t0.c0 and t0.c1 = t0.c1;
+update t0 set c1 = true, c0 = r'.+' where (((("isauuid"(t0.c0))and(((t0.c0)=(t0.c0)))))and(((t0.c1)=(t0.c1))));
+ROLLBACK;
