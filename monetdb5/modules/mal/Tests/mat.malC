@@ -1,8 +1,0 @@
-i:= mat.pack(1,2,3);
-io.print(i);
-f:= mat.pack(1.0,2.0,3.0);
-io.print(f);
-s:= mat.pack("a","b","c");
-io.print(s);
-b:= mat.pack(true,false,true);
-io.print(b);

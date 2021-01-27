@@ -597,20 +597,25 @@ drop_view(mvc *sql, char *sname, char *tname, int drop_action, int if_exists)
 }
 
 static str
-drop_key(mvc *sql, char *sname, char *kname, int drop_action)
+drop_key(mvc *sql, char *sname, char *tname, char *kname, int drop_action)
 {
+	node *n;
+	sql_schema *s = cur_schema(sql);
+	sql_table *t = NULL;
 	sql_key *key;
-	sql_schema *ss = NULL;
 
-	if (!(ss = mvc_bind_schema(sql, sname)))
+	if (!(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.drop_key", SQLSTATE(3F000) "ALTER TABLE: no such schema '%s'", sname);
-	if (!mvc_schema_privs(sql, ss))
-		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), ss->base.name);
-	if ((key = mvc_bind_key(sql, ss, kname)) == NULL)
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
+	if (!(t = mvc_bind_table(sql, s, tname)))
+		throw(SQL,"sql.drop_key", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", tname);
+	if (!(n = list_find_name(t->keys.set, kname)))
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: no such constraint '%s'", kname);
+	key = n->data;
 	if (!drop_action && mvc_check_dependency(sql, key->base.id, KEY_DEPENDENCY, NULL))
 		throw(SQL,"sql.drop_key", SQLSTATE(42000) "ALTER TABLE: cannot drop constraint '%s': there are database objects which depend on it", key->base.name);
-	if (mvc_drop_key(sql, ss, key, drop_action))
+	if (mvc_drop_key(sql, s, key, drop_action))
 		throw(SQL,"sql.drop_key", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -1062,7 +1067,7 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	initcontext();
 	auth_id = sql->role_id;
-	if (name && (auth_id = sql_find_auth(sql, name)) < 0)
+	if (!strNil(name) && (auth_id = sql_find_auth(sql, name)) < 0)
 		throw(SQL,"sql.create_schema", SQLSTATE(42M32) "CREATE SCHEMA: no such authorization '%s'", name);
 	if (sql->user_id != USER_MONETDB && sql->role_id != ROLE_SYSADMIN)
 		throw(SQL,"sql.create_schema", SQLSTATE(42000) "CREATE SCHEMA: insufficient privileges for user '%s'", get_string_global_var(sql, "current_user"));
@@ -1075,14 +1080,12 @@ SQLcreate_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 str
 SQLdrop_schema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
-	str msg= MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str notused = *getArgReference_str(stk, pci, 2);
-	int if_exists = *getArgReference_int(stk, pci, 3);
-	int action = *getArgReference_int(stk, pci, 4);
+	int if_exists = *getArgReference_int(stk, pci, 2);
+	int action = *getArgReference_int(stk, pci, 3);
 	sql_schema *s;
 
-	(void) notused;
 	initcontext();
 	s = mvc_bind_schema(sql, sname);
 	if (!s) {
@@ -1169,12 +1172,13 @@ SQLdrop_constraint(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	mvc *sql = NULL;
 	str msg;
 	str sname = *getArgReference_str(stk, pci, 1);
-	str name = *getArgReference_str(stk, pci, 2);
-	int action = *getArgReference_int(stk, pci, 4);
-	(void) *getArgReference_int(stk, pci, 3); //the if_exists parameter is also passed but not used
+	str tname = *getArgReference_str(stk, pci, 2);
+	str kname = *getArgReference_str(stk, pci, 3);
+	int action = *getArgReference_int(stk, pci, 5);
+	(void) *getArgReference_int(stk, pci, 4); //the if_exists parameter is also passed but not used
 
 	initcontext();
-	msg = drop_key(sql, sname, name, action);
+	msg = drop_key(sql, sname, tname, kname, action);
 	return msg;
 }
 

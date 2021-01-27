@@ -3160,7 +3160,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 
 	for (; ops; ops = ops->next, nr_args++) {
 		if (!err) { /* we need the nr_args count at the end, but if an error is found, stop calling rel_value_exp */
-			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs, iek);
+			sql_exp *e = rel_value_exp(query, rel, ops->data.sym, fs|sql_farg, iek);
 			if (!e) {
 				err = sql->session->status;
 				strcpy(buf, sql->errstr);
@@ -3883,20 +3883,20 @@ rel_case_exp(sql_query *query, sql_rel **rel, symbol *se, int f)
 	dlist *l = se->data.lval;
 
 	if (se->token == SQL_COALESCE) {
-		return rel_complex_case(query, rel, l, f, "coalesce");
+		return rel_complex_case(query, rel, l, f | sql_farg, "coalesce");
 	} else if (se->token == SQL_NULLIF) {
-		return rel_complex_case(query, rel, l, f, "nullif");
+		return rel_complex_case(query, rel, l, f | sql_farg, "nullif");
 	} else if (l->h->type == type_list) {
 		dlist *when_search_list = l->h->data.lval;
 		symbol *opt_else = l->h->next->data.sym;
 
-		return rel_case(query, rel, NULL, when_search_list, opt_else, f);
+		return rel_case(query, rel, NULL, when_search_list, opt_else, f | sql_farg);
 	} else {
 		symbol *scalar_exp = l->h->data.sym;
 		dlist *when_value_list = l->h->next->data.lval;
 		symbol *opt_else = l->h->next->next->data.sym;
 
-		return rel_case(query, rel, scalar_exp, when_value_list, opt_else, f);
+		return rel_case(query, rel, scalar_exp, when_value_list, opt_else, f | sql_farg);
 	}
 }
 
@@ -4705,7 +4705,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 				exp_kind ek = {type_value, card_column, FALSE};
 				sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
-				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
+				in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window | sql_farg, ek);
 				if (!in)
 					return NULL;
 				if (!exp_subtype(in)) { /* we also do not expect parameters here */
@@ -4736,7 +4736,7 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 			exp_kind ek = {type_value, card_column, FALSE};
 			sql_subtype *empty = sql_bind_localtype("void"), *bte = sql_bind_localtype("bte");
 
-			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window, ek);
+			in = rel_value_exp2(query, &p, dargs->data.sym, f | sql_window | sql_farg, ek);
 			if (!in)
 				return NULL;
 			if (!exp_subtype(in)) { /* we also do not expect parameters here */
@@ -5689,8 +5689,11 @@ rel_setquery(sql_query *query, symbol *q)
 		res = rel_setquery_(query, t1, t2, corresponding, op_except );
 	else if ( q->token == SQL_INTERSECT)
 		res = rel_setquery_(query, t1, t2, corresponding, op_inter );
-	if (res && distinct)
-		res = rel_distinct(res);
+	if (res) {
+		set_processed(res);
+		if (distinct)
+			res = rel_distinct(res);
+	}
 	return res;
 }
 
@@ -5719,22 +5722,22 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	}
 
 	lateral = check_is_lateral(tab2);
-	t1 = table_ref(query, NULL, tab1, 0, NULL);
+	t1 = table_ref(query, NULL, tab1, 0, refs);
 	if (rel && !t1 && sql->session->status != -ERR_AMBIGUOUS) {
 		/* reset error */
 		sql->session->status = 0;
 		sql->errstr[0] = 0;
-		t1 = table_ref(query, NULL, tab1, 0, NULL);
+		t1 = table_ref(query, NULL, tab1, 0, refs);
 	}
 	if (t1) {
-		t2 = table_ref(query, NULL, tab2, 0, NULL);
+		t2 = table_ref(query, NULL, tab2, 0, refs);
 		if (lateral && !t2 && sql->session->status != -ERR_AMBIGUOUS) {
 			/* reset error */
 			sql->session->status = 0;
 			sql->errstr[0] = 0;
 
 			query_push_outer(query, t1, sql_from);
-			t2 = table_ref(query, NULL, tab2, 0, NULL);
+			t2 = table_ref(query, NULL, tab2, 0, refs);
 			t1 = query_pop_outer(query);
 		}
 	}
@@ -5742,9 +5745,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 		rel_destroy(rel);
 	if (!t1 || !t2)
 		return NULL;
-
-	if (!lateral && rel_name(t1) && rel_name(t2) && strcmp(rel_name(t1), rel_name(t2)) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the JOIN expression", rel_name(t1));
 
 	inner = rel = rel_crossproduct(sql->sa, t1, t2, op_join);
 	inner->op = op;
@@ -5833,17 +5833,6 @@ rel_joinquery_(sql_query *query, sql_rel *rel, symbol *tab1, int natural, jt joi
 	}
 	if (!rel)
 		return NULL;
-	if (!lateral) { /* if this relation is under a FROM clause, check for duplicate names */
-		const char *rname1 = rel_name(t1), *rname2 = rel_name(t2);
-		if (refs) {
-			if (list_find(refs, (char *)rname1, (fcmp) &strcmp))
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname1);
-			if (list_find(refs, (char *)rname2, (fcmp) &strcmp))
-				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname2);
-			list_append(refs, (char *)rname1);
-			list_append(refs, (char *)rname2);
-		}
-	}
 	if (inner && is_outerjoin(inner->op))
 		set_processed(inner);
 	set_processed(rel);
@@ -5871,28 +5860,12 @@ rel_crossquery(sql_query *query, sql_rel *rel, symbol *q, list *refs)
 	mvc *sql = query->sql;
 	dnode *n = q->data.lval->h;
 	symbol *tab1 = n->data.sym, *tab2 = n->next->data.sym;
-	sql_rel *t1 = table_ref(query, rel, tab1, 0, NULL), *t2 = NULL;
-	const char *rname1, *rname2;
+	sql_rel *t1 = table_ref(query, rel, tab1, 0, refs), *t2 = NULL;
 
 	if (t1)
-		t2 = table_ref(query, rel, tab2, 0, NULL);
+		t2 = table_ref(query, rel, tab2, 0, refs);
 	if (!t1 || !t2)
 		return NULL;
-
-	rname1 = rel_name(t1);
-	rname2 = rel_name(t2);
-	if (rname1 && rname2 && strcmp(rname1, rname2) == 0)
-		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: '%s' on both sides of the CROSS JOIN expression", rname1);
-
-	if (refs) {
-		if (list_find(refs, (char *)rname1, (fcmp) &strcmp))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname1);
-		if (list_find(refs, (char *)rname2, (fcmp) &strcmp))
-			return sql_error(sql, 02, SQLSTATE(42000) "SELECT: relation name \"%s\" specified more than once", rname2);
-		list_append(refs, (char *)rname1);
-		list_append(refs, (char *)rname2);
-	}
-
 	return rel_crossproduct(sql->sa, t1, t2, op_join);
 }
 

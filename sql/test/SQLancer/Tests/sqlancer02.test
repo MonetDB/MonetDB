@@ -434,6 +434,226 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "sys"."t2" ("c1" DOUBLE NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+-3.1207632e+08
+1
+0
+-903197136
+0.3672199296718357
+-1.7976931348623157e+308
+
+statement error
+update t2 set c1 = (scale_down(t2.c1, 0.39861114390109142480156378951505757868289947509765625))
+where (scale_up(-1155480997, 0.5434124050282382)) is not null
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" BOOLEAN NOT NULL,"c1" DECIMAL(18,3) NOT NULL,CONSTRAINT "t1_c0_c1_pkey" PRIMARY KEY ("c0", "c1"))
+
+statement ok
+COPY 8 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+false	0.970
+true	0.249
+false	0.901
+true	0.416
+true	0.150
+true	-1.000
+true	0.305
+false	0.310
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" DOUBLE NOT NULL,"c1" CHAR(21),"c2" DOUBLE)
+
+statement ok
+COPY 16 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1	NULL	NULL
+1	NULL	NULL
+0.20096332264638103	NULL	-8177017368
+0.6291712421744081	NULL	3
+0.5608280161984844	"\n)GV3\n4w,"	NULL
+0.2283066361977384	"DoiQ2"	NULL
+0.4162827659910059	""	NULL
+0.7076516986629799	"2"	NULL
+0.0724600616400724	"true"	9
+0.03951652412329898	""	1.5639034457363068
+0.4631650256727575	"0.10356338203734772"	0.2836868317291048
+-7.88997488	NULL	NULL
+0.9604713389860059	NULL	NULL
+0.7959037091231439	NULL	NULL
+0.38681017904242443	NULL	NULL
+-4.411138449465319	NULL	NULL
+
+query T rowsort
+SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT "isauuid"(COALESCE(t2.c1, t2.c1)) FROM t2 WHERE ((((((((((TRUE)AND(TRUE)))OR
+(TRUE)))OR(TRUE)))OR(FALSE)))AND(TRUE))) EXCEPT ALL (SELECT ALL ((CASE 0.54967607103225102349597364082001149654388427734375
+WHEN 0.05049592582495154857724628527648746967315673828125 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2
+RIGHT OUTER JOIN (SELECT ALL l1t1.c0, CASE WHEN l1t1.c0 THEN l1t1.c0 WHEN l1t1.c0 THEN l1t1.c0 WHEN l1t1.c0
+THEN l1t1.c0 END FROM t2 AS l1t2, t1 AS l1t1 WHERE l1t1.c0) AS sub0 ON ((FALSE)OR(TRUE))
+CROSS JOIN (VALUES (r'-|cQ5', least(6, 4), CASE 0.13214429 WHEN 0.92287980834693872367324729566462337970733642578125
+THEN r'Bv*氅.x' END), (r'', 0.7763767959438655, "insert"(r'RR6Mw+', 5, -65604773, r'1225096844'))) AS sub1)) AS sub0
+CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1758578278)) AS REAL))) AS sub1
+WHERE (3.0) IS NOT NULL
+----
+896 values hashing to d306becf2331385a704244961b752859
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((3.0) IS NOT NULL AS INT) as count FROM t1, t2 CROSS JOIN
+((SELECT "isauuid"(COALESCE(t2.c1, t2.c1)) FROM t2 WHERE ((((((((((TRUE)AND(TRUE)))OR(TRUE)))OR(TRUE)))OR(FALSE)))AND(TRUE)))
+EXCEPT ALL (SELECT ALL ((CASE 0.54967607103225102349597364082001149654388427734375 WHEN 0.05049592582495154857724628527648746967315673828125
+THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2 RIGHT OUTER JOIN (SELECT l1t1.c0, CASE WHEN l1t1.c0 THEN l1t1.c0
+WHEN l1t1.c0 THEN l1t1.c0 WHEN l1t1.c0 THEN l1t1.c0 END FROM t2 AS l1t2, t1 AS l1t1 WHERE l1t1.c0) AS sub0 ON ((FALSE)OR(TRUE))
+CROSS JOIN (VALUES (r'-|cQ5', least(6, 4), CASE 0.13214429 WHEN 0.92287980834693872367324729566462337970733642578125
+THEN r'Bv*氅.x' END), (r'', 0.7763767959438655, "insert"(r'RR6Mw+', 5, -65604773, r'1225096844'))) AS sub1)) AS sub0
+CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1758578278)) AS REAL))) AS sub1) as res
+----
+896
+
+statement error
+SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT 1 FROM t2)
+EXCEPT (SELECT ALL ((CASE 0.1 WHEN 0.2 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2)) AS sub0
+WHERE (3.0) IS NOT NULL; --error
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TEMP TABLE mycount(cc BIGINT) ON COMMIT PRESERVE ROWS
+
+statement ok
+INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies
+
+statement ok
+CREATE TABLE t0(c0 int AUTO_INCREMENT,c1 STRING)
+
+query T rowsort
+SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
+----
+True
+
+statement ok
+ALTER TABLE t0 DROP c0 CASCADE
+
+statement ok
+DROP TABLE t0
+
+query I rowsort
+SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies
+----
+0
+
+statement ok
+TRUNCATE mycount
+
+statement ok
+INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies
+
+statement ok
+CREATE FUNCTION myfunc() returns int return 1
+
+statement ok
+CREATE TABLE t0(c0 int default myfunc(),c1 STRING)
+
+query T rowsort
+SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
+----
+True
+
+statement ok
+ALTER TABLE t0 DROP c0 CASCADE
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP FUNCTION myfunc()
+
+query I rowsort
+SELECT CAST(COUNT(*) - (SELECT cc FROM mycount) AS BIGINT) FROM sys.dependencies
+----
+0
+
+statement ok
+DROP TABLE mycount
+
+statement ok
+START TRANSACTION
+
+statement ok
+create view v20(vc0) as (values (-214362849))
+
+statement ok
+create view v40(vc0) as (values (false), (true))
+
+statement ok
+create view v43(vc0) as (values (null), (true))
+
+statement ok
+create view v54(vc0, vc1, vc2) as (values ('S12^h)y{[]', false, 9.000000000000),('0.9516513734508343', true, null))
+
+statement ok
+create view v1(vc0) as (with cte0(c0,c1,c2) as ((select 7, 0, 2.00000000) union all
+(select 5, 5.1, 4)) select '8#<Fk#]R' from v40 as l0v40, v43 as l0v43, cte0 as l0cte0)
+
+statement ok
+create view v27(vc0, vc1, vc2, vc3, vc4) as (select 1, 2, 1, 0.920, -4 from v40 as l0v40 right outer join (
+select true, case l1v54.vc0 when 'a' then -1 when 'b' then 3 end, 1
+from v54 as l1v54, v1 as l1v1 where l1v54.vc1) as sub1 on not l0v40.vc0 where l0v40.vc0)
+
+query I rowsort
+select 1 from v20 as l0v20, v27 as l0v27, v1 as l0v1 where (l0v20.vc0) in (-3, l0v20.vc0, l0v27.vc1)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" BOOLEAN NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+INSERT INTO "t1" VALUES (false), (true)
+
+statement ok
+create view v5(vc0) as (values (1), (4))
+
+statement ok
+create view v8(vc1) as ((select l0t1.c0 from t1 as l0t1) union distinct (select false))
+
+query I rowsort
+SELECT v5.vc0 FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON
+true WHERE least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true)
+----
+1
+1
+4
+4
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE v5.vc0 WHEN v5.vc0 THEN v8.vc1 END, true) AS INT) as count
+FROM v5, v8 JOIN (VALUES (0.3, 10.0),(0.5, 8.0)) AS sub0 ON true) as res
+----
+4
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "sys"."t0" ("tc0" TIMESTAMP NOT NULL,CONSTRAINT "t0_tc0_pkey" PRIMARY KEY ("tc0"),CONSTRAINT "t0_tc0_unique" UNIQUE ("tc0"))
 
 statement ok
@@ -487,23 +707,44 @@ statement ok
 START TRANSACTION
 
 statement ok
-CREATE TABLE "sys"."t2" ("c1" DOUBLE NOT NULL,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"))
+CREATE TABLE "sys"."t0" ("c0" INTEGER,"c1" INTEGER NOT NULL,"c3" DECIMAL(18,3),"c4" DOUBLE,"c5" BOOLEAN,
+	"c6" CHARACTER LARGE OBJECT,"c7" DOUBLE NOT NULL,"c8" DOUBLE,"c9" DECIMAL(18,3))
 
 statement ok
-COPY 6 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
--3.1207632e+08
-1
-0
--903197136
-0.3672199296718357
--1.7976931348623157e+308
+-1581661246	8	0.000	0.5757982106353843	false	"?h\t*B/"	0.5947494687969431	6.835094360268594	0.317
+-8	3	1.000	0.46282961313792403	false	"*Cn"	0.5643561072026775	1	0.524
+5	6	0.277	0.6299672734345518	false	"v*?g"	-1102035617	1317540012	-2.000
+-570443752	0	0.000	2	NULL	"]#퟈!Nv"	0.6681382286865544	0.5840009532283835	0.540
+-1808926980	9	0.646	0.2983007748066492	true	"P^"	-221084136	4	0.028
 
-statement error
-update t2 set c1 = (scale_down(t2.c1, 0.39861114390109142480156378951505757868289947509765625))
-where (scale_up(-1155480997, 0.5434124050282382)) is not null
+statement ok
+create view v14(vc1, vc2) as (values (0.42, 0.34))
+
+statement ok
+create view v12(vc1) as (values (NULL),(-49.17))
+
+statement ok
+create view v22(vc0, vc1, vc2) as ((select 1, 0.3, true) union all (
+select greatest(l0v12.vc1, 3.2), -9.3976294E8, true from v12 as l0v12))
+
+statement ok
+create view v59(vc0) as (select 1)
+
+statement ok
+create view v85(vc0, vc1) as ((select -9.397294E8, ifthenelse(l0v22.vc2, 7, -5) from v22 as l0v22
+where l0v22.vc0 < l0v22.vc0) intersect (select 1, 8))
+
+query TII rowsort
+select true, 3, 1 from v14 as l0v14 join ((select 1) except all (select 3 from v85 as l1v85)) as
+sub0 on case l0v14.vc2 when l0v14.vc1 then false end
+----
+
+statement ok
+insert into t0(c5, c0, c4)(select true, 3, 1 from v14 as l0v14 join ((select 1) except all
+(select 3 from v85 as l1v85)) as sub0 on case l0v14.vc2 when l0v14.vc1 then false end)
 
 statement ok
 ROLLBACK
-
 
