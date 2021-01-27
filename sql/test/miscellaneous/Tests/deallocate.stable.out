@@ -87,7 +87,7 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 [ "prepare select \"system\" or ? from sys._tables where false;",	0,	0,	"boolean",	1,	0,	NULL,	"%1",	"%1"	]
 [ "prepare select \"system\" or ? from sys._tables where false;",	1,	1,	"boolean",	1,	0,	NULL,	NULL,	NULL	]
 #EXEC  3(false);
-% .%1 # table_name
+% sys.%1 # table_name
 % %1 # name
 % boolean # type
 % 5 # length
@@ -124,7 +124,7 @@ stdout of test 'deallocate` in directory 'sql/test/miscellaneous` itself:
 [ "boolean",	1,	0,	"",	"%1",	"%1"	]
 [ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 #execute 15(false);
-% .%1 # table_name
+% sys.%1 # table_name
 % %1 # name
 % boolean # type
 % 5 # length

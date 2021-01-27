@@ -9767,7 +9767,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_topdown(&v, rel, &rel_simplify_fk_joins);
 	}
 
-	if (gp.cnt[op_select] && sql->emode != m_prepare)
+	if (gp.cnt[op_select] && value_based_opt)
 		rel = rel_visitor_bottomup(&v, rel, &rel_simplify_like_select);
 
 	if (gp.cnt[op_select])
