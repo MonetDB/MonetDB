@@ -309,7 +309,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
 		}
-		if (name && mvc_bind_key(sql, ss, name)) {
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
@@ -340,7 +340,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (!rt) {
 			return SQL_ERR;
-		} else if (name && mvc_bind_key(sql, ss, name)) {
+		} else if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
@@ -496,9 +496,6 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	}
 	if (!ft) {
 		return SQL_ERR;
-	} else if (list_find_name(t->keys.set, name)) {
-		sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
-		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
 		sql_fkey *fk;
@@ -507,8 +504,8 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
-		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, SQLSTATE(42000) "Create Key failed, key '%s' already exists", name);
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -571,7 +568,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return SQL_ERR;
 		}
-		if (name && mvc_bind_key(sql, ss, name)) {
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists",
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
@@ -1245,14 +1242,17 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr, int exists_check)
+rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, auth));
+	if (first_val)
+		append(exps, exp_atom_clob(sa, first_val));
+	if (second_val)
+		append(exps, exp_atom_clob(sa, second_val));
 	append(exps, exp_atom_int(sa, exists_check));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1274,7 +1274,6 @@ rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-
 	if (auth)
 		append(exps, exp_atom_clob(sa, auth));
 	rel->l = NULL;
@@ -1351,7 +1350,7 @@ sql_drop_table(sql_query *query, dlist *qname, int nr, int if_exists)
 	if (isDeclaredTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP TABLE: cannot drop a declared table");
 
-	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, NULL, nr, if_exists);
 }
 
 static sql_rel *
@@ -1371,7 +1370,7 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 		return NULL;
 	}
 
-	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, NULL, nr, if_exists);
 }
 
 static sql_rel *
@@ -1508,7 +1507,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		char *kname = l->h->data.sval;
 		int drop_action = l->h->next->data.i_val;
 
-		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
+		return rel_drop(sql->sa, ddl_drop_constraint, sname, tname, kname, drop_action, 0);
 	}
 
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
@@ -2348,6 +2347,7 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->type == type_int);
 		ret = rel_drop(sql->sa, ddl_drop_schema,
 			   dlist_get_schema_name(auth_name),
+			   NULL,
 			   NULL,
 			   l->h->next->data.i_val, 	/* drop_action */
 			   l->h->next->next->data.i_val); /* if exists */
