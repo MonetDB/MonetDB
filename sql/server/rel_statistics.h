@@ -28,8 +28,13 @@ struct function_properties {
 static inline void
 set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 {
-	prop *p = e->p = prop_create(sql->sa, kind, e->p);
-	p->value = val;
+	prop *found = find_prop(e->p, kind);
+	if (found) {
+		found->value = val;
+	} else {
+		prop *p = e->p = prop_create(sql->sa, kind, e->p);
+		p->value = val;
+	}
 }
 
 static inline void
@@ -37,7 +42,7 @@ set_min_property(mvc *sql, sql_exp *e, atom *val)
 {
 	prop *found = find_prop(e->p, PROP_MIN);
 	if (found) {
-		found->value = atom_min(found->value, val);
+		found->value = atom_max(found->value, val);
 	} else {
 		prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
 		p->value = val;
@@ -49,7 +54,7 @@ set_max_property(mvc *sql, sql_exp *e, atom *val)
 {
 	prop *found = find_prop(e->p, PROP_MAX);
 	if (found) {
-		found->value = atom_max(found->value, val);
+		found->value = atom_min(found->value, val);
 	} else {
 		prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
 		p->value = val;
