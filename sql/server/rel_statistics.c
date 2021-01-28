@@ -56,7 +56,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 
 						if (is_theta_exp(flag) && ((lne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e))))) {
 							atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX), *rval_min = find_prop_and_get(re->p, PROP_MIN),
-								 *rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(re->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(re->p, PROP_MAX) : NULL;
+								 *rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(fe->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(fe->p, PROP_MAX) : NULL;
 
 							found_without_semantics |= !comp->semantics;
 							if (is_outerjoin(rel->op)) /* on outer joins, min and max cannot be propagated */
@@ -502,15 +502,13 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 static sql_exp * /* Remove predicates always false from min/max values */
 rel_prune_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
-	mvc *sql = v->sql;
-	bool always_false = false, always_true = false;
-
 	(void) rel;
 	(void) depth;
 	if (e->type == e_cmp && (is_theta_exp(e->flag) || e->f)) {
 		sql_exp *le = e->l, *re = e->r, *fe = e->f;
 		atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX), *rval_min = find_prop_and_get(re->p, PROP_MIN),
-			*rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(re->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(re->p, PROP_MAX) : NULL;
+			*rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(fe->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(fe->p, PROP_MAX) : NULL;
+		bool always_false = false, always_true = false;
 
 		if (fe) {
 			(void) fval_min;
@@ -553,14 +551,14 @@ rel_prune_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				break;
 			}
 		}
-	}
-	assert(!always_false || !always_true);
-	if (always_false || always_true) {
-		sql_exp *ne = exp_atom_bool(sql->sa, always_true);
-		if (exp_name(e))
-			exp_prop_alias(v->sql->sa, ne, e);
-		e = ne;
-		v->changes++;
+		assert(!always_false || !always_true);
+		if (always_false || always_true) {
+			sql_exp *ne = exp_atom_bool(v->sql->sa, always_true);
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, ne, e);
+			e = ne;
+			v->changes++;
+		}
 	}
 	return e;
 }
