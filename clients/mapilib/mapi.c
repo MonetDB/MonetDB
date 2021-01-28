@@ -2835,6 +2835,9 @@ mapi_reconnect(Mapi mid)
 	if (mid->handshake_options > MAPI_HANDSHAKE_SIZE_HEADER) {
 		CHECK_SNPRINTF(",size_header=%d", mid->sizeheader); // with underscore, despite X command without
 	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_COLUMNAR_PROTOCOL) {
+		CHECK_SNPRINTF(",columnar_protocol=%d", mid->columnar_protocol);
+	}
 	if (mid->handshake_options > MAPI_HANDSHAKE_TIME_ZONE) {
 		CHECK_SNPRINTF(",time_zone=%d", mid->time_zone);
 	}
@@ -3060,6 +3063,9 @@ mapi_reconnect(Mapi mid)
 		if (result != MOK)
 			return mid->error;
 	}
+	// There is no if  (mid->handshake_options <= MAPI_HANDSHAKE_COLUMNAR_PROTOCOL && mid->columnar_protocol != MapiStructDefaults.columnar_protocol)
+	// The reason is that columnar_protocol is very new. If it isn't supported in the handshake it isn't supported at
+	// all so sending the Xcommand would just give an error.
 	if (mid->handshake_options <= MAPI_HANDSHAKE_TIME_ZONE) {
 		mapi_set_time_zone(mid, mid->time_zone);
 	}
@@ -3789,6 +3795,8 @@ mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol)
 	if (mid->columnar_protocol == columnar_protocol)
 		return MOK;
 	mid->columnar_protocol = columnar_protocol;
+	if (!mid->connected)
+		return MOK;
 	if (columnar_protocol)
 		return mapi_Xcommand(mid, "columnar_protocol", "1");
 	else

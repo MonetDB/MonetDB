@@ -29,10 +29,12 @@ typedef int MapiMsg;
 
 enum mapi_handshake_options_levels {
 	MAPI_HANDSHAKE_AUTOCOMMIT = 1,
-	MAPI_HANDSHAKE_REPLY_SIZE,
-	MAPI_HANDSHAKE_SIZE_HEADER,
-	MAPI_HANDSHAKE_TIME_ZONE,
-	// this must always be the last one:
+	MAPI_HANDSHAKE_REPLY_SIZE = 2,
+	MAPI_HANDSHAKE_SIZE_HEADER = 3,
+	MAPI_HANDSHAKE_COLUMNAR_PROTOCOL = 4,
+	MAPI_HANDSHAKE_TIME_ZONE = 5,
+	// make sure to insert new option levels before this one.
+	// it is the value sent by the server during the initial handshake.
 	MAPI_HANDSHAKE_OPTIONS_LEVEL,
 };
 
