@@ -512,9 +512,17 @@ rel_prune_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			*rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(fe->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(fe->p, PROP_MAX) : NULL;
 		bool always_false = false, always_true = false;
 
-		if (fe) {
+		if (fe && !(e->flag & CMP_SYMMETRIC)) {
+			comp_type lower = range2lcompare(e->flag), higher = range2rcompare(e->flag);
+			int not_int1 = rval_min && lval_max && !rval_min->isnull && !lval_max->isnull &&
+				(e->anti ? (lower == cmp_gte ? atom_cmp(rval_min, lval_max) <= 0 : atom_cmp(rval_min, lval_max) < 0) : (lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0)),
+				not_int2 = lval_min && fval_max && !lval_min->isnull && !fval_max->isnull &&
+				(e->anti ? (higher == cmp_lte ? atom_cmp(lval_min, fval_max) <= 0 : atom_cmp(lval_min, fval_max) < 0) : (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0)),
+				not_int3 = rval_min && fval_max && !rval_min->isnull && !fval_max->isnull &&
+				(e->anti ? (atom_cmp(rval_min, fval_max) <= 0) : (atom_cmp(rval_min, fval_max) > 0));
+
+			always_false |= not_int1 || not_int2 || not_int3;
 			(void) fval_min;
-			(void) fval_max;
 		} else {
 			switch (e->flag) {
 			case cmp_equal:
