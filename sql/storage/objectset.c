@@ -530,33 +530,30 @@ os_dup(objectset *os)
 	return os;
 }
 
-// TODO: Look into cohesion between os_destroy, os->destroy and node_destroy
 void
 os_destroy(objectset *os, sql_store store)
 {
+	MT_lock_destroy(&os->ht_lock);
 	if (--os->refcnt > 0)
 		return;
-	if (os->destroy) {
-		for(versionhead  *n=os->name_based_h; n; n=n->next) {
-			objectversion *ov = n->ov;
-			/* TODO destroy objectversion */
-			while(ov) { /* how about id based older ? */
-				os->destroy(store, ov->b);
-				ov = ov->name_based_older;
-			}
+	versionhead* n=os->name_based_h;
+	while(n) {
+		objectversion *ov = n->ov;
+		while(ov) {
+			objectversion *older = ov->name_based_older;
+			objectversion_destroy(store, os, ov);
+			ov = older;
 		}
+		versionhead* hn =n->next;
+		node_destroy(os, store, n);
+		n = hn;
 	}
-	versionhead  *n = os->name_based_h;
 
-	MT_lock_destroy(&os->ht_lock);
-	os->name_based_h = NULL;
-	if (os->destroy || os->sa == NULL) {
-		while (n) {
-			versionhead  *t = n;
-
-			n = t->next;
-			node_destroy(os, store, t);
-		}
+	n=os->id_based_h;
+	while(n) {
+		versionhead* hn =n->next;
+		node_destroy(os, store, n);
+		n = hn;
 	}
 
 	if (os->name_map && !os->name_map->sa)
