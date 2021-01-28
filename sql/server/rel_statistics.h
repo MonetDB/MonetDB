@@ -25,38 +25,61 @@ struct function_properties {
 #define atom_max(X,Y) atom_cmp(X, Y) > 0 ? X : Y
 #define atom_min(X,Y) atom_cmp(X, Y) > 0 ? Y : X
 
+static inline atom *
+statistics_atom_max(mvc *sql, atom *v1, atom *v2)
+{
+	sql_subtype super;
+	atom *cast1 = v1, *cast2 = v2;
+
+	supertype(&super, &v1->tpe, &v2->tpe);
+	if (subtype_cmp(&v1->tpe, &super) != 0) {
+		cast1 = atom_dup(sql->sa, v1);
+		if (!atom_cast(sql->sa, cast1, &super))
+			return NULL;
+	}
+	if (subtype_cmp(&v2->tpe, &super) != 0) {
+		cast2 = atom_dup(sql->sa, v2);
+		if (!atom_cast(sql->sa, cast2, &super))
+			return NULL;
+	}
+	return atom_cmp(cast1, cast2) > 0 ? cast1 : cast2;
+}
+
+static inline atom *
+statistics_atom_min(mvc *sql, atom *v1, atom *v2)
+{
+	sql_subtype super;
+	atom *cast1 = v1, *cast2 = v2;
+
+	supertype(&super, &v1->tpe, &v2->tpe);
+	if (subtype_cmp(&v1->tpe, &super) != 0) {
+		cast1 = atom_dup(sql->sa, v1);
+		if (!atom_cast(sql->sa, cast1, &super))
+			return NULL;
+	}
+	if (subtype_cmp(&v2->tpe, &super) != 0) {
+		cast2 = atom_dup(sql->sa, v2);
+		if (!atom_cast(sql->sa, cast2, &super))
+			return NULL;
+	}
+	return atom_cmp(cast1, cast2) > 0 ? cast2 : cast1;
+}
+
 static inline void
 set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 {
+	sql_subtype *tpe = exp_subtype(e);
 	prop *found = find_prop(e->p, kind);
+
+	if (subtype_cmp(&val->tpe, tpe) != 0) { /* make sure it's the same type */
+		val = atom_dup(sql->sa, val);
+		if (!atom_cast(sql->sa, val, tpe))
+			return;
+	}
 	if (found) {
 		found->value = val;
 	} else {
 		prop *p = e->p = prop_create(sql->sa, kind, e->p);
-		p->value = val;
-	}
-}
-
-static inline void
-set_min_property(mvc *sql, sql_exp *e, atom *val)
-{
-	prop *found = find_prop(e->p, PROP_MIN);
-	if (found) {
-		found->value = atom_max(found->value, val);
-	} else {
-		prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
-		p->value = val;
-	}
-}
-
-static inline void
-set_max_property(mvc *sql, sql_exp *e, atom *val)
-{
-	prop *found = find_prop(e->p, PROP_MAX);
-	if (found) {
-		found->value = atom_min(found->value, val);
-	} else {
-		prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
 		p->value = val;
 	}
 }
