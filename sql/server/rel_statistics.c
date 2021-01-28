@@ -1,4 +1,3 @@
-
 /*
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
@@ -28,8 +27,6 @@ comparison_find_column(sql_exp *input, sql_exp *e)
 static sql_exp *
 rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	sql_exp *found = NULL;
-
 	assert(e->type == e_column);
 	if (rel) {
 		switch(rel->op) {
@@ -61,7 +58,6 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 							atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX), *rval_min = find_prop_and_get(re->p, PROP_MIN),
 								 *rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(re->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(re->p, PROP_MAX) : NULL;
 
-							found = found ? found : lne ? lne : rne ? rne : fne;
 							found_without_semantics |= !comp->semantics;
 							if (is_outerjoin(rel->op)) /* on outer joins, min and max cannot be propagated */
 								continue;
@@ -144,13 +140,10 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 					}
 				}
 			}
-			if (found) {
-				/* if semantics flag was found, null values will pass */
-				if (is_full(rel->op) || (is_left(rel->op) && found_right) || (is_right(rel->op) && found_left) || !found_without_semantics)
-					set_has_nil(e);
-				else if (found_without_semantics || !is_outerjoin(rel->op)) /* at an outer join, null values pass */
-					set_has_no_nil(e);
-			}
+			if (is_full(rel->op) || (is_left(rel->op) && found_right) || (is_right(rel->op) && found_left))
+				set_has_nil(e);
+			if (!is_outerjoin(rel->op) && found_without_semantics) /* at an outer join, null values pass */
+				set_has_no_nil(e);
 			return e;
 		}
 		case op_table:
@@ -160,6 +153,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 		case op_inter:
 		case op_project:
 		case op_groupby: {
+			sql_exp *found;
 			atom *fval;
 			if ((found = rel_find_exp(rel, e)) && rel->op != op_table) {
 				if ((fval = find_prop_and_get(found->p, PROP_MAX)))
@@ -505,61 +499,76 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
-rel_prune_predicates(visitor *v, sql_rel *rel)
+static sql_exp * /* Remove predicates always false from min/max values */
+rel_prune_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	mvc *sql = v->sql;
+	bool always_false = false, always_true = false;
 
-	if ((is_joinop(rel->op) || is_select(rel->op)) && !list_empty(rel->exps)) {
-		/* Remove predicates always false from min/max values */
-		for (node *n = rel->exps->h; n ; n = n->next) {
-			sql_exp *e = n->data;
-			bool always_false = false;
+	(void) rel;
+	(void) depth;
+	if (e->type == e_cmp && (is_theta_exp(e->flag) || e->f)) {
+		sql_exp *le = e->l, *re = e->r, *fe = e->f;
+		atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX), *rval_min = find_prop_and_get(re->p, PROP_MIN),
+			*rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(re->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(re->p, PROP_MAX) : NULL;
 
-			if (e->type == e_cmp && (is_theta_exp(e->flag) || e->f)) {
-				sql_exp *le = e->l, *re = e->r, *fe = e->f;
-				atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX), *rval_min = find_prop_and_get(re->p, PROP_MIN),
-					*rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(re->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(re->p, PROP_MAX) : NULL;
-
-				if (fe) {
-					(void) fval_min;
-					(void) fval_max;
-				} else {
-					switch (e->flag) {
-					case cmp_equal:
-						if (lval_min && lval_max && rval_min && rval_max && !lval_min->isnull && !lval_max->isnull && !rval_min->isnull && !rval_max->isnull)
-							always_false |= (!e->anti && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0)) || (e->anti && atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0);
-						if (is_semantics(e))
-							always_false |= is_semantics(e) ?
-										e->anti ? (exp_is_null(le) && exp_is_null(re)) || (exp_is_not_null(le) && exp_is_not_null(re)) : (exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)) :
-										e->anti ? exp_is_not_null(le) && exp_is_not_null(re) : (exp_is_null(le) && exp_is_null(re)) || (exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re));
-						break;
-					case cmp_notequal:
-						break;
-					case cmp_gt:
-					case cmp_gte:
-					case cmp_lt:
-					case cmp_lte:
-					default: /* Maybe later I can do cmp_in and cmp_notin */
-						break;
-					}
-				}
-			}
-
-			if (always_false) {
-				n->data = exp_atom_bool(sql->sa, 0);
-				v->changes++;
+		if (fe) {
+			(void) fval_min;
+			(void) fval_max;
+		} else {
+			switch (e->flag) {
+			case cmp_equal:
+				if (lval_min && lval_max && rval_min && rval_max && !lval_min->isnull && !lval_max->isnull && !rval_min->isnull && !rval_max->isnull)
+					always_false |= (!e->anti && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0)) || (e->anti && atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0);
+				if (is_semantics(e))
+					always_false |= is_semantics(e) ?
+						e->anti ? (exp_is_null(le) && exp_is_null(re)) || (exp_is_not_null(le) && exp_is_not_null(re)) : (exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)) :
+						e->anti ? exp_is_not_null(le) && exp_is_not_null(re) : (exp_is_null(le) && exp_is_null(re)) || (exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re));
+				break;
+			case cmp_gt:
+				if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					always_false |= e->anti ? atom_cmp(lval_max, rval_min) > 0 : atom_cmp(lval_max, rval_min) <= 0;
+				if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_min, rval_max) <= 0 : atom_cmp(lval_min, rval_max) > 0);
+				break;
+			case cmp_gte:
+				if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					always_false |= e->anti ? atom_cmp(lval_max, rval_min) >= 0 : atom_cmp(lval_max, rval_min) < 0;
+				if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_min, rval_max) < 0 : atom_cmp(lval_min, rval_max) >= 0);
+				break;
+			case cmp_lt:
+				if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					always_false |= e->anti ? atom_cmp(lval_min, rval_max) < 0 : atom_cmp(lval_min, rval_max) >= 0;
+				if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_max, rval_min) >= 0 : atom_cmp(lval_max, rval_min) < 0);
+				break;
+			case cmp_lte:
+				if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					always_false |= e->anti ? atom_cmp(lval_min, rval_max) <= 0 : atom_cmp(lval_min, rval_max) > 0;
+				if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_max, rval_min) > 0 : atom_cmp(lval_max, rval_min) <= 0);
+				break;
+			default: /* Maybe later I can do cmp_in and cmp_notin */
+				break;
 			}
 		}
 	}
-	return rel;
+	assert(!always_false || !always_true);
+	if (always_false || always_true) {
+		sql_exp *ne = exp_atom_bool(sql->sa, always_true);
+		if (exp_name(e))
+			exp_prop_alias(v->sql->sa, ne, e);
+		e = ne;
+		v->changes++;
+	}
+	return e;
 }
-
 
 sql_rel *
 rel_statistics(mvc *sql, sql_rel *rel)
 {
-	visitor v = { .sql = sql };
+	visitor v = { .sql = sql, .value_based_opt = 1, .storage_based_opt = 1 }, ev = { .sql = sql, .value_based_opt = 1, .storage_based_opt = 1 };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
@@ -568,11 +577,13 @@ rel_statistics(mvc *sql, sql_rel *rel)
 		rel = rel_visitor_bottomup(&v, rel, &rel_simplify_count);
 	if (gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_anti] || gp.cnt[op_join] || gp.cnt[op_semi]) {
 		int cur_changes = v.changes;
-		v.changes = 0; /* reset changes counter */
-		rel = rel_visitor_bottomup(&v, rel, &rel_prune_predicates);
-		if (v.changes > 0) /* there were changes by rel_prune_predicates, run rewrite_simplify */
-			rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
-		v.changes += cur_changes;
+		rel = rel_exp_visitor_bottomup(&v, rel, &rel_prune_predicates, false);
+		if (v.changes > cur_changes) { /* there were changes by rel_prune_predicates, run rewrite_simplify */
+			rel = rel_visitor_bottomup(&ev, rel, &rewrite_simplify);
+			if (gp.cnt[op_select])
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+			rel = rel_dce(sql, rel);
+		}
 	}
 
 	return rel;
