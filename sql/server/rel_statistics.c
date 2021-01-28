@@ -64,10 +64,13 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 							/* if (end2 >= start1 && start2 <= end1) then the 2 intervals are intersected */
 							if (fe && lval_min && lval_max) { /* range case, the middle expression must intersect the other two */
 								int int1 = rval_min && rval_max && atom_cmp(rval_max, lval_min) >= 0 && atom_cmp(rval_min, lval_max) <= 0,
-									int2 = fval_min && fval_max && atom_cmp(fval_max, lval_min) >= 0 && atom_cmp(fval_min, lval_max) <= 0;
+									int2 = fval_min && fval_max && atom_cmp(fval_max, lval_min) >= 0 && atom_cmp(fval_min, lval_max) <= 0,
+									symmetric = comp->flag & CMP_SYMMETRIC;
 
-								if (!comp->anti && lne && int1 && int2) {
-									if (comp->flag & CMP_SYMMETRIC) {
+								if (comp->anti || (!symmetric && atom_cmp(fval_min, rval_max) < 0)) /* for asymmetric case the re range must be after the fe range */
+									continue;
+								if (lne && int1 && int2) {
+									if (symmetric) {
 										prop *p1 = find_prop(e->p, PROP_MIN), *p2 = find_prop(e->p, PROP_MAX);
 										atom *nmin = statistics_atom_min(sql, rval_min, fval_min), *nmax = statistics_atom_max(sql, rval_max, fval_max);
 										/* min is max from le and (min from re and fe min) */
@@ -81,8 +84,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 										/* max is min from le and fe max */
 										set_property(sql, e, PROP_MAX, p2 ? statistics_atom_min(sql, fval_max, p2->value) : fval_max);
 									}
-								} else if (!comp->anti && rne) {
-									if (comp->flag & CMP_SYMMETRIC && int1 && int2) { /* min is max from le and (min from re and fe min) */
+								} else if (rne) {
+									if (symmetric && int1 && int2) { /* min is max from le and (min from re and fe min) */
 										prop *p = find_prop(e->p, PROP_MIN);
 										atom *nmin = p ? statistics_atom_min(sql, p->value, fval_min) : fval_min;
 										set_property(sql, e, PROP_MIN, statistics_atom_max(sql, nmin, lval_min));
@@ -90,9 +93,8 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 										prop *p = find_prop(e->p, PROP_MIN);
 										set_property(sql, e, PROP_MIN, p ? statistics_atom_max(sql, lval_min, p->value) : lval_min);
 									}
-								} else if (!comp->anti) {
-									assert(fne);
-									if (comp->flag & CMP_SYMMETRIC && int1 && int2) { /* max is min from le and (max from re and fe max) */
+								} else if (fne) {
+									if (symmetric && int1 && int2) { /* max is min from le and (max from re and fe max) */
 										prop *p = find_prop(e->p, PROP_MAX);
 										atom *nmax = p ? statistics_atom_max(sql, p->value, rval_max) : rval_max;
 										set_property(sql, e, PROP_MAX, p ? statistics_atom_min(sql, nmax, lval_max) : nmax);
