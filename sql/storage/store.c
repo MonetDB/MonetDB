@@ -2146,6 +2146,22 @@ store_exit(sqlstore *store)
 		MT_lock_unset(&store->lock);
 		os_destroy(store->cat->objects, store);
 		os_destroy(store->cat->schemas, store);
+		if (store->changes) {
+			/*
+			ulng oldest = store_timestamp(store);
+			if (!list_empty(store->changes))
+				printf("pending changes %d\n", list_length(store->changes));
+			for(node *n=store->changes->h; n; n = n->next) {
+				sql_change *c = n->data;
+
+				if (c->cleanup && !c->cleanup(store, c, oldest, oldest))
+					assert(0);
+				else
+					_DELETE(c);
+			}
+			*/
+			list_destroy(store->changes);
+		}
 		_DELETE(store->cat);
 		sequences_exit();
 		MT_lock_set(&store->lock);
@@ -3397,7 +3413,7 @@ sql_trans_rollback(sql_trans *tr)
 		}
 	}
 	if (tr->changes) {
-		/* revert this */
+		/* revert the change list */
 		list *nl = SA_LIST(tr->sa, (fdestroy) NULL);
 		for(node *n=tr->changes->h; n; n = n->next)
 			list_prepend(nl, n->data);
@@ -3410,12 +3426,25 @@ sql_trans_rollback(sql_trans *tr)
 			if (c->commit)
 			   	c->commit(tr, c, commit_ts, oldest);
 		}
+		if (!list_empty(store->changes)) { /* lets first cleanup old stuff */
+			for(node *n=store->changes->h; n; ) {
+				node *next = n->next;
+				sql_change *c = n->data;
 
+				if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+					list_remove_node(store->changes, store, n);
+					_DELETE(c);
+				}
+				n = next;
+			}
+		}
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
-			if (c->cleanup)
-			   	c->cleanup(store, c, commit_ts, oldest);
+			if (c->cleanup && !c->cleanup(store, c, commit_ts, oldest))
+				store->changes = sa_list_append(tr->sa, store->changes, c);
+			else
+				_DELETE(c);
 		}
 		list_destroy(nl);
 		list_destroy(tr->changes);
@@ -3568,21 +3597,17 @@ sql_trans_commit(sql_trans *tr)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest))
+			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
 				list_remove_node(tr->changes, store, n);
+				_DELETE(c);
+			} else if (tr->parent) {
+				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
+			} else {
+				store->changes = sa_list_append(tr->sa, store->changes, c);
+			}
 			n = next;
 		}
-		if (tr->parent && !list_empty(tr->changes)) {
-			if (!tr->parent->changes)
-				tr->parent->changes = tr->changes;
-			else {
-				tr->parent->changes = list_merge(tr->parent->changes, tr->changes, NULL);
-				tr->changes->destroy = NULL;
-				list_destroy(tr->changes);
-			}
-		} else {
-			list_destroy(tr->changes); /* TODO move leftovers into store for later gc */
-		}
+		list_destroy(tr->changes);
 		tr->changes = NULL;
 	}
 	tr->ts = commit_ts;

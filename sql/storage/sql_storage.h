@@ -475,6 +475,7 @@ typedef struct sqlstore {
 	int initialized;		/* used during bootstrap only */
 	int debug;				/* debug mask */
 	store_type active_type;
+	list *changes;			/* pending changes too cleanup */
 
 	sql_allocator *sa;		/* for now a store allocator, needs a special version with free operations (with reuse) */
 	sqlid obj_id, prev_oid;

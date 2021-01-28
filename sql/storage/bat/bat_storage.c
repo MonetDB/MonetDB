@@ -2798,7 +2798,15 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 #endif
 	if (c->data != change->data) /* data is freed by commit */
 		return 1;
-	return LOG_OK;
+	sql_delta *d = (sql_delta*)change->data;
+	if (d->next) {
+		if (d->ts > oldest)
+			return LOG_OK; /* cannot cleanup yet */
+
+		destroy_delta(d->next);
+		d->next = NULL;
+	}
+	return 1;
 }
 
 static int
@@ -2828,7 +2836,15 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 #endif
 	if (i->data != change->data) /* data is freed by commit */
 		return 1;
-	return LOG_OK;
+	sql_delta *d = (sql_delta*)change->data;
+	if (d->next) {
+		if (d->ts > oldest)
+			return LOG_OK; /* cannot cleanup yet */
+
+		destroy_delta(d->next);
+		d->next = NULL;
+	}
+	return 1;
 }
 
 static int
@@ -2858,7 +2874,15 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 #endif
 	if (t->data != change->data) /* data is freed by commit */
 		return 1;
-	return LOG_OK;
+	sql_dbat *d = (sql_dbat*)change->data;
+	if (d->next) {
+		if (d->ts > oldest)
+			return LOG_OK; /* cannot cleanup yet */
+
+		destroy_dbat(d->next);
+		d->next = NULL;
+	}
+	return 1;
 }
 
 void
