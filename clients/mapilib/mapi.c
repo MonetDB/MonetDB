@@ -726,6 +726,37 @@
 # include <sys/time.h>		/* gettimeofday */
 #endif
 
+/* Copied from gdk_posix, but without taking a lock because we don't have access to
+ * MT_lock_set/unset here. We just have to hope for the best
+ */
+#ifndef HAVE_LOCALTIME_R
+struct tm *
+localtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	struct tm *tmp;
+	tmp = localtime(timep);
+	if (tmp)
+		*result = *tmp;
+	return tmp ? result : NULL;
+}
+#endif
+
+/* Copied from gdk_posix, but without taking a lock because we don't have access to
+ * MT_lock_set/unset here. We just have to hope for the best
+ */
+#ifndef HAVE_GMTIME_R
+struct tm *
+gmtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	struct tm *tmp;
+	tmp = gmtime(timep);
+	if (tmp)
+		*result = *tmp;
+	return tmp ? result : NULL;
+}
+#endif
+
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
