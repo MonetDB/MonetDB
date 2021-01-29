@@ -15,8 +15,13 @@ static sql_exp *
 comparison_find_column(sql_exp *input, sql_exp *e)
 {
 	switch (input->type) {
-		case e_convert:
-			return comparison_find_column(input->l, e) ? input : NULL;
+		case e_convert: {
+			list *types = (list *)input->r;
+			sql_class from = ((sql_subtype*)types->h->data)->type->eclass, to = ((sql_subtype*)types->h->next->data)->type->eclass;
+			if (from == to)
+				return comparison_find_column(input->l, e) ? input : NULL;
+			return NULL;
+		}
 		case e_column:
 			return exp_match(e, input) ? input : NULL;
 		default:
@@ -55,14 +60,15 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 						int flag = comp->flag & ~CMP_BETWEEN;
 
 						if (is_theta_exp(flag) && ((lne = comparison_find_column(le, e)) || (rne = comparison_find_column(re, e)) || (fe && (fne = comparison_find_column(fe, e))))) {
-							atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX), *rval_min = find_prop_and_get(re->p, PROP_MIN),
-								 *rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(fe->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(fe->p, PROP_MAX) : NULL;
+							atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
+								 *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 
 							found_without_semantics |= !comp->semantics;
 							if (is_full(rel->op) || (is_left(rel->op) && found_left) || (is_right(rel->op) && found_right)) /* on outer joins, min and max cannot be propagated on some cases */
 								continue;
 							/* if (end2 >= start1 && start2 <= end1) then the 2 intervals are intersected */
 							if (fe && lval_min && lval_max) { /* range case, the middle expression must intersect the other two */
+								atom *fval_min = find_prop_and_get(fe->p, PROP_MIN), *fval_max = find_prop_and_get(fe->p, PROP_MAX);
 								int int1 = rval_min && rval_max && atom_cmp(rval_max, lval_min) >= 0 && atom_cmp(rval_min, lval_max) <= 0,
 									int2 = fval_min && fval_max && atom_cmp(fval_max, lval_min) >= 0 && atom_cmp(fval_min, lval_max) <= 0,
 									symmetric = comp->flag & CMP_SYMMETRIC;
@@ -300,8 +306,9 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	case e_convert: {
 		sql_subtype *to = exp_totype(e), *from = exp_fromtype(e);
 		sql_exp *l = e->l;
+		sql_class fr = from->type->eclass, too = to->type->eclass;
 
-		if (EC_NUMBER(from->type->eclass) && EC_NUMBER(to->type->eclass)) {
+		if (fr == too) {
 			if ((lval = find_prop_and_get(l->p, PROP_MAX))) {
 				atom *res = atom_dup(sql->sa, lval);
 				if (atom_cast(sql->sa, res, to))
