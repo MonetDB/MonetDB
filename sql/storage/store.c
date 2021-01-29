@@ -151,8 +151,10 @@ key_destroy(sqlstore *store, sql_key *k)
 		return;
 	list_destroy2(k->columns, store);
 	k->columns = NULL;
+	/*
 	if ((k->type == pkey) && (k->t->pkey == (sql_ukey *) k))
 		k->t->pkey = NULL;
+		*/
 	_DELETE(k->base.name);
 	_DELETE(k);
 }
@@ -166,7 +168,7 @@ idx_destroy(sqlstore *store, sql_idx * i)
 	list_destroy2(i->columns, store);
 	i->columns = NULL;
 
-	if (isTable(i->t))
+	if (i->data)
 		store->storage_api.destroy_idx(store, i);
 	_DELETE(i->base.name);
 	_DELETE(i);
@@ -197,7 +199,7 @@ column_destroy(sqlstore *store, sql_column *c)
 	assert(c->base.refcnt > 0);
 	if (--(c->base.refcnt) > 0)
 		return;
-	if (isTable(c->t))
+	if (c->data)
 		store->storage_api.destroy_col(store, c);
 	_DELETE(c->def);
 	_DELETE(c->base.name);
