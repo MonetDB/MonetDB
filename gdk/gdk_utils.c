@@ -94,9 +94,24 @@ GDKenvironment(const char *dbpath)
 	return true;
 }
 
+static struct orig_value {
+	struct orig_value *next;
+	char *value;
+	char key[];
+} *orig_value;
+static MT_Lock GDKenvlock = MT_LOCK_INITIALIZER(GDKenvlock);
+
 const char *
 GDKgetenv(const char *name)
 {
+	MT_lock_set(&GDKenvlock);
+	for (struct orig_value *ov = orig_value; ov; ov = ov->next) {
+		if (strcmp(ov->key, name) == 0) {
+			MT_lock_unset(&GDKenvlock);
+			return ov->value;
+		}
+	}
+	MT_lock_unset(&GDKenvlock);
 	if (GDKkey && GDKval) {
 		BUN b = BUNfnd(GDKkey, (ptr) name);
 
@@ -138,13 +153,110 @@ GDKgetenv_int(const char *name, int def)
 	return def;
 }
 
+#define ESCAPE_CHAR	'%'
+
+static bool
+isutf8(const char *v, size_t *esclen)
+{
+	size_t n = 1;
+	int nutf8 = 0;
+	int m = 0;
+	for (size_t i = 0; v[i]; i++) {
+		if (nutf8 > 0) {
+			if ((v[i] & 0xC0) != 0x80 ||
+			    (m != 0 && (v[i] & m) == 0))
+				goto badutf8;
+			m = 0;
+			nutf8--;
+		} else if ((v[i] & 0xE0) == 0xC0) {
+			nutf8 = 1;
+			if ((v[i] & 0x1E) == 0)
+				goto badutf8;
+		} else if ((v[i] & 0xF0) == 0xE0) {
+			nutf8 = 2;
+			if ((v[i] & 0x0F) == 0)
+				m = 0x20;
+		} else if ((v[i] & 0xF8) == 0xF0) {
+			nutf8 = 3;
+			if ((v[i] & 0x07) == 0)
+				m = 0x30;
+		} else if ((v[i] & 0x80) != 0) {
+			goto badutf8;
+		}
+	}
+	*esclen = 0;
+	return true;
+  badutf8:
+	for (size_t i = 0; v[i]; i++) {
+		if (v[i] & 0x80 || v[i] == ESCAPE_CHAR)
+			n += 3;
+		else
+			n++;
+	}
+	*esclen = n;
+	return false;
+}
+
 gdk_return
 GDKsetenv(const char *name, const char *value)
 {
-	if (BUNappend(GDKkey, name, false) != GDK_SUCCEED ||
-	    BUNappend(GDKval, value, false) != GDK_SUCCEED)
-		return GDK_FAIL;
-	return GDK_SUCCEED;
+	static const char hexdigits[] = "0123456789abcdef";
+	char *conval = NULL;
+	size_t esclen = 0;
+	if (!isutf8(value, &esclen)) {
+		size_t j = strlen(name) + 1;
+		struct orig_value *ov = GDKmalloc(offsetof(struct orig_value, key) + j + strlen(value) + 1);
+		if (ov == NULL)
+			return GDK_FAIL;
+		strcpy(ov->key, name);
+		ov->value = ov->key + j;
+		strcpy(ov->value, value);
+		conval = GDKmalloc(esclen);
+		if (conval == NULL) {
+			GDKfree(ov);
+			return GDK_FAIL;
+		}
+		j = 0;
+		for (size_t i = 0; value[i]; i++) {
+			if (value[i] & 0x80 || value[i] == ESCAPE_CHAR) {
+				conval[j++] = ESCAPE_CHAR;
+				conval[j++] = hexdigits[(unsigned char) value[i] >> 4];
+				conval[j++] = hexdigits[(unsigned char) value[i] & 0xF];
+			} else {
+				conval[j++] = value[i];
+			}
+		}
+		conval[j] = 0;
+		MT_lock_set(&GDKenvlock);
+		ov->next = orig_value;
+		orig_value = ov;
+		/* remove previous value if present (later in list) */
+		for (ov = orig_value; ov->next; ov = ov->next) {
+			if (strcmp(ov->next->key, name) == 0) {
+				struct orig_value *ovn = ov->next;
+				ov->next = ovn->next;
+				GDKfree(ovn);
+			}
+		}
+		MT_lock_unset(&GDKenvlock);
+	} else {
+		/* remove previous value if present */
+		MT_lock_set(&GDKenvlock);
+		for (struct orig_value **ovp = &orig_value; *ovp; ovp = &(*ovp)->next) {
+			if (strcmp((*ovp)->key, name) == 0) {
+				struct orig_value *ov = *ovp;
+				*ovp = ov->next;
+				GDKfree(ov);
+				break;
+			}
+		}
+		MT_lock_unset(&GDKenvlock);
+	}
+	gdk_return rc = BUNappend(GDKkey, name, false);
+	if (rc == GDK_SUCCEED)
+		rc = BUNappend(GDKval, conval ? conval : value, false);
+	GDKfree(conval);
+	return rc;
 }
 
 gdk_return
@@ -1052,6 +1164,14 @@ GDKreset(int status)
 	}
 
 	join_detached_threads();
+
+	MT_lock_set(&GDKenvlock);
+	while (orig_value) {
+		struct orig_value *ov = orig_value;
+		orig_value = orig_value->next;
+		GDKfree(ov);
+	}
+	MT_lock_unset(&GDKenvlock);
 
 	if (status == 0) {
 		/* they had their chance, now kill them */
