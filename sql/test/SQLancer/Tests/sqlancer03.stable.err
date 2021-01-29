@@ -5,7 +5,11 @@ stderr of test 'sqlancer03` in directory 'sql/test/SQLancer` itself:
 # 17:14:16 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-439482" "--port=37916"
 # 17:14:16 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-279965/.s.monetdb.34039
+MAPI  = (monetdb) /var/tmp/mtest-238583/.s.monetdb.36305
+QUERY = CREATE TABLE "sys"."t0" ("c0" CHARACTER LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+ERROR = !CONSTRAINT UNIQUE: key 't0_c0_unique' already exists
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-238583/.s.monetdb.36305
 QUERY = select all sum(all cast("concat"(cast("month"(t1.c0) as string), r'1313451898') as interval month)) from t1;
 ERROR = !Wrong format (11313451898)
 CODE  = 42000

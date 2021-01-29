@@ -2560,10 +2560,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 			int idx = 0, equality_only = 1;
 
 			jexps = get_equi_joins_first(sql, jexps, &equality_only);
-			if (!equality_only || list_length(jexps) > 1) {
+			if (!equality_only || list_length(jexps) > 1 || exp_has_func((sql_exp*)jexps->h->data))
 				left = subrel_project(be, left, refs, rel->l);
-				equality_only = 0;
-			}
 			right = subrel_project(be, right, refs, rel->r);
 
 			for( en = jexps->h; en; en = en->next ) {
@@ -2572,8 +2570,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				stmt *s = NULL;
 
 				/* only handle simple joins here */
-				if ((exp_has_func(e) && e->flag != cmp_filter) ||
-					e->flag == cmp_or || (e->f && e->anti)) {
+				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && e->anti)) {
 					if (!join && !list_length(lje)) {
 						stmt *l = bin_first_column(be, left);
 						stmt *r = bin_first_column(be, right);
@@ -3312,7 +3309,6 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		if ((p=find_prop(e->p, PROP_HASHCOL)) != NULL) {
 			sql_idx *i = p->value;
 
-			assert(0);
 			sel = rel2bin_hash_lookup(be, rel, sub, NULL, i, en);
 		}
 	}
@@ -5648,7 +5644,7 @@ rel2bin_trans(backend *be, sql_rel *rel, list *refs)
 }
 
 static stmt *
-rel2bin_catalog(backend *be, sql_rel *rel, list *refs)
+rel2bin_catalog_schema(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
@@ -5664,23 +5660,24 @@ rel2bin_catalog(backend *be, sql_rel *rel, list *refs)
 	sname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 	if (!sname)
 		return NULL;
-	if (en->next) {
-		name = exp_bin(be, en->next->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-		if (!name)
-			return NULL;
+	append(l, sname);
+	en = en->next;
+	if (rel->flag == ddl_create_schema) {
+		if (en) {
+			name = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			if (!name)
+				return NULL;
+		} else {
+			name = stmt_atom_string_nil(be);
+		}
+		append(l, name);
 	} else {
-		name = stmt_atom_string_nil(be);
-	}
-	if (en->next && en->next->next) {
-		ifexists = exp_bin(be, en->next->next->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+		assert(rel->flag == ddl_drop_schema);
+		ifexists = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
 		if (!ifexists)
 			return NULL;
-	} else {
-		ifexists = stmt_atom_int(be, 0);
+		append(l, ifexists);
 	}
-	append(l, sname);
-	append(l, name);
-	append(l, ifexists);
 	append(l, action);
 	return stmt_catalog(be, rel->flag, stmt_list(be, l));
 }
@@ -5691,7 +5688,7 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	mvc *sql = be->mvc;
 	node *en = rel->exps->h;
 	stmt *action = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
-	stmt *table = NULL, *sname, *tname = NULL, *ifexists = NULL;
+	stmt *table = NULL, *sname, *tname = NULL, *kname = NULL, *ifexists = NULL;
 	list *l = sa_list(sql->sa);
 
 	if (!action)
@@ -5712,6 +5709,15 @@ rel2bin_catalog_table(backend *be, sql_rel *rel, list *refs)
 	append(l, sname);
 	assert(tname);
 	append(l, tname);
+	if (rel->flag == ddl_drop_constraint) { /* needs extra string parameter for constraint name */
+		if (en) {
+			kname = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			if (!kname)
+				return NULL;
+			en = en->next;
+		}
+		append(l, kname);
+	}
 	if (rel->flag != ddl_drop_table && rel->flag != ddl_drop_view && rel->flag != ddl_drop_constraint) {
 		if (en) {
 			table = exp_bin(be, en->data, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -5796,7 +5802,7 @@ rel2bin_ddl(backend *be, sql_rel *rel, list *refs)
 			break;
 		case ddl_create_schema:
 		case ddl_drop_schema:
-			s = rel2bin_catalog(be, rel, refs);
+			s = rel2bin_catalog_schema(be, rel, refs);
 			sql->type = Q_SCHEMA;
 			break;
 		case ddl_create_table:

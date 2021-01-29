@@ -25,28 +25,36 @@ stdout of test 'copy_multiple_files.SF-2902320` in directory 'sql/test/BugTracke
 % .plan # table_name
 % rel # name
 % clob # type
-% 201 # length
+% 203 # length
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (
-| | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
-| | ) [ "cm_tmp"."i" ] COUNT ,
-| | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
-| | ) [ "cm_tmp"."i" ] COUNT 
+| | project (
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | ) [ "cm_tmp"."i" ] COUNT 
+| | ) [ "cm_tmp"."i" ],
+| | project (
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | ) [ "cm_tmp"."i" ] COUNT 
+| | ) [ "cm_tmp"."i" ]
 | ) [ int "NULL" ]
 )
 #plan copy into cm_tmp from E'a:\\file1','Z:/file2';
 % .plan # table_name
 % rel # name
 % clob # type
-% 203 # length
+% 205 # length
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (
-| | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
-| | ) [ "cm_tmp"."i" ] COUNT ,
-| | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
-| | ) [ "cm_tmp"."i" ] COUNT 
+| | project (
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | ) [ "cm_tmp"."i" ] COUNT 
+| | ) [ "cm_tmp"."i" ],
+| | project (
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | ) [ "cm_tmp"."i" ] COUNT 
+| | ) [ "cm_tmp"."i" ]
 | ) [ int "NULL" ]
 )
 

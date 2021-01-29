@@ -285,7 +285,7 @@
 	CREATE TABLE sdqa_Metric
 	(
 	        sdqa_metricId SMALLINT NOT NULL AUTO_INCREMENT,
-	        metricName VARCHAR(30) UNIQUE UNIQUE NOT NULL,
+	        metricName VARCHAR(30) UNIQUE NOT NULL,
 	        physicalUnits VARCHAR(30) NOT NULL,
 	        dataType CHAR(1) NOT NULL,
 	        definition VARCHAR(255) NOT NULL,

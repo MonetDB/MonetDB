@@ -1,0 +1,28 @@
+stdout of test 'sqlancer10` in directory 'sql/test/SQLancer` itself:
+
+
+# 13:59:46 >  
+# 13:59:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-215607" "--port=30526"
+# 13:59:46 >  
+
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" TIME NOT NULL, "c1" VARCHAR(143),
+#	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t0_c0_unique" UNIQUE ("c0"), CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
+#COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#21:19:08	""
+#13:02:49	NULL
+#01:02:11	NULL
+#16:34:25	NULL
+#12:11:43	NULL
+#10:35:38	NULL
+#04:26:50	NULL
+[ 7	]
+#CREATE TABLE "sys"."t1" ("c0" CHAR(375) NOT NULL, CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t1_c0_fkey" FOREIGN KEY ("c0") REFERENCES "sys"."t0" ("c1"));
+#insert into t1 values ('');
+[ 1	]
+#ROLLBACK;
+
+# 13:59:46 >  
+# 13:59:46 >  "Done."
+# 13:59:46 >  
+

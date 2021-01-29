@@ -239,8 +239,8 @@ CREATE TABLE "sys"."foreign" (
 	"subject"   INTEGER       NOT NULL,
 	"predicate" INTEGER       NOT NULL,
 	"object"    INTEGER       NOT NULL,
-	CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."allnewtriples" ("id"),
-	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "sys"."allnewtriples" ("subject", "predicate", "object")
+	CONSTRAINT "foreign_id_fkey" FOREIGN KEY ("id") REFERENCES "sys"."allnewtriples" ("id") ON UPDATE RESTRICT ON DELETE RESTRICT,
+	CONSTRAINT "foreign_subject_predicate_object_fkey" FOREIGN KEY ("subject", "predicate", "object") REFERENCES "sys"."allnewtriples" ("subject", "predicate", "object") ON UPDATE RESTRICT ON DELETE RESTRICT
 );
 
 INSERT INTO "sys"."foreign" VALUES (1, 1, 1, 1);
