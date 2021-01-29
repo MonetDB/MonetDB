@@ -1,0 +1,64 @@
+stdout of test 'multiple-merge-tables` in directory 'sql/test/mergetables` itself:
+
+
+# 10:32:16 >  
+# 10:32:16 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-37610" "--port=36699"
+# 10:32:16 >  
+
+#create table t (i int);
+#insert into t values (42), (666);
+[ 2	]
+#create merge table mt1 (like t);
+#create merge table mt2 (like t);
+#create temp table mycount(cc BIGINT) ON COMMIT PRESERVE ROWS;
+#insert into mycount SELECT (SELECT COUNT(*) FROM sys.dependencies) + (SELECT COUNT(*) FROM sys.objects);
+[ 1	]
+#alter table mt1 add table t;
+#select i from mt1;
+% sys.mt1 # table_name
+% i # name
+% int # type
+% 3 # length
+[ 42	]
+[ 666	]
+#alter table mt2 add table t;
+#select i from mt1;
+% sys.mt1 # table_name
+% i # name
+% int # type
+% 3 # length
+[ 42	]
+[ 666	]
+#select i from mt2;
+% sys.mt2 # table_name
+% i # name
+% int # type
+% 3 # length
+[ 42	]
+[ 666	]
+#alter table mt1 drop table t;
+#select i from mt2;
+% sys.mt2 # table_name
+% i # name
+% int # type
+% 3 # length
+[ 42	]
+[ 666	]
+#alter table mt2 drop table t;
+#SELECT CAST((SELECT COUNT(*) FROM sys.dependencies) + (SELECT COUNT(*) FROM sys.objects) - (SELECT cc FROM mycount) AS BIGINT);
+% .%4 # table_name
+% %4 # name
+% bigint # type
+% 1 # length
+[ 0	]
+#drop table mycount;
+#drop table mt1;
+#drop table mt2;
+#drop table t;
+
+
+
+# 10:32:16 >  
+# 10:32:16 >  "Done."
+# 10:32:16 >  
+

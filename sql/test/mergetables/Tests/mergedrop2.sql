@@ -22,3 +22,12 @@ alter table t add table t3;
 
 alter table t drop table t1;
 alter table t add table t1;
+
+alter table t drop table t1;
+alter table t drop table t2;
+alter table t drop table t3;
+
+drop table t;
+drop table t1;
+drop table t2;
+drop table t3;

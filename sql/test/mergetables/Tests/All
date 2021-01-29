@@ -33,3 +33,4 @@ sqlsmith-exists
 sqlsmith-exists2
 mergedb_drop
 mergetable_rel_push_aggr_down
+multiple-merge-tables

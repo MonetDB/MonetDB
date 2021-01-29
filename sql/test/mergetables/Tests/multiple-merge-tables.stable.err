@@ -1,0 +1,28 @@
+stderr of test 'multiple-merge-tables` in directory 'sql/test/mergetables` itself:
+
+
+# 10:32:16 >  
+# 10:32:16 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-37610" "--port=36699"
+# 10:32:16 >  
+
+MAPI  = (monetdb) /var/tmp/mtest-40339/.s.monetdb.34967
+QUERY = select i from mt2; -- error, no tables associated
+ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-40339/.s.monetdb.34967
+QUERY = select i from mt1; -- error, no tables associated
+ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-37610/.s.monetdb.36699
+QUERY = select i from mt1; -- error, no tables associated
+ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-37610/.s.monetdb.36699
+QUERY = select i from mt2; -- error, no tables associated
+ERROR = !MERGE or REPLICA TABLE should have at least one table associated
+CODE  = 42000
+
+# 10:32:16 >  
+# 10:32:16 >  "Done."
+# 10:32:16 >  
+

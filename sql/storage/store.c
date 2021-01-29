@@ -6326,7 +6326,7 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 sql_table *
 sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action)
 {
-	node *n = members_find_child_id(mt->members, pt->base.id);
+	node *sn, *n = members_find_child_id(mt->members, pt->base.id);
 	sql_part *p = n ? (sql_part*) n->data : NULL;
 	sql_schema *syss = find_sql_schema(tr, isGlobal(mt)?"sys":"tmp");
 	sql_table *sysobj = find_sql_table(syss, "objects");
@@ -6349,7 +6349,9 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	/* merge table depends on part table */
 	sql_trans_drop_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 
-	cs_del(&mt->s->parts, n, p->base.flags);
+	sn = list_find_base_id(mt->s->parts.set, p->base.id);
+	assert(sn);
+	cs_del(&mt->s->parts, sn, p->base.flags);
 	list_remove_data(mt->members, p);
 	pt->partition--;/* check other hierarchies? */
 	p->member = NULL;
