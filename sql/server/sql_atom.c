@@ -760,7 +760,7 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 		}
 		if (at->type->eclass == EC_NUM && tp->type->eclass == EC_NUM) {
 			if (at->type->localtype <= tp->type->localtype) { /* cast to a larger numeric */
-				switch ( tp->type->localtype) {
+				switch (tp->type->localtype) {
 				case TYPE_bte:
 					if (at->type->localtype != TYPE_bte)
 						return 0;
@@ -813,74 +813,52 @@ atom_cast(sql_allocator *sa, atom *a, sql_subtype *tp)
 					return 0;
 				}
 			} else { /* cast to a smaller numeric */
-				switch ( tp->type->localtype) {
-				case TYPE_bte:
-					if (at->type->localtype == TYPE_sht) {
-						if (a->data.val.shval > (sht) GDK_bte_max || a->data.val.lval <= (sht) GDK_bte_min)
-							return 0;
-						a->data.val.btval = (bte) a->data.val.shval;
-					} else if (at->type->localtype == TYPE_int) {
-						if (a->data.val.ival > (int) GDK_bte_max || a->data.val.lval <= (int) GDK_bte_min)
-							return 0;
-						a->data.val.btval = (bte) a->data.val.ival;
-					} else if (at->type->localtype == TYPE_lng) {
-						if (a->data.val.lval > (lng) GDK_bte_max || a->data.val.lval <= (lng) GDK_bte_min)
-							return 0;
-						a->data.val.btval = (bte) a->data.val.lval;
-					}
+				switch (tp->type->localtype) {
 #ifdef HAVE_HGE
-					else if (at->type->localtype == TYPE_hge) {
-						if (a->data.val.hval > (hge) GDK_bte_max || a->data.val.hval <= (hge) GDK_bte_min)
-							return 0;
-						a->data.val.btval = (bte) a->data.val.hval;
-					}
-#endif
+				case TYPE_bte:
+					if (a->data.val.hval > (hge) GDK_bte_max || a->data.val.hval <= (hge) GDK_bte_min)
+						return 0;
+					a->data.val.btval = (bte) a->data.val.hval;
 					break;
 				case TYPE_sht:
-					if (at->type->localtype == TYPE_int) {
-						if (a->data.val.ival > (int) GDK_sht_max || a->data.val.lval <= (int) GDK_sht_min)
-							return 0;
-						a->data.val.shval = (sht) a->data.val.ival;
-					} else if (at->type->localtype == TYPE_lng) {
-						if (a->data.val.lval > (lng) GDK_sht_max || a->data.val.lval <= (lng) GDK_sht_min)
-							return 0;
-						a->data.val.shval = (sht) a->data.val.lval;
-					}
-#ifdef HAVE_HGE
-					else if (at->type->localtype == TYPE_hge) {
-						if (a->data.val.hval > (hge) GDK_sht_max || a->data.val.hval <= (hge) GDK_sht_min)
-							return 0;
-						a->data.val.shval = (sht) a->data.val.hval;
-					}
-#endif
+					if (a->data.val.hval > (hge) GDK_sht_max || a->data.val.hval <= (hge) GDK_sht_min)
+						return 0;
+					a->data.val.shval = (sht) a->data.val.hval;
 					break;
 				case TYPE_int:
 #if SIZEOF_OID == SIZEOF_INT
 				case TYPE_oid:
 #endif
-					if (at->type->localtype == TYPE_lng) {
-						if (a->data.val.lval > (lng) GDK_int_max || a->data.val.lval <= (lng) GDK_int_min)
-							return 0;
-						a->data.val.ival = (int) a->data.val.lval;
-					}
-#ifdef HAVE_HGE
-					else if (at->type->localtype == TYPE_hge) {
-						if (a->data.val.hval > (hge) GDK_int_max || a->data.val.hval <= (hge) GDK_int_min)
-							return 0;
-						a->data.val.ival = (int) a->data.val.hval;
-					}
-#endif
+					if (a->data.val.hval > (hge) GDK_int_max || a->data.val.hval <= (hge) GDK_int_min)
+						return 0;
+					a->data.val.ival = (int) a->data.val.hval;
 					break;
-#ifdef HAVE_HGE
 				case TYPE_lng:
 #if SIZEOF_OID == SIZEOF_LNG
 				case TYPE_oid:
 #endif
-					if (at->type->localtype == TYPE_hge) {
-						if (a->data.val.hval > (hge) GDK_lng_max || a->data.val.hval <= (hge) GDK_lng_min)
-							return 0;
-						a->data.val.lval = (lng) a->data.val.hval;
-					}
+					if (a->data.val.hval > (hge) GDK_lng_max || a->data.val.hval <= (hge) GDK_lng_min)
+						return 0;
+					a->data.val.lval = (lng) a->data.val.hval;
+					break;
+#else
+				case TYPE_bte:
+					if (a->data.val.lval > (lng) GDK_bte_max || a->data.val.lval <= (lng) GDK_bte_min)
+						return 0;
+					a->data.val.btval = (bte) a->data.val.lval;
+					break;
+				case TYPE_sht:
+					if (a->data.val.lval > (lng) GDK_sht_max || a->data.val.lval <= (lng) GDK_sht_min)
+						return 0;
+					a->data.val.shval = (sht) a->data.val.lval;
+					break;
+				case TYPE_int:
+#if SIZEOF_OID == SIZEOF_INT
+				case TYPE_oid:
+#endif
+					if (a->data.val.lval > (lng) GDK_int_max || a->data.val.lval <= (lng) GDK_int_min)
+						return 0;
+					a->data.val.ival = (int) a->data.val.lval;
 					break;
 #endif
 				default:
