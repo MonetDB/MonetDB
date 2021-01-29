@@ -59,7 +59,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 								 *rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(fe->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(fe->p, PROP_MAX) : NULL;
 
 							found_without_semantics |= !comp->semantics;
-							if (is_outerjoin(rel->op)) /* on outer joins, min and max cannot be propagated */
+							if (is_full(rel->op) || (is_left(rel->op) && found_left) || (is_right(rel->op) && found_right)) /* on outer joins, min and max cannot be propagated on some cases */
 								continue;
 							/* if (end2 >= start1 && start2 <= end1) then the 2 intervals are intersected */
 							if (fe && lval_min && lval_max) { /* range case, the middle expression must intersect the other two */
@@ -412,15 +412,23 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 	case op_except: {
 		int i = 0;
 		sql_rel *l = rel->l, *r = rel->r;
-		list *lexps = l->exps, *rexps = r->exps;
 
-		if (!is_project(l->op))
-			lexps = rel_projections(v->sql, l, NULL, 0, 1);
-		if (!is_project(r->op))
-			rexps = rel_projections(v->sql, r, NULL, 0, 1);
+		while (is_sample(l->op) || is_topn(l->op)) /* skip topN and sample relations in the middle */
+			l = l->l;
+		while (is_sample(r->op) || is_topn(r->op))
+			r = r->l;
+		/* if it's not a projection, then project and propagate statistics */
+		if (!is_project(l->op) && !is_base(l->op)) {
+			l = rel_project(v->sql->sa, l, rel_projections(v->sql, l, NULL, 0, 1));
+			l->exps = exps_exp_visitor_bottomup(v, l, l->exps, 0, &rel_propagate_statistics, false);
+		}
+		if (!is_project(r->op) && !is_base(r->op)) {
+			r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 0, 1));
+			r->exps = exps_exp_visitor_bottomup(v, r, r->exps, 0, &rel_propagate_statistics, false);
+		}
 
 		for (node *n = rel->exps->h ; n ; n = n->next) {
-			rel_setop_get_statistics(v->sql, rel, lexps, rexps, n->data, i);
+			rel_setop_get_statistics(v->sql, rel, l->exps, r->exps, n->data, i);
 			i++;
 		}
 	} break;
@@ -508,21 +516,26 @@ rel_prune_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void) depth;
 	if (e->type == e_cmp && (is_theta_exp(e->flag) || e->f)) {
 		sql_exp *le = e->l, *re = e->r, *fe = e->f;
-		atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX), *rval_min = find_prop_and_get(re->p, PROP_MIN),
-			*rval_max = find_prop_and_get(re->p, PROP_MAX), *fval_min = fe ? find_prop_and_get(fe->p, PROP_MIN) : NULL, *fval_max = fe ? find_prop_and_get(fe->p, PROP_MAX) : NULL;
+		atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
+			 *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 		bool always_false = false, always_true = false;
 
 		if (fe && !(e->flag & CMP_SYMMETRIC)) {
+			atom *fval_min = find_prop_and_get(fe->p, PROP_MIN), *fval_max = find_prop_and_get(fe->p, PROP_MAX);
 			comp_type lower = range2lcompare(e->flag), higher = range2rcompare(e->flag);
-			int not_int1 = rval_min && lval_max && !rval_min->isnull && !lval_max->isnull &&
-				(e->anti ? (lower == cmp_gte ? atom_cmp(rval_min, lval_max) <= 0 : atom_cmp(rval_min, lval_max) < 0) : (lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0)),
-				not_int2 = lval_min && fval_max && !lval_min->isnull && !fval_max->isnull &&
-				(e->anti ? (higher == cmp_lte ? atom_cmp(lval_min, fval_max) <= 0 : atom_cmp(lval_min, fval_max) < 0) : (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0)),
-				not_int3 = rval_min && fval_max && !rval_min->isnull && !fval_max->isnull &&
-				(e->anti ? (atom_cmp(rval_min, fval_max) <= 0) : (atom_cmp(rval_min, fval_max) > 0));
+			int not_int1 = rval_min && lval_max && !rval_min->isnull && !lval_max->isnull && /* the middle and left intervals don't overlap */
+				(!e->anti && (lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0)),
+				not_int2 = lval_min && fval_max && !lval_min->isnull && !fval_max->isnull && /* the middle and right intervals don't overlap */
+				(!e->anti && (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0)),
+				not_int3 = rval_min && fval_max && !rval_min->isnull && !fval_max->isnull && /* the left interval is after the right one */
+				(!e->anti && (atom_cmp(rval_min, fval_max) > 0));
 
 			always_false |= not_int1 || not_int2 || not_int3;
-			(void) fval_min;
+			/* for anti the middle must be before the left or after the right or the right after the left, for the other the middle must be always between the left and right intervals */
+			always_true |= exp_is_not_null(le) && exp_is_not_null(re) && exp_is_not_null(fe) &&
+				lval_min && lval_max && rval_min && rval_max && fval_min && fval_max && !lval_min->isnull && !lval_max->isnull && !rval_min->isnull && !rval_max->isnull && !fval_min->isnull && !fval_max->isnull &&
+				(e->anti ? ((lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0) || (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0) || atom_cmp(rval_min, fval_max) > 0) :
+				((lower == cmp_gte ? atom_cmp(lval_min, rval_max) >= 0 : atom_cmp(lval_min, rval_max) > 0) && (higher == cmp_lte ? atom_cmp(fval_min, lval_max) >= 0 : atom_cmp(fval_min, lval_max) > 0)));
 		} else {
 			switch (e->flag) {
 			case cmp_equal:
