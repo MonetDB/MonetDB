@@ -17,7 +17,7 @@ stdout of test 'segfault_when_quitting_debugger.SF-2538837` in directory 'sql/te
 
 #set optimizer = 'sequential_pipe'; -- to get predictable errors
 #debug select * from tables;
-mdb>#X_1=0@0:void := querylog.define("debug select * from tables;", "sequential_pipe", 136:int);
+mdb>#X_1=0@0:void := querylog.define("debug select * from tables;", "sequential_pipe", 131:int);
 
 # 22:21:12 >  
 # 22:21:12 >  "Done."
