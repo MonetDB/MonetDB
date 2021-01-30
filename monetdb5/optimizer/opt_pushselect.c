@@ -128,6 +128,8 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 	return 1;
 }
 
+#define isIntersect(p) (getModuleId(p) == algebraRef && getFunctionId(p) == intersectRef)
+
 str
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -165,7 +167,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		if (getModuleId(p) == algebraRef &&
-			(getFunctionId(p) == intersectRef ||
+			((!no_mito && getFunctionId(p) == intersectRef) ||
 			 getFunctionId(p) == differenceRef)) {
 			GDKfree(vars);
 			goto wrapup;
@@ -176,6 +178,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (isLikeOp(p))
 			nr_likes++;
+
+		if (no_mito && isIntersect(p))
+			push_down_delta++;
 
 		if ((getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef) ||
 			(no_mito && getModuleId(p) == matRef && getFunctionId(p) == packRef && p->argc == (p->retc+2)))
@@ -771,6 +776,74 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				p = q;
 				oclean[i] = 1;
 				actions++;
+			}
+		} else if (isIntersect(p) && p->retc == 1 && lastbat == 4) {
+		/* c = delta(b, uid, uvl, ins)
+		 * s = intersect(l, r, li, ..)
+		 *
+		 * nc = intersect(b, r, li..)
+		 * ni = intersect(ins, r, li..)
+		 * nu = intersect(uvl, r, ..)
+		 * s = subdelta(nc, uid, nu, ni);
+		 */
+			int var = getArg(p, 1);
+			InstrPtr q = old[vars[var]];
+
+			if (q && q->token == ASSIGNsymbol) {
+				var = getArg(q, 1);
+				q = old[vars[var]];
+			}
+			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
+				InstrPtr r = copyInstruction(p);
+				InstrPtr s = copyInstruction(p);
+				InstrPtr t = copyInstruction(p);
+				InstrPtr u = copyInstruction(q);
+
+				if( r == NULL || s == NULL || t== NULL ||u == NULL){
+					freeInstruction(r);
+					freeInstruction(s);
+					freeInstruction(t);
+					freeInstruction(u);
+					GDKfree(vars);
+					GDKfree(nvars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(oclean);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(r,0));
+				getArg(r, 1) = getArg(q, 1); /* column */
+				r->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,r);
+				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(s,0));
+				getArg(s, 1) = getArg(q, 3); /* updates */
+				s = ReplaceWithNil(mb, s, 3, TYPE_bat); /* no candidate list */
+				setArgType(mb, s, 3, newBatType(TYPE_oid));
+				/* make sure to resolve again */
+				s->token = ASSIGNsymbol;
+				s->typechk = TYPE_UNKNOWN;
+        			s->fcn = NULL;
+        			s->blk = NULL;
+				pushInstruction(mb,s);
+				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(t,0));
+				getArg(t, 1) = getArg(q, 4); /* inserts */
+				pushInstruction(mb,t);
+
+				setFunctionId(u, subdeltaRef);
+				getArg(u, 0) = getArg(p,0);
+				getArg(u, 1) = getArg(r,0);
+				getArg(u, 2) = getArg(p,3); /* pre-cands */
+				getArg(u, 3) = getArg(q,2); /* update ids */
+				getArg(u, 4) = getArg(s,0);
+				u = pushArgument(mb, u, getArg(t,0));
+				u->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,u);
+				oclean[i] = 1;
+				continue;
 			}
 		}
 		assert (p == old[i] || oclean[i]);
