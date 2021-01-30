@@ -1548,15 +1548,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 {
 	mvc *sql = be->mvc;
 	sql_table *t = rel->l;
-	sql_column *c = rel->r;
+	sql_column *fcol = NULL;
+	sql_idx *fi = NULL;
 	list *l = sa_list(sql->sa);
-	stmt *dels, *col = NULL;
+	stmt *dels = stmt_tid(be, t, rel->flag == REL_PARTITION), *col = NULL;
 	node *en;
-
-	if (!t && c)
-		t = c->t;
-
-	dels = stmt_tid(be, t, rel->flag == REL_PARTITION);
 
 	/* add aliases */
 	assert(rel->exps);
@@ -1572,10 +1568,12 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
+			fi = i;
 			col = stmt_idx(be, i, NULL/*dels*/, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
+			fcol = c;
 			col = stmt_col(be, c, NULL/*dels*/, dels->partition);
 		}
 	}
@@ -1585,26 +1583,8 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 		const char *oname = exp->r;
 		stmt *s = NULL;
 
-		if (is_func(exp->type)) {
-			assert(0);
-			list *exps = exp->l;
-			sql_exp *cexp = exps->h->data;
-			const char *cname = cexp->r;
-			list *l = sa_list(sql->sa);
-
-			c = find_sql_column(t, cname);
-			s = stmt_col(be, c, NULL/*dels*/, dels->partition);
-			append(l, s);
-			if (exps->h->next) {
-				sql_exp *at = exps->h->next->data;
-				stmt *u = exp_bin(be, at, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0);
-				if(!u)
-					return NULL;
-
-				append(l, u);
-			}
-			s = stmt_Nop(be, stmt_list(be, l), exp->f);
-		} else if (oname[0] == '%' && strcmp(oname, TID) == 0) {
+		assert(!is_func(exp->type));
+		if (oname[0] == '%' && strcmp(oname, TID) == 0) {
 			/* tid function  sql.tid(t) */
 			const char *rnme = t->base.name;
 
@@ -1619,11 +1599,11 @@ rel2bin_basetable(backend *be, sql_rel *rel)
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
-			s = stmt_idx(be, i, NULL/*dels*/, dels->partition);
+			s = (i == fi) ? col : stmt_idx(be, i, NULL/*dels*/, dels->partition);
 		} else {
 			sql_column *c = find_sql_column(t, oname);
 
-			s = stmt_col(be, c, NULL/*dels*/, dels->partition);
+			s = (c == fcol) ? col : stmt_col(be, c, NULL/*dels*/, dels->partition);
 		}
 		s->tname = rname;
 		s->cname = exp_name(exp);
