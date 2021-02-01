@@ -462,7 +462,7 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 			/* We mark it with the latest possible starttime and reinsert it into the cleanup list.
 			 * This will cause a safe eventual destruction of this rollbacked ov.
 			 */
-			ov->ts = store_get_timestamp(store)+2;
+			ov->ts = store_get_timestamp(store)+1;
 		}
 
 		// not yet old enough to be safely removed. Try later.
