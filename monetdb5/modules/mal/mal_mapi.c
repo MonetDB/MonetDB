@@ -695,7 +695,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		else
 			memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
-		if (remove(usockfile) == -1 && errno != ENOENT) {
+		if (MT_remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file: %s",
 									  GDKstrerror(errno, (char[128]){0}, 128));
 			if (socks[0] != INVALID_SOCKET)
@@ -716,7 +716,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			(void) remove(usockfile);
+			(void) MT_remove(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": binding to UNIX socket file %s failed: %s",
@@ -733,7 +733,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			(void) remove(usockfile);
+			(void) MT_remove(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": setting UNIX socket file %s to listen failed: %s",

@@ -14,6 +14,7 @@
  */
 #include "monetdb_config.h"
 #include "bbp.h"
+#include "mutils.h"
 
 static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {
@@ -173,7 +174,7 @@ CMDbbpLocation(bat *ret)
 	char buf[FILENAME_MAX];
 	char cwd[FILENAME_MAX];
 
-	if (getcwd(cwd, FILENAME_MAX) == NULL)
+	if (MT_getcwd(cwd, FILENAME_MAX) == NULL)
 		throw(MAL, "catalog.bbpLocation", RUNTIME_DIR_ERROR);
 
 	b = COLnew(0, TYPE_str, getBBPsize(), TRANSIENT);

@@ -49,10 +49,6 @@ int GDKdebug = 0;
 #include <sysinfoapi.h>
 #endif
 
-#ifdef NATIVE_WIN32
-#define chdir _chdir
-#endif
-
 static ATOMIC_TYPE GDKstopped = ATOMIC_VAR_INIT(0);
 static void GDKunlockHome(int farmid);
 
@@ -1312,7 +1308,7 @@ GDKlockHome(int farmid)
 	/*
 	 * Obtain the global database lock.
 	 */
-	if (stat(BBPfarms[farmid].dirname, &st) < 0 &&
+	if (MT_stat(BBPfarms[farmid].dirname, &st) < 0 &&
 	    GDKcreatedir(gdklockpath) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "could not create %s\n",
 			 BBPfarms[farmid].dirname);

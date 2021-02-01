@@ -54,13 +54,10 @@ static int lastfile = 0;
 #ifndef F_OK
 #define F_OK 0
 #endif
-#ifdef _MSC_VER
-#define access(f, m)	_access(f, m)
-#endif
 static inline int
 fileexists(const char *path)
 {
-	return access(path, F_OK) == 0;
+	return MT_access(path, F_OK) == 0;
 }
 
 /* Search for occurrence of the function in the library identified by the filename.  */
@@ -425,7 +422,7 @@ locate_file(const char *basename, const char *ext, bit recurse)
 			(void)closedir(rdir);
 		} else {
 			strcat(fullname + i + 1, ext);
-			if ((fd = open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
+			if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
 				char *tmp;
 				close(fd);
 				tmp = GDKrealloc(fullname, strlen(fullname) + 1);

@@ -409,8 +409,11 @@ AUTHinitTables(const char *passwd) {
 		free(master_password);
 		master_password = NULL;
 		msg = msab_pickSecret(&master_password);
-		if (msg != NULL)
-			return msg;
+		if (msg != NULL) {
+			char *nmsg = createException(MAL, "initTables", "%s", msg);
+			free(msg);
+			return nmsg;
+		}
 	}
 
 	return(MAL_SUCCEED);
