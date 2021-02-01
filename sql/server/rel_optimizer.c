@@ -1400,7 +1400,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 static int
 exps_can_push_func(list *exps, sql_rel *rel, bool *push_left, bool *push_right)
 {
-	for(node *n = exps->h; n && !*push_left && !*push_right; n = n->next) {
+	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		int mustl = 0, mustr = 0;
 
