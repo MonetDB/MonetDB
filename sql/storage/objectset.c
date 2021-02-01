@@ -487,6 +487,7 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 	if (ov->id_based_older && ov->id_based_older == ov->name_based_older) {
 		// Destroy everything older then the oldest possibly relevant objectversion.
 		objectversion_destroy_recursive(store, ov->id_based_older);
+		ov->id_based_older = NULL;
 	}
 
 	return LOG_ERR;
