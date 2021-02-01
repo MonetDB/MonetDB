@@ -12,6 +12,7 @@
 
 #include "gdk_time.h"
 #include "blob.h"
+#include "mutils.h"
 
 #include <setjmp.h>
 #include <signal.h>
