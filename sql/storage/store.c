@@ -2146,11 +2146,8 @@ store_exit(sqlstore *store)
 
 	if (store->cat) {
 		MT_lock_unset(&store->lock);
-		os_destroy(store->cat->objects, store);
-		os_destroy(store->cat->schemas, store);
 		if (store->changes) {
-			/*
-			ulng oldest = store_timestamp(store);
+			ulng oldest = store_timestamp(store)+1;
 			if (!list_empty(store->changes))
 				printf("pending changes %d\n", list_length(store->changes));
 			for(node *n=store->changes->h; n; n = n->next) {
@@ -2161,9 +2158,10 @@ store_exit(sqlstore *store)
 				else
 					_DELETE(c);
 			}
-			*/
 			list_destroy(store->changes);
 		}
+		os_destroy(store->cat->objects, store);
+		os_destroy(store->cat->schemas, store);
 		_DELETE(store->cat);
 		sequences_exit();
 		MT_lock_set(&store->lock);
@@ -3598,11 +3596,7 @@ sql_trans_commit(sql_trans *tr)
 		for(node *n=tr->changes->h; n && ok == LOG_OK; ) {
 			node *next = n->next;
 			sql_change *c = n->data;
-
-			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
-				list_remove_node(tr->changes, store, n);
-				_DELETE(c);
-			} else if (tr->parent) {
+			if (tr->parent) {
 				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
 			} else {
 				store->changes = sa_list_append(tr->sa, store->changes, c);
@@ -3611,6 +3605,17 @@ sql_trans_commit(sql_trans *tr)
 		}
 		list_destroy(tr->changes);
 		tr->changes = NULL;
+
+		for(node *n=store->changes->h; n && ok == LOG_OK; ) {
+			node *next = n->next;
+
+			sql_change *c = n->data;
+			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+				list_remove_node(store->changes, store, n);
+				_DELETE(c);
+			}
+			n = next;
+		}
 	}
 	tr->ts = commit_ts;
 	return (ok==LOG_OK)?SQL_OK:SQL_ERR;
