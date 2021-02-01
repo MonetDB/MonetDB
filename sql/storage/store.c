@@ -2141,8 +2141,6 @@ store_exit(sqlstore *store)
 		MT_lock_unset(&store->lock);
 		if (store->changes) {
 			ulng oldest = store_timestamp(store)+1;
-			if (!list_empty(store->changes))
-				printf("pending changes %d\n", list_length(store->changes));
 			for(node *n=store->changes->h; n; n = n->next) {
 				sql_change *c = n->data;
 
@@ -3422,7 +3420,9 @@ sql_trans_rollback(sql_trans *tr)
 				node *next = n->next;
 				sql_change *c = n->data;
 
-				if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+				if (!c->cleanup) {
+					_DELETE(c);
+				} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
 					list_remove_node(store->changes, store, n);
 					_DELETE(c);
 				}
@@ -3432,9 +3432,11 @@ sql_trans_rollback(sql_trans *tr)
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
-			if (c->cleanup && !c->cleanup(store, c, commit_ts, oldest))
+			if (!c->cleanup) {
+				_DELETE(c);
+			} else if (c->cleanup && !c->cleanup(store, c, commit_ts, oldest)) {
 				store->changes = sa_list_append(tr->sa, store->changes, c);
-			else
+			} else
 				_DELETE(c);
 		}
 		list_destroy(nl);
@@ -3560,7 +3562,9 @@ sql_trans_commit(sql_trans *tr)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+			if (!c->cleanup) {
+				_DELETE(c);
+			} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
 				list_remove_node(store->changes, store, n);
 				_DELETE(c);
 			}
@@ -3600,7 +3604,9 @@ sql_trans_commit(sql_trans *tr)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
+			if (!c->cleanup) {
+				_DELETE(c);
+			} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
 				_DELETE(c);
 			} else if (tr->parent) {
 				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
