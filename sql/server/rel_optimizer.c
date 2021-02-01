@@ -5544,9 +5544,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 			}
 			return rel;
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
-			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) ||
-				((v->parent && is_project(v->parent->op)) &&
-				 (is_set(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)))) {
+			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) || (v->parent && is_project(v->parent->op))) {
 				rel->l = NULL;
 				rel_destroy(rel);
 				v->changes++;
@@ -8726,14 +8724,6 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* rewrite sqltype into backend types */
-static sql_rel *
-rel_rewrite_types(visitor *v, sql_rel *rel)
-{
-	(void)v;
-	return rel;
-}
-
 static sql_exp *
 exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de, bit unique)
 {
@@ -9678,8 +9668,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_project])
 		rel = rel_visitor_bottomup(&v, rel, &rel_project_cse);
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_types);
-
 	if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(&v, rel, &rel_split_outerjoin);
 
@@ -9722,7 +9710,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_join_order(&v, rel);
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
 		/* rel_join_order may introduce empty selects */
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (gp.cnt[op_select])
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 
 		if (level <= 0)
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
@@ -9733,7 +9722,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
 		if (level <= 0) {
 			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+			if (gp.cnt[op_select])
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 			rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
 		}
 
@@ -9760,7 +9750,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	   because pushing down select expressions makes rel_join_order more difficult */
 	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (gp.cnt[op_select])
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
@@ -9780,14 +9771,18 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_topdown(&v, rel, &rel_push_project_down_union);
 
 	/* Remove unused expressions */
-	if (level <= 0)
+	if (level <= 0 || v.changes) {
+		if (level > 0)
+			rel = rel_exp_visitor_bottomup(&v, rel, &reset_exp_used, false);
 		rel = rel_dce(sql, rel);
+	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 	    gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_func_down);
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (gp.cnt[op_select])
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])

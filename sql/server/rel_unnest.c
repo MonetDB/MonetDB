@@ -3443,16 +3443,6 @@ rewrite_values(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_exp *
-reset_exp_used(visitor *v, sql_rel *rel, sql_exp *e, int depth)
-{
-	(void) v;
-	(void) rel;
-	(void) depth;
-
-	e->used = 0;
-	return e;
-}
 
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
