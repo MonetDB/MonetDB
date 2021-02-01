@@ -1,30 +1,5 @@
 statement ok
-CREATE SCHEMA other_schema
-
-statement ok
 CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE ON (a)
-
-statement ok
-ALTER TABLE testme SET SCHEMA other_schema
-
-statement ok
-ALTER TABLE other_schema.testme SET SCHEMA sys
-
-statement ok
-ALTER TABLE testme RENAME TO testme2
-
-statement ok
-ALTER TABLE testme2 RENAME TO testme
-
-query I rowsort
-SELECT COUNT(*) from table_partitions
-----
-1
-
-query I rowsort
-SELECT COUNT(*) from range_partitions
-----
-0
 
 statement ok
 CREATE TABLE subtable1 (a int, b varchar(32))
@@ -32,97 +7,20 @@ CREATE TABLE subtable1 (a int, b varchar(32))
 statement ok
 ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10
 
-query I rowsort
-SELECT COUNT(*) from table_partitions
-----
-1
-
-query I rowsort
-SELECT COUNT(*) from range_partitions
-----
-1
-
-statement error
-ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM 5 TO 10
-
-statement ok
-CREATE TABLE wrongtable (a int, b varchar(32), c real)
-
-statement error
-ALTER TABLE testme ADD TABLE wrongtable AS PARTITION FROM 5 TO 6
-
 statement ok
 CREATE TABLE subtable2 (a int, b varchar(32))
 
 statement error
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION IN ('0', '1', '2')
-
-statement error
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 7 TO 9
-
-statement error
-ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5
-
-statement error
-ALTER TABLE testme DROP TABLE subtable2
-
-statement error
-DROP TABLE subtable1
-
-statement error
-ALTER TABLE testme SET SCHEMA other_schema
-
-statement error
-ALTER TABLE subtable1 SET SCHEMA other_schema
-
-statement error
-ALTER TABLE subtable1 RENAME TO subtable3
 
 statement ok
 ALTER TABLE testme DROP TABLE subtable1
 
 statement ok
-ALTER TABLE subtable1 SET SCHEMA other_schema
-
-statement error
-ALTER TABLE testme ADD TABLE other_schema.subtable1 AS PARTITION FROM 4 TO 23
-
-statement ok
 ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 5 TO 5
 
 statement ok
 ALTER TABLE testme DROP TABLE subtable2
 
-query I rowsort
-SELECT COUNT(*) from table_partitions
-----
-1
-
-query I rowsort
-SELECT COUNT(*) from range_partitions
-----
-0
-
 statement ok
 DROP TABLE testme
-
-statement ok
-DROP TABLE wrongtable
-
-statement ok
-DROP TABLE subtable2
-
-statement ok
-DROP SCHEMA other_schema CASCADE
-
-query I rowsort
-SELECT COUNT(*) from table_partitions
-----
-0
-
-query I rowsort
-SELECT COUNT(*) from range_partitions
-----
-0
-
-

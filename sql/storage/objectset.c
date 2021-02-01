@@ -450,9 +450,9 @@ os_cleanup(sqlstore* store, objectversion *ov, ulng oldest)
 	if (os_atmc_get_state(ov) & rollbacked) {
 	 	if (ov->ts < oldest) {
 			// This one is ready to be freed
-			if (ov->name_based_older)
+			if (ov->name_based_older && ov->name_based_older->name_based_newer == ov)
 				ov->name_based_older->name_based_newer=NULL;
-			if (ov->id_based_older)
+			if (ov->id_based_older && ov->id_based_older->id_based_newer == ov)
 				ov->id_based_older->id_based_newer=NULL;
 			objectversion_destroy(store, ov->os, ov);
 			return LOG_ERR;
