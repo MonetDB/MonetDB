@@ -368,3 +368,14 @@ rewrite_reset_used(visitor *v, sql_rel *rel)
 	rel->used = 0;
 	return rel;
 }
+
+sql_exp *
+reset_exp_used(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	(void) v;
+	(void) rel;
+	(void) depth;
+
+	e->used = 0;
+	return e;
+}
