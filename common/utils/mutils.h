@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 struct DIR {
-	char *dir_name;
+	wchar_t *dir_name;
 	int just_opened;
 	HANDLE find_file_handle;
 	void *find_file_data;
@@ -43,6 +43,75 @@ mutils_export void rewinddir(DIR *dir);
 mutils_export int closedir(DIR *dir);
 
 mutils_export char *dirname(char *path);
+
+mutils_export wchar_t *utf8towchar(const char *src);
+mutils_export char *wchartoutf8(const wchar_t *src);
+
+mutils_export FILE *MT_fopen(const char *filename, const char *mode);
+mutils_export int MT_open(const char *filename, int flags);
+mutils_export int MT_stat(const char *filename, struct stat *stb);
+mutils_export int MT_rmdir(const char *dirname);
+mutils_export int MT_rename(const char *old, const char *new);
+mutils_export int MT_remove(const char *filename);
+mutils_export int MT_mkdir(const char *dirname);
+mutils_export char *MT_getcwd(char *buffer, size_t size);
+mutils_export int MT_access(const char *pathname, int mode);
+
+#else
+
+static inline FILE *
+MT_fopen(const char *filename, const char *mode)
+{
+	return fopen(filename, mode);
+}
+
+static inline int
+MT_open(const char *filename, int flags)
+{
+	return open(filename, flags, MONETDB_MODE);
+}
+
+static inline int
+MT_stat(const char *filename, struct stat *stb)
+{
+	return stat(filename, stb);
+}
+
+static inline int
+MT_mkdir(const char *dirname)
+{
+	return mkdir(dirname, MONETDB_DIRMODE);
+}
+
+static inline int
+MT_rmdir(const char *dirname)
+{
+	return rmdir(dirname);
+}
+
+static inline int
+MT_rename(const char *old, const char *new)
+{
+	return rename(old, new);
+}
+
+static inline int
+MT_remove(const char *filename)
+{
+	return remove(filename);
+}
+
+static inline char *
+MT_getcwd(char *buffer, size_t size)
+{
+	return getcwd(buffer, size);
+}
+
+static inline int
+MT_access(const char *pathname, int mode)
+{
+	return access(pathname, mode);
+}
 
 #endif
 
@@ -67,7 +136,7 @@ mutils_export char *dirname(char *path);
 #define F_ULOCK	0		/* unlock a previously locked region */
 #define F_LOCK	1		/* lock a region for exclusive use */
 
-mutils_export int MT_lockf(char *filename, int mode);
+mutils_export int MT_lockf(const char *filename, int mode);
 
 mutils_export void print_trace(void);
 

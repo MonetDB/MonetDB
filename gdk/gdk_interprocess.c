@@ -116,7 +116,7 @@ GDKreleasemmap(void *ptr, size_t size, size_t id)
 	if (path == NULL) {
 		return GDK_FAIL;
 	}
-	ret = remove(path);
+	ret = MT_remove(path);
 	if (ret < 0)
 		GDKsyserror("cannot remove '%s'", path);
 	GDKfree(path);

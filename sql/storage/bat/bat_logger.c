@@ -12,6 +12,7 @@
 #include "sql_types.h" /* EC_POS */
 #include "wlc.h"
 #include "gdk_logger_internals.h"
+#include "mutils.h"
 
 #define CATALOG_MAR2018 52201	/* first in Jun2016 */
 #define CATALOG_AUG2018 52202	/* first in Aug2018 */
@@ -1229,7 +1230,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	stream *s = NULL;
 	size_t to_copy;
 
-	if (stat(path, &statbuf) < 0) {
+	if (MT_stat(path, &statbuf) < 0) {
 		GDKsyserror("stat failed on %s", path);
 		goto end;
 	}
@@ -1306,7 +1307,7 @@ snapshot_wal(stream *plan, const char *db_dir)
 	snapshot_immediate_copy_file(plan, meta_file, meta_file + strlen(db_dir) + 1);
 
 	// parse it to determine the first log file to save
-	FILE *f = fopen(meta_file, "r");
+	FILE *f = MT_fopen(meta_file, "r");
 	if (f == NULL) {
 		GDKerror("Could not open %s", meta_file);
 		return GDK_FAIL;
@@ -1343,7 +1344,7 @@ snapshot_wal(stream *plan, const char *db_dir)
 		}
 
 		struct stat statbuf;
-		if (stat(log_file, &statbuf) != 0) {
+		if (MT_stat(log_file, &statbuf) != 0) {
 			char errbuf[512];
 			GDKerror("Could not stat %s: %s", log_file,
 						GDKstrerror(errno, errbuf, sizeof(errbuf)));
@@ -1371,7 +1372,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		GDKerror("Could not open %s, filename is too large", path1);
 		return GDK_FAIL;
 	}
-	if (stat(path1, &statbuf) == 0) {
+	if (MT_stat(path1, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, path1 + offset, extent);
 		return GDK_SUCCEED;
 	}
@@ -1387,7 +1388,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		GDKerror("Could not open %s, filename is too large", path2);
 		return GDK_FAIL;
 	}
-	if (stat(path2, &statbuf) == 0) {
+	if (MT_stat(path2, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, path2 + offset, extent);
 		return GDK_SUCCEED;
 	}
@@ -1553,7 +1554,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s, filename is too large", path);
 		return GDK_FAIL;
 	}
-	if (stat(path, &statbuf) == 0) {
+	if (MT_stat(path, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, ".vaultkey", statbuf.st_size);
 		return GDK_SUCCEED;
 	}
