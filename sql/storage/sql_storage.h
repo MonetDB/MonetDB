@@ -489,6 +489,8 @@ typedef struct sqlstore {
 typedef struct sql_change {
 	sql_base *obj;
 	void *data;	/* data changes */
+	bool committed;	/* commit or rollback */
+	bool handled;	/* handled in commit */
 	tc_log_fptr log;		/* callback to log changes */
 	tc_commit_fptr commit;	/* callback to commit or rollback the changes */
 	tc_cleanup_fptr cleanup;/* callback to cleanup changes */
