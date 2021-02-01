@@ -24,5 +24,6 @@ extern sql_rel *rel_remove_empty_select(visitor *v, sql_rel *rel);
 extern sql_exp *exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 
 extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
+extern sql_exp *reset_exp_used(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 
 #endif /*_REL_REWRITER_H_*/
