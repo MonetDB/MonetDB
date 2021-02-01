@@ -2477,6 +2477,7 @@ tr_merge_dbat(sql_dbat *tdb)
 static sql_delta *
 savepoint_commit_delta( sql_delta *delta, ulng commit_ts)
 {
+	/* commit ie copy back to the parent transaction */
 	if (delta && delta->ts == commit_ts && delta->next) {
 		sql_delta *od = delta->next;
 		if (od->ts == commit_ts) {
@@ -2796,7 +2797,7 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 		destroy_delta(d);
 	}
 #endif
-	if (c->data != change->data) /* data is freed by commit */
+	if (c->data != change->data || isTempTable(c->t)) /* data is freed by commit */
 		return 1;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
@@ -2834,7 +2835,7 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 		destroy_delta(d);
 	}
 #endif
-	if (i->data != change->data) /* data is freed by commit */
+	if (i->data != change->data || isTempTable(i->t)) /* data is freed by commit */
 		return 1;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
@@ -2872,7 +2873,7 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 		destroy_dbat(d);
 	}
 #endif
-	if (t->data != change->data) /* data is freed by commit */
+	if (t->data != change->data || isTempTable(t)) /* data is freed by commit */
 		return 1;
 	sql_dbat *d = (sql_dbat*)change->data;
 	if (d->next) {
