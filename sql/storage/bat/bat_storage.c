@@ -2779,26 +2779,11 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_column *c = (sql_column*)change->obj;
 
 	(void)store;
-	(void)commit_ts;
-	(void)oldest;
-#if 0
-	if (/*c->t->base->deleted ||*/ !commit_ts) {
-		sql_delta *d = change->data, *o = c->data;
-
-		if (o != d) {
-			while(o && o->next != d)
-				o = o->next;
-		}
-		if (o == c->data)
-			c->data = d->next;
-		else
-			o->next = d->next;
-		d->next = NULL;
-		destroy_delta(d);
-	}
-#endif
+	/* savepoint commit (did it merge ?) */
 	if (c->data != change->data || isTempTable(c->t)) /* data is freed by commit */
 		return 1;
+	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 		if (d->ts > oldest)
@@ -2817,26 +2802,11 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_idx *i = (sql_idx*)change->obj;
 
 	(void)store;
-	(void)commit_ts;
-	(void)oldest;
-#if 0
-	if (/*i->t->base->deleted ||*/ !commit_ts) {
-		sql_delta *d = change->data, *o = i->data;
-
-		if (o != d) {
-			while(o && o->next != d)
-				o = o->next;
-		}
-		if (o == i->data)
-			i->data = d->next;
-		else
-			o->next = d->next;
-		d->next = NULL;
-		destroy_delta(d);
-	}
-#endif
+	/* savepoint commit (did it merge ?) */
 	if (i->data != change->data || isTempTable(i->t)) /* data is freed by commit */
 		return 1;
+	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
 	sql_delta *d = (sql_delta*)change->data;
 	if (d->next) {
 		if (d->ts > oldest)
@@ -2855,26 +2825,11 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	sql_table *t = (sql_table*)change->obj;
 
 	(void)store;
-	(void)commit_ts;
-	(void)oldest;
-#if 0
-	if (/*t->base->deleted ||*/ !commit_ts) {
-		sql_dbat *d = change->data, *o = t->data;
-
-		if (o != d) {
-			while(o && o->next != d)
-				o = o->next;
-		}
-		if (o == t->data)
-			t->data = d->next;
-		else
-			o->next = d->next;
-		d->next = NULL;
-		destroy_dbat(d);
-	}
-#endif
+	/* savepoint commit (did it merge ?) */
 	if (t->data != change->data || isTempTable(t)) /* data is freed by commit */
 		return 1;
+	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
+		return 0;
 	sql_dbat *d = (sql_dbat*)change->data;
 	if (d->next) {
 		if (d->ts > oldest)

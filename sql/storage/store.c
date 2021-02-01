@@ -3320,10 +3320,11 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 			if (store->storage_api.create_col(tr, col) != LOG_OK)
 				return NULL;
 	if (!isDeclaredTable(t)) {
-		store->table_api.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname,
+		if (store->table_api.table_insert(tr, syscolumn, &col->base.id, col->base.name, col->type.type->sqlname,
 								 &col->type.digits, &col->type.scale, &t->base.id,
 								 (col->def) ? col->def : ATOMnilptr(TYPE_str), &col->null, &col->colnr,
-								 (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str));
+								 (col->storage_type) ? col->storage_type : ATOMnilptr(TYPE_str)) != LOG_OK)
+			return NULL;
 		if (c->type.type->s) /* column depends on type */
 			sql_trans_create_dependency(tr, c->type.type->base.id, col->base.id, TYPE_DEPENDENCY);
 	}
@@ -3604,11 +3605,9 @@ sql_trans_commit(sql_trans *tr)
 			node *next = n->next;
 			sql_change *c = n->data;
 
-			if (!c->cleanup) {
+			if (!c->cleanup || c->cleanup(store, c, commit_ts, oldest)) {
 				_DELETE(c);
-			} else if (c->cleanup && c->cleanup(store, c, commit_ts, oldest)) {
-				_DELETE(c);
-			} else if (tr->parent) {
+			} else if (tr->parent) { /* need to keep everything */
 				tr->parent->changes = sa_list_append(tr->sa, tr->parent->changes, c);
 			} else {
 				store->changes = sa_list_append(tr->sa, store->changes, c);
