@@ -2199,6 +2199,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable)
 }
 
 #define is_equi_exp(e) ((e)->flag == cmp_equal || (e)->flag == mark_in || (e)->flag == mark_notin)
+#define is_equi_exp_(e) ((e)->flag == cmp_equal || (e)->flag == mark_in)
 
 static list *
 get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
@@ -2209,7 +2210,7 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 		sql_exp *e = n->data;
 
 		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin && e->flag != cmp_or);
-		if (is_equi_exp(e))
+		if (is_equi_exp_(e))
 			list_append(new_exps, e);
 		else
 			*equality_only = 0;
@@ -2217,7 +2218,7 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 	for( node *n = exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
 
-		if (!is_equi_exp(e))
+		if (!is_equi_exp_(e))
 			list_append(new_exps, e);
 	}
 	return new_exps;
@@ -2523,6 +2524,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	list *l, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c, *lcand = NULL;
+	int semijoin_only = 0;
 
 	if (rel->op == op_anti && !list_empty(rel->exps) && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
@@ -2601,7 +2603,13 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 					if (!l || !r)
 						return NULL;
-					s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, 0, is_semantics(e), false);
+					if (be->no_mitosis && list_length(jexps) == 1 && list_empty(sexps) && rel->op == op_semi && !e->anti && is_equi_exp_(e)) {
+						join = stmt_semijoin(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, is_semantics(e), false);
+						semijoin_only = 1;
+						en = NULL;
+						break;
+					} else
+						s = stmt_join_cand(be, column(be, l), column(be, r), left->cand, NULL/*right->cand*/, e->anti, (comp_type) e->flag, 0, is_semantics(e), false);
 					lcand = left->cand;
 				} else {
 					s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
@@ -2708,14 +2716,16 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	/* We did a full join, thats too much.
 	   Reduce this using difference and intersect */
-	c = stmt_mirror(be, bin_first_column(be, left));
-	if (rel->op == op_anti) {
-		join = stmt_tdiff(be, c, jl, lcand);
-	} else {
-		if (lcand)
-			join = stmt_semijoin(be, c, jl, lcand, NULL/*right->cand*/, 0, false);
-		else
-			join = stmt_tinter(be, c, jl, false);
+	if (!semijoin_only) {
+		c = stmt_mirror(be, bin_first_column(be, left));
+		if (rel->op == op_anti) {
+			join = stmt_tdiff(be, c, jl, lcand);
+		} else {
+			if (lcand)
+				join = stmt_semijoin(be, c, jl, lcand, NULL/*right->cand*/, 0, false);
+			else
+				join = stmt_tinter(be, c, jl, false);
+		}
 	}
 
 	/* project all the left columns */
