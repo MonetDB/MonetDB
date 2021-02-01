@@ -474,7 +474,7 @@ partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp)
 				pp = NULL;
 			continue;
 		}
-		if (p->member->base.id == pt->base.id)
+		if (p->member == pt->base.id)
 			return p;
 	}
 	return NULL;
@@ -488,7 +488,7 @@ members_find_child_id(list *l, sqlid id)
 		for (n = l->h; n; n = n->next) {
 			sql_part *p = n->data;
 
-			if (id == p->member->base.id)
+			if (id == p->member)
 				return n;
 		}
 	}

@@ -655,13 +655,13 @@ typedef struct sql_part_value {
 
 typedef struct sql_part {
 	sql_base base;
-	struct sql_table *t;	  /* the merge table */
-	struct sql_table *member; /* the member of the merge table */
-	sql_subtype tpe;		  /* the column/expression type */
-	bit with_nills;			  /* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
+	struct sql_table *t;	/* the merge table */
+	sqlid member;			/* the member of the merge table */
+	sql_subtype tpe;		/* the column/expression type */
+	bit with_nills;			/* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
 	union {
-		list *values;         /* partition by values/list */
-		struct sql_range {    /* partition by range */
+		list *values;       /* partition by values/list */
+		struct sql_range {  /* partition by range */
 			ptr minvalue;
 			ptr maxvalue;
 			size_t minlength;
