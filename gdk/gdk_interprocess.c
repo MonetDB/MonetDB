@@ -13,6 +13,7 @@
 #include "gdk_interprocess.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "mutils.h"
 
 #include <string.h>
 

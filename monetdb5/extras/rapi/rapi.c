@@ -18,6 +18,7 @@
 #include "gdk.h"
 #include "sql_catalog.h"
 #include "sql_execute.h"
+#include "mutils.h"
 
 #define RAPI_MAX_TUPLES 2147483647L
 
