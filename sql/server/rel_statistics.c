@@ -350,7 +350,8 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (look)
 				look(sql, e);
 		}
-		if (!e->semantics && e->l && !have_nil(e->l))
+		assert(e->type == e_func || is_groupby(rel->op));
+		if (!e->semantics && e->l && !have_nil(e->l) && (e->type != e_aggr || list_length(rel->r)))
 			set_has_no_nil(e);
 	} break;
 	case e_atom: {
