@@ -2555,13 +2555,16 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	list *l, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c, *lcand = NULL;
-	int semijoin_only = 0;
+	int semijoin_only = 0, l_is_base = 0;
 
 	if (rel->op == op_anti && !list_empty(rel->exps) && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
 
-	if (rel->l) /* first construct the left sub relation */
-		left = subrel_bin(be, rel->l, refs);
+	if (rel->l) { /* first construct the left sub relation */
+		sql_rel *l = rel->l;
+		l_is_base = is_basetable(l->op);
+		left = subrel_bin(be, l, refs);
+	}
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
 	if (!left || !right)
@@ -2763,10 +2766,14 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 
 	/* project all the left columns */
 	for( n = left->op4.lval->h; n; n = n->next ) {
-		stmt *c = n->data;
+		stmt *c = n->data, *s;
 		const char *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
-		stmt *s = stmt_project(be, join, column(be, c));
+
+		if (l_is_base && nme[0] == '%' && strcmp(nme, TID) == 0)
+			s = join;
+		else
+			s = stmt_project(be, join, column(be, c));
 
 		s = stmt_alias(be, s, rnme, nme);
 		list_append(l, s);
