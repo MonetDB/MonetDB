@@ -2903,7 +2903,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 		return NULL;
 
 	a = exp->l;
-	if (t->scale && t->type->eclass != EC_FLT)
+	if (!a->isnull && t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
 	if (a && atom_cast(sql->sa, a, t)) {
