@@ -3499,7 +3499,11 @@ schema_dup(sql_trans *tr, sql_schema *s)
 {
 	sql_schema *ns = SA_ZNEW(tr->sa, sql_schema);
 
-	*ns = *s;
+	base_init(tr->sa, &ns->base, s->base.id, 0, s->base.name);
+	ns->auth_id = s->auth_id;
+	ns->owner = s->owner;
+	ns->system = s->system;
+
 	ns->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, isTempSchema(s), true);
 	ns->seqs = os_new(tr->sa, (destroy_fptr) &seq_destroy, isTempSchema(s), true);
 	ns->keys = os_new(tr->sa, (destroy_fptr) &key_destroy, isTempSchema(s), true);
@@ -3522,6 +3526,8 @@ schema_dup(sql_trans *tr, sql_schema *s)
 	/* we can share the funcs and types */
 	ns->funcs = os_dup(s->funcs);
 	ns->types = os_dup(s->types);
+	ns->store = s->store;
+	ns->internal = NULL;
 	return ns;
 }
 
