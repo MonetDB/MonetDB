@@ -249,6 +249,9 @@ MSscheduleClient(str command, str challenge, bstream *fin, stream *fout, protoco
 	if (s && strncmp(s, "FILETRANS:", 10) == 0) {
 		s += 10;
 		filetrans = true;
+	} else if (s && s[0] == ':') {
+		s += 1;
+		filetrans = false;
 	}
 
 	if (s && strchr(s, ':') != NULL) {
