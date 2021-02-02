@@ -28,7 +28,9 @@
 
 #endif
 
+#ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE 700
+#endif
 
 #include <stdlib.h>
 #if defined(_MSC_VER) && defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
