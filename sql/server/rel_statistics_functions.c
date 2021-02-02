@@ -498,8 +498,8 @@ sql_day_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
-	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
+	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
+	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
 }
 
 static void
