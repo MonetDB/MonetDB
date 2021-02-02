@@ -1018,10 +1018,14 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 			} else {
 				sql_func *f = sf->func;
-				if (!f->mod || strcmp(f->mod, fmod))
+				if (!f->mod || strcmp(f->mod, fmod)) {
+					_DELETE(f->mod);
 					f->mod = SA_STRDUP(NULL, fmod) ;//(f->sa)?sa_strdup(f->sa, fmod):sa_strdup(sql->pa, fmod);
-				if (!f->imp || strcmp(f->imp, fnme))
+				}
+				if (!f->imp || strcmp(f->imp, fnme)) {
+					_DELETE(f->imp);
 					f->imp = SA_STRDUP(NULL, fnme);//(f->sa)?sa_strdup(f->sa, fnme):sa_strdup(sql->pa, fnme);
+				}
 				if (!f->mod || !f->imp)
 					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
 				f->sql = 0; /* native */

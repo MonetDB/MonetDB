@@ -4523,12 +4523,16 @@ cascade_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids)
 			case ACT_SET_NULL:
 			case ACT_SET_DEFAULT:
 			case ACT_CASCADE:
-				if (!sql_update_cascade_Fkeys(be, fk, tids, updates, ((sql_fkey*)fk)->on_update))
+				if (!sql_update_cascade_Fkeys(be, fk, tids, updates, ((sql_fkey*)fk)->on_update)) {
+					list_destroy(keys);
 					return -1;
+				}
 				break;
 			default:	/*RESTRICT*/
-				if (!join_updated_pkey(be, fk, tids, updates))
+				if (!join_updated_pkey(be, fk, tids, updates)) {
+					list_destroy(keys);
 					return -1;
+				}
 			}
 		}
 		list_destroy(keys);

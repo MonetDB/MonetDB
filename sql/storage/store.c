@@ -3375,7 +3375,7 @@ sql_trans_rollback(sql_trans *tr)
 					list_prepend(tr->localtmps.set, dup_table(tt));
 				n = next;
 			}
-			list_destroy(tr->localtmps.dset);
+			list_destroy2(tr->localtmps.dset, tr->store);
 		}
 		/* cleanup new */
 		if (tr->localtmps.nelm) {
@@ -3459,6 +3459,7 @@ sql_trans_destroy(sql_trans *tr)
 	}
 	if (tr->changes)
 		sql_trans_rollback(tr);
+	cs_destroy(&tr->localtmps, tr->store);
 	_DELETE(tr);
 	return res;
 }
@@ -3531,7 +3532,7 @@ sql_trans_create(sqlstore *store, sql_trans *parent, const char *name)
 	if (tr) {
 		tr->ts = store_timestamp(store);
 		tr->active = 1;
-		cs_new(&tr->localtmps, tr->sa, (fdestroy) NULL);
+		cs_new(&tr->localtmps, tr->sa, (fdestroy) &table_destroy);
 	}
 	return tr;
 }
@@ -3854,10 +3855,15 @@ sys_drop_default_object(sql_trans *tr, sql_column *col, int drop_action)
 		char *schema = NULL, *seq_name = NULL;
 
 		extract_schema_and_sequence_name(tr->sa, col->def + strlen(next_value_for), &schema, &seq_name);
-		if (!schema || !seq_name || !(s = find_sql_schema(tr, schema)))
+		if (!schema || !seq_name || !(s = find_sql_schema(tr, schema))) {
+			_DELETE(schema);
+			_DELETE(seq_name);
 			return -1;
+		}
 
 		seq = find_sql_sequence(tr, s, seq_name);
+		_DELETE(schema);
+		_DELETE(seq_name);
 		if (seq && sql_trans_get_dependency_type(tr, seq->base.id, BEDROPPED_DEPENDENCY) > 0) {
 			sys_drop_sequence(tr, seq, drop_action);
 			if (os_del(s->seqs, tr, seq->base.name, dup_base(&seq->base)))
@@ -5897,7 +5903,7 @@ sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng st
 	sql_table *sysseqs = find_sql_table(tr, syss, "sequences");
 	sql_sequence *seq = create_sql_sequence_with_id(tr->sa, next_oid(tr->store), s, name, start, min, max, inc, cacheinc, cycle);
 
-	if (os_add(s->seqs, tr, seq->base.name, dup_base(&seq->base))) {
+	if (os_add(s->seqs, tr, seq->base.name, &seq->base)) {
 		seq_destroy(store, seq);
 		return NULL;
 	}
