@@ -485,6 +485,8 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {
 				if (mods < MAX_MODULES)
 					modules[mods++]=optarg;
+				else
+					fprintf(stderr, "ERROR: maximum number of modules reached\n");
 				break;
 			}
 			usage(prog, -1);
