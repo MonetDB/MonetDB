@@ -9710,8 +9710,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_join_order(&v, rel);
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
 		/* rel_join_order may introduce empty selects */
-		if (gp.cnt[op_select])
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 
 		if (level <= 0)
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
@@ -9722,8 +9721,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
 		if (level <= 0) {
 			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-			if (gp.cnt[op_select])
-				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 			rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
 		}
 
@@ -9750,8 +9748,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	   because pushing down select expressions makes rel_join_order more difficult */
 	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		if (gp.cnt[op_select])
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
@@ -9781,8 +9778,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	    gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_func_down);
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		if (gp.cnt[op_select])
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
