@@ -198,7 +198,7 @@ main(int argc, char **argv)
 	if (passwd == NULL)
 		passwd = simple_prompt("password", BUFSIZ, 0, NULL);
 
-	mid = mapi_connect(host, port, user, passwd, "sql", dbname);
+	mid = mapi_mapi(host, port, user, passwd, "sql", dbname);
 	if (user)
 		free(user);
 	if (passwd)
@@ -209,6 +209,8 @@ main(int argc, char **argv)
 		fprintf(stderr, "failed to allocate Mapi structure\n");
 		exit(2);
 	}
+	mapi_set_time_zone(mid, 0);
+	mapi_reconnect(mid);
 	if (mapi_error(mid)) {
 		mapi_explain(mid, stderr);
 		exit(2);
