@@ -12,13 +12,7 @@
 
 #include "gdk_atoms.h"
 
-
-/* TODO
- * implement new double linked list
- * keep hash/map of names -> objectversion
- */
-
-struct versionhead ;// TODO: rename to object_version_chain
+struct versionhead ;
 
 #define active					(0)
 #define id_based_rollbacked		(1)
@@ -109,7 +103,6 @@ find_id(objectset *os, sqlid id)
 			return NULL;
 		}
 		MT_lock_unset(&os->ht_lock);
-		// TODO: can we actually reach this point?
 		for (versionhead  *n = os->id_based_h; n; n = n->next) {
 			objectversion *ov = n->ov;
 
@@ -145,7 +138,7 @@ node_destroy(objectset *os, sqlstore *store, versionhead  *n)
 {
 	if (!os->sa)
 		_DELETE(n);
-	(void)store; /* todo destroy b */
+	(void)store;
 }
 
 static versionhead  *
@@ -663,7 +656,6 @@ find_name(objectset *os, const char *name)
 			return NULL;
 		}
 		MT_lock_unset(&os->ht_lock);
-		// TODO: can we actually reach this point?
 		for (versionhead  *n = os->name_based_h; n; n = n->next) {
 			objectversion *ov = n->ov;
 
@@ -675,7 +667,6 @@ find_name(objectset *os, const char *name)
 	}
 	return NULL;
 }
-
 
 static objectversion*
 get_valid_object_name(sql_trans *tr, objectversion *ov)
