@@ -51,7 +51,11 @@ usage(const char *prog, int xit)
 }
 
 int
+#ifdef _MSC_VER
+wmain(int argc, wchar_t **wargv)
+#else
 main(int argc, char **argv)
+#endif
 {
 	int port = 0;
 	char *user = NULL;
@@ -86,6 +90,20 @@ main(int argc, char **argv)
 		{"help", 0, 0, '?'},
 		{0, 0, 0, 0}
 	};
+#ifdef _MSC_VER
+	char **argv = malloc((argc + 1) * sizeof(char *));
+	if (argv == NULL) {
+		fprintf(stderr, "cannot allocate memory for argument conversion\n");
+		exit(1);
+	}
+	for (int i = 0; i < argc; i++) {
+		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
+			fprintf(stderr, "cannot convert argument to UTF-8\n");
+			exit(1);
+		}
+	}
+	argv[argc] = NULL;
+#endif
 
 	parse_dotmonetdb(&dotfile);
         user = dotfile.user;
