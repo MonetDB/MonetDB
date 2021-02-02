@@ -1,6 +1,13 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Fri Jan 29 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Environment variables (sys.env()) must be UTF-8, but since they can
+  contain file names which may not be UTF-8, there is now a mechanism
+  to store the original values outside of sys.env() and store
+  %-escaped (similar to URL escaping) values in the environment.  The
+  key must still be UTF-8.
+
 * Tue Dec  1 2020 Sjoerd Mullender <sjoerd@acm.org>
 - We now save the location of the min and max values when known.
 

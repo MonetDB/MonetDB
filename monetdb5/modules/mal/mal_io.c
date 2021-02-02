@@ -40,6 +40,7 @@
  */
 #include "monetdb_config.h"
 #include "mal_io.h"
+#include "mutils.h"
 
 #define MAXFORMAT 64*1024
 
@@ -627,7 +628,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 	char *buf;
 	ptr t = 0;
 	size_t lt = 0;
-	FILE *fp = fopen(*fnme, "r");
+	FILE *fp = MT_fopen(*fnme, "r");
 	char msg[BUFSIZ];
 
 	(void) ret;

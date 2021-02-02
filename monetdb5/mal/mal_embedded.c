@@ -36,6 +36,7 @@
 #include "msabaoth.h"
 #include "mal_authorize.h"
 #include "mal_profiler.h"
+#include "mutils.h"
 
 static bool embeddedinitialized = false;
 
@@ -60,7 +61,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
-			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
+			if ((secretf = MT_fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
 				throw(MAL, "malEmbeddedBoot",
 					"unable to open vault_key_file %s: %s\n",
 					GDKgetenv("monet_vault_key"), strerror(errno));

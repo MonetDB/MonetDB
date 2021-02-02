@@ -12,6 +12,7 @@
 
 #include "gdk_time.h"
 #include "blob.h"
+#include "mutils.h"
 
 #include <setjmp.h>
 #include <signal.h>
@@ -666,7 +667,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			msg = createException(MAL, "cudf.eval", MAL_MALLOC_FAIL);
 			goto wrapup;
 		}
-		if (mkdir(deldirpath, 0777) < 0 && errno != EEXIST) {
+		if (MT_mkdir(deldirpath) < 0 && errno != EEXIST) {
 			msg = createException(MAL, "cudf.eval",
 								  "cannot create directory %s\n", deldirpath);
 			goto wrapup;
@@ -674,7 +675,7 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		GDKfree(deldirpath);
 
 		// now generate the source file
-		f = fopen(fname, "w+");
+		f = MT_fopen(fname, "w+");
 		if (!f) {
 			msg = createException(MAL, "cudf.eval",
 								  "Failed to open file for JIT compilation: %s",

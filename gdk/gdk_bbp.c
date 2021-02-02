@@ -79,9 +79,6 @@
 #ifndef F_OK
 #define F_OK 0
 #endif
-#ifdef _MSC_VER
-#define access(f, m)	_access(f, m)
-#endif
 #ifndef S_ISDIR
 #define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
 #endif
@@ -659,7 +656,7 @@ fixdatebats(void)
 					     filename);
 				return GDK_FAIL;
 			}
-			fp = fopen(filename, "w");
+			fp = MT_fopen(filename, "w");
 			if (fp == NULL) {
 				GDKsyserror("cannot create file %s\n",
 					    filename);
@@ -1038,7 +1035,7 @@ BBPcheckbats(void)
 		path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "tail");
 		if (path == NULL)
 			return GDK_FAIL;
-		if (stat(path, &statb) < 0) {
+		if (MT_stat(path, &statb) < 0) {
 			GDKsyserror("BBPcheckbats: cannot stat file %s (expected size %zu)\n",
 				    path, b->theap.free);
 			GDKfree(path);
@@ -1054,7 +1051,7 @@ BBPcheckbats(void)
 			path = GDKfilepath(0, BATDIR, BBP_physical(b->batCacheid), "theap");
 			if (path == NULL)
 				return GDK_FAIL;
-			if (stat(path, &statb) < 0) {
+			if (MT_stat(path, &statb) < 0) {
 				GDKsyserror("BBPcheckbats: cannot stat file %s\n",
 					    path);
 				GDKfree(path);
@@ -1177,9 +1174,9 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 	}
 	if (strcmp(dirname, ":memory:") == 0) {
 		dirname = NULL;
-	} else if (mkdir(dirname, MONETDB_DIRMODE) < 0) {
+	} else if (MT_mkdir(dirname) < 0) {
 		if (errno == EEXIST) {
-			if (stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
+			if (MT_stat(dirname, &st) == -1 || !S_ISDIR(st.st_mode)) {
 				if (logerror)
 					GDKerror("%s: not a directory\n", dirname);
 				return GDK_FAIL;
@@ -1215,7 +1212,7 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 				if (bbpdir == NULL) {
 					return GDK_FAIL;
 				}
-				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
+				if (MT_stat(bbpdir, &st) != -1 || errno != ENOENT) {
 					GDKfree(bbpdir);
 					if (logerror)
 						GDKerror("%s is a database\n", dirname);
@@ -1226,7 +1223,7 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 				if (bbpdir == NULL) {
 					return GDK_FAIL;
 				}
-				if (stat(bbpdir, &st) != -1 || errno != ENOENT) {
+				if (MT_stat(bbpdir, &st) != -1 || errno != ENOENT) {
 					GDKfree(bbpdir);
 					if (logerror)
 						GDKerror("%s is a database\n", dirname);
@@ -1297,9 +1294,9 @@ BBPinit(void)
 		}
 
 		/* try to obtain a BBP.dir from bakdir */
-		if (stat(backupbbpdirstr, &st) == 0) {
+		if (MT_stat(backupbbpdirstr, &st) == 0) {
 			/* backup exists; *must* use it */
-			if (recover_dir(0, stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
+			if (recover_dir(0, MT_stat(bbpdirstr, &st) == 0) != GDK_SUCCEED) {
 				GDKfree(bbpdirstr);
 				GDKfree(backupbbpdirstr);
 				goto bailout;
@@ -1313,7 +1310,7 @@ BBPinit(void)
 		} else if ((fp = GDKfilelocate(0, "BBP", "r", "dir")) == NULL) {
 			/* there was no BBP.dir either. Panic! try to use a
 			 * BBP.bak */
-			if (stat(backupbbpdirstr, &st) < 0) {
+			if (MT_stat(backupbbpdirstr, &st) < 0) {
 				/* no BBP.bak (nor BBP.dir or BACKUP/BBP.dir):
 				 * create a new one */
 				TRC_DEBUG(IO_, "initializing BBP.\n");	/* BBPdir instead of BBPinit for backward compatibility of error messages */
@@ -2893,7 +2890,7 @@ file_move(int farmid, const char *srcdir, const char *dstdir, const char *name, 
 		path = GDKfilepath(farmid, srcdir, name, ext);
 		if (path == NULL)
 			return GDK_FAIL;
-		if (stat(path, &st)) {
+		if (MT_stat(path, &st)) {
 			/* source file does not exist; the best
 			 * recovery is to give an error but continue
 			 * by considering the BAT as not saved; making
@@ -2918,7 +2915,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 
 	path = GDKfilepath(farmid, dir, name, ext);
 	if (path) {
-		ret = stat(path, &st);
+		ret = MT_stat(path, &st);
 		TRC_DEBUG(IO_, "stat(%s) = %d\n", path, ret);
 		GDKfree(path);
 	}
@@ -2953,7 +2950,7 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		path = GDKfilepath(hp->farmid, dstdir, nme, kill_ext);
 		if (path == NULL)
 			return GDK_FAIL;
-		fp = fopen(path, "w");
+		fp = MT_fopen(path, "w");
 		if (fp == NULL)
 			GDKsyserror("heap_move: cannot open file %s\n", path);
 		TRC_DEBUG(IO_, "open %s = %d\n", path, fp ? 0 : -1);
@@ -3012,7 +3009,7 @@ BBPprepare(bool subcommit)
 		backup_dir = 0;
 		ret = BBPrecover(0);
 		if (ret == GDK_SUCCEED) {
-			if (mkdir(bakdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
+			if (MT_mkdir(bakdirpath) < 0 && errno != EEXIST) {
 				GDKsyserror("cannot create directory %s\n", bakdirpath);
 				ret = GDK_FAIL;
 			}
@@ -3022,7 +3019,7 @@ BBPprepare(bool subcommit)
 	}
 	if (ret == GDK_SUCCEED && start_subcommit) {
 		/* make a new SUBDIR (subdir of BAKDIR) */
-		if (mkdir(subdirpath, MONETDB_DIRMODE) < 0) {
+		if (MT_mkdir(subdirpath) < 0) {
 			GDKsyserror("cannot create directory %s\n", subdirpath);
 			ret = GDK_FAIL;
 		}
@@ -3217,7 +3214,7 @@ BBPsync(int cnt, bat *subcommit)
 					ret = GDK_FAIL;
 					goto bailout;
 				}
-				if (access(f, F_OK) == 0)
+				if (MT_access(f, F_OK) == 0)
 					file_move(b->theap.farmid, BAKDIR, SUBDIR, o, "tail");
 				GDKfree(f);
 				f = GDKfilepath(b->theap.farmid, BAKDIR, o, "theap");
@@ -3225,7 +3222,7 @@ BBPsync(int cnt, bat *subcommit)
 					ret = GDK_FAIL;
 					goto bailout;
 				}
-				if (access(f, F_OK) == 0)
+				if (MT_access(f, F_OK) == 0)
 					file_move(b->theap.farmid, BAKDIR, SUBDIR, o, "theap");
 				GDKfree(f);
 			}
@@ -3269,11 +3266,11 @@ BBPsync(int cnt, bat *subcommit)
 		 * succeeded, so no changing of ret after this
 		 * call anymore */
 
-		if (rename(bakdir, deldir) < 0)
+		if (MT_rename(bakdir, deldir) < 0)
 			ret = GDK_FAIL;
 		if (ret != GDK_SUCCEED &&
 		    GDKremovedir(0, DELDIR) == GDK_SUCCEED && /* maybe there was an old deldir */
-		    rename(bakdir, deldir) < 0)
+		    MT_rename(bakdir, deldir) < 0)
 			ret = GDK_FAIL;
 		if (ret != GDK_SUCCEED)
 			GDKsyserror("BBPsync: rename(%s,%s) failed.\n", bakdir, deldir);
@@ -3327,7 +3324,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 
 		/* step 1: remove the X.new file that is going to be
 		 * overridden by X */
-		if (remove(dstpath) != 0 && errno != ENOENT) {
+		if (MT_remove(dstpath) != 0 && errno != ENOENT) {
 			/* if it exists and cannot be removed, all
 			 * this is going to fail */
 			GDKsyserror("force_move: remove(%s)\n", dstpath);
@@ -3341,7 +3338,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 		if(!(killfile = GDKfilepath(farmid, srcdir, name, NULL))) {
 			return GDK_FAIL;
 		}
-		if (remove(killfile) != 0) {
+		if (MT_remove(killfile) != 0) {
 			ret = GDK_FAIL;
 			GDKsyserror("force_move: remove(%s)\n", killfile);
 		}
@@ -3362,7 +3359,7 @@ force_move(int farmid, const char *srcdir, const char *dstdir, const char *name)
 			GDKfree(dstpath);
 			return GDK_FAIL;
 		}
-		if (remove(dstpath) != 0)	/* clear destination */
+		if (MT_remove(dstpath) != 0)	/* clear destination */
 			ret = GDK_FAIL;
 		TRC_DEBUG(IO_, "remove %s = %d\n", dstpath, (int) ret);
 
@@ -3410,7 +3407,7 @@ BBPrecover(int farmid)
 	dstdir = dstpath + j;
 	TRC_DEBUG(IO_, "start\n");
 
-	if (mkdir(leftdirpath, MONETDB_DIRMODE) < 0 && errno != EEXIST) {
+	if (MT_mkdir(leftdirpath) < 0 && errno != EEXIST) {
 		GDKsyserror("cannot create directory %s\n", leftdirpath);
 		closedir(dirp);
 		GDKfree(bakdirpath);
@@ -3430,7 +3427,7 @@ BBPrecover(int farmid)
 				continue;
 			fn = GDKfilepath(farmid, BAKDIR, dent->d_name, NULL);
 			if (fn) {
-				int uret = remove(fn);
+				int uret = MT_remove(fn);
 				TRC_DEBUG(IO_, "remove %s = %d\n",
 					  fn, uret);
 				GDKfree(fn);
@@ -3472,13 +3469,13 @@ BBPrecover(int farmid)
 		if (fn == NULL) {
 			ret = GDK_FAIL;
 		} else {
-			ret = recover_dir(farmid, stat(fn, &st) == 0);
+			ret = recover_dir(farmid, MT_stat(fn, &st) == 0);
 			GDKfree(fn);
 		}
 	}
 
 	if (ret == GDK_SUCCEED) {
-		if (rmdir(bakdirpath) < 0) {
+		if (MT_rmdir(bakdirpath) < 0) {
 			GDKsyserror("BBPrecover: cannot remove directory %s\n", bakdirpath);
 			ret = GDK_FAIL;
 		}
@@ -3696,7 +3693,7 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			break;
 		}
 		if (delete) {
-			if (remove(fullname) != 0 && errno != ENOENT) {
+			if (MT_remove(fullname) != 0 && errno != ENOENT) {
 				GDKsyserror("BBPdiskscan: remove(%s)", fullname);
 				continue;
 			}

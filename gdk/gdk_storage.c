@@ -119,7 +119,7 @@ GDKcreatedir(const char *dir)
 #ifdef WIN32
 			strlen(path) > 3 &&
 #endif
-			mkdir(path, MONETDB_DIRMODE) < 0) {
+			MT_mkdir(path) < 0) {
 			if (errno != EEXIST) {
 				GDKsyserror("cannot create directory %s\n", path);
 				return GDK_FAIL;
@@ -170,14 +170,14 @@ GDKremovedir(int farmid, const char *dirname)
 			 * an error return */
 			break;
 		}
-		ret = remove(path);
+		ret = MT_remove(path);
 		if (ret == -1)
 			GDKsyserror("remove(%s) failed\n", path);
 		TRC_DEBUG(IO_, "Remove %s = %d\n", path, ret);
 		GDKfree(path);
 	}
 	closedir(dirp);
-	ret = rmdir(dirnamestr);
+	ret = MT_rmdir(dirnamestr);
 	if (ret != 0)
 		GDKsyserror("rmdir(%s) failed.\n", dirnamestr);
 	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
@@ -235,11 +235,11 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 #ifdef WIN32
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
-	fd = open(nme, flags, MONETDB_MODE);
+	fd = MT_open(nme, flags);
 	if (fd < 0 && *mode == 'w') {
 		/* try to create the directory, in case that was the problem */
 		if (GDKcreatedir(nme) == GDK_SUCCEED) {
-			fd = open(nme, flags, MONETDB_MODE);
+			fd = MT_open(nme, flags);
 			if (fd < 0)
 				GDKsyserror("cannot open file %s\n", nme);
 		}
@@ -281,7 +281,7 @@ GDKfileopen(int farmid, const char *dir, const char *name, const char *extension
 	if (path != NULL) {
 		FILE *f;
 		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
-		f = fopen(path, mode);
+		f = MT_fopen(path, mode);
 		int err = errno;
 		GDKfree(path);
 		errno = err;
@@ -301,7 +301,7 @@ GDKunlink(int farmid, const char *dir, const char *nme, const char *ext)
 		if (path == NULL)
 			return GDK_FAIL;
 		/* if file already doesn't exist, we don't care */
-		if (remove(path) != 0 && errno != ENOENT) {
+		if (MT_remove(path) != 0 && errno != ENOENT) {
 			GDKsyserror("remove(%s)\n", path);
 			GDKfree(path);
 			return GDK_FAIL;
@@ -329,7 +329,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 	path1 = GDKfilepath(farmid, dir1, nme1, ext1);
 	path2 = GDKfilepath(farmid, dir2, nme2, ext2);
 	if (path1 && path2) {
-		ret = rename(path1, path2);
+		ret = MT_rename(path1, path2);
 		if (ret < 0)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
@@ -412,7 +412,7 @@ GDKextend(const char *fn, size_t size)
 	 * bytes without O_BINARY. */
 	flags |= O_BINARY;
 #endif
-	if ((fd = open(fn, flags | O_CLOEXEC)) >= 0) {
+	if ((fd = MT_open(fn, flags | O_CLOEXEC)) >= 0) {
 		rt = GDKextendf(fd, size, fn);
 		close(fd);
 	} else {

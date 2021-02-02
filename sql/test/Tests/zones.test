@@ -21,12 +21,11 @@ where abs(expected - computed)>0.00001
 
 statement ok
 create table photoobj (
-    objID       bigint      not null,
-    ra          float       not null,
-    "dec"       float       not null,
-    mode        tinyint	    not null,
-    primary key (objID)
-    )
+	objID       bigint      not null,
+	ra          float       not null,
+	"dec"       float       not null,
+	mode        tinyint	    not null,
+	primary key (objID))
 
 statement ok
 insert into photoobj
@@ -50,17 +49,16 @@ values( 687726014001184896,	193.75664598583401,	1.6195802985663199,	0)
 
 statement ok
 create table ZoneIndex (
-    objID       bigint         not null,
-    zone        int         not null,
-    ra          float       not null,
-    "dec"       float       not null,
-    x           float       not null,
-    y           float       not null,
-    z           float       not null,
-    mode        tinyint	    not null,
-    margin      int         not null,
-    primary key (zone, ra, objID)
-    )
+	objID       bigint      not null,
+	zone        int         not null,
+	ra          float       not null,
+	"dec"       float       not null,
+	x           float       not null,
+	y           float       not null,
+	z           float       not null,
+	mode        tinyint	    not null,
+	margin      int         not null,
+	primary key (zone, ra, objID))
 
 statement ok
 create table ZoneHeight( "value" double not null)
@@ -70,14 +68,14 @@ insert into ZoneHeight values(cast (0.1  as double))
 
 statement ok
 insert into zoneindex
-     select objID,
-            cast(floor("dec"/(select min("value") from ZoneHeight)) as int) as zone,
-            ra, "dec",
-              cos(radians("dec"))*cos(radians(ra)) as x,
-              cos(radians("dec"))*sin(radians(ra)) as y,
-              sin(radians("dec")) as z,
-              mode, 0 as margin
-      from photoobj
+select objID,
+	cast(floor("dec"/(select min("value") from ZoneHeight)) as int) as zone,
+	ra, "dec",
+		cos(radians("dec"))*cos(radians(ra)) as x,
+		cos(radians("dec"))*sin(radians(ra)) as y,
+		sin(radians("dec")) as z,
+		mode, 0 as margin
+from photoobj
 
 statement ok
 insert into zoneindex
@@ -89,123 +87,99 @@ insert into zoneindex
 select objid,zone,ra+360.0,"dec",x,y,z,mode,1 as margin
 from zoneindex where ra<180.0 and margin=0
 
-statement error
-create function GetNearbyObjects(
-                       pra double, pdec double,
-                       ptheta double)
+statement ok
+create function GetNearbyObjects(pra double, pdec double, ptheta double)
 returns Table (objID bigint, distance double)
 begin
-    declare zoneHeight float, alpha1 float,
-            x1 float, y1 float, z1 float
-
-statement error
-    set alpha1 = Alpha(ptheta, pdec)
-
-statement error
-    set x1 = cos(radians(pdec))*cos(radians(pra))
-
-statement error
-    set y1 = cos(radians(pdec))*sin(radians(pra))
-
-statement error
-    set z1 = sin(radians(pdec))
-
-statement error
-    return TABLE(select objID,
-            case when(x1*x +y1*y + z1*z) < 1
-                 then degrees(acos(x1*x +y1*y + z1*z))
-                 else 0 end as distance
-    from zoneindex
-    where
-       ra between pra -alpha1
-       and  pra + alpha1
-       and "dec" between pdec - ptheta
-       and    pdec + ptheta
-       and (x1*x +y1*y + z1*z)
-                   > cos(radians(ptheta))
-	)
-
-statement error
+	declare zoneHeight float, alpha1 float,x1 float, y1 float, z1 float;
+	set alpha1 = Alpha(ptheta, pdec);
+	set x1 = cos(radians(pdec))*cos(radians(pra));
+	set y1 = cos(radians(pdec))*sin(radians(pra));
+	set z1 = sin(radians(pdec));
+	return TABLE(select objID,
+			case when(x1*x +y1*y + z1*z) < 1
+					then degrees(acos(x1*x +y1*y + z1*z))
+					else 0 end as distance
+	from zoneindex
+	where
+		ra between pra -alpha1
+		and pra + alpha1
+		and "dec" between pdec - ptheta
+		and pdec + ptheta
+		and (x1*x +y1*y + z1*z) > cos(radians(ptheta)));
 end
 
-statement error
+query I rowsort
 select count(S.objID)
 from GetNearbyObjects(193.75, 1.48, 0.1) as S
+----
+3
 
-statement error
-create table zonetest (
-    objID    bigint,
-    expected double)
+statement ok
+create table zonetest (objID bigint, expected double)
 
-statement error
-insert into zonetest values( 687726014001184891,	0.00669124492169760)
+statement ok
+insert into zonetest values( 687726014001184891,0.00669124492169760)
 
-statement error
-insert into zonetest values( 687726014001184892,	0.00688278877005443)
+statement ok
+insert into zonetest values( 687726014001184892,0.00688278877005443)
 
-statement error
-insert into zonetest values( 687726014001184894,	0.00700190450261338)
+statement ok
+insert into zonetest values( 687726014001184894,0.00700190450261338)
 
-statement error
-insert into zonetest values( 687726014001184895,	0.13972627471136584)
+statement ok
+insert into zonetest values( 687726014001184895,0.13972627471136584)
 
-statement error
-insert into zonetest values( 687726014001184896,	0.13973831452158963)
+statement ok
+insert into zonetest values( 687726014001184896,0.13973831452158963)
 
-statement error
+query IRR rowsort
 select S.objID,S.distance, T.expected
 from GetNearbyObjects(193.75,1.48, 1.0) as S, zonetest as T
 where S.objID=T.objID and abs(S.distance-T.expected)>0.00001
+----
 
-statement error
-create function GetNearestObject(
-                         pra double, pdec double)
-returns Table (objID bigint, distance double)
+statement ok
+create function GetNearestObject(pra double, pdec double)
+returns Table (objID bigint, distance double) 
 begin
 	return TABLE(select objID,distance
 	from GetNearbyObjects(pra,pdec,0.1) G
-	where distance = (select min(distance)
-	from GetNearbyObjects(pra,pdec,0.1) G1))
-
-statement error
+	where distance = (select min(distance) 
+	from GetNearbyObjects(pra,pdec,0.1) G1));
 end
 
-statement error
-create function fGetNearestObjIdAllEq(
-                         pra double, pdec double, pr double)
+statement ok
+create function fGetNearestObjIdAllEq(pra double, pdec double, pr double)
 returns bigint
 begin
-	declare ob bigint
-
-statement error
+	declare ob bigint;
 	set ob= (select G.objID
-	from GetNearestObject(pra,pdec) G)
-
-statement error
-        return ob
-
-statement error
+	from GetNearestObject(pra,pdec) G);
+	return ob;
 end
 
-statement error
+query I rowsort
 select cast(fGetNearestObjIdAllEq(193.75,1.48,0.1) - 687726014001184891 as bigint)
+----
+0
 
-statement error
+statement ok
 drop function fGetNearestObjIdAllEq
 
-statement error
+statement ok
 drop function GetNearestObject
 
-statement error
+statement ok
 drop function GetNearbyObjects
 
-statement error
+statement ok
 drop table alphatest
 
-statement error
+statement ok
 drop table zonetest
 
-statement error
+statement ok
 drop table zoneindex
 
 statement ok

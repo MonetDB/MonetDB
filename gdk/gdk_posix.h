@@ -160,17 +160,6 @@ gdk_export char *dlerror(void);
 #ifndef HAVE_GETTIMEOFDAY
 gdk_export int gettimeofday(struct timeval *tv, int *ignore_zone);
 #endif
-gdk_export int win_stat(const char *, struct stat *);
-gdk_export int win_rmdir(const char *);
-gdk_export int win_rename(const char *, const char *);
-gdk_export int win_unlink(const char *);
-gdk_export int win_mkdir(const char *, const int mode);
-
-#define _stat64(x,y)	win_stat(x,y)
-#define mkdir		win_mkdir
-#define rmdir		win_rmdir
-#define rename		win_rename
-#define remove		win_unlink
 
 #endif	/* NATIVE_WIN32 */
 
