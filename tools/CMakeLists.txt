@@ -6,7 +6,7 @@
 # Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
 #]]
 
-if(NOT WIN32)
+if(NOT WIN32 AND NOT CYGWIN)
   add_subdirectory(merovingian)
 endif()
 add_subdirectory(mserver)

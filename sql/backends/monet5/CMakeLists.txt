@@ -104,14 +104,14 @@ target_link_libraries(sql
   PRIVATE
   monetdb_config_header
   mcrypt
-  bat
-  monetdb5
   sqlstorage
   sqlcommon
   batstore
   sqlserver
   sqlinclude
-  copybinary)
+  copybinary
+  monetdb5
+  bat)
 
 set_target_properties(sql
   PROPERTIES

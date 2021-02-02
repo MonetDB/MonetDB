@@ -29,12 +29,10 @@ target_link_libraries(mutils
   PRIVATE
   monetdb_config_header)
 
-if(WIN32)
-  target_compile_definitions(mutils PRIVATE
-    LIBMUTILS
-    LIBGDK
-    LIBMEROUTIL)
-endif()
+target_compile_definitions(mutils PRIVATE
+  LIBMUTILS
+  LIBGDK
+  LIBMEROUTIL)
 
 set_target_properties(mutils
   PROPERTIES
@@ -59,13 +57,11 @@ target_link_libraries(mcrypt
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   monetdb_config_header)
 
-if(WIN32)
-  target_compile_definitions(mcrypt
-    PRIVATE
-    LIBMONETDB5
-    LIBMAPI
-    LIBMCRYPT)
-endif()
+target_compile_definitions(mcrypt
+  PRIVATE
+  LIBMONETDB5
+  LIBMAPI
+  LIBMCRYPT)
 
 set_target_properties(mcrypt
   PROPERTIES
@@ -97,12 +93,10 @@ target_link_libraries(msabaoth
   mutils
   monetdb_config_header)
 
-if(WIN32)
-  target_compile_definitions(msabaoth
-    PRIVATE
-    LIBMSABAOTH
-    LIBMONETDB5)
-endif()
+target_compile_definitions(msabaoth
+  PRIVATE
+  LIBMSABAOTH
+  LIBMONETDB5)
 
 set_target_properties(msabaoth
   PROPERTIES

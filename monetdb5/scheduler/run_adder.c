@@ -49,7 +49,7 @@
 #include "mal_linker.h"
 #include "mal_client.h"
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #define __declspec(x)
 #endif
 
