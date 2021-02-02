@@ -106,8 +106,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 		str msg1 = NULL, msg2 = NULL;
 
 		if (strcmp(f->func->mod, "calc") == 0) {
-			res1 = atom_sub(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmax));
-			res2 = atom_sub(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmin));
+			res1 = atom_sub(atom_dup(sql->sa, lmax), atom_dup(sql->sa, rmin));
+			res2 = atom_sub(atom_dup(sql->sa, lmin), atom_dup(sql->sa, rmax));
 		} else {
 			sql_subtype tp;
 
@@ -117,16 +117,16 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 
 				switch (t1->type->eclass) {
 				case EC_DATE: {
-					res1 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmax->data.val.ival, (date)rmax->data.val.ival));
-					res2 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmin->data.val.ival, (date)rmin->data.val.ival));
+					res1 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmax->data.val.ival, (date)rmin->data.val.ival));
+					res2 = atom_int(sql->sa, sql_bind_localtype("int"), date_diff_imp((date)lmin->data.val.ival, (date)rmax->data.val.ival));
 				} break;
 				case EC_TIME: {
-					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmax->data.val.lval, (daytime)rmax->data.val.lval));
-					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmin->data.val.lval, (daytime)rmin->data.val.lval));
+					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmax->data.val.lval, (daytime)rmin->data.val.lval));
+					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), daytime_diff((daytime)lmin->data.val.lval, (daytime)rmax->data.val.lval));
 				} break;
 				case EC_TIMESTAMP: {
-					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmax->data.val.lval, (timestamp)rmax->data.val.lval));
-					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmin->data.val.lval, (timestamp)rmin->data.val.lval));
+					res1 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmax->data.val.lval, (timestamp)rmin->data.val.lval));
+					res2 = atom_int(sql->sa, sql_bind_localtype("lng"), tsdiff((timestamp)lmin->data.val.lval, (timestamp)rmax->data.val.lval));
 				} break;
 				default:
 					break;
@@ -134,8 +134,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 			} else if (strcmp(f->func->imp, "date_sub_msec_interval") == 0) {
 				date sub1, sub2;
 
-				if (!(msg1 = date_sub_msec_interval(&sub1, (date)lmax->data.val.ival, rmax->data.val.lval)) &&
-					!(msg2 = date_sub_msec_interval(&sub2, (date)lmin->data.val.ival, rmin->data.val.lval))) {
+				if (!(msg1 = date_sub_msec_interval(&sub1, (date)lmax->data.val.ival, rmin->data.val.lval)) &&
+					!(msg2 = date_sub_msec_interval(&sub2, (date)lmin->data.val.ival, rmax->data.val.lval))) {
 					sql_find_subtype(&tp, "date", 0, 0);
 					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
 					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
@@ -143,15 +143,15 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 			} else if (strcmp(f->func->imp, "date_sub_month_interval") == 0) {
 				date sub1, sub2;
 
-				if (!(msg1 = date_submonths(&sub1, (date)lmax->data.val.ival, rmax->data.val.ival)) &&
-					!(msg2 = date_submonths(&sub2, (date)lmin->data.val.ival, rmin->data.val.ival))) {
+				if (!(msg1 = date_submonths(&sub1, (date)lmax->data.val.ival, rmin->data.val.ival)) &&
+					!(msg2 = date_submonths(&sub2, (date)lmin->data.val.ival, rmax->data.val.ival))) {
 					sql_find_subtype(&tp, "date", 0, 0);
 					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
 					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
 				}
 			} else if (strcmp(f->func->imp, "time_sub_msec_interval") == 0) {
-				daytime sub1 = time_sub_msec_interval((daytime)lmax->data.val.lval, rmax->data.val.lval),
-						sub2 = time_sub_msec_interval((daytime)lmin->data.val.lval, rmin->data.val.lval);
+				daytime sub1 = time_sub_msec_interval((daytime)lmax->data.val.lval, rmin->data.val.lval),
+						sub2 = time_sub_msec_interval((daytime)lmin->data.val.lval, rmax->data.val.lval);
 
 				sql_find_subtype(&tp, "time", 0, 0);
 				res1 = atom_general_ptr(sql->sa, &tp, &sub1);
@@ -159,8 +159,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 			} else if (strcmp(f->func->imp, "timestamp_sub_msec_interval") == 0) {
 				timestamp sub1, sub2;
 
-				if (!(msg1 = timestamp_sub_msec_interval(&sub1, (timestamp)lmax->data.val.lval, rmax->data.val.lval)) &&
-					!(msg2 = timestamp_sub_msec_interval(&sub2, (timestamp)lmin->data.val.lval, rmin->data.val.lval))) {
+				if (!(msg1 = timestamp_sub_msec_interval(&sub1, (timestamp)lmax->data.val.lval, rmin->data.val.lval)) &&
+					!(msg2 = timestamp_sub_msec_interval(&sub2, (timestamp)lmin->data.val.lval, rmax->data.val.lval))) {
 					sql_find_subtype(&tp, "timestamp", 0, 0);
 					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
 					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
@@ -168,8 +168,8 @@ sql_sub_propagate_statistics(mvc *sql, sql_exp *e)
 			} else if (strcmp(f->func->imp, "timestamp_sub_month_interval") == 0) {
 				timestamp sub1, sub2;
 
-				if (!(msg1 = timestamp_sub_month_interval(&sub1, (timestamp)lmax->data.val.lval, rmax->data.val.ival)) &&
-					!(msg2 = timestamp_sub_month_interval(&sub2, (timestamp)lmin->data.val.lval, rmin->data.val.ival))) {
+				if (!(msg1 = timestamp_sub_month_interval(&sub1, (timestamp)lmax->data.val.lval, rmin->data.val.ival)) &&
+					!(msg2 = timestamp_sub_month_interval(&sub2, (timestamp)lmin->data.val.lval, rmax->data.val.ival))) {
 					sql_find_subtype(&tp, "timestamp", 0, 0);
 					res1 = atom_general_ptr(sql->sa, &tp, &sub1);
 					res2 = atom_general_ptr(sql->sa, &tp, &sub2);
@@ -417,8 +417,8 @@ sql_century_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
-	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
+	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
+	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
 }
 
 static void
@@ -440,8 +440,8 @@ sql_decade_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
-	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
+	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
+	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
 }
 
 static void
@@ -463,8 +463,8 @@ sql_year_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
-	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
+	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype("int"), nmax));
+	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype("int"), nmin));
 }
 
 static void
@@ -540,8 +540,8 @@ sql_hour_propagate_statistics(mvc *sql, sql_exp *e)
 		}
 	}
 
-	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
-	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
+	set_property(sql, e, PROP_MAX, atom_int(sql->sa, sql_bind_localtype(localtype), nmax));
+	set_property(sql, e, PROP_MIN, atom_int(sql->sa, sql_bind_localtype(localtype), nmin));
 }
 
 static void
@@ -599,8 +599,8 @@ sql_epoch_ms_propagate_statistics(mvc *sql, sql_exp *e)
 			break;
 		}
 		if (nmin && nmax) {
-			set_property(sql, e, PROP_MAX, nmin);
-			set_property(sql, e, PROP_MIN, nmax);
+			set_property(sql, e, PROP_MAX, nmax);
+			set_property(sql, e, PROP_MIN, nmin);
 		}
 	}
 }
