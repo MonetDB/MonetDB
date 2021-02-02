@@ -368,6 +368,8 @@ handleClient(void *data)
 		fprintf(stdout, "\n");
 		fflush(stdout);
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
+		close_stream(fout);
+		close_stream(fdin);
 	} else {
 		Mfprintf(stdout, "proxying client %s for database '%s' to "
 				"%s?database=%s\n",

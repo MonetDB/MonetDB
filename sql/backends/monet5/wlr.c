@@ -33,6 +33,7 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "querylog.h"
+#include "mutils.h"
 
 #define WLR_WAIT 0
 #define WLR_RUN   101
@@ -73,7 +74,7 @@ WLRgetConfig(void){
 
 	if((path = GDKfilepath(0, 0, "wlr.config", 0)) == NULL)
 		throw(MAL,"wlr.getConfig", "Could not create wlr.config file path\n");
-	fd = fopen(path,"r");
+	fd = MT_fopen(path,"r");
 	GDKfree(path);
 	if( fd == NULL)
 		throw(MAL,"wlr.getConfig", "Could not access wlr.config file \n");
@@ -176,7 +177,7 @@ WLRgetMaster(void)
 	if ((dir = GDKfilepath(0, path, "wlc.config", 0)) == NULL)
 		throw(MAL,"wlr.getMaster","Could not access wlc.config file %s/wlc.config\n", path);
 
-	fd = fopen(dir,"r");
+	fd = MT_fopen(dir,"r");
 	GDKfree(dir);
 	if (fd == NULL)
 		throw(MAL,"wlr.getMaster","Could not get read access to '%s'config file\n", wlr_master);

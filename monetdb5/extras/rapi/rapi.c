@@ -18,6 +18,7 @@
 #include "gdk.h"
 #include "sql_catalog.h"
 #include "sql_execute.h"
+#include "mutils.h"
 
 #define RAPI_MAX_TUPLES 2147483647L
 
@@ -499,7 +500,7 @@ static char *RAPIinstalladdons(void) {
 	if (len == -1 || len >= FILENAME_MAX)
 		return "cannot create rapi_packages directory because the path is too large";
 
-	if (mkdir(rlibs, S_IRWXU) != 0 && errno != EEXIST) {
+	if (MT_mkdir(rlibs) != 0 && errno != EEXIST) {
 		return "cannot create rapi_packages directory";
 	}
 #ifdef _RAPI_DEBUG_

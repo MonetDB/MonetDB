@@ -163,6 +163,7 @@
 #include "mal_builder.h"
 #include "wlc.h"
 #include "gdk_time.h"
+#include "mutils.h"
 
 MT_Lock     wlc_lock = MT_LOCK_INITIALIZER(wlc_lock);
 
@@ -243,7 +244,7 @@ WLCgetConfig(void){
 
 	if((l = GDKfilepath(0,0,"wlc.config",0)) == NULL)
 		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
-	fd = fopen(l,"r");
+	fd = MT_fopen(l,"r");
 	GDKfree(l);
 	if( fd == NULL)
 		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
@@ -386,9 +387,6 @@ WLClogger(void *arg)
 #ifndef F_OK
 #define F_OK 0
 #endif
-#ifdef _MSC_VER
-#define access(f, m)	_access(f, m)
-#endif
 
 str
 WLCinit(void)
@@ -401,7 +399,7 @@ WLCinit(void)
 		if((conf = GDKfilepath(0,0,"wlc.config",0)) == NULL)
 			throw(MAL,"wlc.init","Could not access wlc.config\n");
 
-		if (access(conf, F_OK) ){
+		if (MT_access(conf, F_OK) ){
 			GDKfree(conf);
 			return MAL_SUCCEED;
 		}

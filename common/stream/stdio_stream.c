@@ -165,7 +165,7 @@ file_fsetpos(stream *restrict s, fpos_t *restrict p)
 
 /* convert a string from UTF-8 to wide characters; the return value is
  * freshly allocated */
-#ifdef HAVE__WFOPEN
+#ifdef NATIVE_WIN32
 static wchar_t *
 utf8towchar(const char *src)
 {
@@ -297,7 +297,7 @@ open_stream(const char *restrict filename, const char *restrict flags)
 
 	if ((s = create_stream(filename)) == NULL)
 		return NULL;
-#ifdef HAVE__WFOPEN
+#ifdef NATIVE_WIN32
 	{
 		wchar_t *wfname = utf8towchar(filename);
 		wchar_t *wflags = utf8towchar(flags);
@@ -506,7 +506,7 @@ file_remove(const char *filename)
 {
 	int rc = -1;
 
-#ifdef HAVE__WFOPEN
+#ifdef NATIVE_WIN32
 	wchar_t *wfname = utf8towchar(filename);
 	if (wfname != NULL) {
 		rc = _wremove(wfname);

@@ -23,10 +23,6 @@
 #include "mal_profiler.h"
 #include "bat5.h"
 
-#ifdef _MSC_VER
-#define getcwd _getcwd
-#endif
-
 mal_export str CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 mal_export str CMDbbpDiskSpace(lng *ret);
 mal_export str CMDgetPageSize(int *ret);
