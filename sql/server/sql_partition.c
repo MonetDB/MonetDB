@@ -316,24 +316,14 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	localtype = found.type->localtype;
 
 	if (localtype != TYPE_str && mt->members.set && cs_size(&mt->members)) {
-		list *new = SA_LIST(tr->sa, (fdestroy) NULL), *old = SA_LIST(tr->sa, (fdestroy) NULL);
-
 		for (node *n = mt->members.set->h; n; n = n->next) {
-			sql_part *next = (sql_part*) n->data, *p = SA_ZNEW(tr->sa, sql_part);
-			sql_table *pt = find_sql_table_id(tr, mt->s, next->member);
-
-			base_init(tr->sa, &p->base, next->base.id, TR_NEW, pt->base.name);
-			p->t = mt;
-			p->member = next->member;
-			assert(isMergeTable(mt) || isReplicaTable(mt));
-			p->tpe = found;
-			p->with_nills = next->with_nills;
+			sql_part *p = n->data;
 
 			if (isListPartitionTable(mt)) {
-				p->part.values = SA_LIST(tr->sa, (fdestroy) &part_value_destroy);
+				for (node *m = p->part.values->h; m; m = m->next) {
+					sql_part_value *v = (sql_part_value*) m->data;
+				    sql_part_value ov = *v;
 
-				for (node *m = next->part.values->h; m; m = m->next) {
-					sql_part_value *v = (sql_part_value*) m->data, *nv = SA_ZNEW(tr->sa, sql_part_value);
 					ValRecord vvalue;
 					ptr ok;
 
@@ -342,30 +332,35 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 					if (ok)
 						ok = VALconvert(localtype, &vvalue);
 					if (ok) {
-						nv->value = SA_NEW_ARRAY(tr->sa, char, vvalue.len);
-						memcpy(nv->value, VALget(&vvalue), vvalue.len);
-						nv->length = vvalue.len;
+						v->value = SA_NEW_ARRAY(tr->sa, char, vvalue.len);
+						memcpy(v->value, VALget(&vvalue), vvalue.len);
+						v->length = vvalue.len;
 					}
 					VALclear(&vvalue);
+					/* sorted ??
 					if (list_append_sorted(p->part.values, nv, &found, sql_values_list_element_validate_and_insert)) {
 						res = createException(SQL, "sql.partition",
 											SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
-						goto finish;
+						return res;
 					}
+					*/
 					if (!ok) {
 						res = createException(SQL, "sql.partition",
 											  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
-						goto finish;
+						return res;
 					}
+					_DELETE(ov.value);
 				}
 			} else if (isRangePartitionTable(mt)) {
 				ValRecord vmin, vmax;
 				ptr ok;
 
 				vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
-				ok = VALinit(&vmin, TYPE_str, next->part.range.minvalue);
+				ok = VALinit(&vmin, TYPE_str, p->part.range.minvalue);
 				if (ok)
-					ok = VALinit(&vmax, TYPE_str, next->part.range.maxvalue);
+					ok = VALinit(&vmax, TYPE_str, p->part.range.maxvalue);
+				_DELETE(p->part.range.minvalue);
+				_DELETE(p->part.range.maxvalue);
 				if (ok) {
 					if (strNil((const char *)VALget(&vmin)) &&
 						strNil((const char *)VALget(&vmax))) {
@@ -398,46 +393,10 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 				if (!ok) {
 					res = createException(SQL, "sql.partition",
 										  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
-					goto finish;
+					return res;
 				}
 			}
-			list_append(new, p);
-			list_append(old, next);
 		}
-		for (node *n = old->h; n; n = n->next) { /* remove the old */
-			//list_remove_data(mt->members, n->data);
-			//if (!mt->s->parts.dset)
-		//		mt->s->parts.dset = SA_LIST(tr->sa, (fdestroy) NULL);
-		//	list_move_data(mt->s->parts.set, mt->s->parts.dset, n->data);
-			//list_remove_data(mt->members.set, n->data);
-			if (!mt->members.dset)
-				mt->members.dset = SA_LIST(tr->sa, (fdestroy) NULL);
-			list_move_data(mt->members.set, mt->members.dset, n->data);
-		}
-		for (node *n = new->h; n; n = n->next) {
-			sql_part *next = (sql_part*) n->data;
-			//sql_table *pt = find_sql_table_id(tr, mt->s, next->member->base.id);
-			sql_part *err = NULL;
-
-			//cs_add(&mt->s->parts, next, TR_NEW);
-			assert(isMergeTable(mt) || isReplicaTable(mt));
-			if (isRangePartitionTable(mt) || isListPartitionTable(mt)) {
-				//err = list_append_with_validate(mt->members, next,
-				err = cs_add_with_validate(&mt->members, next, TR_NEW,
-										   isRangePartitionTable(mt) ?
-										   sql_range_part_validate_and_insert : sql_values_part_validate_and_insert);
-			} else {
-				assert(0);
-			}
-			if (err) {
-				res = createException(SQL, "sql.partition",
-									  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
-				goto finish;
-			}
-		}
-		list_destroy(old);
-		list_destroy(new);
 	}
-finish:
 	return res;
 }
