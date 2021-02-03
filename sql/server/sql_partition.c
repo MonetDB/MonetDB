@@ -320,7 +320,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			sql_part *p = n->data;
 
 			if (isListPartitionTable(mt)) {
-				list *new_vals = list_new(tr->sa, p->part.values->destroy);
 				for (node *m = p->part.values->h; m; m = m->next) {
 					sql_part_value *v = (sql_part_value*) m->data;
 				    sql_part_value ov = *v;
@@ -338,11 +337,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 						v->length = vvalue.len;
 					}
 					VALclear(&vvalue);
-					if (list_append_sorted(new_vals, v, &found, sql_values_list_element_validate_and_insert)) {
-						res = createException(SQL, "sql.partition",
-											SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
-						return res;
-					}
 					if (!ok) {
 						res = createException(SQL, "sql.partition",
 											  SQLSTATE(42000) "Internal error while bootstrapping partitioned tables");
@@ -350,9 +344,6 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 					}
 					_DELETE(ov.value);
 				}
-				p->part.values->destroy = NULL;
-				list_destroy2(p->part.values, NULL);
-				p->part.values = new_vals;
 			} else if (isRangePartitionTable(mt)) {
 				ValRecord vmin, vmax;
 				ptr ok;
