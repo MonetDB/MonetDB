@@ -197,6 +197,8 @@ column_destroy(sqlstore *store, sql_column *c)
 		return;
 	if (c->data)
 		store->storage_api.destroy_col(store, c);
+	_DELETE(c->min);
+	_DELETE(c->max);
 	_DELETE(c->def);
 	_DELETE(c->base.name);
 	_DELETE(c);
@@ -4554,7 +4556,6 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	ptr ok;
 	sqlid *v;
 
-	assert(!update);
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
 	mt = new_table(tr, mt);
@@ -4672,7 +4673,6 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	int localtype = tpe.type->localtype, i = 0;
 	sqlid *v;
 
-	assert(!update);
 	mt = new_table(tr, mt);
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
