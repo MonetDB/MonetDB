@@ -124,8 +124,8 @@ typedef int (*append_idx_fptr) (sql_trans *tr, sql_idx *i, void *d, int t);
 typedef int (*update_col_fptr) (sql_trans *tr, sql_column *c, void *tids, void *d, int t);
 typedef int (*update_idx_fptr) (sql_trans *tr, sql_idx *i, void *tids, void *d, int t);
 
-typedef void *(*modify_col_prep_fptr) (sql_trans *tr, sql_column *c);
-typedef void *(*modify_idx_prep_fptr) (sql_trans *tr, sql_idx *i);
+typedef void *(*modify_col_prep_fptr) (sql_trans *tr, sql_allocator *sa, sql_column *c);
+typedef void *(*modify_idx_prep_fptr) (sql_trans *tr, sql_allocator *sa, sql_idx *i);
 
 typedef int (*append_col_exec_fptr) (void *cookie, void *b, bool is_bat);
 typedef int (*update_col_exec_fptr) (void *cookie, void *tids, void *values, bool is_bat);

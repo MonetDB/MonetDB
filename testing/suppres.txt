@@ -9,4 +9,3 @@ leak:PyThread_allocate_lock
 leak:*libpython*.so*
 leak:*cpython*.so*
 leak:*libgomp.so*
-#leak:make_cookie
