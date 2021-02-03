@@ -360,18 +360,6 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 [ 0	]
 #ROLLBACK;
 #START TRANSACTION;
-#CREATE TABLE "t1" ("c0" BIGINT NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
-#INSERT INTO t1(c0) VALUES(2), (+ ((VALUES (sql_min(3, 4)))));
-[ 2	]
-#SELECT * from t1;
-% sys.t1 # table_name
-% c0 # name
-% bigint # type
-% 1 # length
-[ 2	]
-[ 3	]
-#ROLLBACK;
-#START TRANSACTION;
 #CREATE TABLE "t0" ("c0" TIMESTAMP NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
 #COPY 5 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 #"1970-01-06 01:52:11.000000"

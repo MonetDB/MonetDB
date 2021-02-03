@@ -68,15 +68,6 @@ get_table(sql_rel *t)
 	return tab;
 }
 
-static list *
-get_inserts( sql_rel *ins )
-{
-	sql_rel *r = ins->r;
-
-	assert(is_project(r->op) || r->op == op_table);
-	return r->exps;
-}
-
 static sql_rel *
 rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
@@ -85,10 +76,13 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_subtype *it, *lng;
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
+	sql_rel *ins = inserts->r;
 
+	assert(is_project(ins->op) || ins->op == op_table);
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
 		/* dummy append */
-		append(get_inserts(inserts), exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
+		inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
+		list_append(ins->exps, exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
 		return inserts;
 	}
 
@@ -96,7 +90,7 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	lng = sql_bind_localtype("lng");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
-		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
+		sql_exp *e = list_fetch(ins->exps, c->c->colnr);
 		e = exp_ref(sql, e);
 
 		if (h && i->type == hash_idx)  {
@@ -124,7 +118,8 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		}
 	}
 	/* append inserts to hash */
-	append(get_inserts(inserts), h);
+	inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
+	list_append(ins->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
 	return inserts;
 }
@@ -145,6 +140,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
+	assert(is_project(ins->op) || ins->op == op_table);
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
@@ -218,7 +214,6 @@ static sql_rel *
 rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
 	sql_rel *p = inserts->r;
-	bool need_proj = true, special_insert = false;
 
 	if (!t->idxs.set)
 		return inserts;
@@ -226,23 +221,14 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 	inserts->r = rel_label(sql, inserts->r, 1);
 	for (node *n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
-		sql_rel *ins = inserts->r;
 
-		if (is_union(ins->op))
-			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
-			/* needs projection for hash functions */
-			if (list_length(i->columns) > 1 && hash_index(i->type) && need_proj) {
-				inserts->r = rel_project(sql->sa, inserts->r, rel_projections(sql, inserts->r, NULL, 1, 1));
-				need_proj = false;
-			}
 			rel_insert_hash_idx(sql, alias, i, inserts);
 		} else if (i->type == join_idx) {
-			special_insert = true;
 			rel_insert_join_idx(sql, alias, i, inserts);
 		}
 	}
-	if (special_insert) {
+	if (inserts->r != p) {
 		sql_rel *r = rel_create(sql->sa);
 		if(!r)
 			return NULL;
@@ -647,7 +633,9 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_subtype *it, *lng = 0; /* is not set in first if below */
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
+	sql_rel *ups = updates->r;
 
+	assert(is_project(ups->op) || ups->op == op_table);
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
 		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
@@ -655,7 +643,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		lng = sql_bind_localtype("lng");
 		for (m = i->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
-			sql_exp *e = list_fetch(get_inserts(updates), c->c->colnr+1);
+			sql_exp *e = list_fetch(ups->exps, c->c->colnr+1);
 			e = exp_ref(sql, e);
 
 			if (h && i->type == hash_idx)  {
@@ -684,7 +672,8 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		}
 	}
 	/* append hash to updates */
-	append(get_inserts(updates), h);
+	updates->r = ups = rel_project(sql->sa, ups, rel_projections(sql, ups, NULL, 1, 1));
+	list_append(ups->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
 
 	if (!updates->exps)
@@ -738,6 +727,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
+	assert(is_project(ups->op) || ups->op == op_table);
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
@@ -748,7 +738,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql->sa, sql->session->schema, "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
+		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
@@ -819,7 +809,6 @@ static sql_rel *
 rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
 	sql_rel *p = relup->r;
-	bool need_proj = true, special_update = false;
 
 	if (!t->idxs.set)
 		return relup;
@@ -839,18 +828,12 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		 */
 
 		if (hash_index(i->type) || i->type == no_idx) {
-			/* needs projection for hash functions */
-			if (list_length(i->columns) > 1 && hash_index(i->type) && need_proj) {
-				relup->r = rel_project(sql->sa, relup->r, rel_projections(sql, relup->r, NULL, 1, 1));
-				need_proj = false;
-			}
 			rel_update_hash_idx(sql, alias, i, relup);
 		} else if (i->type == join_idx) {
-			special_update = true;
 			rel_update_join_idx(sql, alias, i, relup);
 		}
 	}
-	if (special_update) {
+	if (relup->r != p) {
 		sql_rel *r = rel_create(sql->sa);
 		if(!r)
 			return NULL;

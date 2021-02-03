@@ -6,6 +6,18 @@ stdout of test 'sqlancer10` in directory 'sql/test/SQLancer` itself:
 # 13:59:46 >  
 
 #START TRANSACTION;
+#CREATE TABLE "t1" ("c0" BIGINT NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"));
+#INSERT INTO t1(c0) VALUES(2), (+ ((VALUES (sql_min(3, 4)))));
+[ 2	]
+#SELECT * from t1;
+% sys.t1 # table_name
+% c0 # name
+% bigint # type
+% 1 # length
+[ 2	]
+[ 3	]
+#ROLLBACK;
+#START TRANSACTION;
 #CREATE TABLE "sys"."t0" ("c0" TIME NOT NULL, "c1" VARCHAR(143),
 #	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t0_c0_unique" UNIQUE ("c0"), CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
 #COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
