@@ -51,3 +51,12 @@ create view v2(vc0, vc1) as (values (NULL, 1),(true, 2),(true, 3));
 create view v6(vc2) as ((select '') except (select 'a'));
 select 1 from v6, v2 join (values (0.54), (3), (0)) as sub0 on true where (v2.vc0 > v2.vc0) between (v2.vc0 = v2.vc0) and "isauuid"(v6.vc2);
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE t1(c0 int);
+CREATE VIEW v4(vc0) AS ((SELECT NULL FROM t1 AS l0t1) UNION ALL (SELECT true));
+INSERT INTO t1(c0) VALUES(12), (2), (6), (3), (1321), (10), (8), (1), (2), (3), (9);
+DELETE FROM t1 WHERE true;
+INSERT INTO t1(c0) VALUES(9), (1), (3), (2), (5);
+SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.vc0 AND v4.vc0);
+ROLLBACK;
