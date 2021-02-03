@@ -276,18 +276,21 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 			break;
 		sql_part *spt = it;
 		if (spt) {
+			sql_subtype tp;
+			find_partition_type(&tp, it->t);
+
 			if (isRangePartitionTable(it->t)) {
-				int tpe = spt->tpe.type->localtype;
+				int tpe = tp.type->localtype;
 				int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 				const void *nil = ATOMnilptr(tpe);
 				sql_exp *e1 = NULL, *e2 = NULL;
 				bool found_all = false, max_equal_min = false;
 
 				if (atomcmp(spt->part.range.minvalue, nil) != 0 && atomcmp(spt->part.range.maxvalue, nil) != 0) {
-					max_equal_min = ATOMcmp(spt->tpe.type->localtype, spt->part.range.maxvalue, spt->part.range.minvalue) == 0;
-					e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.minvalue));
+					max_equal_min = ATOMcmp(tpe, spt->part.range.maxvalue, spt->part.range.minvalue) == 0;
+					e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, spt->part.range.minvalue));
 					if (!max_equal_min)
-						e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, spt->part.range.maxvalue));
+						e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, spt->part.range.maxvalue));
 				} else {
 					assert(spt->with_nills);
 					found_all = is_bit_nil(spt->with_nills);
@@ -298,7 +301,7 @@ propagate_validation_to_upper_tables(sql_query* query, sql_table *mt, sql_table 
 				list *exps = new_exp_list(sql->sa);
 				for (node *n = spt->part.values->h ; n ; n = n->next) {
 					sql_part_value *next = (sql_part_value*) n->data;
-					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &spt->tpe, next->value));
+					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, next->value));
 					list_append(exps, e1);
 				}
 				rel = rel_list(sql->sa, rel, create_list_partition_anti_rel(query, it->t, pt, spt->with_nills, exps));
@@ -682,7 +685,9 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	list *anti_exps = new_exp_list(sql->sa);
 	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
+	sql_subtype tp;
 
+	find_partition_type(&tp, t);
 	if (isPartitionedByColumnTable(t)) {
 		anti_rel = rel_dup(rel->r);
 	} else if (isPartitionedByExpressionTable(t)) {
@@ -715,17 +720,17 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 
 		if (isRangePartitionTable(t)) {
 			sql_exp *range = NULL, *full_range = NULL;
-			int tpe = pt->tpe.type->localtype;
+			int tpe = tp.type->localtype;
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 			const void *nil = ATOMnilptr(tpe);
 
 			if (atomcmp(pt->part.range.minvalue, nil) != 0 || atomcmp(pt->part.range.maxvalue, nil) != 0) {
 				sql_exp *e1, *e2;
-				bool max_equal_min = ATOMcmp(pt->tpe.type->localtype, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
 
-				e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
+				e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue));
 				if (!max_equal_min) {
-					e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
+					e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue));
 					range = exp_compare2(sql->sa, le, e1, e2, cmp_gte|CMP_BETWEEN);
 				} else {
 					range = exp_compare(sql->sa, le, e1, cmp_equal);
@@ -770,7 +775,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 				list *exps = new_exp_list(sql->sa);
 				for (node *nn = pt->part.values->h ; nn ; nn = nn->next) {
 					sql_part_value *next = (sql_part_value*) nn->data;
-					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, next->value));
+					sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, next->value));
 					list_append(exps, e1);
 					list_append(anti_exps, exp_copy(sql, e1));
 				}
@@ -945,9 +950,11 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 	sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 	char buf[BUFSIZ];
 	bool found_nils = false, found_all_range_values = false;
+	sql_subtype tp;
 
+	find_partition_type(&tp, upper->t);
 	if (isRangePartitionTable(upper->t)) {
-		int tpe = pt->tpe.type->localtype;
+		int tpe = tp.type->localtype;
 		int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe);
 		const void *nil = ATOMnilptr(tpe);
 
@@ -963,21 +970,21 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 					anti_exp = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 0), cmp_equal);
 				}
 			} else {
-				sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue));
+				sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 			}
 		} else {
 			if (atomcmp(pt->part.range.maxvalue, nil) == 0) {
-				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue));
 				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt);
 			} else {
-				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.minvalue));
-				bool max_equal_min = ATOMcmp(pt->tpe.type->localtype, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.minvalue));
+				bool max_equal_min = ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue) == 0;
 
 				if (max_equal_min) {
 					anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);
 				} else {
-					sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, pt->part.range.maxvalue)),
+					sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue)),
 						*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
 						*range2 = exp_compare(sql->sa, exp_copy(sql, anti_le), e2, cmp_gte);
 
@@ -1000,7 +1007,7 @@ rel_subtable_insert(sql_query *query, sql_rel *rel, sql_table *t, int *changes)
 		if (list_length(pt->part.values)) { /* if the partition holds non-null values */
 			for (node *n = pt->part.values->h ; n ; n = n->next) {
 				sql_part_value *next = (sql_part_value*) n->data;
-				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &pt->tpe, next->value));
+				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, next->value));
 				list_append(anti_exps, exp_copy(sql, e1));
 			}
 			anti_exp = exp_in(sql->sa, exp_copy(sql, anti_le), anti_exps, cmp_notin);

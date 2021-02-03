@@ -547,10 +547,8 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	sql_table *ranges = find_sql_table(tr, syss, "range_partitions");
 	oid rid;
 	rids *rs;
-	sql_subtype *empty = sql_bind_localtype("void");
 	sqlstore *store = tr->store;
 
-	pt->tpe = *empty;
 	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->member, &pt->member, NULL);
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
 		void *v1, *v2, *v3;
@@ -598,15 +596,12 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	oid rid;
 	rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member, &pt->member, NULL);
 	int i = 0;
-	sql_subtype *empty = sql_bind_localtype("void");
 
 	vals = SA_LIST(tr->sa, (fdestroy) &part_value_destroy);
 	if (!vals) {
 		store->table_api.rids_destroy(rs);
 		return -1;
 	}
-
-	pt->tpe = *empty;
 
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_part_value* nextv;
@@ -1559,7 +1554,6 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 	sql_part *p = SA_ZNEW(sa, sql_part);
 
 	base_init(sa, &p->base, op->base.id, op->base.flags, op->base.name);
-	p->tpe = op->tpe; /* No dup_sql_type call I think */
 	p->with_nills = op->with_nills;
 
 	if (isRangePartitionTable(mt)) {
@@ -2937,7 +2931,6 @@ part_dup(sql_trans *tr, sql_part *op, sql_table *mt)
 
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 	base_init(sa, &p->base, op->base.id, 0, op->base.name);
-	p->tpe = op->tpe;
 	p->with_nills = op->with_nills;
 	p->t = mt;
 	p->member = op->member;
@@ -4608,7 +4601,6 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p->t = mt;
 		assert(pt);
 		p->member = pt->base.id;
-		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
 		node *n = members_find_child_id(mt->members.set, pt->base.id);
 		p = (sql_part*) n->data;
@@ -4628,11 +4620,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	p->with_nills = with_nills;
 
 	if (!update) {
-		*err = cs_add_with_validate(&mt->members, p, 0, sql_range_part_validate_and_insert);
+		*err = cs_add_with_validate(&mt->members, p, &localtype, 0, sql_range_part_validate_and_insert);
 		if (*err)
 			part_destroy(store, p);
 	} else {
-		*err = cs_transverse_with_validate(&mt->members, p, sql_range_part_validate_and_insert);
+		*err = cs_transverse_with_validate(&mt->members, p, &localtype, sql_range_part_validate_and_insert);
 	}
 	if (*err) {
 		res = -4;
@@ -4695,7 +4687,6 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p->t = mt;
 		assert(pt);
 		p->member = pt->base.id;
-		dup_sql_type(tr, mt->s, &tpe, &(p->tpe));
 	} else {
 		rids *rs;
 		node *n = members_find_child_id(mt->members.set, pt->base.id);
@@ -4761,11 +4752,11 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	p->part.values = vals;
 
 	if (!update) {
-		*err = cs_add_with_validate(&mt->members, p, 0, sql_values_part_validate_and_insert);
+		*err = cs_add_with_validate(&mt->members, p, &localtype, 0, sql_values_part_validate_and_insert);
 		if (*err)
 			part_destroy(store, p);
 	} else {
-		*err = cs_transverse_with_validate(&mt->members, p, sql_values_part_validate_and_insert);
+		*err = cs_transverse_with_validate(&mt->members, p, &localtype, sql_values_part_validate_and_insert);
 	}
 	if (*err)
 		return -1;
