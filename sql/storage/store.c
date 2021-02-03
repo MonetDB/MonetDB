@@ -6073,6 +6073,7 @@ sql_session_create(sqlstore *store, sql_allocator *sa, int ac)
 	if (!s)
 		return NULL;
 	s->sa = sa;
+	assert(sa);
 	s->tr = sql_trans_create_(store, NULL, NULL);
 	if (!s->tr) {
 		return NULL;
@@ -6110,7 +6111,6 @@ sql_session_reset(sql_session *s, int ac)
 		return 0;
 
 	assert(s->tr && s->tr->active == 0);
-	_DELETE(s->schema_name);
 	s->schema_name = def_schema_name;
 	s->schema = NULL;
 	s->auto_commit = s->ac_on_commit = ac;
