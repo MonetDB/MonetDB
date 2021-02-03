@@ -45,3 +45,9 @@ COPY 11 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 update t0 set c1 = true where t0.c0 = t0.c0 and t0.c1 = t0.c1;
 update t0 set c1 = true, c0 = r'.+' where (((("isauuid"(t0.c0))and(((t0.c0)=(t0.c0)))))and(((t0.c1)=(t0.c1))));
 ROLLBACK;
+
+START TRANSACTION;
+create view v2(vc0, vc1) as (values (NULL, 1),(true, 2),(true, 3));
+create view v6(vc2) as ((select '') except (select 'a'));
+select 1 from v6, v2 join (values (0.54), (3), (0)) as sub0 on true where (v2.vc0 > v2.vc0) between (v2.vc0 = v2.vc0) and "isauuid"(v6.vc2);
+ROLLBACK;
