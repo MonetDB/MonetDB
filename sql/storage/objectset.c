@@ -955,6 +955,8 @@ os_find_name(objectset *os, struct sql_trans *tr, const char *name)
 {
 	if (!os)
 		return NULL;
+
+	assert(os->unique);
 	versionhead  *n = find_name(os, name);
 
 	if (n) {
