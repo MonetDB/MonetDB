@@ -364,17 +364,16 @@ sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* 
 }
 
 void*
-sql_range_part_validate_and_insert(void *v1, void *v2)
+sql_range_part_validate_and_insert(void *v1, void *v2, void *type)
 {
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
-	int res1, res2, tpe = pt->tpe.type->localtype;
+	int res1, res2, tpe = *(int*)type;
 	const void *nil = ATOMnilptr(tpe);
 	bool pt_down_all = false, pt_upper_all = false, newp_down_all = false, newp_upper_all = false, pt_min_max_same = false, newp_min_max_same = false;
 
 	if (pt == newp) /* same pointer, skip (used in updates) */
 		return NULL;
 
-	assert(tpe == newp->tpe.type->localtype);
 	if (is_bit_nil(pt->with_nills) || is_bit_nil(newp->with_nills)) /* if one partition holds all including nills, then conflicts */
 		return pt;
 	if (newp->with_nills && pt->with_nills) /* only one partition at most has null values */
@@ -430,24 +429,23 @@ sql_range_part_validate_and_insert(void *v1, void *v2)
 }
 
 void*
-sql_values_part_validate_and_insert(void *v1, void *v2)
+sql_values_part_validate_and_insert(void *v1, void *v2, void *type)
 {
 	sql_part* pt = (sql_part*) v1, *newp = (sql_part*) v2;
 	list* b1 = pt->part.values, *b2 = newp->part.values;
 	node *n1 = b1->h, *n2 = b2->h;
-	int res;
+	int res, tpe = *(int*)type;
 
 	if (pt == newp) /* same pointer, skip (used in updates) */
 		return NULL;
 
-	assert(pt->tpe.type->localtype == newp->tpe.type->localtype);
 	if (newp->with_nills && pt->with_nills)
-		return pt; //check for nulls first
+		return pt; /* check for nulls first */
 
 	while (n1 && n2) {
 		sql_part_value *p1 = (sql_part_value *) n1->data, *p2 = (sql_part_value *) n2->data;
-		res = ATOMcmp(pt->tpe.type->localtype, p1->value, p2->value);
-		if (!res) { //overlap -> same value in both partitions
+		res = ATOMcmp(tpe, p1->value, p2->value);
+		if (!res) { /* overlap -> same value in both partitions */
 			return pt;
 		} else if (res < 0) {
 			n1 = n1->next;

@@ -318,12 +318,9 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 		for (node *n = mt->members.set->h; n; n = n->next) {
 			sql_part *p = n->data;
 
-			p->tpe = found;
 			if (isListPartitionTable(mt)) {
 				for (node *m = p->part.values->h; m; m = m->next) {
-					sql_part_value *v = (sql_part_value*) m->data;
-				    sql_part_value ov = *v;
-
+					sql_part_value *v = (sql_part_value*) m->data, ov = *v;
 					ValRecord vvalue;
 					ptr ok;
 
@@ -357,9 +354,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 				if (ok) {
 					if (strNil((const char *)VALget(&vmin)) &&
 						strNil((const char *)VALget(&vmax))) {
-						int tpe = found.type->localtype;
-						const void *nil_ptr = ATOMnilptr(tpe);
-						size_t nil_len = ATOMlen(tpe, nil_ptr);
+						const void *nil_ptr = ATOMnilptr(localtype);
+						size_t nil_len = ATOMlen(localtype, nil_ptr);
 
 						p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);
 						p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, nil_len);

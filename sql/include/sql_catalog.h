@@ -258,11 +258,11 @@ extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern changeset* cs_dup(changeset * cs);
 extern void cs_destroy(changeset * cs, void *data);
 extern void cs_add(changeset * cs, void *elm, int flag);
-extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
+extern void *cs_add_with_validate(changeset * cs, void *elm, void *extra, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
 extern void cs_move(changeset *from, changeset *to, void *data);
-extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
+extern void *cs_transverse_with_validate(changeset * cs, void *elm, void *extra, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, sqlid id);
@@ -657,7 +657,6 @@ typedef struct sql_part {
 	sql_base base;
 	struct sql_table *t;	/* the merge table */
 	sqlid member;			/* the member of the merge table */
-	sql_subtype tpe;		/* the column/expression type */
 	bit with_nills;			/* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
 	union {
 		list *values;       /* partition by values/list */
@@ -775,9 +774,10 @@ extern sql_type *sql_trans_find_type(sql_trans *tr, sql_schema *s /*optional */,
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
 
+extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);
-extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
-extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
+extern void *sql_range_part_validate_and_insert(void *v1, void *v2, void *tpe);
+extern void *sql_values_part_validate_and_insert(void *v1, void *v2, void *tpe);
 
 typedef struct {
 	BAT *b;

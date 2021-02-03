@@ -177,8 +177,8 @@ list_append(list *l, void *data)
 	return list_append_node(l, n);
 }
 
-void*
-list_append_with_validate(list *l, void *data, fvalidate cmp)
+void *
+list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m;
 	void* err = NULL;
@@ -187,7 +187,7 @@ list_append_with_validate(list *l, void *data, fvalidate cmp)
 		return NULL;
 	if (l->cnt) {
 		for (m = l->h; m; m = m->next) {
-			err = cmp(m->data, data);
+			err = cmp(m->data, data, extra);
 			if(err) {
 				n->data = NULL;
 				node_destroy(l, NULL, n);
@@ -213,7 +213,7 @@ list_append_with_validate(list *l, void *data, fvalidate cmp)
 	return NULL;
 }
 
-void*
+void *
 list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m, *prev = NULL;
@@ -454,12 +454,12 @@ list_traverse(list *l, traverse_func f, void *clientdata)
 }
 
 void *
-list_traverse_with_validate(list *l, void *data, fvalidate cmp)
+list_transverse_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 {
 	void* err = NULL;
 
 	for (node *n = l->h; n; n = n->next) {
-		err = cmp(n->data, data);
+		err = cmp(n->data, data, extra);
 		if(err)
 			break;
 	}
