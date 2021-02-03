@@ -559,11 +559,9 @@ handle_error(mvc *m, int pstatus, str msg)
 		}
 		freeException(new);
 		freeException(msg);
-	} else
-	if ( msg)
+	} else if (msg)
 		newmsg = msg;
-	else
-	if ( new)
+	else if (new)
 		newmsg = new;
 	return newmsg;
 }
@@ -593,6 +591,7 @@ SQLtrans(mvc *m)
 			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		s = m->session;
 		if (!s->schema) {
+			_DELETE(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
 			if (!s->schema_name) {
 				mvc_cancel_session(m);

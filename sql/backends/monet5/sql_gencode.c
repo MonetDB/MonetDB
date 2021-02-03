@@ -934,12 +934,16 @@ backend_create_r_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("rapi");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("rapi");
 		f->imp = GDKstrdup("eval");
 		break;
@@ -954,16 +958,22 @@ backend_create_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval_loader");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("pyapi3");
 		f->imp = GDKstrdup("eval");
 		break;
@@ -977,12 +987,16 @@ backend_create_map_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("pyapi3map");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("pyapi3map");
 		f->imp = GDKstrdup("eval");
 		break;
@@ -1013,6 +1027,8 @@ backend_create_c_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("capi");
 		f->imp = GDKstrdup("eval_aggr");
 		break;
@@ -1020,6 +1036,8 @@ backend_create_c_func(backend *be, sql_func *f)
 	case F_PROC: /* no output */
 	case F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
+		_DELETE(f->mod);
+		_DELETE(f->imp);
 		f->mod = GDKstrdup("capi");
 		f->imp = GDKstrdup("eval");
 		break;

@@ -69,9 +69,9 @@ cs_add_before(changeset * cs, node *n, void *elm)
 void
 cs_del(changeset * cs, void *gdata, node *elm, int flags)
 {
+	if (cs->nelm == elm)
+		cs->nelm = elm->next;
 	if (newFlagSet(flags)) {	/* remove just added */
-		if (cs->nelm == elm)
-			cs->nelm = elm->next;
 		list_remove_node(cs->set, gdata, elm);
 	} else {
 		if (!cs->dset)
