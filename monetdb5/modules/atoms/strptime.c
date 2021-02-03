@@ -309,7 +309,7 @@ literal:
 					} while (*bp >= '0' && *bp <= '9');
 
 					/* convert the number of seconds to tm structure */
-					if (localtime_s(tm, &secs))
+					if (localtime_r(&secs, tm) == NULL)
 						return NULL;
 				} break;
 			case 'U':	/* The week of year, beginning on sunday. */

@@ -207,7 +207,7 @@ msab_init(const char *dbfarm, const char *dbname)
 			/* remove in a separate loop after reading the directory,
 			 * so as to not have any interference */
 			while (dbe != NULL) {
-				(void) remove(dbe->path);
+				(void) MT_remove(dbe->path);
 				db = dbe;
 				dbe = dbe->next;
 				free(db);
@@ -290,7 +290,7 @@ msab_marchScenario(const char *lang)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
 
-	if ((f = fopen(pathbuf, "a+")) != NULL) {
+	if ((f = MT_fopen(pathbuf, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
 
@@ -334,7 +334,7 @@ msab_retreatScenario(const char *lang)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
 
-	if ((f = fopen(pathbuf, "a+")) != NULL) {
+	if ((f = MT_fopen(pathbuf, "a+")) != NULL) {
 		if ((len = fread(buf, 1, 255, f)) > 0) {
 			char *p;
 			char written = 0;
@@ -366,7 +366,7 @@ msab_retreatScenario(const char *lang)
 				return(NULL);
 			}
 			(void)fclose(f);
-			(void) remove(pathbuf);
+			(void) MT_remove(pathbuf);
 			return(NULL);
 		} else {
 			if (ferror(f)) {
@@ -377,7 +377,7 @@ msab_retreatScenario(const char *lang)
 				return strdup(buf);
 			}
 			(void)fclose(f);
-			(void) remove(pathbuf);  /* empty file? try to remove */
+			(void) MT_remove(pathbuf);  /* empty file? try to remove */
 			return(NULL);
 		}
 	}
@@ -408,7 +408,7 @@ msab_marchConnection(const char *host, const int port)
 		return(strdup("UNIX domain connections should be given as "
 					  "absolute path"));
 
-	if ((f = fopen(pathbuf, "a")) != NULL) {
+	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		if (port > 0) {
 			fprintf(f, "mapi:monetdb://%s:%i/\n", host, port);
@@ -440,19 +440,19 @@ msab_wildRetreat(void)
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), SCENARIOFILE)) != NULL)
 		return(tmp);
-	(void) remove(pathbuf);
+	(void) MT_remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), CONNECTIONFILE)) != NULL)
 		return(tmp);
-	(void) remove(pathbuf);
+	(void) MT_remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	(void) remove(pathbuf);
+	(void) MT_remove(pathbuf);
 
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	(void) remove(pathbuf);
+	(void) MT_remove(pathbuf);
 
 	return(NULL);
 }
@@ -480,7 +480,7 @@ msab_registerStarting(void)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), UPLOGFILE)) != NULL)
 		return(tmp);
 
-	if ((f = fopen(pathbuf, "a")) != NULL) {
+	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, "%" PRId64 "\t", (int64_t)time(NULL));
 		(void)fflush(f);
@@ -499,14 +499,14 @@ msab_registerStarting(void)
 		free(tmp);
 		return(NULL);
 	}
-	f = fopen(pathbuf, "w");
+	f = MT_fopen(pathbuf, "w");
 	if (f)
 		fclose(f);
 
 	/* remove any stray file that would suggest we've finished starting up */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	(void) remove(pathbuf);
+	(void) MT_remove(pathbuf);
 
 
 	return(NULL);
@@ -527,7 +527,7 @@ msab_registerStarted(void)
 	/* flag this database as started up */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), STARTEDFILE)) != NULL)
 		return(tmp);
-	fp = fopen(pathbuf, "w");
+	fp = MT_fopen(pathbuf, "w");
 	if (fp)
 		fclose(fp);
 	else
@@ -550,7 +550,7 @@ msab_registerStop(void)
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), UPLOGFILE)) != NULL)
 		return(tmp);
 
-	if ((f = fopen(pathbuf, "a")) != NULL) {
+	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
 		fprintf(f, "%" PRId64 "\n", (int64_t)time(NULL));
 		(void)fflush(f);
@@ -566,7 +566,7 @@ msab_registerStop(void)
 	 * but for the sake of keeping things clean ... */
 	if ((tmp = getDBPath(pathbuf, sizeof(pathbuf), _sabaoth_internal_uuid)) != NULL)
 		return(tmp);
-	(void) remove(pathbuf);
+	(void) MT_remove(pathbuf);
 	return(NULL);
 }
 
@@ -584,7 +584,7 @@ msab_pickSecret(char **generated_secret)
 		return e;
 
 	// delete existing so we can recreate with appropriate permissions
-	if (remove(pathbuf) < 0 && errno != ENOENT) {
+	if (MT_remove(pathbuf) < 0 && errno != ENOENT) {
 		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to remove '%s': %s",
 				 pathbuf, strerror(errno));
@@ -625,7 +625,7 @@ msab_pickSecret(char **generated_secret)
 			);
 	}
 
-	if ((fd = open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
+	if ((fd = MT_open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				 pathbuf, strerror(errno));
@@ -637,7 +637,7 @@ msab_pickSecret(char **generated_secret)
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
 				 pathbuf, strerror(errno));
 		close(fd);
-		(void)remove(pathbuf);
+		(void)MT_remove(pathbuf);
 		free(secret);
 		return strdup(err);
 	}
@@ -648,7 +648,7 @@ msab_pickSecret(char **generated_secret)
 		char err[512];
 		snprintf(err, sizeof(err), "cannot write secret: %s",
 				 strerror(errno));
-		(void)remove(pathbuf);
+		(void)MT_remove(pathbuf);
 		free(secret);
 		return strdup(err);
 	}
@@ -696,7 +696,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	sdb = NULL;
 
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-	if (stat(buf, &statbuf) == -1)
+	if (MT_stat(buf, &statbuf) == -1)
 		return next;
 
 	sdb = malloc(sizeof(sabdb));
@@ -722,11 +722,11 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	 */
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname,
 			 _sabaoth_internal_uuid);
-	if (stat(buf, &statbuf) == 0) {
+	if (MT_stat(buf, &statbuf) == 0) {
 		/* database has the same process signature as ours, which
 		 * means, it must be us, rely on the uplog state */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-		if ((f = fopen(log, "r")) != NULL) {
+		if ((f = MT_fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
 			if (fread(data, 1, 1, f) != 1) {
 				/* the log is empty, assume no crash */
@@ -735,7 +735,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 				/* see if the database has finished starting */
 				snprintf(buf, sizeof(buf), "%s/%s/%s",
 						 pathbuf, dbname, STARTEDFILE);
-				if (stat(buf, &statbuf) == -1) {
+				if (MT_stat(buf, &statbuf) == -1) {
 					sdb->state = SABdbStarting;
 				} else {
 					sdb->state = SABdbRunning;
@@ -755,7 +755,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	} else if (fd == -1) {
 #ifndef WIN32
 		/* extract process ID from lock file */
-		if ((f = fopen(buf, "r")) != NULL) {
+		if ((f = MT_fopen(buf, "r")) != NULL) {
 			int pid;
 			if (fscanf(f, "USR=%*d PID=%d TIME=", &pid) == 1)
 				sdb->pid = pid;
@@ -764,7 +764,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 #endif
 		/* see if the database has finished starting */
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
-		if (stat(buf, &statbuf) == -1) {
+		if (MT_stat(buf, &statbuf) == -1) {
 			sdb->state = SABdbStarting;
 		} else {
 			sdb->state = SABdbRunning;
@@ -774,9 +774,9 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		 * in the uplog */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, STARTEDFILE);
 		/* just to be sure, remove the .started file */
-		(void) remove(log);		/* may fail, that's fine */
+		(void) MT_remove(log);		/* may fail, that's fine */
 		snprintf(log, sizeof(log), "%s/%s/%s", pathbuf, dbname, UPLOGFILE);
-		if ((f = fopen(log, "r")) != NULL) {
+		if ((f = MT_fopen(log, "r")) != NULL) {
 			(void)fseek(f, -1, SEEK_END);
 			if (fread(data, 1, 1, f) != 1) {
 				/* the log is empty, assume no crash */
@@ -795,12 +795,12 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 		close(fd);
 	}
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, MAINTENANCEFILE);
-	sdb->locked = stat(buf, &statbuf) == 0;
+	sdb->locked = MT_stat(buf, &statbuf) == 0;
 
 	/* add scenarios that are supported */
 	sdb->scens = NULL;
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SCENARIOFILE);
-	if ((f = fopen(buf, "r")) != NULL) {
+	if ((f = MT_fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
 		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
@@ -819,7 +819,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	/* add how this server can be reached */
 	sdb->conns = NULL;
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, CONNECTIONFILE);
-	if ((f = fopen(buf, "r")) != NULL) {
+	if ((f = MT_fopen(buf, "r")) != NULL) {
 		sablist* np = NULL;
 		while (fgets(data, (int) sizeof(data), f) != NULL) {
 			if (*data != '\0' && data[strlen(data) - 1] == '\n')
@@ -839,7 +839,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	do {
 		struct stat stb;
 		snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, SECRETFILE);
-		if ((f = fopen(buf, "r")) == NULL)
+		if ((f = MT_fopen(buf, "r")) == NULL)
 			break;
 		if (fstat(fileno(f), &stb) < 0) {
 			fclose(f);
@@ -990,7 +990,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 	};
 
 	snprintf(log, sizeof(log), "%s/%s", db->path, UPLOGFILE);
-	if ((f = fopen(log, "r")) != NULL) {
+	if ((f = MT_fopen(log, "r")) != NULL) {
 		int c;
 		start = stop = up = 0;
 		p = data;

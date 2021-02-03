@@ -405,12 +405,15 @@ AUTHinitTables(const char *passwd) {
 		/* normally, we'd commit here, but it's done already in AUTHaddUser */
 	}
 
-	if (!GDKinmemory(0)) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		free(master_password);
 		master_password = NULL;
 		msg = msab_pickSecret(&master_password);
-		if (msg != NULL)
-			return msg;
+		if (msg != NULL) {
+			char *nmsg = createException(MAL, "initTables", "%s", msg);
+			free(msg);
+			return nmsg;
+		}
 	}
 
 	return(MAL_SUCCEED);

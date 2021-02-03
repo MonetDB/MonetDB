@@ -40,11 +40,9 @@ target_include_directories(microbenchmark
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-if(WIN32)
-  target_compile_definitions(kernel
-    PRIVATE
-    LIBMONETDB5)
-endif()
+target_compile_definitions(kernel
+  PRIVATE
+  LIBMONETDB5)
 
 target_link_libraries(kernel
   PRIVATE
@@ -67,7 +65,7 @@ set_target_properties(microbenchmark
   PROPERTIES
   OUTPUT_NAME _microbenchmark)
 
-install(TARGETS 
+install(TARGETS
   microbenchmark
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5
   COMPONENT microbenchmark)

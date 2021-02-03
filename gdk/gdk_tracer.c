@@ -10,6 +10,7 @@
 #include "gdk.h"
 #include "gdk_tracer.h"
 #include "gdk_private.h"
+#include "mutils.h"
 
 #define DEFAULT_ADAPTER BASIC
 #define DEFAULT_LOG_LEVEL M_ERROR
@@ -114,7 +115,7 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 		}
 	}
 
-	active_tracer = fopen(file_name, "a");
+	active_tracer = MT_fopen(file_name, "a");
 
 	if (active_tracer == NULL) {
 		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,

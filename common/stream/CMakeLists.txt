@@ -52,11 +52,9 @@ target_include_directories(stream
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
-if(WIN32)
-  target_compile_definitions(stream
-    PRIVATE
-    LIBSTREAM)
-endif()
+target_compile_definitions(stream
+  PRIVATE
+  LIBSTREAM)
 
 target_link_libraries(stream
   PRIVATE

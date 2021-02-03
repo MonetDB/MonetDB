@@ -148,7 +148,7 @@ static str monetdb_initialize(void) {
 							binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
-					if (stat(prmodpath, &sb) == 0) {
+					if (MT_stat(prmodpath, &sb) == 0) {
 						modpath = prmodpath;
 						break;
 					}

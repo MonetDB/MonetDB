@@ -1375,10 +1375,8 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 		} else {
 			int mustl = 0, mustr = 0, mustf = 0;
 			return ((l->type == e_column || can_push_func(l, rel, &mustl, depth + 1)) && (*must = mustl)) ||
-					(!f && (r->type == e_column || can_push_func(r, rel, &mustr, depth + 1)) && (*must = mustr)) ||
-				(f &&
-					(r->type == e_column || can_push_func(r, rel, &mustr, depth + 1)) &&
-				(f->type == e_column || can_push_func(f, rel, &mustf, depth + 1)) && (*must = (mustr || mustf)));
+					((r->type == e_column || can_push_func(r, rel, &mustr, depth + 1)) && (*must = mustr)) ||
+					((f && (f->type == e_column || can_push_func(f, rel, &mustf, depth + 1)) && (*must = mustf)));
 		}
 	}
 	case e_convert:
@@ -1410,7 +1408,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 static int
 exps_can_push_func(list *exps, sql_rel *rel, bool *push_left, bool *push_right)
 {
-	for(node *n = exps->h; n && !*push_left && !*push_right; n = n->next) {
+	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		int mustl = 0, mustr = 0;
 

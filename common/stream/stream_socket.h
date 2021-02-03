@@ -14,9 +14,10 @@
 
 #ifdef HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
-#endif
+#else
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
+#endif
 #endif
 
 #ifndef INVALID_SOCKET

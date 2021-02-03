@@ -35,7 +35,7 @@
 #include "mal_instruction.h"
 #include "mal_client.h"
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #define __declspec(x)
 #endif
 
