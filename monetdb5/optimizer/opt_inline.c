@@ -44,7 +44,9 @@ static bool OPTinlineMultiplex(Client cntxt, MalBlkPtr mb, InstrPtr p){
 	 * This code should be protected against overflow due to recursive calls.
 	 * In general, this is a hard problem. For now, we just expand.
 	 */
+	MT_lock_set(&mal_contextLock);
 	(void) OPTinlineImplementation(cntxt, s->def, NULL, p);
+	MT_lock_unset(&mal_contextLock);
 	return s->def->inlineProp;
 }
 
