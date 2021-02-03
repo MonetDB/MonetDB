@@ -231,7 +231,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 }
 
 str
-bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int instantiate)
+bootstrap_partition_expression(mvc *sql, sql_table *mt, int instantiate)
 {
 	sql_exp *exp;
 	char *query, *msg = NULL;
@@ -255,8 +255,7 @@ bootstrap_partition_expression(mvc *sql, sql_allocator *rsa, sql_table *mt, int 
 		throw(SQL,"sql.partition", SQLSTATE(42000) "Incorrect expression '%s'", query);
 	}
 
-	if (!mt->part.pexp->cols)
-		mt->part.pexp->cols = SA_LIST(rsa, (fdestroy) NULL);
+	assert(mt->part.pexp->cols);
 	exp_find_table_columns(sql, exp, mt, mt->part.pexp->cols);
 
 	mt->part.pexp->type = *exp_subtype(exp);
@@ -309,7 +308,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	int localtype;
 	sql_trans *tr = sql->session->tr;
 
-	if (isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, tr->sa, mt, 0)) != NULL)
+	if (isPartitionedByExpressionTable(mt) && (res = bootstrap_partition_expression(sql, mt, 0)) != NULL)
 		return res;
 
 	find_partition_type(&found, mt);
