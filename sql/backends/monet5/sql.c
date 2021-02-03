@@ -381,8 +381,9 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 	if (isPartitionedByExpressionTable(t)) {
 		char *err = NULL;
 
+		_DELETE(nt->part.pexp->exp);
 		nt->part.pexp->exp = SA_STRDUP(sql->session->tr->sa, t->part.pexp->exp);
-		err = bootstrap_partition_expression(sql, sql->session->tr->sa, nt, 1);
+		err = bootstrap_partition_expression(sql, nt, 1);
 		sa_reset(sql->ta);
 		if (err) {
 			sql->sa = osa;

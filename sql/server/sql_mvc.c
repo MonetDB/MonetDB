@@ -1240,7 +1240,7 @@ mvc_create_table(mvc *m, sql_schema *s, const char *name, int tt, bit system, in
 		t->s = s;
 	} else {
 		t = sql_trans_create_table(m->session->tr, s, name, NULL, tt, system, persistence, commit_action, sz, properties);
-		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, m->session->tr->sa, t, 1))) {
+		if(t && isPartitionedByExpressionTable(t) && (err = bootstrap_partition_expression(m, t, 1))) {
 			(void) sql_error(m, 02, "%s", err);
 			return NULL;
 		}

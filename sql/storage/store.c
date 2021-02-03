@@ -205,6 +205,13 @@ column_destroy(sqlstore *store, sql_column *c)
 }
 
 static void
+int_destroy(sqlstore *store, int *v)
+{
+	(void)store;
+	_DELETE(v);
+}
+
+static void
 table_destroy(sqlstore *store, sql_table *t)
 {
 	assert(t->base.refcnt > 0);
@@ -219,7 +226,9 @@ table_destroy(sqlstore *store, sql_table *t)
 	cs_destroy(&t->triggers, store);
 	cs_destroy(&t->columns, store);
 	if (isPartitionedByExpressionTable(t)) {
-		list_destroy(t->part.pexp->cols);
+		if (t->part.pexp->cols)
+			list_destroy2(t->part.pexp->cols, store);
+		_DELETE(t->part.pexp->exp);
 		_DELETE(t->part.pexp);
 	}
 	_DELETE(t->query);
@@ -670,12 +679,6 @@ dup_base(sql_base *b)
 }
 
 static sql_table *
-dup_table(sql_table *t)
-{
-	return (sql_table*)dup_base(&t->base);
-}
-
-static sql_table *
 load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 {
 	sqlstore *store = tr->store;
@@ -762,8 +765,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
 		t->part.pexp->exp = exp;
 		t->part.pexp->type = *sql_bind_localtype("void"); /* initialized at initialize_sql_parts */
-		/* ??? what kind of objects do we keep */
-		t->part.pexp->cols = SA_LIST(tr->sa, (fdestroy) NULL);
+		t->part.pexp->cols = SA_LIST(tr->sa, (fdestroy) &int_destroy);
 	}
 	for (rid = store->table_api.subrids_next(nrs); !is_oid_nil(rid); rid = store->table_api.subrids_next(nrs)) {
 		sql_column* next = load_column(tr, t, rid);
@@ -1600,7 +1602,7 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 		nt->part.pexp = SA_ZNEW(sa, sql_expression);
 		nt->part.pexp->exp = SA_STRDUP(sa, t->part.pexp->exp);
 		nt->part.pexp->type = t->part.pexp->type; /* No dup_sql_type call needed */
-		nt->part.pexp->cols = SA_LIST(sa, (fdestroy) NULL);
+		nt->part.pexp->cols = SA_LIST(sa, (fdestroy) &int_destroy);
 		for (n = t->part.pexp->cols->h; n; n = n->next) {
 			int *nid = SA_NEW(sa, int);
 			*nid = *(int *) n->data;
@@ -3036,7 +3038,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 		t->part.pexp = SA_ZNEW(sa, sql_expression);
 		t->part.pexp->exp = SA_STRDUP(sa, ot->part.pexp->exp);
 		t->part.pexp->type = ot->part.pexp->type;
-		t->part.pexp->cols = SA_LIST(sa, (fdestroy) NULL);
+		t->part.pexp->cols = SA_LIST(sa, (fdestroy) &int_destroy);
 		for (n = ot->part.pexp->cols->h; n; n = n->next) {
 			int *nid = SA_NEW(sa, int);
 			*nid = *(int *) n->data;
@@ -3395,7 +3397,7 @@ sql_trans_rollback(sql_trans *tr)
 			node *next = n->next;
 			sql_table *tt = n->data;
 			if (!isNew(tt))
-				list_prepend(tr->localtmps.set, dup_table(tt));
+				list_prepend(tr->localtmps.set, dup_base(&tt->base));
 			n = next;
 		}
 	}
@@ -4513,7 +4515,7 @@ sql_trans_drop_schema(sql_trans *tr, sqlid id, int drop_action)
 	return 0;
 }
 
-	sql_table *
+sql_table *
 sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 {
 	sqlstore *store = tr->store;
@@ -4525,6 +4527,8 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	sql_trans_create_dependency(tr, pt->base.id, mt->base.id, TABLE_DEPENDENCY);
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 	mt = new_table(tr, mt);
+	if (!mt->members.set)
+		cs_new(&mt->members, tr->sa, (fdestroy) &part_destroy);
 	p->t = mt;
 	p->member = pt->base.id;
 	/* TODO parts should have a unique name - id ? */
@@ -4857,6 +4861,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 	if (isPartitionedByExpressionTable(t)) {
 		t->part.pexp = SA_ZNEW(tr->sa, sql_expression);
 		t->part.pexp->type = *sql_bind_localtype("void"); /* leave it non-initialized, at the backend the copy of this table will get the type */
+		t->part.pexp->cols = SA_LIST(tr->sa, (fdestroy) &int_destroy);
 	}
 
 	ca = t->commit_action;
