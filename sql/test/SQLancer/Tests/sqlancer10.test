@@ -85,6 +85,22 @@ statement ok
 START TRANSACTION
 
 statement ok
+create view v2(vc0, vc1) as (values (NULL, 1),(true, 2),(true, 3))
+
+statement ok
+create view v6(vc2) as ((select '') except (select 'a'))
+
+query I rowsort
+select 1 from v6, v2 join (values (0.54), (3), (0)) as sub0 on true where (v2.vc0 > v2.vc0) between (v2.vc0 = v2.vc0) and "isauuid"(v6.vc2)
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE t1(c0 int)
 
 statement ok
