@@ -191,7 +191,7 @@ class SQLLogic:
 
     def initfile(self, f):
         self.name = f
-        self.file = open(f)
+        self.file = open(f, 'r', encoding='utf-8', errors='replace')
         self.line = 0
         self.hashes = {}
 
