@@ -807,8 +807,8 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 	}
 }
 
-int /*ok, error (name existed) and conflict (added before) */
-os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
+static int /*ok, error (name existed) and conflict (added before) */
+os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
 	objectversion *ov = SA_ZNEW(os->sa, objectversion);
 	ov->ts = tr->tid;
@@ -829,6 +829,16 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return 0;
 }
+
+int
+os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
+{
+	store_lock(tr->store);
+	int res = os_add_(os, tr, name, b);
+	store_unlock(tr->store);
+	return res;
+}
+
 
 static int
 os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectversion *ov) {
@@ -894,8 +904,8 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 	}
 }
 
-int
-os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
+static int
+os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 {
 	objectversion *ov = SA_ZNEW(os->sa, objectversion);
 	os_atmc_set_state(ov, deleted);
@@ -916,6 +926,15 @@ os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	if (!os->temporary)
 		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
 	return 0;
+}
+
+int
+os_del(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
+{
+	store_lock(tr->store);
+	int res = os_del_(os, tr, name, b);
+	store_unlock(tr->store);
+	return res;
 }
 
 int
