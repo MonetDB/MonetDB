@@ -56,10 +56,10 @@ struct prep_exec_cookie {
  * automatically freed even if errors occur
  */
 static struct prep_exec_cookie *
-make_cookie(sql_delta *delta, bool is_new)
+make_cookie(sql_allocator *sa, sql_delta *delta, bool is_new)
 {
 	struct prep_exec_cookie *cookie;
-	cookie = MNEW(struct prep_exec_cookie);
+	cookie = SA_NEW(sa, struct prep_exec_cookie);
 	if (!cookie)
 		return NULL;
 	cookie->delta = delta;
@@ -777,7 +777,7 @@ bind_col_data(sql_trans *tr, sql_column *c)
 }
 
 static void*
-update_col_prepare(sql_trans *tr, sql_column *c)
+update_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 {
 	sql_delta *delta, *odelta = c->data;
 
@@ -787,7 +787,7 @@ update_col_prepare(sql_trans *tr, sql_column *c)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
-	return make_cookie(delta, isNew(c));
+	return make_cookie(sa, delta, isNew(c));
 }
 
 static int
@@ -809,7 +809,7 @@ update_col_execute(void *incoming_cookie, void *incoming_tids, void *incoming_va
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
-	void *cookie = update_col_prepare(tr, c);
+	void *cookie = update_col_prepare(tr, NULL, c);
 	if (cookie == NULL)
 		return LOG_ERR;
 
@@ -848,7 +848,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 }
 
 static void*
-update_idx_prepare(sql_trans *tr, sql_idx *i)
+update_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 {
 	sql_delta *delta, *odelta = i->data;
 
@@ -858,13 +858,13 @@ update_idx_prepare(sql_trans *tr, sql_idx *i)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
-	return make_cookie(delta, isNew(i));
+	return make_cookie(sa, delta, isNew(i));
 }
 
 static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
-	void *cookie = update_idx_prepare(tr, i);
+	void *cookie = update_idx_prepare(tr, NULL, i);
 	if (cookie == NULL)
 		return LOG_ERR;
 
@@ -994,7 +994,7 @@ dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 }
 
 static void*
-append_col_prepare(sql_trans *tr, sql_column *c)
+append_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 {
 	sql_delta *delta, *odelta = c->data;
 
@@ -1004,7 +1004,7 @@ append_col_prepare(sql_trans *tr, sql_column *c)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
-	return make_cookie(delta, false);
+	return make_cookie(sa, delta, false);
 }
 
 static int
@@ -1029,7 +1029,7 @@ append_col_execute(void *incoming_cookie, void *incoming_data, bool is_bat)
 static int
 append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 {
-	void *cookie = append_col_prepare(tr, c);
+	void *cookie = append_col_prepare(tr, NULL, c);
 	if (cookie == NULL)
 		return LOG_ERR;
 
@@ -1039,7 +1039,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 }
 
 static void*
-append_idx_prepare(sql_trans *tr, sql_idx *i)
+append_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 {
 	sql_delta *delta, *odelta = i->data;
 
@@ -1049,13 +1049,13 @@ append_idx_prepare(sql_trans *tr, sql_idx *i)
 	assert(delta && delta->ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
-	return make_cookie(delta, false);
+	return make_cookie(sa, delta, false);
 }
 
 static int
 append_idx(sql_trans *tr, sql_idx * i, void *data, int tpe)
 {
-	void *cookie = append_idx_prepare(tr, i);
+	void *cookie = append_idx_prepare(tr, NULL, i);
 	if (cookie == NULL)
 		return LOG_ERR;
 

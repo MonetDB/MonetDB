@@ -1816,14 +1816,14 @@ mvc_modify_prep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, modify_
 			sql_column *c = mvc_bind_column(m, t, cname);
 			if (c == NULL)
 				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Column missing %s.%s.%s", sname, tname, cname);
-			*cookie_out = colprep(m->session->tr, c);
+			*cookie_out = colprep(m->session->tr, m->sa, c);
 			if (!(*cookie_out))
 				throw(SQL, "sql.modify_prep", SQLSTATE(42000) "Transaction conflict on %s.%s.%s", sname, tname, cname);
 		} else {
 			sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 			if (i == NULL)
 				throw(SQL, "sql.modify_prep", SQLSTATE(42S02) "Index missing %s.%s.%s", sname, tname, cname);
-			*cookie_out = idxprep(m->session->tr, i);
+			*cookie_out = idxprep(m->session->tr, m->sa, i);
 			if (!(*cookie_out))
 				throw(SQL, "sql.modify_prep", SQLSTATE(42000) "Transaction conflict on %s.%s.%s", sname, tname, cname);
 		}
@@ -1927,11 +1927,13 @@ mvc_append_finish_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*chain_out = chain_in;
 
 	/* cleanup */
+	/*
 	for( int i = 2; i < pci->argc; i++){
 		ptr p = *getArgReference_ptr(stk, pci, i);
 
 		_DELETE(p);
 	}
+	*/
 	(void)cntxt;
 	(void)mb;
 	return MAL_SUCCEED;
