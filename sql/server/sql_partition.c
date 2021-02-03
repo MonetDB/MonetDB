@@ -330,7 +330,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 			p->with_nills = next->with_nills;
 
 			if (isListPartitionTable(mt)) {
-				p->part.values = SA_LIST(tr->sa, (fdestroy) NULL);
+				p->part.values = SA_LIST(tr->sa, (fdestroy) &part_value_destroy);
 
 				for (node *m = next->part.values->h; m; m = m->next) {
 					sql_part_value *v = (sql_part_value*) m->data, *nv = SA_ZNEW(tr->sa, sql_part_value);
@@ -435,6 +435,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 				goto finish;
 			}
 		}
+		list_destroy(old);
+		list_destroy(new);
 	}
 finish:
 	return res;

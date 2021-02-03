@@ -225,8 +225,8 @@ table_destroy(sqlstore *store, sql_table *t)
 	_DELETE(t);
 }
 
-static void
-part_value_destroy(sqlstore *store, sql_part_value *pv)
+void
+part_value_destroy(sql_store store, sql_part_value *pv)
 {
 	(void)store;
 	_DELETE(pv->value);
@@ -1220,7 +1220,7 @@ load_schema(sql_trans *tr, sqlid id, oid rid)
 				} else if (isListPartitionTable(t)) {
 					load_value_partition(tr, syss, pt);
 				}
-				if (os_add(s->parts, tr, pt->base.name, &pt->base)) {
+				if (os_add(s->parts, tr, pt->base.name, dup_base(&pt->base))) {
 					part_destroy(store, pt);
 					schema_destroy(store, s);
 					return NULL;
@@ -2946,7 +2946,7 @@ part_dup(sql_trans *tr, sql_part *op, sql_table *mt)
 		p->part.range.minlength = op->part.range.minlength;
 		p->part.range.maxlength = op->part.range.maxlength;
 	} else if (isListPartitionTable(mt)) {
-		p->part.values = list_new(sa, (fdestroy) NULL);
+		p->part.values = list_new(sa, (fdestroy) &part_value_destroy);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
 			nextv->value = SA_NEW_ARRAY(sa, char, prev->length);
@@ -4554,6 +4554,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	ptr ok;
 	sqlid *v;
 
+	assert(!update);
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
 	mt = new_table(tr, mt);
@@ -4671,6 +4672,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	int localtype = tpe.type->localtype, i = 0;
 	sqlid *v;
 
+	assert(!update);
 	mt = new_table(tr, mt);
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
