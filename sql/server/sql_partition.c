@@ -318,6 +318,7 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 		for (node *n = mt->members.set->h; n; n = n->next) {
 			sql_part *p = n->data;
 
+			p->tpe = found;
 			if (isListPartitionTable(mt)) {
 				for (node *m = p->part.values->h; m; m = m->next) {
 					sql_part_value *v = (sql_part_value*) m->data;
