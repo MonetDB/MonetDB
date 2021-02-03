@@ -562,8 +562,14 @@ monet5_user_get_def_schema(mvc *m, int user)
 	schemas_id = find_sql_column(schemas, "id");
 
 	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
-	if (!is_oid_nil(rid))
+	if (!is_oid_nil(rid)) {
 		schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
+	}
+	if (schema) {
+		char *old = schema;
+		schema = sa_strdup(m->session->sa, schema);
+		_DELETE(old);
+	}
 	return schema;
 }
 
@@ -629,6 +635,12 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (!is_oid_nil(rid))
 		schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
+
+	if (schema) {
+		char *old = schema;
+		schema = sa_strdup(m->session->sa, schema);
+		_DELETE(old);
+	}
 
 	/* only set schema if user is found */
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, username, NULL);
