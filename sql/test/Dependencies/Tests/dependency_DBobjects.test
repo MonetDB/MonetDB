@@ -175,9 +175,6 @@ comments
 describe_table
 DEP_FUNC
 dump_statements
-current_size_dump_statements
-DEP_FUNC
-dump_statements
 dump_database
 DEP_FUNC
 function_languages
@@ -400,9 +397,6 @@ SELECT v.name, tri.name, 'DEP_TRIGGER' from sys.tables as v, sys.triggers as tri
 query TTT rowsort
 SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f2, sys.dependencies as dep where f1.id = dep.id AND f2.id = dep.depend_id AND dep.depend_type = 7 order by f2.name, f1.name
 ----
-current_size_dump_statements
-dump_database
-DEP_FUNC
 describe_type
 describe_columns
 DEP_FUNC

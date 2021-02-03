@@ -42,6 +42,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "mutils.h"
 
 #ifdef ALIGN
 #undef ALIGN
@@ -249,7 +250,7 @@ BATattach(int tt, const char *heapfile, role_t role)
 	ERRORcheck(ATOMvarsized(tt) && ATOMstorage(tt) != TYPE_str, "bad tail type (varsized and not str)\n", NULL);
 	ERRORcheck(heapfile == NULL, "bad heapfile name\n", NULL);
 
-	if ((f = fopen(heapfile, "rb")) == NULL) {
+	if ((f = MT_fopen(heapfile, "rb")) == NULL) {
 		GDKsyserror("BATattach: cannot open %s\n", heapfile);
 		return NULL;
 	}
@@ -1844,19 +1845,19 @@ backup_new(Heap *hp, int lockbat)
 		ret = -1;
 		goto bailout;
 	}
-	batret = stat(batpath, &st);
-	bakret = stat(bakpath, &st);
+	batret = MT_stat(batpath, &st);
+	bakret = MT_stat(bakpath, &st);
 
 	if (batret == 0 && bakret) {
 		/* no backup yet, so move the existing X.new there out
 		 * of the way */
-		if ((ret = rename(batpath, bakpath)) < 0)
+		if ((ret = MT_rename(batpath, bakpath)) < 0)
 			GDKsyserror("backup_new: rename %s to %s failed\n",
 				    batpath, bakpath);
 		TRC_DEBUG(IO_, "rename(%s,%s) = %d\n", batpath, bakpath, ret);
 	} else if (batret == 0) {
 		/* there is a backup already; just remove the X.new */
-		if ((ret = remove(batpath)) != 0)
+		if ((ret = MT_remove(batpath)) != 0)
 			GDKsyserror("backup_new: remove %s failed\n", batpath);
 		TRC_DEBUG(IO_, "remove(%s) = %d\n", batpath, ret);
 	}

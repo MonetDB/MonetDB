@@ -58,6 +58,7 @@
 #include "gdk_private.h"
 #include "gdk_logger.h"
 #include "gdk_logger_internals.h"
+#include "mutils.h"
 #include <string.h>
 
 /*
@@ -1062,10 +1063,6 @@ tr_commit(logger *lg, trans *tr)
 	return tr_destroy(tr);
 }
 
-#ifdef _MSC_VER
-#define access(file, mode)	_access(file, mode)
-#endif
-
 static gdk_return
 logger_open(logger *lg)
 {
@@ -1730,7 +1727,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
 		 * checking the database consistency later on */
-		if ((fp = fopen(bak, "r")) != NULL) {
+		if ((fp = MT_fopen(bak, "r")) != NULL) {
 			fclose(fp);
 			fp = NULL;
 			if (GDKunlink(farmid, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
@@ -1740,7 +1737,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			GDKsyserror("open %s failed", bak);
 			goto error;
 		}
-		fp = fopen(filename, "r");
+		fp = MT_fopen(filename, "r");
 		if (fp == NULL && errno != ENOENT) {
 			GDKsyserror("open %s failed", filename);
 			goto error;
@@ -1819,7 +1816,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 					 filename);
 				goto error;
 			}
-			if ((fp = fopen(filename, "w")) == NULL) {
+			if ((fp = MT_fopen(filename, "w")) == NULL) {
 				GDKsyserror("cannot create log file %s\n",
 					    filename);
 				goto error;
@@ -1827,7 +1824,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->id ++;
 			if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
 				fclose(fp);
-				remove(filename);
+				MT_remove(filename);
 				GDKerror("writing log file %s failed",
 					 filename);
 				goto error;
@@ -1842,14 +1839,14 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			     && fsync(fileno(fp)) < 0
 #endif
 				    )) {
-				remove(filename);
+				MT_remove(filename);
 				(void) fclose(fp);
 				GDKerror("flushing log file %s failed",
 					 filename);
 				goto error;
 			}
 			if (fclose(fp) < 0) {
-				remove(filename);
+				MT_remove(filename);
 				GDKerror("closing log file %s failed",
 					 filename);
 				goto error;
@@ -1865,7 +1862,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->catalog_tpe, lg->catalog_oid, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			remove(filename);
+			MT_remove(filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_nme->batCacheid);
 			BBPrelease(lg->catalog_tpe->batCacheid);
@@ -2195,7 +2192,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 #ifdef _MSC_VER
 			/* work around bug in Visual Studio runtime:
 			 * fgetpos may return incorrect value */
-			if ((fp1 = fopen(filename, "r")) == NULL) {
+			if ((fp1 = MT_fopen(filename, "r")) == NULL) {
 				GDKsyserror("cannot open %s\n", filename);
 				goto error;
 			}

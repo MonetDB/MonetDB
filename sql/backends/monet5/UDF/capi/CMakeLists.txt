@@ -9,10 +9,10 @@
 if(CINTEGRATION)
   # TODO add code too regenerate the cheader.text.h file
   add_library(capi MODULE)
-	
+
   target_sources(capi
     PRIVATE
-    capi.c capi.h
+    capi.c
     cheader.h cheader.text.h)
 
   target_include_directories(capi

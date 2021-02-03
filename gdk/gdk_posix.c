@@ -659,9 +659,6 @@ mdlopen(const char *library, int mode)
 #endif
 
 #undef _errno
-#undef stat
-#undef rmdir
-#undef mkdir
 
 #include <windows.h>
 
@@ -709,6 +706,9 @@ MT_mmap(const char *path, int mode, size_t len)
 	SECURITY_ATTRIBUTES sa;
 	HANDLE h1, h2;
 	void *ret;
+	wchar_t *wpath = utf8towchar(path);
+	if (wpath == NULL)
+		return NULL;
 
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
@@ -734,16 +734,18 @@ MT_mmap(const char *path, int mode, size_t len)
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = 0;
 
-	h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
+	h1 = CreateFileW(wpath, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 	if (h1 == INVALID_HANDLE_VALUE) {
-		(void) SetFileAttributes(path, FILE_ATTRIBUTE_NORMAL);
-		h1 = CreateFile(path, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
+		(void) SetFileAttributesW(wpath, FILE_ATTRIBUTE_NORMAL);
+		h1 = CreateFileW(wpath, mode0, mode1, &sa, OPEN_ALWAYS, mode2, NULL);
 		if (h1 == INVALID_HANDLE_VALUE) {
+			free(wpath);
 			GDKwinerror("CreateFile('%s', %lu, %lu, &sa, %lu, %lu, NULL) failed\n",
 				    path, (unsigned long) mode0, (unsigned long) mode1, (unsigned long) OPEN_ALWAYS, (unsigned long) mode2);
 			return NULL;
 		}
 	}
+	free(wpath);
 
 	h2 = CreateFileMapping(h1, &sa, mode3, (DWORD) (((__int64) len >> 32) & LL_CONSTANT(0xFFFFFFFF)), (DWORD) (len & LL_CONSTANT(0xFFFFFFFF)), NULL);
 	if (h2 == NULL) {
@@ -907,125 +909,6 @@ dlerror(void)
 
 	FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM, NULL, GetLastError(), 0, msg, sizeof(msg), NULL);
 	return msg;
-}
-
-/* dir manipulations fail in WIN32 if file name contains trailing
- * slashes; work around this */
-static char *
-reduce_dir_name(const char *src, char *dst, size_t cap)
-{
-	size_t len = strlen(src);
-	char *buf = dst;
-
-	if (len >= cap)
-		buf = malloc(len + 1);
-	if (buf == NULL)
-		return NULL;
-	while (--len > 0 && src[len - 1] != ':' && src[len] == DIR_SEP)
-		;
-	for (buf[++len] = 0; len > 0; buf[len] = src[len])
-		len--;
-	return buf;
-}
-
-#undef _stat64
-int
-win_stat(const char *pathname, struct _stat64 *st)
-{
-	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
-	int ret;
-
-	if (p == NULL)
-		return -1;
-	ret = _stat64(p, st);
-	if (p != buf)
-		free(p);
-	return ret;
-}
-
-int
-win_rmdir(const char *pathname)
-{
-	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
-	int ret;
-
-	if (p == NULL)
-		return -1;
-	ret = _rmdir(p);
-	if (ret < 0 && errno != ENOENT) {
-		/* it could be the <expletive deleted> indexing
-		 * service which prevents us from doing what we have a
-		 * right to do, so try again (once) */
-		TRC_DEBUG(IO_, "Retry rmdir %s\n", pathname);
-		MT_sleep_ms(100);	/* wait a little */
-		ret = _rmdir(p);
-	}
-	if (p != buf)
-		free(p);
-	return ret;
-}
-
-int
-win_unlink(const char *pathname)
-{
-	int ret = _unlink(pathname);
-	if (ret < 0) {
-		/* Vista is paranoid: we cannot delete read-only files
-		 * owned by ourselves. Vista somehow also sets these
-		 * files to read-only.
-		 */
-		(void) SetFileAttributes(pathname, FILE_ATTRIBUTE_NORMAL);
-		ret = _unlink(pathname);
-	}
-	if (ret < 0 && errno != ENOENT) {
-		/* it could be the <expletive deleted> indexing
-		 * service which prevents us from doing what we have a
-		 * right to do, so try again (once) */
-		TRC_DEBUG(IO_, "Retry unlink %s\n", pathname);
-		MT_sleep_ms(100);	/* wait a little */
-		ret = _unlink(pathname);
-	}
-	return ret;
-}
-
-#undef rename
-int
-win_rename(const char *old, const char *dst)
-{
-	int ret;
-
-	ret = rename(old, dst);
-	if (ret == 0 || (ret < 0 && errno == ENOENT))
-		return ret;
-	if (ret < 0 && errno == EEXIST) {
-		(void) win_unlink(dst);
-		ret = rename(old, dst);
-	}
-
-	if (ret < 0 && errno != ENOENT) {
-		/* it could be the <expletive deleted> indexing
-		 * service which prevents us from doing what we have a
-		 * right to do, so try again (once) */
-		TRC_DEBUG(IO_, "Retry rename %s %s\n", old, dst);
-		MT_sleep_ms(100);	/* wait a little */
-		ret = rename(old, dst);
-	}
-	return ret;
-}
-
-int
-win_mkdir(const char *pathname, const int mode)
-{
-	char buf[128], *p = reduce_dir_name(pathname, buf, sizeof(buf));
-	int ret;
-
-	(void) mode;
-	if (p == NULL)
-		return -1;
-	ret = _mkdir(p);
-	if (p != buf)
-		free(p);
-	return ret;
 }
 #endif
 

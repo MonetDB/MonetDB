@@ -20,7 +20,7 @@
 #include "mal_exception.h"
 #include "mal.h"
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #define __declspec(x)
 #endif
 

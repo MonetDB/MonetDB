@@ -11,6 +11,7 @@
 #include "sql_storage.h"
 #include "store_dependency.h"
 #include "store_sequence.h"
+#include "mutils.h"
 
 #include "bat/bat_utils.h"
 #include "bat/bat_storage.h"
@@ -2697,7 +2698,7 @@ store_hot_snapshot(sqlstore *store, str tarfile)
 		goto end;
 	}
 
-	if (stat(tarfile, &st) == 0) {
+	if (MT_stat(tarfile, &st) == 0) {
 		GDKerror("File already exists: %s", tarfile);
 		goto end;
 	}
@@ -2762,7 +2763,7 @@ store_hot_snapshot(sqlstore *store, str tarfile)
 	mnstr_fsync(tar_stream);
 	close_stream(tar_stream);
 	tar_stream = NULL;
-	if (rename(tmppath, tarfile) < 0) {
+	if (MT_rename(tmppath, tarfile) < 0) {
 		GDKsyserror("rename %s to %s failed", tmppath, tarfile);
 		goto end;
 	}
@@ -2785,7 +2786,7 @@ end:
 	if (plan_buf)
 		buffer_destroy(plan_buf);
 	if (do_remove)
-		(void) remove(tmppath);	// Best effort, ignore the result
+		(void) MT_remove(tmppath);	// Best effort, ignore the result
 	GDKfree(tmppath);
 	return result;
 }

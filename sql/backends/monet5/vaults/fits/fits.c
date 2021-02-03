@@ -280,7 +280,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
 	TRC_INFO(FITS, "Filename: %s\n", filename);
 
-	remove(filename);
+	MT_remove(filename);
 
 	status=0;
 

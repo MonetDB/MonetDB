@@ -34,6 +34,7 @@
 #include <sys/types.h>
 #include "stream_socket.h"
 #include "mapi.h"
+#include "mutils.h"
 
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
@@ -43,14 +44,16 @@
 # include <CommonCrypto/CommonRandom.h>
 #endif
 #endif
-#ifdef HAVE_WINSOCK_H   /* Windows specific */
-# include <winsock.h>
-#else           /* UNIX specific */
+#ifdef HAVE_SYS_SOCKET_H
 # include <sys/select.h>
 # include <sys/socket.h>
 # include <unistd.h>     /* gethostname() */
 # include <netinet/in.h> /* hton and ntoh */
 # include <arpa/inet.h>  /* addr_in */
+#else           /* UNIX specific */
+#ifdef HAVE_WINSOCK_H   /* Windows specific */
+# include <winsock.h>
+#endif
 #endif
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
@@ -695,7 +698,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		else
 			memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
-		if (remove(usockfile) == -1 && errno != ENOENT) {
+		if (MT_remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file: %s",
 									  GDKstrerror(errno, (char[128]){0}, 128));
 			if (socks[0] != INVALID_SOCKET)
@@ -716,7 +719,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			(void) remove(usockfile);
+			(void) MT_remove(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": binding to UNIX socket file %s failed: %s",
@@ -733,7 +736,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			(void) remove(usockfile);
+			(void) MT_remove(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": setting UNIX socket file %s to listen failed: %s",
