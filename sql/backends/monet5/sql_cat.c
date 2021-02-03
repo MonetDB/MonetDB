@@ -330,7 +330,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	str msg = MAL_SUCCEED;
 	sql_part *err = NULL;
 	int errcode = 0, i = 0, ninserts = 0;
-	list *values = list_new(sql->session->tr->sa, (fdestroy) NULL);
+	list *values = list_new(sql->session->tr->sa, (fdestroy) &part_value_destroy);
 	sql_subtype tpe;
 
 	assert(with_nills == false || with_nills == true); /* No nills allowed here */
