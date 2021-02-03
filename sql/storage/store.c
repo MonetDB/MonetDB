@@ -4828,7 +4828,7 @@ sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *
 	return table_dup(tr, t, ns, NULL);
 }
 
-	sql_table *
+sql_table *
 sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action)
 {
 	sqlstore *store = tr->store;
@@ -4849,7 +4849,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	return 0;
 }
 
-	sql_table *
+sql_table *
 sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const char *sql, int tt, bit system,
 					   int persistence, int commit_action, int sz, bte properties)
 {
