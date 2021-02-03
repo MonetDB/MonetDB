@@ -4861,7 +4861,7 @@ sql_trans_create_table(sql_trans *tr, sql_schema *s, const char *name, const cha
 		t->sz = COLSIZE;
 	if (isGlobal(t)) {
 		if (os_add(s->tables, tr, t->base.name, &t->base)) {
-			table_destroy(store, t);
+			//table_destroy(store, t);
 			return NULL;
 		}
 	} else
