@@ -1570,7 +1570,7 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 		p->part.range.minlength = op->part.range.minlength;
 		p->part.range.maxlength = op->part.range.maxlength;
 	} else if (isListPartitionTable(mt)) {
-		p->part.values = list_new(sa, (fdestroy) NULL);
+		p->part.values = list_new(sa, (fdestroy) &part_value_destroy);
 		for (node *n = op->part.values->h ; n ; n = n->next) {
 			sql_part_value *prev = (sql_part_value*) n->data, *nextv = SA_ZNEW(sa, sql_part_value);
 			nextv->value = SA_NEW_ARRAY(sa, char, prev->length);
@@ -4563,6 +4563,8 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
 
 	mt = new_table(tr, mt);
+	if (!mt->members.set)
+		cs_new(&mt->members, tr->sa, (fdestroy) &part_destroy);
 	if (min) {
 		ok = VALinit(&vmin, localtype, min);
 		if (ok && localtype != TYPE_str)
@@ -4613,6 +4615,10 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	}
 
 	/* add range partition values */
+	if (update) {
+		_DELETE(p->part.range.minvalue);
+		_DELETE(p->part.range.maxvalue);
+	}
 	p->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, smin);
 	p->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, smax);
 	memcpy(p->part.range.minvalue, min, smin);
@@ -4623,6 +4629,8 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 
 	if (!update) {
 		*err = cs_add_with_validate(&mt->members, p, 0, sql_range_part_validate_and_insert);
+		if (*err)
+			part_destroy(store, p);
 	} else {
 		*err = cs_transverse_with_validate(&mt->members, p, sql_range_part_validate_and_insert);
 	}
@@ -4663,7 +4671,7 @@ finish:
 	return res;
 }
 
-	int
+int
 sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_subtype tpe, list* vals, bit with_nills,
 		int update, sql_part **err)
 {
@@ -4678,6 +4686,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	sqlid *v;
 
 	mt = new_table(tr, mt);
+	if (!mt->members.set)
+		cs_new(&mt->members, tr->sa, (fdestroy) &part_destroy);
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
 		base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
@@ -4707,7 +4717,10 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	if (with_nills) { /* store the null value first */
 		ValRecord vnnil;
 		if (VALinit(&vnnil, TYPE_str, ATOMnilptr(TYPE_str)) == NULL) {
+			if (!update)
+				part_destroy(store, p);
 			_DELETE(v);
+			list_destroy2(vals, store);
 			return -1;
 		}
 		store->table_api.table_insert(tr, values, &pt->base.id, v, VALget(&vnnil));
@@ -4720,15 +4733,21 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		ptr ok;
 
 		if (ATOMlen(localtype, next->value) > STORAGE_MAX_VALUE_LENGTH) {
+			if (!update)
+				part_destroy(store, p);
 			_DELETE(v);
+			list_destroy2(vals, store);
 			return -i - 1;
 		}
 		ok = VALinit(&vvalue, localtype, next->value);
 		if (ok && localtype != TYPE_str)
 			ok = VALconvert(TYPE_str, &vvalue);
 		if (!ok) {
+			if (!update)
+				part_destroy(store, p);
 			_DELETE(v);
 			VALclear(&vvalue);
+			list_destroy2(vals, store);
 			return -i - 1;
 		}
 		store->table_api.table_insert(tr, values, &pt->base.id, v, VALget(&vvalue));
@@ -4737,10 +4756,14 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	}
 	_DELETE(v);
 
+	if (p->part.values)
+		list_destroy2(p->part.values, store);
 	p->part.values = vals;
 
 	if (!update) {
 		*err = cs_add_with_validate(&mt->members, p, 0, sql_values_part_validate_and_insert);
+		if (*err)
+			part_destroy(store, p);
 	} else {
 		*err = cs_transverse_with_validate(&mt->members, p, sql_values_part_validate_and_insert);
 	}
@@ -4759,7 +4782,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	return 0;
 }
 
-	sql_table*
+sql_table*
 sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name)
 {
 	sqlstore *store = tr->store;
@@ -4787,7 +4810,7 @@ sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_n
 	return t;
 }
 
-	sql_table*
+sql_table*
 sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns)
 {
 	sqlstore *store = tr->store;

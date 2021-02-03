@@ -188,8 +188,11 @@ list_append_with_validate(list *l, void *data, fvalidate cmp)
 	if (l->cnt) {
 		for (m = l->h; m; m = m->next) {
 			err = cmp(m->data, data);
-			if(err)
+			if(err) {
+				n->data = NULL;
+				node_destroy(l, NULL, n);
 				return err;
+			}
 		}
 		l->t->next = n;
 	} else {
@@ -225,8 +228,11 @@ list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 	} else {
 		for (m = l->h; m; m = m->next) {
 			err = cmp(m->data, data, extra, &comp);
-			if(err)
+			if(err) {
+				n->data = NULL;
+				node_destroy(l, NULL, n);
 				return err;
+			}
 			if(comp < 0)
 				break;
 			first = 0;

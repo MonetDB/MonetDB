@@ -330,8 +330,8 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 	str msg = MAL_SUCCEED;
 	sql_part *err = NULL;
 	int errcode = 0, i = 0, ninserts = 0;
-	list *values = list_new(sql->session->tr->sa, (fdestroy) &part_value_destroy);
 	sql_subtype tpe;
+	list *values = NULL;
 
 	assert(with_nills == false || with_nills == true); /* No nills allowed here */
 	if ((msg = validate_alter_table_add_table(sql, "sql.alter_table_add_value_partition", msname, mtname, psname, ptname,
@@ -355,6 +355,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000) "ALTER TABLE: no values in the list");
 		goto finish;
 	}
+	values = list_new(sql->session->tr->sa, (fdestroy) &part_value_destroy);
 	for ( i = pci->retc+6; i < pci->argc; i++){
 		sql_part_value *nextv = NULL;
 		ValRecord *vnext = &(stk)->stk[(pci)->argv[i]];
@@ -364,6 +365,7 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		if (VALisnil(vnext)) { /* check for an eventual null value which cannot be */
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 																			"ALTER TABLE: list value cannot be null");
+			list_destroy2(values, sql->session->tr->store);
 			goto finish;
 		}
 
@@ -375,6 +377,9 @@ alter_table_add_value_partition(mvc *sql, MalStkPtr stk, InstrPtr pci, char *msn
 		if (list_append_sorted(values, nextv, &tpe, sql_values_list_element_validate_and_insert) != NULL) {
 			msg = createException(SQL,"sql.alter_table_add_value_partition",SQLSTATE(42000)
 									"ALTER TABLE: there are duplicated values in the list");
+			list_destroy2(values, sql->session->tr->store);
+			_DELETE(nextv->value);
+			_DELETE(nextv);
 			goto finish;
 		}
 	}
