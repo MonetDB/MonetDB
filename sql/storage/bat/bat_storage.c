@@ -785,7 +785,7 @@ update_col_prepare(sql_trans *tr, sql_column *c)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || isLocalTemp(c->t))
+	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	return make_cookie(delta, isNew(c));
 }
@@ -856,7 +856,7 @@ update_idx_prepare(sql_trans *tr, sql_idx *i)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || isLocalTemp(i->t))
+	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	return make_cookie(delta, isNew(i));
 }
@@ -1002,7 +1002,7 @@ append_col_prepare(sql_trans *tr, sql_column *c)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || isLocalTemp(c->t))
+	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	return make_cookie(delta, false);
 }
@@ -1047,7 +1047,7 @@ append_idx_prepare(sql_trans *tr, sql_idx *i)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || isLocalTemp(i->t))
+	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	return make_cookie(delta, false);
 }
@@ -1201,7 +1201,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		ok = delta_delete_bat(bat, ib);
 	else
 		ok = delta_delete_val(bat, *(oid*)ib);
-	if ((!inTransaction(tr, t) && obat != bat && isGlobal(t)) || isLocalTemp(t))
+	if ((!inTransaction(tr, t) && obat != bat && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return ok;
 }
@@ -1632,8 +1632,8 @@ create_col(sql_trans *tr, sql_column *c)
 				bat_destroy(b);
 			}
 		}
-		if (new && !isTempTable(c->t) && !isNew(c->t) /* alter */)
-			trans_add(tr, &c->base, bat, &tc_gc_col, &commit_create_col, isLocalTemp(c->t)?NULL:&log_create_col);
+		if (new /*&& !isTempTable(c->t)*/ && !isNew(c->t) /* alter */)
+			trans_add(tr, &c->base, bat, &tc_gc_col, &commit_create_col, isTempTable(c->t)?NULL:&log_create_col);
 	}
 	return ok;
 }
@@ -1685,6 +1685,7 @@ static int
 commit_create_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_column *c = (sql_column*)change->obj;
+	c->base.flags = 0;
 	return commit_create_col_( tr, c, commit_ts, oldest);
 }
 
@@ -1752,8 +1753,8 @@ create_idx(sql_trans *tr, sql_idx *ni)
 			if(bat->uvbid == BID_NIL)
 				ok = LOG_ERR;
 		}
-		if (new && !isTempTable(ni->t) && !isNew(ni->t) /* alter */)
-			trans_add(tr, &ni->base, bat, &tc_gc_idx, &commit_create_idx, isLocalTemp(ni->t)?NULL:&log_create_idx);
+		if (new /*&& !isTempTable(ni->t)*/ && !isNew(ni->t) /* alter */)
+			trans_add(tr, &ni->base, bat, &tc_gc_idx, &commit_create_idx, isTempTable(ni->t)?NULL:&log_create_idx);
 	}
 	return ok;
 }
@@ -1803,6 +1804,7 @@ static int
 commit_create_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	sql_idx *i = (sql_idx*)change->obj;
+	i->base.flags = 0;
 	return commit_create_idx_(tr, i, commit_ts, oldest);
 }
 
@@ -1863,8 +1865,8 @@ create_del(sql_trans *tr, sql_table *t)
 		} else {
 			ok = LOG_ERR;
 		}
-		if (new && !isTempTable(t))
-			trans_add(tr, &t->base, bat, &tc_gc_del, &commit_create_del, isLocalTemp(t)?NULL:&log_create_del);
+		if (new /*&& !isTempTable(t)*/)
+			trans_add(tr, &t->base, bat, &tc_gc_del, &commit_create_del, isTempTable(t)?NULL:&log_create_del);
 	}
 	return ok;
 }
@@ -1957,6 +1959,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 			t->base.flags = 0;
 		}
 	}
+			t->base.flags = 0;
 	return ok;
 }
 
@@ -2194,7 +2197,7 @@ clear_col(sql_trans *tr, sql_column *c)
 
 	if ((delta = bind_col_data(tr, c)) == NULL)
 		return BUN_NONE;
-	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || isLocalTemp(c->t))
+	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	if (delta)
 		return clear_delta(tr, delta);
@@ -2210,7 +2213,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 		return 0;
 	if ((delta = bind_idx_data(tr, i)) == NULL)
 		return BUN_NONE;
-	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || isLocalTemp(i->t))
+	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	if (delta)
 		return clear_delta(tr, delta);
@@ -2250,7 +2253,7 @@ clear_del(sql_trans *tr, sql_table *t)
 
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
-	if ((!inTransaction(tr, t) && obat != bat && isGlobal(t)) || isLocalTemp(t))
+	if ((!inTransaction(tr, t) && obat != bat && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return clear_dbat(tr, bat);
 }

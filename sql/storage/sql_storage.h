@@ -456,7 +456,7 @@ extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trig
 extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
 extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
-#define inTransaction(tr,t) (os_obj_intransaction(t->s->tables, tr, &t->base))
+#define inTransaction(tr,t) (isLocalTemp(t) || os_obj_intransaction(t->s->tables, tr, &t->base))
 #define TRANSACTION_ID_BASE	(1ULL<<63)
 
 typedef struct sqlstore {

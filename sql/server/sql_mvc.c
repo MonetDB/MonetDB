@@ -627,8 +627,10 @@ mvc_rollback(mvc *m, int chain, const char *name, bool disabling_auto_commit)
 		}
 		m->session->tr = tr;	/* restart at savepoint */
 		m->session->status = tr->status;
-		if (tr->name)
+		if (tr->name) {
+			_DELETE(tr->name);
 			tr->name = NULL;
+		}
 		m->session->schema = find_sql_schema(m->session->tr, m->session->schema_name);
 	} else {
 		/* first release all intermediate savepoints */
@@ -691,6 +693,7 @@ mvc_release(mvc *m, const char *name)
 			GDKfatal("release savepoints should not fail");
 		tr = sql_trans_destroy(tr);
 	}
+	_DELETE(tr->name);
 	tr->name = NULL;
 	store_unlock(m->store);
 	m->session->tr = tr;

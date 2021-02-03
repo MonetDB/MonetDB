@@ -5301,6 +5301,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 							size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t);
 							assert (n_rows >= n_deletes);
 							if (n_rows - n_deletes > 0) {
+								list_destroy(keys);
 								sql_error(sql, 02, SQLSTATE(23000) "TRUNCATE: FOREIGN KEY %s.%s depends on %s", k->t->base.name, k->base.name, t->base.name);
 								*error = 1;
 								return;
@@ -5313,6 +5314,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 							}
 							if (!found) {
 								if ((new_node = SA_NEW(sql->ta, struct tablelist)) == NULL) {
+									list_destroy(keys);
 									sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 									*error = 1;
 									return;

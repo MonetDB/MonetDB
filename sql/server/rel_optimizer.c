@@ -9556,7 +9556,7 @@ exp_is_zero_rows(mvc *sql, sql_rel *rel, sql_rel *sel)
 				if (lval && hval) {
 					sql_rel *bt;
 					sql_column *col = name_find_column(sel, exp_relname(c), exp_name(c), -2, &bt);
-					char *min, *max;
+					char *min = NULL, *max = NULL;
 					atom *amin, *amax;
 					sql_subtype *ct = exp_subtype(c);
 
