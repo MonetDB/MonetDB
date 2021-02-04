@@ -9,4 +9,3 @@ select foo(2)
 statement ok
 drop all function foo 
 
-

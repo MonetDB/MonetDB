@@ -54,4 +54,3 @@ select * from t2770608 t1, t2770608 t2 where t1.id = t2.id
 statement ok
 drop table t2770608
 
-

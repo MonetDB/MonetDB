@@ -18,4 +18,3 @@ select * from blobtest_bug2832
 statement ok
 rollback
 
-

@@ -31,4 +31,3 @@ drop function f1
 statement ok
 drop table t1983341a
 
-

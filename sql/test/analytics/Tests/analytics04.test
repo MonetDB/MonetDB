@@ -16,7 +16,76 @@ select count(*) over (rows between 3 preceding and 2 preceding),
        count(*) over (rows between 0 following and 0 following),
        count(*) over (rows between 0 preceding and 0 preceding) from analytics
 ----
-70 values hashing to a05e79754939ae461a79093b4a5830a4
+0
+2
+0
+0
+1
+1
+1
+0
+2
+0
+0
+1
+1
+1
+1
+2
+0
+0
+1
+1
+1
+2
+0
+1
+0
+1
+1
+1
+2
+0
+1
+0
+1
+1
+1
+2
+1
+1
+0
+1
+1
+1
+2
+2
+1
+0
+1
+1
+1
+2
+2
+1
+0
+1
+1
+1
+2
+2
+1
+0
+1
+1
+1
+2
+2
+1
+0
+1
+1
+1
 
 query IIIIIII rowsort
 select count(aa) over (partition by bb order by bb rows between 3 preceding and 2 preceding),
@@ -27,7 +96,76 @@ select count(aa) over (partition by bb order by bb rows between 3 preceding and 
        count(aa) over (partition by bb order by bb rows between 0 following and 0 following),
        count(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) from analytics
 ----
-70 values hashing to 082e4b7ffec380304fb21489ffb072ed
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+1
+1
+1
+0
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+1
+1
+1
+0
+1
+0
+0
+1
+1
+1
+1
+0
+0
+0
+1
+1
+1
+1
+0
+0
+0
+1
+1
+1
 
 query IIIIIII rowsort
 select cast(sum(aa) over (rows between 3 preceding and 2 preceding) as bigint),
@@ -38,7 +176,76 @@ select cast(sum(aa) over (rows between 3 preceding and 2 preceding) as bigint),
        cast(sum(aa) over (rows between 0 following and 0 following) as bigint),
        cast(sum(aa) over (rows between 0 preceding and 0 preceding) as bigint) from analytics
 ----
-70 values hashing to ffbd2ae612e9fbf0ac16e4fbe0f89684
+10
+NULL
+4
+NULL
+NULL
+NULL
+NULL
+15
+3
+NULL
+NULL
+2
+2
+2
+18
+7
+15
+NULL
+5
+5
+5
+3
+NULL
+NULL
+NULL
+6
+6
+6
+5
+10
+3
+NULL
+NULL
+NULL
+NULL
+5
+8
+5
+NULL
+4
+4
+4
+7
+14
+2
+NULL
+3
+3
+3
+7
+NULL
+3
+NULL
+8
+8
+8
+NULL
+5
+NULL
+NULL
+3
+3
+3
+NULL
+7
+NULL
+NULL
+15
+15
+15
 
 query IIIIIII rowsort
 select cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 2 preceding) as bigint),
@@ -49,12 +256,90 @@ select cast(sum(aa) over (partition by bb order by bb rows between 3 preceding a
        cast(sum(aa) over (partition by bb order by bb rows between 0 following and 0 following) as bigint),
        cast(sum(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) as bigint) from analytics
 ----
-70 values hashing to ef0a1b1f9f2b4b1a30fc50bc6854c087
+15
+NULL
+NULL
+NULL
+6
+6
+6
+3
+NULL
+NULL
+NULL
+4
+4
+4
+NULL
+4
+NULL
+NULL
+3
+3
+3
+NULL
+6
+NULL
+NULL
+15
+15
+15
+NULL
+8
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+2
+2
+2
+NULL
+NULL
+NULL
+NULL
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
+5
+5
+5
+NULL
+NULL
+NULL
+NULL
+8
+8
+8
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select min(aa) over (order by bb range between current row and unbounded following) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(aa) over (order by bb range between current row and unbounded following) from analytics where false
@@ -63,7 +348,16 @@ select min(aa) over (order by bb range between current row and unbounded followi
 query I rowsort
 select min(aa) over (partition by bb order by bb range between current row and unbounded following) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(aa) over (partition by bb order by bb range between current row and unbounded following) from analytics where false
@@ -122,5 +416,4 @@ select count(distinct aa) over (rows between 1 preceding and current row) from a
 
 statement ok
 drop table analytics
-
 

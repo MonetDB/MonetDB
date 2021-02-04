@@ -13,4 +13,3 @@ optimizer.commonTerms("user,","foo")
 statement ok
 optimizer.aliases("user,","foo")
 
-#mdb.List("user","foo")

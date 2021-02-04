@@ -31,7 +31,6 @@ sql.append_finish
 sql.affectedRows
 1
 
-
 query T python .explain.function_histogram
 explain UPDATE mytest SET b = 10000000000
 ----
@@ -55,7 +54,6 @@ sql.append_finish
 1
 sql.affectedRows
 1
-
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET c = a * b
@@ -108,7 +106,6 @@ sql.append_finish
 1
 sql.affectedRows
 1
-
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET e = d + a
@@ -205,3 +202,4 @@ ROLLBACK
 
 statement ok
 set optimizer = 'default_pipe'
+

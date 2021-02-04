@@ -72,4 +72,3 @@ drop table tblHistory2007
 statement ok
 commit
 
-

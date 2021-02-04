@@ -20,7 +20,7 @@ SELECT * FROM xtmp1
 4
 7
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx FROM storage(current_schema, 'xtmp1')
 ----
 sys
@@ -30,10 +30,10 @@ int
 writable
 12
 0
-False
 0
-False
-False
+0
+0
+0
 
 statement ok
 ALTER TABLE xtmp1 SET READ ONLY
@@ -41,7 +41,7 @@ ALTER TABLE xtmp1 SET READ ONLY
 statement ok
 CREATE ORDERED INDEX sys_xtmp1_i_oidx ON xtmp1(i)
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx FROM storage(current_schema, 'xtmp1')
 ----
 sys
@@ -51,10 +51,10 @@ int
 readonly
 12
 0
-False
 0
-False
-True
+0
+0
+1
 
 query I rowsort
 SELECT * FROM xtmp1 WHERE i<0
@@ -133,5 +133,4 @@ DROP INDEX sys_xtmp1_i_oidx
 
 statement ok
 DROP TABLE xtmp1
-
 

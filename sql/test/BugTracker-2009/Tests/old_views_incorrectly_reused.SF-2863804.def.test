@@ -31,4 +31,3 @@ INSERT INTO doc_string VALUES (3, 'date', '2001',1.0)
 statement ok
 COMMIT
 
-

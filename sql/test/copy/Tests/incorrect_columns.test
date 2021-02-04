@@ -30,12 +30,22 @@ maan
 query IITT rowsort
 select * from sys.rejects()
 ----
-12 values hashing to 920728ecebf34dda3707ffbb787665a8
+1
+0
+Column value missing
+2@
+2
+0
+Column value missing
+no tag@
+3
+2
+Leftover data 'xyz'
+3,too much@
 
 statement ok
 drop table t_columns
 
 statement ok
 rollback
-
 

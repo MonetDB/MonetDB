@@ -47,4 +47,3 @@ NULL
 statement ok
 rollback
 
-

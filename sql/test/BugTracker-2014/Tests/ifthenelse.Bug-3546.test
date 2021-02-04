@@ -34,4 +34,3 @@ select case when not (a is null) and a > 0.0 then 1.0*r/a else -1 end as r from 
 statement ok
 rollback
 
-

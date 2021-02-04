@@ -10,7 +10,7 @@ bat.append(b, 5442033)
 statement ok
 bat.append(b, 5645862)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
 0
@@ -23,7 +23,7 @@ io.print(b)
 statement ok
 bat.delete(b,1@0)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
 0
@@ -34,8 +34,7 @@ io.print(b)
 statement ok
 bat.delete(b)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
-
 

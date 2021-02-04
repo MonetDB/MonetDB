@@ -15,3 +15,4 @@ barrier b:= j<=0;
 exit b;
 ----
 ok entered first
+

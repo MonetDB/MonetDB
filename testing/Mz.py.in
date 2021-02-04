@@ -45,6 +45,7 @@ MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 procdebug = False
 verbose = False
 quiet = False
+approve = False
 
 initdb = None
 
@@ -663,7 +664,8 @@ def PerformDir(env, testdir) :
                         'times.lst',
                         '*.server.err', '*.server.out',
                         '*.test.err', '*.test.out',
-                        'SingleServer.out', 'SingleServer.err']:
+                        'SingleServer.out', 'SingleServer.err',
+                        '*.newtest']:
                 if fnmatch.fnmatch(f, pat):
                     break
             else:
@@ -1839,7 +1841,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                             except:
                                 pass
                         try:
-                            sql.parse(TST+EXT)
+                            sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None)
                         except sqllogictest.SQLLogicSyntaxError:
                             pass
                         except BrokenPipeError:
@@ -2382,6 +2384,7 @@ def main(argv) :
     parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing')
     parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
+    parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
@@ -2398,6 +2401,8 @@ def main(argv) :
         ErrExit('--verbose and --quiet are mutually exclusive')
     global procdebug
     procdebug = opts.procdebug
+    global approve
+    approve = opts.approve
     nomito = False
     jenkins = False
     addreqs = False

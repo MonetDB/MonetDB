@@ -22,7 +22,7 @@ BEGIN
 	);
 END
 
-query TIIR rowsort
+query TIIT rowsort
 WITH distance AS (
 		SELECT v1.id AS ship, v2.id AS neighbour_ship, distance_in_km_quick(v1.lat,v1.log,v2.lat,v2.log) AS distance_in_km
 		FROM distinct_vessels AS v1
@@ -32,7 +32,7 @@ WITH distance AS (
 	WHERE (distance_in_km) IN (SELECT min(distance_in_km) FROM distance GROUP BY ship)
 ----
 
-query TIIR rowsort
+query TIIT rowsort
 WITH distance AS (
 		SELECT v1.id AS ship, v2.id AS neighbour_ship, distance_in_km_quick(v1.lat,v1.log,v2.lat,v2.log) AS distance_in_km
 		FROM distinct_vessels AS v1
@@ -44,5 +44,4 @@ WITH distance AS (
 
 statement ok
 rollback
-
 

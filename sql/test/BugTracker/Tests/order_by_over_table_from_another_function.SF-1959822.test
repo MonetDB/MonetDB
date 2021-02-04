@@ -33,4 +33,3 @@ drop function f3()
 statement ok
 drop function f2()
 
-

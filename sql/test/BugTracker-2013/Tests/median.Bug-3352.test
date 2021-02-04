@@ -38,4 +38,3 @@ select median(b) from t3352
 statement ok
 rollback
 
-

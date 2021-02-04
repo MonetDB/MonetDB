@@ -177,4 +177,3 @@ order by "co_f1"
 statement ok
 ROLLBACK
 
-

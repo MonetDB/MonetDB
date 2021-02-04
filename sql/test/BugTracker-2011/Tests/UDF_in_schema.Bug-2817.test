@@ -66,4 +66,3 @@ drop table schema_2817.table_2817
 statement ok
 drop schema schema_2817 cascade
 
-

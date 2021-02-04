@@ -13,7 +13,18 @@ CREATE TABLE child2(x int REFERENCES parent2)
 query TTTIII rowsort
 SELECT table_name, column_name, key_name, key_col_nr, key_type, depend_type FROM dependency_columns_on_keys WHERE table_name LIKE 'parent%' AND key_name LIKE 'parent%'
 ----
-12 values hashing to f624b71ba6fc707c34f2184dad53a6d5
+parent2
+a
+parent2_a_b_pkey
+1
+0
+4
+parent2
+b
+parent2_a_b_pkey
+2
+0
+4
 
 query TTII rowsort
 SELECT key_name, fk_name, key_type, depend_type FROM dependency_keys_on_foreignkeys WHERE fk_name LIKE 'child%'
@@ -28,5 +39,4 @@ drop table child1
 
 statement ok
 drop table parent2
-
 

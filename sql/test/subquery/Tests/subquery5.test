@@ -117,13 +117,13 @@ SELECT col1 FROM another_t t1 GROUP BY col1 HAVING 1 = ANY (SELECT col1)
 ----
 1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT i = ANY(VALUES(1), (i))) FROM integers
 ----
+1
+1
+1
 NULL
-True
-True
-True
 
 statement error
 SELECT (SELECT i1.i IN (SELECT SUM(i1.i))) FROM integers i1
@@ -136,7 +136,22 @@ SELECT corr(i1.i, i2.i) FROM integers i1, integers i2
 query R rowsort
 SELECT corr(i1.i, i2.i) OVER () FROM integers i1, integers i2
 ----
-16 values hashing to 4876fcaa44e9e7142faf73d7f2c61e55
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 statement error
 SELECT (SELECT SUM(i1.i) IN (SELECT CORR(i1.i, i2.i) FROM integers i2)) FROM integers i1
@@ -233,17 +248,90 @@ SELECT 1 FROM integers CROSS JOIN integers
 query II rowsort
 SELECT * FROM integers i1 LEFT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ())
 ----
-24 values hashing to 076b2a9d41b2fd16bc24001621fd64ac
+1
+1
+1
+2
+1
+3
+2
+1
+2
+2
+2
+3
+3
+1
+3
+2
+3
+3
+NULL
+1
+NULL
+2
+NULL
+3
 
 query II rowsort
 SELECT * FROM integers i1 RIGHT OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ())
 ----
-26 values hashing to 2a37fe8deb2923bb7e6606cb3bdb4985
+1
+1
+1
+2
+1
+3
+2
+1
+2
+2
+2
+3
+3
+1
+3
+2
+3
+3
+NULL
+1
+NULL
+2
+NULL
+3
+NULL
+NULL
 
 query II rowsort
 SELECT * FROM integers i1 FULL OUTER JOIN integers i2 ON i2.i = ANY(SELECT SUM(i2.i + i3.i) FROM integers i3) = NOT EXISTS(SELECT MIN(i1.i) OVER ())
 ----
-26 values hashing to 2a37fe8deb2923bb7e6606cb3bdb4985
+1
+1
+1
+2
+1
+3
+2
+1
+2
+2
+2
+3
+3
+1
+3
+2
+3
+3
+NULL
+1
+NULL
+2
+NULL
+3
+NULL
+NULL
 
 query I rowsort
 SELECT 1 FROM integers i1 RIGHT OUTER JOIN integers i2 ON NOT EXISTS(SELECT 1)
@@ -265,18 +353,18 @@ SELECT (VALUES(col1)), (VALUES(MAX(col2))) FROM another_t
 statement error
 SELECT (SELECT CORR(MIN(i1.i), 1) FROM integers i2) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 1) IN (SELECT 2 UNION SELECT 3) FROM integers i1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 statement error
 SELECT (SELECT 1 UNION SELECT 2) IN (SELECT 1) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MAX(i1.i) = 1) IN (SELECT 1 FROM integers i2 INNER JOIN integers i3 ON MIN(i1.i) = 1) FROM integers i1
 ----
 NULL
@@ -287,10 +375,10 @@ SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FROM int
 statement error
 SELECT (SELECT COVAR_SAMP(i1.i, i2.i) FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT COVAR_POP(i1.i, 1)) IN (SELECT SUM(i1.i)) FROM integers i1
 ----
-False
+0
 
 statement error
 SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1
@@ -298,18 +386,18 @@ SELECT (SELECT MAX(i1.i + i2.i) FROM integers i2) = MIN(i1.i) FROM integers i1
 statement error
 SELECT (SELECT i2.i FROM integers i2) IN (SELECT MIN(i1.i)) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 5) NOT IN (SELECT MIN(i1.i)) FROM integers i1
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 1) IN (SELECT i1.i) FROM integers i1
 ----
-False
-False
+0
+0
+1
 NULL
-True
 
 query I rowsort
 SELECT SUM((SELECT MAX(i1.i + i2.i) FROM integers i2)) FROM integers i1
@@ -324,20 +412,20 @@ SELECT i1.i FROM integers i1 WHERE (SELECT TRUE EXCEPT SELECT i1.i > 0)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i
 ----
-False
+0
+1
+1
 NULL
-True
-True
 
-query T rowsort
+query I rowsort
 SELECT (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1) FROM integers i1 GROUP BY i1.i
 HAVING (((SELECT MIN(i2.i + i1.i) FROM integers i2) IN (SELECT i1.i)) = EXISTS(SELECT i1.i)) = ANY(SELECT MIN(i1.i) = 1)
 ----
-True
-True
+1
+1
 
 query R rowsort
 SELECT (VALUES (SUM(i1.i)),(AVG(i1.i)) INTERSECT VALUES(AVG(i1.i))) FROM integers i1
@@ -362,26 +450,26 @@ SELECT ((SELECT SUM(i1.i)) UNION ALL (SELECT AVG(i1.i))) FROM integers i1
 statement error
 SELECT ((SELECT i1.i NOT IN (SELECT i1.i)) UNION (SELECT SUM(i1.i) IN (SELECT i1.i))) FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (SELECT 6 EXCEPT (SELECT SUM(i1.i))) IN (SELECT 1) FROM integers i1
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT (SELECT col1) IN (col2) FROM another_T
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
-query T rowsort
+query I rowsort
 SELECT (col2) IN ((SELECT col2), MIN(col3)) FROM another_T GROUP BY col2
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
 query I rowsort
 SELECT (SELECT CASE WHEN MIN(i1.i) IS NULL THEN (SELECT i2.i FROM integers i2) ELSE MAX(i1.i) END) FROM integers i1
@@ -399,5 +487,4 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
-
 

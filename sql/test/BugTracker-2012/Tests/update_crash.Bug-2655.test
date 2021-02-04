@@ -58,12 +58,94 @@ insert into  kvk_extra_nieuw values (5, 'test', 'test', 10,  'test',  'test',  '
 query IITTTTTIIIIT rowsort
 select * from  kvk
 ----
-24 values hashing to 213a35681636df38449d8d1baf049247
+1
+1
+table1
+table1
+table1
+table1
+table1
+23
+24
+1
+1
+table1
+2
+1
+table1
+table1
+table1
+table1
+table1
+23
+24
+1
+1
+table2
 
 query ITTITTTTTTII rowsort
 select * from  kvk_extra_nieuw
 ----
-60 values hashing to 2f3a20a0c11b29462fbcb5afeaced2e6
+1
+test
+test
+10
+test
+test
+test
+test
+test
+test
+10
+11
+2
+test
+test
+10
+test
+test
+test
+test
+test
+test
+10
+11
+3
+test
+test
+10
+test
+test
+test
+test
+test
+test
+10
+11
+4
+test
+test
+10
+test
+test
+test
+test
+test
+test
+10
+11
+5
+test
+test
+10
+test
+test
+test
+test
+test
+test
+10
+11
 
 statement ok
 update kvk set website = (select distinct kvk_extra_nieuw.website from kvk, kvk_extra_nieuw WHERE
@@ -72,7 +154,30 @@ kvk.kvk = kvk_extra_nieuw.kvk and kvk_extra_nieuw.website is not null)
 query IITTTTTIIIIT rowsort
 select * from  kvk
 ----
-24 values hashing to 4f4fc7ad94e3ded46ffb48aa40e73bcf
+1
+1
+table1
+table1
+table1
+table1
+table1
+23
+24
+1
+1
+test
+2
+1
+table1
+table1
+table1
+table1
+table1
+23
+24
+1
+1
+test
 
 statement ok
 drop table kvk_extra_nieuw
@@ -82,5 +187,4 @@ drop table  kvk
 
 statement ok
 drop SEQUENCE sys.myseq_5700
-
 

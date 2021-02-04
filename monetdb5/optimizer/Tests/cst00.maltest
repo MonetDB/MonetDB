@@ -10,6 +10,3 @@ end tst
 statement ok
 optimizer.evaluate("user","tst")
 
-#mdb.List("user","tst")
-
-

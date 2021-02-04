@@ -20,4 +20,3 @@ drop table prop1
 statement ok
 drop table prop2
 
-

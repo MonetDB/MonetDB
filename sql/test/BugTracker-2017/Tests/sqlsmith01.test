@@ -98,4 +98,3 @@ limit 132; --four rows
 statement ok
 ROLLBACK
 
-

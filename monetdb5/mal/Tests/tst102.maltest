@@ -9,4 +9,3 @@ a:=1+"hello"
 statement ok
 b:=3.5+1
 
-

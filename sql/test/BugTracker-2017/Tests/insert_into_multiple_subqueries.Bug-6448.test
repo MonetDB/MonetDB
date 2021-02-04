@@ -18,4 +18,3 @@ test3
 statement ok
 ROLLBACK
 
-

@@ -28,4 +28,3 @@ select * from u where u1 >= u2
 statement ok
 drop table u
 
-

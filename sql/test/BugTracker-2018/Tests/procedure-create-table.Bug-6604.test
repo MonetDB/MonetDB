@@ -41,4 +41,3 @@ select "name", "type", "language", "remark" from describe_function('sys', 'test'
 statement ok
 drop procedure test
 
-

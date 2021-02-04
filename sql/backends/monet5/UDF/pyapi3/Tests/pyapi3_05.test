@@ -46,4 +46,3 @@ DROP TABLE xdata
 statement ok
 ROLLBACK
 
-

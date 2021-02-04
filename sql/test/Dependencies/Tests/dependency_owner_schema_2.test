@@ -4,4 +4,3 @@ CREATE SCHEMA "test_2" AUTHORIZATION "public"
 statement error
 DROP USER monetdb
 
-

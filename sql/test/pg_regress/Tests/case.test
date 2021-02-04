@@ -136,7 +136,18 @@ SELECT '' AS "Five", i AS "Value",
   END AS "Category"
   FROM CASE_TBL
 ----
-12 values hashing to a850a5bdc7b45e1885499de84caada8b
+(empty)
+1
+one
+(empty)
+2
+two
+(empty)
+3
+big
+(empty)
+4
+big
 
 query TT rowsort
 SELECT '' AS "Five",
@@ -198,14 +209,70 @@ SELECT distinct '' AS Siksteen, NULLIF(a.i,b.i) AS "NULLIF(a.i,b.i)",
   NULLIF(b.i, 4) AS "NULLIF(b.i,4)"
   FROM CASE_TBL a, CASE2_TBL b  Order By 2,3
 ----
-48 values hashing to 3b42d68fda22e892d5ac810fc7461110
+(empty)
+1
+2
+(empty)
+1
+3
+(empty)
+1
+NULL
+(empty)
+2
+1
+(empty)
+2
+3
+(empty)
+2
+NULL
+(empty)
+3
+1
+(empty)
+3
+2
+(empty)
+3
+NULL
+(empty)
+4
+1
+(empty)
+4
+2
+(empty)
+4
+3
+(empty)
+4
+NULL
+(empty)
+NULL
+1
+(empty)
+NULL
+2
+(empty)
+NULL
+3
 
 query TIRII rowsort
 SELECT '' AS "Two", *
   FROM CASE_TBL a, CASE2_TBL b
   WHERE COALESCE(f,b.i) = 2
 ----
-10 values hashing to 36381be39559064fbc40552cc178aa04
+(empty)
+4
+NULL
+2
+-2
+(empty)
+4
+NULL
+2
+-4
 
 statement ok
 UPDATE CASE_TBL
@@ -264,5 +331,4 @@ DROP TABLE CASE_TBL
 
 statement ok
 DROP TABLE CASE2_TBL
-
 

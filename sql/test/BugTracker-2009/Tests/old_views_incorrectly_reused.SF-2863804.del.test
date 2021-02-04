@@ -10,4 +10,3 @@ DROP TABLE doc_string
 statement ok
 COMMIT
 
-

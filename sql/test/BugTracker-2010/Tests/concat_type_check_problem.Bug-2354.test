@@ -31,4 +31,3 @@ select length(test1||' '||test2||' '||test3) from testmore2
 statement ok
 drop table testmore2
 
-

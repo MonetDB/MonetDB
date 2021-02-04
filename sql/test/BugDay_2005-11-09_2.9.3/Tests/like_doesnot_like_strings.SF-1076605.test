@@ -1,7 +1,7 @@
-query T rowsort
+query I rowsort
 select 'test' like 'test'
 ----
-True
+1
 
 statement ok
 create table sfbug_1076605 ( str1 varchar(10) )
@@ -25,5 +25,4 @@ query T rowsort
 select * from sfbug_1076605 where str1 like 'test'
 ----
 test
-
 

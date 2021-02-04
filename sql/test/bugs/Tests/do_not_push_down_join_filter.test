@@ -17,4 +17,3 @@ on a.id = c.id
 statement ok
 ROLLBACK
 
-

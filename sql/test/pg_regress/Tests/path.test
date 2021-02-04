@@ -94,4 +94,3 @@ SELECT IsOpen(f1), * FROM PATH_TBL_VW
 statement ok
 DROP VIEW PATH_TBL_VW
 
-

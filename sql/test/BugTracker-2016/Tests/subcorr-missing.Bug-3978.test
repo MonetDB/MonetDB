@@ -24,4 +24,3 @@ NULL
 statement ok
 drop table x
 
-

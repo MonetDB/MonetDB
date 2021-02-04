@@ -93,4 +93,3 @@ drop table t_0_1
 statement ok
 drop table t_0_2
 
-

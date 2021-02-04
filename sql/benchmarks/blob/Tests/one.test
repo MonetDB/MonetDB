@@ -18,7 +18,18 @@ INSERT INTO adttest (id, dosname, filename, contenttype, blobsize, blobdata) VAL
 query ITTTIT rowsort
 select * from adttest
 ----
-12 values hashing to 4177d7b8940ea7edc78f2f9e748156ad
+1
+WXKZAYWFEPY
+DECRYZWIEHLQNUAQPLFXHZLMHRDR
+video/mpeg
+10
+41418041418041418041
+2
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 drop table adttest

@@ -12,4 +12,3 @@ c:= bat.new(:int)
 statement error
 user.test("hello",b,c)
 
-

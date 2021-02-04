@@ -38,4 +38,3 @@ select * from "unitTestDontDelete" where "C" < 5.5 AND "C" >= 5.5
 statement ok
 ROLLBACK
 
-

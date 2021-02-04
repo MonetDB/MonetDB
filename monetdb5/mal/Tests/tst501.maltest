@@ -10,4 +10,3 @@ k:= 0;
 statement ok
 r:= user.simple(k);
 
-

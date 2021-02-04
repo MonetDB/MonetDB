@@ -24,4 +24,3 @@ foo
 statement ok
 drop table null_1
 
-

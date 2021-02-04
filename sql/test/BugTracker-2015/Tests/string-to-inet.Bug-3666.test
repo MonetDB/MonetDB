@@ -24,4 +24,3 @@ select cast(textip as inet) from iptable
 statement ok
 drop table iptable
 
-

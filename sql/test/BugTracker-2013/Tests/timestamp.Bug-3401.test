@@ -39,4 +39,3 @@ select * from datebug where time > '2013-01-01' and time < 'foobar'
 statement ok
 drop table datebug
 
-

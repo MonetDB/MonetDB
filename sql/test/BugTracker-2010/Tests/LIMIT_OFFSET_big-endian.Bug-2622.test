@@ -374,7 +374,6 @@ bat.pack
 sql.resultSet
 1
 
-
 query I rowsort
         select * from oblo
 ----
@@ -439,5 +438,4 @@ query I rowsort
 
 statement ok
 drop table oblo
-
 

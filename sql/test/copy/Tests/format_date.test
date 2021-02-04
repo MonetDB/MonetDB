@@ -333,4 +333,3 @@ select count(*) from orders_2
 statement ok
 rollback
 
-

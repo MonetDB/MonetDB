@@ -31,4 +31,3 @@ WHERE user_name NOT IN ('matt', 'fred')
 statement ok
 drop table query_users
 
-

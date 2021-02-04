@@ -28,4 +28,3 @@ DROP TABLE bar
 statement ok
 DROP TABLE foo
 
-

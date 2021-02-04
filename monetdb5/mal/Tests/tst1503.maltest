@@ -119,17 +119,32 @@ query T rowsort
 ----
 "g1 becomes"
 
-query TT rowsort
+query II rowsort
 	io.print(g1)
 ----
-16 values hashing to a911342439e168dab7477213fc8d4177
+0
+0
+1
+0
+2
+1
+3
+1
+4
+1
+5
+1
+6
+2
+7
+2
 
 query T rowsort
 	io.print("e1 becomes")
 ----
 "e1 becomes"
 
-query TT rowsort
+query II rowsort
 	io.print(e1)
 ----
 0
@@ -144,7 +159,7 @@ query T rowsort
 ----
 "h1 becomes"
 
-query TT rowsort
+query II rowsort
 	io.print(h1)
 ----
 0
@@ -162,9 +177,23 @@ query T rowsort
 ----
 "g2 becomes"
 
-query TT rowsort
+query II rowsort
 	io.print(g2)
 ----
-16 values hashing to f5044b8429e49df4c6e965cd07af6bad
-
+0
+0
+1
+1
+2
+2
+3
+2
+4
+2
+5
+3
+6
+4
+7
+4
 

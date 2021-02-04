@@ -9,14 +9,14 @@ NULL
 TABLE
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'test_property')
 ----
 p1
 int
 32
 0
-True
+1
 NULL
 1
 INTEGER
@@ -25,7 +25,7 @@ p2
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
@@ -34,7 +34,7 @@ subject
 int
 32
 0
-True
+1
 NULL
 0
 INTEGER
@@ -42,5 +42,4 @@ NULL
 
 statement ok
 drop table test_property
-
 

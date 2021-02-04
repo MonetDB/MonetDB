@@ -18,4 +18,3 @@ drop table test_a
 statement ok
 drop table test_b
 
-

@@ -19,4 +19,3 @@ statement ok
 command foo3(:bat[:oid]) :bat[:cip_chop1]
 address MATHpi;
 
-

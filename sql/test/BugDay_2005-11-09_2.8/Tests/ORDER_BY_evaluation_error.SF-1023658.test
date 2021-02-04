@@ -19,4 +19,3 @@ WHERE "keys"."id" = "objects"."id"
 ORDER BY "objects"."name"
 ----
 
-

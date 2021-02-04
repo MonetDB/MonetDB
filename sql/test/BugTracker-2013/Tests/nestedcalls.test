@@ -76,4 +76,3 @@ DROP FUNCTION bottom
 statement ok
 DROP TABLE tnc
 
-

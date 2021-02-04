@@ -20,4 +20,3 @@ select t3.pid from test3 t3 where  false and (false and false) or true
 statement ok
 rollback
 
-

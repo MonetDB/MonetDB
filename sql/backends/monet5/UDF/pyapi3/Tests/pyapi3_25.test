@@ -130,4 +130,3 @@ SELECT * FROM pyapi25errortable()
 statement ok
 ROLLBACK
 
-

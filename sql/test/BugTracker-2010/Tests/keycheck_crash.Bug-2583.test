@@ -28,4 +28,3 @@ DROP TABLE "test"."tbl1"
 statement ok
 DROP SCHEMA "test"
 
-

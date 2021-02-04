@@ -139,7 +139,17 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 ----
-11 values hashing to 0df86e95aca4d35079c531fdd9fb49f0
+0
+0
+0
+0
+1
+1
+1
+1
+3
+3
+7
 
 query I rowsort
 SELECT
@@ -184,7 +194,17 @@ FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 ORDER BY GROUPING(Product_Category)
 ----
-11 values hashing to 415db57dbfd17b6a53e78af9d3045250
+0
+0
+0
+0
+0
+0
+1
+1
+1
+1
+1
 
 query I rowsort
 SELECT
@@ -207,7 +227,16 @@ FROM tbl_ProductSales
 GROUP BY CUBE((Product_Category, Product_Name, ColID))
 ORDER BY GROUPING(Product_Category, ColID)
 ----
-10 values hashing to 8a3945488c72373fef7640559a46e708
+0
+0
+0
+0
+0
+0
+0
+0
+7
+3
 
 query I rowsort
 SELECT
@@ -233,7 +262,28 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 ----
-22 values hashing to 099b6fa17f7e86b32e5a3e0c39f069a3
+0
+360.000
+0
+371.429
+0
+375.000
+0
+388.889
+0
+600.000
+0
+600.000
+1
+400.000
+1
+436.364
+1
+450.000
+1
+460.000
+1
+466.667
 
 query II rowsort
 SELECT
@@ -241,7 +291,28 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 ----
-22 values hashing to ab1a7467bbf6c3a642bb2d233b2738b4
+0
+1
+0
+1
+0
+1
+0
+1
+0
+1
+0
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 SELECT
@@ -249,7 +320,17 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 ----
-11 values hashing to a4e199d4fb5de8b7759e5472e3fdb5aa
+2
+2
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query IRI rowsort
 SELECT
@@ -257,7 +338,39 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 ----
-33 values hashing to b507bef6fd57b70ccfb2ce34244a80f9
+0
+100.000
+1
+0
+150.000
+1
+0
+233.333
+1
+0
+300.000
+1
+0
+333.333
+1
+0
+360.000
+1
+1
+100.000
+1
+1
+133.333
+1
+1
+200.000
+1
+1
+271.429
+1
+1
+436.364
+1
 
 query IIII rowsort
 SELECT
@@ -268,7 +381,50 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
 ----
-44 values hashing to ac05e292e185a9ec9941a44079c1c4e6
+0
+4800
+13
+1
+0
+4800
+13
+1
+0
+4800
+13
+1
+0
+4800
+13
+1
+0
+4800
+13
+1
+0
+4800
+13
+1
+1
+4800
+13
+1
+1
+4800
+13
+1
+1
+4800
+13
+1
+1
+4800
+13
+1
+1
+4800
+13
+1
 
 statement ok
 CREATE TABLE tbl_X (ColID int, NItems int)
@@ -326,5 +482,4 @@ DROP TABLE tbl_X
 
 statement ok
 DROP TABLE another_T
-
 

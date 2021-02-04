@@ -29,4 +29,3 @@ NULL
 statement ok
 rollback
 
-

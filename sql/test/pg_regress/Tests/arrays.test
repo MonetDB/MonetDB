@@ -372,4 +372,3 @@ DROP TABLE arrtest_i
 statement error
 DROP table arr_tbl
 
-

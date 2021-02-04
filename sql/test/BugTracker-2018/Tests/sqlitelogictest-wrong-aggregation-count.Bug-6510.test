@@ -18,4 +18,3 @@ SELECT ALL CAST ( COUNT ( DISTINCT - 34 ) * - COUNT ( * ) AS BIGINT) AS col2 FRO
 statement ok
 DROP TABLE tab1
 
-

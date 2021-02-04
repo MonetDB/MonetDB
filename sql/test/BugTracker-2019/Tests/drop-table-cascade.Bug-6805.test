@@ -34,4 +34,3 @@ select * from sys.testcascade_view
 statement error
 select * from "configuration".testcascade
 
-

@@ -23,4 +23,3 @@ SELECT * FROM tab0 WHERE + col1 NOT BETWEEN col2 + - 99 AND + 20
 statement ok
 DROP TABLE tab0
 
-

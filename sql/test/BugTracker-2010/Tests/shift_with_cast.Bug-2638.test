@@ -8,4 +8,3 @@ select cast(98 as bigint) << 32
 ----
 420906795008
 
-

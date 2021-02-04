@@ -50,4 +50,3 @@ world
 statement ok
 rollback
 
-

@@ -3,4 +3,3 @@ SELECT ST_AsText(ST_Centroid(shores)) FROM ponds WHERE fid = 120
 ----
 POINT (25 42)
 
-

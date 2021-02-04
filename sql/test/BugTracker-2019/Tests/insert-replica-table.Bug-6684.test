@@ -19,4 +19,3 @@ truncate t1
 statement ok
 drop table t1
 
-

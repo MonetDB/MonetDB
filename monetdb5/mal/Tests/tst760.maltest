@@ -10,4 +10,3 @@ c:= bat.new(:str);
 statement error
 user.test(c,"hello");
 
-

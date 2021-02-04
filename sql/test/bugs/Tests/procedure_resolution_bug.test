@@ -16,4 +16,3 @@ drop procedure xyz.p
 statement ok
 drop schema xyz
 
-

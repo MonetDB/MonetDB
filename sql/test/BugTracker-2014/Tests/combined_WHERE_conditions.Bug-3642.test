@@ -40,4 +40,3 @@ DROP TABLE t1
 statement ok
 DROP TABLE t2
 
-

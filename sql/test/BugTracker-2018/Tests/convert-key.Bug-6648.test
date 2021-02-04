@@ -24,4 +24,3 @@ select cast(d as tinyint) from bug6648
 statement ok
 rollback
 
-

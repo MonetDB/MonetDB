@@ -41,4 +41,3 @@ data
 statement ok
 DROP TABLE Image
 
-

@@ -53,4 +53,3 @@ Cat1
 statement ok
 drop table sys."unitTestDontDelete"
 
-

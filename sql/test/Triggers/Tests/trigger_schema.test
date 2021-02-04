@@ -101,4 +101,3 @@ create trigger foo.extra_insert
 statement ok
 ROLLBACK
 
-

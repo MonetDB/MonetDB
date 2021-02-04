@@ -10,4 +10,3 @@ CREATE TABLE products_new2 (like products, like products)
 statement ok
 DROP TABLE products
 
-

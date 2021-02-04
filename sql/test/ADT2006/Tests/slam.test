@@ -625,37 +625,356 @@ INSERT INTO Jtr_witness (name, time, appearence, diction) VALUES ('Mary Miniter'
 query TTTT rowsort
 SELECT s.victim, v.location, e.time, e."text" FROM Jtr_scene s INNER JOIN Jtr_victim v ON s.victim = v.name LEFT OUTER JOIN Jtr_event e ON e.scene_id = s.scene_id ORDER BY s.victim, v.location, e.time, e."text"
 ----
-92 values hashing to fb38903587cdd8d072c4ec84c37e82e6
+"Fairy Fay"
+the alleys of Commercial Road
+NULL
+NULL
+Ada Wilson
+19 Maidman Street
+NULL
+NULL
+Alice MacKenzie
+Castle Alley
+NULL
+NULL
+Annie Chapman
+29 Hanbury Street
+NULL
+NULL
+Annie Farmer
+(empty)
+NULL
+NULL
+Annie Millwood
+White's Row, Spitalfields
+NULL
+NULL
+Carrie Brown
+the room of the East River Hotel on the Manhattan waterfront of New York, U.S.A.
+NULL
+NULL
+Catherine Eddowes
+Mitre Square
+NULL
+NULL
+Elisabeth Jackson
+the Thames
+NULL
+NULL
+Elisabeth Stride
+Berner Street (Henriques Street today)
+NULL
+NULL
+Emma Smith
+just outside Taylor Brothers Mustard and Cocoa Mill which was on the north-east corner of the Wentworth/Old Montague Street crossroads
+NULL
+NULL
+Frances Coles
+Swallow Gardens
+NULL
+NULL
+Martha Tabram
+George Yard, a narrow north-south alley connecting Wentworth Street and Whitechapel High Street
+NULL
+NULL
+Mary Ann Walker
+Buck's Row by Charles Cross
+11:00 PM
+Polly is seen walking down Whitechapel Road, she is@@@@@@probably soliciting trade.
+Mary Ann Walker
+Buck's Row by Charles Cross
+12:30 AM
+She is seen leaving the Frying Pan Public House at@@@@@@the corner of Brick Lane and Thrawl Street. She@@@@@@returns to the lodging house at 18 Thrawl Street.
+Mary Ann Walker
+Buck's Row by Charles Cross
+1:20 or 1:40 AM
+She is told by the deputy to leave the kitchen of@@@@@@the lodging house because she could not produce her@@@@@@doss money. Polly, on leaving, asks him to save a@@@@@@bed for her. "Never Mind!" She says, "I'll soon get@@@@@@my doss money. See what a jolly bonnet I've got@@@@@@now." She indicates a little black bonnet which no@@@@@@one had seen before.
+Mary Ann Walker
+Buck's Row by Charles Cross
+2:30 AM
+She meets Emily Holland, who was returning from@@@@@@watching the Shadwell Dry Dock fire, outside of a@@@@@@grocer's shop on the corner of Whitechapel Road and@@@@@@Osborn Street. Polly had come down Osborn Street.@@@@@@Holland describes her as "very drunk and staggered@@@@@@against the wall." Holland calls attention to the@@@@@@church clock striking 2:30. Polly tells Emily that@@@@@@she had had her doss money three times that day and@@@@@@had drunk it away. She says she will return to@@@@@@Flower and Dean Street where she could share a bed@@@@@@with a man after one more attempt to find trade.@@@@@@"I've had my doss money three times today and spent@@@@@@it." She says, "It won't be long before I'm back."@@@@@@The two women talk for seven or eight minutes. Polly@@@@@@leaves walking east down Whitechapel Road.@@@@@@At the time, the services of a destitute prostitute@@@@@@like Polly Nichols could be had for 2 or 3 pence or@@@@@@a stale loaf of bread. 3 pence was the going rate as@@@@@@that was the price of a large glass of gin.
+Mary Ann Walker
+Buck's Row by Charles Cross
+3:15 AM
+P.C. John Thain, 96J, passes down Buck's Row on his@@@@@@beat. He sees nothing unusual. At approximately the@@@@@@same time Sgt. Kerby passes down Bucks Row and@@@@@@reports the same.
+Mary Ann Walker
+Buck's Row by Charles Cross
+3:40 or 3:45 AM
+Polly Nichols' body is discovered in Buck's Row by@@@@@@Charles Cross, a carman, on his way to work at@@@@@@Pickfords in the City Road., and Robert Paul who@@@@@@joins him at his request. "Come and look over here,@@@@@@there's a woman." Cross calls to Paul. Cross@@@@@@believes she is dead. Her hands and face are cold@@@@@@but the arms above the elbow and legs are still@@@@@@warm. Paul believes he feels a faint heartbeat. "I@@@@@@think she's breathing," he says "but it is little if@@@@@@she is."
+Mary Jane Kelly
+13 Miller's Court
+NULL
+NULL
+Pinchin Street Murder, possibly Lydia Hart
+under a railway arch in Pinchin Street
+NULL
+NULL
+Rose Mylett
+the yard between 184 and 186 Poplar High Street, in Clarke's Yard
+NULL
+NULL
+Whitehall Mystery
+a vault soon to become a section of the cellar of New Scotland Yard
+NULL
+NULL
 
 query TTT rowsort
 SELECT v.name, sp.name, sp.picture FROM Jtr_scene sc INNER JOIN Jtr_victim v ON v.name = sc.victim LEFT OUTER JOIN (Jtr_scene_suspects map INNER JOIN Jtr_suspect sp ON map.suspect = sp.name )ON sc.scene_id = map.scene_id ORDER BY v.name, sp.name, sp.picture
 ----
-54 values hashing to a977b6e4128f7c3c0696fb8034574280
+"Fairy Fay"
+NULL
+NULL
+Ada Wilson
+NULL
+NULL
+Alice MacKenzie
+NULL
+NULL
+Annie Chapman
+NULL
+NULL
+Annie Farmer
+NULL
+NULL
+Annie Millwood
+NULL
+NULL
+Carrie Brown
+Severin Klosowski (George Chapman)
+http://www.casebook.org/images/suspect_klos.jpg
+Catherine Eddowes
+NULL
+NULL
+Elisabeth Jackson
+NULL
+NULL
+Elisabeth Stride
+NULL
+NULL
+Emma Smith
+NULL
+NULL
+Frances Coles
+NULL
+NULL
+Martha Tabram
+NULL
+NULL
+Mary Ann Walker
+NULL
+NULL
+Mary Jane Kelly
+NULL
+NULL
+Pinchin Street Murder, possibly Lydia Hart
+NULL
+NULL
+Rose Mylett
+NULL
+NULL
+Whitehall Mystery
+NULL
+NULL
 
 query TI rowsort
 SELECT i.name, count(si.scene_id) AS times FROM Jtr_inspector i LEFT OUTER JOIN Jtr_scene_inspectors si ON i.name = si.inspector GROUP BY i.name ORDER BY i.name, times desc
 ----
-52 values hashing to a731584bf416230cfcd09c4787e9a7db
+Chief Constable Adolphus Frederick Williamson
+0
+Chief Inspector Donald Swanson
+1
+Chief Inspector Henry Moore
+0
+Chief Inspector John George
+0
+Detective Constable Robert Sagar
+0
+Detective Constable Walter Dew
+0
+Detective Sergeant George Godley
+0
+Inspector Edmund Reid
+3
+Inspector Frederick Abberline
+0
+Inspector John Spratling
+0
+Inspector Joseph Henry Helson
+0
+Inspector Walter Andrews
+0
+James Monro
+2
+Major Henry Smith
+0
+P.C. Edward Watkins
+0
+P.C. Ernest Thompson
+0
+P.C. James Harvey
+0
+P.C. John Neil
+0
+P.C. Neil
+1
+P.C. William Smith
+0
+Sergeant Stephen White
+0
+Sergeant William Thick
+0
+Sir Charles Warren
+0
+Sir Melville Macnaghten
+2
+Sir Robert Anderson
+1
+Superintendent Thomas Arnold
+0
 
 query TT rowsort
 SELECT i.name AS name_inspector, d.name AS name_doctor FROM Jtr_scene s INNER JOIN Jtr_scene_inspectors si ON si.scene_id = s.scene_id  INNER JOIN Jtr_scene_doctors sd ON sd.scene_id = s.scene_id INNER JOIN Jtr_inspector i ON si.inspector = i.name INNER JOIN Jtr_doctor d ON sd.doctor = d.name ORDER BY name_inspector, name_doctor
 ----
-12 values hashing to ff61cd37700443d9c746f981599ff91e
+Inspector Edmund Reid
+Dr. George Baxter Phillips
+Inspector Edmund Reid
+Dr. Timothy Robert Killeen
+James Monro
+Dr. George Baxter Phillips
+P.C. Neil
+Dr. Llewellyn
+Sir Melville Macnaghten
+Cornoer Wynne E. Baxter
+Sir Robert Anderson
+Dr. George Baxter Phillips
 
 query TTTT rowsort
 SELECT name, eyes, hair, features from Jtr_victim WHERE features LIKE '%missing%' ORDER BY name, eyes, hair, features
 ----
-16 values hashing to af9a4fbf7d921403190d0be7d5d47298
+Annie Chapman
+blue
+dark brown, wavy
+Pallid complexion, excellent teeth (possibly two missing in lower jaw), strongly built (stout), thick nose
+Elisabeth Stride
+light gray
+curly dark brown
+pale complexion, all the teeth in her lower left jaw were missing
+Mary Ann Walker
+brown
+brown hair turning grey
+five front teeth missing (Rumbelow); two bottom-one top@@@@@front (Fido), her teeth are slightly discoloured. She is@@@@@described as having small, delicate features with high@@@@@cheekbones and grey eyes. She has a small scar on her@@@@@forehead from a childhood injury.  She is described by@@@@@Emily Holland as "a very clean woman who always seemed@@@@@to keep to herself." The doctor at the post mortem@@@@@remarked on the cleanliness of her thighs.  She is also@@@@@an alcoholic.
+Pinchin Street Murder, possibly Lydia Hart
+(empty)
+(empty)
+body, missing both head and legs
 
 query TI rowsort
 SELECT eyes, count(name) AS times FROM Jtr_victim WHERE NOT eyes = '' GROUP BY eyes ORDER BY eyes, times desc
 ----
-10 values hashing to c60ffd947b26fc69c920c7ed1ba144d1
+blue
+2
+brown
+1
+hazel
+1
+light gray
+1
+unknown
+1
 
 query TIIII rowsort
 SELECT s.victim, COUNT(w.witness) AS witnesses, COUNT(i.inspector) AS inspectors, COUNT(d.doctor) AS doctors, COUNT(sp.suspect) AS suspects FROM Jtr_scene s LEFT OUTER JOIN Jtr_scene_witnesses w ON w.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_inspectors i ON i.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_doctors d ON d.scene_id = s.scene_id LEFT OUTER JOIN Jtr_scene_suspects sp ON sp.scene_id = s.scene_id GROUP BY s.victim ORDER BY s.victim asc, witnesses, inspectors, doctors, suspects
 ----
-90 values hashing to ce8c85fe45a093663e4d29ae4b7e588e
+"Fairy Fay"
+0
+1
+0
+0
+Ada Wilson
+2
+0
+0
+0
+Alice MacKenzie
+0
+3
+3
+0
+Annie Chapman
+2
+0
+2
+0
+Annie Farmer
+0
+0
+0
+0
+Annie Millwood
+1
+0
+0
+0
+Carrie Brown
+1
+0
+1
+1
+Catherine Eddowes
+2
+0
+2
+0
+Elisabeth Jackson
+0
+0
+0
+0
+Elisabeth Stride
+6
+0
+6
+0
+Emma Smith
+0
+0
+0
+0
+Frances Coles
+2
+2
+2
+0
+Martha Tabram
+0
+1
+1
+0
+Mary Ann Walker
+1
+1
+1
+0
+Mary Jane Kelly
+4
+0
+4
+0
+Pinchin Street Murder, possibly Lydia Hart
+0
+3
+0
+0
+Rose Mylett
+0
+0
+2
+0
+Whitehall Mystery
+0
+0
+0
+0
 
 statement ok
 DROP TABLE Jtr_scene

@@ -12,4 +12,3 @@ Date
 statement ok
 ROLLBACK
 
-

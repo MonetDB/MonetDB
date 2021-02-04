@@ -19,4 +19,3 @@ SELECT COALESCE(MIN(a), 0) FROM casebug
 statement ok
 drop table casebug
 
-

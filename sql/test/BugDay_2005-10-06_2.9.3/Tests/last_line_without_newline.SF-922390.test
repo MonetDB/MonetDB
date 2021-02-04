@@ -12,4 +12,3 @@ select * from tab_0
 statement ok
 drop table tab_0
 
-

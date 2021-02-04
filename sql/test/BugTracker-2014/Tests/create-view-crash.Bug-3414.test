@@ -39,4 +39,3 @@ SELECT a.*
 statement ok
 ROLLBACK
 
-

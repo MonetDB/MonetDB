@@ -224,4 +224,3 @@ select * from household limit 5
 ----
 1010 values hashing to a694bdbeaa4d3995121aa6a8a305fb01
 
-

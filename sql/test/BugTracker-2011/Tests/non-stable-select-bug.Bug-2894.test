@@ -70,4 +70,3 @@ select d,1/(d-1) from table2894 where d > 1
 statement ok
 rollback
 
-

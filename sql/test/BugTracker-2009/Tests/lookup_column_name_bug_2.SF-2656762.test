@@ -38,4 +38,3 @@ drop table x cascade
 statement ok
 drop table y cascade
 
-

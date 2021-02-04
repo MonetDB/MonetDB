@@ -25,7 +25,18 @@ INSERT INTO moveaccrosspartitions VALUES (50, 'first'), (150, 'second'), (250, '
 query IT rowsort
 SELECT a, b FROM moveaccrosspartitions
 ----
-12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+120
+fifth
+150
+second
+240
+sixth
+250
+third
+50
+first
+60
+fourth
 
 query IT rowsort
 SELECT a, b FROM sublimits1
@@ -57,7 +68,18 @@ UPDATE moveaccrosspartitions SET a = a + 1 WHERE a % 50 = 0
 query IT rowsort
 SELECT a, b FROM moveaccrosspartitions
 ----
-12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+120
+fifth
+150
+second
+240
+sixth
+250
+third
+50
+first
+60
+fourth
 
 query IT rowsort
 SELECT a, b FROM sublimits1
@@ -89,7 +111,18 @@ UPDATE moveaccrosspartitions SET a = a - 50, b = 'p' || b || 's' WHERE a % 60 = 
 query IT rowsort
 SELECT a, b FROM moveaccrosspartitions
 ----
-12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+120
+fifth
+150
+second
+240
+sixth
+250
+third
+50
+first
+60
+fourth
 
 query IT rowsort
 SELECT a, b FROM sublimits1
@@ -121,7 +154,18 @@ UPDATE moveaccrosspartitions SET a = a - 60 WHERE a % 10 = 0
 query IT rowsort
 SELECT a, b FROM moveaccrosspartitions
 ----
-12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+120
+fifth
+150
+second
+240
+sixth
+250
+third
+50
+first
+60
+fourth
 
 query IT rowsort
 SELECT a, b FROM sublimits1
@@ -153,7 +197,18 @@ UPDATE moveaccrosspartitions SET a = a + 100, b = 'moved' WHERE a % 10 = 0 AND a
 query IT rowsort
 SELECT a, b FROM moveaccrosspartitions
 ----
-12 values hashing to 2b11e8c41d894e5568ce5eb7ea4063d1
+120
+fifth
+150
+second
+240
+sixth
+250
+third
+50
+first
+60
+fourth
 
 query IT rowsort
 SELECT a, b FROM sublimits1
@@ -199,5 +254,4 @@ DROP TABLE sublimits3
 
 statement ok
 DROP TABLE moveaccrosspartitions
-
 

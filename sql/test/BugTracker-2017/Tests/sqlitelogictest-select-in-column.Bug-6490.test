@@ -21,4 +21,3 @@ SELECT * FROM tab0 AS cor0 WHERE NOT ( NULL ) IN ( - col3 + - 33 + + + col4 + + 
 statement ok
 DROP TABLE tab0
 
-

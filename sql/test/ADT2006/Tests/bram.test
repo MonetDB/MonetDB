@@ -506,7 +506,30 @@ UNION ALL
 UNION ALL
 (select 12 AS mon, count(v.name) AS murders from victim v where extract(month from v.date) = 12)
 ----
-24 values hashing to 447ec974fa19658ce713d5ca13b93908
+1
+0
+10
+1
+11
+2
+12
+2
+2
+2
+3
+2
+4
+1
+5
+0
+6
+1
+7
+1
+8
+2
+9
+4
 
 query IT rowsort
 (select 1 AS mon, v.name AS victim from victim v where extract(month from v.date) = 1)
@@ -533,13 +556,59 @@ UNION ALL
 UNION ALL
 (select 12 AS mon, v.name AS victim from victim v where extract(month from v.date) = 12)
 ----
-36 values hashing to a188c3d922f98cc73f299e3c6c759fc8
+10
+Whitehall Mystery
+11
+Annie Farmer
+11
+Mary Jane Kelly
+12
+"Fairy Fay"
+12
+Rose Mylett
+2
+Annie Millwood
+2
+Frances Coles
+3
+Ada Wilson
+3
+Emma Smith
+4
+Carrie Brown
+6
+Elisabeth Jackson
+7
+Alice MacKenzie
+8
+Martha Tabram
+8
+Mary Ann Walker
+9
+Annie Chapman
+9
+Catherine Eddowes
+9
+Elisabeth Stride
+9
+Pinchin Street Murder, possibly Lydia Hart
 
 query TI rowsort
 select v.name, count(w.name) as witness_count from victim v JOIN witness w ON (w.victim = v.name)
 GROUP BY v.name HAVING count(w.name) >= 2
 ----
-12 values hashing to c83250e0840616da8d1079bc7ea70639
+Ada Wilson
+2
+Annie Chapman
+2
+Catherine Eddowes
+2
+Elisabeth Stride
+6
+Frances Coles
+2
+Mary Jane Kelly
+2
 
 query TI rowsort
 select i.name, count(v.victim) AS cases from inspector i JOIN inspector_victim v ON (v.inspector = i.name)
@@ -568,7 +637,16 @@ query TI rowsort
 (SELECT 'Major' AS grade, count(name) AS inspectors FROM inspector
     WHERE name LIKE '%Major%')
 ----
-10 values hashing to 7d3f0c65a4fedaf56312816555570d85
+Constable
+3
+Detective
+3
+Inspector
+8
+Major
+1
+Sergeant
+3
 
 query TT rowsort
 (select 'blonde', (cast(cast(floor(avg(h.height)/12) as integer) as char) || ''''
@@ -604,7 +682,24 @@ brown
 query T rowsort
 SELECT name as victim FROM victim WHERE date_of_birth is null or date_of_birth = 'unknown'
 ----
-18 values hashing to d63bc5da6ac6ad9d568c0e17f1076159
+"Fairy Fay"
+Ada Wilson
+Alice MacKenzie
+Annie Chapman
+Annie Farmer
+Annie Millwood
+Carrie Brown
+Catherine Eddowes
+Elisabeth Jackson
+Elisabeth Stride
+Emma Smith
+Frances Coles
+Martha Tabram
+Mary Ann Walker
+Mary Jane Kelly
+Pinchin Street Murder, possibly Lydia Hart
+Rose Mylett
+Whitehall Mystery
 
 query TTT rowsort
 select d.name as doctor, d.victim, v.date from doctor d JOIN victim v ON (d.victim = v.name)

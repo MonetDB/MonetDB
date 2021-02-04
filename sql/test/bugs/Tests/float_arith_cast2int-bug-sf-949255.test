@@ -22,4 +22,3 @@ select cast(f/f as integer) from x
 statement ok
 drop table x
 
-

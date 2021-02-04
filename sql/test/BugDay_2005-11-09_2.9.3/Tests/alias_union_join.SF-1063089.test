@@ -33,4 +33,3 @@ from links locallinks inner join (
 	on locallinks.url=allentries.url
 ----
 
-

@@ -77,4 +77,3 @@ select * from keytest2
 statement ok
 drop table keytest2
 
-

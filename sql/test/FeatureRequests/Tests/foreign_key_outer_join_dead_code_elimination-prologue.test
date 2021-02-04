@@ -71,22 +71,126 @@ select * from pk2 order by pk2
 query III rowsort
 select * from fk order by id
 ----
-18 values hashing to 8bc2f358c75f8e5966d5aefe38bb0788
+1
+1
+1
+2
+1
+2
+3
+2
+1
+4
+NULL
+3
+5
+4
+NULL
+6
+NULL
+NULL
 
 query III rowsort
 select * from v0 order by id
 ----
-18 values hashing to 8bc2f358c75f8e5966d5aefe38bb0788
+1
+1
+1
+2
+1
+2
+3
+2
+1
+4
+NULL
+3
+5
+4
+NULL
+6
+NULL
+NULL
 
 query IIIII rowsort
 select * from v1 order by id
 ----
-30 values hashing to afa7e724aef2e99568ca3511b44ac70d
+1
+1
+1
+1
+11
+2
+1
+2
+1
+11
+3
+2
+1
+2
+12
+4
+NULL
+3
+NULL
+NULL
+5
+4
+NULL
+4
+14
+6
+NULL
+NULL
+NULL
+NULL
 
 query IIIIIII rowsort
 select * from v2 order by id
 ----
-42 values hashing to d768efe925a1bb7d774fe18389c0e0c6
+1
+1
+1
+1
+11
+1
+21
+2
+1
+2
+1
+11
+2
+22
+3
+2
+1
+2
+12
+1
+21
+4
+NULL
+3
+NULL
+NULL
+3
+23
+5
+4
+NULL
+4
+14
+NULL
+NULL
+6
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select count(*) from fk
@@ -181,31 +285,96 @@ select id       from v2 order by id
 query II rowsort
 select id , v1  from v1 order by id
 ----
-12 values hashing to 4f3931cea4ae6856ca866a209b5967d2
+1
+11
+2
+11
+3
+12
+4
+NULL
+5
+14
+6
+NULL
 
 query II rowsort
 select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 order by id
 ----
-12 values hashing to 4f3931cea4ae6856ca866a209b5967d2
+1
+11
+2
+11
+3
+12
+4
+NULL
+5
+14
+6
+NULL
 
 query II rowsort
 select id , v2  from fk left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-12 values hashing to 8cc3e9da15e8756e70edc02df53a1eb8
+1
+21
+2
+22
+3
+21
+4
+23
+5
+NULL
+6
+NULL
 
 query II rowsort
 select id , v1  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-12 values hashing to 4f3931cea4ae6856ca866a209b5967d2
+1
+11
+2
+11
+3
+12
+4
+NULL
+5
+14
+6
+NULL
 
 query II rowsort
 select id , v2  from fk left outer join pk1 on fk.fk1 = pk1.pk1 left outer join pk2 on fk.fk2 = pk2.pk2 order by id
 ----
-12 values hashing to 8cc3e9da15e8756e70edc02df53a1eb8
+1
+21
+2
+22
+3
+21
+4
+23
+5
+NULL
+6
+NULL
 
 query II rowsort
 select id , v2  from v2 order by id
 ----
-12 values hashing to 8cc3e9da15e8756e70edc02df53a1eb8
-
+1
+21
+2
+22
+3
+21
+4
+23
+5
+NULL
+6
+NULL
 

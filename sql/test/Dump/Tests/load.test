@@ -24,7 +24,16 @@ insert into test (id) values (4)
 query II rowsort
 select * from test
 ----
-10 values hashing to 61f7d4b0f975be355ee1463f0c626022
+0
+7
+1
+10
+2
+5
+3
+8
+4
+5
 
 statement ok
 create table "typestest" (
@@ -123,5 +132,4 @@ insert into keytest2 values (0, 0)
 
 statement ok
 insert into keytest2 values (0, 1)
-
 

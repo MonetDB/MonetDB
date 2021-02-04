@@ -4,4 +4,3 @@ select 'avg(sqrt(n8)) == 1.1', avg(cast(1.1 as real)) from generate_series(cast(
 avg(sqrt(n8)) == 1.1
 1.100
 
-

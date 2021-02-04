@@ -33,4 +33,3 @@ select count(distinct testcol ) from testdistinct
 statement ok
 drop table testdistinct
 
-

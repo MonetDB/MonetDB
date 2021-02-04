@@ -23,9 +23,8 @@ z:= batcalc.not(y,nil:bat);
 io.print(z);
 end;
 
-query TT rowsort
+query II rowsort
 user.foo();
 ----
-160 values hashing to 8da95e50216bc790f7fc43573cb061a0
-
+160 values hashing to 7ef33f4afe9040f371e90ea965072f81
 

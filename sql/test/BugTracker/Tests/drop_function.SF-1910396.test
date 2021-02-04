@@ -8,4 +8,3 @@ END
 statement ok
 DROP FUNCTION fGetDiagChecksum
 
-

@@ -26,4 +26,3 @@ select ST_NPoints(geom) AS "POINTS" from geometries where id <10
 6
 7
 
-

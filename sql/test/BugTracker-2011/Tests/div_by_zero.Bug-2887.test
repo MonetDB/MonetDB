@@ -12,4 +12,3 @@ select min (case when "c" = 0 then 4 else 3/c end) from t2887
 statement ok
 drop table t2887
 
-

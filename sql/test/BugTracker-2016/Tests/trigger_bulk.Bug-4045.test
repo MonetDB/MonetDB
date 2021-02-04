@@ -42,4 +42,3 @@ DROP TABLE t111
 statement ok
 DROP TABLE t111 CASCADE
 
-

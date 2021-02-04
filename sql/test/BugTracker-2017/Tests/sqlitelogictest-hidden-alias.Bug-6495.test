@@ -21,4 +21,3 @@ NULL
 statement ok
 DROP TABLE tab0
 
-

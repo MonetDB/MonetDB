@@ -79,4 +79,3 @@ drop table x
 statement ok
 drop table y
 
-

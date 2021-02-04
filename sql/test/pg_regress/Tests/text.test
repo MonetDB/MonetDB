@@ -1,12 +1,12 @@
-query T rowsort
+query I rowsort
 SELECT cast ('this is a text string' AS text) = cast('this is a text string' AS text) AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT cast ('this is a text string' AS text) = cast('this is a text strin' AS text) AS "false"
 ----
-False
+0
 
 statement ok
 CREATE TABLE TEXT_TBL (f1 text)
@@ -27,5 +27,4 @@ hi de ho neighbor
 
 statement ok
 DROP TABLE TEXT_TBL
-
 

@@ -49,7 +49,16 @@ FROM (
       SELECT * FROM my_table1
      ) x
 ----
-10 values hashing to da0f81f3773ec10b245318fdf05e21ce
+1
+2
+2
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 SELECT COALESCE((SELECT y.col2 FROM my_table2 y WHERE y.col1 = x.col1),0) AS col1
@@ -57,7 +66,16 @@ FROM (
       SELECT * FROM my_table1
      ) x
 ----
-10 values hashing to e0145663d590ae02decc8cdc9071e0c2
+0
+0
+0
+0
+1
+2
+2
+3
+3
+3
 
 statement ok
 DROP   TABLE my_table1 

@@ -7,10 +7,21 @@ create table foo (a smallint)
 statement ok
 insert into foo values (1), (200)
 
-query TTT rowsort
+query TII rowsort
 select '',false,a=200 from foo union all select '',null,a=200 from foo
 ----
-12 values hashing to af051c6834fdd22d32c035ac38c3317b
+(empty)
+0
+0
+(empty)
+0
+1
+(empty)
+NULL
+0
+(empty)
+NULL
+1
 
 query II rowsort
 select count(y),cast(sum(z)as bigint) from (select '',false,a=200 from foo union all select '',null,a=200 from foo) as t(x,y,z) group by x
@@ -20,5 +31,4 @@ select count(y),cast(sum(z)as bigint) from (select '',false,a=200 from foo union
 
 statement ok
 ROLLBACK
-
 

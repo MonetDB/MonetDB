@@ -8,4 +8,3 @@ SELECT cor0.col1 FROM tab1 AS cor0 GROUP BY cor0.col1 HAVING NULL NOT IN ( - cor
 statement ok
 DROP TABLE tab1
 
-

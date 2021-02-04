@@ -121,4 +121,3 @@ ll_PROPERTYTYPE.value
 statement ok
 rollback
 
-

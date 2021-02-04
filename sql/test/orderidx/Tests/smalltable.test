@@ -1,7 +1,7 @@
 statement ok
 CREATE TABLE xtmp2(i integer)
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx FROM storage(current_schema, 'xtmp2')
 ----
 sys
@@ -11,10 +11,10 @@ int
 writable
 0
 0
-False
 0
-True
-False
+0
+1
+0
 
 statement ok
 ALTER TABLE xtmp2 SET read only
@@ -22,7 +22,7 @@ ALTER TABLE xtmp2 SET read only
 statement ok
 CREATE ORDERED INDEX sys_xtmp2_i_oidx ON xtmp2(i)
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx FROM storage(current_schema, 'xtmp2')
 ----
 sys
@@ -32,10 +32,10 @@ int
 readonly
 0
 0
-False
 0
-True
-False
+0
+1
+0
 
 query I rowsort
 SELECT * FROM xtmp2 wHERE i>=0 AND i<8
@@ -47,7 +47,7 @@ CREATE TABLE xtmp3(i integer)
 statement ok
 INSERT INTO xtmp3 VALUES(3)
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx FROM storage(current_schema, 'xtmp3')
 ----
 sys
@@ -57,10 +57,10 @@ int
 writable
 1
 0
-False
 0
-True
-False
+0
+1
+0
 
 statement ok
 ALTER TABLE xtmp3 SET read only
@@ -68,7 +68,7 @@ ALTER TABLE xtmp3 SET read only
 statement ok
 CREATE ORDERED INDEX sys_xtmp3_i_oidx ON xtmp3(i)
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx from storage(current_schema, 'xtmp3')
 ----
 sys
@@ -78,10 +78,10 @@ int
 readonly
 1
 0
-False
 0
-True
-False
+0
+1
+0
 
 query I rowsort
 SELECT * FROM xtmp3 WHERE i>=0 AND i<8
@@ -94,7 +94,7 @@ CREATE TABLE xtmp4(i integer)
 statement ok
 INSERT INTO xtmp4 VALUES (3),(0),(2)
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx FROM storage(current_schema, 'xtmp4')
 ----
 sys
@@ -104,10 +104,10 @@ int
 writable
 3
 0
-False
 0
-False
-False
+0
+0
+0
 
 statement ok
 ALTER TABLE xtmp4 SET read only
@@ -115,7 +115,7 @@ ALTER TABLE xtmp4 SET read only
 statement ok
 CREATE ORDERED INDEX sys_xtmp4_i_oidx ON xtmp4(i)
 
-query TTTTTIITITT rowsort
+query TTTTTIIIIII rowsort
 SELECT schema, table, column, type, mode, count, hashes, phash, imprints, sorted, orderidx > 0 as orderidx from storage(current_schema, 'xtmp4')
 ----
 sys
@@ -125,10 +125,10 @@ int
 readonly
 3
 0
-False
 0
-False
-True
+0
+0
+1
 
 query I rowsort
 SELECT * FROM xtmp4 WHERE i>=0 AND i<8
@@ -154,5 +154,4 @@ DROP TABLE xtmp3
 
 statement ok
 DROP TABLE xtmp4
-
 

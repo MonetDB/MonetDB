@@ -25,4 +25,3 @@ JOIN messages parent ON ( parent.id = tnew.parent_id )
 statement ok
 DROP TABLE messages
 
-

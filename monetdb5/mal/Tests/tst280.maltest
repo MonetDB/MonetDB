@@ -39,12 +39,11 @@ statement ok
 statement ok
 	z:= user.tst(b,c)
 
-query TI rowsort
+query II rowsort
 	io.print(z)
 ----
 0
 2
 1
 4
-
 

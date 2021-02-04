@@ -35,4 +35,3 @@ where (true)
 statement ok
 ROLLBACK
 
-

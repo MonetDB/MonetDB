@@ -40,4 +40,3 @@ where ref_38.table_id is NULL
 limit 63
 ----
 
-

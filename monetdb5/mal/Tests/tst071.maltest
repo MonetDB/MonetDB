@@ -23,4 +23,3 @@ a:= user.swap(3,4)
 statement error
 io.print(a)
 
-

@@ -26,4 +26,3 @@ select * from tmp where not t
 statement ok
 rollback
 
-

@@ -1299,4 +1299,3 @@ ALTER SEQUENCE "sys"."seq_video_set_id" RESTART WITH 1 MINVALUE 1 NO CYCLE
 statement ok
 COMMIT
 
-

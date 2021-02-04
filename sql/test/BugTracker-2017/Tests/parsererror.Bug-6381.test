@@ -10,7 +10,7 @@ begin
     return s;
 END
 
-query TTTIIT rowsort
+query TTTIII rowsort
 select name, func, "mod", language, "type", side_effect from functions where name ='mycounter1'
 ----
 mycounter1
@@ -18,7 +18,7 @@ create function mycounter1()@returns integer@begin@ declare s int;@ while (true)
 sql
 2
 1
-False
+0
 
 statement ok
 create function mycounter2()
@@ -32,7 +32,7 @@ begin
     return s;
 END
 
-query TTTIIT rowsort
+query TTTIII rowsort
 select name, func, "mod", language, "type", side_effect from functions where name ='mycounter2'
 ----
 mycounter2
@@ -40,12 +40,11 @@ create function mycounter2()@returns integer@begin@ declare s int;@ while (selec
 sql
 2
 1
-False
+0
 
 statement ok
 drop function mycounter1
 
 statement ok
 drop function mycounter2
-
 

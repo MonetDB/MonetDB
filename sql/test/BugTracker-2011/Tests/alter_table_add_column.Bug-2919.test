@@ -27,4 +27,3 @@ ROLLBACK
 statement ok
 DROP TABLE a2919
 
-

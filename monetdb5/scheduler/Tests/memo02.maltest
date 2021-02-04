@@ -88,10 +88,9 @@ statement ok
 statement ok
 	answer:= run_memo.pick(T9,T10,T11,T12,T13)
 
-query TT rowsort
+query II rowsort
 	io.print(answer)
 ----
 0
 3
-
 

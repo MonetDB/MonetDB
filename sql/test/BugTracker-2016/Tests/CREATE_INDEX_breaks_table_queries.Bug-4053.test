@@ -63,7 +63,7 @@ CREATE INDEX "articolo_idx" ON "sys"."farmap_movimento" ("articolo_id")
 statement ok
 CREATE INDEX "farmacia_idx" ON "sys"."farmap_movimento" ("farmacia_id")
 
-query IIIITIITTTTITTTTTTTTTTTTTTTTTTTTTRRRRRRRRRRRRRITIIII rowsort
+query IIIITIITTTTITTTTTTTTTTTTTTTTTTTTTRRRRRRRRRRRRRIIIIII rowsort
 SELECT * FROM "sys"."farmap_movimento" ORDER BY "id"
 ----
 
@@ -84,5 +84,4 @@ SELECT count(distinct "farmacia_id") FROM "sys"."farmap_movimento"
 
 statement ok
 DROP TABLE "sys"."farmap_movimento"
-
 

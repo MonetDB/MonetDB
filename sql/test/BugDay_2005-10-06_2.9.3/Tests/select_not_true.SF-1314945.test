@@ -1,11 +1,10 @@
-query T rowsort
+query I rowsort
 select false
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not true
 ----
-False
-
+0
 

@@ -12,4 +12,3 @@ SELECT ALL + MIN ( ALL + ( + col0 ) ) + - 9 * - ( + CAST ( COUNT ( * ) AS INTEGE
 statement ok
 DROP TABLE tab1
 
-

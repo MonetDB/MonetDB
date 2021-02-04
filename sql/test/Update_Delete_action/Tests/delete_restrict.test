@@ -61,12 +61,34 @@ delete from t1
 query IT rowsort
 select * from t1
 ----
-14 values hashing to cc37204d92f3681a185d78887c787824
+1
+monetdb
+2
+mon
+3
+monb
+4
+motdb
+5
+mob
+6
+moetdb
+7
+mo
 
 query II rowsort
 select * from t2
 ----
-10 values hashing to 2587449ed5124cd1e56fb78e11e08cf1
+1
+23
+2
+24
+3
+25
+4
+26
+5
+27
 
 query II rowsort
 select * from t3
@@ -86,12 +108,34 @@ delete from t1 where id > 2 and id < 5
 query IT rowsort
 select * from t1
 ----
-14 values hashing to cc37204d92f3681a185d78887c787824
+1
+monetdb
+2
+mon
+3
+monb
+4
+motdb
+5
+mob
+6
+moetdb
+7
+mo
 
 query II rowsort
 select * from t2
 ----
-10 values hashing to 2587449ed5124cd1e56fb78e11e08cf1
+1
+23
+2
+24
+3
+25
+4
+26
+5
+27
 
 query II rowsort
 select * from t3
@@ -111,12 +155,30 @@ delete from t1 where id > 5
 query IT rowsort
 select * from t1
 ----
-10 values hashing to e77bd95715327d4cfb5f65173b88b4c5
+1
+monetdb
+2
+mon
+3
+monb
+4
+motdb
+5
+mob
 
 query II rowsort
 select * from t2
 ----
-10 values hashing to 2587449ed5124cd1e56fb78e11e08cf1
+1
+23
+2
+24
+3
+25
+4
+26
+5
+27
 
 query II rowsort
 select * from t3
@@ -138,5 +200,4 @@ drop table t2
 
 statement ok
 drop table t1
-
 

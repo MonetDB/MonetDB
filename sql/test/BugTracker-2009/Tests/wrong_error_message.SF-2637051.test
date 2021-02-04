@@ -10,4 +10,3 @@ select test from test2 group by test
 statement ok
 drop table "sys"."test2"
 
-

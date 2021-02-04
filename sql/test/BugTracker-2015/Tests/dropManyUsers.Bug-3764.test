@@ -52,4 +52,3 @@ SELECT u.name, u.fullname, s.name as schema FROM "sys"."users" u JOIN "sys"."sch
 statement ok
 DROP SCHEMA schema3764
 
-

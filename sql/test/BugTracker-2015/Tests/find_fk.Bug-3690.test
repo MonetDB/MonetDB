@@ -64,3 +64,4 @@ select count(*) from output_1427369057457
 
 statement ok
 rollback
+

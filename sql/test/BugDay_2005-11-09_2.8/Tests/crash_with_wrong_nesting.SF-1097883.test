@@ -8,4 +8,3 @@ statement error
 update crash_q set b= (
 select b from crash_me where crash_q.a = crash_me.a)
 
-

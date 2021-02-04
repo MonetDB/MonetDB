@@ -104,4 +104,3 @@ drop table t2
 statement ok
 drop function f1
 
-

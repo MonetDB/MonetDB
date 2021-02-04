@@ -8,4 +8,3 @@ select * from "simple" where field1 = 1 and (field1 = 1 or field2 = 1)
 statement ok
 drop table "simple"
 
-

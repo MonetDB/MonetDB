@@ -20,4 +20,3 @@ drop table t1714814a
 statement ok
 drop function f1()
 
-

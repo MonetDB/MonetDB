@@ -3,4 +3,3 @@ SELECT count(*) FROM buildings, bridges WHERE ST_Contains(ST_Buffer(bridges."pos
 ----
 1
 
-

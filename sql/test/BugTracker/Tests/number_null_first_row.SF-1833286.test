@@ -28,4 +28,3 @@ INSERT into "decimal_null" values (NULL)
 statement ok
 drop table decimal_null
 
-

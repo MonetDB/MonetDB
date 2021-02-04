@@ -13,7 +13,46 @@ select stddev_samp(aa) over (partition by bb),
        stddev_samp(aa) over (partition by bb order by bb desc),
        stddev_samp(aa) over (order by bb desc) from analytics
 ----
-40 values hashing to 2cbc0da584a35149d85b013011f9bef2
+1.000
+1.000
+1.000
+4.200
+1.000
+1.000
+1.000
+4.200
+1.000
+1.000
+1.000
+4.200
+3.536
+3.536
+3.536
+4.615
+3.536
+3.536
+3.536
+4.615
+3.536
+3.536
+3.536
+4.615
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select stddev_samp(cc) over (partition by bb),
@@ -21,7 +60,46 @@ select stddev_samp(cc) over (partition by bb),
        stddev_samp(cc) over (partition by bb order by bb desc),
        stddev_samp(cc) over (order by bb desc) from analytics
 ----
-40 values hashing to 2cbc0da584a35149d85b013011f9bef2
+1.000
+1.000
+1.000
+4.200
+1.000
+1.000
+1.000
+4.200
+1.000
+1.000
+1.000
+4.200
+3.536
+3.536
+3.536
+4.615
+3.536
+3.536
+3.536
+4.615
+3.536
+3.536
+3.536
+4.615
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+5.508
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select stddev_pop(aa) over (partition by bb),
@@ -29,7 +107,46 @@ select stddev_pop(aa) over (partition by bb),
        stddev_pop(aa) over (partition by bb order by bb desc),
        stddev_pop(aa) over (order by bb desc) from analytics
 ----
-40 values hashing to b2a17801319522e013bcc9fd4ee6d460
+0.816
+0.816
+0.816
+3.929
+0.816
+0.816
+0.816
+3.929
+0.816
+0.816
+0.816
+3.929
+2.500
+2.500
+2.500
+4.128
+2.500
+2.500
+2.500
+4.128
+2.500
+2.500
+2.500
+4.128
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select stddev_pop(cc) over (partition by bb),
@@ -37,7 +154,46 @@ select stddev_pop(cc) over (partition by bb),
        stddev_pop(cc) over (partition by bb order by bb desc),
        stddev_pop(cc) over (order by bb desc) from analytics
 ----
-40 values hashing to b2a17801319522e013bcc9fd4ee6d460
+0.816
+0.816
+0.816
+3.929
+0.816
+0.816
+0.816
+3.929
+0.816
+0.816
+0.816
+3.929
+2.500
+2.500
+2.500
+4.128
+2.500
+2.500
+2.500
+4.128
+2.500
+2.500
+2.500
+4.128
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+4.497
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select var_samp(aa) over (partition by bb),
@@ -45,7 +201,46 @@ select var_samp(aa) over (partition by bb),
        var_samp(aa) over (partition by bb order by bb desc),
        var_samp(aa) over (order by bb desc) from analytics
 ----
-40 values hashing to c5eaba4ec47f12cef293d5277c7abadc
+1.000
+1.000
+1.000
+17.643
+1.000
+1.000
+1.000
+17.643
+1.000
+1.000
+1.000
+17.643
+12.500
+12.500
+12.500
+21.300
+12.500
+12.500
+12.500
+21.300
+12.500
+12.500
+12.500
+21.300
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select var_samp(cc) over (partition by bb),
@@ -53,7 +248,46 @@ select var_samp(cc) over (partition by bb),
        var_samp(cc) over (partition by bb order by bb desc),
        var_samp(cc) over (order by bb desc) from analytics
 ----
-40 values hashing to c5eaba4ec47f12cef293d5277c7abadc
+1.000
+1.000
+1.000
+17.643
+1.000
+1.000
+1.000
+17.643
+1.000
+1.000
+1.000
+17.643
+12.500
+12.500
+12.500
+21.300
+12.500
+12.500
+12.500
+21.300
+12.500
+12.500
+12.500
+21.300
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+30.333
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select var_pop(aa) over (partition by bb),
@@ -61,7 +295,46 @@ select var_pop(aa) over (partition by bb),
        var_pop(aa) over (partition by bb order by bb desc),
        var_pop(aa) over (order by bb desc) from analytics
 ----
-40 values hashing to 0fa0a58d04c1d7d4c5d5b515053a91ce
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+6.250
+6.250
+6.250
+17.040
+6.250
+6.250
+6.250
+17.040
+6.250
+6.250
+6.250
+17.040
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select var_pop(cc) over (partition by bb),
@@ -69,7 +342,46 @@ select var_pop(cc) over (partition by bb),
        var_pop(cc) over (partition by bb order by bb desc),
        var_pop(cc) over (order by bb desc) from analytics
 ----
-40 values hashing to 0fa0a58d04c1d7d4c5d5b515053a91ce
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+20.222
+6.250
+6.250
+6.250
+17.040
+6.250
+6.250
+6.250
+17.040
+6.250
+6.250
+6.250
+17.040
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select stddev_samp(aa) over (),
@@ -77,7 +389,46 @@ select stddev_samp(aa) over (),
        var_samp(aa) over (),
        var_pop(aa) over () from analytics
 ----
-40 values hashing to 078cdca944c83137c53e28164cd8de29
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
+4.200
+3.929
+17.643
+15.437
 
 query RRRR rowsort
 select stddev_samp(NULL) over (),
@@ -85,7 +436,46 @@ select stddev_samp(NULL) over (),
        var_samp(NULL) over (),
        var_pop(NULL) over () from analytics
 ----
-40 values hashing to c592fdbc473c6ef69c4747110455fb4a
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select stddev_samp(aa) over (rows between 5 preceding and 0 following),
@@ -93,13 +483,71 @@ select stddev_samp(aa) over (rows between 5 preceding and 0 following),
        stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
        stddev_samp(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
 ----
-40 values hashing to 686c7f0c967067713b4beff601fd7d38
+0.707
+1.000
+0.707
+1.000
+0.816
+4.956
+NULL
+3.536
+1.000
+0.816
+1.000
+1.000
+1.000
+2.345
+NULL
+3.536
+2.345
+4.536
+3.536
+3.536
+4.615
+4.615
+5.508
+5.508
+4.615
+4.615
+NULL
+NULL
+4.848
+4.355
+7.071
+5.508
+5.320
+4.375
+NULL
+5.508
+NULL
+1.000
+NULL
+1.000
 
 query RR rowsort
 select stddev_samp(aa) over (rows 2 preceding),
        stddev_samp(aa) over (partition by bb order by bb rows 2 preceding) from analytics
 ----
-20 values hashing to 3e5dbce9d522dde198b1ff6bcd82e61b
+0.707
+0.707
+0.707
+NULL
+0.707
+NULL
+1.000
+1.000
+1.414
+NULL
+3.536
+3.536
+5.132
+7.071
+5.508
+5.508
+6.028
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select var_pop(aa) over (order by bb groups between 5 preceding and 0 following),
@@ -107,13 +555,71 @@ select var_pop(aa) over (order by bb groups between 5 preceding and 0 following)
        var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 0 following),
        var_pop(aa) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
 ----
-40 values hashing to cca36b3805fa87c9086c047264f9eec1
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+0.667
+15.438
+0.667
+0.667
+15.438
+15.438
+20.222
+20.222
+15.438
+15.438
+20.222
+20.222
+15.438
+15.438
+20.222
+20.222
+15.438
+15.438
+NULL
+NULL
+4.400
+15.438
+6.250
+6.250
+4.400
+15.438
+6.250
+6.250
+4.400
+15.438
+6.250
+6.250
 
 query RR rowsort
 select var_pop(aa) over (order by bb groups 2 preceding),
        var_pop(aa) over (partition by bb order by bb groups 2 preceding) from analytics
 ----
-20 values hashing to 2e19f1c1046b599333d6f0d88170fdae
+0.667
+0.667
+0.667
+0.667
+0.667
+0.667
+15.438
+20.222
+15.438
+20.222
+15.438
+20.222
+17.040
+NULL
+4.400
+6.250
+4.400
+6.250
+4.400
+6.250
 
 statement ok
 rollback
@@ -135,5 +641,4 @@ select stddev_samp(*) over (partition by bb) from stressme
 
 statement ok
 drop table stressme
-
 

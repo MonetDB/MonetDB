@@ -25,4 +25,3 @@ drop table child
 statement ok
 drop table parent
 
-

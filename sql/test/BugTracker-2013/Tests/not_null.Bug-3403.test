@@ -13,4 +13,3 @@ ALTER TABLE foo ALTER COLUMN i SET NOT NULL
 statement ok
 DROP TABLE foo
 
-

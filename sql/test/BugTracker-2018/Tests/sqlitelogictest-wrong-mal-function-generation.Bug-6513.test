@@ -20,4 +20,3 @@ SELECT DISTINCT - + col2 * 68 * - + 22 FROM tab0 AS cor0
 statement ok
 DROP TABLE tab0
 
-

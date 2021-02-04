@@ -372,4 +372,3 @@ DROP TABLE another5
 statement ok
 DROP TABLE table1
 
-

@@ -53,4 +53,3 @@ drop table test_join_left_table
 statement ok
 drop table "unitTestDontDelete"
 
-

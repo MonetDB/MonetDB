@@ -945,4 +945,3 @@ where "c2_h_field_2" is null order by "count_1" desc, "Ticker"
 statement ok
 ROLLBACK
 
-

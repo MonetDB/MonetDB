@@ -9,3 +9,4 @@ select max(a), b from agg_error group by a
 
 statement ok
 rollback
+

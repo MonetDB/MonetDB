@@ -217,4 +217,3 @@ SRID:0;POLYGON Z ((10 10 10, 20 20 20, 30 30 30, 10 10 10))
 statement ok
 drop table polygons_tbl
 
-

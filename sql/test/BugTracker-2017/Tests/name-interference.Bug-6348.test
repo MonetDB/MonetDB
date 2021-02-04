@@ -78,4 +78,3 @@ drop procedure cls_0_statistics
 statement error
 drop table cls_0_statistics
 
-

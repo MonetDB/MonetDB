@@ -10,4 +10,3 @@ insert into test (a,b) values (select 2, 2)
 statement ok
 drop table test
 
-

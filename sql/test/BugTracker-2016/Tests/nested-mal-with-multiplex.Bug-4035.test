@@ -23,4 +23,3 @@ DROP TABLE test_table
 statement ok
 DROP FUNCTION geographic_to_cartesian
 
-

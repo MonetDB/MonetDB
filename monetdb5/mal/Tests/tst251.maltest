@@ -22,10 +22,21 @@ bat.append(c,x);
 statement ok
 bat.append(c,"!");
 
-query TT rowsort
+query IT rowsort
 io.print(c);
 ----
-12 values hashing to 7621f20bcb9c64b3a189dc2c9a005bb4
+0
+hello
+1
+brave
+2
+world
+3
+(empty)
+4
+NULL
+5
+!
 
 query T rowsort
 barrier (h,ts):= iterator.new(c);
@@ -40,5 +51,4 @@ exit (h,ts);
 3,
 4,nil
 5,!
-
 

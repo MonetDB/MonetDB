@@ -92,4 +92,3 @@ where subq_0.c5 is NULL; --empty
 statement ok
 ROLLBACK
 
-

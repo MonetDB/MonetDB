@@ -7,4 +7,3 @@ END, + 57 ) WHEN - CAST ( NULL AS INTEGER ) THEN ( 46 ) ELSE NULL END * - 77
 ----
 NULL
 
-
