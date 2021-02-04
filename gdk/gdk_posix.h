@@ -20,8 +20,10 @@
 #include <sys/time.h>		/* gettimeofday */
 #endif
 
+#ifndef HAVE_SYS_SOCKET_H
 #ifdef HAVE_WINSOCK_H
 #include <winsock.h>		/* for timeval */
+#endif
 #endif
 
 #include "gdk_system.h" /* gdk_export */

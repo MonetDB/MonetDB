@@ -5,13 +5,13 @@ select 1 as T, 2 as T
 2
 
 query II rowsort
-select a.* from (select 1 as T, 2 as T) a
+select a.* from (select 1 as T, 2 as U) a
 ----
 1
 2
 
 query II rowsort
-with wa as (select 1 as T, 2 as T) select wa.* from wa
+with wa as (select 1 as T, 2 as U) select wa.* from wa
 ----
 1
 2

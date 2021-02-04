@@ -601,11 +601,14 @@ select * from myv limit 1
 statement ok
 rollback
 
-query II rowsort
+statement error
 select * from (select 1 as c0, 2 as c0) as sub
-----
-1
-2
+
+statement error
+select *,* from (select 1 as c0, 2 as c0) as sub
+
+statement error
+select * from (select 1 as c0, max(k) as c0 from (select 2, 3) tst(k, name) group by name) as sub
 
 query T rowsort
 select cast(interval '3' second as clob)
@@ -757,28 +760,28 @@ select "😀"()
 1
 
 statement ok
+rollback
+
+statement ok
 CREATE FUNCTION ups() RETURNS INT
 BEGIN
 	DECLARE "nononononononononononononononononononononononononononononononono" int;
 	RETURN "nononononononononononononononononononononononononononononononono";
-END
+END;  -- error for now
 
-statement ok
+statement error
 select ups()
 
-statement ok
+statement error
 create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
 
-statement ok
+statement error
 select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"()
 
-statement ok
+statement error
 create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3
 
-statement ok
+statement error
 select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
-
-statement ok
-rollback
 
 

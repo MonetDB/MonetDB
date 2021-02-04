@@ -100,7 +100,7 @@
 #include "mal_client.h"
 #include "mal_runtime.h"
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #define __declspec(x)
 #endif
 

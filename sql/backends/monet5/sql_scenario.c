@@ -1150,6 +1150,7 @@ SQLparser(Client c)
 			m->params = NULL;
 			/* register name in the namespace */
 			if (be->q) {
+				assert(strlen(be->q->name) < IDLENGTH);
 				be->q->name = putName(be->q->name);
 				if (!be->q->name) {
 					err = 1;
