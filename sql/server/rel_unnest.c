@@ -3405,6 +3405,12 @@ rewrite_values(visitor *v, sql_rel *rel)
 	int single = is_single(rel);
 	if (!is_simple_project(rel->op) || list_empty(rel->exps))
 		return rel;
+
+	if (rel_is_ref(rel)) { /* need extra project */
+		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
+		rel->exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
+		return rel;
+	}
 	sql_exp *e = rel->exps->h->data;
 
 	if (!is_values(e) || list_length(exp_get_values(e))<=1 || (!exp_has_freevar(v->sql, e) && !exp_has_rel(e)))

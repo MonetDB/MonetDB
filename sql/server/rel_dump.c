@@ -731,7 +731,7 @@ convertIdent(char *r)
 			r[j++] = r[i++];
 		}
 	}
-	r[i] = '\0';
+	r[j] = '\0';
 }
 
 static void
@@ -786,8 +786,8 @@ readString( char *r, int *pos)
 
 static sql_exp* exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *pos, int grp) ;
 
-static void *
-read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
+static sql_exp*
+read_prop(mvc *sql, sql_exp *exp, char *r, int *pos, bool *found)
 {
 	/* PROPs */
 	if (strncmp(r+*pos, "JOINIDX",  strlen("JOINIDX")) == 0) {
@@ -825,6 +825,8 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 				return sql_error(sql, -1, SQLSTATE(42000) "Index %s missing\n", iname);
 		}
 		skipWS(r,pos);
+		if (found)
+			*found = true;
 	}
 	return exp;
 }
@@ -851,7 +853,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 		}
 		append(exps, e);
 		skipWS( r, pos);
-		if (!read_prop(sql, e, r, pos))
+		if (!read_prop(sql, e, r, pos, NULL))
 			return NULL;
 		while (r[*pos] == ',') {
 
@@ -862,7 +864,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 				return NULL;
 			append(exps, e);
 			skipWS( r, pos);
-			if (!read_prop(sql, e, r, pos))
+			if (!read_prop(sql, e, r, pos, NULL))
 				return NULL;
 		}
 		if (r[*pos] != ebracket)
@@ -871,6 +873,48 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 		skipWS( r, pos);
 	}
 	return exps;
+}
+
+static sql_exp*
+read_exp_properties(mvc *sql, sql_exp *exp, char *r, int *pos)
+{
+	bool found = true;
+	while (found) {
+		found = false;
+
+		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
+			(*pos)+= (int) strlen("COUNT");
+			skipWS(r,pos);
+			found = true;
+		} else if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
+			(*pos)+= (int) strlen("HASHIDX");
+			if (!find_prop(exp->p, PROP_HASHIDX))
+				exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
+			skipWS(r,pos);
+			found = true;
+		} else if (strncmp(r+*pos, "SORTIDX",  strlen("SORTIDX")) == 0) {
+			(*pos)+= (int) strlen("SORTIDX");
+			if (!find_prop(exp->p, PROP_SORTIDX))
+				exp->p = prop_create(sql->sa, PROP_SORTIDX, exp->p);
+			skipWS(r,pos);
+			found = true;
+		} else if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
+			(*pos)+= (int) strlen("HASHCOL");
+			if (!find_prop(exp->p, PROP_HASHCOL))
+				exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
+			skipWS(r,pos);
+			found = true;
+		} else if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
+			(*pos)+= (int) strlen("FETCH");
+			if (!find_prop(exp->p, PROP_FETCH))
+				exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
+			skipWS(r,pos);
+			found = true;
+		}
+		if (!read_prop(sql, exp, r, pos, &found))
+			return NULL;
+	}
+	return exp;
 }
 
 static sql_exp*
@@ -1213,10 +1257,17 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		skipWS(r, pos);
 		set_semantics(exp);
 	}
-	/* [ COUNT ] */
-	if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
-		(*pos)+= (int) strlen("COUNT");
-		skipWS( r, pos);
+
+	/* [ ANY|ALL ] */
+	if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {
+		(*pos)+= (int) strlen("ANY");
+		skipWS(r, pos);
+		exp->flag = 1;
+	}
+	if (strncmp(r+*pos, "ALL",  strlen("ALL")) == 0) {
+		(*pos)+= (int) strlen("ALL");
+		skipWS(r, pos);
+		exp->flag = 2;
 	}
 	/* [ ASC ] */
 	if (strncmp(r+*pos, "ASC",  strlen("ASC")) == 0) {
@@ -1230,17 +1281,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		skipWS(r, pos);
 		set_nulls_last(exp);
 	}
-	/* [ ANY|ALL ] */
-	if (strncmp(r+*pos, "ANY",  strlen("ANY")) == 0) {
-		(*pos)+= (int) strlen("ANY");
-		skipWS(r, pos);
-		exp->flag = 1;
-	}
-	if (strncmp(r+*pos, "ALL",  strlen("ALL")) == 0) {
-		(*pos)+= (int) strlen("ALL");
-		skipWS(r, pos);
-		exp->flag = 2;
-	}
 	/* [ NOT ] NULL */
 	if (strncmp(r+*pos, "NOT",  strlen("NOT")) == 0) {
 		(*pos)+= (int) strlen("NOT");
@@ -1253,25 +1293,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 		if (not)
 			set_has_no_nil(exp);
 	}
-	if (strncmp(r+*pos, "HASHIDX",  strlen("HASHIDX")) == 0) {
-		(*pos)+= (int) strlen("HASHIDX");
-		if (!find_prop(exp->p, PROP_HASHIDX))
-			exp->p = prop_create(sql->sa, PROP_HASHIDX, exp->p);
-		skipWS(r,pos);
-	}
-	if (strncmp(r+*pos, "HASHCOL",  strlen("HASHCOL")) == 0) {
-		(*pos)+= (int) strlen("HASHCOL");
-		if (!find_prop(exp->p, PROP_HASHCOL))
-			exp->p = prop_create(sql->sa, PROP_HASHCOL, exp->p);
-		skipWS(r,pos);
-	}
-	if (strncmp(r+*pos, "FETCH",  strlen("FETCH")) == 0) {
-		(*pos)+= (int) strlen("FETCH");
-		if (!find_prop(exp->p, PROP_FETCH))
-			exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
-		skipWS(r,pos);
-	}
-	if (!read_prop(sql, exp, r, pos))
+
+	if (!(exp = read_exp_properties(sql, exp, r, pos)))
 		return NULL;
 	skipWS(r,pos);
 
@@ -1433,6 +1456,46 @@ rel_set_types(mvc *sql, sql_rel *rel)
 	return 0;
 }
 
+static sql_rel*
+read_rel_properties(mvc *sql, sql_rel *rel, char *r, int *pos)
+{
+	bool found = true;
+	while (found) {
+		found = false;
+
+		if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
+			(*pos)+= (int) strlen("COUNT");
+			skipWS(r,pos);
+			found = true;
+		} else if (strncmp(r+*pos, "REMOTE", strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
+			(*pos)+= (int) strlen("REMOTE");
+			skipWS(r, pos);
+			skipUntilWS(r, pos);
+			skipWS(r, pos);
+			found = true;
+		} else if (strncmp(r+*pos, "USED", strlen("USED")) == 0) {
+			(*pos)+= (int) strlen("USED");
+			if (!find_prop(rel->p, PROP_USED))
+				rel->p = prop_create(sql->sa, PROP_USED, rel->p);
+			skipWS(r, pos);
+			found = true;
+		} else if (strncmp(r+*pos, "DISTRIBUTE", strlen("DISTRIBUTE")) == 0) {
+			(*pos)+= (int) strlen("DISTRIBUTE");
+			if (!find_prop(rel->p, PROP_DISTRIBUTE))
+				rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
+			skipWS(r, pos);
+			found = true;
+		} else if (strncmp(r+*pos, "GROUPINGS", strlen("GROUPINGS")) == 0) {
+			(*pos)+= (int) strlen("GROUPINGS");
+			if (!find_prop(rel->p, PROP_GROUPINGS))
+				rel->p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
+			skipWS(r, pos);
+			found = true;
+		}
+	}
+	return rel;
+}
+
 sql_rel*
 rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
@@ -1483,7 +1546,9 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		t = get_table(lrel);
 		if (!insert_allowed(sql, t, t->base.name, "INSERT", "insert"))
 			return NULL;
-		return rel_insert(sql, lrel, rrel);
+
+		if (!(rel = rel_insert(sql, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
+			return NULL;
 	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'e' && r[*pos+2] == 'l') {
@@ -1504,7 +1569,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!update_allowed(sql, t, t->base.name, "DELETE", "delete", 1))
 			return NULL;
 
-		return rel_delete(sql->sa, lrel, rrel);
+		if (!(rel = rel_delete(sql->sa, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
+			return NULL;
 	}
 
 	if (r[*pos] == 't' && r[*pos+1] == 'r' && r[*pos+2] == 'u') {
@@ -1535,7 +1601,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!update_allowed(sql, t, t->base.name, "TRUNCATE", "truncate", 2))
 			return NULL;
 
-		return rel_truncate(sql->sa, lrel, restart_sequences, drop_action);
+		if (!(rel = rel_truncate(sql->sa, lrel, restart_sequences, drop_action)) || !(rel = read_rel_properties(sql, rel, r, pos)))
+			return NULL;
 	}
 
 	if (r[*pos] == 'u' && r[*pos+1] == 'p' && r[*pos+2] == 'd') {
@@ -1575,7 +1642,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			list_append(nexps, e);
 		}
 
-		return rel_update(sql, lrel, rrel, NULL, nexps);
+		if (!(rel = rel_update(sql, lrel, rrel, NULL, nexps)) || !(rel = read_rel_properties(sql, rel, r, pos)))
+			return NULL;
 	}
 
 	if (r[*pos] == 'd' && r[*pos+1] == 'i') {
@@ -1734,10 +1802,6 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 				if (!(exps = read_exps(sql, rel, NULL, NULL, r, pos, '[', 0, 1)))
 					return NULL;
 				rel->exps = exps;
-			}
-			if (strncmp(r+*pos, "COUNT",  strlen("COUNT")) == 0) {
-				(*pos)+= (int) strlen("COUNT");
-				skipWS( r, pos);
 			}
 		} else { /* top N */
 			*pos += (int) strlen("top N");
@@ -2007,30 +2071,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 	if (dependent)
 		set_dependent(rel);
 
-	/* sometimes the properties are send */
-	while (strncmp(r+*pos, "REMOTE", strlen("REMOTE")) == 0) { /* Remote tables under remote tables not supported, so remove REMOTE property */
-		(*pos)+= (int) strlen("REMOTE");
-		skipWS(r, pos);
-		skipUntilWS(r, pos);
-		skipWS(r, pos);
-	}
-	while (strncmp(r+*pos, "USED", strlen("USED")) == 0) {
-		(*pos)+= (int) strlen("USED");
-		if (!find_prop(rel->p, PROP_USED))
-			rel->p = prop_create(sql->sa, PROP_USED, rel->p);
-		skipWS(r, pos);
-	}
-	while (strncmp(r+*pos, "DISTRIBUTE", strlen("DISTRIBUTE")) == 0) {
-		(*pos)+= (int) strlen("DISTRIBUTE");
-		if (!find_prop(rel->p, PROP_DISTRIBUTE))
-			rel->p = prop_create(sql->sa, PROP_DISTRIBUTE, rel->p);
-		skipWS(r, pos);
-	}
-	while (strncmp(r+*pos, "GROUPINGS", strlen("GROUPINGS")) == 0) {
-		(*pos)+= (int) strlen("GROUPINGS");
-		if (!find_prop(rel->p, PROP_GROUPINGS))
-			rel->p = prop_create(sql->sa, PROP_GROUPINGS, rel->p);
-		skipWS(r, pos);
-	}
+	/* sometimes, properties are sent */
+	if (!(rel = read_rel_properties(sql, rel, r, pos)))
+		return NULL;
 	return rel;
 }

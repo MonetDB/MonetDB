@@ -851,13 +851,19 @@ gdk_return
 GDKinit(opt *set, int setlen, bool embedded)
 {
 	static bool first = true;
-	const char *dbpath = mo_find_option(set, setlen, "gdk_dbpath");
-	const char *dbtrace = mo_find_option(set, setlen, "gdk_dbtrace");
+	const char *dbpath;
+	const char *dbtrace;
 	const char *p;
 	opt *n;
 	int i, nlen = 0;
 	char buf[16];
 
+	if (GDKinmemory(0)) {
+		dbpath = dbtrace = NULL;
+	} else {
+		dbpath = mo_find_option(set, setlen, "gdk_dbpath");
+		dbtrace = mo_find_option(set, setlen, "gdk_dbtrace");
+	}
 	Mbedded = embedded;
 	/* some sanity checks (should also find if symbols are not defined) */
 	static_assert(sizeof(int) == sizeof(int32_t),
