@@ -5258,7 +5258,9 @@ rel_table_exp(sql_query *query, sql_rel **rel, symbol *column_e, bool single_exp
 					}
 				}
 			}
-
+			list *distinct_exps = list_distinct(exps, (fcmp) exp_equal, (fdup) NULL);
+			if (list_length(distinct_exps) != list_length(exps))
+				return sql_error(sql, 02, SQLSTATE(42000) "Duplicate column names in table%s%s%s projection list", tname ? " '" : "", tname ? tname : "", tname ? "'" : "");
 			return exps;
 		}
 		if (!tname)

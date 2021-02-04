@@ -380,18 +380,6 @@ stdout of test 'simple_selects` in directory 'sql/test/miscellaneous` itself:
 % int,	int,	varchar,	varchar # type
 % 1,	1,	0,	0 # length
 #rollback;
-#select * from (select 1 as c0, 2 as c0) as sub;
-% .sub,	.sub # table_name
-% c0,	c0 # name
-% tinyint,	tinyint # type
-% 1,	1 # length
-[ 1,	2	]
-#select * from (select 1 as c0, max(k) as c0 from (select 2, 3) tst(k, name) group by name) as sub;
-% .sub,	.sub # table_name
-% c0,	c0 # name
-% tinyint,	tinyint # type
-% 1,	1 # length
-[ 1,	2	]
 #select cast(interval '3' second as clob);
 % .%1 # table_name
 % %1 # name
