@@ -14,18 +14,19 @@
 static BAT *
 _delta_cands(sql_trans *tr, sql_table *t)
 {
+	sqlstore *store = tr->store;
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
-	size_t nr = store_funcs.count_col(tr, c, 1);
+	size_t nr = store->storage_api.count_col(tr, c, 1);
 	BAT *tids = BATdense(0, 0, (BUN) nr);
 
 	if (!tids)
 		return NULL;
 
-	if (store_funcs.count_del(tr, t)) {
+	if (store->storage_api.count_del(tr, t)) {
 		BAT *d, *diff = NULL;
 
-		if ((d = store_funcs.bind_del(tr, t, RD_INS)) != NULL) {
+		if ((d = store->storage_api.bind_del(tr, t, RD_INS)) != NULL) {
 			diff = BATdiff(tids, d, NULL, NULL, false, false, BUN_NONE);
 			bat_destroy(d);
 		}
@@ -38,37 +39,36 @@ _delta_cands(sql_trans *tr, sql_table *t)
 static BAT *
 delta_cands(sql_trans *tr, sql_table *t)
 {
+	sqlstore *store = tr->store;
 	sql_dbat *d;
 	BAT *tids;
 
-	if (!t->data) {
-		sql_table *ot = tr_find_table(tr->parent, t);
-		t->data = timestamp_dbat(ot->data, tr->stime);
-	}
+	assert(t->data);
 	d = t->data;
-	if (!store_initialized && d->cached)
+	if (!store->initialized && d->cached)
 		return temp_descriptor(d->cached->batCacheid);
 	tids = _delta_cands(tr, t);
-	if (!store_initialized && !d->cached) /* only cache during catalog loading */
+	if (!store->initialized && !d->cached) /* only cache during catalog loading */
 		d->cached = temp_descriptor(tids->batCacheid);
 	return tids;
 }
 
 static BAT *
-delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
+delta_full_bat_( sql_trans *tr, sql_column *c, sql_delta *bat, int is_new)
 {
 	/* return full normalized column bat
 	 * 	b := b.copy()
 		b := b.append(i);
 		b := b.replace(u);
 	*/
+	sqlstore *store = tr->store;
 	BAT *r, *b, *ui, *uv, *i = temp_descriptor(bat->ibid);
 	int needcopy = 1;
 
 	if (!i)
 		return NULL;
 	r = i;
-	if (temp)
+	if (is_new)
 		return r;
 	b = temp_descriptor(bat->bid);
 	if (!b) {
@@ -116,27 +116,25 @@ delta_full_bat_( sql_column *c, sql_delta *bat, int temp)
 		bat_destroy(uv);
 	}
 	(void)c;
-	if (!store_initialized && !bat->cached)
+	if (!store->initialized && !bat->cached)
 		bat->cached = b;
 	return b;
 }
 
 static BAT *
-delta_full_bat( sql_column *c, sql_delta *bat, int temp)
+delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int is_new)
 {
-	if (!store_initialized && bat->cached)
+	sqlstore *store = tr->store;
+	if (!store->initialized && bat->cached)
 		return bat->cached;
-	return delta_full_bat_( c, bat, temp);
+	return delta_full_bat_( tr, c, bat, is_new);
 }
 
 static BAT *
 full_column(sql_trans *tr, sql_column *c)
 {
-	if (!c->data) {
-		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->stime);
-	}
-	return delta_full_bat(c, c->data, isTemp(c));
+	assert(c->data);
+	return delta_full_bat(tr, c, col_timestamp_delta(tr, c), isNew(c->t));
 }
 
 static void
@@ -276,14 +274,16 @@ column_find_int(sql_trans *tr, sql_column *c, oid rid)
 static int
 column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
+	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
+	return store->storage_api.update_col(tr, c, &rid, value, c->type.type->localtype);
 }
 
 static int
 table_insert(sql_trans *tr, sql_table *t, ...)
 {
+	sqlstore *store = tr->store;
 	va_list va;
 	node *n = cs_first_node(&t->columns);
 	void *val = NULL;
@@ -296,7 +296,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store_funcs.append_col(tr, c, val, c->type.type->localtype);
+		ok = store->storage_api.append_col(tr, c, val, c->type.type->localtype);
 		if (ok != LOG_OK) {
 			va_end(va);
 			return ok;
@@ -316,9 +316,10 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 static int
 table_delete(sql_trans *tr, sql_table *t, oid rid)
 {
+	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
+	return store->storage_api.delete_tab(tr, t, &rid, TYPE_oid);
 }
 
 
@@ -643,6 +644,7 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 static int
 table_vacuum(sql_trans *tr, sql_table *t)
 {
+	sqlstore *store = tr->store;
 	BAT *tids = delta_cands(tr, t);
 	BAT **cols;
 	node *n;
@@ -656,7 +658,7 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	}
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		BAT *v = store_funcs.bind_col(tr, c, RDONLY);
+		BAT *v = store->storage_api.bind_col(tr, c, RDONLY);
 
 		if (v == NULL ||
 		    (cols[c->colnr] = BATproject(tids, v)) == NULL) {
@@ -678,7 +680,7 @@ table_vacuum(sql_trans *tr, sql_table *t)
 		sql_column *c = n->data;
 		int ok;
 
-		ok = store_funcs.append_col(tr, c, cols[c->colnr], TYPE_bat);
+		ok = store->storage_api.append_col(tr, c, cols[c->colnr], TYPE_bat);
 		BBPunfix(cols[c->colnr]->batCacheid);
 		if (ok != LOG_OK) {
 			for (n = n->next; n; n = n->next) {

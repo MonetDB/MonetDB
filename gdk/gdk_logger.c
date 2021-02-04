@@ -1430,7 +1430,7 @@ check_version(logger *lg, FILE *fp)
 	}
 	if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
-		    (*lg->prefuncp)(version, lg->version) != GDK_SUCCEED) {
+		    (*lg->prefuncp)(lg->funcdata, version, lg->version) != GDK_SUCCEED) {
 			GDKerror("Incompatible database version %06d, "
 				 "this server supports version %06d.\n%s",
 				 version, lg->version,
@@ -2296,7 +2296,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->convert_date = false;
 		}
 #endif
-		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
+		if (lg->postfuncp && (*lg->postfuncp)(lg->funcdata, lg) != GDK_SUCCEED)
 			goto error;
 
 		/* done reading the log, revert to "normal" behavior */
@@ -2331,7 +2331,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata)
 {
 	int len;
 	logger *lg;
@@ -2386,6 +2386,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 
 	lg->prefuncp = prefuncp;
 	lg->postfuncp = postfuncp;
+	lg->funcdata = funcdata;
 	lg->log = NULL;
 	lg->end = 0;
 	lg->catalog_bid = NULL;
@@ -2414,10 +2415,10 @@ logger_restart(logger *lg)
 
 /* Create a new logger */
 logger *
-logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata)
 {
 	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, funcdata);
 	if (lg == NULL)
 		return NULL;
 	if (lg->debug & 1) {

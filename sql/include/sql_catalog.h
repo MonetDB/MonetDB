@@ -11,6 +11,7 @@
 
 #include "sql_mem.h"
 #include "sql_list.h"
+#include "sql_hash.h"
 #include "mapi_querytype.h"
 #include "stream.h"
 
@@ -197,11 +198,7 @@ typedef enum commit_action_t {
 typedef int sqlid;
 
 typedef struct sql_base {
-	int wtime;
-	int rtime;
-	int stime;
-	int allocated;
-	int flags;
+	int flags;			/* todo change into bool new */
 	int refcnt;
 	sqlid id;
 	char *name;
@@ -221,43 +218,59 @@ typedef struct changeset {
 	node *nelm;
 } changeset;
 
+typedef void *sql_store;
+
+struct sql_trans;
+struct sql_change;
+struct objectset;
+struct versionhead;
+struct os_iter {
+	struct objectset *os;
+	struct sql_trans *tr;
+	struct versionhead *n;
+	struct sql_hash_e *e;
+	const char *name;
+};
+
+/* transaction changes */
+typedef int (*tc_validate_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);
+typedef int (*tc_log_fptr) (struct sql_trans *tr, struct sql_change *c);								/* write changes to the log */
+typedef int (*tc_commit_fptr) (struct sql_trans *tr, struct sql_change *c, ulng commit_ts, ulng oldest);/* commit/rollback changes */
+typedef int (*tc_cleanup_fptr) (sql_store store, struct sql_change *c, ulng commit_ts, ulng oldest);	/* garbage collection, ie cleanup structures when possible */
+typedef void (*destroy_fptr)(sql_store store, sql_base *b);
+
+extern struct objectset *os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique);
+extern struct objectset *os_dup(struct objectset *os);
+extern void os_destroy(struct objectset *os, sql_store store);
+extern int /*ok, error (name existed) and conflict (added before) */ os_add(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
+extern int os_del(struct objectset *os, struct sql_trans *tr, const char *name, sql_base *b);
+extern int os_size(struct objectset *os, struct sql_trans *tr);
+extern int os_empty(struct objectset *os, struct sql_trans *tr);
+extern int os_remove(struct objectset *os, struct sql_trans *tr, const char *name);
+extern sql_base *os_find_name(struct objectset *os, struct sql_trans *tr, const char *name);
+extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id);
+/* iterating (for example for location functinos) */
+extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
+extern sql_base *oi_next(struct os_iter *oi);
+extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
+
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
-extern void cs_destroy(changeset * cs);
+extern changeset* cs_dup(changeset * cs);
+extern void cs_destroy(changeset * cs, void *data);
 extern void cs_add(changeset * cs, void *elm, int flag);
-extern void *cs_add_with_validate(changeset * cs, void *elm, int flag, fvalidate cmp);
+extern void *cs_add_with_validate(changeset * cs, void *elm, void *extra, int flag, fvalidate cmp);
 extern void cs_add_before(changeset * cs, node *n, void *elm);
-extern void cs_del(changeset * cs, node *elm, int flag);
+extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
 extern void cs_move(changeset *from, changeset *to, void *data);
-extern void *cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp);
+extern void *cs_transverse_with_validate(changeset * cs, void *elm, void *extra, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, sqlid id);
 extern node *cs_first_node(changeset * cs);
 extern node *cs_last_node(changeset * cs);
-extern void cs_remove_node(changeset * cs, node *n);
 
 typedef void *backend_code;
 typedef size_t backend_stack;
-
-typedef struct sql_trans {
-	char *name;
-	int stime;		/* start of transaction */
-	int wstime;		/* first write transaction time stamp */
-	int wtime;		/* timestamp of latest write performed in transaction*/
-	int schema_number;	/* schema timestamp */
-	int schema_updates;	/* set on schema changes */
-	int active;		/* active transaction */
-	int status;		/* status of the last query */
-	list *dropped;  	/* protection against recursive cascade action*/
-	list *moved_tables;
-
-	changeset schemas;
-
-	sql_allocator *sa;	/* transaction allocator */
-
-	struct sql_trans *parent;	/* multilevel transaction support */
-	backend_stack stk;
-} sql_trans;
 
 typedef struct sql_schema {
 	sql_base base;
@@ -266,18 +279,46 @@ typedef struct sql_schema {
 	bit system;		/* system or user schema */
 	// TODO? int type;	/* persistent, session local, transaction local */
 
-	changeset tables;
-	changeset types;
-	changeset funcs;
-	changeset seqs;
-	changeset parts;/* merge/replica tables can only contain parts from the same schema */
-	list *keys;		/* Names for keys, idxs and triggers are */
-	list *idxs;		/* global, but these objects are only */
-	list *triggers;		/* useful within a table */
+	struct objectset *tables;
+	struct objectset *types;
+	struct objectset *funcs;
+	struct objectset *seqs;
+	struct objectset *keys;		/* Names for keys, idxs, and triggers and parts are */
+	struct objectset *idxs;		/* global, but these objects are only */
+	struct objectset *triggers;	/* useful within a table */
+	struct objectset *parts;
 
 	char *internal; 	/* optional internal module name */
-	sql_trans *tr;
+	sql_store store;
 } sql_schema;
+
+typedef struct sql_catalog {
+	struct objectset *schemas;
+	struct objectset *objects;
+} sql_catalog;
+
+typedef struct sql_trans {
+	char *name;
+
+	ulng ts;			/* transaction start timestamp */
+	ulng tid;			/* transaction id */
+
+	sql_store store;	/* keep link into the global store */
+	list *changes;		/* list of changes */
+	int logchanges;		/* count number of changes to be applied too the wal */
+
+	int active;			/* is active transaction */
+	int status;			/* status of the last query */
+
+	list *dropped;  	/* protection against recursive cascade action*/
+
+	sql_catalog *cat;
+	sql_schema *tmp;	/* each session has its own tmp schema */
+	changeset localtmps;
+	sql_allocator *sa;	/* transaction allocator */
+
+	struct sql_trans *parent;	/* multilevel transaction support */
+} sql_trans;
 
 typedef enum sql_class {
 	EC_ANY,
@@ -503,7 +544,6 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
-	struct sql_idx *po;	/* the outer transactions idx */
 	void *data;
 } sql_idx;
 
@@ -520,7 +560,7 @@ typedef struct sql_key {	/* pkey, ukey, fkey */
 
 typedef struct sql_ukey {	/* pkey, ukey */
 	sql_key k;
-	list *keys;
+	//list *keys;
 } sql_ukey;
 
 typedef struct sql_fkey {	/* fkey */
@@ -528,7 +568,7 @@ typedef struct sql_fkey {	/* fkey */
 	/* no action, restrict (default), cascade, set null, set default */
 	int on_delete;
 	int on_update;
-	struct sql_ukey *rkey;	/* only set for fkey and rkey */
+	sqlid rkey;
 } sql_fkey;
 
 typedef struct sql_trigger {
@@ -574,7 +614,6 @@ typedef struct sql_column {
 	char *max;
 
 	struct sql_table *t;
-	struct sql_column *po;	/* the outer transactions column */
 	void *data;
 } sql_column;
 
@@ -604,7 +643,6 @@ typedef enum table_types {
 #define isRemote(x)                       ((x)->type==tt_remote)
 #define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x))
-#define isPartition(x)                    ((x)->partition)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1
@@ -617,13 +655,12 @@ typedef struct sql_part_value {
 
 typedef struct sql_part {
 	sql_base base;
-	struct sql_table *t;	  /* the merge table */
-	struct sql_table *member; /* the member of the merge table */
-	sql_subtype tpe;		  /* the column/expression type */
-	bit with_nills;			  /* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
+	struct sql_table *t;	/* the merge table */
+	sqlid member;			/* the member of the merge table */
+	bit with_nills;			/* 0 no nills, 1 holds nills, NULL holds all values -> range FROM MINVALUE TO MAXVALUE WITH NULL */
 	union {
-		list *values;         /* partition by values/list */
-		struct sql_range {    /* partition by range */
+		list *values;       /* partition by values/list */
+		struct sql_range {  /* partition by range */
 			ptr minvalue;
 			ptr maxvalue;
 			size_t minlength;
@@ -655,26 +692,17 @@ typedef struct sql_table {
 	changeset idxs;
 	changeset keys;
 	changeset triggers;
-	list *members;
+	changeset members;	/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
-	int cleared;		/* cleared in the current transaction */
 	void *data;
 	struct sql_schema *s;
-	struct sql_table *po;	/* the outer transactions table */
 
-	char partition;		/* number of times this table is part of some hierachy of tables */
 	union {
 		struct sql_column *pcol; /* If it is partitioned on a column */
 		struct sql_expression *pexp; /* If it is partitioned by an expression */
 	} part;
 } sql_table;
-
-typedef struct sql_moved_table {
-	sql_schema *from;
-	sql_schema *to;
-	sql_table *t;
-} sql_moved_table;
 
 typedef struct res_col {
 	char *tn;
@@ -702,6 +730,7 @@ typedef struct res_table {
 } res_table;
 
 typedef struct sql_session {
+	sql_allocator *sa;
 	sql_trans *tr; 		/* active transaction */
 
 	char *schema_name; /* transaction's schema name */
@@ -715,11 +744,7 @@ typedef struct sql_session {
 	backend_stack stk;
 } sql_session;
 
-extern void schema_destroy(sql_schema *s);
-extern void table_destroy(sql_table *t);
-extern void column_destroy(sql_column *c);
-extern void key_destroy(sql_key *k);
-extern void idx_destroy(sql_idx * i);
+#define sql_base_loop(l, n) for (n=l->h; n; n=n->next)
 
 extern int base_key(sql_base *b);
 extern node *list_find_name(list *l, const char *name);
@@ -727,44 +752,32 @@ extern node *list_find_id(list *l, sqlid id);
 extern node *list_find_base_id(list *l, sqlid id);
 
 extern sql_key *find_sql_key(sql_table *t, const char *kname);
-extern node *find_sql_key_node(sql_schema *s, sqlid id);
 extern sql_key *sql_trans_find_key(sql_trans *tr, sqlid id);
 
 extern sql_idx *find_sql_idx(sql_table *t, const char *kname);
-extern node *find_sql_idx_node(sql_schema *s, sqlid id);
 extern sql_idx *sql_trans_find_idx(sql_trans *tr, sqlid id);
 
 extern sql_column *find_sql_column(sql_table *t, const char *cname);
 
-extern sql_part *find_sql_part_id(sql_table *t, sqlid id);
-
-extern sql_table *find_sql_table(sql_schema *s, const char *tname);
-extern sql_table *find_sql_table_id(sql_schema *s, sqlid id);
-extern node *find_sql_table_node(sql_schema *s, sqlid id);
+extern sql_table *find_sql_table(sql_trans *tr, sql_schema *s, const char *tname);
+extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
 
-extern sql_sequence *find_sql_sequence(sql_schema *s, const char *sname);
+extern sql_sequence *find_sql_sequence(sql_trans *tr, sql_schema *s, const char *sname);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);
-extern node *find_sql_schema_node(sql_trans *t, sqlid id);
 
-extern sql_type *find_sql_type(sql_schema * s, const char *tname);
+extern sql_type *find_sql_type(sql_trans *tr, sql_schema * s, const char *tname);
 extern sql_type *sql_trans_bind_type(sql_trans *tr, sql_schema *s, const char *name);
-extern node *find_sql_type_node(sql_schema *s, sqlid id);
-extern sql_type *sql_trans_find_type(sql_trans *tr, sqlid id);
-
-extern sql_func *find_sql_func(sql_schema * s, const char *tname);
-extern sql_func *sql_trans_bind_func(sql_trans *tr, const char *name);
+extern sql_type *sql_trans_find_type(sql_trans *tr, sql_schema *s /*optional */, sqlid id);
 extern sql_func *sql_trans_find_func(sql_trans *tr, sqlid id);
-extern node *find_sql_func_node(sql_schema *s, sqlid id);
-
-extern node *find_sql_trigger_node(sql_schema *s, sqlid id);
 extern sql_trigger *sql_trans_find_trigger(sql_trans *tr, sqlid id);
 
+extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 extern void *sql_values_list_element_validate_and_insert(void *v1, void *v2, void *tpe, int* res);
-extern void *sql_range_part_validate_and_insert(void *v1, void *v2);
-extern void *sql_values_part_validate_and_insert(void *v1, void *v2);
+extern void *sql_range_part_validate_and_insert(void *v1, void *v2, void *tpe);
+extern void *sql_values_part_validate_and_insert(void *v1, void *v2, void *tpe);
 
 typedef struct {
 	BAT *b;
@@ -774,6 +787,7 @@ typedef struct {
 
 extern int nested_mergetable(sql_trans *tr, sql_table *t, const char *sname, const char *tname);
 extern sql_part *partition_find_part(sql_trans *tr, sql_table *pt, sql_part *pp);
+extern node *members_find_child_id(list *l, sqlid id);
 
 #define outside_str 1
 #define inside_str 2
@@ -798,10 +812,10 @@ extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **
 			} else if (status == inside_str) {
 				next_identifier[bp++] = '\0';
 				if (identifier == extracting_schema) {
-					*schema = sa_strdup(sa, next_identifier);
+					*schema = SA_STRDUP(sa, next_identifier);
 					identifier = extracting_sequence;
 				} else if (identifier == extracting_sequence) {
-					*sequence = sa_strdup(sa, next_identifier);
+					*sequence = SA_STRDUP(sa, next_identifier);
 					break; /* done extracting */
 				}
 				bp = 0;
@@ -825,5 +839,9 @@ extract_schema_and_sequence_name(sql_allocator *sa, char *default_value, char **
 		}
 	}
 }
+
+extern void arg_destroy(sql_store store, sql_arg *a);
+extern void part_value_destroy(sql_store store, sql_part_value *pv);
+
 
 #endif /* SQL_CATALOG_H */

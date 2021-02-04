@@ -11,7 +11,7 @@ select schemas.name, tables.name, columns.name from
 			'objects', 'keys', 'modules', 'sequences')
  order by schemas.name, tables.name, columns.name
 ----
-195 values hashing to 06295bb9a859ce342f6a0324c4f53f3e
+201 values hashing to 31ee80043c90bf403f2837d80ebbda07
 
 query TTT rowsort
 select s.name, t.name, c.name from
@@ -26,5 +26,5 @@ select s.name, t.name, c.name from
 			'objects', 'keys', 'modules', 'sequences')
  order by s.name, t.name, c.name
 ----
-195 values hashing to 06295bb9a859ce342f6a0324c4f53f3e
+201 values hashing to 31ee80043c90bf403f2837d80ebbda07
 

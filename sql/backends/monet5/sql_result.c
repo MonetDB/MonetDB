@@ -716,7 +716,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (locked) {
 		/* flush old changes to disk */
 		sql_trans_end(m->session, 1);
-		store_apply_deltas(true);
+		store_apply_deltas(m->session->tr->store, true);
 		sql_trans_begin(m->session);
 	}
 
@@ -743,6 +743,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 
+		sqlstore *store = m->session->tr->store;
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
 
@@ -783,7 +784,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			fmt[i].size = ATOMsize(fmt[i].adt);
 
 			if (locked) {
-				BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+				BAT *b = store->storage_api.bind_col(m->session->tr, col, RDONLY);
 				if (b == NULL) {
 					for (j = 0; j < i; j++) {
 						GDKfree(fmt[j].data);
@@ -828,7 +829,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			} else if (locked) {	/* restore old counts */
 				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 					sql_column *col = n->data;
-					BAT *b = store_funcs.bind_col(m->session->tr, col, RDONLY);
+					BAT *b = store->storage_api.bind_col(m->session->tr, col, RDONLY);
 					if (b == NULL)
 						sql_error(m, 500, "failed to bind to temporary column");
 					else {
@@ -841,10 +842,9 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		if (locked) {	/* fix delta structures and transaction */
 			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 				sql_column *c = n->data;
-				BAT *b = store_funcs.bind_col(m->session->tr, c, RDONLY);
+				BAT *b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
 				sql_delta *d = c->data;
 
-				c->base.wtime = t->base.wtime = t->s->base.wtime = m->session->tr->wtime = m->session->tr->wstime;
 				if ( b == NULL)
 					sql_error(m, 500, "failed to bind to delta column");
 				else {

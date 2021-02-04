@@ -1,0 +1,11 @@
+# when running testing with sanatizer use
+# export ASAN_OPTIONS=print_suppressions=0
+# export LSAN_OPTIONS=suppressions=$src/testing/suppres.txt 
+# This is a known leak.
+leak:PyObject_Malloc
+leak:PyMem_Malloc
+leak:_PyObject_GC_Resize
+leak:PyThread_allocate_lock
+leak:*libpython*.so*
+leak:*cpython*.so*
+leak:*libgomp.so*

@@ -127,12 +127,11 @@ bool is_commutative(const char *fnm)
 void
 base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name)
 {
-	assert(sa);
 	*b = (sql_base) {
 		.id = id,
 		.flags = flags,
 		.refcnt = 1,
-		.name = (name) ? sa_strdup(sa, name) : NULL,
+		.name = (name) ? SA_STRDUP(sa, name) : NULL,
 	};
 }
 
@@ -566,12 +565,14 @@ sql_bind_alias(const char *alias)
 	return NULL;
 }
 
+static sqlid local_id = 1;
+
 static sql_type *
 sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *name)
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
-	base_init(sa, &t->base, store_next_oid(), 0, name);
+	base_init(sa, &t->base, local_id++, 0, name);
 	t->sqlname = sa_strdup(sa, sqlname);
 	t->digits = digits;
 	t->scale = scale;
@@ -611,7 +612,7 @@ static sql_func *
 sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_ftype type, bit semantics, bit side_effect,
 				 int fix_scale, unsigned int res_scale, sql_type *res, int nargs, va_list valist)
 {
-	list *ops = sa_list(sa);
+	list *ops = SA_LIST(sa, (fdestroy) &arg_destroy);
 	sql_arg *fres = NULL;
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -621,7 +622,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	}
 	if (res)
 		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	base_init(sa, &t->base, store_next_oid(), 0, name);
+	base_init(sa, &t->base, local_id++, 0, name);
 
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
@@ -630,7 +631,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	if (fres) {
 		if (res_scale)
 			fres->type.scale = res_scale;
-		t->res = list_append(sa_list(sa), fres);
+		t->res = list_append(SA_LIST(sa, (fdestroy) &arg_destroy), fres);
 	} else
 		t->res = NULL;
 	t->nr = list_length(funcs);
@@ -1503,6 +1504,7 @@ sqltypeinit( sql_allocator *sa)
 void
 types_init(sql_allocator *sa)
 {
+	local_id = 1;
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);

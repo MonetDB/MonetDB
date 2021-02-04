@@ -28,3 +28,4 @@ sqlsmith-exists
 sqlsmith-exists2
 
 mergetable_rel_push_aggr_down
+multiple-merge-tables
