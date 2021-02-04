@@ -7,7 +7,7 @@ bat.append(b,"Hello")
 statement ok
 bat.append(b,"world")
 
-query TT rowsort
+query IT rowsort
 io.print(b)
 ----
 0
@@ -38,5 +38,4 @@ query T rowsort
 io.print(x)
 ----
 NULL
-
 

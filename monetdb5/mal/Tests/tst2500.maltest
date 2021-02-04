@@ -47,4 +47,3 @@ io.print(r2)
 statement ok
 factories.shutdown("user","random")
 
-

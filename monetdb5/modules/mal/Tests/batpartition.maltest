@@ -34,23 +34,41 @@ bat.append(b,9:lng)
 statement ok
 b1 := bat.partition(b,2,0)
 
-query TT rowsort
+query II rowsort
 io.print(b1)
 ----
-10 values hashing to 10783e4baac3230097302eb075e66765
+0
+0
+1
+1
+2
+2
+3
+3
+4
+4
 
 statement ok
 b2 := bat.partition(b,2,1)
 
-query TT rowsort
+query II rowsort
 io.print(b2)
 ----
-10 values hashing to 6726eb7c5ee043c8ba6246100e714735
+5
+5
+6
+6
+7
+7
+8
+8
+9
+9
 
 statement ok
 c1 := bat.partition(b1,2,0)
 
-query TT rowsort
+query II rowsort
 io.print(c1)
 ----
 0
@@ -61,7 +79,7 @@ io.print(c1)
 statement ok
 c2 := bat.partition(b1,2,1)
 
-query TT rowsort
+query II rowsort
 io.print(c2)
 ----
 2
@@ -74,7 +92,7 @@ io.print(c2)
 statement ok
 d1 := bat.partition(b2,2,0)
 
-query TT rowsort
+query II rowsort
 io.print(d1)
 ----
 5
@@ -85,7 +103,7 @@ io.print(d1)
 statement ok
 d2 := bat.partition(b2,2,1)
 
-query TT rowsort
+query II rowsort
 io.print(d2)
 ----
 7
@@ -94,5 +112,4 @@ io.print(d2)
 8
 9
 9
-
 

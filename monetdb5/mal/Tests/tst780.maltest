@@ -27,4 +27,3 @@ z:=dummy.doit(1,"help");
 statement ok
 optimizer.macro("dummy","hello");
 
-

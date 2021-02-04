@@ -10,10 +10,9 @@ bat.setName(b,"mybat")
 statement ok
 c:bat[:int]:= bbp.bind("mybat")
 
-query TI rowsort
+query II rowsort
 io.print(c)
 ----
 0
 2
-
 

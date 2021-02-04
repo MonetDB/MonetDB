@@ -28,7 +28,7 @@ refcount =1[1]
 statement ok
 	bat.append(b,"bat B")
 
-query TT rowsort
+query IT rowsort
 	io.print(b)
 ----
 0
@@ -92,7 +92,7 @@ statement ok
 statement ok
 	b5:=algebra.projection(b4,b)
 
-query TT rowsort
+query IT rowsort
 	io.print(b5)
 ----
 
@@ -150,5 +150,4 @@ query T rowsort
 	io.printf("return from function refcount =%d[2]\n",i)
 ----
 return from function refcount =3[2]
-
 

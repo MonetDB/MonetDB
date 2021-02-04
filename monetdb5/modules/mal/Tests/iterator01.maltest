@@ -48,10 +48,23 @@ query T rowsort
 ----
 "build a table finished"
 
-query TT rowsort
+query IT rowsort
 	io.print(t)
 ----
-14 values hashing to ecaee0a9c2bf7041f5dd31a7826a383f
+0
+http://www.cwi.nl
+1
+http://www.cwi.nl/~monet
+2
+http://www.cwi.nl/~mk/Acoi/doc/features.html
+3
+http://www.educ.uva.nl/schoolweb/rocloka.htm
+4
+http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium
+5
+http://www.edgeonline.com/
+6
+http://robotics.stanford.edu/icons/ 
 
 query T rowsort
 	io.print("start loop")
@@ -77,5 +90,4 @@ exit h
 "http://www.edgeonline.com/"
 "http://www.educ.uva.nl/schoolweb/rocloka.htm"
 "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"
-
 

@@ -59,4 +59,3 @@ user.foo();
 ----
 5: InvalidCredentialsException:checkCredentials:invalid credentials for user 'x'
 
-

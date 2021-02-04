@@ -10,13 +10,13 @@ statement ok
 statement ok
 	x:= bat.append(x,nil:bit)
 
-query TT rowsort
+query II rowsort
 	io.print(x)
 ----
 0
-True
 1
-False
+1
+0
 2
 NULL
 
@@ -68,7 +68,7 @@ statement ok
 statement ok
 	bat.append(Asr,"WORLD")
 
-query TI rowsort
+query II rowsort
 	io.print(Ai)
 ----
 0
@@ -78,7 +78,7 @@ query TI rowsort
 2
 3
 
-query TI rowsort
+query II rowsort
 	io.print(Air)
 ----
 0
@@ -88,7 +88,7 @@ query TI rowsort
 2
 -3
 
-query TT rowsort
+query IT rowsort
 	io.print(As)
 ----
 0
@@ -98,7 +98,7 @@ new
 2
 world
 
-query TT rowsort
+query IT rowsort
 	io.print(Asr)
 ----
 0
@@ -116,14 +116,14 @@ io.print("ifthen group")
 statement ok
 	xif2:= batcalc.ifthenelse(x,Ai,Air)
 
-query TTI rowsort
+query III rowsort
 io.print(x,xif2)
 ----
 0
-True
 1
 1
-False
+1
+0
 -2
 2
 NULL
@@ -132,14 +132,14 @@ NULL
 statement ok
 	xif2:= batcalc.ifthenelse(x,Ai,-999)
 
-query TTI rowsort
+query III rowsort
 io.print(x,xif2)
 ----
 0
-True
 1
 1
-False
+1
+0
 -999
 2
 NULL
@@ -148,14 +148,14 @@ NULL
 statement ok
 	xif2:= batcalc.ifthenelse(x,999,Air)
 
-query TTI rowsort
+query III rowsort
 io.print(x,xif2)
 ----
 0
-True
+1
 999
 1
-False
+0
 -2
 2
 NULL
@@ -164,14 +164,14 @@ NULL
 statement ok
 	sif2:= batcalc.ifthenelse(x,As,Asr)
 
-query TTT rowsort
+query IIT rowsort
 io.print(x,sif2)
 ----
 0
-True
+1
 hello
 1
-False
+0
 NEW
 2
 NULL
@@ -180,14 +180,14 @@ WORLD
 statement ok
 	sif2:= batcalc.ifthenelse(x,As,"unknown")
 
-query TTT rowsort
+query IIT rowsort
 io.print(x,sif2)
 ----
 0
-True
+1
 hello
 1
-False
+0
 unknown
 2
 NULL
@@ -196,14 +196,14 @@ unknown
 statement ok
 	sif2:= batcalc.ifthenelse(x,"unknown",Asr)
 
-query TTT rowsort
+query IIT rowsort
 io.print(x,sif2)
 ----
 0
-True
+1
 unknown
 1
-False
+0
 NEW
 2
 NULL
@@ -215,25 +215,35 @@ io.print(x,xif1)
 statement ok
 	xif3:= batcalc.ifthenelse(x,x,true)
 
-query TTTT rowsort
+query IIII rowsort
 io.print(x,x,xif3)
 ----
-12 values hashing to 44139d0f680ba5aa679e1078f410bd07
+0
+1
+1
+1
+1
+0
+0
+1
+2
+NULL
+NULL
+1
 
 statement ok
 	xif4:= batcalc.ifthenelse(x,1,2)
 
-query TTI rowsort
+query III rowsort
 io.print(x,xif4)
 ----
 0
-True
 1
 1
-False
+1
+0
 2
 2
 NULL
 2
-
 

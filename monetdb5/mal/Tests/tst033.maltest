@@ -19,7 +19,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,true,true,false)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -35,7 +35,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,true,false,false)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -49,7 +49,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,false,true,false)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -63,7 +63,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,false,false,false)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -75,7 +75,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,true,true,true)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -87,7 +87,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,true,false,true)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -101,7 +101,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,false,true,true)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -115,7 +115,7 @@ s := algebra.select(b,nil:bat[:oid],0,2,false,false,true)
 statement ok
 z := algebra.projection(s,b)
 
-query TI rowsort
+query II rowsort
 io.print(z)
 ----
 0
@@ -124,5 +124,4 @@ io.print(z)
 2
 2
 3
-
 

@@ -5,5 +5,3 @@ function welcome(lim:int):void;
     return w;
 end welcome
 
-
-

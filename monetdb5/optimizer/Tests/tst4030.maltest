@@ -24,16 +24,3 @@ optimizer.aliases("user","foo")
 statement ok
 optimizer.garbageCollector("user","foo")
 
-#mdb.list("user","foo")
-
-query TI nosort
-user.foo()
-----
-@
-1
-@
-2
-@
-3
-
-

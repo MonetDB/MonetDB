@@ -30,6 +30,3 @@ io.printf("#result of inline\n")
 ----
 #result of inline
 
-#mdb.list("user","tst")
-
-
