@@ -76,7 +76,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 									int2 = fval_min && fval_max && atom_cmp(fval_max, lval_min) >= 0 && atom_cmp(fval_min, lval_max) <= 0,
 									symmetric = comp->flag & CMP_SYMMETRIC;
 
-								if (comp->anti || (!symmetric && atom_cmp(fval_min, rval_max) < 0)) /* for asymmetric case the re range must be after the fe range */
+								if (comp->anti || (!symmetric && fval_min && rval_max && atom_cmp(fval_min, rval_max) < 0)) /* for asymmetric case the re range must be after the fe range */
 									continue;
 								if (lne && int1 && int2) {
 									if (symmetric) {
@@ -242,6 +242,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 	atom *lval_min = find_prop_and_get(le->p, PROP_MIN), *lval_max = find_prop_and_get(le->p, PROP_MAX),
 		 *rval_min = find_prop_and_get(re->p, PROP_MIN), *rval_max = find_prop_and_get(re->p, PROP_MAX);
 
+	/* for the intersection, if both expresssions don't overlap, it can be pruned */
 	if (is_inter(rel->op) && exp_is_not_null(le) && exp_is_not_null(re) &&
 		lval_min && rval_min && lval_max && rval_max && !lval_min->isnull && !rval_min->isnull && !lval_max->isnull && !rval_max->isnull &&
 		(atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0))
@@ -287,7 +288,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void) depth;
 	switch(e->type) {
 	case e_column: {
-		switch (rel->op) {
+		switch (rel->op) { /* set relations don't call rel_propagate_statistics */
 		case op_join:
 		case op_left:
 		case op_right:
@@ -300,9 +301,11 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		} break;
 		case op_select:
 		case op_project:
-		case op_groupby:
-			(void) rel_propagate_column_ref_statistics(sql, rel->l, e);
-			break;
+		case op_groupby: {
+			sql_exp *found = rel_propagate_column_ref_statistics(sql, rel->l, e); /* labels may be found on the same projection, ugh */
+			if (!found && is_simple_project(rel->op))
+				(void) rel_propagate_column_ref_statistics(sql, rel, e);
+		} break;
 		case op_insert:
 		case op_update:
 		case op_delete:
