@@ -4096,7 +4096,6 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *i
 				if (updates[c->c->colnr]) {
 					upd = updates[c->c->colnr];
 				} else {
-					//upd = stmt_project(be, u_tids, stmt_col(be, c->c, dels, dels->partition));
 					upd = stmt_col(be, c->c, u_tids, u_tids->partition);
 				}
 				list_append(lje, stmt_col(be, c->c, nu_tids, nu_tids->partition));
