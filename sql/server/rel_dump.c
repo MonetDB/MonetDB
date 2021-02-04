@@ -731,7 +731,7 @@ convertIdent(char *r)
 			r[j++] = r[i++];
 		}
 	}
-	r[i] = '\0';
+	r[j] = '\0';
 }
 
 static void

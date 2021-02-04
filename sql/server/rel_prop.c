@@ -121,14 +121,19 @@ propvalue2string(sql_allocator *sa, prop *p)
 		case PROP_MIN:
 		case PROP_MAX: {
 			atom *a = p->value;
-			char *s = atom2string(sa, a), *res = NULL;
+			char *res;
 
-			assert(s);
-			if (*s == '"') {
-				res = sa_strdup(sa, s);
+			if (a->isnull) {
+				res = sa_strdup(sa, "\"NULL\"");
 			} else {
-				res = sa_alloc(sa, strlen(s) + 3);
-				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
+				char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
+				if (s && *s == '"') {
+					res = sa_strdup(sa, s);
+				} else if (s) {
+					res = sa_alloc(sa, strlen(s) + 3);
+					stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
+				}
+				GDKfree(s);
 			}
 			return res;
 		}
