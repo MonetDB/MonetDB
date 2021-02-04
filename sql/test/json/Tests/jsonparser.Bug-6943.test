@@ -1,10 +1,10 @@
-query T rowsort
+query I rowsort
 SELECT json.isValid('"abc":"abc"')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('{"abc":"abc":"abc"}')
 ----
-False
+0
 

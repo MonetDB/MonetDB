@@ -89,4 +89,3 @@ drop table test4
 statement ok
 drop table test5
 
-

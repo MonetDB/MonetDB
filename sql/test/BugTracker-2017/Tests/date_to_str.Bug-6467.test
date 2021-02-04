@@ -5,4 +5,3 @@ SELECT date '2017-11-14', EXTRACT(year from date '2017-11-14'), date_to_str(date
 2017
 2017 11 14 -A:Tuesday -G:2017 V:46 w:2 W:46
 
-

@@ -16,16 +16,16 @@ CREATE TABLE integers(i INTEGER)
 statement ok
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query T rowsort
+query I rowsort
 SELECT
     NOT MAX(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID))
 FROM another_T t1
 GROUP BY t1.col6, t1.col7
 ----
-False
-False
-False
-True
+0
+0
+0
+1
 
 query IRI rowsort
 SELECT
@@ -35,7 +35,18 @@ SELECT
 FROM another_T
 GROUP BY col1, col2, col5, col8
 ----
-12 values hashing to 8224cdc2246f6953ca344aee09a98975
+2226
+9874568.000
+11443
+226
+98568.000
+1143
+26
+968.000
+113
+6
+8.000
+10
 
 query II rowsort
 SELECT
@@ -53,7 +64,7 @@ GROUP BY col1, col2, col5
 1
 0
 
-query TTTTTT rowsort
+query IIIIII rowsort
 SELECT
 	EXISTS (SELECT col1 WHERE TRUE),
 	EXISTS (SELECT col1 WHERE FALSE),
@@ -63,9 +74,32 @@ SELECT
 	NOT EXISTS (SELECT col1 WHERE NULL)
 FROM another_T t1
 ----
-24 values hashing to c3c60a30607f6c2a8ad35d4a8e18f28d
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
+1
+0
+0
+0
+1
+1
 
-query TTTTTT rowsort
+query IIIIII rowsort
 SELECT
 	EXISTS (SELECT AVG(col1) WHERE TRUE),
 	EXISTS (SELECT AVG(col1) WHERE FALSE),
@@ -75,19 +109,19 @@ SELECT
 	NOT EXISTS (SELECT AVG(col1) WHERE NULL)
 FROM another_T t1
 ----
-True
-False
-False
-False
-True
-True
+1
+0
+0
+0
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT
 	EXISTS (SELECT RANK() OVER (PARTITION BY SUM(DISTINCT col5)))
 FROM another_T t1
 ----
-True
+1
 
 statement error
 SELECT
@@ -197,28 +231,28 @@ GROUP BY col1
 2468
 2468
 
-query T rowsort
+query I rowsort
 SELECT
     NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a1
 FROM another_T
 GROUP BY col1, col2, col5
 ORDER BY a1 NULLS FIRST
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT
     NOT SUM(t1.col2) * MIN(t1.col6 + t1.col6 - t1.col6 * t1.col6) NOT IN (SELECT MAX(t2.col6) FROM another_T t2 GROUP BY t1.col6 HAVING t1.col7 + MIN(t2.col8) < MAX(t2.col7 - t1.col6))
 FROM another_T t1
 GROUP BY t1.col7, t1.col6
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query II rowsort
 SELECT
@@ -236,16 +270,16 @@ GROUP BY t1.col1, t1.col2
 2
 2
 
-query T rowsort
+query I rowsort
 SELECT
     SUM(t1.col6) <> ANY (SELECT t1.col7 INTERSECT SELECT t1.col6)
 FROM another_T t1
 GROUP BY t1.col7, t1.col6
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query I rowsort
 SELECT
@@ -284,7 +318,7 @@ HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) <
 1
 1
 
-query IIT rowsort
+query III rowsort
 SELECT
     col6,
     col7,
@@ -292,9 +326,20 @@ SELECT
 FROM another_T t1
 GROUP BY t1.col7, t1.col6
 ----
-12 values hashing to 9a9a53d1bf3d8a46b34011ce5b5c4cc5
+6
+7
+0
+66
+77
+0
+666
+777
+0
+6666
+7777
+0
 
-query IIT rowsort
+query III rowsort
 SELECT
     col6,
     col7,
@@ -302,7 +347,18 @@ SELECT
 FROM another_T t1
 GROUP BY t1.col7, t1.col6
 ----
-12 values hashing to 9a9a53d1bf3d8a46b34011ce5b5c4cc5
+6
+7
+0
+66
+77
+0
+666
+777
+0
+6666
+7777
+0
 
 query I rowsort
 SELECT
@@ -464,15 +520,15 @@ SELECT
     (SELECT SUM(SUM(i2.i)) FROM integers i2 GROUP BY i2.i)
 FROM integers i1
 
-query T rowsort
+query I rowsort
 SELECT (1) IN (1)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (1) IN (SELECT 1)
 ----
-True
+1
 
 query I rowsort
 SELECT col1 FROM another_T WHERE 1 IN (SELECT 1)
@@ -733,5 +789,4 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
-
 

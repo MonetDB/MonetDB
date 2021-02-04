@@ -118,4 +118,3 @@ DROP TABLE times
 statement ok
 ROLLBACK
 
-

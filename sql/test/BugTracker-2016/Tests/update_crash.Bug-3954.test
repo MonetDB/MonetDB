@@ -34,4 +34,3 @@ drop table temp
 statement ok
 drop table temp_aggregate
 
-

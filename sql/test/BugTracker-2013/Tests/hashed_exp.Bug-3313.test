@@ -324,3 +324,4 @@ SELECT d.id as id, d.idstr as pid, d.type as class, '<attributes/>' as xml, '{ "
 
 statement ok
 rollback
+

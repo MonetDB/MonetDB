@@ -77,4 +77,3 @@ SELECT COUNT(*) from value_partitions
 ----
 0
 
-

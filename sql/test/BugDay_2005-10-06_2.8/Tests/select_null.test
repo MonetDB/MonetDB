@@ -24,3 +24,4 @@ NULL
 
 statement ok
 rollback
+

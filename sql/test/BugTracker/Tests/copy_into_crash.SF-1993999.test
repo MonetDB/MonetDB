@@ -91,4 +91,3 @@ COPY 1 RECORDS INTO PlateX from STDIN USING DELIMITERS E'\t', E'\n'
 statement ok
 drop table PlateX
 
-

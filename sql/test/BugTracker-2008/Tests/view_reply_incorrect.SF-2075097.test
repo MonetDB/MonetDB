@@ -55,4 +55,3 @@ drop table NAMES1
 statement ok
 drop table GROUPS1
 
-

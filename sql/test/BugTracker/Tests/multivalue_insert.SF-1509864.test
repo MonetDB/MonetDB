@@ -30,4 +30,3 @@ select * from test2
 statement ok
 drop table test2
 
-

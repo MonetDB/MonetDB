@@ -4,7 +4,7 @@ CREATE TABLE testnullsa (a boolean, b text, c tinyint, d smallint, e int, f bigi
 statement ok
 INSERT INTO testnullsa VALUES (NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL)
 
-query TTIIIIRRT rowsort
+query ITIIIITRT rowsort
 SELECT a, b, c, d, e, f, g, h, i FROM testnullsa
 ----
 NULL
@@ -40,5 +40,4 @@ NULL
 
 statement ok
 DROP TABLE testnullsb
-
 

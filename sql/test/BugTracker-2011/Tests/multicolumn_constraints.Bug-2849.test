@@ -31,9 +31,32 @@ INSERT INTO "portmapping" VALUES (7,8,2,'z2','test')
 query IIITT rowsort
 SELECT * FROM "portmapping"
 ----
-25 values hashing to dffda3b8debbd01dad405d1cc68aa498
+2
+1
+1
+name
+test
+3
+1
+2
+name
+test
+4
+5
+1
+x
+test
+6
+7
+1
+z1
+test
+7
+8
+2
+z2
+test
 
 statement ok
 DROP TABLE "portmapping"
-
 

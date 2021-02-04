@@ -9,4 +9,3 @@ SELECT B.prop, B.obj, count(*)
 	HAVING count(*) > 1
 ----
 
-

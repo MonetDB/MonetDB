@@ -32,4 +32,3 @@ statement ok
 ALTER TABLE "ggle_url_data" ADD FOREIGN KEY("urls_id")
 	REFERENCES "ggle_urls"("id")
 
-

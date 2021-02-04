@@ -10,7 +10,16 @@ insert into tab (id, nm, dt, qnt, descr) values (2, 'B', '2015-01-29', 3.1415629
 query ITTRT rowsort
 select * from tab
 ----
-10 values hashing to e1ea07f5a43e5cd1884efbb4f32340fb
+1
+A
+NULL
+NULL
+NULL
+2
+B
+2015-01-29
+3.142
+iasdfhiasdhagdsnfgankkkjfgjklfgjklsklsklsdfg
 
 statement ok
 insert into tab (id, nm, dt, qnt, descr) select id, nm, dt, qnt, descr from tab
@@ -18,19 +27,48 @@ insert into tab (id, nm, dt, qnt, descr) select id, nm, dt, qnt, descr from tab
 query ITTRT rowsort
 select * from tab
 ----
-20 values hashing to 9e35969015c4754c9b25a8bae4193e2f
+1
+A
+NULL
+NULL
+NULL
+1
+A
+NULL
+NULL
+NULL
+2
+B
+2015-01-29
+3.142
+iasdfhiasdhagdsnfgankkkjfgjklfgjklsklsklsdfg
+2
+B
+2015-01-29
+3.142
+iasdfhiasdhagdsnfgankkkjfgjklfgjklsklsklsdfg
 
 query IITTRT rowsort
 select count(*) as count_dupl_rows, id, nm, dt, qnt, descr from tab
 group by id, nm, dt, qnt, descr having count(*) > 1
 order by id, nm, dt, qnt, descr
 ----
-12 values hashing to 17c52db2501c9eddd93532fe581ef201
+2
+1
+A
+NULL
+NULL
+NULL
+2
+2
+B
+2015-01-29
+3.142
+iasdfhiasdhagdsnfgankkkjfgjklfgjklsklsklsdfg
 
 statement error
 alter table tab add constraint tab_uc6 unique (id, nm, dt, qnt, descr)
 
 statement ok
 drop table tab
-
 

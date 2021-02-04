@@ -27,4 +27,3 @@ drop table example
 statement ok
 drop function test_timestamp_with_nulls(timestamp)
 
-

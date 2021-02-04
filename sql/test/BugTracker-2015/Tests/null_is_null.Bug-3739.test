@@ -10,4 +10,3 @@ SELECT CASE WHEN L2 IN ( 2 , NULL ) THEN 'yes' ELSE 'no' END FROM ( VALUES ( 1 ,
 no
 yes
 
-

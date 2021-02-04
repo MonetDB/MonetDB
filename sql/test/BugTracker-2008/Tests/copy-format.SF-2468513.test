@@ -44,4 +44,3 @@ select * from my_copytest
 statement ok
 drop table my_copytest
 
-

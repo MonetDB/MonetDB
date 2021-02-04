@@ -8,11 +8,9 @@ create table click_(
 		primary key (cl_time)
 		)
 
-
 statement ok
 INSERT INTO click_
 values ('00:02:54.458',1)
-
 
 statement ok
 create table statistics_(
@@ -20,7 +18,6 @@ create table statistics_(
 		hour1 integer,
 		primary key (url_id)
 		)
-
 
 statement ok
 INSERT INTO statistics_ values (1,0)
@@ -31,12 +28,10 @@ CREATE TABLE temp_table_(
 		counter1 integer
 		)
 
-
 statement ok
 INSERT INTO temp_table_
 SELECT DISTINCT url_id,0
 FROM click_
-
 
 statement ok
 UPDATE temp_table_
@@ -49,7 +44,6 @@ SET counter1 = (SELECT count(*)
 WHERE url_id IN (SELECT url_id FROM click_
 		WHERE extract(hour from cl_time)=0
 		)
-
 
 query II rowsort
 select * from statistics_
@@ -68,7 +62,6 @@ WHERE url_id IN (SELECT url_id FROM click_
 			cl_time)=0
 		)
 
-
 query II rowsort
 select * from statistics_
 ----
@@ -86,5 +79,4 @@ drop table temp_table_
 
 statement ok
 rollback
-
 

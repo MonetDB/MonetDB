@@ -483,4 +483,3 @@ drop table "Match"
 statement ok
 drop table PhotoObjAll
 
-

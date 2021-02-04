@@ -16,4 +16,3 @@ schemas
 statement ok
 DROP FUNCTION CHECK_VIDEO()
 
-

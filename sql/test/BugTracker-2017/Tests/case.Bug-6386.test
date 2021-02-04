@@ -1,6 +1,37 @@
 query R rowsort
 select cast(case privilege_code_name when 'SELECT' then 1 when 'UPDATE' then 60.3281 when 'INSERT' then 0.8415381117315 else 0 end as decimal(18,13)) as t1 from privilege_codes order by privilege_code_id
 ----
-33 values hashing to 68758b38fa934afa88ba8220b2a93cca
-
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.842
+1.000
+60.328
 

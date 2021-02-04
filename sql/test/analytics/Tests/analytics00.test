@@ -10,292 +10,814 @@ insert into analytics values (15, 3, 15), (3, 1, 3), (2, 1, 2), (5, 3, 5), (NULL
 query I rowsort
 select min(aa) over (partition by bb) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(aa) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(aa) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(aa) over (order by bb desc) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select max(aa) over (partition by bb) from analytics
 ----
-10 values hashing to a799d3a13af3a512e4d0ad901620451d
+15
+15
+15
+4
+4
+4
+8
+8
+8
+NULL
 
 query I rowsort
 select max(aa) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to a799d3a13af3a512e4d0ad901620451d
+15
+15
+15
+4
+4
+4
+8
+8
+8
+NULL
 
 query I rowsort
 select max(aa) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to a799d3a13af3a512e4d0ad901620451d
+15
+15
+15
+4
+4
+4
+8
+8
+8
+NULL
 
 query I rowsort
 select max(aa) over (order by bb desc) from analytics
 ----
-10 values hashing to 936f1ae22cc48a9ed0dba93843838b91
+15
+15
+15
+15
+15
+15
+15
+15
+15
+NULL
 
 query I rowsort
 select cast(sum(aa) over (partition by bb) as bigint) from analytics
 ----
-10 values hashing to 64767ba5dbf00e099a825829b6c5d86f
+11
+11
+11
+26
+26
+26
+9
+9
+9
+NULL
 
 query I rowsort
 select cast(sum(aa) over (partition by bb order by bb asc) as bigint) from analytics
 ----
-10 values hashing to 64767ba5dbf00e099a825829b6c5d86f
+11
+11
+11
+26
+26
+26
+9
+9
+9
+NULL
 
 query I rowsort
 select cast(sum(aa) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-10 values hashing to 64767ba5dbf00e099a825829b6c5d86f
+11
+11
+11
+26
+26
+26
+9
+9
+9
+NULL
 
 query I rowsort
 select cast(sum(aa) over (order by bb desc) as bigint) from analytics
 ----
-10 values hashing to 0ada4d880b830ff973d17052d0cb5d67
+26
+26
+26
+37
+37
+37
+46
+46
+46
+NULL
 
 query I rowsort
 select cast(prod(aa) over (partition by bb) as bigint) from analytics
 ----
-10 values hashing to f30d3a0955d8d39f6808830c8d46e80f
+24
+24
+24
+24
+24
+24
+450
+450
+450
+NULL
 
 query I rowsort
 select cast(prod(aa) over (partition by bb order by bb asc) as bigint) from analytics
 ----
-10 values hashing to f30d3a0955d8d39f6808830c8d46e80f
+24
+24
+24
+24
+24
+24
+450
+450
+450
+NULL
 
 query I rowsort
 select cast(prod(aa) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-10 values hashing to f30d3a0955d8d39f6808830c8d46e80f
+24
+24
+24
+24
+24
+24
+450
+450
+450
+NULL
 
 query I rowsort
 select cast(prod(aa) over (order by bb desc) as bigint) from analytics
 ----
-10 values hashing to f8eedeb2f2ca4a1d0a70214433d14229
+10800
+10800
+10800
+259200
+259200
+259200
+450
+450
+450
+NULL
 
 query R rowsort
 select avg(aa) over (partition by bb) from analytics
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(aa) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(aa) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(aa) over (order by bb desc) from analytics
 ----
-10 values hashing to 4c0676f0caaa788f681180642a8078d6
+5.750
+5.750
+5.750
+7.400
+7.400
+7.400
+8.667
+8.667
+8.667
+NULL
 
 query I rowsort
 select count(aa) over (partition by bb) from analytics
 ----
-10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+0
+2
+2
+2
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(aa) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+0
+2
+2
+2
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(aa) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+0
+2
+2
+2
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(aa) over (order by bb desc) from analytics
 ----
-10 values hashing to 7a8982eb1aa394f423ba3a0c40107bcd
+0
+3
+3
+3
+5
+5
+5
+8
+8
+8
 
 query I rowsort
 select min(cc) over (partition by bb) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(cc) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(cc) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select min(cc) over (order by bb desc) from analytics
 ----
-10 values hashing to 2a0e4bf6281334dfaf0849814d794c10
+2
+2
+2
+3
+3
+3
+5
+5
+5
+NULL
 
 query I rowsort
 select max(cc) over (partition by bb) from analytics
 ----
-10 values hashing to a799d3a13af3a512e4d0ad901620451d
+15
+15
+15
+4
+4
+4
+8
+8
+8
+NULL
 
 query I rowsort
 select max(cc) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to a799d3a13af3a512e4d0ad901620451d
+15
+15
+15
+4
+4
+4
+8
+8
+8
+NULL
 
 query I rowsort
 select max(cc) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to a799d3a13af3a512e4d0ad901620451d
+15
+15
+15
+4
+4
+4
+8
+8
+8
+NULL
 
 query I rowsort
 select max(cc) over (order by bb desc) from analytics
 ----
-10 values hashing to 936f1ae22cc48a9ed0dba93843838b91
+15
+15
+15
+15
+15
+15
+15
+15
+15
+NULL
 
 query I rowsort
 select cast(sum(cc) over (partition by bb) as bigint) from analytics
 ----
-10 values hashing to 64767ba5dbf00e099a825829b6c5d86f
+11
+11
+11
+26
+26
+26
+9
+9
+9
+NULL
 
 query I rowsort
 select cast(sum(cc) over (partition by bb order by bb asc) as bigint) from analytics
 ----
-10 values hashing to 64767ba5dbf00e099a825829b6c5d86f
+11
+11
+11
+26
+26
+26
+9
+9
+9
+NULL
 
 query I rowsort
 select cast(sum(cc) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-10 values hashing to 64767ba5dbf00e099a825829b6c5d86f
+11
+11
+11
+26
+26
+26
+9
+9
+9
+NULL
 
 query I rowsort
 select cast(sum(cc) over (order by bb desc) as bigint) from analytics
 ----
-10 values hashing to 0ada4d880b830ff973d17052d0cb5d67
+26
+26
+26
+37
+37
+37
+46
+46
+46
+NULL
 
 query I rowsort
 select cast(prod(cc) over (partition by bb) as bigint) from analytics
 ----
-10 values hashing to f30d3a0955d8d39f6808830c8d46e80f
+24
+24
+24
+24
+24
+24
+450
+450
+450
+NULL
 
 query I rowsort
 select cast(prod(cc) over (partition by bb order by bb asc) as bigint) from analytics
 ----
-10 values hashing to f30d3a0955d8d39f6808830c8d46e80f
+24
+24
+24
+24
+24
+24
+450
+450
+450
+NULL
 
 query I rowsort
 select cast(prod(cc) over (partition by bb order by bb desc) as bigint) from analytics
 ----
-10 values hashing to f30d3a0955d8d39f6808830c8d46e80f
+24
+24
+24
+24
+24
+24
+450
+450
+450
+NULL
 
 query R rowsort
 select avg(cc) over (partition by bb) from analytics
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(cc) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(cc) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(cc) over (order by bb desc) from analytics
 ----
-10 values hashing to 4c0676f0caaa788f681180642a8078d6
+5.750
+5.750
+5.750
+7.400
+7.400
+7.400
+8.667
+8.667
+8.667
+NULL
 
 query I rowsort
 select count(cc) over (partition by bb) from analytics
 ----
-10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+0
+2
+2
+2
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(cc) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+0
+2
+2
+2
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(cc) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 2db9953d16529e093a8e6acc49ccb40d
+0
+2
+2
+2
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(cc) over (order by bb desc) from analytics
 ----
-10 values hashing to 7a8982eb1aa394f423ba3a0c40107bcd
+0
+3
+3
+3
+5
+5
+5
+8
+8
+8
 
 query I rowsort
 select count(*) over (partition by bb) from analytics
 ----
-10 values hashing to ceb4d49eae17ad9b1862f33ad9f28eb5
+1
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(*) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to ceb4d49eae17ad9b1862f33ad9f28eb5
+1
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(*) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to ceb4d49eae17ad9b1862f33ad9f28eb5
+1
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select count(*) over (order by bb desc) from analytics
 ----
-10 values hashing to 8801e9ee670ddb66ee22aa10caa179a5
+1
+10
+10
+10
+4
+4
+4
+7
+7
+7
 
 query I rowsort
 select min(aa) over () from analytics
 ----
-10 values hashing to 1e31a732ed677625a0ac3b96deb7b077
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
 
 query I rowsort
 select max(aa) over () from analytics
 ----
-10 values hashing to f16f7876558d4bacfdad4993a413a74c
+15
+15
+15
+15
+15
+15
+15
+15
+15
+15
 
 query I rowsort
 select cast(sum(aa) over () as bigint) from analytics
 ----
-10 values hashing to ad39acc7e8a488fedbff4835212be6e6
+46
+46
+46
+46
+46
+46
+46
+46
+46
+46
 
 query I rowsort
 select cast(prod(aa) over () as bigint) from analytics
 ----
-10 values hashing to 9ee25ca947a373eac2a9da209a2d8a22
+259200
+259200
+259200
+259200
+259200
+259200
+259200
+259200
+259200
+259200
 
 query R rowsort
 select avg(aa) over () from analytics
 ----
-10 values hashing to 53690c9a00bbfb0b09055d13ff82b535
+5.750
+5.750
+5.750
+5.750
+5.750
+5.750
+5.750
+5.750
+5.750
+5.750
 
 query I rowsort
 select count(aa) over () from analytics
 ----
-10 values hashing to 07db7b3b1a6ac90f2996f9763db648c9
+8
+8
+8
+8
+8
+8
+8
+8
+8
+8
 
 query I rowsort
 select count(*) over () from analytics
 ----
-10 values hashing to f0a3840a195eccb7ed635061681049ca
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
 
 query I rowsort
 select count(*) over ()
@@ -305,62 +827,170 @@ select count(*) over ()
 query I rowsort
 select min(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select max(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select cast(sum(null) over () as bigint) from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select cast(prod(null) over () as bigint) from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query R rowsort
 select avg(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select count(null) over () from analytics
 ----
-10 values hashing to b833e3a3ba082b2c0028b4cd08f0834d
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
 
 query I rowsort
 select min(2) over () from analytics
 ----
-10 values hashing to 1e31a732ed677625a0ac3b96deb7b077
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
 
 query I rowsort
 select max(100) over () from analytics
 ----
-10 values hashing to dab52411c5b546b9a224f32d7a743153
+100
+100
+100
+100
+100
+100
+100
+100
+100
+100
 
 query I rowsort
 select cast(sum(2) over () as bigint) from analytics
 ----
-10 values hashing to 5fc81a8cbbffbcd5df0d46acf39c3393
+20
+20
+20
+20
+20
+20
+20
+20
+20
+20
 
 query I rowsort
 select cast(prod(4 + 0) over () as bigint) from analytics
 ----
-10 values hashing to dc731e419ede217603cb6f873e767264
+1048576
+1048576
+1048576
+1048576
+1048576
+1048576
+1048576
+1048576
+1048576
+1048576
 
 query R rowsort
 select avg(4) over () from analytics
 ----
-10 values hashing to d3d414147d790f19e649c2826af64b70
+4.000
+4.000
+4.000
+4.000
+4.000
+4.000
+4.000
+4.000
+4.000
+4.000
 
 query I rowsort
 select count(4) over () from analytics
 ----
-10 values hashing to f0a3840a195eccb7ed635061681049ca
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
 
 statement ok
 create table stressme (aa varchar(64), bb int)
@@ -1024,65 +1654,173 @@ create table debugme (aa real, bb int)
 statement ok
 insert into debugme values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-query R rowsort
+query T rowsort
 select sum(aa) over (partition by bb) from debugme
 ----
-10 values hashing to 2b636616b455a323d1f756b6d9434d13
+11.0
+11.0
+11.0
+26.0
+26.0
+26.0
+9.0
+9.0
+9.0
+NULL
 
-query R rowsort
+query T rowsort
 select sum(aa) over (partition by bb order by bb asc) from debugme
 ----
-10 values hashing to 2b636616b455a323d1f756b6d9434d13
+11.0
+11.0
+11.0
+26.0
+26.0
+26.0
+9.0
+9.0
+9.0
+NULL
 
-query R rowsort
+query T rowsort
 select sum(aa) over (partition by bb order by bb desc) from debugme
 ----
-10 values hashing to 2b636616b455a323d1f756b6d9434d13
+11.0
+11.0
+11.0
+26.0
+26.0
+26.0
+9.0
+9.0
+9.0
+NULL
 
-query R rowsort
+query T rowsort
 select sum(aa) over (order by bb desc) from debugme
 ----
-10 values hashing to bdf3121c0ad81ad7d9188c6700c3893b
+26.0
+26.0
+26.0
+37.0
+37.0
+37.0
+46.0
+46.0
+46.0
+NULL
 
-query R rowsort
+query T rowsort
 select prod(aa) over (partition by bb) from debugme
 ----
-10 values hashing to 18f7ad7aec91b4a3b3f164e1d1ac491f
+24.0
+24.0
+24.0
+24.0
+24.0
+24.0
+450.0
+450.0
+450.0
+NULL
 
-query R rowsort
+query T rowsort
 select prod(aa) over (partition by bb order by bb asc) from debugme
 ----
-10 values hashing to 18f7ad7aec91b4a3b3f164e1d1ac491f
+24.0
+24.0
+24.0
+24.0
+24.0
+24.0
+450.0
+450.0
+450.0
+NULL
 
-query R rowsort
+query T rowsort
 select prod(aa) over (partition by bb order by bb desc) from debugme
 ----
-10 values hashing to 18f7ad7aec91b4a3b3f164e1d1ac491f
+24.0
+24.0
+24.0
+24.0
+24.0
+24.0
+450.0
+450.0
+450.0
+NULL
 
-query R rowsort
+query T rowsort
 select prod(aa) over (order by bb desc) from debugme
 ----
-10 values hashing to 0c8820982eca10807e50b0958be772b1
+10800.0
+10800.0
+10800.0
+259200.0
+259200.0
+259200.0
+450.0
+450.0
+450.0
+NULL
 
 query R rowsort
 select avg(aa) over (partition by bb) from debugme
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(aa) over (partition by bb order by bb asc) from debugme
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(aa) over (partition by bb order by bb desc) from debugme
 ----
-10 values hashing to b3ab916780bd32ae981544e6564ecf2a
+3.000
+3.000
+3.000
+5.500
+5.500
+5.500
+8.667
+8.667
+8.667
+NULL
 
 query R rowsort
 select avg(aa) over (order by bb desc) from debugme
 ----
-10 values hashing to 4c0676f0caaa788f681180642a8078d6
+5.750
+5.750
+5.750
+7.400
+7.400
+7.400
+8.667
+8.667
+8.667
+NULL
 
 statement ok
 create table overflowme (a int)
@@ -1183,5 +1921,4 @@ SELECT COUNT(o_totalprice) OVER (ORDER BY EXTRACT(YEAR FROM o_orderdate) GROUPS 
 
 statement ok
 rollback
-
 

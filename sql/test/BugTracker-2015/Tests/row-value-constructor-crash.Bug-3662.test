@@ -17,4 +17,3 @@ SELECT * FROM een
 statement ok
 drop table een
 
-

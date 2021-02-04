@@ -17,4 +17,3 @@ select count(*), cast(mytimestamp as date) as mydate from union_view group by my
 statement ok
 Rollback
 
-

@@ -250,16 +250,16 @@ INSERT INTO t0(c1, c0, c2) VALUES(TRUE, ((+ (- (1)))>(charindex(CAST(0.3 AS STRI
 statement ok
 UPDATE t0 SET c2 = 1 WHERE ((((t0.c1)OR(CAST(t0.c2 AS BOOLEAN))))OR((CAST(0.6 AS DECIMAL)) NOT IN (0.1)))
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE ((CAST(t0.c2 AS INT)) NOT  BETWEEN ASYMMETRIC (abs(t0.c2)) AND (((t0.c2)/(t0.c2)))) NOT  BETWEEN ASYMMETRIC (t0.c0) AND ((t0.c2) NOT IN (t0.c2))
 ----
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE (t0.c2) BETWEEN (t0.c0) AND ((t0.c2) NOT IN (t0.c2))
 ----
 
@@ -589,19 +589,19 @@ COPY 5 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.550
 0.916
 
-query T rowsort
+query I rowsort
 select coalesce(1 = true, false)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select coalesce(1 = true, t0.c0 > 0) from t0
 ----
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
 
 query I rowsort
 select count(all coalesce ((case coalesce (1, 2) when case cast(t0.c0 as double) when sql_max(r'', null)
@@ -869,7 +869,7 @@ COPY 8 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.715
 0.369
 
-query T rowsort
+query I rowsort
 SELECT ALL CASE t0.c0 WHEN VAR_POP(ALL t0.c0) THEN (t0.c0) BETWEEN SYMMETRIC (t0.c0) AND (t0.c0) END FROM t0 GROUP BY t0.c0
 ----
 NULL
@@ -1069,5 +1069,4 @@ CAST(CAST(((- (-5))||(((-2)-(5)))) AS DECIMAL) AS INT))
 
 statement ok
 ROLLBACK
-
 

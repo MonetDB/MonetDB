@@ -16,4 +16,3 @@ ALTER TABLE t1114557 DROP name
 statement ok
 DROP TABLE t1114557
 
-

@@ -10,4 +10,3 @@ select i_add_video_file('dummy description',
                                  'codec 1',
                                  2000)
 
-

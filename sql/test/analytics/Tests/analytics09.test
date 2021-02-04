@@ -27,7 +27,16 @@ select cast(sum(aa) * count(*) over () as bigint) from analytics
 query I rowsort
 select cast(aa * count(1) over () as bigint) from analytics
 ----
-10 values hashing to bdda6a07ad8f3e5743ce8046740a2ed5
+150
+20
+30
+30
+40
+50
+60
+80
+NULL
+NULL
 
 query I rowsort
 select cast(sum(aa) * count(1) over () as bigint) from analytics
@@ -47,12 +56,30 @@ select avg(sum(aa)) over () from analytics
 query R rowsort
 select sum(cast(aa as double)) over (rows unbounded preceding) from analytics
 ----
-10 values hashing to 2127a3b37945687a611adb59a05dee73
+15.000
+18.000
+20.000
+25.000
+25.000
+28.000
+32.000
+38.000
+46.000
+46.000
 
 query R rowsort
 select sum(cast(aa as double)) over (range unbounded preceding) from analytics
 ----
-10 values hashing to 0d57043abb17d5e0fb17674e5c836536
+46.000
+46.000
+46.000
+46.000
+46.000
+46.000
+46.000
+46.000
+46.000
+46.000
 
 query R rowsort
 select avg(avg(aa)) over (rows unbounded preceding) from analytics
@@ -121,39 +148,161 @@ select avg(sum(aa)) over (),
        cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
        avg(sum(aa)) over (range unbounded preceding) from analytics group by aa
 ----
-32 values hashing to 82a25b694bf8ff559e87eb01bf600c08
+6.571
+10.500
+3
+6.571
+6.571
+15.000
+2
+6.571
+6.571
+6.333
+1
+6.571
+6.571
+6.400
+1
+6.571
+6.571
+6.571
+1
+6.571
+6.571
+7.000
+1
+6.571
+6.571
+7.000
+NULL
+6.571
+6.571
+7.667
+0
+6.571
 
 query II rowsort
 select cast(sum(aa) * count(aa) over () as bigint),
        cast(sum(aa) over () as bigint) from analytics group by aa
 ----
-16 values hashing to 846f35db6e66acd4182ed479c71458eb
+105
+43
+14
+43
+28
+43
+35
+43
+42
+43
+42
+43
+56
+43
+NULL
+43
 
 query II rowsort
 select cast(sum(sum(aa)) over () as bigint),
        cast(sum(aa) * count(count(aa)) over () as bigint) from analytics group by aa
 ----
-16 values hashing to 3f8da6fb7b1ea7d773ac33e0a33126c3
+46
+120
+46
+16
+46
+32
+46
+40
+46
+48
+46
+48
+46
+64
+46
+NULL
 
 query IR rowsort
 select count(aa) over (),
        avg(aa) over () * count(aa) from analytics group by aa
 ----
-16 values hashing to e78fe7e6cb1029e133364e8a2c138052
+7
+0.000
+7
+12.286
+7
+6.143
+7
+6.143
+7
+6.143
+7
+6.143
+7
+6.143
+7
+6.143
 
 query III rowsort
 select cast(sum(aa) over () as bigint),
        cast(sum(aa) over () as bigint),
        cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa
 ----
-24 values hashing to 5abbd825217b8fb8d66200657f951b12
+43
+43
+105
+43
+43
+14
+43
+43
+28
+43
+43
+35
+43
+43
+42
+43
+43
+42
+43
+43
+56
+43
+43
+NULL
 
 query RRI rowsort
 select 21 - avg(sum(aa)) over (),
        avg(45 * count(aa) + sum(aa)) over (),
        cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa
 ----
-24 values hashing to ce02a4cb85810cdef861d153c8fe3c50
+14.429
+58.000
+105
+14.429
+58.000
+14
+14.429
+58.000
+28
+14.429
+58.000
+35
+14.429
+58.000
+42
+14.429
+58.000
+42
+14.429
+58.000
+56
+14.429
+58.000
+NULL
 
 query R rowsort
 select avg(sum(aa)) over (partition by bb) from analytics group by bb
@@ -191,7 +340,16 @@ select avg(aa) over (partition by sum(aa) over ()) from analytics
 query I rowsort
 select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select rank() over (partition by sum(aa)) from analytics
@@ -295,5 +453,4 @@ select sum(avg(aa) over ()) from analytics
 
 statement ok
 drop table analytics
-
 

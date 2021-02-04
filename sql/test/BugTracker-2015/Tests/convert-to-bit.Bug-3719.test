@@ -29,4 +29,3 @@ SELECT count(*) FROM t1 AS x WHERE x.c
 statement ok
 ROLLBACK
 
-

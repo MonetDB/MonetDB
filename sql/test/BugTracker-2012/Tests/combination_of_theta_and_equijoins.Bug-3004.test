@@ -99,4 +99,3 @@ DROP TABLE "e"
 statement ok
 DROP TABLE "s"
 
-

@@ -21,4 +21,3 @@ LIMIT 5
 statement ok
 drop table foo
 
-

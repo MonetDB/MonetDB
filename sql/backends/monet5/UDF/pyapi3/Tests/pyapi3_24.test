@@ -104,4 +104,3 @@ SELECT pyapi24(i,j,k,l,m) FROM pyapi24table
 statement ok
 ROLLBACK
 
-

@@ -52,4 +52,3 @@ drop table updateme
 statement ok
 drop table other
 
-

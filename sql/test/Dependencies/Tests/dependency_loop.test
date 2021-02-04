@@ -176,4 +176,3 @@ select count(*) from dependencies where depend_type = 5
 ----
 1001
 
-

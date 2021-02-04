@@ -77,4 +77,3 @@ a
 statement ok
 drop table "testme"
 
-

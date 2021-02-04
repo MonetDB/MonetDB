@@ -15,7 +15,46 @@ select avg(aa) over (partition by bb),
        avg(aa) over (partition by bb order by bb desc),
        avg(aa) over (order by bb desc) from analytics
 ----
-40 values hashing to 18b5076b6c343e848630ce33f01c4601
+0:00:03
+0:00:03
+0:00:03
+0:00:05
+0:00:03
+0:00:03
+0:00:03
+0:00:05
+0:00:03
+0:00:03
+0:00:03
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:07
+0:00:05
+0:00:05
+0:00:05
+0:00:07
+0:00:05
+0:00:05
+0:00:05
+0:00:07
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+0:00:08
+NULL
+NULL
+NULL
+NULL
 
 query TTTT rowsort
 select avg(bb) over (partition by bb),
@@ -23,7 +62,46 @@ select avg(bb) over (partition by bb),
        avg(bb) over (partition by bb order by bb desc),
        avg(bb) over (order by bb desc) from analytics
 ----
-40 values hashing to a9d69a13eac933f406c500081613c5f2
+1
+1
+1
+2
+1
+1
+1
+2
+1
+1
+1
+2
+2
+2
+2
+3
+2
+2
+2
+3
+2
+2
+2
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+4
+4
+4
+4
 
 query TTTT rowsort
 select avg(aa) over (partition by aa),
@@ -31,7 +109,46 @@ select avg(aa) over (partition by aa),
        avg(aa) over (partition by aa order by aa desc),
        avg(aa) over (order by aa desc) from analytics
 ----
-40 values hashing to 4c893f65ab72c6774be8a7da3cda8a2c
+0:00:02
+0:00:02
+0:00:02
+0:00:05
+0:00:03
+0:00:03
+0:00:03
+0:00:06
+0:00:03
+0:00:03
+0:00:03
+0:00:06
+0:00:04
+0:00:04
+0:00:04
+0:00:07
+0:00:05
+0:00:05
+0:00:05
+0:00:08
+0:00:06
+0:00:06
+0:00:06
+0:00:09
+0:00:08
+0:00:08
+0:00:08
+0:00:11
+0:00:15
+0:00:15
+0:00:15
+0:00:15
+NULL
+NULL
+NULL
+0:00:05
+NULL
+NULL
+NULL
+0:00:05
 
 query TTTT rowsort
 select avg(bb) over (partition by aa),
@@ -39,7 +156,46 @@ select avg(bb) over (partition by aa),
        avg(bb) over (partition by aa order by aa desc),
        avg(bb) over (order by aa desc) from analytics
 ----
-40 values hashing to bbd70cf92a51295dd4c9c521ea9d641c
+1
+1
+1
+2
+1
+1
+1
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+3
+3
+3
+3
+2
+3
+3
+3
+2
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query TTTT rowsort
 select avg(interval '1' second) over (partition by bb),
@@ -47,7 +203,46 @@ select avg(interval '1' second) over (partition by bb),
        avg(interval '1' month) over (partition by bb order by bb desc),
        avg(interval '1' month) over (order by bb desc) from analytics
 ----
-40 values hashing to edf1310da399e0a4c669f031016f6d38
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
+0:00:01
+0:00:01
+1
+1
 
 query TTTT rowsort
 select avg(interval '-1' second) over (partition by bb),
@@ -55,7 +250,46 @@ select avg(interval '-1' second) over (partition by bb),
        avg(interval '-100' month) over (partition by bb order by bb desc),
        avg(interval '-100' month) over (order by bb desc) from analytics
 ----
-40 values hashing to 73cea73e54338a04cab990265785293b
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
+-1 day, 23:59:59
+-1 day, 23:59:59
+-100
+-100
 
 query TTTTTT rowsort
 select avg(aa) over (),
@@ -65,13 +299,91 @@ select avg(aa) over (),
        avg(interval '1' second) over (),
        avg(interval '1' month) over () from analytics
 ----
-60 values hashing to 240f459963993769c5f94790b990efed
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
+0:00:05
+2
+0:00:05
+2
+0:00:01
+1
 
 query TT rowsort
 select avg(CAST(NULL as interval second)) over (),
        avg(CAST(NULL as interval month)) over () from analytics
 ----
-20 values hashing to 902615685c027333162cc9ece5d11dfa
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query TTTT rowsort
 select avg(aa) over (order by bb rows between 5 preceding and 0 following),
@@ -79,14 +391,82 @@ select avg(aa) over (order by bb rows between 5 preceding and 0 following),
        avg(aa) over (partition by bb order by bb rows between 5 preceding and 0 following),
        avg(aa) over (partition by bb order by bb rows between 5 preceding and 2 following) from analytics
 ----
-40 values hashing to 71471ebcd5e12613845f6dd4cd052c25
+0:00:02
+0:00:03
+0:00:02
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:04
+NULL
+0:00:05
+0:00:03
+0:00:05
+0:00:03
+0:00:05
+0:00:04
+0:00:05
+0:00:05
+0:00:05
+0:00:06
+0:00:06
+0:00:15
+0:00:08
+0:00:07
+0:00:06
+0:00:10
+0:00:08
+0:00:07
+0:00:07
+0:00:08
+0:00:08
+0:00:07
+0:00:07
+NULL
+NULL
 
 query TTT rowsort
 select avg(aa) over (order by bb rows 2 preceding),
        avg(aa) over (partition by bb order by bb rows 2 preceding),
        avg(aa) over (order by bb nulls last, aa nulls last rows 2 preceding) from analytics
 ----
-30 values hashing to 33ab88f7ed7c81f3c41ad79f49366665
+0:00:02
+0:00:02
+0:00:02
+0:00:03
+0:00:03
+0:00:02
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+0:00:03
+NULL
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+0:00:05
+NULL
+0:00:10
+0:00:08
+0:00:08
+0:00:05
+0:00:08
+0:00:15
+0:00:08
+0:00:09
+0:00:10
+0:00:06
 
 query TTTT rowsort
 select avg(bb) over (order by bb groups between 5 preceding and 0 following),
@@ -94,15 +474,72 @@ select avg(bb) over (order by bb groups between 5 preceding and 0 following),
        avg(bb) over (partition by bb order by bb groups between 5 preceding and 0 following),
        avg(bb) over (partition by bb order by bb groups between 5 preceding and 2 following) from analytics
 ----
-40 values hashing to a130c5753081064b77cc7b37b28a47d8
+1
+2
+1
+1
+1
+2
+1
+1
+1
+2
+1
+1
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+3
+3
+2
+2
+3
+3
+2
+2
+3
+3
+2
+2
+4
+4
 
 query TT rowsort
 select avg(bb) over (order by bb groups 2 preceding),
        avg(bb) over (partition by bb order by bb groups 2 preceding) from analytics
 ----
-20 values hashing to 9a2722989b77b6641644f473ac87ca09
+1
+1
+1
+1
+1
+1
+2
+2
+2
+2
+2
+2
+2
+3
+2
+3
+2
+3
+3
+4
 
 statement ok
 rollback
-
 

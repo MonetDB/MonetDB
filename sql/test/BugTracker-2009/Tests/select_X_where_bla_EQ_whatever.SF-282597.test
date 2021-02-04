@@ -1,4 +1,3 @@
 statement error
 select * where bla = "whatever"
 
-

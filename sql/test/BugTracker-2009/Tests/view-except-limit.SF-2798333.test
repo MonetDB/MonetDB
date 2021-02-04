@@ -39,4 +39,3 @@ drop view bug_2
 statement ok
 drop table bug
 
-

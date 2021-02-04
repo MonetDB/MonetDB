@@ -428,4 +428,3 @@ SELECT c1.catsrcid AS t_catsrcid
 ----
 196 values hashing to 8942c7243ea5e302650045a5221db27c
 
-

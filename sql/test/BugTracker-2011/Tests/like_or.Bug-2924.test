@@ -1,4 +1,4 @@
-query ITIIT rowsort
+query ITIII rowsort
 select * from schemas where name like '%ys' escape '=' or name like '%y' escape
 '='
 ----
@@ -6,6 +6,5 @@ select * from schemas where name like '%ys' escape '=' or name like '%y' escape
 sys
 2
 3
-True
-
+1
 

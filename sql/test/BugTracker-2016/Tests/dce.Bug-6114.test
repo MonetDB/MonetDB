@@ -407,4 +407,3 @@ SET SCHEMA sys
 statement ok
 DROP SCHEMA foo
 
-

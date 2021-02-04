@@ -17,7 +17,86 @@ select cast(sum(aa) over (rows unbounded preceding) as bigint),
        cast(sum(aa) over (partition by bb order by bb range unbounded preceding) as bigint),
        cast(sum(aa) over (partition by bb order by bb groups unbounded preceding) as bigint) from rowsvsrangevsgroups
 ----
-80 values hashing to 7efdf251dd4a4a9694a3c132c06b260f
+1
+20
+1
+4
+4
+1
+6
+6
+11
+20
+8
+10
+10
+5
+14
+14
+13
+20
+10
+10
+10
+7
+14
+14
+16
+20
+16
+16
+16
+10
+14
+14
+20
+20
+20
+20
+20
+14
+14
+14
+3
+20
+6
+10
+10
+3
+6
+6
+6
+20
+13
+16
+16
+6
+6
+6
+7
+20
+2
+4
+4
+1
+14
+14
+8
+20
+3
+4
+4
+2
+14
+14
+9
+20
+4
+4
+4
+3
+14
+14
 
 query IIIIIIRR rowsort
 select cast(sum(aa) over (order by aa range between unbounded preceding and current row) as bigint),
@@ -29,7 +108,86 @@ select cast(sum(aa) over (order by aa range between unbounded preceding and curr
        avg(aa) over (order by aa range between unbounded preceding and current row),
        avg(cc) over (order by aa range between unbounded preceding and current row) from rowsvsrangevsgroups
 ----
-80 values hashing to 547bed50f2e421f8fa721179f38eedbf
+10
+10
+7
+7
+1
+2
+1.429
+1.429
+10
+10
+7
+7
+1
+2
+1.429
+1.429
+10
+10
+7
+7
+1
+2
+1.429
+1.429
+16
+16
+9
+9
+1
+3
+1.778
+1.778
+16
+16
+9
+9
+1
+3
+1.778
+1.778
+20
+20
+10
+10
+1
+4
+2.000
+2.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
 
 query IIIIIIRR rowsort
 select cast(sum(aa) over (order by aa groups between unbounded preceding and current row) as bigint),
@@ -41,13 +199,111 @@ select cast(sum(aa) over (order by aa groups between unbounded preceding and cur
        avg(aa) over (order by aa groups between unbounded preceding and current row),
        avg(cc) over (order by aa groups between unbounded preceding and current row) from rowsvsrangevsgroups
 ----
-80 values hashing to 547bed50f2e421f8fa721179f38eedbf
+10
+10
+7
+7
+1
+2
+1.429
+1.429
+10
+10
+7
+7
+1
+2
+1.429
+1.429
+10
+10
+7
+7
+1
+2
+1.429
+1.429
+16
+16
+9
+9
+1
+3
+1.778
+1.778
+16
+16
+9
+9
+1
+3
+1.778
+1.778
+20
+20
+10
+10
+1
+4
+2.000
+2.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
 
 query IR rowsort
 select cast(sum(aa) over (order by aa groups between 1 preceding and current row) as bigint),
        avg(cc) over (order by aa groups between 1 preceding and current row) from rowsvsrangevsgroups
 ----
-20 values hashing to d80f0658fa4df99687b91cd9f1f7b3af
+10
+1.429
+10
+1.429
+10
+1.429
+10
+3.333
+12
+2.400
+12
+2.400
+4
+1.000
+4
+1.000
+4
+1.000
+4
+1.000
 
 statement ok
 delete from rowsvsrangevsgroups where aa = 2
@@ -62,7 +318,62 @@ select cast(sum(aa) over (order by aa range between unbounded preceding and curr
        avg(aa) over (order by aa range between unbounded preceding and current row),
        avg(cc) over (order by aa range between unbounded preceding and current row) from rowsvsrangevsgroups
 ----
-56 values hashing to 60503b2e98446756e8c3ade553dd786d
+10
+10
+6
+6
+1
+3
+1.667
+1.667
+10
+10
+6
+6
+1
+3
+1.667
+1.667
+14
+14
+7
+7
+1
+4
+2.000
+2.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
 
 query IIIIIIRR rowsort
 select cast(sum(aa) over (order by aa groups between unbounded preceding and current row) as bigint),
@@ -74,13 +385,81 @@ select cast(sum(aa) over (order by aa groups between unbounded preceding and cur
        avg(aa) over (order by aa groups between unbounded preceding and current row),
        avg(cc) over (order by aa groups between unbounded preceding and current row) from rowsvsrangevsgroups
 ----
-56 values hashing to 60503b2e98446756e8c3ade553dd786d
+10
+10
+6
+6
+1
+3
+1.667
+1.667
+10
+10
+6
+6
+1
+3
+1.667
+1.667
+14
+14
+7
+7
+1
+4
+2.000
+2.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
+4
+4
+4
+4
+1
+1
+1.000
+1.000
 
 query IR rowsort
 select cast(sum(aa) over (order by aa groups between 1 preceding and current row) as bigint),
        avg(cc) over (order by aa groups between 1 preceding and current row) from rowsvsrangevsgroups
 ----
-14 values hashing to 9b3a2415927f2f0797a3230de64afc73
+10
+1.667
+10
+1.667
+10
+3.333
+4
+1.000
+4
+1.000
+4
+1.000
+4
+1.000
 
 statement ok
 create table stressme (aa varchar(64), bb int)
@@ -98,7 +477,78 @@ select count(aa) over (rows between current row and unbounded following),
        count(aa) over (partition by bb order by bb range unbounded preceding),
        count(aa) over (partition by bb order by bb groups unbounded preceding) from stressme
 ----
-72 values hashing to d0e11af40445d87d48259788de9feafa
+0
+7
+0
+0
+0
+0
+0
+0
+1
+7
+1
+3
+3
+3
+3
+3
+2
+7
+2
+3
+3
+2
+3
+3
+3
+7
+3
+3
+3
+1
+3
+3
+4
+7
+4
+4
+4
+0
+1
+1
+4
+7
+4
+4
+4
+1
+1
+1
+5
+7
+5
+7
+7
+3
+3
+3
+6
+7
+6
+7
+7
+2
+3
+3
+7
+7
+7
+7
+7
+1
+3
+3
 
 query TTTTTTTT rowsort
 select min(aa) over (rows between current row and unbounded following),
@@ -110,7 +560,78 @@ select min(aa) over (rows between current row and unbounded following),
        min(aa) over (partition by bb order by bb range unbounded preceding),
        min(aa) over (partition by bb order by bb groups unbounded preceding) from stressme
 ----
-72 values hashing to 54a79c4661f4a1391ae5d90ce39d926f
+NULL
+another
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+another
+another
+another
+another
+another
+another
+another
+another
+another
+another
+another
+another
+another
+one
+another
+another
+check
+another
+check
+another
+another
+another
+another
+another
+check
+another
+check
+check
+check
+NULL
+ok
+ok
+check
+another
+check
+check
+check
+check
+check
+check
+check
+another
+check
+check
+check
+ok
+ok
+ok
+me
+another
+me
+check
+check
+check
+check
+check
+please
+another
+please
+check
+check
+check
+check
+check
 
 query TTTTTTTT rowsort
 select max(aa) over (rows between current row and unbounded following),
@@ -122,13 +643,101 @@ select max(aa) over (rows between current row and unbounded following),
        max(aa) over (partition by bb order by bb range unbounded preceding),
        max(aa) over (partition by bb order by bb groups unbounded preceding) from stressme
 ----
-72 values hashing to a6bf220a41759a9a45300caef67c1ff8
+NULL
+stress
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+please
+stress
+please
+please
+please
+NULL
+ok
+ok
+please
+stress
+please
+please
+please
+check
+please
+please
+please
+stress
+please
+please
+please
+me
+please
+please
+please
+stress
+please
+please
+please
+ok
+ok
+ok
+please
+stress
+please
+please
+please
+please
+please
+please
+stress
+stress
+stress
+stress
+stress
+one
+stress
+stress
+stress
+stress
+stress
+stress
+stress
+one
+stress
+stress
+stress
+stress
+stress
+stress
+stress
+stress
+stress
+stress
 
 query TI rowsort
 select max(aa) over (order by bb groups between 1 preceding and current row),
        count(aa) over (order by bb groups between 1 preceding and current row) from stressme
 ----
-18 values hashing to 5bbda31e89d1f9ad3686c3671a839a19
+please
+3
+please
+4
+please
+4
+please
+4
+stress
+3
+stress
+3
+stress
+3
+stress
+4
+stress
+4
 
 statement ok
 delete from stressme where bb = 2
@@ -137,7 +746,20 @@ query TI rowsort
 select max(aa) over (order by bb groups between 1 preceding and current row),
        count(aa) over (order by bb groups between 1 preceding and current row) from stressme
 ----
-14 values hashing to 56dd3e8ee54edec42726f51f96c29cbf
+please
+3
+stress
+3
+stress
+3
+stress
+3
+stress
+6
+stress
+6
+stress
+6
 
 statement ok
 create table overflowme (aa int, bb int)
@@ -153,7 +775,42 @@ select floor(avg(aa) over (rows between current row and unbounded following)),
        floor(avg(aa) over (partition by bb order by bb rows unbounded preceding)),
        floor(avg(aa) over (partition by bb order by bb range unbounded preceding)) from overflowme
 ----
-36 values hashing to 7c359a3e1da071adb2195aa371dc52a1
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483644.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483644.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483645.000
+2147483646.000
+2147483645.000
+2147483646.000
+2147483645.000
+2147483645.000
+2147483645.000
 
 statement ok
 rollback
@@ -193,5 +850,4 @@ select min(time '10:10:00') over (partition by 1 order by 1 range between 1 prec
 
 statement ok
 drop table rowsvsrangevsgroups
-
 

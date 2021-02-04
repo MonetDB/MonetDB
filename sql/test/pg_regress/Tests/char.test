@@ -1,7 +1,7 @@
-query T rowsort
+query I rowsort
 SELECT cast('c' as char) = cast('c' as char) AS "true"
 ----
-True
+1
 
 statement ok
 CREATE TABLE CHAR_TBL(f1 char)
@@ -33,14 +33,34 @@ INSERT INTO CHAR_TBL (f1) VALUES ('c     ')
 query TT rowsort
 SELECT '' AS seven, CHAR_TBL.* FROM CHAR_TBL
 ----
-12 values hashing to 4cc0fb6d150be99f10c6eea3503ce950
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
+(empty)
+a
 
 query TT rowsort
 SELECT '' AS six, c.*
    FROM CHAR_TBL c
    WHERE c.f1 <> 'a'
 ----
-10 values hashing to e4b19df656e1c9f0fc30efe78c69c720
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
 
 query TT rowsort
 SELECT '' AS one, c.*
@@ -55,14 +75,34 @@ SELECT '' AS five, c.*
    FROM CHAR_TBL c
    WHERE c.f1 < 'a'
 ----
-10 values hashing to e4b19df656e1c9f0fc30efe78c69c720
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
 
 query TT rowsort
 SELECT '' AS six, c.*
    FROM CHAR_TBL c
    WHERE c.f1 <= 'a'
 ----
-12 values hashing to 4cc0fb6d150be99f10c6eea3503ce950
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
+(empty)
+a
 
 query TT rowsort
 SELECT '' AS one, c.*
@@ -111,5 +151,4 @@ abcd
 
 statement ok
 DROP TABLE CHAR_TBL
-
 

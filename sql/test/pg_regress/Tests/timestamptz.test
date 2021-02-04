@@ -305,7 +305,22 @@ SET TIME ZONE INTERVAL '+01:00' HOUR TO MINUTE
 query TT rowsort
 SELECT '' AS "17", d1 FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 85256fb5bdc856f9c0e493a7f8ec9ad4
+(empty)
+1997-01-02 02:00:00
+(empty)
+1997-01-02 05:04:05
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-06-11 02:32:01
+(empty)
+2001-09-22 20:19:20
+(empty)
+NULL
 
 statement ok
 SET TIME ZONE INTERVAL '+04:30' HOUR TO MINUTE
@@ -359,7 +374,18 @@ query TT rowsort
 SELECT '' AS "48", d1 FROM TIMESTAMPTZ_TBL
    WHERE d1 > cast('1997-01-02' as timestamptz)
 ----
-12 values hashing to ea036cf5a0fca93d704eb76c5b67da69
+(empty)
+1997-01-02 05:04:05
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-06-11 02:32:01
+(empty)
+2001-09-22 20:19:20
 
 query TT rowsort
 SELECT '' AS "15", d1 FROM TIMESTAMPTZ_TBL
@@ -377,7 +403,18 @@ query TT rowsort
 SELECT '' AS "63", d1 FROM TIMESTAMPTZ_TBL
    WHERE d1 <> cast('1997-01-02' as timestamptz)
 ----
-12 values hashing to ea036cf5a0fca93d704eb76c5b67da69
+(empty)
+1997-01-02 05:04:05
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-06-11 02:32:01
+(empty)
+2001-09-22 20:19:20
 
 query TT rowsort
 SELECT '' AS "16", d1 FROM TIMESTAMPTZ_TBL
@@ -390,13 +427,39 @@ query TT rowsort
 SELECT '' AS "49", d1 FROM TIMESTAMPTZ_TBL
    WHERE d1 >= cast('1997-01-02' as timestamptz)
 ----
-14 values hashing to 1aec3da4380ecf3bade94fd06e81de7e
+(empty)
+1997-01-02 02:00:00
+(empty)
+1997-01-02 05:04:05
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-02-11 03:32:01
+(empty)
+1997-06-11 02:32:01
+(empty)
+2001-09-22 20:19:20
 
 query TT rowsort
 SELECT '' AS "54", d1 - cast('1997-01-02' as timestamptz) AS diff
    FROM TIMESTAMPTZ_TBL WHERE d1 BETWEEN '1902-01-01' AND '2038-01-01'
 ----
-14 values hashing to 7962d9018845451c1b0b5281af11fee0
+(empty)
+0:00:00
+(empty)
+160 days, 0:32:01
+(empty)
+1724 days, 18:19:20
+(empty)
+3:04:05
+(empty)
+40 days, 1:32:01
+(empty)
+40 days, 1:32:01
+(empty)
+40 days, 1:32:01
 
 query TT rowsort
 SELECT '' AS date_trunc_week, date_trunc( 'week', cast('2004-02-29 15:44:17.71393' as timestamptz) ) AS week_trunc
@@ -409,7 +472,20 @@ SELECT '' AS "54", d1 - cast('1997-01-02' as timestamptz) AS diff
   FROM TIMESTAMPTZ_TBL
   WHERE d1 BETWEEN cast('1902-01-01' as timestamptz) AND cast('2038-01-01' as timestamptz)
 ----
-14 values hashing to 7962d9018845451c1b0b5281af11fee0
+(empty)
+0:00:00
+(empty)
+160 days, 0:32:01
+(empty)
+1724 days, 18:19:20
+(empty)
+3:04:05
+(empty)
+40 days, 1:32:01
+(empty)
+40 days, 1:32:01
+(empty)
+40 days, 1:32:01
 
 statement error
 SELECT '' AS "54", d1 as timestamptz,
@@ -519,7 +595,22 @@ SELECT d1, day(d1) FROM TIMESTAMPTZ_TBL
 query TI rowsort
 SELECT d1, "day"(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 6eabbaeecac2669380e0b963c156f163
+1997-01-02 02:00:00
+2
+1997-01-02 05:04:05
+2
+1997-02-11 03:32:01
+11
+1997-02-11 03:32:01
+11
+1997-02-11 03:32:01
+11
+1997-06-11 02:32:01
+11
+2001-09-22 20:19:20
+22
+NULL
+NULL
 
 statement error
 SELECT d1, month(d1) FROM TIMESTAMPTZ_TBL
@@ -527,7 +618,22 @@ SELECT d1, month(d1) FROM TIMESTAMPTZ_TBL
 query TI rowsort
 SELECT d1, "month"(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 67505f7a121140927d55ad172c8da572
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+1
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-06-11 02:32:01
+6
+2001-09-22 20:19:20
+9
+NULL
+NULL
 
 statement error
 SELECT d1, year(d1) FROM TIMESTAMPTZ_TBL
@@ -535,27 +641,102 @@ SELECT d1, year(d1) FROM TIMESTAMPTZ_TBL
 query TI rowsort
 SELECT d1, "year"(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to cd11429601c63067648970ed1ddcd163
+1997-01-02 02:00:00
+1997
+1997-01-02 05:04:05
+1997
+1997-02-11 03:32:01
+1997
+1997-02-11 03:32:01
+1997
+1997-02-11 03:32:01
+1997
+1997-06-11 02:32:01
+1997
+2001-09-22 20:19:20
+2001
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, extract(day from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 6eabbaeecac2669380e0b963c156f163
+1997-01-02 02:00:00
+2
+1997-01-02 05:04:05
+2
+1997-02-11 03:32:01
+11
+1997-02-11 03:32:01
+11
+1997-02-11 03:32:01
+11
+1997-06-11 02:32:01
+11
+2001-09-22 20:19:20
+22
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, extract(week from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 61a6b90a59918826a7111eb882c54a06
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+1
+1997-02-11 03:32:01
+7
+1997-02-11 03:32:01
+7
+1997-02-11 03:32:01
+7
+1997-06-11 02:32:01
+24
+2001-09-22 20:19:20
+38
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, extract(month from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 67505f7a121140927d55ad172c8da572
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+1
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-06-11 02:32:01
+6
+2001-09-22 20:19:20
+9
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, extract(quarter from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to e4ca9eb2a6c54d81d12b0f32766bce73
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+1
+1997-02-11 03:32:01
+1
+1997-02-11 03:32:01
+1
+1997-02-11 03:32:01
+1
+1997-06-11 02:32:01
+2
+2001-09-22 20:19:20
+3
+NULL
+NULL
 
 statement error
 SELECT d1, extract(halfyear from d1) FROM TIMESTAMPTZ_TBL
@@ -563,12 +744,42 @@ SELECT d1, extract(halfyear from d1) FROM TIMESTAMPTZ_TBL
 query TI rowsort
 SELECT d1, extract(year from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to cd11429601c63067648970ed1ddcd163
+1997-01-02 02:00:00
+1997
+1997-01-02 05:04:05
+1997
+1997-02-11 03:32:01
+1997
+1997-02-11 03:32:01
+1997
+1997-02-11 03:32:01
+1997
+1997-06-11 02:32:01
+1997
+2001-09-22 20:19:20
+2001
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, extract(century from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to ab2fd5819441577b527fcfd5b22730e3
+1997-01-02 02:00:00
+20
+1997-01-02 05:04:05
+20
+1997-02-11 03:32:01
+20
+1997-02-11 03:32:01
+20
+1997-02-11 03:32:01
+20
+1997-06-11 02:32:01
+20
+2001-09-22 20:19:20
+21
+NULL
+NULL
 
 statement error
 SELECT d1, extract(millennium from d1) FROM TIMESTAMPTZ_TBL
@@ -576,32 +787,122 @@ SELECT d1, extract(millennium from d1) FROM TIMESTAMPTZ_TBL
 query TI rowsort
 SELECT d1, extract(epoch from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to cc357b4f5127679e18086b23f9701fe5
+1997-01-02 02:00:00
+852163200000
+1997-01-02 05:04:05
+852174245000
+1997-02-11 03:32:01
+855624721000
+1997-02-11 03:32:01
+855624721000
+1997-02-11 03:32:01
+855624721000
+1997-06-11 02:32:01
+865989121000
+2001-09-22 20:19:20
+1001182760000
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, week(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 61a6b90a59918826a7111eb882c54a06
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+1
+1997-02-11 03:32:01
+7
+1997-02-11 03:32:01
+7
+1997-02-11 03:32:01
+7
+1997-06-11 02:32:01
+24
+2001-09-22 20:19:20
+38
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, weekofyear(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 61a6b90a59918826a7111eb882c54a06
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+1
+1997-02-11 03:32:01
+7
+1997-02-11 03:32:01
+7
+1997-02-11 03:32:01
+7
+1997-06-11 02:32:01
+24
+2001-09-22 20:19:20
+38
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, dayofmonth(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 6eabbaeecac2669380e0b963c156f163
+1997-01-02 02:00:00
+2
+1997-01-02 05:04:05
+2
+1997-02-11 03:32:01
+11
+1997-02-11 03:32:01
+11
+1997-02-11 03:32:01
+11
+1997-06-11 02:32:01
+11
+2001-09-22 20:19:20
+22
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, dayofweek(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to a24810301505abe898a77c094ee6c7e3
+1997-01-02 02:00:00
+4
+1997-01-02 05:04:05
+4
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-06-11 02:32:01
+3
+2001-09-22 20:19:20
+6
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, dayofyear(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 90dad373a84b430115e096a4142d9f7f
+1997-01-02 02:00:00
+2
+1997-01-02 05:04:05
+2
+1997-02-11 03:32:01
+42
+1997-02-11 03:32:01
+42
+1997-02-11 03:32:01
+42
+1997-06-11 02:32:01
+162
+2001-09-22 20:19:20
+265
+NULL
+NULL
 
 statement error
 SELECT d1, hour(d1) FROM TIMESTAMPTZ_TBL
@@ -609,7 +910,22 @@ SELECT d1, hour(d1) FROM TIMESTAMPTZ_TBL
 query TI rowsort
 SELECT d1, "hour"(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 2c2cb70364d4da663cd575e58aead815
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+4
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-06-11 02:32:01
+1
+2001-09-22 20:19:20
+19
+NULL
+NULL
 
 statement error
 SELECT d1, minute(d1) FROM TIMESTAMPTZ_TBL
@@ -617,7 +933,22 @@ SELECT d1, minute(d1) FROM TIMESTAMPTZ_TBL
 query TI rowsort
 SELECT d1, "minute"(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to d5148ed30c14973166d488f5ee0dee5c
+1997-01-02 02:00:00
+0
+1997-01-02 05:04:05
+4
+1997-02-11 03:32:01
+32
+1997-02-11 03:32:01
+32
+1997-02-11 03:32:01
+32
+1997-06-11 02:32:01
+32
+2001-09-22 20:19:20
+19
+NULL
+NULL
 
 statement error
 SELECT d1, second(d1) FROM TIMESTAMPTZ_TBL
@@ -625,22 +956,82 @@ SELECT d1, second(d1) FROM TIMESTAMPTZ_TBL
 query TR rowsort
 SELECT d1, "second"(d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to e0fe88214ff311876291e6dccdb72606
+1997-01-02 02:00:00
+0.000
+1997-01-02 05:04:05
+5.000
+1997-02-11 03:32:01
+1.000
+1997-02-11 03:32:01
+1.000
+1997-02-11 03:32:01
+1.000
+1997-06-11 02:32:01
+1.000
+2001-09-22 20:19:20
+20.000
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, extract(hour from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 2c2cb70364d4da663cd575e58aead815
+1997-01-02 02:00:00
+1
+1997-01-02 05:04:05
+4
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-02-11 03:32:01
+2
+1997-06-11 02:32:01
+1
+2001-09-22 20:19:20
+19
+NULL
+NULL
 
 query TI rowsort
 SELECT d1, extract(minute from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to d5148ed30c14973166d488f5ee0dee5c
+1997-01-02 02:00:00
+0
+1997-01-02 05:04:05
+4
+1997-02-11 03:32:01
+32
+1997-02-11 03:32:01
+32
+1997-02-11 03:32:01
+32
+1997-06-11 02:32:01
+32
+2001-09-22 20:19:20
+19
+NULL
+NULL
 
 query TR rowsort
 SELECT d1, extract(second from d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to e0fe88214ff311876291e6dccdb72606
+1997-01-02 02:00:00
+0.000
+1997-01-02 05:04:05
+5.000
+1997-02-11 03:32:01
+1.000
+1997-02-11 03:32:01
+1.000
+1997-02-11 03:32:01
+1.000
+1997-06-11 02:32:01
+1.000
+2001-09-22 20:19:20
+20.000
+NULL
+NULL
 
 statement error
 SELECT d1, sql_add(d1, 365*24*60*60.0) FROM TIMESTAMPTZ_TBL
@@ -669,14 +1060,43 @@ SELECT d1, sql_sub(d1, cast(-18 as interval month)) FROM TIMESTAMPTZ_TBL
 query TT rowsort
 SELECT d1, sql_sub(d1, cast('2001-12-12 23:22:21' as timestamptz)) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 97ddab35839ccf798d03948401602ba4
+1997-01-02 02:00:00
+-1806 days, 0:37:39
+1997-01-02 05:04:05
+-1806 days, 3:41:44
+1997-02-11 03:32:01
+-1766 days, 2:09:40
+1997-02-11 03:32:01
+-1766 days, 2:09:40
+1997-02-11 03:32:01
+-1766 days, 2:09:40
+1997-06-11 02:32:01
+-1646 days, 1:09:40
+2001-09-22 20:19:20
+-82 days, 18:56:59
+NULL
+NULL
 
 query TT rowsort
 SELECT d1, sql_sub(cast('2001-12-12 23:22:21' as timestamptz), d1) FROM TIMESTAMPTZ_TBL
 ----
-16 values hashing to 677cae0c682305f048dd9b2adb440ee5
+1997-01-02 02:00:00
+1805 days, 23:22:21
+1997-01-02 05:04:05
+1805 days, 20:18:16
+1997-02-11 03:32:01
+1765 days, 21:50:20
+1997-02-11 03:32:01
+1765 days, 21:50:20
+1997-02-11 03:32:01
+1765 days, 21:50:20
+1997-06-11 02:32:01
+1645 days, 22:50:20
+2001-09-22 20:19:20
+81 days, 5:03:01
+NULL
+NULL
 
 statement ok
 DROP TABLE TIMESTAMPTZ_TBL
-
 

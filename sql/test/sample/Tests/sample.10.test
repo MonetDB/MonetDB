@@ -1,6 +1,14 @@
 query I rowsort
 select * from GENERATE_SERIES(1,41) sample 0.25 seed 1234
 ----
-10 values hashing to e51196ceee812431de139faeb662040e
-
+14
+15
+19
+2
+20
+26
+27
+38
+39
+8
 

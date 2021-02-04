@@ -35,4 +35,3 @@ b
 statement ok
 DROP   TABLE myvar_test 
 
-

@@ -13,4 +13,3 @@ drop view v1
 statement ok
 drop table t1
 
-

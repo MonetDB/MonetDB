@@ -107,4 +107,3 @@ DROP TABLE kvk_extra
 statement ok
 DROP TABLE kvk_extra_nieuw
 
-

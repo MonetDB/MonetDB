@@ -14,4 +14,3 @@ drop table t
 statement ok
 drop table s
 
-

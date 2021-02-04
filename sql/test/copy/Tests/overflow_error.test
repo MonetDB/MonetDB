@@ -941,4 +941,3 @@ COPY 876 RECORDS INTO QsoTarget FROM STDIN USING DELIMITERS '|',E'\n'
 statement ok
 rollback
 
-

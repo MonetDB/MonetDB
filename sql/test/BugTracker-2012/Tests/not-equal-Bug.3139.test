@@ -16,14 +16,36 @@ from t1_bug3139,
      (select count(*) as cnt from t2_bug3139) t3
 where t1_bug3139.id > 1 and t1_bug3139.dp <> t3.cnt
 ----
-12 values hashing to e0461716aa3afbc3758df21ae2411c30
+2
+2
+3
+3
+2
+3
+4
+2
+3
+7
+1
+3
 
 query III rowsort
 select t1_bug3139.id, t1_bug3139.dp, (select count(*) from t2_bug3139)
 from t1_bug3139
 where t1_bug3139.id > 1 and t1_bug3139.dp <> (select count(*) from t2_bug3139)
 ----
-12 values hashing to e0461716aa3afbc3758df21ae2411c30
+2
+2
+3
+3
+2
+3
+4
+2
+3
+7
+1
+3
 
 query II rowsort
 select t1_bug3139.id, t1_bug3139.dp
@@ -38,5 +60,4 @@ where t1_bug3139.id > 1 and t1_bug3139.dp <> (select count(*) from t2_bug3139)
 2
 7
 1
-
 

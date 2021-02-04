@@ -142,4 +142,3 @@ COPY 1 RECORDS INTO LINEITEM FROM stdin USING DELIMITERS '|',E'|\n'
 statement ok
 drop table lineitem
 
-

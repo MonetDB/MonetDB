@@ -48,16 +48,49 @@ SELECT
 FROM
           my_table6
 
-
 query ITTT rowsort
 select * from my_table7
 ----
-36 values hashing to 0ba3a6e8732a9b19923d0e5c3e51f465
+10
+aa
+NULL
+aaa
+20
+ab
+NULL
+aab
+30
+ac
+NULL
+aac
+40
+ad
+NULL
+aad
+50
+ae
+NULL
+aae
+60
+af
+NULL
+aaf
+70
+ag
+NULL
+aag
+80
+ah
+NULL
+aah
+90
+ai
+NULL
+aai
 
 statement ok
 DROP   TABLE my_table6 
 
 statement ok
 DROP   TABLE my_table7 
-
 

@@ -34,4 +34,3 @@ drop schema abc cascade
 statement ok
 drop table copy_into_without_schema
 
-

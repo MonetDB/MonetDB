@@ -25,4 +25,3 @@ select * from stmp S where  S.i = 0 and true
 statement ok
 rollback
 
-

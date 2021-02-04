@@ -7,4 +7,3 @@ select count(subtotal) from bigramlex order by subtotal
 statement ok
 drop TABLE bigramlex
 
-

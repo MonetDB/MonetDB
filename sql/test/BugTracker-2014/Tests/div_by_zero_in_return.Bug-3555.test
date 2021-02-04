@@ -12,4 +12,3 @@ SELECT my_avg(0, 0)
 statement ok
 DROP FUNCTION my_avg
 
-

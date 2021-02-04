@@ -44,4 +44,3 @@ limit 146; --empty
 statement ok
 ROLLBACK
 
-

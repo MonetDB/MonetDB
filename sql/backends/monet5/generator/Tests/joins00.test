@@ -136,4 +136,3 @@ select * from generate_series(9,0,-2) as  X, tmp Y where X.value = Y.i and value
 statement ok
 drop table tmp
 
-

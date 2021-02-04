@@ -23,9 +23,18 @@ INSERT INTO rawtriples VALUES(1001, 1,
 '100168990', 2, 'glossaryEntry', 0, '',
 -5342185907394955428, NULL, 'adorning with mosaic', true)
 
-query RRTRTRTRTTT rowsort
+query RRTRTRTRTTI rowsort
 select * from rawtriples
 ----
-11 values hashing to c537223e6971d4e31202cacabed01842
-
+1001.000
+1.000
+100168990
+2.000
+glossaryEntry
+0.000
+(empty)
+-53495548.000
+NULL
+adorning with mosaic
+1
 

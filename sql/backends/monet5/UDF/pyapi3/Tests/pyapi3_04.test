@@ -14,13 +14,13 @@ language P
     return [True] * 4
 }
 
-query T rowsort
+query I rowsort
 SELECT pyapi04() FROM dval
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
 statement ok
 DROP FUNCTION pyapi04
@@ -30,5 +30,4 @@ DROP TABLE dval
 
 statement ok
 ROLLBACK
-
 

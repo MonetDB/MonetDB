@@ -38,4 +38,3 @@ from (
 statement ok
 drop table tcase
 
-

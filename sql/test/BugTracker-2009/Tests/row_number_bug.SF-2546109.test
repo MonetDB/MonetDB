@@ -37,4 +37,3 @@ drop view b
 statement ok
 drop table a
 
-

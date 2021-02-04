@@ -10,4 +10,3 @@ alter table atacc1 alter test set not null
 statement ok
 drop table atacc1
 
-

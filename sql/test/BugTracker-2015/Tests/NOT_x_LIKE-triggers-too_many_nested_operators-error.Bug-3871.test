@@ -4,20 +4,19 @@ CREATE TABLE foo (col CHAR(8))
 statement ok
 INSERT INTO foo VALUES ('bee')
 
-query I rowsort
+query T rowsort
 SELECT * FROM foo WHERE NOT col LIKE 'b%'
 ----
 
-query I rowsort
+query T rowsort
 SELECT * FROM foo WHERE (col NOT LIKE 'b%')
 ----
 
-query T 
+query T nosort
 SELECT * FROM foo WHERE NOT col NOT like 'b%'
 ----
 bee
 
 statement ok
 DROP TABLE foo
-
 

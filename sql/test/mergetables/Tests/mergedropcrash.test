@@ -34,4 +34,3 @@ DROP table t2
 statement ok
 DROP table m
 
-

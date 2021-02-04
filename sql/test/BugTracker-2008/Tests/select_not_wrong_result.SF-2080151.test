@@ -39,4 +39,3 @@ drop table B
 statement ok
 drop table A
 
-

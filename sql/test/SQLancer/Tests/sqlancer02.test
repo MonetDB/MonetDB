@@ -12,28 +12,28 @@ NULL	1.89755202e+09
 NULL	0.8514002985569765
 NULL	0.8565135463082767
 
-query T rowsort
+query I rowsort
 SELECT ALL t0.c0 FROM t0 WHERE (((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))
 ----
 NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE 1 BETWEEN SYMMETRIC t0.c1 AND 0
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE 1 BETWEEN t0.c1 AND 0
 ----
 
-query T rowsort
+query I rowsort
 SELECT ALL t0.c0 FROM t0 WHERE (((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0)) UNION ALL
 SELECT ALL t0.c0 FROM t0 WHERE NOT ((((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))) UNION ALL
 SELECT t0.c0 FROM t0 WHERE ((((0.654013919354451) BETWEEN SYMMETRIC (t0.c1) AND ("length"(upper(''))))OR(t0.c0))) IS NULL
 ----
-False
+0
 NULL
 NULL
 NULL
@@ -50,13 +50,13 @@ CREATE TABLE integers(i INTEGER)
 statement ok
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query T rowsort
+query I rowsort
 select i between symmetric cast(1 as decimal) and cast(2 as double) from integers
 ----
-False
+0
+1
+1
 NULL
-True
-True
 
 statement ok
 ROLLBACK
@@ -494,7 +494,7 @@ COPY 16 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 0.38681017904242443	NULL	NULL
 -4.411138449465319	NULL	NULL
 
-query T rowsort
+query I rowsort
 SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT "isauuid"(COALESCE(t2.c1, t2.c1)) FROM t2 WHERE ((((((((((TRUE)AND(TRUE)))OR
 (TRUE)))OR(TRUE)))OR(FALSE)))AND(TRUE))) EXCEPT ALL (SELECT ALL ((CASE 0.54967607103225102349597364082001149654388427734375
 WHEN 0.05049592582495154857724628527648746967315673828125 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2
@@ -505,7 +505,7 @@ THEN r'Bv*氅.x' END), (r'', 0.7763767959438655, "insert"(r'RR6Mw+', 5, -6560477
 CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1758578278)) AS REAL))) AS sub1
 WHERE (3.0) IS NOT NULL
 ----
-896 values hashing to d306becf2331385a704244961b752859
+896 values hashing to 25c86efc7cd2ecb484be80b79f18927b
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((3.0) IS NOT NULL AS INT) as count FROM t1, t2 CROSS JOIN
@@ -536,10 +536,10 @@ INSERT INTO mycount SELECT COUNT(*) FROM sys.dependencies
 statement ok
 CREATE TABLE t0(c0 int AUTO_INCREMENT,c1 STRING)
 
-query T rowsort
+query I rowsort
 SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
 ----
-True
+1
 
 statement ok
 ALTER TABLE t0 DROP c0 CASCADE
@@ -564,10 +564,10 @@ CREATE FUNCTION myfunc() returns int return 1
 statement ok
 CREATE TABLE t0(c0 int default myfunc(),c1 STRING)
 
-query T rowsort
+query I rowsort
 SELECT COUNT(*) > (SELECT cc FROM mycount) FROM sys.dependencies
 ----
-True
+1
 
 statement ok
 ALTER TABLE t0 DROP c0 CASCADE
@@ -736,7 +736,7 @@ statement ok
 create view v85(vc0, vc1) as ((select -9.397294E8, ifthenelse(l0v22.vc2, 7, -5) from v22 as l0v22
 where l0v22.vc0 < l0v22.vc0) intersect (select 1, 8))
 
-query TII rowsort
+query III rowsort
 select true, 3, 1 from v14 as l0v14 join ((select 1) except all (select 3 from v85 as l1v85)) as
 sub0 on case l0v14.vc2 when l0v14.vc1 then false end
 ----

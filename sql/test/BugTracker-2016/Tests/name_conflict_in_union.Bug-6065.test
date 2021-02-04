@@ -11,4 +11,3 @@ SELECT 2 AS k2, a8.so AS k2 FROM t0 AS a8
 2
 1
 
-

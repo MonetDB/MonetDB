@@ -4,7 +4,6 @@ nr integer auto_increment,
 tr_time timestamp(3) with time zone
 )
 
-
 statement ok
 insert into timestamp1 (tr_time)
 select *
@@ -20,19 +19,4 @@ select timestamp with time zone '2005-04-12 05:35-07:00' as tr_time
 union
 select timestamp with time zone '2005-04-12 07:15-07:00' as tr_time
 ) as foo
-
-
-query I rowsort
-select nr from timestamp1
-order by tr_time
-limit 3
-
-----
-1
-3
-4
-
-statement ok
-drop table timestamp1
-
 

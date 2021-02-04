@@ -23,4 +23,3 @@ drop table test1
 statement ok
 drop table test2
 
-

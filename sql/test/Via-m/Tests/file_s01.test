@@ -9,3 +9,4 @@ select * from video_set
 query IITTTTITTII nosort
 select * from file
 ----
+

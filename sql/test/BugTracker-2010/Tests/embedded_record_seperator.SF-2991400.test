@@ -15,4 +15,3 @@ c"
 statement ok
 drop table ers
 
-

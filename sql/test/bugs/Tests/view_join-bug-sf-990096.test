@@ -50,4 +50,3 @@ SELECT a.i FROM
 statement ok
 ROLLBACK
 
-

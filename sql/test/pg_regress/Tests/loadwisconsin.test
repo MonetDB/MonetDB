@@ -22035,4 +22035,3 @@ delete from Bprime where unique2 >= 1000
 statement ok
 commit
 
-

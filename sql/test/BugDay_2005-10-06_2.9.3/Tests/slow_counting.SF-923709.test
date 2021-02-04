@@ -35,4 +35,3 @@ drop function gen_insert
 statement ok
 drop table slow_count
 
-

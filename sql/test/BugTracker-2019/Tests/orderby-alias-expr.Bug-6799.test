@@ -85,4 +85,3 @@ SELECT nm, COUNT(nm) countnm, COUNT(DISTINCT nm) countdnm FROM obale GROUP BY nm
 statement ok
 DROP TABLE obale
 
-

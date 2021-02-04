@@ -13,4 +13,3 @@ drop view y
 statement ok
 drop table x
 
-

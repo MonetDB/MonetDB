@@ -39,7 +39,54 @@ select distinct way from way_tags group by way, k having count(*) > 1
 query ITT rowsort
 select * from way_tags where way in (23950375, 24644162)
 ----
-48 values hashing to 117456b7f3bdcd634f32faafeafac0e9
+23950375
+created_by
+Potlatch 0.10f
+23950375
+created_by
+Potlatch 0.10f
+23950375
+highway
+residential
+23950375
+highway
+residential
+23950375
+lanes
+1
+23950375
+lanes
+1
+23950375
+maxspeed
+30
+23950375
+maxspeed
+30
+23950375
+name
+Haarholzer Stra@e
+23950375
+name
+Haarholzer Stra@e
+24644162
+created_by
+Potlatch 0.9c
+24644162
+created_by
+Potlatch 0.9c
+24644162
+highway
+residential
+24644162
+highway
+residential
+24644162
+name
+Kampelaer
+24644162
+name
+Kampelaer
 
 statement ok
 delete from way_tags where way in (23950375, 24644162)
@@ -49,5 +96,4 @@ ALTER table way_tags add primary key(way, k)
 
 statement ok
 DROP table way_tags
-
 

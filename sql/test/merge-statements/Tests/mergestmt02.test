@@ -40,4 +40,3 @@ drop table merging
 statement ok
 drop table predata
 
-

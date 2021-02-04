@@ -407,4 +407,3 @@ update huge set a99 = 2 where a99  is null
 statement ok
 rollback
 
-

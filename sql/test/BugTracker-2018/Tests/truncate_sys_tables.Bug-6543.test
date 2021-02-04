@@ -1,67 +1,67 @@
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.user_role
 ----
-False
+0
 
 statement error
 TRUNCATE TABLE sys.user_role
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.user_role
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.types
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.types
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.types
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.triggers
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.triggers
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.triggers
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.table_types
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.table_types
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.table_types
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.systemfunctions
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.systemfunctions
 ----
-True
+1
 
 statement error
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.storagemodelinput
@@ -81,200 +81,200 @@ TRUNCATE TABLE sys.statistics
 statement error
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.statistics
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.sequences
 ----
-False
+0
 
 statement error
 TRUNCATE TABLE sys.sequences
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.sequences
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.schemas
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.schemas
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.schemas
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.privileges
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.privileges
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.privileges
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.privilege_codes
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.privilege_codes
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.privilege_codes
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.objects
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.objects
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.objects
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.keywords
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.keywords
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.keywords
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.keys
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.keys
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.keys
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.key_types
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.key_types
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.key_types
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.index_types
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.index_types
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.index_types
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.idxs
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.idxs
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.idxs
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.functions
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.functions
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.functions
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_types
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.function_types
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_types
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_languages
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.function_languages
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.function_languages
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependency_types
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.dependency_types
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependency_types
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependencies
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.dependencies
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.dependencies
 ----
-True
+1
 
 statement error
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.db_user_info
@@ -285,69 +285,68 @@ TRUNCATE TABLE sys.db_user_info
 statement error
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.db_user_info
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.comments
 ----
-False
+0
 
 statement error
 TRUNCATE TABLE sys.comments
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.comments
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.auths
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.auths
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.auths
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.args
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys.args
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.args
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys._tables
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys._tables
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys._tables
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys._columns
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE sys._columns
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys._columns
 ----
-True
-
+1
 

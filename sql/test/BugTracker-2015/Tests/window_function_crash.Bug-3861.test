@@ -49,4 +49,3 @@ UPDATE foo SET col = (SELECT ROW_NUMBER() OVER (ORDER BY col))
 statement ok
 DROP TABLE foo
 
-

@@ -1,4 +1,4 @@
-query IIITITRI nosort
+query IIITIITI nosort
 select * from media
 ----
 1
@@ -6,8 +6,8 @@ select * from media
 1
 identifier1
 1
-False
-25.000
+0
+25.0
 125
 
 query IT nosort

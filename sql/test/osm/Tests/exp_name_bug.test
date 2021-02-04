@@ -9,4 +9,3 @@ WITH a(relation, to_relation, indent) AS (SELECT relation, to_relation,
 statement ok
 DROP table relation_members_relation
 
-

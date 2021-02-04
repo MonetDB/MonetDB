@@ -37,4 +37,3 @@ with wa as (select 1,2,3 as "L2") select wa.* from wa
 2
 3
 
-

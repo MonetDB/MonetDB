@@ -23,4 +23,3 @@ bigint
 statement ok
 ROLLBACK
 
-

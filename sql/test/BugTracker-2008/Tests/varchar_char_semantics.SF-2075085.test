@@ -28,4 +28,3 @@ SELECT COUNT(*) FROM T850 WHERE T850C = T850VC
 statement ok
 drop table T850
 
-

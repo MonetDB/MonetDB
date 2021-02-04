@@ -22,4 +22,3 @@ insert into test values ('')
 statement ok
 rollback
 
-

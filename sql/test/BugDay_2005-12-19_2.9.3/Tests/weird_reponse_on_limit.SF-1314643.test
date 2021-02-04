@@ -1,16 +1,26 @@
-query TTITII rowsort
+query TTIIII rowsort
 select name, query, "type", system, commit_action, "temporary" from tables limit 1
 ----
 schemas
 NULL
 10
-True
+1
 0
 0
 
-query TTITII rowsort
+query TTIIII rowsort
 select name, query, "type", system, commit_action, "temporary" from tables limit 2
 ----
-12 values hashing to c6e8473846d2a1bda4e58e9e95e3dbbe
-
+schemas
+NULL
+10
+1
+0
+0
+types
+NULL
+10
+1
+0
+0
 

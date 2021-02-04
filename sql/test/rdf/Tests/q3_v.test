@@ -1335,4 +1335,3 @@ SELECT prop, obj, cnt from (
  ) as trip
 ----
 
-

@@ -27,12 +27,20 @@ select vid, date, cur, val,
 	) as Preis
   from vouchers v
 ----
-10 values hashing to eeb557396cbcafe4ce47a23e91651fbf
+1
+20130110
+USD
+1000.000
+1.200
+1
+20130210
+USD
+2000.000
+1.300
 
 statement ok
 drop table vouchers
 
 statement ok
 drop table prices
-
 

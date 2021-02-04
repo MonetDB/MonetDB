@@ -11,4 +11,3 @@ INSERT INTO parent VALUES (1)
 statement ok
 INSERT INTO child VALUES (1)
 
-

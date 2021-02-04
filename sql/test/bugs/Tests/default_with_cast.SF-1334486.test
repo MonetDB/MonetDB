@@ -14,3 +14,4 @@ select cast(now() as date) - d from t
 
 statement ok
 drop table t
+

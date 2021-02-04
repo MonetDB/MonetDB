@@ -26,4 +26,3 @@ drop table testtbl_2648
 statement ok
 drop sequence testseq_2648
 
-

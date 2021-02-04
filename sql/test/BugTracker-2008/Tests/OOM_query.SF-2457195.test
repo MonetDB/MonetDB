@@ -118,7 +118,7 @@ COPY 113 RECORDS into test from STDIN using delimiters ',',E'\n', '"'
 "S","TOP"
 "NP S@","S"
 
-query TTTTTTTTTTTTTTT rowsort
+query TIIIIIIIIIIIIII rowsort
 select rhs,
 (lhs like 'A%' OR lhs like 'B%' OR lhs like 'C%' OR lhs like 'D%' OR lhs
 like 'E%' OR lhs like 'F%' OR lhs like 'G%' OR lhs like 'H%' OR lhs like
@@ -141,9 +141,9 @@ like 'R%' OR lhs like 'S%' OR lhs like 'T%' OR lhs like 'U%' OR lhs like
 (lower(lhs) like '%._')
 from test where lhs like '%!_' escape '!'
 ----
-810 values hashing to 4d668cad0c2b9bcddc0748074efa9adf
+810 values hashing to 037140c7cccd2523c4153c8a0ed9c78f
 
-query TTTTTTTTTTTTTTT rowsort
+query TIIIIIIIIIIIIII rowsort
 select rhs,
 (lhs like 'A%' OR lhs like 'B%' OR lhs like 'C%' OR lhs like 'D%' OR
 lhs like 'E%' OR lhs like 'F%' OR lhs like 'G%' OR lhs like 'H%' OR lhs
@@ -167,6 +167,5 @@ like 'V%' OR lhs like 'W%' OR lhs like 'X%' OR lhs like 'Y%' OR lhs like
 (lower(lhs) like '%.!_')
 from test where lhs like '%!_' escape '!'
 ----
-810 values hashing to 6beaf57344eff5e9652eabb2c51b906c
-
+810 values hashing to 09e24177753a67a3752ec2570cf47027
 

@@ -30,4 +30,3 @@ SELECT * FROM results_table
 statement ok
 ROLLBACK
 
-

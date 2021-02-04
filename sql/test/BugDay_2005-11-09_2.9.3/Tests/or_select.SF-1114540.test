@@ -51,4 +51,3 @@ SELECT id FROM t1114540 WHERE id<11 OR id IS NULL ORDER BY id
 ----
 10
 
-

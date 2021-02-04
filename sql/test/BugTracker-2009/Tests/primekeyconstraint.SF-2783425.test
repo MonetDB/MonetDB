@@ -38,7 +38,24 @@ ALTER TABLE way_nds ADD CONSTRAINT pk_way_nds PRIMARY KEY (way, idx)
 query II rowsort
 select way,idx from way_nds
 ----
-18 values hashing to f05c6ba913fec37285424e27d9c6c743
+1
+1
+1
+1
+2
+2
+3
+3
+4
+3
+5
+NULL
+5
+NULL
+NULL
+3
+NULL
+3
 
 query III rowsort
 select count(way), way, idx from way_nds group by way, idx having count(way) > 1
@@ -75,5 +92,4 @@ NULL
 
 statement ok
 drop table way_nds
-
 

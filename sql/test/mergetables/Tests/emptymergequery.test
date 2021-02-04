@@ -7,4 +7,3 @@ select * from emptym
 statement ok
 drop table emptym
 
-

@@ -49,7 +49,42 @@ ALTER TABLE R ADD TABLE R3
 query IIT rowsort
 SELECT * FROM R
 ----
-36 values hashing to d6ed295dbb83ef01a5a924a3581b7c71
+0
+0
+hello
+1
+0
+hello
+10
+0
+hello
+11
+0
+hello
+12
+1
+world
+13
+1
+world
+2
+1
+world
+3
+1
+world
+5
+0
+hello
+6
+0
+hello
+7
+1
+world
+8
+1
+world
 
 statement ok
 CREATE TABLE S1 ( x integer primary key, y integer, z string)
@@ -91,7 +126,48 @@ ALTER TABLE S ADD TABLE S2
 query IIT rowsort
 SELECT * FROM S
 ----
-42 values hashing to 2aeb11c813aefc8be1a9876158af4c4d
+0
+0
+hello
+1
+0
+hello
+10
+0
+hello
+11
+0
+hello
+12
+1
+world
+13
+1
+world
+2
+1
+world
+3
+1
+world
+4
+1
+bye
+5
+0
+hello
+6
+0
+hello
+7
+1
+world
+8
+1
+world
+9
+1
+bye
 
 query ITTTITI rowsort
 select
@@ -270,7 +346,7 @@ select  ref_0.x from sys.s2 as ref_0
 	)
 ----
 
-query IT rowsort
+query II rowsort
 select
   ref_11.access as c0,
   ref_12.revsorted as c1
@@ -394,5 +470,4 @@ limit 123
 
 statement ok
 ROLLBACK
-
 

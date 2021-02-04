@@ -18,4 +18,3 @@ select coalesce(f1,'EMPTY') as bug_alias, cast(sum(f2) as bigint) from a group b
 statement ok
 ROLLBACK
 
-

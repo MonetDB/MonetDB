@@ -12,4 +12,3 @@ select avg(val - (select avg(val) from bug2739)) from bug2739
 statement ok
 drop table bug2739
 
-

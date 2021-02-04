@@ -43,4 +43,3 @@ select 7@;
 monetdb
 select username, query from sys.queue() order by query@;
 
-

@@ -19,9 +19,27 @@ insert into "table1" values ('cust2', 'p3', 200)
 query TTRI rowsort
 SELECT "customer", "product", "sumprice", (Row_number() OVER(PARTITION BY "customer" ORDER BY "sumprice")) as "rank" FROM ( SELECT "customer", "product", (Sum("price")) AS "sumprice" FROM "table1" GROUP BY "customer", "product") AS "temp"
 ----
-20 values hashing to 8da78df5921d9bb13c4b75294af9f6b7
+cust1
+p1
+100.000
+1
+cust1
+p2
+200.000
+3
+cust1
+p3
+150.000
+2
+cust2
+p1
+300.000
+2
+cust2
+p3
+200.000
+1
 
 statement ok
 DROP TABLE "table1"
-
 

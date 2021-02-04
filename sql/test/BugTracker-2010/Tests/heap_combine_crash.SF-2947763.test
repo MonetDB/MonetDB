@@ -7408,4 +7408,3 @@ DROP TABLE "temp_20_TERM"
 statement ok
 DROP TABLE "temp_27_TERM"
 
-

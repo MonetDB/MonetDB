@@ -42,4 +42,3 @@ DROP TABLE user_record_insertion
 statement ok
 DROP TABLE user_record
 
-

@@ -38,4 +38,3 @@ SELECT * FROM bug3512 WHERE a = 9999
 statement ok
 ROLLBACK
 
-

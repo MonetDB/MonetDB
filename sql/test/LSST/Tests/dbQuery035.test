@@ -7,4 +7,3 @@ WHERE   uMag-gMag < 0.4
    AND  iMag-zMag > 0.4
 ----
 
-

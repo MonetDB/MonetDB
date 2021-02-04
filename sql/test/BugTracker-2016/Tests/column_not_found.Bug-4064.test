@@ -84,4 +84,3 @@ drop table z
 statement ok
 ROLLBACK
 
-

@@ -13,4 +13,3 @@ rollback
 statement error
 insert into tmp values(0,'ddd')
 
-

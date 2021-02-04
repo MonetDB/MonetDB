@@ -2,7 +2,7 @@ query ITTT nosort
 select * from event
 ----
 
-query ITTT nosort
+query IITT nosort
 select * from event_metadata
 ----
 

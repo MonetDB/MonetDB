@@ -35,14 +35,36 @@ SELECT A.x, A.y, B.x, B.y
 FROM tableA A
 LEFT JOIN tableB B ON ( A.y < 20 ) 
 ----
-12 values hashing to c742eae37ce23be94ebb9dcefaa2d285
+1
+10
+1
+-10
+1
+10
+2
+-20
+2
+20
+NULL
+NULL
 
 query IIII rowsort
 SELECT A.x, A.y, B.x, B.y
 FROM tableA A
 RIGHT JOIN tableB B ON ( B.y < -10 ) 
 ----
-12 values hashing to 06efb863e3cf0fcff355701485781d0c
+1
+10
+2
+-20
+2
+20
+2
+-20
+NULL
+NULL
+1
+-10
 
 query IIII rowsort
 SELECT A.x, A.y, B.x, B.y
@@ -63,19 +85,40 @@ SELECT A.x, A.y, B.x, B.y
 FROM tableA A
 FULL JOIN tableB B ON ( B.y < -10 ) 
 ----
-12 values hashing to 06efb863e3cf0fcff355701485781d0c
+1
+10
+2
+-20
+2
+20
+2
+-20
+NULL
+NULL
+1
+-10
 
 query IIII rowsort
 SELECT A.x, A.y, B.x, B.y
 FROM tableA A
 FULL JOIN tableB B ON ( A.y < 20 ) 
 ----
-12 values hashing to c742eae37ce23be94ebb9dcefaa2d285
+1
+10
+1
+-10
+1
+10
+2
+-20
+2
+20
+NULL
+NULL
 
 statement ok
 DROP TABLE tableA
 
 statement ok
 DROP TABLE tableB
-
 

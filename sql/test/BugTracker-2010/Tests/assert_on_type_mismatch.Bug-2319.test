@@ -13,4 +13,3 @@ drop table dict
 statement ok
 drop table x
 
-

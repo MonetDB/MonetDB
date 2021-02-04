@@ -14,4 +14,3 @@ drop index tx_index
 statement ok
 drop table tx
 
-

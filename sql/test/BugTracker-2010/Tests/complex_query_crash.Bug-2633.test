@@ -285,3 +285,4 @@ SELECT * FROM rank_DOC_BM250_RETRIEVE_result LIMIT 10
 
 statement ok
 rollback
+

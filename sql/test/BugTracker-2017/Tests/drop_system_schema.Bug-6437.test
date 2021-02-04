@@ -1,7 +1,18 @@
 query TII rowsort
 select name, authorization, owner from sys.schemas where system and name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-12 values hashing to 0d6030c58cdf30b3f02b859bfc85343a
+json
+3
+3
+profiler
+3
+3
+sys
+2
+3
+tmp
+2
+3
 
 statement ok
 set schema profiler
@@ -28,7 +39,18 @@ drop schema profiler restrict
 query TII rowsort
 select name, authorization, owner from sys.schemas where system and name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-12 values hashing to 0d6030c58cdf30b3f02b859bfc85343a
+json
+3
+3
+profiler
+3
+3
+sys
+2
+3
+tmp
+2
+3
 
 statement ok
 set schema profiler
@@ -47,7 +69,18 @@ drop schema json restrict
 query TII rowsort
 select name, authorization, owner from sys.schemas where system and name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-12 values hashing to 0d6030c58cdf30b3f02b859bfc85343a
+json
+3
+3
+profiler
+3
+3
+sys
+2
+3
+tmp
+2
+3
 
 statement ok
 set schema json
@@ -72,7 +105,18 @@ drop schema sys restrict
 query TII rowsort
 select name, authorization, owner from sys.schemas where system and name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-12 values hashing to 0d6030c58cdf30b3f02b859bfc85343a
+json
+3
+3
+profiler
+3
+3
+sys
+2
+3
+tmp
+2
+3
 
 statement ok
 set schema profiler
@@ -98,10 +142,25 @@ select current_schema
 ----
 sys
 
-query TIIT rowsort
+query TIII rowsort
 select name, authorization, owner, "system" from sys.schemas where name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-16 values hashing to 435f5ae1939c491d822294758c0e3d38
+json
+3
+3
+1
+profiler
+3
+3
+1
+sys
+2
+3
+1
+tmp
+2
+3
+1
 
 statement error
 drop schema profiler cascade
@@ -112,10 +171,25 @@ drop schema json cascade
 statement error
 drop schema tmp cascade
 
-query TIIT rowsort
+query TIII rowsort
 select name, authorization, owner, "system" from sys.schemas where name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-16 values hashing to 435f5ae1939c491d822294758c0e3d38
+json
+3
+3
+1
+profiler
+3
+3
+1
+sys
+2
+3
+1
+tmp
+2
+3
+1
 
 statement ok
 set schema tmp
@@ -128,9 +202,23 @@ tmp
 statement error
 drop schema sys cascade
 
-query TIIT rowsort
+query TIII rowsort
 select name, authorization, owner, "system" from sys.schemas where name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-16 values hashing to 435f5ae1939c491d822294758c0e3d38
-
+json
+3
+3
+1
+profiler
+3
+3
+1
+sys
+2
+3
+1
+tmp
+2
+3
+1
 

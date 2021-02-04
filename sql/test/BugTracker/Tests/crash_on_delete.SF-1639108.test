@@ -55,4 +55,3 @@ drop table number
 statement ok
 commit
 
-

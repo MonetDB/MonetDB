@@ -16,4 +16,3 @@ abc
 statement ok
 DROP table t
 
-

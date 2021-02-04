@@ -80,6 +80,14 @@ AND "tables"."type" = 1 ) AS "tables" WHERE 1 = 1 AND ("TABLE_TYPE" LIKE
 'TABLE' OR "TABLE_TYPE" LIKE 'VIEW') ORDER BY
 "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME" 
 ----
-10 values hashing to 1310b36e6307528ae83f674e68cc27cf
-
+demo
+sys
+test
+TABLE
+(empty)
+NULL
+NULL
+NULL
+rowid
+SYSTEM
 

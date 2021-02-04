@@ -32,4 +32,3 @@ select var_pop(i) from t3257 group by j
 statement ok
 rollback
 
-

@@ -14,4 +14,3 @@ drop table t1907060_1
 statement ok
 drop table t1907060_2
 
-

@@ -70,12 +70,34 @@ update t1 set id = 17 where id =7
 query IT rowsort
 select * from t1
 ----
-14 values hashing to 5ba7f96486ff4bfb6b85b8572900c617
+1
+monetdb
+16
+moetdb
+17
+mo
+2
+mon
+3
+monb
+4
+motdb
+5
+mob
 
 query II rowsort
 select * from t2
 ----
-10 values hashing to 2587449ed5124cd1e56fb78e11e08cf1
+1
+23
+2
+24
+3
+25
+4
+26
+5
+27
 
 query II rowsort
 select * from t3
@@ -97,5 +119,4 @@ drop table t2
 
 statement ok
 drop table t1
-
 

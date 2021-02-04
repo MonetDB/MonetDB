@@ -89,11 +89,10 @@ CREATE TABLE subt (A1 BIGINT)
 statement ok
 CREATE TABLE t (B BIGINT)
 
-query T rowsort
+query I rowsort
 SELECT (B IN (SELECT A1 FROM subt)) FROM t
 ----
 
 statement ok
 ROLLBACK
-
 

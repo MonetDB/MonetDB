@@ -46,4 +46,3 @@ where EXISTS (
     where true)
 ----
 
-

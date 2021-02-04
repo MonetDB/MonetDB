@@ -63,4 +63,3 @@ select sys.median(cast (id as double)) from tbls
 statement ok
 drop table tbls
 
-

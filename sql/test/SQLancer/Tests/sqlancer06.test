@@ -218,7 +218,7 @@ CREATE ORDERED INDEX "i2" ON "sys"."t1" ("c0")
 statement ok
 create view v0(c0) as (select 1 from t0,t1 where ((t0.c0)>=(t1.c0)))
 
-query T rowsort
+query I rowsort
 select '12' like 'i' from t0, t1 right outer join v0 on exists (select 'a' from t0, t1)
 ----
 
@@ -282,17 +282,117 @@ create view v0(c0, c1, c2, c3) as (select distinct timestamp '1970-01-15 12:32:1
 query I rowsort
 select 1 from t2 right outer join t1 on t1.c0 not like t2.c0
 ----
-21 values hashing to 977a592f2dfa0e16714f2c124e769b53
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select 1 from t2 join t1 on t1.c0 not like t2.c0
 ----
-19 values hashing to aa5586026400f23bc1636b5c623db225
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select cast((((coalesce(t2.c0, t2.c0))not ilike(t2.c0))) = true as int) as count from v0, t2 right outer join t1 on not (not (((t1.c0)not ilike(t2.c0))))
 ----
-63 values hashing to 3231d090f82aff20d38d1a7991b3e0a7
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 ROLLBACK
@@ -306,11 +406,11 @@ CREATE TABLE "sys"."t1" ("c0" BOOLEAN)
 statement ok
 INSERT INTO t1(c0) VALUES(TRUE), ((EXISTS (SELECT DATE '1970-01-06' FROM t1)) BETWEEN (TRUE) AND ((1) IN (1)))
 
-query T rowsort
+query I rowsort
 SELECT c0 from t1
 ----
-False
-True
+0
+1
 
 statement ok
 ROLLBACK
@@ -546,7 +646,46 @@ SELECT count(*) FROM t1 WHERE t1.c0 <> ALL(SELECT '1' WHERE FALSE)
 query T rowsort
 SELECT t1.c0 FROM t1 WHERE t1.c0 <> ALL(SELECT DISTINCT CAST(0.5646222839477373 AS INT) FROM t0, t1 WHERE (t0.c1) NOT BETWEEN ASYMMETRIC (COALESCE(t0.c1, t0.c1)) AND (t0.c1))
 ----
-40 values hashing to d1211adb1db0939eb24717b8d95294e2
+ 
+'A@B^UrHl
+(empty)
+(empty)
+(empty)
+(empty)
+-1593184632
+0.3418058502965632
+0.4196422515625643
+0.6948820797452814
+1814883154
+1953144617
+670216259
+715827645
+858302044
+?}z#4@
+@
+@H@
+A@
+E+Tx4A
+F9
+F@r.(H
+O-,j3@
+R@K2
+Ri5D
+VA
+Vt1
+Y7@?@Qpt@
+[
+^
+b
+fN@?@@Bb
+j
+o_@l
+pM@
+pv
+v0
+vT
+{dT
+}IFT
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(t1.c0 <> ALL(SELECT DISTINCT CAST(0.5646222839477373 AS INT) FROM t0, t1 WHERE (t0.c1) NOT BETWEEN ASYMMETRIC (COALESCE(t0.c1, t0.c1)) AND (t0.c1)) AS INT) as count FROM t1) as res
@@ -752,10 +891,10 @@ CREATE TABLE "t2"("c0" INTERVAL SECOND NOT NULL)
 statement ok
 INSERT INTO "t2" VALUES (INTERVAL '1253074618' SECOND)
 
-query T rowsort
+query I rowsort
 SELECT t1.c0 > COALESCE((SELECT INTERVAL '1' SECOND FROM t2), (SELECT t1.c0 FROM t1)) FROM t1
 ----
-True
+1
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((t1.c0) NOT BETWEEN ASYMMETRIC (COALESCE((SELECT DISTINCT INTERVAL '1584712456' SECOND FROM t2), (SELECT t1.c0 FROM t2, t1, t0))) AND (t1.c0) AS INT) as count FROM t1) as res
@@ -850,15 +989,15 @@ INSERT INTO "t2" VALUES (0.9896628791758083, 0.017)
 statement ok
 INSERT INTO "t2" VALUES (-808084788, 0.922)
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE (t0.c0 <> ALL(SELECT TRUE FROM t0, t1) AND t0.c0) = FALSE
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT t0.c0 FROM t0 WHERE (((((((t0.c0 <> ALL(SELECT ALL t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE
 ----
-False
+0
 
 query I rowsort
 SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((((t0.c0 <> ALL(SELECT t0.c0 FROM t0, t2, t1))OR(t0.c0)))AND(t0.c0)))OR(t0.c0))) = FALSE AS INT) as count FROM t0) as res
@@ -867,5 +1006,4 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST((((((((t0.c0 <> ALL(SELECT t
 
 statement ok
 ROLLBACK
-
 

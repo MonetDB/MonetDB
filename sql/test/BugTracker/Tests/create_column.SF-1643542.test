@@ -14,4 +14,3 @@ select * from t1643542a
 statement ok
 drop table t1643542a
 
-

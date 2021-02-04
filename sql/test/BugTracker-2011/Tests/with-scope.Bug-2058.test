@@ -21,4 +21,3 @@ drop table bug2058a
 statement ok
 drop table bug2058b
 
-

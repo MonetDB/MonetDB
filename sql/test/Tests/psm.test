@@ -138,4 +138,3 @@ select * from fWedgeV3(cast (1.0 as float), cast (1.0 as float), cast (1.0 as fl
 0.000
 0.000
 
-
