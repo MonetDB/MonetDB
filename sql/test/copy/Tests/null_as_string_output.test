@@ -52,4 +52,3 @@ drop table null_as_string
 statement ok
 rollback
 
-

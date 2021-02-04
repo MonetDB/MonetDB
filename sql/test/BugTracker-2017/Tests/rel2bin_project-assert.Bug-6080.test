@@ -55,4 +55,3 @@ where subq_0.c0 is not NULL; --empty
 statement ok
 ROLLBACK
 
-

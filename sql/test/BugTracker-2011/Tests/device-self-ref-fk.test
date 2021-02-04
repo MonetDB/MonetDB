@@ -20,4 +20,3 @@ ALTER TABLE "device" ADD CONSTRAINT "device_device_fk" FOREIGN KEY ("parentdevic
 statement ok
 ROLLBACK
 
-

@@ -1,85 +1,84 @@
 statement ok
 CREATE TEMP TABLE tmptable6543 (id int NOT NULL PRIMARY KEY, name VARCHAR(99) NOT NULL) ON COMMIT PRESERVE ROWS
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers
 ----
-False
+0
 
 statement error
 TRUNCATE TABLE tmp.triggers
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE tmp.objects
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE tmp.keys
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE tmp.idxs
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE tmp._tables
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns
 ----
-True
+1
 
 statement error
 TRUNCATE TABLE tmp._columns
 
-query T rowsort
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns
 ----
-True
+1
 
 statement ok
 DROP TABLE tmptable6543
-
 

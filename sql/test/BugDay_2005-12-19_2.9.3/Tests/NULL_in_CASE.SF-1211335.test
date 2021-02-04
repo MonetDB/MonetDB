@@ -28,4 +28,3 @@ select CASE WHEN 3=0 THEN 3 else cast(null as int) end
 ----
 NULL
 
-

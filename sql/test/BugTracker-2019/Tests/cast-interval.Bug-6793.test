@@ -64,4 +64,3 @@ SELECT count(f1), sum(f1), sum(f1), sum(f1), sum(f1) FROM INTERVAL_TBL
 statement ok
 DROP TABLE INTERVAL_TBL
 
-

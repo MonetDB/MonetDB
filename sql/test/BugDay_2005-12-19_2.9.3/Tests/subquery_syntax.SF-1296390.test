@@ -10,4 +10,3 @@ insert into test1296390 (select max(id) + 1 from test1296390)
 statement ok
 insert into test1296390 ((select max(id) + 1 from test1296390))
 
-

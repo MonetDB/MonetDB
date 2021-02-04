@@ -12,4 +12,3 @@ select cast((t * 100) as integer) from test234
 statement ok
 drop table test234
 
-

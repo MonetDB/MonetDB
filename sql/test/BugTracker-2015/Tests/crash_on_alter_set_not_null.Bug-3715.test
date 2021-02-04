@@ -16,4 +16,3 @@ COMMIT
 statement ok
 drop table bugexample
 
-

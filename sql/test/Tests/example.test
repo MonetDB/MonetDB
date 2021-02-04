@@ -22,12 +22,40 @@ insert into example values( 8, 'texxst', 0.0001 )
 query ITR rowsort
 select * from example order by val1, val2
 ----
-15 values hashing to f34c301e90e99b940877b2196f9a011d
+0
+texst
+99999.100
+1
+test
+0.100
+5
+xtest
+0.900
+8
+texxst
+0.000
+9
+testx
+9.100
 
 query ITR rowsort
 select * from example_view order by val1, val2
 ----
-15 values hashing to f34c301e90e99b940877b2196f9a011d
+0
+texst
+99999.100
+1
+test
+0.100
+5
+xtest
+0.900
+8
+texxst
+0.000
+9
+testx
+9.100
 
 statement ok
 insert into example values( 1, 'test', 0.1 )
@@ -44,15 +72,73 @@ insert into example values( 0, 'texst', 99999.1 )
 statement ok
 insert into example values( 8, 'texxst', 0.0001 )
 
-query ITR nosort 
+query ITR nosort
 select * from example order by val1, val2
 ----
-30 values hashing to 05f5d6949adcca21040db31dfa9c333a
+0
+texst
+99999.100
+0
+texst
+99999.100
+1
+test
+0.100
+1
+test
+0.100
+5
+xtest
+0.900
+5
+xtest
+0.900
+8
+texxst
+0.000
+8
+texxst
+0.000
+9
+testx
+9.100
+9
+testx
+9.100
 
 query ITR nosort
 select * from example_view order by val1, val2
 ----
-30 values hashing to 05f5d6949adcca21040db31dfa9c333a
+0
+texst
+99999.100
+0
+texst
+99999.100
+1
+test
+0.100
+1
+test
+0.100
+5
+xtest
+0.900
+5
+xtest
+0.900
+8
+texxst
+0.000
+8
+texxst
+0.000
+9
+testx
+9.100
+9
+testx
+9.100
 
 statement ok
 drop view example_view

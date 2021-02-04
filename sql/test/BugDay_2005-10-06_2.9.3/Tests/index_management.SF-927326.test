@@ -38,4 +38,3 @@ SELECT * FROM my_table
 statement ok
 drop table my_table
 
-

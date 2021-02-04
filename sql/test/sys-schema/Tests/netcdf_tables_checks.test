@@ -162,4 +162,3 @@ query TIIT rowsort
 SELECT '"sys"."netcdf_vars"."vartype"' as full_col_nm, 64 as max_allowed_length, length("vartype") as data_length, t."vartype" as data_value FROM "sys"."netcdf_vars" t WHERE "vartype" IS NOT NULL AND length("vartype") > (select type_digits from sys._columns where name = 'vartype' and table_id in (select id from tables where name = 'netcdf_vars' and schema_id in (select id from sys.schemas where name = 'sys')))
 ----
 
-

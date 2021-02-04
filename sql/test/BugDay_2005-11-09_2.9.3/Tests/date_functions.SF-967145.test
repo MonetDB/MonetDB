@@ -1,9 +1,10 @@
-query T
+query T nosort
 select current_date - current_date
 ----
 0
 
-query T
+query T nosort
 select current_date() - current_date()
 ----
 0
+

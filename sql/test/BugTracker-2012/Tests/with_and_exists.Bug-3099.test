@@ -91,4 +91,3 @@ ORDER BY pre1, pre2
 statement ok
 drop table rank
 
-

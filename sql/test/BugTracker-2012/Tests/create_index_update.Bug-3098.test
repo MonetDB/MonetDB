@@ -102,4 +102,3 @@ DROP TABLE "sys"."delete_r"
 statement ok
 ROLLBACK
 
-

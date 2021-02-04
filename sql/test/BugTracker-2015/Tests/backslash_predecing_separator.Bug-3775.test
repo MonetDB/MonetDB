@@ -15,4 +15,3 @@ SELECT * FROM whatgoodisadatabaseifyoucannotimport
 statement ok
 ROLLBACK
 
-

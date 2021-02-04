@@ -60,4 +60,3 @@ foo
 statement ok
 DROP TABLE FOO
 
-

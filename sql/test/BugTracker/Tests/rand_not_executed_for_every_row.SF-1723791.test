@@ -42,4 +42,3 @@ select count (*) from
 statement ok
 drop table nr
 
-

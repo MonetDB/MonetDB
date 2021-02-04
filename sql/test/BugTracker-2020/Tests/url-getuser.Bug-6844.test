@@ -13,4 +13,3 @@ select sys.getUser('http://www.cwi.nl/~mk/vision2011.pdf')
 ----
 NULL
 
-

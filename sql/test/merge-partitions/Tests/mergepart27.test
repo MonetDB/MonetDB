@@ -241,4 +241,3 @@ DROP TABLE otherref
 statement ok
 DROP TABLE another
 
-

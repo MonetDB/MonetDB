@@ -35,4 +35,3 @@ drop procedure profiler.starttrace()
 statement ok
 drop procedure profiler.stoptrace()
 
-

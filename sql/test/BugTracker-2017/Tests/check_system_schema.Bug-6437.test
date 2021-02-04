@@ -1,7 +1,22 @@
-query TIIT rowsort
+query TIII rowsort
 select name, authorization, owner, "system" from sys.schemas where name IN ('sys', 'tmp', 'json', 'profiler') order by name
 ----
-16 values hashing to 435f5ae1939c491d822294758c0e3d38
+json
+3
+3
+1
+profiler
+3
+3
+1
+sys
+2
+3
+1
+tmp
+2
+3
+1
 
 statement ok
 set schema profiler
@@ -34,5 +49,4 @@ query T rowsort
 select current_schema
 ----
 sys
-
 

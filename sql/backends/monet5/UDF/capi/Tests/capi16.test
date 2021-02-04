@@ -134,4 +134,3 @@ SELECT capi02_increment_timestamp('1992-09-20 03:03:02.0101')
 statement ok
 ROLLBACK
 
-

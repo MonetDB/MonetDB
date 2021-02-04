@@ -442,4 +442,3 @@ select t.*, s.distance, s.speed     from segments as s, lateral generate_series(
 statement ok
 rollback
 
-

@@ -127,4 +127,3 @@ drop table proc_insert_into_t1
 statement ok
 drop sequence ff
 
-

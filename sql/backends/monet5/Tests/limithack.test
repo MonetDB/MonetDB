@@ -62,7 +62,7 @@ begin
 	return select id from tbls order by id desc limit 1;
 end
 
-query ITITITITI rowsort
+query ITITIIIII rowsort
 select * from tbls where id in (select id from limited())
 ----
 6616
@@ -70,9 +70,9 @@ systemfunctions
 2000
 NULL
 0
-True
+1
 0
-False
+0
 0
 
 statement ok
@@ -80,5 +80,4 @@ drop function limited
 
 statement ok
 drop table tbls
-
 

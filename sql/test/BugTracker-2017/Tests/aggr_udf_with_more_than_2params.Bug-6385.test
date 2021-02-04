@@ -71,4 +71,3 @@ DROP AGGREGATE aggr3
 statement ok
 DROP AGGREGATE aggr4
 
-

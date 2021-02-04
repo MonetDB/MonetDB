@@ -158,3 +158,4 @@ COPY 71 RECORDS INTO "concepts" FROM stdin USING DELIMITERS E'\t'
 
 statement ok
 COMMIT
+

@@ -1,22 +1,22 @@
-query T rowsort
+query I rowsort
 SELECT E'\\a' LIKE E'\\\\a'
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT E'\\a' LIKE E'\\\\\\\\a'
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'xa' LIKE '_a{1}'
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'xa$b' LIKE '_a$b'
 ----
-True
+1
 
 statement ok
 CREATE FUNCTION sql2pcre(pat TEXT, esc TEXT) RETURNS TEXT EXTERNAL NAME pcre.sql2pcre
@@ -53,5 +53,4 @@ SELECT sql2pcre('%^%', E'\\')
 
 statement ok
 DROP FUNCTION sql2pcre
-
 

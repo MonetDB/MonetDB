@@ -53,4 +53,3 @@ drop table entry
 statement ok
 drop table act
 
-

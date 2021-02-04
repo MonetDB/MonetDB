@@ -151,12 +151,42 @@ UPDATE testsmallpartitions SET b = 'on both partitions' WHERE a = 400 OR a = 200
 query IT rowsort
 SELECT a, b FROM testsmallpartitions
 ----
-18 values hashing to 027514c046f3a9f80e02d457d5aa9090
+100
+another update
+100
+another update
+100
+more
+100
+to
+200
+on both partitions
+300
+changeme
+300
+changeme
+400
+on both partitions
+500
+on
 
 query IT rowsort
 SELECT a, b FROM testingme
 ----
-14 values hashing to 6acfc17eb98783c3b670dbc82ec4aef5
+100
+another update
+100
+another update
+100
+more
+100
+to
+300
+changeme
+300
+changeme
+400
+on both partitions
 
 query IT rowsort
 SELECT a, b FROM testmealso
@@ -172,12 +202,42 @@ UPDATE testsmallpartitions SET b = 'just on the second partition' WHERE a = 500
 query IT rowsort
 SELECT a, b FROM testsmallpartitions
 ----
-18 values hashing to a221f8045c3322940e24cdd3cbfd7d53
+100
+another update
+100
+another update
+100
+more
+100
+to
+200
+on both partitions
+300
+changeme
+300
+changeme
+400
+on both partitions
+500
+just on the second partition
 
 query IT rowsort
 SELECT a, b FROM testingme
 ----
-14 values hashing to 6acfc17eb98783c3b670dbc82ec4aef5
+100
+another update
+100
+another update
+100
+more
+100
+to
+300
+changeme
+300
+changeme
+400
+on both partitions
 
 query IT rowsort
 SELECT a, b FROM testmealso
@@ -193,12 +253,42 @@ UPDATE testsmallpartitions SET b = 'no partition' WHERE a = 1000
 query IT rowsort
 SELECT a, b FROM testsmallpartitions
 ----
-18 values hashing to a221f8045c3322940e24cdd3cbfd7d53
+100
+another update
+100
+another update
+100
+more
+100
+to
+200
+on both partitions
+300
+changeme
+300
+changeme
+400
+on both partitions
+500
+just on the second partition
 
 query IT rowsort
 SELECT a, b FROM testingme
 ----
-14 values hashing to 6acfc17eb98783c3b670dbc82ec4aef5
+100
+another update
+100
+another update
+100
+more
+100
+to
+300
+changeme
+300
+changeme
+400
+on both partitions
 
 query IT rowsort
 SELECT a, b FROM testmealso
@@ -237,5 +327,4 @@ DROP TABLE testmealso
 
 statement ok
 DROP TABLE testsmallpartitions
-
 

@@ -113,4 +113,3 @@ select get_value_for('sys','seq')
 statement ok
 rollback
 
-

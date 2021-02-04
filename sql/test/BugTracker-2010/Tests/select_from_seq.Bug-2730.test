@@ -7,4 +7,3 @@ select * from seq1
 statement ok
 drop sequence seq1
 
-

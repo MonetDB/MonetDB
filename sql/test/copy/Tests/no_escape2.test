@@ -31,4 +31,3 @@ SELECT * FROM json_data
 statement ok
 ROLLBACK
 
-

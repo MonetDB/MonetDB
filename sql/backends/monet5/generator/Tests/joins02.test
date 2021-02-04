@@ -20,4 +20,3 @@ select * from generate_series(0,10,3) X, generate_series(0,4,2) Y where X.value 
 0
 0
 
-

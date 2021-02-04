@@ -65,6 +65,6 @@ project (
 | ) [ "v"."a1" as "r"."a1", "sys"."st_distance"("v"."a2" as "tmp"."a2", "p"."a1" as "tmp"."a3") as "r"."prob" ]
 ) [ "r"."a1", "r"."prob" ]
 
-
 statement ok
 rollback
+

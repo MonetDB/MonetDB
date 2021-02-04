@@ -16,4 +16,3 @@ select count(*) from tapestry where attr2<0
 statement error
 select count(*) from tapestry where attr2<0
 
-

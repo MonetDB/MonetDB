@@ -50,4 +50,3 @@ SELECT AVG(random) FROM RANDOM_TBL
 ----
 1000.000
 
-

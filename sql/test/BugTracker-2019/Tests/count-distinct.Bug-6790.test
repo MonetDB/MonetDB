@@ -84,4 +84,3 @@ SELECT DISTINCT col1, + col0 col1 FROM tab1
 statement ok
 ROLLBACK
 
-

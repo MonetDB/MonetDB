@@ -74,9 +74,23 @@ query TTTT rowsort
     WHERE e.job = 'SALESMAN'
     ORDER BY 1,2,3,4
 ----
-16 values hashing to 9b11a68c85bd3f2d165f95e573943dd9
+SALESMAN
+ALLEN
+BLAKE
+KING
+SALESMAN
+MARTIN
+BLAKE
+KING
+SALESMAN
+TURNER
+BLAKE
+KING
+SALESMAN
+WARD
+BLAKE
+KING
 
 statement ok
 drop table emp
-
 

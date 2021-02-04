@@ -4,4 +4,3 @@ create local temporary table input (term int, p float) on commit preserve rows
 statement ok
 insert into input values ( 1,0.1)
 
-

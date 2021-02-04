@@ -34,12 +34,26 @@ insert into "I" values (null, 'this is not null')
 query ITIT rowsort
 select * from "E" left outer join "I" on "E"."intCol" = "I"."intCol" or ("E"."intCol" is null and  "I"."intCol" is null)
 ----
-16 values hashing to 82b4785ce63a767259fb38e19d1adbc1
+0
+zero
+NULL
+NULL
+1
+one
+NULL
+NULL
+2
+two
+2
+due
+NULL
+NULL
+NULL
+this is not null
 
 statement ok
 drop table "E"
 
 statement ok
 drop table "I"
-
 

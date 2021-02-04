@@ -19,4 +19,3 @@ NULL
 statement ok
 rollback
 
-

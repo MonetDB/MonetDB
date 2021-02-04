@@ -87,4 +87,3 @@ rollback
 statement ok
 set optimizer = 'default_pipe'
 
-

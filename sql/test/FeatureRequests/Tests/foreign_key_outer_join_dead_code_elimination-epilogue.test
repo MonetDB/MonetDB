@@ -16,4 +16,3 @@ drop table pk2
 statement ok
 drop table pk1
 
-

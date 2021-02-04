@@ -4090,4 +4090,3 @@ INSERT INTO boo VALUES
 statement ok
 DROP TABLE boo
 
-

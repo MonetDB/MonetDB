@@ -30,4 +30,3 @@ drop view A_VIEW
 statement ok
 drop table A
 
-

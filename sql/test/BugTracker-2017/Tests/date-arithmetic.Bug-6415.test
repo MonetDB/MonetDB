@@ -1,4 +1,4 @@
-query TT
+query TT nosort
 select cast('2017-10-10' as date) - cast('2017-10-01' as date), date '2017-10-10' - date '2017-10-01'
 ----
 9
@@ -18,5 +18,4 @@ select cast('2017-10-01' as date) + interval '777600' SECOND, date '2017-10-01' 
 
 statement error
 select '1' + '1'
-
 

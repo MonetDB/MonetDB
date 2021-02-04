@@ -98,4 +98,3 @@ query T rowsort
 select "name" from sys.schemas where "name" in ('testing', 'altered')
 ----
 
-

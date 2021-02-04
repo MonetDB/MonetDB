@@ -109,4 +109,3 @@ DROP VIEW v2
 statement ok
 DROP TABLE t1
 
-

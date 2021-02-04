@@ -21,4 +21,3 @@ select cast(100*v as bigint) from (select sum(1) as v from foo group by a) as t
 statement ok
 drop table foo
 
-

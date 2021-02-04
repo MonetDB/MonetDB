@@ -212,4 +212,3 @@ CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (SUM(a))
 statement error
 CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (AVG(a) OVER ())
 
-

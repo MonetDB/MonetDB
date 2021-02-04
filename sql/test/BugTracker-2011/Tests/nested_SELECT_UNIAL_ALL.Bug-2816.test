@@ -19,4 +19,3 @@ GROUP BY outtab.c
 statement ok
 DROP TABLE bug_2816
 
-

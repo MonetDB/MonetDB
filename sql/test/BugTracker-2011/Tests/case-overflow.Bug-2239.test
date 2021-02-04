@@ -59,4 +59,3 @@ from t2239 order by station136
 statement ok
 rollback
 
-

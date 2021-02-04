@@ -36,4 +36,3 @@ select * from multiples
 statement ok
 ROLLBACK
 
-

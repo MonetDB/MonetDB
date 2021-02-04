@@ -17,4 +17,3 @@ CREATE AGGREGATE newcnt (
    initcond = '0'
 )
 
-

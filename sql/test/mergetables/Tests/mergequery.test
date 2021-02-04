@@ -35,7 +35,30 @@ ALTER TABLE complete ADD TABLE part2
 query RRR rowsort
 SELECT * FROM COMPLETE
 ----
-24 values hashing to 8f130e4c6c1b2a3e43a48914d6248638
+0.000
+0.000
+0.000
+0.000
+1.000
+0.000
+1.000
+0.000
+0.000
+1.000
+1.000
+0.000
+2.000
+0.000
+0.000
+2.000
+1.000
+0.000
+3.000
+0.000
+0.000
+3.000
+1.000
+0.000
 
 statement ok
 alter table part1 set read only
@@ -52,12 +75,34 @@ analyze sys.part2 (x,y,z) minmax
 query RRR rowsort
 SELECT * FROM complete where x>=0.0 AND x <=1.0
 ----
-12 values hashing to 3b6980dc48c09291f03d3afd6e9d8e61
+0.000
+0.000
+0.000
+0.000
+1.000
+0.000
+1.000
+0.000
+0.000
+1.000
+1.000
+0.000
 
 query RRR rowsort
 SELECT * FROM complete where x>=2.0 AND x <=3.0
 ----
-12 values hashing to 10ce97483635bd79429c525f1117b002
+2.000
+0.000
+0.000
+2.000
+1.000
+0.000
+3.000
+0.000
+0.000
+3.000
+1.000
+0.000
 
 query T nosort
 PLAN SELECT * FROM complete where x = 0.0
@@ -167,7 +212,18 @@ union (
 query RRR nosort
 SELECT * FROM complete where x >= 1.0 AND x <= 2.0
 ----
-12 values hashing to 19ea7cdb36e521974206b7c240f5766e
+1.000
+0.000
+0.000
+1.000
+1.000
+0.000
+2.000
+0.000
+0.000
+2.000
+1.000
+0.000
 
 query T nosort
 PLAN SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
@@ -188,9 +244,25 @@ union (
 query RRR rowsort
 SELECT * FROM complete WHERE x BETWEEN 0 AND 2 AND Y BETWEEN 0 AND 2
 ----
-18 values hashing to 7991743d9b030b03e873bc2ca4e6a6c1
+0.000
+0.000
+0.000
+0.000
+1.000
+0.000
+1.000
+0.000
+0.000
+1.000
+1.000
+0.000
+2.000
+0.000
+0.000
+2.000
+1.000
+0.000
 
 statement ok
 ROLLBACK
-
 

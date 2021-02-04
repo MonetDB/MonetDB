@@ -97,4 +97,3 @@ drop table b
 statement ok
 drop table a
 
-

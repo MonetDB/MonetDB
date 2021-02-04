@@ -11,4 +11,3 @@ select ifthenelse((type_digits > 0), '('||type_digits||')', '') as opt_len from 
 statement ok
 rollback
 
-

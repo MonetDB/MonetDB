@@ -20,4 +20,3 @@ SELECT - col1 FROM tab1 WHERE NOT - 86 IN ( 47 * - 49 + 22 )
 statement ok
 DROP TABLE tab1
 
-

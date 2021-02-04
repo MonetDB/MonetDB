@@ -35,4 +35,3 @@ select sum(dval), cast(sum(nval) as numeric(18,3)) from type_test
 statement ok
 drop table type_test
 
-

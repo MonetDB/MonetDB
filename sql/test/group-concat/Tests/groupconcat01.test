@@ -73,14 +73,31 @@ insert into testme values (5, ''), (4, 'nothing'), (5, ''), (3, '')
 query IT rowsort
 select a, group_concat(b) from testme group by a
 ----
-10 values hashing to d4b95fc43dc26f912a52bc31399e2c9f
+1
+another,testing,todo,serious
+2
+lets,get,harder,more
+3
+even,,more,,stress,
+4
+nothing
+5
+,
 
 query IT rowsort
 select a, group_concat(a) from testme group by a
 ----
-10 values hashing to d95622831967d7c9675a99155356077b
+1
+1,1,1,1
+2
+2,2,2,2
+3
+3,3,3,3,3,3,3
+4
+4,4,4
+5
+5,5
 
 statement ok
 rollback
-
 

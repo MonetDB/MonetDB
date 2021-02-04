@@ -100,4 +100,3 @@ DROP TABLE test1114580
 statement ok
 COMMIT
 
-

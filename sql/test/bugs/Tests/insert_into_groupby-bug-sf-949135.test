@@ -44,4 +44,3 @@ drop table a
 statement ok
 drop table b
 
-

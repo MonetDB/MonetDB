@@ -41,4 +41,3 @@ NULL
 statement ok
 DROP FUNCTION testtruncate
 
-

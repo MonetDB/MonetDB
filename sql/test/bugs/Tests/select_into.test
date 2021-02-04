@@ -23,4 +23,3 @@ drop function test5
 statement ok
 drop table select_into_t
 
-

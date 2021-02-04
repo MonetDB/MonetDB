@@ -19,4 +19,3 @@ copy select val from bug2722 where fk=2 order by time into stdout using delimite
 statement ok
 drop table bug2722
 
-

@@ -7,7 +7,16 @@ insert into countt1 values ( 3, 1 ) , ( 4, 2 ) , ( 5, 3 ) , ( 6, 4 ) , ( 7, 5 )
 query II rowsort
 select * from countt1
 ----
-10 values hashing to aa82f70695fab837f6e2b79a6579751f
+3
+1
+4
+2
+5
+3
+6
+4
+7
+5
 
 query I rowsort
 select cast( ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) as bigint) from countt1 as tt2 order by 1
@@ -20,5 +29,4 @@ select cast( ( select count( * )+1 from countt1 as tt3 where tt3.b < tt2.b ) as 
 
 statement ok
 drop table countt1
-
 

@@ -15,4 +15,3 @@ SELECT i FROM t WHERE t.i NOT IN (-450 , 29) AND (t."s" <> 'xyz' OR t."s" IS NUL
 statement ok
 DROP TABLE t
 
-

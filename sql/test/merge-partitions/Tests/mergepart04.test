@@ -60,4 +60,3 @@ DROP TABLE subtest1
 statement ok
 DROP TABLE subtest2
 
-

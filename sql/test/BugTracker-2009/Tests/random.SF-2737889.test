@@ -46,4 +46,3 @@ select count(distinct rnd) from
 statement ok
 drop table nr
 
-

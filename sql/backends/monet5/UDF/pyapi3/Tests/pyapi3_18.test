@@ -161,4 +161,3 @@ SELECT pyapi_interval(d) FROM uuid_tbl
 statement ok
 ROLLBACK
 
-

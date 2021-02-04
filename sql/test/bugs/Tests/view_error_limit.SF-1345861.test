@@ -26,4 +26,3 @@ DROP VIEW view1345861
 statement ok
 ROLLBACK
 
-

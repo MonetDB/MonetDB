@@ -141,4 +141,3 @@ elf
 statement ok
 DROP TABLE t_alias
 
-

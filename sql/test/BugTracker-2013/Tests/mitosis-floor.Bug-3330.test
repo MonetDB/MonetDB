@@ -38,4 +38,3 @@ group by
 statement ok
 drop table error
 
-

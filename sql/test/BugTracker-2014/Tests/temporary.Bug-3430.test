@@ -19,4 +19,3 @@ drop table tmp.dummy
 statement ok
 drop schema tempo
 
-

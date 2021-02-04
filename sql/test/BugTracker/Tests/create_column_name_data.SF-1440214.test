@@ -7,4 +7,3 @@ create table test1440214 (
 statement ok
 drop table test1440214
 
-

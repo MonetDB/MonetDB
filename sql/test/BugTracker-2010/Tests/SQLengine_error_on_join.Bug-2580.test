@@ -23,4 +23,3 @@ select * from (select 1 as id , count(*) as cnt from (select distinct x,y from a
 statement ok
 drop table a
 
-

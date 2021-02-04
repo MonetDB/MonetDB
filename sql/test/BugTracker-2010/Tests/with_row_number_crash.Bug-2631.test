@@ -10,12 +10,50 @@ create view t2631 as SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "sys"."_t2
 query I rowsort
 WITH t2 (i) AS (SELECT ROW_NUMBER () OVER (ORDER BY id ASC) AS i FROM t2631) select i from t2
 ----
-20 values hashing to bf0cddc902edc5e9c6a532adf1f6e12f
+1
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+2
+20
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 WITH t1 (i) AS (SELECT ROW_NUMBER () OVER (ORDER BY id ASC) AS i FROM _t2631) select i from t1
 ----
-20 values hashing to bf0cddc902edc5e9c6a532adf1f6e12f
+1
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+2
+20
+3
+4
+5
+6
+7
+8
+9
 
 statement ok
 drop view t2631
@@ -25,5 +63,4 @@ drop table _tt2631
 
 statement ok
 drop table _t2631
-
 

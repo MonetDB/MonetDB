@@ -53,4 +53,3 @@ drop function next_b
 statement ok
 drop table table_b
 
-

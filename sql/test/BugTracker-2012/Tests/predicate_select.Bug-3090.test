@@ -55,15 +55,14 @@ COPY 40 RECORDS INTO "sys"."tbls" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 6453	"statistics"	2000	NULL	0	true	0	false	0
 6616	"systemfunctions"	2000	NULL	0	true	0	false	0
 
-query TITITITI rowsort
+query TITIIIII rowsort
 select name, schema_id, query, type, system, commit_action, readonly, temporary from tbls where 1
 ----
-320 values hashing to 57d0ebb9262c42d9e1dd49b580a88709
+320 values hashing to e6721987082cb8a70cf73974bb3a3bb9
 
 statement error
 select name, schema_id, query, type, system, commit_action, readonly, temporary from tbls where name
 
 statement ok
 drop table tbls
-
 

@@ -43,7 +43,6 @@ DELETE
             WHERE base.name=edit.name
     )
 
-
 statement ok
 INSERT
     INTO base (value,name,state)
@@ -92,7 +91,6 @@ DELETE
             WHERE base.name=edit.name
     )
 
-
 statement ok
 INSERT
     INTO base (value,name,state)
@@ -115,5 +113,4 @@ DROP TABLE base
 
 statement ok
 DROP TABLE change
-
 

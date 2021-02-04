@@ -12,7 +12,46 @@ select
 from test_6722
 order by part, qty
 ----
-40 values hashing to f45c22dd130bb5691c7d84996a0a32d3
+1
+1
+a
+13.000
+2
+2
+a
+16.000
+3
+3
+a
+18.000
+4
+4
+b
+15.000
+5
+5
+b
+16.000
+6
+6
+c
+12.000
+7
+7
+c
+17.000
+8
+8
+c
+18.000
+9
+10
+d
+12.000
+9
+9
+d
+12.000
 
 query ITRI rowsort
 select
@@ -22,7 +61,46 @@ select
 from test_6722
 order by part, qty
 ----
-40 values hashing to 4d3061485921d8f278232a78a23e22c8
+1
+a
+13.000
+1
+2
+a
+16.000
+2
+3
+a
+18.000
+3
+4
+b
+15.000
+4
+5
+b
+16.000
+5
+6
+c
+12.000
+6
+7
+c
+17.000
+7
+8
+c
+18.000
+8
+9
+d
+12.000
+10
+9
+d
+12.000
+9
 
 query TRII rowsort
 select
@@ -32,9 +110,47 @@ select
 from test_6722
 order by part, qty
 ----
-40 values hashing to 41c9f8891c2e1b6cb384ff571402f61b
+a
+13.000
+1
+1
+a
+16.000
+2
+2
+a
+18.000
+3
+3
+b
+15.000
+4
+4
+b
+16.000
+5
+5
+c
+12.000
+6
+6
+c
+17.000
+7
+7
+c
+18.000
+8
+8
+d
+12.000
+9
+10
+d
+12.000
+9
+9
 
 statement ok
 drop table test_6722
-
 

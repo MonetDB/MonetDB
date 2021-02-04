@@ -80,4 +80,3 @@ rollback
 statement ok
 drop table updating
 
-

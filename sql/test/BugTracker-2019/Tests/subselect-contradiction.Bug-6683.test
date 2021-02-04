@@ -60,7 +60,16 @@ select
 from
   "c3_t"
 ----
-10 values hashing to 5906e22223b50b01bfff57a5547e212c
+15
+21
+26
+30
+33
+35
+36
+36
+8
+NULL
 
 query I rowsort
 with "c3_t" as
@@ -90,9 +99,17 @@ select
 from
   "c3_t"
 ----
-10 values hashing to 5906e22223b50b01bfff57a5547e212c
+15
+21
+26
+30
+33
+35
+36
+36
+8
+NULL
 
 statement ok
 ROLLBACK
-
 

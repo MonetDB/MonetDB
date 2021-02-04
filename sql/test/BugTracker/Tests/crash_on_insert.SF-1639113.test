@@ -30,4 +30,3 @@ drop table foo
 statement ok
 commit
 
-

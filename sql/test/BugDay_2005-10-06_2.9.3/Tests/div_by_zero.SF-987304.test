@@ -13,4 +13,3 @@ insert into a values (3,0)
 statement error
 select x/y from a
 
-

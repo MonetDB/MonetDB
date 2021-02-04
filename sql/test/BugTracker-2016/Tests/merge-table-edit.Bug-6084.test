@@ -37,4 +37,3 @@ SELECT * FROM test_merge_table
 statement ok
 rollback
 
-

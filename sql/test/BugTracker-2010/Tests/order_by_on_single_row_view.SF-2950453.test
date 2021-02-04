@@ -23,4 +23,3 @@ SELECT * FROM (SELECT 1.0 as score) AS x ORDER BY x.score
 statement ok
 drop view x
 
-

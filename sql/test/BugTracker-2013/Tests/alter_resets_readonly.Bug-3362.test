@@ -7,20 +7,19 @@ insert into x values (1),(2),(3)
 statement ok
 alter table x set read only
 
-query T rowsort
+query I rowsort
 select (access = 1) from sys.tables where name='x'
 ----
-True
+1
 
 statement ok
 alter table x add primary key (a)
 
-query T rowsort
+query I rowsort
 select (access = 1) from sys.tables where name='x'
 ----
-True
+1
 
 statement ok
 drop table x
-
 

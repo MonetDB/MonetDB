@@ -20,4 +20,3 @@ select mod(d + 180, 360) from t3086
 statement ok
 rollback
 
-

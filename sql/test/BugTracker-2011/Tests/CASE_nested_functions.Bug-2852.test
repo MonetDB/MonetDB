@@ -30,4 +30,3 @@ SELECT
 statement ok
 DROP TABLE t2852
 
-

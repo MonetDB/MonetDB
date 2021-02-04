@@ -78,4 +78,3 @@ B
 statement ok
 rollback
 
-

@@ -18,4 +18,3 @@ select distinct count(*) from tabool
 statement ok
 drop table tabool
 
-

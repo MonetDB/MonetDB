@@ -8,4 +8,3 @@ select cast(interval '60' second as time)
 ----
 00:01:00
 
-

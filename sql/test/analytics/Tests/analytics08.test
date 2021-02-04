@@ -10,20 +10,77 @@ start transaction
 query I rowsort
 select first_value(aa) over (w order by bb) from analytics window w as (partition by bb)
 ----
-10 values hashing to 862543e7b183e7d869a12132115bc3d3
+15
+15
+15
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query II rowsort
 select first_value(aa) over (w1 order by bb),
        last_value(aa) over (w2 order by bb) from analytics window w1 as (w2), w2 as (), w3 as (w1)
 ----
-20 values hashing to 3773b8d916622b82fe502fd65f16be25
+3
+4
+3
+4
+3
+4
+3
+6
+3
+6
+3
+6
+3
+8
+3
+8
+3
+8
+3
+NULL
 
 query III rowsort
 select first_value(aa) over (w1 partition by bb),
        last_value(aa) over (w2 range unbounded preceding),
        count(aa) over (w3) from analytics window w1 as (w2), w2 as (order by bb), w3 as (w2 partition by bb)
 ----
-30 values hashing to 5d721cb8ee2ba18d7f7ec923861a8798
+15
+6
+3
+15
+6
+3
+15
+6
+3
+3
+4
+3
+3
+4
+3
+3
+4
+3
+NULL
+8
+2
+NULL
+8
+2
+NULL
+8
+2
+NULL
+NULL
+0
 
 statement ok
 rollback
@@ -41,5 +98,4 @@ select first_value(aa) over (w1 order by bb),
 
 statement ok
 drop table analytics
-
 

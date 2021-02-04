@@ -34,4 +34,3 @@ drop table cik1
 statement ok
 drop table cik2
 
-

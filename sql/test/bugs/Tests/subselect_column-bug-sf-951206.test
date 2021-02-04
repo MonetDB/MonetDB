@@ -21,4 +21,3 @@ fabian
 statement ok
 rollback
 
-

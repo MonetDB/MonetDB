@@ -61,4 +61,3 @@ DROP FUNCTION rooms_derivative
 statement ok
 DROP TABLE rooms
 
-

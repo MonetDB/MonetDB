@@ -53,14 +53,14 @@ CREATE TABLE REAL_TBL(x real)
 statement error
 INSERT INTO REAL_TBL(x) VALUES ('NaN')
 
-query RT rowsort
+query TT rowsort
 SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL
 ----
 
 statement error
 INSERT INTO REAL_TBL(x) VALUES ('-NaN')
 
-query RT rowsort
+query TT rowsort
 SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL
 ----
 
@@ -76,7 +76,7 @@ INSERT INTO REAL_TBL(x) VALUES ('inf')
 statement error
 INSERT INTO REAL_TBL(x) VALUES ('infinity')
 
-query RT rowsort
+query TT rowsort
 SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL
 ----
 
@@ -92,7 +92,7 @@ INSERT INTO REAL_TBL(x) VALUES ('-inf')
 statement error
 INSERT INTO REAL_TBL(x) VALUES ('-infinity')
 
-query RT rowsort
+query TT rowsort
 SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL
 ----
 
@@ -102,7 +102,7 @@ INSERT INTO REAL_TBL(x) VALUES ('1e+39')
 statement error
 INSERT INTO REAL_TBL(x) VALUES ('-1e+39')
 
-query RT rowsort
+query TT rowsort
 SELECT x, cast(x as varchar(30)) as x_str FROM REAL_TBL
 ----
 
@@ -163,5 +163,4 @@ DROP TABLE REAL_TBL
 
 statement ok
 DROP TABLE FLOAT_TBL
-
 

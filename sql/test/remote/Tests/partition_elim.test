@@ -272,4 +272,3 @@ drop table test3
 statement ok
 drop table test4
 
-

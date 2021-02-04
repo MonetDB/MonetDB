@@ -51,4 +51,3 @@ L318
 statement ok
 DROP TABLE "sys"."sensor_readings"
 
-

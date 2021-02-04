@@ -16,4 +16,3 @@ SELECT * FROM c
 statement ok
 drop table wtf
 
-

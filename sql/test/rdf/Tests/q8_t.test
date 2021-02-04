@@ -7,4 +7,3 @@ SELECT B.subj
   	AND A.obj  = B.obj
 ----
 
-

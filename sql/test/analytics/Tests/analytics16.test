@@ -46,7 +46,38 @@ select covar_samp(aa, aa),
        covar_samp(aa, bb),
        covar_samp(bb, aa) from analytics group by aa
 ----
-32 values hashing to 594d08a5edef821d2845c2a988fdf17b
+0.000
+0.500
+0.000
+0.000
+NULL
+2.000
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select covar_pop(aa, aa),
@@ -54,7 +85,38 @@ select covar_pop(aa, aa),
        covar_pop(aa, bb),
        covar_pop(bb, aa) from analytics group by aa
 ----
-32 values hashing to 9fe194cd6a19c0f599eebfcdf4bf769f
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.250
+0.000
+0.000
+NULL
+1.000
+NULL
+NULL
 
 query RRRR rowsort
 select corr(aa, aa),
@@ -62,7 +124,38 @@ select corr(aa, aa),
        corr(aa, bb),
        corr(bb, aa) from analytics group by aa
 ----
-32 values hashing to 03f6549c19ba49d31b3c3622ef6b2937
+NULL
+1.000
+NULL
+NULL
+NULL
+1.000
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select covar_samp(aa, aa),
@@ -70,7 +163,22 @@ select covar_samp(aa, aa),
        covar_samp(aa, bb),
        covar_samp(bb, aa) from analytics group by bb
 ----
-16 values hashing to 045d8678a46e8e0b9cefb49ee6438222
+1.000
+0.000
+0.000
+0.000
+12.500
+0.000
+0.000
+0.000
+30.333
+0.000
+0.000
+0.000
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select covar_pop(aa, aa),
@@ -78,7 +186,22 @@ select covar_pop(aa, aa),
        covar_pop(aa, bb),
        covar_pop(bb, aa) from analytics group by bb
 ----
-16 values hashing to 130260d10a846cd83a6d275554f707cb
+0.667
+0.000
+0.000
+0.000
+20.222
+0.000
+0.000
+0.000
+6.250
+0.000
+0.000
+0.000
+NULL
+0.000
+NULL
+NULL
 
 query RRRR rowsort
 select corr(aa, aa),
@@ -86,7 +209,22 @@ select corr(aa, aa),
        corr(aa, bb),
        corr(bb, aa) from analytics group by bb
 ----
-16 values hashing to be48d3176b9be4eaf64f06bc51375875
+1.000
+NULL
+NULL
+NULL
+1.000
+NULL
+NULL
+NULL
+1.000
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select covar_samp(aa, aa),
@@ -94,7 +232,46 @@ select covar_samp(aa, aa),
        covar_samp(aa, bb),
        covar_samp(bb, aa) from analytics group by aa, bb
 ----
-40 values hashing to c592fdbc473c6ef69c4747110455fb4a
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRRR rowsort
 select covar_pop(aa, aa),
@@ -102,7 +279,46 @@ select covar_pop(aa, aa),
        covar_pop(aa, bb),
        covar_pop(bb, aa) from analytics group by aa, bb
 ----
-40 values hashing to 6176f81d7e034b628a63cb7c0bc028d7
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+NULL
+0.000
+NULL
+NULL
+NULL
+0.000
+NULL
+NULL
 
 query RRRR rowsort
 select corr(aa, aa),
@@ -110,143 +326,578 @@ select corr(aa, aa),
        corr(aa, bb),
        corr(bb, aa) from analytics group by aa, bb
 ----
-40 values hashing to c592fdbc473c6ef69c4747110455fb4a
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(aa, 1),
        covar_pop(aa, 1),
        corr(aa, 1) from analytics group by aa
 ----
-24 values hashing to 27d8bb2e202c5af4dfd285e5b7e90c2b
+0.000
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(aa, 1),
        covar_pop(aa, 1),
        corr(aa, 1) from analytics group by bb
 ----
-12 values hashing to e84de726c59a515b5bb5da9d9506e63f
+0.000
+0.000
+NULL
+0.000
+0.000
+NULL
+0.000
+0.000
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(aa, 1),
        covar_pop(bb, 1),
        corr(bb, 1) from analytics group by aa, bb
 ----
-30 values hashing to 395b5a2f92220dc683687d36cad0009e
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
 
 query RRR rowsort
 select covar_samp(1, aa),
        covar_pop(1, aa),
        corr(1, aa) from analytics group by aa
 ----
-24 values hashing to 27d8bb2e202c5af4dfd285e5b7e90c2b
+0.000
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(1, aa),
        covar_pop(1, aa),
        corr(1, aa) from analytics group by bb
 ----
-12 values hashing to e84de726c59a515b5bb5da9d9506e63f
+0.000
+0.000
+NULL
+0.000
+0.000
+NULL
+0.000
+0.000
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(1, aa),
        covar_pop(1, aa),
        corr(1, aa) from analytics group by aa, bb
 ----
-30 values hashing to 074f83f96020c475cf1053d9424c7c10
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(1, 1),
        covar_pop(1, 1),
        corr(1, 1) from analytics group by aa
 ----
-24 values hashing to 05060482e1ab99dfb84ae5385f08f3a6
+0.000
+0.000
+NULL
+0.000
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
 
 query RRR rowsort
 select covar_samp(1, 1),
        covar_pop(1, 1),
        corr(1, 1) from analytics group by bb
 ----
-12 values hashing to 8cfacaf2bbae9a4c2eb4641e778dc679
+0.000
+0.000
+NULL
+0.000
+0.000
+NULL
+0.000
+0.000
+NULL
+NULL
+0.000
+NULL
 
 query RRR rowsort
 select covar_samp(1, 1),
        covar_pop(1, 1),
        corr(1, 1) from analytics group by aa, bb
 ----
-30 values hashing to 395b5a2f92220dc683687d36cad0009e
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
+NULL
+0.000
+NULL
 
 query RRR rowsort
 select covar_samp(NULL, aa),
        covar_pop(NULL, aa),
        corr(NULL, aa) from analytics group by aa
 ----
-24 values hashing to 6d49eb5a9367ef8a330a435dae131fb4
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(NULL, aa),
        covar_pop(NULL, aa),
        corr(NULL, aa) from analytics group by bb
 ----
-12 values hashing to d470f0b560a47541786c37db33615445
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(NULL, aa),
        covar_pop(NULL, aa),
        corr(NULL, aa) from analytics group by aa, bb
 ----
-30 values hashing to 5ce4940de1a243e16a2f3afccafd4cd8
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(aa, NULL),
        covar_pop(aa, NULL),
        corr(aa, NULL) from analytics group by aa
 ----
-24 values hashing to 6d49eb5a9367ef8a330a435dae131fb4
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(aa, NULL),
        covar_pop(aa, NULL),
        corr(aa, NULL) from analytics group by bb
 ----
-12 values hashing to d470f0b560a47541786c37db33615445
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(aa, NULL),
        covar_pop(aa, NULL),
        corr(aa, NULL) from analytics group by aa, bb
 ----
-30 values hashing to 5ce4940de1a243e16a2f3afccafd4cd8
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(NULL, NULL),
        covar_pop(NULL, NULL),
        corr(NULL, NULL) from analytics group by aa
 ----
-24 values hashing to 6d49eb5a9367ef8a330a435dae131fb4
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(NULL, NULL),
        covar_pop(NULL, NULL),
        corr(NULL, NULL) from analytics group by bb
 ----
-12 values hashing to d470f0b560a47541786c37db33615445
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query RRR rowsort
 select covar_samp(NULL, NULL),
        covar_pop(NULL, NULL),
        corr(NULL, NULL) from analytics group by aa, bb
 ----
-30 values hashing to 5ce4940de1a243e16a2f3afccafd4cd8
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query R rowsort
 select (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2) from analytics a1
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query R rowsort
 select (select corr(a1.aa + a2.aa, a1.aa + a2.aa) from analytics a2) from analytics a1
 ----
-10 values hashing to da4fdadb3f474377bc6bcd41a85d6b78
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+NULL
+NULL
 
 query R rowsort
 select corr(a1.aa, a1.bb) from analytics a1 where a1.bb > (select corr(a1.aa, a2.aa) + corr(a2.aa, a1.aa) from analytics a2)
@@ -336,5 +987,4 @@ SELECT CORR(c0,c0) OVER () FROM t0
 
 statement ok
 DROP TABLE T0
-
 

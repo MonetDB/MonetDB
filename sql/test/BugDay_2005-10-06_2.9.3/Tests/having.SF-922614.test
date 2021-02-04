@@ -15,4 +15,3 @@ select * from t10 where i= (select max(i) from t10)
 statement error
 select * from t10 having i= max(i)
 
-

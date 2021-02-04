@@ -74,4 +74,3 @@ DROP LOADER pyloader05
 statement ok
 ROLLBACK
 
-

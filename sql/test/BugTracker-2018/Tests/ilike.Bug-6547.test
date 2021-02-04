@@ -47,4 +47,3 @@ Cat2
 statement ok
 ROLLBACK
 
-

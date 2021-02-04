@@ -106,4 +106,3 @@ DROP TABLE nexttest
 statement ok
 DROP FUNCTION dosomethingelse
 
-

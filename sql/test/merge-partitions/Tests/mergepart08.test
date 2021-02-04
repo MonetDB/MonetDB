@@ -22,7 +22,18 @@ ALTER TABLE testme ADD TABLE subtable2 AS PARTITION FROM 11 TO 20
 query IT rowsort
 SELECT a, b FROM testme
 ----
-12 values hashing to 5d2b8aeb86a0937cfef1dfe60718eadf
+1
+one
+11
+eleven
+12
+twelve
+13
+thirteen
+2
+two
+3
+three
 
 query IT rowsort
 SELECT a, b FROM subtable1
@@ -147,5 +158,4 @@ DROP TABLE subtable1
 
 statement ok
 DROP TABLE subtable2
-
 

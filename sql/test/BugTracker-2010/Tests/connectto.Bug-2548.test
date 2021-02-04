@@ -10,4 +10,3 @@ connect to 'whatever' port 50001 database 'nonexisting' USER 'monetdb' PASSWORD 
 statement error
 disconnect 'whatever'
 
-

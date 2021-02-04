@@ -36,4 +36,3 @@ DROP TABLE tmp
 statement ok
 DROP FUNCTION groupElements
 
-

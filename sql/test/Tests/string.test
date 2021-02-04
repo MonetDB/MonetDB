@@ -112,12 +112,34 @@ est
 query ITT rowsort
 select position(str in str2), str, str2 from stringtest
 ----
-12 values hashing to 71a3edc12cf3c9c51c1a208c2934ae8e
+0
+ Test 
+(empty)
+0
+test
+(empty)
+1
+(empty)
+(empty)
+1
+(empty)
+test
 
 query ITT rowsort
 select locate(str,str2), str, str2 from stringtest
 ----
-12 values hashing to 71a3edc12cf3c9c51c1a208c2934ae8e
+0
+ Test 
+(empty)
+0
+test
+(empty)
+1
+(empty)
+(empty)
+1
+(empty)
+test
 
 query IT rowsort
 select ascii(str), str from stringtest
@@ -254,12 +276,34 @@ test
 query TTT rowsort
 select insert(str,2,4,str2), str, str2 from stringtest
 ----
-12 values hashing to 11548d0cbdf2e34e6e1cdc0a7c4c637b
+ T
+ Test 
+(empty)
+(empty)
+(empty)
+(empty)
+te
+test
+(empty)
+test
+(empty)
+test
 
 query TTT rowsort
 select replace(str,'t',str), str, str2 from stringtest
 ----
-12 values hashing to a85f8be04d0c3b5192ea7564380e6d11
+ Tes Test  
+ Test 
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+test
+testestest
+test
+(empty)
 
 query TT rowsort
 select repeat(str,4), str from stringtest
@@ -288,7 +332,34 @@ test
 query TTTTIII rowsort
 select str,str2,soundex(str),soundex(str2), editdistance2(soundex(str),soundex(str2)), editdistance(soundex(str),soundex(str2)), difference(str,str2) from stringtest
 ----
-28 values hashing to b386568a9481ea32f8c2da7dacddfc95
+ Test 
+(empty)
+ 323
+(empty)
+4
+4
+4
+(empty)
+(empty)
+(empty)
+(empty)
+0
+0
+0
+(empty)
+test
+(empty)
+T230
+4
+4
+4
+test
+(empty)
+T230
+(empty)
+4
+4
+4
 
 statement ok
 insert into stringtest values ('monetdbiscool', 'coolismonetdb')
@@ -296,7 +367,21 @@ insert into stringtest values ('monetdbiscool', 'coolismonetdb')
 query ITT rowsort
 select levenshtein(str,str2, 1, 2, 3), str, str2 from stringtest
 ----
-15 values hashing to c3b88f52bab5e54a9f1a87560fb9e188
+0
+(empty)
+(empty)
+12
+monetdbiscool
+coolismonetdb
+4
+(empty)
+test
+4
+test
+(empty)
+6
+ Test 
+(empty)
 
 statement ok
 insert into stringtest values ('monetdb45is+ cool', '  123123  123123  ')
@@ -304,7 +389,30 @@ insert into stringtest values ('monetdb45is+ cool', '  123123  123123  ')
 query TTTT rowsort
 select qgramnormalize(str) , qgramnormalize(str2), str, str2 from stringtest
 ----
-24 values hashing to 4468aeb62c2b818c9939bb09499218c8
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+TEST
+(empty)
+test
+MONETDB45IS COOL
+123123 123123
+monetdb45is+ cool
+  123123  123123  
+MONETDBISCOOL
+COOLISMONETDB
+monetdbiscool
+coolismonetdb
+TEST
+(empty)
+ Test 
+(empty)
+TEST
+(empty)
+test
+(empty)
 
 statement ok
 drop table stringtest

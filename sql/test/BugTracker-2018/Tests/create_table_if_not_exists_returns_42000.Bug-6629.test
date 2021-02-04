@@ -7,4 +7,3 @@ create table if not exists test (i int)
 statement ok
 drop table if exists test
 
-

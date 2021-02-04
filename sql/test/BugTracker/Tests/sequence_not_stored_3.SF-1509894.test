@@ -4,4 +4,3 @@ insert into test (val) values (1)
 statement ok
 drop table test
 
-

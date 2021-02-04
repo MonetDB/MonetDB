@@ -83,4 +83,3 @@ NULL
 statement ok
 drop table "other_stuff"
 
-

@@ -21,4 +21,3 @@ SELECT * FROM rapi20()
 statement ok
 ROLLBACK
 
-

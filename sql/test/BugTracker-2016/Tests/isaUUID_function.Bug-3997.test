@@ -20,31 +20,31 @@ ad887b3d-08f7-c308-7285-354a1857cbc8
 c005d6fd-20c3-4d01-91a5-bbe676593530
 c005d6fd-20c3-4d01-91a5-bbe676593530
 
-query TTT rowsort
+query TTI rowsort
 SELECT s, u, isaUUID(s) as a_isa_UUID FROM testUUID ORDER BY s
 ----
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
-True
+1
 ad887b3d-08f7-c308-7285-354a1857cbc8
 ad887b3d-08f7-c308-7285-354a1857cbc8
-True
+1
 c005d6fd-20c3-4d01-91a5-bbe676593530
 c005d6fd-20c3-4d01-91a5-bbe676593530
-True
+1
 
-query TTT rowsort
+query TTI rowsort
 SELECT s, u, isaUUID(u) as u_isa_UUID FROM testUUID ORDER BY s
 ----
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
 7393ad7e-4fcf-461a-856e-b70027fe1a9e
-True
+1
 ad887b3d-08f7-c308-7285-354a1857cbc8
 ad887b3d-08f7-c308-7285-354a1857cbc8
-True
+1
 c005d6fd-20c3-4d01-91a5-bbe676593530
 c005d6fd-20c3-4d01-91a5-bbe676593530
-True
+1
 
 query TT rowsort
 SELECT * FROM testUUID WHERE isaUUID(s) = TRUE ORDER BY s
@@ -82,5 +82,4 @@ SELECT AVG(u) AS sumu FROM testUUID
 
 statement ok
 DROP TABLE testUUID
-
 

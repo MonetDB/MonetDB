@@ -14,4 +14,3 @@ select * from foo
 statement ok
 drop table foo
 
-

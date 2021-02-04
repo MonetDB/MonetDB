@@ -13,12 +13,34 @@ language P
 query IR rowsort
 SELECT i,d FROM pyapi01(42) AS R WHERE i>30
 ----
-24 values hashing to 22df6777abf083682aa4beba08040ac5
+31
+42.000
+32
+42.000
+33
+42.000
+34
+42.000
+35
+42.000
+36
+42.000
+37
+42.000
+38
+42.000
+39
+42.000
+40
+42.000
+41
+42.000
+42
+42.000
 
 statement ok
 DROP FUNCTION pyapi01
 
 statement ok
 ROLLBACK
-
 

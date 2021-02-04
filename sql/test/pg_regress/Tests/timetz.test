@@ -213,4 +213,3 @@ SELECT f1, dayofyear(f1) FROM TIMETZ_TBL
 statement ok
 DROP TABLE TIMETZ_TBL
 
-

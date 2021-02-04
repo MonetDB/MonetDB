@@ -18,4 +18,3 @@ select extract( hour from interval '1 01' day to hour)
 ----
 1
 
-

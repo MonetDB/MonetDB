@@ -15,3 +15,4 @@ select id-row_number() over (order by id) from (select id from foo union all sel
 
 statement ok
 rollback
+

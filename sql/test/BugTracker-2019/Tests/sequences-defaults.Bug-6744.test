@@ -34,16 +34,91 @@ create sequence seq9 NO CYCLE
 statement ok
 create sequence seq0 CYCLE
 
-query TIIIIIT rowsort
+query TIIIIII rowsort
 select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
 where name in ('seq', 'seq1', 'seq2', 'seq3', 'seq4', 'seq5', 'seq6', 'seq7', 'seq8', 'seq9', 'seq0')
 ----
-77 values hashing to abeeee19e0bb439b90472321409a52df
+seq
+1
+0
+0
+1
+1
+0
+seq0
+1
+0
+0
+1
+1
+1
+seq1
+1
+0
+0
+1
+1
+0
+seq2
+2
+0
+0
+1
+1
+0
+seq3
+1
+0
+0
+3
+1
+0
+seq4
+4
+4
+0
+1
+1
+0
+seq5
+1
+0
+0
+1
+1
+0
+seq6
+1
+0
+6
+1
+1
+0
+seq7
+1
+0
+0
+1
+1
+0
+seq8
+1
+0
+0
+1
+8
+0
+seq9
+1
+0
+0
+1
+1
+0
 
 statement ok
 rollback
 
 statement error
 create sequence seq6 MAXVALUE -3
-
 

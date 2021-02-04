@@ -57,4 +57,3 @@ select * from tab where i in (select i from tab where i < 3) order by i
 statement ok
 drop table tab
 
-

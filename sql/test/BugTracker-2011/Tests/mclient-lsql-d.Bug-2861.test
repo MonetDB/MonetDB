@@ -57,4 +57,3 @@ with describe_all_objects as (
 select type, fullname from describe_all_objects where (ntype & 3) > 0 and not system and (sname is null or sname = current_schema) order by fullname, type
 ----
 
-

@@ -22,24 +22,24 @@ false
 0
 .
 
-query T nosort
+query I nosort
 select * from bug3519
 ----
-True
-False
-True
-False
-True
-False
-True
-False
+1
+0
+1
+0
+1
+0
+1
+0
 NULL
-True
-False
-True
-False
-True
-False
+1
+0
+1
+0
+1
+0
 NULL
 
 statement ok
@@ -51,31 +51,30 @@ COPY 2 RECORDS INTO bug3519 FROM stdin
 TRUE
 FALSE
 
-query T nosort
+query I nosort
 select * from bug3519
 ----
-True
-False
-True
-False
-True
-False
-True
-False
+1
+0
+1
+0
+1
+0
+1
+0
 NULL
-True
-False
-True
-False
-True
-False
+1
+0
+1
+0
+1
+0
 NULL
-True
-False
-True
-False
+1
+0
+1
+0
 
 statement ok
 rollback
-
 
