@@ -59,6 +59,10 @@ MAPI  = (monetdb) /var/tmp/mtest-150622/.s.monetdb.34547
 QUERY = select cast(count(1) as interval second) from (values (false)) as v6(vc0); --error
 ERROR = !types bigint(64,0) and sec_interval(13,0) are not equal
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-363537/.s.monetdb.32129
+QUERY = UPDATE t1 SET c1 = 0 WHERE t1.c1 > 3;
+ERROR = !UPDATE: PRIMARY KEY constraint 't1.t1_c0_c1_pkey' violated
+CODE  = 40002
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."

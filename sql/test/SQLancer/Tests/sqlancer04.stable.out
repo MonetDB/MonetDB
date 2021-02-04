@@ -534,6 +534,13 @@ stdout of test 'sqlancer04` in directory 'sql/test/SQLancer` itself:
 % 1 # length
 [ 2	]
 #ROLLBACK;
+#CREATE TABLE t1(c0 BOOLEAN, c1 DOUBLE);
+#ALTER TABLE t1 ADD PRIMARY KEY(c0, c1);
+#INSERT INTO t1(c1, c0) VALUES(0.3, FALSE), (0.5, true), (0.0, true), (4, false), (1, true), (4, true);
+[ 6	]
+#DELETE FROM t1 WHERE NOT t1.c0;
+[ 2	]
+#DROP TABLE t1;
 
 # 09:44:50 >  
 # 09:44:50 >  "Done."

@@ -4,7 +4,6 @@ INSERT INTO t1(c0) VALUES(2), (+ ((VALUES (sql_min(3, 4)))));
 SELECT * from t1;
 ROLLBACK;
 
-START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" TIME NOT NULL, "c1" VARCHAR(143),
 	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"), CONSTRAINT "t0_c0_unique" UNIQUE ("c0"), CONSTRAINT "t0_c1_unique" UNIQUE ("c1"));
 COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
@@ -20,4 +19,5 @@ CREATE TABLE "sys"."t1" ("c0" CHAR(375) NOT NULL, CONSTRAINT "t1_c0_pkey" PRIMAR
 insert into t1 values ('');
 insert into t1(c0) values ((select 'a')), ('b');
 insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
-ROLLBACK;
+DROP TABLE t1;
+DROP TABLE t0;

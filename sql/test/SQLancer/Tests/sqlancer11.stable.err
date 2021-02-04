@@ -1,10 +1,18 @@
-stderr of test 'sqlancer10` in directory 'sql/test/SQLancer` itself:
+stderr of test 'sqlancer11` in directory 'sql/test/SQLancer` itself:
 
 
 # 13:59:46 >  
 # 13:59:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-215607" "--port=30526"
 # 13:59:46 >  
 
+MAPI  = (monetdb) /var/tmp/mtest-364410/.s.monetdb.32318
+QUERY = insert into t1(c0) values ((select 'a')), ('b');
+ERROR = !INSERT INTO: FOREIGN KEY constraint 't1.t1_c0_fkey' violated
+CODE  = 40002
+MAPI  = (monetdb) /var/tmp/mtest-364410/.s.monetdb.32318
+QUERY = insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
+ERROR = !INSERT INTO: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
+CODE  = 40002
 
 # 13:59:46 >  
 # 13:59:46 >  "Done."
