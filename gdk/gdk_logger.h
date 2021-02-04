@@ -38,7 +38,7 @@ typedef int log_bid;
 #define LOG_COL 2
 #define LOG_IDX 3
 
-gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *prefuncdata);
+gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_export void logger_destroy(logger *lg);
 gdk_export gdk_return logger_flush(logger *lg, lng save_id);
 gdk_export gdk_return logger_cleanup(logger *lg);
