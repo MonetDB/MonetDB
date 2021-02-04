@@ -825,22 +825,6 @@ read_prop( mvc *sql, sql_exp *exp, char *r, int *pos)
 				return sql_error(sql, -1, SQLSTATE(42000) "Index %s missing\n", iname);
 		}
 		skipWS(r,pos);
-	} else if (strncmp(r+*pos, "MIN", strlen("MIN")) == 0 || strncmp(r+*pos, "MAX", strlen("MAX")) == 0) {
-		rel_prop kind = strncmp(r+*pos, "MIN", strlen("MIN")) == 0 ? PROP_MIN : PROP_MAX;
-		char *st;
-		atom *a;
-
-		(*pos) += (int) strlen("MIN");
-		skipWS(r, pos);
-		st = readString(r,pos);
-		if (st && strcmp(st, "NULL") == 0)
-			a = atom_general(sql->sa, exp_subtype(exp), NULL);
-		else
-			a = atom_general(sql->sa, exp_subtype(exp), st);
-		if (!find_prop(exp->p, kind)) {
-			prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
-			p->value = a;
-		}
 	}
 	return exp;
 }
@@ -887,6 +871,26 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 		skipWS( r, pos);
 	}
 	return exps;
+}
+
+static void
+exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, rel_prop kind)
+{
+	char *st;
+	atom *a;
+
+	(*pos)+= (int) strlen(prop_str);
+	skipWS(r, pos);
+	st = readString(r,pos);
+	if (st && strcmp(st, "NULL") == 0)
+		a = atom_general(sql->sa, exp_subtype(exp), NULL);
+	else
+		a = atom_general(sql->sa, exp_subtype(exp), st);
+	if (!find_prop(exp->p, kind)) {
+		prop *p = exp->p = prop_create(sql->sa, kind, exp->p);
+		p->value = a;
+	}
+	skipWS(r, pos);
 }
 
 static sql_exp*
@@ -1287,6 +1291,11 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			exp->p = prop_create(sql->sa, PROP_FETCH, exp->p);
 		skipWS(r,pos);
 	}
+	if (strncmp(r+*pos, "MIN", strlen("MIN")) == 0)
+		exp_read_min_or_max(sql, exp, r, pos, "MIN", PROP_MIN);
+	if (strncmp(r+*pos, "MAX", strlen("MAX")) == 0)
+		exp_read_min_or_max(sql, exp, r, pos, "MAX", PROP_MAX);
+
 	if (!read_prop(sql, exp, r, pos))
 		return NULL;
 	skipWS(r,pos);
