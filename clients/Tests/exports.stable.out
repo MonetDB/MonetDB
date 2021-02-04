@@ -525,7 +525,7 @@ gdk_return log_tstart(logger *lg);
 gdk_return logger_add_bat(logger *lg, BAT *b, const char *name, char tpe, oid id) __attribute__((__warn_unused_result__));
 lng logger_changes(logger *lg);
 gdk_return logger_cleanup(logger *lg);
-logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *prefuncdata);
+logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_return logger_del_bat(logger *lg, log_bid bid) __attribute__((__warn_unused_result__));
 void logger_destroy(logger *lg);
 log_bid logger_find_bat(logger *lg, const char *name, char tpe, oid id);
