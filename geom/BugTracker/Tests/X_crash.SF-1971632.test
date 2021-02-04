@@ -29,3 +29,4 @@ DROP TABLE geoms
 
 statement ok
 set optimizer = 'default_pipe'
+

@@ -3,4 +3,3 @@ SELECT ST_AsText(ST_Union(shore, boundary)) FROM lakes, named_places WHERE lakes
 ----
 POLYGON ((52 18, 66 23, 73 9, 48 6, 52 18))
 
-

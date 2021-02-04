@@ -1,6 +1,5 @@
-query T rowsort
+query I rowsort
 SELECT ST_IsEmpty(centerline) FROM road_segments WHERE name = 'Route 5' AND aliases = 'Main Street'
 ----
-False
-
+0
 

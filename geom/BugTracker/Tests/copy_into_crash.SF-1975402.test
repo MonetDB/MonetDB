@@ -12,4 +12,3 @@ COPY 1 RECORDS INTO nodes from STDIN USING DELIMITERS ',', E'\n'
 statement ok
 drop table nodes
 
-
