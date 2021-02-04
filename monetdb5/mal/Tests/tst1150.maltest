@@ -47,4 +47,3 @@ query T rowsort
 statement ok
 	streams.close(fp)
 
-

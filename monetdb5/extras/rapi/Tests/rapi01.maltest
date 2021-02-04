@@ -31,10 +31,29 @@ bat.append(b,596516649)
 statement ok
 bat.append(b,1189641421)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
-20 values hashing to 74a3c631a4c9ac875a281da7c6d5441c
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+1957747793
+5
+424238335
+6
+719885386
+7
+1649760492
+8
+596516649
+9
+1189641421
 
 statement error
 r:bat[:dbl] := rapi.eval(nil:ptr,"someresult <- Re(fft(somevalue));",b)
@@ -56,5 +75,4 @@ r:bat[:dbl] := rapi.eval(nil:ptr,"ret0 <- Re(fft(arg2)  )  );",b)
 
 statement error
 io.print(r)
-
 

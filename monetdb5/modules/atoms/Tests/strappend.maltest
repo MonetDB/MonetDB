@@ -46,9 +46,43 @@ b := bat.append(b, n)
 statement ok
 (g,e,h) := group.group(b)
 
-query TTT rowsort
+query ITI rowsort
 io.print(b,g)
 ----
-36 values hashing to 20208714d9b7f2cac82fb78afea7e05d
-
+0
+NULL
+0
+1
+short_1
+1
+10
+(empty)
+4
+11
+another 1
+7
+2
+longer_string
+2
+3
+8charstr
+3
+4
+(empty)
+4
+5
+10-longstr
+5
+6
+NULL
+0
+7
+short_1
+1
+8
+short_2
+6
+9
+8charstr
+3
 

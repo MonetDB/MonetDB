@@ -23,4 +23,3 @@ end getz
 statement ok
 optimizer.aliases("user","getz")
 
-#mdb.List("user","getz")

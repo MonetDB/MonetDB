@@ -40,15 +40,79 @@ err := bat.append(b,n0)
 statement ok
 err := bat.append(b,81)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
-22 values hashing to 5073ad3da80766b5c9d6b77a1f9168f1
+0
+15
+1
+4
+10
+81
+2
+NULL
+3
+16
+4
+25
+5
+36
+6
+49
+7
+64
+8
+NULL
+9
+NULL
 
-query TIII rowsort
+query IIII rowsort
 io.print(b,b,b)
 ----
-44 values hashing to 323166d817385a925ce8491550ae07e8
+0
+15
+15
+15
+1
+4
+4
+4
+10
+81
+81
+81
+2
+NULL
+NULL
+NULL
+3
+16
+16
+16
+4
+25
+25
+25
+5
+36
+36
+36
+6
+49
+49
+49
+7
+64
+64
+64
+8
+NULL
+NULL
+NULL
+9
+NULL
+NULL
+NULL
 
 statement ok
 profiler.stop()
@@ -62,5 +126,4 @@ query T rowsort
 io.printf("#~EndVariableOutput~#\n")
 ----
 #~EndVariableOutput~#
-
 

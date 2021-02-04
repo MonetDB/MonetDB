@@ -8,6 +8,3 @@ end foo
 statement ok
 optimizer.evaluate("user","foo")
 
-#mdb.List("user","foo")
-
-

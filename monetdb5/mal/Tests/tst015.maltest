@@ -18,11 +18,3 @@ exit	c;
 ----
 2 Correctly entered barrier
 
-query T nosort
-barrier c:= i==0;
-	io.printf("2 Incorrectly entered barrier\n");
-exit	c;
----
-2 Incorrectly entered barrier
-
-

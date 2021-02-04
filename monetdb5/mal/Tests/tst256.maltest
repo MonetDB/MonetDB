@@ -25,10 +25,25 @@ err := bat.append(b,64)
 statement ok
 err := bat.append(b,81)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
-16 values hashing to 24a780af6d292e529650f2cf498366f4
+0
+15
+1
+4
+2
+16
+3
+25
+4
+36
+5
+49
+6
+64
+7
+81
 
 statement ok
 mx:= aggr.max(b)
@@ -53,5 +68,4 @@ query T rowsort
 io.print(cr)
 ----
 8
-
 

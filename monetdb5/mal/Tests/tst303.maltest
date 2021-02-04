@@ -10,9 +10,9 @@ exit	IllegalAccess;
 	return foo:="should not be done";
 end;
 
-
 query T nosort
 msg := user.foo();
 io.print(msg);
 ----
 "caught an exception"
+

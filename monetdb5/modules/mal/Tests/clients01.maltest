@@ -9,4 +9,3 @@ io.print(d)
 statement ok
 (a,b):= clients.getInfo()
 
-

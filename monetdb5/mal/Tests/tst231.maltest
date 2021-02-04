@@ -20,7 +20,7 @@ lrefcount =1
 statement ok
 	bat.append(b,"bat B")
 
-query TT rowsort
+query IT rowsort
 	io.print(b)
 ----
 0
@@ -60,5 +60,4 @@ query T rowsort
 	io.printf("lrefcount =%d\n",j)
 ----
 lrefcount =2
-
 

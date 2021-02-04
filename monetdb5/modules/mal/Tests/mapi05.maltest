@@ -18,4 +18,3 @@ io.print("done")
 statement ok
 mapi.disconnect(mid)
 
-

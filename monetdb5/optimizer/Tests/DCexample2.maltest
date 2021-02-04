@@ -7,11 +7,3 @@ b3:= bat.append(b2,3);
 b5:= algebra.sort(b3,false,false,false);
 end
 
-#mdb.List("user","foo")
-
-statement ok
-optimizer.deadcode("user","foo")
-
-#mdb.List("user","foo")
-
-

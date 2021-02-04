@@ -81,4 +81,3 @@ io.print(d)
 statement ok
 mapi.disconnect(mid)
 
-

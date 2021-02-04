@@ -14,4 +14,3 @@ end foo;
 statement ok
 user.foo();
 
-

@@ -7,4 +7,3 @@ exit go;
 	c:=a;
 end tst;
 
-

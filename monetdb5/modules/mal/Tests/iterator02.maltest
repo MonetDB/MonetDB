@@ -42,10 +42,21 @@ query T rowsort
 ----
 "build a table finished"
 
-query TT rowsort
+query IT rowsort
 	io.print(t)
 ----
-12 values hashing to 34dfc41d181f20f48b4be98b0cd6ddc1
+0
+http://www.cwi.nl
+1
+http://www.cwi.nl/~monet
+2
+http://www.cwi.nl/~mk/Acoi/doc/features.html
+3
+http://www.educ.uva.nl/schoolweb/rocloka.htm
+4
+http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium
+5
+http://www.edgeonline.com/
 
 statement ok
 	rb:= bat.new(:url)
@@ -77,9 +88,19 @@ exit h
 "http://www.educ.uva.nl/schoolweb/rocloka.htm"
 "http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium"
 
-query TT rowsort
+query IT rowsort
 	io.print(rb)
 ----
-12 values hashing to 34dfc41d181f20f48b4be98b0cd6ddc1
-
+0
+http://www.cwi.nl
+1
+http://www.cwi.nl/~monet
+2
+http://www.cwi.nl/~mk/Acoi/doc/features.html
+3
+http://www.educ.uva.nl/schoolweb/rocloka.htm
+4
+http://www.nedstat.nl/cgi-bin/viewstat?name=Planetarium
+5
+http://www.edgeonline.com/
 

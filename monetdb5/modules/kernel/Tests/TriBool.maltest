@@ -94,20 +94,46 @@ io.print(n)
 ----
 NULL
 
-query TT rowsort
+query II rowsort
 io.print(b)
 ----
 0
-True
 1
-False
+1
+0
 2
 NULL
 
-query TTT rowsort
+query III rowsort
 io.print(bl,br)
 ----
-27 values hashing to 36b57b9dc23503517dd7177eb0f4a95d
+0
+1
+1
+1
+1
+0
+2
+1
+NULL
+3
+0
+1
+4
+0
+0
+5
+0
+NULL
+6
+NULL
+1
+7
+NULL
+0
+8
+NULL
+NULL
 
 statement error
 o := calc.or(t,t); bo := bat.append(bo,o)
@@ -174,5 +200,4 @@ aa := batcalc.and(bl,br)
 
 statement error
 io.print(bl,br, ba, aa)
-
 
