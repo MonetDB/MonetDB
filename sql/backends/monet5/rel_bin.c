@@ -2740,7 +2740,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		const char *rnme = table_name(sql->sa, c);
 		const char *nme = column_name(sql->sa, c);
 
-		if (l_is_base && nme[0] == '%' && strcmp(nme, TID) == 0)
+		if (semijoin_only && l_is_base && nme[0] == '%' && strcmp(nme, TID) == 0)
 			s = join;
 		else
 			s = stmt_project(be, join, column(be, c));
