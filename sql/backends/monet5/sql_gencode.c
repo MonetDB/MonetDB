@@ -143,6 +143,14 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 	int res = 0;
 	str msg = MAL_SUCCEED;
 
+	if (strlen(mod) >= IDLENGTH) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
+		return -1;
+	}
+	if (strlen(name) >= IDLENGTH) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "Function name '%s' too large for the backend", name);
+		return -1;
+	}
 	backup = c->curprg;
 	curPrg = c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 	if( curPrg == NULL) {
@@ -184,7 +192,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return -1;
 			}
-			varid = newVariable(curBlk, buf, strlen(buf), type);
+			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
+				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				return -1;
+			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -213,7 +224,10 @@ _create_relational_function(mvc *m, const char *mod, const char *name, sql_rel *
 				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				return -1;
 			}
-			varid = newVariable(curBlk, (char *)buf, strlen(buf), type);
+			if ((varid = newVariable(curBlk, (char *)buf, strlen(buf), type)) < 0) {
+				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				return -1;
+			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -311,6 +325,14 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 		sql_error(m, 003, SQLSTATE(42000) "Missing property on the input relation");
 		return -1;
 	}
+	if (strlen(mod) >= IDLENGTH) {
+		sql_error(m, 003, SQLSTATE(42000) "Module name '%s' too large for the backend", mod);
+		return -1;
+	}
+	if (strlen(name) >= IDLENGTH) {
+		sql_error(m, 003, SQLSTATE(42000) "Function name '%s' too large for the backend", name);
+		return -1;
+	}
 
 	lname = GDKstrdup(name);
 	if (lname == NULL) {
@@ -373,7 +395,11 @@ _create_relational_remote(mvc *m, const char *mod, const char *name, sql_rel *re
 				return -1;
 			}
 			stpcpy(stpcpy(buf, "A"), nme);
-			varid = newVariable(curBlk, buf,strlen(buf), type);
+			if ((varid = newVariable(curBlk, buf,strlen(buf), type)) < 0) {
+				GDKfree(lname);
+				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				return -1;
+			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -789,10 +815,12 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	int argc = 0, res, added_to_cache = 0;
 
 	backup = c->curprg;
-	if (cq)
+	if (cq) {
+		assert(strlen(cq->name) < IDLENGTH);
 		c->curprg = newFunction(userRef, putName(cq->name), FUNCTIONsymbol);
-	else
+	} else {
 		c->curprg = newFunction(userRef, "tmp", FUNCTIONsymbol);
+	}
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		return NULL;
@@ -820,7 +848,10 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 			}
 			type = tpe->localtype;
 			snprintf(arg, IDLENGTH, "A%d", argc);
-			varid = newVariable(mb, arg,strlen(arg), type);
+			if ((varid = newVariable(mb, arg,strlen(arg), type)) < 0) {
+				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				goto cleanup;
+			}
 			curInstr = pushArgument(mb, curInstr, varid);
 			if (c->curprg == NULL) {
 				sql_error(m, 003, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1125,6 +1156,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	sql_rel *r;
 	str msg = MAL_SUCCEED;
 
+	if (strlen(f->base.name) >= IDLENGTH) {
+		(void) sql_error(m, 02, SQLSTATE(42000) "Function name '%s' too large for the backend", f->base.name);
+		return -1;
+	}
 	/* nothing to do for internal and ready (not recompiling) functions, besides finding respective MAL implementation */
 	if (!f->sql && (f->lang == FUNC_LANG_INT || f->lang == FUNC_LANG_MAL)) {
 		if (f->lang == FUNC_LANG_MAL && !f->imp && !mal_function_find_implementation_address(m, f))
@@ -1194,7 +1229,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 			char buf[IDLENGTH];
 
 			(void) snprintf(buf, IDLENGTH, "A%d", argc);
-			varid = newVariable(curBlk, buf, strlen(buf), type);
+			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
+				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				goto cleanup;
+			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);
@@ -1222,7 +1260,10 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 				sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}
-			varid = newVariable(curBlk, buf, strlen(buf), type);
+			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
+				sql_error(m, 003, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				goto cleanup;
+			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
 			setVarType(curBlk, varid, type);
 			setVarUDFtype(curBlk, varid);

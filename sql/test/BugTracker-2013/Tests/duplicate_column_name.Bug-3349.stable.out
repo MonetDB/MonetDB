@@ -37,7 +37,7 @@ stdout of test 'duplicate_column_name.Bug-3349` in directory 'sql/test/BugTracke
 #		ON a1.x = a2.x
 #	) AS t;
 % sys.t,	sys.t,	sys.t,	sys.t # table_name
-% x,	y,	x,	y # name
+% x,	y,	w,	z # name
 % int,	int,	int,	int # type
 % 1,	1,	1,	1 # length
 [ 1,	1,	1,	1	]

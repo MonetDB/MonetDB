@@ -28,15 +28,15 @@ stdout of test 'disallow_duplicate_column_aliases.Bug-6723` in directory 'sql/te
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	2	]
-#select a.* from (select 1 as T, 2 as T) a;
+#select a.* from (select 1 as T, 2 as U) a;
 % .a,	.a # table_name
-% t,	t # name
+% t,	u # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	2	]
-#with wa as (select 1 as T, 2 as T) select wa.* from wa;
+#with wa as (select 1 as T, 2 as U) select wa.* from wa;
 % .wa,	.wa # table_name
-% t,	t # name
+% t,	u # name
 % tinyint,	tinyint # type
 % 1,	1 # length
 [ 1,	2	]

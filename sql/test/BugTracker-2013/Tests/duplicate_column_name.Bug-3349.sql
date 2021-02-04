@@ -5,7 +5,7 @@ insert into test (x, y) VALUES (1, 2);
 
 SELECT *
 FROM (
-	    SELECT a1.x, a1.y, a2.x, a2.y
+	    SELECT a1.x, a1.y, a2.x as w, a2.y as z
 	    FROM ( SELECT * FROM test) AS a1 JOIN 
 		 ( SELECT * FROM test) AS a2 
 		ON a1.x = a2.x

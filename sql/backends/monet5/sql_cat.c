@@ -789,12 +789,13 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f)
 
 	FUNC_TYPE_STR(f->type)
 
-	(void) fname;
 	(void) fn;
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		throw(SQL,"sql.create_func", SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 	if (!mvc_schema_privs(sql, s))
 		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: access denied for %s to schema '%s'", F, sqlvar_get_string(find_global_var(sql, mvc_bind_schema(sql, "sys"), "current_user")), s->base.name);
+	if (strlen(fname) >= IDLENGTH)
+		throw(SQL,"sql.create_func", SQLSTATE(42000) "CREATE %s: name '%s' too large for the backend", F, fname);
 	nf = mvc_create_func(sql, NULL, s, f->base.name, f->ops, f->res, f->type, f->lang, f->mod, f->imp, f->query, f->varres, f->vararg, f->system);
 	assert(nf);
 	switch (nf->lang) {
