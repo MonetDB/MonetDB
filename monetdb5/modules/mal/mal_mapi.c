@@ -44,14 +44,16 @@
 # include <CommonCrypto/CommonRandom.h>
 #endif
 #endif
-#ifdef HAVE_WINSOCK_H   /* Windows specific */
-# include <winsock.h>
-#else           /* UNIX specific */
+#ifdef HAVE_SYS_SOCKET_H
 # include <sys/select.h>
 # include <sys/socket.h>
 # include <unistd.h>     /* gethostname() */
 # include <netinet/in.h> /* hton and ntoh */
 # include <arpa/inet.h>  /* addr_in */
+#else           /* UNIX specific */
+#ifdef HAVE_WINSOCK_H   /* Windows specific */
+# include <winsock.h>
+#endif
 #endif
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>

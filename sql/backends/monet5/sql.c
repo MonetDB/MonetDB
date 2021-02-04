@@ -3197,21 +3197,6 @@ bat2return(MalStkPtr stk, InstrPtr pci, BAT **b)
 	}
 }
 
-#ifdef WIN32
-static void
-fix_windows_newline(unsigned char *s)
-{
-	char *p = NULL;
-	int c = '\r';
-
-	if (s && (p=strchr((char*)s, c)) != NULL && p[1] == '\n') {
-		for(; p[1]; p++)
-			p[0] = p[1];
-		p[0] = 0;
-	}
-}
-#endif
-
 static char fwftsep[2] = {STREAM_FWF_FIELD_SEP, '\0'};
 static char fwfrsep[2] = {STREAM_FWF_RECORD_SEP, '\0'};
 

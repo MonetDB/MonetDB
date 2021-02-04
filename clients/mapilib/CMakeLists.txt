@@ -37,11 +37,9 @@ target_link_libraries(mapi
   stream
   $<$<PLATFORM_ID:Windows>:ws2_32>)
 
-if(WIN32)
-  target_compile_definitions(mapi
-    PRIVATE
-    LIBMAPI)
-endif()
+target_compile_definitions(mapi
+  PRIVATE
+  LIBMAPI)
 
 set_target_properties(mapi
   PROPERTIES

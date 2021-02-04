@@ -6,7 +6,16 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
-#include "capi.h"
+#include "monetdb_config.h"
+#include "mal.h"
+#include "mal_stack.h"
+#include "mal_linker.h"
+#include "gdk.h"
+#include "sql_catalog.h"
+#include "sql_scenario.h"
+#include "sql_cast.h"
+#include "sql_execute.h"
+#include "sql_storage.h"
 #include "cheader.h"
 #include "cheader.text.h"
 
@@ -68,17 +77,17 @@ static int cudf_initialized = 0;
 static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					bool grouped);
 
-str CUDFevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str CUDFevalStd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return CUDFeval(cntxt, mb, stk, pci, false);
 }
 
-str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str CUDFevalAggr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return CUDFeval(cntxt, mb, stk, pci, true);
 }
 
-str CUDFprelude(void *ret)
+static str CUDFprelude(void *ret)
 {
 	(void)ret;
 	if (!cudf_initialized) {
@@ -113,7 +122,7 @@ static _Noreturn void handler(int sig, siginfo_t *si, void *unused)
 
 static bool can_mprotect_region(void* addr) {
 	if (!option_enable_mprotect) return false;
-	int pagesize = getpagesize();
+	int pagesize = MT_pagesize();
 	void* page_begin = (void *)((size_t)addr - (size_t)addr % pagesize);
 	return page_begin == addr;
 }

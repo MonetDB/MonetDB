@@ -28,6 +28,10 @@
 
 #endif
 
+#if !defined(_XOPEN_SOURCE) && defined(__CYGWIN__)
+#define _XOPEN_SOURCE 700
+#endif
+
 #include <stdlib.h>
 #if defined(_MSC_VER) && defined(_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 /* In this case, malloc and friends are redefined in crtdbg.h to debug
@@ -65,6 +69,10 @@
 #define NATIVE_WIN32 1
 
 #endif /* _MSC_VER */
+
+#if !defined(WIN32) && defined(__CYGWIN__)
+#define WIN32 1
+#endif
 
 // Section: monetdb configure defines
 #cmakedefine HAVE_DISPATCH_DISPATCH_H 1
@@ -323,6 +331,10 @@ typedef __uint128_t uhge;
 #define static_assert(expr, mesg)	((void) 0)
 #endif
 
+#ifdef HAVE_STRINGS_H
+#include <strings.h>		/* strcasecmp */
+#endif
+
 #ifdef _MSC_VER
 
 #define strdup(s)	_strdup(s)
@@ -371,7 +383,7 @@ stpcpy(char *restrict dst, const char *restrict src)
 
 /* there is something very similar to localtime_r on Windows: */
 #define HAVE_LOCALTIME_R 1
-#define localtime_r(tp,tm)	localtime_s(tm,tp)
+#define localtime_r(tp,tm)		(localtime_s(tm,tp) == 0 ? (tm) : NULL)
 #define HAVE_GMTIME_R 1
 #define gmtime_r(tp,tm)         (gmtime_s(tm,tp) == 0 ? (tm) : NULL)
 
