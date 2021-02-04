@@ -29,7 +29,10 @@ run(c1, 'start transaction')
 run(c1, 'delete from foo_2017')
 run(c1, 'drop view bar')
 run(c1, 'create view bar as select * from foo_2017')
-run(c2, 'create table baz (a int);drop table baz')
+try:
+    run(c2, 'create table baz (a int);drop table baz')
+except pymonetdb.DatabaseError:
+    pass
 try:
     run(c1, 'commit')
     #print("shouldn't get here")
