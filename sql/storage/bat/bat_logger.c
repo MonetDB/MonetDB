@@ -19,19 +19,17 @@
 #define CATALOG_NOV2019 52203	/* first in Apr2019 */
 #define CATALOG_JUN2020 52204
 
-logger *bat_logger = NULL;
-
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
  * newversion */
 static gdk_return
-bl_preversion(int oldversion, int newversion)
+bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
 
 #ifdef CATALOG_MAR2018
 	if (oldversion == CATALOG_MAR2018) {
 		/* upgrade to Aug2018 releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -39,7 +37,7 @@ bl_preversion(int oldversion, int newversion)
 #ifdef CATALOG_AUG2018
 	if (oldversion == CATALOG_AUG2018) {
 		/* upgrade to default releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -47,7 +45,7 @@ bl_preversion(int oldversion, int newversion)
 #ifdef CATALOG_NOV2019
 	if (oldversion == CATALOG_NOV2019) {
 		/* upgrade to default releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -55,7 +53,7 @@ bl_preversion(int oldversion, int newversion)
 #ifdef CATALOG_JUN2020
 	if (oldversion == CATALOG_JUN2020) {
 		/* upgrade to default releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -199,12 +197,14 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 #endif
 
 static gdk_return
-bl_postversion(void *lg)
+bl_postversion(void *Store, void *lg)
 {
+	sqlstore *store = Store;
+	(void)store;
 	(void)lg;
 
 #ifdef CATALOG_MAR2018
-	if (catalog_version <= CATALOG_MAR2018) {
+	if (store->catalog_version <= CATALOG_MAR2018) {
 		/* In the past, the sys._tables.readonly and
 		 * tmp._tables.readonly columns were renamed to
 		 * (sys|tmp)._tables.access and the type was changed
@@ -412,7 +412,7 @@ bl_postversion(void *lg)
 #endif
 
 #ifdef CATALOG_AUG2018
-	if (catalog_version <= CATALOG_AUG2018) {
+	if (store->catalog_version <= CATALOG_AUG2018) {
 		int id;
 		lng lid;
 		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
@@ -772,7 +772,7 @@ bl_postversion(void *lg)
 #endif
 
 #ifdef CATALOG_NOV2019
-	if (catalog_version <= CATALOG_NOV2019) {
+	if (store->catalog_version <= CATALOG_NOV2019) {
 		BAT *te, *tne;
 		const int *ocl;	/* old eclass */
 		int *ncl;	/* new eclass */
@@ -824,7 +824,7 @@ bl_postversion(void *lg)
 #endif
 
 #ifdef CATALOG_JUN2020
-	if (catalog_version <= CATALOG_JUN2020) {
+	if (store->catalog_version <= CATALOG_JUN2020) {
 		int id;
 		lng lid;
 		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
@@ -1059,22 +1059,22 @@ bl_postversion(void *lg)
 }
 
 static int
-bl_create(int debug, const char *logdir, int cat_version)
+bl_create(sqlstore *store, int debug, const char *logdir, int cat_version)
 {
-	if (bat_logger)
+	if (store->logger)
 		return LOG_ERR;
-	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
-	if (bat_logger)
+	store->logger = logger_create(debug, "sql", logdir, cat_version, (preversionfix_fptr)&bl_preversion, (postversionfix_fptr)&bl_postversion, store);
+	if (store->logger)
 		return LOG_OK;
 	return LOG_ERR;
 }
 
 static void
-bl_destroy(void)
+bl_destroy(sqlstore *store)
 {
-	logger *l = bat_logger;
+	logger *l = store->logger;
 
-	bat_logger = NULL;
+	store->logger = NULL;
 	if (l) {
 		close_stream(l->log);
 		GDKfree(l->fn);
@@ -1086,43 +1086,44 @@ bl_destroy(void)
 }
 
 static int
-bl_flush(lng save_id)
+bl_flush(sqlstore *store, lng save_id)
 {
-	if (bat_logger)
-		return logger_flush(bat_logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (store->logger)
+		return logger_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
 static int
-bl_cleanup(void)
+bl_cleanup(sqlstore *store)
 {
-	if (bat_logger)
-		return logger_cleanup(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (store->logger)
+		return logger_cleanup(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
 static void
-bl_with_ids(void)
+bl_with_ids(sqlstore *store)
 {
-	if (bat_logger)
-		logger_with_ids(bat_logger);
+	if (store->logger)
+		logger_with_ids(store->logger);
 }
 
 static int
-bl_changes(void)
+bl_changes(sqlstore *store)
 {
-	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
+	return (int) MIN(logger_changes(store->logger), GDK_int_max);
 }
 
 static int
-bl_get_sequence(int seq, lng *id)
+bl_get_sequence(sqlstore *store, int seq, lng *id)
 {
-	return logger_sequence(bat_logger, seq, id);
+	return logger_sequence(store->logger, seq, id);
 }
 
 static int
-bl_log_isnew(void)
+bl_log_isnew(sqlstore *store)
 {
+	logger *bat_logger = store->logger;
 	if (BATcount(bat_logger->catalog_bid) > 10) {
 		return 0;
 	}
@@ -1130,37 +1131,38 @@ bl_log_isnew(void)
 }
 
 static bool
-bl_log_needs_update(void)
+bl_log_needs_update(sqlstore *store)
 {
+	logger *bat_logger = store->logger;
 	return !bat_logger->with_ids;
 }
 
 static int
-bl_tstart(void)
+bl_tstart(sqlstore *store)
 {
-	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
-bl_tend(void)
+bl_tend(sqlstore *store)
 {
-	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tend(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static lng
-bl_tid(void)
+bl_tid(sqlstore *store)
 {
-	return log_save_id(bat_logger);
+	return log_save_id(store->logger);
 }
 
 static int
-bl_sequence(int seq, lng id)
+bl_sequence(sqlstore *store, int seq, lng id)
 {
-	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_sequence(store->logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static void *
-bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
+bl_find_table_value(sqlstore *store, const char *tabnam, const char *tab, const void *val, ...)
 {
 	BAT *s = NULL;
 	BAT *b;
@@ -1168,7 +1170,7 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 
 	va_start(va, val);
 	do {
-		b = temp_descriptor(logger_find_bat(bat_logger, tab, 0, 0));
+		b = temp_descriptor(logger_find_bat(store->logger, tab, 0, 0));
 		if (b == NULL) {
 			bat_destroy(s);
 			va_end(va);
@@ -1194,7 +1196,7 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 	oid o = BUNtoid(s, 0);
 	bat_destroy(s);
 
-	b = temp_descriptor(logger_find_bat(bat_logger, tabnam, 0, 0));
+	b = temp_descriptor(logger_find_bat(store->logger, tabnam, 0, 0));
 	if (b == NULL)
 		return NULL;
 	BATiter bi = bat_iterator(b);
@@ -1286,7 +1288,7 @@ end:
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
 static gdk_return
-snapshot_wal(stream *plan, const char *db_dir)
+snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
 	char meta_file[FILENAME_MAX] = {0};     // ../sql_logs/sql/log
 	char log_file[FILENAME_MAX] = {0};      // ../sql_logs/sql/log.N
@@ -1567,8 +1569,9 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 	return GDK_FAIL;
 }
 static gdk_return
-bl_snapshot(stream *plan)
+bl_snapshot(sqlstore *store, stream *plan)
 {
+	logger *bat_logger = store->logger;
 	gdk_return ret;
 	char *db_dir = NULL;
 	size_t db_dir_len;
@@ -1592,7 +1595,7 @@ bl_snapshot(stream *plan)
 	if (ret != GDK_SUCCEED)
 		goto end;
 
-	ret = snapshot_wal(plan, db_dir);
+	ret = snapshot_wal(bat_logger, plan, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 

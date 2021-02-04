@@ -70,8 +70,7 @@ sql_register(const char *name, const unsigned char *code)
 	sql_modules++;
 }
 
-static int SQLinitialized = 0;
-static int SQLnewcatalog = 0;
+static sql_store SQLstore = NULL;
 int SQLdebug = 0;
 static const char *sqlinit = NULL;
 static MT_Lock sql_contextLock = MT_LOCK_INITIALIZER(sql_contextLock);
@@ -189,9 +188,9 @@ SQLexit(Client c)
 {
 	(void) c;		/* not used */
 	MT_lock_set(&sql_contextLock);
-	if (SQLinitialized) {
-		mvc_exit();
-		SQLinitialized = FALSE;
+	if (SQLstore) {
+		mvc_exit(SQLstore);
+		SQLstore = NULL;
 	}
 	MT_lock_unset(&sql_contextLock);
 	return MAL_SUCCEED;
@@ -240,7 +239,7 @@ SQLprepareClient(Client c, int login)
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		m = mvc_create(sa, c->idx, SQLdebug, c->fdin, c->fdout);
+		m = mvc_create(SQLstore, sa, c->idx, SQLdebug, c->fdin, c->fdout);
 		if (m == NULL) {
 			msg = createException(SQL,"sql.initClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
@@ -254,6 +253,8 @@ SQLprepareClient(Client c, int login)
 			goto bailout;
 		}
 	} else {
+		assert(0);
+#if 0
 		be = c->sqlcontext;
 		m = be->mvc;
 		/* Only reset if there is no active transaction which
@@ -266,9 +267,8 @@ SQLprepareClient(Client c, int login)
 			goto bailout;
 		}
 		backend_reset(be);
+#endif
 	}
-	if (m->session->tr)
-		reset_functions(m->session->tr);
 	MT_lock_unset(&sql_contextLock);
 	if (login) {
 		str schema = monet5_user_set_def_schema(m, c->user);
@@ -276,7 +276,6 @@ SQLprepareClient(Client c, int login)
 			msg = createException(PERMD,"sql.initClient", SQLSTATE(08004) "Schema authorization error");
 			goto bailout;
 		}
-		_DELETE(schema);
 	}
 
 bailout:
@@ -353,7 +352,7 @@ SQLinit(Client c)
 
 	MT_lock_set(&sql_contextLock);
 
-	if (SQLinitialized) {
+	if (SQLstore) {
 		MT_lock_unset(&sql_contextLock);
 		return MAL_SUCCEED;
 	}
@@ -375,11 +374,10 @@ SQLinit(Client c)
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL,"sql.init",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if ((SQLnewcatalog = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) < 0) {
+	if ((SQLstore = mvc_init(sa, SQLdebug, GDKinmemory(0) ? store_mem : store_bat, readonly, single_user)) == NULL) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Catalogue initialization failed");
 	}
-	SQLinitialized = TRUE;
 	sqlinit = GDKgetenv("sqlinit");
 	if (sqlinit) {		/* add sqlinit to the fdin stack */
 		buffer *b = (buffer *) GDKmalloc(sizeof(buffer));
@@ -422,17 +420,20 @@ SQLinit(Client c)
 	be = c->sqlcontext;
 	m = be->mvc;
 	/* initialize the database with predefined SQL functions */
-	if (SQLnewcatalog == 0) {
+	sqlstore *store = SQLstore;
+	if (store->first == 0) {
 		/* check whether table sys.systemfunctions exists: if
 		 * it doesn't, this is probably a restart of the
 		 * server after an incomplete initialization */
-		sql_schema *s = mvc_bind_schema(m, "sys");
-		sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
-		if (t == NULL)
-			SQLnewcatalog = 1;
+		if ((msg = SQLtrans(m)) == MAL_SUCCEED) {
+			sql_schema *s = mvc_bind_schema(m, "sys");
+			sql_table *t = s ? mvc_bind_table(m, s, "systemfunctions") : NULL;
+			if (t == NULL)
+				store->first = 1;
+		}
 	}
-	if (SQLnewcatalog > 0) {
-		SQLnewcatalog = 0;
+	if (store->first > 0) {
+		store->first = 0;
 		maybeupgrade = 0;
 
 		qsort(sql_module, sql_modules, sizeof(sql_module[0]), sql_module_compare);
@@ -516,11 +517,11 @@ SQLinit(Client c)
 	if (GDKinmemory(0))
 		return MAL_SUCCEED;
 
-	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, NULL, MT_THR_DETACHED, "logmanager")) == 0) {
+	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
 	if (!(SQLdebug&1024)) {
-		if ((idlethread = THRcreate((void (*)(void *)) mvc_idlemanager, NULL, MT_THR_DETACHED, "idlemanager")) == 0) {
+		if ((idlethread = THRcreate((void (*)(void *)) mvc_idlemanager, SQLstore, MT_THR_DETACHED, "idlemanager")) == 0) {
 			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
 		}
 	}
@@ -557,11 +558,9 @@ handle_error(mvc *m, int pstatus, str msg)
 		}
 		freeException(new);
 		freeException(msg);
-	} else
-	if ( msg)
+	} else if (msg)
 		newmsg = msg;
-	else
-	if ( new)
+	else if (new)
 		newmsg = new;
 	return newmsg;
 }
@@ -591,8 +590,6 @@ SQLtrans(mvc *m)
 			throw(SQL, "sql.trans", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		s = m->session;
 		if (!s->schema) {
-			if (s->schema_name)
-				GDKfree(s->schema_name);
 			s->schema_name = monet5_user_get_def_schema(m, m->user_id);
 			if (!s->schema_name) {
 				mvc_cancel_session(m);
@@ -612,7 +609,7 @@ SQLinitClient(Client c)
 	str msg = MAL_SUCCEED;
 
 	MT_lock_set(&sql_contextLock);
-	if (SQLinitialized == 0) {
+	if (!SQLstore) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLinitClient", SQLSTATE(42000) "Catalogue not available");
 	}
@@ -650,7 +647,7 @@ SQLexitClient(Client c)
 	str err;
 
 	MT_lock_set(&sql_contextLock);
-	if (SQLinitialized == FALSE) {
+	if (!SQLstore) {
 		MT_lock_unset(&sql_contextLock);
 		throw(SQL, "SQLexitClient", SQLSTATE(42000) "Catalogue not available");
 	}
@@ -771,17 +768,8 @@ SQLreader(Client c)
 	int language = -1;
 	mvc *m = NULL;
 	bool blocked = isa_block_stream(in->s);
-	int isSQLinitialized;
 
-	MT_lock_set(&sql_contextLock);
-	isSQLinitialized = SQLinitialized;
-	MT_lock_unset(&sql_contextLock);
-
-	if (isSQLinitialized == FALSE) {
-		c->mode = FINISHCLIENT;
-		return MAL_SUCCEED;
-	}
-	if (!be || c->mode <= FINISHCLIENT) {
+	if (!SQLstore || !be || c->mode <= FINISHCLIENT) {
 		c->mode = FINISHCLIENT;
 		return MAL_SUCCEED;
 	}

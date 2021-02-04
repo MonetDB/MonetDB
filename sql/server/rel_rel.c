@@ -1760,7 +1760,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 			if (sch_name && seq_name) {
 				sql_schema *sche = mvc_bind_schema(sql, sch_name);
 				if (sche) {
-					sql_sequence *seq = find_sql_sequence(sche, seq_name);
+					sql_sequence *seq = find_sql_sequence(sql->session->tr, sche, seq_name);
 					if (seq)
 						cond_append(l, &seq->base.id);
 				}

@@ -16,7 +16,7 @@
 char*
 sql_next_seq_name(mvc *m)
 {
-	sqlid id = store_next_oid();
+	sqlid id = store_next_oid(m->session->tr->store);
 	size_t len = 5 + 10;	/* max nr of digits of (4 bytes) int is 10 */
 	char *msg = sa_alloc(m->sa, len);
 
@@ -94,7 +94,7 @@ rel_create_seq(
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	(void) tpe;
-	if (find_sql_sequence(s, name))
+	if (find_sql_sequence(sql->session->tr, s, name))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: name '%s' already in use", name);
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE SEQUENCE: insufficient privileges "
@@ -108,7 +108,7 @@ rel_create_seq(
 	if (is_lng_nil(max)) max = 0;
 	if (is_lng_nil(cache)) cache = 1;
 
-	seq = create_sql_sequence(sql->sa, s, name, start, min, max, inc, cache, cycle);
+	seq = create_sql_sequence(sql->store, sql->sa, s, name, start, min, max, inc, cache, cycle);
 	seq->bedropped = bedropped;
 	res = rel_seq(sql->sa, ddl_create_seq, s->base.name, seq, NULL, NULL);
 	/* for multi statements we keep the sequence around */
@@ -258,7 +258,7 @@ rel_alter_seq(
 				"for '%s' in schema '%s'", get_string_global_var(sql, "current_user"), seq->s->base.name);
 
 	/* first alter the known values */
-	seq = create_sql_sequence(sql->sa, seq->s, name, seq->start, min, max, inc, cache, (bit) cycle);
+	seq = create_sql_sequence(sql->store, sql->sa, seq->s, name, seq->start, min, max, inc, cache, (bit) cycle);
 
 	/* restart may be a query, i.e. we create a statement
 	   restart(ssname,seqname,value) */

@@ -530,7 +530,7 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 			node *nn = n->next;
 
 			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, n);
+				list_remove_node(funcs, NULL, n);
 			n = nn;
 		}
 		len = list_length(ff);
@@ -975,7 +975,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
 			return rel;
 		}
-		if ((isMergeTable(t) || isReplicaTable(t)) && list_empty(t->members))
+		if ((isMergeTable(t) || isReplicaTable(t)) && cs_size(&t->members)==0)
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {
@@ -1752,7 +1752,7 @@ _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps,
 			node *nn = n->next;
 
 			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, n);
+				list_remove_node(funcs, NULL, n);
 			n = nn;
 		}
 
@@ -3097,7 +3097,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 		l = ol;
 		r = or;
 	}
-	res = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such binary operator %s%s%s'%s'(%s,%s)", 
+	res = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such binary operator %s%s%s'%s'(%s,%s)",
 					sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, exp_subtype(l)->type->sqlname, exp_subtype(r)->type->sqlname);
 	return res;
 }
@@ -3711,7 +3711,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 			type = exp_subtype(e)->type->sqlname;
 		}
 
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s: no such aggregate %s%s%s'%s'(%s)", toUpperCopy(uaname, aname), 
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s: no such aggregate %s%s%s'%s'(%s)", toUpperCopy(uaname, aname),
 						 sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, type);
 	}
 }
@@ -5435,7 +5435,7 @@ join_on_column_name(sql_query *query, sql_rel *rel, sql_rel *t1, sql_rel *t2, in
 			}
 			exp_setname(sql->sa, le, rname, name);
 			append(outexps, le);
-			list_remove_data(r_exps, re);
+			list_remove_data(r_exps, NULL, re);
 		} else {
 			if (l_nil)
 				set_has_nil(le);

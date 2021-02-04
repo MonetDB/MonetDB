@@ -17,8 +17,9 @@
 #include "rel_rel.h"
 
 static void
-destroy_sql_var(void *data)
+destroy_sql_var(void *gdata, void *data)
 {
+	(void)gdata;
 	sql_var *svar = (sql_var*) data;
 	VALclear(&(svar->var.data));
 	svar->var.data.vtype = 0;
@@ -149,8 +150,9 @@ frame_push_var(mvc *sql, const char *name, sql_subtype *type)
 }
 
 static void
-destroy_sql_local_table(void *data)
+destroy_sql_local_table(void *gdata, void *data)
 {
+	(void)gdata;
 	sql_local_table *slt = (sql_local_table*) data;
 	_DELETE(slt);
 }
@@ -178,8 +180,9 @@ frame_push_table(mvc *sql, sql_table *t)
 }
 
 static void
-destroy_sql_rel_view(void *data)
+destroy_sql_rel_view(void *gdata, void *data)
 {
+	(void)gdata;
 	sql_rel_view *srv = (sql_rel_view*) data;
 	rel_destroy(srv->rel_view);
 	_DELETE(srv->name);
@@ -214,8 +217,9 @@ stack_push_rel_view(mvc *sql, const char *name, sql_rel *var)
 }
 
 static void
-destroy_sql_window_definition(void *data)
+destroy_sql_window_definition(void *gdata, void *data)
 {
+	(void)gdata;
 	sql_window_definition *swd = (sql_window_definition*) data;
 	_DELETE(swd->name);
 	_DELETE(swd);
@@ -250,8 +254,9 @@ frame_push_window_def(mvc *sql, const char *name, dlist *wdef)
 }
 
 static void
-destroy_sql_groupby_expression(void *data)
+destroy_sql_groupby_expression(void *gdata, void *data)
 {
+	(void)gdata;
 	sql_groupby_expression *sge = (sql_groupby_expression*) data;
 	_DELETE(sge);
 }

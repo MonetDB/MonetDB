@@ -71,7 +71,10 @@ def test_snapshot(z_extension, expected_initial_bytes, unpack=True):
                 autocommit=False
             )
             cur2 = conn2.cursor()
-            cur2.execute("insert into foo values ('uncommitted2')")
+            try:
+                cur2.execute("insert into foo values ('uncommitted2')")
+            except:
+                pass
 
             # then conn1 creates the snapshot
             cur1.execute("call sys.hot_snapshot(%(tarname)s)", dict(tarname=tarname))

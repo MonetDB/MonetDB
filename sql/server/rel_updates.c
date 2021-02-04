@@ -130,7 +130,8 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	int need_nulls = 0;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
+	sql_trans *tr = sql->session->tr;
+	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name);
 
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -381,7 +382,7 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isNonPartitionedTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
-	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_empty(t->members)) {
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
@@ -390,7 +391,7 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 	} else if (t->access == TABLE_READONLY) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s read only table '%s'", op, opname, tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY)
+	if (t && !isTempTable(t) && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 
 	if (!table_privs(sql, t, PRIV_INSERT)) {
@@ -416,9 +417,9 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isNonPartitionedTable(t) && is_delete == 0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
-	} else if (isNonPartitionedTable(t) && is_delete != 0 && list_empty(t->members)) {
+	} else if (isNonPartitionedTable(t) && is_delete != 0 && cs_size(&t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s' has no partitions set", op, opname, tname);
-	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_empty(t->members)) {
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
@@ -427,7 +428,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s read or append only table '%s'", op, opname, tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY)
+	if (t && !isTempTable(t) && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 	if ((is_delete == 1 && !table_privs(sql, t, PRIV_DELETE)) || (is_delete == 2 && !table_privs(sql, t, PRIV_TRUNCATE)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, get_string_global_var(sql, "current_user"), opname, tname);
@@ -712,7 +713,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 	int need_nulls = 0;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
+	sql_trans *tr = sql->session->tr;
+	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme));
 
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -895,7 +897,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		mt = t;
-	else if (isPartition(t))
+	else if (partition_find_part(sql->session->tr, t, NULL))
 		mt = partition_find_part(sql->session->tr, t, NULL)->t;
 
 	if (mt && isPartitionedByColumnTable(mt)) {
@@ -1469,6 +1471,9 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 
+	if (locked)
+		locked = 0;
+
 	if (strstr(rsep, "\r\n") != NULL)
 		return sql_error(sql, 02, SQLSTATE(42000)
 				"COPY INTO: record separator contains '\\r\\n' but "
@@ -1495,13 +1500,14 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	}
 	/* lock the store, for single user/transaction */
 	if (locked) {
+		sqlstore *store = sql->session->tr->store;
 		if (headers)
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed with column lists");
-		store_lock();
-		while (ATOMIC_GET(&store_nr_active) > 1) {
-			store_unlock();
+		store_lock(store);
+		while (ATOMIC_GET(&store->nr_active) > 1) {
+			store_unlock(store);
 			MT_sleep_ms(100);
-			store_lock();
+			store_lock(store);
 		}
 		sql->emod |= mod_locked;
 	}
@@ -1753,7 +1759,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 		return NULL;
 	else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-	else if (isPartition(t)) {
+	else if (partition_find_part(sql->session->tr, t, NULL)) {
 		sql_part *mt = partition_find_part(sql->session->tr, t, NULL);
 		if (mt && (isPartitionedByColumnTable(mt->t) || isPartitionedByExpressionTable(mt->t)))
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");

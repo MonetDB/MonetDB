@@ -15,7 +15,7 @@ select name, func, "mod", language, "type", side_effect from functions where nam
 ----
 mycounter1
 create function mycounter1()@returns integer@begin@ declare s int;@ while (true)@ do@ set s =1;@ end while;@ return s;@end@;
-user
+sql
 2
 1
 0
@@ -37,7 +37,7 @@ select name, func, "mod", language, "type", side_effect from functions where nam
 ----
 mycounter2
 create function mycounter2()@returns integer@begin@ declare s int;@ while (select true)@ do@ set s =1;@ end while;@ return s;@end@;
-user
+sql
 2
 1
 0

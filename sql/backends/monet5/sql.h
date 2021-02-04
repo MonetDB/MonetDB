@@ -306,10 +306,10 @@ sql5_export str BATSTRindex_bte(bat *res, const bat *src, const bit *u);
 sql5_export str STRstrings(str *res, const str *src);
 sql5_export str BATSTRstrings(bat *res, const bat *src);
 
-sql5_export str SQLflush_log(void *ret);
-sql5_export str SQLsuspend_log_flushing(void *ret);
-sql5_export str SQLresume_log_flushing(void *ret);
-sql5_export str SQLhot_snapshot(void *ret, const str *tarfile);
+sql5_export str SQLflush_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLsuspend_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLresume_log_flushing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+sql5_export str SQLhot_snapshot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str SQLhot_snapshot_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 sql5_export str SQLsession_prepared_statements(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
