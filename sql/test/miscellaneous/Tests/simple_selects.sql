@@ -273,17 +273,15 @@ start transaction;
 create function "😀"() returns int return 1;
 select "😀"();
 	-- 1
+rollback;
+
 CREATE FUNCTION ups() RETURNS INT
 BEGIN
 	DECLARE "nononononononononononononononononononononononononononononononono" int;
 	RETURN "nononononononononononononononononononononononononononononononono";
-END;
-select ups();
-	-- NULL
-create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2;
-select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"();
-	-- 2
-create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3;
-select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"();
-	-- 3
-rollback;
+END;  -- error for now
+select ups();  -- error for now
+create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2;  -- error for now
+select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"();  -- error for now
+create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3;  -- error for now
+select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"();  -- error for now
