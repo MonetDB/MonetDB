@@ -3,4 +3,3 @@ SELECT ST_AsText(ST_Intersection(centerline, shore)) FROM streams, lakes WHERE s
 ----
 POINT (52 18)
 
-

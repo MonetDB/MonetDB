@@ -21,6 +21,18 @@ SELECT ST_Dimension(st_GeomCollFromText('GEOMETRYCOLLECTION(LINESTRING(1 1,0 0),
 query TI rowsort
 SELECT DISTINCT ST_GeometryType(geom) AS "TYPE", ST_Dimension(geom) AS "DIM" FROM geometries
 ----
-14 values hashing to 4ecad7f8888582fb9f06064252ca74ac
-
+ST_GeometryCollection
+2
+ST_LineString
+1
+ST_MultiLinestring
+1
+ST_MultiPoint
+0
+ST_MultiPolygon
+2
+ST_Point
+0
+ST_Polygon
+2
 

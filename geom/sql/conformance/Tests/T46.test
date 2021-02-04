@@ -3,4 +3,3 @@ SELECT ST_Distance("position", boundary) FROM bridges, named_places WHERE bridge
 ----
 12.000
 
-

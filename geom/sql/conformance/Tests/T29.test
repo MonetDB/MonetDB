@@ -3,4 +3,3 @@ SELECT ST_AsText(ST_InteriorRingN(shore, 1)) FROM lakes WHERE name = 'Blue Lake'
 ----
 LINESTRING (59 18, 67 18, 67 13, 59 13, 59 18)
 
-
