@@ -121,7 +121,7 @@ propvalue2string(sql_allocator *sa, prop *p)
 		case PROP_MIN:
 		case PROP_MAX: {
 			atom *a = p->value;
-			char *s = atom2sql(sa, a, 0), *res = NULL;
+			char *s = atom2string(sa, a), *res = NULL;
 
 			assert(s);
 			if (*s == '"') {
