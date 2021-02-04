@@ -4057,7 +4057,7 @@ first_updated_col(stmt **updates, int cnt)
 }
 
 static stmt *
-update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx_updates, int updcol)
+update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *u_tids, stmt *idx_updates, int updcol)
 {
 	mvc *sql = be->mvc;
 	char *msg = NULL;
@@ -4068,7 +4068,6 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 	sql_subtype *bt = sql_bind_localtype("bit");
 	sql_subfunc *ne;
 
-	(void)tids;
 	ne = sql_bind_func_result(sql->sa, sql->session->schema, "<>", F_FUNC, bt, 2, lng, lng);
 	if (list_length(k->columns) > 1) {
 		stmt *dels = stmt_tid(be, k->t, 0);
@@ -4081,7 +4080,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 			should be zero)
 	 	*/
 		if (!isNew(k)) {
-			stmt *nu_tids = stmt_tdiff(be, dels, tids, NULL); /* not updated ids */
+			stmt *nu_tids = stmt_tdiff(be, dels, u_tids, NULL); /* not updated ids */
 			list *lje = sa_list(sql->sa);
 			list *rje = sa_list(sql->sa);
 
@@ -4097,7 +4096,8 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 				if (updates[c->c->colnr]) {
 					upd = updates[c->c->colnr];
 				} else {
-					upd = stmt_project(be, tids, stmt_col(be, c->c, dels, dels->partition));
+					//upd = stmt_project(be, u_tids, stmt_col(be, c->c, dels, dels->partition));
+					upd = stmt_col(be, c->c, u_tids, u_tids->partition);
 				}
 				list_append(lje, stmt_col(be, c->c, nu_tids, nu_tids->partition));
 				list_append(rje, upd);
@@ -4194,7 +4194,7 @@ update_check_ukey(backend *be, stmt **updates, sql_key *k, stmt *tids, stmt *idx
 
 		/* s should be empty */
 		if (!isNew(k)) {
-			stmt *nu_tids = stmt_tdiff(be, dels, tids, NULL); /* not updated ids */
+			stmt *nu_tids = stmt_tdiff(be, dels, u_tids, NULL); /* not updated ids */
 			assert (updates);
 
 			h = updates[c->c->colnr];
