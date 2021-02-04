@@ -26,4 +26,3 @@ drop table nodes_legacy
 statement ok
 drop table way_nds
 
-

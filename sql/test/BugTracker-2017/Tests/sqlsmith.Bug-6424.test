@@ -53,4 +53,3 @@ where ref_2.col4 is NULL
 statement ok
 ROLLBACK
 
-

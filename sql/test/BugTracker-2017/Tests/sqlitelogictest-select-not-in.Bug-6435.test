@@ -8,4 +8,3 @@ SELECT ALL * FROM tab0 cor0 WHERE - 62 NOT IN ( 9, - ( + + 67 ) ) AND - col0 * +
 statement ok
 DROP TABLE tab0
 
-

@@ -31,4 +31,3 @@ SELECT * FROM tst123 WHERE col1 NOT IN (10)
 statement ok
 DROP TABLE tst123 
 
-

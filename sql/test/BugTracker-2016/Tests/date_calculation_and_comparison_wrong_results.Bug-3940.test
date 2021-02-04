@@ -10,17 +10,16 @@ INSERT INTO foo VALUES ('2016-01-01', '2016-01-01')
 statement ok
 INSERT INTO foo VALUES ('2016-01-01', '2016-01-31')
 
-query TT
+query TI nosort
 SELECT (dat2-dat1), (dat2-dat1) < interval '10' day FROM foo
 ----
 1
-True
+1
 0
-True
+1
 30
-False
+0
 
 statement ok
 DROP TABLE foo
-
 

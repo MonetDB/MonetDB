@@ -36,4 +36,3 @@ drop schema "SA" cascade
 statement ok
 drop schema "SB" cascade
 
-

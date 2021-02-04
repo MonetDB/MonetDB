@@ -83,4 +83,3 @@ select * from tab3205 order by pos
 statement ok
 drop table tab3205
 
-

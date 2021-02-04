@@ -15,16 +15,3 @@ end tst
 statement ok
 optimizer.dataflow("user","tst")
 
-#mdb.List("user","tst")
-
-query T rowsort
-mdb.var("user","tst")
-----
-#[12]   X_6 (0,0,0) =  :str   not used 
-
-statement ok
-optimizer.multiplex("user","tst")
-
-#mdb.List("user","tst")
-
-

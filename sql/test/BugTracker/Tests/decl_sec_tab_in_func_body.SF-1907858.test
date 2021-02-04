@@ -16,4 +16,3 @@ END
 statement ok
 drop function fR
 
-

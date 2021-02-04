@@ -31,17 +31,124 @@ COPY LOADER INTO mytable2 FROM myfunc(20, 2)
 query IIII rowsort
 SELECT * FROM mytable4
 ----
-40 values hashing to 06a6a8bbebc60088a694e1f9372bdf54
+1
+2
+3
+NULL
+10
+20
+30
+NULL
+2
+4
+6
+NULL
+3
+6
+9
+NULL
+4
+8
+12
+NULL
+5
+10
+15
+NULL
+6
+12
+18
+NULL
+7
+14
+21
+NULL
+8
+16
+24
+NULL
+9
+18
+27
+NULL
 
 query III rowsort
 SELECT * FROM mytable3
 ----
-30 values hashing to 05ecd200f24684cb86aa59915a63fddd
+1
+2
+3
+10
+20
+30
+2
+4
+6
+3
+6
+9
+4
+8
+12
+5
+10
+15
+6
+12
+18
+7
+14
+21
+8
+16
+24
+9
+18
+27
 
 query II rowsort
 SELECT * FROM mytable2
 ----
-40 values hashing to 4b9a1c8a9990e321afcc917839eedc40
+1
+2
+10
+20
+11
+22
+12
+24
+13
+26
+14
+28
+15
+30
+16
+32
+17
+34
+18
+36
+19
+38
+2
+4
+20
+40
+3
+6
+4
+8
+5
+10
+6
+12
+7
+14
+8
+16
+9
+18
 
 statement ok
 DROP TABLE mytable3
@@ -54,5 +161,4 @@ DROP LOADER myfunc
 
 statement ok
 ROLLBACK
-
 

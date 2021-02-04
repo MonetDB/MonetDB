@@ -12,4 +12,3 @@ SELECT DISTINCT - 15 * - 19 + - CAST( COUNT ( * ) AS INT) * + 70 FROM tab2 WHERE
 statement ok
 DROP TABLE tab2
 
-

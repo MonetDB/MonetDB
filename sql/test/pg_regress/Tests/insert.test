@@ -19,7 +19,18 @@ insert into inserttest (col1, col2) values (NULL, 7)
 query IIT rowsort
 select * from inserttest
 ----
-12 values hashing to e2cdd029dcd73f0eeebf992392c88c18
+NULL
+3
+DEFAULT
+NULL
+5
+DEFAULT
+NULL
+5
+test
+NULL
+7
+testing
 
 statement error
 insert into inserttest (col1, col2, col3) values (DEFAULT, DEFAULT)
@@ -36,9 +47,19 @@ insert into inserttest (col1) values (DEFAULT, DEFAULT)
 query IIT rowsort
 select * from inserttest
 ----
-12 values hashing to e2cdd029dcd73f0eeebf992392c88c18
+NULL
+3
+DEFAULT
+NULL
+5
+DEFAULT
+NULL
+5
+test
+NULL
+7
+testing
 
 statement ok
 drop table inserttest
-
 

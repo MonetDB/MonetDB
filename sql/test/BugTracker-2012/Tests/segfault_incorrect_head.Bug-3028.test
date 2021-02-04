@@ -48,4 +48,3 @@ drop table cache_kv1_3
 statement ok
 drop table cache_kv1
 
-

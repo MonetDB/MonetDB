@@ -17,4 +17,3 @@ select * from way_nds;
 select * from way_nds as t1, way_nds as t2 where t1.way = t2.way and t1.idx = t2.idx-1;
 drop table way_nds;
 
-

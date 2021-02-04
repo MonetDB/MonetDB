@@ -12,7 +12,8 @@ select sum(b-a) from foo
 statement ok
 drop table foo
 
-query T
+query T nosort
 select sum(i) from (select interval '1' day) x(i)
 ----
 1
+

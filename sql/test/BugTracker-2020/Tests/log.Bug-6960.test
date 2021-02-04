@@ -21,4 +21,3 @@ SELECT LOG(2,42)
 statement error
 SELECT LOG(1,100)
 
-

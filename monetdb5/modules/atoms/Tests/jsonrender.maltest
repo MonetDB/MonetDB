@@ -34,10 +34,21 @@ bat.append(ans,false)
 statement ok
 bat.append(ans,nil:bit)
 
-query TITT rowsort
+query IITI rowsort
 io.print(idx,wrd,ans)
 ----
-12 values hashing to 19ddc97069f43af16a86f51966a8da63
+0
+1
+hello
+1
+1
+2
+brave
+0
+2
+3
+world
+NULL
 
 statement ok
 result:=json.renderobject("idx",idx,"wrd",wrd,"ans",ans)
@@ -54,5 +65,4 @@ query T rowsort
 io.print(result)
 ----
 "[[1,\"hello\",true],[2,\"brave\",false],[3,\"world\",null]]"
-
 

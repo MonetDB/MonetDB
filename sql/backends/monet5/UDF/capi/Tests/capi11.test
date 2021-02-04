@@ -83,4 +83,3 @@ SELECT _dbl2dec(d) FROM doubles
 statement ok
 ROLLBACK
 
-

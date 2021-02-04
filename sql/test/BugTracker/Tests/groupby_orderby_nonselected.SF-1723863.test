@@ -17,4 +17,3 @@ order by row_count desc, col1
 statement ok
 drop table data_1to10
 
-

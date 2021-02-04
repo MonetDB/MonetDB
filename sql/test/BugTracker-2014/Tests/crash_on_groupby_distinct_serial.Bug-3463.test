@@ -8,4 +8,3 @@ SELECT a as t, count(distinct c) FROM test GROUP BY t
 statement ok
 drop table test
 
-

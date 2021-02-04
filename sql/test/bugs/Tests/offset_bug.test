@@ -29,7 +29,20 @@ INSERT INTO query_users (user_id, user_name) VALUES (7, 'fido')
 query IT rowsort
 select * from query_users
 ----
-14 values hashing to 6f1dd5f5aa3835ce5d3f1a19d2631a5b
+1
+john
+2
+jack
+3
+ed
+4
+wendy
+5
+laura
+6
+ralph
+7
+fido
 
 query IT rowsort
 SELECT query_users.user_id, query_users.user_name
@@ -57,19 +70,49 @@ laura
 query IT rowsort
 select * from query_users OFFSET 2
 ----
-10 values hashing to c5e74fd16be6b65a9fce3eca1d4de60e
+3
+ed
+4
+wendy
+5
+laura
+6
+ralph
+7
+fido
 
 query IT rowsort
 select * from query_users order by user_name
 ----
-14 values hashing to 6f1dd5f5aa3835ce5d3f1a19d2631a5b
+1
+john
+2
+jack
+3
+ed
+4
+wendy
+5
+laura
+6
+ralph
+7
+fido
 
 query IT rowsort
 select * from query_users order BY user_name OFFSET 2
 ----
-10 values hashing to 27844e9dae94812ae87787508cfdd97a
+1
+john
+2
+jack
+4
+wendy
+5
+laura
+6
+ralph
 
 statement ok
 drop table query_users
-
 

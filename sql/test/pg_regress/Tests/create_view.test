@@ -104,4 +104,3 @@ DROP VIEW viewtest
 statement ok
 DROP TABLE viewtest_tbl
 
-

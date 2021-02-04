@@ -85,7 +85,6 @@ create view "dw_hospital"."v_dim_classi_movimenti" as
  from
  "dw_hospital"."dim_classi_movimenti"
 
-
 statement ok
 CREATE TABLE "dw_hospital"."facts_costi_2017" (
 	"id"                     INTEGER       NOT NULL DEFAULT next value for "dw_hospital"."seq_36397",
@@ -413,5 +412,4 @@ group by "dim_periodi"."year4","gruppi"."codice"
 
 statement ok
 rollback
-
 

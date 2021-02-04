@@ -7,7 +7,16 @@ insert into test_oidx (c1, c2) values (1, 'ccc'), (2, 'bbb'), (3, 'eee'), (4, 'a
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 create ordered index test_oidx1 on test_oidx (c2)
@@ -15,7 +24,16 @@ create ordered index test_oidx1 on test_oidx (c2)
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 drop index test_oidx1
@@ -32,7 +50,16 @@ insert into test_oidx (c1, c2) values (1, 'ccc'), (2, 'bbb'), (3, 'eee'), (4, 'a
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 create ordered index test_oidx1 on test_oidx (c2)
@@ -40,7 +67,16 @@ create ordered index test_oidx1 on test_oidx (c2)
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 drop index test_oidx1
@@ -57,7 +93,16 @@ insert into test_oidx (c1, c2) values (1, 'ccc'), (2, 'bbb'), (3, 'eee'), (4, 'a
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 create ordered index test_oidx1 on test_oidx (c2)
@@ -65,7 +110,16 @@ create ordered index test_oidx1 on test_oidx (c2)
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 drop index test_oidx1
@@ -82,7 +136,16 @@ insert into test_oidx (c1, c2) values (1, 'ccc'), (2, 'bbb'), (3, 'eee'), (4, 'a
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 create ordered index test_oidx1 on test_oidx (c2)
@@ -90,12 +153,20 @@ create ordered index test_oidx1 on test_oidx (c2)
 query IT rowsort
 select * from test_oidx order by c2, c1
 ----
-10 values hashing to e09c55a8c5fdef5a775c21679ad1aff3
+1
+ccc
+2
+bbb
+3
+eee
+4
+aaa
+5
+ddd
 
 statement ok
 drop index test_oidx1
 
 statement ok
 drop table test_oidx
-
 

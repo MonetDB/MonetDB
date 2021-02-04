@@ -34,4 +34,3 @@ DROP TABLE ProductTarget
 statement ok
 DROP TABLE ProductSource
 
-

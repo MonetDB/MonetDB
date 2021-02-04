@@ -4,7 +4,7 @@ START TRANSACTION
 statement ok
 CREATE SEQUENCE "mytest" AS int
 
-query TTIIIIIT rowsort
+query TTIIIIII rowsort
 SELECT q.name, s.name, q."start", q."minvalue", q."maxvalue",	q."increment", q.cacheinc, q."cycle"  FROM SEQUENCES q, SCHEMAS s where s.id = q.schema_id
 ----
 mytest
@@ -14,7 +14,7 @@ sys
 0
 1
 1
-False
+0
 
 query I rowsort
 SELECT NEXT VALUE FOR "mytest"
@@ -26,7 +26,7 @@ SELECT NEXT VALUE FOR "mytest"
 ----
 2
 
-query TTIIIIIT rowsort
+query TTIIIIII rowsort
 SELECT q.name, s.name, q."start", q."minvalue", q."maxvalue",	q."increment", q.cacheinc, q."cycle"  FROM SEQUENCES q, SCHEMAS s where s.id = q.schema_id
 ----
 mytest
@@ -36,12 +36,12 @@ sys
 0
 1
 1
-False
+0
 
 statement ok
 ALTER SEQUENCE "mytest" RESTART WITH 10
 
-query TTIIIIIT rowsort
+query TTIIIIII rowsort
 SELECT q.name, s.name, q."start", q."minvalue", q."maxvalue",	q."increment", q.cacheinc, q."cycle"  FROM SEQUENCES q, SCHEMAS s where s.id = q.schema_id
 ----
 mytest
@@ -51,7 +51,7 @@ sys
 0
 1
 1
-False
+0
 
 query I rowsort
 SELECT NEXT VALUE FOR "mytest"
@@ -63,7 +63,7 @@ SELECT NEXT VALUE FOR "mytest"
 ----
 11
 
-query TTIIIIIT rowsort
+query TTIIIIII rowsort
 SELECT q.name, s.name, q."start", q."minvalue", q."maxvalue",	q."increment", q.cacheinc, q."cycle"  FROM SEQUENCES q, SCHEMAS s where s.id = q.schema_id
 ----
 mytest
@@ -73,7 +73,7 @@ sys
 0
 1
 1
-False
+0
 
 statement ok
 DROP SEQUENCE "mytest"

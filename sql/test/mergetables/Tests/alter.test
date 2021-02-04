@@ -37,4 +37,3 @@ drop table mys.smalltable
 statement ok
 drop table mys.part
 
-

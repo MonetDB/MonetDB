@@ -48,7 +48,30 @@ COPY 12 RECORDS INTO "sys"."s" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 query III rowsort
 SELECT u, v, r FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter ORDER BY u, v, r
 ----
-24 values hashing to b9dd2e21697116f3c27682a8120b06bb
+0
+1
+3
+0
+2
+3
+1
+0
+3
+1
+3
+64
+2
+0
+3
+2
+3
+2
+3
+1
+16
+3
+2
+2
 
 query I rowsort
 SELECT count(*) as c FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as inter
@@ -58,7 +81,18 @@ SELECT count(*) as c FROM ((SELECT * FROM S) INTERSECT (SELECT * FROM R)) as int
 query III rowsort
 SELECT u, v, r  FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff ORDER BY u, v, r
 ----
-12 values hashing to 208a5811a95c8801af04f9566613eb65
+0
+3
+1
+1
+2
+100
+2
+1
+28
+3
+0
+1
 
 query I rowsort
 SELECT count(*) as c FROM ((SELECT * FROM S) EXCEPT (SELECT * FROM R)) as diff
@@ -99,5 +133,4 @@ SELECT inter.u FROM ((SELECT * FROM R) INTERSECT (SELECT * FROM S)) as inter ORD
 
 statement ok
 ROLLBACK
-
 

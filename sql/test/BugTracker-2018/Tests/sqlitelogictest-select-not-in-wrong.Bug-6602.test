@@ -62,4 +62,3 @@ Paris
 statement ok
 drop table CITIES
 
-

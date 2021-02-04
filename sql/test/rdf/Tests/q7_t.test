@@ -11,4 +11,3 @@ SELECT A.subj, B.obj, C.obj
 	AND C.prop = 17582582
 ----
 
-

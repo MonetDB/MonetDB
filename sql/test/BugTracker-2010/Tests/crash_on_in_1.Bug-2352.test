@@ -8,4 +8,3 @@ select test from test8 where test in (test + 1)
 statement ok
 drop table test8
 
-

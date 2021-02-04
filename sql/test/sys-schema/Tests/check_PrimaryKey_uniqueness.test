@@ -134,15 +134,15 @@ query IIII rowsort
 SELECT COUNT(*) AS duplicates, obj_id, auth_id, privileges FROM sys.privileges GROUP BY obj_id, auth_id, privileges HAVING COUNT(*) > 1
 ----
 
-query IT rowsort
+query II rowsort
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_catalog GROUP BY id HAVING COUNT(*) >1
 ----
 
-query IT rowsort
+query II rowsort
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_calls GROUP BY id HAVING COUNT(*) > 1
 ----
 
-query IT rowsort
+query II rowsort
 SELECT COUNT(*) AS duplicates, id FROM sys.querylog_history GROUP BY id HAVING COUNT(*) >1
 ----
 
@@ -213,5 +213,4 @@ SELECT COUNT(*) AS duplicates, table_id, partition_id, minimum FROM sys.range_pa
 query IIIT rowsort
 SELECT COUNT(*) AS duplicates, table_id, partition_id, "value" FROM sys.value_partitions GROUP BY table_id, partition_id, "value" HAVING COUNT(*) >1
 ----
-
 

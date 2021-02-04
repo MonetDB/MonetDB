@@ -3,7 +3,6 @@ CREATE TABLE x (
 x DOUBLE
 )
 
-
 statement ok
 INSERT INTO x VALUES (1)
 
@@ -101,5 +100,4 @@ FROM
 
 statement ok
 drop table x
-
 

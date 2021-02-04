@@ -12094,7 +12094,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "iterator",	"next",	"command iterator.next(X_1:lng, X_2:lng):lng ",	"ITRnext_lng;",	""	]
 [ "iterator",	"next",	"command iterator.next(X_1:oid, X_2:oid):oid ",	"ITRnext_oid;",	""	]
 [ "iterator",	"next",	"command iterator.next(X_1:sht, X_2:sht):sht ",	"ITRnext_sht;",	""	]
-[ "json",	"dump",	"pattern json.dump(X_1:json):void ",	"JSONdump;",	""	]
+[ "json",	"dump",	"pattern json.dump(X_1:json):bat[:str] ",	"JSONdump;",	""	]
 [ "json",	"filter",	"command json.filter(X_1:json, X_2:str):json ",	"JSONfilter;",	""	]
 [ "json",	"filter",	"command json.filter(X_1:json, X_2:bte, X_3:str):json ",	"JSONfilterArrayDefault_bte;",	""	]
 [ "json",	"filter",	"command json.filter(X_1:json, X_2:hge, X_3:str):json ",	"JSONfilterArrayDefault_hge;",	""	]

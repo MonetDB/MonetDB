@@ -20,4 +20,3 @@ drop view v11993765
 statement ok
 drop table t11993765
 
-

@@ -293,4 +293,3 @@ select helloworld from in_table where in_col not in (NULL)
 statement ok
 drop table in_table
 
-

@@ -9,10 +9,24 @@ io.print(js)
 statement ok
 (k,v):= json.unfold(js)
 
-query TTT rowsort
+query ITT rowsort
 io.print(k,v)
 ----
-15 values hashing to 645f321ead728611dff209aa675ad1b5
+0
+NULL
+{ "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }
+1
+NULL
+{ "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }
+2
+NULL
+{ "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }
+3
+NULL
+{ "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }
+4
+NULL
+{ "color": "red", "price": 19.95 }
 
 statement ok
 jsn:= json.fold(k,v)
@@ -25,10 +39,29 @@ io.print(jsn)
 statement ok
 (o,l,w):= json.unfold(js)
 
-query TTTT rowsort
+query IITT rowsort
 io.print(o,l,w)
 ----
-20 values hashing to fc6ad02223c7c77e23d71dfddfd44d8c
+0
+0
+NULL
+{ "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }
+1
+1
+NULL
+{ "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }
+2
+2
+NULL
+{ "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }
+3
+3
+NULL
+{ "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }
+4
+4
+NULL
+{ "color": "red", "price": 19.95 }
 
 statement ok
 barrier (i,j):= iterator.new(w)
@@ -59,7 +92,7 @@ io.print(js)
 statement ok
 (l1,l2) := json.unfold(js)
 
-query TT rowsort
+query IT rowsort
 io.print(l2)
 ----
 0
@@ -72,7 +105,7 @@ true
 statement ok
 (l0,l1,l2) := json.unfold(js)
 
-query TTT rowsort
+query IIT rowsort
 io.print(l0,l2)
 ----
 0
@@ -84,5 +117,4 @@ true
 2
 2
 [2,false]
-
 

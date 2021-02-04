@@ -22,4 +22,3 @@ drop table tmp_a
 statement ok
 drop table tmp_b
 
-

@@ -77,4 +77,3 @@ DROP TABLE tab0
 statement ok
 DROP TABLE tab1
 
-

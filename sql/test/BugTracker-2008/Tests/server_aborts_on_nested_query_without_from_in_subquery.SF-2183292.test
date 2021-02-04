@@ -8,4 +8,3 @@ SELECT * FROM way_tags_2183292 WHERE way IN (SELECT way WHERE k = 'bridge')
 statement ok
 drop table way_tags_2183292
 
-

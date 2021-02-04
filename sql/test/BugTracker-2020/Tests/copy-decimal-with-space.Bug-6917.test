@@ -18,10 +18,29 @@ copy 10 records into tmpcopy from stdin delimiters ',','\n'
 0,67 
 0,890
 
-query IR
+query IR nosort
 select * from tmpcopy;
 ----
-20 values hashing to 32102c6f8607147544fd523688eef6e2
+0
+1.200
+0
+2.340
+0
+3.456
+0
+4.456
+0
+5.000
+0
+67.000
+0
+890.000
+0
+5.000
+0
+67.000
+0
+890.000
 
 statement error
 copy 1 records into tmpcopy from stdin delimiters ',','\n';
@@ -30,5 +49,4 @@ copy 1 records into tmpcopy from stdin delimiters ',','\n';
 
 statement ok
 rollback;
-
 

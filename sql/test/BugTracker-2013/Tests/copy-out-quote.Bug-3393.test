@@ -35,4 +35,3 @@ copy select * from table3393 into stdout
 statement ok
 rollback
 
-

@@ -30,4 +30,3 @@ DROP FUNCTION pyapi32
 statement ok
 ROLLBACK
 
-

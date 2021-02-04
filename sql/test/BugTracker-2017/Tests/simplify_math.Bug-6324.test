@@ -8,4 +8,3 @@ SELECT col2 FROM tab0 AS cor0 WHERE + col4 NOT IN ( + 0 + + col1 )
 statement ok
 DROP TABLE tab0
 
-

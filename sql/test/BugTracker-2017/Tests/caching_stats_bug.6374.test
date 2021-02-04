@@ -93,4 +93,3 @@ drop table sub1
 statement ok
 drop table sub2
 
-

@@ -52,7 +52,16 @@ insert into decimaltest values (-1234.1)
 query R rowsort
 select * from decimaltest
 ----
-10 values hashing to b575979ba41f84dc15a02b4ed1542286
+-1.100
+-12.120
+-123.120
+-123.120
+-123.130
+1.100
+12.120
+123.120
+123.120
+123.130
 
 statement ok
 drop table decimaltest

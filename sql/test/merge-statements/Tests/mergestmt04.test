@@ -26,10 +26,24 @@ MERGE INTO food_store USING (SELECT id, "name" FROM incoming) AS new_food
   ON food_store.id = new_food.id
   WHEN NOT MATCHED THEN INSERT VALUES (new_food.id, new_food."name", true)
 
-query ITT rowsort
+query ITI rowsort
 SELECT id, "name", new_item FROM food_store
 ----
-15 values hashing to b5837d8a1bc8c4c1a163e6f00f752e71
+1
+bread
+0
+2
+coffee
+0
+3
+tea
+0
+4
+butter
+0
+6
+ice cream
+1
 
 statement ok
 TRUNCATE incoming
@@ -43,10 +57,27 @@ MERGE INTO food_store USING (SELECT id, "name" FROM incoming) AS food_updates
   WHEN NOT MATCHED THEN INSERT VALUES (food_updates.id, food_updates."name", true)
   WHEN MATCHED THEN UPDATE SET "name" = food_updates."name", new_item = true
 
-query ITT rowsort
+query ITI rowsort
 SELECT id, "name", new_item FROM food_store
 ----
-18 values hashing to 660314345cf8826a4b24c7666c8c925e
+1
+cookies
+1
+2
+cake
+1
+3
+tea
+0
+4
+butter
+0
+6
+ice cream
+1
+7
+peanuts
+1
 
 statement ok
 TRUNCATE releases
@@ -59,10 +90,27 @@ MERGE INTO food_store USING (SELECT id, reason FROM releases) AS food_updates
   ON food_store.id = food_updates.id
   WHEN MATCHED THEN UPDATE SET new_item = true
 
-query ITT rowsort
+query ITI rowsort
 SELECT id, "name", new_item FROM food_store
 ----
-18 values hashing to 660314345cf8826a4b24c7666c8c925e
+1
+cookies
+1
+2
+cake
+1
+3
+tea
+0
+4
+butter
+0
+6
+ice cream
+1
+7
+peanuts
+1
 
 statement ok
 DROP TABLE food_store
@@ -72,5 +120,4 @@ DROP TABLE releases
 
 statement ok
 DROP TABLE incoming
-
 

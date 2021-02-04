@@ -17,15 +17,15 @@ select * from my_table
 2
 3
 
-query T rowsort
+query I rowsort
 select 1<2
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select 'A'='a'
 ----
-False
+0
 
 query I rowsort
 select 1 from my_table where 1<2
@@ -51,5 +51,4 @@ select * from my_table where 1 = 0
 
 statement ok
 drop table my_table
-
 

@@ -16,4 +16,3 @@ drop table "b2745"
 statement ok
 drop table "a2745"
 
-

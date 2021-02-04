@@ -7,4 +7,3 @@ create index idx_dropindex on t_dropindex(i)
 statement ok
 drop index idx_dropindex
 
-

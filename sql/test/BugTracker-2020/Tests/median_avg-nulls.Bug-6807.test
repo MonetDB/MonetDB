@@ -38,4 +38,3 @@ SELECT c2, quantile_avg(c1, 0.7) FROM (VALUES (1, 1), (NULL, 1), (1, 2), (2, 2),
 3
 NULL
 
-

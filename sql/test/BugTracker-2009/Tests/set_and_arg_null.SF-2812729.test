@@ -14,4 +14,3 @@ NULL
 statement ok
 drop function call_function
 
-

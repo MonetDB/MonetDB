@@ -9,10 +9,10 @@ SELECT schema_id('sys')
 ----
 2000
 
-query T rowsort
+query I rowsort
 SELECT schema_id('json') > 2000
 ----
-True
+1
 
 query I rowsort
 SELECT schema_id('hsfdjkhksf does not exist')
@@ -25,20 +25,73 @@ BEGIN
   RETURN SELECT min(id) from sys.tables where name = tname AND schema_id = (SELECT id from sys.schemas where name = sname);
 END
 
-query T rowsort
+query I rowsort
 SELECT table_id('sys','tables') > 2000
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT table_id(current_schema,'columns') > 2000
 ----
-True
+1
 
-query TTIITI rowsort
+query TTIIII rowsort
 SELECT name, type, type_digits, type_scale, "null", number from columns where table_id = table_id('sys','tables')
 ----
-54 values hashing to 0e6f99a8b7d9c6a09c1aa1aee32c46ae
+access
+smallint
+16
+0
+1
+7
+commit_action
+smallint
+16
+0
+1
+6
+id
+int
+32
+0
+1
+0
+name
+varchar
+1024
+0
+1
+1
+query
+varchar
+1048576
+0
+1
+3
+schema_id
+int
+32
+0
+1
+2
+system
+boolean
+1
+0
+1
+5
+temporary
+smallint
+16
+0
+1
+8
+type
+smallint
+16
+0
+1
+4
 
 query I rowsort
 SELECT table_id('sys','hsfdjkhksf does not exist')
@@ -56,20 +109,73 @@ SELECT current_schema
 ----
 sys
 
-query T rowsort
+query I rowsort
 SELECT table_id('tables') > 2000
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT table_id('columns') > 2000
 ----
-True
+1
 
-query TTIITI rowsort
+query TTIIII rowsort
 SELECT name, type, type_digits, type_scale, "null", number from columns where table_id = table_id('tables')
 ----
-54 values hashing to 0e6f99a8b7d9c6a09c1aa1aee32c46ae
+access
+smallint
+16
+0
+1
+7
+commit_action
+smallint
+16
+0
+1
+6
+id
+int
+32
+0
+1
+0
+name
+varchar
+1024
+0
+1
+1
+query
+varchar
+1048576
+0
+1
+3
+schema_id
+int
+32
+0
+1
+2
+system
+boolean
+1
+0
+1
+5
+temporary
+smallint
+16
+0
+1
+8
+type
+smallint
+16
+0
+1
+4
 
 query I rowsort
 SELECT table_id('hsfdjkhksf does not exist')
@@ -88,5 +194,4 @@ DROP ALL function table_id
 
 statement ok
 DROP function schema_id
-
 

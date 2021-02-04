@@ -13,4 +13,3 @@ drop table names cascade
 statement ok
 COMMIT
 
-

@@ -160,4 +160,3 @@ select count(distinct f1) from interval_tbl
 statement ok
 DROP TABLE INTERVAL_TBL
 
-

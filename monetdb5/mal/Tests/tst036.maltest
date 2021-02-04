@@ -20,4 +20,3 @@ statement error
 statement error
 (l4,l5) := (4,5,6)
 
-

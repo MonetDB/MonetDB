@@ -36,4 +36,3 @@ NULL
 statement ok
 drop table test_subquery
 
-

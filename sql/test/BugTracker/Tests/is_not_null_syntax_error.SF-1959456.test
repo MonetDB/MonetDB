@@ -18,4 +18,3 @@ drop function f11959456
 statement ok
 drop table t11959456
 
-

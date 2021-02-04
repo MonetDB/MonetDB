@@ -49,4 +49,3 @@ WHERE COL3 IS NULL
 statement ok
 drop table a
 
-

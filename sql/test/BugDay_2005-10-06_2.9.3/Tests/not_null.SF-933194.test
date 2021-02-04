@@ -5,13 +5,32 @@ create table test (
 	id3 int null
 )
 
-query TTIITTI rowsort
+query TTIIITI rowsort
 select c.name, c.type, c.type_digits, c.type_scale, c."null", c."default", c.number from sys._columns c, sys._tables t, sys.schemas s
 where c.table_id = t.id and t.name = 'test' and t.schema_id = s.id and s.name = 'sys' order by c.number
 ----
-21 values hashing to 797e808231261709d37c70c962cb5e96
+id1
+int
+32
+0
+1
+NULL
+0
+id2
+int
+32
+0
+0
+NULL
+1
+id3
+int
+32
+0
+1
+NULL
+2
 
 statement ok
 drop table test
-
 

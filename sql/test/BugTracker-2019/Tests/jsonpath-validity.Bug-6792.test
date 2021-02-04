@@ -9,4 +9,3 @@ INSERT INTO jstest VALUES ('{"track":{"segments":[{"location":[ 47.763,13.4034 ]
 statement error
 select json.filter(j, '$.track.segments[*][*') from jstest
 
-

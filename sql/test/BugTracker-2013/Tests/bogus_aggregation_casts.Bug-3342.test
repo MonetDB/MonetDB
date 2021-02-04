@@ -23,4 +23,3 @@ select sys.median(p_retailprice) from part
 statement ok
 drop table part
 
-

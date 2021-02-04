@@ -10,4 +10,3 @@ rollback
 statement error
 select tmp.myt()
 
-

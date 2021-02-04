@@ -28,4 +28,3 @@ select s.name, t.name, c.name from
 ----
 201 values hashing to 31ee80043c90bf403f2837d80ebbda07
 
-

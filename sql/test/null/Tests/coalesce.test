@@ -52,7 +52,16 @@ FROM (
       SELECT * FROM my_table1
      ) x
 ----
-10 values hashing to e0145663d590ae02decc8cdc9071e0c2
+0
+0
+0
+0
+1
+2
+2
+3
+3
+3
 
 statement ok
 DROP   TABLE my_table1 

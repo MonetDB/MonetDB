@@ -12,4 +12,3 @@ copy 1 records into testnull from stdin using delimiters ',',E'\n',''''
 select * from testnull;
 drop table testnull;
 
-

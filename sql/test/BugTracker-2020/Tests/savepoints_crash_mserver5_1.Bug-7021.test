@@ -57,4 +57,3 @@ select * from savepointtest
 statement ok
 drop table if exists savepointtest
 
-

@@ -59,6 +59,3 @@ statement ok
 statement ok
 	optimizer.remap("user","qry")
 
-#	mdb.List("user","qry")
-
-

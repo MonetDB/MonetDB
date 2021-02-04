@@ -14,10 +14,10 @@ select json.text(json.filter(js, 'message')) from txt
 ----
 indoorDeviceLocation
 
-query T rowsort
+query I rowsort
 select json.text(json.filter(js, 'message')) = 'indoorDeviceLocation' from txt
 ----
-True
+1
 
 statement ok
 drop table txt

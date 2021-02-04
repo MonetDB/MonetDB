@@ -48,4 +48,3 @@ drop table anbikvk2
 statement ok
 drop table anbinew
 
-

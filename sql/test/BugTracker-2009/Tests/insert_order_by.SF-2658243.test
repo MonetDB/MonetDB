@@ -48,4 +48,3 @@ drop table sorted
 statement ok
 drop table unsorted
 
-

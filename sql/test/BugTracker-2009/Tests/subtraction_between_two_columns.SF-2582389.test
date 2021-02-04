@@ -22,4 +22,3 @@ select l.id, r.inst, l.inst, (r.inst - l.inst) as diff from t2_2582389 l,  t2_25
 statement ok
 drop table t2_2582389
 
-

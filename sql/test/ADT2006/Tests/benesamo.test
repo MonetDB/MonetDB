@@ -658,12 +658,100 @@ select count(*) from victim where eyes='blue'
 query TTT rowsort
 select first_name, surname, picture from victim order by surname
 ----
-54 values hashing to 1ee6b55e45549ab59916c654e63bbd26
+Ada
+Wilson
+http://www.casebook.org/images/victims_wilson.jpg
+Alice
+MacKenzie
+http://www.casebook.org/images/victims_mckenzie.jpg
+Annie
+Chapman
+http://www.casebook.org/images/victims_chapman.jpg
+Annie
+Farmer
+http://www.casebook.org/images/victims_farmer.jpg
+Annie
+Millwood
+http://www.casebook.org/images/victims_millwood.jpg
+Carrie
+Brown
+http://www.casebook.org/images/victims_brown.jpg
+Catherine
+Eddowes
+http://www.casebook.org/images/eddowes1.jpg
+Elisabeth
+Jackson
+http://www.casebook.org/images/victims_jackson.jpg
+Elisabeth
+Stride
+http://www.casebook.org/images/victims_stride.jpg
+Emma
+Smith
+http://www.casebook.org/images/victims_smith.jpg
+Frances
+Coles
+http://www.casebook.org/images/victims_coles.jpg
+Martha
+Tabram
+http://www.casebook.org/images/victims_tabram.jpg
+Mary
+Kelly
+http://www.casebook.org/images/victims_kelly.jpg
+Mary
+Walker
+http://www.casebook.org/images/victims_nichols.jpg
+NULL
+Fairy Fay
+http://www.casebook.org/images/victims_fairy.jpg
+NULL
+Pinchin Street Murder, possibly Lydia Hart
+http://www.casebook.org/images/victims_pinchin.jpg
+Rose
+Mylett
+http://www.casebook.org/images/victims_mylett.jpg
+Whitehall
+Mystery
+http://www.casebook.org/images/victims_whitehall.jpg
 
 query TT rowsort
 select surname, location from victim order by surname
 ----
-36 values hashing to 7f79be60128bd41462c125651746886d
+Brown
+ the room of the East River Hotel on the Manhattan waterfront of New York, U.S.A.
+Chapman
+B29 Hanbury Street
+Coles
+Swallow Gardens  
+Eddowes
+Mitre Square
+Fairy Fay
+the alleys of Commercial Road
+Farmer
+NULL
+Jackson
+the Thames 
+Kelly
+13 Miller's Court
+MacKenzie
+Castle Alley
+Millwood
+White's Row, Spitalfields
+Mylett
+the yard between 184 and 186 Poplar High Street, in Clarke's Yard
+Mystery
+a vault soon to become a section of the cellar of New Scotland Yard
+Pinchin Street Murder, possibly Lydia Hart
+under a railway arch in Pinchin Street
+Smith
+just outside Taylor Brothers Mustard and Cocoa Mill which was on the north-east corner of the Wentworth/Old Montague Street crossroads
+Stride
+Berner Street (Henriques Street today)
+Tabram
+George Yard, a narrow north-south alley connecting Wentworth Street and Whitechapel High Street
+Walker
+Buck's Row by Charles Cross
+Wilson
+19 Maidman Street
 
 query TTTT rowsort
 select title, first_name, other_names, surname from doctor d, scene_doctor s where d.doctor_id = s.doctor_id and s.scene_id IN( SELECT scene_id FROM scene s, victim v where s.victim_id = v.victim_id and v.surname='Stride')

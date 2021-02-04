@@ -43,4 +43,3 @@ TRUNCATE TABLE sys.netcdf_attrs
 statement ok
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs
 
-

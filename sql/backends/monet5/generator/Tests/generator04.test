@@ -23,3 +23,4 @@ select * from generate_series(
 
 statement ok
 set optimizer = 'default_pipe'
+

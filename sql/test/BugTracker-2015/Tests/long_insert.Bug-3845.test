@@ -47,4 +47,3 @@ select count(*) from "attribute"
 statement ok
 ROLLBACK
 
-

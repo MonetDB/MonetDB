@@ -10,7 +10,7 @@ statement ok
 statement ok
  bat.append(z1,2)
 
-query TI rowsort
+query II rowsort
 io.print(z1)
 ----
 0
@@ -23,7 +23,7 @@ io.print(z1)
 statement ok
 o:= batcalc.oid(z1)
 
-query TT rowsort
+query II rowsort
 io.print(o)
 ----
 0
@@ -32,5 +32,4 @@ io.print(o)
 1
 2
 2
-
 

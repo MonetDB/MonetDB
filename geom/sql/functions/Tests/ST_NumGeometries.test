@@ -19,4 +19,3 @@ SELECT ST_NumGeometries(geom) AS "GEOMETRIES" FROM geometries WHERE id IN (19,20
 3
 3
 
-

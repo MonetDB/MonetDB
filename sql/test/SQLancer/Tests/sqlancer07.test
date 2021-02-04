@@ -72,7 +72,7 @@ CREATE TABLE "t1" ("c1" INT)
 statement ok
 CREATE TABLE "t2" ("c0" DATE NOT NULL)
 
-query T rowsort
+query I rowsort
 SELECT 0 <= ANY(SELECT CASE INTERVAL '2' SECOND WHEN INTERVAL '6' SECOND THEN t1.c1 ELSE (SELECT t1.c1 FROM t1) END FROM t1) FROM t1
 ----
 
@@ -137,12 +137,12 @@ CREATE TABLE "t2" ("c0" CHAR(315))
 statement ok
 INSERT INTO "t2" VALUES ('1753268987.000'), ('(y/l'), ('(y/l'), ('')
 
-query T rowsort
+query I rowsort
 SELECT '1' > COALESCE(((SELECT t1.c0 FROM t1) INTERSECT (SELECT '2')), t0.c0) FROM t0
 ----
-True
-True
-True
+1
+1
+1
 
 query I rowsort
 SELECT CAST(((COALESCE(t0.c0, t0.c0, t0.c0))>(COALESCE(((SELECT DISTINCT t1.c0 FROM t1, t0, t2 WHERE FALSE) INTERSECT DISTINCT (SELECT ALL t0.c0 FROM t0 WHERE TRUE)),
@@ -505,13 +505,13 @@ create view v1(c0) as (with cte0(c0) as (values (case when ((true)or(true)) then
 statement ok
 create view v2(c0) as (select distinct interval '883554454' month from t1, t2) with check option
 
-query T rowsort
+query I rowsort
 VALUES ('b' LIKE (SELECT 'a' FROM t1)), (EXISTS (SELECT 1 WHERE TRUE))
 ----
+1
 NULL
-True
 
-query T rowsort
+query I rowsort
 SELECT (VALUES ((('524519669')NOT ILIKE((SELECT 'X囊*T\f' FROM t1, v2 WHERE FALSE)))), (NOT EXISTS (SELECT DISTINCT sql_min(0.52, 0.90) WHERE TRUE))) FROM v1, t2 RIGHT OUTER JOIN v0 ON ((v0.c0)<>('Vx'))
 ----
 
@@ -610,10 +610,10 @@ SELECT * FROM (SELECT 1) as v3(c0) LEFT JOIN (SELECT 2) as v4(c0) ON (0.6) NOT I
 1
 2
 
-query T rowsort
+query I rowsort
 SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN (0.5854332103580835, CASE WHEN v4.vc0 THEN (SELECT 0.023816515 WHERE TRUE) END))
 ----
-False
+0
 
 statement ok
 ROLLBACK
@@ -622,5 +622,4 @@ query T rowsort
 select interval '1' month * cast(1 as bigint)
 ----
 1
-
 

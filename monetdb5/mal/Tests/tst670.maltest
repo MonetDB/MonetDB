@@ -11,4 +11,3 @@ user.foo();
 statement error
 clients.quit();
 
-

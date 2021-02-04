@@ -1,8 +1,8 @@
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys.columns WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
@@ -98,11 +98,11 @@ select count(*) as count_rows from sys.objects where id in (select id from sys.k
 ----
 1
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys.columns WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
@@ -129,11 +129,11 @@ SELECT * FROM sys.dependencies WHERE depend_id NOT IN (SELECT id FROM sys.ids)
 statement ok
 drop table sys.test2
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys.columns WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
@@ -162,5 +162,4 @@ create table sys.test2 (col1 serial)
 
 statement ok
 drop table if exists sys.test2
-
 

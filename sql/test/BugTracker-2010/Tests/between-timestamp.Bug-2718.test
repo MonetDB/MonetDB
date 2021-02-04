@@ -40,4 +40,3 @@ order by t1.time
 statement ok
 rollback
 
-

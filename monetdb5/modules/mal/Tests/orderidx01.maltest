@@ -34,22 +34,41 @@ bat.append(bv,1863672321 )
 statement ok
 bat.append(bv,58690783 )
 
-query TI rowsort
+query II rowsort
 io.print(bv)
 ----
-20 values hashing to 0a90958a5f39bc70be3ba0dc3a938556
+0
+959217167
+1
+1920220901
+2
+1303856962
+3
+1667896496
+4
+1080090866
+5
+527076325
+6
+266430612
+7
+1674978691
+8
+1863672321
+9
+58690783
 
 statement ok
 s0:= algebra.select(bv,nil:bat[:oid],nil:int,nil:int,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(s0)
 ----
 
 statement ok
 s1:= algebra.select(bv,nil:bat[:oid],nil:int,959217167,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(s1)
 ----
 0
@@ -64,7 +83,7 @@ io.print(s1)
 statement ok
 s2:= algebra.select(bv,nil:bat[:oid],959217167,959217167,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(s2)
 ----
 0
@@ -73,7 +92,7 @@ io.print(s2)
 statement ok
 s3:= algebra.select(bv,nil:bat[:oid],1863672321,nil:int,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(s3)
 ----
 0
@@ -87,22 +106,41 @@ bat.orderidx(bv,3)
 statement ok
 ord := bat.getorderidx(bv)
 
-query TT rowsort
+query II rowsort
 io.print(ord)
 ----
-20 values hashing to 3cb93d8caeadc97ad36636b562cc1831
+0
+9
+1
+6
+2
+5
+3
+0
+4
+4
+5
+2
+6
+3
+7
+7
+8
+8
+9
+1
 
 statement ok
 x0:= algebra.select(bv,nil:bat[:oid],nil:int,nil:int,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(x0)
 ----
 
 statement ok
 x1:= algebra.select(bv,nil:bat[:oid],nil:int,959217167,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(x1)
 ----
 0
@@ -117,7 +155,7 @@ io.print(x1)
 statement ok
 x2:= algebra.select(bv,nil:bat[:oid],959217167,959217167,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(x2)
 ----
 0
@@ -126,12 +164,11 @@ io.print(x2)
 statement ok
 x3:= algebra.select(bv,nil:bat[:oid],1863672321,nil:int,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(x3)
 ----
 0
 1
 1
 8
-
 

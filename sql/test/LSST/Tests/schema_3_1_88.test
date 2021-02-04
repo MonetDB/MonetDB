@@ -1508,4 +1508,3 @@ statement ok
 	ALTER TABLE Source_pt2 ADD CONSTRAINT FK_Source_Object
 	        FOREIGN KEY (objectId) REFERENCES Object (objectId)
 
-

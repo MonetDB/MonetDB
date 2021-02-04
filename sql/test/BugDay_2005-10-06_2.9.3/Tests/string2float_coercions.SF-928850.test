@@ -9,4 +9,3 @@ PRIMARY KEY (sid)
 statement ok
 INSERT INTO services (sid, sname, sfee) VALUES (1, 'Accounting', '1500.00')
 
-

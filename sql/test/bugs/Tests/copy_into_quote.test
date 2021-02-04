@@ -30,9 +30,33 @@ copy 1 records INTO test_copyinto FROM stdin USING DELIMITERS '|',E'\n', ''
 query IITTTTTTTTTTT rowsort
 select * from test_copyinto
 ----
-26 values hashing to 2726e431cf9a360da5a5fd061f9a6a01
+2413949
+8117533
+1234 ANOTHER DISK
+(empty)
+ABCDE
+TT
+23456
+7860
+" S
+(empty)
+LAST
+-
+N
+2413949
+8117533
+1234 ANOTHER DISK
+(empty)
+ABCDE
+TT
+23456
+7860
+' S
+(empty)
+LAST
+-
+N
 
 statement ok
 drop table test_copyinto
-
 

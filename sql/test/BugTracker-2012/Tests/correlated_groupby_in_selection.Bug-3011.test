@@ -15,7 +15,7 @@ CREATE TABLE "sys"."test" (
         "productformulatype" VARCHAR(4)
 )
 
-query TTTRTTI rowsort
+query TTTRTII rowsort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -30,7 +30,7 @@ from test order by dataownercode, lineplanningnumber, journeypatterncode,
 timinglinkorder limit 20
 ----
 
-query TTTRTTI rowsort
+query TTTRTII rowsort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -58,7 +58,7 @@ COPY 10 RECORDS INTO "test" FROM STDIN USING DELIMITERS ',', E'\n'
 1,true,CXX,A001,0,8,40002690,40002770,santro,A00100998,false,,34
 1,true,CXX,A001,0,9,40002770,40009591,santro,A00100998,false,,34
 
-query TTTRTTI rowsort
+query TTTRTII rowsort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -72,9 +72,78 @@ passagesequencenumber
 from test order by dataownercode, lineplanningnumber, journeypatterncode,
 timinglinkorder limit 20
 ----
-70 values hashing to fed392ea83a73638dbad8413b237f8fd
+CXX
+A001
+0
+0.000
+40000010
+1
+NULL
+CXX
+A001
+0
+1.000
+40004015
+0
+NULL
+CXX
+A001
+0
+2.000
+40004021
+0
+NULL
+CXX
+A001
+0
+3.000
+40002570
+0
+NULL
+CXX
+A001
+0
+4.000
+40002550
+0
+NULL
+CXX
+A001
+0
+5.000
+40002590
+0
+NULL
+CXX
+A001
+0
+6.000
+40002610
+0
+NULL
+CXX
+A001
+0
+7.000
+40002630
+0
+NULL
+CXX
+A001
+0
+8.000
+40002690
+0
+NULL
+CXX
+A001
+0
+9.000
+40002770
+0
+NULL
 
-query TTTRTTI rowsort
+query TTTRTII rowsort
 select dataownercode, lineplanningnumber, journeypatterncode, timinglinkorder,
 userstopcodebegin, istimingstop,
        (select count(*) from test as counter where
@@ -87,9 +156,77 @@ passagesequencenumber
 from test order by dataownercode, lineplanningnumber, journeypatterncode,
 timinglinkorder limit 20
 ----
-70 values hashing to 79a55d5f5c33a0ca80ae7d644ad30c6a
+CXX
+A001
+0
+0.000
+40000010
+1
+0
+CXX
+A001
+0
+1.000
+40004015
+0
+0
+CXX
+A001
+0
+2.000
+40004021
+0
+0
+CXX
+A001
+0
+3.000
+40002570
+0
+0
+CXX
+A001
+0
+4.000
+40002550
+0
+0
+CXX
+A001
+0
+5.000
+40002590
+0
+0
+CXX
+A001
+0
+6.000
+40002610
+0
+0
+CXX
+A001
+0
+7.000
+40002630
+0
+0
+CXX
+A001
+0
+8.000
+40002690
+0
+0
+CXX
+A001
+0
+9.000
+40002770
+0
+0
 
 statement ok
 DROP table test
-
 

@@ -22,7 +22,21 @@ INSERT INTO t1default (text2) VALUES('test2')
 query ITTTT rowsort
 select * from t1default
 ----
-15 values hashing to 86856ba5b667d884173d0d8fb4e4aaeb
+1
+test1
+test2
+test3
+test4
+2
+NULL
+test2
+foo
+foo
+NULL
+NULL
+test2
+foo
+foo
 
 statement ok
 commit
@@ -45,7 +59,21 @@ INSERT INTO t1default (id, text1, text2, text3, text4) VALUES(1, 'test1', 'test2
 query ITTTT rowsort
 select * from t1default
 ----
-15 values hashing to 86856ba5b667d884173d0d8fb4e4aaeb
+1
+test1
+test2
+test3
+test4
+2
+NULL
+test2
+foo
+foo
+NULL
+NULL
+test2
+foo
+foo
 
 statement ok
 drop table t1default

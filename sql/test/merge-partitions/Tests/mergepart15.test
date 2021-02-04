@@ -70,12 +70,36 @@ INSERT INTO testme VALUES (NULL, 'fourth'), (303, 'null'), (NULL, 'fifth')
 query IT rowsort
 SELECT a, b FROM testme
 ----
-14 values hashing to 3c020dff3c6a9ffbd0170e51fbe8cbc3
+303
+null
+NULL
+NULL
+NULL
+NULL
+NULL
+fifth
+NULL
+first
+NULL
+fourth
+NULL
+second
 
 query IT rowsort
 SELECT a, b FROM sublimits1
 ----
-12 values hashing to 5fc14667c27fd0e369a9388ac52b464e
+NULL
+NULL
+NULL
+NULL
+NULL
+fifth
+NULL
+first
+NULL
+fourth
+NULL
+second
 
 query IT rowsort
 SELECT a, b FROM sublimits2
@@ -97,5 +121,4 @@ DROP TABLE sublimits2
 
 statement ok
 DROP TABLE testme
-
 

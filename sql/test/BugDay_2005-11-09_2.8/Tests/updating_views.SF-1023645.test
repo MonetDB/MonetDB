@@ -7,4 +7,3 @@ create view v1023645 as select c1 from t1023645
 statement error
 insert into v1023645 values (1)
 
-

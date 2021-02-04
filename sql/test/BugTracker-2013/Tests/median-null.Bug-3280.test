@@ -77,4 +77,3 @@ select median(mpg) from mtcars
 statement ok
 rollback
 
-

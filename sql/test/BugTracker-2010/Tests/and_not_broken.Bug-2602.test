@@ -22,4 +22,3 @@ SELECT (1) as "a" FROM tbl1 WHERE ( id1 = 1 AND name = 'one' AND NOT id = 1)
 statement ok
 DROP TABLE "tbl1"
 
-

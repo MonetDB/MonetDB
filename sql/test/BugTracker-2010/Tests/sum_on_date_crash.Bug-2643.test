@@ -7,4 +7,3 @@ select sum(today) from test
 statement ok
 drop table test
 
-

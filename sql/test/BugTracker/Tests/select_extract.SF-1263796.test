@@ -12,4 +12,3 @@ select c from t where extract( hour from c ) = 12 and extract( minute from c ) =
 statement ok
 drop table t
 
-

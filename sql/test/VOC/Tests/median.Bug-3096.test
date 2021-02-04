@@ -37,4 +37,3 @@ NULL
 statement ok
 drop table voyages
 
-

@@ -35,4 +35,3 @@ varchar
 statement ok
 DROP TABLE cols_6624
 
-

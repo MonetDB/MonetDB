@@ -21,4 +21,3 @@ drop table foo_bar
 statement ok
 drop table foo
 
-

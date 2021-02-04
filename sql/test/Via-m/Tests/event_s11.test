@@ -21,4 +21,3 @@ values ( 1,
 statement error
 select add_event('event 4', '2009-06-24', 'artist4', 'location4', 'description4')
 
-

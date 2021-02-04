@@ -23,4 +23,3 @@ select
 statement ok
 ROLLBACK
 
-

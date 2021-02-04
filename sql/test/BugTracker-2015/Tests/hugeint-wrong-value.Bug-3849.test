@@ -25,4 +25,3 @@ SELECT * FROM "test_hugeint"
 statement ok
 ROLLBACK
 
-

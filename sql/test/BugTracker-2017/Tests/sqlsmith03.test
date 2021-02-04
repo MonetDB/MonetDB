@@ -37,4 +37,3 @@ where cast(coalesce(cast(coalesce(ref_101.table_id,
 limit 164
 ----
 
-

@@ -60,4 +60,3 @@ drop table marketdata.quotes
 statement ok
 drop schema marketdata
 
-

@@ -7,4 +7,3 @@ select decimal_function(10)
 ----
 10.000
 
-

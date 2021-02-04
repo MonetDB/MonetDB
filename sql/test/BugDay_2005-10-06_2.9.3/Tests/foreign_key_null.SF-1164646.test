@@ -15,4 +15,3 @@ CREATE TABLE "second" (
 statement ok
 insert into "second" values (1, null)
 
-

@@ -448,23 +448,23 @@ query T rowsort
 SELECT t1.c0 FROM t1 WHERE t1.c0 NOT ILIKE t1.c0
 ----
 
-query T rowsort
+query I rowsort
 SELECT t1.c0 NOT ILIKE t1.c0 FROM t1
 ----
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
-False
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
 
 statement ok
 ROLLBACK
@@ -595,7 +595,7 @@ COPY 26 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 1970-01-02
 1970-01-23
 
-query T rowsort
+query I rowsort
 SELECT t1.c1 FROM t1, t2 NATURAL JOIN t0 WHERE (CAST((TIME '15:03:17') NOT IN (TIME '11:36:59', TIME '21:14:10',
 TIME '01:03:49') AS INT)) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0)
 ----
@@ -736,5 +736,4 @@ WITH cte0(c0,c1,c2) AS (SELECT CAST('1' AS INT), 1, 0.82 FROM v82 AS l1v82) SELE
 
 statement ok
 ROLLBACK
-
 

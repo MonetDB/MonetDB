@@ -139,4 +139,3 @@ b
 statement ok
 DROP   TABLE my_test 
 
-

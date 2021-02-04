@@ -103,7 +103,16 @@ INSERT INTO testnestedpartitions VALUES (4, 'not'), (2, 'going'), (5, 'through')
 query IT rowsort
 SELECT a, b FROM testnestedpartitions
 ----
-10 values hashing to 6911a3fd1153be34c1468abda85a9b66
+1
+ok
+1
+ok
+1
+ok
+2
+going
+5
+through
 
 query IT rowsort
 SELECT a, b FROM subnested1
@@ -257,5 +266,4 @@ DROP TABLE subt3
 
 statement ok
 DROP TABLE subt4
-
 

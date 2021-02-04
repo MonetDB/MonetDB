@@ -62,4 +62,3 @@ FROM (
 statement ok
 drop table test
 
-

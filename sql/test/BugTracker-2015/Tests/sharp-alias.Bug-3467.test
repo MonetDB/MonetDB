@@ -11,4 +11,3 @@ SELECT a AS "@" FROM test3467
 statement ok
 DROP TABLE test3467
 
-

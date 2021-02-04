@@ -28,4 +28,3 @@ SELECT "output_min_time_value_1" FROM "testschema"."test" WHERE "type" = 'OUTPUT
 statement ok
 ROLLBACK
 
-

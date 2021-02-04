@@ -8,7 +8,26 @@ query II rowsort
 select count(*) over w, cast(sum(aa) over w as bigint)
     from analytics window w as (rows between 5 preceding and 0 following)
 ----
-20 values hashing to 3b5fd838045ffbbe5314d25e5dd8fa28
+1
+15
+2
+18
+3
+20
+4
+25
+5
+25
+6
+17
+6
+20
+6
+21
+6
+26
+6
+28
 
 statement error
 select count(*) over w, cast(sum(aa) over w as bigint)
@@ -22,13 +41,51 @@ query IIR rowsort
 select count(*) over w, cast(sum(aa) over z as bigint), avg(aa) over z
     from analytics window w as (rows between 5 preceding and 0 following), z as (order by bb range unbounded preceding)
 ----
-30 values hashing to c8b1a4ef79e7d3f552639e69d452113e
+1
+9
+3.000
+2
+9
+3.000
+3
+9
+3.000
+4
+20
+4.000
+5
+20
+4.000
+6
+20
+4.000
+6
+46
+5.750
+6
+46
+5.750
+6
+46
+5.750
+6
+46
+5.750
 
 query I rowsort
 with helper as (select count(*) over w as counted from analytics window w as (order by bb))
     select count(*) over w from helper window w as (rows unbounded preceding)
 ----
-10 values hashing to ff2650590d3f27ea6644b5573ccc37ba
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select count(*) over w window w as ()
@@ -42,5 +99,4 @@ select (select count(*) over w window w as ())
 
 statement ok
 drop table analytics
-
 

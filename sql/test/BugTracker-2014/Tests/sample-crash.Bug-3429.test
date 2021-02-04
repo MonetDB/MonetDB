@@ -48,4 +48,3 @@ select * from t3429 sample 300
 statement ok
 rollback
 
-

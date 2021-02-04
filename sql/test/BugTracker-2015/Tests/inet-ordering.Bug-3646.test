@@ -16,4 +16,3 @@ SELECT * FROM "testing" ORDER BY addr
 statement ok
 DROP TABLE "testing"
 
-

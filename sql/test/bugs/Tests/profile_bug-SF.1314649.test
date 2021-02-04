@@ -22,4 +22,3 @@ select query, user from history
 statement ok
 rollback
 
-

@@ -20,4 +20,3 @@ t
 statement ok
 drop table t
 
-

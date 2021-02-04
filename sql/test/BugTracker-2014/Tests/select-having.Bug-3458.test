@@ -63,4 +63,3 @@ select count(*) from sys.tbls having count(*) > 0
 statement ok
 drop table tbls
 
-

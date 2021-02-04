@@ -11,4 +11,3 @@ where ref_1.dependency_type_name is NULL
 limit 96
 ----
 
-

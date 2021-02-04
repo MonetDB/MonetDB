@@ -19,4 +19,3 @@ SELECT * FROM test WHERE (b = 1 OR b = 2) AND (a NOT IN (3, 4) OR b <> 1) AND a 
 statement ok
 drop table test
 
-

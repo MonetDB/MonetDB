@@ -80,4 +80,3 @@ drop table t_1_1
 statement ok
 drop table t_1_2
 
-

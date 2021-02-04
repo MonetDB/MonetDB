@@ -21,12 +21,11 @@ z:= bat.new(:str)
 statement ok
 io.import(z,"namebat")
 
-query TT rowsort
+query IT rowsort
 io.print(z)
 ----
 0
 tmpdocs
 1
 tmpterms
-
 

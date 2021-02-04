@@ -45,4 +45,3 @@ select distinct id from t2676 limit 2
 statement ok
 rollback
 
-

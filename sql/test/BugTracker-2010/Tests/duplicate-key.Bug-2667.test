@@ -15,4 +15,3 @@ ALTER TABLE mulpk ADD CONSTRAINT pk3 PRIMARY KEY (id)
 statement ok
 DROP TABLE "sys"."mulpk"
 
-

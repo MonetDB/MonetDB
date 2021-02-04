@@ -10,4 +10,3 @@ alter table tmp alter column data set default 6
 statement ok
 drop table tmp
 
-

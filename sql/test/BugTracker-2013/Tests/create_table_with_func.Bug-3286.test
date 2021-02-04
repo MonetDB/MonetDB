@@ -11,4 +11,3 @@ as (
 		  group by "table")
 	with data
 
-

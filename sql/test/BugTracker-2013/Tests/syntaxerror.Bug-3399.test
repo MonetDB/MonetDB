@@ -23,4 +23,3 @@ drop table bla
 statement error
 select *, (select *) from tmp
 
-

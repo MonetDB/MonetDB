@@ -34,4 +34,3 @@ select id from executiontimes where cast(value as bigint) > 80000
 statement ok
 rollback
 
-

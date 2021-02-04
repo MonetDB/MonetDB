@@ -75,4 +75,3 @@ io.printf("bat  head %s\n",tt)
 ----
 bat  head bat[:str]
 
-

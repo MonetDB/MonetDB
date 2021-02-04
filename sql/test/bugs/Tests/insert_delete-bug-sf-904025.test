@@ -96,4 +96,3 @@ drop table tmp
 statement ok
 drop table tbls
 
-

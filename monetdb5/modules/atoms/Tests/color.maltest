@@ -44,7 +44,20 @@ end testcolor
 query T rowsort
 user.testcolor()
 ----
-14 values hashing to b9143297836ce1f423816314390ca360
+"0x0012ABCD"
+"0x00646566"
+"0x00A0F63D"
+"0x00BFFF80"
+"0x00BFFF80"
+100
+101
+101
+102
+171
+18
+199
+205
+51
 
 statement ok
 	bc:= bat.new(:color)
@@ -58,7 +71,7 @@ statement ok
 statement ok
 	bat.append(bc,"0x00003f44":color)
 
-query TT rowsort
+query IT rowsort
 	io.print(bc)
 ----
 0
@@ -71,7 +84,7 @@ query TT rowsort
 statement ok
 	z:= batcolor.red(bc)
 
-query TI rowsort
+query II rowsort
 	io.print(z)
 ----
 0
@@ -80,5 +93,4 @@ query TI rowsort
 51
 2
 0
-
 

@@ -13,10 +13,9 @@ function foo();
 	io.print(c);
 end;
 
-query TI rowsort
+query II rowsort
 user.foo();
 ----
 0
 9
-
 

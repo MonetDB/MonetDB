@@ -40,4 +40,3 @@ NULL
 statement ok
 DROP TABLE table_two
 
-

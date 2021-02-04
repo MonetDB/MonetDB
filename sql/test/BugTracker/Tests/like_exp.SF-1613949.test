@@ -1,5 +1,4 @@
-query ITITITIII rowsort
+query ITITIIIII rowsort
 select * from tables where name LIKE ('hel%')
 ----
-
 

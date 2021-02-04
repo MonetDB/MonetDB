@@ -29,4 +29,3 @@ SELECT CASE WHEN c>(SELECT avg(c) FROM t1) THEN a*2 ELSE b*10 END, abs(b-c) FROM
 statement ok
 drop table t1
 
-

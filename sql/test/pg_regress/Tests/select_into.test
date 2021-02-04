@@ -16,4 +16,3 @@ SELECT *
 statement error
 DROP TABLE tmp1
 
-

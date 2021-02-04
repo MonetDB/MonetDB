@@ -10127,4 +10127,3 @@ select quantile(l_extendedprice,42.0) from lit group by l_returnflag
 statement ok
 drop table lit
 
-

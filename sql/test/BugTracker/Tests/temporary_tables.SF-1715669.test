@@ -8,4 +8,3 @@ select name from tables where name = 't1715669a'
 statement error
 drop table t1715669a
 
-

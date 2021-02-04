@@ -46,4 +46,3 @@ io.printf("formatted lng %d\n",l)
 ----
 formatted lng nil
 
-

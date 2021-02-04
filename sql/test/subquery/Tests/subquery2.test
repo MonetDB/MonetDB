@@ -59,11 +59,11 @@ drop table students
 statement ok
 drop table exams
 
-query TT rowsort
+query II rowsort
 SELECT 1 IN (1, (SELECT 2)), 1 NOT IN (1, (SELECT 2))
 ----
-True
-False
+1
+0
 
 statement ok
 CREATE TABLE tbl_ProductSales (ColID int, Product_Category  varchar(64), Product_Name  varchar(64), TotalSales int)
@@ -77,21 +77,21 @@ CREATE TABLE another_T (col1 INT, col2 INT, col3 INT, col4 INT, col5 INT, col6 I
 statement ok
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888)
 
-query T rowsort
+query I rowsort
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
-query T rowsort
+query I rowsort
 SELECT col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query I rowsort
 SELECT (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1) FROM another_T GROUP BY col1, col2
@@ -101,15 +101,15 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 SELECT
 	EXISTS (SELECT col2 FROM tbl_ProductSales WHERE tbl_ProductSales.ColID = another_T.col1)
 FROM another_T GROUP BY col1, col2, col5, col8
 ----
-False
-False
-False
-True
+0
+0
+0
+1
 
 statement error
 SELECT
@@ -117,22 +117,22 @@ SELECT
 	(SELECT ColID FROM tbl_ProductSales) * DENSE_RANK() OVER (PARTITION BY AVG(DISTINCT col5))
 FROM another_T GROUP BY col1, col2, col5, col8
 
-query TT rowsort
+query II rowsort
 SELECT
 	-col1 IN (SELECT ColID FROM tbl_ProductSales),
 	col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col8) IS NULL)
 FROM another_T GROUP BY col1, col2, col5, col8
 ----
-False
-True
-False
-True
-False
-True
-False
-True
+0
+1
+0
+1
+0
+1
+0
+1
 
-query TII rowsort
+query III rowsort
 SELECT
 	col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
 	CAST(SUM(DISTINCT CASE WHEN col5 - col8 = (SELECT MIN(ColID / col2) FROM tbl_ProductSales) THEN col2 - 5 ELSE ABS(col1) END) AS BIGINT),
@@ -140,49 +140,60 @@ SELECT
 FROM another_T
 GROUP BY col1, col2, col5, col8
 ----
-12 values hashing to 42df40a10548db11012e2b56eedb2926
+0
+1
+6
+0
+11
+26
+0
+111
+226
+0
+1111
+2226
 
-query TI rowsort
+query II rowsort
 SELECT
 	col1 + col5 = (SELECT MIN(ColID) FROM tbl_ProductSales),
 	MIN(col8) OVER (PARTITION BY col5 ORDER BY col1 ROWS UNBOUNDED PRECEDING)
 FROM another_T
 GROUP BY col1, col2, col5, col8
 ----
-False
+0
 8
-False
+0
 88
-False
+0
 888
-False
+0
 8888
 
-query TT rowsort
+query II rowsort
 SELECT
 	EXISTS (SELECT 1 FROM tbl_ProductSales),
 	NOT EXISTS (SELECT 1 FROM tbl_ProductSales)
 FROM another_T
 GROUP BY col1
 ----
-True
-False
-True
-False
-True
-False
-True
-False
+1
+0
+1
+0
+1
+0
+1
+0
 
-query T rowsort
+query I rowsort
 SELECT NOT col2 <> ANY (SELECT 20 FROM tbl_ProductSales GROUP BY ColID HAVING NOT MAX(col1) <> col1 * AVG(col1 + ColID) * ColID) FROM another_T GROUP BY col1, col2, col5, col8
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
-query TTTT rowsort
+query IIII rowsort
 SELECT
 	NOT -SUM(col2) NOT IN (SELECT ColID FROM tbl_ProductSales GROUP BY ColID HAVING SUM(ColID - col8) <> col5),
 	NOT col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col8) > 2 AND MIN(col8) IS NOT NULL),
@@ -191,9 +202,24 @@ SELECT
 FROM another_T
 GROUP BY col1, col2, col5, col8
 ----
-16 values hashing to a2ed6fbd8b01c6aaf5b1c6c987bf2554
+0
+1
+1
+1
+0
+1
+1
+1
+0
+1
+1
+1
+0
+1
+1
+1
 
-query TTII rowsort
+query IIII rowsort
 SELECT
 	DISTINCT
 	NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
@@ -203,25 +229,25 @@ SELECT
 FROM another_T
 GROUP BY col1, col2, col5
 ----
-False
-False
+0
+0
 1
 0
-True
-False
+1
+0
 1
 0
 
-query T rowsort
+query I rowsort
 SELECT
 	SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
 FROM another_T
 GROUP BY col4
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 query I rowsort
 SELECT
@@ -233,18 +259,18 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 SELECT
 	t1.col1 = ALL (SELECT col4 + SUM(t1.col5) FROM another_T INNER JOIN tbl_ProductSales ON another_T.col1 = tbl_ProductSales.ColID)
 FROM another_T t1
 GROUP BY t1.col1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
-query TTTT rowsort
+query IIII rowsort
 SELECT
 	SUM(t1.col6) NOT IN (SELECT t1.col7),
 	t1.col6 NOT IN (SELECT t1.col7),
@@ -253,7 +279,22 @@ SELECT
 FROM another_T t1
 GROUP BY t1.col6, t1.col7
 ----
-16 values hashing to 157c5fec6fdde155f9c4fa778f178966
+1
+1
+0
+0
+1
+1
+0
+0
+1
+1
+0
+0
+1
+1
+0
+0
 
 statement error
 SELECT
@@ -345,16 +386,16 @@ GROUP BY col1
 2
 2
 
-query T rowsort
+query I rowsort
 SELECT
 	t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY t1.col1, tbl_ProductSales.ColID)
 FROM another_T t1
 GROUP BY col1
 ----
-False
-False
-False
-True
+0
+0
+0
+1
 
 query I rowsort
 SELECT t1.col1 FROM another_T t1 WHERE t1.col1 >= ANY(SELECT t1.col1 + t2.col1 FROM another_T t2)
@@ -363,26 +404,25 @@ SELECT t1.col1 FROM another_T t1 WHERE t1.col1 >= ANY(SELECT t1.col1 + t2.col1 F
 statement ok
 INSERT INTO tbl_ProductSales VALUES (0, 'a', 'b', 0)
 
-query T rowsort
+query I rowsort
 SELECT col1 IN (SELECT ColID + col1 FROM tbl_ProductSales) FROM another_T GROUP BY col1
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT col1 IN (SELECT col1 * SUM(ColID + col1) FROM tbl_ProductSales) FROM another_T GROUP BY col1
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 
 statement ok
 DROP TABLE tbl_ProductSales
 
 statement ok
 DROP TABLE another_T
-
 

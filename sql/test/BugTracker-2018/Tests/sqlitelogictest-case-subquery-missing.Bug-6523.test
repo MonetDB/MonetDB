@@ -3,4 +3,3 @@ SELECT CASE WHEN 18 IN ( AVG ( + 12 ) + - + ( - 29 ) + - SUM ( + + 53 ) * - ( 73
 ----
 NULL
 
-

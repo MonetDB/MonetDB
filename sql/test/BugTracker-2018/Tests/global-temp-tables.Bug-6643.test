@@ -28,4 +28,3 @@ CREATE GLOBAL TEMPORARY TABLE tmp."temp4" ("id" int, "name" VARCHAR(99))
 statement ok
 ROLLBACK
 
-

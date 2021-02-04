@@ -16,4 +16,3 @@ WHERE "f"."id" NOT IN (SELECT "function_id" FROM "sys"."systemfunctions") AND
 ORDER BY "f"."id", "a"."number"
 ----
 
-

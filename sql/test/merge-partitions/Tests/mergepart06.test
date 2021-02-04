@@ -76,7 +76,32 @@ INSERT INTO sublimits2 VALUES (NULL, 'again')
 query IT rowsort
 SELECT a,b FROM testrangelimits
 ----
-26 values hashing to 61861f2496a5ea169ad04efaab5d05e5
+1
+a
+1
+first
+101
+b
+102
+successful
+171
+test
+2
+another
+401
+another
+401
+c
+450
+to
+499
+pass
+50
+more
+NULL
+attempt
+NULL
+test
 
 query IT rowsort
 SELECT a,b FROM sublimits1
@@ -103,7 +128,18 @@ test
 query IT rowsort
 SELECT a,b FROM sublimits3
 ----
-12 values hashing to c7bd283be25d3e3cd31d884cc4682e9c
+401
+another
+401
+c
+450
+to
+499
+pass
+NULL
+attempt
+NULL
+test
 
 query IT rowsort
 SELECT a,b FROM sublimits4
@@ -138,5 +174,4 @@ DROP TABLE sublimits4
 
 statement ok
 DROP TABLE sublimits5
-
 

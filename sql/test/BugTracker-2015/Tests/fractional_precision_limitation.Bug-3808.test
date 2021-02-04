@@ -12,4 +12,3 @@ select * from TT7
 statement ok
 drop table TT7
 
-

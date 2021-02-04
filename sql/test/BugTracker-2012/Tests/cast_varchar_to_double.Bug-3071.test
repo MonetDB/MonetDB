@@ -12,4 +12,3 @@ select avg ( cast (s as double)) from t3071
 statement ok
 drop table t3071
 
-

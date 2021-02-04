@@ -34,12 +34,34 @@ insert into t2_2585592(num, age) select num, age from t1_2585592 order by num, a
 query III rowsort
 select * from t2_2585592
 ----
-24 values hashing to f42df9d9bd900e38d6fad1fe062d284d
+1
+1
+1
+2
+1
+3
+3
+1
+4
+4
+2
+2
+5
+2
+3
+6
+3
+3
+7
+5
+1
+8
+6
+3
 
 statement ok
 drop table t1_2585592
 
 statement ok
 drop table t2_2585592
-
 

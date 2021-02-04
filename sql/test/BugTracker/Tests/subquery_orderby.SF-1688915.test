@@ -127,4 +127,3 @@ users
 statement ok
 drop table foo
 
-

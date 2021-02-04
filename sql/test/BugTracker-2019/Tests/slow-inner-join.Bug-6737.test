@@ -41,4 +41,3 @@ USING monet1_test AS t_1
 statement ok
 rollback
 
-

@@ -21,4 +21,3 @@ SELECT col2 FROM tab0 AS cor0 WHERE NOT 49 + + col1 IS NULL GROUP BY col2, col1 
 statement ok
 DROP TABLE tab0
 
-

@@ -13,4 +13,3 @@ select json.text('{"a":"abc", "b":"def"}', '')
 ----
 abcdef
 
-

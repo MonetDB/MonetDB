@@ -48,13 +48,68 @@ insert into antitest02 select  * from antitest01 order by id, col2
 query ITI rowsort
 select * from antitest01
 ----
-30 values hashing to 7af3f8efa2879ceb20454d14d741367e
+10
+ABC
+21
+11
+ABD
+22
+12
+ABE
+23
+13
+ABF
+24
+14
+ABC
+25
+15
+ABD
+26
+16
+ABE
+27
+17
+ABD
+28
+18
+ABE
+29
+19
+ABF
+30
 
 query ITI rowsort
 select * from antitest01
 where id <> 14
 ----
-27 values hashing to 04b9f6d47e6f89e14a3fe8624b204f00
+10
+ABC
+21
+11
+ABD
+22
+12
+ABE
+23
+13
+ABF
+24
+15
+ABD
+26
+16
+ABE
+27
+17
+ABD
+28
+18
+ABE
+29
+19
+ABF
+30
 
 query ITI rowsort
 select * from antitest01
@@ -74,18 +129,93 @@ query ITI rowsort
 select * from antitest01
 where id not between 14 and 16
 ----
-21 values hashing to 254f46d17df873b1aa18be5423a83912
+10
+ABC
+21
+11
+ABD
+22
+12
+ABE
+23
+13
+ABF
+24
+17
+ABD
+28
+18
+ABE
+29
+19
+ABF
+30
 
 query ITI rowsort
 select * from antitest02
 ----
-30 values hashing to 7af3f8efa2879ceb20454d14d741367e
+10
+ABC
+21
+11
+ABD
+22
+12
+ABE
+23
+13
+ABF
+24
+14
+ABC
+25
+15
+ABD
+26
+16
+ABE
+27
+17
+ABD
+28
+18
+ABE
+29
+19
+ABF
+30
 
 query ITI rowsort
 select * from antitest02
 where id <> 14
 ----
-27 values hashing to 04b9f6d47e6f89e14a3fe8624b204f00
+10
+ABC
+21
+11
+ABD
+22
+12
+ABE
+23
+13
+ABF
+24
+15
+ABD
+26
+16
+ABE
+27
+17
+ABD
+28
+18
+ABE
+29
+19
+ABF
+30
 
 query ITI rowsort
 select * from antitest02
@@ -105,7 +235,27 @@ query ITI rowsort
 select * from antitest02
 where id not between 14 and 16
 ----
-21 values hashing to 254f46d17df873b1aa18be5423a83912
+10
+ABC
+21
+11
+ABD
+22
+12
+ABE
+23
+13
+ABF
+24
+17
+ABD
+28
+18
+ABE
+29
+19
+ABF
+30
 
 statement ok
 drop table antitest01

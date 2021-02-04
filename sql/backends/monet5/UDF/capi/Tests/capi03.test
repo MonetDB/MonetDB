@@ -59,4 +59,3 @@ SELECT capi03(i) FROM integers
 statement ok
 ROLLBACK
 
-

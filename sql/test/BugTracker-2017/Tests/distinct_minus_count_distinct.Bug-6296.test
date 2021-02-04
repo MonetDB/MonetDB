@@ -20,4 +20,3 @@ DROP TABLE tab2
 statement ok
 DROP TABLE tab0
 
-

@@ -2001,4 +2001,3 @@ SELECT * from (
  ) as trip
 ----
 
-

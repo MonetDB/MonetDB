@@ -8,4 +8,3 @@ select interval '1' second * 2
 ----
 0:00:02
 
-

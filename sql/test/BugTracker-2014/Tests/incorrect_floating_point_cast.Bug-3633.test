@@ -12,11 +12,12 @@ select a from foo3633 group by a having sum(b)>count(*)*.5
 ----
 1
 
-query IT rowsort
+query II rowsort
 select a,sum(b)>count(*)*.5 from foo3633 group by a
 ----
 1
-True
+1
 
 statement ok
 rollback
+

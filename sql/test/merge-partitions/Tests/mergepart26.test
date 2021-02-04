@@ -94,4 +94,3 @@ DROP TABLE subnn
 statement ok
 DROP TABLE testagain
 
-

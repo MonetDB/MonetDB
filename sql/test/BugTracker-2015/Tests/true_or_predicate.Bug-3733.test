@@ -24,4 +24,3 @@ SELECT * FROM test WHERE (false OR c1 = 3) AND c1 = 1
 statement ok
 drop table test
 
-

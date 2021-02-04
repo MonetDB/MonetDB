@@ -7,8 +7,7 @@ bat.setColumn(t,"first")
 statement ok
 u:= bat.new(:str)
 
-query TTT rowsort
+query ITT rowsort
 io.print(t,u)
 ----
-
 

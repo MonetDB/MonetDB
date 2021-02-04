@@ -82,7 +82,7 @@ query I rowsort
 SELECT 1 FROM tab0 WHERE NOT (NOT NULL IN (1))
 ----
 
-query T rowsort
+query I rowsort
 SELECT NOT (NOT NULL IN (1)) FROM tab0
 ----
 NULL
@@ -93,7 +93,7 @@ query I rowsort
 SELECT - col0 + + CAST ( NULL AS INTEGER ) AS col2 FROM tab0 AS cor0 WHERE NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) )
 ----
 
-query T rowsort
+query I rowsort
 SELECT NOT ( NOT + - CAST ( NULL AS INTEGER ) NOT IN ( col0 / CAST ( col2 AS INTEGER ) - + col1 ) ) FROM tab0 AS cor0
 ----
 NULL
@@ -439,5 +439,4 @@ group by
 
 statement ok
 ROLLBACK
-
 

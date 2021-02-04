@@ -133,4 +133,3 @@ DROP TABLE tryupdateme
 statement ok
 DROP FUNCTION multiplybytwo
 
-

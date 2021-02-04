@@ -45,4 +45,3 @@ world-map-1600-1700.jpg
 statement ok
 DROP TABLE sys.maps
 
-

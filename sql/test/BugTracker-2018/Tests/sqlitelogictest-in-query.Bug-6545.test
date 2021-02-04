@@ -11,4 +11,3 @@ SELECT DISTINCT * FROM tab0 AS cor0 WHERE - 60 + ( + - col0 ) IN ( + - CAST ( 35
 statement ok
 DROP TABLE tab0
 
-

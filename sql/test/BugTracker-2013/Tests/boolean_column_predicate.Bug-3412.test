@@ -4,35 +4,34 @@ create table boolean_test (b boolean not null, i int not null)
 statement ok
 insert into boolean_test (b, i) values (true, 1), (true, 2), (true, 3), (true, 4)
 
-query TI rowsort
+query II rowsort
 select * from boolean_test
 ----
-True
 1
-True
+1
+1
 2
-True
+1
 3
-True
+1
 4
 
-query TI rowsort
+query II rowsort
 select * from boolean_test where b and (i < 3)
 ----
-True
 1
-True
+1
+1
 2
 
-query TI rowsort
+query II rowsort
 select * from boolean_test where b = true and (i < 3)
 ----
-True
 1
-True
+1
+1
 2
 
 statement ok
 drop table boolean_test
-
 

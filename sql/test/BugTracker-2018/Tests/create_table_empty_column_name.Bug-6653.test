@@ -27,4 +27,3 @@ SELECT a AS "othera" FROM (SELECT a FROM selectme) AS "other"
 statement ok
 DROP TABLE selectme
 
-

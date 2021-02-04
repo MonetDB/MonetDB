@@ -1,28 +1,28 @@
 statement ok
 create schema changeme
 
-query TT rowsort
+query TI rowsort
 select "name", "system" from sys.schemas where "name" = 'changeme'
 ----
 changeme
-False
+0
 
-query TT rowsort
+query TI rowsort
 select "name", "system" from sys.schemas where "name" = 'changed'
 ----
 
 statement ok
 alter schema "changeme" rename to "changed"
 
-query TT rowsort
+query TI rowsort
 select "name", "system" from sys.schemas where "name" = 'changeme'
 ----
 
-query TT rowsort
+query TI rowsort
 select "name", "system" from sys.schemas where "name" = 'changed'
 ----
 changed
-False
+0
 
 statement ok
 create table "changed"."testme" (oneval int)
@@ -58,8 +58,7 @@ drop schema "changeme"
 statement ok
 drop schema "changed"
 
-query TT rowsort
+query TI rowsort
 select "name", "system" from sys.schemas where "name" in ('changeme', 'changed')
 ----
-
 

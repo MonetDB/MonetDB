@@ -10,11 +10,3 @@ function foo();
 	io.print("done");
 end
 
-#mdb.List("user","foo")
-
-statement ok
-optimizer.deadcode("user","foo")
-
-#mdb.List("user","foo")
-
-

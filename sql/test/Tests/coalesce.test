@@ -96,7 +96,16 @@ insert into coalescetest(id,name) values (3,'hello this is a test')
 query IT rowsort
 select id, coalesce(name, age, 'unknown') from coalescetest
 ----
-10 values hashing to 7028f46491d6a33c7e838600f6dd3b60
+1
+a
+2
+26
+3
+c
+3
+hello this is a test
+4
+unknown
 
 statement ok
 drop table coalescetest

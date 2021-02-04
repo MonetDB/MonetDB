@@ -27,4 +27,3 @@ select * from A
 statement ok
 drop table A
 
-
