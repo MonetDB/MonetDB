@@ -1,64 +1,11 @@
 statement ok
 js:= json.new("{ \"store\": { \"book\": [ { \"category\": \"reference\", \"author\": \"Nigel Rees\", \"title\": \"Sayings of the Century\", \"price\": 8.95 }, { \"category\": \"fiction\", \"author\": \"Evelyn Waugh\", \"title\": \"Sword of Honour\", \"price\": 12.99 }, { \"category\": \"fiction\", \"author\": \"Herman Melville\", \"title\": \"Moby Dick\", \"isbn\": \"0-553-21311-3\", \"price\": 8.99 }, { \"category\": \"fiction\", \"author\": \"J. R. R. Tolkien\", \"title\": \"The Lord of the Rings\", \"isbn\": \"0-395-19395-8\", \"price\": 22.99 } ], \"bicycle\": { \"color\": \"red\", \"price\": 19.95 } } }")
 
-query T rowsort
-json.dump(js)
+query IT rowsort
+jd := json.dump(js);
+io.print(jd);
 ----
-0] object child 0 list 1 { "store": { "book": [ { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 } ], "bicycle": { "color": "red", "price": 19.95 } }
-10] element child 11 list 12 titl
-11] string child 0 list "Sayings of the Century
-12] element child 13 list pric
-13] number child 0 list 8.9
-14] value child 5 list 24 36 48
-15] object child 0 list 16 18 20 22 { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99
-16] element child 17 list 18 20 22 categor
-17] string child 0 list "fiction
-18] element child 19 list 20 22 autho
-19] string child 0 list "Evelyn Waugh
-1] element child 2 list stor
-20] element child 21 list 22 titl
-21] string child 0 list "Sword of Honour
-22] element child 23 list pric
-23] number child 0 list 12.9
-24] value child 15 list 36 48
-25] object child 0 list 26 28 30 32 34 { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99
-26] element child 27 list 28 30 32 34 categor
-27] string child 0 list "fiction
-28] element child 29 list 30 32 34 autho
-29] string child 0 list "Herman Melville
-2] object child 0 list 3 49 { "book": [ { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 } ], "bicycle": { "color": "red", "price": 19.95 }
-30] element child 31 list 32 34 titl
-31] string child 0 list "Moby Dick
-32] element child 33 list 34 isb
-33] string child 0 list "0-553-21311-3
-34] element child 35 list pric
-35] number child 0 list 8.9
-36] value child 25 list 48
-37] object child 0 list 38 40 42 44 46 { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99
-38] element child 39 list 40 42 44 46 categor
-39] string child 0 list "fiction
-3] element child 4 list 49 boo
-40] element child 41 list 42 44 46 autho
-41] string child 0 list "J. R. R. Tolkien
-42] element child 43 list 44 46 titl
-43] string child 0 list "The Lord of the Rings
-44] element child 45 list 46 isb
-45] string child 0 list "0-395-19395-8
-46] element child 47 list pric
-47] number child 0 list 22.9
-48] value child 37 list
-49] element child 50 list bicycl
-4] array child 0 list 14 24 36 48 [ { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95 }, { "category": "fiction", "author": "Evelyn Waugh", "title": "Sword of Honour", "price": 12.99 }, { "category": "fiction", "author": "Herman Melville", "title": "Moby Dick", "isbn": "0-553-21311-3", "price": 8.99 }, { "category": "fiction", "author": "J. R. R. Tolkien", "title": "The Lord of the Rings", "isbn": "0-395-19395-8", "price": 22.99 }
-50] object child 0 list 51 53 { "color": "red", "price": 19.95
-51] element child 52 list 53 colo
-52] string child 0 list "red
-53] element child 54 list pric
-54] number child 0 list 19.9
-5] object child 0 list 6 8 10 12 { "category": "reference", "author": "Nigel Rees", "title": "Sayings of the Century", "price": 8.95
-6] element child 7 list 8 10 12 categor
-7] string child 0 list "reference
-8] element child 9 list 10 12 autho
-9] string child 0 list "Nigel Rees
+110 values hashing to 84992dc677b13759a408ee7ea3828340
 
 statement ok
 p:= json.filter(js,".store.book[*]..author")
