@@ -8,6 +8,7 @@
 
 #include "monetdb_config.h"
 #include "dotmonetdb.h"
+#define LIBMUTILS 1
 #include "mutils.h"
 #include <string.h>
 
