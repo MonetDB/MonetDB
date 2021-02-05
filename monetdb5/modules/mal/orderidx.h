@@ -25,11 +25,7 @@
 #define orderidx_export extern
 #endif
 
-orderidx_export str OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 orderidx_export str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces);
 orderidx_export str OIDXdropImplementation(Client cntxt, BAT *b);
-orderidx_export str OIDXorderidx(bat *ret, const bat *bid, const bit *stable);
-orderidx_export str OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-orderidx_export str OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-orderidx_export str OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+
 #endif /* _OIDX_H */
