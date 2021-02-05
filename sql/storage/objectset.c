@@ -726,9 +726,9 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			}
 			// END ATOMIC CAS
 		}
-		if (state == active && oo->ts == ov->ts && !(ov->state & deleted)) {
-			return -1; /* new object with same name within transaction, should have a delete in between */
-		}
+
+		/* new object with same name within transaction, should have a delete in between */
+		assert(!(state == active && oo->ts == ov->ts && !(ov->state & deleted)));
 
 		MT_lock_set(&os->ht_lock);
 		ov->name_based_head = oo->name_based_head;
