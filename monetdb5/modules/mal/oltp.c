@@ -14,7 +14,9 @@
  * It could be extended with a semaphore for queue management
  */
 #include "monetdb_config.h"
-#include "oltp.h"
+#include "gdk.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
 #include "gdk_time.h"
 
 #define LOCKTIMEOUT (20 * 1000)
@@ -45,7 +47,7 @@ OLTPdump_(Client cntxt, str msg)
 }
 */
 
-str
+static str
 OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int i;
 	(void) cntxt;
@@ -66,7 +68,7 @@ OLTPreset(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 OLTPenable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -78,7 +80,7 @@ OLTPenable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 OLTPdisable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	OLTPreset(cntxt, mb, stk,pci);
@@ -87,7 +89,7 @@ OLTPdisable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 OLTPinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	// nothing to be done right now
@@ -98,7 +100,7 @@ OLTPinit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 // It contains all write locks outstanding
 // A transaction may proceed if no element in its read set is locked
 
-str
+static str
 OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,lck;
@@ -159,7 +161,7 @@ OLTPlock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i,lck;
@@ -194,7 +196,7 @@ OLTPrelease(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *bs= NULL, *bu= NULL, *bl= NULL, *bq= NULL, *bc = NULL;
@@ -247,7 +249,7 @@ OLTPtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "oltp.table", GDK_EXCEPTION);
 }
 
-str
+static str
 OLTPis_enabled(int *ret) {
   *ret = oltp_delay;
   return MAL_SUCCEED;

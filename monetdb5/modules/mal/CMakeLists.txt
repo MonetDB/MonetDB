@@ -11,13 +11,13 @@ add_library(malmodules OBJECT)
 target_sources(malmodules
   PRIVATE
   language.c
-  bbp.c bbp.h
-  profiler.c profiler.h
+  bbp.c
+  profiler.c
   batExtensions.c
   orderidx.c orderidx.h
   inspect.c
   manual.c
-  mal_io.c mal_io.h
+  mal_io.c
   mkey.c
   manifold.c manifold.h
   iterator.c
@@ -28,12 +28,12 @@ target_sources(malmodules
   pcre.c
   mat.c
   transaction.c
-  oltp.c oltp.h
+  oltp.c
   wlc.c
-  mal_mapi.c mal_mapi.h
+  mal_mapi.c
   remote.c remote.h
   txtsim.c
-  tokenizer.c tokenizer.h
+  tokenizer.c
   sample.c
   json_util.c
   querylog.c querylog.h

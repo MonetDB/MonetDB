@@ -39,12 +39,14 @@
  * allow for any type to be assigned.
  */
 #include "monetdb_config.h"
-#include "mal_io.h"
+#include "mal.h"
+#include "mal_instruction.h"
+#include "mal_interpreter.h"
 #include "mutils.h"
 
 #define MAXFORMAT 64*1024
 
-str
+static str
 io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bstream **ret= (bstream**) getArgReference(stk,pci,0);
@@ -55,7 +57,7 @@ io_stdin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 io_stdout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	stream **ret= (stream**) getArgReference(stk,pci,0);
@@ -127,7 +129,7 @@ IOprintBoth(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int indx, s
 	return MAL_SUCCEED;
 }
 
-str
+static str
 IOprint_val(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i;
@@ -458,7 +460,7 @@ IOprintf_(str *res, str format, ...)
 
 #define G(X) getArgValue(stk,pci,X), getArgType(mb,pci,X)
 
-str
+static str
 IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *fmt = getArgReference_str(stk,pci,1);
@@ -492,7 +494,7 @@ IOprintf(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	return msg;
 }
-str
+static str
 IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *fmt = getArgReference_str(stk,pci,2);
 	str fmt2 = NULL;
@@ -531,7 +533,7 @@ IOprintfStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
  * The table printing routine implementations.
  * They merely differ in destination and order prerequisite
  */
-str
+static str
 IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *piv[MAXPARAMS];
@@ -588,7 +590,7 @@ IOtable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * presented.
  */
 
-str
+static str
 IOexport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
@@ -617,7 +619,7 @@ IOexport(void *ret, bat *bid, str *fnme)
 /*
  * The import command reads a single BAT from an ASCII file produced by export.
  */
-str
+static str
 IOimport(void *ret, bat *bid, str *fnme)
 {
 	BAT *b;
@@ -806,7 +808,7 @@ IOimport(void *ret, bat *bid, str *fnme)
 
 
 
-str
+static str
 IOsetmallocsuccesscount(void *res, lng *count) {
 	(void) res;
 	GDKsetmallocsuccesscount(*count);

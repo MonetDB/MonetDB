@@ -33,7 +33,16 @@
 #include "rel_exp.h"
 #include "rel_dump.h"
 #include "rel_bin.h"
-#include "bbp.h"
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+#include "mal_module.h"
+#include "mal_session.h"
+#include "mal_resolve.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+#include "mal_profiler.h"
+#include "bat5.h"
 #include "opt_pipes.h"
 #include "orderidx.h"
 #include "clients.h"
@@ -270,7 +279,7 @@ SQLabort(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 SQLshutdown_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg;
@@ -3672,7 +3681,7 @@ dump_trace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	return CLTsessions(cntxt, mb, stk, pci);

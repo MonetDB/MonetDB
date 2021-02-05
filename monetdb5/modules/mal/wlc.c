@@ -165,7 +165,7 @@
 #include "gdk_time.h"
 #include "mutils.h"
 
-MT_Lock     wlc_lock = MT_LOCK_INITIALIZER(wlc_lock);
+static MT_Lock     wlc_lock = MT_LOCK_INITIALIZER(wlc_lock);
 
 static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
 static stream *wlc_fd = 0;
@@ -175,7 +175,7 @@ char wlc_dir[FILENAME_MAX]; 	// The location in the global file store for the lo
 char wlc_name[IDLENGTH];  	// The master database name
 lng  wlc_tag = 0;			// next transaction id
 int  wlc_state = 0;			// The current status of the logger in the life cycle
-char wlc_write[26];			// The timestamp of the last committed transaction
+static char wlc_write[26];			// The timestamp of the last committed transaction
 int  wlc_batches = 0;		// identifier of next batch
 int  wlc_beat = 10;		// maximal period covered by a single log file in seconds
 
@@ -237,7 +237,7 @@ bailout:
 	return msg;
 }
 
-str
+static str
 WLCgetConfig(void){
 	str l;
 	FILE *fd;
@@ -320,7 +320,7 @@ WLCcloselogger(void)
 }
 
 /* force the current log file to its storage container, but dont create a new one yet */
-str
+static str
 WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -334,7 +334,7 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-str
+static str
 WLCepilogue(void *ret)
 {
 	str msg = MAL_SUCCEED;
@@ -419,7 +419,7 @@ WLCinit(void)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -429,7 +429,7 @@ WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCinit();
 }
 
-str
+static str
 WLCgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str *ret = getArgReference_str(stk,pci,0);
 	(void) cntxt;
@@ -443,7 +443,7 @@ WLCgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	lng *ret = getArgReference_lng(stk,pci,0);
 	(void) cntxt;
@@ -455,7 +455,7 @@ WLCgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* Changing the beat should have immediate effect
  * It forces a new log file
  */
-str
+static str
 WLCsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int beat;
 	(void) mb;
@@ -467,7 +467,7 @@ WLCsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCcloselogger();
 }
 
-str
+static str
 WLCgetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int *ret = getArgReference_int(stk,pci,0);
 	(void) mb;
@@ -476,7 +476,7 @@ WLCgetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int len;
@@ -514,7 +514,7 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-str
+static str
 WLCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -631,18 +631,7 @@ WLCstart(Client cntxt, str fcn)
 	return msg;
 }
 
-str
-WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	return MAL_SUCCEED;
-}
-
-str
+static str
 WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -660,7 +649,7 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -676,7 +665,7 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -696,7 +685,7 @@ WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * We actually don't need the catalog operations in the log.
  * It is sufficient to upgrade the replay block to WLR_CATALOG.
  */
-str
+static str
 WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -827,7 +816,7 @@ finish:
 	return msg;
 }
 
-str
+static str
 WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -866,7 +855,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* check for empty BATs first */
-str
+static str
 WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 	int tpe, k = 0;
@@ -926,7 +915,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 	str sch,tbl,col, msg = MAL_SUCCEED;
@@ -1006,7 +995,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -1035,7 +1024,7 @@ WLCcommit(int clientid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg = MAL_SUCCEED;
 	msg = WLCstart(cntxt, "wlr.commit");
@@ -1058,7 +1047,7 @@ WLCrollback(int clientid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg = MAL_SUCCEED;
 	msg = WLCstart(cntxt, "wlr.rollback");
