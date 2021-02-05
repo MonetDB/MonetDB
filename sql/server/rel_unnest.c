@@ -3270,25 +3270,8 @@ rewrite_values(visitor *v, sql_rel *rel)
 	if (rel_is_ref(rel)) { /* need extra project */
 		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
 		rel->exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
-		if (!list_empty(rel->r)) { /* propagate order by exps */
-			list *nexps = sa_list(v->sql->sa);
-			for (node *en = ((list*)rel->r)->h; en; en = en->next) {
-				sql_exp *e = en->data, *ne = exps_find_exp(((sql_rel*)rel->l)->exps, e);
-
-				assert(ne);
-				ne = exp_ref(v->sql, ne);
-				if (is_ascending(e))
-					set_ascending(ne);
-				else
-					set_descending(ne);
-				if (nulls_last(e))
-					set_nulls_last(ne);
-				else
-					set_nulls_first(ne);
-				list_append(nexps, ne);
-			}
-			rel->r = nexps;
-		}
+		((sql_rel*)rel->l)->r = rel->r; /* propagate order by exps */
+		rel->r = NULL;
 		return rel;
 	}
 	sql_exp *e = rel->exps->h->data;
