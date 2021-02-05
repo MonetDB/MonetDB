@@ -391,14 +391,14 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 	if (ov->state == deleted) {
 		ov->state = under_destruction;
 
-		if (!ov->name_based_newer) {
+		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) {
 			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
 		}
 		else {
 			ov->name_based_newer->name_based_older = NULL;
 		}
 
-		if (!ov->id_based_newer) {
+		if (!ov->id_based_newer || (os_atmc_get_state(ov->id_based_newer) & rollbacked)) {
 			os_remove_id_based_chain(ov->os, store, ov->id_based_head);
 		}
 		else {
@@ -713,16 +713,16 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		bte state = os_atmc_get_state(oo);
 		if (state != active) {
 			// This can only happen if the parent oo was a comitted deleted at some point.
-			assert(state == deleted || state == under_destruction);
+			assert(state == deleted || state == under_destruction || state == under_resurrection);
 			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
-			* another transaction that tries to clean up oo.
+			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
 			//TODO ATOMIC CAS
 			if (oo->state == deleted) {
 				oo->state = under_resurrection;
 			}
 			else {
-				return -1; /*conflict with cleaner*/
+				return -1; /*conflict with cleaner or write-write conflict*/
 			}
 			// END ATOMIC CAS
 		}
@@ -771,16 +771,16 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		bte state = oo->state;
 		if (state != active) {
 			// This can only happen if the parent oo was a comitted deleted at some point.
-			assert(state == deleted || state == under_destruction);
+			assert(state == deleted || state == under_destruction || state == under_resurrection);
 			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
-			* another transaction that tries to clean up oo.
+			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
 			//TODO ATOMIC CAS
 			if (oo->state == deleted) {
 				oo->state = under_resurrection;
 			}
 			else {
-				return -1; /*conflict with cleaner*/
+				return -1; /*conflict with cleaner or write-write conflict*/
 			}
 			// END ATOMIC CAS
 		}
