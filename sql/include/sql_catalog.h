@@ -14,6 +14,7 @@
 #include "sql_hash.h"
 #include "mapi_querytype.h"
 #include "stream.h"
+#include "matomic.h"
 
 #define tr_none		0
 #define tr_readonly	1
@@ -544,7 +545,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
-	void *data;
+	ATOMIC_PTR_TYPE data;
 } sql_idx;
 
 /* fkey consists of two of these */
@@ -614,7 +615,7 @@ typedef struct sql_column {
 	char *max;
 
 	struct sql_table *t;
-	void *data;
+	ATOMIC_PTR_TYPE data;
 } sql_column;
 
 typedef enum table_types {
@@ -695,7 +696,7 @@ typedef struct sql_table {
 	changeset members;	/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
-	void *data;
+	ATOMIC_PTR_TYPE data;
 	struct sql_schema *s;
 
 	union {

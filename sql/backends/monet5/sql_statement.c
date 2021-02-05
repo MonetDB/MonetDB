@@ -429,7 +429,7 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 			return NULL;
 		}
 
-		t->data = l;
+		ATOMIC_PTR_SET(&t->data, l);
 		/*
 		s->op2 = (stmt*)l;
 		s->op3 = (stmt*)t;
@@ -532,9 +532,9 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	if (!t->s && t->data) { /* declared table */
+	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_tid);
-		int *l = t->data;
+		int *l = ATOMIC_PTR_GET(&t->data);
 
 		if (s == NULL) {
 			return NULL;
@@ -584,9 +584,9 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	InstrPtr q;
 
 	/* for read access tid.project(col) */
-	if (!c->t->s && c->t->data) { /* declared table */
+	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_bat);
-		int *l = c->t->data;
+		int *l = ATOMIC_PTR_GET(&c->t->data);
 
 		if (s == NULL) {
 			return NULL;
@@ -708,8 +708,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 	if (b->nr < 0)
 		return NULL;
 
-	if (!c->t->s && c->t->data) { /* declared table */
-		int *l = c->t->data;
+	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&c->t->data);
 
 		if (c->colnr == 0) { /* append to tid column */
 			q = newStmt(mb, sqlRef, growRef);
@@ -798,8 +798,8 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	if (tids->nr < 0 || upd->nr < 0)
 		return NULL;
 
-	if (!c->t->s && c->t->data) { /* declared table */
-		int *l = c->t->data;
+	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&c->t->data);
 
 		q = newStmt(mb, batRef, replaceRef);
 		q = pushArgument(mb, q, l[c->colnr+1]);
@@ -883,8 +883,8 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 	if (tids->nr < 0)
 		return NULL;
 
-	if (!t->s && t->data) { /* declared table */
-		int *l = t->data;
+	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&t->data);
 
 		q = newStmt(mb, batRef, deleteRef);
 		q = pushArgument(mb, q, l[0]);
@@ -2968,8 +2968,8 @@ stmt_table_clear(backend *be, sql_table *t)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (!t->s && t->data) { /* declared table */
-		int *l = t->data, cnt = list_length(t->columns.set)+1;
+	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&t->data), cnt = list_length(t->columns.set)+1;
 
 		for (int i = 0; i < cnt; i++) {
 			q = newStmt(mb, batRef, deleteRef);

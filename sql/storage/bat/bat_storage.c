@@ -132,12 +132,12 @@ static sql_delta *
 temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
 	assert(isTempTable(c->t));
-	sql_delta *d = temp_delta(c->data, tr->tid);
+	sql_delta *d = temp_delta(ATOMIC_PTR_GET(&c->data), tr->tid);
 	if (!d) {
 		d = temp_dup_delta(tr->tid, c->type.type->localtype);
 		do {
-			d->next = c->data;
-		} while(!ATOMIC_PTR_CAS(&c->data, &d->next, d)); /* set c->data = d, when c->data == d->next else d->next = c->data */
+			d->next = ATOMIC_PTR_GET(&c->data);
+		} while(!ATOMIC_PTR_CAS(&c->data, (void**)&d->next, d)); /* set c->data = d, when c->data == d->next else d->next = c->data */
 	}
 	return d;
 }
@@ -147,20 +147,20 @@ col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
 	if (isTempTable(c->t))
 		return temp_col_timestamp_delta(tr, c);
-	return timestamp_delta( tr, c->data);
+	return timestamp_delta( tr, ATOMIC_PTR_GET(&c->data));
 }
 
 static sql_delta *
 temp_idx_timestamp_delta( sql_trans *tr, sql_idx *i)
 {
 	assert(isTempTable(i->t));
-	sql_delta *d = temp_delta(i->data, tr->tid);
+	sql_delta *d = temp_delta(ATOMIC_PTR_GET(&i->data), tr->tid);
 	if (!d) {
 		int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
 		d = temp_dup_delta(tr->tid, type);
 		do {
-			d->next = i->data;
-		} while(!ATOMIC_PTR_CAS(&i->data, &d->next, d)); /* set i->data = d, when i->data == d->next else d->next = i->data */
+			d->next = ATOMIC_PTR_GET(&i->data);
+		} while(!ATOMIC_PTR_CAS(&i->data, (void**)&d->next, d)); /* set i->data = d, when i->data == d->next else d->next = i->data */
 	}
 	return d;
 }
@@ -170,7 +170,7 @@ idx_timestamp_delta( sql_trans *tr, sql_idx *i)
 {
 	if (isTempTable(i->t))
 		return temp_idx_timestamp_delta(tr, i);
-	return timestamp_delta( tr, i->data);
+	return timestamp_delta( tr, ATOMIC_PTR_GET(&i->data));
 }
 
 static sql_dbat *
@@ -185,12 +185,12 @@ static sql_dbat *
 temp_tab_timestamp_dbat( sql_trans *tr, sql_table *t)
 {
 	assert(isTempTable(t));
-	sql_dbat *d = temp_dbat(t->data, tr->tid);
+	sql_dbat *d = temp_dbat(ATOMIC_PTR_GET(&t->data), tr->tid);
 	if (!d) {
 		d = temp_dup_dbat(tr->tid);
 		do {
-			d->next = t->data;
-		} while(!ATOMIC_PTR_CAS(&t->data, &d->next, d)); /* set t->data = d, when t->data == d->next else d->next = t->data */
+			d->next = ATOMIC_PTR_GET(&t->data);
+		} while(!ATOMIC_PTR_CAS(&t->data, (void**)&d->next, d)); /* set t->data = d, when t->data == d->next else d->next = t->data */
 	}
 	return d;
 }
@@ -200,7 +200,7 @@ tab_timestamp_dbat( sql_trans *tr, sql_table *t)
 {
 	if (isTempTable(t))
 		return temp_tab_timestamp_dbat(tr, t);
-	return timestamp_dbat( tr, t->data);
+	return timestamp_dbat( tr, ATOMIC_PTR_GET(&t->data));
 }
 
 static sql_delta*
@@ -213,16 +213,15 @@ delta_dup(sql_delta *d)
 static void *
 col_dup(sql_column *c)
 {
-	assert(c->data);
-	return delta_dup(c->data);
+	return delta_dup(ATOMIC_PTR_GET(&c->data));
 }
 
 static void *
 idx_dup(sql_idx *i)
 {
-	if (!i->data)
+	if (!ATOMIC_PTR_GET(&i->data))
 		return NULL;
-	return delta_dup(i->data);
+	return delta_dup(ATOMIC_PTR_GET(&i->data));
 }
 
 static sql_dbat*
@@ -235,8 +234,7 @@ dbat_dup(sql_dbat *d)
 static void *
 del_dup(sql_table *t)
 {
-	assert(t->data);
-	return dbat_dup(t->data);
+	return dbat_dup(ATOMIC_PTR_GET(&t->data));
 }
 
 static BAT *
@@ -382,7 +380,6 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	assert(access == QUICK || tr->active);
 	if (!isTable(c->t))
 		return NULL;
-	assert(c->data);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_ucol(tr, c, access);
 	sql_delta *d = col_timestamp_delta(tr, c);
@@ -395,7 +392,6 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	assert(access == QUICK || tr->active);
 	if (!isTable(i->t))
 		return NULL;
-	assert(i->data);
 	if (access == RD_UPD_ID || access == RD_UPD_VAL)
 		return bind_uidx(tr, i, access);
 	sql_delta *d = idx_timestamp_delta(tr, i);
@@ -772,7 +768,7 @@ destroy_delta(sql_delta *b)
 static sql_delta *
 bind_col_data(sql_trans *tr, sql_column *c)
 {
-	sql_delta *obat = c->data;
+	sql_delta *obat = ATOMIC_PTR_GET(&c->data);
 
 	if (isTempTable(c->t))
 		obat = temp_col_timestamp_delta(tr, c);
@@ -783,7 +779,7 @@ bind_col_data(sql_trans *tr, sql_column *c)
 		/* abort */
 		return NULL;
 	assert(!isTempTable(c->t));
-	obat = timestamp_delta(tr, c->data);
+	obat = timestamp_delta(tr, ATOMIC_PTR_GET(&c->data));
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
@@ -793,7 +789,7 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	bat->ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
-	if (!ATOMIC_PTR_CAS(&c->data, &bat->next, bat)) {
+	if (!ATOMIC_PTR_CAS(&c->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
 		destroy_delta(bat);
 		return NULL;
@@ -804,7 +800,7 @@ bind_col_data(sql_trans *tr, sql_column *c)
 static void*
 update_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 {
-	sql_delta *delta, *odelta = c->data;
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
 	if ((delta = bind_col_data(tr, c)) == NULL)
 		return NULL;
@@ -846,7 +842,7 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 static sql_delta *
 bind_idx_data(sql_trans *tr, sql_idx *i)
 {
-	sql_delta *obat = i->data;
+	sql_delta *obat = ATOMIC_PTR_GET(&i->data);
 
 	if (isTempTable(i->t))
 		obat = temp_idx_timestamp_delta(tr, i);
@@ -857,7 +853,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 		/* abort */
 		return NULL;
 	assert(!isTempTable(i->t));
-	obat = timestamp_delta(tr, i->data);
+	obat = timestamp_delta(tr, ATOMIC_PTR_GET(&i->data));
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
@@ -867,7 +863,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 	bat->ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
-	if (!ATOMIC_PTR_CAS(&i->data, &bat->next, bat)) {
+	if (!ATOMIC_PTR_CAS(&i->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
 		destroy_delta(bat);
 		return NULL;
@@ -878,7 +874,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 static void*
 update_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 {
-	sql_delta *delta, *odelta = i->data;
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
 	if ((delta = bind_idx_data(tr, i)) == NULL)
 		return NULL;
@@ -1024,7 +1020,7 @@ dup_dbat( sql_trans *tr, sql_dbat *obat, sql_dbat *bat, int is_new, int temp)
 static void*
 append_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 {
-	sql_delta *delta, *odelta = c->data;
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
 	if ((delta = bind_col_data(tr, c)) == NULL)
 		return NULL;
@@ -1069,7 +1065,7 @@ append_col(sql_trans *tr, sql_column *c, void *i, int tpe)
 static void*
 append_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 {
-	sql_delta *delta, *odelta = i->data;
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
 	if ((delta = bind_idx_data(tr, i)) == NULL)
 		return NULL;
@@ -1180,7 +1176,7 @@ destroy_dbat(sql_dbat *bat)
 static sql_dbat *
 bind_del_data(sql_trans *tr, sql_table *t)
 {
-	sql_dbat *obat = t->data;
+	sql_dbat *obat = ATOMIC_PTR_GET(&t->data);
 
 	if (isTempTable(t))
 		obat = temp_tab_timestamp_dbat(tr, t);
@@ -1191,7 +1187,7 @@ bind_del_data(sql_trans *tr, sql_table *t)
 		/* abort */
 		return NULL;
 	assert(!isTempTable(t));
-	obat = timestamp_dbat(tr, t->data);
+	obat = timestamp_dbat(tr, ATOMIC_PTR_GET(&t->data));
 	sql_dbat *bat = ZNEW(sql_dbat);
 	if(!bat)
 		return NULL;
@@ -1200,7 +1196,7 @@ bind_del_data(sql_trans *tr, sql_table *t)
 	bat->ts = tr->tid;
 	/* only one writer else abort */
 	bat->next = obat;
-	if (!ATOMIC_PTR_CAS(&t->data, &bat->next, bat)) {
+	if (!ATOMIC_PTR_CAS(&t->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
 		destroy_dbat(bat);
 		return NULL;
@@ -1213,7 +1209,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 {
 	int ok = LOG_OK;
 	BAT *b = ib;
-	sql_dbat *bat, *obat = t->data;
+	sql_dbat *bat, *obat = ATOMIC_PTR_GET(&t->data);
 
 	if (tpe == TYPE_bat && !BATcount(b))
 		return ok;
@@ -1382,7 +1378,7 @@ sorted_col(sql_trans *tr, sql_column *col)
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 
-	if (col && col->data) {
+	if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
@@ -1400,7 +1396,7 @@ unique_col(sql_trans *tr, sql_column *col)
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 
-	if (col && col->data) {
+	if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b)
@@ -1418,7 +1414,7 @@ double_elim_col(sql_trans *tr, sql_column *col)
 	if (!isTable(col->t) || !col->t->s)
 		return 0;
 
-	if (col && col->data) {
+	if (col && ATOMIC_PTR_GET(&col->data)) {
 		BAT *b = bind_col(tr, col, QUICK);
 
 		if (b && b->tvarsized) /* check double elimination */
@@ -1599,11 +1595,12 @@ create_col(sql_trans *tr, sql_column *c)
 {
 	int ok = LOG_OK, new = 0;
 	int type = c->type.type->localtype;
-	sql_delta *bat = c->data;
+	sql_delta *bat = ATOMIC_PTR_GET(&c->data);
 
 	if (!bat) {
 		new = 1;
-		c->data = bat = ZNEW(sql_delta);
+		bat = ZNEW(sql_delta);
+		ATOMIC_PTR_SET(&c->data, bat);
 		if(!bat)
 			return LOG_ERR;
 		bat->refcnt = 1;
@@ -1621,7 +1618,7 @@ create_col(sql_trans *tr, sql_column *c)
 		bat->ts = tr->ts;
 		return load_bat(tr, bat, type, c->t->bootstrap?0:LOG_COL, c->base.id);
 	} else if (bat && bat->ibid && !isTempTable(c->t)) {
-		return new_persistent_bat(tr, c->data, c->t->sz);
+		return new_persistent_bat(tr, ATOMIC_PTR_GET(&c->data), c->t->sz);
 	} else if (!bat->ibid) {
 		sql_column *fc = NULL;
 		size_t cnt = 0;
@@ -1630,7 +1627,7 @@ create_col(sql_trans *tr, sql_column *c)
 		if (c->t->columns.set && (fc = c->t->columns.set->h->data) != NULL)
 			cnt = count_col(tr, fc, 1);
 		if (cnt && fc != c) {
-			sql_delta *d = fc->data;
+			sql_delta *d = ATOMIC_PTR_GET(&fc->data);
 
 			if (d->bid) {
 				bat->bid = copyBat(d->bid, type, 0);
@@ -1660,7 +1657,7 @@ create_col(sql_trans *tr, sql_column *c)
 			if (!b) {
 				ok = LOG_ERR;
 			} else {
-				create_delta(c->data, NULL, b);
+				create_delta(ATOMIC_PTR_GET(&c->data), NULL, b);
 				bat_destroy(b);
 			}
 		}
@@ -1673,7 +1670,7 @@ create_col(sql_trans *tr, sql_column *c)
 static int
 upgrade_col(sql_trans *tr, sql_column *c)
 {
-	sql_delta *bat = c->data;
+	sql_delta *bat = ATOMIC_PTR_GET(&c->data);
 
 	if (!c->t->bootstrap)
 		return upgrade_delta(tr, bat, LOG_COL, c->base.id);
@@ -1684,7 +1681,7 @@ static int
 log_create_col_(sql_trans *tr, sql_column *c)
 {
 	assert(!isTempTable(c->t));
-	return log_create_delta(tr,  c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
+	return log_create_delta(tr,  ATOMIC_PTR_GET(&c->data), c->t->bootstrap?0:LOG_COL, c->base.id);
 }
 
 static int
@@ -1700,7 +1697,7 @@ commit_create_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 	(void)oldest;
 
 	if(!isTempTable(c->t)) {
-		sql_delta *delta = c->data;
+		sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 		assert(delta->ts == tr->tid);
 		delta->ts = commit_ts;
 
@@ -1726,7 +1723,7 @@ static int
 create_idx(sql_trans *tr, sql_idx *ni)
 {
 	int ok = LOG_OK, new = 0;
-	sql_delta *bat = ni->data;
+	sql_delta *bat = ATOMIC_PTR_GET(&ni->data);
 	int type = TYPE_lng;
 
 	if (oid_index(ni->type))
@@ -1734,7 +1731,8 @@ create_idx(sql_trans *tr, sql_idx *ni)
 
 	if (!bat) {
 		new = 1;
-		ni->data = bat = ZNEW(sql_delta);
+		bat = ZNEW(sql_delta);
+		ATOMIC_PTR_SET(&ni->data, bat);
 		if(!bat)
 			return LOG_ERR;
 		bat->refcnt = 1;
@@ -1752,7 +1750,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat->ts = tr->ts;
 		return load_bat(tr, bat, type, ni->t->bootstrap?0:LOG_IDX, ni->base.id);
 	} else if (bat && bat->ibid && !isTempTable(ni->t)) {
-		return new_persistent_bat( tr, ni->data, ni->t->sz);
+		return new_persistent_bat( tr, ATOMIC_PTR_GET(&ni->data), ni->t->sz);
 	} else if (!bat->ibid) {
 		sql_column *c = ni->t->columns.set->h->data;
 		sql_delta *d;
@@ -1794,7 +1792,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 static int
 upgrade_idx(sql_trans *tr, sql_idx *i)
 {
-	sql_delta *bat = i->data;
+	sql_delta *bat = ATOMIC_PTR_GET(&i->data);
 
 	if (!i->t->bootstrap && bat != NULL)
 		return upgrade_delta(tr, bat, LOG_IDX, i->base.id);
@@ -1805,7 +1803,7 @@ static int
 log_create_idx_(sql_trans *tr, sql_idx *i)
 {
 	assert(!isTempTable(i->t));
-	return log_create_delta(tr, i->data, i->t->bootstrap?0:LOG_IDX, i->base.id);
+	return log_create_delta(tr, ATOMIC_PTR_GET(&i->data), i->t->bootstrap?0:LOG_IDX, i->base.id);
 }
 
 static int
@@ -1821,7 +1819,7 @@ commit_create_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 	(void)oldest;
 
 	if(!isTempTable(i->t)) {
-		sql_delta *delta = i->data;
+		sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 		assert(delta->ts == tr->tid);
 		delta->ts = commit_ts;
 
@@ -1861,11 +1859,12 @@ create_del(sql_trans *tr, sql_table *t)
 
 	int ok = LOG_OK, new = 0;
 	BAT *b;
-	sql_dbat *bat = t->data;
+	sql_dbat *bat = ATOMIC_PTR_GET(&t->data);
 
 	if (!bat) {
 		new = 1;
-		t->data = bat = ZNEW(sql_dbat);
+		bat = ZNEW(sql_dbat);
+		ATOMIC_PTR_SET(&t->data, bat);
 		if(!bat)
 			return LOG_ERR;
 		bat->refcnt = 1;
@@ -1906,7 +1905,7 @@ create_del(sql_trans *tr, sql_table *t)
 static int
 upgrade_del(sql_trans *tr, sql_table *t)
 {
-	sql_dbat *bat = t->data;
+	sql_dbat *bat = ATOMIC_PTR_GET(&t->data);
 
 	if (!t->bootstrap) {
 		sqlstore *store = tr->store;
@@ -1943,7 +1942,7 @@ log_create_del(sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 
 	assert(!isTempTable(t));
-	ok = log_create_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
+	ok = log_create_dbat(tr, ATOMIC_PTR_GET(&t->data), t->bootstrap?0:LOG_TAB, t->base.id);
 	if (ok == LOG_OK) {
 		for(node *n = t->columns.set->h; n && ok == LOG_OK; n = n->next) {
 			sql_column *c = n->data;
@@ -1954,7 +1953,7 @@ log_create_del(sql_trans *tr, sql_change *change)
 			for(node *n = t->idxs.set->h; n && ok == LOG_OK; n = n->next) {
 				sql_idx *i = n->data;
 
-				if (i->data)
+				if (ATOMIC_PTR_GET(&i->data))
 					ok = log_create_idx_(tr, i);
 			}
 		}
@@ -1971,7 +1970,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (!commit_ts) /* rollback handled by ? */
 		return ok;
 	if(!isTempTable(t)) {
-		sql_dbat *dbat = t->data;
+		sql_dbat *dbat = ATOMIC_PTR_GET(&t->data);
 		assert(dbat->ts == tr->tid);
 		dbat->ts = commit_ts;
 		if (ok == LOG_OK) {
@@ -1984,7 +1983,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 				for(node *n = t->idxs.set->h; n && ok == LOG_OK; n = n->next) {
 					sql_idx *i = n->data;
 
-					if (i->data)
+					if (ATOMIC_PTR_GET(&i->data))
 						ok = commit_create_idx_(tr, i, commit_ts, oldest);
 				}
 			}
@@ -2019,9 +2018,9 @@ destroy_col(sqlstore *store, sql_column *c)
 {
 	(void)store;
 	int ok = LOG_OK;
-	if (c->data)
-		ok = destroy_delta(c->data);
-	c->data = NULL;
+	if (ATOMIC_PTR_GET(&c->data))
+		ok = destroy_delta(ATOMIC_PTR_GET(&c->data));
+	ATOMIC_PTR_SET(&c->data, NULL);
 	return ok;
 }
 
@@ -2032,7 +2031,7 @@ log_destroy_col_(sql_trans *tr, sql_column *c)
 	assert(!isTempTable(c->t));
 	//delta->ts = commit_ts;
 	if (!tr->parent) /* don't write save point commits */
-		ok = log_destroy_delta(tr, c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
+		ok = log_destroy_delta(tr, ATOMIC_PTR_GET(&c->data), c->t->bootstrap?0:LOG_COL, c->base.id);
 	return ok;
 }
 
@@ -2047,9 +2046,9 @@ destroy_idx(sqlstore *store, sql_idx *i)
 {
 	(void)store;
 	int ok = LOG_OK;
-	if (i->data)
-		ok = destroy_delta(i->data);
-	i->data = NULL;
+	if (ATOMIC_PTR_GET(&i->data))
+		ok = destroy_delta(ATOMIC_PTR_GET(&i->data));
+	ATOMIC_PTR_SET(&i->data, NULL);
 	return ok;
 }
 
@@ -2058,10 +2057,10 @@ log_destroy_idx_(sql_trans *tr, sql_idx *i)
 {
 	int ok = LOG_OK;
 	assert(!isTempTable(i->t));
-	if (i->data) {
+	if (ATOMIC_PTR_GET(&i->data)) {
 		//delta->ts = commit_ts;
 		if (!tr->parent) /* don't write save point commits */
-			ok = log_destroy_delta(tr, i->data, i->t->bootstrap?0:LOG_IDX, i->base.id);
+			ok = log_destroy_delta(tr, ATOMIC_PTR_GET(&i->data), i->t->bootstrap?0:LOG_IDX, i->base.id);
 	}
 	return ok;
 }
@@ -2085,9 +2084,9 @@ destroy_del(sqlstore *store, sql_table *t)
 {
 	(void)store;
 	int ok = LOG_OK;
-	if (t->data)
-		ok = destroy_dbat(t->data);
-	t->data = NULL;
+	if (ATOMIC_PTR_GET(&t->data))
+		ok = destroy_dbat(ATOMIC_PTR_GET(&t->data));
+	ATOMIC_PTR_SET(&t->data, NULL);
 	return ok;
 }
 
@@ -2115,11 +2114,11 @@ log_destroy_del(sql_trans *tr, sql_change *change)
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
-	sql_dbat *dbat = t->data;
+	sql_dbat *dbat = ATOMIC_PTR_GET(&t->data);
 	if (dbat->ts < tr->ts) /* no changes ? */
 		return ok;
 	//dbat->ts = commit_ts;
-	ok = log_destroy_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
+	ok = log_destroy_dbat(tr, ATOMIC_PTR_GET(&t->data), t->bootstrap?0:LOG_TAB, t->base.id);
 
 	if (ok == LOG_OK) {
 		for(node *n = t->columns.set->h; n && ok == LOG_OK; n = n->next) {
@@ -2197,7 +2196,7 @@ clear_delta(sql_trans *tr, sql_delta *bat)
 static BUN
 clear_col(sql_trans *tr, sql_column *c)
 {
-	sql_delta *delta, *odelta = c->data;
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
 
 	if ((delta = bind_col_data(tr, c)) == NULL)
 		return BUN_NONE;
@@ -2211,7 +2210,7 @@ clear_col(sql_trans *tr, sql_column *c)
 static BUN
 clear_idx(sql_trans *tr, sql_idx *i)
 {
-	sql_delta *delta, *odelta = i->data;
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
 	if (!isTable(i->t) || (hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 		return 0;
@@ -2253,7 +2252,7 @@ clear_dbat(sql_trans *tr, sql_dbat *bat)
 static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
-	sql_dbat *bat, *obat = t->data;
+	sql_dbat *bat, *obat = ATOMIC_PTR_GET(&t->data);
 
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
@@ -2528,7 +2527,7 @@ log_update_col( sql_trans *tr, sql_change *change)
 	sql_column *c = (sql_column*)change->obj;
 
 	if (!isTempTable(c->t) && !tr->parent) /* don't write save point commits */
-		return tr_log_delta(tr, c->data, c->t->bootstrap?0:LOG_COL, c->base.id);
+		return tr_log_delta(tr, ATOMIC_PTR_GET(&c->data), c->t->bootstrap?0:LOG_COL, c->base.id);
 	return LOG_OK;
 }
 
@@ -2536,7 +2535,7 @@ static int
 commit_update_col_( sql_trans *tr, sql_column *c, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
-	sql_delta *delta = c->data;
+	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
 	(void)oldest;
 	if (isTempTable(c->t)) {
@@ -2561,21 +2560,21 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 {
 	int ok = LOG_OK;
 	sql_column *c = (sql_column*)change->obj;
-	sql_delta *delta = c->data;
+	sql_delta *delta = ATOMIC_PTR_GET(&c->data);
 
 	if (isTempTable(c->t))
 		return commit_update_col_(tr, c, commit_ts, oldest);
 	if (commit_ts)
 		delta->ts = commit_ts;
 	if (!commit_ts) { /* rollback */
-		sql_delta *d = change->data, *o = c->data;
+		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(&c->data);
 
 		if (o != d) {
 			while(o && o->next != d)
 				o = o->next;
 		}
-		if (o == c->data)
-			c->data = d->next;
+		if (o == ATOMIC_PTR_GET(&c->data))
+			ATOMIC_PTR_SET(&c->data, d->next);
 		else
 			o->next = d->next;
 		d->next = NULL;
@@ -2595,7 +2594,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		if (ok == LOG_OK && delta == d && oldest == commit_ts)
 			ok = tr_merge_delta(tr, delta);
 	} else if (ok == LOG_OK && tr->parent) /* move delta into older and cleanup current save points */
-		c->data = savepoint_commit_delta(delta, commit_ts);
+		ATOMIC_PTR_SET(&c->data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
 }
 
@@ -2605,7 +2604,7 @@ log_update_idx( sql_trans *tr, sql_change *change)
 	sql_idx *i = (sql_idx*)change->obj;
 
 	if (!isTempTable(i->t) && !tr->parent) /* don't write save point commits */
-		return tr_log_delta(tr, i->data, i->t->bootstrap?0:LOG_COL, i->base.id);
+		return tr_log_delta(tr, ATOMIC_PTR_GET(&i->data), i->t->bootstrap?0:LOG_COL, i->base.id);
 	return LOG_OK;
 }
 
@@ -2613,7 +2612,7 @@ static int
 commit_update_idx_( sql_trans *tr, sql_idx *i, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
-	sql_delta *delta = i->data;
+	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
 
 	(void)oldest;
@@ -2639,21 +2638,21 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 {
 	int ok = LOG_OK;
 	sql_idx *i = (sql_idx*)change->obj;
-	sql_delta *delta = i->data;
+	sql_delta *delta = ATOMIC_PTR_GET(&i->data);
 
 	if (isTempTable(i->t))
 		return commit_update_idx_( tr, i, commit_ts, oldest);
 	if (commit_ts)
 		delta->ts = commit_ts;
 	if (!commit_ts) { /* rollback */
-		sql_delta *d = change->data, *o = i->data;
+		sql_delta *d = change->data, *o = ATOMIC_PTR_GET(&i->data);
 
 		if (o != d) {
 			while(o && o->next != d)
 				o = o->next;
 		}
-		if (o == i->data)
-			i->data = d->next;
+		if (o == ATOMIC_PTR_GET(&i->data))
+			ATOMIC_PTR_SET(&i->data, d->next);
 		else
 			o->next = d->next;
 		d->next = NULL;
@@ -2673,7 +2672,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		if (ok == LOG_OK && delta == d && oldest == commit_ts)
 			ok = tr_merge_delta(tr, delta);
 	} else if (ok == LOG_OK && tr->parent) /* cleanup older save points */
-		i->data = savepoint_commit_delta(delta, commit_ts);
+		ATOMIC_PTR_SET(&i->data, savepoint_commit_delta(delta, commit_ts));
 	return ok;
 }
 
@@ -2701,7 +2700,7 @@ log_update_del( sql_trans *tr, sql_change *change)
 	sql_table *t = (sql_table*)change->obj;
 
 	if (!isTempTable(t) && !tr->parent) /* don't write save point commits */
-		return tr_log_dbat(tr, t->data, t->bootstrap?0:LOG_TAB, t->base.id);
+		return tr_log_dbat(tr, ATOMIC_PTR_GET(&t->data), t->bootstrap?0:LOG_TAB, t->base.id);
 	return LOG_OK;
 }
 
@@ -2726,7 +2725,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 {
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
-	sql_dbat *dbat = t->data;
+	sql_dbat *dbat = ATOMIC_PTR_GET(&t->data);
 
 	if (isTempTable(t)) {
 		if (commit_ts) { /* commit */
@@ -2746,14 +2745,14 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 	if (!isTempTable(t))
 		dbat->ts = commit_ts;
 	if (!commit_ts) { /* rollback */
-		sql_dbat *d = change->data, *o = t->data;
+		sql_dbat *d = change->data, *o = ATOMIC_PTR_GET(&t->data);
 
 		if (o != d) {
 			while(o && o->next != d)
 				o = o->next;
 		}
-		if (o == t->data)
-			t->data = d->next;
+		if (o == ATOMIC_PTR_GET(&t->data))
+			ATOMIC_PTR_SET(&t->data, d->next);
 		else
 			o->next = d->next;
 		d->next = NULL;
@@ -2773,7 +2772,7 @@ commit_update_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		if (ok == LOG_OK && dbat == d && oldest == commit_ts)
 			ok = tr_merge_dbat(dbat);
 	} else if (ok == LOG_OK && tr->parent) {/* cleanup older save points */
-		t->data = savepoint_commit_dbat(dbat, commit_ts);
+		ATOMIC_PTR_SET(&t->data, savepoint_commit_dbat(dbat, commit_ts));
 	}
 	return ok;
 }
@@ -2787,7 +2786,7 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 
 	(void)store;
 	/* savepoint commit (did it merge ?) */
-	if (c->data != change->data || isTempTable(c->t)) /* data is freed by commit */
+	if (ATOMIC_PTR_GET(&c->data) != change->data || isTempTable(c->t)) /* data is freed by commit */
 		return 1;
 	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
@@ -2810,7 +2809,7 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 
 	(void)store;
 	/* savepoint commit (did it merge ?) */
-	if (i->data != change->data || isTempTable(i->t)) /* data is freed by commit */
+	if (ATOMIC_PTR_GET(&i->data) != change->data || isTempTable(i->t)) /* data is freed by commit */
 		return 1;
 	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
@@ -2833,7 +2832,7 @@ tc_gc_del( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 
 	(void)store;
 	/* savepoint commit (did it merge ?) */
-	if (t->data != change->data || isTempTable(t)) /* data is freed by commit */
+	if (ATOMIC_PTR_GET(&t->data) != change->data || isTempTable(t)) /* data is freed by commit */
 		return 1;
 	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;

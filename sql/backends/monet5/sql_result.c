@@ -843,7 +843,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 				sql_column *c = n->data;
 				BAT *b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
-				sql_delta *d = c->data;
+				sql_delta *d = ATOMIC_PTR_GET(&c->data);
 
 				if ( b == NULL)
 					sql_error(m, 500, "failed to bind to delta column");
