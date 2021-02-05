@@ -25,8 +25,8 @@ function user.main():void;
     X_88:ptr := sql.append_exec(X_85:ptr, X_28:bat[:int]);
     X_91:ptr := sql.append_exec(X_90:ptr, X_29:bat[:int]);
     X_94:ptr := sql.append_exec(X_93:ptr, X_30:bat[:int]);
-    X_42:lng := aggr.count(X_30:bat[:int]);
     X_40:int := sql.append_finish(X_86:int, X_88:ptr, X_91:ptr, X_94:ptr);
+    X_42:lng := aggr.count(X_30:bat[:int]);
     sql.affectedRows(X_40:int, X_42:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
@@ -68,8 +68,8 @@ function user.main():void;
     X_88:ptr := sql.append_exec(X_85:ptr, X_28:bat[:int]);
     X_91:ptr := sql.append_exec(X_90:ptr, X_29:bat[:int]);
     X_94:ptr := sql.append_exec(X_93:ptr, X_30:bat[:int]);
-    X_42:lng := aggr.count(X_30:bat[:int]);
     X_40:int := sql.append_finish(X_86:int, X_88:ptr, X_91:ptr, X_94:ptr);
+    X_42:lng := aggr.count(X_30:bat[:int]);
     sql.affectedRows(X_40:int, X_42:lng);
 end user.main;
 #inline               actions= 0 time=1 usec 
@@ -128,8 +128,8 @@ function user.main():void;
     X_89:ptr := sql.append_exec(X_86:ptr, X_28:bat[:int]);
     X_92:ptr := sql.append_exec(X_91:ptr, X_29:bat[:int]);
     X_95:ptr := sql.append_exec(X_94:ptr, X_30:bat[:int]);
-    X_42:lng := aggr.count(X_30:bat[:int]);
     X_40:int := sql.append_finish(X_87:int, X_89:ptr, X_92:ptr, X_95:ptr);
+    X_42:lng := aggr.count(X_30:bat[:int]);
     sql.affectedRows(X_40:int, X_42:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
@@ -172,8 +172,8 @@ function user.main():void;
     X_89:ptr := sql.append_exec(X_86:ptr, X_28:bat[:int]);
     X_92:ptr := sql.append_exec(X_91:ptr, X_29:bat[:int]);
     X_95:ptr := sql.append_exec(X_94:ptr, X_30:bat[:int]);
-    X_42:lng := aggr.count(X_30:bat[:int]);
     X_40:int := sql.append_finish(X_87:int, X_89:ptr, X_92:ptr, X_95:ptr);
+    X_42:lng := aggr.count(X_30:bat[:int]);
     sql.affectedRows(X_40:int, X_42:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
