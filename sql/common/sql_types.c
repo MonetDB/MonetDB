@@ -462,8 +462,10 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 			scale = member->scale;
 		}
 		/* same type as the input */
-		if (r->type->eclass == EC_ANY && member)
+		if (r->type->eclass == EC_ANY && member) {
 			r = member;
+			digits = member->digits;
+		}
 		if (!EC_SCALE(r->type->eclass))
 			scale = 0;
 		res = sql_create_subtype(sa, r->type, digits, scale);
