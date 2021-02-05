@@ -391,14 +391,14 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 	if (ov->state == deleted) {
 		ov->state = under_destruction;
 
-		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) {
+		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) { // TODO: This gives race conditions with os_rollback.
 			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
 		}
 		else {
 			ov->name_based_newer->name_based_older = NULL;
 		}
 
-		if (!ov->id_based_newer || (os_atmc_get_state(ov->id_based_newer) & rollbacked)) {
+		if (!ov->id_based_newer || (os_atmc_get_state(ov->id_based_newer) & rollbacked)) { // TODO: This gives race conditions with os_rollback.
 			os_remove_id_based_chain(ov->os, store, ov->id_based_head);
 		}
 		else {
