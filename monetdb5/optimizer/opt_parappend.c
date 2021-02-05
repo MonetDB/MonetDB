@@ -20,11 +20,9 @@ typedef struct parstate {
 	InstrPtr finish_stmt;
 } parstate;
 
-static str transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr importTable, const char *execRef, const char *prepRef, int *actions);
-static int setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char *prepRef);
+static str transform(parstate *state, MalBlkPtr mb, InstrPtr importTable, const char *execRef, const char *prepRef, int *actions);
+static int setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old, const char *prepRef);
 static void flush_finish_stmt(parstate *state, MalBlkPtr mb);
-static void pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr instr);
-static bool needs_chain_var(parstate *state, InstrPtr instr);
 
 
 str
@@ -68,13 +66,11 @@ OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	for (size_t i = 0; i < old_stop; i++) {
 		InstrPtr p = old_mb_stmt[i];
 		if (p->modname == sqlRef && p->fcnname == appendRef) {
-			msg = transform(&state, cntxt, mb, p, putName("append_exec"), putName("append_prep"), &actions);
+			msg = transform(&state, mb, p, putName("append_exec"), putName("append_prep"), &actions);
 		} else if (p->modname == sqlRef && p->fcnname == updateRef) {
-			msg = transform(&state, cntxt, mb, p, putName("update_exec"), putName("update_prep"), &actions);
+			msg = transform(&state, mb, p, putName("update_exec"), putName("update_prep"), &actions);
 		} else {
-			if (p->barrier != 0 || mayhaveSideEffects(cntxt, mb, p, false) || needs_chain_var(&state, p)) {
-				flush_finish_stmt(&state, mb);
-			}
+			flush_finish_stmt(&state, mb);
 			pushInstruction(mb, p);
 		}
 		if (msg != MAL_SUCCEED)
@@ -115,7 +111,7 @@ end:
 }
 
 static str
-transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char *opRef, const char *prepRef, int *actions)
+transform(parstate *state, MalBlkPtr mb, InstrPtr old, const char *opRef, const char *prepRef, int *actions)
 {
 	int sname_var;
 	int tname_var;
@@ -158,7 +154,7 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char 
 
 	*actions += 1;
 
-	int cookie_var = setup_append_prep(state, cntxt, mb, old, prepRef);
+	int cookie_var = setup_append_prep(state, mb, old, prepRef);
 
 	int ret_cookie = newTmpVariable(mb, TYPE_ptr);
 	InstrPtr e = newFcnCall(mb, sqlRef, opRef);
@@ -175,7 +171,7 @@ transform(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char 
 }
 
 static int
-setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, const char *prepRef)
+setup_append_prep(parstate *state, MalBlkPtr mb, InstrPtr old, const char *prepRef)
 {
 	// take the old instruction apart
 	assert(old->retc == 1);
@@ -253,8 +249,6 @@ setup_append_prep(parstate *state, Client cntxt, MalBlkPtr mb, InstrPtr old, con
 		setReturnArgument(f, chain_out_var);
 		f = pushArgument(mb, f, chain);
 		state->finish_stmt = f;
-
-		pull_prep_towards_beginning(cntxt, mb, p);
 	} else {
 		// Append to existing first, to ensure there is room
 		prep_stmt = pushArgument(mb, prep_stmt, cname_var);
@@ -283,67 +277,4 @@ flush_finish_stmt(parstate *state, MalBlkPtr mb)
 	}
 	state->prep_stmt = NULL;
 	state->finish_stmt = NULL;
-}
-
-
-static bool
-can_swap_prep_with(Client cntxt, MalBlkPtr mb, InstrPtr prep, InstrPtr other)
-{
-	if (mayhaveSideEffects(cntxt, mb, other, false)) {
-		// probably not safe to pull it across a side effect, and chainflow wouldn't benefit anyway
-		return false;
-	}
-
-	if (other->barrier != 0) {
-		// be wary of control flow
-		return false;
-	}
-
-	int chain_var = getArg(prep, prep->retc);
-	for (int i = 0; i < other->retc; i++) {
-		int other_ret = getArg(other, i);
-		if (chain_var == other_ret) {
-			// it defines the chain var we use, we must not violate causality
-			return false;
-		}
-	}
-
-	return true; // okay
-}
-
-static bool
-needs_chain_var(parstate *state, InstrPtr instr)
-{
-	if (state->finish_stmt == NULL)
-		return false;
-
-	int chain_var = getArg(state->finish_stmt, 0);
-
-	for (int i = 0; i < instr->argc; i++) {
-		int var = getArg(instr, i);
-		if (var == chain_var)
-			return true;
-	}
-
-	return false;
-}
-
-static void
-pull_prep_towards_beginning(Client cntxt, MalBlkPtr mb, InstrPtr prep)
-{
-	int prep_loc = prep->pc;
-	int tgt = prep_loc;
-
-	while (tgt > 0) {
-		int new_tgt = tgt - 1;
-		InstrPtr other = getInstrPtr(mb, new_tgt);
-		if (!can_swap_prep_with(cntxt, mb, prep, other))
-			break;
-		tgt = new_tgt;
-	}
-
-	if (tgt != prep_loc) {
-		moveInstruction(mb, prep_loc, tgt);
-	} else {
-	}
 }
