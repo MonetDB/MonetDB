@@ -272,6 +272,14 @@ winerror(int e)
 	}
 }
 
+struct DIR {
+	wchar_t *dir_name;
+	int just_opened;
+	HANDLE find_file_handle;
+	void *find_file_data;
+	struct dirent result;
+};
+
 DIR *
 opendir(const char *dirname)
 {
@@ -360,7 +368,6 @@ basename(const wchar_t *file_name)
 struct dirent *
 readdir(DIR *dir)
 {
-	static struct dirent result;
 	char *base;
 
 	if (dir == NULL) {
@@ -376,11 +383,11 @@ readdir(DIR *dir)
 	base = wchartoutf8(basename(((LPWIN32_FIND_DATAW) dir->find_file_data)->cFileName));
 	if (base == NULL)
 		return NULL;
-	strcpy_len(result.d_name, base, sizeof(result.d_name));
+	strcpy_len(dir->result.d_name, base, sizeof(dir->result.d_name));
 	free(base);
-	result.d_namelen = (int) strlen(result.d_name);
+	dir->result.d_namelen = (int) strlen(dir->result.d_name);
 
-	return &result;
+	return &dir->result;
 }
 
 void
