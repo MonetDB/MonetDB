@@ -266,8 +266,10 @@ _dup_subaggr(sql_allocator *sa, sql_func *a, sql_subtype *member)
 			scale = member->scale;
 		}
 		/* same type as the input */
-		if (r->type->eclass == EC_ANY && member)
+		if (r->type->eclass == EC_ANY && member) {
 			r = member;
+			digits = member->digits;
+		}
 		if (!EC_SCALE(r->type->eclass))
 			scale = 0;
 		res = sql_create_subtype(sa, r->type, digits, scale);
@@ -955,14 +957,14 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		char *tpe = "varchar";
 		unsigned int digits = 0;
 		if (!EC_VARCHAR(lclass)) {
-				tpe = r->type->sqlname;
-				digits = (!l->digits)?0:r->digits;
+			tpe = r->type->sqlname;
+			digits = (!l->digits)?0:r->digits;
 		} else if (!EC_VARCHAR(rclass)) {
-				tpe = l->type->sqlname;
-				digits = (!r->digits)?0:l->digits;
+			tpe = l->type->sqlname;
+			digits = (!r->digits)?0:l->digits;
 		} else { /* both */
-				tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
-				digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
+			tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+			digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
 		}
 		sql_find_subtype(super, tpe, digits, 0);
 	/* case b blob */
@@ -976,30 +978,38 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 		char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
 		unsigned int digits = sql_max(l->digits, r->digits);
 		unsigned int scale = sql_max(l->scale, r->scale);
-		if (l->type->radix == 10 || r->type->radix == 10) {
-			digits = 0;
-			/* change to radix 10 */
-			if (l->type->radix == 2 && r->type->radix == 10) {
-				digits = bits2digits(l->type->digits);
-				digits = sql_max(r->digits, digits);
-				scale = r->scale;
-			} else if (l->type->radix == 10 && r->type->radix == 2) {
-				digits = bits2digits(r->type->digits);
-				digits = sql_max(l->digits, digits);
-				scale = l->scale;
+
+		if (l->type->radix == 10 && r->type->radix == 10) {
+			digits = scale + (sql_max(l->digits - l->scale, r->digits - r->scale));
+#ifdef HAVE_HGE
+			if (digits > 39) {
+				digits = 39;
+#else
+			if (digits > 19) {
+				digits = 19;
+#endif
+				scale = MIN(scale, digits - 1);
 			}
+		} else if (l->type->radix == 2 && r->type->radix == 10) { /* change to radix 10 */
+			digits = bits2digits(l->type->digits);
+			digits = sql_max(r->digits, digits);
+			scale = r->scale;
+		} else if (l->type->radix == 10 && r->type->radix == 2) { /* change to radix 10 */
+			digits = bits2digits(r->type->digits);
+			digits = sql_max(l->digits, digits);
+			scale = l->scale;
 		}
 		sql_find_subtype(super, tpe, digits, scale);
 	/* case d approximate numeric */
 	} else if (EC_APPNUM(lclass) || EC_APPNUM(rclass)) {
 		if (!EC_APPNUM(lclass)) {
-				*super = *r;
+			*super = *r;
 		} else if (!EC_APPNUM(rclass)) {
-				*super = *l;
+			*super = *l;
 		} else { /* both */
-				char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
-				unsigned int digits = sql_max(l->digits, r->digits); /* bits precision */
-				sql_find_subtype(super, tpe, digits, 0);
+			char *tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+			unsigned int digits = sql_max(l->digits, r->digits); /* bits precision */
+			sql_find_subtype(super, tpe, digits, 0);
 		}
 	/* now its getting serious, ie e any 'case e' datetime data type */
 	/* 'case f' interval types */
@@ -1064,8 +1074,19 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
 		/* for strings use the max of both */
-		digits = EC_VARCHAR(eclass) ? sql_max(idigits, rdigits) :
-				 sql_max(idigits - i->scale, rdigits - r->scale);
+		if (eclass == EC_CHAR) {
+			if (i->type->eclass == EC_NUM)
+				idigits++; /* add '-' */
+			else if (i->type->eclass == EC_DEC || i->type->eclass == EC_FLT)
+				idigits+=2; /* add '-' and '.' TODO for floating-points maybe more is needed */
+			if (r->type->eclass == EC_NUM)
+				rdigits++;
+			else if (r->type->eclass == EC_DEC || r->type->eclass == EC_FLT)
+				rdigits+=2;
+			digits = sql_max(idigits, rdigits);
+		} else {
+			digits = sql_max(idigits - i->scale, rdigits - r->scale);
+		}
 		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
 	}
 	*super = lsuper;

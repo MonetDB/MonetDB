@@ -51,10 +51,10 @@ WHERE ctr1.ctr_total_return >
 statement error
 SELECT i FROM integers i1 WHERE (SELECT CASE WHEN i1.i IS NULL THEN (SELECT FALSE FROM integers i2) ELSE TRUE END)
 
-query I rowsort
+query T rowsort
 SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2))) FROM another_t
 ----
-0
+False
 
 statement error
 SELECT 1 IN (col4, MIN(col2)) FROM another_t
@@ -62,10 +62,10 @@ SELECT 1 IN (col4, MIN(col2)) FROM another_t
 statement error
 SELECT (SELECT col1) IN ('not a number') FROM another_t
 
-query I rowsort
+query T rowsort
 SELECT (SELECT (SELECT SUM(col1)) IN (MAX(col2), '12')) FROM another_t
 ----
-0
+False
 
 query I rowsort
 SELECT CASE WHEN ColID IS NULL THEN CAST(Product_Category AS INT) ELSE TotalSales END FROM tbl_ProductSales
@@ -186,10 +186,10 @@ SELECT (SELECT t2.col2 FROM another_t t2 WHERE t2.col1 BETWEEN t2.col1 AND t1.co
 statement error
 SELECT 1 > (SELECT 2 FROM integers)
 
-query I rowsort
+query T rowsort
 SELECT (SELECT 1) > ANY(SELECT 1)
 ----
-0
+False
 
 statement ok
 CREATE FUNCTION debugme() RETURNS INT
@@ -205,20 +205,20 @@ SELECT debugme()
 statement ok
 DROP FUNCTION debugme
 
-query III rowsort
+query TTT rowsort
 SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers
 ----
-1
-0
-NULL
-1
-0
-NULL
-1
-0
 NULL
 NULL
 NULL
+True
+False
+NULL
+True
+False
+NULL
+True
+False
 NULL
 
 query I rowsort
@@ -423,61 +423,61 @@ select (select sum(i2.i) in (select sum(i1.i + i2.i)) from integers i2 group by 
 statement error
 select (select sum(i1.i + i2.i) in (select sum(i1.i + i2.i)) from integers i2 group by i2.i) from integers i1 group by i1.i
 
-query I rowsort
+query T rowsort
 select (select sum(i1.i + i2.i) in (select sum(i1.i + i2.i)) from integers i2) from integers i1
 ----
-1
-1
-1
 NULL
+True
+True
+True
 
-query I rowsort
+query T rowsort
 select (select sum(i1.i + i2.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1
 ----
-0
-0
-0
+False
+False
+False
 NULL
 
 statement error
 select (select sum(i1.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1
 
-query I rowsort
+query T rowsort
 select (select sum(i2.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1
 ----
-0
-0
-0
+False
+False
+False
 NULL
 
-query I rowsort
+query T rowsort
 select (select sum(i1.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1 group by i1.i
 ----
-0
-0
-0
+False
+False
+False
 NULL
 
-query I rowsort
+query T rowsort
 select (select sum(i1.i) < (select sum(sum(i1.i) + i2.i)) from integers i2) from integers i1
 ----
-1
+True
 
-query I rowsort
+query T rowsort
 select (select exists (select sum(i1.i + i2.i)) from integers i2) from integers i1
 ----
-1
-1
-1
-1
+True
+True
+True
+True
 
-query I rowsort
+query T rowsort
 select (select not exists (select sum(i1.i + i2.i)) from integers i2) from integers i1 group by i1.i
 ----
-0
-0
-0
-0
+False
+False
+False
+False
 
 statement ok
 DROP TABLE tbl_ProductSales
@@ -487,4 +487,5 @@ DROP TABLE another_T
 
 statement ok
 DROP TABLE integers
+
 

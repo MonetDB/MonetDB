@@ -23,7 +23,7 @@ from sys.tables t join sys.columns c on c.table_id = t.id where t.name = 'dummy6
 dummy6
 key
 varchar
-0
+32
 dummy6
 val4
 int
@@ -43,7 +43,7 @@ from sys.tables t join sys.columns c on c.table_id = t.id where t.name = 'dummy7
 dummy7
 key
 varchar
-0
+32
 dummy7
 val4
 int
