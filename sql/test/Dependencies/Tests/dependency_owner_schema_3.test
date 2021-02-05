@@ -190,7 +190,7 @@ SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sy
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-357 values hashing to 443639bbb626f6beccc4d57730d3beb9
+351 values hashing to 0357ee3f8bc7b05468e46a56d104a4e9
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -324,5 +324,4 @@ SELECT f.name, tri.name, 'DEP_TRIGGER' from sys.functions as f, sys.objects as t
 query TTT rowsort
 SELECT k.name, fk.name, 'DEP_FKEY' from sys.keys as k, sys.keys as fk where fk.rkey = k.id order by k.name, fk.name
 ----
-
 
