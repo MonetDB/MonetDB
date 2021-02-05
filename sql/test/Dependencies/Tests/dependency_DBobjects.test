@@ -298,7 +298,7 @@ DEP_INDEX
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-372 values hashing to 78fd640e374ca620ee5f10465e0caf4a
+366 values hashing to cccf8f0385098793ac0698438837609a
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -510,5 +510,4 @@ DROP TABLE t1
 
 statement ok
 DROP TABLE t3
-
 
