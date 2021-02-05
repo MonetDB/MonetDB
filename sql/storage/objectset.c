@@ -24,7 +24,7 @@ struct versionhead ;
 
 typedef struct objectversion {
 	ulng ts;
-	bte state;
+	ATOMIC_TYPE state;
 	sql_base *b; // base of underlying sql object
 	struct objectset* os;
 	struct objectversion	*name_based_older;
@@ -312,14 +312,12 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 }
 
 static bte os_atmc_get_state(objectversion *ov) {
-	// ATOMIC GET
-	bte state = ov->state;
+	bte state = (bte) ATOMIC_GET(&ov->state);
 	return state;
 }
 
 static void os_atmc_set_state(objectversion *ov, bte state) {
-	// ATOMIC SET
-	ov->state = state;
+	ATOMIC_SET(&ov->state, state);
 }
 
 static void
@@ -387,9 +385,8 @@ os_rollback(objectversion *ov, sqlstore *store)
 static inline void
 try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 {
-	//TODO ATOMIC CAS
-	if (ov->state == deleted) {
-		ov->state = under_destruction;
+	ATOMIC_BASE_TYPE expected_deleted = deleted;
+	if (ATOMIC_CAS(&ov->state, &expected_deleted, under_destruction)) {
 
 		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) { // TODO: This gives race conditions with os_rollback.
 			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
@@ -407,7 +404,6 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 
 		ov->ts = store_get_timestamp(store)+1;
 	}
-	//END ATOMIC CAS
 }
 
 static void
@@ -717,18 +713,14 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
 			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
-			//TODO ATOMIC CAS
-			if (oo->state == deleted) {
-				oo->state = under_resurrection;
-			}
-			else {
+			ATOMIC_BASE_TYPE expected_deleted = deleted;
+			if (!ATOMIC_CAS(&oo->state, &expected_deleted, under_destruction)) {
 				return -1; /*conflict with cleaner or write-write conflict*/
 			}
-			// END ATOMIC CAS
 		}
 
 		/* new object with same name within transaction, should have a delete in between */
-		assert(!(state == active && oo->ts == ov->ts && !(ov->state & deleted)));
+		assert(!(state == active && oo->ts == ov->ts && !(os_atmc_get_state(ov) & deleted)));
 
 		MT_lock_set(&os->ht_lock);
 		ov->name_based_head = oo->name_based_head;
@@ -767,22 +759,17 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 
 		assert(ov != oo); // Time loops are not allowed
 
-		//TODO ATOMIC GET
-		bte state = oo->state;
+		bte state = os_atmc_get_state(oo);
 		if (state != active) {
 			// This can only happen if the parent oo was a comitted deleted at some point.
 			assert(state == deleted || state == under_destruction || state == under_resurrection);
 			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
 			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
-			//TODO ATOMIC CAS
-			if (oo->state == deleted) {
-				oo->state = under_resurrection;
-			}
-			else {
+			ATOMIC_BASE_TYPE expected_deleted = deleted;
+			if (!ATOMIC_CAS(&oo->state, &expected_deleted, under_resurrection)) {
 				return -1; /*conflict with cleaner or write-write conflict*/
 			}
-			// END ATOMIC CAS
 		}
 
 		MT_lock_set(&os->ht_lock);
@@ -794,7 +781,6 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		if (oo) {
 			oo->id_based_newer = ov;
 			// if the parent was originally deleted, we restore it to that state.
-			oo->state = state;
 			os_atmc_set_state(oo, state);
 		}
 		MT_lock_unset(&os->ht_lock);
