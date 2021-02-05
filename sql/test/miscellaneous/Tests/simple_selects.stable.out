@@ -433,7 +433,7 @@ project (
 % .%2,	.%3 # table_name
 % %2,	%3 # name
 % char,	decimal # type
-% 4,	40 # length
+% 4,	6 # length
 [ "abcd",	12.30	]
 #start transaction;
 #create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end;
