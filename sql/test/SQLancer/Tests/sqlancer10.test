@@ -101,6 +101,21 @@ statement ok
 START TRANSACTION
 
 statement ok
+create view v3(vc0, vc1) as (values (0.67,NULL),(18.50, 3),(0.70, 6))
+
+statement ok
+create view v7(vc0) as (values (8505133838.114197),(NULL))
+
+statement error
+(select v3.vc0 from v3) intersect (select greatest('-1115800120', v7.vc0) from v7)
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE t1(c0 int)
 
 statement ok
