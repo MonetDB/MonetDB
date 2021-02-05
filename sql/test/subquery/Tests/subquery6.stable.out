@@ -318,13 +318,13 @@ stdout of test 'subquery6` in directory 'sql/test/subquery` itself:
 % .%4,	.%11,	.%16,	.%24,	.%32 # table_name
 % %4,	%11,	%16,	%24,	%32 # name
 % char,	char,	char,	char,	char # type
-% 0,	0,	3,	3,	3 # length
+% 3,	3,	3,	3,	3 # length
 [ NULL,	NULL,	"bug",	"oth",	"bug"	]
 #select lead('bug') over (), lead('bug', 1) over (), lead('bug', 0) over (), lead('bug', 1, 'oth') over (), lead('bug', 0, 'oth') over (), max(TotalSales) from tbl_ProductSales;
 % .%4,	.%11,	.%16,	.%24,	.%32,	sys.%33 # table_name
 % %4,	%11,	%16,	%24,	%32,	%33 # name
 % char,	char,	char,	char,	char,	int # type
-% 0,	0,	3,	3,	3,	3 # length
+% 3,	3,	3,	3,	3,	3 # length
 [ NULL,	NULL,	"bug",	"oth",	"bug",	500	]
 #select (select sum(i1.i + i2.i) in (select sum(i1.i + i2.i)) from integers i2) from integers i1;
 % .%4 # table_name

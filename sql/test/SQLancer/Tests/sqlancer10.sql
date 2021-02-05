@@ -53,6 +53,12 @@ select 1 from v6, v2 join (values (0.54), (3), (0)) as sub0 on true where (v2.vc
 ROLLBACK;
 
 START TRANSACTION;
+create view v3(vc0, vc1) as (values (0.67,NULL),(18.50, 3),(0.70, 6));
+create view v7(vc0) as (values (8505133838.114197),(NULL));
+(select v3.vc0 from v3) intersect (select greatest('-1115800120', v7.vc0) from v7);
+ROLLBACK;
+
+START TRANSACTION;
 CREATE TABLE t1(c0 int);
 CREATE VIEW v4(vc0) AS ((SELECT NULL FROM t1 AS l0t1) UNION ALL (SELECT true));
 INSERT INTO t1(c0) VALUES(12), (2), (6), (3), (1321), (10), (8), (1), (2), (3), (9);

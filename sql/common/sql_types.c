@@ -569,7 +569,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 					} else if (r->scale)
 						scale = r->scale;
 				}
-				if (member && f->fix_scale == INOUT)
+				if (member && (f->fix_scale == INOUT || r->type->eclass == EC_ANY))
 					digits = member->digits;
 				if (IS_ANALYTIC(f) && mscale)
 					scale = mscale;
