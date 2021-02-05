@@ -48,6 +48,8 @@ static int tc_gc_col( sql_store Store, sql_change *c, ulng commit_ts, ulng oldes
 static int tc_gc_idx( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
 static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
 
+static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
+
 /* used for communication between {append,update}_prepare and {append,update}_execute */
 struct prep_exec_cookie {
 	sql_delta *delta;
@@ -68,8 +70,6 @@ make_cookie(sql_allocator *sa, sql_delta *delta, bool is_new)
 	cookie->is_new = is_new;
 	return cookie;
 }
-
-static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 
 static sql_delta *
 temp_dup_delta(ulng tid, int type)
@@ -741,6 +741,34 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 	return dup_delta( tr, obat, bat, type, c_isnew, isTempTable(t), t->sz);
 }
 
+static int
+destroy_delta(sql_delta *b)
+{
+	int ok = LOG_OK;
+
+	if (--b->refcnt > 0)
+		return LOG_OK;
+	if (b->next)
+		ok = destroy_delta(b->next);
+	if (b->name)
+		_DELETE(b->name);
+	if (b->ibid)
+		temp_destroy(b->ibid);
+	if (b->uibid)
+		temp_destroy(b->uibid);
+	if (b->uvbid)
+		temp_destroy(b->uvbid);
+	if (b->bid)
+		temp_destroy(b->bid);
+	if (b->cached)
+		bat_destroy(b->cached);
+	b->bid = b->ibid = b->uibid = b->uvbid = 0;
+	b->name = NULL;
+	b->cached = NULL;
+	_DELETE(b);
+	return ok;
+}
+
 static sql_delta *
 bind_col_data(sql_trans *tr, sql_column *c)
 {
@@ -763,9 +791,13 @@ bind_col_data(sql_trans *tr, sql_column *c)
 	if(dup_bat(tr, c->t, obat, bat, c->type.type->localtype, isNew(c)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
-	do {
-		bat->next = obat;
-	} while(!ATOMIC_PTR_CAS(&c->data, &bat->next, bat));
+	/* only one writer else abort */
+	bat->next = obat;
+	if (!ATOMIC_PTR_CAS(&c->data, &bat->next, bat)) {
+		bat->next = NULL;
+		destroy_delta(bat);
+		return NULL;
+	}
 	return bat;
 }
 
@@ -833,9 +865,13 @@ bind_idx_data(sql_trans *tr, sql_idx *i)
 	if(dup_bat(tr, i->t, obat, bat, (oid_index(i->type))?TYPE_oid:TYPE_lng, isNew(i)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
-	do {
-		bat->next = obat;
-	} while(!ATOMIC_PTR_CAS(&i->data, &bat->next, bat));
+	/* only one writer else abort */
+	bat->next = obat;
+	if (!ATOMIC_PTR_CAS(&i->data, &bat->next, bat)) {
+		bat->next = NULL;
+		destroy_delta(bat);
+		return NULL;
+	}
 	return bat;
 }
 
@@ -1162,9 +1198,13 @@ bind_del_data(sql_trans *tr, sql_table *t)
 	bat->refcnt = 1;
 	dup_dbat(tr, obat, bat, isNew(t), isTempTable(t));
 	bat->ts = tr->tid;
-	do {
-		bat->next = obat;
-	} while(!ATOMIC_PTR_CAS(&t->data, &bat->next, bat));
+	/* only one writer else abort */
+	bat->next = obat;
+	if (!ATOMIC_PTR_CAS(&t->data, &bat->next, bat)) {
+		bat->next = NULL;
+		destroy_dbat(bat);
+		return NULL;
+	}
 	return bat;
 }
 
@@ -1972,34 +2012,6 @@ log_destroy_delta(sql_trans *tr, sql_delta *b, char tpe, oid id)
 		ok = logger_del_bat(store->logger, bid);
 	}
 	return ok == GDK_SUCCEED ? LOG_OK : LOG_ERR;
-}
-
-static int
-destroy_delta(sql_delta *b)
-{
-	int ok = LOG_OK;
-
-	if (--b->refcnt > 0)
-		return LOG_OK;
-	if (b->next)
-		ok = destroy_delta(b->next);
-	if (b->name)
-		_DELETE(b->name);
-	if (b->ibid)
-		temp_destroy(b->ibid);
-	if (b->uibid)
-		temp_destroy(b->uibid);
-	if (b->uvbid)
-		temp_destroy(b->uvbid);
-	if (b->bid)
-		temp_destroy(b->bid);
-	if (b->cached)
-		bat_destroy(b->cached);
-	b->bid = b->ibid = b->uibid = b->uvbid = 0;
-	b->name = NULL;
-	b->cached = NULL;
-	_DELETE(b);
-	return ok;
 }
 
 static int
