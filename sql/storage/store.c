@@ -165,7 +165,7 @@ idx_destroy(sqlstore *store, sql_idx * i)
 	list_destroy2(i->columns, store);
 	i->columns = NULL;
 
-	if (i->data)
+	if (ATOMIC_PTR_GET(&i->data))
 		store->storage_api.destroy_idx(store, i);
 	_DELETE(i->base.name);
 	_DELETE(i);
@@ -196,7 +196,7 @@ column_destroy(sqlstore *store, sql_column *c)
 	assert(c->base.refcnt > 0);
 	if (--(c->base.refcnt) > 0)
 		return;
-	if (c->data)
+	if (ATOMIC_PTR_GET(&c->data))
 		store->storage_api.destroy_col(store, c);
 	_DELETE(c->min);
 	_DELETE(c->max);
@@ -2816,7 +2816,7 @@ column_dup(sql_trans *tr, sql_column *oc, sql_table *t)
 			if (store->storage_api.create_col(tr, c) != LOG_OK)
 				return NULL;
 		} else {
-			c->data = store->storage_api.col_dup(oc);
+			ATOMIC_PTR_SET(&c->data, store->storage_api.col_dup(oc));
 		}
 	}
 	return c;
@@ -2908,7 +2908,7 @@ idx_dup(sql_trans *tr, sql_idx * i, sql_table *t)
 			if (store->storage_api.create_idx(tr, ni) != LOG_OK)
 				return NULL;
 		} else {
-			ni->data = store->storage_api.idx_dup(i);
+			ATOMIC_PTR_SET(&ni->data, store->storage_api.idx_dup(i));
 		}
 	}
 
@@ -3065,7 +3065,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 				return NULL;
 			}
 		} else {
-			t->data = store->storage_api.del_dup(ot);
+			ATOMIC_PTR_SET(&t->data, store->storage_api.del_dup(ot));
 		}
 	}
 	return t;

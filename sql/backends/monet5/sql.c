@@ -1359,7 +1359,7 @@ mvc_insert_delta_values(mvc *m, BAT *col1, BAT *col2, BAT *col3, BAT *col4, BAT 
 	}
 	/* compute level using global transaction */
 	if (c) {
-			for(sql_delta *d = c->data; d; d = d->next)
+			for(sql_delta *d = ATOMIC_PTR_GET(&c->data); d; d = d->next)
 				level++;
 	}
 	if (BUNappend(col7, &level, false) != GDK_SUCCEED) {
@@ -3823,7 +3823,7 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == NULL)
 		throw(SQL,"sql.rowid", SQLSTATE(HY005) "Cannot access column descriptor");
 	/* UGH (move into storage backends!!) */
-	d = c->data;
+	d = ATOMIC_PTR_GET(&c->data);
 	*rid = d->ibase + BATcount(b);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;

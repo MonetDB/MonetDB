@@ -43,8 +43,7 @@ delta_cands(sql_trans *tr, sql_table *t)
 	sql_dbat *d;
 	BAT *tids;
 
-	assert(t->data);
-	d = t->data;
+	d = ATOMIC_PTR_GET(&t->data);
 	if (!store->initialized && d->cached)
 		return temp_descriptor(d->cached->batCacheid);
 	tids = _delta_cands(tr, t);
@@ -133,14 +132,13 @@ delta_full_bat( sql_trans *tr, sql_column *c, sql_delta *bat, int is_new)
 static BAT *
 full_column(sql_trans *tr, sql_column *c)
 {
-	assert(c->data);
 	return delta_full_bat(tr, c, col_timestamp_delta(tr, c), isNew(c->t));
 }
 
 static void
 full_destroy(sql_column *c, BAT *b)
 {
-	sql_delta *d = c->data;
+	sql_delta *d = ATOMIC_PTR_GET(&c->data);
 	assert(d);
 	if (d->cached != b)
 		bat_destroy(b);
