@@ -11,6 +11,8 @@
 #include "bat_utils.h"
 #include "sql_string.h"
 #include "gdk_atoms.h"
+#include "gdk_atoms.h"
+#include "matomic.h"
 
 /*
  * The sql data is stored using 2 structure
@@ -96,17 +98,6 @@ temp_delta(sql_delta *d, ulng tid)
 	return d;
 }
 
-static sql_delta *
-get_delta(sql_delta *d, ulng tid, int type, int is_temp)
-{
-	if (is_temp) {
-		d = temp_delta(d, tid);
-		if (!d)
-			return temp_dup_delta(tid, type);
-	}
-	return d;
-}
-
 static sql_dbat *
 temp_dup_dbat(ulng tid)
 {
@@ -129,85 +120,87 @@ temp_dbat(sql_dbat *d, ulng tid)
 	return d;
 }
 
-static sql_dbat *
-get_dbat(sql_dbat *d, ulng tid, int is_temp)
+static sql_delta *
+timestamp_delta( sql_trans *tr, sql_delta *d)
 {
-	if (is_temp) {
-		d = temp_dbat(d, tid);
-		if (!d)
-			return temp_dup_dbat(tid);
-	}
+	while (d->next && d->ts != tr->tid && (!tr->parent || !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
+		d = d->next;
 	return d;
 }
 
 static sql_delta *
-timestamp_delta( sql_trans *tr, sql_delta *d, int type, int is_temp)
+temp_col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
-	assert(!is_temp);
-	if (is_temp)
-		return get_delta(d, tr->tid, type, is_temp);
-	while (d->next && d->ts != tr->tid && (!tr->parent || !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
-		d = d->next;
+	assert(isTempTable(c->t));
+	sql_delta *d = temp_delta(c->data, tr->tid);
+	if (!d) {
+		d = temp_dup_delta(tr->tid, c->type.type->localtype);
+		do {
+			d->next = c->data;
+		} while(!ATOMIC_PTR_CAS(&c->data, &d->next, d)); /* set c->data = d, when c->data == d->next else d->next = c->data */
+	}
 	return d;
 }
 
 sql_delta *
 col_timestamp_delta( sql_trans *tr, sql_column *c)
 {
-	int is_temp = isTempTable(c->t);
-	if (is_temp) {
-		sql_delta *d = temp_delta(c->data, tr->tid);
-		if (!d) {
-			d = temp_dup_delta(tr->tid, c->type.type->localtype);
-			d->next = c->data;
-			c->data = d;
-		}
-		return d;
+	if (isTempTable(c->t))
+		return temp_col_timestamp_delta(tr, c);
+	return timestamp_delta( tr, c->data);
+}
+
+static sql_delta *
+temp_idx_timestamp_delta( sql_trans *tr, sql_idx *i)
+{
+	assert(isTempTable(i->t));
+	sql_delta *d = temp_delta(i->data, tr->tid);
+	if (!d) {
+		int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
+		d = temp_dup_delta(tr->tid, type);
+		do {
+			d->next = i->data;
+		} while(!ATOMIC_PTR_CAS(&i->data, &d->next, d)); /* set i->data = d, when i->data == d->next else d->next = i->data */
 	}
-	return timestamp_delta( tr, c->data, c->type.type->localtype, is_temp);
+	return d;
 }
 
 static sql_delta *
 idx_timestamp_delta( sql_trans *tr, sql_idx *i)
 {
-	int type = oid_index(i->type)?TYPE_oid:TYPE_lng;
-	int is_temp = isTempTable(i->t);
-	if (is_temp) {
-		sql_delta *d = temp_delta(i->data, tr->tid);
-		if (!d) {
-			d = temp_dup_delta(tr->tid, type);
-			d->next = i->data;
-			i->data = d;
-		}
-		return d;
-	}
-	return timestamp_delta( tr, i->data, type, is_temp);
+	if (isTempTable(i->t))
+		return temp_idx_timestamp_delta(tr, i);
+	return timestamp_delta( tr, i->data);
 }
 
 static sql_dbat *
-timestamp_dbat( sql_trans *tr, sql_dbat *d, int is_temp)
+timestamp_dbat( sql_trans *tr, sql_dbat *d)
 {
-	if (is_temp)
-		return get_dbat(d, tr->tid, is_temp);
 	while (d->next && d->ts != tr->tid && (!tr->parent || !tr_version_of_parent(tr, d->ts)) && d->ts > tr->ts)
 		d = d->next;
 	return d;
 }
 
 static sql_dbat *
+temp_tab_timestamp_dbat( sql_trans *tr, sql_table *t)
+{
+	assert(isTempTable(t));
+	sql_dbat *d = temp_dbat(t->data, tr->tid);
+	if (!d) {
+		d = temp_dup_dbat(tr->tid);
+		do {
+			d->next = t->data;
+		} while(!ATOMIC_PTR_CAS(&t->data, &d->next, d)); /* set t->data = d, when t->data == d->next else d->next = t->data */
+	}
+	return d;
+}
+
+static sql_dbat *
 tab_timestamp_dbat( sql_trans *tr, sql_table *t)
 {
-	int is_temp = isTempTable(t);
-	if (is_temp) {
-		sql_dbat *d = temp_dbat(t->data, tr->tid);
-		if (!d) {
-			d = temp_dup_dbat(tr->tid);
-			d->next = t->data;
-			t->data = d;
-		}
-		return d;
-	}
-	return timestamp_dbat( tr, t->data, is_temp);
+	if (isTempTable(t))
+		return temp_tab_timestamp_dbat(tr, t);
+	return timestamp_dbat( tr, t->data);
 }
 
 static sql_delta*
@@ -751,28 +744,28 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type, 
 static sql_delta *
 bind_col_data(sql_trans *tr, sql_column *c)
 {
-	int type = c->type.type->localtype;
-	sql_delta *obat = get_delta(c->data, tr->tid, type, isTempTable(c->t));
+	sql_delta *obat = c->data;
 
-	if (obat && obat != c->data) {
-		obat->next = c->data;
-		c->data = obat;
-	}
+	if (isTempTable(c->t))
+		obat = temp_col_timestamp_delta(tr, c);
+
 	if (obat->ts == tr->tid)
 		return obat;
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(c->t))
 		/* abort */
 		return NULL;
-	obat = timestamp_delta(tr, c->data, type, isTempTable(c->t));
+	assert(!isTempTable(c->t));
+	obat = timestamp_delta(tr, c->data);
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
 	bat->refcnt = 1;
-	if(dup_bat(tr, c->t, obat, bat, type, isNew(c)) == LOG_ERR)
+	if(dup_bat(tr, c->t, obat, bat, c->type.type->localtype, isNew(c)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
-	bat->next = obat;
-	c->data = bat;
+	do {
+		bat->next = obat;
+	} while(!ATOMIC_PTR_CAS(&c->data, &bat->next, bat));
 	return bat;
 }
 
@@ -821,29 +814,28 @@ update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 static sql_delta *
 bind_idx_data(sql_trans *tr, sql_idx *i)
 {
-	int type = (oid_index(i->type))?TYPE_oid:TYPE_lng;
-	sql_delta *obat = get_delta(i->data, tr->tid, type, isTempTable(i->t));
+	sql_delta *obat = i->data;
 
-	if (obat && obat != i->data) {
-		obat->next = i->data;
-		i->data = obat;
-	}
+	if (isTempTable(i->t))
+		obat = temp_idx_timestamp_delta(tr, i);
+
 	if (obat->ts == tr->tid)
 		return obat;
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(i->t))
 		/* abort */
 		return NULL;
-
-	obat = timestamp_delta(tr, i->data, type, isTempTable(i->t));
+	assert(!isTempTable(i->t));
+	obat = timestamp_delta(tr, i->data);
 	sql_delta* bat = ZNEW(sql_delta);
 	if(!bat)
 		return NULL;
 	bat->refcnt = 1;
-	if(dup_bat(tr, i->t, obat, bat, type, isNew(i)) == LOG_ERR)
+	if(dup_bat(tr, i->t, obat, bat, (oid_index(i->type))?TYPE_oid:TYPE_lng, isNew(i)) == LOG_ERR)
 		return NULL;
 	bat->ts = tr->tid;
-	bat->next = obat;
-	i->data = bat;
+	do {
+		bat->next = obat;
+	} while(!ATOMIC_PTR_CAS(&i->data, &bat->next, bat));
 	return bat;
 }
 
@@ -1152,27 +1144,27 @@ destroy_dbat(sql_dbat *bat)
 static sql_dbat *
 bind_del_data(sql_trans *tr, sql_table *t)
 {
-	sql_dbat *obat = get_dbat(t->data, tr->tid, isTempTable(t));
+	sql_dbat *obat = t->data;
 
-	if (obat && obat != t->data) {
-		obat->next = t->data;
-		t->data = obat;
-	}
+	if (isTempTable(t))
+		obat = temp_tab_timestamp_dbat(tr, t);
 
 	if (obat->ts == tr->tid)
 		return obat;
 	if ((!tr->parent || !tr_version_of_parent(tr, obat->ts)) && obat->ts >= TRANSACTION_ID_BASE && !isTempTable(t))
 		/* abort */
 		return NULL;
-	obat = timestamp_dbat(tr, t->data, isTempTable(t));
+	assert(!isTempTable(t));
+	obat = timestamp_dbat(tr, t->data);
 	sql_dbat *bat = ZNEW(sql_dbat);
 	if(!bat)
 		return NULL;
 	bat->refcnt = 1;
 	dup_dbat(tr, obat, bat, isNew(t), isTempTable(t));
 	bat->ts = tr->tid;
-	bat->next = obat;
-	t->data = bat;
+	do {
+		bat->next = obat;
+	} while(!ATOMIC_PTR_CAS(&t->data, &bat->next, bat));
 	return bat;
 }
 
