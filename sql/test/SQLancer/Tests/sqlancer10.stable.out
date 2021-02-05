@@ -66,6 +66,26 @@ stdout of test 'sqlancer10` in directory 'sql/test/SQLancer` itself:
 % tinyint # type
 % 1 # length
 #ROLLBACK;
+#START TRANSACTION;
+#create view v3(vc0, vc1) as (values (0.67,NULL),(18.50, 3),(0.70, 6));
+#create view v7(vc0) as (values (8505133838.114197),(NULL));
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE t1(c0 int);
+#CREATE VIEW v4(vc0) AS ((SELECT NULL FROM t1 AS l0t1) UNION ALL (SELECT true));
+#INSERT INTO t1(c0) VALUES(12), (2), (6), (3), (1321), (10), (8), (1), (2), (3), (9);
+[ 11	]
+#DELETE FROM t1 WHERE true;
+[ 11	]
+#INSERT INTO t1(c0) VALUES(9), (1), (3), (2), (5);
+[ 5	]
+#SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.vc0 AND v4.vc0);
+% .%13 # table_name
+% %13 # name
+% tinyint # type
+% 1 # length
+[ 1	]
+#ROLLBACK;
 
 # 13:59:46 >  
 # 13:59:46 >  "Done."

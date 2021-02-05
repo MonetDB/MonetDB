@@ -302,8 +302,19 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
 		/* for strings use the max of both */
-		digits = EC_VARCHAR(eclass) ? sql_max(idigits, rdigits) :
-				 sql_max(idigits - i->scale, rdigits - r->scale);
+		if (eclass == EC_CHAR) {
+			if (i->type->eclass == EC_NUM)
+				idigits++; /* add '-' */
+			else if (i->type->eclass == EC_DEC || i->type->eclass == EC_FLT)
+				idigits+=2; /* add '-' and '.' TODO for floating-points maybe more is needed */
+			if (r->type->eclass == EC_NUM)
+				rdigits++;
+			else if (r->type->eclass == EC_DEC || r->type->eclass == EC_FLT)
+				rdigits+=2;
+			digits = sql_max(idigits, rdigits);
+		} else {
+			digits = sql_max(idigits - i->scale, rdigits - r->scale);
+		}
 		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
 	}
 	*super = lsuper;
