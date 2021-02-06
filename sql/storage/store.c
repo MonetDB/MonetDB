@@ -3696,7 +3696,7 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 				case TABLE_DEPENDENCY:
 				case VIEW_DEPENDENCY: {
 										  sql_table *t = sql_trans_find_table(tr, dep_id);
-										  if (sql_trans_drop_table_id(tr, t->s, dep_id, DROP_CASCADE))
+										  if (t && sql_trans_drop_table_id(tr, t->s, dep_id, DROP_CASCADE))
 												return DEPENDENCY_CHECK_ERROR;
 									  } break;
 				case COLUMN_DEPENDENCY: {
@@ -3708,20 +3708,20 @@ sql_trans_drop_all_dependencies(sql_trans *tr, sqlid id, sql_dependency type)
 										} break;
 				case TRIGGER_DEPENDENCY: {
 										  sql_trigger *t = sql_trans_find_trigger(tr, dep_id);
-										  if (!list_find_id(tr->dropped, t->t->base.id) && /* table not jet dropped */
+										  if (t && !list_find_id(tr->dropped, t->t->base.id) && /* table not jet dropped */
 											  sql_trans_drop_trigger(tr, t->t->s, dep_id, DROP_CASCADE))
 												return DEPENDENCY_CHECK_ERROR;
 										 } break;
 				case KEY_DEPENDENCY:
 				case FKEY_DEPENDENCY: {
 										  sql_key *k = sql_trans_find_key(tr, dep_id);
-										  if (!list_find_id(tr->dropped, k->t->base.id) && /* table not jet dropped */
+										  if (k && !list_find_id(tr->dropped, k->t->base.id) && /* table not jet dropped */
 										      sql_trans_drop_key(tr, k->t->s, dep_id, DROP_CASCADE))
 												return DEPENDENCY_CHECK_ERROR;
 									  } break;
 				case INDEX_DEPENDENCY: {
 										  sql_idx *i = sql_trans_find_idx(tr, dep_id);
-										  if (!list_find_id(tr->dropped, i->t->base.id) && /* table not jet dropped */
+										  if (i && !list_find_id(tr->dropped, i->t->base.id) && /* table not jet dropped */
 										      sql_trans_drop_idx(tr, i->t->s, dep_id, DROP_CASCADE))
 												return DEPENDENCY_CHECK_ERROR;
 									   } break;
@@ -3888,34 +3888,6 @@ sys_drop_tc(sql_trans *tr, sql_trigger * i, sql_kc *kc)
 }
 
 static int
-sys_drop_trigger(sql_trans *tr, sql_trigger * i)
-{
-	sqlstore *store = tr->store;
-	node *n;
-	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
-	sql_table *systrigger = find_sql_table(tr, syss, "triggers");
-	oid rid = store->table_api.column_find_row(tr, find_sql_column(systrigger, "id"), &i->base.id, NULL);
-
-	if (is_oid_nil(rid))
-		return -1;
-	if (store->table_api.table_delete(tr, systrigger, rid))
-		return -2;
-
-	for (n = i->columns->h; n; n = n->next) {
-		sql_kc *tc = n->data;
-
-		if (sys_drop_tc(tr, i, tc))
-			return -3;
-	}
-	/* remove trigger from schema */
-	if (isGlobal(i->t))
-		if (os_del(i->t->s->triggers, tr, i->base.name, dup_base(&i->base)))
-			return -4;
-	sql_trans_drop_dependencies(tr, i->base.id);
-	return 0;
-}
-
-static int
 sys_drop_sequence(sql_trans *tr, sql_sequence * seq, int drop_action)
 {
 	sqlstore *store = tr->store;
@@ -4005,6 +3977,34 @@ sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id)
 }
 
 static int
+sys_drop_trigger(sql_trans *tr, sql_trigger * i)
+{
+	sqlstore *store = tr->store;
+	node *n;
+	sql_schema *syss = find_sql_schema(tr, isGlobal(i->t)?"sys":"tmp");
+	sql_table *systrigger = find_sql_table(tr, syss, "triggers");
+	oid rid = store->table_api.column_find_row(tr, find_sql_column(systrigger, "id"), &i->base.id, NULL);
+
+	if (is_oid_nil(rid))
+		return -1;
+	if (store->table_api.table_delete(tr, systrigger, rid))
+		return -2;
+
+	for (n = i->columns->h; n; n = n->next) {
+		sql_kc *tc = n->data;
+
+		if (sys_drop_tc(tr, i, tc))
+			return -3;
+	}
+	/* remove trigger from schema */
+	if (isGlobal(i->t))
+		if (os_del(i->t->s->triggers, tr, i->base.name, dup_base(&i->base)))
+			return -4;
+	sql_trans_drop_dependencies(tr, i->base.id);
+	return 0;
+}
+
+static int
 sys_drop_column(sql_trans *tr, sql_column *col, int drop_action)
 {
 	sqlstore *store = tr->store;
@@ -4059,6 +4059,21 @@ sys_drop_idxs(sql_trans *tr, sql_table *t, int drop_action)
 			sql_idx *k = n->data;
 
 			if (sys_drop_idx(tr, k, drop_action))
+				return -1;
+		}
+	return 0;
+}
+
+static int
+sys_drop_triggers(sql_trans *tr, sql_table *t)
+{
+	node *n;
+
+	if (cs_size(&t->triggers))
+		for (n = t->triggers.set->h; n; n = n->next) {
+			sql_trigger *i = n->data;
+
+			if (sys_drop_trigger(tr, i))
 				return -1;
 		}
 	return 0;
@@ -4163,6 +4178,8 @@ sys_drop_table(sql_trans *tr, sql_table *t, int drop_action)
 	if (sys_drop_keys(tr, t, drop_action))
 		return -3;
 	if (sys_drop_idxs(tr, t, drop_action))
+		return -4;
+	if (sys_drop_triggers(tr, t))
 		return -4;
 
 	if (partition_find_part(tr, t, NULL))
@@ -6126,7 +6143,8 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		list_append(tr->dropped, local_id);
 	}
 
-	sys_drop_trigger(tr, i);
+	if (sys_drop_trigger(tr, i))
+		return -1;
 	node *n = cs_find_name(&i->t->triggers, i->base.name);
 	if (n)
 		cs_del(&i->t->triggers, store, n, i->base.flags);
