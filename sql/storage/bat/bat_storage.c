@@ -806,7 +806,7 @@ update_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
+	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	return make_cookie(sa, delta, isNew(c));
 }
@@ -880,7 +880,7 @@ update_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
+	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	return make_cookie(sa, delta, isNew(i));
 }
@@ -1026,7 +1026,7 @@ append_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
+	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	return make_cookie(sa, delta, false);
 }
@@ -1071,7 +1071,7 @@ append_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 		return NULL;
 
 	assert(delta && delta->ts == tr->tid);
-	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
+	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	return make_cookie(sa, delta, false);
 }
@@ -1229,7 +1229,7 @@ delete_tab(sql_trans *tr, sql_table * t, void *ib, int tpe)
 		ok = delta_delete_bat(bat, ib);
 	else
 		ok = delta_delete_val(bat, *(oid*)ib);
-	if ((!inTransaction(tr, t) && obat != bat && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && (obat != bat || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return ok;
 }
@@ -2200,7 +2200,7 @@ clear_col(sql_trans *tr, sql_column *c)
 
 	if ((delta = bind_col_data(tr, c)) == NULL)
 		return BUN_NONE;
-	if ((!inTransaction(tr, c->t) && odelta != delta && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
+	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	if (delta)
 		return clear_delta(tr, delta);
@@ -2216,7 +2216,7 @@ clear_idx(sql_trans *tr, sql_idx *i)
 		return 0;
 	if ((delta = bind_idx_data(tr, i)) == NULL)
 		return BUN_NONE;
-	if ((!inTransaction(tr, i->t) && odelta != delta && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
+	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	if (delta)
 		return clear_delta(tr, delta);
@@ -2256,7 +2256,7 @@ clear_del(sql_trans *tr, sql_table *t)
 
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
-	if ((!inTransaction(tr, t) && obat != bat && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && (obat != bat || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return clear_dbat(tr, bat);
 }

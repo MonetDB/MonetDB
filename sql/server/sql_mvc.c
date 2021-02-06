@@ -1306,7 +1306,7 @@ mvc_drop_table(mvc *m, sql_schema *s, sql_table *t, int drop_action)
 	}
 
 	if (sql_trans_drop_table(m->session->tr, s, t->base.name, drop_action ? DROP_CASCADE_START : DROP_RESTRICT))
-		throw(SQL, "sql.mvc_drop_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(SQL, "sql.mvc_drop_table", SQLSTATE(42000) "Transaction conflict while dropping table %s.%s", s->base.name, t->base.name);
 	return MAL_SUCCEED;
 }
 

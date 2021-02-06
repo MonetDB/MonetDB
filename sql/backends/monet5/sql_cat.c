@@ -429,7 +429,8 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	if (!(n = members_find_child_id(mt->members.set, pt->base.id)))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
-	sql_trans_del_table(sql->session->tr, mt, pt, drop_action);
+	if (sql_trans_del_table(sql->session->tr, mt, pt, drop_action))
+		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42000) "ALTER TABLE: transaction conflict detected");
 	return MAL_SUCCEED;
 }
 

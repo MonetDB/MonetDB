@@ -372,7 +372,7 @@ extern int sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table
 
 extern sql_table *sql_trans_rename_table(sql_trans *tr, sql_schema *s, sqlid id, const char *new_name);
 extern sql_table *sql_trans_set_table_schema(sql_trans *tr, sqlid id, sql_schema *os, sql_schema *ns);
-extern sql_table *sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action);
+extern int sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action);
 
 extern int sql_trans_drop_table(sql_trans *tr, sql_schema *s, const char *name, int drop_action);
 extern int sql_trans_drop_table_id(sql_trans *tr, sql_schema *s, sqlid id, int drop_action);
@@ -411,7 +411,7 @@ extern int sql_trans_create_role(sql_trans *tr, str auth, sqlid grantor);
 
 extern sql_sequence *create_sql_sequence(struct sqlstore *store, sql_allocator *sa, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle);
 extern sql_sequence * sql_trans_create_sequence(sql_trans *tr, sql_schema *s, const char *name, lng start, lng min, lng max, lng inc, lng cacheinc, bit cycle, bit bedropped);
-extern void sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
+extern int sql_trans_drop_sequence(sql_trans *tr, sql_schema *s, sql_sequence *seq, int drop_action);
 extern sql_sequence *sql_trans_alter_sequence(sql_trans *tr, sql_sequence *seq, lng min, lng max, lng inc, lng cache, bit cycle);
 extern sql_sequence *sql_trans_sequence_restart(sql_trans *tr, sql_sequence *seq, lng start);
 extern sql_sequence *sql_trans_seqbulk_restart(sql_trans *tr, seqbulk *sb, lng start);
@@ -452,9 +452,6 @@ extern sql_column *sql_trans_copy_column(sql_trans *tr, sql_table *t, sql_column
 extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
 extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri);
-
-extern void sql_trans_drop_any_comment(sql_trans *tr, sqlid id);
-extern void sql_trans_drop_obj_priv(sql_trans *tr, sqlid obj_id);
 
 #define inTransaction(tr,t) (isLocalTemp(t) || os_obj_intransaction(t->s->tables, tr, &t->base))
 #define TRANSACTION_ID_BASE	(1ULL<<63)
