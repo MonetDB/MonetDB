@@ -3270,6 +3270,8 @@ rewrite_values(visitor *v, sql_rel *rel)
 	if (rel_is_ref(rel)) { /* need extra project */
 		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
 		rel->exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
+		((sql_rel*)rel->l)->r = rel->r; /* propagate order by exps */
+		rel->r = NULL;
 		return rel;
 	}
 	sql_exp *e = rel->exps->h->data;

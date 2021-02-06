@@ -255,8 +255,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 #       floor(avg(aa) over (order by bb range between current row and unbounded following)),
 #       floor(avg(aa) over (partition by bb order by bb rows unbounded preceding)),
 #       floor(avg(aa) over (partition by bb order by bb range unbounded preceding)) from overflowme;
-% sys.%65,	sys.%66,	sys.%67,	sys.%70,	sys.%71,	sys.%72 # table_name
-% %65,	%66,	%67,	%70,	%71,	%72 # name
+% sys.%53,	sys.%54,	sys.%55,	sys.%56,	sys.%57,	sys.%60 # table_name
+% %53,	%54,	%55,	%56,	%57,	%60 # name
 % double,	double,	double,	double,	double,	double # type
 % 24,	24,	24,	24,	24,	24 # length
 [ 2147483645,	2147483645,	2147483645,	2147483645,	2147483644,	2147483645	]
@@ -282,8 +282,8 @@ stdout of test 'analytics03` in directory 'sql/test/analytics` itself:
 % .%12 # table_name
 % %12 # name
 % time # type
-% 15 # length
-[ 10:10:00.000000	]
+% 8 # length
+[ 10:10:00	]
 #drop table rowsvsrangevsgroups;
 
 # 17:06:35 >  

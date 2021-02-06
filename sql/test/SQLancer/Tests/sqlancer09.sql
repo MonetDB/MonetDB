@@ -184,7 +184,7 @@ NULL	1	0.07074437
 
 create view v2(vc0, vc1, vc2) as (values (((((+ (0.51506835))&(-2)))<<(scale_down(least(31552,
 0.3), cast(1500294098 as int)))),
-((- (((44257622)-(0.6))))>=(least(-15958291, -1534974396))), case - (sql_min(0.632858,
+((- (((44257622)-(0.6))))>=(least(-3, -4))), case - (sql_min(0.632858,
 0.3)) when ((((0.5)^(0.4)))+(((0.4)/(5))))
 then sql_max(cast(5293 as decimal), ((0.5)-
 (0.5))) end),(charindex(r'934079707', r'35305325'), not (false),
