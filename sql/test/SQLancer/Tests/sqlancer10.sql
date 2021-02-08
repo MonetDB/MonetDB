@@ -66,3 +66,6 @@ DELETE FROM t1 WHERE true;
 INSERT INTO t1(c0) VALUES(9), (1), (3), (2), (5);
 SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.vc0 AND v4.vc0);
 ROLLBACK;
+
+select case 3 <> any(select 4) when true then 2 when false then 8 end;
+	-- 2
