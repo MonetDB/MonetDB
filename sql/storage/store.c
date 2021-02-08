@@ -18,8 +18,8 @@
 #include "bat/bat_table.h"
 #include "bat/bat_logger.h"
 
-/* version 05.22.05 of catalog */
-#define CATALOG_VERSION 52205
+/* version 05.22.06 of catalog */
+#define CATALOG_VERSION 52206	/* first after Oct2020 */
 
 static int sys_drop_table(sql_trans *tr, sql_table *t, int drop_action);
 
