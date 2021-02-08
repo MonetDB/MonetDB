@@ -1150,7 +1150,12 @@ logger_readlog(logger *lg, char *filename, bool *filemissing)
 		return GDK_SUCCEED;
 	case 1:
 		/* if not empty, must start with correct byte order mark */
-		assert(byteorder == 1234);
+		if (byteorder != 1234) {
+			TRC_CRITICAL(GDK, "incorrect byte order word in file %s\n", filename);
+			logger_close(lg);
+			GDKdebug = dbg;
+			return GDK_FAIL;
+		}
 		break;
 	}
 	if ((fd = getFileNo(lg->log)) < 0 || fstat(fd, &sb) < 0) {
