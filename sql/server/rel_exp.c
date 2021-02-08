@@ -3040,21 +3040,30 @@ exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 	if (!e)
 		return 0;
 
-	assert(e->type == e_atom);
-	if (e->f) {
-		const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
-		if (next_rel && next_exp && !strcmp(next_rel, *relname) && !strcmp(next_exp, *expname))
-			for (node *n = ((list *) e->f)->h; n; n = n->next)
+	if (exp_is_rel(e)) {
+		/* Try to set parameters on the list of projections of the subquery. For now I won't go any further, ugh */
+		sql_rel *r = exp_rel_get_rel(sql->sa, e);
+		if ((is_simple_project(r->op) || is_groupby(r->op)) && list_length(r->exps) == 1) {
+			for (node *n = r->exps->h; n; n = n->next)
 				if (exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname) < 0)
 					return -1;
-	}
-	if (e->f && !e->tpe.type) {
-		e->tpe = *type;
-	} else if (!e->l && !e->r && !e->f && !e->tpe.type) {
-		if (set_type_param(sql, type, e->flag) == 0)
+		}
+	} else if (e->type == e_atom) {
+		if (e->f) {
+			const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
+			if (next_rel && next_exp && !strcmp(next_rel, *relname) && !strcmp(next_exp, *expname))
+				for (node *n = ((list *) e->f)->h; n; n = n->next)
+					if (exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname) < 0)
+						return -1;
+		}
+		if (e->f && !e->tpe.type) {
 			e->tpe = *type;
-		else
-			return -1;
+		} else if (!e->l && !e->r && !e->f && !e->tpe.type) {
+			if (set_type_param(sql, type, e->flag) == 0)
+				e->tpe = *type;
+			else
+				return -1;
+		}
 	}
 	return 0;
 }

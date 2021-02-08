@@ -327,3 +327,5 @@ START TRANSACTION;
 create view v10(vc0) as (select l0v0.vc0 from (values (1, 2)) as l0v0(vc0, vc1));
 prepare select case when true then false when ? then not exists (select ?, ?, 6) end from v10 as l0v10;
 ROLLBACK;
+
+prepare values (0.34, (values ((select ? from (select 1) as t1(x))))), (3, 2);

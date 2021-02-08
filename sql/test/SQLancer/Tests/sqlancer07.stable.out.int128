@@ -473,6 +473,18 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % month_interval # type
 % 1 # length
 [ 1	]
+#START TRANSACTION;
+#create view v10(vc0) as (select l0v0.vc0 from (values (1, 2)) as l0v0(vc0, vc1));
+#ROLLBACK;
+#prepare values (0.34, (values ((select ? from (select 1) as t1(x))))), (3, 2);
+#prepare values (0.34, (values ((select ? from (select 1) as t1(x))))), (3, 2);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	2,	2 # length
+[ "decimal",	3,	2,	"",	"%1",	"%1"	]
+[ "tinyint",	2,	0,	"",	"%2",	"%2"	]
+[ "tinyint",	2,	0,	NULL,	NULL,	NULL	]
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."
