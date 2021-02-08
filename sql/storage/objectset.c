@@ -539,9 +539,9 @@ os_dup(objectset *os)
 void
 os_destroy(objectset *os, sql_store store)
 {
-	MT_lock_destroy(&os->ht_lock);
 	if (--os->refcnt > 0)
 		return;
+	MT_lock_destroy(&os->ht_lock);
 	versionhead* n=os->name_based_h;
 	while(n) {
 		objectversion *ov = n->ov;
