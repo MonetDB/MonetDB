@@ -712,7 +712,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
-			if (!ATOMIC_CAS(&oo->state, &expected_deleted, under_destruction)) {
+			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
 				return -1; /*conflict with cleaner or write-write conflict*/
 			}
 		}
