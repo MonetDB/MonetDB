@@ -26,3 +26,9 @@ MAPI  = (monetdb) /var/tmp/mtest-918314/.s.monetdb.35583
 QUERY = PREPARE VALUES (CAST(? >> 1.2 AS INTERVAL SECOND)), (interval '1' second); -- error, types decimal(2,1) and sec_interval(13,0) are not equal
 ERROR = !types decimal(2,1) and sec_interval(13,0) are not equal
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-363257/.s.monetdb.38983
+QUERY = prepare with cte0(c0) as (select 1), cte1(c0,c1,c2) as (select distinct 1, 2, false)
+        select distinct least('y', (values (''), (''))), 1, (select ? from (select 1) as l1v0(x))
+        from cte0 as l0cte0, cte1 as l0cte1 order by l0cte0.c0 desc nulls last, l0cte1.c2 desc nulls first; -- ? can't be defined, so error
+ERROR = !Could not determine type for argument number 1
+CODE  = 42000
