@@ -322,3 +322,8 @@ PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS
 PREPARE SELECT DISTINCT ((((CAST(l0t0.c0 AS INT))-(CAST(? AS BIGINT))))*(scale_up(?, ((-438139776)*(-813129345))))) FROM (select 1) AS l0t0(c0);
 
 select interval '1' month * cast(1 as bigint);
+
+START TRANSACTION;
+create view v10(vc0) as (select l0v0.vc0 from (values (1, 2)) as l0v0(vc0, vc1));
+prepare select case when true then false when ? then not exists (select ?, ?, 6) end from v10 as l0v10;
+ROLLBACK;

@@ -56,6 +56,10 @@ MAPI  = (monetdb) /var/tmp/mtest-20193/.s.monetdb.38814
 QUERY = PREPARE SELECT (1 + CAST(l0t0.c0 AS BIGINT)) * scale_up(?, 2) FROM (select 1) AS l0t0(c0);
 ERROR = !SELECT: no such binary operator 'sql_mul(bigint,month_interval)'
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-299030/.s.monetdb.30707
+QUERY = prepare select case when true then false when ? then not exists (select ?, ?, 6) end from v10 as l0v10;
+ERROR = !Could not determine type for argument number 3
+CODE  = 42000
 
 # 10:16:14 >  
 # 10:16:14 >  "Done."

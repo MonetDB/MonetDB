@@ -201,8 +201,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 #INSERT INTO "t2" VALUES (596983192), (-601428889), (1688368391);
 [ 3	]
 #SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE t0.c0 % (SELECT 1 WHERE FALSE) <= t1.c0;
-% .%3 # table_name
-% %3 # name
+% .%4 # table_name
+% %4 # name
 % tinyint # type
 % 1 # length
 #SELECT t1.c0 FROM t2, t0 CROSS JOIN t1 WHERE ((((t0.c0)%((SELECT DISTINCT t0.c0 FROM t1, t0, t2 WHERE FALSE))))<=(t1.c0));
@@ -455,8 +455,8 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 % 1,	1 # length
 [ 1,	2	]
 #SELECT FALSE FROM v3, v0 FULL OUTER JOIN v4 ON sql_max(FALSE, (0.6902854) NOT IN (0.5854332103580835, CASE WHEN v4.vc0 THEN (SELECT 0.023816515 WHERE TRUE) END));
-% .%15 # table_name
-% %15 # name
+% .%20 # table_name
+% %20 # name
 % boolean # type
 % 5 # length
 [ false	]
