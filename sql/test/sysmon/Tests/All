@@ -4,4 +4,4 @@ sys_queue_rotate
 HAVE_PYMONETDB?sys_queue_expand
 HAVE_PYMONETDB?sys_user_statistics
 drop_sleep
-sys_queue_multisessions
+HAVE_PYMONETDB?sys_queue_multisessions
