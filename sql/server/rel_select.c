@@ -1794,8 +1794,16 @@ exp_exist(sql_query *query, sql_rel *rel, sql_exp *le, int exists)
 
 	if (!exp_name(le))
 		exp_label(sql->sa, le, ++sql->label);
-	if (!exp_subtype(le) && rel_set_type_param(sql, sql_bind_localtype("bit"), rel, le, 0) < 0) /* workaround */
+	if (!exp_subtype(le) && rel_set_type_param(sql, sql_bind_localtype("bit"), rel, le, 0) < 0) { /* workaround */
 		return NULL;
+	} else if (exp_is_rel(le)) { /* for the subquery case, propagate to the inner query */
+		sql_rel *r = exp_rel_get_rel(sql->sa, le);
+		if (is_simple_project(r->op) || is_groupby(r->op)) {
+			for (node *n = r->exps->h; n; n = n->next)
+				if (!exp_subtype(n->data) && rel_set_type_param(sql, sql_bind_localtype("bit"), r, n->data, 0) < 0) /* workaround */
+					return NULL;
+		}
+	}
 	t = exp_subtype(le);
 
 	if (exists)
