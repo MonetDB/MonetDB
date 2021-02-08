@@ -2769,8 +2769,6 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				if (exp_is_rel(ie))
 					ie->l = sq;
-				if (!exp_subtype(le) && rel_set_type_param(v->sql, sql_bind_localtype("bit"), rel, le, 0) < 0) /* workaround */
-					return NULL;
 				ea = sql_bind_func(v->sql->sa, v->sql->session->schema, is_exists(sf)?"exist":"not_exist", exp_subtype(le), NULL, F_AGGR);
 				le = exp_aggr1(v->sql->sa, le, ea, 0, 0, CARD_AGGR, 0);
 				le = rel_groupby_add_aggr(v->sql, sq, le);

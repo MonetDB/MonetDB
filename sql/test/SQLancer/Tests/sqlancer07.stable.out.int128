@@ -475,6 +475,16 @@ stdout of test 'sqlancer07` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 #START TRANSACTION;
 #create view v10(vc0) as (select l0v0.vc0 from (values (1, 2)) as l0v0(vc0, vc1));
+#prepare select case when true then false when ? then not exists (select ?, ?, 6) end from v10 as l0v10;
+#prepare select case when true then false when ? then not exists (select ?, ?, 6) end from v10 as l0v10;
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 7,	1,	1,	0,	3,	3 # length
+[ "boolean",	1,	0,	"",	"%11",	"%11"	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
+[ "boolean",	1,	0,	NULL,	NULL,	NULL	]
 #ROLLBACK;
 #prepare values (0.34, (values ((select ? from (select 1) as t1(x))))), (3, 2);
 #prepare values (0.34, (values ((select ? from (select 1) as t1(x))))), (3, 2);
