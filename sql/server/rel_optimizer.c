@@ -5759,7 +5759,7 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		if (ngbe - i > 1) {
 			for (int j = i; j < ngbe; j++) {
 				sql_subtype *t = exp_subtype(exps[j]);
-				scores[j] = t->digits;
+				scores[j] = t ? t->digits : 0;
 			}
 			/* the less number of digits the better, order ascending */
 			GDKqsort(scores + i, exps + i, NULL, ngbe - i, sizeof(int), sizeof(void *), TYPE_int, false, true);
