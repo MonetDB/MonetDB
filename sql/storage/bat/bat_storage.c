@@ -2604,7 +2604,7 @@ log_update_idx( sql_trans *tr, sql_change *change)
 	sql_idx *i = (sql_idx*)change->obj;
 
 	if (!isTempTable(i->t) && !tr->parent) /* don't write save point commits */
-		return tr_log_delta(tr, ATOMIC_PTR_GET(&i->data), i->t->bootstrap?0:LOG_COL, i->base.id);
+		return tr_log_delta(tr, ATOMIC_PTR_GET(&i->data), i->t->bootstrap?0:LOG_IDX, i->base.id);
 	return LOG_OK;
 }
 
