@@ -1035,8 +1035,9 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	sql_subtype lsuper;
 
 	lsuper = *r;
+	/* EC_STRING class is superior to EC_CHAR */
 	if (i->type->base.id > r->type->base.id ||
-	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
+	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass)) || i->type->eclass == EC_STRING) {
 		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
