@@ -636,6 +636,10 @@ load_part(sql_trans *tr, sql_table *mt, oid rid)
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 	v = store->table_api.column_find_value(tr, find_sql_column(objects, "id"), rid);
 	id = *(sqlid*)v; _DELETE(v);
+	if (is_int_nil(id)) { /* upgrade case, the id it's not initialized */
+		id = store_next_oid(store);
+		store->table_api.column_update_value(tr, find_sql_column(objects, "id"), rid, &id);
+	}
 	v = store->table_api.column_find_value(tr, find_sql_column(objects, "name"), rid);
 	base_init(tr->sa, &pt->base, id, 0, v);	_DELETE(v);
 	v = store->table_api.column_find_value(tr, find_sql_column(objects, "sub"), rid);

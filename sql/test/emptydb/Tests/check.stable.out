@@ -4123,6 +4123,7 @@ drop function pcre_replace(string, string, string, string);
 [ "column used by function",	"sys",	"objects",	"id",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 [ "column used by function",	"sys",	"objects",	"name",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 [ "column used by function",	"sys",	"objects",	"nr",	"sys",	"storagemodelinit",	"PROCEDURE"	]
+[ "column used by function",	"sys",	"objects",	"sub",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 [ "column used by function",	"sys",	"schemas",	"authorization",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 [ "column used by function",	"sys",	"schemas",	"id",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 [ "column used by function",	"sys",	"schemas",	"name",	"sys",	"storagemodelinit",	"PROCEDURE"	]

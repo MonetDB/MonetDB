@@ -175,8 +175,8 @@ doChallenge(void *data)
 		return;
 	}
 
-	// send the challenge over the block stream
-	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:",
+	// Send the challenge over the block stream
+	mnstr_printf(fdout, "%s:mserver:9:%s:%s:%s:sql=%d:",
 			challenge,
 			mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
@@ -184,7 +184,8 @@ doChallenge(void *data)
 #else
 			"LIT",
 #endif
-			MONETDB5_PASSWDHASH
+			MONETDB5_PASSWDHASH,
+			MAPI_HANDSHAKE_OPTIONS_LEVEL
 			);
 	mnstr_flush(fdout, MNSTR_FLUSH_DATA);
 	/* get response */

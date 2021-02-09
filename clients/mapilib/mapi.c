@@ -726,6 +726,37 @@
 # include <sys/time.h>		/* gettimeofday */
 #endif
 
+/* Copied from gdk_posix, but without taking a lock because we don't have access to
+ * MT_lock_set/unset here. We just have to hope for the best
+ */
+#ifndef HAVE_LOCALTIME_R
+struct tm *
+localtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	struct tm *tmp;
+	tmp = localtime(timep);
+	if (tmp)
+		*result = *tmp;
+	return tmp ? result : NULL;
+}
+#endif
+
+/* Copied from gdk_posix, but without taking a lock because we don't have access to
+ * MT_lock_set/unset here. We just have to hope for the best
+ */
+#ifndef HAVE_GMTIME_R
+struct tm *
+gmtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	struct tm *tmp;
+	tmp = gmtime(timep);
+	if (tmp)
+		*result = *tmp;
+	return tmp ? result : NULL;
+}
+#endif
+
+
 #ifdef HAVE_FCNTL_H
 #include <fcntl.h>
 #endif
@@ -879,8 +910,11 @@ struct MapiStruct {
 	struct BlockCache blk;
 	bool connected;
 	bool trace;		/* Trace Mapi interaction */
+	int handshake_options;	/* which settings can be sent during challenge/response? */
 	bool auto_commit;
 	bool columnar_protocol;
+	bool sizeheader;
+	int time_zone;		/* seconds EAST of UTC */
 	MapiHdl first;		/* start of doubly-linked list */
 	MapiHdl active;		/* set when not all rows have been received */
 
@@ -995,6 +1029,7 @@ static int mapi_extend_bindings(MapiHdl hdl, int minbindings);
 static int mapi_extend_params(MapiHdl hdl, int minparams);
 static void close_connection(Mapi mid);
 static MapiMsg read_into_cache(MapiHdl hdl, int lookahead);
+static MapiMsg mapi_Xcommand(Mapi mid, const char *cmdname, const char *cmdvalue);
 static int unquote(const char *msg, char **start, const char **next, int endchar, size_t *lenp);
 static int mapi_slice_row(struct MapiResultSet *result, int cr);
 static void mapi_store_bind(struct MapiResultSet *result, int cr);
@@ -1377,6 +1412,13 @@ mapi_get_columnar_protocol(Mapi mid)
 {
 	mapi_check0(mid);
 	return mid->columnar_protocol;
+}
+
+int
+mapi_get_time_zone(Mapi mid)
+{
+	mapi_check0(mid);
+	return mid->time_zone;
 }
 
 static int64_t
@@ -1863,6 +1905,17 @@ mapi_close_handle(MapiHdl hdl)
 	return MOK;
 }
 
+static const struct MapiStruct MapiStructDefaults = {
+	.auto_commit = true,
+	.error = MOK,
+	.languageId = LANG_SQL,
+	.mapiversion = "mapi 1.0",
+	.cachelimit = 100,
+	.redirmax = 10,
+	.blk.eos = false,
+	.blk.lim = BLOCK,
+};
+
 /* Allocate a new connection handle. */
 static Mapi
 mapi_new(void)
@@ -1875,23 +1928,24 @@ mapi_new(void)
 		return NULL;
 
 	/* then fill in some details */
-	*mid = (struct MapiStruct) {
-		.index = (uint32_t) ATOMIC_ADD(&index, 1),	/* for distinctions in log records */
-		.auto_commit = true,
-		.error = MOK,
-		.languageId = LANG_SQL,
-		.mapiversion = "mapi 1.0",
-		.cachelimit = 100,
-		.redirmax = 10,
-		.blk.eos = false,
-		.blk.lim = BLOCK,
-	};
+	*mid = MapiStructDefaults;
+	mid->index =  (uint32_t) ATOMIC_ADD(&index, 1); /* for distinctions in log records */
 	if ((mid->blk.buf = malloc(mid->blk.lim + 1)) == NULL) {
 		mapi_destroy(mid);
 		return NULL;
 	}
 	mid->blk.buf[0] = 0;
 	mid->blk.buf[mid->blk.lim] = 0;
+
+	/* also the current timezone, seconds EAST of UTC */
+	time_t t = time(NULL);
+	struct tm *gm_tm = gmtime_r(&t, &(struct tm){0});
+	time_t gt = mktime(gm_tm);
+	struct tm *local_tm = localtime_r(&t, &(struct tm){0});
+	local_tm->tm_isdst=0; /* We need the difference without dst */
+	time_t lt = mktime(local_tm);
+	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
+	mid->time_zone = (int) (lt - gt);
 
 	return mid;
 }
@@ -2205,11 +2259,6 @@ mapi_reconnect(Mapi mid)
 	char buf[BLOCK];
 	size_t len;
 	MapiHdl hdl;
-	int pversion = 0;
-	char *chal;
-	char *server;
-	char *protover;
-	char *rest;
 
 	if (mid->connected)
 		close_connection(mid);
@@ -2556,212 +2605,30 @@ mapi_reconnect(Mapi mid)
 		return mid->error;
 	}
 	/* buf at this point looks like "challenge:servertype:protover[:.*]" */
-	chal = buf;
-	server = strchr(chal, ':');
+
+	char *strtok_state = NULL;
+	char *chal = strtok_r(buf, ":", &strtok_state);
+	if (chal == NULL) {
+		mapi_setError(mid, "Challenge string is not valid, challenge not found", __func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	}
+
+	char *server = strtok_r(NULL, ":", &strtok_state);
 	if (server == NULL) {
 		mapi_setError(mid, "Challenge string is not valid, server not found", __func__, MERROR);
 		close_connection(mid);
 		return mid->error;
 	}
-	*server++ = '\0';
-	protover = strchr(server, ':');
+
+	char *protover = strtok_r(NULL, ":", &strtok_state);
 	if (protover == NULL) {
 		mapi_setError(mid, "Challenge string is not valid, protocol not found", __func__, MERROR);
 		close_connection(mid);
 		return mid->error;
 	}
-	*protover++ = '\0';
-	rest = strchr(protover, ':');
-	if (rest != NULL) {
-		*rest++ = '\0';
-	}
-	pversion = atoi(protover);
-
-	if (pversion == 9) {
-		char *hash = NULL;
-		char *hashes = NULL;
-		char *byteo = NULL;
-		char *serverhash = NULL;
-		char *algsv[] = {
-#ifdef HAVE_RIPEMD160_UPDATE
-			"RIPEMD160",
-#endif
-#ifdef HAVE_SHA512_UPDATE
-			"SHA512",
-#endif
-#ifdef HAVE_SHA384_UPDATE
-			"SHA384",
-#endif
-#ifdef HAVE_SHA256_UPDATE
-			"SHA256",
-#endif
-#ifdef HAVE_SHA224_UPDATE
-			"SHA224",
-#endif
-#ifdef HAVE_SHA1_UPDATE
-			"SHA1",
-#endif
-			NULL
-		};
-		char **algs = algsv;
-		char *p;
-
-		/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
-
-		if (mid->username == NULL || mid->password == NULL) {
-			mapi_setError(mid, "username and password must be set",
-				      __func__, MERROR);
-			close_connection(mid);
-			return mid->error;
-		}
-
-		/* the database has sent a list of supported hashes to us, it's
-		 * in the form of a comma separated list and in the variable
-		 * rest.  We try to use the strongest algorithm. */
-		if (rest == NULL) {
-			/* protocol violation, not enough fields */
-			mapi_setError(mid, "Not enough fields in challenge string",
-				      __func__, MERROR);
-			close_connection(mid);
-			return mid->error;
-		}
-		hashes = rest;
-		hash = strchr(hashes, ':');	/* temp misuse hash */
-		if (hash) {
-			*hash = '\0';
-			rest = hash + 1;
-		}
-		/* in rest now should be the byte order of the server */
-		byteo = rest;
-		hash = strchr(byteo, ':');
-		if (hash) {
-			*hash = '\0';
-			rest = hash + 1;
-		}
-		hash = NULL;
-
-		/* Proto v9 is like v8, but mandates that the password is a
-		 * hash, that is salted like in v8.  The hash algorithm is
-		 * specified in the 6th field.  If we don't support it, we
-		 * can't login. */
-		serverhash = rest;
-		hash = strchr(serverhash, ':');
-		if (hash) {
-			*hash = '\0';
-			/* rest = hash + 1; -- rest of string ignored */
-		}
-		hash = NULL;
-		/* hash password, if not already */
-		if (mid->password[0] != '\1') {
-			char *pwdhash = NULL;
-#ifdef HAVE_RIPEMD160_UPDATE
-			if (strcmp(serverhash, "RIPEMD160") == 0) {
-				pwdhash = mcrypt_RIPEMD160Sum(mid->password,
-							      strlen(mid->password));
-			} else
-#endif
-#ifdef HAVE_SHA512_UPDATE
-			if (strcmp(serverhash, "SHA512") == 0) {
-				pwdhash = mcrypt_SHA512Sum(mid->password,
-							   strlen(mid->password));
-			} else
-#endif
-#ifdef HAVE_SHA384_UPDATE
-			if (strcmp(serverhash, "SHA384") == 0) {
-				pwdhash = mcrypt_SHA384Sum(mid->password,
-							   strlen(mid->password));
-			} else
-#endif
-#ifdef HAVE_SHA256_UPDATE
-			if (strcmp(serverhash, "SHA256") == 0) {
-				pwdhash = mcrypt_SHA256Sum(mid->password,
-							   strlen(mid->password));
-			} else
-#endif
-#ifdef HAVE_SHA224_UPDATE
-			if (strcmp(serverhash, "SHA224") == 0) {
-				pwdhash = mcrypt_SHA224Sum(mid->password,
-							   strlen(mid->password));
-			} else
-#endif
-#ifdef HAVE_SHA1_UPDATE
-			if (strcmp(serverhash, "SHA1") == 0) {
-				pwdhash = mcrypt_SHA1Sum(mid->password,
-							 strlen(mid->password));
-			} else
-#endif
-			{
-				(void)pwdhash;
-				snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
-					 serverhash);
-				close_connection(mid);
-				return mapi_setError(mid, buf, __func__, MERROR);
-			}
-
-#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
-			if (pwdhash == NULL) {
-				snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
-					 serverhash);
-				close_connection(mid);
-				return mapi_setError(mid, buf, __func__, MERROR);
-			}
-
-			free(mid->password);
-			mid->password = malloc(1 + strlen(pwdhash) + 1);
-			sprintf(mid->password, "\1%s", pwdhash);
-			free(pwdhash);
-#endif
-		}
-
-		p = mid->password + 1;
-
-		for (; *algs != NULL; algs++) {
-			/* TODO: make this actually obey the separation by
-			 * commas, and only allow full matches */
-			if (strstr(hashes, *algs) != NULL) {
-				char *pwh = mcrypt_hashPassword(*algs, p, chal);
-				size_t len;
-				if (pwh == NULL)
-					continue;
-				len = strlen(pwh) + strlen(*algs) + 3 /* {}\0 */;
-				hash = malloc(len);
-				if (hash == NULL) {
-					close_connection(mid);
-					free(pwh);
-					return mapi_setError(mid, "malloc failure", __func__, MERROR);
-				}
-				snprintf(hash, len, "{%s}%s", *algs, pwh);
-				free(pwh);
-				break;
-			}
-		}
-		if (hash == NULL) {
-			/* the server doesn't support what we can */
-			snprintf(buf, sizeof(buf), "unsupported hash algorithms: %.100s", hashes);
-			close_connection(mid);
-			return mapi_setError(mid, buf, __func__, MERROR);
-		}
-
-		mnstr_set_bigendian(mid->from, strcmp(byteo, "BIG") == 0);
-
-		/* note: if we make the database field an empty string, it
-		 * means we want the default.  However, it *should* be there. */
-		if (snprintf(buf, sizeof(buf), "%s:%s:%s:%s:%s:FILETRANS:\n",
-#ifdef WORDS_BIGENDIAN
-			     "BIG",
-#else
-			     "LIT",
-#endif
-			     mid->username, hash, mid->language,
-			     mid->database == NULL ? "" : mid->database) >= (int) sizeof(buf)) {;
-			mapi_setError(mid, "combination of database name and user name too long", __func__, MERROR);
-			free(hash);
-			close_connection(mid);
-			return mid->error;
-		}
-
-		free(hash);
-	} else {
+	int pversion = atoi(protover);
+	if (pversion != 9) {
 		/* because the headers changed, and because it makes no sense to
 		 * try and be backwards (or forwards) compatible, we bail out
 		 * with a friendly message saying so */
@@ -2771,6 +2638,216 @@ mapi_reconnect(Mapi mid)
 		close_connection(mid);
 		return mid->error;
 	}
+
+	char *hashes = strtok_r(NULL, ":", &strtok_state);
+	if (hashes == NULL) {
+		/* protocol violation, not enough fields */
+		mapi_setError(mid, "Not enough fields in challenge string", __func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	}
+	char *algsv[] = {
+#ifdef HAVE_RIPEMD160_UPDATE
+		"RIPEMD160",
+#endif
+#ifdef HAVE_SHA512_UPDATE
+		"SHA512",
+#endif
+#ifdef HAVE_SHA384_UPDATE
+		"SHA384",
+#endif
+#ifdef HAVE_SHA256_UPDATE
+		"SHA256",
+#endif
+#ifdef HAVE_SHA224_UPDATE
+		"SHA224",
+#endif
+#ifdef HAVE_SHA1_UPDATE
+		"SHA1",
+#endif
+		NULL
+	};
+	char **algs = algsv;
+
+	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
+
+	if (mid->username == NULL || mid->password == NULL) {
+		mapi_setError(mid, "username and password must be set",
+				__func__, MERROR);
+		close_connection(mid);
+		return mid->error;
+	}
+
+	/* the database has sent a list of supported hashes to us, it's
+		* in the form of a comma separated list and in the variable
+		* rest.  We try to use the strongest algorithm. */
+
+
+	/* in rest now should be the byte order of the server */
+	char *byteo = strtok_r(NULL, ":", &strtok_state);
+
+	/* Proto v9 is like v8, but mandates that the password is a
+		* hash, that is salted like in v8.  The hash algorithm is
+		* specified in the 6th field.  If we don't support it, we
+		* can't login. */
+	char *serverhash = strtok_r(NULL, ":", &strtok_state);
+
+	char *handshake_options = strtok_r(NULL, ":", &strtok_state);
+	if (handshake_options) {
+		if (sscanf(handshake_options, "sql=%d", &mid->handshake_options) != 1) {
+			mapi_setError(mid, "invalid handshake options",
+					__func__, MERROR);
+			close_connection(mid);
+			return mid->error;
+		}
+	}
+
+	/* hash password, if not already */
+	if (mid->password[0] != '\1') {
+		char *pwdhash = NULL;
+#ifdef HAVE_RIPEMD160_UPDATE
+		if (strcmp(serverhash, "RIPEMD160") == 0) {
+			pwdhash = mcrypt_RIPEMD160Sum(mid->password,
+							strlen(mid->password));
+		} else
+#endif
+#ifdef HAVE_SHA512_UPDATE
+		if (strcmp(serverhash, "SHA512") == 0) {
+			pwdhash = mcrypt_SHA512Sum(mid->password,
+							strlen(mid->password));
+		} else
+#endif
+#ifdef HAVE_SHA384_UPDATE
+		if (strcmp(serverhash, "SHA384") == 0) {
+			pwdhash = mcrypt_SHA384Sum(mid->password,
+							strlen(mid->password));
+		} else
+#endif
+#ifdef HAVE_SHA256_UPDATE
+		if (strcmp(serverhash, "SHA256") == 0) {
+			pwdhash = mcrypt_SHA256Sum(mid->password,
+							strlen(mid->password));
+		} else
+#endif
+#ifdef HAVE_SHA224_UPDATE
+		if (strcmp(serverhash, "SHA224") == 0) {
+			pwdhash = mcrypt_SHA224Sum(mid->password,
+							strlen(mid->password));
+		} else
+#endif
+#ifdef HAVE_SHA1_UPDATE
+		if (strcmp(serverhash, "SHA1") == 0) {
+			pwdhash = mcrypt_SHA1Sum(mid->password,
+							strlen(mid->password));
+		} else
+#endif
+		{
+			(void)pwdhash;
+			snprintf(buf, sizeof(buf), "server requires unknown hash '%.100s'",
+					serverhash);
+			close_connection(mid);
+			return mapi_setError(mid, buf, __func__, MERROR);
+		}
+
+#if defined(HAVE_RIPEMD160_UPDATE) || defined(HAVE_SHA512_UPDATE) || defined(HAVE_SHA384_UPDATE) || defined(HAVE_SHA256_UPDATE) || defined(HAVE_SHA224_UPDATE) || defined(HAVE_SHA1_UPDATE)
+		if (pwdhash == NULL) {
+			snprintf(buf, sizeof(buf), "allocation failure or unknown hash '%.100s'",
+					serverhash);
+			close_connection(mid);
+			return mapi_setError(mid, buf, __func__, MERROR);
+		}
+
+		free(mid->password);
+		mid->password = malloc(1 + strlen(pwdhash) + 1);
+		sprintf(mid->password, "\1%s", pwdhash);
+		free(pwdhash);
+#endif
+	}
+
+
+	char *pw = mid->password + 1;
+
+	char *hash = NULL;
+	for (; *algs != NULL; algs++) {
+		/* TODO: make this actually obey the separation by
+			* commas, and only allow full matches */
+		if (strstr(hashes, *algs) != NULL) {
+			char *pwh = mcrypt_hashPassword(*algs, pw, chal);
+			size_t len;
+			if (pwh == NULL)
+				continue;
+			len = strlen(pwh) + strlen(*algs) + 3 /* {}\0 */;
+			hash = malloc(len);
+			if (hash == NULL) {
+				close_connection(mid);
+				free(pwh);
+				return mapi_setError(mid, "malloc failure", __func__, MERROR);
+			}
+			snprintf(hash, len, "{%s}%s", *algs, pwh);
+			free(pwh);
+			break;
+		}
+	}
+	if (hash == NULL) {
+		/* the server doesn't support what we can */
+		snprintf(buf, sizeof(buf), "unsupported hash algorithms: %.100s", hashes);
+		close_connection(mid);
+		return mapi_setError(mid, buf, __func__, MERROR);
+	}
+
+	mnstr_set_bigendian(mid->from, strcmp(byteo, "BIG") == 0);
+
+	char *p = buf;
+	int remaining = sizeof(buf);
+	int n;
+#define CHECK_SNPRINTF(...) \
+	do { \
+		n = snprintf(p, remaining, __VA_ARGS__); \
+		if (n < remaining) { \
+			remaining -= n; \
+			p += n; \
+		} else { \
+			mapi_setError(mid, "combination of database name and user name too long", __func__, MERROR); \
+			free(hash); \
+			close_connection(mid); \
+			return mid->error; \
+		} \
+	} while (0)
+
+#ifdef WORDS_BIGENDIAN
+	char *our_endian = "BIG";
+#else
+	char *our_endian = "LIT";
+#endif
+	/* note: if we make the database field an empty string, it
+		* means we want the default.  However, it *should* be there. */
+	CHECK_SNPRINTF("%s:%s:%s:%s:%s:FILETRANS:",
+			our_endian,
+			mid->username, hash, mid->language,
+			mid->database == NULL ? "" : mid->database);
+
+	if (mid->handshake_options > MAPI_HANDSHAKE_AUTOCOMMIT) {
+		CHECK_SNPRINTF("auto_commit=%d", mid->auto_commit);
+	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_REPLY_SIZE) {
+		CHECK_SNPRINTF(",reply_size=%d", mid->cachelimit);
+	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_SIZE_HEADER) {
+		CHECK_SNPRINTF(",size_header=%d", mid->sizeheader); // with underscore, despite X command without
+	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_COLUMNAR_PROTOCOL) {
+		CHECK_SNPRINTF(",columnar_protocol=%d", mid->columnar_protocol);
+	}
+	if (mid->handshake_options > MAPI_HANDSHAKE_TIME_ZONE) {
+		CHECK_SNPRINTF(",time_zone=%d", mid->time_zone);
+	}
+	if (mid->handshake_options > 0) {
+		CHECK_SNPRINTF(":");
+	}
+	CHECK_SNPRINTF("\n");
+
+	free(hash);
+
 	if (mid->trace) {
 		printf("sending first request [%zu]:%s", sizeof(buf), buf);
 		fflush(stdout);
@@ -2960,8 +3037,39 @@ mapi_reconnect(Mapi mid)
 	if (mid->languageId != LANG_SQL)
 		return mid->error;
 
-	/* tell server about cachelimit */
-	mapi_cache_limit(mid, mid->cachelimit);
+	if (mid->error != MOK)
+		return mid->error;
+
+	/* use X commands to send options that couldn't be sent in the handshake */
+	/* tell server about auto_complete and cache limit if handshake options weren't used */
+	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && mid->auto_commit != MapiStructDefaults.auto_commit) {
+		char buf[2];
+		sprintf(buf, "%d", !!mid->auto_commit);
+		MapiMsg result = mapi_Xcommand(mid, "auto_commit", buf);
+		if (result != MOK)
+			return mid->error;
+	}
+	if (mid->handshake_options <= MAPI_HANDSHAKE_REPLY_SIZE && mid->cachelimit != MapiStructDefaults.cachelimit) {
+		char buf[50];
+		sprintf(buf, "%d", mid->cachelimit);
+		MapiMsg result = mapi_Xcommand(mid, "reply_size", buf);
+		if (result != MOK)
+			return mid->error;
+	}
+	if (mid->handshake_options <= MAPI_HANDSHAKE_SIZE_HEADER && mid->sizeheader != MapiStructDefaults.sizeheader) {
+		char buf[50];
+		sprintf(buf, "%d", !!mid->sizeheader);
+		MapiMsg result = mapi_Xcommand(mid, "sizeheader", buf); // no underscore!
+		if (result != MOK)
+			return mid->error;
+	}
+	// There is no if  (mid->handshake_options <= MAPI_HANDSHAKE_COLUMNAR_PROTOCOL && mid->columnar_protocol != MapiStructDefaults.columnar_protocol)
+	// The reason is that columnar_protocol is very new. If it isn't supported in the handshake it isn't supported at
+	// all so sending the Xcommand would just give an error.
+	if (mid->handshake_options <= MAPI_HANDSHAKE_TIME_ZONE) {
+		mapi_set_time_zone(mid, mid->time_zone);
+	}
+
 	return mid->error;
 }
 
@@ -3648,10 +3756,37 @@ mapi_setAutocommit(Mapi mid, bool autocommit)
 		return MERROR;
 	}
 	mid->auto_commit = autocommit;
+	if (!mid->connected)
+		return MOK;
 	if (autocommit)
 		return mapi_Xcommand(mid, "auto_commit", "1");
 	else
 		return mapi_Xcommand(mid, "auto_commit", "0");
+}
+
+MapiMsg
+mapi_set_time_zone(Mapi mid, int time_zone)
+{
+	mid->time_zone = time_zone;
+	if (!mid->connected)
+		return MOK;
+
+	char buf[100];
+	if (time_zone < 0)
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
+			 -time_zone / 3600, (-time_zone % 3600) / 60);
+	else
+		snprintf(buf, sizeof(buf),
+			 "SET TIME ZONE INTERVAL '+%02d:%02d' HOUR TO MINUTE",
+			 time_zone / 3600, (time_zone % 3600) / 60);
+
+	MapiHdl hdl = mapi_query(mid, buf);
+	if (hdl == NULL)
+		return mid->error;
+	mapi_close_handle(hdl);
+
+	return MOK;
 }
 
 MapiMsg
@@ -3660,6 +3795,8 @@ mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol)
 	if (mid->columnar_protocol == columnar_protocol)
 		return MOK;
 	mid->columnar_protocol = columnar_protocol;
+	if (!mid->connected)
+		return MOK;
 	if (columnar_protocol)
 		return mapi_Xcommand(mid, "columnar_protocol", "1");
 	else
@@ -3673,6 +3810,9 @@ mapi_set_size_header(Mapi mid, bool value)
 		mapi_setError(mid, "size header only supported in SQL", __func__, MERROR);
 		return MERROR;
 	}
+	mid->sizeheader = value;
+	if (!mid->connected)
+		return MOK;
 	if (value)
 		return mapi_Xcommand(mid, "sizeheader", "1");
 	else
@@ -4551,8 +4691,10 @@ MapiMsg
 mapi_cache_limit(Mapi mid, int limit)
 {
 	/* clean out superflous space TODO */
-	mapi_check(mid);
 	mid->cachelimit = limit;
+	if (!mid->connected)
+		return MOK;
+	mapi_check(mid);
 /* 	if (hdl->cache.rowlimit < hdl->cache.limit) { */
 	/* TODO: decide what to do here */
 	/*              hdl->cache.limit = hdl->cache.rowlimit; *//* arbitrarily throw away cache lines */

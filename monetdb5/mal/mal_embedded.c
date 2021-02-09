@@ -120,7 +120,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout, int sessiont
 		MCcloseClient(c);
 		return msg;
 	}
-	char *modules[3] = { "embedded", "sql" };
+	char *modules[5] = { "embedded", "sql", "generator", "udf" };
 	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		return msg;
