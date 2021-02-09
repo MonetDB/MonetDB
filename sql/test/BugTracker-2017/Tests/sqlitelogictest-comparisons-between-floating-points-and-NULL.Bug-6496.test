@@ -34,7 +34,41 @@ INSERT INTO tab0 VALUES(9,501,776.40,'cvygg',725,75.5,'etlyv')
 query IIRTIRT rowsort
 SELECT * FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL
 ----
-35 values hashing to 556f80deebd2f6f4957d0e5d0f7e1172
+0
+698
+169.420
+apdbu
+431
+316.150
+sqvis
+4
+754
+677.300
+iofrg
+67
+665.490
+bzqba
+6
+904
+193.160
+eozui
+48
+698.550
+ejyzs
+8
+535
+18.110
+ijika
+630
+489.630
+hpnyu
+9
+501
+776.400
+cvygg
+725
+75.500
+etlyv
 
 query I rowsort
 SELECT + - COUNT ( * ) FROM tab0 AS cor0 WHERE NOT ( - col0 ) BETWEEN - + col4 AND NULL; --should be -5
@@ -67,5 +101,4 @@ SELECT ALL + COUNT ( DISTINCT 64 ) FROM tab1 AS cor0 WHERE col2 + 5 > NULL; --sh
 
 statement ok
 DROP TABLE tab1
-
 

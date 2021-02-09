@@ -41,7 +41,30 @@ ALTER TABLE complete ADD TABLE partk2
 query RRR rowsort
 SELECT * FROM COMPLETE
 ----
-24 values hashing to 8f130e4c6c1b2a3e43a48914d6248638
+0.000
+0.000
+0.000
+0.000
+1.000
+0.000
+1.000
+0.000
+0.000
+1.000
+1.000
+0.000
+2.000
+0.000
+0.000
+2.000
+1.000
+0.000
+3.000
+0.000
+0.000
+3.000
+1.000
+0.000
 
 statement ok
 DROP TABLE complete
@@ -51,5 +74,4 @@ DROP TABLE partk1
 
 statement ok
 DROP TABLE partk2
-
 

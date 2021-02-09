@@ -121,4 +121,3 @@ statement ok
 -- this should return success as there are no depending objects anymore
 DROP SCHEMA IF EXISTS xyz2 CASCADE
 
-

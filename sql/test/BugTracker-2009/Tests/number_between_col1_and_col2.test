@@ -22,4 +22,3 @@ select * from btest where 3 between links and rechts
 statement ok
 drop table btest
 
-

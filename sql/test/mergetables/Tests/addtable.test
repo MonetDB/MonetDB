@@ -24,4 +24,3 @@ drop table tmp1
 statement ok
 drop table tmp2
 
-

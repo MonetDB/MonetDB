@@ -27,4 +27,3 @@ barrier FS:= calc.not(FTE);
 exit	FS;
 end foo;
 
-

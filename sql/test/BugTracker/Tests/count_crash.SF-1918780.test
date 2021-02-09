@@ -18,4 +18,3 @@ select count(1000) from count_crash
 statement ok
 drop table count_crash
 
-

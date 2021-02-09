@@ -76,4 +76,3 @@ drop table "Bug_2835_1"
 statement ok
 drop table "Bug_2835_0"
 
-

@@ -137,7 +137,7 @@ typedef struct __attribute__((__designated_init__)) mel_func_arg {
 } mel_func_arg;
 
 /* var arg of arguments of type mel_func_arg */
-int melFunction(bool command, char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ...);
+int melFunction(bool command, const char *mod, char *fcn, fptr imp, char *fname, bool unsafe, char *comment, int retc, int argc, ...);
 
 #ifdef SPECS
 typedef struct __attribute__((__designated_init__)) mal_spec{

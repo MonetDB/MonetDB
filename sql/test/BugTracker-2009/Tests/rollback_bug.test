@@ -87,4 +87,3 @@ drop table phpbb_attachments
 statement ok
 drop sequence phpbb_attachments_seq
 
-

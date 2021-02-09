@@ -11,14 +11,3 @@ l2:= k1+k2;
 l3:= l2+k1;
 end
 
-#mdb.List("user","foo")
-
-statement ok
-optimizer.commonTerms("user","foo")
-
-statement ok
-optimizer.aliases("user","foo")
-
-#mdb.List("user","foo")
-
-

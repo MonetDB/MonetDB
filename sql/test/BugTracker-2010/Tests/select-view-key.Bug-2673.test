@@ -24,4 +24,3 @@ DROP VIEW v2673
 statement ok
 DROP TABLE t2673
 
-

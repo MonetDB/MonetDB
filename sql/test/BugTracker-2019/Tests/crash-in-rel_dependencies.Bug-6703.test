@@ -78,4 +78,3 @@ insert into resultbuffer_int_str (q, i1,s1, prob) select cast(0 as int) as q,a1,
 statement ok
 ROLLBACK
 
-

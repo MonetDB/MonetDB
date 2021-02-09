@@ -147,4 +147,3 @@ SELECT * FROM pyapi19_load_table() LIMIT 100
 statement ok
 ROLLBACK
 
-

@@ -46,4 +46,3 @@ m
 statement ok
 drop table car
 
-

@@ -45,6 +45,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
+#include "mutils.h"
 
 static void *
 HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
@@ -385,7 +386,7 @@ file_exists(int farmid, const char *dir, const char *name, const char *ext)
 	path = GDKfilepath(farmid, dir, name, ext);
 	if (path == NULL)
 		return -1;
-	ret = stat(path, &st);
+	ret = MT_stat(path, &st);
 	TRC_DEBUG(IO_, "stat(%s) = %d\n", path, ret);
 	GDKfree(path);
 	return (ret == 0);
@@ -689,18 +690,18 @@ HEAPfree(Heap *h, bool rmheap)
 	if (h->storage == STORE_MMAPABS)  {
 		/* heap is stored in a mmap() file, but h->filename
 		 * is the absolute path */
-		if (remove(h->filename) != 0 && errno != ENOENT) {
+		if (MT_remove(h->filename) != 0 && errno != ENOENT) {
 			perror(h->filename);
 		}
 	} else
 #endif
 	if (rmheap && !GDKinmemory(h->farmid)) {
 		char *path = GDKfilepath(h->farmid, BATDIR, h->filename, NULL);
-		if (path && remove(path) != 0 && errno != ENOENT)
+		if (path && MT_remove(path) != 0 && errno != ENOENT)
 			perror(path);
 		GDKfree(path);
 		path = GDKfilepath(h->farmid, BATDIR, h->filename, "new");
-		if (path && remove(path) != 0 && errno != ENOENT)
+		if (path && MT_remove(path) != 0 && errno != ENOENT)
 			perror(path);
 		GDKfree(path);
 	}
@@ -788,7 +789,7 @@ HEAPload_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	strcat(srcpath, suffix);
 
 	t0 = GDKms();
-	ret = rename(srcpath, dstpath);
+	ret = MT_rename(srcpath, dstpath);
 	TRC_DEBUG(HEAP, "rename %s %s = %d %s (%dms)\n",
 		  srcpath, dstpath, ret, ret < 0 ? GDKstrerror(errno, (char[128]){0}, 128) : "",
 		  GDKms() - t0);

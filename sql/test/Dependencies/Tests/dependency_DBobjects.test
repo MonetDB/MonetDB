@@ -174,6 +174,9 @@ DEP_FUNC
 comments
 describe_table
 DEP_FUNC
+dump_statements
+dump_database
+DEP_FUNC
 function_languages
 describe_function
 DEP_FUNC
@@ -197,6 +200,9 @@ getproj4
 DEP_FUNC
 t1
 f2
+DEP_FUNC
+table_partitions
+get_merge_table_partition_expressions
 DEP_FUNC
 table_types
 describe_table
@@ -292,7 +298,7 @@ DEP_INDEX
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-255 values hashing to e2d9a3e1109be2f236e4d7f734331ef0
+366 values hashing to cccf8f0385098793ac0698438837609a
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.triggers as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -319,6 +325,63 @@ DEP_TRIGGER
 query TTT rowsort
 SELECT v.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type IN (1, 11) ORDER BY v.name, f.name
 ----
+columns
+get_merge_table_partition_expressions
+DEP_FUNC
+dump_add_schemas_to_users
+dump_database
+DEP_FUNC
+dump_column_defaults
+dump_database
+DEP_FUNC
+dump_comments
+dump_database
+DEP_FUNC
+dump_create_roles
+dump_database
+DEP_FUNC
+dump_create_schemas
+dump_database
+DEP_FUNC
+dump_create_users
+dump_database
+DEP_FUNC
+dump_foreign_keys
+dump_database
+DEP_FUNC
+dump_functions
+dump_database
+DEP_FUNC
+dump_grant_user_priviledges
+dump_database
+DEP_FUNC
+dump_indices
+dump_database
+DEP_FUNC
+dump_partition_tables
+dump_database
+DEP_FUNC
+dump_privileges
+dump_database
+DEP_FUNC
+dump_sequences
+dump_database
+DEP_FUNC
+dump_start_sequences
+dump_database
+DEP_FUNC
+dump_table_constraint_type
+dump_database
+DEP_FUNC
+dump_tables
+dump_database
+DEP_FUNC
+dump_triggers
+dump_database
+DEP_FUNC
+dump_user_defined_types
+dump_database
+DEP_FUNC
 v1
 f2
 DEP_FUNC
@@ -337,8 +400,26 @@ SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f
 describe_type
 describe_columns
 DEP_FUNC
+dq
+fqn
+DEP_FUNC
+dq
+get_merge_table_partition_expressions
+DEP_FUNC
+dq
+prepare_esc
+DEP_FUNC
+dump_table_data
+dump_database
+DEP_FUNC
 f1
 f2
+DEP_FUNC
+fqn
+alter_table
+DEP_FUNC
+fqn
+schema_guard
 DEP_FUNC
 getproj4
 st_transform
@@ -348,6 +429,15 @@ st_transform
 DEP_FUNC
 ms_trunc
 ms_round
+DEP_FUNC
+remote_table_credentials
+get_remote_table_expressions
+DEP_FUNC
+replace_first
+schema_guard
+DEP_FUNC
+sq
+get_remote_table_expressions
 DEP_FUNC
 st_geometryn
 st_patchn
@@ -420,5 +510,4 @@ DROP TABLE t1
 
 statement ok
 DROP TABLE t3
-
 

@@ -10,4 +10,3 @@ y:= user.welcome4(1)
 statement error
 io.print(y)
 
-

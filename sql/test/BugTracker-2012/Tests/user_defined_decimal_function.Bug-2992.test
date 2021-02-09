@@ -23,4 +23,3 @@ select truncode(12.00,12)
 statement ok
 drop function truncode
 
-

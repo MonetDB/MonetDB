@@ -304,8 +304,8 @@ VIEWreset(BAT *b)
 
 	if (tp == 0) {
 		/* only sharing the vheap */
-		assert(ATOMstorage(b->ttype) == TYPE_str);
-		return unshare_string_heap(b);
+		assert(ATOMvarsized(b->ttype));
+		return unshare_varsized_heap(b);
 	}
 
 	BAT *v = VIEWcreate(b->hseqbase, b);

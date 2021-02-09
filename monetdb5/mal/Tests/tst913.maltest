@@ -7,14 +7,23 @@ bat.append(b,"FALSE");
 bat.append(b,"false");
 bat.append(b,"");
 bat.append(b,nil:str);
-io.print(b);
 bc:= batcalc.bit_noerror(b);
 io.print(bc);
 end;
 
-query TT rowsort
+query II rowsort
 user.foo();
 ----
-24 values hashing to 73a611c47192ae64e0f6bd9d0f585e20
-
+0
+1
+1
+1
+2
+0
+3
+0
+4
+NULL
+5
+NULL
 

@@ -53,7 +53,30 @@ INSERT INTO test2 VALUES (2, 'b', 2, 'b'), (100, 'other', -1, DEFAULT), (3, 'c',
 query ITIT rowsort
 SELECT * FROM test2
 ----
-24 values hashing to 4d4dd5f56aa89665568947ec438aa3ba
+0
+a
+1
+astring
+0
+d
+4
+d
+1
+a
+1
+a
+100
+other
+-1
+astring
+2
+b
+2
+b
+3
+c
+3
+c
 
 statement ok
 UPDATE test2 SET d = DEFAULT, b = 'bbb' WHERE a = 1
@@ -61,7 +84,30 @@ UPDATE test2 SET d = DEFAULT, b = 'bbb' WHERE a = 1
 query ITIT rowsort
 SELECT * FROM test2
 ----
-24 values hashing to 99e374e8eec5fbec427b4cebc2f49982
+0
+a
+1
+astring
+0
+d
+4
+d
+1
+bbb
+1
+astring
+100
+other
+-1
+astring
+2
+b
+2
+b
+3
+c
+3
+c
 
 statement error
 INSERT INTO test2 VALUES (1, 'a', DEFAULT, 'a'); --throw an error
@@ -71,5 +117,4 @@ UPDATE test2 SET b = DEFAULT; --throw an error
 
 statement ok
 DROP TABLE test2
-
 

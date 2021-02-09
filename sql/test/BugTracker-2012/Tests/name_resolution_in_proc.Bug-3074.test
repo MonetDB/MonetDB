@@ -26,4 +26,3 @@ call dc.archive()
 statement ok
 rollback
 
-

@@ -27,4 +27,3 @@ SELECT COUNT(*) from table_partitions
 ----
 0
 
-

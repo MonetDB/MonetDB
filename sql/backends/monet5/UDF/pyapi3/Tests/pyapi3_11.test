@@ -41,4 +41,3 @@ DROP FUNCTION pyapi11_mult
 statement ok
 ROLLBACK
 
-

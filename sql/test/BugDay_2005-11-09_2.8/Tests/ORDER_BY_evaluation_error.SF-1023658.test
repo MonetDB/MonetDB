@@ -1,4 +1,4 @@
-query IIITIIITIITITITIIIITIIT rowsort
+query IIIITIIITIITITITIIIITIIT rowsort
 SELECT *
 FROM "keys", "objects", "tables", "schemas"
 WHERE "keys"."id" = "objects"."id"
@@ -8,7 +8,7 @@ WHERE "keys"."id" = "objects"."id"
   AND "keys"."type" = 0
 ----
 
-query IIITIIITIITITITIIIITIIT rowsort
+query IIIITIIITIITITITIIIITIIT rowsort
 SELECT *
 FROM "keys", "objects", "tables", "schemas"
 WHERE "keys"."id" = "objects"."id"
@@ -18,5 +18,4 @@ WHERE "keys"."id" = "objects"."id"
   AND "keys"."type" = 0
 ORDER BY "objects"."name"
 ----
-
 

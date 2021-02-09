@@ -357,7 +357,7 @@ comment "Import a table from bstream s with the
 pattern single(x:any_2):bat[:any_2]
 address CMDBATsingle;
 
-unsafe pattern importTable( sname:str, tname:str, onclient:int, fname:str... )(:bat[:any]...)
+unsafe pattern importTable( sname:str, tname:str, onclient:int, bswap:bit, fname:str... )(:bat[:any]...)
 address mvc_bin_import_table_wrap
 comment "Import a table from the files (fname)";
 

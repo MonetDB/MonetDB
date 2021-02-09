@@ -4,27 +4,26 @@ create table nntest(alive boolean)
 statement ok
 insert into nntest(alive) values(False)
 
-query T rowsort
+query I rowsort
 select n.alive from nntest n
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not n.alive from nntest n
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select not not n.alive from nntest n
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select not not not n.alive from nntest n
 ----
-True
+1
 
 statement ok
 drop table nntest
-
 

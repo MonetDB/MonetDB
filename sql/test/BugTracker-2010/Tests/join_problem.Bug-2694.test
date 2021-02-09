@@ -83,7 +83,50 @@ and extract(month from t1.opr_date) = t2.m
 and t1.svalue = t2.svalue
 order by t1.opr_hr
 ----
-44 values hashing to 9152d262151d3571d8394e3f7d85222f
+2009-04-01
+1
+OFF
+-2.500
+2009-04-01
+10
+ON
+1.000
+2009-04-01
+11
+ON
+2.000
+2009-04-01
+2
+OFF
+-1.500
+2009-04-01
+3
+OFF
+-0.500
+2009-04-01
+4
+OFF
+0.500
+2009-04-01
+5
+OFF
+1.500
+2009-04-01
+6
+OFF
+2.500
+2009-04-01
+7
+ON
+-2.000
+2009-04-01
+8
+ON
+-1.000
+2009-04-01
+9
+ON
+0.000
 
 query TITR rowsort
 select t1.opr_date, t1.opr_hr, t1.svalue,  t1.yyyymmddhh - t2.avg_yyyymmddhh
@@ -95,9 +138,51 @@ and extract(month from t1.opr_date) = t2.m
 and t1.svalue = t2.svalue
 order by t1.opr_hr
 ----
-44 values hashing to 9152d262151d3571d8394e3f7d85222f
+2009-04-01
+1
+OFF
+-2.500
+2009-04-01
+10
+ON
+1.000
+2009-04-01
+11
+ON
+2.000
+2009-04-01
+2
+OFF
+-1.500
+2009-04-01
+3
+OFF
+-0.500
+2009-04-01
+4
+OFF
+0.500
+2009-04-01
+5
+OFF
+1.500
+2009-04-01
+6
+OFF
+2.500
+2009-04-01
+7
+ON
+-2.000
+2009-04-01
+8
+ON
+-1.000
+2009-04-01
+9
+ON
+0.000
 
 statement ok
 rollback
-
 

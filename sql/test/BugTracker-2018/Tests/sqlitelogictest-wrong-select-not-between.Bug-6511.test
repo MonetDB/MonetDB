@@ -20,4 +20,3 @@ SELECT ALL - col0 / col0 FROM tab2 cor0 WHERE - col0 NOT BETWEEN ( + col1 + - 0 
 statement ok
 DROP TABLE tab2
 
-

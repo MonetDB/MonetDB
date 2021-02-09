@@ -33,4 +33,3 @@ drop table t2010
 statement ok
 drop schema intro3
 
-

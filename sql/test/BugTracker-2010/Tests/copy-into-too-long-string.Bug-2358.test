@@ -10,4 +10,3 @@ COPY 1 RECORDS INTO t FROM STDIN USING DELIMITERS '|','
 statement ok
 drop table t
 
-

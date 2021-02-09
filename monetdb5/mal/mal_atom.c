@@ -35,7 +35,7 @@ static void setAtomName(InstrPtr pci)
 str
 malAtomProperty(MalBlkPtr mb, InstrPtr pci)
 {
-	str name;
+	const char *name;
 	int tpe;
 	(void)mb;  /* fool compilers */
 	assert(pci != 0);
@@ -162,7 +162,7 @@ malAtomProperty(MalBlkPtr mb, InstrPtr pci)
  */
 
 str
-malAtomDefinition(str name, int tpe)
+malAtomDefinition(const char *name, int tpe)
 {
 	int i;
 

@@ -52,7 +52,61 @@ COMMIT WORK
 query RTTRR rowsort
 SELECT * FROM employee order by 1
 ----
-55 values hashing to 644fc47c5750f1d6f2169e6262ff5467
+1.000
+Matthew
+Management
+4500.000
+55.000
+10.000
+Sophia
+Sales
+4300.000
+36.000
+11.000
+Samantha
+Sales
+4100.000
+38.000
+2.000
+Olivia
+Management
+4400.000
+61.000
+3.000
+Grace
+Management
+4000.000
+42.000
+4.000
+Jim
+Production
+3700.000
+35.000
+5.000
+Alice
+Production
+3500.000
+24.000
+6.000
+Michael
+Production
+3600.000
+28.000
+7.000
+Tom
+Production
+3800.000
+35.000
+8.000
+Kevin
+Production
+4000.000
+52.000
+9.000
+Elvis
+Service
+4100.000
+40.000
 
 query RTTRRIRR rowsort
 SELECT id,
@@ -67,7 +121,94 @@ SELECT id,
        LEAD(id)        OVER (PARTITION BY dep_name ORDER BY id) AS next_row
 FROM   employee
 ----
-88 values hashing to aa682c462d5ed9fd78fc959b18d7e4a4
+1.000
+Matthew
+Management
+1.000
+1.000
+1
+NULL
+2.000
+10.000
+Sophia
+Sales
+10.000
+10.000
+1
+NULL
+11.000
+11.000
+Samantha
+Sales
+10.000
+11.000
+2
+10.000
+NULL
+2.000
+Olivia
+Management
+1.000
+2.000
+2
+1.000
+3.000
+3.000
+Grace
+Management
+1.000
+3.000
+3
+2.000
+NULL
+4.000
+Jim
+Production
+4.000
+4.000
+1
+NULL
+5.000
+5.000
+Alice
+Production
+4.000
+5.000
+2
+4.000
+6.000
+6.000
+Michael
+Production
+4.000
+6.000
+3
+5.000
+7.000
+7.000
+Tom
+Production
+4.000
+7.000
+4
+6.000
+8.000
+8.000
+Kevin
+Production
+4.000
+8.000
+5
+7.000
+NULL
+9.000
+Elvis
+Service
+9.000
+9.000
+1
+NULL
+NULL
 
 query RTTITT rowsort
 SELECT id,
@@ -78,7 +219,72 @@ SELECT id,
        LEAD(emp_name, 2)      OVER (PARTITION BY dep_name ORDER BY id) AS two_rows_ahead
 FROM   employee
 ----
-66 values hashing to 9f79b0c62dbc4700d24113a7edac55a5
+1.000
+Matthew
+Management
+1
+NULL
+Grace
+10.000
+Sophia
+Sales
+1
+NULL
+NULL
+11.000
+Samantha
+Sales
+2
+Samantha
+NULL
+2.000
+Olivia
+Management
+2
+Olivia
+NULL
+3.000
+Grace
+Management
+3
+Olivia
+NULL
+4.000
+Jim
+Production
+1
+NULL
+Michael
+5.000
+Alice
+Production
+2
+Alice
+Tom
+6.000
+Michael
+Production
+3
+Alice
+Kevin
+7.000
+Tom
+Production
+4
+Alice
+NULL
+8.000
+Kevin
+Production
+5
+Alice
+NULL
+9.000
+Elvis
+Service
+1
+NULL
+NULL
 
 query RTRRR rowsort
 SELECT id, dep_name, salary,
@@ -88,7 +294,61 @@ SELECT id, dep_name, salary,
                            ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) as DECIMAL(7,2)) AS sum_over_1or2or3_rows
 FROM   employee
 ----
-55 values hashing to 110da0cfc0ae1af2d8fa7ae712a1e5f4
+1.000
+Management
+4500.000
+12900.000
+12900.000
+10.000
+Sales
+4300.000
+8400.000
+8400.000
+11.000
+Sales
+4100.000
+4100.000
+4100.000
+2.000
+Management
+4400.000
+8400.000
+8400.000
+3.000
+Management
+4000.000
+4000.000
+4000.000
+4.000
+Production
+3700.000
+10800.000
+10800.000
+5.000
+Production
+3500.000
+3500.000
+3500.000
+6.000
+Production
+3600.000
+7100.000
+7100.000
+7.000
+Production
+3800.000
+14600.000
+11100.000
+8.000
+Production
+4000.000
+18600.000
+11500.000
+9.000
+Service
+4100.000
+4100.000
+4100.000
 
 query RTRR rowsort
 SELECT id, dep_name, salary,
@@ -96,7 +356,50 @@ SELECT id, dep_name, salary,
                            GROUPS BETWEEN 1 PRECEDING AND 1 FOLLOWING) as DECIMAL(7,2)) AS sum_over_groups
 FROM   employee
 ----
-44 values hashing to 89bd1cd2a9ca668cfca11292503bf45e
+1.000
+Management
+4500.000
+8900.000
+10.000
+Sales
+4300.000
+8400.000
+11.000
+Sales
+4100.000
+8400.000
+2.000
+Management
+4400.000
+12900.000
+3.000
+Management
+4000.000
+8400.000
+4.000
+Production
+3700.000
+11100.000
+5.000
+Production
+3500.000
+7100.000
+6.000
+Production
+3600.000
+10800.000
+7.000
+Production
+3800.000
+11500.000
+8.000
+Production
+4000.000
+7800.000
+9.000
+Service
+4100.000
+4100.000
 
 query RTRR rowsort
 SELECT id, dep_name, salary,
@@ -104,7 +407,50 @@ SELECT id, dep_name, salary,
                            RANGE BETWEEN 100.0 PRECEDING AND 50.0 FOLLOWING) as DECIMAL(7,2)) AS sum_over_range
 FROM   employee
 ----
-44 values hashing to 1a2ac679eecd61cec8b787f146fd28be
+1.000
+Management
+4500.000
+8900.000
+10.000
+Sales
+4300.000
+4300.000
+11.000
+Sales
+4100.000
+4100.000
+2.000
+Management
+4400.000
+4400.000
+3.000
+Management
+4000.000
+4000.000
+4.000
+Production
+3700.000
+7300.000
+5.000
+Production
+3500.000
+3500.000
+6.000
+Production
+3600.000
+7100.000
+7.000
+Production
+3800.000
+7500.000
+8.000
+Production
+4000.000
+4000.000
+9.000
+Service
+4100.000
+4100.000
 
 statement ok
 DROP TABLE employee
@@ -136,14 +482,66 @@ INSERT INTO tutorial.dc_bikeshare_q1_2012 VALUES (65, '2012-01-07 10:30:10', '20
 query ITTTTIT rowsort
 SELECT * FROM tutorial.dc_bikeshare_q1_2012
 ----
-42 values hashing to 0eb8024a1a44d1baaa1d4cf6d9a4f1eb
+155
+2012-01-05 12:30:10
+2012-01-05 12:21:05
+DIEMEN
+AMS
+1025
+registered
+155
+2012-01-06 16:30:10
+2012-01-06 18:21:05
+DIEMEN
+AMS
+1025
+registered
+165
+2012-01-05 12:30:10
+2012-01-05 12:21:15
+DIEMEN
+AMS
+2025
+casual
+165
+2012-01-06 16:30:10
+2012-01-06 18:21:15
+DIEMEN
+AMS
+2025
+casual
+55
+2012-01-07 10:30:10
+2012-01-07 10:31:05
+AMS
+AMS
+1025
+registered
+65
+2012-01-07 10:30:10
+2012-01-07 10:31:15
+AMS
+AMS
+2025
+casual
 
 query II rowsort
 SELECT duration_seconds,
        cast(SUM(duration_seconds) OVER (ORDER BY start_time) as int) AS running_total
   FROM tutorial.dc_bikeshare_q1_2012
 ----
-12 values hashing to 2ffa1d3b56e8fd9292d0e305c27626e3
+155
+320
+155
+640
+165
+320
+165
+640
+55
+760
+65
+760
 
 query TII rowsort
 SELECT start_terminal,
@@ -154,7 +552,24 @@ SELECT start_terminal,
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
 ----
-18 values hashing to a26fe6d06f2eddb5131c74cd0a0b35a1
+AMS
+55
+120
+AMS
+65
+120
+DIEMEN
+155
+320
+DIEMEN
+155
+640
+DIEMEN
+165
+320
+DIEMEN
+165
+640
 
 query TII rowsort
 SELECT start_terminal,
@@ -164,7 +579,24 @@ SELECT start_terminal,
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
 ----
-18 values hashing to 5d0e05b87c892638a21d46aec6022c74
+AMS
+55
+120
+AMS
+65
+120
+DIEMEN
+155
+640
+DIEMEN
+155
+640
+DIEMEN
+165
+640
+DIEMEN
+165
+640
 
 query TIIIR rowsort
 SELECT start_terminal,
@@ -178,7 +610,36 @@ SELECT start_terminal,
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
 ----
-30 values hashing to b49ef2ca3731b75f29263433d006c19a
+AMS
+55
+120
+2
+60.000
+AMS
+65
+120
+2
+60.000
+DIEMEN
+155
+640
+4
+160.000
+DIEMEN
+155
+640
+4
+160.000
+DIEMEN
+165
+640
+4
+160.000
+DIEMEN
+165
+640
+4
+160.000
 
 query TIIIR rowsort
 SELECT start_terminal,
@@ -195,7 +656,36 @@ SELECT start_terminal,
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
 ----
-30 values hashing to 9119f7c163b6ab7b5ea95155ed980ab7
+AMS
+55
+120
+2
+60.000
+AMS
+65
+120
+2
+60.000
+DIEMEN
+155
+320
+2
+160.000
+DIEMEN
+155
+640
+4
+160.000
+DIEMEN
+165
+320
+2
+160.000
+DIEMEN
+165
+640
+4
+160.000
 
 query TTII rowsort
 SELECT start_terminal,
@@ -206,7 +696,30 @@ SELECT start_terminal,
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
 ----
-24 values hashing to 8e26f0492a7ce9f09d42b998fcb8676b
+AMS
+2012-01-07 10:30:10
+55
+5
+AMS
+2012-01-07 10:30:10
+65
+6
+DIEMEN
+2012-01-05 12:30:10
+155
+1
+DIEMEN
+2012-01-05 12:30:10
+165
+2
+DIEMEN
+2012-01-06 16:30:10
+155
+3
+DIEMEN
+2012-01-06 16:30:10
+165
+4
 
 query TTII rowsort
 SELECT start_terminal,
@@ -218,7 +731,30 @@ SELECT start_terminal,
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
 ----
-24 values hashing to 9c0ab68d80f16a57dbc1783faf56e1e2
+AMS
+2012-01-07 10:30:10
+55
+1
+AMS
+2012-01-07 10:30:10
+65
+2
+DIEMEN
+2012-01-05 12:30:10
+155
+1
+DIEMEN
+2012-01-05 12:30:10
+165
+2
+DIEMEN
+2012-01-06 16:30:10
+155
+3
+DIEMEN
+2012-01-06 16:30:10
+165
+4
 
 query TII rowsort
 SELECT start_terminal,
@@ -229,7 +765,24 @@ SELECT start_terminal,
   FROM tutorial.dc_bikeshare_q1_2012
  WHERE start_time < '2012-01-08'
 ----
-18 values hashing to d16e40bd01fcb0388a0ecf91b371d273
+AMS
+55
+1
+AMS
+65
+1
+DIEMEN
+155
+1
+DIEMEN
+155
+3
+DIEMEN
+165
+1
+DIEMEN
+165
+3
 
 query TIIII rowsort
 SELECT start_terminal,
@@ -247,7 +800,36 @@ SELECT start_terminal,
  WHERE start_time < '2012-01-08'
  ORDER BY start_terminal, duration_seconds
 ----
-30 values hashing to 1ec969252074a69a13f4fce281403aba
+AMS
+55
+1
+1
+1
+AMS
+65
+2
+2
+2
+DIEMEN
+155
+1
+1
+1
+DIEMEN
+155
+2
+2
+2
+DIEMEN
+165
+3
+3
+3
+DIEMEN
+165
+4
+4
+4
 
 query TIII rowsort
 SELECT start_terminal,
@@ -260,7 +842,30 @@ SELECT start_terminal,
  WHERE start_time < '2012-01-08'
  ORDER BY start_terminal, duration_seconds
 ----
-24 values hashing to 4d0c4754cf9166fe90ce833758f64d68
+AMS
+55
+NULL
+65
+AMS
+65
+55
+NULL
+DIEMEN
+155
+155
+165
+DIEMEN
+155
+NULL
+155
+DIEMEN
+165
+155
+165
+DIEMEN
+165
+165
+NULL
 
 query TII rowsort
 SELECT start_terminal,
@@ -272,7 +877,24 @@ SELECT start_terminal,
  WHERE start_time < '2012-01-08'
  ORDER BY start_terminal, duration_seconds
 ----
-18 values hashing to ca3342488606cb3998a583b104ea422e
+AMS
+55
+NULL
+AMS
+65
+10
+DIEMEN
+155
+0
+DIEMEN
+155
+NULL
+DIEMEN
+165
+0
+DIEMEN
+165
+10
 
 query TII rowsort
 SELECT *
@@ -288,7 +910,18 @@ SELECT *
        ) sub
  WHERE sub.difference IS NOT NULL
 ----
-12 values hashing to b96c67ebe3d9238c7df3d69eb3608a5d
+AMS
+65
+10
+DIEMEN
+155
+0
+DIEMEN
+165
+0
+DIEMEN
+165
+10
 
 query TIIII rowsort
 SELECT start_terminal,
@@ -306,7 +939,36 @@ SELECT start_terminal,
  WHERE start_time < '2012-01-08'
  ORDER BY start_terminal, duration_seconds
 ----
-30 values hashing to 1ec969252074a69a13f4fce281403aba
+AMS
+55
+1
+1
+1
+AMS
+65
+2
+2
+2
+DIEMEN
+155
+1
+1
+1
+DIEMEN
+155
+2
+2
+2
+DIEMEN
+165
+3
+3
+3
+DIEMEN
+165
+4
+4
+4
 
 query TIIII rowsort
 SELECT start_terminal,
@@ -320,7 +982,36 @@ WINDOW ntile_window AS
  WHERE start_time < '2012-01-08'
  ORDER BY start_terminal, duration_seconds
 ----
-30 values hashing to 1ec969252074a69a13f4fce281403aba
+AMS
+55
+1
+1
+1
+AMS
+65
+2
+2
+2
+DIEMEN
+155
+1
+1
+1
+DIEMEN
+155
+2
+2
+2
+DIEMEN
+165
+3
+3
+3
+DIEMEN
+165
+4
+4
+4
 
 statement ok
 DROP TABLE tutorial.dc_bikeshare_q1_2012

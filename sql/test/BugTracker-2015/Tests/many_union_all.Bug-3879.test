@@ -146,4 +146,3 @@ DROP TABLE foo
 statement ok
 ROLLBACK
 
-

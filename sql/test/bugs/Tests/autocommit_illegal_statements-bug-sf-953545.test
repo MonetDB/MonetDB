@@ -10,4 +10,3 @@ SAVEPOINT failingsavepoint
 statement error
 RELEASE SAVEPOINT failingsavepoint
 
-

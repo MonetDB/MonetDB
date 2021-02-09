@@ -29,4 +29,3 @@ drop table way_tags2
 statement ok
 drop table ways
 
-

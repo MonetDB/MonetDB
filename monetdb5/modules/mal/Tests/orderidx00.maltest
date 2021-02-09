@@ -34,10 +34,29 @@ bat.append(bv,1863672321 )
 statement ok
 bat.append(bv,58690783 )
 
-query TI rowsort
+query II rowsort
 io.print(bv)
 ----
-20 values hashing to 0a90958a5f39bc70be3ba0dc3a938556
+0
+959217167
+1
+1920220901
+2
+1303856962
+3
+1667896496
+4
+1080090866
+5
+527076325
+6
+266430612
+7
+1674978691
+8
+1863672321
+9
+58690783
 
 statement ok
 bat.orderidx(bv,3)
@@ -45,25 +64,91 @@ bat.orderidx(bv,3)
 statement ok
 ord := bat.getorderidx(bv)
 
-query TT rowsort
+query II rowsort
 io.print(ord)
 ----
-20 values hashing to 3cb93d8caeadc97ad36636b562cc1831
+0
+9
+1
+6
+2
+5
+3
+0
+4
+4
+5
+2
+6
+3
+7
+7
+8
+8
+9
+1
 
 statement ok
 seq := algebra.projection(ord,bv)
 
-query TI rowsort
+query II rowsort
 io.print(seq)
 ----
-20 values hashing to 00603b75348bece0a499f25e4924d19d
+0
+58690783
+1
+266430612
+2
+527076325
+3
+959217167
+4
+1080090866
+5
+1303856962
+6
+1667896496
+7
+1674978691
+8
+1863672321
+9
+1920220901
 
 statement ok
 (k,l):= algebra.sort(bv,0:bit,0:bit,1:bit)
 
-query TIT rowsort
+query III rowsort
 io.print(k,l)
 ----
-30 values hashing to 140cbc195e9ae5d323ca265d176d3d01
-
+0
+58690783
+9
+1
+266430612
+6
+2
+527076325
+5
+3
+959217167
+0
+4
+1080090866
+4
+5
+1303856962
+2
+6
+1667896496
+3
+7
+1674978691
+7
+8
+1863672321
+8
+9
+1920220901
+1
 

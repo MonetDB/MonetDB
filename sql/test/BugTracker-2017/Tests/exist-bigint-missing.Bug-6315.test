@@ -1,4 +1,4 @@
-query T rowsort
+query I rowsort
 select
         case when EXISTS ( select hashsize from sys.tablestoragemodel )
                 then (true)
@@ -6,11 +6,11 @@ select
         end
 from sys.table_types limit 3
 ----
-False
-False
-False
+0
+0
+0
 
-query T rowsort
+query I rowsort
 select
         case when EXISTS ( select count(hashsize) from sys.tablestoragemodel )
                 then (true)
@@ -18,9 +18,9 @@ select
         end
 from sys.table_types limit 3
 ----
-True
-True
-True
+1
+1
+1
 
 statement error
 insert into sys.privileges values (
@@ -36,5 +36,4 @@ insert into sys.privileges values (
         case when (select dependency_type_name from sys.dependency_types)
                is not NULL then 7 else 7 end
           )
-
 

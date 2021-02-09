@@ -24,4 +24,3 @@ niels
 statement ok
 drop table t978045
 
-

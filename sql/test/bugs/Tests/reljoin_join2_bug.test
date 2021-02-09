@@ -50,4 +50,3 @@ WHERE
 statement ok
 drop table preAccident1
 
-

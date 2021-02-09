@@ -22,4 +22,3 @@ select bug2969(12,12)
 statement ok
 drop function bug2969
 
-

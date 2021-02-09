@@ -32,9 +32,19 @@ h := aggr.max(b,g,e);
 io.print(i,h);
 end foo;
 
-query TTT rowsort
+query III rowsort
 user.foo();
 ----
-12 values hashing to 9e65a7e5335883fb89a1cc76f31ab9ff
-
+0
+0
+0
+1
+1
+3
+2
+0
+3
+3
+NULL
+NULL
 

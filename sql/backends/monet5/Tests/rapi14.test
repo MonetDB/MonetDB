@@ -14,13 +14,13 @@ language R
     rep(T,4)
 }
 
-query T rowsort
+query I rowsort
 SELECT rapi14() FROM dval
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
 statement ok
 DROP FUNCTION rapi14
@@ -30,5 +30,4 @@ DROP TABLE dval
 
 statement ok
 ROLLBACK
-
 

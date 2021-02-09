@@ -20,19 +20,135 @@ insert into employees values
 query TTRR rowsort
 SELECT dep, name, salary, SUM(salary) OVER (ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees
 ----
-40 values hashing to 22382ea2a7aec1038ddd0774f0094575
+dev
+Brown
+62.000
+218.000
+dev
+Jones
+55.000
+571.000
+mgmt
+Davies
+84.000
+218.000
+mgmt
+Johnson
+100.000
+373.000
+mgmt
+Smith
+81.000
+571.000
+sls
+Evans
+87.000
+730.000
+sls
+Taylor
+62.000
+571.000
+sls
+Thomas
+72.000
+218.000
+sls
+Williams
+55.000
+373.000
+sls
+Wilson
+72.000
+730.000
 
 query TTRR rowsort
 SELECT dep, name, salary, SUM(salary) OVER (ORDER BY hire_date) salary_sum FROM employees
 ----
-40 values hashing to daecfc8252e4e476fecce0a99de7f30b
+dev
+Brown
+62.000
+146.000
+dev
+Jones
+55.000
+428.000
+mgmt
+Davies
+84.000
+84.000
+mgmt
+Johnson
+100.000
+318.000
+mgmt
+Smith
+81.000
+509.000
+sls
+Evans
+87.000
+658.000
+sls
+Taylor
+62.000
+571.000
+sls
+Thomas
+72.000
+218.000
+sls
+Williams
+55.000
+373.000
+sls
+Wilson
+72.000
+730.000
 
 query TTRR rowsort
 SELECT dep, name, salary, SUM(salary) OVER (PARTITION BY dep ORDER BY EXTRACT(MONTH FROM hire_date)) salary_sum FROM employees
 ----
-40 values hashing to 49258fedec2df610815083b96126dc0c
+dev
+Brown
+62.000
+62.000
+dev
+Jones
+55.000
+117.000
+mgmt
+Davies
+84.000
+84.000
+mgmt
+Johnson
+100.000
+184.000
+mgmt
+Smith
+81.000
+265.000
+sls
+Evans
+87.000
+348.000
+sls
+Taylor
+62.000
+189.000
+sls
+Thomas
+72.000
+72.000
+sls
+Williams
+55.000
+127.000
+sls
+Wilson
+72.000
+348.000
 
 statement ok
 ROLLBACK
-
 

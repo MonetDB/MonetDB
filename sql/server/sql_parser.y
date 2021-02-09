@@ -544,6 +544,7 @@ int yydebug=1;
 	opt_bounds
 	opt_column
 	opt_encrypted
+	opt_endianness
 	opt_for_each
 	opt_from_grantor
 	opt_grantor	
@@ -621,6 +622,7 @@ int yydebug=1;
 	sqlDOUBLE sqlREAL PRECISION PARTIAL SIMPLE ACTION CASCADE RESTRICT
 	BOOL_FALSE BOOL_TRUE
 	CURRENT_DATE CURRENT_TIMESTAMP CURRENT_TIME LOCALTIMESTAMP LOCALTIME
+	BIG LITTLE NATIVE ENDIAN
 	LEX_ERROR 
 	
 /* the tokens used in geom */
@@ -2770,13 +2772,14 @@ copyfrom_stmt:
 	  append_list(l, $4);
 	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_COPYLOADER, l ); }
-   | COPY BINARY INTO qname opt_column_list FROM string_commalist opt_on_location opt_constraint
+   | COPY opt_endianness BINARY INTO qname opt_column_list FROM string_commalist opt_on_location opt_constraint
 	{ dlist *l = L();
-	  append_list(l, $4);
 	  append_list(l, $5);
-	  append_list(l, $7);
+	  append_list(l, $6);
+	  append_list(l, $8);
+	  append_int(l, $10);
 	  append_int(l, $9);
-	  append_int(l, $8);
+	  append_int(l, $2);
 	  $$ = _symbol_create_list( SQL_BINCOPYFROM, l ); }
   | COPY query_expression_def INTO string opt_on_location opt_seps opt_null_string
 	{ dlist *l = L();
@@ -2900,6 +2903,14 @@ string_commalist_contents:
  |  string_commalist_contents ',' string
 			{ $$ = append_string($1, $3); }
  ;
+
+
+opt_endianness:
+	/* empty */		{ $$ = endian_native; }
+	| BIG ENDIAN		{ $$ = endian_big; }
+	| LITTLE ENDIAN	{ $$ = endian_little; }
+	| NATIVE ENDIAN	{ $$ = endian_native; }
+	;
 
 delete_stmt:
     sqlDELETE FROM qname opt_alias_name opt_where_clause
@@ -5397,12 +5408,14 @@ non_reserved_word:
 | ACTION	{ $$ = sa_strdup(SA, "action"); }
 | ANALYZE	{ $$ = sa_strdup(SA, "analyze"); }
 | AUTO_COMMIT	{ $$ = sa_strdup(SA, "auto_commit"); }
+| BIG	{ $$ = sa_strdup(SA, "big"); }
 | CACHE		{ $$ = sa_strdup(SA, "cache"); }
 | CENTURY	{ $$ = sa_strdup(SA, "century"); }
 | CLIENT	{ $$ = sa_strdup(SA, "client"); }
 | COMMENT	{ $$ = sa_strdup(SA, "comment"); }
 | DATA 		{ $$ = sa_strdup(SA, "data"); }
 | DECADE	{ $$ = sa_strdup(SA, "decade"); }
+| ENDIAN		{ $$ = sa_strdup(SA, "endian"); }
 | EPOCH		{ $$ = sa_strdup(SA, "epoch"); }
 | SQL_DEBUG	{ $$ = sa_strdup(SA, "debug"); }
 | DIAGNOSTICS 	{ $$ = sa_strdup(SA, "diagnostics"); }
@@ -5414,10 +5427,12 @@ non_reserved_word:
 | KEY		{ $$ = sa_strdup(SA, "key"); }
 | LAST		{ $$ = sa_strdup(SA, "last"); }
 | LEVEL		{ $$ = sa_strdup(SA, "level"); }
+| LITTLE		{ $$ = sa_strdup(SA, "little"); }
 | MAXVALUE	{ $$ = sa_strdup(SA, "maxvalue"); }
 | MINMAX	{ $$ = sa_strdup(SA, "MinMax"); }
 | MINVALUE	{ $$ = sa_strdup(SA, "minvalue"); }
 | sqlNAME	{ $$ = sa_strdup(SA, "name"); }
+| NATIVE		{ $$ = sa_strdup(SA, "native"); }
 | NULLS		{ $$ = sa_strdup(SA, "nulls"); }
 | OBJECT	{ $$ = sa_strdup(SA, "object"); }
 | OPTIONS	{ $$ = sa_strdup(SA, "options"); }

@@ -79,7 +79,7 @@ CREATE INDEX "predobjsubj" ON "quads" ("p", "o", "s")
 statement ok
 CREATE INDEX "subjpredobj" ON "quads" ("s", "p", "o")
 
-query TTTITTTT
+query TTTITTTI nosort
 SELECT R_1.lex AS V_1_lex, R_1.datatype AS V_1_datatype,
 R_1.lang AS V_1_lang, R_1.type AS V_1_type,
   R_2.lex AS V_2_lex, R_2.datatype AS V_2_datatype, R_2.lang AS V_2_lang,
@@ -112,5 +112,4 @@ NULL
 
 statement ok
 ROLLBACK
-
 

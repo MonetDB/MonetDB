@@ -122,4 +122,3 @@ order by id
 statement ok
 drop table "t2664"
 
-

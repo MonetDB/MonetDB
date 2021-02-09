@@ -115,4 +115,3 @@ DROP TABLE "sys"."inventory_fact_1997"
 statement ok
 DROP TABLE "sys"."time_by_day"
 
-

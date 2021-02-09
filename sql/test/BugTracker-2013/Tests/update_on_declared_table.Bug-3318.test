@@ -14,4 +14,3 @@ select MyFunc1()
 statement error
 drop function MyFunc1
 
-

@@ -144,7 +144,22 @@ SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.pr
 query I rowsort
 SELECT t1.colid FROM tbl_productsales t1 INNER JOIN tbl_productsales t2 ON t1.product_category NOT LIKE t2.product_name ORDER BY t1.colid
 ----
-16 values hashing to 5411f476c4907debb6739c004a33651a
+1
+1
+1
+1
+2
+2
+2
+2
+3
+3
+3
+3
+4
+4
+4
+4
 
 query I rowsort
 SELECT (SELECT 1 FROM another_t t1 WHERE t2.product_category LIKE CAST(t1.col1 AS VARCHAR(32))) FROM tbl_ProductSales t2
@@ -193,7 +208,18 @@ DROP FUNCTION debugme
 query TTT rowsort
 SELECT i = ALL(i), i < ANY(i), i = ANY(NULL) FROM integers
 ----
-12 values hashing to 49054c1785840f11cef5c8b3188dc04b
+NULL
+NULL
+NULL
+True
+False
+NULL
+True
+False
+NULL
+True
+False
+NULL
 
 query I rowsort
 SELECT i FROM integers WHERE i = ANY(NULL)

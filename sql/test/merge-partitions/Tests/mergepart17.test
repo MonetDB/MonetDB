@@ -109,4 +109,3 @@ DROP TABLE sublimits1
 statement ok
 DROP TABLE testupdates
 
-

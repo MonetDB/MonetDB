@@ -1,3 +1,45 @@
+monetdb (11.39.11) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#3772: Any user can grant a role.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 18 Jan 2021 14:48:19 +0100
+
+monetdb (11.39.9) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#6862: mserver5: crashes under update_table() when calling lib_sql.so
+    ( max_clients = 2048)
+  * GH#7002: monetdb stop fails
+  * GH#7012: mclient enters an infinite loop when a file on the command line
+    does not exist
+  * GH#7013: Select * on grouped view: wrong error "cannot use non GROUP BY
+    column 'a1' in query results without an aggregate function"
+  * GH#7017: mal seems to leak in functions
+  * GH#7020: release an older savepoint causes "BATproject2: does not match
+    always"
+  * GH#7021: savepoints crash mserver5
+  * GH#7022: transaction with an unreleased savepoint not properly persisted
+  * GH#7023: CREATE VIEW: SELECT: cannot use non GROUP BY column '%1' in
+    query results without an aggregate function
+  * GH#7024: DELETE FROM or TRUNCATE on freshly created table leads to
+    loosing all further inserts in same transaction
+  * GH#7030: DROP TABLE with AUTO_INCREMENT doesn't drop sequence causing
+    left-over dependency
+  * GH#7034: User with sysadmin role cannot create another user
+  * GH#7035: UPDATE and SELECT column privileges
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 11 Jan 2021 11:01:32 +0100
+
+monetdb (11.39.9) unstable; urgency=low
+
+  * sql: CREATE [OR REPLACE] TRIGGER schema_name.trigger_name is now disallowed,
+    because the trigger will be stored on the same schema as the table it
+    refers to. Use a schema-qualified on the table reference (ie ON clause)
+    when necessary.
+
+ -- Pedro Ferreira <pedro.ferreira@monetdbsolutions.com>  Thu, 10 Dec 2020 11:01:32 +0100
+
 monetdb (11.39.7) unstable; urgency=low
 
   * Rebuilt.

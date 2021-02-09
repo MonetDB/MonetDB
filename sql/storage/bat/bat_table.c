@@ -14,16 +14,17 @@
 static BAT *
 _delta_cands(sql_trans *tr, sql_table *t)
 {
+	sqlstore *store = tr->store;
 	sql_column *c = t->columns.set->h->data;
 	/* create void,void bat with length and oid's set */
-	size_t nr = store_funcs.count_col(tr, c, 0), dcnt = 0;
+	size_t nr = store->storage_api.count_col(tr, c, 0), dcnt = 0;
 	BAT *tids = NULL;
 
-	if ((dcnt=store_funcs.count_del(tr, t, 0)) > 0 || store_funcs.count_del(tr, t, 2) > 0) {
+	if ((dcnt=store->storage_api.count_del(tr, t, 0)) > 0 || store->storage_api.count_del(tr, t, 2) > 0) {
 #if 0
-		BAT *d = store_funcs.bind_del(tr, t, RDONLY);
+		BAT *d = store->storage_api.bind_del(tr, t, RDONLY);
 
-		if (d && store_funcs.count_del(tr, t, 2) > 0) {
+		if (d && store->storage_api.count_del(tr, t, 2) > 0) {
 		    BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
 			bat_destroy(d);
 			d = nd;
@@ -39,8 +40,8 @@ _delta_cands(sql_trans *tr, sql_table *t)
 				}
 			}
 			*/
-			BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
-			BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
+			BAT *ui = store->storage_api.bind_del(tr, t, RD_UPD_ID);
+			BAT *uv = store->storage_api.bind_del(tr, t, RD_UPD_VAL);
 	    	if (!ui || !uv || !d || BATreplace(d, ui, uv, true) != GDK_SUCCEED) {
 				bat_destroy(d);
 				bat_destroy(ui);
@@ -60,13 +61,13 @@ _delta_cands(sql_trans *tr, sql_table *t)
 #else
 		BAT *d;
 
-		if ((d = store_funcs.bind_del(tr, t, RDONLY)) != NULL) {
+		if ((d = store->storage_api.bind_del(tr, t, RDONLY)) != NULL) {
 			if (!d)
 				return NULL;
-			if (store_funcs.count_del(tr, t, 2) > 0) {
+			if (store->storage_api.count_del(tr, t, 2) > 0) {
 				BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
-				BAT *ui = store_funcs.bind_del(tr, t, RD_UPD_ID);
-				BAT *uv = store_funcs.bind_del(tr, t, RD_UPD_VAL);
+				BAT *ui = store->storage_api.bind_del(tr, t, RD_UPD_ID);
+				BAT *uv = store->storage_api.bind_del(tr, t, RD_UPD_VAL);
 
 				BBPunfix(d->batCacheid);
 	    			if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
@@ -102,36 +103,21 @@ _delta_cands(sql_trans *tr, sql_table *t)
 static BAT *
 delta_cands(sql_trans *tr, sql_table *t)
 {
-	BAT *tids;
-
-	if (!t->data) {
-		sql_table *ot = tr_find_table(tr->parent, t);
-		t->data = timestamp_dbat(ot->data, tr->stime);
-	}
-	tids = _delta_cands(tr, t);
-	return tids;
+	return _delta_cands(tr, t);
 }
 
 static BAT *
 full_column(sql_trans *tr, sql_column *c)
 {
-	/* TODO use bat_storage via callbacks */
-	if (!c->data) {
-		sql_column *oc = tr_find_column(tr->parent, c);
-		c->data = timestamp_delta(oc->data, tr->stime);
-	}
 	/* return full normalized column bat
 	 * 	b := b.copy()
 		b := b.append(i);
 		b := b.replace(u);
 	*/
 	BAT *b, *ui, *uv;
-	int temp = isTemp(c);
-	sql_delta *bat = c->data;
+	sql_delta *bat = col_timestamp_delta(tr, c);
 
 	b = temp_descriptor(bat->cs.bid);
-	if (temp)
-		return b;
 	if (b && bat->cs.uibid && bat->cs.ucnt) {
 		ui = temp_descriptor(bat->cs.uibid);
 		uv = temp_descriptor(bat->cs.uvbid);
@@ -289,14 +275,16 @@ column_find_int(sql_trans *tr, sql_column *c, oid rid)
 static int
 column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
+	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store_funcs.update_col(tr, c, &rid, value, c->type.type->localtype);
+	return store->storage_api.update_col(tr, c, &rid, value, c->type.type->localtype);
 }
 
 static int
 table_insert(sql_trans *tr, sql_table *t, ...)
 {
+	sqlstore *store = tr->store;
 	va_list va;
 	node *n = cs_first_node(&t->columns);
 	void *val = NULL;
@@ -304,13 +292,13 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	int ok = LOG_OK;
 
 	va_start(va, t);
-	size_t offset = store_funcs.claim_tab(tr, t, 1);
+	size_t offset = store->storage_api.claim_tab(tr, t, 1);
 	for (; n; n = n->next) {
 		sql_column *c = n->data;
 		val = va_arg(va, void *);
 		if (!val)
 			break;
-		ok = store_funcs.append_col(tr, c, offset, val, c->type.type->localtype);
+		ok = store->storage_api.append_col(tr, c, offset, val, c->type.type->localtype);
 		if (ok != LOG_OK) {
 			va_end(va);
 			return ok;
@@ -330,9 +318,10 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 static int
 table_delete(sql_trans *tr, sql_table *t, oid rid)
 {
+	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store_funcs.delete_tab(tr, t, &rid, TYPE_oid);
+	return store->storage_api.delete_tab(tr, t, &rid, TYPE_oid);
 }
 
 
@@ -657,6 +646,7 @@ rids_diff(sql_trans *tr, rids *l, sql_column *lc, subrids *r, sql_column *rc )
 static int
 table_vacuum(sql_trans *tr, sql_table *t)
 {
+	sqlstore *store = tr->store;
 	BAT *tids = delta_cands(tr, t);
 	BAT **cols;
 	node *n;
@@ -672,7 +662,7 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	}
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
-		BAT *v = store_funcs.bind_col(tr, c, RDONLY);
+		BAT *v = store->storage_api.bind_col(tr, c, RDONLY);
 
 		if (v == NULL ||
 		    (cols[c->colnr] = BATproject(tids, v)) == NULL) {
@@ -690,13 +680,13 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	}
 	BBPunfix(tids->batCacheid);
 	sql_trans_clear_table(tr, t);
-	size_t offset = store_funcs.claim_tab(tr, t, cnt);
+	size_t offset = store->storage_api.claim_tab(tr, t, cnt);
 	assert(offset == 0);
 	for (n = t->columns.set->h; n; n = n->next) {
 		sql_column *c = n->data;
 		int ok;
 
-		ok = store_funcs.append_col(tr, c, offset, cols[c->colnr], TYPE_bat);
+		ok = store->storage_api.append_col(tr, c, offset, cols[c->colnr], TYPE_bat);
 		BBPunfix(cols[c->colnr]->batCacheid);
 		if (ok != LOG_OK) {
 			for (n = n->next; n; n = n->next) {

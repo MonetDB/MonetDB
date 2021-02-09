@@ -44,4 +44,3 @@ view
 statement ok
 drop table t
 
-

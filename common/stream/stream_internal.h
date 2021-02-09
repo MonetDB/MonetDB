@@ -174,6 +174,10 @@ struct stream {
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };
 
+#ifdef __CYGWIN__
+#define __visibility__(a)
+#endif
+
 void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap)
 	__attribute__((__visibility__("hidden")));
 
@@ -266,6 +270,8 @@ struct bs {
 	unsigned itotal;	/* amount available in current read block */
 	size_t blks;		/* read/writen blocks (possibly partial) */
 	size_t bytes;		/* read/writen bytes */
+	const char *prompt;	/* on eof, first try to send this then try again */
+	stream *pstream;	/* stream to send prompts on */
 	char buf[BLOCK];	/* the buffered data (minus the size of
 				 * size-short */
 };

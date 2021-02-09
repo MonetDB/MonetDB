@@ -11,4 +11,3 @@ SELECT t.pid FROM test t WHERE FALSE AND (FALSE OR TRUE) AND ( (FALSE AND (FALSE
 statement ok
 DROP TABLE test
 
-

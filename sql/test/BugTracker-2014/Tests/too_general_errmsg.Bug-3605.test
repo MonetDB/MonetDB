@@ -52,3 +52,4 @@ select operatingday, coalesce(gepubliceerd, 0) as gepubliceerd, coalesce(gereden
 
 statement ok
 rollback
+

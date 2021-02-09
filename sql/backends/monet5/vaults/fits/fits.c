@@ -205,6 +205,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	tr = m->session->tr;
+	sqlstore *store = tr->store;
 	sch = mvc_bind_schema(m, "sys");
 
 	/* First step: look if the table exists in the database. If the table is not in the database, the export function cannot continue */
@@ -230,26 +231,26 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tables = mvc_bind_table(m, sch, "_tables");
 	col = mvc_bind_column(m, tables, "name");
-	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, col, tname, NULL);
 
 	col = mvc_bind_column(m, tables, "id");
-	fid = (int*) table_funcs.column_find_value(m->session->tr, col, rid);
+	fid = (int*) store->table_api.column_find_value(m->session->tr, col, rid);
 
 	column =  mvc_bind_table(m, sch, "_columns");
 	col = mvc_bind_column(m, column, "table_id");
 
-	rs = table_funcs.rids_select(m->session->tr, col, (void *) fid, (void *) fid, NULL);
+	rs = store->table_api.rids_select(m->session->tr, col, (void *) fid, (void *) fid, NULL);
 	GDKfree(fid);
 
-	while ((rid = table_funcs.rids_next(rs)), !is_oid_nil(rid))
+	while ((rid = store->table_api.rids_next(rs)), !is_oid_nil(rid))
 	{
 		col = mvc_bind_column(m, column, "name");
-		name = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
+		name = (char *) store->table_api.column_find_value(m->session->tr, col, rid);
 		colname[j] = toLower(name);
 		GDKfree(name);
 
 		col = mvc_bind_column(m, column, "type");
-		type = (char *) table_funcs.column_find_value(m->session->tr, col, rid);
+		type = (char *) store->table_api.column_find_value(m->session->tr, col, rid);
 
 		if (strcmp(type,"boolean")==0) tform[j] = "1L";
 
@@ -273,13 +274,13 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	col = mvc_bind_column(m, tbl, colname[0]);
 
-	nrows = store_funcs.count_col(tr, col, 1);
+	nrows = store->storage_api.count_col(tr, col, 1);
 	assert(nrows <= (size_t) GDK_oid_max);
 
 	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
 	TRC_INFO(FITS, "Filename: %s\n", filename);
 
-	remove(filename);
+	MT_remove(filename);
 
 	status=0;
 
@@ -305,7 +306,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				boolvalue = (_Bool*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				boolvalue = (_Bool*) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readboolrows[dimension] = *boolvalue;
 				GDKfree(boolvalue);
 				dimension++;
@@ -335,7 +336,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				charvalue = (char*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				charvalue = (char*) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readcharrows[dimension] = *charvalue;
 				GDKfree(charvalue);
 				dimension++;
@@ -365,7 +366,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				strvalue = (char *) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				strvalue = (char *) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readstrrows[dimension] = strvalue;
 				dimension++;
 
@@ -399,7 +400,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				shortvalue = (short*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				shortvalue = (short*) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readshortrows[dimension] = *shortvalue;
 				GDKfree(shortvalue);
 				dimension++;
@@ -429,7 +430,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				intvalue = (int*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				intvalue = (int*) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readintrows[dimension] = *intvalue;
 				GDKfree(intvalue);
 				dimension++;
@@ -459,7 +460,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				lngvalue = (lng*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				lngvalue = (lng*) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readlngrows[dimension] = *lngvalue;
 				GDKfree(lngvalue);
 				dimension++;
@@ -489,7 +490,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				realvalue = (float*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				realvalue = (float*) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readfloatrows[dimension] = *realvalue;
 				GDKfree(realvalue);
 				dimension++;
@@ -519,7 +520,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			for (numberrow = 0; numberrow < nrows ; numberrow++)
 			{
-				doublevalue = (double*) table_funcs.column_find_value(m->session->tr, col, (oid) numberrow);
+				doublevalue = (double*) store->table_api.column_find_value(m->session->tr, col, (oid) numberrow);
 				readdoublerows[dimension] = *doublevalue;
 				GDKfree(doublevalue);
 				dimension++;
@@ -705,6 +706,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	tr = m->session->tr;
 	sch = mvc_bind_schema(m, "sys");
+	sqlstore *store = tr->store;
 
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
 	if (fits_fl == NULL)
@@ -717,7 +719,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, fits_fl, "name");
-	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, col, fname, NULL);
 	if (!is_oid_nil(rid)) {
 		fits_close_file(fptr, &status);
 		msg = createException(SQL, "fits.attach", SQLSTATE(FI000) "File %s already attached\n", fname);
@@ -725,16 +727,16 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* add row in the fits_files catalog table */
-	size_t pos = store_funcs.claim_tab(m->session->tr, fits_fl, 1);
+	size_t pos = store->storage_api.claim_tab(m->session->tr, fits_fl, 1);
 	col = mvc_bind_column(m, fits_fl, "id");
-	fid = store_funcs.count_col(tr, col, 1) + 1;
-	store_funcs.append_col(m->session->tr,
+	fid = store->storage_api.count_col(tr, col, 1) + 1;
+	store->storage_api.append_col(m->session->tr,
 		mvc_bind_column(m, fits_fl, "id"), pos, &fid, TYPE_int);
-	store_funcs.append_col(m->session->tr,
+	store->storage_api.append_col(m->session->tr,
 		mvc_bind_column(m, fits_fl, "name"), pos, fname, TYPE_str);
 
 	col = mvc_bind_column(m, fits_tbl, "id");
-	tid = store_funcs.count_col(tr, col, 1) + 1;
+	tid = store->storage_api.count_col(tr, col, 1) + 1;
 
 	if ((s = strrchr(fname, DIR_SEP)) == NULL)
 		s = fname;
@@ -759,7 +761,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}else  { /* check table name for existence in the fits catalog */
 			tname_low = toLower(tname);
 			col = mvc_bind_column(m, fits_tbl, "name");
-			rid = table_funcs.column_find_row(m->session->tr, col, tname_low, NULL);
+			rid = store->table_api.column_find_row(m->session->tr, col, tname_low, NULL);
 			/* or as regular SQL table */
 			tbl = mvc_bind_table(m, sch, tname_low);
 			if (!is_oid_nil(rid) || tbl) {
@@ -799,40 +801,40 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		fits_get_num_cols(fptr, &cnum, &status);
 
-		size_t pos = store_funcs.claim_tab(m->session->tr, fits_tbl, 1);
-		store_funcs.append_col(m->session->tr,
+		size_t pos = store->storage_api.claim_tab(m->session->tr, fits_tbl, 1);
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "id"), pos, &tid, TYPE_int);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "name"), pos, tname_low, TYPE_str);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "columns"), pos, &cnum, TYPE_int);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "file_id"), pos, &fid, TYPE_int);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "hdu"), pos, &i, TYPE_int);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "date"), pos, tdate, TYPE_str);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "origin"), pos, orig, TYPE_str);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tbl, "comment"), pos, comm, TYPE_str);
 
-		pos = store_funcs.claim_tab(m->session->tr, fits_tp, 1);
-		store_funcs.append_col(m->session->tr,
+		pos = store->storage_api.claim_tab(m->session->tr, fits_tp, 1);
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "table_id"), pos, &tid, TYPE_int);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "xtension"), pos, xtensionname, TYPE_str);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "bitpix"), pos, &bitpixnumber, TYPE_int);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "stilvers"), pos, stilversion, TYPE_str);
-		store_funcs.append_col(m->session->tr,
+		store->storage_api.append_col(m->session->tr,
 			mvc_bind_column(m, fits_tp, "stilclas"), pos, stilclass, TYPE_str);
 
 		/* read columns description */
 		s = stmt;
 		col = mvc_bind_column(m, fits_col, "id");
-		cid = store_funcs.count_col(tr, col, 1) + 1;
+		cid = store->storage_api.count_col(tr, col, 1) + 1;
 		for (j = 1; j <= cnum; j++, cid++) {
 			fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status);
 			/* escape the various strings to avoid SQL injection attacks */
@@ -905,7 +907,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	col = mvc_bind_column(m, fits_tbl, "name");
-	rid = table_funcs.column_find_row(m->session->tr, col, tname, NULL);
+	sqlstore *store = m->session->tr->store;
+	rid = store->table_api.column_find_row(m->session->tr, col, tname, NULL);
 	if (is_oid_nil(rid)) {
 		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Table %s is unknown in FITS catalog. Attach first the containing file\n", tname);
 		return msg;
@@ -913,14 +916,14 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* Open FITS file and move to the table HDU */
 	col = mvc_bind_column(m, fits_tbl, "file_id");
-	fid = (int*)table_funcs.column_find_value(m->session->tr, col, rid);
+	fid = (int*)store->table_api.column_find_value(m->session->tr, col, rid);
 
 	fits_fl = mvc_bind_table(m, sch, "fits_files");
 	col = mvc_bind_column(m, fits_fl, "id");
-	frid = table_funcs.column_find_row(m->session->tr, col, (void *)fid, NULL);
+	frid = store->table_api.column_find_row(m->session->tr, col, (void *)fid, NULL);
 	GDKfree(fid);
 	col = mvc_bind_column(m, fits_fl, "name");
-	fname = (char *)table_funcs.column_find_value(m->session->tr, col, frid);
+	fname = (char *)store->table_api.column_find_value(m->session->tr, col, frid);
 	if (fits_open_file(&fptr, fname, READONLY, &status)) {
 		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "Missing FITS file %s.\n", fname);
 		GDKfree(fname);
@@ -929,7 +932,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	GDKfree(fname);
 
 	col = mvc_bind_column(m, fits_tbl, "hdu");
-	hdu = (int*)table_funcs.column_find_value(m->session->tr, col, rid);
+	hdu = (int*)store->table_api.column_find_value(m->session->tr, col, rid);
 	fits_movabs_hdu(fptr, *hdu, &hdutype, &status);
 	if (hdutype != ASCII_TBL && hdutype != BINARY_TBL) {
 		msg = createException(MAL, "fits.loadtable", SQLSTATE(FI000) "HDU %d is not a table.\n", *hdu);
@@ -941,7 +944,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create a SQL table to hold the FITS table */
 	/*	col = mvc_bind_column(m, fits_tbl, "columns");
-	   cnum = *(int*) table_funcs.column_find_value(m->session->tr, col, rid); */
+	   cnum = *(int*) store->table_api.column_find_value(m->session->tr, col, rid); */
 	fits_get_num_cols(fptr, &cnum, &status);
 	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum, 0);
 
@@ -1087,8 +1090,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		TRC_INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
-		size_t pos = store_funcs.claim_tab(m->session->tr, tbl, BATcount(tmp));
-		if (store_funcs.append_col(m->session->tr, col, pos, tmp, TYPE_bat) != LOG_OK) {
+		size_t pos = store->storage_api.claim_tab(m->session->tr, tbl, BATcount(tmp));
+		if (store->storage_api.append_col(m->session->tr, col, pos, tmp, TYPE_bat) != LOG_OK) {
 			BBPunfix(tmp->batCacheid);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;

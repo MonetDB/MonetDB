@@ -46,4 +46,3 @@ DROP TABLE test1
 statement ok
 DROP TABLE test2
 
-

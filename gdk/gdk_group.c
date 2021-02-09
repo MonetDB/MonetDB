@@ -1081,6 +1081,16 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		} else {
 			nbucket = MAX(HASHmask(cnt), 1 << 16);
 		}
+		switch (t) {
+		case TYPE_bte:
+			nbucket = 256;
+			break;
+		case TYPE_sht:
+			nbucket = 65536;
+			break;
+		default:
+			break;
+		}
 		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
 		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
 		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0) {

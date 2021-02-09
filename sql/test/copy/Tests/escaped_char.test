@@ -30,12 +30,22 @@ therest"
 query TT rowsort
 select * from tt_str
 ----
-12 values hashing to 7fa94a1fa7c55c7b8258f06f40d7808a
+\hello
+world
+hello"
+world
+hello,world
+all
+hello,world
+all@therest
+hello@
+world
+hello@
+world
 
 statement ok
 drop table tt_str
 
 statement ok
 rollback
-
 

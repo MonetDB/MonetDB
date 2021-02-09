@@ -11,8 +11,8 @@
 
 #define LOGFILE "log"
 
-typedef gdk_return (*preversionfix_fptr)(int oldversion, int newversion);
-typedef gdk_return (*postversionfix_fptr)(void *lg);
+typedef gdk_return (*preversionfix_fptr)(void *data, int oldversion, int newversion);
+typedef gdk_return (*postversionfix_fptr)(void *data, void *lg);
 
 typedef struct logger logger;
 
@@ -44,7 +44,7 @@ typedef int log_id;
 
 gdk_export gdk_return old_logger_load(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
 
-gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp);
+gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_export void logger_destroy(logger *lg);
 gdk_export gdk_return logger_flush(logger *lg, lng saved_id); /* try too flush a part of the logs, including the passed saved_id */
 

@@ -43,10 +43,9 @@ z := user.foo();
 ----
 do multiplex three test, do multiplex one test, do multiplex pow test
 
-query TI rowsort
+query II rowsort
 io.print(z);
 ----
 0
 2
-
 

@@ -19,4 +19,3 @@ SELECT A.prop, count(*)
 	GROUP BY A.prop
 ----
 
-

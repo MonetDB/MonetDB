@@ -46,7 +46,18 @@ INSERT INTO RELTIME_TBL (f1) VALUES ('@ 30 eons ago')
 query TT rowsort
 SELECT '' AS six, RELTIME_TBL.* FROM RELTIME_TBL
 ----
-12 values hashing to e672309fe201df996648956169dc7352
+(empty)
+0:00:01
+(empty)
+0:00:10
+(empty)
+0:01:40
+(empty)
+0:16:40
+(empty)
+1 day, 3:46:40
+(empty)
+2:46:40
 
 statement error
 SELECT '' AS five, RELTIME_TBL.* FROM RELTIME_TBL
@@ -78,9 +89,52 @@ SELECT '' AS fifteen, r1.*, r2.*
    WHERE r1.f1 > r2.f1
    ORDER BY r1.f1, r2.f1
 ----
-45 values hashing to a999d638e53d71c6ff21b464fc8f0a40
+(empty)
+0:00:10
+0:00:01
+(empty)
+0:01:40
+0:00:01
+(empty)
+0:01:40
+0:00:10
+(empty)
+0:16:40
+0:00:01
+(empty)
+0:16:40
+0:00:10
+(empty)
+0:16:40
+0:01:40
+(empty)
+1 day, 3:46:40
+0:00:01
+(empty)
+1 day, 3:46:40
+0:00:10
+(empty)
+1 day, 3:46:40
+0:01:40
+(empty)
+1 day, 3:46:40
+0:16:40
+(empty)
+1 day, 3:46:40
+2:46:40
+(empty)
+2:46:40
+0:00:01
+(empty)
+2:46:40
+0:00:10
+(empty)
+2:46:40
+0:01:40
+(empty)
+2:46:40
+0:16:40
 
 statement ok
 DROP TABLE RELTIME_TBL
-
 

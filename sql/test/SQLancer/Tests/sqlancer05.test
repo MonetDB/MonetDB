@@ -448,10 +448,23 @@ query T rowsort
 SELECT t1.c0 FROM t1 WHERE t1.c0 NOT ILIKE t1.c0
 ----
 
-query T rowsort
+query I rowsort
 SELECT t1.c0 NOT ILIKE t1.c0 FROM t1
 ----
-14 values hashing to 4bc664ac1927cce717e0f9b22a01e157
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
 
 statement ok
 ROLLBACK
@@ -582,7 +595,7 @@ COPY 26 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 1970-01-02
 1970-01-23
 
-query T rowsort
+query I rowsort
 SELECT t1.c1 FROM t1, t2 NATURAL JOIN t0 WHERE (CAST((TIME '15:03:17') NOT IN (TIME '11:36:59', TIME '21:14:10',
 TIME '01:03:49') AS INT)) BETWEEN ASYMMETRIC (t1.c0) AND (t1.c0)
 ----
@@ -645,4 +658,82 @@ select cast(interval '-1' second as time)
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" INTERVAL MONTH,"c1" BINARY LARGE OBJECT)
+
+statement ok
+COPY 11 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	E0
+NULL	A0B0
+NULL	00
+NULL	NULL
+1655951380	NULL
+1624060581	NULL
+503097283	NULL
+1181487537	NULL
+NULL	
+NULL	4D3ABFB0
+1233829956	0C
+
+statement ok
+create view v0(vc0, vc1, vc2) as (values (length(r'-165227345'), greatest(interval '773370894' second, interval '-320486280' second),
+sql_add(cast(date '1970-01-06' as timestamp), case 0.34182486343556306440660819134791381657123565673828125 when 20419
+then interval '-359816023' second else interval '413001394' second end))) with check option
+
+query T rowsort
+select t2.c1 from (values (10, 773370894.000, timestamp '1983-02-07 02:36:34')) v0, t2
+right outer join (values (47940718, null)) as sub0 on nullif(true, (t2.c1) between (t2.c1) and (t2.c1))
+----
+NULL
+NULL
+NULL
+NULL
+NULL
+
+query T rowsort
+select t2.c1 from v0, t2 right outer join (values (least(ifthenelse(false, r'', r'47940718'), sql_max(r'栩', r'U*>Kz0')),
+case cast(interval '-165227345' month as string) when "insert"(r'f3', 0.57506007, -1550051844, r'0.06527867754732408')
+then r'u' when r'2033856974' then case when true then r'' when false then r'-1543387917' when true then r'0.4055556886118663'
+when false then r'c' else r'E\n' end end)) as sub0 on nullif(not (false), (t2.c1) not between asymmetric (t2.c1) and (t2.c1))
+where case ((50)*(1836147184)) when least(5110, 1303739364) then (false) = false when scale_down(0.07871449894764926,
+0.26471586054989171277185278086108155548572540283203125) then least(true, true) when
+cast(0.92609287116711858089956876938231289386749267578125 as double) then greatest(true, false) end
+----
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create view v5(vc0, vc1, vc2) as (values (2090916872, -1.850350369280157e-11, 566614814)) with check option
+
+statement ok
+create view v29(vc0, vc1) as (values (0.2, 0.2), (0.4, 0.5)) with check option
+
+statement ok
+create view v57(vc0, vc1) as (values (0.6, 0.7), (0.8, 0.9)) with check option
+
+statement ok
+create view v76(vc0) as (with cte0(c0,c1,c2,c3) as (select 0.32, 1, true, 1), cte1(c0,c1) as (select -0.50347245, 23.2)
+select distinct true from (values(1),(2)) l0v54,cte0 as l0cte0,cte1 as l0cte1) with check option
+
+statement ok
+create view v82(vc0, vc1) as (with cte1(c0,c1,c2) as (select 1, case when false
+then true when false then false end, 1 from v29 as l1v29)
+select case l0cte1.c1 when true then least(null, l0cte1.c0) end, 1 from cte1 as l0cte1
+join (select 1, '1', cast(l1v57.vc1 as bigint) from v57 as l1v57,
+v5 as l1v5, v76 as l1v76) as sub1 on false) with check option
+
+query I rowsort
+WITH cte0(c0,c1,c2) AS (SELECT CAST('1' AS INT), 1, 0.82 FROM v82 AS l1v82) SELECT 1 FROM cte0 AS l0cte0
+----
+
+statement ok
+ROLLBACK
 

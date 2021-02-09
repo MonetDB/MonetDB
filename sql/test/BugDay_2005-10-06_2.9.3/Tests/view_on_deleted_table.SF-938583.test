@@ -11,4 +11,3 @@ query I rowsort
 select * from v_vdt
 ----
 
-

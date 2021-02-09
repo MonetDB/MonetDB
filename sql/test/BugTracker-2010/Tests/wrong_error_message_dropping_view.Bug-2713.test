@@ -7,4 +7,3 @@ drop view t2713
 statement ok
 drop table t2713
 
-

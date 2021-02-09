@@ -229,7 +229,7 @@ OIDXcreateImplementation(Client cntxt, int tpe, BAT *b, int pieces)
 	return msg;
 }
 
-str
+static str
 OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -250,7 +250,7 @@ OIDXcreate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -270,7 +270,7 @@ OIDXhasorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -307,7 +307,7 @@ OIDXgetorderidx(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
 {
 	BAT *b;
@@ -332,7 +332,7 @@ OIDXorderidx(bat *ret, const bat *bid, const bit *stable)
  * Merge the collection of sorted OID BATs into one
  */
 
-str
+static str
 OIDXmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;

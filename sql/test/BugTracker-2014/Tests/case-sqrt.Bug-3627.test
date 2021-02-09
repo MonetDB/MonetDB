@@ -20,7 +20,21 @@ SELECT t0.id
           FROM t1
        ) t0
 ----
-15 values hashing to f12c1f7f14718285c289a2537f92118c
+1
+-2
+1.414
+2
+-1
+1.000
+3
+0
+0.000
+4
+1
+1.000
+5
+2
+1.414
 
 query IIR rowsort
 SELECT t0.id
@@ -35,9 +49,22 @@ SELECT t0.id
           FROM t1
        ) t0
 ----
-15 values hashing to f12c1f7f14718285c289a2537f92118c
+1
+-2
+1.414
+2
+-1
+1.000
+3
+0
+0.000
+4
+1
+1.000
+5
+2
+1.414
 
 statement ok
 ROLLBACK
-
 

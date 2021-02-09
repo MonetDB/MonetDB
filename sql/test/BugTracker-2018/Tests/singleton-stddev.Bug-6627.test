@@ -86,4 +86,3 @@ NULL
 statement ok
 ROLLBACK
 
-

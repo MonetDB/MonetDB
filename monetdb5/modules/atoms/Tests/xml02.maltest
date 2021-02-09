@@ -16,7 +16,7 @@ bat.append(h,"brown")
 statement ok
 bat.append(h,"curly dark brown")
 
-query TT rowsort
+query IT rowsort
 io.print(b)
 ----
 0
@@ -36,7 +36,7 @@ bj:= batxml.str(bc)
 statement ok
 hj:= batxml.str(hc)
 
-query TT rowsort
+query IT rowsort
 io.print(bj)
 ----
 0
@@ -44,7 +44,7 @@ name = "Mary Ann Walker"
 1
 name = "Annie Chapman"
 
-query TT rowsort
+query IT rowsort
 io.print(hj)
 ----
 0
@@ -58,12 +58,11 @@ aa:= batxml.concat(bc,hc)
 statement ok
 as:= batxml.str(aa)
 
-query TT rowsort
+query IT rowsort
 io.print(as)
 ----
 0
 name = "Mary Ann Walker" hair = "brown"
 1
 name = "Annie Chapman" hair = "curly dark brown"
-
 

@@ -71,4 +71,3 @@ SELECT * FROM fract_only
 statement ok
 drop table fract_only
 
-

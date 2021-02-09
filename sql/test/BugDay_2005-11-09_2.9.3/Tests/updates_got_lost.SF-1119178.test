@@ -52,4 +52,3 @@ SELECT * FROM aap
 statement ok
 DROP TABLE aap
 
-

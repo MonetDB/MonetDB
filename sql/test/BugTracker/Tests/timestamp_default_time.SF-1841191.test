@@ -25,4 +25,3 @@ select * from testdate
 statement ok
 drop table testdate
 
-

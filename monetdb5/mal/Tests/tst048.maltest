@@ -10,7 +10,7 @@ bat.append(a, 1)
 statement ok
 bat.append(a, 2)
 
-query TI rowsort
+query II rowsort
 io.print(a)
 ----
 0
@@ -32,46 +32,46 @@ bat.append(b, 1.4)
 statement ok
 bat.append(b, 2.5)
 
-query TT rowsort
+query IR rowsort
 io.print(b)
 ----
 0
-0.3
+0.300
 1
-1.4
+1.400
 2
-2.5
+2.500
 
 statement ok
 c := algebra.project(a, 2.1)
 
-query TT rowsort
+query IR rowsort
 io.print(c)
 ----
 0
-2.1
+2.100
 1
-2.1
+2.100
 2
-2.1
+2.100
 
 statement ok
 e:= algebra.project(b,2.5)
 
-query TT rowsort
+query IR rowsort
 io.print(e)
 ----
 0
-2.5
+2.500
 1
-2.5
+2.500
 2
-2.5
+2.500
 
 statement ok
 d:= algebra.project(a,3)
 
-query TI rowsort
+query II rowsort
 io.print(d)
 ----
 0
@@ -80,5 +80,4 @@ io.print(d)
 3
 2
 3
-
 

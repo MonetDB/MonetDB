@@ -1683,4 +1683,3 @@ drop table orders
 statement ok
 drop table customer
 
-

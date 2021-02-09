@@ -96,7 +96,16 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Name)
 ----
-10 values hashing to 63842f5a497ce27b8be5fb06f533cce3
+Mobo Game
+200
+NULL
+1200
+PKO Game
+400
+Shirt
+500
+Shorts
+100
 
 query TTI rowsort
 SELECT
@@ -104,7 +113,27 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name)
 ----
-21 values hashing to fbce57c6159a884ed56f8379265d8f19
+Fashion
+NULL
+600
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Game
+Mobo Game
+200
+Game
+NULL
+600
+Game
+PKO Game
+400
+NULL
+NULL
+1200
 
 query TTI rowsort
 SELECT
@@ -112,7 +141,18 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name) HAVING SUM(TotalSales) > 400
 ----
-12 values hashing to c98bd6c8186784c3da5af0bf778b0f52
+Fashion
+NULL
+600
+Fashion
+Shirt
+500
+Game
+NULL
+600
+NULL
+NULL
+1200
 
 statement error
 SELECT
@@ -138,7 +178,16 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE(Product_Name)
 ----
-10 values hashing to 63842f5a497ce27b8be5fb06f533cce3
+Mobo Game
+200
+NULL
+1200
+PKO Game
+400
+Shirt
+500
+Shorts
+100
 
 query TTI rowsort
 SELECT
@@ -146,7 +195,39 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE(Product_Category, Product_Name)
 ----
-33 values hashing to 5e89b76ff52132015fd9be61527b523c
+Fashion
+NULL
+600
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Game
+Mobo Game
+200
+Game
+NULL
+600
+Game
+PKO Game
+400
+NULL
+Mobo Game
+200
+NULL
+NULL
+1200
+NULL
+PKO Game
+400
+NULL
+Shirt
+500
+NULL
+Shorts
+100
 
 query TTI rowsort
 SELECT
@@ -154,7 +235,39 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE(Product_Category, Product_Name) ORDER BY Product_Category, Product_Name
 ----
-33 values hashing to 5e89b76ff52132015fd9be61527b523c
+Fashion
+NULL
+600
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Game
+Mobo Game
+200
+Game
+NULL
+600
+Game
+PKO Game
+400
+NULL
+Mobo Game
+200
+NULL
+NULL
+1200
+NULL
+PKO Game
+400
+NULL
+Shirt
+500
+NULL
+Shorts
+100
 
 statement error
 SELECT
@@ -168,7 +281,42 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ColID, ROLLUP(Product_Category, Product_Name)
 ----
-36 values hashing to d035145c315f82a8ab4becc045f14443
+Fashion
+NULL
+100
+Fashion
+NULL
+500
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Game
+Mobo Game
+200
+Game
+NULL
+200
+Game
+NULL
+400
+Game
+PKO Game
+400
+NULL
+NULL
+100
+NULL
+NULL
+200
+NULL
+NULL
+400
+NULL
+NULL
+500
 
 query TTI rowsort
 SELECT
@@ -176,7 +324,42 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY (ColID), ROLLUP(Product_Category, Product_Name)
 ----
-36 values hashing to d035145c315f82a8ab4becc045f14443
+Fashion
+NULL
+100
+Fashion
+NULL
+500
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Game
+Mobo Game
+200
+Game
+NULL
+200
+Game
+NULL
+400
+Game
+PKO Game
+400
+NULL
+NULL
+100
+NULL
+NULL
+200
+NULL
+NULL
+400
+NULL
+NULL
+500
 
 query TTI rowsort
 SELECT
@@ -184,7 +367,54 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY (ColID), CUBE(Product_Category, Product_Name)
 ----
-48 values hashing to be5f8db6a2eaf19eb5390123a3f76b75
+Fashion
+NULL
+100
+Fashion
+NULL
+500
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Game
+Mobo Game
+200
+Game
+NULL
+200
+Game
+NULL
+400
+Game
+PKO Game
+400
+NULL
+Mobo Game
+200
+NULL
+NULL
+100
+NULL
+NULL
+200
+NULL
+NULL
+400
+NULL
+NULL
+500
+NULL
+PKO Game
+400
+NULL
+Shirt
+500
+NULL
+Shorts
+100
 
 query TI rowsort
 SELECT
@@ -192,7 +422,20 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category), ROLLUP(Product_Category)
 ----
-14 values hashing to f7b95597668b193d8c184778f6469b4a
+Fashion
+600
+Fashion
+600
+Fashion
+600
+Game
+600
+Game
+600
+Game
+600
+NULL
+1200
 
 query TI rowsort
 SELECT
@@ -200,7 +443,20 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE(Product_Category), CUBE(Product_Category)
 ----
-14 values hashing to f7b95597668b193d8c184778f6469b4a
+Fashion
+600
+Fashion
+600
+Fashion
+600
+Game
+600
+Game
+600
+Game
+600
+NULL
+1200
 
 query TTI rowsort
 SELECT
@@ -208,7 +464,87 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name), ROLLUP(Product_Category, Product_Name)
 ----
-81 values hashing to 9b57c42dcdf6881a2caa3a2f083593ae
+Fashion
+NULL
+600
+Fashion
+NULL
+600
+Fashion
+NULL
+600
+Fashion
+Shirt
+500
+Fashion
+Shirt
+500
+Fashion
+Shirt
+500
+Fashion
+Shirt
+500
+Fashion
+Shirt
+500
+Fashion
+Shorts
+100
+Fashion
+Shorts
+100
+Fashion
+Shorts
+100
+Fashion
+Shorts
+100
+Fashion
+Shorts
+100
+Game
+Mobo Game
+200
+Game
+Mobo Game
+200
+Game
+Mobo Game
+200
+Game
+Mobo Game
+200
+Game
+Mobo Game
+200
+Game
+NULL
+600
+Game
+NULL
+600
+Game
+NULL
+600
+Game
+PKO Game
+400
+Game
+PKO Game
+400
+Game
+PKO Game
+400
+Game
+PKO Game
+400
+Game
+PKO Game
+400
+NULL
+NULL
+1200
 
 query TTI rowsort
 SELECT
@@ -232,7 +568,16 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE((Product_Name))
 ----
-10 values hashing to 63842f5a497ce27b8be5fb06f533cce3
+Mobo Game
+200
+NULL
+1200
+PKO Game
+400
+Shirt
+500
+Shorts
+100
 
 query I rowsort
 SELECT
@@ -268,7 +613,18 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP((Product_Category, Product_Name), ColID), ColID
 ----
-12 values hashing to 3b78f664e52eec82d10a440884aa4194
+100
+100
+100
+200
+200
+200
+400
+400
+400
+500
+500
+500
 
 query II rowsort
 SELECT
@@ -276,7 +632,102 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY CUBE((Product_Category, Product_Name), ColID), ColID, ROLLUP((Product_Category, ColID), Product_Name)
 ----
-96 values hashing to 1db6cb61d39cc78b402270b620a165e1
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+100
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+200
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+400
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
+1
+500
 
 query I rowsort
 SELECT
@@ -369,7 +820,38 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ColID, CUBE (Product_Category, ColID), GROUPING SETS ((Product_Name), (Product_Category))
 ----
-32 values hashing to b79d0959c7f847b23536edbf2f55a8d6
+100
+100
+100
+100
+100
+100
+100
+100
+200
+200
+200
+200
+200
+200
+200
+200
+400
+400
+400
+400
+400
+400
+400
+400
+500
+500
+500
+500
+500
+500
+500
+500
 
 query I rowsort
 SELECT
@@ -377,7 +859,26 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS(CUBE(Product_Category, Product_Name), ROLLUP(ColID, Product_Name))
 ----
-20 values hashing to 7fb44d1be15f1ffa83c32ce67af91f71
+100
+100
+100
+100
+1200
+1200
+200
+200
+200
+200
+400
+400
+400
+400
+500
+500
+500
+500
+600
+600
 
 query I rowsort
 SELECT
@@ -385,7 +886,18 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ColID, GROUPING SETS (GROUPING SETS (()), (Product_Name), (Product_Category))
 ----
-12 values hashing to 3b78f664e52eec82d10a440884aa4194
+100
+100
+100
+200
+200
+200
+400
+400
+400
+500
+500
+500
 
 query I rowsort
 SELECT
@@ -393,7 +905,25 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS (ROLLUP(ColID), (), GROUPING SETS ((Product_Category, Product_Name), CUBE(ColID), ColID))
 ----
-19 values hashing to a05028a6811f075e6b96abb3f6ede39c
+100
+100
+100
+100
+1200
+1200
+1200
+200
+200
+200
+200
+400
+400
+400
+400
+500
+500
+500
+500
 
 query I rowsort
 SELECT
@@ -449,5 +979,4 @@ ORDER BY AVG(TotalSales)
 
 statement ok
 DROP TABLE tbl_ProductSales
-
 

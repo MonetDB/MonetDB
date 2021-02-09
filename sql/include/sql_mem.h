@@ -64,11 +64,12 @@ extern char *sa_strdup( sql_allocator *sa, const char *s);
 extern char *sa_strconcat( sql_allocator *sa, const char *s1, const char *s2);
 extern size_t sa_size( sql_allocator *sa );
 
-#define SA_NEW( sa, type ) ((type*)sa_alloc( sa, sizeof(type)) )
-#define SA_ZNEW( sa, type ) ((type*)sa_zalloc( sa, sizeof(type)) )
-#define SA_NEW_ARRAY( sa, type, size ) (type*)sa_alloc( sa, ((size)*sizeof(type)))
+#define SA_NEW( sa, type ) (sa?((type*)sa_alloc( sa, sizeof(type))):MNEW(type))
+#define SA_ZNEW( sa, type ) (sa?((type*)sa_zalloc( sa, sizeof(type))):ZNEW(type))
+#define SA_NEW_ARRAY( sa, type, size ) (sa?(type*)sa_alloc( sa, ((size)*sizeof(type))):NEW_ARRAY(type,size))
 #define SA_ZNEW_ARRAY( sa, type, size ) (type*)sa_zalloc( sa, ((size)*sizeof(type)))
-#define SA_RENEW_ARRAY( sa, type, ptr, sz, osz ) (type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
+#define SA_RENEW_ARRAY( sa, type, ptr, sz, osz ) (sa?(type*)sa_realloc( sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type))):RENEW_ARRAY(type,ptr,sz))
+#define SA_STRDUP( sa, s) (sa?sa_strdup(sa, s):_STRDUP(s))
 
 #define _strlen(s) (int)strlen(s)
 

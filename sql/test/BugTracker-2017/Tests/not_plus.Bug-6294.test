@@ -13,4 +13,3 @@ SELECT + 86 / - + 59 + + - col1 + - - 40 FROM tab0 WHERE NOT + col2 IS NOT NULL
 statement ok
 DROP TABLE tab0
 
-

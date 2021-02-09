@@ -35,4 +35,3 @@ a BETWEEN x AND y
 statement ok
 ROLLBACK
 
-

@@ -50,4 +50,3 @@ WHERE a2 OR a3
 statement ok
 ROLLBACK
 
-

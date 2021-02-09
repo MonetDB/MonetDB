@@ -26,12 +26,12 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
-user.my_generate_series
+sql.my_generate_series
 2
 aggr.count
 2
+bat.pack
+5
 bat.single
 2
 algebra.crossproduct
@@ -64,5 +64,4 @@ rollback
 
 statement ok
 set optimizer = 'default_pipe'
-
 

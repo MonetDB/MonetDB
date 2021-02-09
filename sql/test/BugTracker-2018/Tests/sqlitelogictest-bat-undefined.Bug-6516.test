@@ -17,4 +17,3 @@ SELECT DISTINCT * FROM tab1 AS cor0 WHERE ( col0 ) NOT IN ( + col0, 70 )
 statement ok
 DROP TABLE tab1
 
-

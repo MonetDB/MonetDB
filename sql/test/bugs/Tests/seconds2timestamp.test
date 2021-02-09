@@ -46,4 +46,3 @@ select epoch(time2) from t10
 statement ok
 drop table t10
 
-

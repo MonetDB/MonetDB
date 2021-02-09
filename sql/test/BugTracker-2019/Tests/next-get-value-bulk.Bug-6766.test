@@ -80,4 +80,3 @@ myseq
 statement ok
 rollback
 
-

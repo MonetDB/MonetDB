@@ -22,9 +22,55 @@ so:= bat.reuseMap(b,d);
 io.print(so);
 end foo;
 
-query TT rowsort
+query II rowsort
 user.foo();
 ----
-48 values hashing to 8a22da7f5ade05a40de9d9e0e687d7c0
-
+0
+0
+0
+1
+0
+1
+0
+1
+1
+2
+1
+2
+1
+3
+1
+4
+2
+3
+2
+4
+2
+5
+2
+7
+3
+4
+3
+5
+3
+6
+4
+5
+4
+6
+4
+7
+5
+6
+5
+8
+5
+9
+6
+7
+7
+8
+8
+9
 

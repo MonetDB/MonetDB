@@ -25,3 +25,4 @@ select count(*) from c
 
 statement ok
 rollback
+

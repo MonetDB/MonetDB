@@ -42,4 +42,3 @@ DROP TABLE repro_friends
 statement ok
 DROP TABLE repro_persons
 
-

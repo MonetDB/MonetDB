@@ -37,4 +37,3 @@ SELECT B.prop, count(*)
 	GROUP BY B.prop
 ----
 
-

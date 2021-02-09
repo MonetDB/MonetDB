@@ -252,4 +252,3 @@ DROP TABLE s4_keywords
 statement ok
 COMMIT
 
-

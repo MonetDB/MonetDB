@@ -32,4 +32,3 @@ select json.filter(j,'..num') from jstmp
 statement ok
 drop table jstmp
 
-

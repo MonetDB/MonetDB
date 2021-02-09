@@ -8,13 +8,13 @@ query I rowsort
 SELECT i FROM integers WHERE i >= ALL(SELECT i FROM integers)
 ----
 
-query IT rowsort
+query II rowsort
 SELECT i, i >= ALL(SELECT i FROM integers) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
 NULL
 NULL
@@ -25,15 +25,15 @@ SELECT i FROM integers WHERE i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL
 ----
 3
 
-query IT rowsort
+query II rowsort
 SELECT i, i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
-True
+1
 NULL
 NULL
 
@@ -90,99 +90,99 @@ SELECT i FROM integers WHERE i <> ALL(SELECT i FROM integers WHERE i>10) ORDER B
 3
 NULL
 
-query IT rowsort
+query II rowsort
 SELECT i, i <> ALL(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i
 ----
 1
-True
+1
 2
-True
+1
 3
-True
+1
 NULL
-True
+1
 
-query IT rowsort
+query II rowsort
 SELECT i, i > ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
-False
+0
 NULL
-False
+0
 
-query IT rowsort
+query II rowsort
 SELECT i, i = ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
-False
+0
 NULL
-False
+0
 
-query IT rowsort
+query II rowsort
 SELECT i, i >= ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
-False
+0
 NULL
-False
+0
 
-query IT rowsort
+query II rowsort
 SELECT i, i <= ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
-False
+0
 NULL
-False
+0
 
-query IT rowsort
+query II rowsort
 SELECT i, i < ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
-False
+0
 NULL
-False
+0
 
-query IT rowsort
+query II rowsort
 SELECT i, i <> ANY(SELECT i FROM integers WHERE i>10) FROM integers ORDER BY i
 ----
 1
-False
+0
 2
-False
+0
 3
-False
+0
 NULL
-False
+0
 
-query TI rowsort
+query II rowsort
 SELECT i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k
 ----
-False
+0
+3
+1
 3
 NULL
 NULL
-True
-3
 
 query I rowsort
 SELECT CAST(SUM(i) AS BIGINT) FROM integers GROUP BY (i >= ALL(SELECT i FROM integers WHERE i IS NOT NULL)) ORDER BY 1
@@ -191,13 +191,13 @@ SELECT CAST(SUM(i) AS BIGINT) FROM integers GROUP BY (i >= ALL(SELECT i FROM int
 3
 NULL
 
-query TI rowsort
+query II rowsort
 SELECT i >= ALL(SELECT MIN(i) FROM integers WHERE i IS NOT NULL) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k ORDER BY k
 ----
-NULL
-NULL
-True
+1
 6
+NULL
+NULL
 
 query II rowsort
 SELECT i, CAST(SUM(CASE WHEN (i >= ALL(SELECT i FROM integers WHERE i=2)) THEN 1 ELSE 0 END) AS BIGINT) FROM integers GROUP BY i ORDER BY i
@@ -213,5 +213,4 @@ NULL
 
 statement ok
 DROP TABLE integers
-
 

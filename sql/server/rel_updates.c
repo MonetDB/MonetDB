@@ -68,15 +68,6 @@ get_table(sql_rel *t)
 	return tab;
 }
 
-static list *
-get_inserts( sql_rel *ins )
-{
-	sql_rel *r = ins->r;
-
-	assert(is_project(r->op) || r->op == op_table);
-	return r->exps;
-}
-
 static sql_rel *
 rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
@@ -85,10 +76,13 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_subtype *it, *lng;
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
+	sql_rel *ins = inserts->r;
 
+	assert(is_project(ins->op) || ins->op == op_table);
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
 		/* dummy append */
-		append(get_inserts(inserts), exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
+		inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
+		list_append(ins->exps, exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label));
 		return inserts;
 	}
 
@@ -96,7 +90,7 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	lng = sql_bind_localtype("lng");
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
-		sql_exp *e = list_fetch(get_inserts(inserts), c->c->colnr);
+		sql_exp *e = list_fetch(ins->exps, c->c->colnr);
 		e = exp_ref(sql, e);
 
 		if (h && i->type == hash_idx)  {
@@ -124,7 +118,8 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		}
 	}
 	/* append inserts to hash */
-	append(get_inserts(inserts), h);
+	inserts->r = ins = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 1, 1));
+	list_append(ins->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
 	return inserts;
 }
@@ -135,7 +130,8 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
 	int need_nulls = 0;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
+	sql_trans *tr = sql->session->tr;
+	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name);
 
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -145,6 +141,7 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
+	assert(is_project(ins->op) || ins->op == op_table);
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
@@ -218,7 +215,6 @@ static sql_rel *
 rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
 	sql_rel *p = inserts->r;
-	bool need_proj = true, special_insert = false;
 
 	if (!t->idxs.set)
 		return inserts;
@@ -226,23 +222,14 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 	inserts->r = rel_label(sql, inserts->r, 1);
 	for (node *n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
-		sql_rel *ins = inserts->r;
 
-		if (is_union(ins->op))
-			inserts->r = rel_project(sql->sa, ins, rel_projections(sql, ins, NULL, 0, 1));
 		if (hash_index(i->type) || i->type == no_idx) {
-			/* needs projection for hash functions */
-			if (list_length(i->columns) > 1 && hash_index(i->type) && need_proj) {
-				inserts->r = rel_project(sql->sa, inserts->r, rel_projections(sql, inserts->r, NULL, 1, 1));
-				need_proj = false;
-			}
 			rel_insert_hash_idx(sql, alias, i, inserts);
 		} else if (i->type == join_idx) {
-			special_insert = true;
 			rel_insert_join_idx(sql, alias, i, inserts);
 		}
 	}
-	if (special_insert) {
+	if (inserts->r != p) {
 		sql_rel *r = rel_create(sql->sa);
 		if(!r)
 			return NULL;
@@ -395,7 +382,7 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isNonPartitionedTable(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
-	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_empty(t->members)) {
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
@@ -404,7 +391,7 @@ insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname)
 	} else if (t->access == TABLE_READONLY) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s read only table '%s'", op, opname, tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY)
+	if (t && !isTempTable(t) && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 
 	if (!table_privs(sql, t, PRIV_INSERT)) {
@@ -430,9 +417,9 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s view '%s'", op, opname, tname);
 	} else if (isNonPartitionedTable(t) && is_delete == 0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s'", op, opname, tname);
-	} else if (isNonPartitionedTable(t) && is_delete != 0 && list_empty(t->members)) {
+	} else if (isNonPartitionedTable(t) && is_delete != 0 && cs_size(&t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s merge table '%s' has no partitions set", op, opname, tname);
-	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && list_empty(t->members)) {
+	} else if ((isRangePartitionTable(t) || isListPartitionTable(t)) && cs_size(&t->members)==0) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s partitioned table '%s' has no partitions set", op, isListPartitionTable(t)?"list":"range", tname);
 	} else if (isRemote(t)) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s remote table '%s' from this server at the moment", op, opname, tname);
@@ -441,7 +428,7 @@ update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int 
 	} else if (t->access == TABLE_READONLY || t->access == TABLE_APPENDONLY) {
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s read or append only table '%s'", op, opname, tname);
 	}
-	if (t && !isTempTable(t) && STORE_READONLY)
+	if (t && !isTempTable(t) && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: %s table '%s' not allowed in readonly mode", op, opname, tname);
 	if ((is_delete == 1 && !table_privs(sql, t, PRIV_DELETE)) || (is_delete == 2 && !table_privs(sql, t, PRIV_TRUNCATE)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: insufficient privileges for user '%s' to %s table '%s'", op, get_string_global_var(sql, "current_user"), opname, tname);
@@ -642,7 +629,9 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_subtype *it, *lng = 0; /* is not set in first if below */
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
 	sql_exp *h = NULL;
+	sql_rel *ups = updates->r;
 
+	assert(is_project(ups->op) || ups->op == op_table);
 	if (list_length(i->columns) <= 1 || i->type == no_idx) {
 		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
@@ -650,7 +639,7 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		lng = sql_bind_localtype("lng");
 		for (m = i->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
-			sql_exp *e = list_fetch(get_inserts(updates), c->c->colnr+1);
+			sql_exp *e = list_fetch(ups->exps, c->c->colnr+1);
 			e = exp_ref(sql, e);
 
 			if (h && i->type == hash_idx)  {
@@ -679,7 +668,8 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		}
 	}
 	/* append hash to updates */
-	append(get_inserts(updates), h);
+	updates->r = ups = rel_project(sql->sa, ups, rel_projections(sql, ups, NULL, 1, 1));
+	list_append(ups->exps, h);
 	exp_setname(sql->sa, h, alias, iname);
 
 	if (!updates->exps)
@@ -723,7 +713,8 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 
 	int need_nulls = 0;
 	node *m, *o;
-	sql_key *rk = &((sql_fkey *) i->key)->rkey->k;
+	sql_trans *tr = sql->session->tr;
+	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme));
 
 	sql_subtype *bt = sql_bind_localtype("bit");
@@ -733,6 +724,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
+	assert(is_project(ups->op) || ups->op == op_table);
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 
@@ -743,7 +735,7 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
 		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC);
-		sql_exp *upd = list_fetch(get_inserts(updates), c->c->colnr + 1), *lnl, *rnl, *je;
+		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, 0);
 
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
@@ -814,7 +806,6 @@ static sql_rel *
 rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
 	sql_rel *p = relup->r;
-	bool need_proj = true, special_update = false;
 
 	if (!t->idxs.set)
 		return relup;
@@ -834,18 +825,12 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		 */
 
 		if (hash_index(i->type) || i->type == no_idx) {
-			/* needs projection for hash functions */
-			if (list_length(i->columns) > 1 && hash_index(i->type) && need_proj) {
-				relup->r = rel_project(sql->sa, relup->r, rel_projections(sql, relup->r, NULL, 1, 1));
-				need_proj = false;
-			}
 			rel_update_hash_idx(sql, alias, i, relup);
 		} else if (i->type == join_idx) {
-			special_update = true;
 			rel_update_join_idx(sql, alias, i, relup);
 		}
 	}
-	if (special_update) {
+	if (relup->r != p) {
 		sql_rel *r = rel_create(sql->sa);
 		if(!r)
 			return NULL;
@@ -912,7 +897,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 
 	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		mt = t;
-	else if (isPartition(t))
+	else if (partition_find_part(sql->session->tr, t, NULL))
 		mt = partition_find_part(sql->session->tr, t, NULL)->t;
 
 	if (mt && isPartitionedByColumnTable(mt)) {
@@ -1350,6 +1335,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			no_tid = rel_project(sql->sa, rel_dup(joined), rel_projections(sql, joined, NULL, 1, 0));
 			extra_project = rel_setop(sql->sa, no_tid, extra_project, op_except);
 			rel_setop_set_exps(sql, extra_project, rel_projections(sql, extra_project, NULL, 1, 0));
+			set_processed(extra_project);
 
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
@@ -1634,7 +1620,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 }
 
 static sql_rel *
-bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int constraint, int onclient)
+bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int constraint, int onclient, endianness endian)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1665,12 +1651,20 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	if (!collist)
 		return NULL;
 
+	bool do_byteswap =
+		#ifdef WORDS_BIGENDIAN
+			endian == endian_little;
+		#else
+			endian == endian_big;
+		#endif
+
 	f->res = table_column_types(sql->sa, t);
  	sql_find_subtype(&strtpe, "varchar", 0, 0);
-	args = append( append( append( new_exp_list(sql->sa),
+	args = append( append( append( append( new_exp_list(sql->sa),
 		exp_atom_str(sql->sa, t->s?t->s->base.name:NULL, &strtpe)),
 		exp_atom_str(sql->sa, t->base.name, &strtpe)),
-		exp_atom_int(sql->sa, onclient));
+		exp_atom_int(sql->sa, onclient)),
+		exp_atom_bool(sql->sa, do_byteswap));
 
 	// create the list of files that is passed to the function as parameter
 	for (i = 0; i < list_length(t->columns.set); i++) {
@@ -1726,7 +1720,7 @@ copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
 		return NULL;
 	else if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-	else if (isPartition(t)) {
+	else if (partition_find_part(sql->session->tr, t, NULL)) {
 		sql_part *mt = partition_find_part(sql->session->tr, t, NULL);
 		if (mt && (isPartitionedByColumnTable(mt->t) || isPartitionedByExpressionTable(mt->t)))
 			return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
@@ -1925,7 +1919,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val);
+		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, l->h->next->next->next->next->data.i_val, (endianness) l->h->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

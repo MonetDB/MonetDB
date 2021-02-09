@@ -30,10 +30,19 @@
  */
 #include "monetdb_config.h"
 #ifdef HAVE_MAPI
-#include "mal_mapi.h"
+#include "mal_client.h"
+#include "mal_session.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
+#include "mal_authorize.h"
+#include "msabaoth.h"
+#include "mcrypt.h"
+#include "stream.h"
+#include "streams.h"			/* for Stream */
 #include <sys/types.h>
 #include "stream_socket.h"
 #include "mapi.h"
+#include "mutils.h"
 
 #ifdef HAVE_OPENSSL
 # include <openssl/rand.h>		/* RAND_bytes() */
@@ -43,14 +52,16 @@
 # include <CommonCrypto/CommonRandom.h>
 #endif
 #endif
-#ifdef HAVE_WINSOCK_H   /* Windows specific */
-# include <winsock.h>
-#else           /* UNIX specific */
+#ifdef HAVE_SYS_SOCKET_H
 # include <sys/select.h>
 # include <sys/socket.h>
 # include <unistd.h>     /* gethostname() */
 # include <netinet/in.h> /* hton and ntoh */
 # include <arpa/inet.h>  /* addr_in */
+#else           /* UNIX specific */
+#ifdef HAVE_WINSOCK_H   /* Windows specific */
+# include <winsock.h>
+#endif
 #endif
 #ifdef HAVE_SYS_UN_H
 # include <sys/un.h>
@@ -78,6 +89,8 @@
 #if !defined(HAVE_ACCEPT4) || !defined(SOCK_CLOEXEC)
 #define accept4(sockfd, addr, addrlen, flags)	accept(sockfd, addr, addrlen)
 #endif
+
+#define SERVERMAXUSERS 		5
 
 static char seedChars[] = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
 	'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
@@ -133,6 +146,8 @@ struct challengedata {
 	stream *out;
 	char challenge[13];
 };
+
+static str SERVERsetAlias(void *ret, int *key, str *dbalias);
 
 static void
 doChallenge(void *data)
@@ -695,7 +710,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 		else
 			memcpy(userver.sun_path, usockfile, ulen + 1);
 		length = (SOCKLEN) sizeof(userver);
-		if (remove(usockfile) == -1 && errno != ENOENT) {
+		if (MT_remove(usockfile) == -1 && errno != ENOENT) {
 			char *e = createException(IO, "mal_mapi.listen", OPERATION_FAILED ": remove UNIX socket file: %s",
 									  GDKstrerror(errno, (char[128]){0}, 128));
 			if (socks[0] != INVALID_SOCKET)
@@ -716,7 +731,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			(void) remove(usockfile);
+			(void) MT_remove(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": binding to UNIX socket file %s failed: %s",
@@ -733,7 +748,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
 			if (socks[1] != INVALID_SOCKET)
 				closesocket(socks[1]);
 			closesocket(socks[2]);
-			(void) remove(usockfile);
+			(void) MT_remove(usockfile);
 			throw(IO, "mal_mapi.listen",
 				  OPERATION_FAILED
 				  ": setting UNIX socket file %s to listen failed: %s",
@@ -796,7 +811,7 @@ SERVERlisten(int port, const char *usockfile, int maxusers)
  * in the database, so that others can more easily
  * be notified.
  */
-str
+static str
 SERVERlisten_default(int *ret)
 {
 	int port = MAPI_PORT;
@@ -809,14 +824,14 @@ SERVERlisten_default(int *ret)
 	return SERVERlisten(port, p, SERVERMAXUSERS);
 }
 
-str
+static str
 SERVERlisten_usock(int *ret, str *usock)
 {
 	(void) ret;
 	return SERVERlisten(-1, usock ? *usock : NULL, SERVERMAXUSERS);
 }
 
-str
+static str
 SERVERlisten_port(int *ret, int *pid)
 {
 	(void) ret;
@@ -831,7 +846,7 @@ SERVERlisten_port(int *ret, int *pid)
  * field in the client record.
  */
 
-str
+static str
 SERVERstop(void *ret)
 {
 	TRC_INFO(MAL_SERVER, "Server stop\n");
@@ -845,7 +860,7 @@ SERVERstop(void *ret)
 }
 
 
-str
+static str
 SERVERsuspend(void *res)
 {
 	(void) res;
@@ -853,7 +868,7 @@ SERVERsuspend(void *res)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERresume(void *res)
 {
 	ATOMIC_SET(&serveractive, 1);
@@ -861,7 +876,7 @@ SERVERresume(void *res)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERclient(void *res, const Stream *In, const Stream *Out)
 {
 	struct challengedata *data;
@@ -1020,7 +1035,7 @@ SERVERconnectAll(Client cntxt, int *key, str *host, int *port, str *username, st
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERdisconnectALL(int *key){
 	int i;
 
@@ -1044,7 +1059,7 @@ SERVERdisconnectALL(int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERdisconnectWithAlias(int *key, str *dbalias){
 	int i;
 
@@ -1071,7 +1086,7 @@ SERVERdisconnectWithAlias(int *key, str *dbalias){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key =getArgReference_int(stk,pci,0);
 	str *host = getArgReference_str(stk,pci,1);
@@ -1085,7 +1100,7 @@ SERVERconnect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 
-str
+static str
 SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int *key =getArgReference_int(stk,pci,0);
@@ -1114,7 +1129,7 @@ SERVERreconnectAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	int *key =getArgReference_int(stk,pci,0);
 	str *host = getArgReference_str(stk,pci,1);
@@ -1151,7 +1166,7 @@ SERVERreconnectWithoutAlias(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		(void) mid; /* silence compilers */							\
 	} while (0)
 
-str
+static str
 SERVERsetAlias(void *ret, int *key, str *dbalias){
 	int i;
 	Mapi mid;
@@ -1163,7 +1178,7 @@ SERVERsetAlias(void *ret, int *key, str *dbalias){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERlookup(int *ret, str *dbalias)
 {
 	int i;
@@ -1176,14 +1191,14 @@ SERVERlookup(int *ret, str *dbalias)
 	throw(MAL, "mapi.lookup", "Could not find database connection");
 }
 
-str
+static str
 SERVERtrace(void *ret, int *key, int *flag){
 	(void )ret;
 	mapi_trace(SERVERsessions[*key].mid,(bool)*flag);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERdisconnect(void *ret, int *key){
 	int i;
 	Mapi mid;
@@ -1197,7 +1212,7 @@ SERVERdisconnect(void *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERdestroy(void *ret, int *key){
 	int i;
 	Mapi mid;
@@ -1211,7 +1226,7 @@ SERVERdestroy(void *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERreconnect(void *ret, int *key){
 	int i;
 	Mapi mid;
@@ -1221,7 +1236,7 @@ SERVERreconnect(void *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERping(int *ret, int *key){
 	int i;
 	Mapi mid;
@@ -1230,7 +1245,7 @@ SERVERping(int *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERquery(int *ret, int *key, str *qry){
 	Mapi mid;
 	MapiHdl hdl=0;
@@ -1244,7 +1259,7 @@ SERVERquery(int *ret, int *key, str *qry){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERquery_handle(int *ret, int *key, str *qry){
 	Mapi mid;
 	MapiHdl hdl=0;
@@ -1256,13 +1271,13 @@ SERVERquery_handle(int *ret, int *key, str *qry){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERquery_array(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc){
 	(void)cntxt, (void) mb; (void) stk; (void) pc;
 	throw(MAL, "mapi.query_array", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
-str
+static str
 SERVERprepare(int *ret, int *key, str *qry){
 	Mapi mid;
 	int i;
@@ -1277,7 +1292,7 @@ SERVERprepare(int *ret, int *key, str *qry){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfinish(int *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1290,7 +1305,7 @@ SERVERfinish(int *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERget_row_count(lng *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1302,7 +1317,7 @@ SERVERget_row_count(lng *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERget_field_count(int *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1314,7 +1329,7 @@ SERVERget_field_count(int *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERrows_affected(lng *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1323,7 +1338,7 @@ SERVERrows_affected(lng *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_row(int *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1332,7 +1347,7 @@ SERVERfetch_row(int *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_all_rows(lng *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1341,7 +1356,7 @@ SERVERfetch_all_rows(lng *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1357,7 +1372,7 @@ SERVERfetch_field_str(str *ret, int *key, int *fnr){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_field_int(int *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1371,7 +1386,7 @@ SERVERfetch_field_int(int *ret, int *key, int *fnr){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1386,7 +1401,7 @@ SERVERfetch_field_lng(lng *ret, int *key, int *fnr){
 }
 
 #ifdef HAVE_HGE
-str
+static str
 SERVERfetch_field_hge(hge *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1401,7 +1416,7 @@ SERVERfetch_field_hge(hge *ret, int *key, int *fnr){
 }
 #endif
 
-str
+static str
 SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1415,7 +1430,7 @@ SERVERfetch_field_sht(sht *ret, int *key, int *fnr){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_field_void(void *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1425,7 +1440,7 @@ SERVERfetch_field_void(void *ret, int *key, int *fnr){
 	throw(MAL, "mapi.fetch_field_void","defaults to nil");
 }
 
-str
+static str
 SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1441,7 +1456,7 @@ SERVERfetch_field_oid(oid *ret, int *key, int *fnr){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_field_bte(bte *ret, int *key, int *fnr){
 	Mapi mid;
 	int i;
@@ -1457,7 +1472,7 @@ SERVERfetch_field_bte(bte *ret, int *key, int *fnr){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_line(str *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1473,7 +1488,7 @@ SERVERfetch_line(str *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERnext_result(int *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1486,7 +1501,7 @@ SERVERnext_result(int *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_reset(int *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1499,7 +1514,7 @@ SERVERfetch_reset(int *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERfetch_field_bat(bat *bid, int *key){
 	int i,j,cnt;
 	Mapi mid;
@@ -1528,7 +1543,7 @@ SERVERfetch_field_bat(bat *bid, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERerror(int *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1537,7 +1552,7 @@ SERVERerror(int *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERgetError(str *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1548,7 +1563,7 @@ SERVERgetError(str *ret, int *key){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERexplain(str *ret, int *key){
 	Mapi mid;
 	int i;
@@ -1645,7 +1660,7 @@ static int SERVERfieldAnalysis(str fld, int tpe, ValPtr v){
 	return 0;
 }
 
-str
+static str
 SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int key,i,j;
@@ -1723,7 +1738,7 @@ SERVERmapi_rpc_single_row(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
  * The generic implementation based on a pattern is the next
  * step.
  */
-str
+static str
 SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	bat *ret;
 	int *key;
@@ -1765,7 +1780,7 @@ SERVERmapi_rpc_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return err;
 }
 
-str
+static str
 SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;
 	str *nme;
@@ -1828,7 +1843,7 @@ SERVERput(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	str *ret, *nme;
 	ptr val;
@@ -1859,7 +1874,7 @@ SERVERputLocal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SERVERbindBAT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	int *key;
 	str *nme,*tab,*col;

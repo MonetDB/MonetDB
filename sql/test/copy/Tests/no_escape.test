@@ -23,7 +23,22 @@ COPY 4 RECORDS INTO json_data FROM STDIN DELIMITERS E',',E'\n' NO ESCAPE
 query IT rowsort
 SELECT * FROM json_data
 ----
-16 values hashing to 358def0a93ea956db4fa7294739972ce
+1
+"\""
+2
+"\\"
+3
+NULL
+4
+"\n"
+5
+"\""
+6
+"\\"
+7
+NULL
+8
+"\n"
 
 statement ok
 ROLLBACK
@@ -55,9 +70,27 @@ COPY 5 RECORDS INTO str_data FROM STDIN DELIMITERS E',',E'\n' NO ESCAPE
 query IT rowsort
 SELECT * FROM str_data
 ----
-20 values hashing to e2002c7aa60bc5bbd41d71acc376f826
+1
+(empty)
+10
+a\nb
+2
+NULL
+3
+A12B
+4
+\
+5
+a@b
+6
+(empty)
+7
+NULL
+8
+A12B
+9
+\\
 
 statement ok
 ROLLBACK
-
 

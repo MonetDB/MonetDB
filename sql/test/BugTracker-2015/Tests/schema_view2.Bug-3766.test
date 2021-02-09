@@ -28,4 +28,3 @@ drop schema tst
 statement ok
 drop table t1
 
-

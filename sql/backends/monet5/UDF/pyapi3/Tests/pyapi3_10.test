@@ -147,4 +147,3 @@ SELECT AVG(pyapi10_runtime_exception(i,j)) FROM pyapi10_random_table_nulls(5000)
 statement ok
 ROLLBACK
 
-

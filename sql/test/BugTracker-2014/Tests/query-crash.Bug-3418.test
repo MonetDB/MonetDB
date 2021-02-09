@@ -31,4 +31,3 @@ select * from v where v.sym like '%.L' limit 100
 statement ok
 rollback
 
-

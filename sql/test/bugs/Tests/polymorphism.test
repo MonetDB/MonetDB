@@ -36,4 +36,3 @@ select bwdecompose(l_int,24), bwdecompose(l_dat,24), bwdecompose(l_dec,24) from 
 statement ok
 rollback
 
-

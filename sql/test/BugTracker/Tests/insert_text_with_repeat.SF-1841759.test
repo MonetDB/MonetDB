@@ -18,4 +18,3 @@ drop table table1841759
 statement ok
 COMMIT
 
-

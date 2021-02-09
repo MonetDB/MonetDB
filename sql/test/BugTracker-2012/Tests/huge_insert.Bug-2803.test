@@ -10010,4 +10010,3 @@ insert into huge values(
 statement ok
 rollback
 
-

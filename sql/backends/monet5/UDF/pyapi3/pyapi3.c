@@ -9,6 +9,7 @@
 #include "monetdb_config.h"
 #include "pyapi.h"
 #include "connection.h"
+#include "mutils.h"
 
 #include "unicode.h"
 #include "pytypes.h"
@@ -547,7 +548,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				// relative path
 				snprintf(address, 1000, "%s/%s", FunctionBasePath(), exprStr);
 			}
-			if (stat(address, &buffer) < 0) {
+			if (MT_stat(address, &buffer) < 0) {
 				msg = createException(
 					MAL, "pyapi3.eval",
 					SQLSTATE(PY000) "Could not find Python source file \"%s\".", address);

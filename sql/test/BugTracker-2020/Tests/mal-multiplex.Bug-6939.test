@@ -58,4 +58,3 @@ select wlr.tick() from t0
 statement ok
 rollback
 
-

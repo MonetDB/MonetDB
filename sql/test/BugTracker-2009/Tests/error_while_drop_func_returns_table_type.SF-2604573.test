@@ -39,3 +39,4 @@ drop function test_002
 
 statement ok
 rollback
+

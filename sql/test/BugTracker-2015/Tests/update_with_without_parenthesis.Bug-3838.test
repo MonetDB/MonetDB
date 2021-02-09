@@ -13,7 +13,7 @@ CREATE TABLE daterange (startdate DATE, enddate DATE, name CHAR(8))
 statement ok
 INSERT INTO daterange (startdate, enddate, name) VALUES ('2012-03-01','2012-03-31','A')
 
-query TTTTTT rowsort
+query TTTTIT rowsort
 SELECT *
 FROM (
 	SELECT startdate, enddate, name
@@ -26,7 +26,7 @@ AND datepoint.mydate <= B.enddate
 2012-03-31
 A
 2012-03-09
-False
+0
 NULL
 
 statement ok
@@ -41,11 +41,11 @@ SET (insiderange) = (
 	AND datepoint.mydate <= B.enddate
 )
 
-query TTT rowsort
+query TIT rowsort
 SELECT * FROM datepoint
 ----
 2012-03-09
-True
+1
 NULL
 2012-05-09
 NULL
@@ -84,11 +84,11 @@ SET insiderange = (
 	AND datepoint.mydate <= B.enddate
 )
 
-query TTT rowsort
+query TIT rowsort
 SELECT * FROM datepoint
 ----
 2012-03-09
-True
+1
 NULL
 2012-05-09
 NULL
@@ -99,5 +99,4 @@ DROP TABLE datepoint
 
 statement ok
 DROP TABLE daterange
-
 

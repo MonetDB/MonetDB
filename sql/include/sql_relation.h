@@ -196,7 +196,6 @@ typedef enum operator_type {
 #define is_simple_project(op) 	(op == op_project)
 #define is_project(op) 		(op == op_project || op == op_groupby || is_set(op))
 #define is_groupby(op) 		(op == op_groupby)
-#define is_sort(rel) 		(((rel)->op == op_project && (rel)->r) || (rel)->op == op_topn)
 #define is_topn(op) 		(op == op_topn)
 #define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
 #define is_sample(op) 		(op == op_sample)

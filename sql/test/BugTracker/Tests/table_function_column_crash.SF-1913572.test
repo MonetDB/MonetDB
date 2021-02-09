@@ -44,4 +44,3 @@ drop function fGetNearbyObjEq
 statement ok
 drop table t1913572
 
-

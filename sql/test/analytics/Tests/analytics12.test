@@ -14,7 +14,50 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 ----
-44 values hashing to e1686d3343b8691f0bb6bca6bd57c536
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+4
+0
+0
+1
+4
+0
+0
+1
+4
+0
+0
+1
+4
+0
+0
+3
+5
+1
+2
+3
+5
+1
+2
+7
+7
+3
+3
 
 query IIIII rowsort
 SELECT
@@ -26,7 +69,61 @@ SELECT
 FROM tbl_ProductSales
 GROUP BY ROLLUP(Product_Category, Product_Name, ColID)
 ----
-55 values hashing to a2650f230ea304e588600dd9132ade1f
+0
+0
+0
+0
+1
+0
+0
+0
+0
+2
+0
+0
+0
+0
+3
+0
+0
+0
+0
+4
+0
+1
+2
+1
+1
+0
+1
+2
+1
+2
+0
+1
+2
+1
+3
+0
+1
+2
+1
+4
+3
+1
+2
+4
+3
+3
+1
+2
+4
+7
+3
+3
+3
+11
+10
 
 query IIIII rowsort
 WITH "groupings" AS (
@@ -45,5 +142,4 @@ WITH "groupings" AS (
 
 statement ok
 ROLLBACK
-
 

@@ -18,17 +18,172 @@ CREATE INDEX allnewtriples_object_idx ON allnewtriples ("object")
 query TITI rowsort
 SELECT idxs.name, idxs."type", keys.name, keys."type"
 FROM sys.idxs LEFT JOIN sys.keys on idxs.name = keys.name
+ORDER BY idxs.name, keys.name
 ----
-84 values hashing to aca252ae38ab8879e6e119df7736fb5e
+allnewtriples_object_idx
+0
+NULL
+NULL
+allnewtriples_predicate_idx
+0
+NULL
+NULL
+allnewtriples_subject_idx
+0
+NULL
+NULL
+comments_id_pkey
+0
+comments_id_pkey
+0
+dependency_types_dependency_type_id_pkey
+0
+dependency_types_dependency_type_id_pkey
+0
+dependency_types_dependency_type_name_unique
+0
+dependency_types_dependency_type_name_unique
+1
+function_languages_language_id_pkey
+0
+function_languages_language_id_pkey
+0
+function_languages_language_name_unique
+0
+function_languages_language_name_unique
+1
+function_types_function_type_id_pkey
+0
+function_types_function_type_id_pkey
+0
+function_types_function_type_name_unique
+0
+function_types_function_type_name_unique
+1
+index_types_index_type_id_pkey
+0
+index_types_index_type_id_pkey
+0
+index_types_index_type_name_unique
+0
+index_types_index_type_name_unique
+1
+key_types_key_type_id_pkey
+0
+key_types_key_type_id_pkey
+0
+key_types_key_type_name_unique
+0
+key_types_key_type_name_unique
+1
+keywords_keyword_pkey
+0
+keywords_keyword_pkey
+0
+privilege_codes_privilege_code_id_pkey
+0
+privilege_codes_privilege_code_id_pkey
+0
+privilege_codes_privilege_code_name_unique
+0
+privilege_codes_privilege_code_name_unique
+1
+spatial_ref_sys_srid_pkey
+0
+spatial_ref_sys_srid_pkey
+0
+table_types_table_type_id_pkey
+0
+table_types_table_type_id_pkey
+0
+table_types_table_type_name_unique
+0
+table_types_table_type_name_unique
+1
+unique_key
+0
+unique_key
+1
 
 query TITI rowsort
 SELECT idxs.name, idxs."type", keys.name, keys."type"
 FROM sys.idxs JOIN sys.keys on idxs.name = keys.name
+ORDER BY idxs.name, keys.name
 ----
-72 values hashing to 605c876e5adbcc987c4a0294b82e9da6
+comments_id_pkey
+0
+comments_id_pkey
+0
+dependency_types_dependency_type_id_pkey
+0
+dependency_types_dependency_type_id_pkey
+0
+dependency_types_dependency_type_name_unique
+0
+dependency_types_dependency_type_name_unique
+1
+function_languages_language_id_pkey
+0
+function_languages_language_id_pkey
+0
+function_languages_language_name_unique
+0
+function_languages_language_name_unique
+1
+function_types_function_type_id_pkey
+0
+function_types_function_type_id_pkey
+0
+function_types_function_type_name_unique
+0
+function_types_function_type_name_unique
+1
+index_types_index_type_id_pkey
+0
+index_types_index_type_id_pkey
+0
+index_types_index_type_name_unique
+0
+index_types_index_type_name_unique
+1
+key_types_key_type_id_pkey
+0
+key_types_key_type_id_pkey
+0
+key_types_key_type_name_unique
+0
+key_types_key_type_name_unique
+1
+keywords_keyword_pkey
+0
+keywords_keyword_pkey
+0
+privilege_codes_privilege_code_id_pkey
+0
+privilege_codes_privilege_code_id_pkey
+0
+privilege_codes_privilege_code_name_unique
+0
+privilege_codes_privilege_code_name_unique
+1
+spatial_ref_sys_srid_pkey
+0
+spatial_ref_sys_srid_pkey
+0
+table_types_table_type_id_pkey
+0
+table_types_table_type_id_pkey
+0
+table_types_table_type_name_unique
+0
+table_types_table_type_name_unique
+1
+unique_key
+0
+unique_key
+1
 
 statement ok
-/* test elimination of distinct restriction on aggregates */
 create table dummyme (a int primary key, b int)
 
 statement ok

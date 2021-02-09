@@ -7,4 +7,3 @@ WHERE  areaSpec_box(1,2,3,4)
 ORDER BY objectId, taiMidPoint ASC
 ----
 
-

@@ -13,4 +13,3 @@ select cast(cast(1117422000 as bigint) as integer)
 ----
 1117422000
 
-

@@ -245,9 +245,9 @@ class TestCaseResult(object):
             if err_message:
                 if self.err_message:
                     if err_message.lower() != self.err_message.lower():
-                        msgs.append("expected to fail with error message {} but failed with error message {}".format(err_message, self.err_message))
+                        msgs.append("expected to fail with error message '{}' but failed with error message '{}'".format(err_message, self.err_message))
                 else:
-                    msgs.append("expected to fail with error message {} but got {}".format(err_message, self.err_message))
+                    msgs.append("expected to fail with error message '{}' but got '{}'".format(err_message, self.err_message))
             if len(msgs) > 0:
                 self.fail('\n'.join(msgs))
         return self
@@ -394,13 +394,14 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             stable = list(filter(filter_headers, stable))
             data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(stable, data)
-        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
-        if len(diff) > 0:
-            err_file = self.test_case.err_file
-            msg = "expected to match stable output {} but it didnt\'t\n".format(fout)
-            msg+='\n'.join(diff)
-            self.assertion_errors.append(AssertionError(msg))
-            self.fail(msg)
+        if a or b:
+            diff = list(difflib.unified_diff(stable, data, fromfile='stable', tofile='test'))
+            if len(diff) > 0:
+                err_file = self.test_case.err_file
+                msg = "expected to match stable output {} but it didnt\'t\n".format(fout)
+                msg+='\n'.join(diff)
+                self.assertion_errors.append(AssertionError(msg))
+                self.fail(msg)
         return self
 
     def assertMatchStableError(self, ferr, ignore_err_messages=False):
@@ -421,8 +422,22 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             self.fail(msg)
         return self
 
-    def assertDataResultMatch(self, data=[], index=None):
-        raise NotImplementedError
+    def assertDataResultMatch(self, expected):
+        data = list(filter(filter_junk, self.data.split('\n')))
+        data = list(filter(filter_headers, data))
+        a, b = filter_matching_blocks(expected, data)
+        diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))
+        if len(diff) > 0:
+            err_file = self.test_case.err_file
+            exp = '\n'.join(expected)
+            got = '\n'.join(data)
+            msg = "Output didn't match.\n"
+            msg += f"Expected:\n{exp}\n"
+            msg += f"Got:\n{got}\n"
+            msg += "Diff:\n" + '\n'.join(s.rstrip() for s in diff)
+            self.assertion_errors.append(AssertionError(msg))
+            self.fail(msg)
+        return self
 
     def assertValue(self, row, col, val):
         raise NotImplementedError
@@ -661,4 +676,3 @@ class SQLTestCase():
 
         except (pymonetdb.Error, ValueError) as e:
             pass
-

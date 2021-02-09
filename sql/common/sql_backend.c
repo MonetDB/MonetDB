@@ -28,7 +28,7 @@
 backend_functions be_funcs;
 
 void
-backend_freecode(int clientid, char *name)
+backend_freecode(int clientid, const char *name)
 {
 	if (be_funcs.fcode != NULL)
 		be_funcs.fcode(clientid, name);

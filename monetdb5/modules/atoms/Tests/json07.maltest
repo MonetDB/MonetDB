@@ -20,7 +20,7 @@ io.print(a1)
 statement ok
 n1:=json.keys(js)
 
-query TT rowsort
+query IT rowsort
 io.print(n1)
 ----
 0
@@ -31,7 +31,7 @@ yours
 statement ok
 v1:=json.values(js)
 
-query TT rowsort
+query IT rowsort
 io.print(v1)
 ----
 0
@@ -61,17 +61,34 @@ io.print(a1)
 statement ok
 n1:=json.keys(js)
 
-query TT rowsort
+query IT rowsort
 io.print(n1)
 ----
-10 values hashing to 7a1e99dbfe422fd7214f5012dbb7ae7a
+0
+myBoolean
+1
+myList
+2
+myMap
+3
+myObject
+4
+myJsonObject
 
 statement ok
 v1:=json.values(js)
 
-query TT rowsort
+query IT rowsort
 io.print(v1)
 ----
-10 values hashing to 95d150ff28b5bf11f25c1428b16a0602
-
+0
+true
+1
+["a","b"]
+2
+{"c":"d","a":"b"}
+3
+"myClass"
+4
+{"myString":"myStringValue"}
 

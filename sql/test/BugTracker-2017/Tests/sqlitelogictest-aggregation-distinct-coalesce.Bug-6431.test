@@ -7,4 +7,3 @@ SELECT DISTINCT + ( - col2 ) AS col0 FROM tab2 AS cor0 WHERE NOT ( - 1 * col2 ) 
 statement ok
 DROP TABLE tab2
 
-

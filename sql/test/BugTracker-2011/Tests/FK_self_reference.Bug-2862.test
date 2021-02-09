@@ -14,22 +14,3 @@ COPY 2 RECORDS INTO "device" FROM stdin USING DELIMITERS ',',E'\n','"'
 2,NULL
 23,2
 
-query II rowsort
-SELECT * FROM "device"
-2
-NULL
-23
-2
-
-statement ok
-ALTER TABLE "device" ADD CONSTRAINT "device_device_fk" FOREIGN KEY ("parentdeviceid") REFERENCES "device" ("deviceid")
-
-query II rowsort
-SELECT * FROM "device"
-2
-NULL
-23
-2
-
-statement ok
-rollback

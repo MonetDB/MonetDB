@@ -15,11 +15,11 @@ NULL
 TABLE
 NULL
 
-query TTTIT rowsort
+query TITIT rowsort
 select "name", "nulls", "cdefault", "number", "remark" from describe_columns('sys', 'foo')
 ----
 eur
-True
+1
 NULL
 0
 NULL
@@ -29,5 +29,4 @@ DROP TABLE foo
 
 statement ok
 DROP TABLE bar
-
 

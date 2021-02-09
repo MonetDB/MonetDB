@@ -13,14 +13,3 @@ exit go;
 	io.print(b);
 end
 
-#mdb.list("user","foo")
-
-statement ok
-optimizer.aliases("user","foo")
-
-statement ok
-optimizer.garbageCollector("user","foo")
-
-#mdb.list("user","foo")
-
-

@@ -13,12 +13,15 @@
 #include "bat_logger.h"
 
 typedef struct column_storage {
+	int refcnt;
 	int bid;
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
-	int cleared;
-	size_t ucnt;		/* number of updates */
-	int wtime;		/* time stamp */
+	bool cleared;
+	bool alter;		/* set when the delta is created for an alter statement */
+	size_t cnt;		/* number of tuples (excluding? the deletes) */
+	size_t ucnt;	/* number of updates */
+	ulng ts;		/* version timestamp */
 } column_storage;
 
 typedef struct sql_delta {
@@ -53,9 +56,8 @@ typedef struct storage {
 
 /* initialize bat storage call back functions interface */
 extern void bat_storage_init( store_functions *sf );
-
-extern sql_delta * timestamp_delta( sql_delta *d, int ts);
-extern storage * timestamp_dbat( storage *d, int ts);
+extern sql_delta * col_timestamp_delta( sql_trans *tr, sql_column *c);
+extern storage * tab_timestamp_dbat( sql_trans *tr, sql_table *t);
 
 #endif /*BATSTORAGE_H */
 

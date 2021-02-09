@@ -4,7 +4,7 @@ b:= json.new("{\"f1\":1}")
 statement ok
 f:= json.keys(b)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 0
@@ -13,7 +13,7 @@ f1
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
 0
@@ -25,7 +25,7 @@ b:= json.new("{\"f1\":1,\"f2\":2}")
 statement ok
 f:= json.keys(b)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 0
@@ -36,7 +36,7 @@ f2
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
 0
@@ -50,7 +50,7 @@ b:= json.new("{\"f1\":1,\"f2\":2,\"f1\":3}")
 statement ok
 f:= json.keys(b)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 0
@@ -63,7 +63,7 @@ f1
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
 0
@@ -79,7 +79,7 @@ b:= json.new("{\"f1\":{\"f12\":3},\"f2\":[2,3,4]}")
 statement ok
 f:= json.keys(b)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 0
@@ -90,7 +90,7 @@ f2
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
 0
@@ -120,7 +120,7 @@ true
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
 
@@ -146,7 +146,7 @@ true
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
 0
@@ -170,10 +170,19 @@ true
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
-10 values hashing to 4773210d63177d2ad4e6e3f46b02ce29
+0
+1
+1
+2
+2
+null
+3
+true
+4
+false
 
 statement ok
 i:= json.length(b)
@@ -197,12 +206,11 @@ true
 statement ok
 ff:= json.values(b)
 
-query TT rowsort
+query IT rowsort
 io.print(ff)
 ----
 0
 "\/"
 1
 2
-
 

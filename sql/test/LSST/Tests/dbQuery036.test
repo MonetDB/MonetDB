@@ -13,4 +13,3 @@ GROUP BY UG, GR, RI, IZ, ZY
 HAVING pop > 500
 ORDER BY pop
 
-

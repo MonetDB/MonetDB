@@ -6,4 +6,3 @@ catch NotDefinedException:str;
 exit NotDefinedException;
 end foo;
 
-

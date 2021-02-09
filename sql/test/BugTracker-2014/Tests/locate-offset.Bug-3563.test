@@ -48,4 +48,3 @@ select locate('@','joeuser@mydatabase@test', -4) as string_position
 ----
 8
 
-

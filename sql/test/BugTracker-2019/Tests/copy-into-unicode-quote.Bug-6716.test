@@ -19,9 +19,31 @@ copy 8 records into foo from stdin
 query ITI rowsort
 select * from foo
 ----
-24 values hashing to ef9b160777cfccbf62befcbaee903f60
+1689
+00i'm
+2
+1690
+00i'v
+2
+171067
+arde@ch
+2
+182773
+a@
+1
+41561
+2015@
+1
+45804
+21@
+1
+51981
+24hours@
+1
+607808
+poverty@
+1
 
 statement ok
 rollback
-
 

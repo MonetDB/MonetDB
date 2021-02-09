@@ -3943,15 +3943,17 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 	 * of doing searches on r, we swap */
 	swap = (lcost < rcost);
 
-	if ((BATordered(r) || BATordered_rev(r)) &&
-	    (lci.ncand * (log2((double) rci.ncand) + 1) < (swap ? lcost : rcost))) {
+	if ((r->ttype == TYPE_void && r->tvheap != NULL) ||
+	    ((BATordered(r) || BATordered_rev(r)) &&
+	     (lci.ncand * (log2((double) rci.ncand) + 1) < (swap ? lcost : rcost)))) {
 		/* r is sorted and it is cheaper to do multiple binary
 		 * searches than it is to use a hash */
 		rc = mergejoin(r1p, r2p, l, r, &lci, &rci,
 			       nil_matches, false, false, false, false, false, false,
 			       estimate, t0, false, __func__);
-	} else if ((BATordered(l) || BATordered_rev(l)) &&
-		   (rci.ncand * (log2((double) lci.ncand) + 1) < (swap ? lcost : rcost))) {
+	} else if ((l->ttype == TYPE_void && l->tvheap != NULL) ||
+	    ((BATordered(l) || BATordered_rev(l)) &&
+	     (rci.ncand * (log2((double) lci.ncand) + 1) < (swap ? lcost : rcost)))) {
 		/* l is sorted and it is cheaper to do multiple binary
 		 * searches than it is to use a hash */
 		rc = mergejoin(r2p ? r2p : &r2, r1p, r, l, &rci, &lci,

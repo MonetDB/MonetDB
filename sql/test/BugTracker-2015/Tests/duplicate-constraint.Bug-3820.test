@@ -33,4 +33,3 @@ CREATE TABLE instrument (
 statement ok
 rollback
 
-

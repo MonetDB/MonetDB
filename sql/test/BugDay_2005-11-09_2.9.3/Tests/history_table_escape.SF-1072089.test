@@ -15,3 +15,4 @@ SELECT query FROM history
 
 statement ok
 rollback
+

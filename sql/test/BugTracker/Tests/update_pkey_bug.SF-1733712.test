@@ -27,4 +27,3 @@ mon
 statement ok
 drop table t1733712a
 
-

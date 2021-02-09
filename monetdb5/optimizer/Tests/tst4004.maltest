@@ -18,20 +18,3 @@ io.print(A);
 io.print(D);
 end foo
 
-#mdb.list("user","foo")
-
-statement ok
-optimizer.deadcode("user","foo")
-
-statement ok
-optimizer.garbageCollector("user","foo")
-
-#mdb.list("user","foo")
-
-query T rowsort
-user.foo()
-----
-1
-3
-
-

@@ -11,6 +11,7 @@
 #include "gdk_private.h"
 #include "gdk_logger.h"
 #include "gdk_logger_internals.h"
+#include "mutils.h"
 #include <string.h>
 
 static gdk_return logger_add_bat(logger *lg, BAT *b, log_id id);
@@ -842,20 +843,20 @@ logger_create_types_file(logger *lg, char filename[FILENAME_MAX])
 {
 	FILE *fp;
 
-	if ((fp = fopen(filename, "w")) == NULL) {
+	if ((fp = MT_fopen(filename, "w")) == NULL) {
 		GDKerror("cannot create log file %s\n", filename);
 		return GDK_FAIL;
 	}
 	if (fprintf(fp, "%06d\n\n", lg->version) < 0) {
 		fclose(fp);
-		remove(filename);
+		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 
 	if (logger_write_new_types(lg, fp) == GDK_FAIL) {
 		fclose(fp);
-		remove(filename);
+		MT_remove(filename);
 		GDKerror("writing log file %s failed", filename);
 		return GDK_FAIL;
 	}
@@ -868,16 +869,12 @@ logger_create_types_file(logger *lg, char filename[FILENAME_MAX])
 		     && fsync(fileno(fp)) < 0
 #endif
 	    ) || fclose(fp) < 0) {
-		remove(filename);
+		MT_remove(filename);
 		GDKerror("closing log file %s failed", filename);
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
 }
-
-#ifdef _MSC_VER
-#define access(file, mode)	_access(file, mode)
-#endif
 
 static gdk_return
 logger_open_output(logger *lg)
@@ -1587,14 +1584,14 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
 		 * checking the database consistency later on */
-		if ((fp = fopen(bak, "r")) != NULL) {
+		if ((fp = MT_fopen(bak, "r")) != NULL) {
 			fclose(fp);
 			fp = NULL;
 			if (GDKunlink(farmid, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
 			    GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 				goto error;
 		}
-		fp = fopen(filename, "r");
+		fp = MT_fopen(filename, "r");
 	}
 
 	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
@@ -1670,7 +1667,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		if (bm_subcommit(lg) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			remove(filename);
+			MT_remove(filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_id->batCacheid);
 			BBPrelease(lg->dcatalog->batCacheid);
@@ -1812,7 +1809,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		if (logger_readlogs(lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
-		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
+		if (lg->postfuncp && (*lg->postfuncp)(lg->funcdata, lg) != GDK_SUCCEED)
 			goto error;
 		if (logger_commit(lg) != GDK_SUCCEED) {
 			goto error;
@@ -1846,7 +1843,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static logger *
-logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata)
 {
 	int len;
 	logger *lg;
@@ -1869,6 +1866,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		.version = version,
 		.prefuncp = prefuncp,
 		.postfuncp = postfuncp,
+		.funcdata = funcdata,
 
 		.id = 0,
 		.saved_id = getBBPlogno(), 		/* get saved log numer from bbp */
@@ -1941,10 +1939,10 @@ logger_destroy(logger *lg)
 
 /* Create a new logger */
 logger *
-logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp)
+logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata)
 {
 	logger *lg;
-	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp);
+	lg = logger_new(debug, fn, logdir, version, prefuncp, postfuncp, funcdata);
 	if (lg == NULL)
 		return NULL;
 	if (lg->debug & 1) {

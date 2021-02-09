@@ -7,4 +7,3 @@ THEN NULL END * 11 + NULLIF ( ( - 3 ) + 51, 32 ) AS col1
 -5
 NULL
 
-

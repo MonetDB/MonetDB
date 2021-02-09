@@ -19,10 +19,10 @@
 #include "gdk_private.h"
 
 gdk_return
-unshare_string_heap(BAT *b)
+unshare_varsized_heap(BAT *b)
 {
 	assert(b->batCacheid > 0);
-	if (ATOMstorage(b->ttype) == TYPE_str &&
+	if (ATOMvarsized(b->ttype) &&
 	    b->tvheap->parentid != b->batCacheid) {
 		Heap *h = GDKzalloc(sizeof(Heap));
 		if (h == NULL)
@@ -131,7 +131,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				   ci->tpe == cand_dense) {
 				toff = 0;
 			} else if (b->tvheap->parentid != bid &&
-				   unshare_string_heap(b) != GDK_SUCCEED) {
+				   unshare_varsized_heap(b) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 		}
@@ -191,7 +191,7 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 				}
 			}
 		}
-	} else if (unshare_string_heap(b) != GDK_SUCCEED)
+	} else if (unshare_varsized_heap(b) != GDK_SUCCEED)
 		return GDK_FAIL;
 
 	/* make sure there is (vertical) space in the offset heap, we
@@ -211,7 +211,6 @@ insert_string_bat(BAT *b, BAT *n, struct canditer *ci, bool mayshare)
 		 * string heap at known locations (namely the offset
 		 * in n added to toff), so insert offsets from n after
 		 * adding toff into b */
-
 		/* note the use of the "restrict" qualifier here: all
 		 * four pointers below point to the same value, but
 		 * only one of them will actually be used, hence we
@@ -862,7 +861,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		b->tnonil &= n->tnonil;
 		b->tnil |= n->tnil && cnt == BATcount(n);
 	}
-
 	if (b->ttype == TYPE_str) {
 		if (insert_string_bat(b, n, &ci, mayshare) != GDK_SUCCEED) {
 			return GDK_FAIL;

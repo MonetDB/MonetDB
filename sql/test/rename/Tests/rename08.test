@@ -70,4 +70,3 @@ query I rowsort
 select "ii"."type" from "sys"."idxs" "ii" inner join "sys"."tables" "tt" on "ii"."table_id" = "tt"."id" where "tt"."name" = 't1'
 ----
 
-

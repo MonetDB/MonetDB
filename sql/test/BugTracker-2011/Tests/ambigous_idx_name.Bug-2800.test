@@ -27,4 +27,3 @@ UPDATE HTMTEST set COMMENT='some update' WHERE HTMID=1
 statement ok
 drop table HTMTEST
 
-

@@ -100,4 +100,3 @@ DROP TABLE othersub1
 statement ok
 DROP TABLE othersub2
 
-

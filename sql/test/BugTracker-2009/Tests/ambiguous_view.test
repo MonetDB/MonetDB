@@ -10,7 +10,6 @@ SELECT t_base.*
 , 'kg' AS DT_UOM
 FROM t_base
 
-
 statement error
 select * from eur_kg_test
 
@@ -19,5 +18,4 @@ drop view eur_kg_test
 
 statement ok
 drop table t_base
-
 

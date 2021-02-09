@@ -24,4 +24,3 @@ DROP table b1
 statement ok
 DROP table a1
 
-

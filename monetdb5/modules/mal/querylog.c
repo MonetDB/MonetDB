@@ -81,6 +81,8 @@ static BAT *QLOG_calls_iowait = 0;
 
 static MT_Lock QLOGlock = MT_LOCK_INITIALIZER(QLOGlock);
 
+static str initQlog(void);
+
 str
 QLOGcatalog(BAT **r)
 {
@@ -243,7 +245,7 @@ _initQlog(void)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 initQlog(void)
 {
 	str msg;
@@ -288,7 +290,7 @@ QLOGisset(void)
 	return QLOGtrace;
 }
 
-str
+static str
 QLOGissetFcn(int *ret)
 {
 	*ret = QLOGtrace;
@@ -331,7 +333,7 @@ QLOGempty(void *ret)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	oid *ret = getArgReference_oid(stk,pci,0);
@@ -370,7 +372,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 {
 	// Nothing else to be done.
@@ -381,7 +383,7 @@ QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri)
 {
 	// Nothing else to be done.
@@ -393,7 +395,7 @@ QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	timestamp *tick1  = getArgReference_TYPE(stk,pci,1,timestamp);

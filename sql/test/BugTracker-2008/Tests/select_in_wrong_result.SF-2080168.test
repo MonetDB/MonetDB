@@ -21,4 +21,3 @@ AND a IN (SELECT a FROM A)
 statement ok
 drop table A
 
-

@@ -46,7 +46,16 @@ SELECT '' AS five, INT2_TBL.*
 query TI rowsort
 SELECT '' AS five, * FROM INT2_TBL
 ----
-10 values hashing to 675fcfeb52a9b1e450eb137dcb1f0b50
+(empty)
+-1234
+(empty)
+-32767
+(empty)
+0
+(empty)
+1234
+(empty)
+32767
 
 query TI rowsort
 SELECT '' AS four, i.* FROM INT2_TBL i WHERE i.f1 <> cast('0' as smallint)
@@ -175,7 +184,21 @@ SELECT '' AS three, i.* FROM INT2_TBL i WHERE (i.f1 % cast('2' as integer)) = ca
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i
 ----
-15 values hashing to a72da567ed35a15218fd6dd76764eb30
+(empty)
+-1234
+-2468
+(empty)
+-32767
+-65534
+(empty)
+0
+0
+(empty)
+1234
+2468
+(empty)
+32767
+65534
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT2_TBL i
@@ -194,48 +217,167 @@ WHERE abs(f1) < 16384
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT2_TBL i
 ----
-15 values hashing to a72da567ed35a15218fd6dd76764eb30
+(empty)
+-1234
+-2468
+(empty)
+-32767
+-65534
+(empty)
+0
+0
+(empty)
+1234
+2468
+(empty)
+32767
+65534
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i
 ----
-15 values hashing to 9d603e5f5f95223c71f71afd072a17fd
+(empty)
+-1234
+-1232
+(empty)
+-32767
+-32765
+(empty)
+0
+2
+(empty)
+1234
+1236
+(empty)
+32767
+32769
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT2_TBL i
 WHERE f1 < 32766
 ----
-12 values hashing to 6ff3193fdd4efb361cfc38f65a59444f
+(empty)
+-1234
+-1232
+(empty)
+-32767
+-32765
+(empty)
+0
+2
+(empty)
+1234
+1236
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT2_TBL i
 ----
-15 values hashing to 9d603e5f5f95223c71f71afd072a17fd
+(empty)
+-1234
+-1232
+(empty)
+-32767
+-32765
+(empty)
+0
+2
+(empty)
+1234
+1236
+(empty)
+32767
+32769
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i
 ----
-15 values hashing to 2f76564c4a12dd79a057b972faf24faa
+(empty)
+-1234
+-1236
+(empty)
+-32767
+-32769
+(empty)
+0
+-2
+(empty)
+1234
+1232
+(empty)
+32767
+32765
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT2_TBL i
 WHERE f1 > -32767
 ----
-12 values hashing to d403a76711a55cee8e63d5054750e053
+(empty)
+-1234
+-1236
+(empty)
+0
+-2
+(empty)
+1234
+1232
+(empty)
+32767
+32765
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT2_TBL i
 ----
-15 values hashing to 2f76564c4a12dd79a057b972faf24faa
+(empty)
+-1234
+-1236
+(empty)
+-32767
+-32769
+(empty)
+0
+-2
+(empty)
+1234
+1232
+(empty)
+32767
+32765
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT2_TBL i
 ----
-15 values hashing to fd724e6df3c2da2f07da37b91c1e0f8e
+(empty)
+-1234
+-617
+(empty)
+-32767
+-16383
+(empty)
+0
+0
+(empty)
+1234
+617
+(empty)
+32767
+16383
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT2_TBL i
 ----
-15 values hashing to fd724e6df3c2da2f07da37b91c1e0f8e
-
+(empty)
+-1234
+-617
+(empty)
+-32767
+-16383
+(empty)
+0
+0
+(empty)
+1234
+617
+(empty)
+32767
+16383
 

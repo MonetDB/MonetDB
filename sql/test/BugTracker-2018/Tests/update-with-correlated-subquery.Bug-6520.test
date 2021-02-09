@@ -34,4 +34,3 @@ update "FOREIGN"
 statement ok
 rollback
 
-

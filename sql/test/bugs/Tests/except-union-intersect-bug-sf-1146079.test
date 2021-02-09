@@ -117,12 +117,72 @@ START TRANSACTION
 query II rowsort
 SELECT * FROM a
 ----
-32 values hashing to 6a613f656229cd142160fb9a09b3aed1
+1
+17
+12
+16
+13
+11
+15
+16
+19
+17
+20
+2
+21
+17
+22
+17
+23
+18
+24
+18
+25
+16
+26
+16
+29
+16
+4
+16
+5
+16
+6
+16
 
 query II rowsort
 SELECT * FROM b
 ----
-30 values hashing to 2afa7bdba49986a1d3a24a81bbc433e6
+1
+17
+11
+15
+12
+10
+14
+15
+19
+17
+20
+2
+21
+17
+22
+17
+23
+17
+24
+15
+25
+15
+28
+15
+4
+16
+5
+16
+6
+16
 
 statement ok
 ROLLBACK
@@ -161,17 +221,92 @@ START TRANSACTION
 query II rowsort
 SELECT * FROM a EXCEPT SELECT * FROM b ORDER BY class, property
 ----
-16 values hashing to f7dae4be38e491125b30b4fdb5eee94b
+12
+16
+13
+11
+15
+16
+23
+18
+24
+18
+25
+16
+26
+16
+29
+16
 
 query II rowsort
 SELECT * FROM a UNION SELECT * FROM b ORDER BY class, property
 ----
-46 values hashing to 1a7c2a8e047542131f744b57d950cb41
+1
+17
+11
+15
+12
+10
+12
+16
+13
+11
+14
+15
+15
+16
+19
+17
+20
+2
+21
+17
+22
+17
+23
+17
+23
+18
+24
+15
+24
+18
+25
+15
+25
+16
+26
+16
+28
+15
+29
+16
+4
+16
+5
+16
+6
+16
 
 query II rowsort
 SELECT * FROM a INTERSECT SELECT * FROM b ORDER BY class, property
 ----
-16 values hashing to 3d6367e8616b6a6451fc8b0f42df08a1
+1
+17
+19
+17
+20
+2
+21
+17
+22
+17
+4
+16
+5
+16
+6
+16
 
 statement ok
 ROLLBACK
@@ -182,12 +317,42 @@ START TRANSACTION
 query I rowsort
 SELECT class FROM a EXCEPT ALL SELECT 16 ORDER BY class
 ----
-15 values hashing to e2f63c5c44b92affc266c3ed81eb26d6
+11
+16
+16
+16
+16
+16
+16
+16
+17
+17
+17
+17
+18
+18
+2
 
 query I rowsort
 SELECT class FROM a UNION ALL SELECT 16 ORDER BY class
 ----
-17 values hashing to dbe605318ed1997a0fddda204e0f359d
+11
+16
+16
+16
+16
+16
+16
+16
+16
+16
+17
+17
+17
+17
+18
+18
+2
 
 query I rowsort
 SELECT class FROM a INTERSECT ALL SELECT 16 ORDER BY class
@@ -203,7 +368,22 @@ START TRANSACTION
 query II rowsort
 SELECT * FROM a EXCEPT ALL SELECT * FROM b ORDER BY class, property
 ----
-16 values hashing to f7dae4be38e491125b30b4fdb5eee94b
+12
+16
+13
+11
+15
+16
+23
+18
+24
+18
+25
+16
+26
+16
+29
+16
 
 query I rowsort
 SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class
@@ -220,12 +400,88 @@ SELECT class FROM a EXCEPT ALL SELECT class FROM b ORDER BY class
 query II rowsort
 SELECT * FROM a UNION ALL SELECT * FROM b ORDER BY class, property
 ----
-62 values hashing to d8aff666dbb57f9b11f5b00b8ec4f630
+1
+17
+1
+17
+11
+15
+12
+10
+12
+16
+13
+11
+14
+15
+15
+16
+19
+17
+19
+17
+20
+2
+20
+2
+21
+17
+21
+17
+22
+17
+22
+17
+23
+17
+23
+18
+24
+15
+24
+18
+25
+15
+25
+16
+26
+16
+28
+15
+29
+16
+4
+16
+4
+16
+5
+16
+5
+16
+6
+16
+6
+16
 
 query II rowsort
 SELECT * FROM a INTERSECT ALL SELECT * FROM b ORDER BY class, property
 ----
-16 values hashing to 3d6367e8616b6a6451fc8b0f42df08a1
+1
+17
+19
+17
+20
+2
+21
+17
+22
+17
+4
+16
+5
+16
+6
+16
 
 query I rowsort
 SELECT class FROM a INTERSECT ALL SELECT class FROM b ORDER BY class
@@ -253,5 +509,4 @@ DROP TABLE "b"
 
 statement ok
 COMMIT
-
 

@@ -28,7 +28,8 @@
 static lng
 SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 {
-	return store_funcs.count_col(tr, c, access);
+	sqlstore *store = tr->store;
+	return store->storage_api.count_col(tr, c, access);
 }
 
 /*

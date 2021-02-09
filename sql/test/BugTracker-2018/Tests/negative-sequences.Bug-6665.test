@@ -119,4 +119,3 @@ select next value for "other_seq"
 statement ok
 rollback
 
-

@@ -31,4 +31,3 @@ SELECT * FROM t
 statement ok
 DROP TABLE t
 
-

@@ -7,4 +7,3 @@ select 1, (select 1) as x
 statement error
 select 1, (select 1 as y, 2 as z) as x
 
-

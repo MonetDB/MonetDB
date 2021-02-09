@@ -100,7 +100,7 @@
 #include "mal_client.h"
 #include "mal_runtime.h"
 
-#ifndef _MSC_VER
+#ifndef WIN32
 #define __declspec(x)
 #endif
 
@@ -114,7 +114,7 @@ propagateNonTarget(MalBlkPtr mb, int pc)
 {
 	int i;
 	InstrPtr p;
-	str scheduler = putName("run_memo");
+	const char *scheduler = putName("run_memo");
 
 	for (; pc < mb->stop; pc++) {
 		p = getInstrPtr(mb, pc);

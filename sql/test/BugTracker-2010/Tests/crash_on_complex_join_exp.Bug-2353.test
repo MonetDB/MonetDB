@@ -13,4 +13,3 @@ where kvks between fr and t group by kvks
 statement ok
 drop table test
 
-

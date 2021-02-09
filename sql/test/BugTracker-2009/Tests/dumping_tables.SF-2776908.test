@@ -30,4 +30,3 @@ select * from node_tags
 statement ok
 drop table node_tags
 
-

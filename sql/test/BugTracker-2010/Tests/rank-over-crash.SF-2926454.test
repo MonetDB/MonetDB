@@ -38,4 +38,3 @@ foo
 statement ok
 drop table score_table
 
-

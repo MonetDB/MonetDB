@@ -29,12 +29,10 @@ target_link_libraries(mutils
   PRIVATE
   monetdb_config_header)
 
-if(WIN32)
-  target_compile_definitions(mutils PRIVATE
-    LIBMUTILS
-    LIBGDK
-    LIBMEROUTIL)
-endif()
+target_compile_definitions(mutils PRIVATE
+  LIBMUTILS
+  LIBGDK
+  LIBMEROUTIL)
 
 set_target_properties(mutils
   PROPERTIES
@@ -59,13 +57,11 @@ target_link_libraries(mcrypt
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::Crypto>
   monetdb_config_header)
 
-if(WIN32)
-  target_compile_definitions(mcrypt 
-    PRIVATE
-    LIBMONETDB5
-    LIBMAPI
-    LIBMCRYPT)
-endif()
+target_compile_definitions(mcrypt
+  PRIVATE
+  LIBMONETDB5
+  LIBMAPI
+  LIBMCRYPT)
 
 set_target_properties(mcrypt
   PROPERTIES
@@ -97,12 +93,10 @@ target_link_libraries(msabaoth
   mutils
   monetdb_config_header)
 
-if(WIN32)
-  target_compile_definitions(msabaoth
-    PRIVATE
-    LIBMSABAOTH
-    LIBMONETDB5)
-endif()
+target_compile_definitions(msabaoth
+  PRIVATE
+  LIBMSABAOTH
+  LIBMONETDB5)
 
 set_target_properties(msabaoth
   PROPERTIES
@@ -144,6 +138,13 @@ set_target_properties(mprompt
   PROPERTIES
   POSITION_INDEPENDENT_CODE ON
   PUBLIC_HEADER mprompt.h)
+
+add_library(copybinary INTERFACE)
+
+target_include_directories(copybinary
+  INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>)
 
 # We need to define the matomic target because it is a public
 # dependency of gdk.

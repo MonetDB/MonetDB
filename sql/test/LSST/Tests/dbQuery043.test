@@ -14,4 +14,3 @@ WHERE   E1.extendedness < 0.2
    AND  S1.iMag-S1.zMag > 0.4
 ----
 
-

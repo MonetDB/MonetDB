@@ -28,4 +28,3 @@ exit	t
 statement ok
 	i:= 0
 
-

@@ -32,4 +32,3 @@ WITH t AS ( SELECT count(*) FROM withonlybug ) SELECT * FROM t
 statement ok
 drop table withonlybug
 
-

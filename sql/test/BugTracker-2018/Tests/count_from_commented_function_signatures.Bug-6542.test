@@ -16,7 +16,7 @@ SELECT f.id AS fid,
   LEFT OUTER JOIN sys.args p ON f.id = p.func_id AND p.inout = 1
  ORDER BY line
 
-query ITTITTTTIII rowsort
+query ITTIITTTIII rowsort
 select * from sys.commented_function_signatures_6542
 ----
 
@@ -66,5 +66,4 @@ select count (*) from sys.commented_function_signatures_6542
 
 statement ok
 DROP VIEW sys.commented_function_signatures_6542
-
 

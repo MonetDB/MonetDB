@@ -28,5 +28,22 @@ minimal_pipe
 query TTT rowsort
 select * from optimizers()
 ----
-18 values hashing to a37beedc8e37ec2b97c186efcf42a2dc
+default_pipe
+optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();
+stable
+minimal_pipe
+optimizer.inline();optimizer.remap();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.garbageCollector();
+stable
+no_mitosis_pipe
+optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();
+stable
+oltp_pipe
+optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.oltp();optimizer.wlc();optimizer.garbageCollector();
+stable
+sequential_pipe
+optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();
+stable
+volcano_pipe
+optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mitosis();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.dataflow();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.volcano();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();
+stable
 

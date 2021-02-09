@@ -40,13 +40,13 @@ SET (col5,col6) = (
 	AND ( (tbl1.col3 = tbl.col3 AND (tbl1.col4 = '0000' OR tbl.col4 = '0000')) OR (tbl1.col4 = tbl.col4))
 )
 
-query TTTTT rowsort
+query TTTIT rowsort
 SELECT * FROM tbl1
 ----
 2015-01-01
 Z
 0000
-True
+1
 overwriten by col6 with tbl.col3 (Z) and tbl.col1 (01-01-2015) and tbl.col2 (01-01-2015)
 
 statement ok
@@ -57,5 +57,4 @@ DROP TABLE tbl1
 
 statement ok
 DROP TABLE tbl
-
 

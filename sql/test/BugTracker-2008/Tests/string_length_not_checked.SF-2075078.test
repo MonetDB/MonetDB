@@ -13,4 +13,3 @@ select * from staff
 statement ok
 drop table staff
 
-

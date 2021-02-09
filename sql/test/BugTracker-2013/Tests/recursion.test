@@ -55,4 +55,3 @@ SELECT fibonacci(8)
 statement ok
 DROP FUNCTION fibonacci(integer)
 
-

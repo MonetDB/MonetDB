@@ -57,6 +57,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 #include "gdk_logger.h"
+#include "mutils.h"
 #include <string.h>
 
 struct logger {
@@ -1468,7 +1469,7 @@ check_version(logger *lg, FILE *fp)
 	}
 	if (version != lg->version) {
 		if (lg->prefuncp == NULL ||
-		    (*lg->prefuncp)(version, lg->version) != GDK_SUCCEED) {
+		    (*lg->prefuncp)(NULL, version, lg->version) != GDK_SUCCEED) {
 			GDKerror("Incompatible database version %06d, "
 				 "this server supports version %06d.\n%s",
 				 version, lg->version,
@@ -1764,14 +1765,14 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		/* try to open logfile backup, or failing that, the file
 		 * itself. we need to know whether this file exists when
 		 * checking the database consistency later on */
-		if ((fp = fopen(bak, "r")) != NULL) {
+		if ((fp = MT_fopen(bak, "r")) != NULL) {
 			fclose(fp);
 			fp = NULL;
 			if (GDKunlink(farmid, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
 			    GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 				goto error;
 		}
-		fp = fopen(filename, "r");
+		fp = MT_fopen(filename, "r");
 	}
 
 	strconcat_len(bak, sizeof(bak), fn, "_catalog", NULL);
@@ -1846,7 +1847,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 					 filename);
 				goto error;
 			}
-			if ((fp = fopen(filename, "w")) == NULL) {
+			if ((fp = MT_fopen(filename, "w")) == NULL) {
 				GDKerror("cannot create log file %s\n",
 					 filename);
 				goto error;
@@ -1854,7 +1855,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->id ++;
 			if (fprintf(fp, "%06d\n\n" LLFMT "\n", lg->version, lg->id) < 0) {
 				fclose(fp);
-				remove(filename);
+				MT_remove(filename);
 				GDKerror("writing log file %s failed",
 					 filename);
 				goto error;
@@ -1870,7 +1871,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 #endif
 				    ) ||
 			    fclose(fp) < 0) {
-				remove(filename);
+				MT_remove(filename);
 				GDKerror("closing log file %s failed",
 					 filename);
 				goto error;
@@ -1886,7 +1887,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 
 		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->catalog_tpe, lg->catalog_oid, lg->dcatalog, NULL, lg->debug) != GDK_SUCCEED) {
 			/* cannot commit catalog, so remove log */
-			remove(filename);
+			MT_remove(filename);
 			BBPrelease(lg->catalog_bid->batCacheid);
 			BBPrelease(lg->catalog_nme->batCacheid);
 			BBPrelease(lg->catalog_tpe->batCacheid);
@@ -2218,7 +2219,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 #ifdef _MSC_VER
 			/* work around bug in Visual Studio runtime:
 			 * fgetpos may return incorrect value */
-			if ((fp1 = fopen(filename, "r")) == NULL)
+			if ((fp1 = MT_fopen(filename, "r")) == NULL)
 				goto error;
 			if (fgets(bak, sizeof(bak), fp1) == NULL ||
 			    fgets(bak, sizeof(bak), fp1) == NULL ||
@@ -2303,7 +2304,7 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 			lg->convert_date = false;
 		}
 #endif
-		if (lg->postfuncp && (*lg->postfuncp)(lg) != GDK_SUCCEED)
+		if (lg->postfuncp && (*lg->postfuncp)(NULL, lg) != GDK_SUCCEED)
 			goto error;
 
 		/* done reading the log, revert to "normal" behavior */

@@ -21,4 +21,3 @@ rollback
 statement ok
 drop table s10
 
-

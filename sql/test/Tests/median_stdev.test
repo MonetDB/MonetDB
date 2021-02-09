@@ -70,7 +70,16 @@ SELECT median(groupID) FROM sampleData
 query II rowsort
 SELECT groupID, median(numValue) FROM sampleData GROUP BY groupID ORDER BY groupId
 ----
-10 values hashing to 0da73ad67a2902b543b497619b249c51
+1
+6
+2
+5
+3
+17
+4
+18
+5
+0
 
 query IR rowsort
 SELECT R.groupID, CAST(AVG(1.0*R.numValue) AS DECIMAL(10,2)) AS medianValue
@@ -86,7 +95,16 @@ INNER JOIN
 ON R.GroupID = G.GroupID AND R.rowNo BETWEEN N/2 AND N/2+N%2
 GROUP BY R.groupID ORDER by R.groupID
 ----
-10 values hashing to 663c20a5da1829cdf01fa426a6e7bbcb
+1
+6.000
+2
+5.000
+3
+34.500
+4
+18.000
+5
+0.000
 
 query IR rowsort
 SELECT R.groupID, sqrt(SUM((R.n-G.a)*(R.n-G.a))/count(*)) AS stdev
@@ -102,7 +120,16 @@ INNER JOIN
 ON R.GroupID = G.GroupID
 GROUP BY R.groupID ORDER BY R.groupID
 ----
-10 values hashing to 29655407b4de71a4b7c712dac14fab1e
+1
+5.314
+2
+2.598
+3
+23.413
+4
+0.000
+5
+0.000
 
 statement ok
 drop table sampleData

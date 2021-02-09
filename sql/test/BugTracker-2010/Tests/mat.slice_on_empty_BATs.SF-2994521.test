@@ -40,4 +40,3 @@ DROP TABLE available_segment
 statement ok
 DROP TABLE category_entry
 
-

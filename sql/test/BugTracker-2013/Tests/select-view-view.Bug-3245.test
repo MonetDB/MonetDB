@@ -61,4 +61,3 @@ select * from view_d order by id
 statement ok
 rollback
 
-

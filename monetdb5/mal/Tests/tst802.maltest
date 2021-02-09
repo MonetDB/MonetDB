@@ -13,8 +13,7 @@ c:= tst(b);
 io.print(c);
 end;
 
-query TI rowsort
+query II rowsort
 user.foo();
 ----
-
 

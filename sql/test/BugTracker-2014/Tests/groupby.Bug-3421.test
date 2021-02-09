@@ -20,10 +20,23 @@ statement ok
 create table t2 as select * from orderconnectormetrics where
 toplevelorderid = 5508 with data
 
-query ITTRRIR rowsort
+query ITTTTIT rowsort
 select * from t2
 ----
-14 values hashing to 3a575a8fdc05de49ae6a1adb1331a127
+5508
+2013-02-01
+C1
+3000000.0
+3000000.0
+4
+NULL
+5508
+2013-02-01
+C2
+2000000.0
+2000000.0
+2
+NULL
 
 query III rowsort
 select toplevelorderid, count(*), cast( sum(numberoffills) as bigint) from t2 group by toplevelorderid
@@ -88,5 +101,4 @@ drop table t2
 
 statement ok
 drop table OrderConnectorMetrics
-
 

@@ -65,7 +65,27 @@ select sum(lo_revenue), d_year, p_brand1
 	group by d_year, p_brand1
 	order by d_year, p_brand1
 ----
-21 values hashing to c52df9641b9901b6b5e242ba6d767d44
+11180484
+1995
+MFGR#2221
+2535744
+1992
+MFGR#2221
+4605666
+1997
+MFGR#2221
+5646414
+1993
+MFGR#2221
+6838192
+1996
+MFGR#2221
+9102972
+1998
+MFGR#2221
+9516564
+1994
+MFGR#2221
 
 query TTII rowsort
 select c_nation, s_nation, d_year, sum(lo_revenue) as revenue
@@ -137,7 +157,90 @@ select d_year, c_nation, sum(lo_revenue-lo_supplycost) as profit1
 	group by d_year, c_nation
 	order by d_year, c_nation
 ----
-84 values hashing to 85b58d8b755ca1b883513de0fd08546b
+1992
+ARGENTINA
+60236596
+1992
+BRAZIL
+50116740
+1992
+CANADA
+158594332
+1992
+PERU
+122782525
+1993
+ARGENTINA
+101488494
+1993
+BRAZIL
+18300780
+1993
+CANADA
+220466287
+1993
+PERU
+138221761
+1994
+ARGENTINA
+96762374
+1994
+BRAZIL
+41192541
+1994
+CANADA
+142838983
+1994
+PERU
+81585186
+1995
+ARGENTINA
+77733294
+1995
+BRAZIL
+48321419
+1995
+CANADA
+132723304
+1995
+PERU
+120699540
+1996
+ARGENTINA
+77775674
+1996
+BRAZIL
+30868579
+1996
+CANADA
+227015896
+1996
+PERU
+82556019
+1997
+ARGENTINA
+70072123
+1997
+BRAZIL
+33222386
+1997
+CANADA
+118280072
+1997
+PERU
+68393464
+1998
+ARGENTINA
+29902049
+1998
+BRAZIL
+17035775
+1998
+CANADA
+93061401
+1998
+PERU
+41688725
 
 query ITTI rowsort
 select d_year, s_nation, p_category, sum(lo_revenue-lo_supplycost) as profit1
@@ -169,5 +272,32 @@ select d_year, s_city, p_brand1, sum(lo_revenue-lo_supplycost) as profit1
 	group by d_year, s_city, p_brand1
 	order by d_year, s_city, p_brand1
 ----
-28 values hashing to dea45ef297261624a6a828a04e3b1f0c
+1997
+UNITED ST2
+MFGR#1433
+2636841
+1997
+UNITED ST6
+MFGR#1415
+5022945
+1997
+UNITED ST7
+MFGR#1415
+2846336
+1998
+UNITED ST0
+MFGR#1418
+1457152
+1998
+UNITED ST2
+MFGR#1414
+442555
+1998
+UNITED ST7
+MFGR#142
+306182
+1998
+UNITED ST9
+MFGR#1433
+141465
 

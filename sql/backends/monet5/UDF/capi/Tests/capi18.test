@@ -46,4 +46,3 @@ DROP TABLE integers
 statement ok
 ROLLBACK
 
-

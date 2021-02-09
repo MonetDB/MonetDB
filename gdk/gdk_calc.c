@@ -66,6 +66,23 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 	return GDK_SUCCEED;
 }
 
+#define ON_OVERFLOW1(TYPE, OP)					\
+	do {							\
+		GDKerror("22003!overflow in calculation "	\
+			 OP "(" FMT##TYPE ").\n",		\
+			 CST##TYPE src[x]);			\
+		BBPreclaim(bn);					\
+		return NULL;					\
+	} while (0)
+
+#define ON_OVERFLOW(TYPE1, TYPE2, OP)				\
+	do {							\
+		GDKerror("22003!overflow in calculation "	\
+			 FMT##TYPE1 OP FMT##TYPE2 ".\n",	\
+			 CST##TYPE1 ((TYPE1 *)lft)[i], CST##TYPE2 ((TYPE2 *)rgt)[j]); \
+		return BUN_NONE;				\
+	} while (0)
+
 #define UNARY_2TYPE_FUNC(TYPE1, TYPE2, FUNC)				\
 	do {								\
 		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
@@ -77,6 +94,24 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				dst[i] = TYPE2##_nil;			\
 			} else {					\
 				dst[i] = FUNC(src[x]);			\
+			}						\
+		}							\
+	} while (0)
+
+#define UNARY_2TYPE_FUNC_nilcheck(TYPE1, TYPE2, FUNC, on_overflow)	\
+	do {								\
+		const TYPE1 *restrict src = (const TYPE1 *) Tloc(b, 0);	\
+		TYPE2 *restrict dst = (TYPE2 *) Tloc(bn, 0);		\
+		for (i = 0; i < ci.ncand; i++) {			\
+			x = canditer_next(&ci) - b->hseqbase;		\
+			if (is_##TYPE1##_nil(src[x])) {			\
+				nils++;					\
+				dst[i] = TYPE2##_nil;			\
+			} else {					\
+				dst[i] = FUNC(src[x]);			\
+				if (is_##TYPE2##_nil(dst[i])) {		\
+					on_overflow;			\
+				}					\
 			}						\
 		}							\
 	} while (0)
@@ -112,6 +147,46 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 					((TYPE3 *) dst)[k] = TYPE3##_nil; \
 				} else {				\
 					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+				}					\
+			}						\
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_nilcheck(TYPE1, TYPE2, TYPE3, FUNC, on_overflow) \
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+					if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+						on_overflow;		\
+				}					\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				if (is_##TYPE1##_nil(v1) || is_##TYPE2##_nil(v2)) { \
+					nils++;				\
+					((TYPE3 *) dst)[k] = TYPE3##_nil; \
+				} else {				\
+					((TYPE3 *) dst)[k] = FUNC(v1, v2); \
+					if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+						on_overflow;		\
 				}					\
 			}						\
 		}							\
@@ -175,6 +250,36 @@ checkbats(BAT *b1, BAT *b2, const char *func)
 				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
 				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
 				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+			}						\
+		}							\
+	} while (0)
+
+#define BINARY_3TYPE_FUNC_nonil_nilcheck(TYPE1, TYPE2, TYPE3, FUNC, on_overflow)	\
+	do {								\
+		i = j = 0;						\
+		if (ci1->tpe == cand_dense && ci2->tpe == cand_dense) {	\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				if (incr1)				\
+					i = canditer_next_dense(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next_dense(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+					on_overflow;			\
+			}						\
+		} else {						\
+			for (k = 0; k < ci1->ncand; k++) {		\
+				if (incr1)				\
+					i = canditer_next(ci1) - candoff1; \
+				if (incr2)				\
+					j = canditer_next(ci2) - candoff2; \
+				TYPE1 v1 = ((const TYPE1 *) lft)[i];	\
+				TYPE2 v2 = ((const TYPE2 *) rgt)[j];	\
+				((TYPE3 *) dst)[k] = FUNC(v1, v2);	\
+				if (is_##TYPE3##_nil(((TYPE3 *) dst)[k])) \
+					on_overflow;			\
 			}						\
 		}							\
 	} while (0)
@@ -292,21 +397,21 @@ BATcalcnot(BAT *b, BAT *s)
 		if (b->ttype == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
 		} else {
-			UNARY_2TYPE_FUNC(bte, bte, NOT);
+			UNARY_2TYPE_FUNC_nilcheck(bte, bte, NOT, ON_OVERFLOW1(bte, "NOT"));
 		}
 		break;
 	case TYPE_sht:
-		UNARY_2TYPE_FUNC(sht, sht, NOT);
+		UNARY_2TYPE_FUNC_nilcheck(sht, sht, NOT, ON_OVERFLOW1(sht, "NOT"));
 		break;
 	case TYPE_int:
-		UNARY_2TYPE_FUNC(int, int, NOT);
+		UNARY_2TYPE_FUNC_nilcheck(int, int, NOT, ON_OVERFLOW1(int, "NOT"));
 		break;
 	case TYPE_lng:
-		UNARY_2TYPE_FUNC(lng, lng, NOT);
+		UNARY_2TYPE_FUNC_nilcheck(lng, lng, NOT, ON_OVERFLOW1(lng, "NOT"));
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		UNARY_2TYPE_FUNC(hge, hge, NOT);
+		UNARY_2TYPE_FUNC_nilcheck(hge, hge, NOT, ON_OVERFLOW1(hge, "NOT"));
 		break;
 #endif
 	default:
@@ -345,33 +450,64 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 			ret->val.btval = bit_nil;
 		else if (v->vtype == TYPE_bit)
 			ret->val.btval = !v->val.btval;
-		else
+		else {
 			ret->val.btval = ~v->val.btval;
+			if (is_bte_nil(ret->val.btval)) {
+				GDKerror("22003!overflow in calculation "
+					 "NOT(" FMTbte ").\n", v->val.btval);
+				return GDK_FAIL;
+			}
+		}
 		break;
 	case TYPE_sht:
 		if (is_sht_nil(v->val.shval))
 			ret->val.shval = sht_nil;
-		else
+		else {
 			ret->val.shval = ~v->val.shval;
+			if (is_sht_nil(ret->val.shval)) {
+				GDKerror("22003!overflow in calculation "
+					 "NOT(" FMTsht ").\n", v->val.shval);
+				return GDK_FAIL;
+			}
+		}
 		break;
 	case TYPE_int:
 		if (is_int_nil(v->val.ival))
 			ret->val.ival = int_nil;
-		else
+		else {
 			ret->val.ival = ~v->val.ival;
+			if (is_int_nil(ret->val.ival)) {
+				GDKerror("22003!overflow in calculation "
+					 "NOT(" FMTint ").\n", v->val.ival);
+				return GDK_FAIL;
+			}
+		}
 		break;
 	case TYPE_lng:
 		if (is_lng_nil(v->val.lval))
 			ret->val.lval = lng_nil;
-		else
+		else {
 			ret->val.lval = ~v->val.lval;
+			if (is_lng_nil(ret->val.lval)) {
+				GDKerror("22003!overflow in calculation "
+					 "NOT(" FMTlng ").\n", v->val.lval);
+				return GDK_FAIL;
+			}
+		}
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		if (is_hge_nil(v->val.hval))
 			ret->val.hval = hge_nil;
-		else
+		else {
 			ret->val.hval = ~v->val.hval;
+			if (is_hge_nil(ret->val.hval)) {
+				GDKerror("22003!overflow in calculation "
+					 "NOT(" FMThge ").\n",
+					 CSThge v->val.hval);
+				return GDK_FAIL;
+			}
+		}
 		break;
 #endif
 	default:
@@ -1718,14 +1854,6 @@ BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s)
 
 /* ---------------------------------------------------------------------- */
 /* addition (any numeric type) */
-
-#define ON_OVERFLOW(TYPE1, TYPE2, OP)				\
-	do {							\
-		GDKerror("22003!overflow in calculation "	\
-			 FMT##TYPE1 OP FMT##TYPE2 ".\n",	\
-			 CST##TYPE1 lft[i], CST##TYPE2 rgt[j]);	\
-		return BUN_NONE;				\
-	} while (0)
 
 #define ADD_3TYPE(TYPE1, TYPE2, TYPE3, IF)				\
 static BUN								\
@@ -7853,7 +7981,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				nils++;					\
 			} else if (rgt[j] == 0 ||			\
 				   (ABSOLUTE(rgt[j]) < 1 &&		\
-				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < ABSOLUTE(lft[i]))) { \
 				/* only check for overflow, not for underflow */ \
 				if (abort_on_error) {			\
 					if (rgt[j] == 0)		\
@@ -7883,7 +8011,7 @@ div_##TYPE1##_##TYPE2##_##TYPE3(const TYPE1 *lft, bool incr1,		\
 				nils++;					\
 			} else if (rgt[j] == 0 ||			\
 				   (ABSOLUTE(rgt[j]) < 1 &&		\
-				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < lft[i])) { \
+				    GDK_##TYPE3##_max * ABSOLUTE(rgt[j]) < ABSOLUTE(lft[i]))) { \
 				/* only check for overflow, not for underflow */ \
 				if (abort_on_error) {			\
 					if (rgt[j] == 0)		\
@@ -11508,35 +11636,35 @@ xor_typeswitchloop(const void *lft, bool incr1,
 				BINARY_3TYPE_FUNC(bit, bit, bit, XORBIT);
 		} else {
 			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, XOR);
+				BINARY_3TYPE_FUNC_nonil_nilcheck(bte, bte, bte, XOR, ON_OVERFLOW(bte, bte, "XOR"));
 			else
-				BINARY_3TYPE_FUNC(bte, bte, bte, XOR);
+				BINARY_3TYPE_FUNC_nilcheck(bte, bte, bte, XOR, ON_OVERFLOW(bte, bte, "XOR"));
 		}
 		break;
 	case TYPE_sht:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(sht, sht, sht, XOR);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(sht, sht, sht, XOR, ON_OVERFLOW(sht, sht, "XOR"));
 		else
-			BINARY_3TYPE_FUNC(sht, sht, sht, XOR);
+			BINARY_3TYPE_FUNC_nilcheck(sht, sht, sht, XOR, ON_OVERFLOW(sht, sht, "XOR"));
 		break;
 	case TYPE_int:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(int, int, int, XOR);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(int, int, int, XOR, ON_OVERFLOW(int, int, "XOR"));
 		else
-			BINARY_3TYPE_FUNC(int, int, int, XOR);
+			BINARY_3TYPE_FUNC_nilcheck(int, int, int, XOR, ON_OVERFLOW(int, int, "XOR"));
 		break;
 	case TYPE_lng:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, XOR);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(lng, lng, lng, XOR, ON_OVERFLOW(lng, lng, "XOR"));
 		else
-			BINARY_3TYPE_FUNC(lng, lng, lng, XOR);
+			BINARY_3TYPE_FUNC_nilcheck(lng, lng, lng, XOR, ON_OVERFLOW(lng, lng, "XOR"));
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, XOR);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(hge, hge, hge, XOR, ON_OVERFLOW(hge, hge, "XOR"));
 		else
-			BINARY_3TYPE_FUNC(hge, hge, hge, XOR);
+			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, XOR, ON_OVERFLOW(hge, hge, "XOR"));
 		break;
 #endif
 	default:
@@ -11710,6 +11838,11 @@ or_typeswitchloop(const void *lft, bool incr1,
 	BUN i = 0, j = 0, k;
 	BUN nils = 0;
 
+	/* note, we don't have to check whether the result is equal to
+	 * NIL when using bitwise OR: there is only a single bit set in
+	 * NIL, which means that at least one of the operands must have
+	 * only that single bit set (and the other either also or
+	 * no bits set), so that that operand is already NIL */
 	switch (ATOMbasetype(tp)) {
 	case TYPE_bte:
 		if (tp == TYPE_bit) {
@@ -11949,35 +12082,35 @@ and_typeswitchloop(const void *lft, bool incr1,
 			}
 		} else {
 			if (nonil)
-				BINARY_3TYPE_FUNC_nonil(bte, bte, bte, AND);
+				BINARY_3TYPE_FUNC_nonil_nilcheck(bte, bte, bte, AND, ON_OVERFLOW(bte, bte, "AND"));
 			else
-				BINARY_3TYPE_FUNC(bte, bte, bte, AND);
+				BINARY_3TYPE_FUNC_nilcheck(bte, bte, bte, AND, ON_OVERFLOW(bte, bte, "AND"));
 		}
 		break;
 	case TYPE_sht:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(sht, sht, sht, AND);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(sht, sht, sht, AND, ON_OVERFLOW(sht, sht, "AND"));
 		else
-			BINARY_3TYPE_FUNC(sht, sht, sht, AND);
+			BINARY_3TYPE_FUNC_nilcheck(sht, sht, sht, AND, ON_OVERFLOW(sht, sht, "AND"));
 		break;
 	case TYPE_int:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(int, int, int, AND);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(int, int, int, AND, ON_OVERFLOW(int, int, "AND"));
 		else
-			BINARY_3TYPE_FUNC(int, int, int, AND);
+			BINARY_3TYPE_FUNC_nilcheck(int, int, int, AND, ON_OVERFLOW(int, int, "AND"));
 		break;
 	case TYPE_lng:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(lng, lng, lng, AND);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(lng, lng, lng, AND, ON_OVERFLOW(lng, lng, "AND"));
 		else
-			BINARY_3TYPE_FUNC(lng, lng, lng, AND);
+			BINARY_3TYPE_FUNC_nilcheck(lng, lng, lng, AND, ON_OVERFLOW(lng, lng, "AND"));
 		break;
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		if (nonil)
-			BINARY_3TYPE_FUNC_nonil(hge, hge, hge, AND);
+			BINARY_3TYPE_FUNC_nonil_nilcheck(hge, hge, hge, AND, ON_OVERFLOW(hge, hge, "AND"));
 		else
-			BINARY_3TYPE_FUNC(hge, hge, hge, AND);
+			BINARY_3TYPE_FUNC_nilcheck(hge, hge, hge, AND, ON_OVERFLOW(hge, hge, "AND"));
 		break;
 #endif
 	default:

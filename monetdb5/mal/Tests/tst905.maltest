@@ -13,9 +13,27 @@ end;
 statement ok
 optimizer.multiplex("user","foo");
 
-query TT rowsort
+query II rowsort
 user.foo();
 ----
-20 values hashing to e1077e0061cd2ee38a51615ad534c98a
-
+0
+0
+1
+2
+2
+4
+3
+6
+4
+8
+5
+10
+6
+12
+7
+14
+8
+16
+9
+18
 

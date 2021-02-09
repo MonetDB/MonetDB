@@ -5,18 +5,18 @@ CREATE TABLE "PKeyNotNull" (
 	"DataCol" int DEFAULT NULL,
 	PRIMARY KEY ("PK_COL1","PK_COL2") )
 
-query TTT nosort
+query TTI nosort
 select c.name, c.type, c."null" from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'PKeyNotNull' and s.name = 'sys' order by c.number
 ----
 PK_COL1
 varchar
-False
+0
 PK_COL2
 varchar
-False
+0
 DataCol
 int
-True
+1
 
 statement error
 INSERT INTO "PKeyNotNull" values ('C12', NULL, 1)
@@ -41,18 +41,18 @@ CREATE TABLE "PKeyImplicitNotNull" (
 	"DataCol" int DEFAULT NULL,
 	PRIMARY KEY ("PK_COL1","PK_COL2") )
 
-query TTT nosort
+query TTI nosort
 select c.name, c.type, c."null" from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'PKeyImplicitNotNull' and s.name = 'sys' order by c.number
 ----
 PK_COL1
 varchar
-False
+0
 PK_COL2
 varchar
-False
+0
 DataCol
 int
-True
+1
 
 statement error
 INSERT INTO "PKeyImplicitNotNull" values ('C12', NULL, 1)
@@ -69,5 +69,4 @@ SELECT * FROM "PKeyImplicitNotNull"
 
 statement ok
 DROP TABLE "PKeyImplicitNotNull"
-
 

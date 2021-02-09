@@ -58,4 +58,3 @@ GROUP BY success_credit.directory, success_credit.allowed
 statement ok
 ROLLBACK
 
-

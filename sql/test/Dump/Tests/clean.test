@@ -13,4 +13,3 @@ drop table keytest2
 statement ok
 drop table keytest1
 
-

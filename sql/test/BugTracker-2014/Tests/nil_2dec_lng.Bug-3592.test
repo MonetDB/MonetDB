@@ -22,4 +22,3 @@ NULL
 statement ok
 drop table foo_nil_2dec
 
-

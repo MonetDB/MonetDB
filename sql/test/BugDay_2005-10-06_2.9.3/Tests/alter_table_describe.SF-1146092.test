@@ -232,14 +232,14 @@ NULL
 TABLE
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'experiment')
 ----
 config_id
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
@@ -248,7 +248,7 @@ exp_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
@@ -257,7 +257,7 @@ result_id
 int
 32
 0
-True
+1
 NULL
 4
 INTEGER
@@ -266,7 +266,7 @@ table_id
 int
 32
 0
-True
+1
 NULL
 3
 INTEGER
@@ -275,20 +275,20 @@ user_id
 int
 32
 0
-True
+1
 NULL
 1
 INTEGER
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'tapestry_user')
 ----
 createdate
 date
 0
 0
-True
+1
 NULL
 3
 DATE
@@ -297,7 +297,7 @@ email
 varchar
 50
 0
-True
+1
 NULL
 2
 CHARACTER VARYING(50)
@@ -306,7 +306,7 @@ name
 varchar
 25
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(25)
@@ -315,7 +315,7 @@ passwd
 varchar
 50
 0
-True
+1
 NULL
 4
 CHARACTER VARYING(50)
@@ -324,20 +324,20 @@ user_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'config')
 ----
 config_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
@@ -346,7 +346,7 @@ name
 varchar
 25
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(25)
@@ -355,7 +355,7 @@ sysinf_id
 int
 32
 0
-True
+1
 NULL
 3
 INTEGER
@@ -364,20 +364,20 @@ target_id
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'tapestry_table')
 ----
 fast
 int
 32
 0
-True
+1
 NULL
 4
 INTEGER
@@ -386,7 +386,7 @@ nrcols
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
@@ -395,7 +395,7 @@ nrrows
 int
 32
 0
-True
+1
 NULL
 1
 INTEGER
@@ -404,7 +404,7 @@ seed
 int
 32
 0
-True
+1
 NULL
 3
 INTEGER
@@ -413,20 +413,20 @@ table_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'result')
 ----
 description
 varchar
 256
 0
-True
+1
 NULL
 2
 CHARACTER VARYING(256)
@@ -435,7 +435,7 @@ result_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
@@ -444,20 +444,20 @@ type
 varchar
 10
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(10)
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'target')
 ----
 comment
 varchar
 256
 0
-True
+1
 NULL
 3
 CHARACTER VARYING(256)
@@ -466,7 +466,7 @@ name
 varchar
 50
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(50)
@@ -475,7 +475,7 @@ permission
 varchar
 10
 0
-True
+1
 NULL
 2
 CHARACTER VARYING(10)
@@ -484,20 +484,20 @@ target_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'sysinf')
 ----
 cpu_id
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
@@ -506,7 +506,7 @@ disk_id
 int
 32
 0
-True
+1
 NULL
 4
 INTEGER
@@ -515,7 +515,7 @@ memory_id
 int
 32
 0
-True
+1
 NULL
 3
 INTEGER
@@ -524,7 +524,7 @@ platform_id
 int
 32
 0
-True
+1
 NULL
 1
 INTEGER
@@ -533,20 +533,20 @@ sysinf_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'platform')
 ----
 comment
 varchar
 256
 0
-True
+1
 NULL
 2
 CHARACTER VARYING(256)
@@ -555,7 +555,7 @@ name
 varchar
 50
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(50)
@@ -564,20 +564,20 @@ platform_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'cpu')
 ----
 cpu_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
@@ -586,20 +586,20 @@ type
 varchar
 50
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(50)
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'memory')
 ----
 memory_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
@@ -608,7 +608,7 @@ size
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
@@ -617,20 +617,20 @@ type
 varchar
 50
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(50)
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'disk')
 ----
 disk_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
@@ -639,7 +639,7 @@ size
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
@@ -648,20 +648,20 @@ type
 varchar
 50
 0
-True
+1
 NULL
 1
 CHARACTER VARYING(50)
 NULL
 
-query TTIITTITT rowsort
+query TTIIITITT rowsort
 select * from describe_columns('sys', 'query_walk')
 ----
 begin_x
 int
 32
 0
-True
+1
 NULL
 1
 INTEGER
@@ -670,7 +670,7 @@ begin_y
 int
 32
 0
-True
+1
 NULL
 2
 INTEGER
@@ -679,7 +679,7 @@ end_x
 int
 32
 0
-True
+1
 NULL
 6
 INTEGER
@@ -688,7 +688,7 @@ end_y
 int
 32
 0
-True
+1
 NULL
 7
 INTEGER
@@ -697,7 +697,7 @@ nr_runs
 int
 32
 0
-True
+1
 NULL
 3
 INTEGER
@@ -706,7 +706,7 @@ nr_steps
 int
 32
 0
-True
+1
 NULL
 4
 INTEGER
@@ -715,7 +715,7 @@ step_size
 int
 32
 0
-True
+1
 NULL
 5
 INTEGER
@@ -724,7 +724,7 @@ walk_id
 int
 32
 0
-False
+0
 NULL
 0
 INTEGER
@@ -765,5 +765,4 @@ DROP TABLE "tapestry_user" CASCADE
 
 statement ok
 DROP TABLE "experiment" CASCADE
-
 

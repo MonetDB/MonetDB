@@ -142,4 +142,3 @@ query IIIT rowsort
 SELECT COUNT(*) AS duplicates, table_id, partition_id, "minimum" FROM sys.range_partitions GROUP BY table_id, partition_id, "minimum"  HAVING COUNT(*) >1
 ----
 
-

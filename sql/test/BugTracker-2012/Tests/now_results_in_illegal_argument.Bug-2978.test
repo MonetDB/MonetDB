@@ -22,4 +22,3 @@ select (select a from deterministic) - (select a from deterministic)
 statement ok
 drop table deterministic
 
-

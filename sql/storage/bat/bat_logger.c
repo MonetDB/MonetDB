@@ -12,23 +12,22 @@
 #include "sql_types.h" /* EC_POS */
 #include "wlc.h"
 #include "gdk_logger_internals.h"
+#include "mutils.h"
 
 #define CATALOG_AUG2018 52202
 #define CATALOG_JUN2020 52204
 
-logger *bat_logger = NULL;
-
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
  * newversion */
 static gdk_return
-bl_preversion(int oldversion, int newversion)
+bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
 
 #ifdef CATALOG_JUN2020
 	if (oldversion == CATALOG_JUN2020) {
 		/* upgrade to default releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -174,11 +173,13 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 #endif
 
 static gdk_return
-bl_postversion(void *lg)
+bl_postversion(void *Store, void *lg)
 {
+	sqlstore *store = Store;
+	(void)store;
 	(void)lg;
 #ifdef CATALOG_JUN2020
-	if (catalog_version <= CATALOG_JUN2020) {
+	if (store->catalog_version <= CATALOG_JUN2020) {
 		lng lid;
 		BAT *fid = temp_descriptor(logger_find_bat(lg, 2017)); /* functions.id */
 		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
@@ -413,22 +414,22 @@ bl_postversion(void *lg)
 }
 
 static int
-bl_create(int debug, const char *logdir, int cat_version)
+bl_create(sqlstore *store, int debug, const char *logdir, int cat_version)
 {
-	if (bat_logger)
+	if (store->logger)
 		return LOG_ERR;
-	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
-	if (bat_logger)
+	store->logger = logger_create(debug, "sql", logdir, cat_version, (preversionfix_fptr)&bl_preversion, (postversionfix_fptr)&bl_postversion, store);
+	if (store->logger)
 		return LOG_OK;
 	return LOG_ERR;
 }
 
 static void
-bl_destroy(void)
+bl_destroy(sqlstore *store)
 {
-	logger *l = bat_logger;
+	logger *l = store->logger;
 
-	bat_logger = NULL;
+	store->logger = NULL;
 	if (l) {
 		close_stream(l->output_log);
 		GDKfree(l->fn);
@@ -440,28 +441,29 @@ bl_destroy(void)
 }
 
 static int
-bl_flush(lng saved_id)
+bl_flush(sqlstore *store, lng save_id)
 {
-	if (bat_logger)
-		return logger_flush(bat_logger, saved_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (store->logger)
+		return logger_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
 static int
-bl_changes(void)
+bl_changes(sqlstore *store)
 {
-	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
+	return (int) MIN(logger_changes(store->logger), GDK_int_max);
 }
 
 static int
-bl_get_sequence(int seq, lng *id)
+bl_get_sequence(sqlstore *store, int seq, lng *id)
 {
-	return logger_sequence(bat_logger, seq, id);
+	return logger_sequence(store->logger, seq, id);
 }
 
 static int
-bl_log_isnew(void)
+bl_log_isnew(sqlstore *store)
 {
+	logger *bat_logger = store->logger;
 	if (BATcount(bat_logger->catalog_bid) > 10) {
 		return 0;
 	}
@@ -469,27 +471,27 @@ bl_log_isnew(void)
 }
 
 static int
-bl_tstart(void)
+bl_tstart(sqlstore *store)
 {
-	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
-bl_tend(void)
+bl_tend(sqlstore *store)
 {
-	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tend(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static lng
-bl_tid(void)
+bl_tid(sqlstore *store)
 {
-	return log_save_id(bat_logger);
+	return log_save_id(store->logger);
 }
 
 static int
-bl_sequence(int seq, lng id)
+bl_sequence(sqlstore *store, int seq, lng id)
 {
-	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_sequence(store->logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 /* Write a plan entry to copy part of the given file.
@@ -515,7 +517,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	stream *s = NULL;
 	size_t to_copy;
 
-	if (stat(path, &statbuf) < 0) {
+	if (MT_stat(path, &statbuf) < 0) {
 		GDKsyserror("stat failed on %s", path);
 		goto end;
 	}
@@ -571,7 +573,7 @@ end:
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
 static gdk_return
-snapshot_wal(stream *plan, const char *db_dir)
+snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
 	char log_file[FILENAME_MAX];
 	int len;
@@ -591,7 +593,7 @@ snapshot_wal(stream *plan, const char *db_dir)
 			GDKerror("Could not open %s, filename is too large", log_file);
 			return GDK_FAIL;
 		}
-		if (stat(log_file, &statbuf) == 0) {
+		if (MT_stat(log_file, &statbuf) == 0) {
 			snapshot_lazy_copy_file(plan, log_file + strlen(db_dir) + 1, statbuf.st_size);
 		} else {
 			GDKerror("Could not open %s", log_file);
@@ -617,7 +619,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		GDKerror("Could not open %s, filename is too large", path1);
 		return GDK_FAIL;
 	}
-	if (stat(path1, &statbuf) == 0) {
+	if (MT_stat(path1, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, path1 + offset, extent);
 		return GDK_SUCCEED;
 	}
@@ -633,7 +635,7 @@ snapshot_heap(stream *plan, const char *db_dir, uint64_t batid, const char *file
 		GDKerror("Could not open %s, filename is too large", path2);
 		return GDK_FAIL;
 	}
-	if (stat(path2, &statbuf) == 0) {
+	if (MT_stat(path2, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, path2 + offset, extent);
 		return GDK_SUCCEED;
 	}
@@ -805,7 +807,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 		GDKerror("Could not open %s, filename is too large", path);
 		return GDK_FAIL;
 	}
-	if (stat(path, &statbuf) == 0) {
+	if (MT_stat(path, &statbuf) == 0) {
 		snapshot_lazy_copy_file(plan, ".vaultkey", statbuf.st_size);
 		return GDK_SUCCEED;
 	}
@@ -818,8 +820,9 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 	return GDK_FAIL;
 }
 static gdk_return
-bl_snapshot(stream *plan)
+bl_snapshot(sqlstore *store, stream *plan)
 {
+	logger *bat_logger = store->logger;
 	gdk_return ret;
 	char *db_dir = NULL;
 	size_t db_dir_len;
@@ -843,7 +846,7 @@ bl_snapshot(stream *plan)
 	if (ret != GDK_SUCCEED)
 		goto end;
 
-	ret = snapshot_wal(plan, db_dir);
+	ret = snapshot_wal(bat_logger, plan, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 

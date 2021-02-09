@@ -4,36 +4,3 @@ create table tmp_one (data numeric(5))
 statement ok
 create table tmp_two (data numeric(5))
 
-query R rowsort
-select data from tmp_one
-union
-select data from tmp_two
-
-----
-
-query R rowsort
-select data from tmp_one
-union
-select data from tmp_two
-order by data
-
-----
-
-query R rowsort
-select *
-from (
-  select data from tmp_one
-  union
-  select data from tmp_two
-) as foo
-order by data
-
-----
-
-statement ok
-drop table tmp_one
-
-statement ok
-drop table tmp_two
-
-

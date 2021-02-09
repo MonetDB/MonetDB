@@ -129,31 +129,31 @@ query I rowsort
 SELECT * FROM integers WHERE NOT EXISTS(SELECT * FROM integers) ORDER BY i
 ----
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT * FROM integers)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT * FROM integers WHERE i>10)
 ----
-False
+0
 
-query TT rowsort
+query II rowsort
 SELECT EXISTS(SELECT * FROM integers), EXISTS(SELECT * FROM integers)
 ----
-True
-True
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT * FROM integers) AND EXISTS(SELECT * FROM integers)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT EXISTS(SELECT * FROM integers))
 ----
-True
+1
 
 query I rowsort
 SELECT * FROM integers WHERE 1 IN (SELECT 1) ORDER BY i
@@ -175,7 +175,7 @@ query I rowsort
 SELECT * FROM integers WHERE 1 IN (SELECT NULL) ORDER BY i
 ----
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT NULL) FROM integers
 ----
 NULL
@@ -183,7 +183,7 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 SELECT NULL IN (SELECT * FROM integers) FROM integers
 ----
 NULL
@@ -201,13 +201,13 @@ SELECT (SELECT (SELECT (SELECT 42)))
 ----
 42
 
-query T rowsort
+query I rowsort
 SELECT (SELECT EXISTS(SELECT * FROM integers WHERE i>2)) FROM integers
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
 query II rowsort
 SELECT (SELECT MAX(i) FROM integers) AS k, CAST(SUM(i) AS BIGINT) FROM integers GROUP BY k
@@ -292,25 +292,25 @@ CREATE TABLE strings(v VARCHAR(128))
 statement ok
 INSERT INTO strings VALUES ('hello'), ('world'), (NULL)
 
-query T rowsort
+query I rowsort
 SELECT NULL IN (SELECT * FROM strings)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 'hello' IN (SELECT * FROM strings)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'bla' IN (SELECT * FROM strings)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 'bla' IN (SELECT * FROM strings WHERE v IS NOT NULL)
 ----
-False
+0
 
 query T rowsort
 SELECT * FROM strings WHERE EXISTS(SELECT NULL)
@@ -339,5 +339,4 @@ NULL
 
 statement ok
 drop table strings
-
 

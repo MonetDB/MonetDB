@@ -29,15 +29,14 @@ LANGUAGE P
 statement ok
 CREATE TABLE python_objects AS SELECT * FROM pyapi21_create() WITH DATA
 
-query T rowsort
+query I rowsort
 SELECT pyapi21_load(s) FROM python_objects
 ----
-True
+1
 
 statement ok
 DROP FUNCTION pyapi21_create; DROP FUNCTION pyapi21_load; DROP TABLE python_objects
 
 statement ok
 ROLLBACK
-
 

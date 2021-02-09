@@ -74,4 +74,3 @@ select count(name) , count(distinct name) from tbls
 statement ok
 drop table tbls
 
-

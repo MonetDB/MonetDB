@@ -405,12 +405,15 @@ AUTHinitTables(const char *passwd) {
 		/* normally, we'd commit here, but it's done already in AUTHaddUser */
 	}
 
-	if (!GDKinmemory(0)) {
+	if (!GDKinmemory(0) && !GDKembedded()) {
 		free(master_password);
 		master_password = NULL;
 		msg = msab_pickSecret(&master_password);
-		if (msg != NULL)
-			return msg;
+		if (msg != NULL) {
+			char *nmsg = createException(MAL, "initTables", "%s", msg);
+			free(msg);
+			return nmsg;
+		}
 	}
 
 	return(MAL_SUCCEED);
@@ -1037,7 +1040,8 @@ AUTHgetRemoteTableCredentials(const char *local_table, str *uri, str *username, 
 
 	p = lookupRemoteTableKey(local_table);
 	if (p == BUN_NONE) {
-		throw(MAL, "getRemoteTableCredentials", "No credentials for remote table %s found", local_table);
+		// No credentials for remote table with name local_table.
+		return MAL_SUCCEED;
 	}
 
 	assert(rt_key);

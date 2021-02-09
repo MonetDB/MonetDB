@@ -17,7 +17,26 @@ SELECT '' AS five, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 60
 		ORDER BY unique1 LIMIT 5
 ----
-20 values hashing to 73bd82021298603ec78a0a00c0df2cb9
+(empty)
+61
+560
+JCAAAA
+(empty)
+62
+633
+KCAAAA
+(empty)
+63
+296
+LCAAAA
+(empty)
+64
+479
+MCAAAA
+(empty)
+65
+64
+NCAAAA
 
 query TIIT rowsort
 SELECT '' AS two, unique1, unique2, stringu1
@@ -38,7 +57,18 @@ SELECT '' AS three, unique1, unique2, stringu1
 		FROM onek WHERE unique1 > 100
 		ORDER BY unique1 LIMIT 3 OFFSET 20
 ----
-12 values hashing to b51a8d8cd8acafcd81a71e5497cfcd1b
+(empty)
+121
+700
+REAAAA
+(empty)
+122
+519
+SEAAAA
+(empty)
+123
+777
+TEAAAA
 
 query TIIT rowsort
 SELECT '' AS zero, unique1, unique2, stringu1
@@ -51,14 +81,96 @@ SELECT '' AS eleven, unique1, unique2, stringu1
 		FROM onek WHERE unique1 < 50
 		ORDER BY unique1 DESC LIMIT 20 OFFSET 39
 ----
-44 values hashing to d8ebf76c60eb8393dfea613dc230148a
+(empty)
+0
+998
+AAAAAA
+(empty)
+1
+214
+BAAAAA
+(empty)
+10
+520
+KAAAAA
+(empty)
+2
+326
+CAAAAA
+(empty)
+3
+431
+DAAAAA
+(empty)
+4
+833
+EAAAAA
+(empty)
+5
+541
+FAAAAA
+(empty)
+6
+978
+GAAAAA
+(empty)
+7
+647
+HAAAAA
+(empty)
+8
+653
+IAAAAA
+(empty)
+9
+49
+JAAAAA
 
 query TIIT rowsort
 SELECT '' AS ten, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 OFFSET 990
 ----
-40 values hashing to 7ee0ebb0db667c599d942cbc0376de2a
+(empty)
+990
+369
+CMAAAA
+(empty)
+991
+426
+DMAAAA
+(empty)
+992
+363
+EMAAAA
+(empty)
+993
+661
+FMAAAA
+(empty)
+994
+695
+GMAAAA
+(empty)
+995
+144
+HMAAAA
+(empty)
+996
+258
+IMAAAA
+(empty)
+997
+21
+JMAAAA
+(empty)
+998
+549
+KMAAAA
+(empty)
+999
+152
+LMAAAA
 
 statement error
 SELECT '' AS five, unique1, unique2, stringu1
@@ -70,6 +182,24 @@ SELECT '' AS five, unique1, unique2, stringu1
 		FROM onek
 		ORDER BY unique1 LIMIT 5 OFFSET 900
 ----
-20 values hashing to f6c67375f4ea2d3c0b34dd2ced7f7612
-
+(empty)
+900
+913
+QIAAAA
+(empty)
+901
+931
+RIAAAA
+(empty)
+902
+702
+SIAAAA
+(empty)
+903
+641
+TIAAAA
+(empty)
+904
+793
+UIAAAA
 

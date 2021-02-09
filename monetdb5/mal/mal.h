@@ -111,7 +111,7 @@ typedef str (*MALfcn) ();
 typedef struct SYMDEF {
 	struct SYMDEF *peer;		/* where to look next */
 	struct SYMDEF *skip;		/* skip to next different symbol */
-	str name;
+	const char *name;
 	int kind;					/* what kind of symbol */
 	struct MALBLK *def;			/* the details of the MAL fcn */
 } *Symbol, SymRecord;
@@ -161,8 +161,8 @@ typedef struct {
 	lng totticks;				/* total time spent on this instruction. */
 	lng wbytes;					/* number of bytes produced in last instruction */
 	/* the core admin */
-	str modname;				/* module context, reference into namespace */
-	str fcnname;				/* function name, reference into namespace */
+	const char *modname;		/* module context, reference into namespace */
+	const char *fcnname;		/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
 	int argv[FLEXIBLE_ARRAY_MEMBER]; /* at least a few entries */
 } *InstrPtr, InstrRecord;

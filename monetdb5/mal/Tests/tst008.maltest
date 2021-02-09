@@ -5,4 +5,3 @@ function foo();
 	io.print(i);
 end foo;
 
-

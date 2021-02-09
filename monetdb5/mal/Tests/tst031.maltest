@@ -10,7 +10,7 @@ bat.append(b,1)
 statement ok
 bat.append(b,2)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
 0
@@ -37,7 +37,7 @@ bat.append(c,1)
 statement ok
 bat.append(c,2)
 
-query TI rowsort
+query II rowsort
 io.print(c)
 ----
 0
@@ -53,7 +53,7 @@ k:= 1@0
 statement ok
 bat.replace(c,k,3)
 
-query TI rowsort
+query II rowsort
 io.print(c)
 ----
 0
@@ -66,7 +66,7 @@ io.print(c)
 statement ok
 bat.delete(c,2@0)
 
-query TI rowsort
+query II rowsort
 io.print(c)
 ----
 0
@@ -91,7 +91,7 @@ bat.append(d,1)
 statement ok
 bat.append(d,2)
 
-query TI rowsort
+query II rowsort
 io.print(d)
 ----
 0
@@ -107,7 +107,7 @@ k:= 1@0
 statement ok
 bat.replace(d,k,3)
 
-query TI rowsort
+query II rowsort
 io.print(d)
 ----
 0
@@ -120,7 +120,7 @@ io.print(d)
 statement ok
 bat.delete(d,2@0)
 
-query TI rowsort
+query II rowsort
 io.print(d)
 ----
 0
@@ -142,7 +142,7 @@ bat.append(e,5@0)
 statement ok
 bat.append(e,6@0)
 
-query TT rowsort
+query II rowsort
 io.print(e)
 ----
 0
@@ -164,12 +164,11 @@ bat.append(f,nil:oid)
 statement ok
 bat.append(f,nil:oid)
 
-query TT rowsort
+query II rowsort
 io.print(f)
 ----
 0
 NULL
 1
 NULL
-
 

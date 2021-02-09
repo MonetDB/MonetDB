@@ -44,12 +44,24 @@ joeuser@mydatabase
 query TT rowsort
 select split_part(a,'@',1), split_part(a,'@',2) from somestrings
 ----
-14 values hashing to 6dcd38df06c2d6c185958d4b75920f73
+ 
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+(empty)
+b
+a
+(empty)
+a
+(empty)
+joeuser
+mydatabase
 
 statement ok
 drop table somestrings
 
 statement ok
 rollback
-
 

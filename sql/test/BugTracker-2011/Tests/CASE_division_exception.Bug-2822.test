@@ -12,4 +12,3 @@ SELECT CASE WHEN (c = 0) THEN 0 ELSE (c / (c + 1)) END FROM bug_2822
 statement ok
 DROP TABLE bug_2822
 
-

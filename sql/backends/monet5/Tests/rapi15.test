@@ -271,4 +271,3 @@ select "2-Age","ttest2samplesStatistic"("9-Score", "4-Gender") as "stat", "ttest
 statement ok
 rollback
 
-

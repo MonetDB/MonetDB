@@ -44,4 +44,3 @@ select * from t3446
 statement ok
 drop table t3446
 
-

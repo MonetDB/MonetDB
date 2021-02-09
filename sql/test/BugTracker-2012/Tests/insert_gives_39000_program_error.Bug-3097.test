@@ -12,7 +12,6 @@ CREATE TABLE "t3097" (
     UNIQUE ("app_label", "model")
 )
 
-
 statement ok
 INSERT INTO "t3097"
   ("name"
@@ -25,11 +24,9 @@ VALUES
   ,'contenttype'
   )
 
-
 statement ok
 DROP TABLE "t3097"
 
 statement ok
 ROLLBACK
-
 

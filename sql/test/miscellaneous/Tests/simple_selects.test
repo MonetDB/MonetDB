@@ -601,11 +601,14 @@ select * from myv limit 1
 statement ok
 rollback
 
-query II rowsort
+statement error
 select * from (select 1 as c0, 2 as c0) as sub
-----
-1
-2
+
+statement error
+select *,* from (select 1 as c0, 2 as c0) as sub
+
+statement error
+select * from (select 1 as c0, max(k) as c0 from (select 2, 3) tst(k, name) group by name) as sub
 
 query T rowsort
 select cast(interval '3' second as clob)
@@ -676,6 +679,40 @@ statement ok
 start transaction
 
 statement ok
+create table t1("kk" int)
+
+statement ok
+create table t2("kk" int)
+
+statement ok
+create table t3("tkey" int)
+
+statement error
+SELECT 1 FROM (((t1 t10 INNER JOIN t2 t20 ON t10."kk" = t20."kk") INNER JOIN t2 t20 ON t10."kk" = t20."kk")
+INNER JOIN t3 t31 ON t20."kk" = t31."tkey"); --error, multiple references to relation t20
+
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
+CREATE TABLE "t0" ("c0" int NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"))
+
+statement ok
+CREATE TABLE "t1" ("c1" int NOT NULL,CONSTRAINT "t1_c1_pkey" PRIMARY KEY ("c1"))
+
+statement error
+alter table t1 drop constraint "t0_c0_pkey"
+
+statement ok
+rollback
+
+statement ok
+start transaction
+
+statement ok
 create or replace function ups() returns int begin if null > 1 then return 1; else return 2; end if; end
 
 query I rowsort
@@ -723,28 +760,28 @@ select "😀"()
 1
 
 statement ok
+rollback
+
+statement ok
 CREATE FUNCTION ups() RETURNS INT
 BEGIN
 	DECLARE "nononononononononononononononononononononononononononononononono" int;
 	RETURN "nononononononononononononononononononononononononononononononono";
-END
+END;  -- error for now
 
-statement ok
+statement error
 select ups()
 
-statement ok
+statement error
 create function "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"() returns int return 2
 
-statement ok
+statement error
 select "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"()
 
-statement ok
+statement error
 create function "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"() returns int return 3
 
-statement ok
+statement error
 select "😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀"()
-
-statement ok
-rollback
 
 

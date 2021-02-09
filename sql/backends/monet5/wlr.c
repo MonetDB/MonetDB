@@ -33,6 +33,7 @@
 #include "mal_client.h"
 #include "mal_authorize.h"
 #include "querylog.h"
+#include "mutils.h"
 
 #define WLR_WAIT 0
 #define WLR_RUN   101
@@ -73,7 +74,7 @@ WLRgetConfig(void){
 
 	if((path = GDKfilepath(0, 0, "wlr.config", 0)) == NULL)
 		throw(MAL,"wlr.getConfig", "Could not create wlr.config file path\n");
-	fd = fopen(path,"r");
+	fd = MT_fopen(path,"r");
 	GDKfree(path);
 	if( fd == NULL)
 		throw(MAL,"wlr.getConfig", "Could not access wlr.config file \n");
@@ -176,7 +177,7 @@ WLRgetMaster(void)
 	if ((dir = GDKfilepath(0, path, "wlc.config", 0)) == NULL)
 		throw(MAL,"wlr.getMaster","Could not access wlc.config file %s/wlc.config\n", path);
 
-	fd = fopen(dir,"r");
+	fd = MT_fopen(dir,"r");
 	GDKfree(dir);
 	if (fd == NULL)
 		throw(MAL,"wlr.getMaster","Could not get read access to '%s'config file\n", wlr_master);
@@ -244,7 +245,7 @@ WLRprocessBatch(Client cntxt)
 	}
 
 	/* Cook a log file into a concreate MAL function for multiple transactions */
-	prev = newFunction(putName("user"), putName("wlr"), FUNCTIONsymbol);
+	prev = newFunction(putName(sql_private_module_name), putName("wlr"), FUNCTIONsymbol);
 	if(prev == NULL) {
 		MCcloseClient(c);
 		throw(MAL, "wlr.batch", "Could not create user for WLR process\n");
@@ -884,6 +885,7 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL,"WLRappend",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
+	sqlstore *store = m->session->tr->store;
 	switch(ATOMstorage(tpe)){
 	case TYPE_bit: WLRcolumn(bit); break;
 	case TYPE_bte: WLRcolumn(bte); break;
@@ -908,11 +910,11 @@ WLRappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat);
+		store->storage_api.append_col(m->session->tr, c, (size_t)pos, ins, TYPE_bat);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store_funcs.append_idx(m->session->tr, i, (size_t)pos, ins, tpe);
+			store->storage_api.append_idx(m->session->tr, i, (size_t)pos, ins, tpe);
 	}
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
@@ -940,6 +942,7 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+	sqlstore *store = m->session->tr->store;
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
@@ -962,7 +965,7 @@ WLRdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 
-	store_funcs.delete_tab(m->session->tr, t, ins, TYPE_bat);
+	store->storage_api.delete_tab(m->session->tr, t, ins, TYPE_bat);
 cleanup:
 	BBPunfix(((BAT *) ins)->batCacheid);
 	return msg;
@@ -1004,6 +1007,8 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	if ((msg = checkSQLContext(cntxt)) != NULL)
 		return msg;
+
+	sqlstore *store = m->session->tr->store;
 
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL)
@@ -1055,11 +1060,11 @@ WLRupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATmsync(tids);
 	BATmsync(upd);
 	if (cname[0] != '%' && (c = mvc_bind_column(m, t, cname)) != NULL) {
-		store_funcs.update_col(m->session->tr, c, tids, upd, TYPE_bat);
+		store->storage_api.update_col(m->session->tr, c, tids, upd, TYPE_bat);
 	} else if (cname[0] == '%') {
 		sql_idx *i = mvc_bind_idx(m, s, cname + 1);
 		if (i)
-			store_funcs.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
+			store->storage_api.update_idx(m->session->tr, i, tids, upd, TYPE_bat);
 	}
 
 cleanup:

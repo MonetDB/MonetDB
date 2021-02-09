@@ -23,7 +23,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	char buf[1024];
 	int i, retc = pci->retc;
 	InstrPtr p;
-	str bufName, fcnName;
+	const char *bufName, *fcnName;
 
 	(void) cntxt;
 	(void) stk;
@@ -115,13 +115,13 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc )
 	int i,j,k,m, actions=0;
 	int refbat=0, retc = p->retc;
 	bit *upgrade;
-	Symbol s;
 	str msg;
 
 
-	s= findSymbol(cntxt->usermodule,
-			VALget(&getVar(mb, getArg(p, retc+0))->value),
-			VALget(&getVar(mb, getArg(p, retc+1))->value));
+	str mod = VALget(&getVar(mb, getArg(p, retc+0))->value);
+	str fcn = VALget(&getVar(mb, getArg(p, retc+1))->value);
+	//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
+	Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
 	if( s== NULL || !isSideEffectFree(s->def) ||
 		getInstrPtr(s->def,0)->retc != p->retc ) {
@@ -351,7 +351,7 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 	for(i=0;OperatorMap[i].src;i++)
 	if( strcmp(fcn,OperatorMap[i].src)==0){
 		/* found a candidate for a switch */
-		getVarConstant(mb, getArg(pci, 2)).val.sval = putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
+		getVarConstant(mb, getArg(pci, 2)).val.sval = (char *) putNameLen(OperatorMap[i].dst,OperatorMap[i].len);
 		getVarConstant(mb, getArg(pci, 2)).len = OperatorMap[i].len;
 		r= getArg(pci,3); getArg(pci,3)=getArg(pci,4);getArg(pci,4)=r;
 		r= OPTremapDirect(cntxt,mb, stk, pci, idx, scope);
@@ -396,9 +396,10 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			 * such as the calculator functions. It is particularly
 			 * geared at handling the PSM code.
 			 */
-			str mod = VALget(&getVar(mb, getArg(p, 1))->value);
-			str fcn = VALget(&getVar(mb, getArg(p, 2))->value);
-			Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
+			str mod = VALget(&getVar(mb, getArg(p, p->retc+0))->value);
+			str fcn = VALget(&getVar(mb, getArg(p, p->retc+1))->value);
+			//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
+			Symbol s = findSymbolInModule(getModule(putName(mod)),putName(fcn));
 
 			if (s && s->def->inlineProp ){
 				pushInstruction(mb, p);

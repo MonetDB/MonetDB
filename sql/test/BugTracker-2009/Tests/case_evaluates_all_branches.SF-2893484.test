@@ -24,4 +24,3 @@ SELECT cast( CASE SUM(payout_units_cpc) WHEN 0 THEN 0 ELSE cast(SUM(payout_units
 statement ok
 drop table stats_2009_week_31
 
-

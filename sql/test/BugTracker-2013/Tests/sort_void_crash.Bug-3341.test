@@ -75,4 +75,3 @@ select rank() over(partition by o_custkey) from orders
 1
 1
 
-

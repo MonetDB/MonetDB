@@ -165,4 +165,3 @@ int
 statement ok
 drop table test_aggre_limit
 
-

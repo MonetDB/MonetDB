@@ -174,6 +174,11 @@ scanner_init_keywords(void)
 	failed += keywords_insert("FROM", FROM);
 	failed += keywords_insert("FWF", FWF);
 
+	failed += keywords_insert("BIG", BIG);
+	failed += keywords_insert("LITTLE", LITTLE);
+	failed += keywords_insert("NATIVE", NATIVE);
+	failed += keywords_insert("ENDIAN", ENDIAN);
+
 	failed += keywords_insert("REFERENCES", REFERENCES);
 
 	failed += keywords_insert("MATCH", MATCH);

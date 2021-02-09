@@ -47,4 +47,3 @@ select distinct a from (select 10 as a union all select 10 as a) as b
 ----
 10
 
-

@@ -70,4 +70,3 @@ SELECT (SELECT count(*) FROM tbls), 1
 statement ok
 drop table tbls
 
-

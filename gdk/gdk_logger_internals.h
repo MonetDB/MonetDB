@@ -15,7 +15,7 @@ struct logger {
 	lng id;			/* current log output id */
 	lng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */
-	int saved_tid;		/* id of transaction which was flush out (into BBP storage)  */
+	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
 
 	int row_insert_nrcols;	/* nrcols == 0 no rowinsert, log_update will include the logformat */
@@ -26,6 +26,7 @@ struct logger {
 	char *local_dir; /* the directory in which the log is written */
 	preversionfix_fptr prefuncp;
 	postversionfix_fptr postfuncp;
+	void *funcdata;
 	stream *output_log;
 	stream *input_log;	/* current stream too flush */
 	lng end;		/* end of pre-allocated blocks for faster f(data)sync */

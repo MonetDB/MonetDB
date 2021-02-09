@@ -3,4 +3,3 @@ select cast ('2013-01-01' as date) + interval '-1' year
 ----
 2012-01-01
 
-

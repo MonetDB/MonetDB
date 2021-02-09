@@ -9,4 +9,3 @@ SELECT A.subj, B.obj, C.obj
 	AND A.subj = C.subj
 ----
 
-

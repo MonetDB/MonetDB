@@ -49,4 +49,3 @@ drop table t31
 statement ok
 drop function fHtm
 
-

@@ -29,10 +29,9 @@ io.print("FIRST ROUND")
 ----
 "FIRST ROUND"
 
-query TI rowsort
+query II rowsort
 io.print(c)
 ----
 0
 2
-
 

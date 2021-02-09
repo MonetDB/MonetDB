@@ -247,6 +247,7 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
         return msg;
 
 	tr = m->session->tr;
+	sqlstore *store = tr->store;
 	sch = mvc_bind_schema(m, "sys");
 	if ( !sch )
         return createException(MAL, "netcdf.attach", SQLSTATE(NC000) "Cannot get schema sys\n");
@@ -263,7 +264,7 @@ NCDFattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* check if the file is already attached */
 	col = mvc_bind_column(m, tfiles, "location");
-	rid = table_funcs.column_find_row(m->session->tr, col, fname, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, col, fname, NULL);
 	if (!is_oid_nil(rid))
 	    return createException(SQL, "netcdf.attach", SQLSTATE(NC000) "File %s is already attached\n", fname);
 
@@ -278,7 +279,7 @@ header: %s", nc_strerror(retval));
 
 	/* Insert row into netcdf_files table */
 	col = mvc_bind_column(m, tfiles, "file_id");
-	fid = store_funcs.count_col(tr, col, 1) + 1;
+	fid = store->storage_api.count_col(tr, col, 1) + 1;
 
 	esc_str0 = SQLescapeString(fname);
 	if (!esc_str0) {
@@ -739,6 +740,7 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (msg)
 		return msg;
 
+	sqlstore *store = m->session->tr->store;
 	sch = mvc_bind_schema(m, "sys");
 	if ( !sch )
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Cannot get schema sys\n");
@@ -751,13 +753,13 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	col = mvc_bind_column(m, tfiles, "file_id");
 	if (col == NULL)
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "Could not find \"netcdf_files\".\"file_id\"\n");
-	rid = table_funcs.column_find_row(m->session->tr, col, (void *)&fid, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, col, (void *)&fid, NULL);
 	if (is_oid_nil(rid))
 		return createException(MAL, "netcdf.importvar", SQLSTATE(NC000) "File %d not in the NetCDF vault\n", fid);
 
 
 	col = mvc_bind_column(m, tfiles, "location");
-	fname = (str)table_funcs.column_find_value(m->session->tr, col, rid);
+	fname = (str)store->table_api.column_find_value(m->session->tr, col, rid);
 
 	/* Open NetCDF file  */
 	if ((retval = nc_open(fname, NC_NOWRITE, &ncid))) {
@@ -860,8 +862,8 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		GDKfree(dim_bids);
 		return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	size_t pos = store_funcs.claim_tab(m->session->tr, arr_table, BATcount(vbat));
-	store_funcs.append_col(m->session->tr, col, pos, vbat, TYPE_bat);
+	size_t pos = store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(vbat));
+	store->storage_api.append_col(m->session->tr, col, pos, vbat, TYPE_bat);
 	BBPunfix(vbatid);
 	BBPrelease(vbatid);
 	vbat = NULL;
@@ -881,8 +883,8 @@ NCDFimportVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			GDKfree(dim_bids);
 			return createException(MAL, "netcdf.importvar", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		pos = store_funcs.claim_tab(m->session->tr, arr_table, BATcount(dimbat));
-		store_funcs.append_col(m->session->tr, col, pos, dimbat, TYPE_bat);
+		pos = store->storage_api.claim_tab(m->session->tr, arr_table, BATcount(dimbat));
+		store->storage_api.append_col(m->session->tr, col, pos, dimbat, TYPE_bat);
 		BBPunfix(dim_bids[i]); /* phys. ref from BATdescriptor */
 		BBPrelease(dim_bids[i]); /* log. ref. from loadVar */
 		dimbat = NULL;

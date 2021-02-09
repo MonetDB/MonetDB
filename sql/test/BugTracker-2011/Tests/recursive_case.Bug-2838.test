@@ -17,4 +17,3 @@ FROM t
 statement ok
 drop table t
 
-

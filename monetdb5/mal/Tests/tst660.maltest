@@ -22,4 +22,3 @@ fs(1,"a","b");
 statement error
 fs(1,"a","b","c");
 
-

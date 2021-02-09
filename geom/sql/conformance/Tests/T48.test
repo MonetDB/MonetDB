@@ -3,4 +3,3 @@ SELECT ST_AsText(ST_Difference(named_places.boundary, forests.boundary)) FROM na
 ----
 POLYGON ((62 48, 84 48, 84 42, 56 34, 62 48))
 
-

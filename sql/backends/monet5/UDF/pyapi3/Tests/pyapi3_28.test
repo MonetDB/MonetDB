@@ -13,12 +13,11 @@ CREATE FUNCTION test_duplicates(s STRING) RETURNS BOOLEAN LANGUAGE PYTHON {
     return True
 }
 
-query T rowsort
+query I rowsort
 SELECT test_duplicates(s) FROM duplicate_strings()
 ----
-True
+1
 
 statement ok
 ROLLBACK
-
 
