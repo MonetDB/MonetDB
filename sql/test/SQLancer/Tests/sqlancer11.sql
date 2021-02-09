@@ -21,3 +21,30 @@ insert into t1(c0) values ((select 'a')), ('b');
 insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_'))) as string(616))), (r'');
 DROP TABLE t1;
 DROP TABLE t0;
+
+START TRANSACTION;
+CREATE TABLE "sys"."t0" ("c0" BOOLEAN,"c1" DECIMAL(14,3));
+COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+false	0.458
+true	4.112
+false	0.201
+false	0.347
+true	0.420
+false	0.127
+false	0.502
+
+CREATE TABLE "sys"."t1" ("c0" BOOLEAN,"c1" DECIMAL(14,3));
+COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+NULL	0.000
+false	0.187
+false	0.000
+false	NULL
+false	NULL
+true	NULL
+NULL	0.325
+NULL	0.374
+true	NULL
+true	NULL
+
+select 1 from t1, t0 where cast(t1.c1 as clob) not like ((select 'A' from t0, t1) except all (select 'B' from t0));
+ROLLBACK;
