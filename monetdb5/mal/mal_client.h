@@ -179,6 +179,7 @@ typedef struct CLIENT {
 	size_t blocksize;
 	protocol_version protocol;
 	bool filetrans;			/* whether the client can read files for us */
+	char *handshake_options;
 	char *query;			/* string, identify whatever we're working on */
 } *Client, ClientRec;
 
