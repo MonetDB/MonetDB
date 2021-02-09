@@ -645,14 +645,18 @@ load_part(sql_trans *tr, sql_table *mt, oid rid)
 	sql_part *pt = SA_ZNEW(tr->sa, sql_part);
 	sql_schema *syss = find_sql_schema(tr, "sys");
 	sql_table *objects = find_sql_table(tr, syss, "objects");
-	sqlid id;
+	int id;
 	sqlstore *store = tr->store;
 
 	assert(isMergeTable(mt) || isReplicaTable(mt));
 	v = store->table_api.column_find_value(tr, find_sql_column(objects, "id"), rid);
 	id = *(sqlid*)v; _DELETE(v);
+	if (is_int_nil(id)) { /* upgrade case, the id it's not initialized */
+		id = store_next_oid(store);
+		store->table_api.column_update_value(tr, find_sql_column(objects, "id"), rid, &id);
+	}
 	v = store->table_api.column_find_value(tr, find_sql_column(objects, "name"), rid);
-	base_init(tr->sa, &pt->base, id, 0, v);	_DELETE(v);
+	base_init(tr->sa, &pt->base, (sqlid) id, 0, v);	_DELETE(v);
 	v = store->table_api.column_find_value(tr, find_sql_column(objects, "sub"), rid);
 	pt->t = mt;
 	pt->member = *(sqlid*)v; _DELETE(v);

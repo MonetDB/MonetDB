@@ -59,6 +59,14 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_OCT2020
+	if (oldversion == CATALOG_OCT2020) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
@@ -66,9 +74,9 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #define D(schema, table)	"D_" schema "_" table
 
-#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
+#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020 || defined CATALOG_OCT2020
 static int
-find_table_id(logger *lg, const char *val, int *sid)
+find_table_id(logger *lg, const char *schema, const char *val, int *sid)
 {
 	BAT *s = NULL;
 	BAT *b, *t;
@@ -79,7 +87,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name"), 0, 0));
 	if (b == NULL)
 		return 0;
-	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
+	s = BATselect(b, NULL, schema, NULL, 1, 1, 0);
 	bat_destroy(b);
 	if (s == NULL)
 		return 0;
@@ -463,7 +471,7 @@ bl_postversion(void *Store, void *lg)
 		}
 		bat_destroy(b);
 		int sid;
-		int tid = find_table_id(lg, "functions", &sid);
+		int tid = find_table_id(lg, "sys", "functions", &sid);
 		if (tabins(lg, true, -1, NULL, "sys", "_columns",
 			   "id", &id,
 			   "name", "system",
@@ -859,7 +867,7 @@ bl_postversion(void *Store, void *lg)
 		}
 		bat_destroy(sem);
 		int sid;
-		int tid = find_table_id(lg, "functions", &sid);
+		int tid = find_table_id(lg, "sys", "functions", &sid);
 		if (tabins(lg, true, -1, NULL, "sys", "_columns",
 			   "id", &id,
 			   "name", "semantics",
@@ -1053,6 +1061,121 @@ bl_postversion(void *Store, void *lg)
 			if ((res = logger_upgrade_bat(lg, N("sys", "functions", "mod"), LOG_COL, 0)) != GDK_SUCCEED)
 				return res;
 		}
+	}
+#endif
+
+#ifdef CATALOG_OCT2020
+	if (store->catalog_version <= CATALOG_OCT2020) {
+		lng lid;
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0)
+			return GDK_FAIL;
+		int id = (int) lid;
+		char *schemas[2] = {"sys", "tmp"};
+		for (int i = 0 ; i < 2; i++) { /* create for both tmp and sys schemas */
+			int sid, tid = find_table_id(lg, schemas[i], "objects", &sid);
+			if (tabins(lg, true, -1, NULL, "sys", "_columns",
+				"id", &id,
+				"name", "sub",
+				"type", "int",
+				"type_digits", &((const int) {32}),
+				"type_scale", &((const int) {0}),
+				"table_id", &tid,
+				"default", str_nil,
+				"null", &((const bit) {TRUE}),
+				"number", &((const int) {3}),
+				"storage", str_nil,
+				NULL) != GDK_SUCCEED)
+				return GDK_FAIL;
+			id++;
+		}
+
+		/* add sub column to "objects" table. This is required for merge tables */
+		BAT *objs_id = temp_descriptor(logger_find_bat(lg, N("sys", "objects", "id"), 0, 0));
+		if (!objs_id)
+			return GDK_FAIL;
+
+		BAT *objs_sub = BATconstant(objs_id->hseqbase, TYPE_int, ATOMnilptr(TYPE_int), BATcount(objs_id), PERSISTENT);
+		if (!objs_sub) {
+			bat_destroy(objs_id);
+			return GDK_FAIL;
+		}
+		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED || logger_add_bat(lg, objs_sub, N("sys", "objects", "sub"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+
+		BAT *objs_nr = temp_descriptor(logger_find_bat(lg, N("sys", "objects", "nr"), 0, 0));
+		if (!objs_nr) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+
+		/* hopefully no one will create a key or index with more than 2000 columns */
+		BAT *tids = BATthetaselect(objs_nr, NULL, &((const int) {2000}), ">");
+		if (!tids) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+
+		BAT *prj = BATproject2(tids, objs_nr, NULL);
+		if (!prj) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+		gdk_return res = BATreplace(objs_sub, tids, prj, TRUE); /* 'sub' takes the id of the child */
+		bat_destroy(objs_sub);
+		bat_destroy(prj);
+		if (res != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(tids);
+			return res;
+		}
+
+		if (!(prj = BATproject2(tids, objs_id, NULL))) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+		res = BATreplace(objs_nr, tids, prj, TRUE); /* 'nr' takes the id of the parent */
+		bat_destroy(objs_nr);
+		bat_destroy(prj);
+		if (res != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(tids);
+			return res;
+		}
+		if (logger_upgrade_bat(lg, N("sys", "objects", "nr"), LOG_COL, 0) != GDK_SUCCEED || logger_upgrade_bat(lg, N("sys", "objects", "sub"), LOG_COL, 0) != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+
+		BAT *new_ids = BATconstant(objs_id->hseqbase, TYPE_int, ATOMnilptr(TYPE_int), BATcount(tids), PERSISTENT);
+		if (!new_ids) {
+			bat_destroy(objs_id);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+		res = BATreplace(objs_id, tids, new_ids, TRUE); /* 'id' will get initialized at load_part */
+		bat_destroy(objs_id);
+		bat_destroy(tids);
+		bat_destroy(new_ids);
+		if (res != GDK_SUCCEED)
+			return res;
+
+		if (logger_upgrade_bat(lg, N("sys", "objects", "id"), LOG_COL, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
 	}
 #endif
 
