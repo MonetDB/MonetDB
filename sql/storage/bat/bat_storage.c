@@ -168,8 +168,7 @@ static storage *
 temp_dup_storage(ulng tid)
 {
 	storage *bat = ZNEW(storage);
-	/* temp has no segments? */
-	if (temp_dup_cs(&bat->cs, tid, TYPE_oid)) {
+	if (temp_dup_cs(&bat->cs, tid, TYPE_msk)) {
 		_DELETE(bat);
 		return NULL;
 	}
