@@ -15,12 +15,10 @@
 struct versionhead ;
 
 #define active					(0)
-#define id_based_rollbacked		(1)
-#define name_based_rollbacked	(1<<1)
-#define under_destruction		(id_based_rollbacked | name_based_rollbacked)
-#define under_resurrection		(1<<3)
-#define deleted					(1<<4)
-#define rollbacked				(1<<5)
+#define under_destruction		(1<<1)
+#define block_destruction		(1<<2)
+#define deleted					(1<<3)
+#define rollbacked				(1<<4)
 
 typedef struct objectversion {
 	ulng ts;
@@ -539,9 +537,9 @@ os_dup(objectset *os)
 void
 os_destroy(objectset *os, sql_store store)
 {
-	MT_lock_destroy(&os->ht_lock);
 	if (--os->refcnt > 0)
 		return;
+	MT_lock_destroy(&os->ht_lock);
 	versionhead* n=os->name_based_h;
 	while(n) {
 		objectversion *ov = n->ov;
@@ -709,12 +707,12 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 		bte state = os_atmc_get_state(oo);
 		if (state != active) {
 			// This can only happen if the parent oo was a comitted deleted at some point.
-			assert(state == deleted || state == under_destruction || state == under_resurrection);
+			assert(state == deleted || state == under_destruction || state == block_destruction);
 			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
 			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
-			if (!ATOMIC_CAS(&oo->state, &expected_deleted, under_destruction)) {
+			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
 				return -1; /*conflict with cleaner or write-write conflict*/
 			}
 		}
@@ -762,12 +760,12 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 		bte state = os_atmc_get_state(oo);
 		if (state != active) {
 			// This can only happen if the parent oo was a comitted deleted at some point.
-			assert(state == deleted || state == under_destruction || state == under_resurrection);
+			assert(state == deleted || state == under_destruction || state == block_destruction);
 			/* Since our parent oo is comitted deleted objectversion, we might have a conflict with
 			* another transaction that tries to clean up oo or also wants to add a new objectversion.
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
-			if (!ATOMIC_CAS(&oo->state, &expected_deleted, under_resurrection)) {
+			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
 				return -1; /*conflict with cleaner or write-write conflict*/
 			}
 		}

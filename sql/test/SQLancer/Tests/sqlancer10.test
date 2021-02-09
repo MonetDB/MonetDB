@@ -137,3 +137,9 @@ SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.v
 
 statement ok
 ROLLBACK
+
+query I rowsort
+select case 3 <> any(select 4) when true then 2 when false then 8 end;
+----
+2
+
