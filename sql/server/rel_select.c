@@ -4056,6 +4056,8 @@ rel_group_column(sql_query *query, sql_rel **rel, symbol *grp, dlist *selection,
 			return NULL;
 		}
 	}
+	if (!exp_subtype(e))
+		return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for group by column");
 	return e;
 }
 
@@ -4408,6 +4410,8 @@ rel_order_by(sql_query *query, sql_rel **R, symbol *orderby, int f)
 			}
 			if (!e)
 				return NULL;
+			if (!exp_subtype(e))
+				return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for order by column");
 			set_direction(e, direction);
 			list_append(exps, e);
 		} else {
