@@ -54,3 +54,7 @@ prepare values (0.34, (values ((select ? from (select 1) as t1(x))))), (3, 2);
 prepare with cte0(c0) as (select 1), cte1(c0,c1,c2) as (select distinct 1, 2, false)
 select distinct least('y', (values (''), (''))), 1, (select ? from (select 1) as l1v0(x))
 from cte0 as l0cte0, cte1 as l0cte1 order by l0cte0.c0 desc nulls last, l0cte1.c2 desc nulls first; -- ? can't be defined, so error
+
+prepare with cte0(c0) as (select 2) select 1 <> all(select 2 from (values (1),(2)) as t1) from cte0 as l0cte0 group by ?; --error, cannot have a parameter for group by column
+
+prepare with cte0(c0) as (select 2) select 1 <> all(select 2 from (values (1),(2)) as t1) from cte0 as l0cte0 order by ?; --error, cannot have a parameter for order by column
