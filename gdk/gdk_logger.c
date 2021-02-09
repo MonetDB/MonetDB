@@ -955,8 +955,7 @@ logger_open_input(logger *lg, char *filename, bool *filemissing)
 		/* if not empty, must start with correct byte order mark */
 		if (byteorder != 1234) {
 			TRC_CRITICAL(GDK, "incorrect byte order word in file %s\n", filename);
-			logger_close(lg);
-			GDKdebug = dbg;
+			logger_close_input(lg);
 			return GDK_FAIL;
 		}
 		break;
