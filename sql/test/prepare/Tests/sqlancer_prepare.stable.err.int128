@@ -1,6 +1,6 @@
 MAPI  = (monetdb) /var/tmp/mtest-918314/.s.monetdb.35583
 QUERY = PREPARE SELECT DISTINCT (SELECT DISTINCT r'|m<v' FROM t1 WHERE ((t1.c0)<(?)) GROUP BY t1.c2, ?), ?, t1.c2 FROM t1 WHERE CAST(? AS BOOLEAN) LIMIT 2103332269785059850;
-ERROR = !Could not determine type for argument number 2
+ERROR = !Cannot have a parameter (?) for group by column
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-918314/.s.monetdb.35583
 QUERY = PREPARE SELECT (SELECT ? FROM (select 1) as v1(c0));
@@ -31,4 +31,12 @@ QUERY = prepare with cte0(c0) as (select 1), cte1(c0,c1,c2) as (select distinct 
         select distinct least('y', (values (''), (''))), 1, (select ? from (select 1) as l1v0(x))
         from cte0 as l0cte0, cte1 as l0cte1 order by l0cte0.c0 desc nulls last, l0cte1.c2 desc nulls first; -- ? can't be defined, so error
 ERROR = !Could not determine type for argument number 1
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
+QUERY = prepare with cte0(c0) as (select 2) select 1 <> all(select 2 from (values (1),(2)) as t1) from cte0 as l0cte0 group by ?; --error, cannot have a parameter for group by column
+ERROR = !Cannot have a parameter (?) for group by column
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-185783/.s.monetdb.32587
+QUERY = prepare with cte0(c0) as (select 2) select 1 <> all(select 2 from (values (1),(2)) as t1) from cte0 as l0cte0 order by ?; --error, cannot have a parameter for order by column
+ERROR = !Cannot have a parameter (?) for order by column
 CODE  = 42000
