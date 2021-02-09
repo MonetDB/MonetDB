@@ -623,7 +623,3 @@ select interval '1' month * cast(1 as bigint)
 ----
 1
 
-query I rowsort
-select case 3 <> any(select 4) when true then 2 when false then 8 end;
-----
-2
