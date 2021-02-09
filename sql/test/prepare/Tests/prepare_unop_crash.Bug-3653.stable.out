@@ -31,7 +31,7 @@ stdout of test 'prepare_unop_crash.Bug-3653` in directory 'sql/test/BugTracker-2
 % varchar,	int,	int,	str,	str,	str # type
 % 4,	2,	1,	0,	6,	2 # length
 [ "int",	32,	0,	"",	"tables",	"id"	]
-[ "clob",	0,	0,	NULL,	NULL,	NULL	]
+[ "char",	0,	0,	NULL,	NULL,	NULL	]
 
 # 08:58:49 >  
 # 08:58:49 >  "Done."
