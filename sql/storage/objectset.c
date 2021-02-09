@@ -331,34 +331,53 @@ _os_rollback(objectversion *ov, sqlstore *store)
 	state |= rollbacked;
 	os_atmc_set_state(ov, state);
 
-	if (ov->name_based_older && !(os_atmc_get_state(ov->name_based_older) & rollbacked)) {
-		if (ov->ts != ov->name_based_older->ts) {
+	bte state_older;
+
+	// TODO ATOMIC GET
+	objectversion* name_based_older = ov->name_based_older;
+	if (name_based_older && !((state_older= os_atmc_get_state(name_based_older)) & rollbacked)) {
+		if (ov->ts != name_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
-			// TODO START ATOMIC SET
-			ov->name_based_head->ov = ov->name_based_older;
+
+			ATOMIC_BASE_TYPE expected_deleted = deleted;
+			if (state_older == active || (state_older == deleted && ATOMIC_CAS(&name_based_older->state, &expected_deleted, block_destruction))) {
+				ov->name_based_head->ov = name_based_older;
+				name_based_older->name_based_newer=NULL;
+				if (state_older != active && expected_deleted == deleted)
+					os_atmc_set_state(name_based_older, deleted); //Restore the deleted older back to its deleted state.
+			}
 		}
 		else {
-			_os_rollback(ov->name_based_older, store);
+			_os_rollback(name_based_older, store);
 		}
 	}
-	else if (!ov->name_based_older) {
+	else if (!name_based_older) {
 		// this is a terminal node. i.e. this objectversion does not have name based committed history
 		if (ov->name_based_head) // The oposite can happen during an early conflict in os_add or os_del.
 			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
 	}
 
-	if (ov->id_based_older && !(os_atmc_get_state(ov->id_based_older) & rollbacked)) {
-		if (ov->ts != ov->id_based_older->ts) {
+	// TODO ATOMIC GET
+	objectversion* id_based_older = ov->id_based_older;
+	if (id_based_older && !((state_older= os_atmc_get_state(id_based_older)) & rollbacked)) {
+		if (ov->ts != id_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
 			// TODO START ATOMIC SET
-			ov->id_based_head->ov = ov->id_based_older;
+
+			ATOMIC_BASE_TYPE expected_deleted = deleted;
+			if (state_older == active || (state_older == deleted && ATOMIC_CAS(&id_based_older->state, &expected_deleted, block_destruction))) {
+				ov->id_based_head->ov = id_based_older;
+				id_based_older->id_based_newer=NULL;
+				if (state_older != active && expected_deleted == deleted)
+					os_atmc_set_state(id_based_older, deleted); //Restore the deleted older back to its deleted state.
+			}
 		}
-		else if (ov->id_based_older != ov->name_based_older)
-			_os_rollback(ov->id_based_older, store);
+		else if (id_based_older != name_based_older)
+			_os_rollback(id_based_older, store);
 	}
-	else if (!ov->id_based_older) {
+	else if (!id_based_older) {
 		// this is a terminal node. i.e. this objectversion does not have id based committed history
 		os_remove_id_based_chain(ov->os, store, ov->id_based_head);
 	}
@@ -386,14 +405,14 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 	ATOMIC_BASE_TYPE expected_deleted = deleted;
 	if (ATOMIC_CAS(&ov->state, &expected_deleted, under_destruction)) {
 
-		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) { // TODO: This gives race conditions with os_rollback.
+		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) {
 			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
 		}
 		else {
 			ov->name_based_newer->name_based_older = NULL;
 		}
 
-		if (!ov->id_based_newer || (os_atmc_get_state(ov->id_based_newer) & rollbacked)) { // TODO: This gives race conditions with os_rollback.
+		if (!ov->id_based_newer || (os_atmc_get_state(ov->id_based_newer) & rollbacked)) {
 			os_remove_id_based_chain(ov->os, store, ov->id_based_head);
 		}
 		else {
