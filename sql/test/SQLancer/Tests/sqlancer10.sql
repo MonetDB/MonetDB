@@ -54,8 +54,8 @@ ROLLBACK;
 
 START TRANSACTION;
 create view v3(vc0, vc1) as (values (0.67,NULL),(18.50, 3),(0.70, 6));
-create view v7(vc0) as (values (8505133838.114197),(NULL));
-(select v3.vc0 from v3) intersect (select greatest('-1115800120', v7.vc0) from v7);
+create view v7(vc0) as (values (85.11),(NULL));
+(select v3.vc0 from v3) intersect (select greatest('-111', v7.vc0) from v7);
 ROLLBACK;
 
 START TRANSACTION;

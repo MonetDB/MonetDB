@@ -5,9 +5,9 @@ stderr of test 'sqlancer10` in directory 'sql/test/SQLancer` itself:
 # 13:59:46 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-215607" "--port=30526"
 # 13:59:46 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-485092/.s.monetdb.38732
-QUERY = (select v3.vc0 from v3) intersect (select greatest('-1115800120', v7.vc0) from v7);
-ERROR = !types char(18,0) and decimal(20,2) are not equal
+MAPI  = (monetdb) /var/tmp/mtest-16501/.s.monetdb.38249
+QUERY = (select v3.vc0 from v3) intersect (select greatest('-111', v7.vc0) from v7);
+ERROR = !types char(6,0) and decimal(8,2) are not equal
 CODE  = 42000
 
 # 13:59:46 >  
