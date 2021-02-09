@@ -25,7 +25,7 @@ stdout of test 'prepare_doesnot_like_LIKE.SF-1234205` in directory 'sql/test/Bug
 % varchar,	int,	int,	str,	str,	str # type
 % 7,	4,	1,	0,	8,	4 # length
 [ "varchar",	1024,	0,	"",	"t1234205",	"name"	]
-[ "char",	0,	0,	NULL,	NULL,	NULL	]
+[ "clob",	0,	0,	NULL,	NULL,	NULL	]
 #execute 3 ('%');
 % sys.t1234205 # table_name
 % name # name
