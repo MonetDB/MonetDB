@@ -7,4 +7,3 @@ alter table t2795 add r float default sqrt(power(t2795.x, 2) + power(t2795.y, 2)
 statement ok
 drop table t2795
 
-

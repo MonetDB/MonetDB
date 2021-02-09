@@ -67,4 +67,3 @@ select st_makepoint(x,y,z,m) as "XYZM" from points_tbl
 statement ok
 drop table points_tbl
 
-

@@ -166,4 +166,3 @@ values (timestamp '2010-01-01 10:00:00'), (time '10:00:00')
 statement error
 values (timestamp '2010-01-01 10:00:00'), (time '10:00:00'), (date '2010-01-01')
 
-

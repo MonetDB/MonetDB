@@ -9,4 +9,3 @@ function sample(nme:str, val:any_1):bit;
    return sample:=true;
 end sample
 
-

@@ -22,4 +22,3 @@ SELECT * FROM testDateLoopback( (SELECT * FROM testTableDates) )
 statement ok
 ROLLBACK
 
-

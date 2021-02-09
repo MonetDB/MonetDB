@@ -188,7 +188,91 @@ left join
 	ljb1
 		on ljb1.id = ljb3.ljb1_id
 ----
-85 values hashing to 95d4eecb87be42b70ff444a778050688
+0
+1
+Mary Ann Walker
+NULL
+NULL
+10
+11
+Whitehall Mystery
+NULL
+NULL
+11
+12
+Annie Farmer
+NULL
+NULL
+12
+13
+Rose Mylett
+NULL
+NULL
+13
+14
+Elisabeth Jackson
+NULL
+NULL
+14
+15
+Alice MacKenzie
+NULL
+NULL
+15
+16
+Pinchin Street Murder, possibly Lydia Hart
+NULL
+NULL
+16
+17
+Frances Coles
+NULL
+NULL
+17
+18
+Carrie Brown
+13
+Severin Klosowski (George Chapman)
+2
+3
+Elisabeth Stride
+NULL
+NULL
+3
+4
+Catherine Eddowes
+NULL
+NULL
+4
+5
+Mary Jane Kelly
+NULL
+NULL
+5
+6
+"Fairy Fay"
+NULL
+NULL
+6
+7
+Annie Millwood
+NULL
+NULL
+7
+8
+Ada Wilson
+NULL
+NULL
+8
+9
+Emma Smith
+NULL
+NULL
+9
+10
+Martha Tabram
+NULL
+NULL
 
 query IITIT rowsort
 select ljb2.ljb3, ljb2.id, ljb2.name, ljb1.id, ljb1.name
@@ -201,7 +285,91 @@ left join
 	ljb1
 		on ljb1.id = ljb3.ljb1_id
 ----
-85 values hashing to 95d4eecb87be42b70ff444a778050688
+0
+1
+Mary Ann Walker
+NULL
+NULL
+10
+11
+Whitehall Mystery
+NULL
+NULL
+11
+12
+Annie Farmer
+NULL
+NULL
+12
+13
+Rose Mylett
+NULL
+NULL
+13
+14
+Elisabeth Jackson
+NULL
+NULL
+14
+15
+Alice MacKenzie
+NULL
+NULL
+15
+16
+Pinchin Street Murder, possibly Lydia Hart
+NULL
+NULL
+16
+17
+Frances Coles
+NULL
+NULL
+17
+18
+Carrie Brown
+13
+Severin Klosowski (George Chapman)
+2
+3
+Elisabeth Stride
+NULL
+NULL
+3
+4
+Catherine Eddowes
+NULL
+NULL
+4
+5
+Mary Jane Kelly
+NULL
+NULL
+5
+6
+"Fairy Fay"
+NULL
+NULL
+6
+7
+Annie Millwood
+NULL
+NULL
+7
+8
+Ada Wilson
+NULL
+NULL
+8
+9
+Emma Smith
+NULL
+NULL
+9
+10
+Martha Tabram
+NULL
+NULL
 
 statement ok
 drop table ljb2
@@ -211,5 +379,4 @@ drop table ljb3
 
 statement ok
 drop table ljb1
-
 

@@ -66,4 +66,3 @@ SELECT acol FROM debugme WHERE acol ILIKE 'öo'
 statement ok
 ROLLBACK
 
-

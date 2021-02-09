@@ -19,7 +19,30 @@ insert into udf_fuse values  (7,8,7000,8000,7000000,8000000)
 query IIIIII rowsort
 select * from udf_fuse
 ----
-24 values hashing to fc8e95a2473227f0c518c6e4a60e2117
+1
+2
+1000
+2000
+1000000
+2000000
+3
+4
+3000
+4000
+3000000
+4000000
+5
+6
+5000
+6000
+5000000
+6000000
+7
+8
+7000
+8000
+7000000
+8000000
 
 statement ok
 create procedure profiler.starttrace() external name profiler."starttrace"
@@ -212,3 +235,4 @@ drop table udf_fuse
 
 statement ok
 set optimizer = 'default_pipe'
+

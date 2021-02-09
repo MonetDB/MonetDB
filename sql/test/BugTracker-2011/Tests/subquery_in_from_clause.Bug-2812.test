@@ -1022,7 +1022,102 @@ FROM  (SELECT MAX(price) as MAXPRICE FROM SALESMART) T, SALESMART S
 WHERE T.MAXPRICE = S.PRICE
 GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY
 ----
-96 values hashing to db7648657ef21dd1d8db935ce8cb4f2a
+3.990
+Tyson roasted chicken
+Meat
+Athens
+Attiki
+Greece
+3.990
+Tyson roasted chicken
+Meat
+Cattaraugus
+New York
+United States
+3.990
+Tyson roasted chicken
+Meat
+Crooks
+South Dakota
+United States
+3.990
+Tyson roasted chicken
+Meat
+Davos
+Graubunden
+Switzerland
+3.990
+Tyson roasted chicken
+Meat
+Eau Galle
+Wisconsin
+United States
+3.990
+Tyson roasted chicken
+Meat
+Fengjie
+Sichuan
+China
+3.990
+Tyson roasted chicken
+Meat
+Franklin Springs
+New York
+United States
+3.990
+Tyson roasted chicken
+Meat
+Jerusalem
+Yerushalayim  (Jerusalem)
+Israel
+3.990
+Tyson roasted chicken
+Meat
+Jose Leon Suarez
+Buenos Aires
+Argentina
+3.990
+Tyson roasted chicken
+Meat
+Mill Creek
+Oklahoma
+United States
+3.990
+Tyson roasted chicken
+Meat
+Molodesjnaja
+Enderby Land
+Antarctica
+3.990
+Tyson roasted chicken
+Meat
+Plymouth
+Tobago
+Trinidad and Tobago
+3.990
+Tyson roasted chicken
+Meat
+Roma
+Texas
+United States
+3.990
+Tyson roasted chicken
+Meat
+Scarborough
+Tobago
+Trinidad and Tobago
+3.990
+Tyson roasted chicken
+Meat
+West Long Branch
+New Jersey
+United States
+7.980
+Tyson roasted chicken
+Meat
+Cairo
+Illinois
+United States
 
 query RTTTTT rowsort
 SELECT cast(SUM(PRICE) as NUMERIC(18,2)) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
@@ -1030,10 +1125,106 @@ FROM  SALESMART S
 WHERE S.PRICE IN (SELECT MAX(price) as MAXPRICE FROM SALESMART)
 GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY
 ----
-96 values hashing to db7648657ef21dd1d8db935ce8cb4f2a
+3.990
+Tyson roasted chicken
+Meat
+Athens
+Attiki
+Greece
+3.990
+Tyson roasted chicken
+Meat
+Cattaraugus
+New York
+United States
+3.990
+Tyson roasted chicken
+Meat
+Crooks
+South Dakota
+United States
+3.990
+Tyson roasted chicken
+Meat
+Davos
+Graubunden
+Switzerland
+3.990
+Tyson roasted chicken
+Meat
+Eau Galle
+Wisconsin
+United States
+3.990
+Tyson roasted chicken
+Meat
+Fengjie
+Sichuan
+China
+3.990
+Tyson roasted chicken
+Meat
+Franklin Springs
+New York
+United States
+3.990
+Tyson roasted chicken
+Meat
+Jerusalem
+Yerushalayim  (Jerusalem)
+Israel
+3.990
+Tyson roasted chicken
+Meat
+Jose Leon Suarez
+Buenos Aires
+Argentina
+3.990
+Tyson roasted chicken
+Meat
+Mill Creek
+Oklahoma
+United States
+3.990
+Tyson roasted chicken
+Meat
+Molodesjnaja
+Enderby Land
+Antarctica
+3.990
+Tyson roasted chicken
+Meat
+Plymouth
+Tobago
+Trinidad and Tobago
+3.990
+Tyson roasted chicken
+Meat
+Roma
+Texas
+United States
+3.990
+Tyson roasted chicken
+Meat
+Scarborough
+Tobago
+Trinidad and Tobago
+3.990
+Tyson roasted chicken
+Meat
+West Long Branch
+New Jersey
+United States
+7.980
+Tyson roasted chicken
+Meat
+Cairo
+Illinois
+United States
 
 statement ok
 DROP TABLE SALESMART
 
 statement ok
 ROLLBACK
+

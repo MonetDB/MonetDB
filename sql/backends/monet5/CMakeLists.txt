@@ -29,7 +29,7 @@ set(include_sql_files
   27_rejects
   39_analytics
   40_json
-  41_md5sum
+  42_md5sum
   45_uuid
   46_profiler
   51_sys_schema_extension
@@ -38,13 +38,14 @@ set(include_sql_files
   60_wlcr
   61_wlcr
   75_storagemodel
+  76_dump
   80_statistics
   81_tracer)
 
 if(HAVE_HGE)
   list(APPEND include_sql_files
     39_analytics_hge
-    40_json_hge)
+    41_json_hge)
 endif()
 
 create_include_object(
@@ -77,6 +78,7 @@ target_sources(sql
   sql_fround.c sql_fround_impl.h
   sql_orderidx.c sql_orderidx.h
   sql_time.c
+  sql_bincopyfrom.c
   wlr.c wlr.h
   sql_datetrunc.c
   sql_rank.c sql_rank.h
@@ -101,13 +103,14 @@ target_link_libraries(sql
   PRIVATE
   monetdb_config_header
   mcrypt
-  bat
-  monetdb5
   sqlstorage
   sqlcommon
   batstore
   sqlserver
-  sqlinclude)
+  sqlinclude
+  copybinary
+  monetdb5
+  bat)
 
 set_target_properties(sql
   PROPERTIES

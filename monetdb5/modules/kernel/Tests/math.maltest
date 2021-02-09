@@ -13,27 +13,27 @@ bat.append(b,nil:dbl)
 statement ok
 z:= batmmath.sqrt(b)
 
-query RR rowsort
+query IR rowsort
 io.print(z)
 ----
-0.000
+0
 5.196
-1.000
+1
 4.000
-2.000
+2
 NULL
 
 statement ok
 zz:= batmmath.cbrt(b)
 
-query RR rowsort
+query IR rowsort
 io.print(zz)
 ----
-0.000
+0
 3.000
-1.000
+1
 2.520
-2.000
+2
 NULL
 
 statement ok
@@ -51,27 +51,26 @@ bat.append(f,nil:flt)
 statement ok
 zf:= batmmath.sqrt(f)
 
-query RR rowsort
+query IR rowsort
 io.print(zf)
 ----
-0.000
+0
 5.196
-1.000
+1
 4.000
-2.000
+2
 NULL
 
 statement ok
 zzf:= batmmath.cbrt(f)
 
-query RR rowsort
+query IR rowsort
 io.print(zzf)
 ----
-0.000
+0
 3.000
-1.000
+1
 2.520
-2.000
+2
 NULL
-
 

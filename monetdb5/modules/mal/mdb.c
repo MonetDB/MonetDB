@@ -735,7 +735,7 @@ static str MDBdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 }
 
 static str
-MDBdummy(int *ret)
+MDBdummy(void *ret)
 {
 	(void) ret;
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);

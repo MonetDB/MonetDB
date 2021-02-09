@@ -1535,7 +1535,30 @@ SELECT t1.id1, t1.result, t2.expected
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
 ----
-24 values hashing to 07acd19aa7c7f17e12e876f6bc93b5c4
+2
+5859.905
+5859.905
+3
+2.076
+2.076
+4
+2792.752
+2792.752
+5
+128.051
+128.051
+6
+306.434
+306.434
+7
+9111.997
+9111.997
+8
+273.644
+273.644
+9
+4992.675
+4992.675
 
 statement ok
 DELETE FROM num_result
@@ -1551,7 +1574,30 @@ SELECT t1.id1, t1.result, t2.expected
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
 ----
-24 values hashing to b0ea80ae04d2263dff5950f1e80502eb
+2
+17.352
+17.352
+3
+1.461
+1.461
+4
+15.870
+15.870
+5
+9.705
+9.705
+6
+11.450
+11.450
+7
+18.235
+18.235
+8
+11.224
+11.224
+9
+17.031
+17.031
 
 statement ok
 DELETE FROM num_result
@@ -1567,7 +1613,30 @@ SELECT t1.id1, t1.result, t2.expected
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
 ----
-24 values hashing to 7c8021b8c8f869972fd89eaad1f0df20
+2
+7.536
+7.536
+3
+0.634
+0.634
+4
+6.892
+6.892
+5
+4.215
+4.215
+6
+4.973
+4.973
+7
+7.919
+7.919
+8
+4.874
+4.874
+9
+7.397
+7.397
 
 statement ok
 DELETE FROM num_result
@@ -1583,7 +1652,30 @@ SELECT t1.id1, t1.result, t2.expected
     WHERE t1.id1 = t2.id
     AND t1.result <> t2.expected
 ----
-24 values hashing to c6b4209934e65cd4f2e9e9de5cef7500
+2
+224790267919917472.000
+224790267919917952.000
+3
+28.903
+28.903
+4
+7405685069595001.000
+7405685069594999.000
+5
+5068226527.321
+5068226527.321
+6
+281839893606.994
+281839893606.994
+7
+1716699575118595840.000
+1716699575118597120.000
+8
+167361463828.075
+167361463828.075
+9
+107511333880051856.000
+107511333880052000.000
 
 query R rowsort
 SELECT AVG(val) FROM num_data
@@ -1626,7 +1718,18 @@ INSERT INTO fract_only VALUES (8, '0.00017')
 query IR rowsort
 SELECT * FROM fract_only
 ----
-12 values hashing to e882b7301e81923d0e247f1539889bc1
+1
+0.000
+2
+0.100
+4
+-1.000
+5
+1.000
+7
+0.000
+8
+0.000
 
 statement ok
 DROP TABLE fract_only
@@ -1661,7 +1764,34 @@ SELECT a, ceil(a), ceiling(a), floor(a), round(a) FROM ceil_floor_round
 query RRRR rowsort
 SELECT a, ceil(a), ceiling(a), floor(a) FROM ceil_floor_round
 ----
-28 values hashing to 1e1a91f65b00c31a46921c2ef24a46e6
+-5.500
+-5.000
+-5.000
+-6.000
+-5.500
+-5.000
+-5.000
+-6.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+9.500
+10.000
+10.000
+9.000
+9.500
+10.000
+10.000
+9.000
 
 statement error
 SELECT a, round(a) FROM ceil_floor_round
@@ -1669,7 +1799,20 @@ SELECT a, round(a) FROM ceil_floor_round
 query RR rowsort
 SELECT a, round(a, 0) FROM ceil_floor_round
 ----
-14 values hashing to b839dee95be0b7ebbb619d930d5ae724
+-5.500
+-6.000
+-5.500
+-6.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+9.500
+10.000
+9.500
+10.000
 
 statement ok
 DROP TABLE ceil_floor_round
@@ -1928,5 +2071,4 @@ DROP TABLE num_result
 
 statement ok
 set optimizer = 'default_pipe'
-
 

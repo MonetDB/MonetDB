@@ -12,11 +12,11 @@ insert into a values (1)
 statement ok
 insert into a values (3)
 
-query T rowsort
+query I rowsort
 select i<2 from a
 ----
-False
-True
+0
+1
 
 query I rowsort
 select cast(i<2 as integer)+1 from a
@@ -26,5 +26,4 @@ select cast(i<2 as integer)+1 from a
 
 statement ok
 drop table a
-
 

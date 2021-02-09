@@ -11,10 +11,10 @@ select * from time_table
 1980-12-31 00:00:00
 2012-01-01
 
-query T rowsort
+query I rowsort
 select btime <> atime from time_table
 ----
-True
+1
 
 query T rowsort
 select btime - timestamp '1975-JAN-01' from time_table
@@ -28,5 +28,4 @@ select btime - atime from time_table
 
 statement ok
 drop table time_table
-
 

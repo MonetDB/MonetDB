@@ -62,7 +62,18 @@ CREATE AGGREGATE aggrsum(val integer) RETURNS integer LANGUAGE P {
 query III rowsort
 SELECT groupcol,secondgroupcol,aggrsum(datacol) FROM rval GROUP BY groupcol,secondgroupcol
 ----
-12 values hashing to 372c7b7cff92fad4cfb8b283b6b5823f
+0
+0
+3
+0
+1
+7
+1
+0
+11
+1
+1
+15
 
 statement ok
 DROP AGGREGATE aggrsum
@@ -72,5 +83,4 @@ DROP TABLE rval
 
 statement ok
 ROLLBACK
-
 

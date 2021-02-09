@@ -25,7 +25,20 @@ merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
 query II rowsort
 select aa, bb from predata order by bb
 ----
-14 values hashing to 877ac354eafe216cbc03e6a9db3cb23f
+15
+3
+3
+1
+5
+3
+6
+3
+8
+1
+NULL
+1
+NULL
+4
 
 statement ok
 merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb when not matched then insert values (5, 5)
@@ -33,7 +46,22 @@ merge into predata using (select aa, bb from merging) sub on predata.bb = sub.bb
 query II rowsort
 select aa, bb from predata order by bb
 ----
-16 values hashing to 2a62489ee71c16e2563f54a79de06589
+15
+3
+3
+1
+5
+3
+5
+5
+6
+3
+8
+1
+NULL
+1
+NULL
+4
 
 statement ok
 merge into predata as othern using (select aa, bb from merging) sub on othern.bb = sub.bb when not matched then insert values (5, 5)
@@ -49,5 +77,4 @@ drop table merging
 
 statement ok
 drop table predata
-
 

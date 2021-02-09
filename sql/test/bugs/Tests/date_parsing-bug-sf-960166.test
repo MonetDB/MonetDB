@@ -1,11 +1,10 @@
-query T rowsort
+query I rowsort
 select current_date = date '2004-05-25'
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select current_date = '2004-05-25'
 ----
-False
-
+0
 

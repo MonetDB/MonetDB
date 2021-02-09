@@ -247,6 +247,8 @@ find_winthread(DWORD tid)
 const char *
 MT_thread_getname(void)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return mainthread.threadname;
 	struct winthread *w = TlsGetValue(threadslot);
 	return w ? w->threadname : UNKNOWN_THREAD;
 }
@@ -254,6 +256,8 @@ MT_thread_getname(void)
 void
 MT_thread_setdata(void *data)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
@@ -263,6 +267,8 @@ MT_thread_setdata(void *data)
 void
 MT_thread_setlockwait(MT_Lock *lock)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
@@ -272,6 +278,8 @@ MT_thread_setlockwait(MT_Lock *lock)
 void
 MT_thread_setsemawait(MT_Sema *sema)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
@@ -281,6 +289,8 @@ MT_thread_setsemawait(MT_Sema *sema)
 void
 MT_thread_setworking(const char *work)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w)
@@ -290,6 +300,8 @@ MT_thread_setworking(const char *work)
 void
 MT_thread_setalgorithm(const char *algo)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w) {
@@ -309,6 +321,8 @@ MT_thread_setalgorithm(const char *algo)
 const char *
 MT_thread_getalgorithm(void)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return NULL;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	return w && w->algorithm[0] ? w->algorithm : NULL;
@@ -317,6 +331,8 @@ MT_thread_getalgorithm(void)
 bool
 MT_thread_override_limits(void)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return false;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	return w && w->working && strcmp(w->working, "store locked") == 0;
@@ -325,6 +341,8 @@ MT_thread_override_limits(void)
 void *
 MT_thread_getdata(void)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return NULL;
 	struct winthread *w = TlsGetValue(threadslot);
 
 	return w ? w->data : NULL;
@@ -471,6 +489,9 @@ MT_getpid(void)
 void
 MT_exiting_thread(void)
 {
+	if (threadslot == TLS_OUT_OF_INDEXES)
+		return;
+
 	struct winthread *w = TlsGetValue(threadslot);
 
 	if (w) {
@@ -555,6 +576,7 @@ static pthread_mutex_t posthread_lock = PTHREAD_MUTEX_INITIALIZER;
 static MT_Id MT_thread_id = 1;
 
 static pthread_key_t threadkey;
+static bool thread_initialized = false;
 
 void
 dump_threads(void)
@@ -584,6 +606,7 @@ MT_thread_init(void)
 		GDKsyserr(ret, "Creating specific key for thread failed");
 		return false;
 	}
+	thread_initialized = true;
 	mainthread.tid = pthread_self();
 	if ((ret = pthread_setspecific(threadkey, &mainthread)) != 0) {
 		GDKsyserr(ret, "Setting specific value failed");
@@ -609,6 +632,8 @@ MT_thread_getname(void)
 {
 	struct posthread *p;
 
+	if (!thread_initialized)
+		return mainthread.threadname;
 	p = pthread_getspecific(threadkey);
 	return p ? p->threadname : UNKNOWN_THREAD;
 }
@@ -616,6 +641,8 @@ MT_thread_getname(void)
 void
 MT_thread_setdata(void *data)
 {
+	if (!thread_initialized)
+		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
@@ -625,6 +652,8 @@ MT_thread_setdata(void *data)
 void *
 MT_thread_getdata(void)
 {
+	if (!thread_initialized)
+		return NULL;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	return p ? p->data : NULL;
@@ -633,6 +662,8 @@ MT_thread_getdata(void)
 void
 MT_thread_setlockwait(MT_Lock *lock)
 {
+	if (!thread_initialized)
+		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
@@ -642,6 +673,8 @@ MT_thread_setlockwait(MT_Lock *lock)
 void
 MT_thread_setsemawait(MT_Sema *sema)
 {
+	if (!thread_initialized)
+		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
@@ -651,6 +684,8 @@ MT_thread_setsemawait(MT_Sema *sema)
 void
 MT_thread_setworking(const char *work)
 {
+	if (!thread_initialized)
+		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p)
@@ -660,6 +695,8 @@ MT_thread_setworking(const char *work)
 void
 MT_thread_setalgorithm(const char *algo)
 {
+	if (!thread_initialized)
+		return;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	if (p) {
@@ -679,6 +716,8 @@ MT_thread_setalgorithm(const char *algo)
 const char *
 MT_thread_getalgorithm(void)
 {
+	if (!thread_initialized)
+		return NULL;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	return p && p->algorithm[0] ? p->algorithm : NULL;
@@ -687,6 +726,8 @@ MT_thread_getalgorithm(void)
 bool
 MT_thread_override_limits(void)
 {
+	if (!thread_initialized)
+		return false;
 	struct posthread *p = pthread_getspecific(threadkey);
 
 	return p && p->working && strcmp(p->working, "store locked") == 0;
@@ -866,6 +907,8 @@ MT_getpid(void)
 {
 	struct posthread *p;
 
+	if (!thread_initialized)
+		return mainthread.mtid;
 	p = pthread_getspecific(threadkey);
 	return p ? p->mtid : 0;
 }
@@ -875,6 +918,8 @@ MT_exiting_thread(void)
 {
 	struct posthread *p;
 
+	if (!thread_initialized)
+		return;
 	p = pthread_getspecific(threadkey);
 	if (p) {
 		ATOMIC_SET(&p->exited, 1);

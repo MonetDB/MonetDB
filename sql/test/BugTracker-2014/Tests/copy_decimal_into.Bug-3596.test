@@ -21,4 +21,3 @@ t3
 statement ok
 drop table load_decimals
 
-

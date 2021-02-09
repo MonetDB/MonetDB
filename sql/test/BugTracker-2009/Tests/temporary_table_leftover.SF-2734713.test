@@ -25,4 +25,3 @@ COMMIT
 statement error
 drop table persistent_temopary
 
-

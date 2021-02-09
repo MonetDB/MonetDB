@@ -42,6 +42,7 @@ MonetDB_VERSION = '@MONETDB_VERSION@'.split('.')
 procdebug = False
 verbose = False
 quiet = False
+approve = False
 
 initdb = None
 single_in_memory = False
@@ -1435,7 +1436,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                         '*.server.err', '*.server.out',
                         '*.stable.err*', '*.stable.out*',
                         '*.test.err', '*.test.out',
-                        'SingleServer.out', 'SingleServer.err']:
+                        'SingleServer.out', 'SingleServer.err',
+                        '*.newtest']:
                 if fnmatch.fnmatch(f, pat):
                     break
             else:
@@ -1549,7 +1551,7 @@ def returnCode(proc, f = None):
         if proc.returncode == -signal.SIGSEGV:
             if f is not None:
                 f.write('\nSegmentation fault\n')
-                if os.path.exists('/usr/bin/coredumpctl'):
+                if os.path.exists('/usr/bin/coredumpctl') and False:
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
                     out, err = coredumpctl(proc.pid)
@@ -1565,7 +1567,7 @@ def returnCode(proc, f = None):
         if proc.returncode == -signal.SIGABRT:
             if f is not None:
                 f.write('\nAborted\n')
-                if os.path.exists('/usr/bin/coredumpctl'):
+                if os.path.exists('/usr/bin/coredumpctl') and False:
                     # wait a few seconds for the core to be dumped
                     time.sleep(10)
                     out, err = coredumpctl(proc.pid)
@@ -1630,7 +1632,7 @@ def GetBitsAndModsAndThreads(env) :
                                  stderr=process.PIPE, text=True)
             input = '''\
                 c := mdb.modules();
-                modsid := algebra.unique(c);
+                modsid := algebra.unique(c,nil:bat);
                 mods := algebra.projection(modsid,c);
                 s := "\\nModules: ";
                 sep := "";
@@ -2946,7 +2948,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                             except:
                                 pass
                         try:
-                            sql.parse(TST+EXT)
+                            sql.parse(TST+EXT, approve=open(TST+'.newtest','w') if approve else None)
                         except sqllogictest.SQLLogicSyntaxError:
                             pass
                         except BrokenPipeError:
@@ -3503,6 +3505,7 @@ def main(argv) :
     parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
     parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
     parser.add_argument('--report-all-failures', action='store_true', dest='report_all_failures', help='report all failing tests, even if many')
+    parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
 
     parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
     opts = parser.parse_args()
@@ -3519,6 +3522,8 @@ def main(argv) :
         ErrExit('--verbose and --quiet are mutually exclusive')
     global procdebug
     procdebug = opts.procdebug
+    global approve
+    approve = opts.approve
     nomito = False
     jenkins = False
     addreqs = False
@@ -3573,6 +3578,8 @@ def main(argv) :
     a = opts.data_path
     if a is not None:
         env['TSTDATAPATH'] = a
+    elif os.getenv('TSTDATAPATH'):
+        env['TSTDATAPATH'] = os.getenv('TSTDATAPATH')
     global initdb
     initdb = opts.initdb
     global single_in_memory

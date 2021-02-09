@@ -96,4 +96,3 @@ select group_concat(b) from othertest
 statement ok
 rollback
 
-

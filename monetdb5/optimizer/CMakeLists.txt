@@ -12,6 +12,7 @@ target_sources(optimizer
   PRIVATE
   optimizer.c optimizer.h optimizer_private.h
   opt_aliases.c opt_aliases.h
+  opt_bincopyfrom.c opt_bincopyfrom.h
   opt_coercion.c opt_coercion.h
   opt_commonTerms.c opt_commonTerms.h
   opt_candidates.c opt_candidates.h
@@ -35,6 +36,7 @@ target_sources(optimizer
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
   opt_oltp.c opt_oltp.h
+  opt_parappend.c opt_parappend.h
   opt_wlc.c opt_wlc.h
   opt_pipes.c
   opt_prelude.c opt_prelude.h

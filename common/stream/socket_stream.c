@@ -11,6 +11,9 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#ifdef HAVE_SYS_TIME_H
+#include <sys/time.h>
+#endif
 
 
 /* ------------------------------------------------------------------ */

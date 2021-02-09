@@ -1,2 +1,0 @@
-start transaction;
-rollback;

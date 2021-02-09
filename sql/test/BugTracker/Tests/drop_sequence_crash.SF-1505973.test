@@ -238,4 +238,3 @@ statement ok
 INSERT INTO userss(name,passwd,email,affiliation)
 	VALUES ('manzano15','manzano','manzano@cwi.nl','cwi')
 
-

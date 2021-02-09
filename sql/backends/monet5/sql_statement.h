@@ -131,6 +131,12 @@ typedef struct stmt {
 	InstrPtr q;
 } stmt;
 
+/* which MAL modules can push candidates */
+#define can_push_cands(sel, f) \
+	(sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0 || \
+			 strcmp(sql_func_mod(f->func), "mtime") == 0 || \
+			 (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
+
 extern void create_merge_partitions_accumulator(backend *be);
 extern int add_to_merge_partitions_accumulator(backend *be, int nr);
 
@@ -229,9 +235,9 @@ extern stmt *stmt_order(backend *be, stmt *s, int direction, int nullslast);
 extern stmt *stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_ids, stmt *orderby_grp);
 
 extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sql_subtype *to);
-extern stmt *stmt_unop(backend *be, stmt *op1, sql_subfunc *op);
-extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, sql_subfunc *op);
-extern stmt *stmt_Nop(backend *be, stmt *ops, sql_subfunc *op);
+extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
+extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
+extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);

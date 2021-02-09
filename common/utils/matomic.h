@@ -136,10 +136,11 @@ typedef volatile atomic_flag ATOMIC_FLAG;
  * documentation.
  */
 
+typedef __declspec(align(8)) volatile int64_t ATOMIC_TYPE;
+typedef int64_t ATOMIC_BASE_TYPE;
+
 #if SIZEOF_SIZE_T == 8
 
-typedef volatile int64_t ATOMIC_TYPE;
-typedef int64_t ATOMIC_BASE_TYPE;
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_DESTROY(var)	((void) 0)
@@ -168,48 +169,51 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 #define ATOMIC_INC(var)		_InterlockedIncrement64(var)
 #define ATOMIC_DEC(var)		_InterlockedDecrement64(var)
 
-#pragma intrinsic(_InterlockedExchange64)
-#pragma intrinsic(_InterlockedExchangeAdd64)
-#pragma intrinsic(_InterlockedIncrement64)
-#pragma intrinsic(_InterlockedDecrement64)
-#pragma intrinsic(_InterlockedCompareExchange64)
-
 #else
 
-typedef volatile int ATOMIC_TYPE;
-typedef int ATOMIC_BASE_TYPE;
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_DESTROY(var)	((void) 0)
 
-#ifdef __INTEL_COMPILER
-#define ATOMIC_GET(var)		_InterlockedExchangeAdd(var, 0)
-#else
-#define ATOMIC_GET(var)		(*(var))
-/* should we use _InterlockedExchangeAdd(var, 0) instead? */
-#endif
-#define ATOMIC_SET(var, val)	_InterlockedExchange(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_XCG(var, val)	_InterlockedExchange(var, (ATOMIC_BASE_TYPE) (val))
+#ifdef DECLSPEC_NOINITALL
+#define ATOMIC_GET(var)			_InlineInterlockedExchangeAdd64(var, 0)
+#define ATOMIC_SET(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_XCG(var, val)	_InlineInterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
 static inline bool
 ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 {
 	ATOMIC_BASE_TYPE old;
-	old = _InterlockedCompareExchange(var, des, *exp);
+	old = _InterlockedCompareExchange64(var, des, *exp);
 	if (old == *exp)
 		return true;
 	*exp = old;
 	return false;
 }
 #define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
-#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd(var, (ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd(var, -(ATOMIC_BASE_TYPE) (val))
-#define ATOMIC_INC(var)		_InterlockedIncrement(var)
-#define ATOMIC_DEC(var)		_InterlockedDecrement(var)
-
-#pragma intrinsic(_InterlockedExchange)
-#pragma intrinsic(_InterlockedExchangeAdd)
-#pragma intrinsic(_InterlockedIncrement)
-#pragma intrinsic(_InterlockedDecrement)
+#define ATOMIC_ADD(var, val)	_InlineInterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_SUB(var, val)	_InlineInterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_INC(var)		_InlineInterlockedIncrement64(var)
+#define ATOMIC_DEC(var)		_InlineInterlockedDecrement64(var)
+#else
+#define ATOMIC_GET(var)			_InterlockedExchangeAdd64(var, 0)
+#define ATOMIC_SET(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_XCG(var, val)	_InterlockedExchange64(var, (ATOMIC_BASE_TYPE) (val))
+static inline bool
+ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
+{
+	ATOMIC_BASE_TYPE old;
+	old = _InterlockedCompareExchange64(var, des, *exp);
+	if (old == *exp)
+		return true;
+	*exp = old;
+	return false;
+}
+#define ATOMIC_CAS(var, exp, des)	ATOMIC_CAS(var, exp, (ATOMIC_BASE_TYPE) (des))
+#define ATOMIC_ADD(var, val)	_InterlockedExchangeAdd64(var, (ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_SUB(var, val)	_InterlockedExchangeAdd64(var, -(ATOMIC_BASE_TYPE) (val))
+#define ATOMIC_INC(var)		_InterlockedIncrement64(var)
+#define ATOMIC_DEC(var)		_InterlockedDecrement64(var)
+#endif
 
 #endif
 

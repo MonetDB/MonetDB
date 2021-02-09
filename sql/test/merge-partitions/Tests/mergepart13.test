@@ -41,7 +41,16 @@ INSERT INTO testtime VALUES (timestamp '2019-12-12 23:59:59', 4)
 query TI rowsort
 SELECT t, b FROM testtime
 ----
-10 values hashing to ad7c2bca06be4f04354de55652895c64
+2000-01-01 00:00:00
+1
+2002-12-03 20:00:00
+2
+2012-05-12 21:01:00
+3
+2019-12-12 23:59:58
+4
+NULL
+5
 
 query TI rowsort
 SELECT t, b FROM onedecade
@@ -74,7 +83,18 @@ INSERT INTO onedecade VALUES (timestamp '2007-03-14 04:06:10', 2000)
 query TI rowsort
 SELECT t, b FROM testtime
 ----
-12 values hashing to 40ec48d333c2c6b0c5c2ea0bff8f7336
+2000-01-01 00:00:00
+1
+2002-12-03 20:00:00
+2
+2007-03-14 04:06:10
+2000
+2012-05-12 21:01:00
+3
+2019-12-12 23:59:58
+4
+NULL
+5
 
 query TI rowsort
 SELECT t, b FROM onedecade
@@ -122,7 +142,26 @@ INSERT INTO fourdecades VALUES (timestamp '2054-05-18 02:51:16', 2000)
 query TI rowsort
 SELECT t, b FROM testtime
 ----
-20 values hashing to 30fbb8faf846bed19614b6652aac75be
+2000-01-01 00:00:00
+1
+2002-02-02 02:02:02
+2222
+2002-12-03 20:00:00
+2
+2007-03-14 04:06:10
+2000
+2012-05-12 21:01:00
+3
+2019-12-12 23:59:58
+4
+2030-01-01 00:00:00
+2033
+2054-05-18 02:51:16
+2000
+3300-10-10 22:12:00
+3300
+NULL
+5
 
 query TI rowsort
 SELECT t, b FROM onedecade
@@ -186,5 +225,4 @@ DROP TABLE fourdecades
 
 statement ok
 DROP TABLE testtime
-
 

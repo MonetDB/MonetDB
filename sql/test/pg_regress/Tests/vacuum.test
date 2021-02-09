@@ -66,18 +66,38 @@ SELECT * FROM vactst
 ----
 0
 
-query TTTTIIIIIIT rowsort
+query TTTTIIIIIII rowsort
 select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
 ----
-11 values hashing to cb42c97271c0549d5d22e21760173195
+sys
+vactst
+i
+int
+2049
+4
+8196
+0
+0
+0
+0
 
 statement ok
 call vacuum(current_schema, 'vactst')
 
-query TTTTIIIIIIT rowsort
+query TTTTIIIIIII rowsort
 select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
 ----
-11 values hashing to 903d4da5c45a119e4e90695daba873a3
+sys
+vactst
+i
+int
+1
+4
+4
+0
+0
+0
+1
 
 statement ok
 UPDATE vactst SET i = i + 1
@@ -166,18 +186,38 @@ SELECT count(*) FROM vactst WHERE i <> 0
 statement ok
 DELETE FROM vactst WHERE i <> 0
 
-query TTTTIIIIIIT rowsort
+query TTTTIIIIIII rowsort
 select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
 ----
-11 values hashing to 7fc5b1d0f53242d03fe8b11e960e3249
+sys
+vactst
+i
+int
+1048577
+4
+4194308
+0
+0
+0
+0
 
 statement ok
 call vacuum(current_schema, 'vactst')
 
-query TTTTIIIIIIT rowsort
+query TTTTIIIIIII rowsort
 select "schema", "table", "column", type, count, typewidth, columnsize, heapsize, hashes, "imprints", sorted from sys.storage(current_schema, 'vactst')
 ----
-11 values hashing to 903d4da5c45a119e4e90695daba873a3
+sys
+vactst
+i
+int
+1
+4
+4
+0
+0
+0
+1
 
 statement ok
 DELETE FROM vactst
@@ -188,5 +228,4 @@ SELECT * FROM vactst
 
 statement ok
 DROP TABLE vactst
-
 

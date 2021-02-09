@@ -10,7 +10,7 @@ end tst
 statement ok
 d:= inspect.getSignature("user","tst")
 
-query TT rowsort
+query IT rowsort
 io.print(d)
 ----
 0
@@ -35,12 +35,11 @@ language.call(m)
 statement ok
 d:= inspect.getSignature("user","tst")
 
-query TT rowsort
+query IT rowsort
 io.print(d)
 ----
 0
 (i:int, s:str):bit;
 1
 (i:int, s:str):bit;
-
 

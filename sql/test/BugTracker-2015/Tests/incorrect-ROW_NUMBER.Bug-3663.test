@@ -71,4 +71,3 @@ DROP TABLE t2
 statement ok
 DROP TABLE t3
 
-

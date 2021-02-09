@@ -45,12 +45,13 @@ monet5_drop_user(ptr _mvc, str user)
 		return FALSE;
 	}
 	sys = find_sql_schema(m->session->tr, "sys");
-	users = find_sql_table(sys, "db_user_info");
+	users = find_sql_table(m->session->tr, sys, "db_user_info");
 	users_name = find_sql_column(users, "name");
 
-	rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
+	sqlstore *store = m->session->tr->store;
+	rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
 	if (!is_oid_nil(rid))
-		table_funcs.table_delete(m->session->tr, users, rid);
+		store->table_api.table_delete(m->session->tr, users, rid);
 	/* FIXME: We have to ignore this inconsistency here, because the
 	 * user was already removed from the system authorisation. Once
 	 * we have warnings, we could issue a warning about this
@@ -77,7 +78,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 
 	if (build) {
 		while (l->t) /* if building, empty schema_path list */
-			(void) list_remove_node(l, l->t);
+			(void) list_remove_node(l, NULL, l->t);
 		m->schema_path_has_sys = 0;
 		m->schema_path_has_tmp = 0;
 	}
@@ -151,6 +152,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info, *auths;
 	Client c = MCgetClient(m->clientid);
+	sqlstore *store = m->session->tr->store;
 
 	if (!schema_path)
 		schema_path = default_schema_path;
@@ -173,11 +175,11 @@ monet5_create_user(ptr _mvc, str user, str passwd, char enc, str fullname, sqlid
 	if (ret != MAL_SUCCEED)
 		return ret;
 
-	user_id = store_next_oid();
-	db_user_info = find_sql_table(s, "db_user_info");
-	auths = find_sql_table(s, "auths");
-	table_funcs.table_insert(m->session->tr, db_user_info, user, fullname, &schema_id, schema_path);
-	table_funcs.table_insert(m->session->tr, auths, &user_id, user, &grantorid);
+	user_id = store_next_oid(m->session->tr->store);
+	db_user_info = find_sql_table(m->session->tr, s, "db_user_info");
+	auths = find_sql_table(m->session->tr, s, "auths");
+	store->table_api.table_insert(m->session->tr, db_user_info, user, fullname, &schema_id, schema_path);
+	store->table_api.table_insert(m->session->tr, auths, &user_id, user, &grantorid);
 	return NULL;
 }
 
@@ -304,7 +306,8 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	schema_id = sql_find_schema(m, "sys");
 	assert(schema_id >= 0);
 
-	table_funcs.table_insert(m->session->tr, uinfo, "monetdb", "MonetDB Admin", &schema_id, default_schema_path);
+	sqlstore *store = m->session->tr->store;
+	store->table_api.table_insert(m->session->tr, uinfo, "monetdb", "MonetDB Admin", &schema_id, default_schema_path);
 }
 
 static int
@@ -313,11 +316,12 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 	mvc *m = (mvc *) _mvc;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *users = find_sql_table(sys, "db_user_info");
+	sql_table *users = find_sql_table(m->session->tr, sys, "db_user_info");
 	sql_column *users_schema = find_sql_column(users, "default_schema");
 	sqlid schema_id = s->base.id;
 
-	rid = table_funcs.column_find_row(m->session->tr, users_schema, &schema_id, NULL);
+	sqlstore *store = m->session->tr->store;
+	rid = store->table_api.column_find_row(m->session->tr, users_schema, &schema_id, NULL);
 	if (is_oid_nil(rid))
 		return FALSE;
 	return TRUE;
@@ -400,22 +404,23 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 		}
 	}
 
+	sqlstore *store = m->session->tr->store;
 	if (schema_id) {
 		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-		sql_table *info = find_sql_table(sys, "db_user_info");
+		sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
 		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *users_schema = find_sql_column(info, "default_schema");
 
 		/* FIXME: we don't really check against the backend here */
-		oid rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
+		oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
 		if (is_oid_nil(rid))
 			return FALSE;
-		table_funcs.column_update_value(m->session->tr, users_schema, rid, &schema_id);
+		store->table_api.column_update_value(m->session->tr, users_schema, rid, &schema_id);
 	}
 
 	if (schema_path) {
 		sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-		sql_table *info = find_sql_table(sys, "db_user_info");
+		sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
 		sql_column *users_name = find_sql_column(info, "name");
 		sql_column *sp = find_sql_column(info, "schema_path");
 
@@ -425,10 +430,10 @@ monet5_alter_user(ptr _mvc, str user, str passwd, char enc, sqlid schema_id, str
 			return (FALSE);
 		}
 
-		oid rid = table_funcs.column_find_row(m->session->tr, users_name, user, NULL);
+		oid rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
 		if (is_oid_nil(rid))
 			return FALSE;
-		table_funcs.column_update_value(m->session->tr, sp, rid, schema_path);
+		store->table_api.column_update_value(m->session->tr, sp, rid, schema_path);
 	}
 
 	return TRUE;
@@ -442,9 +447,9 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	str err;
 	oid rid;
 	sql_schema *sys = find_sql_schema(m->session->tr, "sys");
-	sql_table *info = find_sql_table(sys, "db_user_info");
+	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
 	sql_column *users_name = find_sql_column(info, "name");
-	sql_table *auths = find_sql_table(sys, "auths");
+	sql_table *auths = find_sql_table(m->session->tr, sys, "auths");
 	sql_column *auths_name = find_sql_column(auths, "name");
 
 	if ((err = AUTHchangeUsername(c, olduser, newuser)) !=MAL_SUCCEED) {
@@ -453,21 +458,22 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 		return (FALSE);
 	}
 
-	rid = table_funcs.column_find_row(m->session->tr, users_name, olduser, NULL);
+	sqlstore *store = m->session->tr->store;
+	rid = store->table_api.column_find_row(m->session->tr, users_name, olduser, NULL);
 	if (is_oid_nil(rid)) {
 		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
 				 "your database is damaged, user not found in SQL catalog");
 		return (FALSE);
 	}
-	table_funcs.column_update_value(m->session->tr, users_name, rid, newuser);
+	store->table_api.column_update_value(m->session->tr, users_name, rid, newuser);
 
-	rid = table_funcs.column_find_row(m->session->tr, auths_name, olduser, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, auths_name, olduser, NULL);
 	if (is_oid_nil(rid)) {
 		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
 				 "your database is damaged, auth not found in SQL catalog");
 		return (FALSE);
 	}
-	table_funcs.column_update_value(m->session->tr, auths_name, rid, newuser);
+	store->table_api.column_update_value(m->session->tr, auths_name, rid, newuser);
 
 	return (TRUE);
 }
@@ -479,20 +485,21 @@ monet5_schema_user_dependencies(ptr _trans, int schema_id)
 	sql_trans *tr = (sql_trans *) _trans;
 	sql_schema *s = find_sql_schema(tr, "sys");
 
-	sql_table *auths = find_sql_table(s, "auths");
+	sql_table *auths = find_sql_table(tr, s, "auths");
 	sql_column *auth_name = find_sql_column(auths, "name");
 
-	sql_table *users = find_sql_table(s, "db_user_info");
+	sql_table *users = find_sql_table(tr, s, "db_user_info");
 	sql_column *users_name = find_sql_column(users, "name");
 	sql_column *users_sch = find_sql_column(users, "default_schema");
 
+	sqlstore *store = tr->store;
 	/* select users with given schema */
-	U = table_funcs.rids_select(tr, users_sch, &schema_id, &schema_id, NULL);
+	U = store->table_api.rids_select(tr, users_sch, &schema_id, &schema_id, NULL);
 	/* select all authorization ids */
-	A = table_funcs.rids_select(tr, auth_name, NULL, NULL);
+	A = store->table_api.rids_select(tr, auth_name, NULL, NULL);
 	/* join all authorization with the selected users */
-	A = table_funcs.rids_join(tr, A, auth_name, U, users_name);
-	table_funcs.rids_destroy(U);
+	A = store->table_api.rids_join(tr, A, auth_name, U, users_name);
+	store->table_api.rids_destroy(U);
 	return A;
 }
 
@@ -529,33 +536,40 @@ monet5_user_get_def_schema(mvc *m, int user)
 	str schema = NULL;
 
 	sys = find_sql_schema(m->session->tr, "sys");
-	auths = find_sql_table(sys, "auths");
+	auths = find_sql_table(m->session->tr, sys, "auths");
 	auths_id = find_sql_column(auths, "id");
 	auths_name = find_sql_column(auths, "name");
-	rid = table_funcs.column_find_row(m->session->tr, auths_id, &user, NULL);
+	sqlstore *store = m->session->tr->store;
+	rid = store->table_api.column_find_row(m->session->tr, auths_id, &user, NULL);
 	if (is_oid_nil(rid))
 		return NULL;
-	username = table_funcs.column_find_value(m->session->tr, auths_name, rid);
+	username = store->table_api.column_find_value(m->session->tr, auths_name, rid);
 
-	user_info = find_sql_table(sys, "db_user_info");
+	user_info = find_sql_table(m->session->tr, sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
 	users_schema = find_sql_column(user_info, "default_schema");
-	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, users_name, username, NULL);
 	if (!is_oid_nil(rid))
-		p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
+		p = store->table_api.column_find_value(m->session->tr, users_schema, rid);
 
 	_DELETE(username);
 	assert(p);
 	schema_id = *(sqlid *) p;
 	_DELETE(p);
 
-	schemas = find_sql_table(sys, "schemas");
+	schemas = find_sql_table(m->session->tr, sys, "schemas");
 	schemas_name = find_sql_column(schemas, "name");
 	schemas_id = find_sql_column(schemas, "id");
 
-	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
-	if (!is_oid_nil(rid))
-		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
+	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
+	if (!is_oid_nil(rid)) {
+		schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
+	}
+	if (schema) {
+		char *old = schema;
+		schema = sa_strdup(m->session->sa, schema);
+		_DELETE(old);
+	}
 	return schema;
 }
 
@@ -590,43 +604,50 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	}
 
 	sys = find_sql_schema(m->session->tr, "sys");
-	user_info = find_sql_table(sys, "db_user_info");
+	user_info = find_sql_table(m->session->tr, sys, "db_user_info");
 	users_name = find_sql_column(user_info, "name");
 	users_schema = find_sql_column(user_info, "default_schema");
 	users_schema_path = find_sql_column(user_info, "schema_path");
 
-	rid = table_funcs.column_find_row(m->session->tr, users_name, username, NULL);
+	sqlstore *store = m->session->tr->store;
+	rid = store->table_api.column_find_row(m->session->tr, users_name, username, NULL);
 	if (is_oid_nil(rid)) {
 		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
 			freeException(other);
 		GDKfree(username);
 		return NULL;
 	}
-	p = table_funcs.column_find_value(m->session->tr, users_schema, rid);
+	p = store->table_api.column_find_value(m->session->tr, users_schema, rid);
 	assert(p);
 	schema_id = *(sqlid *) p;
 	_DELETE(p);
 
-	p = table_funcs.column_find_value(m->session->tr, users_schema_path, rid);
+	p = store->table_api.column_find_value(m->session->tr, users_schema_path, rid);
 	assert(p);
 	schema_path = (str) p;
 
-	schemas = find_sql_table(sys, "schemas");
+	schemas = find_sql_table(m->session->tr, sys, "schemas");
 	schemas_name = find_sql_column(schemas, "name");
 	schemas_id = find_sql_column(schemas, "id");
-	auths = find_sql_table(sys, "auths");
+	auths = find_sql_table(m->session->tr, sys, "auths");
 	auths_name = find_sql_column(auths, "name");
 
-	rid = table_funcs.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (!is_oid_nil(rid))
-		schema = table_funcs.column_find_value(m->session->tr, schemas_name, rid);
+		schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
+
+	if (schema) {
+		char *old = schema;
+		schema = sa_strdup(m->session->sa, schema);
+		_DELETE(old);
+	}
 
 	/* only set schema if user is found */
-	rid = table_funcs.column_find_row(m->session->tr, auths_name, username, NULL);
+	rid = store->table_api.column_find_row(m->session->tr, auths_name, username, NULL);
 	if (!is_oid_nil(rid)) {
 		sql_column *auths_id = find_sql_column(auths, "id");
 		sqlid id;
-		p = table_funcs.column_find_value(m->session->tr, auths_id, rid);
+		p = store->table_api.column_find_value(m->session->tr, auths_id, rid);
 		id = *(sqlid *) p;
 		_DELETE(p);
 

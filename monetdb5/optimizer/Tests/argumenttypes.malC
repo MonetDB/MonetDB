@@ -1,7 +1,0 @@
-# Handle the BAT type coercions to simplify re-execution of MAL explain plans.
-# flag it as error if incompatible with definition
-X:bat[:int] := bat.new(nil:int);
-(X_115:bat[:int], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:int], false:bit, false:bit, false:bit);
-
-#and an error
-(X_115:bat[:lng], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:lng], false:bit, false:bit, false:bit);

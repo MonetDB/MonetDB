@@ -1729,25 +1729,22 @@ exp_is_true(sql_exp *e)
 }
 
 static inline bool
-exp_is_cmp_exp_is_false(sql_exp* e) {
-    assert(e->type == e_cmp);
-    assert(e->semantics && (e->flag == cmp_equal || e->flag == cmp_notequal));
-    assert(e->f == NULL);
-    sql_exp* l = e->l;
-    sql_exp* r = e->r;
-    assert (l && r);
+exp_is_cmp_exp_is_false(sql_exp* e)
+{
+	sql_exp *l = e->l;
+	sql_exp *r = e->r;
+	assert(e->type == e_cmp && e->f == NULL && l && r);
 
-    /* Handle 'v is x' and 'v is not x' expressions.
-     * Other cases in is-semantics are unspecified.
-     */
-    if (e->flag == cmp_equal && !e->anti) {
-        return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
-    }
-    if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) ) {
-        return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
-    }
-
-    return false;
+	/* Handle 'v is x' and 'v is not x' expressions.
+	* Other cases in is-semantics are unspecified.
+	*/
+	if (e->flag != cmp_equal && e->flag != cmp_notequal)
+		return false;
+	if (e->flag == cmp_equal && !e->anti)
+		return ((exp_is_null(l) && exp_is_not_null(r)) || (exp_is_not_null(l) && exp_is_null(r)));
+	if (((e->flag == cmp_notequal) && !e->anti) || ((e->flag == cmp_equal) && e->anti) )
+		return ((exp_is_null(l) && exp_is_null(r)) || (exp_is_not_null(l) && exp_is_not_null(r)));
+	return false;
 }
 
 static inline bool
@@ -2906,7 +2903,7 @@ exp_convert_inplace(mvc *sql, sql_subtype *t, sql_exp *exp)
 		return NULL;
 
 	a = exp->l;
-	if (t->scale && t->type->eclass != EC_FLT)
+	if (!a->isnull && t->scale && t->type->eclass != EC_FLT)
 		return NULL;
 
 	if (a && atom_cast(sql->sa, a, t)) {
@@ -2966,6 +2963,7 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 		}
 	}
 	if (err) {
+		const char *name = (exp->type == e_column && !has_label(exp)) ? exp_name(exp) : "%";
 		sql_exp *res = sql_error( sql, 03, SQLSTATE(42000) "types %s(%u,%u) and %s(%u,%u) are not equal%s%s%s",
 			fromtype->type->sqlname,
 			fromtype->digits,
@@ -2973,9 +2971,9 @@ exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type 
 			t->type->sqlname,
 			t->digits,
 			t->scale,
-			(exp->type == e_column ? " for column '" : ""),
-			(exp->type == e_column ? exp_name(exp) : ""),
-			(exp->type == e_column ? "'" : "")
+			(name[0] != '%' ? " for column '" : ""),
+			(name[0] != '%' ? name : ""),
+			(name[0] != '%' ? "'" : "")
 		);
 		return res;
 	}

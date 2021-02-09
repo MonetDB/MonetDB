@@ -118,4 +118,3 @@ select * from sys.sys.generate_series(1,2)
 statement error
 select * from sys.sys.sys.generate_series(1,2)
 
-

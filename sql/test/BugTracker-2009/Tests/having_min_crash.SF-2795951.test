@@ -123,4 +123,3 @@ select schema_id from mytables group by schema_id having min(schema_id)
 statement ok
 ROLLBACK
 
-

@@ -14,4 +14,3 @@ and    char_length(a.s)-char_length(b.s)=0
 0
 0
 
-

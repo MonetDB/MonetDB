@@ -6,4 +6,3 @@ select avg(field) from sf1207887
 ----
 NULL
 
-

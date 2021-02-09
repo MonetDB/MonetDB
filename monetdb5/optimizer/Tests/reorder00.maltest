@@ -107,6 +107,3 @@ optimizer.reorder("user","tst903")
 statement ok
 optimizer.garbageCollector("user","tst903")
 
-#mdb.list("user","tst903")
-
-

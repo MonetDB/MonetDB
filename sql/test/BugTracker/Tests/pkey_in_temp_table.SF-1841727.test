@@ -14,4 +14,3 @@ select * from pktable1841727
 statement ok
 drop table pktable1841727
 
-

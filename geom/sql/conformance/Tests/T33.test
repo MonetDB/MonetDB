@@ -3,4 +3,3 @@ SELECT ST_Length(centerlines) FROM divided_routes WHERE name = 'Route 75'
 ----
 96.000
 
-

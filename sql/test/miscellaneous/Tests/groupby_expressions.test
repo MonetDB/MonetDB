@@ -124,11 +124,11 @@ select distinct count(distinct "aa") from "groupings" group by "aa" > 1
 ----
 1
 
-query T rowsort
+query I rowsort
 select "aa" > 1 from "groupings" group by "aa" > 1
 ----
-False
-True
+0
+1
 
 query I rowsort
 select count(*) from "groupings" group by case when "aa" > 1 then "aa" else "aa" + 10 end
@@ -382,5 +382,4 @@ select 1 from "groupings" group by "aa" + "bb" order by "aa"
 
 statement ok
 drop table "groupings"
-
 

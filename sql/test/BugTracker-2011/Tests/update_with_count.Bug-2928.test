@@ -25,4 +25,3 @@ drop table trips
 statement ok
 drop table ranges
 
-

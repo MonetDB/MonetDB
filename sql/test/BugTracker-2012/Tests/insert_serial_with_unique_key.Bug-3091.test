@@ -18,7 +18,6 @@ VALUES
     ( 'example', 'access-control', '', '<?xml version="1.0" encoding="UTF-8"?>'
 )
 
-
 statement ok
 DROP TABLE "meta"."program_specs"
 
@@ -65,5 +64,4 @@ drop table t31
 
 statement ok
 drop table t32
-
 

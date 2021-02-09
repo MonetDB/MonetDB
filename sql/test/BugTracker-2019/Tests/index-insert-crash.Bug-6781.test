@@ -50,4 +50,3 @@ truncate table a
 statement ok
 rollback
 
-

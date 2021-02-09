@@ -1,0 +1,111 @@
+statement ok
+CREATE TABLE t1 (m varchar (1) NOT NULL)
+
+statement ok
+INSERT into t1 values ('0')
+
+statement ok
+INSERT into t1 values ('2')
+
+query T rowsort
+SELECT * FROM sys.t1
+----
+0
+2
+
+query IT rowsort
+SELECT length("m") as data_length, "m" as data_value FROM "sys"."t1" WHERE "m" IS NOT NULL AND length("m") > 1
+----
+
+statement ok
+CREATE VIEW v1 as select "m" from t1 where m in (select m from sys.t1)
+
+query T rowsort
+SELECT * FROM v1
+----
+0
+2
+
+query IT rowsort
+SELECT length("m") as data_length, "m" as data_value FROM "sys"."v1" WHERE "m" IS NOT NULL AND length("m") > 1
+----
+
+statement ok
+CREATE VIEW v2 as select "m" from t1 where rtrim(m) in (select rtrim(m) from sys.t1)
+
+query T rowsort
+SELECT * FROM v2
+----
+0
+2
+
+query T nosort
+PLAN SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
+----
+project (
+| semijoin (
+| | project (
+| | | select (
+| | | | table("sys"."t1") [ "t1"."m" NOT NULL ] COUNT 
+| | | ) [ "sys"."length"("t1"."m" NOT NULL) NOT NULL > int "1" ]
+| | ) [ "t1"."m" NOT NULL, "sys"."rtrim"("t1"."m" NOT NULL) NOT NULL as "%5"."%5" ],
+| | project (
+| | | project (
+| | | | table("sys"."t1") [ "t1"."m" NOT NULL ] COUNT 
+| | | ) [ "sys"."rtrim"("t1"."m" NOT NULL) NOT NULL as "%1"."%1" ]
+| | ) [ "%1"."%1" NOT NULL as "%4"."%4" ]
+| ) [ "%5"."%5" NOT NULL any = "%4"."%4" NOT NULL ]
+) [ "sys"."length"("t1"."m" NOT NULL as "v2"."m") NOT NULL as "data_length", "t1"."m" NOT NULL as "data_value" ]
+
+statement ok
+set optimizer = 'sequential_pipe'
+
+statement ok
+create procedure profiler.starttrace() external name profiler."starttrace"
+
+statement ok
+create procedure profiler.stoptrace() external name profiler.stoptrace
+
+statement ok
+call profiler."starttrace"()
+
+query IT rowsort
+SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
+----
+
+query IT rowsort
+call profiler.stoptrace()
+----
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% algebra.crossproduct%'
+----
+0
+
+query I rowsort
+select count(*) from sys.tracelog() where stmt like '% algebra.join%'
+----
+1
+
+statement ok
+drop procedure profiler.starttrace()
+
+statement ok
+drop procedure profiler.stoptrace()
+
+statement ok
+set optimizer = 'default_pipe'
+
+query IT rowsort
+SELECT length("m") as data_length, "m" as data_value FROM "sys"."v2" WHERE "m" IS NOT NULL AND length("m") > 1
+----
+
+statement ok
+DROP VIEW v1
+
+statement ok
+DROP VIEW v2
+
+statement ok
+DROP TABLE t1
+

@@ -12,4 +12,3 @@ SELECT B.subj, C.obj
 	AND C.obj <> 14660332
 ----
 
-

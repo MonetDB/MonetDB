@@ -1,17 +1,62 @@
 statement ok
 b := txtsim.str2qgrams("hello world")
 
-query TT rowsort
+query IT rowsort
 io.print(b)
 ----
-24 values hashing to 4e4fe242f51e847bbf1dc66c6b7f7152
+0
+##he
+1
+#hel
+10
+rld$
+11
+ld$$
+2
+hell
+3
+ello
+4
+llo 
+5
+lo w
+6
+o wo
+7
+ wor
+8
+worl
+9
+orld
 
 statement ok
 b := txtsim.str2qgrams("hällö wørłð")
 
-query TT rowsort
+query IT rowsort
 io.print(b)
 ----
-24 values hashing to a37932e1075361ece310c84b70de9b60
-
+0
+##h@
+1
+#h@l
+10
+r@@$
+11
+@@$$
+2
+h@ll
+3
+@ll@
+4
+ll@ 
+5
+l@ w
+6
+@ w@
+7
+ w@r
+8
+w@r@
+9
+@r@@
 

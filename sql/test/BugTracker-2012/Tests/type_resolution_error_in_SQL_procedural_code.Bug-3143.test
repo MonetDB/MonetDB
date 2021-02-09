@@ -103,4 +103,3 @@ drop TABLE warden
 statement ok
 drop TABLE observations
 
-

@@ -38,4 +38,3 @@ drop table segments
 statement ok
 drop table nodes_legacy
 
-

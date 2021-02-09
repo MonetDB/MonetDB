@@ -15,4 +15,3 @@ SELECT sys.stddev_pop(col1) * sys.stddev_pop(col1) FROM err_stddev2
 statement ok
 drop table err_stddev2
 
-

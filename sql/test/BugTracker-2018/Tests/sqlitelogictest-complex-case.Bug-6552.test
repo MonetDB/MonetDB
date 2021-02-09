@@ -3,4 +3,3 @@ SELECT CASE WHEN + - 44 <> 44 * - - 17 + 30 AND NOT NULL IS NOT NULL THEN COUNT 
 ----
 1
 
-

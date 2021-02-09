@@ -85,7 +85,18 @@ INSERT INTO FEAT16 VALUES (NULL, 2)
 query II rowsort
 select * from feat16
 ----
-12 values hashing to 408d67f148bfa69a8b54c8aebf35f4f9
+2
+NULL
+2
+NULL
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 drop table FEAT16
@@ -128,7 +139,22 @@ INSERT INTO FEAT16 VALUES (2, 2)
 query II rowsort
 select * from feat16
 ----
-16 values hashing to b752fcd400def80dd1bc7d15cb142b80
+2
+2
+2
+NULL
+2
+NULL
+NULL
+2
+NULL
+2
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 drop table FEAT16
@@ -163,5 +189,4 @@ drop table t1
 
 statement ok
 drop table t2
-
 

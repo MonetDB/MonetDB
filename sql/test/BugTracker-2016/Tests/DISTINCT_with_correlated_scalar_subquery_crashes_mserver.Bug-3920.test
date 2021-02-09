@@ -4632,7 +4632,42 @@ AND "functions_cpy"."type" = 2
 AND "schemas"."name" = 'sys'
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-36 values hashing to 35ba72d15c3cde3648b30ca8a2524690
+sys
+setsession
+1
+sys.setsession
+sys
+settimeout
+1
+sys.settimeout
+sys
+settimeout
+1
+sys.settimeout
+sys
+shrink
+1
+sys.shrink
+sys
+shutdown
+1
+sys.shutdown
+sys
+shutdown
+1
+sys.shutdown
+sys
+stop
+1
+sys.stop
+sys
+stop
+1
+sys.stop
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4643,7 +4678,51 @@ AND "functions_cpy"."type" = 2
 AND "schemas"."name" = 'sys'
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-45 values hashing to f608109a659ec921a6f111c90c528506
+NULL
+sys
+setsession
+1
+sys.setsession
+NULL
+sys
+settimeout
+1
+sys.settimeout
+NULL
+sys
+settimeout
+1
+sys.settimeout
+NULL
+sys
+shrink
+1
+sys.shrink
+NULL
+sys
+shutdown
+1
+sys.shutdown
+NULL
+sys
+shutdown
+1
+sys.shutdown
+NULL
+sys
+stop
+1
+sys.stop
+NULL
+sys
+stop
+1
+sys.stop
+NULL
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT cast('' as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4654,7 +4733,51 @@ AND "functions_cpy"."type" = 2
 AND "schemas"."name" = 'sys'
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-45 values hashing to c9125150f0afc4d016c4504cd766b94d
+(empty)
+sys
+setsession
+1
+sys.setsession
+(empty)
+sys
+settimeout
+1
+sys.settimeout
+(empty)
+sys
+settimeout
+1
+sys.settimeout
+(empty)
+sys
+shrink
+1
+sys.shrink
+(empty)
+sys
+shutdown
+1
+sys.shutdown
+(empty)
+sys
+shutdown
+1
+sys.shutdown
+(empty)
+sys
+stop
+1
+sys.stop
+(empty)
+sys
+stop
+1
+sys.stop
+(empty)
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT DISTINCT cast('' as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4665,7 +4788,36 @@ AND "functions_cpy"."type" = 2
 AND "schemas"."name" = 'sys'
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-30 values hashing to 6a43c75956605774dab31be856f60651
+(empty)
+sys
+setsession
+1
+sys.setsession
+(empty)
+sys
+settimeout
+1
+sys.settimeout
+(empty)
+sys
+shrink
+1
+sys.shrink
+(empty)
+sys
+shutdown
+1
+sys.shutdown
+(empty)
+sys
+stop
+1
+sys.stop
+(empty)
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4676,7 +4828,36 @@ AND "functions_cpy"."type" = 2
 AND "schemas"."name" = 'sys'
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-30 values hashing to 7196c8fbe037b23b1a23aa455d6c7fe4
+NULL
+sys
+setsession
+1
+sys.setsession
+NULL
+sys
+settimeout
+1
+sys.settimeout
+NULL
+sys
+shrink
+1
+sys.shrink
+NULL
+sys
+shutdown
+1
+sys.shutdown
+NULL
+sys
+stop
+1
+sys.stop
+NULL
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT DISTINCT cast(NULL as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4687,7 +4868,36 @@ AND "functions_cpy"."type" = 2
 AND "schemas"."name" = 'sys'
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-30 values hashing to 7196c8fbe037b23b1a23aa455d6c7fe4
+NULL
+sys
+setsession
+1
+sys.setsession
+NULL
+sys
+settimeout
+1
+sys.settimeout
+NULL
+sys
+shrink
+1
+sys.shrink
+NULL
+sys
+shutdown
+1
+sys.shutdown
+NULL
+sys
+stop
+1
+sys.stop
+NULL
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4698,7 +4908,36 @@ AND "functions_cpy"."type" = 2
 AND "schemas"."name" = 'sys'
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-30 values hashing to 7196c8fbe037b23b1a23aa455d6c7fe4
+NULL
+sys
+setsession
+1
+sys.setsession
+NULL
+sys
+settimeout
+1
+sys.settimeout
+NULL
+sys
+shrink
+1
+sys.shrink
+NULL
+sys
+shutdown
+1
+sys.shutdown
+NULL
+sys
+stop
+1
+sys.stop
+NULL
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4708,7 +4947,36 @@ FROM "sys"."functions_cpy", "sys"."schemas" WHERE "functions_cpy"."schema_id" = 
 AND "functions_cpy"."type" = 2
 ORDER BY "PROCEDURE_SCHEM", "PROCEDURE_NAME", "SPECIFIC_NAME"
 ----
-30 values hashing to 7196c8fbe037b23b1a23aa455d6c7fe4
+NULL
+sys
+setsession
+1
+sys.setsession
+NULL
+sys
+settimeout
+1
+sys.settimeout
+NULL
+sys
+shrink
+1
+sys.shrink
+NULL
+sys
+shutdown
+1
+sys.shutdown
+NULL
+sys
+stop
+1
+sys.stop
+NULL
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 query TTTIT rowsort
 SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "PROCEDURE_SCHEM", "functions_cpy"."name" AS "PROCEDURE_NAME"
@@ -4717,12 +4985,40 @@ SELECT DISTINCT cast(null as char(1)) AS "PROCEDURE_CAT", "schemas"."name" AS "P
 FROM "sys"."functions_cpy", "sys"."schemas" WHERE "functions_cpy"."schema_id" = "schemas"."id"
 AND "functions_cpy"."type" = 2
 ----
-30 values hashing to 7196c8fbe037b23b1a23aa455d6c7fe4
+NULL
+sys
+setsession
+1
+sys.setsession
+NULL
+sys
+settimeout
+1
+sys.settimeout
+NULL
+sys
+shrink
+1
+sys.shrink
+NULL
+sys
+shutdown
+1
+sys.shutdown
+NULL
+sys
+stop
+1
+sys.stop
+NULL
+sys
+storagemodelinit
+0
+sys.storagemodelinit
 
 statement ok
 DROP TABLE sys.functions_cpy
 
 statement ok
 DROP TABLE sys.args_cpy
-
 

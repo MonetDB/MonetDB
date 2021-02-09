@@ -1,7 +1,7 @@
 statement ok
 i:= mat.pack(1,2,3)
 
-query TI rowsort
+query II rowsort
 io.print(i)
 ----
 0
@@ -14,20 +14,20 @@ io.print(i)
 statement ok
 f:= mat.pack(1.0,2.0,3.0)
 
-query TT rowsort
+query IR rowsort
 io.print(f)
 ----
 0
-1.0
+1.000
 1
-2.0
+2.000
 2
-3.0
+3.000
 
 statement ok
 s:= mat.pack("a","b","c")
 
-query TT rowsort
+query IT rowsort
 io.print(s)
 ----
 0
@@ -40,14 +40,13 @@ c
 statement ok
 b:= mat.pack(true,false,true)
 
-query TT rowsort
+query II rowsort
 io.print(b)
 ----
 0
-True
 1
-False
+1
+0
 2
-True
-
+1
 

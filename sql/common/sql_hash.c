@@ -30,7 +30,11 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	ht->sa = sa;
 	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
-	ht->buckets = (ht->sa)?SA_NEW_ARRAY(sa, sql_hash_e*, ht->size):NEW_ARRAY(sql_hash_e*, ht->size);
+	ht->buckets = (ht->sa)?SA_NEW_ARRAY(sa, sql_hash_e*, ht->size):NEW_ARRAY(sql_hash_e*, ht->size); // TODO: can fail
+	if (ht->buckets == NULL) {
+		_DELETE(ht);
+		return NULL;
+	}
 	for (int i = 0; i < ht->size; i++)
 		ht->buckets[i] = NULL;
 	return ht;

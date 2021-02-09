@@ -58,4 +58,3 @@ io.print(y);
 statement error
 (x,y):= user.welcome2(1);
 
-

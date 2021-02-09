@@ -23,7 +23,7 @@ select type, fullname from describe_all_objects where (ntype & 3) > 0 and not sy
 MERGE TABLE
 sys.strt
 
-query IITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT table_id, * FROM sys._columns WHERE (table_id) NOT IN (SELECT id FROM sys._tables)
 ----
 
@@ -47,8 +47,7 @@ with describe_all_objects as (
 select type, fullname from describe_all_objects where (ntype & 3) > 0 and not system and (sname is null or sname = current_schema) order by fullname, type
 ----
 
-query IITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT table_id, * FROM sys._columns WHERE (table_id) NOT IN (SELECT id FROM sys._tables)
 ----
-
 

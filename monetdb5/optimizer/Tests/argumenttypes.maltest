@@ -7,4 +7,3 @@ statement ok
 statement error
 (X_115:bat[:lng], X_116:bat[:oid], X_117:bat[:oid]) := algebra.sort(X:bat[:lng], false:bit, false:bit, false:bit)
 
-

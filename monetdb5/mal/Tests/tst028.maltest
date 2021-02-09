@@ -15,15 +15,14 @@ end g
 statement ok
 z:= bat.new(:str);
 
-query TT rowsort
+query IT rowsort
 f(z)
 ----
 
 statement ok
 g(z)
 
-query TT rowsort
+query IT rowsort
 h(z)
 ----
-
 

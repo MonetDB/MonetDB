@@ -1,28 +1,28 @@
 statement ok
 create table a_6329 (x int, y int not null)
 
-query TTT nosort
+query TTI nosort
 select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'a_6329' and s.name = 'sys' order by c.number
 ----
 x
 int
-True
+1
 y
 int
-False
+0
 
 statement ok
 create table b_6329 as select * from a_6329 with no data
 
-query TTT nosort
+query TTI nosort
 select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'b_6329' and s.name = 'sys' order by c.number
 ----
 x
 int
-True
+1
 y
 int
-True
+1
 
 statement ok
 DROP TABLE a_6329
@@ -33,33 +33,32 @@ DROP TABLE b_6329
 statement ok
 create table a_pk_6329 (x int PRIMARY KEY, y int not null)
 
-query TTT nosort
+query TTI nosort
 select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'a_pk_6329' and s.name = 'sys' order by c.number
 ----
 x
 int
-False
+0
 y
 int
-False
+0
 
 statement ok
 create table b_pk_6329 as select * from a_pk_6329 with data
 
-query TTT nosort
+query TTI nosort
 select c.name, c.type, c."null" from sys._columns c, sys._tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and t.name = 'b_pk_6329' and s.name = 'sys' order by c.number
 ----
 x
 int
-True
+1
 y
 int
-True
+1
 
 statement ok
 DROP TABLE a_pk_6329
 
 statement ok
 DROP TABLE b_pk_6329
-
 

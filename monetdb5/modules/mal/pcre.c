@@ -2332,15 +2332,17 @@ bailout:
 }
 
 static str
-PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, const char *esc, bool caseignore, bool anti)
+PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid, bool caseignore, bool anti)
 {
-	BAT *left = NULL, *right = NULL, *candleft = NULL, *candright = NULL;
+	BAT *left = NULL, *right = NULL, *escape = NULL, *candleft = NULL, *candright = NULL;
 	BAT *result1 = NULL, *result2 = NULL;
-	char *msg = MAL_SUCCEED;
+	char *msg = MAL_SUCCEED, *esc = "";
 
 	if ((left = BATdescriptor(lid)) == NULL)
 		goto fail;
 	if ((right = BATdescriptor(rid)) == NULL)
+		goto fail;
+	if (!is_bat_nil(elid) && (escape = BATdescriptor(elid)) == NULL)
 		goto fail;
 	if (!is_bat_nil(slid) && (candleft = BATdescriptor(slid)) == NULL)
 		goto fail;
@@ -2367,6 +2369,13 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, const char *esc
 		result2->trevsorted = true;
 		result2->tseqbase = 0;
 	}
+	if (escape) {
+		if (BATcount(escape) != 1) {
+			msg = createException(MAL, "pcre.join", SQLSTATE(42000) "At the moment, only one value is allowed for the escape input at pcre join");
+			goto fail;
+		}
+		esc = BUNtvar(bat_iterator(escape), 0);
+	}
 	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, caseignore, anti);
 	if (msg)
 		goto fail;
@@ -2378,6 +2387,8 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, const char *esc
 	}
 	BBPunfix(left->batCacheid);
 	BBPunfix(right->batCacheid);
+	if (escape)
+		BBPunfix(escape->batCacheid);
 	if (candleft)
 		BBPunfix(candleft->batCacheid);
 	if (candright)
@@ -2389,6 +2400,8 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, const char *esc
 		BBPunfix(left->batCacheid);
 	if (right)
 		BBPunfix(right->batCacheid);
+	if (escape)
+		BBPunfix(escape->batCacheid);
 	if (candleft)
 		BBPunfix(candleft->batCacheid);
 	if (candright)
@@ -2403,19 +2416,19 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, const char *esc
 }
 
 static str
-LIKEjoin_esc(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+LIKEjoin_esc(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0, *anti);
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, elid ? *elid : 0, 0, *anti);
 }
 
 static str
-LIKEjoin_esc1(bat *r1, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+LIKEjoin_esc1(bat *r1, const bat *lid, const bat *rid, const bat *elid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 0, *anti);
+	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, elid ? *elid : 0, 0, *anti);
 }
 
 static str
@@ -2423,7 +2436,7 @@ LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, cons
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 0, *anti);
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, 0, 0, *anti);
 }
 
 static str
@@ -2431,23 +2444,23 @@ LIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *s
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 0, *anti);
+	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, 0, 0, *anti);
 }
 
 static str
-ILIKEjoin_esc(bat *r1, bat *r2, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+ILIKEjoin_esc(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1, *anti);
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, elid ? *elid : 0, 1, *anti);
 }
 
 static str
-ILIKEjoin_esc1(bat *r1, const bat *lid, const bat *rid, const str *esc, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
+ILIKEjoin_esc1(bat *r1, const bat *lid, const bat *rid, const bat *elid, const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate, const bit *anti)
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, *esc, 1, *anti);
+	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, elid ? *elid : 0, 1, *anti);
 }
 
 static str
@@ -2455,7 +2468,7 @@ ILIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid, con
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 1, *anti);
+	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, 0, 1, *anti);
 }
 
 static str
@@ -2463,7 +2476,7 @@ ILIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid, const bat *
 {
 	(void) nil_matches;
 	(void) estimate;
-	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, "", 1, *anti);
+	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0, 0, 1, *anti);
 }
 
 #include "mel.h"
@@ -2520,10 +2533,10 @@ mel_func pcre_init_funcs[] = {
  command("algebra", "ilikeselect", PCRElikeselect1, false, "", args(1,6, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("esc",str),arg("anti",bit))),
  command("algebra", "likeselect", PCRElikeselect5, false, "", args(1,5, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("anti",bit))),
  command("algebra", "ilikeselect", PCRElikeselect4, false, "", args(1,5, batarg("",oid),batarg("b",str),batarg("cand",oid),arg("pat",str),arg("anti",bit))),
- command("algebra", "likejoin", LIKEjoin_esc, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case sensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),arg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
- command("algebra", "likejoin", LIKEjoin_esc1, false, "The same as LIKEjoin_esc, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),arg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
- command("algebra", "ilikejoin", ILIKEjoin_esc, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case insensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),arg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
- command("algebra", "ilikejoin", ILIKEjoin_esc1, false, "The same as ILIKEjoin_esc, but only produce one output", args(1,9, batarg("",oid),batarg("l",str),batarg("r",str),arg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("algebra", "likejoin", LIKEjoin_esc, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case sensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("algebra", "likejoin", LIKEjoin_esc1, false, "The same as LIKEjoin_esc, but only produce one output", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
+ command("algebra", "ilikejoin", ILIKEjoin_esc, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case insensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("algebra", "ilikejoin", ILIKEjoin_esc1, false, "The same as ILIKEjoin_esc, but only produce one output", args(1,9, batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
  command("algebra", "likejoin", LIKEjoin, false, "", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
  command("algebra", "likejoin", LIKEjoin1, false, "", args(1,8, batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
  command("algebra", "ilikejoin", ILIKEjoin, false, "", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),

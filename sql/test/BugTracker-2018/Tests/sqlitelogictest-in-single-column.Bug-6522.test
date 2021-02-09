@@ -45,4 +45,3 @@ SELECT ALL * FROM tab2 WHERE + col0 IN ( col1 )
 statement ok
 DROP TABLE tab2
 
-

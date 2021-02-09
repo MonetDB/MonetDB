@@ -1,30 +1,54 @@
-query T rowsort
+query I rowsort
 SELECT ST_Contains(smallc, bigc) As smallcontainsbig
 FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT ST_Contains(bigc,smallc) As bigcontainssmall
 FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT ST_Contains(bigc, ST_Union(smallc, bigc)) as bigcontainsunion
 FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT ST_Contains(bigc, ST_ExteriorRing(bigc)) As bigcontainsexterior
 FROM (SELECT ST_Buffer(ST_GeomFromText('POINT(1 2)'), 10) As smallc, ST_Buffer(ST_GeomFromText('POINT(1 2)'), 20) As bigc) As foo
 ----
-False
+0
 
-query TT rowsort
+query TI rowsort
 SELECT geom AS "GEOMETRY", ST_Contains(geom, 'POINT (15 15)') AS "CONTAINS" FROM geometries WHERE id<14
 ----
-26 values hashing to d239042c6c6ff8460c75e847aa973430
-
+GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))
+1
+GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40, 10 20), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))
+1
+LINESTRING (10 10, 50 50, 30 80, 25 5)
+1
+LINESTRING (10 20, 30 40, 50 60)
+0
+LINESTRING (10 20, 30 40, 50 60, 80 60, 60 40, 10 20)
+0
+MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))
+0
+MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))
+0
+MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 60 70))
+0
+MULTIPOINT (10 20, 30 40)
+0
+MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))
+1
+MULTIPOLYGON EMPTY
+0
+POINT (10 20)
+0
+POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))
+1
 

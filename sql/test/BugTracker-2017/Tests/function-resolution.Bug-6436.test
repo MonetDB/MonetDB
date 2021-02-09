@@ -28,4 +28,3 @@ SELECT nullif(1234, null) as a
 ----
 1234
 
-

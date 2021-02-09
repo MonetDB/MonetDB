@@ -38,4 +38,3 @@ ALTER TABLE complete SET READ ONLY
 statement ok
 rollback
 
-

@@ -163,8 +163,9 @@
 #include "mal_builder.h"
 #include "wlc.h"
 #include "gdk_time.h"
+#include "mutils.h"
 
-MT_Lock     wlc_lock = MT_LOCK_INITIALIZER(wlc_lock);
+static MT_Lock     wlc_lock = MT_LOCK_INITIALIZER(wlc_lock);
 
 static char wlc_snapshot[FILENAME_MAX]; // The location of the snapshot against which the logs work
 static stream *wlc_fd = 0;
@@ -174,7 +175,7 @@ char wlc_dir[FILENAME_MAX]; 	// The location in the global file store for the lo
 char wlc_name[IDLENGTH];  	// The master database name
 lng  wlc_tag = 0;			// next transaction id
 int  wlc_state = 0;			// The current status of the logger in the life cycle
-char wlc_write[26];			// The timestamp of the last committed transaction
+static char wlc_write[26];			// The timestamp of the last committed transaction
 int  wlc_batches = 0;		// identifier of next batch
 int  wlc_beat = 10;		// maximal period covered by a single log file in seconds
 
@@ -236,14 +237,14 @@ bailout:
 	return msg;
 }
 
-str
+static str
 WLCgetConfig(void){
 	str l;
 	FILE *fd;
 
 	if((l = GDKfilepath(0,0,"wlc.config",0)) == NULL)
 		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
-	fd = fopen(l,"r");
+	fd = MT_fopen(l,"r");
 	GDKfree(l);
 	if( fd == NULL)
 		throw(MAL,"wlc.getConfig","Could not access wlc.config file\n");
@@ -319,7 +320,7 @@ WLCcloselogger(void)
 }
 
 /* force the current log file to its storage container, but dont create a new one yet */
-str
+static str
 WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -333,7 +334,7 @@ WLCflush(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-str
+static str
 WLCepilogue(void *ret)
 {
 	str msg = MAL_SUCCEED;
@@ -386,9 +387,6 @@ WLClogger(void *arg)
 #ifndef F_OK
 #define F_OK 0
 #endif
-#ifdef _MSC_VER
-#define access(f, m)	_access(f, m)
-#endif
 
 str
 WLCinit(void)
@@ -401,7 +399,7 @@ WLCinit(void)
 		if((conf = GDKfilepath(0,0,"wlc.config",0)) == NULL)
 			throw(MAL,"wlc.init","Could not access wlc.config\n");
 
-		if (access(conf, F_OK) ){
+		if (MT_access(conf, F_OK) ){
 			GDKfree(conf);
 			return MAL_SUCCEED;
 		}
@@ -421,7 +419,7 @@ WLCinit(void)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -431,7 +429,7 @@ WLCinitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCinit();
 }
 
-str
+static str
 WLCgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str *ret = getArgReference_str(stk,pci,0);
 	(void) cntxt;
@@ -445,7 +443,7 @@ WLCgetclock(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	lng *ret = getArgReference_lng(stk,pci,0);
 	(void) cntxt;
@@ -457,7 +455,7 @@ WLCgettick(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 /* Changing the beat should have immediate effect
  * It forces a new log file
  */
-str
+static str
 WLCsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int beat;
 	(void) mb;
@@ -469,7 +467,7 @@ WLCsetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCcloselogger();
 }
 
-str
+static str
 WLCgetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	int *ret = getArgReference_int(stk,pci,0);
 	(void) mb;
@@ -478,7 +476,7 @@ WLCgetbeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int len;
@@ -516,7 +514,7 @@ WLCmaster(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return WLCsetConfig();
 }
 
-str
+static str
 WLCstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
@@ -633,18 +631,7 @@ WLCstart(Client cntxt, str fcn)
 	return msg;
 }
 
-str
-WLCtransaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	(void) cntxt;
-	(void) mb;
-	(void) stk;
-	(void) pci;
-
-	return MAL_SUCCEED;
-}
-
-str
+static str
 WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -662,7 +649,7 @@ WLCquery(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -678,7 +665,7 @@ WLCcatalog(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -698,7 +685,7 @@ WLCaction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * We actually don't need the catalog operations in the log.
  * It is sufficient to upgrade the replay block to WLR_CATALOG.
  */
-str
+static str
 WLCgeneric(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -829,7 +816,7 @@ finish:
 	return msg;
 }
 
-str
+static str
 WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -868,7 +855,7 @@ WLCappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 /* check for empty BATs first */
-str
+static str
 WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 	int tpe, k = 0;
@@ -928,7 +915,7 @@ WLCdelete(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	InstrPtr p;
 	str sch,tbl,col, msg = MAL_SUCCEED;
@@ -1008,7 +995,7 @@ WLCupdate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str
+static str
 WLCclear_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr p;
@@ -1037,7 +1024,7 @@ WLCcommit(int clientid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCcommitCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg = MAL_SUCCEED;
 	msg = WLCstart(cntxt, "wlr.commit");
@@ -1060,7 +1047,7 @@ WLCrollback(int clientid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 WLCrollbackCmd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {	str msg = MAL_SUCCEED;
 	msg = WLCstart(cntxt, "wlr.rollback");
@@ -1100,13 +1087,13 @@ mel_func wlc_init_funcs[] = {
  pattern("wlc", "alter_seq", WLCgeneric, false, "Catalog operation alter_seq", args(0,3, arg("sname",str),arg("seqname",str),arg("val",lng))),
  pattern("wlc", "alter_seq", WLCgeneric, false, "Catalog operation alter_seq", args(0,4, arg("sname",str),arg("seqname",str),arg("seq",ptr),batarg("val",lng))),
  pattern("wlc", "drop_seq", WLCgeneric, false, "Catalog operation drop_seq", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),
- pattern("wlc", "create_schema", WLCgeneric, false, "Catalog operation create_schema", args(0,4, arg("sname",str),arg("auth",str),arg("ifnotexists",int),arg("action",int))),
- pattern("wlc", "drop_schema", WLCgeneric, false, "Catalog operation drop_schema", args(0,4, arg("sname",str),arg("s",str),arg("ifexists",int),arg("action",int))),
+ pattern("wlc", "create_schema", WLCgeneric, false, "Catalog operation create_schema", args(0,3, arg("sname",str),arg("auth",str),arg("action",int))),
+ pattern("wlc", "drop_schema", WLCgeneric, false, "Catalog operation drop_schema", args(0,3, arg("sname",str),arg("ifexists",int),arg("action",int))),
  pattern("wlc", "create_table", WLCgeneric, false, "Catalog operation create_table", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
  pattern("wlc", "create_view", WLCgeneric, false, "Catalog operation create_view", args(0,3, arg("sname",str),arg("tname",str),arg("temp",int))),
  pattern("wlc", "drop_table", WLCgeneric, false, "Catalog operation drop_table", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlc", "drop_view", WLCgeneric, false, "Catalog operation drop_view", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
- pattern("wlc", "drop_constraint", WLCgeneric, false, "Catalog operation drop_constraint", args(0,4, arg("sname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
+ pattern("wlc", "drop_constraint", WLCgeneric, false, "Catalog operation drop_constraint", args(0,5, arg("sname",str),arg("tname",str),arg("name",str),arg("action",int),arg("ifexists",int))),
  pattern("wlc", "alter_table", WLCgeneric, false, "Catalog operation alter_table", args(0,3, arg("sname",str),arg("tname",str),arg("action",int))),
  pattern("wlc", "create_type", WLCgeneric, false, "Catalog operation create_type", args(0,3, arg("sname",str),arg("nme",str),arg("impl",str))),
  pattern("wlc", "drop_type", WLCgeneric, false, "Catalog operation drop_type", args(0,3, arg("sname",str),arg("nme",str),arg("action",int))),

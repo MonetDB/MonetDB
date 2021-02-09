@@ -31,7 +31,7 @@
 
 #include <string.h>
 
-static str myname = 0;	// avoid tracing the profiler module
+static const char *myname = 0;	// avoid tracing the profiler module
 
 /* The JSON rendering can be either using '\n' separators between
  * each key:value pair or as a single line.

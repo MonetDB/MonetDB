@@ -239,4 +239,3 @@ statement ok
 -- crash
 ROLLBACK
 
-

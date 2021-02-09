@@ -20,7 +20,26 @@ query ITTT rowsort
 SELECT col1, SUBSTRING(col1,1,4), SUBSTRING(col1 ,5,2), SUBSTRING(col1 ,7,2)
 FROM   test456  
 ----
-20 values hashing to 68966fbb9e9cd3228759eb7b0bf6b2e7
+20080101
+2008
+01
+01
+20080215
+2008
+02
+15
+20080227
+2008
+02
+27
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query T rowsort
 SELECT CASE
@@ -48,5 +67,4 @@ WHERE  col1 IS NOT NULL
 
 statement ok
 DROP TABLE test456 
-
 

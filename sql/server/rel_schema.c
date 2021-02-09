@@ -309,7 +309,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
 		}
-		if (name && mvc_bind_key(sql, ss, name)) {
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
@@ -340,7 +340,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (!rt) {
 			return SQL_ERR;
-		} else if (name && mvc_bind_key(sql, ss, name)) {
+		} else if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
@@ -496,9 +496,6 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 	}
 	if (!ft) {
 		return SQL_ERR;
-	} else if (list_find_name(t->keys.set, name)) {
-		sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
-		return SQL_ERR;
 	} else {
 		sql_key *rk = NULL;
 		sql_fkey *fk;
@@ -507,8 +504,8 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
-		if (name && mvc_bind_key(sql, ss, name)) {
-			sql_error(sql, 02, SQLSTATE(42000) "Create Key failed, key '%s' already exists", name);
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return SQL_ERR;
 		}
 		if (n->next->next->data.lval) {	/* find unique referenced key */
@@ -571,7 +568,7 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return SQL_ERR;
 		}
-		if (name && mvc_bind_key(sql, ss, name)) {
+		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists",
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
@@ -644,12 +641,12 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	int res = SQL_OK;
 
 	(void) ss;
-	if (alter && !(isTable(t) || (isMergeTable(t) && list_empty(t->members)))) {
+	if (alter && !(isTable(t) || (isMergeTable(t) && cs_size(&t->members)==0))) {
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
 				  isMergeTable(t)?"MERGE TABLE":
 				  isRemote(t)?"REMOTE TABLE":
 				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				  t->base.name, (isMergeTable(t) && !list_empty(t->members)) ? " while it has partitions" : "");
+				  t->base.name, (isMergeTable(t) && cs_size(&t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -680,12 +677,11 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 	if (alter &&
 		(isView(t) ||
-		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && !list_empty(t->members))) ||
+		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->members))) ||
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
-		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)) ||
-		(isPartition(t) &&
-		(s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL ||
-		 s->token == SQL_DROP_CONSTRAINT)))){
+		(partition_find_part(sql->session->tr, t, NULL) &&
+			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
+			  s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))){
 		char *msg = "";
 
 		switch (s->token) {
@@ -726,11 +722,11 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s %s '%s'%s\n",
 				action,
 				msg,
-				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
+				partition_find_part(sql->session->tr, t, NULL)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
 				isRemote(t)?"REMOTE TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name, (isMergeTable(t) && !list_empty(t->members)) ? " while it has partitions" : "");
+				t->base.name, (isMergeTable(t) && cs_size(&t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
@@ -1246,14 +1242,17 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(sql_allocator *sa, int cat_type, char *sname, char *auth, int nr, int exists_check)
+rel_drop(sql_allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-	append(exps, exp_atom_clob(sa, auth));
+	if (first_val)
+		append(exps, exp_atom_clob(sa, first_val));
+	if (second_val)
+		append(exps, exp_atom_clob(sa, second_val));
 	append(exps, exp_atom_int(sa, exists_check));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1275,7 +1274,6 @@ rel_create_schema_dll(sql_allocator *sa, char *sname, char *auth, int nr)
 
 	append(exps, exp_atom_int(sa, nr));
 	append(exps, exp_atom_clob(sa, sname));
-
 	if (auth)
 		append(exps, exp_atom_clob(sa, auth));
 	rel->l = NULL;
@@ -1352,7 +1350,7 @@ sql_drop_table(sql_query *query, dlist *qname, int nr, int if_exists)
 	if (isDeclaredTable(t))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP TABLE: cannot drop a declared table");
 
-	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_table, t->s->base.name, tname, NULL, nr, if_exists);
 }
 
 static sql_rel *
@@ -1372,7 +1370,7 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 		return NULL;
 	}
 
-	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, nr, if_exists);
+	return rel_drop(sql->sa, ddl_drop_view, t->s->base.name, tname, NULL, nr, if_exists);
 }
 
 static sql_rel *
@@ -1439,7 +1437,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				}
 				return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
 			}
-			if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
+			if ((isMergeTable(pt) || isReplicaTable(pt)) && cs_size(&pt->members)==0)
 				return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 
@@ -1509,11 +1507,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		char *kname = l->h->data.sval;
 		int drop_action = l->h->next->data.i_val;
 
-		return rel_drop(sql->sa, ddl_drop_constraint, sname, kname, drop_action, 0);
+		return rel_drop(sql->sa, ddl_drop_constraint, sname, tname, kname, drop_action, 0);
 	}
-
-	if (t->s && !nt->s)
-		nt->s = t->s;
 
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 
@@ -1831,8 +1826,6 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	if (t->persistence != SQL_DECLARED_TABLE)
 		sname = t->s->base.name;
-	if (t->s && !nt->s)
-		nt->s = t->s;
 
 	/* add index here */
 	i = mvc_create_idx(sql, nt, iname, itype);
@@ -2156,6 +2149,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	sql_schema *s;
 	sql_rel *rel;
 	list *exps;
+	sql_trans *tr = sql->session->tr;
 
 	assert(old_name && new_name);
 	if (!(s = mvc_bind_schema(sql, old_name))) {
@@ -2167,7 +2161,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
 	if (s->system)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
+	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
@@ -2304,7 +2298,7 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
-	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || !list_empty(ot->members) || !list_empty(ot->triggers.set))
+	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&ot->members) || !list_empty(ot->triggers.set))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
@@ -2333,7 +2327,7 @@ rel_schemas(sql_query *query, symbol *s)
 	mvc *sql = query->sql;
 	sql_rel *ret = NULL;
 
-	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY)
+	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {
@@ -2353,6 +2347,7 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->type == type_int);
 		ret = rel_drop(sql->sa, ddl_drop_schema,
 			   dlist_get_schema_name(auth_name),
+			   NULL,
 			   NULL,
 			   l->h->next->data.i_val, 	/* drop_action */
 			   l->h->next->next->data.i_val); /* if exists */

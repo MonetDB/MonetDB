@@ -17,4 +17,3 @@ select sum(c2) from (select count(*) / (select count(*) from t1) as c2 from t1) 
 statement ok
 drop table t1
 
-

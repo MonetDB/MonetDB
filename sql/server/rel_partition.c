@@ -27,8 +27,10 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (t && isTable(t))
-			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 0);
+		if (t && isTable(t)) {
+			sqlstore *store = sql->session->tr->store;
+			return (lng)store->storage_api.count_col(sql->session->tr, t->columns.set->h->data, 0);
+		}
 		if (!t && rel->r) /* dict */
 			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;

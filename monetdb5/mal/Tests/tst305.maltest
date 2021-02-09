@@ -13,4 +13,3 @@ end foo;
 statement error
 user.foo();
 
-

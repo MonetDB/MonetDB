@@ -23,4 +23,3 @@ DROP FUNCTION pyapi00
 statement ok
 ROLLBACK
 
-

@@ -41,4 +41,3 @@ select interval '2' hour + interval '74' minute
 statement error
 select interval '2:74' hour to minute
 
-

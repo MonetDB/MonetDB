@@ -53,9 +53,43 @@ T_1.o AS VC_3, T_1.s AS VC_4
     ) AS M_1
 ORDER BY V_1, V_2, V_3, V_4
 ----
-36 values hashing to c4f124d2c6e3108b923165ff9e8c3231
+<http://example/x>
+<http://example/a>
+<http://example/z11>
+<http://example/z21>
+<http://example/x>
+<http://example/a>
+<http://example/z11>
+<http://example/z22>
+<http://example/x>
+<http://example/a>
+<http://example/z12>
+<http://example/z21>
+<http://example/x>
+<http://example/a>
+<http://example/z12>
+<http://example/z22>
+<http://example/x>
+<http://example/b>
+<http://example/y21>
+<http://example/y21>
+<http://example/x>
+<http://example/b>
+<http://example/y21>
+<http://example/y22>
+<http://example/x>
+<http://example/b>
+<http://example/y22>
+<http://example/y21>
+<http://example/x>
+<http://example/b>
+<http://example/y22>
+<http://example/y22>
+<http://example/x>
+<http://example/c>
+NULL
+NULL
 
 statement ok
 ROLLBACK
-
 

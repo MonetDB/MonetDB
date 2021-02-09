@@ -368,6 +368,9 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == zero_or_oneRef) return FALSE;
 		if (getFunctionId(p) == mvcRef) return FALSE;
 		if (getFunctionId(p) == singleRef) return FALSE;
+		if (getFunctionId(p) == importColumnRef) return FALSE;
+		if (getFunctionId(p) == append_execRef) return FALSE;
+		if (getFunctionId(p) == update_execRef) return FALSE;
 		return TRUE;
 	}
 	if( getModuleId(p) == mapiRef){
@@ -584,7 +587,7 @@ int isFragmentGroup2(InstrPtr p){
 
 inline int isSelect(InstrPtr p)
 {
-	char *func = getFunctionId(p);
+	const char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 
 	return (l >= 6 && strcmp(func+l-6,"select") == 0);
@@ -592,7 +595,7 @@ inline int isSelect(InstrPtr p)
 
 inline int isSubJoin(InstrPtr p)
 {
-	char *func = getFunctionId(p);
+	const char *func = getFunctionId(p);
 	size_t l = func?strlen(func):0;
 
 	return (l >= 7 && strcmp(func+l-7,"join") == 0);
@@ -636,4 +639,3 @@ isOptimizerEnabled(MalBlkPtr mb, str opt)
 	}
 	return 0;
 }
-

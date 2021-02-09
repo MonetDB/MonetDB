@@ -7,4 +7,3 @@ io.print(RKA);
 bat.setWriteMode(RKB);
 end foo;
 
-

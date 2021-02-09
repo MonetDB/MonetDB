@@ -254,7 +254,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops){
 /*
  * The manifold should support aligned BATs as well
  */
-str
+static str
 MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci){
 	MULTItask mut;
 	MULTIarg *mat;
@@ -362,7 +362,7 @@ wrapup:
 }
 
 // The old code
-str
+static str
 MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
     (void) mb;

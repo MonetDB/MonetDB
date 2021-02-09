@@ -14,4 +14,3 @@ SELECT ALL - 52 * + COALESCE ( + col2, + 47 / + 25 ) FROM tab1 AS cor0 GROUP BY 
 statement ok
 DROP TABLE tab1
 
-

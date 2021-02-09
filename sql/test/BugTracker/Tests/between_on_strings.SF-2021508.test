@@ -56,4 +56,3 @@ drop table between_on_strings1
 statement ok
 drop table between_on_strings2
 
-

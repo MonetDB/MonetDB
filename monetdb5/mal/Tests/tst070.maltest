@@ -4,4 +4,3 @@ function foo();
 (initial:str,surname:str):= user.getName();
 end foo
 
-

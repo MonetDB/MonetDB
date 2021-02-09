@@ -31,4 +31,3 @@ DROP TABLE part2
 statement ok
 DROP VIEW wrong
 
-

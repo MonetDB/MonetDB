@@ -664,4 +664,3 @@ CREATE TABLE prop14657210_pso (subj int, obj int)
 statement ok
 CREATE TABLE prop14659605_pso (subj int, obj int)
 
-

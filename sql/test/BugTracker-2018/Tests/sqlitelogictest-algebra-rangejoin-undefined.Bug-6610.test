@@ -38,4 +38,3 @@ DROP TABLE tab1
 statement ok
 DROP TABLE tab2
 
-

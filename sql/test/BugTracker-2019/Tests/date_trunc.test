@@ -138,4 +138,3 @@ select date_trunc('millennium', timestamp '1999-12-31 23:59:59.987654')
 ----
 1000-01-01 00:00:00
 
-

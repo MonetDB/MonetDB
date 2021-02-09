@@ -268,8 +268,12 @@ least(true, false) then least(true, true) else ((true)and(false)) end) as res
 statement ok
 ROLLBACK
 
-statement error
+query R rowsort
 values (0.51506835), (2), (least('a', 0.5667308))
+----
+0.515
+0.567
+2.000
 
 statement ok
 START TRANSACTION
@@ -305,7 +309,7 @@ NULL	1	0.07074437
 statement ok
 create view v2(vc0, vc1, vc2) as (values (((((+ (0.51506835))&(-2)))<<(scale_down(least(31552,
 0.3), cast(1500294098 as int)))),
-((- (((44257622)-(0.6))))>=(least(-15958291, -1534974396))), case - (sql_min(0.632858,
+((- (((44257622)-(0.6))))>=(least(-3, -4))), case - (sql_min(0.632858,
 0.3)) when ((((0.5)^(0.4)))+(((0.4)/(5))))
 then sql_max(cast(5293 as decimal), ((0.5)-
 (0.5))) end),(charindex(r'934079707', r'35305325'), not (false),
@@ -376,6 +380,47 @@ statement ok
 START TRANSACTION
 
 statement ok
+create or replace view v74(vc0, vc1) as (values (-1, 0.014)) with check option
+
+statement ok
+create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10)) with check option
+
+statement error
+select 1 from v74 cross join v84 join (values ('b'), ('a'), (1)) as sub0 on (v84.vc0)^(-9223372036854775807) is not null
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace view v74(vc0, vc1) as (values (cosh(case 0.82292664 when 0.3286772 then least(-1542994811, 28216) end),
+abs(round(0.014417256786389054, 1390068457)))) with check option
+
+statement ok
+create or replace view v84(vc0, vc1) as (values (cast(not (least(false, false)) as int), case when nullif(((-763905586)=(0.8063365267447331)),
+"isauuid"(r'87')) then case ((-1573098947)%(0.22336472349933323)) when nullif(7159, 26015) then ((-1216247830)*(-580027885))
+when - (0.17724898013816237) then -1847868202 else - (-7.96515311E8) end else 0.854441498295166 end), (cast(not (false) as int),
+greatest(scale_up(+ (48), 0.9562314161003085), ((- (85))+(- (-1290129393)))))) with check option
+
+statement error
+select all count(all least(((null)*(v74.vc1)), cast(0.7407841 as bigint))) from v74 cross join v84 join (values
+(cast(cast(((-1660927937)+(-1322418229)) as bigint) as string)), (cast(case upper(r'#+6') when least(r'', r'l9O+,s5?')
+then r'0.8101890506861533' when greatest(r'', r'B+') then sql_max(r'?''', r'E|!H4p') else cast(0.6526341396196464 as string(381))
+end as string)), (case ((+ (0.07023401))/(- (1190953480))) when ((((-1138638151)>>(31055)))*(least(-1433171609, 0.67441124)))
+then r'n%y]' when cast(case 599601669 when 993501855 then 934684161 when 1426216310 then -46477174
+when 0.326376321343257114193647794309072196483612060546875 then 1762363571 else 1836924027 end as int) then ltrim(r'<>?')
+else splitpart(cast(126 as string), cast(1768691589 as string), 21) end)) as sub0 on (((((v84.vc0)^(-9223372036854775807)))
+is not null)and(cast(true as boolean)))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3),"c1" VARCHAR(253))
 
 statement ok
@@ -403,11 +448,71 @@ NULL	"3128"
 0.968	"1403896159"
 0.565	"0.8224972062481081"
 
-query I nosort
+query I rowsort
+SELECT 1 FROM t2 WHERE CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END
+----
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
 SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) END
 ----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
-query II nosort
+query RT rowsort
 SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
 (t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
 ((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
@@ -417,8 +522,244 @@ CAST(1847496204 AS BOOLEAN) WHEN CASE WHEN FALSE THEN FALSE WHEN FALSE THEN FALS
 WHEN ((t2.c1)LIKE(t2.c1)) THEN (t1.c0) IN (t2.c0, t1.c0) ELSE (t2.c1) NOT BETWEEN SYMMETRIC (t1.c1) AND (t2.c1) END
 FROM t2, t1 WHERE CAST(20726 AS BOOLEAN)) AS sub0 ON ((CAST(t1.c1 AS STRING))ILIKE(t1.c1))
 ----
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+create view v18(vc0) as (values (cast(((r'-W<~>頃')not like(r'8')) as bigint)), (case when least(((0.4)>(0.4)), case when true
+then true when false then true when false then false when true then true else true end) then ((least(0.5,
+343))/(abs(2.017526512E9))) else cast(greatest(-23, 33) as decimal) end)) with check option
+
+statement ok
+create view v21(vc0) as (values (greatest(cast(42 as real), ((0.353)*(-3))))) with check option
+
+statement ok
+create view v24(vc0) as (values (0.22)) with check option
+
+statement error
+select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>(least(cast(26 as bigint),
+cast(-507871984 as bigint)))), 1 from v21
+join v18 on ((scale_down(v18.vc0, null))>(cast(((0.33)
+-(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim(r'便竼E*P'),
+"concat"(r'?X', r'沈pJqd')), replace(r'w', r'95', r'580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
+as sub0 on ((least(342, v18.vc0))<>(1))
+group by greatest(-432, ((24)|(32))), least(((((r'RJᦈ4[[h\340\272\246')like(r'9804')))and(not (false))),
+"isauuid"(cast(v18.vc0 as string(979))))
+
+statement ok
+ROLLBACK
+
+statement error
+select (-1.7976931348623157E308)/(0.98067827792867723335490381941781379282474517822265625)
+
+statement error
+values (round(-1.4999792343698102e+308, 15)),(1.2)
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" REAL NOT NULL, "c1" DECIMAL(15,3),
+	CONSTRAINT "t2_c0_pkey" PRIMARY KEY ("c0"),
+	CONSTRAINT "t2_c0_unique" UNIQUE ("c0"),
+	CONSTRAINT "t2_c0_c1_unique" UNIQUE ("c0", "c1")
+)
+
+statement ok
+COPY 33 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+26	0.991
+0.13630049	37.000
+0.51769805	0.784
+-1.6852343e+09	NULL
+0.21530622	NULL
+113.135216	NULL
+1.0975889	0.000
+0.5668781	0.163
+0.07123395	0.808
+0.8320952	NULL
+0.35641629	NULL
+1.4285428e+12	NULL
+0.5716349	0.925
+-1.1734946e+08	0.000
+0.030607125	0.874
+0.83317256	0.000
+-1.7515901e+09	0.246
+5.855687e+08	0.630
+0.6815483	NULL
+0.0059321974	NULL
+0.8218823	0.960
+-4.015704e+08	0.000
+0.34888306	NULL
+-0.5051734	NULL
+0.34162566	NULL
+-1.0525191e+09	-1697412576.000
+0.5970499	NULL
+8.183423e+08	0.664
+0.5821468	0.721
+1.7945473e+09	1535759864.000
+0.24326971	0.329
+-1.0841585e+09	NULL
+10098	0.846
+
+statement ok
+ALTER TABLE t2 ADD CONSTRAINT "t2_c0_c1_fkey" FOREIGN KEY ("c0", "c1") REFERENCES "sys"."t2" ("c0", "c1")
+
+statement error
+update t2 set c1 = 0.012 where (((t2.c0)%(t2.c1))) between symmetric (coalesce(-1053, 991)) and (((0.6974)+(183)))
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" REAL NOT NULL,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"))
+
+statement ok
+COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+4.2328605e+08
+0.69732165
+0.71200204
+4.466514e+07
+0
+1.3677554e+09
+0.36787975
+0.961471
+0.6692194
+0.3954379
+
+statement ok
+create or replace view v64(vc0, vc1, vc2, vc3) as (select -34, 'A',
+((0.2457749548974355047192830170388333499431610107421875)*(5)), cast(-43 as int)) with check option
+
+statement ok
+create or replace view v110(vc0) as (values ('a'), ('8'), ('g'), (null)) with check option
+
+query I rowsort
+select 1 from v64, t1, v110 where t1.c0 > v64.vc2
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace view v11(vc0, vc1) as (values (cast(r'<' as string), ((((356910743)||(324718164)))<<(sql_max(962062904, -1226062612)))),
+(r'e]+)Nik', ((cast(-1267863719 as tinyint))&(- (340796877)))), (case when ((r'24060')not like(r'f')) then r'vyA,R' else r'68' end,
++ (greatest(113, 0.61746233049203114173764106453745625913143157958984375))))
+
+statement ok
+create or replace view v13(vc0, vc1) as (values (((0.9896616954779023)<(greatest(-1982788333, 0.76584341990855342441335551484371535480022430419921875)))
+, cast(1938193505 as boolean)), (greatest(false, false), cast(cast(r'rHIVNz' as int) as boolean))) with check option
+
+statement ok
+create or replace view v23(vc0, vc1) as (values (case when ((false)and(true)) then ((25922)*(697298603)) when not (false) then - (2909) end,
+cast(case r'17841' when r'155' then 2909 when r'116' then 17275 end as int)))
+
+query I rowsort
+SELECT CAST(SUM(agg0) as BIGINT) FROM (
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE ((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))
+	UNION ALL
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE NOT (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299)))))
+	UNION ALL
+	SELECT count(ALL 1) as agg0 FROM v23, v13, v11 CROSS JOIN (VALUES (scale_down(CAST(0.31366895126242933 AS BIGINT),
+	NULLIF(0.6018914, 0.947574)), "isauuid"(r''))) AS sub0 WHERE (((greatest(v11.vc0, v11.vc0))NOT LIKE(CAST(r'' AS STRING(299))))) IS NULL
+	) as asdf
+----
+6
+
+statement ok
+create or replace view v11(vc0) as (values ('<'), ('a'))
+
+query I rowsort
+SELECT 1 FROM v11 WHERE v11.vc0 LIKE '' IS NULL
+----
+
+statement ok
+ROLLBACK
+
+query I rowsort
+SELECT 1 HAVING group_concat('') NOT LIKE '3' IS NULL
+----
+
+statement ok
+START TRANSACTION
+
+statement ok
+create or replace view v0(vc0, vc1, vc2) as (values (3, true, 0.3))
+
+statement ok
+create or replace view v1(vc0, vc1) as (select 0.80, 'a')
+
+query I rowsort
+select 1 from v0, v1
+inner join (values (88), (3), (59)) as sub0 on true natural join
+(select distinct v0.vc0 from v1, v0 group by v0.vc1) as sub1
+where v0.vc0 = 0.06683239
+----
+
+statement ok
+create or replace view v0(vc0, vc1, vc2) as (values (nullif(cast(220424338 as smallint), case 0.04487378302689426501359548637992702424526214599609375 when 126710153 then 0.6929207132873739 when 26968 then 26968.0 when 1679982115 then 29 else 0.8204445662571608 end), cast(sql_min(r'', r'#Ts9.H') as boolean), 0.45182237213592768565462165497592650353908538818359375))
+
+statement ok
+create or replace view v1(vc0, vc1) as (select round(0.80863825841427316998277774473535828292369842529296875, 0.6571010204254646), r'䝀i8jPo' where not (false))
+
+statement error
+select all v0.vc2, greatest(min(all least(-266013300, 864326131)), -1183805674), greatest(-544857133, + (v0.vc2)) from v0, v1
+inner join (values (+ (88)), (greatest(0.8732546822607857, greatest(1933292715, -525885982))), (case when (-1466474216) in
+(-1504372996, 417052418, 94) then least(28288, 1447812316) when cast(r'' as boolean) then "second"(time '14:18:59') else
+((-730700220)-(929722313)) end)) as sub0 on true natural join (select distinct v0.vc0 from v1, v0 where ((((v0.vc1)and(v0.vc1)))
+or(v0.vc1)) group by v0.vc1) as sub1 where (v0.vc0) in (0.06683239) group by least(-1913343924, 10622),
+((v1.vc1)not ilike(least(v1.vc1, v1.vc1)))
+
+statement ok
+ROLLBACK
+
+statement ok
+CREATE TABLE t1(c0 BOOLEAN, c1 DOUBLE)
+
+statement ok
+INSERT INTO t1(c0) VALUES(true)
+
+statement ok
+TRUNCATE t1
+
+statement ok
+ALTER TABLE t1 ADD PRIMARY KEY(c0, c1)
+
+statement ok
+INSERT INTO t1(c1, c0) VALUES(7,true),(5,false),(2,true),(4,false)
+
+statement error
+UPDATE t1 SET c1 = 0 WHERE t1.c1 BETWEEN SYMMETRIC 3 AND t1.c1
+
+statement ok
+DROP TABLE t1
 

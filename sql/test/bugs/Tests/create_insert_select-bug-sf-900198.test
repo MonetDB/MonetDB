@@ -78,4 +78,3 @@ drop table tst
 statement ok
 drop table tst2
 
-

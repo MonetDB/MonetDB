@@ -28,4 +28,3 @@ select g, rapi18(n) from rapi18bad group by g
 statement ok
 ROLLBACK
 
-

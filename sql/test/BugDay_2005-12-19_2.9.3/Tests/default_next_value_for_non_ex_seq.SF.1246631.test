@@ -10,4 +10,3 @@ select * from test1246631
 statement error
 insert into test1246631
 
-

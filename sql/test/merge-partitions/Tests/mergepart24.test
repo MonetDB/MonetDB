@@ -108,4 +108,3 @@ DROP FUNCTION addone
 statement ok
 DROP FUNCTION addtwo
 
-

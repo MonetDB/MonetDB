@@ -8,4 +8,3 @@ SELECT pk FROM tab0 WHERE ((col1 <= 601.41 AND (((col0 IS NULL AND (col3 > 768 O
 statement ok
 DROP TABLE tab0
 
-

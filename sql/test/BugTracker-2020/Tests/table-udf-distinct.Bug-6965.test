@@ -8,7 +8,7 @@ BEGIN
   return values (1), (2), (2), (3), (i);
 END
 
-query I
+query I nosort
 select distinct value from test(3)
 ----
 1
@@ -17,5 +17,4 @@ select distinct value from test(3)
 
 statement ok
 ROLLBACK
-
 

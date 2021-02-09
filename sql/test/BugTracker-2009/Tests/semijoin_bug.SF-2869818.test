@@ -30,4 +30,3 @@ drop table kvk
 statement ok
 drop table concernrelaties
 
-

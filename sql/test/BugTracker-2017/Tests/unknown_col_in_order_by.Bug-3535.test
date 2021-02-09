@@ -16,4 +16,3 @@ SELECT a from test_a group by a order by b
 statement ok
 DROP TABLE "sys"."test_a"
 
-

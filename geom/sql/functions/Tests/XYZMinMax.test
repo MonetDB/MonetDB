@@ -8,4 +8,3 @@ select id, ST_XMin(mbr(geom)) AS "Xmin", ST_YMin(mbr(geom)) AS "Ymin", ST_XMax(m
 ----
 135 values hashing to e55d26263a0004ee5457d82440cc2577
 
-

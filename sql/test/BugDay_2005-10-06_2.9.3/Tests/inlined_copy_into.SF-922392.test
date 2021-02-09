@@ -27,4 +27,3 @@ Rammekens	8.7000000000000004e+307	6.2999999999999997e+307
 statement ok
 drop table pos
 
-

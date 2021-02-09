@@ -45,10 +45,6 @@
 #undef _CRTDBG_MAP_ALLOC
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER >= 1400
-#define getcwd _getcwd
-#endif
-
 /* NEEDED? */
 #if defined(_MSC_VER) && defined(__cplusplus)
 #include <eh.h>
@@ -257,8 +253,26 @@ handler(int sig)
 #endif
 
 int
+#ifdef _MSC_VER
+wmain(int argc, wchar_t **argv)
+#else
 main(int argc, char **av)
+#endif
 {
+#ifdef _MSC_VER
+	char **av = malloc((argc + 1) * sizeof(char *));
+	if (av == NULL) {
+		fprintf(stderr, "cannot allocate memory for argument conversion\n");
+		exit(1);
+	}
+	for (int i = 0; i < argc; i++) {
+		if ((av[i] = wchartoutf8(argv[i])) == NULL) {
+			fprintf(stderr, "cannot convert argument to UTF-8\n");
+			exit(1);
+		}
+	}
+	av[argc] = NULL;
+#endif
 	char *prog = *av;
 	opt *set = NULL;
 	int grpdebug = 0, debug = 0, setlen = 0;
@@ -349,7 +363,7 @@ main(int argc, char **av)
 		exit(1);
 	}
 
-	if (getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
+	if (MT_getcwd(monet_cwd, FILENAME_MAX - 1) == NULL) {
 		perror("pwd");
 		fprintf(stderr,"monet_init: could not determine current directory\n");
 		exit(-1);
@@ -471,6 +485,8 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {
 				if (mods < MAX_MODULES)
 					modules[mods++]=optarg;
+				else
+					fprintf(stderr, "ERROR: maximum number of modules reached\n");
 				break;
 			}
 			usage(prog, -1);
@@ -625,7 +641,7 @@ main(int argc, char **av)
 									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
-					if (stat(prmodpath, &sb) == 0) {
+					if (MT_stat(prmodpath, &sb) == 0) {
 						modpath = prmodpath;
 						break;
 					}
@@ -717,7 +733,7 @@ main(int argc, char **av)
 			/* use a default (hard coded, non safe) key */
 			snprintf(secret, sizeof(secret), "%s", "Xas632jsi2whjds8");
 		} else {
-			if ((secretf = fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
+			if ((secretf = MT_fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
 				fprintf(stderr,
 					"unable to open vault_key_file %s: %s\n",
 					GDKgetenv("monet_vault_key"), strerror(errno));

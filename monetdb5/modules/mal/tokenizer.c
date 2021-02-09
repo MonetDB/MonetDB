@@ -39,7 +39,9 @@
  */
 #include "monetdb_config.h"
 #include "bat5.h"
-#include "tokenizer.h"
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
 #include "mal_linker.h"
 
 #define MAX_TKNZR_DEPTH 256
@@ -89,7 +91,7 @@ static int prvlocate(BAT* b, BAT* bidx, oid *prv, str part)
 	return FALSE;
 }
 
-str
+static str
 TKNZRopen(void *ret, str *in)
 {
 	int depth;
@@ -182,7 +184,7 @@ TKNZRopen(void *ret, str *in)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 TKNZRclose(void *r)
 {
 	int i;
@@ -233,7 +235,7 @@ TKNZRtokenize(str in, str *parts, char tkn)
 	return depth;
 }
 
-str
+static str
 TKNZRappend(oid *pos, str *s)
 {
 	str url;
@@ -367,7 +369,7 @@ TKNZRappend(oid *pos, str *s)
 }
 
 #define SIZE (1 * 1024 * 1024)
-str
+static str
 TKNZRdepositFile(void *r, str *fnme)
 {
 	stream *fs;
@@ -434,7 +436,7 @@ TKNZRdepositFile(void *r, str *fnme)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	oid pos;
@@ -491,7 +493,7 @@ TKNZRlocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 takeOid(oid id, str *val)
 {
 	int i, depth;
@@ -530,7 +532,7 @@ takeOid(oid id, str *val)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str ret, val = NULL;
@@ -549,7 +551,7 @@ TKNZRtakeOid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return ret;
 }
 
-str
+static str
 TKNZRgetIndex(bat *r)
 {
 	if (TRANS == NULL)
@@ -559,7 +561,7 @@ TKNZRgetIndex(bat *r)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 TKNZRgetLevel(bat *r, int *level)
 {
 	BAT* view;
@@ -576,7 +578,7 @@ TKNZRgetLevel(bat *r, int *level)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 TKNZRgetCount(bat *r)
 {
 	BAT *b;
@@ -601,7 +603,7 @@ TKNZRgetCount(bat *r)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 TKNZRgetCardinality(bat *r)
 {
 	BAT *b, *en;

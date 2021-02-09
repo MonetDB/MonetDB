@@ -20,35 +20,35 @@ select * from nosql
 {"f1":{"f12":3},"f2":[2,3,4]}
 {}
 
-query T rowsort
+query I rowsort
 select json.isvalid(j) from nosql
 ----
-True
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 select json.isobject(j) from nosql
 ----
-False
-True
-True
-True
-True
-True
+0
+1
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 select json.isarray(j) from nosql
 ----
-False
-False
-False
-False
-False
-True
+0
+0
+0
+0
+0
+1
 
 statement ok
 create table tmpsql(j string)
@@ -72,35 +72,35 @@ select * from tmpsql
 {"f1":{"f12":3},"f2":[2,3,4]}
 {}
 
-query T rowsort
+query I rowsort
 select json.isvalid(j) from nosql
 ----
-True
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 select json.isobject(j) from nosql
 ----
-False
-True
-True
-True
-True
-True
+0
+1
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 select json.isarray(j) from nosql
 ----
-False
-False
-False
-False
-False
-True
+0
+0
+0
+0
+0
+1
 
 statement ok
 drop table tmpsql

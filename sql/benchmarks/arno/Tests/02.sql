@@ -1,1 +1,0 @@
-SELECT MODEL2.is_mutagen, count(distinct MODEL2.model_id ) FROM MODEL MODEL2, ATOM ATOM3, ATOM T1008290346670  WHERE MODEL2.model_id=ATOM3.model_id AND MODEL2.model_id=T1008290346670.model_id group by MODEL2.is_mutagen;

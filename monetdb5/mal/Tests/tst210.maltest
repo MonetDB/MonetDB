@@ -4,7 +4,7 @@ b:= bat.new(:int)
 statement ok
 bat.append(b,1)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
 0
@@ -16,10 +16,9 @@ bat.setName(b,"myhome")
 statement ok
 bat.setColumn(b,"last")
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
 0
 1
-
 

@@ -36,21 +36,19 @@ NULL
 TABLE
 NULL
 
--- show that the comment column id and remark are both set to NOT NULL
-query ITTTT rowsort
+query ITTII rowsort
 select number, name, type, type_digits, "null" from sys._columns where table_id in (select id from sys._tables where name = 'comments' and system)
 ----
 0
 id
 int
 32
-False
+0
 1
 remark
 varchar
 65000
-False
-
+0
 
 query TTTT rowsort
 select "name", "query", "type", "remark" from describe_table('sys', 'comments')

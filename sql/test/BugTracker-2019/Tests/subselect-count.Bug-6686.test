@@ -36,9 +36,27 @@ select
 from
   "c3_t"
 ----
-20 values hashing to 135f263bada8f68138595175895b8d76
+0.500
+8
+1.500
+7
+2.500
+6
+3.500
+5
+4.500
+4
+5.500
+3
+6.500
+2
+7.500
+1
+8.500
+0
+NULL
+8
 
 statement ok
 ROLLBACK
-
 

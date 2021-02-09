@@ -15,4 +15,3 @@ WORKSY.PNUM))
 statement ok
 drop table WORKS
 
-

@@ -12,4 +12,3 @@ select explain
 statement error
 select @explain
 
-

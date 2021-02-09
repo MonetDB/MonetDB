@@ -16,4 +16,3 @@ copy select count(*) from t into stdout using delimiters ',', E'\n'
 statement ok
 rollback
 
-

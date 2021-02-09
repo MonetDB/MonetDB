@@ -58,4 +58,3 @@ query TIIT rowsort
 SELECT '"sys"."spatial_ref_sys"."srtext"' as full_col_nm, 2048 as max_allowed_length, length("srtext") as data_length, t."srtext" as data_value FROM "sys"."spatial_ref_sys" t WHERE "srtext" IS NOT NULL AND length("srtext") > (select type_digits from sys._columns where name = 'srtext' and table_id in (select id from tables where name = 'spatial_ref_sys' and schema_id in (select id from sys.schemas where name = 'sys')))
 ----
 
-

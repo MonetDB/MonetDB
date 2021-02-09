@@ -52,3 +52,4 @@ statement ok
 
 statement ok
 rollback
+

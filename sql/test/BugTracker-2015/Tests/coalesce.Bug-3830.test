@@ -3,9 +3,8 @@ select coalesce(0, false)
 ----
 0
 
-query T rowsort
+query I rowsort
 select coalesce(null, false)
 ----
-False
-
+0
 

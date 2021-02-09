@@ -160,4 +160,3 @@ drop table test_statistics
 statement ok
 drop table preLav
 
-

@@ -59,17 +59,3 @@ w :=algebra.projectionpath(empty,c,d);
 io.print(w);
 end qry
 
-#mdb.list("user","qry")
-
-statement ok
-optimizer.projectionpath("user","qry")
-
-statement ok
-optimizer.garbageCollector("user","qry")
-
-3mdb.list("user","qry")
-
-query T nosort
-qry()
-
-

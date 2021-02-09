@@ -13,4 +13,3 @@ select COUNT(*) >= 0 from "sys"."sessions"
 ----
 1
 
-

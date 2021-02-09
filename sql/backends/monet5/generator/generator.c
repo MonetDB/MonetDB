@@ -504,20 +504,20 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		low= hgh = TPE##_nil;											\
 		v = (oid*) Tloc(bn,0);											\
 		if ( strcmp(oper,"<") == 0){									\
-			hgh= *getArgReference_##TPE(stk,pci,idx);					\
+			hgh= *getArgReference_##TPE(stk,pci,3);						\
 			hgh = PREVVALUE##TPE(hgh);									\
 		} else if ( strcmp(oper,"<=") == 0){							\
-			hgh= *getArgReference_##TPE(stk,pci,idx);					\
+			hgh= *getArgReference_##TPE(stk,pci,3);						\
 		} else if ( strcmp(oper,">") == 0){								\
-			low= *getArgReference_##TPE(stk,pci,idx);					\
+			low= *getArgReference_##TPE(stk,pci,3);						\
 			low = NEXTVALUE##TPE(low);									\
 		} else if ( strcmp(oper,">=") == 0){							\
-			low= *getArgReference_##TPE(stk,pci,idx);					\
+			low= *getArgReference_##TPE(stk,pci,3);						\
 		} else if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){ \
-			hgh= low= *getArgReference_##TPE(stk,pci,idx);				\
+			hgh= low= *getArgReference_##TPE(stk,pci,3);				\
 			anti = 1;													\
 		} else if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){	\
-			hgh= low= *getArgReference_##TPE(stk,pci,idx);				\
+			hgh= low= *getArgReference_##TPE(stk,pci,3);				\
 		} else															\
 			throw(MAL,"generator.thetaselect", SQLSTATE(42000) "Unknown operator");	\
 		for(j=0;j<cap;j++, f+=s, o++)									\
@@ -532,7 +532,7 @@ VLTgenerator_subselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx, c= 0, anti =0,tpe;
+	int c= 0, anti =0,tpe;
 	bat cndid =0;
 	BAT *cand = 0, *bn = NULL;
 	struct canditer ci = (struct canditer) {.tpe = cand_dense};
@@ -546,21 +546,19 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	if( p == NULL)
 		throw(MAL,"generator.thetaselect",SQLSTATE(42000) "Could not locate definition for object");
 
-	if( pci->argc == 5){ // candidate list included
-		cndid = *getArgReference_bat(stk,pci, 2);
-		if( !is_bat_nil(cndid)){
-			cand = BATdescriptor(cndid);
-			if( cand == NULL)
-				throw(MAL,"generator.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			canditer_init(&ci, NULL, cand);
-		}
-		idx = 3;
-	} else idx = 2;
-	oper= *getArgReference_str(stk,pci,idx+1);
+	assert(pci->argc == 5); // candidate list included
+	cndid = *getArgReference_bat(stk,pci, 2);
+	if( !is_bat_nil(cndid)){
+		cand = BATdescriptor(cndid);
+		if( cand == NULL)
+			throw(MAL,"generator.select", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		canditer_init(&ci, NULL, cand);
+	}
+	oper= *getArgReference_str(stk,pci,4);
 
 	// check the step direction
 
-	switch( tpe =getArgType(mb,pci,idx)){
+	switch( tpe =getArgType(mb,pci,3)){
 	case TYPE_bte: VLTthetasubselect(bte,abs);break;
 	case TYPE_sht: VLTthetasubselect(sht,abs);break;
 	case TYPE_int: VLTthetasubselect(int,abs);break;
@@ -596,7 +594,7 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 
 			hgh = low = timestamp_nil;
 			if ( strcmp(oper,"<") == 0){
-				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp);
+				hgh= *getArgReference_TYPE(stk,pci,3, timestamp);
 				hgh = timestamp_add_usec(hgh, -1);
 				if (is_timestamp_nil(hgh)) {
 					if (cand)
@@ -605,10 +603,10 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				}
 			} else
 			if ( strcmp(oper,"<=") == 0){
-				hgh= *getArgReference_TYPE(stk,pci,idx, timestamp) ;
+				hgh= *getArgReference_TYPE(stk,pci,3, timestamp) ;
 			} else
 			if ( strcmp(oper,">") == 0){
-				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
+				low= *getArgReference_TYPE(stk,pci,3, timestamp);
 				low = timestamp_add_usec(low, 1);
 				if (is_timestamp_nil(low)) {
 					if (cand)
@@ -617,14 +615,14 @@ str VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 				}
 			} else
 			if ( strcmp(oper,">=") == 0){
-				low= *getArgReference_TYPE(stk,pci,idx, timestamp);
+				low= *getArgReference_TYPE(stk,pci,3, timestamp);
 			} else
 			if ( strcmp(oper,"!=") == 0 || strcmp(oper, "<>") == 0){
-				hgh= low= *getArgReference_TYPE(stk,pci,idx, timestamp);
+				hgh= low= *getArgReference_TYPE(stk,pci,3, timestamp);
 				anti = 1;
 			} else
 			if ( strcmp(oper,"==") == 0 || strcmp(oper, "=") == 0){
-				hgh= low= *getArgReference_TYPE(stk,pci,idx, timestamp);
+				hgh= low= *getArgReference_TYPE(stk,pci,3, timestamp);
 			} else {
 				if (cand)
 					BBPunfix(cand->batCacheid);
@@ -1132,13 +1130,6 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",lng),arg("first",lng),arg("limit",lng))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",flt),arg("first",flt),arg("limit",flt))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",dbl),arg("first",dbl),arg("limit",dbl))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",bte),arg("low",bte),arg("oper",str))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",sht),arg("low",sht),arg("oper",str))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",int),arg("low",int),arg("oper",str))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",lng),arg("low",lng),arg("oper",str))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",flt),arg("low",flt),arg("oper",str))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,4, batarg("",oid),batarg("b",dbl),arg("low",dbl),arg("oper",str))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,4, batarg("",oid),batarg("b",timestamp),arg("low",timestamp),arg("oper",str))),
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",bte),batarg("cnd",oid),arg("low",bte),arg("oper",str))),
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",sht),batarg("cnd",oid),arg("low",sht),arg("oper",str))),
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "", args(1,5, batarg("",oid),batarg("b",int),batarg("cnd",oid),arg("low",int),arg("oper",str))),
@@ -1184,7 +1175,6 @@ static mel_func generator_init_funcs[] = {
  pattern("generator", "series", VLTgenerator_table, false, "Create and materialize a generator table", args(1,4, batarg("",hge),arg("first",hge),arg("limit",hge),arg("step",hge))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "Retain the table definition, but don't materialize", args(1,4, batarg("",hge),arg("first",hge),arg("limit",hge),arg("step",hge))),
  pattern("generator", "parameters", VLTgenerator_noop, false, "", args(1,3, batarg("",hge),arg("first",hge),arg("limit",hge))),
- pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,4, batarg("",oid),batarg("b",hge),arg("low",hge),arg("oper",str))),
  pattern("generator", "thetaselect", VLTgenerator_thetasubselect, false, "Overloaded selection routine", args(1,5, batarg("",oid),batarg("b",hge),batarg("cnd",oid),arg("low",hge),arg("oper",str))),
  pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,7, batarg("",oid),batarg("b",hge),arg("low",hge),arg("high",hge),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  pattern("generator", "select", VLTgenerator_subselect, false, "Overloaded selection routine", args(1,8, batarg("",oid),batarg("b",hge),batarg("cand",oid),arg("low",hge),arg("high",hge),arg("li",bit),arg("hi",bit),arg("anti",bit))),

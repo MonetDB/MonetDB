@@ -1,7 +1,0 @@
-function welcome3(lim:int)(w:str,i:int);
-    i:= 2;
-    return w:="hello"; #illegal return statement
-end welcome3;
-
-y:= user.welcome3(1);
-io.print(y);

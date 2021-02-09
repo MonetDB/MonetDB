@@ -428,4 +428,3 @@ drop table f2774
 statement ok
 drop table d2774
 
-

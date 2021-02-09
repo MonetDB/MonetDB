@@ -13,4 +13,3 @@ select * from x((select id from _tables), (select schema_id from _tables))
 statement ok
 rollback
 
-

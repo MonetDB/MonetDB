@@ -67,7 +67,32 @@ INSERT INTO sublimits1 VALUES (NULL, 'again')
 query IT rowsort
 SELECT a,b FROM testvaluespartitions
 ----
-26 values hashing to bcc7d2ccd3a3d62aacc6997774c3bd3a
+1
+a
+1
+another
+1
+first
+3
+mmm
+5
+b
+5
+test
+7
+another
+7
+c
+8
+attempt
+9
+pass
+9
+to
+NULL
+successful
+NULL
+test
 
 query IT rowsort
 SELECT a,b FROM sublimits1
@@ -96,7 +121,16 @@ test
 query IT rowsort
 SELECT a,b FROM sublimits3
 ----
-10 values hashing to 780a45393d6142629488adec3b8f77c7
+7
+another
+7
+c
+8
+attempt
+9
+pass
+9
+to
 
 statement ok
 ALTER TABLE testvaluespartitions DROP TABLE sublimits1
@@ -118,5 +152,4 @@ DROP TABLE sublimits2
 
 statement ok
 DROP TABLE sublimits3
-
 

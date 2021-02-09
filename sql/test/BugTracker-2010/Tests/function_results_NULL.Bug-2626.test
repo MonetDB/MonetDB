@@ -130,4 +130,3 @@ drop function getBand
 statement ok
 drop table frequencybands
 
-

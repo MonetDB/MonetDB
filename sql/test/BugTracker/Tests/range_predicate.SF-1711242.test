@@ -32,4 +32,3 @@ select distinct c2.pre from test1711251 as c2, test1711251 as c1 where c1.kind =
 1
 2
 
-

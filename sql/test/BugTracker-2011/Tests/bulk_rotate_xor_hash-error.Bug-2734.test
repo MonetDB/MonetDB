@@ -71,4 +71,3 @@ SELECT 1 AS iter20_nat, a0006.item2_int AS item8_int
 statement ok
 DROP TABLE foo2734
 
-

@@ -23,4 +23,3 @@ drop function refine
 statement ok
 drop table r
 
-

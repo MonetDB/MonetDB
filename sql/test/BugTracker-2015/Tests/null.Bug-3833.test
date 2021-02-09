@@ -7,14 +7,13 @@ query I rowsort
     SELECT 1 WHERE NULL = 42
 ----
 
-query T rowsort
+query I rowsort
     SELECT (1 = NULL)
 ----
 NULL
 
-query T rowsort
+query I rowsort
     SELECT (TRUE OR NULL)
 ----
-True
-
+1
 

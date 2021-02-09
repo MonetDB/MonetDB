@@ -33,4 +33,3 @@ SELECT CORR( CAST( a AS INTEGER ) , b ) FROM x
 statement ok
 drop table x
 
-

@@ -89,4 +89,3 @@ select distinct a,b,c from test3527 order by a,b,c limit 2
 statement ok
 rollback
 
-

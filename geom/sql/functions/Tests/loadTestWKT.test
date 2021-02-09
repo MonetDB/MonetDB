@@ -25,4 +25,3 @@ insert into geometriesTxt(geom) values ('MULTIPOLYGON EMPTY')
 statement ok
 insert into geometriesTxt(geom) values ('GEOMETRYCOLLECTION(POINT(10 20),LINESTRING(10 20, 30 40),POLYGON((10 10, 10 20, 20 20, 20 10, 10 10)))')
 
-

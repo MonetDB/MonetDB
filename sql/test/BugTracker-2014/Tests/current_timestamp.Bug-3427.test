@@ -81,4 +81,3 @@ create table d(t time default current_timestamp, i integer)
 statement ok
 drop table d
 
-

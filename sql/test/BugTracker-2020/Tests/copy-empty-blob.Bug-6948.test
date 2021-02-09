@@ -12,7 +12,7 @@ copy 4 records into blobtbl from stdin delimiters ',','\n','"'
 2,""
 3,
 
-query IT
+query IT nosort
 select * from blobtbl
 ----
 0
@@ -26,5 +26,4 @@ NULL
 
 statement ok
 rollback
-
 

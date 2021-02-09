@@ -32,4 +32,3 @@ drop table t_8_1
 statement ok
 drop table t_8_2
 
-

@@ -867,10 +867,13 @@ mvc_export_prepare_columnar(stream *out, cq *q, int nrows, sql_rel *r) {
 	BAT* bschema	= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* btable		= COLnew(0, TYPE_str, nrows, TRANSIENT);
 	BAT* bcolumn	= COLnew(0, TYPE_str, nrows, TRANSIENT);
-
 	node *n;
 	sql_subtype *t;
 	sql_arg *a;
+
+	if (!btype || !bdigits || !bscale || !bschema || !btable || !bcolumn)
+		goto bailout;
+
 	if (r && is_project(r->op) && r->exps) {
 		for (n = r->exps->h; n; n = n->next) {
 			const char *name, *rname, *schema = NULL;
@@ -1028,9 +1031,10 @@ mvc_export_prepare(backend *b, stream *out, str w)
 	}
 
 	if (b->client->protocol == PROTOCOL_COLUMNAR) {
-		if (mnstr_flush(out, MNSTR_FLUSH_DATA) < 0) return -1;
-		mvc_export_prepare_columnar(out, q, nrows, r);
-
+		if (mnstr_flush(out, MNSTR_FLUSH_DATA) < 0)
+			return -1;
+		if (mvc_export_prepare_columnar(out, q, nrows, r) < 0)
+			return -1;
 	}
 	else {
 		if (r && is_project(r->op) && r->exps) {
@@ -1317,10 +1321,8 @@ mvc_export_row(backend *b, stream *s, res_table *t, const char *btag, const char
 }
 
 static int
-mvc_export_table_columnar(stream *s, res_table *t, BAT *order) {
+mvc_export_table_columnar(stream *s, res_table *t) {
 	int i;
-
-	(void) order;
 
 	if (!t)
 		return -1;
@@ -1333,12 +1335,9 @@ mvc_export_table_columnar(stream *s, res_table *t, BAT *order) {
 		if (!c->b)
 			break;
 
-		BAT* b = BATdescriptor(c->b);
-		if (b == NULL) {
-			while (--i >= 1)
-				BBPunfix(b->batCacheid);
+		BAT *b = BATdescriptor(c->b);
+		if (b == NULL)
 			return -1;
-		}
 
 		mvc_export_binary_bat(s, b);
 
@@ -1912,25 +1911,28 @@ mvc_export_result(backend *b, stream *s, int res_id, bool header, lng starttime,
 	if (t->tsep) {
 		if (header) {
 			/* need header */
-			mvc_export_head(b, s, t->id, TRUE, TRUE, starttime, maloptimizer);
+			if (mvc_export_head(b, s, t->id, TRUE, TRUE, starttime, maloptimizer) < 0)
+				return -1;
 		}
 		return mvc_export_file(b, s, t);
 	}
 
 	if (!json) {
-		mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer);
+		if (mvc_export_head(b, s, res_id, TRUE, TRUE, starttime, maloptimizer) < 0)
+			return -1;
 	}
 
 	assert(t->order);
 
+	if (b->client->protocol == PROTOCOL_COLUMNAR) {
+		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0)
+			return -1;
+		return mvc_export_table_columnar(s, t);
+	}
+
 	order = BATdescriptor(t->order);
 	if (!order)
 		return -1;
-
-	if (b->client->protocol == PROTOCOL_COLUMNAR) {
-		if (mnstr_flush(s, MNSTR_FLUSH_DATA) < 0) return -1;
-		return mvc_export_table_columnar(s, t, order);
-	}
 
 	count = m->reply_size;
 	if (m->reply_size != -2 && (count <= 0 || count >= t->nr_rows)) {

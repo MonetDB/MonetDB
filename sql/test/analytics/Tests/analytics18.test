@@ -68,4 +68,3 @@ and col2 <> 'HEHEHEHE'
 statement ok
 ROLLBACK
 
-

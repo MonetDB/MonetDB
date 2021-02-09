@@ -24,7 +24,7 @@ typedef struct cq {
 	sql_rel *rel;		/* relational query */
 	symbol *s;			/* the SQL parse tree */
 	int id;				/* cache identity */
-	char *name;			/* name of cached query */
+	const char *name;	/* name of cached query */
 	int no_mitosis;		/* run query without mitosis */
 	int count;			/* number of times the query is matched */
 	timestamp created;	/* when the query was created */

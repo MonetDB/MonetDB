@@ -190,7 +190,8 @@ CMDregisterFunction(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	str *code = getArgReference_str(stk,pci,3);
 	str *help = getArgReference_str(stk,pci,4);
 	InstrPtr sig;
-	str msg, fcnName, modName, ahelp;
+	str msg, ahelp;
+	const char *fcnName, *modName;
 
 	msg= compileString(&sym, cntxt,*code);
 	if( msg == MAL_SUCCEED) {

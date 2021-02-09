@@ -8,4 +8,3 @@ SELECT CAST(45 - CASE + + 70 WHEN COUNT ( * ) + SUM ( DISTINCT 91 ) + MIN ( DIST
 ----
 NULL
 
-

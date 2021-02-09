@@ -22,4 +22,3 @@ drop table case_tbl
 statement ok
 drop table case2_tbl
 
-

@@ -1,16 +1,15 @@
-query T rowsort
+query I rowsort
 select 1 in ('1', '2', '3')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select 1 in ((select 1 union select 2))
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select 1 in (select * from (select 1 union select 2) as a)
 ----
-True
-
+1
 

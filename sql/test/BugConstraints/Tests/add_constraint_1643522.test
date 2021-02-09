@@ -19,4 +19,3 @@ query T rowsort
 select name from sys.keys where name = 'id_p'
 ----
 
-

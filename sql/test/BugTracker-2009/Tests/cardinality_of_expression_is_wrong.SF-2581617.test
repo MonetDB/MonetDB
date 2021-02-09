@@ -30,4 +30,3 @@ drop view v2_2581617
 statement ok
 drop table t1_2581617
 
-

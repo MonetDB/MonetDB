@@ -29,4 +29,3 @@ SELECT * FROM tst3552 WHERE int_col <> 0
 statement ok
 ROLLBACK
 
-

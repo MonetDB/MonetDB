@@ -25,4 +25,3 @@ insert into test3168 ( id ) values ( 1 )
 statement ok
 drop table test3168
 
-

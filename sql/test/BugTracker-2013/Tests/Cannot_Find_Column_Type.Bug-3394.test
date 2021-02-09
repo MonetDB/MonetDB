@@ -8,10 +8,10 @@ begin
     return true;
 end
 
-query T rowsort
+query I rowsort
 select tmp1()
 ----
-True
+1
 
 statement ok
 create function tmp2 ()
@@ -23,10 +23,10 @@ begin
     return true;
 end
 
-query T rowsort
+query I rowsort
 select tmp2()
 ----
-True
+1
 
 statement ok
 create function tmp3 ()
@@ -38,10 +38,10 @@ begin
     return true;
 end
 
-query T rowsort
+query I rowsort
 select tmp3()
 ----
-True
+1
 
 statement ok
 create function tmp4 ()
@@ -53,10 +53,10 @@ begin
     return true;
 end
 
-query T rowsort
+query I rowsort
 select tmp4()
 ----
-True
+1
 
 statement ok
 drop function tmp4
@@ -69,5 +69,4 @@ drop function tmp2
 
 statement ok
 drop function tmp1
-
 

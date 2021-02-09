@@ -192,4 +192,3 @@ top N (
 statement ok
 ROLLBACK
 
-

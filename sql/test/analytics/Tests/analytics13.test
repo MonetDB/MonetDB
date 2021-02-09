@@ -20,77 +20,89 @@ FROM another_T t1
 0
 0
 
-query T rowsort
+query I rowsort
 SELECT
     col1 IN (SELECT ColID FROM tbl_ProductSales)
 FROM another_T
 GROUP BY ROLLUP(col1)
 ----
-False
-False
-False
+0
+0
+0
+1
 NULL
-True
 
-query T rowsort
+query I rowsort
 SELECT
     col1 IN (SELECT ColID + col1 FROM tbl_ProductSales)
 FROM another_T
 GROUP BY ROLLUP(col1)
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 NULL
 
-query T rowsort
+query I rowsort
 SELECT
     col1 IN (SELECT SUM(ColID + col1) FROM tbl_ProductSales)
 FROM another_T
 GROUP BY ROLLUP(col1)
 ----
-False
-False
-False
-False
+0
+0
+0
+0
 NULL
 
-query T rowsort
+query I rowsort
 SELECT
     col3 > ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col4) > 30)
 FROM another_T
 GROUP BY ROLLUP(col3, col4)
 ----
-True
-True
-True
-True
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT
     col1 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MIN(col2) IS NULL)
 FROM another_T
 GROUP BY CUBE(col1, col2)
 ----
-13 values hashing to 12c9cbe43d3a44dd13df0c5ffc0faa81
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT
     SUM(col1) IN (SELECT DISTINCT col2 FROM another_T GROUP BY col2)
 FROM another_T
 GROUP BY CUBE(col4)
 ----
-False
-False
-False
-False
-False
+0
+0
+0
+0
+0
 
 query I rowsort
 SELECT
@@ -103,25 +115,37 @@ GROUP BY col1
 2
 2
 
-query T rowsort
+query I rowsort
 SELECT
     1 IN (SELECT 1 FROM tbl_ProductSales GROUP BY CUBE(t1.col1, tbl_ProductSales.ColID))
 FROM another_T t1
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT
     t1.col1 IN (SELECT ColID FROM tbl_ProductSales GROUP BY CUBE(t1.col1, tbl_ProductSales.ColID))
 FROM another_T t1
 GROUP BY CUBE(col1, col2)
 ----
-13 values hashing to e8e006813314f9708e633900a14684d2
+1
+1
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
-query TTTTTTT rowsort
+query IIIIIII rowsort
 SELECT
     NOT GROUPING(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID)),
     GROUPING(t1.col6) IN (SELECT SUM(t1.col7) HAVING GROUPING(t1.col7) < SUM(t1.col4)),
@@ -133,9 +157,99 @@ SELECT
 FROM another_T t1
 GROUP BY CUBE(t1.col6, t1.col7)
 ----
-91 values hashing to ba2a3b7e014564e87cc7432ba57b7dc6
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+1
+1
+1
+0
+0
+0
+0
+1
+1
+1
+0
+1
+0
+0
+0
+0
+1
+0
+1
+0
+0
+0
+0
+1
+0
+1
+0
+0
+0
+0
+1
+0
+1
+0
+0
+0
+0
+1
+0
+1
+0
+0
+1
+1
 
-query TTTTTTT rowsort
+query IIIIIII rowsort
 SELECT
     DISTINCT
     NOT GROUPING(t1.col6) IN (SELECT SUM(t1.col6) FROM tbl_ProductSales tp HAVING MAX(t1.col1) > MIN(tp.colID)),
@@ -148,9 +262,36 @@ SELECT
 FROM another_T t1
 GROUP BY CUBE(t1.col6, t1.col7)
 ----
-28 values hashing to bf715b2339bb99306cbe05b1a7650db9
+1
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+1
+1
+1
+0
+1
+0
+0
+0
+0
+1
+0
+1
+0
+0
+1
+1
 
-query TTTII rowsort
+query IIIII rowsort
 SELECT
     NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
     NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL),
@@ -160,9 +301,9 @@ SELECT
 FROM another_T
 GROUP BY CUBE(col1, col2, col5)
 ----
-145 values hashing to cb34c4b406c119325e3e1147b31ddf27
+145 values hashing to 2180373d9debdb69ad704a767deb2e0a
 
-query TTTII rowsort
+query IIIII rowsort
 SELECT
     NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2) AS a1,
     NOT AVG(col2) * col1 <> ANY (SELECT 20 FROM tbl_ProductSales HAVING MAX(col1) IS NULL) AS a2,
@@ -173,9 +314,9 @@ FROM another_T
 GROUP BY CUBE(col1, col2, col5)
 ORDER BY a1 NULLS FIRST, a2 NULLS FIRST, a3 NULLS FIRST, a4 NULLS FIRST, a5 NULLS FIRST
 ----
-145 values hashing to cb34c4b406c119325e3e1147b31ddf27
+145 values hashing to 2180373d9debdb69ad704a767deb2e0a
 
-query IRIIIITT rowsort
+query IRIIIIII rowsort
 SELECT
     GROUPING(col1, col2, col3, col4, col5, col6, col7, col8), AVG(col1), CAST(SUM(col2) * 3 AS BIGINT), col3 + col4,
     CAST(MAX(col5) * MIN(col6) AS BIGINT), col7, col1 IN (SELECT ColID FROM tbl_ProductSales), col2 IN (SELECT ColID + col3 FROM tbl_ProductSales)
@@ -183,17 +324,17 @@ FROM another_T
 GROUP BY ROLLUP(col1, col2, col3, col4, col5, col6, col7, col8)
 ORDER BY GROUPING(col1, col2, col3, col4, col5, col6, col7, col8)
 ----
-264 values hashing to 8150d0c1579aa2cae6022df084cf5aca
+264 values hashing to d0905fd084d3f4a80c43f4a39006486b
 
-query T rowsort
+query I rowsort
 SELECT
     DISTINCT
     NOT col1 IN (SELECT col2 FROM another_T GROUP BY col2)
 FROM another_T
 GROUP BY ROLLUP(col1)
 ----
+1
 NULL
-True
 
 query I rowsort
 SELECT
@@ -201,9 +342,69 @@ SELECT
 FROM another_T
 GROUP BY CUBE(col1, col2, col5, col8)
 ----
-61 values hashing to b53204949560a10e216e7080e9a22564
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+5555
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
-query TTTII rowsort
+query IIIII rowsort
 SELECT
     DISTINCT
     NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2),
@@ -214,9 +415,48 @@ SELECT
 FROM another_T
 GROUP BY CUBE(col1, col2, col5)
 ----
-40 values hashing to e234bcc96c60de167d7c4055b1c7a04b
+0
+1
+0
+1
+0
+0
+1
+0
+NULL
+0
+0
+1
+0
+NULL
+1
+1
+1
+0
+1
+0
+1
+1
+0
+NULL
+0
+NULL
+1
+0
+1
+0
+NULL
+1
+0
+NULL
+0
+NULL
+1
+0
+NULL
+1
 
-query TTTII rowsort
+query IIIII rowsort
 SELECT
     DISTINCT
     NOT col1 * col5 = ALL (SELECT 1 FROM tbl_ProductSales HAVING MAX(col2) > 2) AS a1,
@@ -228,9 +468,48 @@ FROM another_T
 GROUP BY CUBE(col1, col2, col5)
 ORDER BY a1 NULLS FIRST, a2 NULLS FIRST, a3 NULLS FIRST, a4 NULLS FIRST, a5 NULLS FIRST
 ----
-40 values hashing to e234bcc96c60de167d7c4055b1c7a04b
+0
+1
+0
+1
+0
+0
+1
+0
+NULL
+0
+0
+1
+0
+NULL
+1
+1
+1
+0
+1
+0
+1
+1
+0
+NULL
+0
+NULL
+1
+0
+1
+0
+NULL
+1
+0
+NULL
+0
+NULL
+1
+0
+NULL
+1
 
-query ITTITTTIIIITI rowsort
+query IIIIIIIIIIITI rowsort
 SELECT
     GROUPING(col1, col2, col5, col8) a1,
     col1 IN (SELECT ColID + col2 FROM tbl_ProductSales) a2,
@@ -253,7 +532,7 @@ ORDER BY
     a11 ASC NULLS FIRST, a12 DESC NULLS LAST,
     a14 DESC NULLS LAST
 ----
-793 values hashing to 015f1b906ab5fde379e0942e187d3213
+793 values hashing to b203a4a5e17a727140e5fcdff19d5b8e
 
 statement error
 SELECT
@@ -273,7 +552,18 @@ FROM another_T t1
 GROUP BY ROLLUP(t1.col1, t1.col2), GROUPING SETS ((t1.col4))
 ORDER BY a1 ASC NULLS FIRST
 ----
-12 values hashing to d470f0b560a47541786c37db33615445
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 SELECT
@@ -285,7 +575,7 @@ ORDER BY a1 ASC NULLS FIRST
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT
     NOT GROUPING(t1.col2, t1.col4) <> ALL (SELECT t1.col2 FROM tbl_ProductSales tp WHERE tp.colID = 1) a1
 FROM another_T t1
@@ -295,11 +585,11 @@ HAVING (t1.col1 = ANY (SELECT MAX(ColID + col2) FROM tbl_ProductSales)) NOT IN
      (SELECT NOT GROUPING(t1.col1) BETWEEN (SELECT MAX(t1.col7) EXCEPT SELECT tp.ColID FROM tbl_ProductSales tp) AND (SELECT MIN(t1.col5) EXCEPT SELECT t1.col2)))
 ORDER BY a1 DESC NULLS FIRST
 ----
-False
-False
-False
+0
+0
+0
 
-query TTTTTT rowsort
+query IIIIII rowsort
 SELECT
     GROUPING(t1.col6, t1.col7) IN (SELECT SUM(t2.col2) FROM another_T t2 GROUP BY t2.col5),
     NOT 32 * GROUPING(t1.col7, t1.col6) IN (SELECT MAX(t2.col2) FROM another_T t2),
@@ -310,7 +600,84 @@ SELECT
 FROM another_T t1
 GROUP BY CUBE(t1.col7, t1.col6)
 ----
-78 values hashing to 781767ba86ca0fd0ebeec22f9506567d
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+NULL
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
+1
+1
+0
+0
+0
+0
 
 query III rowsort
 SELECT
@@ -320,7 +687,33 @@ SELECT
 FROM another_T t1
 GROUP BY ROLLUP(t1.col1, t1.col2)
 ----
-27 values hashing to 45de122df482b744d205e379084c6029
+1
+1
+2
+1
+1
+2
+2
+1
+2
+2
+1
+2
+2
+1
+2
+2
+1
+2
+2
+1
+2
+2
+1
+2
+2
+2
+2
 
 query IIII rowsort
 SELECT
@@ -331,7 +724,42 @@ SELECT
 FROM another_T t1
 GROUP BY ROLLUP(t1.col1, t1.col2)
 ----
-36 values hashing to e4f038f557efa667b53c87ca48e58adf
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
 
 query III rowsort
 SELECT
@@ -341,12 +769,49 @@ SELECT
 FROM another_T t1
 GROUP BY CUBE(t1.col1, t1.col2)
 ----
-39 values hashing to e00d4ff5b0ad6b4e7bd470c3f667b474
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
+2
 
 statement ok
 DROP TABLE tbl_ProductSales
 
 statement ok
 DROP TABLE another_T
-
 

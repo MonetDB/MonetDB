@@ -9,4 +9,3 @@ b:= bat.new(:int)
 statement error
 user.tst2(b)
 
-

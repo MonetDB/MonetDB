@@ -10,13 +10,28 @@ insert into test (x, y) VALUES (1, 2)
 query IIII rowsort
 SELECT *
 FROM (
-	    SELECT a1.x, a1.y, a2.x, a2.y
+	    SELECT a1.x, a1.y, a2.x as w, a2.y as z
 	    FROM ( SELECT * FROM test) AS a1 JOIN
 		 ( SELECT * FROM test) AS a2
 		ON a1.x = a2.x
 	) AS t
 ----
-16 values hashing to 3eca16e9cfb8a195b29ff52eed7ee064
+1
+1
+1
+1
+1
+1
+1
+2
+1
+2
+1
+1
+1
+2
+1
+2
 
 query IIII rowsort
 SELECT *
@@ -27,9 +42,23 @@ FROM (
 	    ON a1.x = a2.x
 	) AS t
 ----
-16 values hashing to 3eca16e9cfb8a195b29ff52eed7ee064
+1
+1
+1
+1
+1
+1
+1
+2
+1
+2
+1
+1
+1
+2
+1
+2
 
 statement ok
 drop table test
-
 

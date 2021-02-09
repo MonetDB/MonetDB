@@ -44,6 +44,8 @@ static struct PIPELINES {
 	{"minimal_pipe",
 	 "optimizer.inline();"
 	 "optimizer.remap();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.parappend();"
 	 "optimizer.deadcode();"
 	 "optimizer.multiplex();"
 	 "optimizer.generator();"
@@ -73,6 +75,8 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.parappend();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
@@ -110,6 +114,8 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.parappend();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
@@ -147,6 +153,8 @@ static struct PIPELINES {
 	 "optimizer.aliases();"
 	 "optimizer.mitosis();"
 	 "optimizer.mergetable();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.parappend();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
@@ -190,6 +198,8 @@ static struct PIPELINES {
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.parappend();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
@@ -232,6 +242,8 @@ static struct PIPELINES {
 	 "optimizer.pushselect();"
 	 "optimizer.aliases();"
 	 "optimizer.mergetable();"
+	 "optimizer.bincopyfrom();"
+	 "optimizer.parappend();"
 	 "optimizer.deadcode();"
 	 "optimizer.aliases();"
 	 "optimizer.constants();"
@@ -394,7 +406,8 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 static str
 validatePipe(MalBlkPtr mb)
 {
-	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
+	int mitosis = FALSE, deadcode = FALSE, mergetable = FALSE, multiplex = FALSE;
+	int bincopyfrom = FALSE, garbage = FALSE, generator = FALSE, remap =  FALSE;
 	int i;
 	InstrPtr p;
 
@@ -405,21 +418,24 @@ validatePipe(MalBlkPtr mb)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
 
 	for (i = 1; i < mb->stop - 1; i++){
-		p = getInstrPtr(mb,i);
-		if (getFunctionId(getInstrPtr(mb, i)) != NULL) {
-			if (strcmp(getFunctionId(p), "deadcode") == 0)
+		p = getInstrPtr(mb, i);
+		const char *fname = getFunctionId(p);
+		if (fname != NULL) {
+			if (strcmp(fname, "deadcode") == 0)
 				deadcode = TRUE;
-			else if (strcmp(getFunctionId(p), "remap") == 0)
+			else if (strcmp(fname, "remap") == 0)
 				remap = TRUE;
-			else if (strcmp(getFunctionId(p), "mitosis") == 0)
+			else if (strcmp(fname, "mitosis") == 0)
 				mitosis = TRUE;
-			else if (strcmp(getFunctionId(p), "mergetable") == 0)
+			else if (strcmp(fname, "bincopyfrom") == 0)
+				bincopyfrom = TRUE;
+			else if (strcmp(fname, "mergetable") == 0)
 				mergetable = TRUE;
-			else if (strcmp(getFunctionId(p), "multiplex") == 0)
+			else if (strcmp(fname, "multiplex") == 0)
 				multiplex = TRUE;
-			else if (strcmp(getFunctionId(p), "generator") == 0)
+			else if (strcmp(fname, "generator") == 0)
 				generator = TRUE;
-			else if (strcmp(getFunctionId(p), "garbageCollector") == 0)
+			else if (strcmp(fname, "garbageCollector") == 0)
 				garbage = TRUE;
 		} else
 			throw(MAL, "optimizer.validate", SQLSTATE(42000) "Missing optimizer call\n");
@@ -439,6 +455,8 @@ validatePipe(MalBlkPtr mb)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'remap' should be used\n");
 	if (generator == FALSE)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'generator' should be used\n");
+	if (bincopyfrom == FALSE)
+		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'bincopyfrom' should be used\n");
 
 	return MAL_SUCCEED;
 }

@@ -117,7 +117,18 @@ select "A", "B", (
 ) from "testTable2" "outer"
 order by "A", "B"
 ----
-12 values hashing to 5d0c5e2a7ed83b727982ad1ed14e73d0
+Cat1
+2.000
+2.000
+Cat2
+3.000
+7.000
+Cat2
+4.000
+7.000
+NULL
+NULL
+NULL
 
 query TRR rowsort
 select "A", "B", (
@@ -130,7 +141,18 @@ select "A", "B", (
 ) from "testTable2" "outer"
 order by "A", "B"
 ----
-12 values hashing to 96596e0ce3ac5d246e8b911a23c4d380
+Cat1
+2.000
+NULL
+Cat2
+3.000
+NULL
+Cat2
+4.000
+NULL
+NULL
+NULL
+NULL
 
 query TRR rowsort
 select "A", "B", (
@@ -143,9 +165,19 @@ select "A", "B", (
 ) from "testTable2" "outer"
 order by "A", "B"
 ----
-12 values hashing to 96596e0ce3ac5d246e8b911a23c4d380
+Cat1
+2.000
+NULL
+Cat2
+3.000
+NULL
+Cat2
+4.000
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 rollback
-
 

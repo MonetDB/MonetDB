@@ -46,4 +46,3 @@ SELECT id FROM table_Test_Csavepoints
 statement ok
 ROLLBACK
 
-

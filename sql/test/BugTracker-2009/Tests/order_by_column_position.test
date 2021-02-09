@@ -23,4 +23,3 @@ select i, s from ttt order by 1 asc
 statement ok
 drop table ttt
 
-

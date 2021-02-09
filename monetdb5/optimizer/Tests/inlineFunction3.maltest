@@ -65,6 +65,3 @@ optimizer.evaluate("user","tst")
 statement ok
 optimizer.garbageCollector("user","tst")
 
-#mdb.list("user","tst")
-
-

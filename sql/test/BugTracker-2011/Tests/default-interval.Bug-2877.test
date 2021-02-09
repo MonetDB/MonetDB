@@ -21,4 +21,3 @@ select * from table2877
 statement ok
 rollback
 
-

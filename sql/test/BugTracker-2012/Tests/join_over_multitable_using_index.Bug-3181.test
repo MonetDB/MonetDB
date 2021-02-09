@@ -44,7 +44,18 @@ FROM
 	ON (TR.rxy = s AND TR.ryz = t)
  order by TR.x, TR.z
 ----
-12 values hashing to 388f9be1c75900ecaab6d86c03d84298
+0
+2
+255
+0
+3
+31
+0
+4
+31
+3
+4
+255
 
 statement ok
 Drop index trans_st_idx
@@ -54,5 +65,4 @@ Drop table trans
 
 statement ok
 Drop table rx
-
 

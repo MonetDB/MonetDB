@@ -10,6 +10,7 @@
 #include "gdk.h"
 #include "gdk_tracer.h"
 #include "gdk_private.h"
+#include "mutils.h"
 
 #define DEFAULT_ADAPTER BASIC
 #define DEFAULT_LOG_LEVEL M_ERROR
@@ -95,30 +96,26 @@ get_timestamp(char *datetime, size_t dtsz)
 // When BASIC adapter is active, all the log messages are getting printed to a file.
 // This function prepares a file in order to write the contents of the buffer when necessary.
 static gdk_return
-_GDKtracer_init_basic_adptr(void)
+GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 {
-	const char *trace_path;
-
-	trace_path = GDKgetenv("gdk_dbtrace");
-	if (trace_path == NULL) {
-		trace_path = GDKgetenv("gdk_dbpath");
-		if (trace_path == NULL) {
+	if (dbtrace == NULL) {
+		if (dbpath == NULL) {
 			active_tracer = stderr;
 			return GDK_SUCCEED;
 		}
 		if (strconcat_len(file_name, sizeof(file_name),
-				  trace_path, DIR_SEP_STR, FILE_NAME, NULL)
+				  dbpath, DIR_SEP_STR, FILE_NAME, NULL)
 		    >= sizeof(file_name)) {
 			goto too_long;
 		}
 	} else {
-		if (strcpy_len(file_name, trace_path, sizeof(file_name))
+		if (strcpy_len(file_name, dbtrace, sizeof(file_name))
 		    >= sizeof(file_name)) {
 			goto too_long;
 		}
 	}
 
-	active_tracer = fopen(file_name, "a");
+	active_tracer = MT_fopen(file_name, "a");
 
 	if (active_tracer == NULL) {
 		GDK_TRACER_EXCEPTION("Failed to open %s: %s\n", file_name,
@@ -135,6 +132,13 @@ _GDKtracer_init_basic_adptr(void)
 	file_name[0] = 0; /* uninitialize */
 	active_tracer = stderr;
 	return GDK_FAIL;
+}
+
+static gdk_return
+_GDKtracer_init_basic_adptr(void)
+{
+	return GDKtracer_init_trace_file(GDKgetenv("gdk_dbpath"),
+					 GDKgetenv("gdk_dbtrace"));
 }
 
 
@@ -418,13 +422,14 @@ GDKtracer_reset_adapter(void)
 static bool add_ts;		/* add timestamp to error message to stderr */
 
 void
-GDKtracer_init(void)
+GDKtracer_init(const char *dbpath, const char *dbtrace)
 {
 #ifdef _MSC_VER
 	add_ts = GetFileType(GetStdHandle(STD_ERROR_HANDLE)) != FILE_TYPE_PIPE;
 #else
 	add_ts = isatty(2) || lseek(2, 0, SEEK_CUR) != (off_t) -1 || errno != ESPIPE;
 #endif
+	(void) GDKtracer_init_trace_file(dbpath, dbtrace);
 }
 
 void
@@ -487,7 +492,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	if ((p = strchr(buffer, '\n')) != NULL)
 		*p = '\0';
 
-	if (comp == GDK && (level == M_CRITICAL || level == M_ERROR)) {
+	if (comp == GDK && level <= M_ERROR) {
 		/* append message to GDKerrbuf (if set) */
 		char *buf = GDKerrbuf;
 		if (buf) {
@@ -500,7 +505,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		}
 	}
 
-	if (level == M_CRITICAL || level == M_ERROR || level == M_WARNING) {
+	if (level <= M_WARNING) {
 		fprintf(stderr, "#%s%s%s: %s: %s%s%s%s\n",
 			add_ts ? ts : "",
 			add_ts ? ": " : "",
@@ -510,12 +515,8 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 		if (active_tracer == NULL || active_tracer == stderr)
 			return;
 	}
-	MT_lock_set(&GDKtracer_lock);
-	if (file_name[0] == 0) {
-		MT_lock_unset(&GDKtracer_lock);
+	if (active_tracer == NULL)
 		return;
-	}
-	MT_lock_unset(&GDKtracer_lock);
 	if (syserr)
 		fprintf(active_tracer, "%s: %s\n", buffer, syserr);
 	else
@@ -527,7 +528,7 @@ GDKtracer_log(const char *file, const char *func, int lineno,
 	// like mserver5 refusing to start due to allocated port
 	// and the error is never reported to the user because it
 	// is still in the buffer which it never gets flushed.
-	if (level == cur_flush_level || level == M_CRITICAL || level == M_ERROR)
+	if (level == cur_flush_level || level <= M_ERROR)
 		fflush(active_tracer);
 }
 

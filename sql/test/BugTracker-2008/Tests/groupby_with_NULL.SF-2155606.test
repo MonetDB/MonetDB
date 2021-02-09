@@ -20,4 +20,3 @@ NULL
 statement ok
 drop table testola
 
-

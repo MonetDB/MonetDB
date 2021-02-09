@@ -24,4 +24,3 @@ select myfunc()
 statement ok
 drop function myfunc
 
-

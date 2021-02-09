@@ -20,4 +20,3 @@ lala
 statement ok
 ROLLBACK
 
-

@@ -10,9 +10,27 @@ insert into t values (1,2),(2,3),(3,4),(4,1), (5,3)
 query II rowsort
 select * from t where i < 10 order by i asc, j  desc
 ----
-20 values hashing to 8df59c4359ce47ca08fb61a06a61f513
+1
+2
+1
+2
+2
+3
+2
+3
+3
+4
+3
+4
+4
+1
+4
+1
+5
+3
+5
+3
 
 statement ok
 drop table t
-
 

@@ -10,9 +10,19 @@ INSERT INTO config (dataset, section, key, value, type) VALUES (6, 'quality_lofa
 query IITTTT rowsort
 select * from config
 ----
-12 values hashing to 669ebf5a21c40702866aafaf14aa68d4
+1
+6
+quality_lofar
+low_bound
+1.9
+float
+2
+6
+quality_lofar
+high_bound
+80
+int
 
 statement ok
 drop table config
-
 

@@ -35,4 +35,3 @@ DROP TABLE uuids
 statement ok
 ROLLBACK
 
-

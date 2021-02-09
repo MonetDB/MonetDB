@@ -118,4 +118,3 @@ select st_pointfromtext(geom) from geometriesTxt WHERE id=7
 statement error
 select st_pointfromtext(geom) from geometriesTxt WHERE id=8
 
-

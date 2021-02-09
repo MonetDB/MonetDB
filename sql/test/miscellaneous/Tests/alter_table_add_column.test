@@ -459,4 +459,3 @@ varchar
 statement ok
 DROP SCHEMA "schema1" CASCADE
 
-

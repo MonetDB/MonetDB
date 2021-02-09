@@ -79,7 +79,7 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 {
 	BAT *bn;
@@ -94,7 +94,7 @@ BKCattach(bat *ret, const int *tt, const char * const *heapfile)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCdensebat(bat *ret, const lng *size)
 {
 	BAT *bn;
@@ -131,7 +131,7 @@ BKCmirror(bat *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCdelete(bat *r, const bat *bid, const oid *h)
 {
 	BAT *b;
@@ -148,7 +148,7 @@ BKCdelete(bat *r, const bat *bid, const oid *h)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
 {
 	BAT *b, *s;
@@ -170,7 +170,7 @@ BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCdelete_all(bat *r, const bat *bid)
 {
 	BAT *b;
@@ -187,7 +187,7 @@ BKCdelete_all(bat *r, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid, const bit *force)
 {
 	BAT *b, *u, *s = NULL;
@@ -220,25 +220,25 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCappend_cand_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid)
 {
 	return BKCappend_cand_force_wrap(r, bid, uid, sid, NULL);
 }
 
-str
+static str
 BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
 {
 	return BKCappend_cand_force_wrap(r, bid, uid, NULL, NULL);
 }
 
-str
+static str
 BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
 {
 	return BKCappend_cand_force_wrap(r, bid, uid, NULL, force);
 }
 
-str
+static str
 BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force)
 {
 	BAT *b;
@@ -261,13 +261,13 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u, const bit *force
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCappend_val_wrap(bat *r, const bat *bid, const void *u)
 {
 	return BKCappend_val_force_wrap(r, bid, u, NULL);
 }
 
-str
+static str
 BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 {
 	BAT *b;
@@ -282,7 +282,7 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const bit *force)
 {
 	BAT *b;
@@ -298,7 +298,7 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t, const
 }
 
 
-str
+static str
 BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, const bit *force)
 {
 	BAT *b, *p, *u;
@@ -326,7 +326,7 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid, con
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid)
 {
 	bit F = FALSE;
@@ -336,7 +336,7 @@ BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid)
 
 /*end of SQL enhancement */
 
-str
+static str
 BKCgetCapacity(lng *res, const bat *bid)
 {
 	*res = lng_nil;
@@ -349,7 +349,7 @@ BKCgetCapacity(lng *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCgetColumnType(str *res, const bat *bid)
 {
 	const char *ret = str_nil;
@@ -367,7 +367,7 @@ BKCgetColumnType(str *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCgetRole(str *res, const bat *bid)
 {
 	BAT *b;
@@ -382,7 +382,7 @@ BKCgetRole(str *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCisSorted(bit *res, const bat *bid)
 {
 	BAT *b;
@@ -395,7 +395,7 @@ BKCisSorted(bit *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCisSortedReverse(bit *res, const bat *bid)
 {
 	BAT *b;
@@ -414,7 +414,7 @@ BKCisSortedReverse(bit *res, const bat *bid)
  * a nil column of a BAT with <= 1 entries does not contain doubles => return TRUE.
  */
 
-str
+static str
 BKCgetKey(bit *ret, const bat *bid)
 {
 	BAT *b;
@@ -450,7 +450,7 @@ BKCsetPersistent(void *r, const bat *bid)
 	return BKCpersists(r, bid, &flag);
 }
 
-str
+static str
 BKCisPersistent(bit *res, const bat *bid)
 {
 	BAT *b;
@@ -463,14 +463,14 @@ BKCisPersistent(bit *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCsetTransient(void *r, const bat *bid)
 {
 	bit flag = FALSE;
 	return BKCpersists(r, bid, &flag);
 }
 
-str
+static str
 BKCisTransient(bit *res, const bat *bid)
 {
 	BAT *b;
@@ -483,7 +483,7 @@ BKCisTransient(bit *res, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 {
 	BAT *b;
@@ -512,7 +512,7 @@ BKCsetAccess(bat *res, const bat *bid, const char * const *param)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCgetAccess(str *res, const bat *bid)
 {
 	BAT *b;
@@ -542,7 +542,7 @@ BKCgetAccess(str *res, const bat *bid)
  * descriptor.
  * Where necessary use the primary view to access the properties
  */
-str
+static str
 BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 {
 	BAT *bv, *bk;
@@ -558,7 +558,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 // get the actual size of all constituents, also for views
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
-str
+static str
 BKCgetSize(lng *tot, const bat *bid){
 	BAT *b;
 	lng size = 0;
@@ -585,7 +585,7 @@ BKCgetSize(lng *tot, const bat *bid){
 /*
  * Synced BATs
  */
-str
+static str
 BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
 {
 	BAT *b1, *b2;
@@ -606,7 +606,7 @@ BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
 /*
  * Role Management
  */
-str
+static str
 BKCsetColumn(void *r, const bat *bid, const char * const *tname)
 {
 	BAT *b;
@@ -664,7 +664,7 @@ BKCsetName(void *r, const bat *bid, const char * const *s)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCgetBBPname(str *ret, const bat *bid)
 {
 	BAT *b;
@@ -677,7 +677,7 @@ BKCgetBBPname(str *ret, const bat *bid)
 	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-str
+static str
 BKCsave(bit *res, const char * const *input)
 {
 	bat bid = BBPindex(*input);
@@ -699,7 +699,7 @@ BKCsave(bit *res, const char * const *input)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCsave2(void *r, const bat *bid)
 {
 	BAT *b;
@@ -722,7 +722,7 @@ BKCsave2(void *r, const bat *bid)
 /*
  * Accelerator Control
  */
-str
+static str
 BKCsetHash(bit *ret, const bat *bid)
 {
 	BAT *b;
@@ -736,7 +736,7 @@ BKCsetHash(bit *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCsetImprints(bit *ret, const bat *bid)
 {
 	BAT *b;
@@ -750,7 +750,7 @@ BKCsetImprints(bit *ret, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCgetSequenceBase(oid *r, const bat *bid)
 {
 	BAT *b;
@@ -1049,7 +1049,7 @@ BKCreuseBAT(bat *ret, const bat *bid, const bat *did)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 {
 	BAT *b, *d, *bn, *bs;
@@ -1106,7 +1106,7 @@ BKCreuseBATmap(bat *ret, const bat *bid, const bat *did)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 {
 	BAT *a, *b, *bn;
@@ -1128,7 +1128,7 @@ BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 {
 	BAT *a, *b, *bn;
@@ -1150,7 +1150,7 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
 {
 	BAT *a, *b, *bn;

@@ -23,7 +23,96 @@ AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
 ) AS "ttables" WHERE 1 = 1
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME"
 ----
-90 values hashing to fb69435ac5ab9472d3be639cbcf04d40
+NULL
+sys
+args
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+functions
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+idxs
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+keys
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+objects
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+sequences
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+tmp
+idxs
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+tmp
+keys
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+tmp
+objects
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
 
 query TTTTTTTTTT rowsort
 SELECT * FROM (
@@ -62,6 +151,94 @@ AND "ttables"."name" IN ('args', 'columns', 'functions', 'idxs',
 ) AS "ttables" WHERE 1 = 1
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME"
 ----
-90 values hashing to fb69435ac5ab9472d3be639cbcf04d40
-
+NULL
+sys
+args
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+functions
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+idxs
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+keys
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+objects
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+sys
+sequences
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+tmp
+idxs
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+tmp
+keys
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
+NULL
+tmp
+objects
+SYSTEM TABLE
+(empty)
+NULL
+NULL
+NULL
+id
+SYSTEM
 

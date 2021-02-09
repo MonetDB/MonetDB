@@ -132,6 +132,8 @@ no_updates(InstrPtr *old, int *vars, int oldv, int newv)
 	return 1;
 }
 
+#define isIntersect(p) (getModuleId(p) == algebraRef && getFunctionId(p) == intersectRef)
+
 str
 OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -169,7 +171,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 
 		if (getModuleId(p) == algebraRef &&
-			(getFunctionId(p) == intersectRef ||
+			((!no_mito && getFunctionId(p) == intersectRef) ||
 			 getFunctionId(p) == differenceRef)) {
 			GDKfree(vars);
 			goto wrapup;
@@ -180,6 +182,9 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 		if (isLikeOp(p))
 			nr_likes++;
+
+		if (no_mito && isIntersect(p))
+			push_down_delta++;
 
 		if ((getModuleId(p) == sqlRef && getFunctionId(p) == deltaRef) ||
 			(no_mito && getModuleId(p) == matRef && getFunctionId(p) == packRef && p->argc == (p->retc+2)))
@@ -323,25 +328,45 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
 						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) /* escape is a value */
 						) {
-					InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
-					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid));
+					bool has_null_semantics = false;
+					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0;
 					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
 
-					getArg(r,0) = getArg(p,0);
-					r = addArgument(mb, r, getArg(q, 1));
-					if (has_cand)
-						r = addArgument(mb, r, getArg(p, 2));
-					for(a = 2; a<q->argc; a++)
-						r = addArgument(mb, r, getArg(q, a));
-					if (r->argc < (4+has_cand))
-						r = pushStr(mb, r, ""); /* default esc */
-					if (r->argc < (5+has_cand))
-						r = pushBit(mb, r, ignore_case);
-					if (r->argc < (6+has_cand))
-						r = pushBit(mb, r, anti);
-					freeInstruction(p);
-					p = r;
-					actions++;
+					/* TODO at the moment we cannot convert if the select statement has NULL semantics
+						we can convert it into VAL is NULL or PATERN is NULL or ESCAPE is NULL
+					*/
+					if (getFunctionId(p) == selectRef && isVarConstant(mb,getArg(p, 2 + has_cand)) && isVarConstant(mb,getArg(p, 3 + has_cand))
+						&& isVarConstant(mb,getArg(p, 4 + has_cand)) && isVarConstant(mb,getArg(p, 5 + has_cand))) {
+						ValRecord low = getVarConstant(mb, getArg(p, 2 + has_cand)), high = getVarConstant(mb, getArg(p, 3 + has_cand));
+						bit li = *(bit*)getVarValue(mb, getArg(p, 4 + has_cand)), hi = *(bit*)getVarValue(mb, getArg(p, 5 + has_cand));
+
+						if (li && hi && VALisnil(&low) && VALisnil(&high))
+							has_null_semantics = true;
+					}
+
+					if (!has_null_semantics) {
+						InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
+						getArg(r,0) = getArg(p,0);
+						r = addArgument(mb, r, getArg(q, 1));
+						if (has_cand) {
+							r = addArgument(mb, r, getArg(p, 2));
+							offset = 1;
+						} else if (isaBatType(getArgType(mb, q, 1))) { /* likeselect calls have a candidate parameter */
+							r = pushNil(mb, r, TYPE_bat);
+							offset = 1;
+						}
+						for(a = 2; a<q->argc; a++)
+							r = addArgument(mb, r, getArg(q, a));
+						if (r->argc < (4+offset))
+							r = pushStr(mb, r, ""); /* default esc */
+						if (r->argc < (5+offset))
+							r = pushBit(mb, r, ignore_case);
+						if (r->argc < (6+offset))
+							r = pushBit(mb, r, anti);
+						freeInstruction(p);
+						p = r;
+						actions++;
+					}
 				}
 			}
 
@@ -778,6 +803,74 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				p = q;
 				oclean[i] = 1;
 				actions++;
+			}
+		} else if (isIntersect(p) && p->retc == 1 && lastbat == 4) {
+		/* c = delta(b, uid, uvl, ins)
+		 * s = intersect(l, r, li, ..)
+		 *
+		 * nc = intersect(b, r, li..)
+		 * ni = intersect(ins, r, li..)
+		 * nu = intersect(uvl, r, ..)
+		 * s = subdelta(nc, uid, nu, ni);
+		 */
+			int var = getArg(p, 1);
+			InstrPtr q = old[vars[var]];
+
+			if (q && q->token == ASSIGNsymbol) {
+				var = getArg(q, 1);
+				q = old[vars[var]];
+			}
+			if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
+				InstrPtr r = copyInstruction(p);
+				InstrPtr s = copyInstruction(p);
+				InstrPtr t = copyInstruction(p);
+				InstrPtr u = copyInstruction(q);
+
+				if( r == NULL || s == NULL || t== NULL ||u == NULL){
+					freeInstruction(r);
+					freeInstruction(s);
+					freeInstruction(t);
+					freeInstruction(u);
+					GDKfree(vars);
+					GDKfree(nvars);
+					GDKfree(slices);
+					GDKfree(rslices);
+					GDKfree(oclean);
+					GDKfree(old);
+					throw(MAL,"optimizer.pushselect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				}
+				getArg(r, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(r,0));
+				getArg(r, 1) = getArg(q, 1); /* column */
+				r->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,r);
+				getArg(s, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(s,0));
+				getArg(s, 1) = getArg(q, 3); /* updates */
+				s = ReplaceWithNil(mb, s, 3, TYPE_bat); /* no candidate list */
+				setArgType(mb, s, 3, newBatType(TYPE_oid));
+				/* make sure to resolve again */
+				s->token = ASSIGNsymbol;
+				s->typechk = TYPE_UNKNOWN;
+        			s->fcn = NULL;
+        			s->blk = NULL;
+				pushInstruction(mb,s);
+				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
+				setVarCList(mb,getArg(t,0));
+				getArg(t, 1) = getArg(q, 4); /* inserts */
+				pushInstruction(mb,t);
+
+				setFunctionId(u, subdeltaRef);
+				getArg(u, 0) = getArg(p,0);
+				getArg(u, 1) = getArg(r,0);
+				getArg(u, 2) = getArg(p,3); /* pre-cands */
+				getArg(u, 3) = getArg(q,2); /* update ids */
+				getArg(u, 4) = getArg(s,0);
+				u = pushArgument(mb, u, getArg(t,0));
+				u->typechk = TYPE_UNKNOWN;
+				pushInstruction(mb,u);
+				oclean[i] = 1;
+				continue;
 			}
 		}
 		assert (p == old[i] || oclean[i]);

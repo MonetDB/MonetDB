@@ -13,4 +13,3 @@ count(links) < 3
 statement ok
 drop table htest
 
-

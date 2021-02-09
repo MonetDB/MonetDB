@@ -16,7 +16,7 @@ bat.append(h,"brown")
 statement ok
 bat.append(h,"curly dark brown")
 
-query TT rowsort
+query IT rowsort
 io.print(b)
 ----
 0
@@ -36,12 +36,11 @@ aa:= batxml.root(bc,"1.0","no")
 statement ok
 as:= batxml.str(aa)
 
-query TT rowsort
+query IT rowsort
 io.print(as)
 ----
 0
 <?xml version="1.0" standalone="no"?><name>Mary Ann Walker</name>
 1
 <?xml version="1.0" standalone="no"?><name>Annie Chapman</name>
-
 

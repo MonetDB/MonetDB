@@ -50,4 +50,3 @@ DROP TABLE alignments_2
 statement ok
 DROP FUNCTION seq_char
 
-

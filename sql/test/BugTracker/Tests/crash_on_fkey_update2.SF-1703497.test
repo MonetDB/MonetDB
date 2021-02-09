@@ -25,4 +25,3 @@ drop table t1703497a
 statement error
 COMMIT
 
-

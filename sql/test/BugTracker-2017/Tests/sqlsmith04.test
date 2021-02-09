@@ -70,4 +70,3 @@ limit 77; --empty
 statement ok
 ROLLBACK
 
-

@@ -53,4 +53,3 @@ select count(*) as "c3_recordcount", count(distinct "t2"."B") as "c7_b__unique_c
 statement ok
 rollback
 
-

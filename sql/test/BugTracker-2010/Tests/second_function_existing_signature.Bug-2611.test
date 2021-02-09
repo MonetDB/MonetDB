@@ -28,4 +28,3 @@ drop function next_a
 statement ok
 drop table table_a
 
-

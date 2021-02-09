@@ -7,4 +7,3 @@ end doit
 statement error
 Admin.doit("print(1);")
 
-

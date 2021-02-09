@@ -27,4 +27,3 @@ drop table mmtest20
 statement ok
 drop table mmtest10
 
-

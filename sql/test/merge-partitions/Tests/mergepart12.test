@@ -77,4 +77,3 @@ DROP TABLE sublimits2
 statement ok
 DROP TABLE testme
 
-

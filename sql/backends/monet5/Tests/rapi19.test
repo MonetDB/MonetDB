@@ -14,4 +14,3 @@ SELECT rapi19()
 statement ok
 ROLLBACK
 
-

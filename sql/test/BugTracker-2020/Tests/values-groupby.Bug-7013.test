@@ -29,4 +29,3 @@ SELECT * from v
 statement ok
 ROLLBACK
 
-

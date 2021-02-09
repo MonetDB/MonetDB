@@ -1893,6 +1893,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 
 			switch (formatter) {
 			case TRASHformatter:
+				mapi_finish(hdl);
 				break;
 			case XMLformatter:
 				XMLrenderer(hdl);
@@ -1917,6 +1918,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 				rows = mapi_get_row_count(hdl);
 				mnstr_printf(toConsole,
 						"%" PRId64 " tuple%s\n", rows, rows != 1 ? "s" : "");
+				mapi_finish(hdl);
 				break;
 			case EXPANDEDformatter:
 				EXPANDEDrenderer(hdl);
@@ -1937,7 +1939,7 @@ format_result(Mapi mid, MapiHdl hdl, bool singleinstr)
 	if (timerHumanCalled)
 		timerHuman(sqloptimizer, maloptimizer, querytime, singleinstr, true);
 	if (mnstr_errnr(toConsole)) {
-		fprintf(stderr, "write error: %s\n", mnstr_peek_error(toConsole));
+		mnstr_printf(stderr_stream, "write error: %s\n", mnstr_peek_error(toConsole));
 		mnstr_clearerr(toConsole);
 		errseen = true;
 	}
@@ -2018,7 +2020,7 @@ doFileBulk(Mapi mid, stream *fp)
 	bufsize = 10240;
 	buf = malloc(bufsize + 1);
 	if (!buf) {
-		fprintf(stderr, "cannot allocate memory for send buffer\n");
+		mnstr_printf(stderr_stream, "cannot allocate memory for send buffer\n");
 		if (fp)
 			close_stream(fp);
 		return true;
@@ -2041,7 +2043,7 @@ doFileBulk(Mapi mid, stream *fp)
 		} else {
 			buf[length] = 0;
 			if (strlen(buf) < (size_t) length) {
-				fprintf(stderr, "NULL byte in input\n");
+				mnstr_printf(stderr_stream, "NULL byte in input\n");
 				errseen = true;
 				break;
 			}
@@ -2233,7 +2235,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 		rl.s = fp;
 		rl.buf = NULL;
 		if ((fp = callback_stream(&rl, myread, NULL, NULL, mydestroy, mnstr_name(fp))) == NULL) {
-			fprintf(stderr,"Malloc for doFile failed");
+			mnstr_printf(stderr_stream,"Malloc for doFile failed");
 			exit(2);
 		}
 #endif
@@ -2241,7 +2243,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 #ifdef HAVE_ICONV
 	if (encoding) {
 		if ((fp = iconv_rstream(fp, encoding, mnstr_name(fp))) == NULL) {
-			fprintf(stderr,"Malloc failure");
+			mnstr_printf(stderr_stream,"Malloc failure");
 			exit(2);
 		}
 	}
@@ -2255,7 +2257,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 	bufsiz = READBLOCK;
 	buf = malloc(bufsiz);
 	if (buf == NULL) {
-		fprintf(stderr,"Malloc for doFile failed");
+		mnstr_printf(stderr_stream,"Malloc for doFile failed");
 		exit(2);
 	}
 
@@ -2283,7 +2285,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			if (l <= 0)
 				break;
 			if (!seen_null_byte && strlen(buf + length) < (size_t) l) {
-				fprintf(stderr, "NULL byte in input on line %d of input\n", lineno);
+				mnstr_printf(stderr_stream, "NULL byte in input on line %d of input\n", lineno);
 				seen_null_byte = true;
 				errseen = true;
 				if (hdl) {
@@ -2298,7 +2300,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 			if (newbuf) {
 				buf = newbuf;
 			} else {
-				fprintf(stderr,"Malloc failure");
+				mnstr_printf(stderr_stream,"Malloc failure");
 				length = 0;
 				errseen = true;
 				if (hdl) {
@@ -2430,7 +2432,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 							wantsSystem = true;
 							break;
 						default:
-							fprintf(stderr, "unknown sub-command for \\d: %c\n", *line);
+							mnstr_printf(stderr_stream, "unknown sub-command for \\d: %c\n", *line);
 							length = 0;
 							line[1] = '\0';
 							break;
@@ -2476,7 +2478,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					}
 					*q = '\0';
 					if (escaped) {
-						fprintf(stderr, "unexpected end of string while "
+						mnstr_printf(stderr_stream, "unexpected end of string while "
 							"looking for matching \"\n");
 						continue;
 					}
@@ -2556,7 +2558,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						char *q = query, *endq = query + len;
 
 						if (query == NULL) {
-							fprintf(stderr, "memory allocation failure\n");
+							mnstr_printf(stderr_stream, "memory allocation failure\n");
 							continue;
 						}
 
@@ -2628,7 +2630,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					while (my_isspace(line[length - 1]))
 						line[--length] = 0;
 					if (line[2] && !my_isspace(line[2])) {
-						fprintf(stderr, "space required after \\D\n");
+						mnstr_printf(stderr_stream, "space required after \\D\n");
 						continue;
 					}
 					for (line += 2; *line && my_isspace(*line); line++)
@@ -2661,7 +2663,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					    mnstr_errnr(s)) {
 						if (s)
 							close_stream(s);
-						fprintf(stderr, "Cannot open %s: %s\n", line, mnstr_peek_error(NULL));
+						mnstr_printf(stderr_stream, "Cannot open %s: %s\n", line, mnstr_peek_error(NULL));
 					} else
 						doFile(mid, s, 0, 0, 0);
 					continue;
@@ -2683,7 +2685,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 						toConsole = stderr_stream;
 					else if ((toConsole = open_wastream(line)) == NULL ||
 						 mnstr_errnr(toConsole)) {
-						fprintf(stderr, "Cannot open %s: %s\n", line, mnstr_peek_error(toConsole));
+						mnstr_printf(stderr_stream, "Cannot open %s: %s\n", line, mnstr_peek_error(toConsole));
 						if (toConsole != NULL) {
 							close_stream(toConsole);
 						}
@@ -2820,7 +2822,7 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 					} else if (strncmp(line,"perf",4) == 0 || strcmp(line,"performance") == 0) {
 						timermode = T_PERF;
 					} else if (*line != '\0') {
-						fprintf(stderr, "warning: invalid argument to -t: %s\n",
+						mnstr_printf(stderr_stream, "warning: invalid argument to -t: %s\n",
 							line);
 					}
 					continue;
@@ -3095,45 +3097,45 @@ static _Noreturn void usage(const char *prog, int xit);
 static void
 usage(const char *prog, int xit)
 {
-	fprintf(stderr, "Usage: %s [ options ] [ file or database [ file ... ] ]\n", prog);
-	fprintf(stderr, "\nOptions are:\n");
+	mnstr_printf(stderr_stream, "Usage: %s [ options ] [ file or database [ file ... ] ]\n", prog);
+	mnstr_printf(stderr_stream, "\nOptions are:\n");
 #ifdef HAVE_SYS_UN_H
-	fprintf(stderr, " -h hostname | --host=hostname    host or UNIX domain socket to connect to\n");
+	mnstr_printf(stderr_stream, " -h hostname | --host=hostname    host or UNIX domain socket to connect to\n");
 #else
-	fprintf(stderr, " -h hostname | --host=hostname    host to connect to\n");
+	mnstr_printf(stderr_stream, " -h hostname | --host=hostname    host to connect to\n");
 #endif
-	fprintf(stderr, " -p portnr   | --port=portnr      port to connect to\n");
-	fprintf(stderr, " -u user     | --user=user        user id\n");
-	fprintf(stderr, " -d database | --database=database  database to connect to (may be URI)\n");
+	mnstr_printf(stderr_stream, " -p portnr   | --port=portnr      port to connect to\n");
+	mnstr_printf(stderr_stream, " -u user     | --user=user        user id\n");
+	mnstr_printf(stderr_stream, " -d database | --database=database  database to connect to (may be URI)\n");
 
-	fprintf(stderr, " -e          | --echo             echo the query\n");
+	mnstr_printf(stderr_stream, " -e          | --echo             echo the query\n");
 #ifdef HAVE_ICONV
-	fprintf(stderr, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
+	mnstr_printf(stderr_stream, " -E charset  | --encoding=charset specify encoding (character set) of the terminal\n");
 #endif
-	fprintf(stderr, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash,rowcount}\n");
-	fprintf(stderr, " -H          | --history          load/save cmdline history (default off)\n");
-	fprintf(stderr, " -i          | --interactive      interpret `\\' commands on stdin\n");
-	fprintf(stderr, " -t          | --timer=format     use time formatting {none,clock,performance} (none is default)\n");
-	fprintf(stderr, " -l language | --language=lang    {sql,mal}\n");
-	fprintf(stderr, " -L logfile  | --log=logfile      save client/server interaction\n");
-	fprintf(stderr, " -s stmt     | --statement=stmt   run single statement\n");
-	fprintf(stderr, " -X          | --Xdebug           trace mapi network interaction\n");
-	fprintf(stderr, " -z          | --timezone         do not tell server our timezone\n");
+	mnstr_printf(stderr_stream, " -f kind     | --format=kind      specify output format {csv,tab,raw,sql,xml,trash,rowcount}\n");
+	mnstr_printf(stderr_stream, " -H          | --history          load/save cmdline history (default off)\n");
+	mnstr_printf(stderr_stream, " -i          | --interactive      interpret `\\' commands on stdin\n");
+	mnstr_printf(stderr_stream, " -t          | --timer=format     use time formatting {none,clock,performance} (none is default)\n");
+	mnstr_printf(stderr_stream, " -l language | --language=lang    {sql,mal}\n");
+	mnstr_printf(stderr_stream, " -L logfile  | --log=logfile      save client/server interaction\n");
+	mnstr_printf(stderr_stream, " -s stmt     | --statement=stmt   run single statement\n");
+	mnstr_printf(stderr_stream, " -X          | --Xdebug           trace mapi network interaction\n");
+	mnstr_printf(stderr_stream, " -z          | --timezone         do not tell server our timezone\n");
 #ifdef HAVE_POPEN
-	fprintf(stderr, " -| cmd      | --pager=cmd        for pagination\n");
+	mnstr_printf(stderr_stream, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
-	fprintf(stderr, " -v          | --version          show version information and exit\n");
-	fprintf(stderr, " -?          | --help             show this usage message\n");
+	mnstr_printf(stderr_stream, " -v          | --version          show version information and exit\n");
+	mnstr_printf(stderr_stream, " -?          | --help             show this usage message\n");
 
-	fprintf(stderr, "\nSQL specific opions \n");
-	fprintf(stderr, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
-	fprintf(stderr, " -a          | --autocommit       turn off autocommit mode\n");
-	fprintf(stderr, " -R          | --allow-remote     allow remote content\n");
-	fprintf(stderr, " -r nr       | --rows=nr          for pagination\n");
-	fprintf(stderr, " -w nr       | --width=nr         for pagination\n");
-	fprintf(stderr, " -D          | --dump             create an SQL dump\n");
-	fprintf(stderr, " -N          | --inserts          use INSERT INTO statements when dumping\n");
-	fprintf(stderr, "The file argument can be - for stdin\n");
+	mnstr_printf(stderr_stream, "\nSQL specific opions \n");
+	mnstr_printf(stderr_stream, " -n nullstr  | --null=nullstr     change NULL representation for sql, csv and tab output modes\n");
+	mnstr_printf(stderr_stream, " -a          | --autocommit       turn off autocommit mode\n");
+	mnstr_printf(stderr_stream, " -R          | --allow-remote     allow remote content\n");
+	mnstr_printf(stderr_stream, " -r nr       | --rows=nr          for pagination\n");
+	mnstr_printf(stderr_stream, " -w nr       | --width=nr         for pagination\n");
+	mnstr_printf(stderr_stream, " -D          | --dump             create an SQL dump\n");
+	mnstr_printf(stderr_stream, " -N          | --inserts          use INSERT INTO statements when dumping\n");
+	mnstr_printf(stderr_stream, "The file argument can be - for stdin\n");
 	exit(xit);
 }
 
@@ -3150,7 +3152,11 @@ isfile(FILE *fp)
 }
 
 int
+#ifdef _MSC_VER
+wmain(int argc, wchar_t **wargv)
+#else
 main(int argc, char **argv)
+#endif
 {
 	int port = 0;
 	char *user = NULL;
@@ -3207,6 +3213,20 @@ main(int argc, char **argv)
 		{0, 0, 0, 0}
 	};
 
+#ifdef _MSC_VER
+	char **argv = malloc((argc + 1) * sizeof(char *));
+	if (argv == NULL) {
+		fprintf(stderr, "cannot allocate memory for argument conversion\n");
+		exit(1);
+	}
+	for (int i = 0; i < argc; i++) {
+		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
+			fprintf(stderr, "cannot convert argument to UTF-8\n");
+			exit(1);
+		}
+	}
+	argv[argc] = NULL;
+#endif
 #ifndef WIN32
 	/* don't set locale on Windows: setting the locale like this
 	 * causes the output to be converted (we could set it to
@@ -3337,7 +3357,7 @@ main(int argc, char **argv)
 				language = strdup("msql");
 				mode = MAL;
 			} else {
-				fprintf(stderr, "language option needs to be sql or mal\n");
+				mnstr_printf(stderr_stream, "language option needs to be sql or mal\n");
 				exit(-1);
 			}
 			break;
@@ -3383,7 +3403,7 @@ main(int argc, char **argv)
 				} else if (strcmp(optarg, "perf") == 0 || strcmp(optarg, "performance") == 0) {
 					timermode = T_PERF;
 				} else if (*optarg != '\0') {
-					fprintf(stderr, "warning: invalid argument to -t: %s\n",
+					mnstr_printf(stderr_stream, "warning: invalid argument to -t: %s\n",
 						optarg);
 				}
 			}
@@ -3467,7 +3487,7 @@ main(int argc, char **argv)
 	if (encoding != NULL) {
 		stream *s = iconv_wstream(toConsole, encoding, "stdout");
 		if (s == NULL || mnstr_errnr(s)) {
-			fprintf(stderr, "warning: cannot convert local character set %s to UTF-8\n", encoding);
+			mnstr_printf(stderr_stream, "warning: cannot convert local character set %s to UTF-8\n", encoding);
 			close_stream(s);
 		} else
 			toConsole = s;
@@ -3522,7 +3542,7 @@ main(int argc, char **argv)
 		mapi_reconnect(mid);	/* actually, initial connect */
 
 	if (mid == NULL) {
-		fprintf(stderr, "failed to allocate Mapi structure\n");
+		mnstr_printf(stderr_stream, "failed to allocate Mapi structure\n");
 		exit(2);
 	}
 
@@ -3530,7 +3550,7 @@ main(int argc, char **argv)
 		if (trace)
 			mapi_explain(mid, stderr);
 		else
-			fprintf(stderr, "%s\n", mapi_error_str(mid));
+			mnstr_printf(stderr_stream, "%s\n", mapi_error_str(mid));
 		exit(2);
 	}
 	mapi_cache_limit(mid, -1);
@@ -3538,7 +3558,7 @@ main(int argc, char **argv)
 		if (mode == SQL) {
 			exit(dump_database(mid, toConsole, 0, useinserts, false));
 		} else {
-			fprintf(stderr, "Dump only supported for SQL\n");
+			mnstr_printf(stderr_stream, "Dump only supported for SQL\n");
 			exit(1);
 		}
 	}
@@ -3600,9 +3620,10 @@ main(int argc, char **argv)
 		set_timezone(mid);
 
 	if (command != NULL) {
-#ifdef HAVE_ICONV
+#if !defined(_MSC_VER) && defined(HAVE_ICONV)
+		/* no need on Windows: using wmain interface */
 		iconv_t cd_in;
-		int free_command = 0;
+		bool free_command = false;
 
 		if (encoding != NULL &&
 		    (cd_in = iconv_open("utf-8", encoding)) != (iconv_t) -1) {
@@ -3614,10 +3635,10 @@ main(int argc, char **argv)
 			char *to = malloc(tolen);
 
 			if (to == NULL) {
-				fprintf(stderr,"Malloc in main failed");
+				mnstr_printf(stderr_stream,"Malloc in main failed");
 				exit(2);
 			}
-			free_command = 1;
+			free_command = true;
 
 		  try_again:
 			command = to;
@@ -3625,7 +3646,7 @@ main(int argc, char **argv)
 				switch (errno) {
 				case EILSEQ:
 					/* invalid multibyte sequence */
-					fprintf(stderr, "Illegal input sequence in command line\n");
+					mnstr_printf(stderr_stream, "Illegal input sequence in command line\n");
 					exit(-1);
 				case E2BIG:
 					/* output buffer too small */
@@ -3636,13 +3657,13 @@ main(int argc, char **argv)
 					free(command);
 					to = malloc(tolen);
 					if (to == NULL) {
-						fprintf(stderr,"Malloc in main failed");
+						mnstr_printf(stderr_stream,"Malloc in main failed");
 						exit(2);
 					}
 					goto try_again;
 				case EINVAL:
 					/* incomplete multibyte sequence */
-					fprintf(stderr, "Incomplete input sequence on command line\n");
+					mnstr_printf(stderr_stream, "Incomplete input sequence on command line\n");
 					exit(-1);
 				default:
 					break;
@@ -3651,14 +3672,14 @@ main(int argc, char **argv)
 			*to = 0;
 			iconv_close(cd_in);
 		} else if (encoding)
-			fprintf(stderr, "warning: cannot convert local character set %s to UTF-8\n", encoding);
+			mnstr_printf(stderr_stream, "warning: cannot convert local character set %s to UTF-8\n", encoding);
 #endif
 		/* execute from command-line, need interactive to know whether
 		 * to keep the mapi handle open */
 		timerStart();
 		c = doRequest(mid, command);
 		timerEnd();
-#ifdef HAVE_ICONV
+#if !defined(_MSC_VER) && defined(HAVE_ICONV)
 		if (free_command)
 			free(command);
 #endif
@@ -3676,7 +3697,7 @@ main(int argc, char **argv)
 					s = open_rastream(arg);
 			}
 			if (s == NULL) {
-				fprintf(stderr, "%s: cannot open: %s\n", arg, mnstr_peek_error(NULL));
+				mnstr_printf(stderr_stream, "%s: cannot open: %s\n", arg, mnstr_peek_error(NULL));
 				c |= 1;
 				optind++;
 				continue;

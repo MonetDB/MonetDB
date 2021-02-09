@@ -20,3 +20,4 @@ select * from m
 
 statement ok
 rollback
+

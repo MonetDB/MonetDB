@@ -16,4 +16,3 @@ drop table mt
 statement ok
 drop table other_table
 
-

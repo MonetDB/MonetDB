@@ -3,4 +3,3 @@ SELECT ST_AsText(ST_GeometryN(centerlines, 2)) FROM divided_routes WHERE name = 
 ----
 LINESTRING (16 0, 16 23, 16 48)
 
-

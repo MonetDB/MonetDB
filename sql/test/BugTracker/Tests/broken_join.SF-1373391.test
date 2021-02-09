@@ -67,4 +67,3 @@ clicktime>'00:00:00' and clicktime<'23:59
 statement ok
 ROLLBACK
 
-

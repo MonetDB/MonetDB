@@ -40,34 +40,78 @@ bat.append(j,b)
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,"$.f1")
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
-12 values hashing to 8570ccbe5c2e2dff248990ab96f0aa32
+0
+[]
+1
+[1]
+2
+[1]
+3
+[1,3]
+4
+[{"f12":3}]
+5
+[]
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,"$.f2")
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
-12 values hashing to 21a48ee7ca95e3a4104996b060500b11
+0
+[]
+1
+[]
+2
+[2]
+3
+[2]
+4
+[[2,3,4]]
+5
+[]
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,"$.f1[0]")
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
-12 values hashing to 5034e67a23e0256393c30c993c64fb3d
+0
+[]
+1
+[1]
+2
+[1]
+3
+[1]
+4
+[{"f12":3}]
+5
+[]
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,"$..f12")
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
-12 values hashing to b943974a645cf7e11709b8267d766b0c
+0
+[]
+1
+[]
+2
+[]
+3
+[]
+4
+[3]
+5
+[]
 
 query T rowsort
 io.printf("#next batch\n")
@@ -80,29 +124,28 @@ i:= bat.new(:json)
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",i,0)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",i,1)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",i,2)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",i,3)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
-
 

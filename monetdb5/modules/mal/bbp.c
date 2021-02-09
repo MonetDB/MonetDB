@@ -13,7 +13,17 @@
  * by the server.
  */
 #include "monetdb_config.h"
-#include "bbp.h"
+#include "mal.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+#include "mal_module.h"
+#include "mal_session.h"
+#include "mal_resolve.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
+#include "mal_profiler.h"
+#include "bat5.h"
+#include "mutils.h"
 
 static int
 pseudo(bat *ret, BAT *b, str X1,str X2) {
@@ -28,7 +38,7 @@ pseudo(bat *ret, BAT *b, str X1,str X2) {
 	return -0;
 }
 
-str
+static str
 CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str name;
@@ -84,7 +94,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * it is simply removed first
  */
 
-str
+static str
 CMDbbpNames(bat *ret)
 {
 	BAT *b;
@@ -110,20 +120,20 @@ CMDbbpNames(bat *ret)
 		throw(MAL, "catalog.bbpNames", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
-str
+static str
 CMDbbpDiskSpace(lng *ret)
 {
 	*ret=  getDiskSpace();
 	return MAL_SUCCEED;
 }
-str
+static str
 CMDgetPageSize(int *ret)
 {
 	*ret= (int)  MT_pagesize();
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDbbpName(str *ret, bat *bid)
 {
 	*ret = (str) GDKstrdup(BBP_logical(*bid));
@@ -132,7 +142,7 @@ CMDbbpName(str *ret, bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDbbpCount(bat *ret)
 {
 	BAT *b, *bn;
@@ -165,7 +175,7 @@ CMDbbpCount(bat *ret)
 /*
  * The BAT status is redundantly stored in CMDbat_info.
  */
-str
+static str
 CMDbbpLocation(bat *ret)
 {
 	BAT *b;
@@ -173,7 +183,7 @@ CMDbbpLocation(bat *ret)
 	char buf[FILENAME_MAX];
 	char cwd[FILENAME_MAX];
 
-	if (getcwd(cwd, FILENAME_MAX) == NULL)
+	if (MT_getcwd(cwd, FILENAME_MAX) == NULL)
 		throw(MAL, "catalog.bbpLocation", RUNTIME_DIR_ERROR);
 
 	b = COLnew(0, TYPE_str, getBBPsize(), TRANSIENT);
@@ -206,7 +216,7 @@ CMDbbpLocation(bat *ret)
 /*
  * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
  */
-str
+static str
 CMDbbpDirty(bat *ret)
 {
 	BAT *b;
@@ -237,7 +247,7 @@ CMDbbpDirty(bat *ret)
 /*
  * The BAT status is redundantly stored in CMDbat_info.
  */
-str
+static str
 CMDbbpStatus(bat *ret)
 {
 	BAT *b;
@@ -265,7 +275,7 @@ CMDbbpStatus(bat *ret)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDbbpKind(bat *ret)
 {
 	BAT *b;
@@ -296,7 +306,7 @@ CMDbbpKind(bat *ret)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDbbpRefCount(bat *ret)
 {
 	BAT *b;
@@ -323,7 +333,7 @@ CMDbbpRefCount(bat *ret)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDbbpLRefCount(bat *ret)
 {
 	BAT *b;
@@ -350,14 +360,14 @@ CMDbbpLRefCount(bat *ret)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDbbpgetIndex(int *res, bat *bid)
 {
 	*res= *bid;
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDgetBATrefcnt(int *res, bat *bid)
 {
 	BAT *b;
@@ -370,7 +380,7 @@ CMDgetBATrefcnt(int *res, bat *bid)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDgetBATlrefcnt(int *res, bat *bid)
 {
 	BAT *b;
@@ -383,7 +393,8 @@ CMDgetBATlrefcnt(int *res, bat *bid)
 	return MAL_SUCCEED;
 }
 
-str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
+static str
+CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
 {
 	BAT *id, *ns, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty, *status, *kind, *bn;
 	bat	i;
@@ -471,7 +482,7 @@ str CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT, bat *
 	return msg;
 }
 
-str
+static str
 CMDsetName(str *rname, const bat *bid, str *name)
 {
 	BAT *b;

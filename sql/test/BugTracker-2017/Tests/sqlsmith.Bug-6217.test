@@ -23,4 +23,3 @@ where 24 is NULL; --empty
 statement ok
 ROLLBACK
 
-

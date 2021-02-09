@@ -17,11 +17,3 @@ barrier go:=true;
 exit go;
 end qry
 
-#mdb.List("user","qry")
-
-statement ok
-optimizer.garbageCollector("user","qry")
-
-#mdb.List("user","qry")
-
-

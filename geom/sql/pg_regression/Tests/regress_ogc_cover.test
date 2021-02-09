@@ -1,109 +1,108 @@
-query TT rowsort
+query TI rowsort
 SELECT 'covers100', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'LINESTRING(1 10, 9 10, 9 8)')
 ----
 covers100
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers101', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'LINESTRING(1 10, 10 10, 10 8)')
 ----
 covers101
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers102', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(5 5)')
 ----
 covers102
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers103', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 0)')
 ----
 covers103
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers104', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(-1 0)')
 ----
 covers104
-False
+0
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers105', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 5)')
 ----
 covers105
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers106', ST_Covers('POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))', 'POINT(0 12)')
 ----
 covers106
-False
+0
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers107', ST_Covers(ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631), ST_GeomFromText('POINT(521513 5377804)', 32631))
 ----
 covers107
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'covers108', ST_Covers(ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631), ST_GeomFromText('POINT(521513 5377804)', 32631))
 ----
 covers108
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby100', ST_CoveredBy('LINESTRING(1 10, 9 10, 9 8)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
 ----
 coveredby100
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby101', ST_CoveredBy('LINESTRING(1 10, 10 10, 10 8)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
 ----
 coveredby101
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby102', ST_CoveredBy('POINT(5 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
 ----
 coveredby102
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby103', ST_CoveredBy('POINT(0 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
 ----
 coveredby103
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby104', ST_CoveredBy('POINT(-1 0)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
 ----
 coveredby104
-False
+0
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby105', ST_CoveredBy('POINT(0 5)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
 ----
 coveredby105
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby106', ST_CoveredBy('POINT(0 12)', 'POLYGON((0 0, 0 10, 10 10, 10 0, 0 0))')
 ----
 coveredby106
-False
+0
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby107', ST_CoveredBy(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
 ----
 coveredby107
-True
+1
 
-query TT rowsort
+query TI rowsort
 SELECT 'coveredby108', ST_CoveredBy(ST_GeomFromText('POINT(521513 5377804)', 32631), ST_GeomFromText('POLYGON((521526 5377783, 521482 5377811, 521481 5377811, 521494 5377832, 521539 5377804, 521526 5377783))', 32631))
 ----
 coveredby108
-True
-
+1
 

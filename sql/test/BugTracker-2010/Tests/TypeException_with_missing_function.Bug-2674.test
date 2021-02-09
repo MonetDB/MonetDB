@@ -34,4 +34,3 @@ select f2674()
 statement ok
 DROP FUNCTION f2674
 
-

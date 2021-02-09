@@ -58,4 +58,3 @@ select RANK () OVER () as foo from rankbug
 statement ok
 drop table rankbug
 
-

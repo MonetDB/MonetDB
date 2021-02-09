@@ -31,4 +31,3 @@ COPY 2 RECORDS INTO uitspraken FROM STDIN DELIMITERS E'\t', E'\n' NULL as ''
 statement ok
 ROLLBACK
 
-

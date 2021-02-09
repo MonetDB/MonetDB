@@ -48,7 +48,7 @@ DEP_SCHEMA
 query TTT rowsort
 SELECT t.name, v.name, 'DEP_VIEW' from sys.tables as t, sys.tables as v, sys.dependencies as dep where t.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by t.name, v.name
 ----
-324 values hashing to e020d09504870ef9571021d508055252
+564 values hashing to 2296fb6b8831002f7203b6982a75ac62
 
 query TTT rowsort
 SELECT t.name, i.name, 'DEP_INDEX' from sys.tables as t, sys.idxs as i where i.table_id = t.id and i.name not in (select name from sys.keys) and t.type in (0, 10, 20, 30) order by t.name, i.name
@@ -89,6 +89,9 @@ DEP_FUNC
 comments
 describe_table
 DEP_FUNC
+dump_statements
+dump_database
+DEP_FUNC
 function_languages
 describe_function
 DEP_FUNC
@@ -110,6 +113,9 @@ DEP_FUNC
 spatial_ref_sys
 getproj4
 DEP_FUNC
+table_partitions
+get_merge_table_partition_expressions
+DEP_FUNC
 table_types
 describe_table
 DEP_FUNC
@@ -120,7 +126,7 @@ DEP_FUNC
 query TTT rowsort
 SELECT c.name, v.name, 'DEP_VIEW' from sys.columns as c, sys.tables as v, sys.dependencies as dep where c.id = dep.id AND v.id = dep.depend_id AND dep.depend_type = 5 AND v.type in (1, 11, 21, 31) order by c.name, v.name
 ----
-1134 values hashing to 9b1d4d4cac08bf1ea7e754c7a552595c
+2028 values hashing to e4d83e2392d2ba2271d72e36cf09a7ae
 
 query TTT rowsort
 SELECT c.name, k.name, 'DEP_KEY' from sys.columns as c,  sys.objects as kc, sys.keys as k where kc."name" = c.name AND kc.id = k.id AND k.table_id = c.table_id AND k.rkey = -1 order by c.name, k.name
@@ -184,7 +190,7 @@ SELECT c.name, i.name, 'DEP_INDEX' from sys.columns as c,  sys.objects as kc, sy
 query TTT rowsort
 SELECT c.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.columns as c, sys.dependencies as dep where c.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 ORDER BY c.name, f.name
 ----
-240 values hashing to a54398d1b2159982985fb2a8b3dd764e
+351 values hashing to 0357ee3f8bc7b05468e46a56d104a4e9
 
 query TTT rowsort
 SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri, sys.dependencies as dep where dep.id = c.id AND dep.depend_id =tri.id AND dep.depend_type = 8 order by c.name, tri.name
@@ -193,6 +199,63 @@ SELECT c.name, tri.name, 'DEP_TRIGGER' from sys.columns as c, sys.objects as tri
 query TTT rowsort
 SELECT v.name, f.name, 'DEP_FUNC' from sys.functions as f, sys.tables as v, sys.dependencies as dep where v.id = dep.id AND f.id = dep.depend_id AND dep.depend_type = 7 AND v.type in (1, 11, 21, 31) ORDER BY v.name, f.name
 ----
+columns
+get_merge_table_partition_expressions
+DEP_FUNC
+dump_add_schemas_to_users
+dump_database
+DEP_FUNC
+dump_column_defaults
+dump_database
+DEP_FUNC
+dump_comments
+dump_database
+DEP_FUNC
+dump_create_roles
+dump_database
+DEP_FUNC
+dump_create_schemas
+dump_database
+DEP_FUNC
+dump_create_users
+dump_database
+DEP_FUNC
+dump_foreign_keys
+dump_database
+DEP_FUNC
+dump_functions
+dump_database
+DEP_FUNC
+dump_grant_user_priviledges
+dump_database
+DEP_FUNC
+dump_indices
+dump_database
+DEP_FUNC
+dump_partition_tables
+dump_database
+DEP_FUNC
+dump_privileges
+dump_database
+DEP_FUNC
+dump_sequences
+dump_database
+DEP_FUNC
+dump_start_sequences
+dump_database
+DEP_FUNC
+dump_table_constraint_type
+dump_database
+DEP_FUNC
+dump_tables
+dump_database
+DEP_FUNC
+dump_triggers
+dump_database
+DEP_FUNC
+dump_user_defined_types
+dump_database
+DEP_FUNC
 
 query TTT rowsort
 SELECT v.name, i.name, 'DEP_INDEX' from sys.tables as v, sys.idxs as i where i.table_id = v.id and i.name not in (select name from sys.keys) and v.type in (1, 11, 21, 31) order by v.name, i.name
@@ -208,6 +271,24 @@ SELECT f1.name, f2.name, 'DEP_FUNC' from sys.functions as f1, sys.functions as f
 describe_type
 describe_columns
 DEP_FUNC
+dq
+fqn
+DEP_FUNC
+dq
+get_merge_table_partition_expressions
+DEP_FUNC
+dq
+prepare_esc
+DEP_FUNC
+dump_table_data
+dump_database
+DEP_FUNC
+fqn
+alter_table
+DEP_FUNC
+fqn
+schema_guard
+DEP_FUNC
 getproj4
 st_transform
 DEP_FUNC
@@ -216,6 +297,15 @@ st_transform
 DEP_FUNC
 ms_trunc
 ms_round
+DEP_FUNC
+remote_table_credentials
+get_remote_table_expressions
+DEP_FUNC
+replace_first
+schema_guard
+DEP_FUNC
+sq
+get_remote_table_expressions
 DEP_FUNC
 st_geometryn
 st_patchn
@@ -234,5 +324,4 @@ SELECT f.name, tri.name, 'DEP_TRIGGER' from sys.functions as f, sys.objects as t
 query TTT rowsort
 SELECT k.name, fk.name, 'DEP_FKEY' from sys.keys as k, sys.keys as fk where fk.rkey = k.id order by k.name, fk.name
 ----
-
 

@@ -3,4 +3,3 @@ SELECT ST_NumInteriorRing(shore) FROM lakes WHERE name = 'Blue Lake'
 ----
 1
 
-

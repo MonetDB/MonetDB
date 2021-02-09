@@ -412,7 +412,85 @@ COPY 245 RECORDS INTO "sys"."actual_positionmart_pfx_intraday_test" FROM stdin U
 query I rowsort
 select fundid from actual_positionmart_pfx_intraday_test where fundid = 10 and currencyexposed <> 'TOTAL'
 ----
-79 values hashing to c0a675079bf080b31eeb14059b11d066
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
+10
 
 query I rowsort
 select fundid from actual_positionmart_pfx_intraday_test where fundid = 10 and currencyexposed = 'TOTAL'
@@ -424,5 +502,4 @@ select fundid, CAST(sum(fxcurdlttot) AS BIGINT) as fxcurdlttotfx from actual_pos
 
 statement ok
 ROLLBACK
-
 

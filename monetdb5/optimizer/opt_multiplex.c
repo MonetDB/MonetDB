@@ -35,7 +35,7 @@ OPTexpandMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i = 2, iter = 0;
 	int hvar, tvar;
-	str mod, fcn;
+	const char *mod, *fcn;
 	int *alias, *resB;
 	InstrPtr q;
 	int tt;

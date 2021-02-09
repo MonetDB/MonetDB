@@ -6,4 +6,3 @@ external name iot.places
 statement error
 select * from places3()
 
-

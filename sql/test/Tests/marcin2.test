@@ -63,12 +63,46 @@ NULL
 query II rowsort
 select * from t3 order by val,id
 ----
-18 values hashing to b1ef2565ef12dc133f6afdcb10080c9b
+1
+5
+1
+6
+1
+NULL
+2
+5
+2
+6
+2
+NULL
+NULL
+5
+NULL
+6
+NULL
+NULL
 
 query II rowsort
 select * from t3 order by id,val
 ----
-18 values hashing to b1ef2565ef12dc133f6afdcb10080c9b
+1
+5
+1
+6
+1
+NULL
+2
+5
+2
+6
+2
+NULL
+NULL
+5
+NULL
+6
+NULL
+NULL
 
 statement error
 select sum(*) from t3

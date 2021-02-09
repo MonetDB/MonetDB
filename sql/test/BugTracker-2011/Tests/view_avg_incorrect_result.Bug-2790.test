@@ -27,4 +27,3 @@ drop view tv2790
 statement ok
 drop table t2790
 
-

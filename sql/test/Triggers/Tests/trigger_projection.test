@@ -1,0 +1,30 @@
+statement ok
+start transaction
+
+statement ok
+create table fun(a int, b varchar(32))
+
+statement ok
+create table fun2(c int, d varchar(32))
+
+statement ok
+create or replace trigger mytrigger2
+	after delete on fun referencing old row as "del"
+	insert into fun2 values ("del"."a", "del"."b")
+
+statement ok
+insert into fun values (1, 'a')
+
+statement ok
+delete from fun
+
+query IT rowsort
+select c, d from fun2
+----
+1
+a
+
+statement ok
+rollback
+
+

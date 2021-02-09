@@ -13,7 +13,7 @@
 #include "sql_catalog.h"
 
 extern str sql_partition_validate_key(mvc *sql, sql_table *nt, sql_key *k, const char* op);
-extern str bootstrap_partition_expression(mvc* sql, sql_allocator *rsa, sql_table *mt, int instantiate);
+extern str bootstrap_partition_expression(mvc* sql, sql_table *mt, int instantiate);
 extern void find_partition_type(sql_subtype *tpe, sql_table *mt);
 extern str initialize_sql_parts(mvc* sql, sql_table *mt);
 

@@ -154,7 +154,7 @@ INSERT INTO dummy VALUES (NULL, FALSE)
 statement ok
 INSERT INTO dummy VALUES (NULL, NULL)
 
-query TTTTTTTTTTT rowsort
+query IIIIIIIIIII rowsort
 SELECT
   a
 , b
@@ -169,9 +169,106 @@ SELECT
 , a AND b AS "a_AND_b"
 FROM dummy
 ----
-99 values hashing to 322b702ce7de2998dd023b14d004e763
+0
+0
+1
+1
+0
+0
+1
+0
+1
+0
+0
+0
+1
+1
+0
+1
+1
+1
+0
+0
+1
+0
+0
+NULL
+1
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+0
+1
+0
+0
+0
+1
+0
+0
+1
+1
+1
+0
+1
+1
+0
+1
+0
+0
+1
+0
+1
+1
+1
+1
+NULL
+0
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+1
+NULL
+NULL
+0
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+0
+NULL
+1
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+1
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 DROP table dummy
-
 

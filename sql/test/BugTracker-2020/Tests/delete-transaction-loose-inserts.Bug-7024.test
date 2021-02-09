@@ -21,4 +21,3 @@ SELECT * FROM b
 statement ok
 DROP TABLE b
 
-
