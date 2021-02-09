@@ -417,12 +417,15 @@ bl_postversion(void *Store, void *lg)
 		}
 #endif
 	}
+#endif
 
 #ifdef CATALOG_OCT2020
 	if (store->catalog_version <= CATALOG_OCT2020) {
 		lng lid;
 		if (logger_sequence(lg, OBJ_SID, &lid) == 0)
 			return GDK_FAIL;
+		(void)lid;
+#if 0 /* TODO */
 		int id = (int) lid;
 		char *schemas[2] = {"sys", "tmp"};
 		for (int i = 0 ; i < 2; i++) { /* create for both tmp and sys schemas */
@@ -530,6 +533,7 @@ bl_postversion(void *Store, void *lg)
 
 		if (logger_upgrade_bat(lg, N("sys", "objects", "id"), LOG_COL, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
+#endif
 	}
 #endif
 
