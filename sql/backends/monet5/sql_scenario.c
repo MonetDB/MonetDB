@@ -280,6 +280,37 @@ SQLprepareClient(Client c, int login)
 		}
 	}
 
+	if (c->handshake_options) {
+		char *strtok_state = NULL;
+		char *tok = strtok_r(c->handshake_options, ",", &strtok_state);
+		while (tok != NULL) {
+			int value;
+			if (sscanf(tok, "auto_commit=%d", &value) == 1) {
+				bool auto_commit= value != 0;
+				m->session->auto_commit = auto_commit;
+				m->session->ac_on_commit = auto_commit;
+			} else if (sscanf(tok, "reply_size=%d", &value) == 1) {
+				if (value < -1) {
+					msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "Reply_size cannot be negative");
+					goto bailout;
+				}
+				m->reply_size = value;
+			} else if (sscanf(tok, "size_header=%d", &value) == 1) {
+					be->sizeheader = value != 0;
+			} else if (sscanf(tok, "columnar_protocol=%d", &value) == 1) {
+				c->protocol = (value != 0) ? PROTOCOL_COLUMNAR : PROTOCOL_9;
+			} else if (sscanf(tok, "time_zone=%d", &value) == 1) {
+				m->timezone = 1000 * value;
+			} else {
+				msg = createException(SQL, "SQLprepareClient", SQLSTATE(42000) "unexpected handshake option: %s", tok);
+				goto bailout;
+			}
+
+			tok = strtok_r(NULL, ",", &strtok_state);
+		}
+	}
+
+
 bailout:
 	MT_lock_set(&sql_contextLock);
 	/* expect SQL text first */
@@ -1013,7 +1044,7 @@ SQLparser(Client c)
 			in->pos = in->len;	/* HACK: should use parsed length */
 			return MAL_SUCCEED;
 		}
-		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) {
+		if (strncmp(in->buf + in->pos, "sizeheader", 10) == 0) { // no underscore
 			v = (int) strtol(in->buf + in->pos + 10, NULL, 10);
 			be->sizeheader = v != 0;
 			in->pos = in->len;	/* HACK: should use parsed length */
