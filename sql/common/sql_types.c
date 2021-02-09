@@ -98,7 +98,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_BIT */		{ 0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_CHAR */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_STRING */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_BLOB */		{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BLOB */		{ 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_POS */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_NUM */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_MONTH*/		{ 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -763,9 +763,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_alias(sa, BIT->sqlname, "BOOL");
 
 	strings = t;
+	/* create clob type first, so functions by default will bind to the clob version which doesn't require length validation on some cases */
+	STR = *t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
+	*t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
 	*t++ = sql_create_type(sa, "CHAR",    0, 0, 0, EC_CHAR,   "str");
-	STR = *t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
-	*t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
 
 	numerical = t;
 #if SIZEOF_OID == SIZEOF_INT
