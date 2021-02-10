@@ -49,4 +49,123 @@ DROP TABLE t1
 statement ok
 DROP TABLE t0
 
+statement ok
+CREATE TABLE "sys"."t0" ("c0" BOOLEAN,"c1" DECIMAL(14,3))
+
+statement ok
+COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+false	0.458
+true	4.112
+false	0.201
+false	0.347
+true	0.420
+false	0.127
+false	0.502
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" BOOLEAN,"c1" DECIMAL(14,3))
+
+statement ok
+COPY 10 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	0.000
+false	0.187
+false	0.000
+false	NULL
+false	NULL
+true	NULL
+NULL	0.325
+NULL	0.374
+true	NULL
+true	NULL
+
+statement error
+select 1 from t1, t0 where cast(t1.c1 as clob) not like ((select 'A' from t0, t1) except all (select 'B' from t0))
+
+statement error
+select 1 from t1, t0 where (select 1 from t1) like cast(t1.c1 as clob)
+
+statement error
+select 1 from t1, t0 where cast(t1.c1 as clob) between 'b' and ((select 'A' from t0))
+
+statement error
+select 1 from t1, t0 where ((select 'A' from t0)) between cast(t1.c1 as clob) and 'a'
+
+statement error
+select 1 from t1, t0 where cast(t1.c1 as clob) between ((select 1 from t0)) and 'c'
+
+statement ok
+drop table t0
+
+statement ok
+drop table t1
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DOUBLE PRECISION,"c2" BIGINT)
+
+statement ok
+INSERT INTO "t0" VALUES (NULL, 4), (NULL, 6), (NULL, 0), (NULL, 2), (NULL, 1)
+
+statement ok
+CREATE TABLE "t2" ("c0" DOUBLE PRECISION,"c1" bigint,"c2" BIGINT,"c4" REAL)
+
+statement ok
+INSERT INTO "t2" VALUES (4, 0, 6, NULL),(0.692789052132086, -1, 9, NULL),(2, 0, 6, NULL),(0.9469594820593024, 1, NULL, NULL),(NULL, 0, 6, NULL),
+(0.39272912837466945, 8, NULL, NULL),(NULL, NULL, 4, NULL),(2, 0, 6, NULL),(-1596101049, 0, 6, NULL),(-1951243968, 0, 6, NULL),(NULL, 0, 6, NULL),
+(NULL, 0, 6, NULL),(NULL, 0, 6, NULL),(NULL, 0, 6, NULL)
+
+query T rowsort
+SELECT 4 = ANY(SELECT t2.c2 FROM t2) FROM t0
+----
+True
+True
+True
+True
+True
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" REAL,"c1" BOOLEAN,"c3" DOUBLE PRECISION)
+
+statement ok
+INSERT INTO "t0" VALUES (NULL, false, NULL)
+
+statement ok
+CREATE TABLE "t1" ("c0" REAL)
+
+statement ok
+INSERT INTO "t1" VALUES (2),(2),(2),(2),(2),(2),(2),(0.27167553),(0.67248166),(0.7818908),(-9.1086214e+08),(-0.9899925)
+
+statement ok
+CREATE TABLE "t2" ("c0" REAL,"c1" BOOLEAN)
+
+statement ok
+INSERT INTO "t2" VALUES (-1.2357439e+08, false), (0.16160075, false), (NULL, true)
+
+query R rowsort
+SELECT t0.c3 FROM t2, t0 WHERE FALSE BETWEEN t0.c3 = ANY(SELECT t0.c0 FROM t0 WHERE t0.c1) AND TRUE
+----
+NULL
+NULL
+NULL
+
+query T rowsort
+SELECT FALSE BETWEEN t0.c3 = ANY(SELECT t0.c0 FROM t0 WHERE t0.c1) AND TRUE FROM t2, t0
+----
+True
+True
+True
+
+statement ok
+ROLLBACK
+
 

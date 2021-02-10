@@ -1256,7 +1256,11 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 					goto bailout;
 				while (mapi_fetch_row(hdl) != 0)
 					expr = mapi_fetch_field(hdl, 0);
-				mnstr_printf(toConsole, " PARTITION BY %s %s (%s)", phow, pusing, expr);
+				mnstr_printf(toConsole, " PARTITION BY %s %s (", phow, pusing);
+				if (column)
+					dquoted_print(toConsole, expr, ")");
+				else
+					mnstr_printf(toConsole, "%s)", expr);
 				mapi_close_handle(hdl);
 			}
 		}
