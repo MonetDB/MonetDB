@@ -107,6 +107,73 @@ stdout of test 'sqlancer11` in directory 'sql/test/SQLancer` itself:
 [ true	]
 [ true	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" BINARY LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"));
+#INSERT INTO "sys"."t0" VALUES (BINARY LARGE OBJECT 'F4BECB7E'),(BINARY LARGE OBJECT ''),(BINARY LARGE OBJECT 'E0'),(BINARY LARGE OBJECT 'B0'),(BINARY LARGE OBJECT 'A0FA'),
+#(BINARY LARGE OBJECT 'E67D3FC0'),(BINARY LARGE OBJECT 'A324'),(BINARY LARGE OBJECT '49E0');
+[ 8	]
+#CREATE TABLE "sys"."t1" ("c0" BINARY LARGE OBJECT);
+#INSERT INTO "sys"."t1" VALUES (BINARY LARGE OBJECT ''), (BINARY LARGE OBJECT 'A0'), (BINARY LARGE OBJECT '');
+[ 3	]
+#SELECT t0.c0 FROM t1, t0 WHERE 4 NOT IN (6, 1.7976931348623157E308, 0);
+% sys.t0 # table_name
+% c0 # name
+% blob # type
+% 0 # length
+[ F4BECB7E	]
+[ 	]
+[ E0	]
+[ B0	]
+[ A0FA	]
+[ E67D3FC0	]
+[ A324	]
+[ 49E0	]
+[ F4BECB7E	]
+[ 	]
+[ E0	]
+[ B0	]
+[ A0FA	]
+[ E67D3FC0	]
+[ A324	]
+[ 49E0	]
+[ F4BECB7E	]
+[ 	]
+[ E0	]
+[ B0	]
+[ A0FA	]
+[ E67D3FC0	]
+[ A324	]
+[ 49E0	]
+#SELECT 4 NOT IN (6, 1.7976931348623157E308, 0) FROM t1, t0;
+% .%5 # table_name
+% %5 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+#ROLLBACK;
 
 # 13:59:46 >  
 # 13:59:46 >  "Done."
