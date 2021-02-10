@@ -53,3 +53,20 @@ select 1 from t1, t0 where cast(t1.c1 as clob) between ((select 1 from t0)) and 
 
 drop table t0;
 drop table t1;
+
+START TRANSACTION;
+CREATE TABLE "t0" ("c0" DOUBLE PRECISION,"c2" BIGINT);
+INSERT INTO "t0" VALUES (NULL, 4), (NULL, 6), (NULL, 0), (NULL, 2), (NULL, 1);
+
+CREATE TABLE "t2" ("c0" DOUBLE PRECISION,"c1" bigint,"c2" BIGINT,"c4" REAL);
+INSERT INTO "t2" VALUES (4, 0, 6, NULL),(0.692789052132086, -1, 9, NULL),(2, 0, 6, NULL),(0.9469594820593024, 1, NULL, NULL),(NULL, 0, 6, NULL),
+(0.39272912837466945, 8, NULL, NULL),(NULL, NULL, 4, NULL),(2, 0, 6, NULL),(-1596101049, 0, 6, NULL),(-1951243968, 0, 6, NULL),(NULL, 0, 6, NULL),
+(NULL, 0, 6, NULL),(NULL, 0, 6, NULL),(NULL, 0, 6, NULL);
+
+SELECT 4 = ANY(SELECT t2.c2 FROM t2) FROM t0;
+	-- True
+	-- True
+	-- True
+	-- True
+	-- True
+ROLLBACK;
