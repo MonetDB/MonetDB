@@ -745,9 +745,11 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	if (strcmp(type, "hge") == 0)
 		havehge = true;
 #endif
+#ifdef GDKLIBRARY_BLOB_SORT
 	/* sqlblob was changed to plain blob in the Apr2019 release */
 	if (strcmp(type, "sqlblob") == 0)
 		strcpy(type, "blob");
+#endif
 	if ((t = ATOMindex(type)) < 0) {
 		if ((t = ATOMunknown_find(type)) == 0) {
 			TRC_CRITICAL(GDK, "no space for atom %s", type);
