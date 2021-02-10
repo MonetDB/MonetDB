@@ -174,6 +174,35 @@ stdout of test 'sqlancer11` in directory 'sql/test/SQLancer` itself:
 [ true	]
 [ true	]
 #ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t1" ("c1" TINYINT,"c2" CHAR(22),"c4" INTEGER);
+#INSERT INTO "sys"."t1" VALUES (NULL, NULL, 0),(NULL, NULL, -391221783),(NULL, NULL, -1107653660),(NULL, NULL, 0),(7, 'cTR'' Abp', 0),(7, 'cTR'' Abp', 1),(7, 'cTR'' Abp', -1);
+[ 7	]
+#SELECT t1.c2 FROM t1 WHERE CASE 3 WHEN ((SELECT 0.48) INTERSECT DISTINCT (SELECT -1.2)) THEN FALSE ELSE TRUE END;
+% .t1 # table_name
+% c2 # name
+% char # type
+% 22 # length
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ NULL	]
+[ "cTR' Abp"	]
+[ "cTR' Abp"	]
+[ "cTR' Abp"	]
+#SELECT CASE 3 WHEN ((SELECT 0.48) INTERSECT DISTINCT (SELECT -1.2)) THEN FALSE ELSE TRUE END FROM t1;
+% .%12 # table_name
+% %12 # name
+% boolean # type
+% 5 # length
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+[ true	]
+#ROLLBACK;
 
 # 13:59:46 >  
 # 13:59:46 >  "Done."
