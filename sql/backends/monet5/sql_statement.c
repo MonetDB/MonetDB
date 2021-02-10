@@ -2939,7 +2939,7 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 
 	if (!t || cnt->nr < 0)
 		return NULL;
-	if (!t->s && t->data) /* declared table */
+	if (!t->s) /* declared table */
 		assert(0);
 	q = newStmtArgs(mb, sqlRef, claimRef, 5);
 	q = pushArgument(mb, q, be->mvc_var);
