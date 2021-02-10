@@ -2522,6 +2522,8 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 	/* use (resizeable) array of locks like BBP */
 	//lock_table(t->base.id);
 	/* make lockless ? */
+	if (isTempTable(t))
+		ps = s;
 	slot = ps->end;
 	if (isNew(t) || isTempTable(t) || s->cs.cleared) {
 		ps->end += cnt;
