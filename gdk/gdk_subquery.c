@@ -574,7 +574,6 @@ alloc_fail:
 						ret[gid] = VAL2; \
 					} else if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
 						ret[gid] = bit_nil; \
-						hasnil = 1; \
 					} else if (vals1[i] == vals2[i]) { \
 						ret[gid] = VAL1; \
 					} \
@@ -671,7 +670,6 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 							const void *rv = BUNtail(ri, i);
 							if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
 								ret[gid] = bit_nil;
-								hasnil = 1;
 							} else if (ocmp(lv, rv) == 0)
 								ret[gid] = TRUE;
 						}
@@ -680,6 +678,8 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			}
 		}
 		}
+		for (BUN i = 0 ; i < ngrp ; i++)
+			hasnil |= ret[i] == bit_nil;
 		BATsetcount(res, ngrp);
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
@@ -790,7 +790,6 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 							const void *rv = BUNtail(ri, i);
 							if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
 								ret[gid] = bit_nil;
-								hasnil = 1;
 							} else if (ocmp(lv, rv) == 0)
 								ret[gid] = FALSE;
 						}
@@ -799,6 +798,8 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			}
 		}
 		}
+		for (BUN i = 0 ; i < ngrp ; i++)
+			hasnil |= ret[i] == bit_nil;
 		BATsetcount(res, ngrp);
 		res->tkey = BATcount(res) <= 1;
 		res->tsorted = BATcount(res) <= 1;
