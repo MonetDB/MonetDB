@@ -22,7 +22,6 @@ insert into t1(c0) values(r']BW扗}FUp'), (cast((values (greatest(r'Aᨐ', r'_')
 DROP TABLE t1;
 DROP TABLE t0;
 
-START TRANSACTION;
 CREATE TABLE "sys"."t0" ("c0" BOOLEAN,"c1" DECIMAL(14,3));
 COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 false	0.458
@@ -46,5 +45,11 @@ NULL	0.374
 true	NULL
 true	NULL
 
-select 1 from t1, t0 where cast(t1.c1 as clob) not like ((select 'A' from t0, t1) except all (select 'B' from t0));
-ROLLBACK;
+select 1 from t1, t0 where cast(t1.c1 as clob) not like ((select 'A' from t0, t1) except all (select 'B' from t0)); --error, more than one row returned
+select 1 from t1, t0 where (select 1 from t1) like cast(t1.c1 as clob); --error, more than one row returned
+select 1 from t1, t0 where cast(t1.c1 as clob) between 'b' and ((select 'A' from t0)); --error, more than one row returned
+select 1 from t1, t0 where ((select 'A' from t0)) between cast(t1.c1 as clob) and 'a'; --error, more than one row returned
+select 1 from t1, t0 where cast(t1.c1 as clob) between ((select 1 from t0)) and 'c'; --error, more than one row returned
+
+drop table t0;
+drop table t1;

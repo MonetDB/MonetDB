@@ -151,6 +151,7 @@ extern int exp_is_zero(sql_exp *e);
 extern int exp_is_not_null(sql_exp *e);
 extern int exp_is_null(sql_exp *e);
 extern int exp_is_rel(sql_exp *e);
+extern int exps_one_is_rel(list *exps);
 extern int exp_has_rel(sql_exp *e);
 extern int exps_have_rel_exp(list *exps);
 extern int exps_have_func(list *exps);

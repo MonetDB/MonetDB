@@ -1493,6 +1493,8 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT: no such FILTER function '%s'", filter_op);
 	e = exp_filter(sql->sa, l, r, f, anti);
 
+	if (exps_one_is_rel(l) || exps_one_is_rel(r)) /* uncorrelated subquery case */
+		return rel_select(sql->sa, rel, e);
 	/* atom or row => select */
 	if (exps_card(l) > rel->card) {
 		sql_exp *ls = l->h->data;
@@ -1557,7 +1559,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 	mvc *sql = query->sql;
 	sql_exp *e = NULL;
 
-	if (quantifier || exp_is_rel(ls) || exp_is_rel(rs)) {
+	if (quantifier || exp_is_rel(ls) || exp_is_rel(rs) || (rs2 && exp_is_rel(rs2))) {
 		if (rs2) {
 			e = exp_compare2(sql->sa, ls, rs, rs2, type);
 			if (anti)
