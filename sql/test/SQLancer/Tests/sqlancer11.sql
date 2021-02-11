@@ -153,3 +153,10 @@ merge into t2 using (select * from t1) as t1 on (((((values (false), (false)))an
 0.200162480534249) union all (select distinct -25669977 from t1 as l2t1 where false)))) when matched then update set c2 = (coalesce(0.05676984416302433, cast(0.05650992 as bigint))) 
 when not matched then insert (c2) values (cast(((0.6603879962021974581176664287340827286243438720703125)<>(0.99667693019570047230359932655119337141513824462890625)) as bigint));
 ROLLBACK;
+
+START TRANSACTION;
+CREATE TABLE "t2" ("c0" TINYINT);
+INSERT INTO "t2" VALUES (1), (0);
+
+select min(case (select 2 where false) when 3 then uuid 'dbC4da54-8C0B-4b83-E74E-30242dA0a5fF' end) from t2 group by 0.88;
+ROLLBACK;
