@@ -14,9 +14,13 @@ query TTTT rowsort
 select "name", "query", "type", "remark" from describe_table('sys', 'x')
 ----
 
-statement ok
+query TTTT rowsort
 select "name", "type", "language", "remark" from describe_function('sys', 'test')
 ----
+test
+PROCEDURE
+NULL
+NULL
 
 statement ok
 drop procedure test
@@ -34,9 +38,13 @@ query TTTT rowsort
 select "name", "query", "type", "remark" from describe_table('sys', 'x')
 ----
 
-statement ok
+query TTTT rowsort
 select "name", "type", "language", "remark" from describe_function('sys', 'test')
 ----
+test
+PROCEDURE
+NULL
+NULL
 
 statement ok
 drop procedure test
