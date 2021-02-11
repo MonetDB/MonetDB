@@ -2701,7 +2701,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					set_processed(rsq);
 				}
 				if (rsq)
-					(void)rewrite_inner(v->sql, rel, rsq, is_cnt?op_left:op_join);
+					(void)rewrite_inner(v->sql, rel, rsq, ((!quantifier && depth > 0)||is_cnt)?op_left:op_join);
 
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 					return NULL;
