@@ -2589,7 +2589,7 @@ is_identity( sql_exp *e, sql_rel *r)
 		return 0;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		return (strcmp(f->func->base.name, "identity") == 0);
+		return !f->func->s && strcmp(f->func->base.name, "identity") == 0;
 	}
 	default:
 		return 0;
@@ -2750,12 +2750,12 @@ exp_flatten(mvc *sql, sql_exp *e)
 		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
 
 		/* TODO handle date + x months */
-		if (strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, l->h->data);
 			atom *l2 = exp_flatten(sql, l->h->next->data);
 			if (l1 && l2)
 				return atom_add(l1,l2);
-		} else if (strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, l->h->data);
 			atom *l2 = exp_flatten(sql, l->h->next->data);
 			if (l1 && l2)
@@ -2821,7 +2821,7 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 int
 exp_aggr_is_count(sql_exp *e)
 {
-	if (e->type == e_aggr && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
+	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
 	return 0;
 }

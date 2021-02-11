@@ -4039,7 +4039,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		if (u->op == op_project)
 			u = u->l;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u))
+		if (!u || !is_union(u->op) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
 			return rel;
 
 		ul = u->l;
@@ -4845,7 +4845,7 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			l = l->l;
 		*/
 
-		if (!is_join(l->op) || is_full(l->op) || rel_is_ref(l))
+		if (!is_join(l->op) || is_full(l->op) || rel_is_ref(l) || is_single(l))
 			return rel;
 
 		lop = l->op;
@@ -5055,7 +5055,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 		if (is_semi(rel->op) && is_union(l->op) && je && !find_prop(je->p, PROP_JOINIDX))
 			return rel;
 
-		if ((is_union(l->op) && !need_distinct(l)) && !is_union(r->op)){
+		if ((is_union(l->op) && !need_distinct(l) && !is_single(l)) && !is_union(r->op)){
 			sql_rel *nl, *nr;
 			sql_rel *ll = rel_dup(l->l), *lr = rel_dup(l->r);
 
@@ -5082,8 +5082,8 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			nr = rel_project(v->sql->sa, nr, rel_projections(v->sql, nr, NULL, 1, 1));
 			v->changes++;
 			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
-		} else if (is_union(l->op) && !need_distinct(l) &&
-			   is_union(r->op) && !need_distinct(r)) {
+		} else if (is_union(l->op) && !need_distinct(l) && !is_single(l) &&
+			   is_union(r->op) && !need_distinct(r) && !is_single(r)) {
 			sql_rel *nl, *nr;
 			sql_rel *ll = rel_dup(l->l), *lr = rel_dup(l->r);
 			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
@@ -5126,7 +5126,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (!is_union(l->op) &&
-			   is_union(r->op) && !need_distinct(r) &&
+			   is_union(r->op) && !need_distinct(r) && !is_single(r) &&
 			   !is_semi(rel->op)) {
 			sql_rel *nl, *nr;
 			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
@@ -5170,7 +5170,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 		 *
 		 * */
 		} else if (!is_union(l->op) &&
-			   is_union(r->op) && !need_distinct(r) &&
+			   is_union(r->op) && !need_distinct(r) && !is_single(r) &&
 			   is_semi(rel->op) && rel_is_join_on_pkey(rel)) {
 			/* use first join expression, to find part nr */
 			sql_exp *je = rel->exps->h->data;
@@ -5448,7 +5448,7 @@ rel_push_select_down_union(visitor *v, sql_rel *rel)
 		if (u->op == op_project)
 			u = u->l;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u))
+		if (!u || !is_union(u->op) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u))
 			return rel;
 
 		ul = u->l;
@@ -5616,6 +5616,8 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 			rel_projections(v->sql, rel, NULL, 1, 1));
 		if (need_distinct)
 			set_distinct(rel);
+		if (is_single(u))
+			set_single(rel);
 		v->changes++;
 		rel->l = rel_merge_projects(v, rel->l);
 		rel->r = rel_merge_projects(v, rel->r);
@@ -7971,7 +7973,7 @@ rel_split_project(visitor *v, sql_rel *rel, int top)
 
 	if (!rel)
 		return NULL;
-	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel)) {
+	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel) && !is_single(rel)) {
 		list *exps = rel->exps;
 		node *n;
 		int funcs = 0;
@@ -8585,7 +8587,7 @@ rel_rewrite_antijoin(visitor *v, sql_rel *rel)
 		sql_rel *r = rel->r;
 
 		if (l && !rel_is_ref(l) &&
-		    r && !rel_is_ref(r) && is_union(r->op)) {
+		    r && !rel_is_ref(r) && is_union(r->op) && !is_single(r)) {
 			sql_rel *rl = rel_dup(r->l), *nl;
 			sql_rel *rr = rel_dup(r->r);
 
