@@ -6,8 +6,8 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #define sversion(major,minor,patch)	#major "." #minor "." #patch "\0"
 
 1 VERSIONINFO
-  FILEVERSION version(11,39,12)
-  PRODUCTVERSION version(11,39,12)
+  FILEVERSION version(11,39,13)
+  PRODUCTVERSION version(11,39,13)
   FILEFLAGSMASK 0x3fL
   FILEFLAGS 0
   FILEOS VOS_NT_WINDOWS32
@@ -21,14 +21,14 @@ BEGIN
       VALUE "Comments", "\0"
       VALUE "CompanyName", "MonetDB B.V.\0"
       VALUE "FileDescription", "MonetDB Application Interface DLL\0"
-      VALUE "FileVersion", sversion(11,39,12)
+      VALUE "FileVersion", sversion(11,39,13)
       VALUE "InternalName", "Mapi\0"
       VALUE "LegalCopyright", "Copyright (c) MonetDB B.V. 2008-2021\0"
       VALUE "LegalTrademarks", "\0"
       VALUE "OriginalFilename", "Mapi.dll\0"
       VALUE "PrivateBuild", "\0"
       VALUE "ProductName", "MonetDB Client Libraries\0"
-      VALUE "ProductVersion", sversion(11,39,12)
+      VALUE "ProductVersion", sversion(11,39,13)
       VALUE "SpecialBuild", "\0"
     END
   END
