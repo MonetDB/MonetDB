@@ -118,14 +118,14 @@ INSERT INTO "t2" VALUES (4, 0, 6, NULL),(0.692789052132086, -1, 9, NULL),(2, 0, 
 (0.39272912837466945, 8, NULL, NULL),(NULL, NULL, 4, NULL),(2, 0, 6, NULL),(-1596101049, 0, 6, NULL),(-1951243968, 0, 6, NULL),(NULL, 0, 6, NULL),
 (NULL, 0, 6, NULL),(NULL, 0, 6, NULL),(NULL, 0, 6, NULL)
 
-query T rowsort
+query I rowsort
 SELECT 4 = ANY(SELECT t2.c2 FROM t2) FROM t0
 ----
-True
-True
-True
-True
-True
+1
+1
+1
+1
+1
 
 statement ok
 ROLLBACK
@@ -158,14 +158,152 @@ NULL
 NULL
 NULL
 
-query T rowsort
+query I rowsort
 SELECT FALSE BETWEEN t0.c3 = ANY(SELECT t0.c0 FROM t0 WHERE t0.c1) AND TRUE FROM t2, t0
 ----
-True
-True
-True
+1
+1
+1
 
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" BINARY LARGE OBJECT NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
+
+statement ok
+INSERT INTO "sys"."t0" VALUES (BINARY LARGE OBJECT 'F4BECB7E'),(BINARY LARGE OBJECT ''),(BINARY LARGE OBJECT 'E0'),(BINARY LARGE OBJECT 'B0'),(BINARY LARGE OBJECT 'A0FA'),
+(BINARY LARGE OBJECT 'E67D3FC0'),(BINARY LARGE OBJECT 'A324'),(BINARY LARGE OBJECT '49E0')
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" BINARY LARGE OBJECT)
+
+statement ok
+INSERT INTO "sys"."t1" VALUES (BINARY LARGE OBJECT ''), (BINARY LARGE OBJECT 'A0'), (BINARY LARGE OBJECT '')
+
+query T rowsort
+SELECT t0.c0 FROM t1, t0 WHERE 4 NOT IN (6, 1.7976931348623157E308, 0)
+----
+(empty)
+(empty)
+(empty)
+49E0
+49E0
+49E0
+A0FA
+A0FA
+A0FA
+A324
+A324
+A324
+B0
+B0
+B0
+E0
+E0
+E0
+E67D3FC0
+E67D3FC0
+E67D3FC0
+F4BECB7E
+F4BECB7E
+F4BECB7E
+
+query I rowsort
+SELECT 4 NOT IN (6, 1.7976931348623157E308, 0) FROM t1, t0
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c1" TINYINT,"c2" CHAR(22),"c4" INTEGER)
+
+statement ok
+INSERT INTO "sys"."t1" VALUES (NULL, NULL, 0),(NULL, NULL, -391221783),(NULL, NULL, -1107653660),(NULL, NULL, 0),(7, 'cTR'' Abp', 0),(7, 'cTR'' Abp', 1),(7, 'cTR'' Abp', -1)
+
+query T rowsort
+SELECT t1.c2 FROM t1 WHERE CASE 3 WHEN ((SELECT 0.48) INTERSECT DISTINCT (SELECT -1.2)) THEN FALSE ELSE TRUE END
+----
+NULL
+NULL
+NULL
+NULL
+cTR' Abp
+cTR' Abp
+cTR' Abp
+
+query I rowsort
+SELECT CASE 3 WHEN ((SELECT 0.48) INTERSECT DISTINCT (SELECT -1.2)) THEN FALSE ELSE TRUE END FROM t1
+----
+1
+1
+1
+1
+1
+1
+1
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" SMALLINT NOT NULL,"c2" INTEGER)
+
+statement ok
+CREATE TABLE "t1" ("c0" SMALLINT NOT NULL,"c2" SMALLINT)
+
+statement ok
+INSERT INTO "t1" VALUES (4, NULL),(3, 4),(3, 5),(2, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(6, NULL),(3, NULL),(5, NULL),
+(0, 8),(3, NULL),(8, 7),(-1, 6),(3, -3),(7, 7),(0, 1),(8, NULL),(9, NULL),(9, NULL),(-1, NULL),(2, NULL),(7, 8),(1, 2)
+
+statement ok
+CREATE TABLE "t2" ("c0" SMALLINT)
+
+statement ok
+INSERT INTO "t2" VALUES (NULL), (NULL), (0)
+
+query I rowsort
+SELECT t1.c0 FROM t1 FULL OUTER JOIN (SELECT 3.3 FROM t2) AS sub0 ON true WHERE (EXISTS (SELECT 1)) OR greatest(TRUE, FALSE)
+----
+
+query I rowsort
+SELECT (EXISTS (SELECT 1)) OR greatest(TRUE, FALSE) FROM t1 FULL OUTER JOIN (SELECT 3.3 FROM t2) AS sub0 ON true
+----
+
+statement ok
+ROLLBACK
 
