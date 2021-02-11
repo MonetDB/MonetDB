@@ -1989,7 +1989,7 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 				if (exps_have_rel_exp(e->l) || exps_have_rel_exp(e->r)) {
 					/* rewrite into setop */
 					list_remove_node(rel->exps, n); /* remove or expression */
-					if (is_select(rel->op) && list_empty(rel->exps)) { /* remove empty select if that's the case */
+					if (is_select(rel->op) && list_empty(rel->exps) && !(rel_is_ref(rel))) { /* remove empty select if that's the case */
 						sql_rel *l = rel->l;
 						rel->l = NULL;
 						rel_destroy(rel);

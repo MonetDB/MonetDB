@@ -402,8 +402,8 @@ stdout of test 'sqlancer11` in directory 'sql/test/SQLancer` itself:
 [ true	]
 [ true	]
 #SELECT 1 FROM t1 JOIN (SELECT 3.3 FROM t2) AS sub0 ON true WHERE (EXISTS (SELECT 1)) OR true >= true;
-% .%7 # table_name
-% %7 # name
+% .%6 # table_name
+% %6 # name
 % tinyint # type
 % 1 # length
 [ 1	]
@@ -496,6 +496,33 @@ stdout of test 'sqlancer11` in directory 'sql/test/SQLancer` itself:
 [ 1	]
 [ 1	]
 [ 1	]
+#ROLLBACK;
+#START TRANSACTION;
+#CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) NOT NULL,"c2" UUID,"c3" CHARACTER LARGE OBJECT,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"));
+#COPY 7 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#0.790	NULL	"-1900689153"
+#0.184	99ccfc7f-b976-fec3-71ec-4b288badccea	"c2306ddc-bbd0-ded7-7679-d940bb5abc68"
+#0.309	1ef3706c-8ff1-e8d9-30cd-bfa4df474c76	""
+#0.033	4e102536-8e5b-2bae-2bed-fdbd3dcfe88a	NULL
+#0.095	cbd717c5-6248-e6ae-9c9c-e7cde9ddbc18	NULL
+#0.251	39a0b33b-a1ca-48ff-86ff-e5f08fda4aaf	NULL
+#0.276	7baae4a1-bd03-8aff-dc8b-6bae5099697f	NULL
+[ 7	]
+#CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL,"c2" UUID,CONSTRAINT "t1_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t1_c0_unique" UNIQUE ("c0"));
+#CREATE TABLE "sys"."t2" ("c2" BIGINT);
+#COPY 7 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+#5
+#0
+#35340968
+#3
+#NULL
+#NULL
+#1804976115
+[ 7	]
+#merge into t2 using (select * from t1) as t1 on (((((values (false), (false)))and("isauuid"(r'AJr1G'))))or(exists ((select distinct l2t2.c2 from t0 as l2t0, t2 as l2t2 where false group by l2t2.c2, l2t2.c2, 
+#0.200162480534249) union all (select distinct -25669977 from t1 as l2t1 where false)))) when matched then update set c2 = (coalesce(0.05676984416302433, cast(0.05650992 as bigint))) 
+#when not matched then insert (c2) values (cast(((0.6603879962021974581176664287340827286243438720703125)<>(0.99667693019570047230359932655119337141513824462890625)) as bigint));
+[ 0	]
 #ROLLBACK;
 
 # 13:59:46 >  
