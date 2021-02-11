@@ -158,5 +158,6 @@ START TRANSACTION;
 CREATE TABLE "t2" ("c0" TINYINT);
 INSERT INTO "t2" VALUES (1), (0);
 
+select min(case 2 when 3 then uuid 'dbC4da54-8C0B-4b83-E74E-30242dA0a5fF' end) from (values(1)) x(x) group by x;
 select min(case (select 2 where false) when 3 then uuid 'dbC4da54-8C0B-4b83-E74E-30242dA0a5fF' end) from t2 group by 0.88;
 ROLLBACK;
