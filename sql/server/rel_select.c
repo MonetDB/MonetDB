@@ -1957,7 +1957,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			supertype(&super, exp_subtype(values), exp_subtype(le));
 
 			/* on selection/join cases we can generate cmp expressions instead of anyequal for trivial cases */
-			if (is_sql_where(f) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
+			if ((is_sql_where(f) || is_sql_having(f)) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
 				if (list_length(vals) == 1) { /* use cmp_equal instead of cmp_in for 1 expression */
 					sql_exp *first = vals->h->data;
 					if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &first, 1, type_equal_no_any) < 0)
@@ -2659,7 +2659,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!rel)
 			return sq;
 		sq = rel_zero_or_one(sql, sq, ek);
-		if (is_sql_where(f)) {
+		if (is_sql_where(f) || is_sql_having(f)) {
 			sql_exp *le = exp_rel(sql, sq);
 			sql_subtype bt;
 
