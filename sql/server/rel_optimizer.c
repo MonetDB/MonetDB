@@ -5628,7 +5628,7 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 
-		if (!u || !is_union(u->op) || need_distinct(u) || is_single(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
+		if (!u || !is_union(u->op) || need_distinct(u) || !u->exps || rel_is_ref(u) || project_unsafe(rel,0))
 			return rel;
 		/* don't push project down union of single values */
 		if ((is_project(ul->op) && !ul->l) || (is_project(ur->op) && !ur->l))
@@ -5664,6 +5664,8 @@ rel_push_project_down_union(visitor *v, sql_rel *rel)
 			rel_projections(v->sql, rel, NULL, 1, 1));
 		if (need_distinct)
 			set_distinct(rel);
+		if (is_single(u))
+			set_single(rel);
 		v->changes++;
 		rel->l = rel_merge_projects(v, rel->l);
 		rel->r = rel_merge_projects(v, rel->r);
