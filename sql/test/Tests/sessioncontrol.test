@@ -24,8 +24,17 @@ call setworkerlimit(12)
 statement ok
 call setmemorylimit(8000)
 
-statement ok
+query ITTIIII rowsort
 select sessionid, s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+----
+0
+monetdb
+minimal_pipe
+5000
+123
+12
+8000
+
 
 statement error
 call setoptimizer('')
