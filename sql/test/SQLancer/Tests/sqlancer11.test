@@ -704,4 +704,26 @@ HAVING (((SELECT DISTINCT least(FALSE, TRUE) FROM t1 AS l1t1, t0 AS l1t0, t2 AS 
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c1" REAL NOT NULL,"c2" SMALLINT,"c3" UUID);
+
+statement ok
+INSERT INTO "sys"."t0" VALUES (1.2981725e+09, 0, '7dd474c9-f093-8ecd-5f7c-0f9100ac11ba'),(0.49708593, 0, '0aead7ff-1812-bac2-fb0e-f982697d5ddd'),
+(0.058829725, 0, '2c8f3ee5-76d2-949f-d4c2-1d2aefc63f3c'),(0.761042, NULL, 'ebdbec5b-679b-7e71-3da8-4daaeb68ee20')
+
+query I rowsort
+SELECT 1 FROM t0 HAVING max((t0.c2) IN (52545019, 6))
+----
+
+
+query I rowsort
+SELECT 1 FROM t0 GROUP BY t0.c1 HAVING max((t0.c2) IN (52545019, 6))
+----
+
+
+statement ok
+ROLLBACK
 
