@@ -1,3 +1,10 @@
+monetdb (11.39.13) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7049: Implement DISTINCT for GROUP_CONCAT
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Thu, 11 Feb 2021 10:59:33 +0100
+
 monetdb (11.39.11) unstable; urgency=low
 
   * Rebuilt.
