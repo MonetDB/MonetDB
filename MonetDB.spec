@@ -84,7 +84,7 @@ Group: Applications/Databases
 License: MPLv2.0
 URL: https://www.monetdb.org/
 BugURL: https://bugs.monetdb.org/
-Source: https://www.monetdb.org/downloads/sources/Oct2020-SP2/%{name}-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Oct2020-SP3/%{name}-%{version}.tar.bz2
 
 # The Fedora packaging document says we need systemd-rpm-macros for
 # the _unitdir and _tmpfilesdir macros to exist; however on RHEL 7
@@ -845,6 +845,10 @@ else
 fi
 
 %changelog
+* Thu Feb 11 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.13-20210211
+- Rebuilt.
+- GH#7049: Implement DISTINCT for GROUP_CONCAT
+
 * Mon Jan 18 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.11-20210118
 - Rebuilt.
 - GH#3772: Any user can grant a role.
