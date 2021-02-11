@@ -309,6 +309,12 @@ select (select not exists (select sum(i1.i + i2.i)) from integers i2) from integ
 	-- False
 	-- False
 
+select 1 where (select 1 union all select 2) in (1);
+	--error, more than one row returned by a subquery used as an expression
+
+select (select 1 union all select 2) in (1);
+	--error, more than one row returned by a subquery used as an expression
+
 DROP TABLE tbl_ProductSales;
 DROP TABLE another_T;
 DROP TABLE integers;

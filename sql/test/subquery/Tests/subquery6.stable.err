@@ -102,6 +102,12 @@ MAPI  = (monetdb) /var/tmp/mtest-6957/.s.monetdb.33856
 QUERY = select (select sum(i1.i) > (select sum(i1.i + i2.i)) from integers i2) from integers i1;
 ERROR = !SELECT: subquery uses ungrouped column from outer query
 CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-151373/.s.monetdb.33332
+QUERY = select 1 where (select 1 union all select 2) in (1);
+ERROR = !GDK reported error: BATsubcross: more than one match
+MAPI  = (monetdb) /var/tmp/mtest-151373/.s.monetdb.33332
+QUERY = select (select 1 union all select 2) in (1);
+ERROR = !GDK reported error: BATsubcross: more than one match
 
 # 11:45:43 >  
 # 11:45:43 >  "Done."

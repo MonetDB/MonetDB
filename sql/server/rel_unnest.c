@@ -1993,6 +1993,14 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 					list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 
 					list_remove_node(rel->exps, n); /* remove or expression */
+					if (is_select(rel->op) && list_empty(rel->exps)) {
+						sql_rel *ll = rel->l;
+						rel->l = NULL;
+						rel_destroy(rel);
+						rel = ll;
+						l = rel;
+						r = rel_dup(rel);
+					}
 
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
