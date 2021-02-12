@@ -141,6 +141,12 @@ enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 #define MT_NAME_LEN	32	/* length of thread/semaphore/etc. names */
 
 #define UNKNOWN_THREAD "unknown thread"
+typedef int64_t lng;
+
+typedef struct QryCtx {
+	lng starttime;
+	lng querytimeout;
+} QryCtx;
 
 gdk_export bool MT_thread_init(void);
 gdk_export int MT_create_thread(MT_Id *t, void (*function) (void *),
@@ -152,6 +158,8 @@ gdk_export void MT_thread_setdata(void *data);
 gdk_export void MT_exiting_thread(void);
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
+gdk_export QryCtx *MT_thread_get_qry_ctx(void);
+gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
 
 #if SIZEOF_VOID_P == 4
 /* "limited" stack size on 32-bit systems */

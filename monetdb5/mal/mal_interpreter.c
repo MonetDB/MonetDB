@@ -463,6 +463,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	int	startedProfileQueue = 0;
 #define CHECKINTERVAL 1000 /* how often do we check for client disconnect */
 	runtimeProfile.ticks = runtimeProfileFunction.ticks = 0;
+	QryCtx qry_ctx = {.starttime=mb->starttime, .querytimeout=cntxt->querytimeout};
 
 	if (stk == NULL)
 		throw(MAL, "mal.interpreter", MAL_STACK_FAIL);
@@ -515,6 +516,7 @@ str runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 	while (stkpc < mb->stop && stkpc != stoppc) {
 		// incomplete block being executed, requires at least signature and end statement
 		MT_thread_setalgorithm(NULL);
+		MT_thread_set_qry_ctx(&qry_ctx);
 		pci = getInstrPtr(mb, stkpc);
 		if (cntxt->mode == FINISHCLIENT){
 			stkpc = stoppc;
