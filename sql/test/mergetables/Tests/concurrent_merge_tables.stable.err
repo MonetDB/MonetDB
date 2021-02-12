@@ -1,0 +1,12 @@
+stderr of test 'concurrent_merge_tables` in directory 'sql/test/mergetables` itself:
+
+
+# 14:09:11 >  
+# 14:09:11 >  "/usr/bin/python3" "concurrent_merge_tables.SQL.py" "concurrent_merge_tables"
+# 14:09:11 >  
+
+
+# 14:09:13 >  
+# 14:09:13 >  "Done."
+# 14:09:13 >  
+
