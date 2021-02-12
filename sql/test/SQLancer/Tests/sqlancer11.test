@@ -914,3 +914,32 @@ INSERT INTO t1(c2) VALUES(COALESCE(BLOB '23f0', ifthenelse(FALSE, BLOB '', BLOB 
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" DECIMAL(18,3) NOT NULL,CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
+
+statement ok
+INSERT INTO "sys"."t0" VALUES (0.070), (1.000)
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL,"c2" INTERVAL SECOND)
+
+statement ok
+INSERT INTO "sys"."t1" VALUES (0.263, NULL), (0.263, NULL), (0.263, NULL)
+
+statement ok
+CREATE TABLE "sys"."t2" ("c0" DECIMAL(18,3),"c2" CHAR(294))
+
+query TI rowsort
+select interval '415570333' month, count(*) from t2, t0, t1 cross join (select t2.c0, case when least(false, true) then ((367992674)||(7)) when (date '1970-01-01') is not null then ((6)*(0.66515356)) when (values (true), (true)) 
+then sql_max(0.54999214, 0.15893766330413428) end from t1, t2, t0 full outer join (select (select 0.16147217 from t1 as l2t1, t2 as l2t2 where true) from t0 as l1t0, t1 as l1t1, t2 as l1t2 where false) as sub0 on case blob ''
+when blob '14' then false when blob '15' then false end where ((t2.c2)ilike(t2.c2))) as sub0 where ((nullif(t2.c2, t2.c2))ilike((select all l2t2.c2 from t2 as l2t2, t1 as l2t1 where true))) group by 5 having (scale_up(min(all
+case when ((t2.c2)ilike(t2.c2)) then ((825098476)*(t0.c0)) end), 2)) between asymmetric (cast(0.42723433840954905 as smallint)) and (least(-678178003, 0.752261257217908)) order by null asc nulls last, lower(r'0.9714232446714142') desc nulls last
+----
+
+
+statement ok
+ROLLBACK
