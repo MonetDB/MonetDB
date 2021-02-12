@@ -379,7 +379,7 @@ class SQLLogic:
             raise
         except:
             type, value, traceback = sys.exc_info()
-            self.query_error(statement, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return
         try:
             data = crs.fetchall()
@@ -387,7 +387,7 @@ class SQLLogic:
             raise
         except:
             type, value, traceback = sys.exc_info()
-            self.query_error(statement, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb', str(value))
             return
         if crs.description:
             rescols = []
