@@ -59,6 +59,8 @@ class SQLLogic:
         for row in self.crs.fetchall():
             try:
                 self.crs.execute('drop table "%s" cascade' % row[0].replace('"', '""'))
+            except KeyboardInterrupt:
+                raise
             except:
                 pass
 
@@ -71,6 +73,8 @@ class SQLLogic:
         except pymonetdb.DatabaseError:
             if not expectok:
                 return
+        except KeyboardInterrupt:
+            raise
         except:
             type, value, traceback = sys.exc_info()
             self.query_error(statement, 'unexpected error from pymonetdb', str(value))
@@ -134,6 +138,8 @@ class SQLLogic:
         except pymonetdb.DatabaseError as e:
             self.query_error(query, 'query failed', e.args[0])
             return
+        except KeyboardInterrupt:
+            raise
         except:
             type, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
@@ -146,6 +152,8 @@ class SQLLogic:
             return
         try:
             data = self.crs.fetchall()
+        except KeyboardInterrupt:
+            raise
         except:
             type, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))

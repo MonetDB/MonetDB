@@ -1308,6 +1308,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
             if not env.get('NOCLEAN') and LogDBdir and os.path.exists(LogDBdir):
                 try:
                     shutil.rmtree(LogDBdir)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     Warn("database '%s` exists, but destroying it failed; skipping tests in '%s`!" % (TSTDB, TSTSRCDIR))
                     #TODO:
@@ -1332,6 +1334,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
                     return td, elem, max(FdOut, FdErr), interrupted
                 try:
                     z.extractall(LogDBdir)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     Warn("initial database '%s` cannot be extracted; skipping tests in '%s`!" % (initdb, TSTSRCDIR))
                     #TODO:
@@ -1468,6 +1472,8 @@ def PerformDir(env, testdir, testlist, BusyPorts, all_tests = False) :
         if testweb:
             try:
                 os.removedirs(TSTTRGDIR)
+            except KeyboardInterrupt:
+                raise
             except:
                 pass
 
@@ -2886,6 +2892,8 @@ def killProc(proc, outfile = None, cmd = None):
             out, err = p.communicate()
             if t is not None:
                 t.cancel()
+        except KeyboardInterrupt:
+            raise
         except:
             out = ''
     if outfile is not None and out:
@@ -3238,6 +3246,8 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, STIMEOUT, CTIMEO
                     sql.connect(hostname='localhost',
                                 port=int(env['MAPIPORT']),
                                 database=TSTDB)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     returncode = 'error'
                 else:
@@ -4105,6 +4115,8 @@ def main(argv) :
         if proc.returncode == 0:
             CONDITIONALS['MERCURIAL'] = '#' # True
         proc = None
+    except KeyboardInterrupt:
+        raise
     except:
         pass
     os.chdir(BACK)
@@ -4115,6 +4127,8 @@ def main(argv) :
     else:
         try:
             socket.getaddrinfo(socket.gethostname(), None)
+        except KeyboardInterrupt:
+            raise
         except:
             CONDITIONALS['BAD_HOSTNAME'] = '#' # True
 
@@ -4246,6 +4260,8 @@ def main(argv) :
             if proc.returncode == 0:
                 REV = out.strip()
             proc = None
+        except KeyboardInterrupt:
+            raise
         except:
             pass
     # fix up URLPREFIX
@@ -4271,6 +4287,8 @@ def main(argv) :
                             (sockdir, env['MAPIPORT'])
                     HOST = sockdir
                     os.environ['MAPIHOST'] = HOST
+                except KeyboardInterrupt:
+                    raise
                 except:
                     SOCK = ""
             else:
@@ -4427,6 +4445,8 @@ def main(argv) :
             if not env.get('NOCLEAN') and os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
                 try:
                     shutil.rmtree(os.path.join(TSTTRGBASE, TSTPREF))
+                except KeyboardInterrupt:
+                    raise
                 except:
                     ErrXit("Failed to remove %s" % os.path.join(TSTTRGBASE, TSTPREF))
             if not os.path.exists(env['GDK_DBFARM']):
@@ -4436,6 +4456,8 @@ def main(argv) :
             if not env.get('NOCLEAN') and os.path.exists(os.path.join(env['GDK_DBFARM'], TSTPREF)):
                 try:
                     shutil.rmtree(os.path.join(env['GDK_DBFARM'], TSTPREF))
+                except KeyboardInterrupt:
+                    raise
                 except:
                     ErrXit("Failed to remove %s" % os.path.join(env['GDK_DBFARM'], TSTPREF))
             try:
@@ -4738,6 +4760,8 @@ VALUES (%s, '%s', '%s', '%s',
         if THISFILE == "Mtest.py" and SOCK:
             try:
                 shutil.rmtree(sockdir);
+            except KeyboardInterrupt:
+                raise
             except:
                 pass
 
