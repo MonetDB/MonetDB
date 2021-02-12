@@ -1268,8 +1268,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			}
 		} else {
 			if (r2) { /* handle all cases in stmt_uselect, reducing, non reducing, scalar etc */
-				if (l->nrcols == 0 && left)
-					l = stmt_const(be, bin_first_column(be, left), l);
+				if (l->nrcols == 0 && ((sel && sel->nrcols > 0) || r->nrcols > 0 || r2->nrcols > 0 || reduce))
+					l = left ? stmt_const(be, bin_first_column(be, left), l) : column(be, l);
 				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
 			} else {
 				/* value compare or select */
