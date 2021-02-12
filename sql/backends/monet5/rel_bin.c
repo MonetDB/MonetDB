@@ -381,7 +381,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	if (reduce && c->nrcols == 0)
 		c = stmt_const(be, bin_first_column(be, left), c);
 
-	if (c->nrcols == 0 || (depth && !reduce)) {
+	if (c->nrcols == 0 || depth || !reduce) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)
 			?sql_bind_func(sql, "sys", "=", tail_type(c), tail_type(c), F_FUNC)
@@ -400,9 +400,8 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				s = stmt_binop(be, s, i, NULL, a);
 			else
 				s = i;
-
 		}
-		if (sel && !(depth && !reduce))
+		if (sel && !(depth || !reduce))
 			s = stmt_uselect(be,
 				stmt_const(be, bin_first_column(be, left), s),
 				stmt_bool(be, 1), cmp_equal, sel, 0, 0);
