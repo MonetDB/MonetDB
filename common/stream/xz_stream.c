@@ -19,6 +19,7 @@
 struct inner_state {
 	lzma_stream strm;
 	uint8_t buf[64*1024];
+	lzma_ret error_code;
 };
 
 static pump_buffer
@@ -85,6 +86,7 @@ xz_work(inner_state_t *xz, pump_action action)
 	}
 
 	lzma_ret ret = lzma_code(&xz->strm, a);
+	xz->error_code = ret;
 
 	switch (ret) {
 		case LZMA_OK:
@@ -103,6 +105,29 @@ xz_finalizer(inner_state_t *xz)
 	free(xz);
 }
 
+static const char *
+xz_get_error(inner_state_t *xz)
+{
+	static const char *msgs[] = {
+		"LZMA_OK",
+		"LZMA_STREAM_END",
+		"LZMA_NO_CHECK",
+		"LZMA_UNSUPPORTED_CHECK",
+		"LZMA_GET_CHECK",
+		"LZMA_MEM_ERROR",
+		"LZMA_MEMLIMIT_ERROR",
+		"LZMA_FORMAT_ERROR",
+		"LZMA_OPTIONS_ERROR",
+		"LZMA_DATA_ERROR",
+		"LZMA_BUF_ERROR",
+		"LZMA_PROG_ERROR"
+	};
+
+	if (xz->error_code <= LZMA_PROG_ERROR)
+		return msgs[xz->error_code];
+	else
+		return "unknown LZMA error code";
+}
 
 
 
@@ -127,6 +152,7 @@ xz_stream(stream *inner, int preset)
 	state->get_buffer = xz_get_buffer;
 	state->worker = xz_work;
 	state->finalizer = xz_finalizer;
+	state->get_error = xz_get_error;
 
 	lzma_ret ret;
 	if (inner->readonly) {

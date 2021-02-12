@@ -122,6 +122,13 @@ finalizer(inner_state_t *inner_state)
 	free(inner_state);
 }
 
+static const char*
+bz2_get_error(inner_state_t *inner_state)
+{
+	int dummy;
+	return BZ2_bzerror(&inner_state->strm, &dummy);
+}
+
 static int
 BZ2_bzDecompress_wrapper(bz_stream *strm, int a)
 {
@@ -148,6 +155,7 @@ bz2_stream(stream *inner, int level)
 	state->set_dst_win = set_dst_win;
 	state->get_buffer = get_buffer;
 	state->worker = work;
+	state->get_error = bz2_get_error;
 	state->finalizer = finalizer;
 
 	int ret;
