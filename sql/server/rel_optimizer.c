@@ -4030,11 +4030,10 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 {
 	if (rel->op == op_groupby && rel->l) {
 		sql_rel *u = rel->l, *ou = u;
-		sql_rel *g = rel;
 		sql_rel *ul = u->l;
 		sql_rel *ur = u->r;
 		node *n, *m;
-		list *lgbe = NULL, *rgbe = NULL, *gbe = NULL, *exps = NULL;
+		list *lgbe = NULL, *rgbe = NULL, *gbe = NULL, *exps = NULL, *others = NULL;
 
 		if (u->op == op_project)
 			u = u->l;
@@ -4050,7 +4049,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			return rel;
 
 		/* distinct should be done over the full result */
-		for (n = g->exps->h; n; n = n->next) {
+		for (n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			sql_subfunc *af = e->f;
 
@@ -4068,11 +4067,9 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		ul = rel_dup(ul);
 		ur = rel_dup(ur);
 		if (!is_project(ul->op))
-			ul = rel_project(v->sql->sa, ul,
-				rel_projections(v->sql, ul, NULL, 1, 1));
+			ul = rel_project(v->sql->sa, ul, rel_projections(v->sql, ul, NULL, 1, 1));
 		if (!is_project(ur->op))
-			ur = rel_project(v->sql->sa, ur,
-				rel_projections(v->sql, ur, NULL, 1, 1));
+			ur = rel_project(v->sql->sa, ur, rel_projections(v->sql, ur, NULL, 1, 1));
 		rel_rename_exps(v->sql, u->exps, ul->exps);
 		rel_rename_exps(v->sql, u->exps, ur->exps);
 		if (u != ou) {
@@ -4084,29 +4081,49 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 			rel_rename_exps(v->sql, ou->exps, ur->exps);
 		}
 
-		if (g->r && list_length(g->r) > 0) {
-			list *gbe = g->r;
+		if (!list_empty(rel->r)) {
+			list *ogbe = rel->r;
 
-			lgbe = exps_copy(v->sql, gbe);
-			rgbe = exps_copy(v->sql, gbe);
+			lgbe = exps_copy(v->sql, ogbe);
+			rgbe = exps_copy(v->sql, ogbe);
+			gbe = new_exp_list(v->sql->sa);
+			others = new_exp_list(v->sql->sa);
+			for (n = ogbe->h; n; n = n->next) {
+				sql_exp *e = n->data, *ne;
+
+				/* all grouping columns are required to the sum, otherwise the grouping column will different, thus giving a different result */
+				ne = exps_uses_exp(rel->exps, e);
+				if (!ne) {
+					ne = exp_ref(v->sql, e);
+					list_append(others, ne);
+				} else {
+					ne = list_find_exp(rel->exps, ne);
+					assert(ne);
+					ne = exp_ref(v->sql, ne);
+				}
+				append(gbe, ne);
+			}
 		}
+
 		ul = rel_groupby(v->sql, ul, NULL);
 		ul->r = lgbe;
-		ul->nrcols = g->nrcols;
-		ul->card = g->card;
-		ul->exps = exps_copy(v->sql, g->exps);
+		ul->nrcols = rel->nrcols;
+		ul->card = rel->card;
+		ul->exps = list_empty(others) ? exps_copy(v->sql, rel->exps) : list_merge(exps_copy(v->sql, others), exps_copy(v->sql, rel->exps), (fdup) NULL);
 		ul->nrcols = list_length(ul->exps);
 
 		ur = rel_groupby(v->sql, ur, NULL);
 		ur->r = rgbe;
-		ur->nrcols = g->nrcols;
-		ur->card = g->card;
-		ur->exps = exps_copy(v->sql, g->exps);
+		ur->nrcols = rel->nrcols;
+		ur->card = rel->card;
+		ur->exps = list_empty(others) ? exps_copy(v->sql, rel->exps) : list_merge(exps_copy(v->sql, others), exps_copy(v->sql, rel->exps), (fdup) NULL);
 		ur->nrcols = list_length(ur->exps);
+
+		rel->exps = list_empty(others) ? rel->exps : list_merge(others, rel->exps, (fdup) NULL);
 
 		/* group by on primary keys which define the partioning scheme
 		 * don't need a finalizing group by */
-		/* how to check if a partion is based on some primary key ?
+		/* how to check if a partition is based on some primary key ?
 		 * */
 		if (rel->r && list_length(rel->r)) {
 			node *n;
@@ -4122,8 +4139,7 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 					sql_table *mt = (bt)?bt->r:NULL;
 					if (c && mt && list_find(c->t->pkey->k.columns, c, cmp) != NULL) {
 						v->changes++;
-						return rel_inplace_setop(v->sql, rel, ul, ur, op_union,
-					       	       rel_projections(v->sql, rel, NULL, 1, 1));
+						return rel_inplace_setop(v->sql, rel, ul, ur, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 					}
 				}
 			}
@@ -4133,22 +4149,6 @@ rel_push_aggr_down(visitor *v, sql_rel *rel)
 		rel_setop_set_exps(v->sql, u, rel_projections(v->sql, ul, NULL, 1, 1));
 		set_processed(u);
 
-		if (rel->r) {
-			list *ogbe = rel->r;
-
-			gbe = new_exp_list(v->sql->sa);
-			for (n = ogbe->h; n; n = n->next) {
-				sql_exp *e = n->data, *ne;
-
-				ne = exps_uses_exp( rel->exps, e);
-				if (!ne)
-					continue;
-				ne = list_find_exp( u->exps, ne);
-				assert(ne);
-				ne = exp_ref(v->sql, ne);
-				append(gbe, ne);
-			}
-		}
 		exps = new_exp_list(v->sql->sa);
 		for (n = u->exps->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
 			sql_exp *ne, *e = n->data, *oa = m->data;
