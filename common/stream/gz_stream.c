@@ -107,6 +107,13 @@ finalizer(inner_state_t *inner_state)
 	free(inner_state);
 }
 
+
+static const char*
+get_error(inner_state_t *inner_state)
+{
+	return inner_state->strm.msg;
+}
+
 stream *
 gz_stream(stream *inner, int level)
 {
@@ -126,6 +133,7 @@ gz_stream(stream *inner, int level)
 	state->set_dst_win = set_dst_win;
 	state->get_buffer = get_buffer;
 	state->worker = work;
+	state->get_error = get_error;
 	state->finalizer = finalizer;
 
 	int ret;
