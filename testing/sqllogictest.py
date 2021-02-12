@@ -133,7 +133,12 @@ class SQLLogic:
         if self.crs.rowcount * len(columns) != nresult:
             self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
             return
-        data = self.crs.fetchall()
+        try:
+            data = self.crs.fetchall()
+        except pymonetdb.ProgrammingError:
+            self.query_error(query, 'query gave ProgrammingError', e.args[0])
+            err = True
+            data = []
         if self.res is not None:
             for row in data:
                 sep=''
