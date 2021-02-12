@@ -386,6 +386,80 @@ BLOBblob_blob(blob **d, blob **s)
 }
 
 static str
+BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
+{
+	BAT *b = NULL, *s = NULL, *dst = NULL;
+	BATiter bi;
+	str msg = NULL;
+	struct canditer ci;
+	BUN q;
+	oid off;
+	bool nils = false;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid && !is_bat_nil(*sid)) {
+		if ((s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+	} else {
+		BBPkeepref(*res = b->batCacheid); /* nothing to convert, return */
+		return MAL_SUCCEED;
+	}
+	off = b->hseqbase;
+	q = canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
+		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (ci.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next_dense(&ci) - off);
+			blob *v = (blob*) BUNtvar(bi, p);
+
+			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_blob_nil(v);
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next(&ci) - off);
+			blob *v = (blob*) BUNtvar(bi, p);
+
+			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_blob_nil(v);
+		}
+	}
+
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
+		BBPkeepref(*res = dst->batCacheid);
+	} else if (dst)
+		BBPreclaim(dst);
+	return msg;
+}
+
+static str
 BLOBblob_fromstr(blob **b, const char **s)
 {
 	size_t len = 0;
@@ -407,6 +481,7 @@ static mel_func blob_init_funcs[] = {
  command("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,2, batarg("",int),batarg("b",blob))),
  command("blob", "prelude", BLOBprelude, false, "", args(1,1, arg("",void))),
  command("calc", "blob", BLOBblob_blob, false, "", args(1,2, arg("",blob),arg("b",blob))),
+ command("batcalc", "blob", BLOBblob_blob_bulk, false, "", args(1,3, batarg("",blob),batarg("b",blob),batarg("s",oid))),
  command("calc", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
  { .imp=NULL }
 };

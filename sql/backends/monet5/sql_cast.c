@@ -155,29 +155,6 @@ SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int 
 	return MAL_SUCCEED;
 }
 
-static inline str
-SQLstr_cast_str(str *r, size_t *rlen, str v, int len)
-{
-	size_t intput_strlen;
-
-	if (len > 0 && str_utf8_length(v) > len)
-		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
-
-	intput_strlen = strlen(v) + 1;
-	if (intput_strlen > *rlen) {
-		size_t newlen = ((intput_strlen + 1023) & ~1023); /* align to a multiple of 1024 bytes */
-		str newr = GDKmalloc(newlen);
-
-		if (!newr)
-			throw(SQL, "str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		GDKfree(*r);
-		*r = newr;
-		*rlen = newlen;
-	}
-	strcpy(*r, v);
-	return MAL_SUCCEED;
-}
-
 str
 SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -218,6 +195,12 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+#define SQLstr_cast_str(v, len) \
+	if (len > 0 && str_utf8_length(v) > len) { \
+		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len); \
+		goto bailout; \
+	}
+
 /* str SQLbatstr_cast(int *res, int *eclass, int *d1, int *s1, int *has_tz, int *bid, int *digits); */
 str
 SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -252,13 +235,25 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off = b->hseqbase;
 	q = canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
+
+	if (from_str && (!sid || is_bat_nil(*sid))) { /* from string case, just do validation, if right, return */
+		for (BUN i = 0; i < q; i++) {
+			str v = (str) BUNtvar(bi, i);
+
+			if (!strNil(v))
+				SQLstr_cast_str(v, digits);
+		}
+		BBPkeepref(*res = b->batCacheid);
+		return MAL_SUCCEED;
+	}
+
 	if (!(dst = COLnew(ci.hseq, TYPE_str, q, TRANSIENT))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	assert(rlen > 0);
-	if (!(r = GDKmalloc(rlen))) {
+	if (!from_str && !(r = GDKmalloc(rlen))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -276,9 +271,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					nils = true;
 				} else {
-					if ((msg = SQLstr_cast_str(&r, &rlen, v, digits)) != MAL_SUCCEED)
-						goto bailout;
-					if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+					SQLstr_cast_str(v, digits);
+					if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
 						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
@@ -311,9 +305,8 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 					nils = true;
 				} else {
-					if ((msg = SQLstr_cast_str(&r, &rlen, v, digits)) != MAL_SUCCEED)
-						goto bailout;
-					if (tfastins_nocheckVAR(dst, i, r, Tsize(dst)) != GDK_SUCCEED) {
+					SQLstr_cast_str(v, digits);
+					if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
 						msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						goto bailout;
 					}
