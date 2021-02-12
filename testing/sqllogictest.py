@@ -380,7 +380,7 @@ class SQLLogic:
         except:
             type, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
-            return
+            return ['statement', 'error'], []
         try:
             data = crs.fetchall()
         except KeyboardInterrupt:
@@ -388,7 +388,7 @@ class SQLLogic:
         except:
             type, value, traceback = sys.exc_info()
             self.query_error(query, 'unexpected error from pymonetdb', str(value))
-            return
+            return ['statement', 'error'], []
         if crs.description:
             rescols = []
             for desc in crs.description:
