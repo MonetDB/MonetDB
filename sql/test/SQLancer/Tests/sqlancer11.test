@@ -875,3 +875,22 @@ RIGHT OUTER JOIN (VALUES (UUID '131b9167-efFa-92FE-523A-5EF2Ca7963a8', ((scale_d
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" VARCHAR(127) NOT NULL,"c2" BOOLEAN,"c3" DOUBLE,"c4" REAL,"c5" DECIMAL(18,3) DEFAULT 0.665794, "c7" DECIMAL(18,3),"c8"  BIGINT,"c9" BOOLEAN,"c10" REAL NOT NULL,
+	"c11" BIGINT NOT NULL,"c12" TINYINT NOT NULL,CONSTRAINT "t1_c11_c12_c0_pkey" PRIMARY KEY ("c11", "c12", "c0"),CONSTRAINT "t1_c2_c0_unique" UNIQUE ("c2", "c0"),CONSTRAINT "t1_c0_c2_c3_c4_unique" UNIQUE ("c0", "c2", "c3", "c4"))
+
+statement ok
+CREATE TABLE "sys"."t2" ("c2" UUID NOT NULL,CONSTRAINT "t2_c2_pkey" PRIMARY KEY ("c2"),CONSTRAINT "t2_c2_unique" UNIQUE ("c2"))
+
+statement ok
+INSERT INTO "sys"."t2" VALUES ('5a8f807e-47aa-3ddd-9b12-65ec99aa6b89'), ('adb2afe1-0aff-5af0-aee1-bf5dfdafcdaf'), ('4b9d0cdd-fd79-ac10-8ab5-6dd3dddebd8a')
+
+statement ok
+MERGE INTO t1 USING (SELECT * FROM t2) AS t2 ON CASE 1 WHEN (VALUES (2)) THEN '6' BETWEEN 0.77 AND 0.28 WHEN 3 THEN TRUE END WHEN MATCHED THEN DELETE WHEN NOT MATCHED THEN INSERT (c4, c9) VALUES (0.66, true)
+
+statement ok
+ROLLBACK
+
