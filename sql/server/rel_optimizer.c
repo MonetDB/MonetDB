@@ -6407,6 +6407,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
+					if (is_right(rel->op) || is_full(rel->op))
+						set_has_nil(e);
 					list_append(exps, e);
 				} else {
 					return rel;
@@ -6414,6 +6416,9 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			}
 		} else {
 			exps = rel_projections(v->sql, l, NULL, 1, 1);
+			if (!list_empty(exps) && (is_right(rel->op) || is_full(rel->op)))
+				for (n = exps->h ; n ; n = n->next)
+					set_has_nil((sql_exp*)n->data);
 		}
 		/* also handle right hand of join */
 		if (is_join(rel->op) && r->op == op_project && r->l) {
@@ -6429,6 +6434,8 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 				} else if (e->type == e_column) {
 					if (has_label(e))
 						return rel;
+					if (is_left(rel->op) || is_full(rel->op))
+						set_has_nil(e);
 					list_append(exps, e);
 				} else {
 					return rel;
@@ -6436,6 +6443,9 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 			}
 		} else if (is_join(rel->op)) {
 			list *r_exps = rel_projections(v->sql, r, NULL, 1, 1);
+			if (!list_empty(r_exps) && (is_left(rel->op) || is_full(rel->op)))
+				for (n = r_exps->h ; n ; n = n->next)
+					set_has_nil((sql_exp*)n->data);
 
 			list_merge(exps, r_exps, (fdup)NULL);
 		}
