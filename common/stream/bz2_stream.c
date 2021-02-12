@@ -20,6 +20,7 @@ struct inner_state {
 	bz_stream strm;
 	int (*work)(bz_stream *strm, int flush);
 	int (*end)(bz_stream *strm);
+	void (*reset)(inner_state_t *inner_state);
 	bool eof_reached;
 	char buf[64*1024];
 };
@@ -108,6 +109,11 @@ work(inner_state_t *inner_state, pump_action action)
 			/* flushing and finishing is not yet done */
 			return PUMP_OK;
 		case BZ_STREAM_END:
+			if (action == PUMP_NO_FLUSH && inner_state->reset != NULL) {
+				// attempt to read concatenated additional bz2 stream
+				inner_state->reset(inner_state);
+				return PUMP_OK;
+			}
 			inner_state->eof_reached = true;
 			return PUMP_END;
 		default:
@@ -136,6 +142,17 @@ BZ2_bzDecompress_wrapper(bz_stream *strm, int a)
 	return BZ2_bzDecompress(strm);
 }
 
+static void
+bz2_decompress_reset(inner_state_t *inner_state)
+{
+	pump_buffer src = get_src_win(inner_state);
+	pump_buffer dst = get_dst_win(inner_state);
+	BZ2_bzDecompressEnd(&inner_state->strm);
+	BZ2_bzDecompressInit(&inner_state->strm, 0, 0);
+	set_src_win(inner_state, src);
+	set_dst_win(inner_state, dst);
+}
+
 stream *
 bz2_stream(stream *inner, int level)
 {
@@ -162,6 +179,7 @@ bz2_stream(stream *inner, int level)
 	if (inner->readonly) {
 		bz->work = BZ2_bzDecompress_wrapper;
 		bz->end = BZ2_bzDecompressEnd;
+		bz->reset = bz2_decompress_reset;
 		ret = BZ2_bzDecompressInit(&bz->strm, 0, 0);
 	} else {
 		bz->work = BZ2_bzCompress;
