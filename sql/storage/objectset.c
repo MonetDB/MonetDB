@@ -559,11 +559,11 @@ os_destroy(objectset *os, sql_store store)
 	if (--os->refcnt > 0)
 		return;
 	MT_lock_destroy(&os->ht_lock);
-	versionhead* n=os->name_based_h;
+	versionhead* n=os->id_based_h;
 	while(n) {
 		objectversion *ov = n->ov;
 		while(ov) {
-			objectversion *older = ov->name_based_older;
+			objectversion *older = ov->id_based_older;
 			objectversion_destroy(store, os, ov);
 			ov = older;
 		}
@@ -572,18 +572,18 @@ os_destroy(objectset *os, sql_store store)
 		n = hn;
 	}
 
-	n=os->id_based_h;
+	n=os->name_based_h;
 	while(n) {
 		versionhead* hn =n->next;
 		node_destroy(os, store, n);
 		n = hn;
 	}
 
-	if (os->name_map && !os->name_map->sa)
-		hash_destroy(os->name_map);
-
 	if (os->id_map && !os->id_map->sa)
 		hash_destroy(os->id_map);
+
+	if (os->name_map && !os->name_map->sa)
+		hash_destroy(os->name_map);
 
 	if (!os->sa)
 		_DELETE(os);
