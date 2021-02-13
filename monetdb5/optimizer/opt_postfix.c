@@ -33,7 +33,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
 		if ( getModuleId(p) == algebraRef) {
-			if ( getFunctionId(p) == leftjoinRef ||
+			if ( getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
 				 getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
 				 getFunctionId(p) == likejoinRef || getFunctionId(p) == ilikejoinRef ) {
 				if ( getVarEolife(mb, getArg(p, p->retc -1)) == i) {
@@ -61,7 +61,8 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 					actions++;
 					continue;
 				} else if (is_first_ret_not_used && (getFunctionId(p) == joinRef || (getFunctionId(p) == thetajoinRef && isVarConstant(mb, getArg(p, 6))) ||
-						   getFunctionId(p) == outerjoinRef || getFunctionId(p) == crossRef)) {
+						   (getFunctionId(p) == crossRef && isVarConstant(mb, getArg(p, 4)) && getVarConstant(mb, getArg(p, 4)).val.btval != 1))) {
+					/* Can't swap arguments on single cross products */
 					/* swap join inputs */
 					getArg(p, 2) ^= getArg(p, 3);
 					getArg(p, 3) ^= getArg(p, 2);
