@@ -450,6 +450,8 @@ idx_timestamp_delta( sql_trans *tr, sql_idx *i)
 static storage *
 timestamp_storage( sql_trans *tr, storage *d)
 {
+	if (!d)
+		return NULL;
 	while (d->next && !VALID_4_READ(d->cs.ts, tr))
 		d = d->next;
 	return d;
