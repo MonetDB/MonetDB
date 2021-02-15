@@ -20,7 +20,11 @@ sql.tid
 1
 algebra.project
 1
-sql.update
+sql.update_prep
+1
+sql.update_exec
+1
+sql.append_finish
 1
 aggr.count
 1
@@ -40,7 +44,11 @@ sql.tid
 1
 algebra.project
 1
-sql.update
+sql.update_prep
+1
+sql.update_exec
+1
+sql.append_finish
 1
 aggr.count
 1
@@ -62,7 +70,11 @@ sql.bind
 2
 algebra.projection
 2
-sql.update
+sql.update_prep
+1
+sql.update_exec
+1
+sql.append_finish
 1
 aggr.count
 1
@@ -84,7 +96,11 @@ sql.bind
 2
 algebra.projection
 2
-sql.update
+sql.update_prep
+1
+sql.update_exec
+1
+sql.append_finish
 1
 aggr.count
 1
@@ -106,7 +122,11 @@ sql.bind
 2
 algebra.projection
 2
-sql.update
+sql.update_prep
+1
+sql.update_exec
+1
+sql.append_finish
 1
 aggr.count
 1
@@ -162,7 +182,11 @@ sql.mvc
 1
 sql.claim
 1
-sql.append
+sql.append_prep
+1
+sql.append_exec
+1
+sql.append_finish
 1
 sql.affectedRows
 1
@@ -180,3 +204,4 @@ ROLLBACK
 
 statement ok
 set optimizer = 'default_pipe'
+
