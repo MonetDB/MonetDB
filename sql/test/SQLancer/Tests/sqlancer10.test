@@ -138,6 +138,9 @@ SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.v
 statement ok
 ROLLBACK
 
+statement error
+(SELECT 4) EXCEPT (SELECT 3 || (VALUES (3),(6)))
+
 statement ok
 START TRANSACTION
 
