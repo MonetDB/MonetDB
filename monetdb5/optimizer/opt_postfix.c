@@ -73,22 +73,24 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 						getArg(p, 5) ^= getArg(p, 4);
 						getArg(p, 4) ^= getArg(p, 5);
 						if (getFunctionId(p) == thetajoinRef) { /* swap the comparison */
-							switch (getVarConstant(mb, getArg(p, 6)).val.ival) {
+							ValRecord *x = &getVarConstant(mb, getArg(p, 6)), cst = {.vtype = TYPE_int};
+							switch (x->val.ival) {
 							case JOIN_LT:
-								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_GE;
+								cst.val.ival = JOIN_GE;
 								break;
 							case JOIN_LE:
-								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_GT;
+								cst.val.ival = JOIN_GT;
 								break;
 							case JOIN_GT:
-								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_LE;
+								cst.val.ival = JOIN_LE;
 								break;
 							case JOIN_GE:
-								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_LT;
+								cst.val.ival = JOIN_LT;
 								break;
 							default:
-								break;
+								cst.val.ival = x->val.ival;
 							}
+							setArg(p, 6, defConstant(mb, TYPE_int, &cst));
 						}
 					}
 					delArgument(p, p->retc -2);
