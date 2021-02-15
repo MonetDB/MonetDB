@@ -159,7 +159,6 @@ extern sql_store mvc_init(sql_allocator *pa, int debug, store_type store, int ro
 extern void mvc_exit(sql_store store);
 
 extern void mvc_logmanager(sql_store store);
-extern void mvc_idlemanager(sql_store store);
 
 extern mvc *mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream *rs, stream *ws);
 extern int mvc_reset(mvc *m, bstream *rs, stream *ws, int debug);

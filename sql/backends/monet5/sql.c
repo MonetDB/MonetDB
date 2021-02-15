@@ -1262,7 +1262,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BUN l, h;
 				/* here we align the parts to multiples of 'BAT_ALIGN', needed for efficient 'msk' slices */
 				psz = cnt ? (cnt / nr_parts) : 0;
-				psz = ALIGN(psz, BAT_ALIGN);
+				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
@@ -1286,7 +1286,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
-				psz = ALIGN(psz, BAT_ALIGN);
+				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
@@ -1603,7 +1603,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				BUN l, h;
 				/* here we align the parts to multiples of 'BAT_ALIGN', needed for efficient 'msk' slices */
 				psz = cnt ? (cnt / nr_parts) : 0;
-				psz = ALIGN(psz, BAT_ALIGN);
+				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
@@ -1624,7 +1624,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
-				psz = ALIGN(psz, BAT_ALIGN);
+				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
@@ -2486,13 +2486,8 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	sql_trans *tr;
 	const char *sname = *getArgReference_str(stk, pci, 2);
 	const char *tname = *getArgReference_str(stk, pci, 3);
-
 	sql_schema *s;
 	sql_table *t;
-	sql_column *c;
-	BAT *tids = NULL;
-	size_t nr, dcnt;
-	oid sb = 0;
 
 	*res = bat_nil;
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
@@ -2506,82 +2501,17 @@ SQLtid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.tid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
-	c = t->columns.set->h->data;
 
 	sqlstore *store = m->store;
-	nr = store->storage_api.count_col(tr, c, 0);
+	/* we have full table count, nr of deleted (unused rows) */
+	int part_nr = 0;
+	int nr_parts = 1;
 	if (pci->argc == 6) {	/* partitioned version */
-		size_t cnt = nr;
-		int part_nr = *getArgReference_int(stk, pci, 4);
-		int nr_parts = *getArgReference_int(stk, pci, 5);
-
-		nr /= nr_parts;
-		nr = ALIGN(nr, BAT_ALIGN);
-		sb = (oid) (part_nr * nr);
-		if (sb > cnt)
-			sb = cnt;
-		if (nr_parts == (part_nr + 1)) 		/* last part gets remainder */
-			nr = (cnt > (part_nr*nr))?cnt - (part_nr * nr):0;	/* keep rest */
-		if (sb+nr > cnt)
-			nr = cnt-sb;
+		part_nr = *getArgReference_int(stk, pci, 4);
+		nr_parts = *getArgReference_int(stk, pci, 5);
 	}
-
-	/* check if we have deletes, iff get bit msk */
-	if ((dcnt = store->storage_api.count_del(tr, t, 0)) > 0 || store->storage_api.count_del(tr, t, 2) > 0) {
-		//setVarType(mb, getArg(pci, 0), setCandType(newBatType(TYPE_msk)));
-		BAT *d = store->storage_api.bind_del(tr, t, RDONLY), *bn = NULL;
-
-		if (d) {
-			bn = BATslice(d, sb, sb+nr);
-			BBPunfix(d->batCacheid);
-			d = NULL;
-		}
-		if (bn && store->storage_api.count_del(tr, t, 2) > 0) {
-			BAT *ui = store->storage_api.bind_del(tr, t, RD_UPD_ID);
-			BAT *uv = store->storage_api.bind_del(tr, t, RD_UPD_VAL);
-			oid h = sb+nr;
-
-			h--;
-			BAT *p = BATselect(ui, NULL, &sb, &h, true, true, false);
-			BAT *nui = NULL, *nuv = NULL;
-
-			if (p) {
-				nui = BATproject(p, ui);
-				nuv = BATproject(p, uv);
-				BBPunfix(p->batCacheid);
-			}
-			if (ui) BBPunfix(ui->batCacheid);
-			if (uv) BBPunfix(uv->batCacheid);
-
-	    		if (!nui || !nuv || BATreplace(bn, nui, nuv, true) != GDK_SUCCEED) {
-				if (bn) BBPunfix(bn->batCacheid);
-				if (nui) BBPunfix(nui->batCacheid);
-				if (nuv) BBPunfix(nuv->batCacheid);
-				throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
-			}
-			BBPunfix(nui->batCacheid);
-			BBPunfix(nuv->batCacheid);
-		}
-		/* true == deleted, need not deleted  */
-		if (bn) {
-			tids = BATmaskedcands(sb, nr, bn, false);
-			BBPunfix(bn->batCacheid);
-			if (tids == NULL) {
-				throw(MAL, "sql.tids", SQLSTATE(45003) "TIDdeletes failed");
-			}
-			d = tids;
-		}
-		if(d == NULL)
-			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*res = d->batCacheid;
-	} else {
-		/* create void,void bat with length and oid's set */
-		tids = BATdense(sb, sb, (BUN) nr);
-		if (tids == NULL)
-			throw(SQL, "sql.tid", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*res = tids->batCacheid;
-	}
-
+	BAT *b = store->storage_api.bind_cands(tr, t, nr_parts, part_nr);
+	*res = b->batCacheid;
 	BBPkeepref(*res);
 	return msg;
 }

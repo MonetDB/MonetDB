@@ -12,98 +12,10 @@
 #include "bat_storage.h"
 
 static BAT *
-_delta_cands(sql_trans *tr, sql_table *t)
-{
-	sqlstore *store = tr->store;
-	sql_column *c = t->columns.set->h->data;
-	/* create void,void bat with length and oid's set */
-	size_t nr = store->storage_api.count_col(tr, c, 0), dcnt = 0;
-	BAT *tids = NULL;
-
-	if ((dcnt=store->storage_api.count_del(tr, t, 0)) > 0 || store->storage_api.count_del(tr, t, 2) > 0) {
-#if 0
-		BAT *d = store->storage_api.bind_del(tr, t, RDONLY);
-
-		if (d && store->storage_api.count_del(tr, t, 2) > 0) {
-		    BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
-			bat_destroy(d);
-			d = nd;
-			/*
-			storage *s = t->data;
-			if (BATcount(d) < s->segs->head->end) {
-				msk deleted = 0;
-				for(BUN i = BATcount(d); i<nr; i++) {
-					if (BUNappend(d, &deleted, true) != GDK_SUCCEED) {
-						bat_destroy(d);
-						return NULL;
-					}
-				}
-			}
-			*/
-			BAT *ui = store->storage_api.bind_del(tr, t, RD_UPD_ID);
-			BAT *uv = store->storage_api.bind_del(tr, t, RD_UPD_VAL);
-	    	if (!ui || !uv || !d || BATreplace(d, ui, uv, true) != GDK_SUCCEED) {
-				bat_destroy(d);
-				bat_destroy(ui);
-				bat_destroy(uv);
-				return NULL;
-			}
-			bat_destroy(ui);
-			bat_destroy(uv);
-		}
-		if (!d)
-			return NULL;
-		/* true == deleted, need not deleted  */
-		tids = BATmaskedcands(0, nr, d, false);
-		bat_destroy(d);
-		if(tids == NULL)
-			return NULL;
-#else
-		BAT *d;
-
-		if ((d = store->storage_api.bind_del(tr, t, RDONLY)) != NULL) {
-			if (!d)
-				return NULL;
-			if (store->storage_api.count_del(tr, t, 2) > 0) {
-				BAT *nd = COLcopy(d, d->ttype, true, TRANSIENT);
-				BAT *ui = store->storage_api.bind_del(tr, t, RD_UPD_ID);
-				BAT *uv = store->storage_api.bind_del(tr, t, RD_UPD_VAL);
-
-				BBPunfix(d->batCacheid);
-	    			if (!nd || !ui || !uv || BATreplace(nd, ui, uv, true) != GDK_SUCCEED) {
-					if (nd) BBPunfix(nd->batCacheid);
-					if (ui) BBPunfix(ui->batCacheid);
-					if (uv) BBPunfix(uv->batCacheid);
-					return NULL;
-				}
-				BBPunfix(ui->batCacheid);
-				BBPunfix(uv->batCacheid);
-				d = nd;
-			}
-			BAT *del_ids = BATunmask(d);
-			bat_destroy(d);
-			if (del_ids == NULL) {
-				return NULL;
-			}
-			tids = BATnegcands((BUN) nr, del_ids);
-			BBPunfix(del_ids->batCacheid);
-			if (tids == NULL) {
-				return NULL;
-			}
-		} else {
-			return NULL;
-		}
-#endif
-	}
-	if (tids == NULL)
-		tids = BATdense(0, 0, (BUN) nr);
-	return tids;
-}
-
-static BAT *
 delta_cands(sql_trans *tr, sql_table *t)
 {
-	return _delta_cands(tr, t);
+	sqlstore *store = tr->store;
+	return store->storage_api.bind_cands(tr, t, 1, 0);
 }
 
 static BAT *
@@ -111,7 +23,6 @@ full_column(sql_trans *tr, sql_column *c)
 {
 	/* return full normalized column bat
 	 * 	b := b.copy()
-		b := b.append(i);
 		b := b.replace(u);
 	*/
 	BAT *b, *ui, *uv;
@@ -126,7 +37,7 @@ full_column(sql_trans *tr, sql_column *c)
 
 			bat_destroy(b);
 			b = r;
-	    		if (!b || !ui || !uv || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
+	    	if (!b || !ui || !uv || BATreplace(b, ui, uv, true) != GDK_SUCCEED) {
 				if (b) BBPunfix(b->batCacheid);
 				if (ui) BBPunfix(ui->batCacheid);
 				if (uv) BBPunfix(uv->batCacheid);
@@ -136,7 +47,6 @@ full_column(sql_trans *tr, sql_column *c)
 		bat_destroy(ui);
 		bat_destroy(uv);
 	}
-	(void)c;
 	return b;
 }
 
@@ -423,6 +333,16 @@ static oid
 rids_next(rids *r)
 {
 	if (r->cur < BATcount((BAT *) r->data)) {
+		BAT *t = r->data;
+
+		if (t && (t->ttype == TYPE_msk || mask_cand(t))) {
+			r->data = BATunmask(t);
+			if (!r->data) {
+				r->data = t;
+				return oid_nil;
+			}
+			bat_destroy(t);
+		}
 		return BUNtoid((BAT *) r->data, r->cur++);
 	}
 	return oid_nil;

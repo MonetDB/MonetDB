@@ -5347,7 +5347,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 						if (k->t != t && !cascade) {
 							node *n = t->columns.set->h;
 							sql_column *c = n->data;
-							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 1);
+							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 0);
 							size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t, 0);
 							assert (n_rows >= n_deletes);
 							if (n_rows - n_deletes > 0) {

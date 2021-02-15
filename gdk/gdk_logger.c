@@ -27,13 +27,14 @@ static gdk_return logger_del_bat(logger *lg, log_bid bid);
 
 #define LOG_START	0
 #define LOG_END		1
-#define LOG_UPDATE_BULK	2
-#define LOG_UPDATE	3
-#define LOG_CREATE	4
-#define LOG_DESTROY	5
-#define LOG_SEQ		6
-#define LOG_CLEAR	7
-#define LOG_ROW		8 /* per row relative small log entry */
+#define LOG_UPDATE_CONST	2
+#define LOG_UPDATE_BULK	3
+#define LOG_UPDATE	4
+#define LOG_CREATE	5
+#define LOG_DESTROY	6
+#define LOG_SEQ		7
+#define LOG_CLEAR	8
+#define LOG_ROW		9 /* per row relative small log entry */
 
 #ifdef NATIVE_WIN32
 #define getfilepos _ftelli64
@@ -52,6 +53,7 @@ static gdk_return logger_del_bat(logger *lg, log_bid bid);
 static const char *log_commands[] = {
 	"LOG_START",
 	"LOG_END",
+	"LOG_UPDATE_CONST",
 	"LOG_UPDATE_BULK",
 	"LOG_UPDATE",
 	"LOG_CREATE",
@@ -354,7 +356,22 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 			}
 		}
 
-		if (l->flag == LOG_UPDATE_BULK) {
+		if (l->flag == LOG_UPDATE_CONST) {
+	    		if (!mnstr_readLng(lg->input_log, &offset)) {
+				if (r)
+					BBPreclaim(r);
+				return LOG_ERR;
+			}
+			void *t = rt(tv, lg->input_log, 1);
+			if (t == NULL) {
+				res = LOG_ERR;
+			} else {
+				for(BUN p = 0; p<(BUN) nr; p++) {
+					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
+						res = LOG_ERR;
+				}
+			}
+		} else if (l->flag == LOG_UPDATE_BULK) {
 	    		if (!mnstr_readLng(lg->input_log, &offset)) {
 				if (r)
 					BBPreclaim(r);
@@ -462,7 +479,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 
 		if (res == LOG_OK) {
 			if (tr_grow(tr) == GDK_SUCCEED) {
-				tr->changes[tr->nr].type = l->flag;
+				tr->changes[tr->nr].type =
+					l->flag==LOG_UPDATE_CONST?LOG_UPDATE_BULK:l->flag;
 				tr->changes[tr->nr].nr = pnr;
 				tr->changes[tr->nr].tt = tpe;
 				tr->changes[tr->nr].cid = id;
@@ -1020,6 +1038,7 @@ logger_read_transaction(logger *lg)
 		case LOG_SEQ:
 			err = log_read_seq(lg, &l);
 			break;
+		case LOG_UPDATE_CONST:
 		case LOG_UPDATE_BULK:
 		case LOG_UPDATE:
 			if (tr == NULL)
@@ -2061,6 +2080,48 @@ logger_sequence(logger *lg, int seq, lng *id)
 	}
 	logger_unlock(lg);
 	return 0;
+}
+
+gdk_return
+log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
+{
+	char tpe = find_type(lg, type);
+	gdk_return ok = GDK_SUCCEED;
+	logformat l;
+	lng nr;
+	int is_row = 0;
+
+	if (lg->row_insert_nrcols != 0) {
+		lg->row_insert_nrcols--;
+		is_row = 1;
+	}
+	l.flag = LOG_UPDATE_CONST;
+	l.id = id;
+	nr = cnt;
+
+	if (LOG_DISABLED(lg) || !nr) {
+		/* logging is switched off */
+		return GDK_SUCCEED;
+	}
+
+	gdk_return (*wt) (const void *, stream *, size_t) = BATatoms[type].atomWrite;
+
+	if (is_row)
+		l.flag = tpe;
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
+	    (!is_row && !mnstr_writeLng(lg->output_log, nr)) ||
+	    (!is_row && mnstr_write(lg->output_log, &tpe, 1, 1) != 1) ||
+	    (!is_row && !mnstr_writeLng(lg->output_log, offset)))
+		return GDK_FAIL;
+
+	ok = wt(val, lg->output_log, 1);
+
+	if (lg->debug & 1)
+		fprintf(stderr, "#Logged %d " LLFMT " inserts\n", id, nr);
+
+	if (ok != GDK_SUCCEED)
+		TRC_CRITICAL(GDK, "write failed\n");
+	return ok;
 }
 
 static gdk_return

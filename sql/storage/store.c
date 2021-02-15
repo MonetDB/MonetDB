@@ -45,7 +45,7 @@ store_transaction_id(sqlstore *store)
 }
 
 static ulng
-store_oldest(sqlstore *store, ulng commit_ts)
+store_oldest_given_max(sqlstore *store, ulng commit_ts)
 {
 	ulng oldest = commit_ts;
 	if (store->active && list_length(store->active) == 1)
@@ -58,6 +58,12 @@ store_oldest(sqlstore *store, ulng commit_ts)
 		}
 	}
 	return oldest;
+}
+
+ulng
+store_oldest(sqlstore *store)
+{
+	return store_oldest_given_max(store, TRANSACTION_ID_BASE);
 }
 
 static inline bool
@@ -1893,6 +1899,8 @@ store_load(sqlstore *store, sql_allocator *pa)
 	if (!store->first && !load_trans(tr)) {
 		return NULL;
 	}
+	if (sql_trans_commit(tr) != SQL_OK)
+		TRC_CRITICAL(SQL_STORE, "Cannot commit loaded objects transaction\n");
 	tr->active = 0;
 	sql_trans_destroy(tr);
 	store->initialized = 1;
@@ -1916,9 +1924,10 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 
 	(void)store_timestamp(store); /* increment once */
 	MT_lock_init(&store->lock, "sqlstore_lock");
+	MT_lock_init(&store->flush, "sqlstore_flush");
 
 	MT_lock_set(&store->lock);
-	//MT_lock_set(&flush_lock);
+	MT_lock_set(&store->flush);
 
 	/* initialize empty bats */
 	switch (store_tpe) {
@@ -1926,6 +1935,7 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	case store_mem:
 		if (bat_utils_init() == -1) {
 			MT_lock_unset(&store->lock);
+			MT_lock_unset(&store->flush);
 			return NULL;
 		}
 		bat_storage_init(&store->storage_api);
@@ -1940,71 +1950,17 @@ store_init(sql_allocator *pa, int debug, store_type store_tpe, int readonly, int
 	if (!store->logger_api.create ||
 	    store->logger_api.create(store, debug, "sql_logs", CATALOG_VERSION*v) != LOG_OK) {
 		MT_lock_unset(&store->lock);
+		MT_lock_unset(&store->flush);
 		return NULL;
 	}
 
 	/* create the initial store structure or re-load previous data */
 	MT_lock_unset(&store->lock);
-	//MT_lock_unset(&flush_lock);
+	MT_lock_unset(&store->flush);
 	return store_load(store, pa);
 }
 
-static int
-store_needs_vacuum( sqlstore *store )
-{
-	//size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
-
-	(void)store;
-	return 0;
-#if 0
-	sql_schema *s = (sql_schema*)os_find_name(store->cat->schemas, NULL, "sys"); /* sys schema if first */
-	struct os_iter oi;
-	os_iterator(&oi, s->tables, NULL, NULL);
-	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-		sql_table *t = (sql_table*)b;
-		sql_column *c = t->columns.set->h->data;
-
-		(void)c;
-		if (!t->system)
-			continue;
-		/* no inserts, updates and enough deletes ? */
-		/*
-		if (store->storage_api.count_col(tr, c, 0) == 0 &&
-		    store->storage_api.count_upd(tr, t) == 0 &&
-		    store->storage_api.count_del(tr, t) >= max_dels)
-			return 1;
-			*/
-	}
-	return 0;
-#endif
-}
-
-static int
-store_vacuum( sql_trans *tr )
-{
-	sqlstore *store = tr->store;
-	/* tables */
-	size_t max_dels = GDKdebug & FORCEMITOMASK ? 1 : 128;
-	sql_schema *s = find_sql_schema(tr, "sys");
-
-	struct os_iter oi;
-	os_iterator(&oi, s->tables, tr, NULL);
-	for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-		sql_table *t = (sql_table*)b;
-		sql_column *c = t->columns.set->h->data;
-
-		if (!t->system)
-			continue;
-		if (store->storage_api.count_col(tr, c, 0) == 0 &&
-		    store->storage_api.count_col(tr, c, 2) == 0 &&
-		    store->storage_api.count_del(tr, t, 0) >= max_dels)
-			if (store->table_api.table_vacuum(tr, t) != SQL_OK)
-				return -1;
-	}
-	return 0;
-}
-
-// All this must only be accessed while holding the store->lock.
+// All this must only be accessed while holding the store->flush.
 // The exception is flush_now, which can be set by anyone at any
 // time and therefore needs some special treatment.
 static struct {
@@ -2040,11 +1996,12 @@ store_exit(sqlstore *store)
 {
 	sql_allocator *sa = store->sa;
 	MT_lock_set(&store->lock);
+	MT_lock_set(&store->flush);
 
 	TRC_DEBUG(SQL_STORE, "Store locked\n");
-	//MT_lock_set(&flush_lock);
 
 	if (store->cat) {
+		MT_lock_unset(&store->flush);
 		MT_lock_unset(&store->lock);
 		if (store->changes) {
 			ulng oldest = store_timestamp(store)+1;
@@ -2063,12 +2020,14 @@ store_exit(sqlstore *store)
 		_DELETE(store->cat);
 		sequences_exit();
 		MT_lock_set(&store->lock);
+		MT_lock_set(&store->flush);
 	}
 	store->logger_api.destroy(store);
 
 	list_destroy(store->active);
 
 	TRC_DEBUG(SQL_STORE, "Store unlocked\n");
+	MT_lock_unset(&store->flush);
 	MT_lock_unset(&store->lock);
 	sa_destroy(sa);
 	_DELETE(store);
@@ -2083,7 +2042,7 @@ store_apply_deltas(sqlstore *store)
 	flusher.working = true;
 
 	store_lock(store);
-	ulng oldest = store_oldest(store, TRANSACTION_ID_BASE);
+	ulng oldest = store_oldest(store);
 	store_unlock(store);
 	if (oldest)
 	    res = store->logger_api.flush(store, oldest);
@@ -2092,7 +2051,7 @@ store_apply_deltas(sqlstore *store)
 }
 
 
-/* Call while holding store->lock */
+/* Call while holding store->flush */
 static void
 wait_until_flusher_idle(sqlstore *store)
 {
@@ -2115,10 +2074,9 @@ store_suspend_log(sqlstore *store)
 void
 store_resume_log(sqlstore *store)
 {
-	(void)store;
-	//MT_lock_set(&flush_lock);
-	//flusher.enabled = true;
-	//MT_lock_unset(&flush_lock);
+	MT_lock_set(&store->flush);
+	flusher.enabled = true;
+	MT_lock_unset(&store->flush);
 }
 
 void
@@ -2127,7 +2085,7 @@ store_manager(sqlstore *store)
 	MT_thread_setworking("sleeping");
 
 	// In the main loop we always hold the lock except when sleeping
-	//MT_lock_set(&flush_lock);
+	MT_lock_set(&store->flush);
 
 	for (;;) {
 		int res;
@@ -2136,10 +2094,10 @@ store_manager(sqlstore *store)
 			if (GDKexiting())
 				break;
 			const int sleeptime = 100;
-			//MT_lock_unset(&flush_lock);
+			MT_lock_unset(&store->flush);
 			MT_sleep_ms(sleeptime);
 			flusher.countdown_ms -= sleeptime;
-			//MT_lock_set(&flush_lock);
+			MT_lock_set(&store->flush);
 			continue;
 		}
 		if (GDKexiting())
@@ -2149,7 +2107,7 @@ store_manager(sqlstore *store)
 		res = store_apply_deltas(store);
 
 		if (res != LOG_OK) {
-			//MT_lock_unset(&flush_lock);
+			MT_lock_unset(&store->flush);
 			GDKfatal("write-ahead logging failure, disk full?");
 		}
 
@@ -2162,55 +2120,7 @@ store_manager(sqlstore *store)
 	}
 
 	// End of loop, end of lock
-	//MT_lock_unset(&flush_lock);
-}
-
-void
-idle_manager(sqlstore *store)
-{
-	const int sleeptime = GDKdebug & FORCEMITOMASK ? 10 : 50;
-	const int timeout = GDKdebug & FORCEMITOMASK ? 50 : 5000;
-
-	MT_thread_setworking("sleeping");
-	//MT_lock_set(&flush_lock);
-
-	while (!GDKexiting()) {
-		int t;
-
-		for (t = timeout; t > 0; t -= sleeptime) {
-			//MT_lock_unset(&flush_lock);
-			MT_sleep_ms(sleeptime);
-			//MT_lock_set(&flush_lock);
-			if (GDKexiting()) {
-				//MT_lock_unset(&flush_lock);
-				return;
-			}
-		}
-		MT_lock_set(&store->lock);
-		if (ATOMIC_GET(&store->nr_active) || GDKexiting() || !store_needs_vacuum(store)) {
-			MT_lock_unset(&store->lock);
-			continue;
-		}
-
-		sql_allocator *sa = sa_create(NULL);
-		sql_session *s = sql_session_create(store, sa, 0);
-		if (!s) {
-			MT_lock_unset(&store->lock);
-			sa_destroy(sa);
-			continue;
-		}
-		MT_thread_setworking("vacuuming");
-		sql_trans_begin(s);
-		if (store_vacuum( s->tr ) == 0)
-			sql_trans_commit(s->tr);
-		sql_trans_end(s, 1);
-		sql_session_destroy(s);
-		sa_destroy(sa);
-
-		MT_lock_unset(&store->lock);
-		MT_thread_setworking("sleeping");
-	}
-	//MT_lock_unset(&flush_lock);
+	MT_lock_unset(&store->flush);
 }
 
 void
@@ -2536,10 +2446,10 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 		goto end;
 	}
 
-	//MT_lock_set(&flush_lock);
+	MT_lock_set(&store->flush);
 	MT_lock_set(&store->lock);
 	locked = 1;
-	//wait_until_flusher_idle(store);
+	wait_until_flusher_idle(store);
 	if (GDKexiting())
 		goto end;
 
@@ -2564,7 +2474,7 @@ store_hot_snapshot_to_stream(sqlstore *store, stream *tar_stream)
 end:
 	if (locked) {
 		MT_lock_unset(&store->lock);
-		//MT_lock_unset(&flush_lock);
+		MT_lock_unset(&store->flush);
 	}
 	if (plan_stream)
 		close_stream(plan_stream);
@@ -3313,7 +3223,7 @@ sql_trans_rollback(sql_trans *tr)
 			list_prepend(nl, n->data);
 
 		/* rollback */
-		ulng oldest = store_oldest(store, TRANSACTION_ID_BASE);
+		ulng oldest = store_oldest(store);
 		for(node *n=nl->h; n; n = n->next) {
 			sql_change *c = n->data;
 
@@ -3484,7 +3394,7 @@ sql_trans_commit(sql_trans *tr)
 	int ok = LOG_OK;
 	sqlstore *store = tr->store;
 	ulng commit_ts = tr->parent ? tr->parent->tid : store_timestamp(store);
-	ulng oldest = store_oldest(store, commit_ts);
+	ulng oldest = store_oldest_given_max(store, commit_ts);
 
 	/* write phase */
 	TRC_DEBUG(SQL_STORE, "Forwarding changes (" ULLFMT ", " ULLFMT ") -> " ULLFMT "\n", tr->tid, tr->ts, commit_ts);
