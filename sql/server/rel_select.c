@@ -3819,6 +3819,8 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		return NULL;
 	sql_find_subtype(&bt, "boolean", 0, 0);
 	list *args = sa_list(sql->sa);
+	if (opt_cond_exp)
+		append(args, opt_cond_exp);
 	for (node *n = conds->h, *m = results->h; n && m; n = n->next, m = m->next) {
 		sql_exp *cond = n->data;
 		sql_exp *result = m->data;
@@ -3828,9 +3830,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 
 		if (!(cond = exp_check_type(sql, condtype, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
-		if (opt_cond_exp && !(cond = rel_binop_(sql, rel ? *rel : NULL, n == conds->h ? opt_cond_exp : exp_copy(sql, opt_cond_exp), cond, "sys", "=", card_value)))
-			return NULL;
-		if (!(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
+		if (!opt_cond_exp && !(cond = exp_check_type(sql, &bt, rel ? *rel : NULL, cond, type_equal)))
 			return NULL;
 		append(args, cond);
 		append(args, result);
@@ -3838,8 +3838,11 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 	assert(res);
 	if (res)
 		list_append(args, res);
-	list *types = append(append(append(sa_list(sql->sa), condtype), restype), restype);
-	sql_subfunc *ifthenelse = find_func(sql, NULL, "ifthenelse", list_length(types), F_FUNC, NULL);
+	list *types = sa_list(sql->sa);
+	if (!opt_cond_exp)
+		types = append(sa_list(sql->sa), condtype);
+	types = append(append(types, restype), restype);
+	sql_subfunc *ifthenelse = find_func(sql, NULL, opt_cond_exp?"casewhen":"ifthenelse", list_length(types), F_FUNC, NULL);
 	res = exp_op(sql->sa, args, ifthenelse);
 	((sql_subfunc*)res->f)->res->h->data = sql_create_subtype(sql->sa, restype->type, restype->digits, restype->scale);
 	return res;
