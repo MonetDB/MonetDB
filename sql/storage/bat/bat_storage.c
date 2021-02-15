@@ -3001,7 +3001,7 @@ static BUN
 claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 {
 	assert(s->segs);
-	ulong oldest = store_oldest(tr->store);
+	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
 	int in_transaction = 0, reused = 0;
 
