@@ -9,22 +9,24 @@
 % .%1 # table_name
 % def # name
 % clob # type
-% 580 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();"	]
+% 626 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.garbageCollector();"	]
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
 % clob # type
-% 245 # length
+% 274 # length
 function user.main():void;
     querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
-    (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7f85501da060:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7ffb40161430:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
     X_30:lng := aggr.count(X_27:bat[:int]);
     X_31:lng := sql.claim(X_4:int, "sys":str, "ttt":str, X_30:lng);
-    X_35:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_31:lng, X_27:bat[:int]);
-    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "b":str, X_31:lng, X_28:bat[:int]);
-    X_41:int := sql.append(X_38:int, "sys":str, "ttt":str, "c":str, X_31:lng, X_29:bat[:int]);
+    (X_86:int, X_85:ptr, X_90:ptr, X_93:ptr) := sql.append_prep(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
+    X_88:ptr := sql.append_exec(X_85:ptr, X_31:lng, X_27:bat[:int]);
+    X_91:ptr := sql.append_exec(X_90:ptr, X_31:lng, X_28:bat[:int]);
+    X_94:ptr := sql.append_exec(X_93:ptr, X_31:lng, X_29:bat[:int]);
+    X_41:int := sql.append_finish(X_86:int, X_88:ptr, X_91:ptr, X_94:ptr);
     sql.affectedRows(X_41:int, X_30:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
@@ -66,23 +68,25 @@ end user.main;
 % .%1 # table_name
 % def # name
 % clob # type
-% 603 # length
-[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
+% 649 # length
+[ "optimizer.inline();optimizer.remap();optimizer.costModel();optimizer.coercions();optimizer.aliases();optimizer.evaluate();optimizer.emptybind();optimizer.pushselect();optimizer.aliases();optimizer.mergetable();optimizer.bincopyfrom();optimizer.parappend();optimizer.deadcode();optimizer.aliases();optimizer.constants();optimizer.commonTerms();optimizer.projectionpath();optimizer.deadcode();optimizer.reorder();optimizer.matpack();optimizer.querylog();optimizer.multiplex();optimizer.generator();optimizer.profiler();optimizer.candidates();optimizer.deadcode();optimizer.postfix();optimizer.wlc();optimizer.sql_append();optimizer.garbageCollector();"	]
 #rollback;
 #explain copy into ttt from '/tmp/xyz';
 % .explain # table_name
 % mal # name
 % clob # type
-% 245 # length
+% 274 # length
 function user.main():void;
     querylog.define("explain copy into ttt from \\'/tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
-    (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7f85501da060:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    (X_27:bat[:int], X_28:bat[:int], X_29:bat[:int]) := sql.copy_from(0x7ffb40161430:ptr, "|":str, "\n":str, nil:str, "null":str, "/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
     X_30:lng := aggr.count(X_27:bat[:int]);
     X_31:lng := sql.claim(X_4:int, "sys":str, "ttt":str, X_30:lng);
-    X_35:int := sql.append(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, X_31:lng, X_27:bat[:int]);
-    X_38:int := sql.append(X_35:int, "sys":str, "ttt":str, "b":str, X_31:lng, X_28:bat[:int]);
-    X_41:int := sql.append(X_38:int, "sys":str, "ttt":str, "c":str, X_31:lng, X_29:bat[:int]);
+    (X_87:int, X_86:ptr, X_91:ptr, X_94:ptr) := sql.append_prep(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
+    X_89:ptr := sql.append_exec(X_86:ptr, X_31:lng, X_27:bat[:int]);
+    X_92:ptr := sql.append_exec(X_91:ptr, X_31:lng, X_28:bat[:int]);
+    X_95:ptr := sql.append_exec(X_94:ptr, X_31:lng, X_29:bat[:int]);
+    X_41:int := sql.append_finish(X_87:int, X_89:ptr, X_92:ptr, X_95:ptr);
     sql.affectedRows(X_41:int, X_30:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
