@@ -636,6 +636,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 	}
 
 	list *exps = fe->l;
+
 	/*
 	 * left - isel: calls down need id's from the range of left
 	 * res  - rsel: updates too res need id's in the range from res
@@ -657,6 +658,166 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 
 		if (!es)
 			return NULL;
+		if (!single_value) {
+			/* create result */
+			if (!res) {
+				stmt *l = isel;
+				if (!l)
+					l = bin_first_column(be, left);
+				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
+				ires = l;
+				if (res)
+					res->cand = isel;
+			} else if (res && !next_cond) { /* use result too update column */
+				stmt *val = es;
+				stmt *pos = rsel;
+
+				if (val->nrcols == 0)
+					val = stmt_const(be, pos, val);
+				else if (!val->cand && nsel)
+					val = stmt_project(be, nsel, val);
+				res = stmt_replace(be, res, pos, val);
+
+				assert(cond);
+
+				if (en->next) {
+					/* osel - rsel */
+					if (!osel)
+						osel = stmt_mirror(be, ires);
+					stmt *d = stmt_tdiff(be, osel, rsel, NULL);
+					osel = rsel = stmt_project(be, d, osel);
+				}
+			}
+			if (next_cond) {
+				ncond = cond = es;
+				if (!ncond->nrcols) {
+					if (osel) {
+						ncond = stmt_const(be, nsel, ncond);
+						ncond->cand = nsel;
+					} else if (isel) {
+						ncond = stmt_const(be, isel, ncond);
+						ncond->cand = isel;
+					} else
+						ncond = stmt_const(be, bin_first_column(be, left), ncond);
+				}
+				if (isel && !ncond->cand)
+					ncond = stmt_project(be, nsel, ncond);
+				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, !ncond->cand?rsel:NULL, 0/*anti*/, 0);
+				if (rsel && ncond->cand)
+					rsel = stmt_project(be, s, rsel);
+				else
+					rsel = s;
+			}
+		} else {
+			if (!res) {
+				/* if_barrier ... */
+				assert(next_cond);
+				if (next_cond) {
+					if (cond) {
+						ncond = stmt_binop(be, cond, es, nsel, and);
+					} else {
+						ncond = es;
+					}
+					cond = es;
+				}
+			} else {
+				/* var_x = s */
+				(void)stmt_assign(be, NULL, nme, es, 2);
+				/* endif_barrier */
+				(void)stmt_control_end(be, res);
+				res = NULL;
+
+				if (en->next) {
+					cond = stmt_unop(be, cond, nsel, not);
+
+					sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC);
+					cond = stmt_binop(be, cond, stmt_unop(be, cond, nsel, isnull), nsel, or);
+					if (ocond)
+						cond = stmt_binop(be, ocond, cond, nsel, and);
+					ocond = cond;
+					if (!en->next->next)
+						ncond = cond;
+				}
+			}
+			if (ncond && (next_cond || (en->next && !en->next->next))) {
+				/* if_barrier ... */
+				res = stmt_cond(be, ncond, NULL, 0, 0);
+			}
+		}
+		next_cond = !next_cond;
+	}
+	if (single_value)
+		return stmt_var(be, NULL, nme, exp_subtype(fe), 0, 2);
+	return res;
+}
+
+static stmt *
+exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int depth)
+{
+	stmt *res = NULL, *ires = NULL, *rsel = NULL, *osel = NULL, *ncond = NULL, *ocond = NULL, *cond = NULL;
+	int next_cond = 1, single_value = (fe->card <= CARD_ATOM && (!left || !left->nrcols));
+	char name[16], *nme = NULL;
+	sql_subtype *bt = sql_bind_localtype("bit");
+	sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC);
+	sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC);
+	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC);
+	sql_subfunc *cmp;
+
+	if (single_value) {
+		/* var_x = nil; */
+		nme = number2name(name, sizeof(name), ++be->mvc->label);
+		(void)stmt_var(be, NULL, nme, exp_subtype(fe), 1, 2);
+	}
+
+	list *exps = fe->l;
+	node *en = exps->h;
+	sql_exp *e = en->data;
+
+	stmt *nsel = !single_value?isel:NULL;
+	stmt *case_when = exp_bin(be, e, left, right, NULL, NULL, NULL, nsel, depth+1, 0, 1);
+	if (!case_when)
+		return NULL;
+   	cmp = sql_bind_func(be->mvc, "sys", "=", exp_subtype(e), exp_subtype(e), F_FUNC);
+	if (!cmp)
+		return NULL;
+	if (!single_value && !case_when->nrcols) {
+		stmt *l = isel;
+		if (!l)
+			l = bin_first_column(be, left);
+		case_when = stmt_const(be, l, case_when);
+		case_when->cand = isel;
+	}
+
+	/*
+	 * left - isel: calls down need id's from the range of left
+	 * res  - rsel: updates too res need id's in the range from res
+	 */
+	for (en = en->next; en; en = en->next) {
+		sql_exp *e = en->data;
+
+		next_cond = next_cond && en->next; /* last else is only a value */
+
+		stmt *nsel = rsel;
+		if (!single_value) {
+			if (/*!next_cond &&*/ rsel && isel) {
+				/* back into left range */
+				nsel = stmt_project(be, rsel, isel);
+			} else if (isel && !rsel)
+				nsel = isel;
+		}
+		stmt *es = exp_bin(be, e, left, right, NULL, NULL, NULL, nsel, depth+1, 0, 1);
+
+		if (!es)
+			return NULL;
+		if (next_cond) {
+			stmt *l = case_when;
+			assert(!es->cand || !l->cand || es->cand == l->cand);
+			if (es->cand && !l->cand)
+				l = stmt_project(be, es->cand, case_when);
+			else if (l->cand && !es->cand)
+				es = stmt_project(be, l->cand, es);
+			es = stmt_binop(be, l, es, NULL, cmp);
+		}
 		if (!single_value) {
 			/* create result */
 			if (!res) {
@@ -1027,6 +1188,8 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 
 			if (strcmp(sql_func_mod(f->func), "calc") == 0 && strcmp(sql_func_imp(f->func), "ifthenelse") == 0)
 				return exp2bin_case(be, e, left, right, sel, depth);
+			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "casewhen") == 0)
+				return exp2bin_casewhen(be, e, left, right, sel, depth);
 			if (strcmp(sql_func_mod(f->func), "") == 0 && strcmp(sql_func_imp(f->func), "") == 0 && strcmp(f->func->base.name, "coalesce") == 0)
 				return exp2bin_coalesce(be, e, left, right, sel, depth);
 
