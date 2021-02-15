@@ -20,7 +20,9 @@ struct inner_state {
 	z_stream strm;
 	int (*indeflate)(z_streamp strm, int flush);
 	int (*indeflateEnd)(z_streamp strm);
+	void (*reset)(inner_state_t *inner_state);
 	Bytef buf[64*1024];
+	bool prev_was_stream_end;
 };
 
 static pump_buffer
@@ -88,13 +90,29 @@ work(inner_state_t *inner_state, pump_action action)
 		return PUMP_ERROR;
 	}
 
+	if (inner_state->strm.next_in == NULL && inner_state->prev_was_stream_end) {
+		// on the previous Z_STREAM_END we attempted to continue in case there
+		// was a concatenated additional zstream but that is not the case.
+		return PUMP_END;
+	}
+
 	int ret = inner_state->indeflate(&inner_state->strm, a);
 
+	inner_state->prev_was_stream_end = false;
 	switch (ret) {
 		case Z_OK:
 			return PUMP_OK;
 		case Z_STREAM_END:
-			return PUMP_END;
+			inner_state->prev_was_stream_end = true;
+			if (action == PUMP_NO_FLUSH && inner_state->reset != NULL) {
+				// zlib returns end, but maybe the input consists of multiple
+				// gzipped files.
+				inner_state->reset(inner_state);
+				return PUMP_OK;
+			} else {
+				// no more incoming data
+				return PUMP_END;
+			}
 		default:
 			return PUMP_ERROR;
 	}
@@ -105,6 +123,23 @@ finalizer(inner_state_t *inner_state)
 {
 	inner_state->indeflateEnd(&inner_state->strm);
 	free(inner_state);
+}
+
+
+static const char*
+get_error(inner_state_t *inner_state)
+{
+	return inner_state->strm.msg;
+}
+
+static void
+inflate_reset(inner_state_t *inner_state)
+{
+	pump_buffer src = get_src_win(inner_state);
+	pump_buffer dst = get_dst_win(inner_state);
+	inflateReset(&inner_state->strm);
+	set_src_win(inner_state, src);
+	set_dst_win(inner_state, dst);
 }
 
 stream *
@@ -126,12 +161,14 @@ gz_stream(stream *inner, int level)
 	state->set_dst_win = set_dst_win;
 	state->get_buffer = get_buffer;
 	state->worker = work;
+	state->get_error = get_error;
 	state->finalizer = finalizer;
 
 	int ret;
 	if (inner->readonly) {
 		gz->indeflate = inflate;
 		gz->indeflateEnd = inflateEnd;
+		gz->reset = inflate_reset;
 		gz->strm.next_in = gz->buf;
 		gz->strm.avail_in = 0;
 		gz->strm.next_in = NULL;

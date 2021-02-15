@@ -33,23 +33,65 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 /* POSTFIX ACTION FOR THE JOIN CASE  */
 		p= getInstrPtr(mb, i);
 		if ( getModuleId(p) == algebraRef) {
-			if ( getFunctionId(p) == joinRef || getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
-				 getFunctionId(p) == thetajoinRef || getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
-				 getFunctionId(p) == likejoinRef || getFunctionId(p) == ilikejoinRef || getFunctionId(p) == crossRef) {
+			if ( getFunctionId(p) == leftjoinRef || getFunctionId(p) == outerjoinRef ||
+				 getFunctionId(p) == bandjoinRef || getFunctionId(p) == rangejoinRef ||
+				 getFunctionId(p) == likejoinRef || getFunctionId(p) == ilikejoinRef ) {
 				if ( getVarEolife(mb, getArg(p, p->retc -1)) == i) {
 					delArgument(p, p->retc -1);
 					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 					actions++;
 					continue;
 				}
-			} else if ( getFunctionId(p) == semijoinRef) {
+			} else if ( getFunctionId(p) == semijoinRef || getFunctionId(p) == joinRef ||
+				 getFunctionId(p) == thetajoinRef || getFunctionId(p) == outerjoinRef || getFunctionId(p) == crossRef) {
 				int is_first_ret_not_used = getVarEolife(mb, getArg(p, p->retc -2)) == i;
 				int is_second_ret_not_used = getVarEolife(mb, getArg(p, p->retc -1)) == i;
+
 				assert(!is_first_ret_not_used || !is_second_ret_not_used);
-				if ( is_first_ret_not_used || is_second_ret_not_used) {
+				if ( (is_first_ret_not_used || is_second_ret_not_used) && getFunctionId(p) == semijoinRef) {
 					delArgument(p, is_second_ret_not_used ? p->retc -1 : p->retc -2);
 					/* semijoin with a single output is called intersect */
 					setFunctionId(p,intersectRef);
+					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+					actions++;
+					continue;
+				} else if (is_second_ret_not_used) {
+					delArgument(p, p->retc -1);
+					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+					actions++;
+					continue;
+				} else if (is_first_ret_not_used && (getFunctionId(p) == joinRef || (getFunctionId(p) == thetajoinRef && isVarConstant(mb, getArg(p, 6))) ||
+						   (getFunctionId(p) == crossRef && isVarConstant(mb, getArg(p, 4)) && getVarConstant(mb, getArg(p, 4)).val.btval != 1))) {
+					/* Can't swap arguments on single cross products */
+					/* swap join inputs */
+					getArg(p, 2) ^= getArg(p, 3);
+					getArg(p, 3) ^= getArg(p, 2);
+					getArg(p, 2) ^= getArg(p, 3);
+
+					if (getFunctionId(p) != crossRef) { /* swap candidate lists */
+						getArg(p, 4) ^= getArg(p, 5);
+						getArg(p, 5) ^= getArg(p, 4);
+						getArg(p, 4) ^= getArg(p, 5);
+						if (getFunctionId(p) == thetajoinRef) { /* swap the comparison */
+							switch (getVarConstant(mb, getArg(p, 6)).val.ival) {
+							case JOIN_LT:
+								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_GE;
+								break;
+							case JOIN_LE:
+								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_GT;
+								break;
+							case JOIN_GT:
+								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_LE;
+								break;
+							case JOIN_GE:
+								getVarConstant(mb, getArg(p, 6)).val.ival = JOIN_LT;
+								break;
+							default:
+								break;
+							}
+						}
+					}
+					delArgument(p, p->retc -2);
 					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
 					actions++;
 					continue;

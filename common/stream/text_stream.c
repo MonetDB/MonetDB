@@ -230,6 +230,13 @@ text_end(inner_state_t *s)
 }
 
 
+static const char*
+get_error(inner_state_t *s)
+{
+	(void)s;
+	return "line ending conversion failure";
+}
+
 static ssize_t
 skip_bom(stream *s)
 {
@@ -281,6 +288,7 @@ create_text_stream(stream *inner)
 	state->set_dst_win = set_dst_win;
 	state->get_buffer = get_buffer;
 	state->finalizer = text_end;
+	state->get_error = get_error;
 
 	inner_state->putback_win.start = inner_state->putback_buf;
 	inner_state->putback_win.count = 0;

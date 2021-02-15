@@ -849,59 +849,59 @@ def GetBitsAndModsAndThreads(env) :
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                         stderr=process.PIPE, text=True)
-    proc.killed = False
-    proc.onechild = True
-    t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
-    qOut = qErr = None
-    try:
-        t.start()
-        while True:
-            proc.poll()
-            if proc.returncode is not None:
-                break
-            if os.path.exists(os.path.join(dbpath, '.started')):
-                break
-            time.sleep(0.001)
-        if proc.returncode is None:
-            cmd = splitcommand(env['exe']['MAL_Client'][1])
+    with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                       stderr=process.PIPE, text=True) as proc:
+        proc.killed = False
+        proc.onechild = True
+        t = Timer(float(par['TIMEOUT']), killProc, args = [proc, proc.stderr, cmd])
+        qOut = qErr = None
+        try:
+            t.start()
+            while True:
+                proc.poll()
+                if proc.returncode is not None:
+                    break
+                if os.path.exists(os.path.join(dbpath, '.started')):
+                    break
+                time.sleep(0.001)
+            if proc.returncode is None:
+                cmd = splitcommand(env['exe']['MAL_Client'][1])
+                if procdebug:
+                    print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
+                with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                                   stderr=process.PIPE, text=True) as clnt:
+                    input = '''\
+                        c := mdb.modules();
+                        modsid := algebra.unique(c,nil:bat);
+                        mods := algebra.projection(modsid,c);
+                        s := "\\nModules: ";
+                        sep := "";
+                        barrier (h:oid,t:str) := iterator.new(mods);
+                                s := s + sep;
+                                s := s + "\'";
+                                s := s + t;
+                                s := s + "\'";
+                                sep := ",";
+                        redo (h:oid,t:str) := iterator.next(mods);
+                        exit h;
+                        s := s + "\\n";
+                        io.printf(s);
+                    '''
+                    ##module("NoModule");
+                    qOut, qErr = clnt.communicate(input=input)
+                proc.terminate()
+                sOut = proc.stdout.read()
+                sErr = proc.stderr.read()
+                proc.wait()
+                qOut = sOut + qOut
+                qErr = sErr + qErr
+        finally:
+            t.cancel()
+            if proc.returncode is None:
+                killProc(proc, proc.stderr, cmd)
+                proc.wait()
             if procdebug:
-                print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-            clnt = process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                                 stderr=process.PIPE, text=True)
-            input = '''\
-                c := mdb.modules();
-                modsid := algebra.unique(c,nil:bat);
-                mods := algebra.projection(modsid,c);
-                s := "\\nModules: ";
-                sep := "";
-                barrier (h:oid,t:str) := iterator.new(mods);
-                        s := s + sep;
-                        s := s + "\'";
-                        s := s + t;
-                        s := s + "\'";
-                        sep := ",";
-                redo (h:oid,t:str) := iterator.next(mods);
-                exit h;
-                s := s + "\\n";
-                io.printf(s);
-            '''
-            ##module("NoModule");
-            qOut, qErr = clnt.communicate(input=input)
-            proc.terminate()
-            sOut = proc.stdout.read()
-            sErr = proc.stderr.read()
-            proc.wait()
-            qOut = sOut + qOut
-            qErr = sErr + qErr
-    finally:
-        t.cancel()
-        if proc.returncode is None:
-            killProc(proc, proc.stderr, cmd)
-            proc.wait()
-        if procdebug:
-            print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
+                print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
     env['TST_MODS'] = []
     env['TST_BITS'] = ""
     env['TST_INT128'] = ""
@@ -1364,10 +1364,10 @@ def progress(count, total, test):
 def getkids():
     # return a dictionary with process IDs as key and a list of child
     # processes as value
-    p = process.Popen(['ps', '-lu', os.getenv('USER')],
-                      stdout=process.PIPE, stderr=process.PIPE,
-                      text=True)
-    out, err = p.communicate()
+    with process.Popen(['ps', '-lu', os.getenv('USER')],
+                       stdout=process.PIPE, stderr=process.PIPE,
+                       text=True) as p:
+        out, err = p.communicate()
     if err:
         return {}
     lines = out.split('\n')
@@ -1448,24 +1448,24 @@ def killProc(proc, outfile = None, cmd = None):
         else:
             cdb = None
         if cdb:
-            p = process.Popen([cdb, '-pv', '-p', str(proc.pid),
-                               '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
-                              stdout=process.PIPE, text=True)
-            out, err = p.communicate()
+            with process.Popen([cdb, '-pv', '-p', str(proc.pid),
+                                '-y', '%scache*;srv*http://msdl.microsoft.com/download/symbols' % sym, '-lines', '-c', '~*kP;!locks;q'],
+                               stdout=process.PIPE, text=True) as p:
+                out, err = p.communicate()
         else:
             out = ''
     else:
         try:
-            p = process.Popen(['pstack', str(proc.pid)], stdout=process.PIPE,
-                              text=True)
-            try:
-                # pstack (gdb) sometimes hangs when trying to get the
-                # stack trace: kill it mercilessly if it does
-                t = Timer(60, reallyKill, args = [p])
-                t.start()
-            except AttributeError:
-                t = None
-            out, err = p.communicate()
+            with process.Popen(['pstack', str(proc.pid)], stdout=process.PIPE,
+                               text=True) as p:
+                try:
+                    # pstack (gdb) sometimes hangs when trying to get the
+                    # stack trace: kill it mercilessly if it does
+                    t = Timer(60, reallyKill, args = [p])
+                    t.start()
+                except AttributeError:
+                    t = None
+                out, err = p.communicate()
             if t is not None:
                 t.cancel()
         except:
@@ -1484,10 +1484,10 @@ def killProc(proc, outfile = None, cmd = None):
     elif os.name == 'nt':
         if procdebug:
             print('killProc: starting process "taskkill" "/F" "/T" "/PID" "%s"\n' % str(proc.pid))
-        p = process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
-                          stdout=process.PIPE, stderr=process.PIPE,
-                          text=True)
-        out, err = p.communicate()
+        with process.Popen(['taskkill','/F','/T','/PID',str(proc.pid)],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as p:
+            out, err = p.communicate()
         if procdebug:
             print('killProc: process exited "taskkill" "/F" "/T" "/PID" "%s" (%s)\n' % (str(proc.pid), proc.returncode))
         proc.kill()
@@ -1628,25 +1628,25 @@ def RunIt(cmd, onechild, TestIn, TestOut, TestErr, TimeOut) :
     if procdebug:
         print('RunIt: starting process "%s"\n' % '" "'.join(cmd))
     setpgrp = True
-    proc = process.Popen(cmd, stdin=TestIn, stdout=TestOut,
-                         stderr=TestErr, text=True)
-    proc.killed = False
-    proc.onechild = onechild
-    t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
-    try:
-        t.start()
-        # since both stdout and stderr are redirected to files,
-        # communicate will not return any useful data
-        proc.communicate(input = TestInput)
-        t.cancel()
-        if procdebug:
-            print('RunIt: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
-    except KeyboardInterrupt:
-        t.cancel()
-        killProc(proc, TestErr, cmd)
-        if procdebug:
-            print('RunIt: process killed "%s"\n' % '" "'.join(cmd))
-        raise
+    with process.Popen(cmd, stdin=TestIn, stdout=TestOut,
+                       stderr=TestErr, text=True) as proc:
+        proc.killed = False
+        proc.onechild = onechild
+        t = Timer(TimeOut, killProc, args = [proc, TestErr, cmd])
+        try:
+            t.start()
+            # since both stdout and stderr are redirected to files,
+            # communicate will not return any useful data
+            proc.communicate(input = TestInput)
+            t.cancel()
+            if procdebug:
+                print('RunIt: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
+        except KeyboardInterrupt:
+            t.cancel()
+            killProc(proc, TestErr, cmd)
+            if procdebug:
+                print('RunIt: process killed "%s"\n' % '" "'.join(cmd))
+            raise
     rc = returnCode(proc, TestErr)
     if rc == 'interrupt':
         raise KeyboardInterrupt
@@ -1980,23 +1980,23 @@ def Check(command, input) :
     if procdebug:
         print('Check: starting process "%s" (inpipe,outpipe,errpipe)\n' % '" "'.join(command))
     setpgrp = True
-    proc = process.Popen(command, stdin=process.PIPE, stdout=process.PIPE,
-                         stderr=process.PIPE, text=True)
-    proc.killed = False
-    proc.onechild = True
-    t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
-    try:
-        t.start()
-        qOut, qErr = proc.communicate(input = input)
-        t.cancel()
-        if procdebug:
-            print('Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode))
-    except KeyboardInterrupt:
-        t.cancel()
-        killProc(proc)
-        if procdebug:
-            print('Check: process killed "%s"\n' % '" "'.join(command))
-        raise
+    with process.Popen(command, stdin=process.PIPE, stdout=process.PIPE,
+                       stderr=process.PIPE, text=True) as proc:
+        proc.killed = False
+        proc.onechild = True
+        t = Timer(float(par['TIMEOUT']), killProc, args = [proc])
+        try:
+            t.start()
+            qOut, qErr = proc.communicate(input = input)
+            t.cancel()
+            if procdebug:
+                print('Check: process exited "%s" (%s)\n' % ('" "'.join(command), proc.returncode))
+        except KeyboardInterrupt:
+            t.cancel()
+            killProc(proc)
+            if procdebug:
+                print('Check: process killed "%s"\n' % '" "'.join(command))
+            raise
     qOut = qOut.split('\n')
     qErr = qErr.split('\n')
     failed = False
@@ -2166,10 +2166,10 @@ if os.name == "nt":
     r = re.compile('^Microsoft Windows (.*)\[Version ([0-9]+\.[0-9]+)([^\[0-9].*)\]$')
     if procdebug:
         print('starting process "cmd" "/c" "ver" (inpipe,outpipe)\n')
-    proc = process.Popen('cmd /c ver', stdin=process.PIPE,
-                         stdout=process.PIPE, stderr=process.PIPE,
-                         text=True)
-    qOut, qErr = proc.communicate()
+    with process.Popen('cmd /c ver', stdin=process.PIPE,
+                       stdout=process.PIPE, stderr=process.PIPE,
+                       text=True) as proc:
+        qOut, qErr = proc.communicate()
     if procdebug:
         print('process exited "cmd" "/c" "ver" (%s)\n' % proc.returncode)
     for l in qOut.split('\n'):
@@ -2319,19 +2319,19 @@ def main(argv) :
 
     r_noecho = '--no-echo'
     if CheckExec('R'):
-        proc = process.Popen(['R', '--version'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             text=True)
-        r_out, r_err = proc.communicate()
+        with process.Popen(['R', '--version'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            r_out, r_err = proc.communicate()
         res = re.search(r'R version (?P<major>\d+)\.', r_out)
         if res is not None and int(res.group('major')) < 4:
             r_noecho = '--slave'
         if CONDITIONALS['HAVE_LIBR']:
-            proc = process.Popen(['R', r_noecho, '--no-save', '--no-restore',
-                                  '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
-                                 stdout=process.PIPE, stderr=process.PIPE,
-                                 text=True)
-            r_out, r_err = proc.communicate()
+            with process.Popen(['R', r_noecho, '--no-save', '--no-restore',
+                                '-e', 'print(Sys.getenv("R_LIBS_USER"))'],
+                               stdout=process.PIPE, stderr=process.PIPE,
+                               text=True) as proc:
+                r_out, r_err = proc.communicate()
             res = re.search(r'\[\d+\] "(?P<dir>.*)"', r_out)
             if res is not None:
                 rdir = os.path.expanduser(res.group('dir'))
@@ -2467,10 +2467,10 @@ def main(argv) :
 
     python_version = ''
     if CheckExec('python'):
-        proc = process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             text=True)
-        pyout, pyerr = proc.communicate()
+        with process.Popen(['python', '-c', 'import sys; print(sys.version[:1])'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            pyout, pyerr = proc.communicate()
         if proc.returncode == 0 and pyout:
             python_version = pyout.strip()
             os.environ['PYTHON' + python_version] = 'python'
@@ -2489,19 +2489,19 @@ def main(argv) :
         CONDITIONALS['HAVE_MONETDBE'] = True
 
     if 'PYTHON3' in os.environ:
-        proc = process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             text=True)
-        pyout, pyerr = proc.communicate()
+        with process.Popen([os.environ['PYTHON3'], '-c', 'import scipy'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            pyout, pyerr = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_LIBSCIPY3'] = '#'
     if env.get('TSTDATAPATH'):
         CONDITIONALS['HAVE_DATA_PATH'] = '#'
     if CheckExec('perl'):
-        proc = process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             text=True)
-        perl_out, perl_err = proc.communicate()
+        with process.Popen(['perl', '-e', 'use MonetDB::CLI::MapiPP; use DBI;'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            perl_out, perl_err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_PERL'] = '#'
         else:
@@ -2511,29 +2511,29 @@ def main(argv) :
         if 'PHP_INCPATH' in os.environ:
             phpcmd.extend(['-d', 'include_path=%s' % os.environ['PHP_INCPATH']])
         phpcmd.extend(['-r', "require 'monetdb/php_monetdb.php';"])
-        proc = process.Popen(phpcmd,
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             text=True)
-        php_out, php_err = proc.communicate()
+        with process.Popen(phpcmd,
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            php_out, php_err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['HAVE_PHP'] = '#'
         else:
             print('PHP available, but MonetDB driver not available')
     if CheckExec('ruby'):
         # also check ruby version; we require >= 1.9 for "require_relative"
-        proc = process.Popen(['ruby', '--version'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             text=True)
-        ruby_out, ruby_err = proc.communicate()
+        with process.Popen(['ruby', '--version'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            ruby_out, ruby_err = proc.communicate()
         ruby_reg = re.compile("^[^ ]* ([0-9]+)\.([0-9]+)[^0-9].*$", re.MULTILINE)
         ruby_ver = ruby_reg.match(ruby_out)
         if ruby_ver and \
            100 * int(ruby_ver.group(1)) + int(ruby_ver.group(2)) >= 109:
             # now check whether the monetdb-ruby gem is available
-            proc = process.Popen(['ruby', '-e', "require 'MonetDB'"],
-                                 stdout=process.PIPE, stderr=process.PIPE,
-                                 text=True)
-            ruby_out, ruby_err = proc.communicate()
+            with process.Popen(['ruby', '-e', "require 'MonetDB'"],
+                               stdout=process.PIPE, stderr=process.PIPE,
+                               text=True) as proc:
+                ruby_out, ruby_err = proc.communicate()
             if proc.returncode == 0:
                 CONDITIONALS['HAVE_RUBY'] = '#'
             else:
@@ -2594,10 +2594,10 @@ def main(argv) :
     BACK = os.getcwd()
     try:
         os.chdir(TSTSRCBASE)
-        proc = process.Popen(['hg', 'root'],
-                             stdout=process.PIPE, stderr=process.PIPE,
-                             text=True)
-        out, err = proc.communicate()
+        with process.Popen(['hg', 'root'],
+                           stdout=process.PIPE, stderr=process.PIPE,
+                           text=True) as proc:
+            out, err = proc.communicate()
         if proc.returncode == 0:
             CONDITIONALS['MERCURIAL'] = '#' # True
         proc = None
@@ -2667,10 +2667,10 @@ def main(argv) :
     REV = opts.revision
     if REV is None:             # no --revision option: try to find out
         try:
-            proc = process.Popen(['hg', 'id', '-i'],
-                                 stdout=process.PIPE,
-                                 text=True)
-            out, err = proc.communicate()
+            with process.Popen(['hg', 'id', '-i'],
+                               stdout=process.PIPE,
+                               text=True) as proc:
+                out, err = proc.communicate()
             if proc.returncode == 0:
                 REV = out.strip()
             proc = None

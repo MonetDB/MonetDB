@@ -1497,11 +1497,12 @@ _rel_add_identity(mvc *sql, sql_rel *rel, sql_exp **exp)
 	list *exps = rel_projections(sql, rel, NULL, 1, 1);
 	sql_exp *e;
 
-	if (list_length(exps) == 0) {
+	if (list_empty(exps)) {
 		*exp = NULL;
 		return rel;
 	}
-	rel = rel_project(sql->sa, rel, exps);
+	if (!is_simple_project(rel->op) || !list_empty(rel->r))
+		rel = rel_project(sql->sa, rel, exps);
 	e = rel->exps->h->data;
 	e = exp_column(sql->sa, exp_relname(e), exp_name(e), exp_subtype(e), rel->card, has_nil(e), is_intern(e));
 	e = exp_unop(sql->sa, e, sql_bind_func(sql, "sys", "identity", exp_subtype(e), NULL, F_FUNC));

@@ -138,6 +138,26 @@ SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.v
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" TINYINT NOT NULL,"c1" TINYINT NOT NULL,"c3" BOOLEAN,"c4" INT,"c5" BIGINT)
+
+statement ok
+CREATE TABLE "t1" ("c0" INT,"c3" VARCHAR(32))
+
+statement ok
+INSERT INTO "t1" VALUES (NULL, ''),(NULL, 'E5E0'),(NULL, '396B34AC'),(NULL, '68AB5D04'),(NULL, ''),(0, NULL),(NULL, 'D5E5'),(NULL, '4E')
+
+query T rowsort
+select case t0.c1 = any(select 2 from t1) when false then 'a' when true then 'b' end from t0
+----
+
+
+statement ok
+ROLLBACK
+
 query I rowsort
 select case 3 <> any(select 4) when true then 2 when false then 8 end;
 ----

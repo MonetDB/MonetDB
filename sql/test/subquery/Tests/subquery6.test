@@ -479,6 +479,12 @@ False
 False
 False
 
+statement error
+select 1 where (select 1 union all select 2) in (1)
+
+statement error
+select (select 1 union all select 2) in (1)
+
 statement ok
 DROP TABLE tbl_ProductSales
 

@@ -881,7 +881,12 @@ ilog2(BUN x)
 				/* degenerates into half range */	\
 				/* -inf < x <[=] *tl */			\
 				anti = false;				\
-				th = tl;				\
+				if (tl == &vl.v_##TYPE) {		\
+					vh.v_##TYPE = vl.v_##TYPE;	\
+					th = &vh.v_##TYPE;		\
+				} else {				\
+					th = tl;			\
+				}					\
 				hi = !li;				\
 				lval = false;				\
 				/* further dealt with below */		\
