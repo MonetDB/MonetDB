@@ -9024,7 +9024,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						sqlstore *store = v->sql->session->tr->store;
 
 						/* Do not include empty partitions */
-						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, pt->columns.set->h->data, 1))
+						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, pt->columns.set->h->data, 0))
 							continue;
 
 						prel = rel_rename_part(v->sql, prel, tname, t);
