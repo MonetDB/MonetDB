@@ -1,0 +1,18 @@
+statement ok
+create table foo(id bigserial, value int);
+
+statement ok
+create table bar(id bigserial, value int);
+
+statement ok
+insert into foo(value) (select * from generate_series(0,10000));
+
+statement ok
+insert into bar(value) (select * from generate_series(0,10000));
+
+statement ok
+call setquerytimeout(0, 1);
+
+# test crossproduct
+statement error HYT00!Query aborted due to timeout
+select * from  foo, bar
