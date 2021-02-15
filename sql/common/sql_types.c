@@ -87,6 +87,37 @@ unsigned int bits2digits(unsigned int bits)
 #endif
 }
 
+unsigned int type_digits_to_char_digits(sql_subtype *t)
+{
+	if (!t)
+		return 0;
+	switch (t->type->eclass) {
+		case EC_BIT:
+			return 1;
+		case EC_POS:
+		case EC_NUM:
+		case EC_MONTH:
+			return bits2digits(t->digits) + 1; /* add '-' */
+		case EC_FLT:
+			return bits2digits(t->digits) + 2; /* TODO for floating-points maybe more is needed */
+		case EC_DEC:
+		case EC_SEC:
+			return t->digits + 2; /* add '-' and '.' */
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ:
+			return 40; /* TODO this needs more tunning */
+		case EC_TIME:
+		case EC_TIME_TZ:
+			return 20; /* TODO this needs more tunning */
+		case EC_DATE:
+			return 20; /* TODO this needs more tunning */
+		case EC_BLOB:
+			return t->digits * 2; /* TODO BLOBs don't have digits, so this is wrong */
+		default:
+			return t->digits; /* What to do with EC_GEOM? */
+	}
+}
+
 /* 0 cannot convert */
 /* 1 set operations have very limited coersion rules */
 /* 2 automatic coersion (could still require dynamic checks for overflow) */
@@ -919,9 +950,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "least", "calc", "min_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "greatest", "calc", "max_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", TRUE, FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
-	/* nullif and coalesce don't have a backend implementation */
+	/* nullif, coalesce and casewhen don't have a backend implementation */
 	sql_create_func(sa, "nullif", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "coalesce", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	sql_create_func(sa, "casewhen", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	/* needed for count(*) and window functions without input col */
 	sql_create_func(sa, "star", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 0);
 
