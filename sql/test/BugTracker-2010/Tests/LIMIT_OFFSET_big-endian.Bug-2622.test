@@ -113,9 +113,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -137,9 +137,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -163,9 +163,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -189,9 +189,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -215,9 +215,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -241,9 +241,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -267,9 +267,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -295,9 +295,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -325,9 +325,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -355,9 +355,9 @@ sql.mvc
 1
 sql.tid
 1
-sql.emptybind
-2
 sql.bind
+1
+sql.emptybind
 1
 sql.delta
 1
@@ -373,7 +373,6 @@ bat.pack
 5
 sql.resultSet
 1
-
 
 query I rowsort
         select * from oblo
@@ -439,5 +438,4 @@ query I rowsort
 
 statement ok
 drop table oblo
-
 
