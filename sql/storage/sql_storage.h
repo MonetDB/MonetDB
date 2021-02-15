@@ -115,6 +115,7 @@ typedef struct table_functions {
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_del_fptr) (sql_trans *tr, sql_table *t, int access);
+typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
 /*
 -- append/update to columns and indices
@@ -204,6 +205,7 @@ typedef struct store_functions {
 	bind_col_fptr bind_col;
 	bind_idx_fptr bind_idx;
 	bind_del_fptr bind_del;
+	bind_cands_fptr bind_cands;
 
 	append_col_fptr append_col;
 	modify_col_prep_fptr append_col_prep;
@@ -319,9 +321,9 @@ extern void store_resume_log(struct sqlstore *store);
 extern lng store_hot_snapshot(struct sqlstore *store, str tarfile);
 extern lng store_hot_snapshot_to_stream(struct sqlstore *store, stream *s);
 
+extern ulng store_oldest(struct sqlstore *store);
 extern ulng store_get_timestamp(struct sqlstore *store);
 extern void store_manager(struct sqlstore *store);
-extern void idle_manager(struct sqlstore *store);
 
 extern void store_lock(struct sqlstore *store);
 extern void store_unlock(struct sqlstore *store);
@@ -447,6 +449,7 @@ typedef struct sqlstore {
 	sql_catalog *cat;		/* the catalog of persistent tables (what to do with tmp tables ?) */
 	sql_schema *tmp;		/* keep pointer to default (empty) tmp schema */
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
 	list *active;			/* list of running transactions */
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
     ATOMIC_TYPE timestamp;	/* timestamp counter */

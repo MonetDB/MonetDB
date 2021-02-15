@@ -365,7 +365,7 @@ SQLresetClient(Client c)
 	return msg;
 }
 
-MT_Id sqllogthread, idlethread;
+MT_Id sqllogthread;
 
 static str
 SQLinit(Client c)
@@ -554,13 +554,6 @@ SQLinit(Client c)
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
 	}
-#if 0
-	if (!(SQLdebug&1024)) {
-		if ((idlethread = THRcreate((void (*)(void *)) mvc_idlemanager, SQLstore, MT_THR_DETACHED, "idlemanager")) == 0) {
-			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
-		}
-	}
-#endif
 	if ( wlc_state == WLC_STARTUP)
 		return WLCinit();
 	return MAL_SUCCEED;

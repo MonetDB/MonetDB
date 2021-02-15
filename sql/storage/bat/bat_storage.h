@@ -32,24 +32,23 @@ typedef struct sql_delta {
 typedef struct segment {
 	BUN start;
 	BUN end;
-	sql_trans *owner;	/* keep which transaction owns this */
+	bool deleted;	/* we need to keep a dense segment set, 0 - enf of last segemnt,
+					   some segments maybe deleted */
+	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
+					   rollback time, ie ready for reuse */
+	ulng oldts;		/* keep previous ts, for rollbacks */
 	struct segment *next;	/* usualy one should be enough */
 } segment;
 
 /* container structure too allow sharing this structure */
 typedef struct segments {
 	sql_ref r;
-	BUN end;		/* current end */
-	struct segment *head;
+	struct segment *h;
+	struct segment *t;
 } segments;
 
 typedef struct storage {
 	column_storage cs;	/* storage on disk */
-	bit cached_cnt;
-	size_t cnt;
-	size_t ucnt;	/* updates (ie deletes) in this transaction */
-	size_t icnt;	/* claimed in the transaction */
-	BUN end;		/* end maybe less than the segments indicate */
 	segments *segs;	/* local used segements */
 	struct storage *next;
 } storage;
