@@ -534,9 +534,6 @@ statement ok
 INSERT INTO t2(c0) VALUES(blob 'dAe8C7')
 
 statement ok
-CALL sys.shrink('sys', 't2')
-
-statement ok
 DROP TABLE t0
 
 statement ok
