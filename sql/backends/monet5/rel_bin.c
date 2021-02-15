@@ -381,7 +381,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 	if (reduce && c->nrcols == 0)
 		c = stmt_const(be, bin_first_column(be, left), c);
 
-	if (c->nrcols == 0 || (depth && !reduce)) {
+	if (c->nrcols == 0 || depth || !reduce) {
 		sql_subtype *bt = sql_bind_localtype("bit");
 		sql_subfunc *cmp = (in)
 			?sql_bind_func(sql, "sys", "=", tail_type(c), tail_type(c), F_FUNC)
@@ -400,9 +400,8 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				s = stmt_binop(be, s, i, NULL, a);
 			else
 				s = i;
-
 		}
-		if (sel && !(depth && !reduce))
+		if (sel && !(depth || !reduce))
 			s = stmt_uselect(be,
 				stmt_const(be, bin_first_column(be, left), s),
 				stmt_bool(be, 1), cmp_equal, sel, 0, 0);
@@ -1268,10 +1267,9 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				s = stmt_join(be, l, r, is_anti(e), (comp_type)e->flag, 0, is_semantics(e), false);
 			}
 		} else {
-			if (r2) { /* handle all cases in stmt_uselect,
-						 reducing, non reducing, scalar etc */
-				if (l->nrcols == 0 && left && left->nrcols > 0)
-					l = stmt_const(be, bin_first_column(be, left), l);
+			if (r2) { /* handle all cases in stmt_uselect, reducing, non reducing, scalar etc */
+				if (l->nrcols == 0 && ((sel && sel->nrcols > 0) || r->nrcols > 0 || r2->nrcols > 0 || reduce))
+					l = left ? stmt_const(be, bin_first_column(be, left), l) : column(be, l);
 				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
 			} else {
 				/* value compare or select */

@@ -1504,6 +1504,8 @@ rel_filter(mvc *sql, sql_rel *rel, list *l, list *r, char *sname, char *filter_o
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: no such FILTER function %s%s%s'%s'", sname ? "'":"", sname ? sname : "", sname ? "'.":"", filter_op);
 	e = exp_filter(sql->sa, l, r, f, anti);
 
+	if (exps_one_is_rel(l) || exps_one_is_rel(r)) /* uncorrelated subquery case */
+		return rel_select(sql->sa, rel, e);
 	/* atom or row => select */
 	if (exps_card(l) > rel->card) {
 		sql_exp *ls = l->h->data;
@@ -1550,9 +1552,10 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 {
 	if (!is_join(rel->op) && !is_select(rel->op))
 		return rel_select(sql->sa, rel, e);
-	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
-	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
-		if ((ls->card == rs->card && (!rs2 || ls->card == rs2->card)) || rel->processed)  /* bin compare op */
+	if ((rs->card <= CARD_ATOM || (rs2 && ls->card <= CARD_ATOM)) &&
+		(exp_is_atom(rs) || (rs2 && exp_is_atom(ls)) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
+		(!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
+		if ((ls->card == rs->card && (!rs2 || ls->card == rs2->card || rs->card == rs2->card)) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		return push_select_exp(sql, rel, e, ls, L, f);
@@ -1568,7 +1571,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 	mvc *sql = query->sql;
 	sql_exp *e = NULL;
 
-	if (quantifier || exp_is_rel(ls) || exp_is_rel(rs)) {
+	if (quantifier || exp_is_rel(ls) || exp_is_rel(rs) || (rs2 && exp_is_rel(rs2))) {
 		if (rs2) {
 			e = exp_compare2(sql->sa, ls, rs, rs2, type);
 			if (anti)
@@ -1954,7 +1957,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			supertype(&super, exp_subtype(values), exp_subtype(le));
 
 			/* on selection/join cases we can generate cmp expressions instead of anyequal for trivial cases */
-			if (is_sql_where(f) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
+			if ((is_sql_where(f) || is_sql_having(f)) && !is_sql_farg(f) && !exp_has_rel(le) && exps_are_atoms(vals)) {
 				if (list_length(vals) == 1) { /* use cmp_equal instead of cmp_in for 1 expression */
 					sql_exp *first = vals->h->data;
 					if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &first, 1, type_equal_no_any) < 0)
@@ -2656,7 +2659,7 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!rel)
 			return sq;
 		sq = rel_zero_or_one(sql, sq, ek);
-		if (is_sql_where(f)) {
+		if (is_sql_where(f) || is_sql_having(f)) {
 			sql_exp *le = exp_rel(sql, sq);
 			sql_subtype bt;
 

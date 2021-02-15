@@ -882,6 +882,34 @@ dump_column_definition(Mapi mid, stream *toConsole, const char *schema,
 		mnstr_printf(toConsole, "\t");
 		space = dquoted_print(toConsole, c_name, " ");
 		mnstr_printf(toConsole, "%*s", CAP(slen - space), "");
+		if (s != NULL && t != NULL &&
+			strcmp(c_type, "char") == 0 && strcmp(c_type_digits, "0") == 0) {
+			/* if the number of characters is not specified (due to a bug),
+			 * calculate a size */
+			char *c = descape(c_name);
+			if (c != NULL) {
+				size_t qlen = strlen(c) + strlen(s) + strlen(t) + 64;
+				char *q = malloc(qlen);
+				if (q != NULL) {
+					snprintf(q, qlen, "SELECT max(length(\"%s\")) FROM \"%s\".\"%s\"", c, s, t);
+					MapiHdl h = mapi_query(mid, q);
+					if (h != NULL) {
+						if (mapi_fetch_row(h) != 0) {
+							const char *d = mapi_fetch_field(h, 0);
+							free(c_type_digits);
+							/* if NULL, i.e. no non-NULL values, fill in 1 */
+							c_type_digits = strdup(d ? d : "1");
+							fprintf(stderr, "Warning: fixing size of CHAR column for %s of table %s.%s\n", c_name, schema, tname);
+						}
+						mapi_close_handle(h);
+					}
+					free(q);
+				}
+				free(c);
+			}
+			if (c_type_digits == NULL)
+				goto bailout;
+		}
 		space = dump_type(mid, toConsole, c_type, c_type_digits, c_type_scale, hashge);
 		if (strcmp(c_null, "false") == 0) {
 			mnstr_printf(toConsole, "%*s NOT NULL",
@@ -1256,7 +1284,11 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 					goto bailout;
 				while (mapi_fetch_row(hdl) != 0)
 					expr = mapi_fetch_field(hdl, 0);
-				mnstr_printf(toConsole, " PARTITION BY %s %s (%s)", phow, pusing, expr);
+				mnstr_printf(toConsole, " PARTITION BY %s %s (", phow, pusing);
+				if (column)
+					dquoted_print(toConsole, expr, ")");
+				else
+					mnstr_printf(toConsole, "%s)", expr);
 				mapi_close_handle(hdl);
 			}
 		}

@@ -623,7 +623,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	if (!stringtrick && tpe != TYPE_oid)
-		tpe = ATOMstorage(tpe);
+		tpe = ATOMbasetype(tpe);
 	switch (tpe) {
 	case TYPE_bte:
 		res = project_bte(bn, l, lci, r1, r2);

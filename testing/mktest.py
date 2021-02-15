@@ -135,6 +135,8 @@ def to_sqllogic_test(query, copy_into_data=None):
                 else:
                     args += 'T'
             sorting = opts.sort
+            if re.search(r'\sorder\s+by\s', query, re.IGNORECASE) is not None:
+                sorting = 'nosort'
             print('query {} {}'.format(args, sorting))
             print(query)
             print('----')

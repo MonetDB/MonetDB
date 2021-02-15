@@ -5442,6 +5442,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "batcalc",	"bit_noerror",	"pattern batcalc.bit_noerror(X_1:bat[:sht], X_2:bat[:oid]):bat[:bit] ",	"CMDconvert_bit;",	""	]
 [ "batcalc",	"bit_noerror",	"pattern batcalc.bit_noerror(X_1:bat[:str]):bat[:bit] ",	"CMDconvert_bit;",	""	]
 [ "batcalc",	"bit_noerror",	"pattern batcalc.bit_noerror(X_1:bat[:str], X_2:bat[:oid]):bat[:bit] ",	"CMDconvert_bit;",	""	]
+[ "batcalc",	"blob",	"command batcalc.blob(X_1:bat[:blob], X_2:bat[:oid]):bat[:blob] ",	"BLOBblob_blob_bulk;",	""	]
 [ "batcalc",	"blob",	"command batcalc.blob(X_1:bat[:str], X_2:bat[:oid]):bat[:blob] ",	"batstr_2_blob;",	""	]
 [ "batcalc",	"bte",	"pattern batcalc.bte(X_1:bat[:bit]):bat[:bte] ",	"CMDconvertsignal_bte;",	""	]
 [ "batcalc",	"bte",	"pattern batcalc.bte(X_1:bat[:bit], X_2:bat[:oid]):bat[:bte] ",	"CMDconvertsignal_bte;",	""	]

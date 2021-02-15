@@ -40,11 +40,19 @@ typedef struct versionhead  {
     objectversion* ov;
 } versionhead ;
 
+// TODO: this might be moved to the objectversion struct itself.
+typedef struct RW_lock { //readers-writer lock
+	int reader_cnt;
+	MT_Lock readers_lock;
+	MT_Lock general_lock;
+} RW_lock;
+
 typedef struct objectset {
 	int refcnt;
 	sql_allocator *sa;
 	destroy_fptr destroy;
 	MT_Lock ht_lock;	/* latch protecting ht */
+	RW_lock rw_lock;	/*readers-writer lock to protect the links (chains) in the objectversion chain.*/
 	versionhead  *name_based_h;
 	versionhead  *name_based_t;
 	versionhead  *id_based_h;
@@ -318,6 +326,54 @@ static void os_atmc_set_state(objectversion *ov, bte state) {
 	ATOMIC_SET(&ov->state, state);
 }
 
+static inline void
+lock_reader(objectset* os)
+{
+	MT_lock_set(&os->rw_lock.readers_lock);
+	if (1 == ++os->rw_lock.reader_cnt) {
+		MT_lock_set(&os->rw_lock.general_lock);
+	}
+	MT_lock_unset(&os->rw_lock.readers_lock);
+}
+
+static inline void
+unlock_reader(objectset* os)
+{
+	MT_lock_set(&os->rw_lock.readers_lock);
+	if (0 == --os->rw_lock.reader_cnt) {
+		MT_lock_unset(&os->rw_lock.general_lock);
+	}
+	MT_lock_unset(&os->rw_lock.readers_lock);
+}
+
+static inline void
+lock_writer(objectset* os)
+{
+	MT_lock_set(&os->rw_lock.general_lock);
+}
+
+static inline void
+unlock_writer(objectset* os)
+{
+	MT_lock_unset(&os->rw_lock.general_lock);
+}
+
+static inline objectversion*
+get_name_based_older_locked(objectversion* ov) {
+	lock_reader(ov->os);
+	objectversion* name_based_older = ov->name_based_older;
+	unlock_reader(ov->os);
+	return name_based_older;
+}
+
+static inline objectversion*
+get_id_based_older_locked(objectversion* ov) {
+	lock_reader(ov->os);
+	objectversion* id_based_older = ov->id_based_older;
+	unlock_reader(ov->os);
+	return id_based_older;
+}
+
 static void
 _os_rollback(objectversion *ov, sqlstore *store)
 {
@@ -331,44 +387,69 @@ _os_rollback(objectversion *ov, sqlstore *store)
 	state |= rollbacked;
 	os_atmc_set_state(ov, state);
 
-	if (ov->name_based_older && !(os_atmc_get_state(ov->name_based_older) & rollbacked)) {
-		if (ov->ts != ov->name_based_older->ts) {
+	bte state_older;
+
+ 	/*
+	 * We have to use the readers-writer lock here,
+	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
+	 */
+	objectversion* name_based_older = get_name_based_older_locked(ov);
+
+	if (name_based_older && !((state_older= os_atmc_get_state(name_based_older)) & rollbacked)) {
+		if (ov->ts != name_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
-			// TODO START ATOMIC SET
-			ov->name_based_head->ov = ov->name_based_older;
+
+			ATOMIC_BASE_TYPE expected_deleted = deleted;
+			if (state_older == active || (state_older == deleted && ATOMIC_CAS(&name_based_older->state, &expected_deleted, block_destruction))) {
+				ov->name_based_head->ov = name_based_older;
+				name_based_older->name_based_newer=NULL;
+				if (state_older != active && expected_deleted == deleted)
+					os_atmc_set_state(name_based_older, deleted); //Restore the deleted older back to its deleted state.
+			}
 		}
 		else {
-			_os_rollback(ov->name_based_older, store);
+			_os_rollback(name_based_older, store);
 		}
 	}
-	else if (!ov->name_based_older) {
+	else if (!name_based_older) {
 		// this is a terminal node. i.e. this objectversion does not have name based committed history
 		if (ov->name_based_head) // The oposite can happen during an early conflict in os_add or os_del.
 			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
 	}
 
-	if (ov->id_based_older && !(os_atmc_get_state(ov->id_based_older) & rollbacked)) {
-		if (ov->ts != ov->id_based_older->ts) {
+ 	/*
+	 * We have to use the readers-writer lock here,
+	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
+	 */
+	objectversion* id_based_older = get_id_based_older_locked(ov);
+	if (id_based_older && !((state_older= os_atmc_get_state(id_based_older)) & rollbacked)) {
+		if (ov->ts != id_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
 			// In any case, we restore versionhead pointer to that.
-			// TODO START ATOMIC SET
-			ov->id_based_head->ov = ov->id_based_older;
+
+			ATOMIC_BASE_TYPE expected_deleted = deleted;
+			if (state_older == active || (state_older == deleted && ATOMIC_CAS(&id_based_older->state, &expected_deleted, block_destruction))) {
+				ov->id_based_head->ov = id_based_older;
+				id_based_older->id_based_newer=NULL;
+				if (state_older != active && expected_deleted == deleted)
+					os_atmc_set_state(id_based_older, deleted); //Restore the deleted older back to its deleted state.
+			}
 		}
-		else if (ov->id_based_older != ov->name_based_older)
-			_os_rollback(ov->id_based_older, store);
+		else if (id_based_older != name_based_older)
+			_os_rollback(id_based_older, store);
 	}
-	else if (!ov->id_based_older) {
+	else if (!id_based_older) {
 		// this is a terminal node. i.e. this objectversion does not have id based committed history
 		os_remove_id_based_chain(ov->os, store, ov->id_based_head);
 	}
 
 	if (ov->name_based_newer && !(os_atmc_get_state(ov->name_based_newer) & rollbacked)) {
-		_os_rollback(ov->id_based_older, store);
+		_os_rollback(ov->name_based_newer, store);
 	}
 
 	if (ov->id_based_newer && ov->id_based_newer != ov->name_based_newer && !(os_atmc_get_state(ov->id_based_newer) & rollbacked)) {
-		_os_rollback(ov->id_based_older, store);
+		_os_rollback(ov->id_based_newer, store);
 	}
 }
 
@@ -386,18 +467,22 @@ try_to_mark_deleted_for_destruction(sqlstore* store, objectversion *ov)
 	ATOMIC_BASE_TYPE expected_deleted = deleted;
 	if (ATOMIC_CAS(&ov->state, &expected_deleted, under_destruction)) {
 
-		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) { // TODO: This gives race conditions with os_rollback.
+		if (!ov->name_based_newer || (os_atmc_get_state(ov->name_based_newer) & rollbacked)) {
 			os_remove_name_based_chain(ov->os, store, ov->name_based_head);
 		}
 		else {
+			lock_writer(ov->os);
 			ov->name_based_newer->name_based_older = NULL;
+			unlock_writer(ov->os);
 		}
 
-		if (!ov->id_based_newer || (os_atmc_get_state(ov->id_based_newer) & rollbacked)) { // TODO: This gives race conditions with os_rollback.
+		if (!ov->id_based_newer || (os_atmc_get_state(ov->id_based_newer) & rollbacked)) {
 			os_remove_id_based_chain(ov->os, store, ov->id_based_head);
 		}
 		else {
+			lock_writer(ov->os);
 			ov->id_based_newer->id_based_older = NULL;
+			unlock_writer(ov->os);
 		}
 
 		ov->ts = store_get_timestamp(store)+1;
@@ -410,12 +495,6 @@ objectversion_destroy_recursive(sqlstore* store, objectversion *ov)
 	if (ov->id_based_older && ov->id_based_older == ov->name_based_older) {
 			objectversion_destroy_recursive(store, ov->id_based_older);
 		}
-
-		if (ov->name_based_newer)
-			ov->name_based_newer->name_based_older=NULL;
-
-		if (ov->id_based_newer)
-			ov->id_based_newer->id_based_older=NULL;
 
 		objectversion_destroy(store, ov->os, ov);
 }
@@ -523,6 +602,8 @@ os_new(sql_allocator *sa, destroy_fptr destroy, bool temporary, bool unique)
 	};
 	os->destroy = destroy;
 	MT_lock_init(&os->ht_lock, "sa_ht_lock");
+	MT_lock_init(&os->rw_lock.readers_lock, "sa_readers_lock");
+	MT_lock_init(&os->rw_lock.general_lock, "sa_general_lock");
 
 	return os;
 }
@@ -540,11 +621,13 @@ os_destroy(objectset *os, sql_store store)
 	if (--os->refcnt > 0)
 		return;
 	MT_lock_destroy(&os->ht_lock);
-	versionhead* n=os->name_based_h;
+	MT_lock_destroy(&os->rw_lock.readers_lock);
+	MT_lock_destroy(&os->rw_lock.general_lock);
+	versionhead* n=os->id_based_h;
 	while(n) {
 		objectversion *ov = n->ov;
 		while(ov) {
-			objectversion *older = ov->name_based_older;
+			objectversion *older = ov->id_based_older;
 			objectversion_destroy(store, os, ov);
 			ov = older;
 		}
@@ -553,18 +636,18 @@ os_destroy(objectset *os, sql_store store)
 		n = hn;
 	}
 
-	n=os->id_based_h;
+	n=os->name_based_h;
 	while(n) {
 		versionhead* hn =n->next;
 		node_destroy(os, store, n);
 		n = hn;
 	}
 
-	if (os->name_map && !os->name_map->sa)
-		hash_destroy(os->name_map);
-
 	if (os->id_map && !os->id_map->sa)
 		hash_destroy(os->id_map);
+
+	if (os->name_map && !os->name_map->sa)
+		hash_destroy(os->name_map);
 
 	if (!os->sa)
 		_DELETE(os);
@@ -669,7 +752,7 @@ get_valid_object_name(sql_trans *tr, objectversion *ov)
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts)) || ov->ts < tr->ts)
 			return ov;
 		else
-			ov = ov->name_based_older;
+			ov = get_name_based_older_locked(ov);
 	}
 	return ov;
 }
@@ -681,7 +764,7 @@ get_valid_object_id(sql_trans *tr, objectversion *ov)
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts))  || ov->ts < tr->ts)
 			return ov;
 		else
-			ov = ov->id_based_older;
+			ov = get_id_based_older_locked(ov);
 	}
 	return ov;
 }
@@ -743,10 +826,8 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 static int
 os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov) {
 	versionhead  *id_based_node;
-	if (ov->name_based_older && ov->name_based_older->b->id == id)
-		id_based_node = ov->name_based_older->id_based_head;
-	else // Previous id based objectversion is of a different name, so now we do have to perform an extensive look up
-		id_based_node = find_id(os, id);
+
+	id_based_node = find_id(os, id);
 
 	if (id_based_node) {
 		objectversion *co = id_based_node->ov;

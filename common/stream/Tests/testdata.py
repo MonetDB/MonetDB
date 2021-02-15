@@ -218,6 +218,13 @@ class TestFile:
         f.write(content)
         return filename
 
+
+    def write_raw(self, content):
+        filename = self.path()
+        f = open(filename, 'wb')
+        f.write(content)
+        return filename
+
     def read(self):
         filename = self.path()
         if not self.compression:
