@@ -388,17 +388,17 @@ query T rowsort
 select t2.c3 from t2 left join (select distinct least(lower('䙕<x?L!'), substr(t2.c3, t2.c2, t2.c4)) from t2, t1 where (t2.c0) = false) as sub0 on t2.c0 where
 case when true then t2.c3 when t2.c0 then t2.c3 when t2.c0 then t2.c3 end <> all(values (greatest('jG', '}')), (splitpart('薍噥', '', 6)), (greatest('', 'n8駞Rr')))
 ----
-*F᢬#W\t7.#
-苌RM2o>+Ꮉ
-TRUE
+*F@#W@7.#
+.9E'G.F_&
+0.27948064932943084
+0.27948064932943084
+0.27948064932943084
+0.27948064932943084
 0.6612383260040383
 1.0
-0.27948064932943084
-0.27948064932943084
-0.27948064932943084
-0.27948064932943084
+@RM2o>+@
 CB
-.9E'G.F_&
+TRUE
 
 statement ok
 ROLLBACK
