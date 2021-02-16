@@ -857,7 +857,7 @@ logger_read_types_file(logger *lg, FILE *fp)
 
 
 static gdk_return
-logger_create_types_file(logger *lg, char filename[FILENAME_MAX])
+logger_create_types_file(logger *lg, const char *filename)
 {
 	FILE *fp;
 
@@ -1181,7 +1181,7 @@ logger_commit(logger *lg)
 }
 
 static gdk_return
-check_version(logger *lg, FILE *fp, char filename[FILENAME_MAX])
+check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const char *filename)
 {
 	int version = 0;
 
@@ -1190,9 +1190,9 @@ check_version(logger *lg, FILE *fp, char filename[FILENAME_MAX])
 		GDKerror("Could not read the version number from the file '%s/log'.\n", lg->dir);
 		return GDK_FAIL;
 	}
-	if (version != lg->version) {
+	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
 		fclose(fp);
-		if (old_logger_load(lg->debug, filename, lg->dir, lg->version, lg->prefuncp, lg->postfuncp) != GDK_SUCCEED) {
+		if (old_logger_load(lg->debug, fn, logdir, lg->version, lg->prefuncp, lg->postfuncp, lg->funcdata) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
 			GDKerror("Incompatible database version %06d, "
@@ -1209,6 +1209,7 @@ check_version(logger *lg, FILE *fp, char filename[FILENAME_MAX])
 
 		if (fgetc(fp) != '\n' ||	 /* skip \n */
 	    	    fgetc(fp) != '\n') {	 /* skip \n */
+			fclose(fp);
 			GDKerror("Badly formatted log file");
 			return GDK_FAIL;
 		}
@@ -1216,6 +1217,7 @@ check_version(logger *lg, FILE *fp, char filename[FILENAME_MAX])
 			fclose(fp);
 			return GDK_FAIL;
 		}
+		fclose(fp);
 	}
 	return GDK_SUCCEED;
 }
@@ -1525,29 +1527,27 @@ bm_subcommit(logger *lg)
 	return res;
 }
 
-static str
+static gdk_return
 logger_filename(logger *lg, char bak[FILENAME_MAX], char filename[FILENAME_MAX])
 {
 	str filenamestr = NULL;
-	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 
-	if ((filenamestr = GDKfilepath(farmid, lg->dir, LOGFILE, NULL)) == NULL)
-		return NULL;
-	int len = snprintf(filename, FILENAME_MAX, "%s", filenamestr);
-	if (len == -1 || len >= FILENAME_MAX) {
-		GDKfree(filenamestr);
+	if ((filenamestr = GDKfilepath(0, lg->dir, LOGFILE, NULL)) == NULL)
+		return GDK_FAIL;
+	size_t len = strcpy_len(filename, filenamestr, FILENAME_MAX);
+	GDKfree(filenamestr);
+	if (len >= FILENAME_MAX) {
 		GDKerror("Logger filename path is too large\n");
-		return NULL;
+		return GDK_FAIL;
 	}
 	if (bak) {
-		len = snprintf(bak, FILENAME_MAX, "%s.bak", filename);
-		GDKfree(filenamestr);
-		if (len == -1 || len >= FILENAME_MAX) {
+		len = strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL);
+		if (len >= FILENAME_MAX) {
 			GDKerror("Logger filename path is too large\n");
-			return NULL;
+			return GDK_FAIL;
 		}
 	}
-	return filename;
+	return GDK_SUCCEED;
 }
 
 static gdk_return
@@ -1560,8 +1560,7 @@ logger_cleanup(logger *lg, lng id)
 		fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
 		return GDK_FAIL;
 	}
-	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
-	if (GDKunlink(farmid, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
+	if (GDKunlink(0, lg->dir, LOGFILE, log_id) != GDK_SUCCEED) {
 		fprintf(stderr, "#logger_cleanup: failed to remove old WAL %s.%s\n", LOGFILE, log_id);
 		GDKclrerr();
 	}
@@ -1573,19 +1572,18 @@ logger_cleanup(logger *lg, lng id)
  * unless running in read-only mode
  * Load data and persist it in the BATs */
 static gdk_return
-logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
+logger_load(int debug, const char *fn, const char *logdir, logger *lg, char filename[FILENAME_MAX])
 {
 	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
 	bat catalog_bid, catalog_id, dcatalog;
-	int farmid = BBPselectfarm(PERSISTENT, 0, offheap);
 	bool needcommit = false;
 	int dbg = GDKdebug;
 	int readlogs = 0;
 
 	/* refactor */
 	if (!LOG_DISABLED(lg)) {
-		if (!logger_filename(lg, bak, filename))
+		if (logger_filename(lg, bak, filename) != GDK_SUCCEED)
 			goto error;
 	}
 
@@ -1610,11 +1608,18 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 		if ((fp = MT_fopen(bak, "r")) != NULL) {
 			fclose(fp);
 			fp = NULL;
-			if (GDKunlink(farmid, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
-			    GDKmove(farmid, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
+			if (GDKunlink(0, lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
+			    GDKmove(0, lg->dir, LOGFILE, "bak", lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
 				goto error;
+		} else if (errno != ENOENT) {
+			GDKsyserror("open %s failed", bak);
+			goto error;
 		}
 		fp = MT_fopen(filename, "r");
+		if (fp == NULL && errno != ENOENT) {
+			GDKsyserror("open %s failed", filename);
+			goto error;
+		}
 	}
 
 	strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL);
@@ -1715,7 +1720,8 @@ logger_load(int debug, const char *fn, char filename[FILENAME_MAX], logger *lg)
 				 fn, fn, lg->dir);
 			goto error;
 		}
-		if (check_version(lg, fp, filename) != GDK_SUCCEED) {
+		if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) {
+			fp = NULL;
 			goto error;
 		}
 		readlogs = 1;
@@ -1920,7 +1926,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 		fprintf(stderr, "#logger_new dir set to %s\n", lg->dir);
 	}
 
-	if (logger_load(debug, fn, filename, lg) == GDK_SUCCEED) {
+	if (logger_load(debug, fn, logdir, lg, filename) == GDK_SUCCEED) {
 		return lg;
 	}
 	return NULL;
