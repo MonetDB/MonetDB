@@ -329,3 +329,77 @@ project (
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t1" ("c0" DECIMAL(18,3),"c1" TINYINT,"c3" SMALLINT,"c4" BOOLEAN,"c5" REAL,CONSTRAINT "t1_c1_unique" UNIQUE ("c1"),
+    CONSTRAINT "t1_c1_c0_unique" UNIQUE ("c1", "c0"),CONSTRAINT "t1_c0_c1_unique" UNIQUE ("c0", "c1"))
+
+statement ok
+COPY 6 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	NULL	5	NULL	NULL
+NULL	NULL	6	NULL	NULL
+NULL	NULL	6	NULL	NULL
+NULL	NULL	5	NULL	NULL
+NULL	NULL	NULL	NULL	NULL
+NULL	NULL	NULL	false	NULL
+
+statement ok
+CREATE TABLE "t2" ("c0" BOOLEAN,"c2" BIGINT,"c3" CHARACTER LARGE OBJECT,"c4" INTEGER)
+
+statement ok
+COPY 16 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+false	3	NULL	-1284583770
+NULL	NULL	"*F᢬#W\t7.#"	NULL
+NULL	1598687530	"苌RM2o>+Ꮉ"	NULL
+false	0	NULL	NULL
+false	2	NULL	NULL
+false	7	NULL	NULL
+false	-704112799	"TRUE"	9
+NULL	1097664958	"0.6612383260040383"	-7
+false	2	"1.0"	NULL
+NULL	6	"0.27948064932943084"	6
+NULL	6	"0.27948064932943084"	6
+NULL	6	"0.27948064932943084"	6
+NULL	6	"0.27948064932943084"	6
+false	2	"CB"	NULL
+false	1	".9E'G.F_&"	NULL
+false	2	NULL	NULL
+
+query I rowsort
+select 1 from t2 full outer join (select 'a') as sub0 on true where t2.c3 <> all(values ('jG'), ('薍噥'), ('n8駞Rr'))
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query T rowsort
+select t2.c3 from t2 left join (select distinct least(lower('䙕<x?L!'), substr(t2.c3, t2.c2, t2.c4)) from t2, t1 where (t2.c0) = false) as sub0 on t2.c0 where
+case when true then t2.c3 when t2.c0 then t2.c3 when t2.c0 then t2.c3 end <> all(values (greatest('jG', '}')), (splitpart('薍噥', '', 6)), (greatest('', 'n8駞Rr')))
+----
+*F᢬#W\t7.#
+苌RM2o>+Ꮉ
+TRUE
+0.6612383260040383
+1.0
+0.27948064932943084
+0.27948064932943084
+0.27948064932943084
+0.27948064932943084
+CB
+.9E'G.F_&
+
+statement ok
+ROLLBACK
+
