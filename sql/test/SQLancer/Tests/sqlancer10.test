@@ -314,6 +314,18 @@ SELECT 1 FROM t0, t2 GROUP BY t2.c1 HAVING ((((SELECT FALSE WHERE FALSE) EXCEPT 
 1
 1
 
+query T nosort
+PLAN SELECT (SELECT c0 FROM t0) FROM t0
+----
+project (
+| single left outer join (
+| | table("sys"."t0") [ "t0"."c0" NOT NULL ] COUNT ,
+| | project (
+| | | table("sys"."t0") [ "t0"."c0" NOT NULL ] COUNT 
+| | ) [ "t0"."c0" NOT NULL as "%1"."%1" ]
+| ) [  ]
+) [ "%1"."%1" ]
+
 statement ok
 ROLLBACK
 
