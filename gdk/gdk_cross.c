@@ -52,9 +52,10 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		bn1->tnonil = true;
 		p = (oid *) Tloc(bn1, 0);
 		for (i = 0; i < cnt1; i++) {
-			_CHECK_TIMEOUT(qry_ctx->starttime, qry_ctx->querytimeout);
 			oid x = canditer_next(&ci1);
 			for (j = 0; j < cnt2; j++) {
+				if ((((i+1)*(j+1)) % CHECK_QRY_TIMEOUT_STEP) == 0)
+					_CHECK_TIMEOUT(qry_ctx->starttime, qry_ctx->querytimeout);
 				*p++ = x;
 			}
 		}
@@ -69,8 +70,9 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 			bn2->tnonil = true;
 			p = (oid *) Tloc(bn2, 0);
 			for (i = 0; i < cnt1; i++) {
-				_CHECK_TIMEOUT(qry_ctx->starttime, qry_ctx->querytimeout);
 				for (j = 0; j < cnt2; j++) {
+					if ((((i+1)*(j+1)) % CHECK_QRY_TIMEOUT_STEP) == 0)
+						_CHECK_TIMEOUT(qry_ctx->starttime, qry_ctx->querytimeout);
 					*p++ = canditer_next(&ci2);
 				}
 				canditer_reset(&ci2);
