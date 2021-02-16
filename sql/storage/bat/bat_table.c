@@ -15,7 +15,14 @@ static BAT *
 delta_cands(sql_trans *tr, sql_table *t)
 {
 	sqlstore *store = tr->store;
-	return store->storage_api.bind_cands(tr, t, 1, 0);
+	BAT *cands = store->storage_api.bind_cands(tr, t, 1, 0);
+
+	if (cands && (cands->ttype == TYPE_msk || mask_cand(cands))) {
+		BAT *ncands = BATunmask(cands);
+		BBPreclaim(cands);
+		cands = ncands;
+	}
+	return cands;
 }
 
 static BAT *
