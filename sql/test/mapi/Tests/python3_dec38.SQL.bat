@@ -8,6 +8,5 @@ rem Python that runs Mtest (currently always Python 3)
 set PYTHONPATH=%testpath%;%PYTHON3PATH%
 
 prompt # $t $g  
-echo on
 
 "%PYTHON3%" "%testpath%/python_dec38.py %MAPIPORT% %TSTDB% %MAPIHOST%"
