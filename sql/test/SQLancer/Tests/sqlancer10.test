@@ -223,3 +223,22 @@ select case 3 <> any(select 4) when true then 2 when false then 8 end;
 ----
 2
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" SMALLINT,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"))
+
+statement ok
+INSERT INTO "t0" VALUES (6),(NULL),(3),(1),(0)
+
+query I rowsort
+select t0.c0 from t0 where cast(case t0.c0 when t0.c0 then t0.c0 when 6 then -222736171 when t0.c0 then t0.c0 when 521647798 then t0.c0 when t0.c0 then 2 end as boolean)
+----
+1
+3
+6
+
+statement ok
+ROLLBACK
+
