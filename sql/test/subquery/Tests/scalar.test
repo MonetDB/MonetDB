@@ -3,30 +3,30 @@ SELECT 1+(SELECT 1)
 ----
 2
 
-query T rowsort
+query I rowsort
 SELECT 1=(SELECT 1)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 1<>(SELECT 1)
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 1=(SELECT NULL)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT NULL=(SELECT 1)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT 1)
 ----
-True
+1
 
 statement ok
 DROP TABLE IF EXISTS integers
@@ -37,46 +37,46 @@ CREATE TABLE integers(i INTEGER)
 statement ok
 INSERT INTO integers VALUES (1), (2), (3), (NULL)
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT 1) FROM integers
 ----
-True
-True
-True
-True
+1
+1
+1
+1
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT * FROM integers)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT EXISTS(SELECT * FROM integers WHERE i IS NULL)
 ----
-True
+1
 
 statement ok
 DROP TABLE integers
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT 1)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT NULL IN (SELECT 1)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT NULL)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT 2)
 ----
-False
+0
 
 statement ok
 CREATE TABLE integers(i INTEGER)
@@ -84,35 +84,35 @@ CREATE TABLE integers(i INTEGER)
 statement ok
 INSERT INTO integers VALUES (1), (2), (3)
 
-query T rowsort
+query I rowsort
 SELECT 4 IN (SELECT * FROM integers)
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT * FROM integers)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT * FROM integers) FROM integers
 ----
-True
-True
-True
+1
+1
+1
 
 statement ok
 INSERT INTO integers VALUES (NULL)
 
-query T rowsort
+query I rowsort
 SELECT 4 IN (SELECT * FROM integers)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT * FROM integers)
 ----
-True
+1
 
 query I rowsort
 SELECT * FROM integers WHERE (4 IN (SELECT * FROM integers)) IS NULL ORDER BY 1
@@ -129,5 +129,4 @@ NULL
 
 statement ok
 DROP TABLE integers
-
 

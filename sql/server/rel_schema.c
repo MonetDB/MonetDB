@@ -641,12 +641,12 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	int res = SQL_OK;
 
 	(void) ss;
-	if (alter && !(isTable(t) || (isMergeTable(t) && list_empty(t->members)))) {
+	if (alter && !(isTable(t) || (isMergeTable(t) && cs_size(&t->members)==0))) {
 		sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s\n",
 				  isMergeTable(t)?"MERGE TABLE":
 				  isRemote(t)?"REMOTE TABLE":
 				  isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				  t->base.name, (isMergeTable(t) && !list_empty(t->members)) ? " while it has partitions" : "");
+				  t->base.name, (isMergeTable(t) && cs_size(&t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -677,12 +677,11 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 	if (alter &&
 		(isView(t) ||
-		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && !list_empty(t->members))) ||
+		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && cs_size(&t->members))) ||
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
-		(isPartition(t) && (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT)) ||
-		(isPartition(t) &&
-		(s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL ||
-		 s->token == SQL_DROP_CONSTRAINT)))){
+		(partition_find_part(sql->session->tr, t, NULL) &&
+			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
+			  s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))){
 		char *msg = "";
 
 		switch (s->token) {
@@ -723,11 +722,11 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		sql_error(sql, 02, SQLSTATE(42000) "%s: cannot %s %s '%s'%s\n",
 				action,
 				msg,
-				isPartition(t)?"a PARTITION of a MERGE or REPLICA TABLE":
+				partition_find_part(sql->session->tr, t, NULL)?"a PARTITION of a MERGE or REPLICA TABLE":
 				isMergeTable(t)?"MERGE TABLE":
 				isRemote(t)?"REMOTE TABLE":
 				isReplicaTable(t)?"REPLICA TABLE":"VIEW",
-				t->base.name, (isMergeTable(t) && !list_empty(t->members)) ? " while it has partitions" : "");
+				t->base.name, (isMergeTable(t) && cs_size(&t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 
@@ -1438,7 +1437,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 				}
 				return rel_alter_table(sql->sa, ddl_alter_table_add_table, sname, tname, nsname, ntname, 0);
 			}
-			if ((isMergeTable(pt) || isReplicaTable(pt)) && list_empty(pt->members))
+			if ((isMergeTable(pt) || isReplicaTable(pt)) && cs_size(&pt->members)==0)
 				return sql_error(sql, 02, SQLSTATE(42000) "The %s %s.%s should have at least one table associated",
 								 TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 
@@ -2150,6 +2149,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	sql_schema *s;
 	sql_rel *rel;
 	list *exps;
+	sql_trans *tr = sql->session->tr;
 
 	assert(old_name && new_name);
 	if (!(s = mvc_bind_schema(sql, old_name))) {
@@ -2161,7 +2161,7 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), old_name);
 	if (s->system)
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
-	if (!list_empty(s->tables.set) || !list_empty(s->types.set) || !list_empty(s->funcs.set) || !list_empty(s->seqs.set))
+	if (os_size(s->tables, tr) || os_size(s->types, tr) || os_size(s->funcs, tr) || os_size(s->seqs, tr))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER SCHEMA: unable to rename schema '%s' (there are database objects which depend on it)", old_name);
 	if (strNil(new_name) || *new_name == '\0')
 		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
@@ -2298,7 +2298,7 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
-	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || !list_empty(ot->members) || !list_empty(ot->triggers.set))
+	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&ot->members) || !list_empty(ot->triggers.set))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);
@@ -2327,7 +2327,7 @@ rel_schemas(sql_query *query, symbol *s)
 	mvc *sql = query->sql;
 	sql_rel *ret = NULL;
 
-	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && STORE_READONLY)
+	if (s->token != SQL_CREATE_TABLE && s->token != SQL_CREATE_VIEW && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
 
 	switch (s->token) {

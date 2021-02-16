@@ -61,9 +61,27 @@ select row_number() over (order by tables) as row, '1' limit 10
 query IT rowsort
 select row_number() over (order by name) as row, '1' from tbls limit 10
 ----
-20 values hashing to 9b39f014f846d385f1c45d5a88d1fa45
+1
+1
+10
+1
+2
+1
+3
+1
+4
+1
+5
+1
+6
+1
+7
+1
+8
+1
+9
+1
 
 statement ok
 drop table tbls
-
 

@@ -61,4 +61,3 @@ SELECT count(*) as "# profiler user views" FROM sys.tables WHERE schema_id IN (S
 statement ok
 DROP VIEW sys.schema_stats
 
-

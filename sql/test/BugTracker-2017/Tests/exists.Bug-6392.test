@@ -1,12 +1,11 @@
 statement ok
 CREATE TABLE foo(i INT)
 
-query T rowsort
+query I rowsort
 SELECT EXISTS (SELECT i FROM foo WHERE FALSE)
 ----
-False
+0
 
 statement ok
 DROP table foo
-
 

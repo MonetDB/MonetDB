@@ -116,12 +116,34 @@ select "oneval", "twoval" from "ichanged"
 query IT rowsort
 select "threeval", "twoval" from "ichanged"
 ----
-12 values hashing to 4376e9b0fdc61de56369057054f507b0
+1
+one
+2
+two
+3
+three
+4
+four
+5
+five
+NULL
+NULL
 
 query IT rowsort
 select * from "ichanged"
 ----
-12 values hashing to 4376e9b0fdc61de56369057054f507b0
+1
+one
+2
+two
+3
+three
+4
+four
+5
+five
+NULL
+NULL
 
 statement error
 drop table "rename"
@@ -132,5 +154,4 @@ drop table "ichanged"
 query T rowsort
 select "name" from sys.tables where "name" in ('rename', 'ichanged')
 ----
-
 

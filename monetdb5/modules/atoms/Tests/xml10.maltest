@@ -108,4 +108,3 @@ io.print(doc)
 ----
 <books><author>john<title>spring</title></author><author>john<title>summer</title></author><author>marie<title>autum</title></author></books>
 
-

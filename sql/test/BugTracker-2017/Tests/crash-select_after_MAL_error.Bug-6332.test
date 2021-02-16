@@ -12,4 +12,3 @@ SELECT ALL + 93 + col0 FROM tab0 AS cor0
 statement ok
 DROP TABLE tab0
 
-

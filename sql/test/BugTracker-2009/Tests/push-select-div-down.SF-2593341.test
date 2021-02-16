@@ -4,7 +4,6 @@ CREATE TABLE div0 (
 , y DOUBLE
 )
 
-
 statement ok
 INSERT INTO div0 VALUES (1,0)
 
@@ -31,5 +30,4 @@ GROUP BY x2
 
 statement ok
 drop table div0
-
 

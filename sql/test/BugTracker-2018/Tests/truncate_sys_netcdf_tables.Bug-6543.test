@@ -1,46 +1,65 @@
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars
+----
+0
 
 statement error
 TRUNCATE TABLE sys.netcdf_vars
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vars
+----
+0
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim
+----
+0
 
 statement error
 TRUNCATE TABLE sys.netcdf_vardim
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_vardim
+----
+0
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files
+----
+0
 
 statement error
 TRUNCATE TABLE sys.netcdf_files
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_files
+----
+0
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims
+----
+0
 
 statement error
 TRUNCATE TABLE sys.netcdf_dims
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_dims
+----
+0
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs
+----
+0
 
 statement error
 TRUNCATE TABLE sys.netcdf_attrs
 
-statement ok
+query I rowsort
 SELECT (COUNT(*) > 0) AS has_rows FROM sys.netcdf_attrs
-
+----
+0
 

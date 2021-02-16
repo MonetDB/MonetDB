@@ -1,5 +1,4 @@
 hash-threshold 8
-
 statement ok
 CREATE TABLE t1(a INTEGER, b INTEGER, c INTEGER, d INTEGER, e INTEGER)
 
@@ -11215,3 +11214,4 @@ SELECT a+b*2+c*3
     OR a IS NULL
 ----
 16 values hashing to 393ec0319f60a4bcad062e8ed256490f
+

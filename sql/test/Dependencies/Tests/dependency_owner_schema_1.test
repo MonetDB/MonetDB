@@ -13,4 +13,3 @@ ALTER USER "monet_test" SET SCHEMA "test"
 statement error
 DROP SCHEMA test
 
-

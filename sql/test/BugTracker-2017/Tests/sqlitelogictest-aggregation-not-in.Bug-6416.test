@@ -8,4 +8,3 @@ SELECT ALL - 89 FROM tab2 GROUP BY col1, col1 HAVING - CAST ( NULL AS INTEGER ) 
 statement ok
 DROP TABLE tab2
 
-

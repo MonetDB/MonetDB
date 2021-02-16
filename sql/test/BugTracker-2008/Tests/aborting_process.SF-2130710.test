@@ -16,4 +16,3 @@ drop table scene
 statement ok
 drop table victim
 
-

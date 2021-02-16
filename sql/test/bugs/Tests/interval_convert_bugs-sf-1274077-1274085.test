@@ -12,4 +12,3 @@ select cast( 1 as interval year )
 statement error
 select cast( 1 as interval day )
 
-

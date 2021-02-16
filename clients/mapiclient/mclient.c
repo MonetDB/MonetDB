@@ -2893,75 +2893,6 @@ doFile(Mapi mid, stream *fp, bool useinserts, bool interactive, bool save_histor
 	return errseen;
 }
 
-static void
-set_timezone(Mapi mid)
-{
-	char buf[128];
-	int tzone;
-	MapiHdl hdl;
-
-	/* figure out our current timezone */
-#if defined HAVE_GETDYNAMICTIMEZONEINFORMATION
-	DYNAMIC_TIME_ZONE_INFORMATION tzinf;
-
-	/* documentation says: UTC = localtime + Bias (in minutes),
-	 * but experimentation during DST period says, UTC = localtime
-	 * + Bias + DaylightBias, and presumably during non DST
-	 * period, UTC = localtime + Bias */
-	switch (GetDynamicTimeZoneInformation(&tzinf)) {
-	case TIME_ZONE_ID_STANDARD:
-	case TIME_ZONE_ID_UNKNOWN:
-		tzone = (int) tzinf.Bias * 60;
-		break;
-	case TIME_ZONE_ID_DAYLIGHT:
-		tzone = (int) (tzinf.Bias + tzinf.DaylightBias) * 60;
-		break;
-	default:
-		/* call failed, we don't know the time zone */
-		tzone = 0;
-		break;
-	}
-#elif defined HAVE_STRUCT_TM_TM_ZONE
-	time_t t;
-	struct tm *tmp;
-
-	t = time(NULL);
-	tmp = localtime(&t);
-	tzone = (int) -tmp->tm_gmtoff;
-#else
-	time_t t, lt, gt;
-	struct tm *tmp;
-
-	t = time(NULL);
-	tmp = gmtime(&t);
-	gt = mktime(tmp);
-	tmp = localtime(&t);
-	tmp->tm_isdst=0; /* We need the difference without dst */
-	lt = mktime(tmp);
-	assert((int64_t) gt - (int64_t) lt >= (int64_t) INT_MIN && (int64_t) gt - (int64_t) lt <= (int64_t) INT_MAX);
-	tzone = (int) (gt - lt);
-#endif
-	if (tzone < 0)
-		snprintf(buf, sizeof(buf),
-			 "SET TIME ZONE INTERVAL '+%02d:%02d' HOUR TO MINUTE",
-			 -tzone / 3600, (-tzone % 3600) / 60);
-	else
-		snprintf(buf, sizeof(buf),
-			 "SET TIME ZONE INTERVAL '-%02d:%02d' HOUR TO MINUTE",
-			 tzone / 3600, (tzone % 3600) / 60);
-	if ((hdl = mapi_query(mid, buf)) == NULL) {
-		if (formatter == TABLEformatter) {
-			mapi_noexplain(mid, "");
-		} else {
-			mapi_noexplain(mid, NULL);
-		}
-		mapi_explain(mid, stderr);
-		errseen = true;
-		return;
-	}
-	mapi_close_handle(hdl);
-}
-
 struct privdata {
 	stream *f;
 	char *buf;
@@ -3538,6 +3469,12 @@ main(int argc, char **argv)
 	if (dbname)
 		free(dbname);
 	dbname = NULL;
+
+	mapi_cache_limit(mid, -1);
+	mapi_setAutocommit(mid, autocommit);
+	if (mode == SQL && !settz)
+		mapi_set_time_zone(mid, 0);
+
 	if (mid && mapi_error(mid) == MOK)
 		mapi_reconnect(mid);	/* actually, initial connect */
 
@@ -3553,7 +3490,6 @@ main(int argc, char **argv)
 			mnstr_printf(stderr_stream, "%s\n", mapi_error_str(mid));
 		exit(2);
 	}
-	mapi_cache_limit(mid, -1);
 	if (dump) {
 		if (mode == SQL) {
 			exit(dump_database(mid, toConsole, 0, useinserts, false));
@@ -3566,9 +3502,6 @@ main(int argc, char **argv)
 	struct privdata priv;
 	priv = (struct privdata) {0};
 	mapi_setfilecallback(mid, getfile, putfile, &priv);
-
-	if (!autocommit)
-		mapi_setAutocommit(mid, autocommit);
 
 	if (logfile)
 		mapi_log(mid, logfile);
@@ -3615,9 +3548,6 @@ main(int argc, char **argv)
 			mnstr_printf(toConsole, "auto commit mode: %s\n",
 				     mapi_get_autocommit(mid) ? "on" : "off");
 	}
-
-	if (mode == SQL && settz)
-		set_timezone(mid);
 
 	if (command != NULL) {
 #if !defined(_MSC_VER) && defined(HAVE_ICONV)

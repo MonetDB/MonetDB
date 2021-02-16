@@ -13,4 +13,3 @@ s:= "hello world"
 statement ok
 d:= calc.+(3,1)
 
-

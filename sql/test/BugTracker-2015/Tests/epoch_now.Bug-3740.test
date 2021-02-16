@@ -3,4 +3,3 @@ select epoch(now()) - epoch(now())
 ----
 0
 
-

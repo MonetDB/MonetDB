@@ -8,4 +8,3 @@ select round(id,8) from t23
 statement ok
 drop table t23
 
-

@@ -127,7 +127,7 @@ INSERT INTO "t920585"."schemas" VALUES (4535, 'tmp', 2)
 statement ok
 CREATE VIEW "t920585"."tables" AS SELECT * FROM (SELECT p.*, 0 AS "temporary" FROM "t920585"."_tables" AS p UNION ALL SELECT t.*, 1 AS "temporary" FROM "t920585"."ttables" AS t) AS tables
 
-query TTTTII rowsort
+query TTIIII rowsort
 select name, query, istable, system, commit_action, "temporary"
 	from (
 		select *
@@ -140,7 +140,7 @@ select name, query, istable, system, commit_action, "temporary"
 		) as a
 	order by name, commit_action
 ----
-180 values hashing to 03744d024ad9081bdf87a6143097fe02
+180 values hashing to be349abacf34264a8167c64792dae275
 
 query TTTTTTTTTT rowsort
 select * from (
@@ -191,7 +191,67 @@ WHERE tables.schema_id = schemas.id
 	AND (tables.name = '_tables' or tables.name = '_columns' or tables.name = 'users')
 ) as tables order by TABLE_NAME, TABLE_TYPE
 ----
-60 values hashing to 9253025445c88dd08740238d62f8580c
+null
+sys
+columns
+SYSTEM TABLE
+(empty)
+null
+null
+null
+id
+SYSTEM
+null
+sys
+db_scens
+SYSTEM TABLE
+(empty)
+null
+null
+null
+id
+SYSTEM
+null
+sys
+db_users
+SYSTEM TABLE
+(empty)
+null
+null
+null
+id
+SYSTEM
+null
+sys
+tables
+SYSTEM TABLE
+(empty)
+null
+null
+null
+id
+SYSTEM
+null
+sys
+users
+SYSTEM TABLE
+(empty)
+null
+null
+null
+id
+SYSTEM
+null
+sys
+users
+VIEW
+SELECT u."t" AS "name", ui."fullname", ui."default_schema" FROM "sys"."db_users" AS u, "sys"."db_user_info" AS ui WHERE u."h" = ui."id" AND u."h" NOT IN (SELECT s."h" FROM "sys"."db_scens" AS s WHERE s."t" NOT LIKE 'sql');
+null
+null
+null
+id
+SYSTEM
 
 statement ok
 rollback
+

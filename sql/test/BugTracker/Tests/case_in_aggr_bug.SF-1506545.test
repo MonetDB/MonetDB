@@ -49,4 +49,3 @@ DROP TABLE system
 statement ok
 DROP TABLE target
 
-

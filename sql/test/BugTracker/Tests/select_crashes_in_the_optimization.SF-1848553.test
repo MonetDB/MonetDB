@@ -23,4 +23,3 @@ drop table s
 statement ok
 drop table sp
 
-

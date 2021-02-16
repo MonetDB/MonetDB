@@ -1,12 +1,12 @@
-query TTTTTTIITTTIIIII rowsort
+query ITTTTTIITTTIIIII rowsort
 select * from sys.querylog_history
 ----
 
-query TTTTTTII rowsort
+query ITTTTTII rowsort
 select * from sys.querylog_catalog
 ----
 
-query TTTTIIIII rowsort
+query ITTTIIIII rowsort
 select * from sys.querylog_calls
 ----
 
@@ -41,7 +41,24 @@ function user.main():void;
 query TTTTTI rowsort
 select owner, query, pipe, plan, arguments, tuples from sys.querylog_history
 ----
-18 values hashing to 594a4a49fb6f1e04c60a4e3d90d3a1ac
+monetdb
+select 1@;
+default_pipe
+user.main
+function user.main():void;
+1
+monetdb
+select arguments, tuples from sys.querylog_calls@;
+default_pipe
+user.main
+function user.main():void;
+2
+monetdb
+select owner, query, pipe, plan from sys.querylog_catalog@;
+default_pipe
+user.main
+function user.main():void;
+4
 
 statement ok
 call querylog_disable()
@@ -49,16 +66,15 @@ call querylog_disable()
 statement ok
 call sys.querylog_empty()
 
-query TTTTTTIITTTIIIII rowsort
+query ITTTTTIITTTIIIII rowsort
 select * from sys.querylog_history
 ----
 
-query TTTTIIIII rowsort
+query ITTTIIIII rowsort
 select * from sys.querylog_calls
 ----
 
-query TTTTTTII rowsort
+query ITTTTTII rowsort
 select * from sys.querylog_catalog
 ----
-
 

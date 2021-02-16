@@ -2245,7 +2245,30 @@ SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x
    AND a8=b20
    AND a47=b37
 ----
-24 values hashing to ef038bbcaf888cf0dd371df925faeb98
+table t20 row 5
+table t47 row 10
+table t38 row 5
+table t18 row 10
+table t10 row 1
+table t22 row 2
+table t37 row 9
+table t3 row 8
+table t63 row 3
+table t8 row 6
+table t30 row 6
+table t43 row 1
+table t54 row 4
+table t9 row 4
+table t21 row 8
+table t25 row 4
+table t2 row 10
+table t61 row 8
+table t55 row 5
+table t32 row 3
+table t52 row 1
+table t29 row 10
+table t50 row 1
+table t12 row 4
 
 query T nosort
 PLAN
@@ -2379,7 +2402,30 @@ SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x
    AND a8=b20
    AND a47=b37
 ----
-24 values hashing to ef038bbcaf888cf0dd371df925faeb98
+table t20 row 5
+table t47 row 10
+table t38 row 5
+table t18 row 10
+table t10 row 1
+table t22 row 2
+table t37 row 9
+table t3 row 8
+table t63 row 3
+table t8 row 6
+table t30 row 6
+table t43 row 1
+table t54 row 4
+table t9 row 4
+table t21 row 8
+table t25 row 4
+table t2 row 10
+table t61 row 8
+table t55 row 5
+table t32 row 3
+table t52 row 1
+table t29 row 10
+table t50 row 1
+table t12 row 4
 
 query T nosort
 PLAN
@@ -2513,7 +2559,30 @@ SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x
    AND a8=b20
    AND a47=b37
 ----
-24 values hashing to ef038bbcaf888cf0dd371df925faeb98
+table t20 row 5
+table t47 row 10
+table t38 row 5
+table t18 row 10
+table t10 row 1
+table t22 row 2
+table t37 row 9
+table t3 row 8
+table t63 row 3
+table t8 row 6
+table t30 row 6
+table t43 row 1
+table t54 row 4
+table t9 row 4
+table t21 row 8
+table t25 row 4
+table t2 row 10
+table t61 row 8
+table t55 row 5
+table t32 row 3
+table t52 row 1
+table t29 row 10
+table t50 row 1
+table t12 row 4
 
 query T nosort
 PLAN
@@ -2647,7 +2716,30 @@ SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x
    AND a8=b20
    AND a47=b37
 ----
-24 values hashing to ef038bbcaf888cf0dd371df925faeb98
+table t20 row 5
+table t47 row 10
+table t38 row 5
+table t18 row 10
+table t10 row 1
+table t22 row 2
+table t37 row 9
+table t3 row 8
+table t63 row 3
+table t8 row 6
+table t30 row 6
+table t43 row 1
+table t54 row 4
+table t9 row 4
+table t21 row 8
+table t25 row 4
+table t2 row 10
+table t61 row 8
+table t55 row 5
+table t32 row 3
+table t52 row 1
+table t29 row 10
+table t50 row 1
+table t12 row 4
 
 query T nosort
 PLAN
@@ -2781,9 +2873,31 @@ SELECT x20,x47,x38,x18,x10,x22,x37,x3,x63,x8,x30,x43,x54,x9,x21,x25,x2,x61,x55,x
    AND a8=b20
    AND a47=b37
 ----
-24 values hashing to ef038bbcaf888cf0dd371df925faeb98
+table t20 row 5
+table t47 row 10
+table t38 row 5
+table t18 row 10
+table t10 row 1
+table t22 row 2
+table t37 row 9
+table t3 row 8
+table t63 row 3
+table t8 row 6
+table t30 row 6
+table t43 row 1
+table t54 row 4
+table t9 row 4
+table t21 row 8
+table t25 row 4
+table t2 row 10
+table t61 row 8
+table t55 row 5
+table t32 row 3
+table t52 row 1
+table t29 row 10
+table t50 row 1
+table t12 row 4
 
 statement ok
 ROLLBACK
-
 

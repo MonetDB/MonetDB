@@ -19,4 +19,3 @@ ALTER TABLE myschema.collection_info ADD COLUMN test_col4  varchar(256)
 statement ok
 drop table myschema.collection_info
 
-

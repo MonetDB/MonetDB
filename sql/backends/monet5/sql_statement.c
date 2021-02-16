@@ -429,7 +429,7 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 			return NULL;
 		}
 
-		t->data = l;
+		ATOMIC_PTR_SET(&t->data, l);
 		/*
 		s->op2 = (stmt*)l;
 		s->op3 = (stmt*)t;
@@ -532,9 +532,9 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	if (!t->s && t->data) { /* declared table */
+	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_tid);
-		int *l = t->data;
+		int *l = ATOMIC_PTR_GET(&t->data);
 
 		if (s == NULL) {
 			return NULL;
@@ -557,7 +557,8 @@ stmt_tid(backend *be, sql_table *t, int partition)
 		return NULL;
 	if (t && (!isRemote(t) && !isMergeTable(t)) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
-		BUN rows = (BUN) store_funcs.count_col(tr, t->columns.set->h->data, 1);
+		sqlstore *store = tr->store;
+		BUN rows = (BUN) store->storage_api.count_col(tr, t->columns.set->h->data, 1);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
@@ -583,9 +584,9 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	InstrPtr q;
 
 	/* for read access tid.project(col) */
-	if (!c->t->s && c->t->data) { /* declared table */
+	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
 		stmt *s = stmt_create(be->mvc->sa, st_bat);
-		int *l = c->t->data;
+		int *l = ATOMIC_PTR_GET(&c->t->data);
 
 		if (s == NULL) {
 			return NULL;
@@ -621,9 +622,10 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	}
 	if (access != RD_INS && partition) {
 		sql_trans *tr = be->mvc->session->tr;
+		sqlstore *store = tr->store;
 
 		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-			BUN rows = (BUN) store_funcs.count_col(tr, c, 1);
+			BUN rows = (BUN) store->storage_api.count_col(tr, c, 1);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -674,9 +676,10 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	}
 	if (access != RD_INS && partition) {
 		sql_trans *tr = be->mvc->session->tr;
+		sqlstore *store = tr->store;
 
 		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-			BUN rows = (BUN) store_funcs.count_idx(tr, i, 1);
+			BUN rows = (BUN) store->storage_api.count_idx(tr, i, 1);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -705,8 +708,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *b, int fake)
 	if (b->nr < 0)
 		return NULL;
 
-	if (!c->t->s && c->t->data) { /* declared table */
-		int *l = c->t->data;
+	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&c->t->data);
 
 		if (c->colnr == 0) { /* append to tid column */
 			q = newStmt(mb, sqlRef, growRef);
@@ -795,8 +798,8 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	if (tids->nr < 0 || upd->nr < 0)
 		return NULL;
 
-	if (!c->t->s && c->t->data) { /* declared table */
-		int *l = c->t->data;
+	if (!c->t->s && ATOMIC_PTR_GET(&c->t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&c->t->data);
 
 		q = newStmt(mb, batRef, replaceRef);
 		q = pushArgument(mb, q, l[c->colnr+1]);
@@ -880,8 +883,8 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 	if (tids->nr < 0)
 		return NULL;
 
-	if (!t->s && t->data) { /* declared table */
-		int *l = t->data;
+	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&t->data);
 
 		q = newStmt(mb, batRef, deleteRef);
 		q = pushArgument(mb, q, l[0]);
@@ -2965,8 +2968,8 @@ stmt_table_clear(backend *be, sql_table *t)
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 
-	if (!t->s && t->data) { /* declared table */
-		int *l = t->data, cnt = list_length(t->columns.set)+1;
+	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
+		int *l = ATOMIC_PTR_GET(&t->data), cnt = list_length(t->columns.set)+1;
 
 		for (int i = 0; i < cnt; i++) {
 			q = newStmt(mb, batRef, deleteRef);
@@ -3090,16 +3093,15 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	if (v->nr < 0)
 		return NULL;
 
-	if ((t->type->localtype == f->type->localtype &&
-	    (t->type->eclass == f->type->eclass ||
-	     (EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass))) &&
-	    !EC_INTERVAL(f->type->eclass) &&
-	    f->type->eclass != EC_DEC &&
-	    (t->digits == 0 || f->digits == t->digits) &&
-	    type_has_tz(t) == type_has_tz(f)) ||
-		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && f->digits > 0 && t->digits >= f->digits)) {
-		/* set output type. Despite the MAL code already being generated,
-		   the output type may still be checked */
+	if (f->type->eclass != EC_EXTERNAL && t->type->eclass != EC_EXTERNAL &&
+		/* general cases */
+		((t->type->localtype == f->type->localtype && t->type->eclass == f->type->eclass &&
+		!EC_INTERVAL(f->type->eclass) && f->type->eclass != EC_DEC && (t->digits == 0 || f->digits == t->digits) && type_has_tz(t) == type_has_tz(f)) ||
+		/* trivial decimal cases */
+		(f->type->eclass == EC_DEC && t->type->eclass == EC_DEC && f->scale == t->scale && f->type->localtype == t->type->localtype) ||
+		/* trivial string cases */
+		(EC_VARCHAR(f->type->eclass) && EC_VARCHAR(t->type->eclass) && (t->digits == 0 || (f->digits > 0 && t->digits >= f->digits))))) {
+		/* set output type. Despite the MAL code already being generated, the output type may still be checked */
 		tail_set_type(v, t);
 		return v;
 	}

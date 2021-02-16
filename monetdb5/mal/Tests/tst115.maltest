@@ -30,4 +30,3 @@ c:= 3
 statement error
 d:= user.doitTwice("wrong")
 
-

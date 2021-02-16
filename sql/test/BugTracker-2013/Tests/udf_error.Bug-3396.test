@@ -31,12 +31,20 @@ udf alone
 query TR rowsort
 SELECT 'udf from table',MY_UDF(t.x,t.y) FROM TEST_UDF as t
 ----
-10 values hashing to 24343198664a41c77cd27dcd8a21133b
+udf from table
+-0.388
+udf from table
+-0.693
+udf from table
+-2.063
+udf from table
+0.527
+udf from table
+1.694
 
 statement ok
 DROP FUNCTION MY_UDF
 
 statement ok
 DROP TABLE TEST_UDF
-
 

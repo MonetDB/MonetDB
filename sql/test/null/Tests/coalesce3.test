@@ -51,7 +51,26 @@ FROM (
      ) x
 ORDER BY id
 ----
-20 values hashing to 90517be8b415ee2ec661c591e9f0c97f
+1
+1
+10
+NULL
+2
+2
+3
+2
+4
+3
+5
+3
+6
+3
+7
+NULL
+8
+NULL
+9
+NULL
 
 statement ok
 DROP   TABLE my_table1 

@@ -91,4 +91,3 @@ drop table clmns
 statement ok
 drop table tbls
 
-

@@ -58,4 +58,3 @@ and tmptheta.i = x.value
 statement ok
 drop table tmptheta
 
-

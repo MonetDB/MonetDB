@@ -19,4 +19,3 @@ select EXTRACT (SECOND FROM FIPS2) FROM A
 statement ok
 drop table A
 
-

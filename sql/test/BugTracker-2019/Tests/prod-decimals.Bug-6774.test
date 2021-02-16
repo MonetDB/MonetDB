@@ -67,4 +67,3 @@ select prod(col1) from (values(152.2), (1.34), (0.3), (32.266), (-0.1)) as t1(co
 statement ok
 ROLLBACK
 
-

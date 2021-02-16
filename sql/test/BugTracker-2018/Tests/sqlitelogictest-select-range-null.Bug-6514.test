@@ -37,4 +37,3 @@ SELECT ALL col1 FROM tab1 WHERE NULL = NULL
 statement ok
 DROP TABLE tab1
 
-

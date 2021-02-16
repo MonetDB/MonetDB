@@ -92,4 +92,3 @@ DROP TABLE another3
 statement ok
 DROP TABLE table1
 
-

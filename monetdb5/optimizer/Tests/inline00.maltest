@@ -51,14 +51,3 @@ function user.qry();
 	user.help();
 end qry
 
-#mdb.List("user","help")
-
-statement ok
-optimizer.inline("user","qry")
-
-statement ok
-optimizer.remap("user","qry")
-
-#mdb.List("user","qry")
-
-

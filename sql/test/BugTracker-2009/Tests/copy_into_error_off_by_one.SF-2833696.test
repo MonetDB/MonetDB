@@ -8,4 +8,3 @@ COPY 2 RECORDS INTO number FROM stdin USING DELIMITERS E'\n'
 bla
 drop table number;
 
-

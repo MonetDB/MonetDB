@@ -28,4 +28,3 @@ select * from f1543216 union select * from b1543216
 statement ok
 rollback
 
-

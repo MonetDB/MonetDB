@@ -136,4 +136,3 @@ DROP TABLE b
 statement ok
 DROP TABLE c
 
-

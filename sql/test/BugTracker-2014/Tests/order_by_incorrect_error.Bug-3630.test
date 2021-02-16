@@ -39,4 +39,3 @@ select a.recordedattime, a.monexpectedarr, a.monexpecteddep, a.monaimedarr, b.mo
 statement ok
 drop TABLE "sys"."sirivm"
 
-

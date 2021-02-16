@@ -19,4 +19,3 @@ DROP SEQUENCE "seq_2184"
 statement ok
 ROLLBACK
 
-

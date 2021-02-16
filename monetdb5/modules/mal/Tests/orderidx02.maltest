@@ -43,7 +43,7 @@ s0:= algebra.select(vv,nil:bat[:oid],nil:int,nil:int,true,true,false)
 statement ok
 s0v := algebra.projection(s0,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(s0,s0v)
 ----
 
@@ -53,10 +53,21 @@ s1:= algebra.select(vv,nil:bat[:oid],nil:int,959217167,true,true,false)
 statement ok
 s1v := algebra.projection(s1,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(s1,s1v)
 ----
-12 values hashing to 9b91d4b142c3c99c085ffbb413150b14
+0
+0
+959217167
+1
+5
+527076325
+2
+6
+266430612
+3
+9
+58690783
 
 statement ok
 s2:= algebra.select(vv,nil:bat[:oid],959217167,959217167,true,true,false)
@@ -64,7 +75,7 @@ s2:= algebra.select(vv,nil:bat[:oid],959217167,959217167,true,true,false)
 statement ok
 s2v := algebra.projection(s2,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(s2,s2v)
 ----
 0
@@ -77,7 +88,7 @@ s3:= algebra.select(vv,nil:bat[:oid],1863672321,nil:int,true,true,false)
 statement ok
 s3v := algebra.projection(s3,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(s3,s3v)
 ----
 0
@@ -93,10 +104,39 @@ bat.orderidx(vv,3)
 statement ok
 ord := bat.getorderidx(vv)
 
-query TTI rowsort
+query III rowsort
 io.print(ord,vv)
 ----
-30 values hashing to 5bf1e2ae3a9c72c0b93444a90e21f598
+0
+9
+959217167
+1
+6
+1920220901
+2
+5
+1303856962
+3
+0
+1667896496
+4
+4
+1080090866
+5
+2
+527076325
+6
+3
+266430612
+7
+7
+1674978691
+8
+8
+1863672321
+9
+1
+58690783
 
 statement ok
 x0:= algebra.select(vv,nil:bat[:oid],nil:int,nil:int,true,true,false)
@@ -104,7 +144,7 @@ x0:= algebra.select(vv,nil:bat[:oid],nil:int,nil:int,true,true,false)
 statement ok
 x0v := algebra.projection(x0,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(x0,x0v)
 ----
 
@@ -114,10 +154,21 @@ x1:= algebra.select(vv,nil:bat[:oid],nil:int,959217167,true,true,false)
 statement ok
 x1v := algebra.projection(x1,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(x1,x1v)
 ----
-12 values hashing to 9b91d4b142c3c99c085ffbb413150b14
+0
+0
+959217167
+1
+5
+527076325
+2
+6
+266430612
+3
+9
+58690783
 
 statement ok
 x2:= algebra.select(vv,nil:bat[:oid],959217167,959217167,true,true,false)
@@ -125,7 +176,7 @@ x2:= algebra.select(vv,nil:bat[:oid],959217167,959217167,true,true,false)
 statement ok
 x2v := algebra.projection(x2,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(x2,x2v)
 ----
 0
@@ -138,7 +189,7 @@ x3:= algebra.select(vv,nil:bat[:oid],1863672321,nil:int,true,true,false)
 statement ok
 x3v := algebra.projection(x3,vv)
 
-query TTI rowsort
+query III rowsort
 io.print(x3,x3v)
 ----
 0
@@ -147,5 +198,4 @@ io.print(x3,x3v)
 1
 8
 1863672321
-
 

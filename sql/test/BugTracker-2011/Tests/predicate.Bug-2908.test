@@ -11,4 +11,3 @@ t."schema_id" and t."name" like 'x%z' and (1 = 0 or (t."type" = 0 and t."system"
 = false and t."temporary" = 0)) order by table_type, table_schem, table_name
 ----
 
-

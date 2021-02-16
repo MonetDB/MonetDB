@@ -280,4 +280,3 @@ NULL
 statement ok
 ROLLBACK
 
-

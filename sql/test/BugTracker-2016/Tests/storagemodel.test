@@ -1,10 +1,81 @@
 statement ok
 create table bug3923(i integer)
 
-query TTTTTIITI rowsort
+query TTTTTIIII rowsort
 select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables')
 ----
-72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
+sys
+_tables
+access
+smallint
+writable
+2
+0
+0
+0
+sys
+_tables
+commit_action
+smallint
+writable
+2
+0
+0
+0
+sys
+_tables
+id
+int
+writable
+4
+0
+0
+0
+sys
+_tables
+name
+varchar
+writable
+99
+0
+0
+0
+sys
+_tables
+query
+varchar
+writable
+99
+0
+0
+0
+sys
+_tables
+schema_id
+int
+writable
+4
+0
+0
+0
+sys
+_tables
+system
+boolean
+writable
+1
+0
+0
+0
+sys
+_tables
+type
+smallint
+writable
+2
+0
+0
+0
 
 statement ok
 call storagemodelinit()
@@ -15,10 +86,22 @@ update storagemodelinput set "count" =10000 where "table" ='bug3923'
 statement ok
 update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
 
-query TTTTIIIIIITTT rowsort
+query TTTTIIIIIIIII rowsort
 select * from storagemodel where "table" = 'bug3923'
 ----
-13 values hashing to c499d6faa21698d5f67e25ef85e898e1
+sys
+bug3923
+i
+int
+10000
+10000
+8312
+0
+2000
+0
+1
+NULL
+1
 
 statement ok
 drop table bug3923
@@ -32,10 +115,81 @@ set schema bug3923schema
 statement ok
 create table bug3923(i integer)
 
-query TTTTTIITI rowsort
+query TTTTTIIII rowsort
 select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from sys.storage('sys','_tables')
 ----
-72 values hashing to 4c5e9b1e4afb42c5e62c76d7b0862af9
+sys
+_tables
+access
+smallint
+writable
+2
+0
+0
+0
+sys
+_tables
+commit_action
+smallint
+writable
+2
+0
+0
+0
+sys
+_tables
+id
+int
+writable
+4
+0
+0
+0
+sys
+_tables
+name
+varchar
+writable
+99
+0
+0
+0
+sys
+_tables
+query
+varchar
+writable
+99
+0
+0
+0
+sys
+_tables
+schema_id
+int
+writable
+4
+0
+0
+0
+sys
+_tables
+system
+boolean
+writable
+1
+0
+0
+0
+sys
+_tables
+type
+smallint
+writable
+2
+0
+0
+0
 
 statement ok
 call sys.storagemodelinit()
@@ -46,12 +200,23 @@ update sys.storagemodelinput set "count" =10000 where "table" ='bug3923'
 statement ok
 update sys.storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
 
-query TTTTIIIIIITTT rowsort
+query TTTTIIIIIIIII rowsort
 select * from sys.storagemodel where "table" = 'bug3923'
 ----
-13 values hashing to c8680d05829bc5dfcfaf3bd1d4505eda
+bug3923schema
+bug3923
+i
+int
+10000
+10000
+8312
+0
+2000
+0
+1
+NULL
+1
 
 statement ok
 drop table bug3923
-
 

@@ -19,34 +19,33 @@ x4 := batstr.string(t, 12)
 statement ok
 x5 := batstr.string(t, -6)
 
-query TT rowsort
+query IT rowsort
 io.print(x1)
 ----
 0
 0123456789
 
-query TT rowsort
+query IT rowsort
 io.print(x2)
 ----
 0
 3456789
 
-query TT rowsort
+query IT rowsort
 io.print(x3)
 ----
 0
 9
 
-query TT rowsort
+query IT rowsort
 io.print(x4)
 ----
 0
 (empty)
 
-query TT rowsort
+query IT rowsort
 io.print(x5)
 ----
 0
 456789
-
 

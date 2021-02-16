@@ -240,4 +240,3 @@ DROP TABLE clients
 statement ok
 DROP TABLE services
 
-

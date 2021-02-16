@@ -4,4 +4,3 @@ SELECT A.obj, count(*)
 	GROUP BY A.obj
 ----
 
-

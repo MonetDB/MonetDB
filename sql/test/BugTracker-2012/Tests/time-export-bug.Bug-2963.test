@@ -115,4 +115,3 @@ select * from kv17
 statement ok
 rollback
 
-

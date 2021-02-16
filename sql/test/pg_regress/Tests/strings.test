@@ -147,35 +147,35 @@ DROP TABLE VARCHAR_TBL
 statement ok
 DROP TABLE TEXT_TBL
 
-query T rowsort
+query I rowsort
 SELECT TRIM('  bunch o blanks  ') = 'bunch o blanks' AS "bunch o blanks"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT LTRIM('  bunch o blanks  ') = 'bunch o blanks  ' AS "bunch o blanks  "
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT RTRIM('  bunch o blanks  ') = '  bunch o blanks' AS "  bunch o blanks"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT TRIM(replace('xxxxxsome Xsxxxxx', 'x', ' ')) = 'some Xs' AS "some Xs"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT SUBSTRING('1234567890' FROM 3) = '34567890' AS "34567890"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT SUBSTRING('1234567890' FROM 4 FOR 3) = '456' AS "456"
 ----
-True
+1
 
 statement error
 SELECT SUBSTRING('abcdefg' FROM 'a#"(b_d)#"%' FOR '#') AS "bcd"
@@ -198,15 +198,15 @@ SELECT SUBSTRING('abcdefg' FROM 'c.e') AS "cde"
 statement error
 SELECT SUBSTRING('abcdefg' FROM 'b(.*)f') AS "cde"
 
-query T rowsort
+query I rowsort
 SELECT POSITION('4' IN '1234567890') = '4' AS "4"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT POSITION(5 IN '1234567890') = '5' AS "5"
 ----
-True
+1
 
 statement error
 SELECT OVERLAY('abcdef' PLACING '45' FROM 4) AS "abc45f"
@@ -220,265 +220,265 @@ SELECT OVERLAY('yabadoo' PLACING 'daba' FROM 5 FOR 0) AS "yabadabadoo"
 statement error
 SELECT OVERLAY('babosa' PLACING 'ubb' FROM 2 FOR 4) AS "bubba"
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' LIKE 'h%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT LIKE 'h%' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' LIKE 'H%' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT LIKE 'H%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' LIKE 'indio%' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT LIKE 'indio%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' LIKE 'h%eye' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT LIKE 'h%eye' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'indio' LIKE '_ndio' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'indio' NOT LIKE '_ndio' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'indio' LIKE 'in__o' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'indio' NOT LIKE 'in__o' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'indio' LIKE 'in_o' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'indio' NOT LIKE 'in_o' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' LIKE 'h%' ESCAPE '#' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT LIKE 'h%' ESCAPE '#' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'indio' LIKE 'ind_o' ESCAPE '$' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'indio' NOT LIKE 'ind_o' ESCAPE '$' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'h%' LIKE 'h#%' ESCAPE '#' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'h%' NOT LIKE 'h#%' ESCAPE '#' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'h%wkeye' LIKE 'h#%' ESCAPE '#' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'h%wkeye' NOT LIKE 'h#%' ESCAPE '#' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'h%wkeye' LIKE 'h#%%' ESCAPE '#' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'h%wkeye' NOT LIKE 'h#%%' ESCAPE '#' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'h%awkeye' LIKE 'h#%a%k%e' ESCAPE '#' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'h%awkeye' NOT LIKE 'h#%a%k%e' ESCAPE '#' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'indio' LIKE '_ndio' ESCAPE '$' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'indio' NOT LIKE '_ndio' ESCAPE '$' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'i_dio' LIKE 'i$_d_o' ESCAPE '$' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'i_dio' NOT LIKE 'i$_d_o' ESCAPE '$' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'i_dio' LIKE 'i$_nd_o' ESCAPE '$' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'i_dio' NOT LIKE 'i$_nd_o' ESCAPE '$' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'i_dio' LIKE 'i$_d%o' ESCAPE '$' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'i_dio' NOT LIKE 'i$_d%o' ESCAPE '$' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'maca' LIKE 'm%aca' ESCAPE '%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'maca' NOT LIKE 'm%aca' ESCAPE '%' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'ma%a' LIKE 'm%a%%a' ESCAPE '%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'ma%a' NOT LIKE 'm%a%%a' ESCAPE '%' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'bear' LIKE 'b_ear' ESCAPE '_' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'bear' NOT LIKE 'b_ear' ESCAPE '_' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'be_r' LIKE 'b_e__r' ESCAPE '_' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'be_r' NOT LIKE 'b_e__r' ESCAPE '_' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'be_r' LIKE '__e__r' ESCAPE '_' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'be_r' NOT LIKE '__e__r' ESCAPE '_' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' ILIKE 'h%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT ILIKE 'h%' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' ILIKE 'H%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT ILIKE 'H%' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' ILIKE 'H%Eye' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'hawkeye' NOT ILIKE 'H%Eye' AS "false"
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT 'Hawkeye' ILIKE 'h%' AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT 'Hawkeye' NOT ILIKE 'h%' AS "false"
 ----
-False
+0
 
 query T rowsort
 SELECT 'unknown' || ' and unknown' AS "Concat unknown types"
@@ -664,39 +664,38 @@ select to_hex(256*256*256 - 1) AS "ffffff"
 statement error
 select to_hex(cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint)*cast(256 as bigint) - 1) AS "ffffffff"
 
-query T rowsort
+query I rowsort
 select md5('') = 'd41d8cd98f00b204e9800998ecf8427e' AS "TRUE"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select md5('a') = '0cc175b9c0f1b6a831c399e269772661' AS "TRUE"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select md5('abc') = '900150983cd24fb0d6963f7d28e17f72' AS "TRUE"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select md5('message digest') = 'f96b697d7cb7938d525a2f31aaf161d0' AS "TRUE"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select md5('abcdefghijklmnopqrstuvwxyz') = 'c3fcd3d76192e4007dfb496cca67e13b' AS "TRUE"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select md5('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789') = 'd174ab98d277d9f5a5611c2c9f419d9f' AS "TRUE"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select md5('12345678901234567890123456789012345678901234567890123456789012345678901234567890') = '57edf4a22be3c955ac49da2e2107b67a' AS "TRUE"
 ----
-True
-
+1
 

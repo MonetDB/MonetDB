@@ -10,7 +10,7 @@ bat.append(b, "io.print(\"hello\");")
 statement error
 bat.append(b,"s:=\"goodbye\";io.print(s);")
 
-query TT rowsort
+query IT rowsort
 io.print(b)
 ----
 
@@ -19,5 +19,4 @@ s:= algebra.fetch(b,2@0)
 
 statement error
 io.printf("%s\n",s)
-
 

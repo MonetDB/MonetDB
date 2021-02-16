@@ -37,4 +37,3 @@ drop table t2a
 statement ok
 drop table t1a
 
-

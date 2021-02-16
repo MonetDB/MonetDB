@@ -20,14 +20,91 @@ insert into employees values
 query TTRR rowsort
 SELECT dep, name, salary, CUME_DIST() OVER (partition by dep ORDER BY salary) cume_dist_val FROM employees
 ----
-40 values hashing to 5b2c925e3e13a428e0f839cf50be6ed7
+dev
+Brown
+62.000
+1.000
+dev
+Jones
+55.000
+0.500
+mgmt
+Davies
+84.000
+0.667
+mgmt
+Johnson
+100.000
+1.000
+mgmt
+Smith
+81.000
+0.333
+sls
+Evans
+87.000
+1.000
+sls
+Taylor
+62.000
+0.400
+sls
+Thomas
+72.000
+0.800
+sls
+Williams
+55.000
+0.200
+sls
+Wilson
+72.000
+0.800
 
 query TTRR rowsort
 SELECT dep, name, salary, CUME_DIST() OVER (PARTITION BY dep) cume_dist_val FROM employees
 ----
-40 values hashing to 576bcad741f66d34851d2ff4e5c2ebbb
+dev
+Brown
+62.000
+1.000
+dev
+Jones
+55.000
+1.000
+mgmt
+Davies
+84.000
+1.000
+mgmt
+Johnson
+100.000
+1.000
+mgmt
+Smith
+81.000
+1.000
+sls
+Evans
+87.000
+1.000
+sls
+Taylor
+62.000
+1.000
+sls
+Thomas
+72.000
+1.000
+sls
+Williams
+55.000
+1.000
+sls
+Wilson
+72.000
+1.000
 
 statement ok
 ROLLBACK
-
 

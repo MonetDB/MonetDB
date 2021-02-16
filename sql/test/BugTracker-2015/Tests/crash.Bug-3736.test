@@ -163,7 +163,66 @@ project (
 query ITTTTR rowsort
 Select b.* FROM open_auctions o, bidder b WHERE (select b3.INCREASE from bidder b3 where b3.id = (select min(b3a.id) from bidder b3a where b3a.open_auction_id = o.open_auction_id)) * 2 <= (Select b2.INCREASE from bidder b2 where b2.id = (SELECT MAX(b2a.id) from bidder b2a where b2a.open_auction_id = o.open_auction_id)) AND o.open_auction_id = b.open_auction_id order by date, time
 ----
-60 values hashing to 39331628915d225e497c7366176579be
+10
+open_auction1
+11/12/2001
+04:50:27
+person9
+6.000
+11
+open_auction1
+05/21/2001
+08:02:16
+person5
+12.000
+29
+open_auction5
+07/07/2000
+08:53:00
+person15
+6.000
+30
+open_auction5
+08/06/2001
+10:16:15
+person13
+4.500
+31
+open_auction5
+08/23/1999
+08:26:06
+person17
+30.000
+5
+open_auction1
+11/12/1998
+11:23:38
+person20
+4.500
+6
+open_auction1
+10/02/2000
+22:48:00
+person4
+15.000
+7
+open_auction1
+12/04/1998
+22:29:38
+person23
+1.500
+8
+open_auction1
+06/22/1999
+12:43:47
+person19
+15.000
+9
+open_auction1
+12/02/2001
+13:38:51
+person15
+45.000
 
 query ITTTTRRR rowsort
 select * from (
@@ -176,12 +235,90 @@ select * from (
 where b3_increase * 2 <= b2_increase
 order by date, time
 ----
-80 values hashing to 821f5811161747017875f452957587c5
+10
+open_auction1
+11/12/2001
+04:50:27
+person9
+6.000
+4.500
+12.000
+11
+open_auction1
+05/21/2001
+08:02:16
+person5
+12.000
+4.500
+12.000
+29
+open_auction5
+07/07/2000
+08:53:00
+person15
+6.000
+6.000
+30.000
+30
+open_auction5
+08/06/2001
+10:16:15
+person13
+4.500
+6.000
+30.000
+31
+open_auction5
+08/23/1999
+08:26:06
+person17
+30.000
+6.000
+30.000
+5
+open_auction1
+11/12/1998
+11:23:38
+person20
+4.500
+4.500
+12.000
+6
+open_auction1
+10/02/2000
+22:48:00
+person4
+15.000
+4.500
+12.000
+7
+open_auction1
+12/04/1998
+22:29:38
+person23
+1.500
+4.500
+12.000
+8
+open_auction1
+06/22/1999
+12:43:47
+person19
+15.000
+4.500
+12.000
+9
+open_auction1
+12/02/2001
+13:38:51
+person15
+45.000
+4.500
+12.000
 
 statement ok
 drop table bidder
 
 statement ok
 drop table open_auctions
-
 

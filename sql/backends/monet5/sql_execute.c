@@ -459,7 +459,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		 * optimize and produce code.
 		 * We don't search the cache for a previous incarnation yet.
 		 */
-		if((msg = MSinitClientPrg(c, "user", nme)) != MAL_SUCCEED) {
+		if((msg = MSinitClientPrg(c, sql_private_module_name, nme)) != MAL_SUCCEED) {
 			goto endofcompile;
 		}
 		oldvtop = c->curprg->def->vtop;
@@ -774,7 +774,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (*opt && rel)
 			rel = sql_processrelation(m, rel, 1, 1);
 
-		if ((msg = MSinitClientPrg(c, "user", "test")) != MAL_SUCCEED) {
+		if ((msg = MSinitClientPrg(c, sql_private_module_name, "test")) != MAL_SUCCEED) {
 			rel_destroy(rel);
 			return msg;
 		}

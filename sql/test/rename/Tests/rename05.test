@@ -60,4 +60,3 @@ set schema "sys"
 statement ok
 drop schema "nother"
 
-

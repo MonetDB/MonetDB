@@ -8,6 +8,3 @@ end
 statement ok
 	optimizer.multiplex("user","foo")
 
-#	mdb.List("user","foo")
-
-

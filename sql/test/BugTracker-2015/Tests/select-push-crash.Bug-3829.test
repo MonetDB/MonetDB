@@ -15,4 +15,3 @@ SELECT 1 FROM kb WHERE value AND (value OR value AND (value OR value))
 statement ok
 ROLLBACK
 
-

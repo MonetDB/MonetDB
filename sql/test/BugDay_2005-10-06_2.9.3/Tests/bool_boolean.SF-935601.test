@@ -1,16 +1,15 @@
-query T rowsort
+query I rowsort
 select isnull(1)
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select isnull(1)=false
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 select (1=1)=true
 ----
-True
-
+1
 

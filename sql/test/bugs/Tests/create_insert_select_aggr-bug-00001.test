@@ -45,7 +45,7 @@ select (4-1)*5
 ----
 15
 
-query TTITI rowsort
+query TTIII rowsort
 select name, query, "type", system, commit_action from sys._tables
 	where name like 'foo' or name like 'ff'
 ----
@@ -84,14 +84,14 @@ select * from r
 ----
 1
 
-query TTITI rowsort
+query TTIII rowsort
 select name, query, "type", system, commit_action from sys._tables
 	where name in ('s4', 'r', 'foo', 'ff')
 ----
 r
 NULL
 0
-False
+0
 0
 
 statement ok
@@ -156,5 +156,4 @@ query TIII rowsort
 select name, 1, 2, 3  from sys._tables
 	where name in ('s4', 'r', 'foo', 'ff')
 ----
-
 

@@ -1,3 +1,7 @@
+* Thu Feb 11 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.13-20210211
+- Rebuilt.
+- GH#7049: Implement DISTINCT for GROUP_CONCAT
+
 * Mon Jan 18 2021 Sjoerd Mullender <sjoerd@acm.org> - 11.39.11-20210118
 - Rebuilt.
 - GH#3772: Any user can grant a role.

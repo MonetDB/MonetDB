@@ -18,12 +18,14 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "ReadlineTools.h"
+#define LIBMUTILS 1
+#include "mutils.h"
 
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* for strncasecmp */
 #endif
 
-#ifndef WIN32
+#ifndef NATIVE_WIN32
 /* for umask */
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -309,10 +311,6 @@ readline_show_error(const char *msg) {
 #define BUFFER_SIZE 1024
 #endif
 
-#ifdef WIN32
-#define unlink _unlink
-#endif
-
 static int
 invoke_editor(int cnt, int key) {
 	char editor_command[BUFFER_SIZE];
@@ -325,14 +323,14 @@ invoke_editor(int cnt, int key) {
 	(void) cnt;
 	(void) key;
 
-#ifdef WIN32
+#ifdef NATIVE_WIN32
 	char *mytemp;
 	char template[] = "mclient_temp_XXXXXX";
 	if ((mytemp = _mktemp(template)) == NULL) {
 		readline_show_error("invoke_editor: Cannot create temp file\n");
 		goto bailout;
 	}
-	if ((fp = fopen(mytemp, "r+")) == NULL) {
+	if ((fp = MT_fopen(mytemp, "r+")) == NULL) {
 		// Notify the user that we cannot create temp file
 		readline_show_error("invoke_editor: Cannot create temp file\n");
 		goto bailout;
@@ -408,7 +406,7 @@ invoke_editor(int cnt, int key) {
 	}
 
 	fclose(fp);
-	unlink(template);
+	MT_remove(template);
 
 	return 0;
 
@@ -416,7 +414,7 @@ bailout:
 	if (fp)
 		fclose(fp);
 	free(read_buff);
-	unlink(template);
+	MT_remove(template);
 	return 1;
 }
 
@@ -462,7 +460,7 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 			case ENOENT:
 				/* history file didn't exist, so try to create
 				 * it and then try again */
-				if ((f = fopen(_history_file, "w")) == NULL) {
+				if ((f = MT_fopen(_history_file, "w")) == NULL) {
 					/* failed to create, don't
 					 * bother saving */
 					_save_history = 0;

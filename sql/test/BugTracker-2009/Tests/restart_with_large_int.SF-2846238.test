@@ -17,4 +17,3 @@ select next value for test_seq
 statement ok
 drop SEQUENCE test_seq
 
-

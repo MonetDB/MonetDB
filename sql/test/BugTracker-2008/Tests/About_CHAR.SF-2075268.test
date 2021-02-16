@@ -40,4 +40,3 @@ SELECT * FROM TMP WHERE T1 = ' zzzz'
 statement ok
 DROP TABLE TMP
 
-

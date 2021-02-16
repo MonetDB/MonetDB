@@ -3,4 +3,3 @@ select count(*) from "sys"."tracelog"
 ----
 0
 
-

@@ -42,7 +42,17 @@ INSERT INTO liketable VALUES ('123454321')
 query T rowsort
 SELECT * FROM liketable
 ----
-11 values hashing to b2c8408d93ccb6d5fbf8bf6627236fef
+(empty)
+123123123
+123123456123
+123454321
+123456123456
+199993456123
+a math assignment
+pathfinder is fun!
+t
+ts
+tsz
 
 query T rowsort
 SELECT * FROM liketable WHERE str LIKE 't_'
@@ -182,7 +192,17 @@ SELECT * FROM liketable WHERE str LIKE '%23'
 query T rowsort
 SELECT * FROM liketable WHERE str LIKE '%' ESCAPE '?'
 ----
-11 values hashing to b2c8408d93ccb6d5fbf8bf6627236fef
+(empty)
+123123123
+123123456123
+123454321
+123456123456
+199993456123
+a math assignment
+pathfinder is fun!
+t
+ts
+tsz
 
 query T rowsort
 SELECT * FROM liketable WHERE str LIKE '?%' ESCAPE '?'

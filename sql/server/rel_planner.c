@@ -123,8 +123,10 @@ rel_getcount(mvc *sql, sql_rel *rel)
 	case op_basetable: {
 		sql_table *t = rel->l;
 
-		if (t && isTable(t))
-			return (lng)store_funcs.count_col(sql->session->tr, t->columns.set->h->data, 1);
+		if (t && isTable(t)) {
+			sqlstore *store = sql->session->tr->store;
+			return (lng)store->storage_api.count_col(sql->session->tr, t->columns.set->h->data, 1);
+		}
 		if (!t && rel->r) /* dict */
 			return (lng)sql_trans_dist_count(sql->session->tr, rel->r);
 		return 0;
@@ -906,7 +908,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 			op_join);
 		if (mi->level == 2) {
 			rel_join_add_exp(sql->sa, top, mi->data);
-			list_remove_data(sdje, mi->data);
+			list_remove_data(sdje, NULL, mi->data);
 		} else {
 			node *djn;
 
@@ -915,7 +917,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				sql_exp *e = djn->data;
 
 				rel_join_add_exp(sql->sa, top, e);
-				list_remove_data(sdje, e);
+				list_remove_data(sdje, NULL, e);
 			}
 
 			/* all other join expressions on these 2 relations */
@@ -923,7 +925,7 @@ memo_select_plan( mvc *sql, list *memo, memoitem *mi, list *sdje, list *exps)
 				sql_exp *e = djn->data;
 
 				rel_join_add_exp(sql->sa, top, e);
-				list_remove_data(exps, e);
+				list_remove_data(exps, NULL, e);
 			}
 		}
 		return top;

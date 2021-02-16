@@ -17,4 +17,3 @@ drop table kvk
 statement ok
 drop table anbi
 
-

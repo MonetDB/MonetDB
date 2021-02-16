@@ -62,4 +62,3 @@ delete from t_int
 statement ok
 drop table t_int
 
-

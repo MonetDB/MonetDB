@@ -8,4 +8,3 @@ select * from t1019122
 statement ok
 drop table t1019122
 
-

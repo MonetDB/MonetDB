@@ -19,4 +19,3 @@ select employee_id, manager_id from employee where employee_id = 60 and (manager
 statement ok
 drop table employee
 
-

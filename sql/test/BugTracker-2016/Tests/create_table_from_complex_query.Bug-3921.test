@@ -10,4 +10,3 @@ create table bug3921b as select bene_id ,CAST( COUNT( DISTINCT CASE WHEN drug_cv
 statement ok
 rollback
 
-

@@ -22,7 +22,7 @@ bat.append(j,b)
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,0)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 0
@@ -35,7 +35,7 @@ io.print(f)
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,1)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 0
@@ -48,7 +48,7 @@ io.print(f)
 statement ok
 f:bat[:json]:= mal.manifold("json","filter",j,2)
 
-query TT rowsort
+query IT rowsort
 io.print(f)
 ----
 0
@@ -57,5 +57,4 @@ io.print(f)
 []
 2
 [2]
-
 

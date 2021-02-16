@@ -62,4 +62,3 @@ select * from t1911991 WHERE (4 - id) BETWEEN 2 AND 7
 statement ok
 drop table t1911991
 
-

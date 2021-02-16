@@ -118,3 +118,4 @@ exit MapiException;
 
 statement ok
 mapi.disconnect(mid);
+

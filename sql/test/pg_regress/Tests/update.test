@@ -32,4 +32,3 @@ SELECT * FROM update_test
 statement ok
 DROP TABLE update_test
 
-

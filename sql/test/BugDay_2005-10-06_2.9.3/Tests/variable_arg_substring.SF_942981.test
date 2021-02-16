@@ -15,4 +15,3 @@ o
 statement ok
 drop table N
 
-

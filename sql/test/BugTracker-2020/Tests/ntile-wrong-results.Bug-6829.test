@@ -20,19 +20,135 @@ insert into employees values
 query TTRI rowsort
 SELECT dep, name, salary, NTILE(4) OVER (ORDER BY hire_date) FROM employees
 ----
-40 values hashing to 91722f0132734678ee8c75e4edc9083f
+dev
+Brown
+62.000
+1
+dev
+Jones
+55.000
+2
+mgmt
+Davies
+84.000
+1
+mgmt
+Johnson
+100.000
+2
+mgmt
+Smith
+81.000
+3
+sls
+Evans
+87.000
+4
+sls
+Taylor
+62.000
+3
+sls
+Thomas
+72.000
+1
+sls
+Williams
+55.000
+2
+sls
+Wilson
+72.000
+4
 
 query TTRI rowsort
 SELECT dep, name, salary, NTILE(4) OVER (PARTITION by dep ORDER BY salary) FROM employees
 ----
-40 values hashing to 51c2a817e6309c1c1139a8e7604dcb24
+dev
+Brown
+62.000
+2
+dev
+Jones
+55.000
+1
+mgmt
+Davies
+84.000
+2
+mgmt
+Johnson
+100.000
+3
+mgmt
+Smith
+81.000
+1
+sls
+Evans
+87.000
+4
+sls
+Taylor
+62.000
+1
+sls
+Thomas
+72.000
+3
+sls
+Williams
+55.000
+1
+sls
+Wilson
+72.000
+2
 
 query TTRI rowsort
 SELECT dep, name, salary, NTILE(4) OVER (PARTITION BY dep) FROM employees
 ----
-40 values hashing to 3910e73d2394f67a207932c1f9b42126
+dev
+Brown
+62.000
+2
+dev
+Jones
+55.000
+1
+mgmt
+Davies
+84.000
+2
+mgmt
+Johnson
+100.000
+3
+mgmt
+Smith
+81.000
+1
+sls
+Evans
+87.000
+2
+sls
+Taylor
+62.000
+1
+sls
+Thomas
+72.000
+4
+sls
+Williams
+55.000
+1
+sls
+Wilson
+72.000
+3
 
 statement ok
 rollback
-
 

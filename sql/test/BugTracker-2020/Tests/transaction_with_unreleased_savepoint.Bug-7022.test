@@ -16,14 +16,14 @@ release savepoint name1
 statement ok
 commit
 
-query TITITIII rowsort
+query TITIIIII rowsort
 select name, schema_id, query, type, system, commit_action, access, temporary from tables where name = 'savepointtest'
 ----
 savepointtest
 2000
 NULL
 0
-False
+0
 0
 0
 0
@@ -39,14 +39,14 @@ create table savepointtest (id int, primary key(id))
 statement ok
 insert into savepointtest values(42)
 
-query TITITIII rowsort
+query TITIIIII rowsort
 select name, schema_id, query, type, system, commit_action, access, temporary from tables where name = 'savepointtest'
 ----
 savepointtest
 2000
 NULL
 0
-False
+0
 0
 0
 0
@@ -60,7 +60,7 @@ select * from savepointtest
 statement ok
 drop table savepointtest
 
-query TITITIII rowsort
+query TITIIIII rowsort
 select name, schema_id, query, type, system, commit_action, access, temporary from tables where name = 'savepointtest'
 ----
 
@@ -79,14 +79,14 @@ insert into savepointtest values(24)
 statement ok
 commit
 
-query TITITIII rowsort
+query TITIIIII rowsort
 select name, schema_id, query, type, system, commit_action, access, temporary from tables where name = 'savepointtest'
 ----
 savepointtest
 2000
 NULL
 0
-False
+0
 0
 0
 0
@@ -102,14 +102,14 @@ create table savepointtest (id int, primary key(id))
 statement ok
 insert into savepointtest values(42)
 
-query TITITIII rowsort
+query TITIIIII rowsort
 select name, schema_id, query, type, system, commit_action, access, temporary from tables where name = 'savepointtest'
 ----
 savepointtest
 2000
 NULL
 0
-False
+0
 0
 0
 0
@@ -123,8 +123,7 @@ select * from savepointtest
 statement ok
 drop table savepointtest
 
-query TITITIII rowsort
+query TITIIIII rowsort
 select name, schema_id, query, type, system, commit_action, access, temporary from tables where name = 'savepointtest'
 ----
-
 

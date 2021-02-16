@@ -1,7 +1,7 @@
-query T rowsort
+query I rowsort
 SELECT DATE '1996-02-24' + INTERVAL '7' DAY = DATE '1996-03-02'
 ----
-True
+1
 
 query T rowsort
 SELECT DATE '1996-02-24' + INTERVAL '12:30' HOUR TO MINUTE
@@ -13,13 +13,13 @@ SELECT DATE '1996-02-24' + INTERVAL '2 12' DAY TO HOUR
 ----
 1996-02-26
 
-query T rowsort
+query I rowsort
 SELECT INTERVAL '7' DAY + DATE '1996-02-24' = DATE '1996-03-02'
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT DATE '1996-03-02' - INTERVAL '7' DAY = DATE '1996-02-24'
 ----
-True
+1
 

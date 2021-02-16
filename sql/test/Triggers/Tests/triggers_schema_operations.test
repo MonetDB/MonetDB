@@ -105,4 +105,3 @@ drop table t_7_2
 statement ok
 drop table t_7_1
 
-

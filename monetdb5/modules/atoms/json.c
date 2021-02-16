@@ -241,75 +241,133 @@ JSONtoString(str *s, size_t *len, const void *SRC, bool external)
 	return (ssize_t) (dst - *s);
 }
 
-#define tab(D)									\
-	do {										\
-		int kk;									\
-		for (kk = 0; kk < (D) * 4; kk++)		\
-			mnstr_printf(fd, " ");				\
-	} while (0)
-
-static void
-JSONdumpInternal(stream *fd, JSON *jt, int depth)
+static BAT *
+JSONdumpInternal(JSON *jt, int depth)
 {
 	int i, idx;
 	JSONterm *je;
+	size_t buflen = 1024;
+	char *buffer = GDKmalloc(buflen);
+	BAT *bn = COLnew(0, TYPE_str, 0, TRANSIENT);
+	if (bn == NULL)
+		return NULL;
 
 	for (idx = 0; idx < jt->free; idx++) {
+		size_t datlen = 0;
 		je = jt->elm + idx;
 
-		tab(depth);
-		mnstr_printf(fd, "[%d] ", idx);
+		if (datlen + depth*4 + 512 > buflen) {
+			do {
+				buflen += 1024;
+			} while (datlen + depth*4 + 512 > buflen);
+			char *newbuf = GDKrealloc(buffer, buflen);
+			if (newbuf == NULL) {
+				GDKfree(buffer);
+				BBPreclaim(bn);
+				return NULL;
+			}
+			buffer = newbuf;
+		}
+		datlen += snprintf(buffer + datlen, buflen - datlen, "%*s", depth * 4, "");
+		datlen += snprintf(buffer + datlen, buflen - datlen, "[%d] ", idx);
 		switch (je->kind) {
 		case JSON_OBJECT:
-			mnstr_printf(fd, "object ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "object ");
 			break;
 		case JSON_ARRAY:
-			mnstr_printf(fd, "array ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "array ");
 			break;
 		case JSON_ELEMENT:
-			mnstr_printf(fd, "element ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "element ");
 			break;
 		case JSON_VALUE:
-			mnstr_printf(fd, "value ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "value ");
 			break;
 		case JSON_STRING:
-			mnstr_printf(fd, "string ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "string ");
 			break;
 		case JSON_NUMBER:
-			mnstr_printf(fd, "number ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "number ");
 			break;
 		case JSON_BOOL:
-			mnstr_printf(fd, "bool ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "bool ");
 			break;
 		case JSON_NULL:
-			mnstr_printf(fd, "null ");
+			datlen += snprintf(buffer + datlen, buflen - datlen, "null ");
 			break;
 		default:
-			mnstr_printf(fd, "unknown %d ", (int) je->kind);
+			datlen += snprintf(buffer + datlen, buflen - datlen, "unknown %d ", (int) je->kind);
 		}
-		mnstr_printf(fd, "child %d list ", je->child);
-		for (i = je->next; i; i = jt->elm[i].next)
-			mnstr_printf(fd, "%d ", i);
+		datlen += snprintf(buffer + datlen, buflen - datlen, "child %d list ", je->child);
+		for (i = je->next; i; i = jt->elm[i].next) {
+			if (datlen + 10 > buflen) {
+				buflen += 1024;
+				char *newbuf = GDKrealloc(buffer, buflen);
+				if (newbuf == NULL) {
+					GDKfree(buffer);
+					BBPreclaim(bn);
+					return NULL;
+				}
+				buffer = newbuf;
+			}
+			datlen += snprintf(buffer + datlen, buflen - datlen, "%d ", i);
+		}
 		if (je->name) {
-			mnstr_printf(fd, "%.*s : ", (int) je->namelen, je->name);
+			if (datlen + 10 + je->namelen > buflen) {
+				do {
+					buflen += 1024;
+				} while (datlen + 10 + je->namelen > buflen);
+				char *newbuf = GDKrealloc(buffer, buflen);
+				if (newbuf == NULL) {
+					GDKfree(buffer);
+					BBPreclaim(bn);
+					return NULL;
+				}
+				buffer = newbuf;
+			}
+			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s : ", (int) je->namelen, je->name);
 		}
-		if (je->value)
-			mnstr_printf(fd, "%.*s", (int) je->valuelen, je->value);
-		mnstr_printf(fd, "\n");
+		if (je->value) {
+			if (datlen + 10 + je->valuelen > buflen) {
+				do {
+					buflen += 1024;
+				} while (datlen + 10 + je->valuelen > buflen);
+				char *newbuf = GDKrealloc(buffer, buflen);
+				if (newbuf == NULL) {
+					GDKfree(buffer);
+					BBPreclaim(bn);
+					return NULL;
+				}
+				buffer = newbuf;
+			}
+			datlen += snprintf(buffer + datlen, buflen - datlen, "%.*s", (int) je->valuelen, je->value);
+		}
+		if (BUNappend(bn, buffer, false) != GDK_SUCCEED) {
+			BBPreclaim(bn);
+			GDKfree(buffer);
+			return NULL;
+		}
 	}
+	GDKfree(buffer);
+	return bn;
 }
 
 static str
 JSONdump(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
+	(void) cntxt;
 
+	bat *ret = getArgReference_bat(stk, pci, 0);
 	json *val = (json*) getArgReference(stk, pci, 1);
 	JSON *jt = JSONparse(*val);
 
 	CHECK_JSON(jt);
-	JSONdumpInternal(cntxt->fdout, jt, 0);
+	BAT *bn = JSONdumpInternal(jt, 0);
 	JSONfree(jt);
+	if (bn == NULL)
+		throw(MAL, "json.dump", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	BBPkeepref(*ret = bn->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -2656,7 +2714,7 @@ static mel_func json_init_funcs[] = {
  command("json", "text", JSONjson2textSeparator, false, "Convert JSON values to their plain string equivalent, injecting a separator.", args(1,3, arg("",str),arg("j",json),arg("s",str))),
  command("json", "number", JSONjson2number, false, "Convert simple JSON values to a double, return nil upon error.", args(1,2, arg("",dbl),arg("j",json))),
  command("json", "integer", JSONjson2integer, false, "Convert simple JSON values to an integer, return nil upon error.", args(1,2, arg("",lng),arg("j",json))),
- pattern("json", "dump", JSONdump, false, "", args(1,2, arg("",void),arg("j",json))),
+ pattern("json", "dump", JSONdump, false, "", args(1,2, batarg("",str),arg("j",json))),
  command("json", "filter", JSONfilter, false, "Filter all members of an object by a path expression, returning an array.\nNon-matching elements are skipped.", args(1,3, arg("",json),arg("name",json),arg("pathexpr",str))),
  command("json", "filter", JSONfilterArray_bte, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",bte))),
  command("json", "filter", JSONfilterArrayDefault_bte, false, "", args(1,4, arg("",json),arg("name",json),arg("idx",bte),arg("other",str))),

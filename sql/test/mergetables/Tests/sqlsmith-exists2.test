@@ -107,7 +107,7 @@ NULL
 NULL
 NULL
 
-query IIIIR rowsort
+query IIIIT rowsort
 select
  subq_0.c18 as c0,
  19 as c1,
@@ -283,7 +283,33 @@ from tab1
   on (exists (select ref_5.col0, ref_8.col2))
   on (true)
 ----
-27 values hashing to da8a72a7967c0c73d91239275230aed9
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query TII rowsort
 select
@@ -480,7 +506,24 @@ where (((true)
  and (subq_0.c5 is not null)))
 limit 74
 ----
-18 values hashing to ed224591f3b5226b6767a561042eabb5
+59
+5
+29
+5
+5
+85
+68
+47
+29
+47
+47
+91
+96
+14
+29
+14
+14
+51
 
 query II rowsort
 select
@@ -604,7 +647,22 @@ ORDER BY ss_items.item_id,
          ss_item_rev
 LIMIT 100
 ----
-16 values hashing to a731aefa371754d7f26a8f1990d1e9b5
+1
+1
+100
+1
+100
+1
+100
+1
+1
+1
+100
+1
+100
+1
+100
+1
 
 statement ok
 create table myitem (i_current_price decimal(7,2))
@@ -670,5 +728,4 @@ NULL
 
 statement ok
 ROLLBACK
-
 

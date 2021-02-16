@@ -11,4 +11,3 @@ select 1 + 1 as bar, cast(sum(b) as bigint) from foo group by bar
 statement ok
 rollback
 
-

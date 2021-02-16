@@ -15,4 +15,3 @@ SELECT * FROM x WHERE a IS NULL
 statement ok
 DROP TABLE x
 
-

@@ -5,4 +5,3 @@ ELSE NULL END ) AS INT) AS col2
 ----
 NULL
 
-

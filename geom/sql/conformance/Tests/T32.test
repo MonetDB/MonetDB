@@ -1,6 +1,5 @@
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(centerlines) FROM divided_routes WHERE name = 'Route 75'
 ----
-False
-
+0
 

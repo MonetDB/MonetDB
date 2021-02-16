@@ -64,7 +64,7 @@ RETURNS NUMERIC(13,6)
           AND BUSINESS_END_DATE='9999-12-31'
   )
 
-query I
+query I nosort
 select count(*) from test_fn where get_r(c1, '01', '2015-08-31 23:59:59')>1.0
 ----
 0
@@ -92,5 +92,4 @@ drop table sys.test_fn
 
 statement ok
 drop table sys.chg
-
 

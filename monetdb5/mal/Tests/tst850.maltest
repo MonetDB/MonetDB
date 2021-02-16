@@ -10,14 +10,13 @@ end;
 statement ok
 optimizer.multiplex("user","foo");
 
-query TTT rowsort
+query ITI rowsort
 user.foo();
 ----
 0
 #hello world
-True
+1
 1
 #sleep well
-True
-
+1
 

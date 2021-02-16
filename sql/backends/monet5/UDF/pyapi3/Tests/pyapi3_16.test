@@ -19,10 +19,10 @@ language P
 	return True
 }
 
-query T rowsort
+query I rowsort
 SELECT * FROM pyapi16( (SELECT * FROM vals) )
 ----
-True
+1
 
 statement ok
 DROP FUNCTION pyapi16
@@ -32,5 +32,4 @@ DROP TABLE vals
 
 statement ok
 ROLLBACK
-
 

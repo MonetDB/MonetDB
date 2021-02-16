@@ -8,4 +8,3 @@ select interval '1' day + date '2005-08-19'
 ----
 2005-08-20
 
-

@@ -54,10 +54,10 @@ select reverse(r'8 \rcr੧[bp1eMY쫺4j5s뮯!<Rn4*}')
 ----
 }*4nR<!@s5j4@YMe1pb[@rcr\ 8
 
-query T rowsort
+query I rowsort
 select true in (1 in (1))
 ----
-True
+1
 
 statement ok
 INSERT INTO integers VALUES(ascii(CAST(0.1 AS STRING)) IN (-1.186003652E9))

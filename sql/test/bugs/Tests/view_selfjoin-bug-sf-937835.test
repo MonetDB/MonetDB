@@ -39,4 +39,3 @@ drop view test2
 statement ok
 drop table test
 
-

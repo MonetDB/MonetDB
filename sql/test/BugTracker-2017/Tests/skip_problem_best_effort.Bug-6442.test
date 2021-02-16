@@ -101,4 +101,3 @@ select * from t
 statement ok
 rollback
 
-

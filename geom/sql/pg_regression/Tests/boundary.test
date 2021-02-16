@@ -18,4 +18,3 @@ SELECT ST_AsEWKT(ST_Boundary(ST_GeomFromText('MULTILINESTRING((1 1 1,0 0 0.5, -1
 ----
 SRID:0;MULTIPOINT Z (-1 1 1, 1 1 0.75)
 
-

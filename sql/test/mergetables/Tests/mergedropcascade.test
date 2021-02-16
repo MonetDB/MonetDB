@@ -32,4 +32,3 @@ ALTER TABLE complete ADD TABLE part2
 statement ok
 DROP TABLE part1 cascade
 
-

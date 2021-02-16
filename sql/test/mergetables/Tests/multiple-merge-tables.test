@@ -1,0 +1,84 @@
+statement ok
+create table t (i int)
+
+statement ok
+insert into t values (42), (666)
+
+statement ok
+create merge table mt1 (like t)
+
+statement ok
+create merge table mt2 (like t)
+
+statement ok
+create temp table mycount(cc BIGINT) ON COMMIT PRESERVE ROWS
+
+statement ok
+insert into mycount SELECT (SELECT COUNT(*) FROM sys.dependencies) + (SELECT COUNT(*) FROM sys.objects)
+
+statement ok
+alter table mt1 add table t
+
+query I rowsort
+select i from mt1
+----
+42
+666
+
+statement error
+select i from mt2
+
+statement ok
+alter table mt2 add table t
+
+query I rowsort
+select i from mt1
+----
+42
+666
+
+query I rowsort
+select i from mt2
+----
+42
+666
+
+statement ok
+alter table mt1 drop table t
+
+statement error
+select i from mt1
+
+query I rowsort
+select i from mt2
+----
+42
+666
+
+statement ok
+alter table mt2 drop table t
+
+statement error
+select i from mt1
+
+statement error
+select i from mt2
+
+query I rowsort
+SELECT CAST((SELECT COUNT(*) FROM sys.dependencies) + (SELECT COUNT(*) FROM sys.objects) - (SELECT cc FROM mycount) AS BIGINT)
+----
+0
+
+statement ok
+drop table mycount
+
+statement ok
+drop table mt1
+
+statement ok
+drop table mt2
+
+statement ok
+drop table t
+
+

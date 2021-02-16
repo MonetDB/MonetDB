@@ -1153,4 +1153,3 @@ select * from r2
 statement ok
 rollback
 
-

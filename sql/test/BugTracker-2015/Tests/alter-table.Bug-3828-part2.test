@@ -11,4 +11,3 @@ drop table hmda_ins_14
 statement ok
 drop table hmda_14
 
-

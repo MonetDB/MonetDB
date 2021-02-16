@@ -1,16 +1,15 @@
-query T rowsort
+query I rowsort
 select null in (null)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 select null in (1)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 select null between null and null
 ----
 NULL
-
 

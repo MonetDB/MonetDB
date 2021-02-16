@@ -95,22 +95,22 @@ insert into all_types values (false, -10, -10000, -1000000,
 	'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype',
 	'76236890-f4e2-4d4f-a02b-ec7a02c3cb50')
 
-query TIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRTRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
-False
+0
 -10
 -10000
 -1000000
 -10000000000
 -1000000000000000019884624838656.000
--100000000000000000000.000
+-1e+20
 -1.000
 -123456789.000
 -12345.678
 -3.142
--3.142
--3.142
+-3.1415
+-3.1415
 2005-04-15
 -24
 -18
@@ -147,19 +147,19 @@ A012345678
 https://www.monetdb.org/Documentation/Manuals/SQLreference/BuiltinTypes
 https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 76236890-f4e2-4d4f-a02b-ec7a02c3cb50
-True
+1
 10
 10000
 1000000
 10000000000
 1000000000000000019884624838656.000
-100000000000000000000.000
+1e+20
 1.000
 123456789.000
 12345.678
 3.142
-3.142
-3.142
+3.1415
+3.1415
 2009-04-15
 24
 18
@@ -200,18 +200,18 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-query TIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRTRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
-196 values hashing to cd4383d0c716ab2c0b46d96fb6394a99
+196 values hashing to 0fe8a85c71916d9a354fa517c706ec86
 
-query TIITIIT rowsort
+query TIIIIIT rowsort
 select name, schema_id, type, system, commit_action, access, query from sys._tables where name = 'all_types'
 ----
 all_types
 2000
 0
-False
+0
 0
 0
 NULL
@@ -571,13 +571,13 @@ select "url55" from all_types order by "url55" ASC;
 select "uuid" from all_types order by "uuid" ASC;
 select "varchar100" from all_types order by "varchar100" ASC;
 
-query T rowsort
+query I rowsort
 select "boolean" from all_types order by "boolean" ASC
 ----
-False
-False
-True
-True
+0
+0
+1
+1
 
 query I rowsort
 select "tinyint" from all_types order by "tinyint" ASC
@@ -619,13 +619,13 @@ select "double" from all_types order by "double" ASC
 1000000000000000019884624838656.000
 1000000000000000019884624838656.000
 
-query R rowsort
+query T rowsort
 select "real" from all_types order by "real" ASC
 ----
--100000000000000000000.000
--100000000000000000000.000
-100000000000000000000.000
-100000000000000000000.000
+-1e+20
+-1e+20
+1e+20
+1e+20
 
 query R rowsort
 select "decimal" from all_types order by "decimal" ASC
@@ -659,21 +659,21 @@ select "float" from all_types order by "float" ASC
 3.142
 3.142
 
-query R rowsort
+query T rowsort
 select "float9" from all_types order by "float9" ASC
 ----
--3.142
--3.142
-3.142
-3.142
+-3.1415
+-3.1415
+3.1415
+3.1415
 
-query R rowsort
+query T rowsort
 select "float83" from all_types order by "float83" ASC
 ----
--3.142
--3.142
-3.142
-3.142
+-3.1415
+-3.1415
+3.1415
+3.1415
 
 query T rowsort
 select "date" from all_types order by "date" ASC
@@ -1016,13 +1016,13 @@ select "url55" from all_types order by "url55" DESC;
 select "uuid" from all_types order by "uuid" DESC;
 select "varchar100" from all_types order by "varchar100" DESC;
 
-query T rowsort
+query I rowsort
 select "boolean" from all_types order by "boolean" DESC
 ----
-False
-False
-True
-True
+0
+0
+1
+1
 
 query I rowsort
 select "tinyint" from all_types order by "tinyint" DESC
@@ -1064,13 +1064,13 @@ select "double" from all_types order by "double" DESC
 1000000000000000019884624838656.000
 1000000000000000019884624838656.000
 
-query R rowsort
+query T rowsort
 select "real" from all_types order by "real" DESC
 ----
--100000000000000000000.000
--100000000000000000000.000
-100000000000000000000.000
-100000000000000000000.000
+-1e+20
+-1e+20
+1e+20
+1e+20
 
 query R rowsort
 select "decimal" from all_types order by "decimal" DESC
@@ -1104,21 +1104,21 @@ select "float" from all_types order by "float" DESC
 3.142
 3.142
 
-query R rowsort
+query T rowsort
 select "float9" from all_types order by "float9" DESC
 ----
--3.142
--3.142
-3.142
-3.142
+-3.1415
+-3.1415
+3.1415
+3.1415
 
-query R rowsort
+query T rowsort
 select "float83" from all_types order by "float83" DESC
 ----
--3.142
--3.142
-3.142
-3.142
+-3.1415
+-3.1415
+3.1415
+3.1415
 
 query T rowsort
 select "date" from all_types order by "date" DESC
@@ -1411,10 +1411,10 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-query TIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRTRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10
 ----
-392 values hashing to d867a67935623e9cd794a91e48fc7373
+392 values hashing to 81c256290b3c4e56975dedc3b3ea8f81
 
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name
@@ -1734,5 +1734,4 @@ select type, name from sys.idxs where table_id in (select id from sys._tables wh
 
 statement ok
 rollback
-
 

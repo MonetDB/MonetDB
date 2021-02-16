@@ -10,7 +10,20 @@ start transaction
 query II rowsort
 select count(aa) over (partition by bb), cast(75 + count(aa) over (partition by bb) as bigint) from testing where bb <> 1
 ----
-14 values hashing to eab5ebf2e841698347746be08d98a206
+0
+75
+2
+77
+2
+77
+2
+77
+3
+78
+3
+78
+3
+78
 
 query IIIIII rowsort
 with relation as (select row_number() over () as dd, aa, bb from testing where bb <> 1)
@@ -19,13 +32,73 @@ select aa, bb, dd,
        count(aa) over (partition by bb rows between dd preceding and dd following),
        count(aa) over (partition by bb rows between dd + 1 preceding and dd preceding) from relation
 ----
-42 values hashing to 6949d9a6bd8d081652e4cb15bd7c409e
+15
+3
+1
+1
+2
+0
+3
+0
+4
+1
+2
+0
+5
+3
+2
+2
+3
+0
+6
+3
+5
+3
+3
+0
+8
+0
+6
+2
+2
+0
+NULL
+0
+3
+0
+2
+0
+NULL
+4
+7
+0
+0
+0
 
 query II rowsort
 select first_value(aa) over (partition by bb rows between 2 preceding and 1 following),
        last_value(aa) over (partition by bb rows between 1 preceding and 1 following) from testing
 ----
-20 values hashing to 219cb5f5c7b03533cd6ae4f5b6c91597
+15
+5
+15
+6
+15
+6
+3
+2
+3
+4
+3
+4
+NULL
+3
+NULL
+8
+NULL
+8
+NULL
+NULL
 
 statement ok
 rollback
@@ -62,5 +135,4 @@ select count(aa) over (partition by bb rows between cc - 500 preceding and cc - 
 
 statement ok
 drop table testing
-
 

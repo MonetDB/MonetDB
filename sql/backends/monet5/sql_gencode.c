@@ -814,9 +814,9 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 		argc = MAXARG;
 	if (cq) {
 		assert(strlen(cq->name) < IDLENGTH);
-		c->curprg = newFunctionArgs(userRef, putName(cq->name), FUNCTIONsymbol, argc);
+		c->curprg = newFunctionArgs(putName(sql_private_module_name), putName(cq->name), FUNCTIONsymbol, argc);
 	} else {
-		c->curprg = newFunctionArgs(userRef, "tmp", FUNCTIONsymbol, argc);
+		c->curprg = newFunctionArgs(putName(sql_private_module_name), "tmp", FUNCTIONsymbol, argc);
 	}
 	if (c->curprg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -829,7 +829,7 @@ backend_dumpproc(backend *be, Client c, cq *cq, sql_rel *r)
 	curInstr = getInstrPtr(mb, 0);
 	/* we do not return anything */
 	setVarType(mb, 0, TYPE_void);
-	setModuleId(curInstr, userRef);
+	setModuleId(curInstr, putName(sql_private_module_name));
 
 	if (m->params) {	/* needed for prepare statements */
 
@@ -897,7 +897,7 @@ monet5_resolve_function(ptr M, sql_func *f)
 	Client c;
 	Module m;
 	int clientID = *(int*) M;
-	const char *mname = getName(f->mod), *fname = getName(f->imp);
+	const char *mname = putName(f->mod), *fname = putName(f->imp);
 
 	if (!mname || !fname)
 		return 0;
@@ -965,14 +965,18 @@ backend_create_r_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "rapi";
-		f->imp = "eval_aggr";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("rapi");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "rapi";
-		f->imp = "eval";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("rapi");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
@@ -985,18 +989,24 @@ backend_create_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapi3";
-		f->imp = "eval_aggr";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("pyapi3");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
-		f->mod = "pyapi3";
-		f->imp = "eval_loader";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("pyapi3");
+		f->imp = GDKstrdup("eval_loader");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapi3";
-		f->imp = "eval";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("pyapi3");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
@@ -1008,14 +1018,18 @@ backend_create_map_py_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "pyapi3map";
-		f->imp = "eval_aggr";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("pyapi3map");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case  F_PROC: /* no output */
 	case  F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "pyapi3map";
-		f->imp = "eval";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("pyapi3map");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
@@ -1025,7 +1039,7 @@ static int
 backend_create_py3_func(backend *be, sql_func *f)
 {
 	backend_create_py_func(be, f);
-	f->mod = "pyapi3";
+	f->mod = GDKstrdup("pyapi3");
 	return 0;
 }
 
@@ -1033,7 +1047,7 @@ static int
 backend_create_map_py3_func(backend *be, sql_func *f)
 {
 	backend_create_map_py_func(be, f);
-	f->mod = "pyapi3map";
+	f->mod = GDKstrdup("pyapi3map");
 	return 0;
 }
 
@@ -1044,15 +1058,19 @@ backend_create_c_func(backend *be, sql_func *f)
 	(void)be;
 	switch(f->type) {
 	case  F_AGGR:
-		f->mod = "capi";
-		f->imp = "eval_aggr";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("capi");
+		f->imp = GDKstrdup("eval_aggr");
 		break;
 	case F_LOADER:
 	case F_PROC: /* no output */
 	case F_FUNC:
 	default: /* ie also F_FILT and F_UNION for now */
-		f->mod = "capi";
-		f->imp = "eval";
+		_DELETE(f->mod);
+		_DELETE(f->imp);
+		f->mod = GDKstrdup("capi");
+		f->imp = GDKstrdup("eval");
 		break;
 	}
 	return 0;
@@ -1078,9 +1096,9 @@ mal_function_find_implementation_address(mvc *m, sql_func *f)
 	m->type = Q_PARSE;
 	m->user_id = m->role_id = USER_MONETDB;
 
-	store_lock();
-	m->session = sql_session_create(0);
-	store_unlock();
+	store_lock(m->session->tr->store);
+	m->session = sql_session_create(m->store, m->pa, 0);
+	store_unlock(m->session->tr->store);
 	if (!m->session) {
 		(void) sql_error(o, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -1124,9 +1142,9 @@ bailout:
 	if (m) {
 		bstream_destroy(m->scanner.rs);
 		if (m->session) {
-			store_lock();
+			store_lock(m->session->tr->store);
 			sql_session_destroy(m->session);
-			store_unlock();
+			store_unlock(m->session->tr->store);
 		}
 		if (m->sa)
 			sa_destroy(m->sa);
@@ -1189,7 +1207,7 @@ backend_create_sql_func(backend *be, sql_func *f, list *restypes, list *ops)
 	}
 
 	backup = c->curprg;
-	curPrg = c->curprg = newFunctionArgs(userRef, putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
+	curPrg = c->curprg = newFunctionArgs(putName(sql_shared_module_name), putName(f->base.name), FUNCTIONsymbol, (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0));
 	if( curPrg == NULL) {
 		sql_error(m, 001, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto cleanup;

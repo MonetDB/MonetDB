@@ -31,4 +31,3 @@ order by CASE WHEN c0 IS NULL THEN 1 ELSE 0 END, c0 ASC
 statement ok
 rollback
 
-

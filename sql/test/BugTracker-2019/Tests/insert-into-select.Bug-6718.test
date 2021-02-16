@@ -26,7 +26,21 @@ COPY 5 RECORDS INTO test2 FROM stdin USING DELIMITERS '|',E'\n'
 query III rowsort
 SELECT * FROM test2
 ----
-15 values hashing to e19d9d7f4be470aa993a807b3c50e148
+1
+32
+57
+2
+15
+105
+3
+33
+0
+4
+57
+20
+5
+67
+134
 
 statement ok
 CREATE TABLE test1 (
@@ -50,7 +64,21 @@ query III rowsort
 SELECT test2.order_id,
 test2.qnt, test2.order_number from test2
 ----
-15 values hashing to 8eb975440822669de969e3217c7c80b9
+15
+105
+2
+32
+57
+1
+33
+0
+3
+57
+20
+4
+67
+134
+5
 
 statement ok
 INSERT INTO test1 (id, qnt, order_number) SELECT test2.order_id,
@@ -59,7 +87,21 @@ test2.qnt, test2.order_number from test2
 query III rowsort
 SELECT * FROM test1
 ----
-15 values hashing to 8eb975440822669de969e3217c7c80b9
+15
+105
+2
+32
+57
+1
+33
+0
+3
+57
+20
+4
+67
+134
+5
 
 statement ok
 CREATE TABLE test3 (id, qnt, order_number) AS SELECT test2.order_id,
@@ -76,7 +118,21 @@ NULL
 query III rowsort
 SELECT * FROM test3
 ----
-15 values hashing to 8eb975440822669de969e3217c7c80b9
+15
+105
+2
+32
+57
+1
+33
+0
+3
+57
+20
+4
+67
+134
+5
 
 statement ok
 ALTER TABLE test3 ALTER id SET NOT NULL
@@ -107,5 +163,4 @@ DROP TABLE test1
 
 statement ok
 DROP TABLE test2
-
 

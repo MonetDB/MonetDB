@@ -133,7 +133,18 @@ INSERT INTO subt1 VALUES (32, 'done')
 query IT rowsort
 SELECT a, b FROM testme
 ----
-12 values hashing to 44c1956982770f4e4ee45e715f88f94c
+11
+going
+12
+elsewhere
+31
+still
+32
+done
+32
+ok
+33
+alright
 
 query IT rowsort
 SELECT a, b FROM subt1
@@ -169,5 +180,4 @@ DROP TABLE subt2
 
 statement ok
 DROP TABLE testme
-
 

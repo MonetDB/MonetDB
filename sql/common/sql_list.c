@@ -49,6 +49,23 @@ sa_list(sql_allocator *sa)
 	return list_init(l, sa, NULL);
 }
 
+/*
+static void
+_free(void *dummy, void *data)
+{
+	(void)dummy;
+	GDKfree(data);
+}
+*/
+
+list *
+sa_list_append(sql_allocator *sa, list *l, void *data)
+{
+	if (!l)
+		l = SA_LIST(sa, NULL);
+	return list_append(l, data);
+}
+
 list *
 list_new(sql_allocator *sa, fdestroy destroy)
 {
@@ -76,10 +93,10 @@ list_empty(list *l)
 }
 
 static void
-node_destroy(list *l, node *n)
+node_destroy(list *l, void *data, node *n)
 {
 	if (n->data && l->destroy) {
-		l->destroy(n->data);
+		l->destroy(data, n->data);
 		n->data = NULL;
 	}
 	if (!l->sa)
@@ -87,7 +104,7 @@ node_destroy(list *l, node *n)
 }
 
 void
-list_destroy(list *l)
+list_destroy2(list *l, void *data)
 {
 	if (l) {
 		node *n = l->h;
@@ -99,7 +116,7 @@ list_destroy(list *l)
 				node *t = n;
 
 				n = t->next;
-				node_destroy(l, t);
+				node_destroy(l, data, t);
 			}
 		}
 
@@ -109,6 +126,12 @@ list_destroy(list *l)
 		if (!l->sa)
 			_DELETE(l);
 	}
+}
+
+void
+list_destroy(list *l)
+{
+	list_destroy2(l, NULL);
 }
 
 int
@@ -154,8 +177,8 @@ list_append(list *l, void *data)
 	return list_append_node(l, n);
 }
 
-void*
-list_append_with_validate(list *l, void *data, fvalidate cmp)
+void *
+list_append_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m;
 	void* err = NULL;
@@ -164,9 +187,12 @@ list_append_with_validate(list *l, void *data, fvalidate cmp)
 		return NULL;
 	if (l->cnt) {
 		for (m = l->h; m; m = m->next) {
-			err = cmp(m->data, data);
-			if(err)
+			err = cmp(m->data, data, extra);
+			if(err) {
+				n->data = NULL;
+				node_destroy(l, NULL, n);
 				return err;
+			}
 		}
 		l->t->next = n;
 	} else {
@@ -187,7 +213,7 @@ list_append_with_validate(list *l, void *data, fvalidate cmp)
 	return NULL;
 }
 
-void*
+void *
 list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 {
 	node *n = node_create(l->sa, data), *m, *prev = NULL;
@@ -202,8 +228,11 @@ list_append_sorted(list *l, void *data, void *extra, fcmpvalidate cmp)
 	} else {
 		for (m = l->h; m; m = m->next) {
 			err = cmp(m->data, data, extra, &comp);
-			if(err)
+			if(err) {
+				n->data = NULL;
+				node_destroy(l, NULL, n);
 				return err;
+			}
 			if(comp < 0)
 				break;
 			first = 0;
@@ -338,16 +367,16 @@ list_remove_node_(list *l, node *n)
 }
 
 node *
-list_remove_node(list *l, node *n)
+list_remove_node(list *l, void *gdata, node *n)
 {
 	node *p = list_remove_node_(l, n);
 
-	node_destroy(l, n);
+	node_destroy(l, gdata, n);
 	return p;
 }
 
 void
-list_remove_data(list *s, void *data)
+list_remove_data(list *s, void *gdata, void *data)
 {
 	node *n;
 
@@ -361,19 +390,19 @@ list_remove_data(list *s, void *data)
 				hash_delete(s->ht, n->data);
 			MT_lock_unset(&s->ht_lock);
 			n->data = NULL;
-			list_remove_node(s, n);
+			list_remove_node(s, gdata, n);
 			break;
 		}
 	}
 }
 
 void
-list_remove_list(list *l, list *data)
+list_remove_list(list *l, void *gdata, list *data)
 {
 	node *n;
 
 	for (n=data->h; n; n = n->next)
-		list_remove_data(l, n->data);
+		list_remove_data(l, gdata, n->data);
 }
 
 void
@@ -425,12 +454,12 @@ list_traverse(list *l, traverse_func f, void *clientdata)
 }
 
 void *
-list_traverse_with_validate(list *l, void *data, fvalidate cmp)
+list_transverse_with_validate(list *l, void *data, void *extra, fvalidate cmp)
 {
 	void* err = NULL;
 
 	for (node *n = l->h; n; n = n->next) {
-		err = cmp(n->data, data);
+		err = cmp(n->data, data, extra);
 		if(err)
 			break;
 	}

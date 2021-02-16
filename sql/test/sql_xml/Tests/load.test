@@ -45,6 +45,28 @@ from Customers c, Projects p
 where c.CustId = p.CustId
 order by c.CustId, p.ProjId
 ----
-24 values hashing to 7a1104052800017323e648c06b71c126
-
+1
+WoodWorks
+Baltimore
+1
+Medusa
+1
+4
+Hardware Shop
+Washington
+2
+Pegasus
+4
+4
+Hardware Shop
+Washington
+8
+Typhon
+4
+5
+Books Inc
+New Orleans
+10
+Sphinx
+5
 

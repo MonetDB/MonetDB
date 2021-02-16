@@ -12,22 +12,3 @@ end welcome
 statement ok
 optimizer.macro("user","welcome")
 
-#mdb.List("user","welcome")
-
-query T rowsort
-io.print("test expansion")
-----
-"test expansion"
-
-query T rowsort
-a:=user.welcome(2)
-----
-"Welcome"
-"Welcome"
-
-query T rowsort
-io.print(a)
-----
-2
-
-

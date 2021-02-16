@@ -78,4 +78,3 @@ DROP TABLE testmeplease
 statement ok
 DROP FUNCTION casttoint
 
-

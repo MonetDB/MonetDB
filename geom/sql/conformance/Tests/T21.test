@@ -3,4 +3,3 @@ SELECT ST_Length(centerline) FROM road_segments WHERE fid = 106
 ----
 26.000
 
-

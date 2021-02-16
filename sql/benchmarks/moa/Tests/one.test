@@ -13042,7 +13042,6 @@ COPY 224 RECORDS INTO "sys"."video" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 statement ok
 commit
 
-
 query TTTTT rowsort
  SELECT * FROM MOA_DD WHERE name='Video' AND type='match' ORDER BY  name, type, field1, field2, field3
 ----
@@ -13130,17 +13129,133 @@ Titanic
 query II rowsort
  SELECT * from _t3 ORDER BY  creationfk, creatorfk
 ----
-34 values hashing to c75a27cbd21f9fa9df925ad19499ad26
+1
+5823
+1
+5824
+1
+5825
+1
+5826
+1
+5827
+1
+5828
+1
+5829
+1
+5830
+1
+5831
+1
+5832
+1
+5833
+1
+5834
+1
+5835
+1
+5836
+1
+5837
+1
+5838
+1
+5839
 
 query ITI rowsort
  SELECT * from _t4 ORDER BY  creatorpk, role, individualfk
 ----
-51 values hashing to 2e89c4e4305944ebecf1b3eddff3ca7f
+5823
+Actor
+2328
+5824
+Actor
+415
+5825
+Actor
+3
+5826
+Actor
+43
+5827
+Actor
+1312
+5828
+Actor
+973
+5829
+Actor
+2799
+5830
+Actor
+1222
+5831
+Actor
+2066
+5832
+Actor
+2591
+5833
+Actor
+884
+5834
+Actor
+156
+5835
+Actor
+2978
+5836
+Actor
+2911
+5837
+Actor
+693
+5838
+Writer
+376
+5839
+Director
+376
 
 query IT rowsort
  SELECT * from _t5 ORDER BY  individualpk, personname
 ----
-34 values hashing to 7c04c6da4cf578ad7209373e52de31f6
+1222
+Hill,+Bernard
+1312
+Hyde,+Jonathan
+156
+Bates,+Kathy
+2066
+Paxton,+Bill
+2328
+Sagalevitch,+Dr.+Anatoly+M.
+2591
+Stuart,+Gloria
+2799
+Warner,+David
+2911
+Winslet,+Kate
+2978
+Zane,+Billy
+3
+Abernathy,+Lewis
+376
+Cameron,+James
+376
+Cameron,+James
+415
+Cascone,+Nicholas
+43
+Amis,+Suzy
+693
+DiCaprio,+Leonardo
+884
+Fisher,+Frances
+973
+Garber,+Victor
 
 query RTTR rowsort
  SELECT * from Video ORDER BY  id, imdb, image, mediainformationfk
@@ -13251,27 +13366,323 @@ statement ok
 query ITTI rowsort
  SELECT * from _t10 ORDER BY  id, imdb, image, mediainformationfk
 ----
-56 values hashing to 960a1abe2d6ae533e6c9d1c5284a2eb4
+103
+0117438
+http%3A%2F%2Fposters.imdb.com%2FPosters%2Fr%2Fransom.jpg
+1
+105
+0115433
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F1558908374.01.MZZZZZZZ.gif
+1
+111
+0117500
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6304711891.01.MZZZZZZZ.gif
+1
+118
+0117218
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0783225539.01.MZZZZZZZ.gif
+1
+131
+0115685
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0792833198.01.MZZZZZZZ.gif
+1
+174
+0117913
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729660.01.MZZZZZZZ.gif
+1
+188
+0116313
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305182051.01.MZZZZZZZ.gif
+1
+19
+0117998
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729636.01.MZZZZZZZ.gif
+1
+191
+0117333
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630471193X.01.MZZZZZZZ.gif
+1
+195
+0117571
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F630521610X.01.MZZZZZZZ.gif
+1
+214
+0116213
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0790729601.01.MZZZZZZZ.gif
+1
+45
+0117060
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F6305181772.01.MZZZZZZZ.gif
+1
+76
+0116695
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2F0800141741.01.MZZZZZZZ.gif
+1
+9
+0116629
+http%3A%2F%2Fimages.amazon.com%2Fimages%2FP%2FB00003Q43A.01.MZZZZZZZ.gif
+1
 
 query ITT rowsort
  SELECT * from _t9 ORDER BY  creationpk, title, creationdate
 ----
-42 values hashing to e39311c68f349687cc97c87db8adfd1d
+103
+Ransom
+1996
+105
+101 Dalmatians
+1996
+111
+Rock, The
+1996
+118
+Nutty Professor, The
+1996
+131
+Birdcage, The
+1996
+174
+Time to Kill, A
+1996
+188
+First Wives Club, The
+1996
+19
+Twister
+1996
+191
+Phenomenon
+1996
+195
+Scream
+1996
+214
+Eraser
+1996
+45
+Mission: Impossible
+1996
+76
+Jerry Maguire
+1996
+9
+Independence Day
+1996
 
 query II rowsort
  SELECT * from _t13 ORDER BY  creationfk, creatorfk
 ----
-50 values hashing to 53ba4b0b9d03254f4949868cba3ff07a
+103
+3280
+103
+3281
+105
+3230
+105
+3231
+111
+3081
+111
+3082
+118
+2907
+118
+2908
+131
+2587
+131
+2588
+174
+1523
+174
+1524
+188
+1172
+188
+1173
+19
+5390
+19
+5391
+191
+1098
+195
+1000
+214
+532
+214
+533
+45
+4745
+45
+4746
+76
+3952
+9
+5640
+9
+5641
 
 query ITI rowsort
  SELECT * from _t14 ORDER BY  creatorpk, role, individualfk
 ----
-75 values hashing to 3e27ccdb1bff35d92f6f71d5d62346ea
+1000
+Writer
+2882
+1098
+Writer
+690
+1172
+Writer
+1158
+1173
+Writer
+1045
+1523
+Writer
+1043
+1524
+Writer
+1099
+2587
+Writer
+2748
+2588
+Writer
+2129
+2907
+Writer
+2244
+2908
+Writer
+1587
+3081
+Writer
+540
+3082
+Writer
+2827
+3230
+Writer
+1291
+3231
+Writer
+2487
+3280
+Writer
+1670
+3281
+Writer
+1297
+3952
+Writer
+585
+4745
+Writer
+1486
+4746
+Writer
+994
+532
+Writer
+1082
+533
+Writer
+2169
+5390
+Writer
+1716
+5391
+Writer
+578
+5640
+Writer
+807
+5641
+Writer
+689
 
 query IT rowsort
  SELECT * from _t16 ORDER BY  individualpk, personname
 ----
-78 values hashing to 1db2b01c16d2d8ed36f0d284209fd954
+1043
+Goldsman,+Akiva
+1043
+Goldsman,+Akiva
+1045
+Goldsmith,+Olivia
+1082
+Green,+Walon
+1082
+Green,+Walon
+1099
+Grisham,+John
+1099
+Grisham,+John
+1099
+Grisham,+John
+1158
+Harling,+Robert
+1291
+Hughes,+John
+1291
+Hughes,+John
+1291
+Hughes,+John
+1297
+Hume,+Cyril
+1486
+Koepp,+David
+1486
+Koepp,+David
+1587
+Lewis,+Jerry
+1670
+Maibaum,+Richard
+1716
+Martin,+Anne-Marie
+2129
+Poiret,+Jean
+2169
+Puryear,+Tony
+2244
+Richmond,+Bill+(I)
+2487
+Smith,+Dodie
+2748
+Veber,+Francis
+2827
+Weisberg,+David+(I)
+2827
+Weisberg,+David+(I)
+2882
+Williamson,+Kevin
+2882
+Williamson,+Kevin
+540
+Cook,+Douglas+(I)
+540
+Cook,+Douglas+(I)
+578
+Crichton,+Michael
+578
+Crichton,+Michael
+578
+Crichton,+Michael
+578
+Crichton,+Michael
+585
+Crowe,+Cameron
+689
+Devlin,+Dean
+690
+Di+Pego,+Gerald
+807
+Emmerich,+Roland
+994
+Geller,+Bruce
+994
+Geller,+Bruce
 
 statement ok
  create table _t17 (CreatorPK int, Role varchar(255), IndividualFK int)
@@ -13363,22 +13774,128 @@ Spielberg,+Steven
 query ITI rowsort
  SELECT * from _t22 ORDER BY  creatorpk, role, individualfk
 ----
-30 values hashing to df74a87ec95517027a4910c04cbd0257
+2290
+Director
+2522
+2884
+Director
+2522
+4722
+Director
+2522
+4994
+Director
+2522
+5217
+Director
+2522
+5317
+Director
+2522
+5417
+Director
+2522
+5543
+Director
+2522
+5743
+Director
+2522
+5767
+Director
+2522
 
 query ITI rowsort
  SELECT * from _t23 ORDER BY  creatorpk, role, individualfk
 ----
-30 values hashing to df74a87ec95517027a4910c04cbd0257
+2290
+Director
+2522
+2884
+Director
+2522
+4722
+Director
+2522
+4994
+Director
+2522
+5217
+Director
+2522
+5317
+Director
+2522
+5417
+Director
+2522
+5543
+Director
+2522
+5743
+Director
+2522
+5767
+Director
+2522
 
 query II rowsort
  SELECT * from _t25 ORDER BY  creationfk, creatorfk
 ----
-20 values hashing to d4fa2b42445045dde09e3785a7b2487c
+119
+2884
+13
+5543
+143
+2290
+18
+5417
+22
+5317
+26
+5217
+35
+4994
+4
+5767
+46
+4722
+5
+5743
 
 query ITT rowsort
  SELECT * from _t27 ORDER BY  creationpk, title, creationdate
 ----
-30 values hashing to ba389400030e05f1a1adb64aff7beb4a
+119
+Close Encounters of the Third Kind
+1977
+13
+Jaws
+1975
+143
+Hook
+1991
+18
+Raiders of the Lost Ark
+1981
+22
+Lost World: Jurassic Park, The
+1997
+26
+Saving Private Ryan
+1998
+35
+Indiana Jones and the Last Crusade
+1989
+4
+E.T. the Extra-Terrestrial
+1982
+46
+Indiana Jones and the Temple of Doom
+1984
+5
+Jurassic Park
+1993
 
 statement ok
  create table _t29 (IndividualPK int, PersonName varchar(255))
@@ -13413,7 +13930,106 @@ statement ok
 query ITITIIIITT rowsort
  SELECT * from _t32 ORDER BY  individualpk, personname, creatorpk, role, individualfk, creationfk, creatorfk, creationpk, title, creationdate
 ----
-100 values hashing to 2c55b2798398f4d349ac3f1f27e203b1
+2522
+Spielberg,+Steven
+2290
+Director
+2522
+143
+2290
+143
+Hook
+1991
+2522
+Spielberg,+Steven
+2884
+Director
+2522
+119
+2884
+119
+Close Encounters of the Third Kind
+1977
+2522
+Spielberg,+Steven
+4722
+Director
+2522
+46
+4722
+46
+Indiana Jones and the Temple of Doom
+1984
+2522
+Spielberg,+Steven
+4994
+Director
+2522
+35
+4994
+35
+Indiana Jones and the Last Crusade
+1989
+2522
+Spielberg,+Steven
+5217
+Director
+2522
+26
+5217
+26
+Saving Private Ryan
+1998
+2522
+Spielberg,+Steven
+5317
+Director
+2522
+22
+5317
+22
+Lost World: Jurassic Park, The
+1997
+2522
+Spielberg,+Steven
+5417
+Director
+2522
+18
+5417
+18
+Raiders of the Lost Ark
+1981
+2522
+Spielberg,+Steven
+5543
+Director
+2522
+13
+5543
+13
+Jaws
+1975
+2522
+Spielberg,+Steven
+5743
+Director
+2522
+5
+5743
+5
+Jurassic Park
+1993
+2522
+Spielberg,+Steven
+5767
+Director
+2522
+4
+5767
+4
+E.T. the Extra-Terrestrial
+1982
 
 statement ok
  drop table _t1
@@ -13510,5 +14126,4 @@ statement ok
 
 statement ok
  drop table _t32
-
 

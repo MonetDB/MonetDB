@@ -71,4 +71,3 @@ drop schema s2
 statement ok
 drop schema s1
 
-

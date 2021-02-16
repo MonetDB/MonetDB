@@ -6,4 +6,3 @@ select name from "sys".users where lower(name) = 'monetdb'
 ----
 monetdb
 
-

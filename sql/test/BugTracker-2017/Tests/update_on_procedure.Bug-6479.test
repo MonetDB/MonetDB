@@ -27,4 +27,3 @@ drop table stmp10
 statement ok
 drop table tmp_aggregate
 
-

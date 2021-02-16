@@ -388,4 +388,3 @@ drop table t_2_1
 statement ok
 drop table t_2_2
 
-

@@ -1,4 +1,4 @@
-query IT rowsort
+query II rowsort
 select
   ref_17.sessionid as c0,
   cast(coalesce(ref_17.tag,
@@ -8,5 +8,4 @@ from
 where false
 limit 156
 ----
-
 

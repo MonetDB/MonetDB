@@ -58,4 +58,3 @@ select count(*) from bug where address>=inet'4.0.0.0' and address<inet'8.0.0.0'
 statement ok
 rollback
 
-

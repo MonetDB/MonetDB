@@ -57,4 +57,3 @@ where EXISTS (
          is not NULL)
 ----
 
-

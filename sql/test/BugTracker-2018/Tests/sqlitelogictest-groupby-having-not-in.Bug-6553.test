@@ -11,4 +11,3 @@ SELECT DISTINCT + cor0.col1 / cor0.col1 col2 FROM tab1 AS cor0 GROUP BY col1 HAV
 statement ok
 DROP TABLE tab1
 
-

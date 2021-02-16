@@ -21,4 +21,3 @@ from
     on (ref_1.type = sample_16.privilege_code_id )
 where sample_16.privilege_code_id is NULL
 
-

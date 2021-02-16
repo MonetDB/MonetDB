@@ -5,4 +5,3 @@ select cast('10' as tinyint) as not_ok_tinyint, cast('10' as int) as ok_int, cas
 10
 10
 
-

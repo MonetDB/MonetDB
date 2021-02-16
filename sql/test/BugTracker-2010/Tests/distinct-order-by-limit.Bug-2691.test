@@ -76,4 +76,3 @@ mydir2/mytest3
 statement ok
 rollback
 
-

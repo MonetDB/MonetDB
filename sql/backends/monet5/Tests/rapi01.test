@@ -21,4 +21,3 @@ DROP FUNCTION rapi01
 statement ok
 ROLLBACK
 
-

@@ -28,14 +28,34 @@ INSERT INTO VARCHAR_TBL (f1) VALUES ('c     ')
 query TT rowsort
 SELECT '' AS seven, VARCHAR_TBL.* FROM VARCHAR_TBL
 ----
-12 values hashing to 4cc0fb6d150be99f10c6eea3503ce950
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
+(empty)
+a
 
 query TT rowsort
 SELECT '' AS six, c.*
    FROM VARCHAR_TBL c
    WHERE c.f1 <> 'a'
 ----
-10 values hashing to e4b19df656e1c9f0fc30efe78c69c720
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
 
 query TT rowsort
 SELECT '' AS one, c.*
@@ -50,14 +70,34 @@ SELECT '' AS five, c.*
    FROM VARCHAR_TBL c
    WHERE c.f1 < 'a'
 ----
-10 values hashing to e4b19df656e1c9f0fc30efe78c69c720
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
 
 query TT rowsort
 SELECT '' AS six, c.*
    FROM VARCHAR_TBL c
    WHERE c.f1 <= 'a'
 ----
-12 values hashing to 4cc0fb6d150be99f10c6eea3503ce950
+(empty)
+(empty)
+(empty)
+1
+(empty)
+2
+(empty)
+3
+(empty)
+A
+(empty)
+a
 
 query TT rowsort
 SELECT '' AS one, c.*
@@ -106,5 +146,4 @@ abcd
 
 statement ok
 DROP TABLE VARCHAR_TBL
-
 

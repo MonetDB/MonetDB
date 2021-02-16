@@ -7,7 +7,7 @@ statement ok
 statement ok
 	bat.setColumn(b,"second")
 
-query TI rowsort
+query II rowsort
 	io.print(b)
 ----
 
@@ -17,11 +17,11 @@ statement ok
 statement ok
 	bat.setName(c,"mybat")
 
-query TT rowsort
+query IT rowsort
 	io.print(c)
 ----
 
-query TT rowsort
+query IT rowsort
 	io.print(c)
 ----
 
@@ -38,5 +38,4 @@ statement ok
 
 statement ok
 exit  GDKerror
-
 

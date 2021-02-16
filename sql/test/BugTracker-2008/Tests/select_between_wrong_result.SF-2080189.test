@@ -25,4 +25,3 @@ a BETWEEN 19.999 AND 2.001E1
 statement ok
 drop table A
 
-

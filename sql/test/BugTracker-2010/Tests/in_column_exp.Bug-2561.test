@@ -32,4 +32,3 @@ drop table "sys"."anbi"
 statement ok
 drop table "sys"."kvk"
 
-

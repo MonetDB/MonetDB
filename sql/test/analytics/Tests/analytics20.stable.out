@@ -40,8 +40,8 @@ stdout of test 'analytics20` in directory 'sql/test/analytics` itself:
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	2,	1,	0,	2,	2 # length
-[ "varchar",	0,	0,	"",	"%1",	"%1"	]
+% 7,	3,	1,	0,	2,	2 # length
+[ "varchar",	64,	0,	"",	"%1",	"%1"	]
 [ "bigint",	64,	0,	NULL,	NULL,	NULL	]
 #exec  1(2);
 % sys.%1 # table_name
@@ -62,8 +62,8 @@ stdout of test 'analytics20` in directory 'sql/test/analytics` itself:
 % .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
 % type,	digits,	scale,	schema,	table,	column # name
 % varchar,	int,	int,	str,	str,	str # type
-% 7,	2,	1,	0,	2,	2 # length
-[ "varchar",	0,	0,	"",	"%2",	"%2"	]
+% 7,	3,	1,	0,	2,	2 # length
+[ "varchar",	64,	0,	"",	"%2",	"%2"	]
 [ "int",	32,	0,	NULL,	NULL,	NULL	]
 #exec  2(2);
 % sys.%2 # table_name

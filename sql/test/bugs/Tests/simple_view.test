@@ -66,4 +66,3 @@ select tt.name, tv.* from tbls as tt, tv
 statement ok
 drop table tbls
 
-

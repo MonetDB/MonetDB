@@ -12,4 +12,3 @@ create table x( id serial, a varchar(1000))
 statement ok
 drop table x
 
-

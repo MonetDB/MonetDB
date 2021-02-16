@@ -36,14 +36,31 @@ COPY 10 RECORDS INTO "sys"."temp_value" FROM stdin USING DELIMITERS E'\t',E'\n',
 query R rowsort
 select (temp_table.mmax - temp_table.mmin)+temp_table.mmin as col1 from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min order by col1
 ----
-10 values hashing to 6e95bba3548eea6f49114f7bd86cc27b
+12.250
+24.750
+24.750
+24.750
+24.750
+31.000
+31.000
+31.000
+31.000
+31.000
 
 query R rowsort
 select (0.72/2147483648.0)*(temp_table.mmax - temp_table.mmin)+temp_table.mmin as col1 from temp_value, temp_table where temp_value.vvalue<=temp_table.norm_max and temp_value.vvalue>temp_table.norm_min order by col1
 ----
-10 values hashing to 521d286d893d44749566fc5fda3e9d0d
+18.500
+18.500
+18.500
+18.500
+24.750
+24.750
+24.750
+24.750
+24.750
+6.000
 
 statement ok
 rollback
-
 

@@ -53,4 +53,3 @@ insert into source_attr select  'src_0',
                from sys.tables as T, sys.columns as C
                where T.id = C.table_id and T.name = 'source_ac_0'
 
-

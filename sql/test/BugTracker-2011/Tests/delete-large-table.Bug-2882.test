@@ -265,4 +265,3 @@ drop table bigtable2882
 statement ok
 drop table test2882
 
-

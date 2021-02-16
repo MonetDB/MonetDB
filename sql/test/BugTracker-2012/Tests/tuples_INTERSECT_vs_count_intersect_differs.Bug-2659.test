@@ -348,4 +348,3 @@ select count(*) from (select * from T intersect select * from T ) as cnt
 statement ok
 DROP TABLE T
 
-

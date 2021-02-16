@@ -13,7 +13,7 @@ bat.append(S,"new");
 statement ok
 bat.append(S,"world");
 
-query TT rowsort
+query IT rowsort
 io.print(S);
 ----
 0
@@ -28,7 +28,7 @@ world
 statement ok
 L:= batstr.length(S);
 
-query TI rowsort
+query II rowsort
 io.print(L);
 ----
 0
@@ -43,7 +43,7 @@ io.print(L);
 statement ok
 L:= batstr.nbytes(S);
 
-query TI rowsort
+query II rowsort
 io.print(L);
 ----
 0
@@ -58,37 +58,37 @@ io.print(L);
 statement ok
 B:= batcalc.==(S,"hello");
 
-query TT rowsort
+query II rowsort
 io.print(B);
 ----
 0
-True
 1
-False
+1
+0
 2
-False
+0
 3
-False
+0
 
 statement ok
 C:= batalgebra.like(S,"hello");
 
-query TT rowsort
+query II rowsort
 io.print(C);
 ----
 0
-True
 1
-False
+1
+0
 2
-False
+0
 3
-False
+0
 
 statement ok
 U:= batstr.toUpper(S);
 
-query TT rowsort
+query IT rowsort
 io.print(U);
 ----
 0
@@ -103,7 +103,7 @@ WORLD
 statement ok
 l:= batstr.toLower(U);
 
-query TT rowsort
+query IT rowsort
 io.print(l);
 ----
 0
@@ -118,7 +118,7 @@ world
 statement ok
 trim:= batstr.trim(S);
 
-query TT rowsort
+query IT rowsort
 io.print(trim);
 ----
 0
@@ -133,7 +133,7 @@ world
 statement ok
 ltrim:= batstr.ltrim(S);
 
-query TT rowsort
+query IT rowsort
 io.print(ltrim);
 ----
 0
@@ -148,7 +148,7 @@ world
 statement ok
 rtrim:= batstr.rtrim(S);
 
-query TT rowsort
+query IT rowsort
 io.print(rtrim);
 ----
 0
@@ -168,7 +168,7 @@ io.print("Start searches");
 statement ok
 srch:= batstr.search(S,"hello");
 
-query TI rowsort
+query II rowsort
 io.print(srch);
 ----
 0
@@ -183,7 +183,7 @@ io.print(srch);
 statement ok
 srch:= batstr.search(S,S);
 
-query TI rowsort
+query II rowsort
 io.print(srch);
 ----
 0
@@ -198,7 +198,7 @@ io.print(srch);
 statement ok
 plus:= batcalc.+(S,S,nil:bat,nil:bat);
 
-query TT rowsort
+query IT rowsort
 io.print(plus);
 ----
 0
@@ -209,5 +209,4 @@ bravebrave
 newnew
 3
 worldworld
-
 

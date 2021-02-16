@@ -41,4 +41,31 @@ NULL
 statement ok
 DROP FUNCTION testtruncate
 
+statement ok
+START TRANSACTION
 
+statement ok
+CREATE TABLE foo (i INT)
+
+statement ok
+CREATE FUNCTION cnt() RETURNS INT BEGIN RETURN SELECT COUNT(*) FROM foo; END
+
+statement ok
+CREATE FUNCTION func () RETURNS TABLE(i int)
+BEGIN
+    TRUNCATE foo;
+    INSERT INTO foo VALUES (1);
+    INSERT INTO foo VALUES ((SELECT COUNT(*) FROM foo)+1);
+    INSERT INTO foo SELECT cnt()+1;
+    RETURN foo;
+END
+
+query I rowsort
+SELECT * FROM func()
+----
+1
+2
+3
+
+statement ok
+ROLLBACK

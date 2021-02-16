@@ -60,4 +60,3 @@ t.n/(t.n-1) > 0
 statement ok
 drop table catalog
 
-

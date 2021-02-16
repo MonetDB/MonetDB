@@ -60,4 +60,3 @@ DROP TABLE subtable1
 statement ok
 DROP TABLE subtable2
 
-

@@ -15,4 +15,3 @@ select * from test1838785
 statement ok
 drop table test1838785
 
-

@@ -137,4 +137,3 @@ SELECT distinct p.nr, p.label
 statement ok
 ROLLBACK
 
-

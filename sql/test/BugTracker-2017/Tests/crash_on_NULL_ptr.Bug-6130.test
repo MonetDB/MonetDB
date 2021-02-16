@@ -410,4 +410,3 @@ DROP TABLE tags
 statement ok
 DROP TABLE tagclasses
 
-

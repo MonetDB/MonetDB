@@ -18,4 +18,3 @@ query I rowsort
 select * from test1044534 where id > 0
 ----
 
-

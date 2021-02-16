@@ -1,18 +1,3 @@
 statement ok
 CREATE TABLE A (a DATE)
 
-# Within a <datetime literal>, the <years value> shall contain four digits.
-# do see this a a feature (ie 9999 -> 10000)
-# but as pymonetdb and other db's don't support this we changed the test (not the code)
-
-statement ok
-INSERT INTO A VALUES ( DATE '1999-01-01' + INTERVAL '1-00' YEAR TO MONTH)
-
-query T nosort
--- This currently is a limitation of pymonetdb
-select * from A
-----
-2000-01-01
-
-statement ok
-drop table a

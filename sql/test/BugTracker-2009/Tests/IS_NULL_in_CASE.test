@@ -3,7 +3,6 @@ CREATE TABLE "sometable" (
 "somecol" INTEGER
 )
 
-
 statement ok
 INSERT INTO "sometable" VALUES ( 0)
 
@@ -51,5 +50,4 @@ NULL FOUND
 
 statement ok
 drop table sometable
-
 

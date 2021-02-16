@@ -82,14 +82,68 @@ SELECT department_name, employee_name FROM
 	departments as d JOIN LATERAL (SELECT employee_name FROM   employees e WHERE  e.department_id = d.department_id) as e on TRUE
 order by department_name, employee_name
 ----
-28 values hashing to dd6ed2b4218f7a975710cdd61c4c5918
+ACCOUNTING
+CLARK
+ACCOUNTING
+KING
+ACCOUNTING
+MILLER
+RESEARCH
+ADAMS
+RESEARCH
+FORD
+RESEARCH
+JONES
+RESEARCH
+SCOTT
+RESEARCH
+SMITH
+SALES
+ALLEN
+SALES
+BLAKE
+SALES
+JAMES
+SALES
+MARTIN
+SALES
+TURNER
+SALES
+WARD
 
 query TT rowsort
 SELECT department_name, employee_name FROM
 	departments as d, LATERAL (SELECT employee_name FROM   employees e WHERE  e.department_id = d.department_id) as e
 order by department_name, employee_name
 ----
-28 values hashing to dd6ed2b4218f7a975710cdd61c4c5918
+ACCOUNTING
+CLARK
+ACCOUNTING
+KING
+ACCOUNTING
+MILLER
+RESEARCH
+ADAMS
+RESEARCH
+FORD
+RESEARCH
+JONES
+RESEARCH
+SCOTT
+RESEARCH
+SMITH
+SALES
+ALLEN
+SALES
+BLAKE
+SALES
+JAMES
+SALES
+MARTIN
+SALES
+TURNER
+SALES
+WARD
 
 statement ok
 create function emps(dep_id integer) returns table(employee_name string)
@@ -113,5 +167,4 @@ DROP TABLE departments
 
 statement ok
 DROP FUNCTION to_date(string, string)
-
 

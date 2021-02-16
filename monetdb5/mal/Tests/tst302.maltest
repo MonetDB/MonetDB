@@ -7,4 +7,3 @@ end
 statement error
 user.foo()
 
-

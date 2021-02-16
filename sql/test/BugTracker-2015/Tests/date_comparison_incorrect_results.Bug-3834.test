@@ -13,11 +13,11 @@ CREATE TABLE daterange_wrong (startdate DATE, enddate DATE, name CHAR(8))
 statement ok
 INSERT INTO daterange_wrong (startdate, enddate, name) VALUES ('2012-03-01','2012-03-31','A')
 
-query TTTTTT rowsort
+query TITTTT rowsort
 SELECT * FROM datepoint_wrong A, daterange_wrong B WHERE A.mydate BETWEEN B.startdate AND B.enddate
 ----
 2012-03-09
-False
+0
 NULL
 2012-03-01
 2012-03-31
@@ -35,11 +35,11 @@ SET (insiderange, rangename) = (
 	AND datepoint_wrong.mydate <= B.enddate
 )
 
-query TTT rowsort
+query TIT rowsort
 SELECT * FROM datepoint_wrong
 ----
 2012-03-09
-True
+1
 A
 2012-05-09
 NULL
@@ -63,11 +63,11 @@ CREATE TABLE daterange_correct1 (startdate DATE, enddate DATE, name CHAR(8))
 statement ok
 INSERT INTO daterange_correct1 (startdate, enddate, name) VALUES ('2012-03-01','2012-03-31','A')
 
-query TTTTTT rowsort
+query TITTTT rowsort
 SELECT * FROM datepoint_correct1 A, daterange_correct1 B WHERE A.mydate BETWEEN B.startdate AND B.enddate
 ----
 2012-03-09
-False
+0
 NULL
 2012-03-01
 2012-03-31
@@ -85,11 +85,11 @@ SET (insiderange, rangename) = (
 	AND datepoint_correct1.mydate <= B.enddate
 )
 
-query TTT rowsort
+query TIT rowsort
 SELECT * FROM datepoint_correct1
 ----
 2012-03-09
-True
+1
 A
 2012-04-09
 NULL
@@ -113,11 +113,11 @@ CREATE TABLE daterange_correct2 (startdate DATE, enddate DATE, name CHAR(8))
 statement ok
 INSERT INTO daterange_correct2 (startdate, enddate, name) VALUES ('2012-03-01','2012-03-31','A')
 
-query TTTTTT rowsort
+query TITTTT rowsort
 SELECT * FROM datepoint_correct2 A, daterange_correct2 B WHERE A.mydate BETWEEN B.startdate AND B.enddate
 ----
 2012-03-09
-False
+0
 NULL
 2012-03-01
 2012-03-31
@@ -135,11 +135,11 @@ SET (insiderange, rangename) = (
 	AND datepoint_correct2.mydate <= B.enddate
 )
 
-query TTT rowsort
+query TIT rowsort
 SELECT * FROM datepoint_correct2
 ----
 2012-03-09
-True
+1
 A
 2012-05-09
 NULL
@@ -162,5 +162,4 @@ DROP TABLE daterange_correct1
 
 statement ok
 DROP TABLE daterange_correct2
-
 

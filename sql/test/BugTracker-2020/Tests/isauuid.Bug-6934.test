@@ -1,37 +1,37 @@
-query T rowsort
+query I rowsort
 select sys.isauuid('e31960fb-dc8b-452d-ab30-b342723e7565XYZ') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select sys.isauuid('e31960fbdc8b452dab30b342723e7565XYZ') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select sys.isauuid('00000000-0000-0000-0000-000000000000XYZ') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select sys.isauuid('FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFFXYZ') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select sys.isauuid('00000000000000000000000000000000XYZ') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select sys.isauuid('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFXYZ') as fals
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 select sys.isauuid('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF %$#@!') as fals
 ----
-False
+0
 
 statement error
 select cast('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF %$#@!' as uuid) as uuid_val
@@ -41,5 +41,4 @@ select convert('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF %$#@!', uuid) as uuid_val
 
 statement error
 select uuid 'FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF %$#@!' as uuid_val
-
 

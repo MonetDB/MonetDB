@@ -99,6 +99,30 @@ ST_GeometryCollection
 query TT rowsort
 SELECT geometrytype(geom) AS "DESC1", st_geometrytype(geom) AS "DESC2" FROM geometries WHERE id<14
 ----
-26 values hashing to e38fcef5e71db30c957000ca2ada2a53
-
+GEOMETRYCOLLECTION
+ST_GeometryCollection
+GEOMETRYCOLLECTION
+ST_GeometryCollection
+LINESTRING
+ST_LineString
+LINESTRING
+ST_LineString
+LINESTRING
+ST_LineString
+MULTILINESTRING
+ST_MultiLinestring
+MULTILINESTRING
+ST_MultiLinestring
+MULTILINESTRING
+ST_MultiLinestring
+MULTIPOINT
+ST_MultiPoint
+MULTIPOLYGON
+ST_MultiPolygon
+MULTIPOLYGON
+ST_MultiPolygon
+POINT
+ST_Point
+POLYGON
+ST_Polygon
 

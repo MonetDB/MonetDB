@@ -46,10 +46,33 @@ statement ok
 statement ok
 	v18:= bat.append(b,v16)
 
-query TT rowsort
+query IT rowsort
 	v19:= io.print(b)
 ----
-24 values hashing to 6b10abec4fdc844d0eec7fe955576044
+0
+the
+1
+quick
+10
+(empty)
+11
+NULL
+2
+brown
+3
+fox
+4
+jumps
+5
+over
+6
+lazy
+7
+dog
+8
+NULL
+9
+.
 
 statement ok
 	v20:= algebra.find(b,"the")
@@ -115,7 +138,7 @@ query T rowsort
 statement ok
 	v38:= algebra.slice(b,2@0,4@0)
 
-query TT rowsort
+query IT rowsort
 	v39:= io.print(v38)
 ----
 2
@@ -131,10 +154,25 @@ statement ok
 statement ok
 	v41:= algebra.slice(b,7@0,v40)
 
-query TT rowsort
+query IT rowsort
 	v42:= io.print(v41)
 ----
-16 values hashing to 97d8f1974564533969263b52786ba3ae
+10
+(empty)
+11
+NULL
+12
+fox
+13
+the
+14
+.
+7
+dog
+8
+NULL
+9
+.
 
 statement ok
 	v43:= calc.oid(nil)
@@ -145,29 +183,58 @@ statement ok
 statement ok
 	v45:= algebra.slice(b,v43,v44)
 
-query TT rowsort
+query IT rowsort
 	v46:= io.print(v45)
 ----
-30 values hashing to dac117b508a1ac232c28b85e692bd847
+0
+the
+1
+quick
+10
+(empty)
+11
+NULL
+12
+fox
+13
+the
+14
+.
+2
+brown
+3
+fox
+4
+jumps
+5
+over
+6
+lazy
+7
+dog
+8
+NULL
+9
+.
 
 statement ok
 	v75:= algebra.likeselect(b, nil:bat[:oid], "ox", "", false, false)
 
-query TT rowsort
+query II rowsort
 	v76:= io.print(v75)
 ----
 
 statement ok
 	v78:= algebra.likeselect(b, nil:bat[:oid], "fo", "", false, false)
 
-query TT rowsort
+query II rowsort
 	v79:= io.print(v78)
 ----
 
 statement ok
 	v81:= algebra.likeselect(b, nil:bat[:oid], "fox", "", false, false)
 
-query TT rowsort
+query II rowsort
 	v82:= io.print(v81)
 ----
 0
@@ -178,8 +245,7 @@ query TT rowsort
 statement ok
 	v84:= algebra.likeselect(b, nil:bat[:oid], " fox", "", false, false)
 
-query TT rowsort
+query II rowsort
 	v85:= io.print(v84)
 ----
-
 

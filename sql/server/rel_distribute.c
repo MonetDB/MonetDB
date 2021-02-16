@@ -81,7 +81,7 @@ static sql_rel *
 rewrite_replica( mvc *sql, sql_rel *rel, sql_table *t, sql_part *pd, int remote_prop)
 {
 	node *n, *m;
-	sql_table *p = find_sql_table_id(t->s, pd->base.id);
+	sql_table *p = find_sql_table_id(sql->session->tr, t->s, pd->member);
 	sql_rel *r = rel_basetable(sql, p, t->base.name);
 
 	for (n = rel->exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
@@ -195,9 +195,9 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 
 			if (uri) {
 				/* replace by the replica which matches the uri */
-				for (n = t->members->h; n; n = n->next) {
+				for (n = t->members.set->h; n; n = n->next) {
 					sql_part *p = n->data;
-					sql_table *pt = find_sql_table_id(t->s, p->base.id);
+					sql_table *pt = find_sql_table_id(sql->session->tr, t->s, p->member);
 
 					if (isRemote(pt) && strcmp(uri, pt->query) == 0) {
 						rel = rewrite_replica(sql, rel, t, p, 0);
@@ -205,12 +205,12 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 					}
 				}
 			} else { /* no match, find one without remote or use first */
-				if (t->members) {
+				if (t->members.set) {
 					int fnd = 0;
 					sql_part *p;
-					for (n = t->members->h; n; n = n->next) {
+					for (n = t->members.set->h; n; n = n->next) {
 						sql_part *p = n->data;
-						sql_table *pt = find_sql_table_id(t->s, p->base.id);
+						sql_table *pt = find_sql_table_id(sql->session->tr, t->s, p->member);
 
 						if (!isRemote(pt)) {
 							fnd = 1;
@@ -219,7 +219,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 						}
 					}
 					if (!fnd) {
-						p = t->members->h->data;
+						p = t->members.set->h->data;
 						rel = rewrite_replica(sql, rel, t, p, 1);
 					}
 				} else {

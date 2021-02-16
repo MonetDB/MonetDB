@@ -85,3 +85,4 @@ WHERE t1.id=source.a1 and source.rownum > 0 AND source.rownum <= 10
 
 statement ok
 rollback
+

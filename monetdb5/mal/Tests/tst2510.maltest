@@ -31,4 +31,3 @@ end tst.tryme
 statement ok
 tst.tryme()
 
-

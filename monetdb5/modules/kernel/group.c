@@ -63,61 +63,61 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, co
 	return r == GDK_SUCCEED ? MAL_SUCCEED : createException(MAL, gid ? "group.subgroup" : "group.group", GDK_EXCEPTION);
 }
 
-str
+static str
 GRPsubgroup9(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, eid, hid);
 }
 
-str
+static str
 GRPsubgroup8(bat *ngid, bat *next, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, eid, hid);
 }
 
-str
+static str
 GRPsubgroup7(bat *ngid, bat *next, const bat *bid, const bat *sid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, NULL, NULL);
 }
 
-str
+static str
 GRPsubgroup6(bat *ngid, bat *next, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, NULL, NULL);
 }
 
-str
+static str
 GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, eid, hid);
 }
 
-str
+static str
 GRPsubgroup3(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, sid, gid, NULL, NULL);
 }
 
-str
+static str
 GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, NULL, NULL);
 }
 
-str
+static str
 GRPgroup4(bat *ngid, bat *next, const bat *bid, const bat *sid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, sid, NULL, NULL, NULL);
 }
 
-str
+static str
 GRPgroup3(bat *ngid, bat *next, const bat *bid)
 {
 	return GRPsubgroup5(ngid, next, NULL, bid, NULL, NULL, NULL, NULL);
 }
 
-str
+static str
 GRPgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid)
 {
 	return GRPsubgroup5(ngid, next, nhis, bid, sid, NULL, NULL, NULL);
@@ -129,37 +129,37 @@ GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid)
 	return GRPsubgroup5(ngid, next, nhis, bid, NULL, NULL, NULL, NULL);
 }
 
-str
+static str
 GRPgroup11(bat *ngid, const bat *bid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, NULL, NULL, NULL);
 }
 
-str
+static str
 GRPgroup21(bat *ngid, const bat *bid, const bat *sid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, NULL, NULL, NULL);
 }
 
-str
+static str
 GRPsubgroup51(bat *ngid, const bat *bid, const bat *sid, const bat *gid, const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, gid, eid, hid);
 }
 
-str
+static str
 GRPsubgroup41(bat *ngid, const bat *bid, const bat *gid, const bat *eid, const bat *hid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, gid, eid, hid);
 }
 
-str
+static str
 GRPsubgroup31(bat *ngid, const bat *bid, const bat *sid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, gid, NULL, NULL);
 }
 
-str
+static str
 GRPsubgroup21(bat *ngid, const bat *bid, const bat *gid)
 {
 	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, gid, NULL, NULL);

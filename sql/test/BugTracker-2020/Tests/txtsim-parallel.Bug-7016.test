@@ -20,4 +20,3 @@ select count(1) from t_200000 where similarity(s1, s2)> 0.5
 statement ok
 ROLLBACK
 
-

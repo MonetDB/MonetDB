@@ -12,10 +12,58 @@ create table hge_types (
 	"numeric37_9" numeric(37, 9)
 )
 
-query ITTIITT rowsort
+query ITTIIIT rowsort
 select number, name, type, type_digits, type_scale, "null", "default" from sys._columns where table_id in (select id from sys._tables where name = 'hge_types') order by number
 ----
-49 values hashing to cca3d36cc8dae47c6a95e1e900a58e89
+0
+hugeint
+hugeint
+128
+0
+1
+NULL
+1
+decimal
+decimal
+18
+3
+1
+NULL
+2
+decimal38
+decimal
+38
+0
+1
+NULL
+3
+decimal37_22
+decimal
+37
+22
+1
+NULL
+4
+numeric
+decimal
+18
+3
+1
+NULL
+5
+numeric38
+decimal
+38
+0
+1
+NULL
+6
+numeric37_9
+decimal
+37
+9
+1
+NULL
 
 statement ok
 insert into hge_types ("hugeint") values (12345678900987654321)
@@ -76,7 +124,20 @@ create ordered index "hge_oidx_numeric37_9" on hge_types ("numeric37_9")
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'hge_types') order by name
 ----
-14 values hashing to b2eb39e9d7e29ef82096d48a142d7e95
+5
+hge_oidx_decimal
+5
+hge_oidx_decimal37_22
+5
+hge_oidx_decimal38
+5
+hge_oidx_hugeint
+5
+hge_oidx_numeric
+5
+hge_oidx_numeric37_9
+5
+hge_oidx_numeric38
 
 query IRRRRRR rowsort
 select * from hge_types
@@ -89,7 +150,69 @@ select * from hge_types
     or "numeric37_9"  between 4 and 1234567890123456789012345.123456790
  order by 1,2,3,4,5,6,7
 ----
-63 values hashing to a08496f66314494633becbb404841397
+12345678900987654321
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+123456789012345
+123456789012345.000
+123456789012345.000
+123456789012345.000
+123456789012345.000
+123456789012345.000
+123456789012345.000
+123456789012345
+123456789012345.000
+123456789012345.000
+123456789012345.000
+123456789012345.000
+123456789012345.000
+123456789012345.000
+NULL
+123456789012345.672
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+12345678900987654144.000
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+123456789012345.125
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+123456789012345.672
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+12345678900987654144.000
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+1234567890123456824475648.000
 
 query IRRRRRR rowsort
 select * from hge_types
@@ -123,7 +246,20 @@ select * from hge_types
 query IT rowsort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'hge_types') order by name
 ----
-14 values hashing to b2eb39e9d7e29ef82096d48a142d7e95
+5
+hge_oidx_decimal
+5
+hge_oidx_decimal37_22
+5
+hge_oidx_decimal38
+5
+hge_oidx_hugeint
+5
+hge_oidx_numeric
+5
+hge_oidx_numeric37_9
+5
+hge_oidx_numeric38
 
 statement ok
 drop index "hge_oidx_hugeint"
@@ -158,5 +294,4 @@ select type, name from sys.idxs where table_id in (select id from sys._tables wh
 
 statement ok
 rollback
-
 

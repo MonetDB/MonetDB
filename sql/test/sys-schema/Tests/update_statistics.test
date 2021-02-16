@@ -4,4 +4,3 @@ ANALYZE sys
 statement ok
 CALL storagemodelinit()
 
-

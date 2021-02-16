@@ -137,4 +137,3 @@ set "current_schema" = null
 statement error
 set "sys"."current_timezone" = null
 
-

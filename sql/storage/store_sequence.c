@@ -20,8 +20,9 @@ typedef struct store_sequence {
 static list *sql_seqs = NULL;
 
 static void
-sequence_destroy( store_sequence *s )
+sequence_destroy( void *dummy, store_sequence *s )
 {
+	(void)dummy;
 	_DELETE(s);
 }
 
@@ -43,14 +44,14 @@ sequences_exit(void)
 
 /* lock is held */
 static void
-sql_update_sequence_cache(sql_sequence *seq, lng cached)
+sql_update_sequence_cache(sqlstore *store, sql_sequence *seq, lng cached)
 {
-	logger_funcs.log_sequence(seq->base.id, cached);
+	store->logger_api.log_sequence(store, seq->base.id, cached);
 }
 
 /* lock is held */
 static store_sequence *
-sql_create_sequence(sql_sequence *seq )
+sql_create_sequence(sqlstore *store, sql_sequence *seq )
 {
 	lng id = 0;
 	store_sequence *s = NULL;
@@ -64,29 +65,29 @@ sql_create_sequence(sql_sequence *seq )
 		.cached = seq->start,
 	};
 
-	if (!isNew(seq) && logger_funcs.get_sequence(seq->base.id, &id ))
+	if (!isNew(seq) && store->logger_api.get_sequence(store, seq->base.id, &id ))
 		s->cached = id;
 	s -> cur = s->cached;
 	return s;
 }
 
 int
-seq_restart(sql_sequence *seq, lng start)
+seq_restart(sql_store store, sql_sequence *seq, lng start)
 {
 	node *n = NULL;
 	store_sequence *s;
 
 	assert(!is_lng_nil(start));
-	store_lock();
+	store_lock(store);
 	for ( n = sql_seqs->h; n; n = n ->next ) {
 		s = n->data;
 		if (s->seqid == seq->base.id)
 			break;
 	}
 	if (!n) {
-		s = sql_create_sequence(seq);
+		s = sql_create_sequence(store, seq);
 		if (!s) {
-			store_unlock();
+			store_unlock(store);
 			return 0;
 		}
 		list_append(sql_seqs, s);
@@ -101,16 +102,16 @@ seq_restart(sql_sequence *seq, lng start)
 	    (seq->minvalue && s->cur < seq->minvalue))
 	{
 		/* we're out of numbers */
-		store_unlock();
+		store_unlock(store);
 		return 0;
 	}
-	sql_update_sequence_cache(seq, s->cached);
-	store_unlock();
+	sql_update_sequence_cache(store, seq, s->cached);
+	store_unlock(store);
 	return 1;
 }
 
 int
-seq_next_value(sql_sequence *seq, lng *val)
+seq_next_value(sql_store store, sql_sequence *seq, lng *val)
 {
 	lng nr = 0;
 	node *n = NULL;
@@ -118,16 +119,16 @@ seq_next_value(sql_sequence *seq, lng *val)
 	int save = 0;
 
 	*val = 0;
-	store_lock();
+	store_lock(store);
 	for ( n = sql_seqs->h; n; n = n ->next ) {
 		s = n->data;
 		if (s->seqid == seq->base.id)
 			break;
 	}
 	if (!n) {
-		s = sql_create_sequence(seq);
+		s = sql_create_sequence(store, seq);
 		if (!s) {
-			store_unlock();
+			store_unlock(store);
 			return 0;
 		}
 		list_append(sql_seqs, s);
@@ -145,7 +146,7 @@ seq_next_value(sql_sequence *seq, lng *val)
 			s->cur = seq->minvalue;
 			save = 1;
 		} else { /* we're out of numbers */
-			store_unlock();
+			store_unlock(store);
 			return 0;
 		}
 	}
@@ -154,17 +155,17 @@ seq_next_value(sql_sequence *seq, lng *val)
 	*val = nr;
 	if (save || nr == s->cached) {
 		s->cached = nr + seq->cacheinc*seq->increment;
-		sql_update_sequence_cache(seq, s->cached);
-		store_unlock();
+		sql_update_sequence_cache(store, seq, s->cached);
+		store_unlock(store);
 		return 1;
 	}
 	assert(nr<s->cached);
-	store_unlock();
+	store_unlock(store);
 	return 1;
 }
 
 seqbulk *
-seqbulk_create(sql_sequence *seq, BUN cnt)
+seqbulk_create(sql_store store, sql_sequence *seq, BUN cnt)
 {
 	seqbulk *sb = MNEW(seqbulk);
 	store_sequence *s;
@@ -173,7 +174,7 @@ seqbulk_create(sql_sequence *seq, BUN cnt)
 	if (!sb)
 		return NULL;
 
-	store_lock();
+	store_lock(store);
 	*sb = (seqbulk) {
 		.seq = seq,
 		.cnt = cnt,
@@ -185,10 +186,10 @@ seqbulk_create(sql_sequence *seq, BUN cnt)
 			break;
 	}
 	if (!n) {
-		s = sql_create_sequence(seq);
+		s = sql_create_sequence(store, seq);
 		if (!s) {
 			_DELETE(sb);
-			store_unlock();
+			store_unlock(store);
 			return NULL;
 		}
 		list_append(sql_seqs, s);
@@ -200,16 +201,16 @@ seqbulk_create(sql_sequence *seq, BUN cnt)
 }
 
 void
-seqbulk_destroy(seqbulk *sb)
+seqbulk_destroy(sql_store store, seqbulk *sb)
 {
 	if (sb->save) {
 		sql_sequence *seq = sb->seq;
 		store_sequence *s = sb->internal_seq;
 
-		sql_update_sequence_cache(seq, s->cached);
+		sql_update_sequence_cache(store, seq, s->cached);
 	}
 	_DELETE(sb);
-	store_unlock();
+	store_unlock(store);
 }
 
 int
@@ -247,22 +248,22 @@ seqbulk_next_value(seqbulk *sb, lng *val)
 }
 
 int
-seq_get_value(sql_sequence *seq, lng *val)
+seq_get_value(sql_store store, sql_sequence *seq, lng *val)
 {
 	node *n = NULL;
 	store_sequence *s;
 
 	*val = 0;
-	store_lock();
+	store_lock(store);
 	for ( n = sql_seqs->h; n; n = n ->next ) {
 		s = n->data;
 		if (s->seqid == seq->base.id)
 			break;
 	}
 	if (!n) {
-		s = sql_create_sequence(seq);
+		s = sql_create_sequence(store, seq);
 		if (!s) {
-			store_unlock();
+			store_unlock(store);
 			return 0;
 		}
 		list_append(sql_seqs, s);
@@ -280,11 +281,11 @@ seq_get_value(sql_sequence *seq, lng *val)
 			/* cycle to the min value again */
 			*val = seq->minvalue;
 		} else { /* we're out of numbers */
-			store_unlock();
+			store_unlock(store);
 			return 0;
 		}
 	}
-	store_unlock();
+	store_unlock(store);
 	return 1;
 }
 
@@ -313,7 +314,7 @@ seqbulk_get_value(seqbulk *sb, lng *val)
 }
 
 int
-seqbulk_restart(seqbulk *sb, lng start)
+seqbulk_restart(sql_store store, seqbulk *sb, lng start)
 {
 	store_sequence *s = sb->internal_seq;
 	sql_sequence *seq = sb->seq;
@@ -328,6 +329,6 @@ seqbulk_restart(seqbulk *sb, lng start)
 	{
 		return 0;
 	}
-	sql_update_sequence_cache(seq, s->cached);
+	sql_update_sequence_cache(store, seq, s->cached);
 	return 1;
 }

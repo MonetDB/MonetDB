@@ -38,4 +38,3 @@ SELECT * FROM INET_TBL
 statement ok
 DROP TABLE INET_TBL
 
-

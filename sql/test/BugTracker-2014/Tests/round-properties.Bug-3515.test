@@ -26,4 +26,3 @@ SELECT a, round(a, 0) FROM ceil_floor_round
 statement ok
 ROLLBACK
 
-

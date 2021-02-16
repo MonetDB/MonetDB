@@ -48,4 +48,3 @@ SELECT a, b FROM (select 1 AS a, 'x' AS b) sub WHERE NOT b IN ('y')
 1
 x
 
-

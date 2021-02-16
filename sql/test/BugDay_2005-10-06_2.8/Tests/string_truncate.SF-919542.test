@@ -14,4 +14,3 @@ select * from z
 statement ok
 drop table z
 
-

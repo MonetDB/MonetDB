@@ -76,6 +76,3 @@ statement ok
 statement ok
     optimizer.garbageCollector("user","s1_0")
 
-#mdb.list("user","s1_0")
-
-

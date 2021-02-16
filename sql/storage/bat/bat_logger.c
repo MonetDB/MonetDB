@@ -17,21 +17,20 @@
 #define CATALOG_MAR2018 52201	/* first in Jun2016 */
 #define CATALOG_AUG2018 52202	/* first in Aug2018 */
 #define CATALOG_NOV2019 52203	/* first in Apr2019 */
-#define CATALOG_JUN2020 52204
-
-logger *bat_logger = NULL;
+#define CATALOG_JUN2020 52204	/* first in Jun2020 */
+#define CATALOG_OCT2020 52205	/* first in Oct2020 */
 
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
  * newversion */
 static gdk_return
-bl_preversion(int oldversion, int newversion)
+bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
 
 #ifdef CATALOG_MAR2018
 	if (oldversion == CATALOG_MAR2018) {
 		/* upgrade to Aug2018 releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -39,7 +38,7 @@ bl_preversion(int oldversion, int newversion)
 #ifdef CATALOG_AUG2018
 	if (oldversion == CATALOG_AUG2018) {
 		/* upgrade to default releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -47,7 +46,7 @@ bl_preversion(int oldversion, int newversion)
 #ifdef CATALOG_NOV2019
 	if (oldversion == CATALOG_NOV2019) {
 		/* upgrade to default releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -55,7 +54,15 @@ bl_preversion(int oldversion, int newversion)
 #ifdef CATALOG_JUN2020
 	if (oldversion == CATALOG_JUN2020) {
 		/* upgrade to default releases */
-		catalog_version = oldversion;
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_OCT2020
+	if (oldversion == CATALOG_OCT2020) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
 		return GDK_SUCCEED;
 	}
 #endif
@@ -67,9 +74,9 @@ bl_preversion(int oldversion, int newversion)
 
 #define D(schema, table)	"D_" schema "_" table
 
-#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020
+#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020 || defined CATALOG_OCT2020
 static int
-find_table_id(logger *lg, const char *val, int *sid)
+find_table_id(logger *lg, const char *schema, const char *val, int *sid)
 {
 	BAT *s = NULL;
 	BAT *b, *t;
@@ -80,7 +87,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	b = temp_descriptor(logger_find_bat(lg, N("sys", "schemas", "name"), 0, 0));
 	if (b == NULL)
 		return 0;
-	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
+	s = BATselect(b, NULL, schema, NULL, 1, 1, 0);
 	bat_destroy(b);
 	if (s == NULL)
 		return 0;
@@ -199,12 +206,14 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 #endif
 
 static gdk_return
-bl_postversion(void *lg)
+bl_postversion(void *Store, void *lg)
 {
+	sqlstore *store = Store;
+	(void)store;
 	(void)lg;
 
 #ifdef CATALOG_MAR2018
-	if (catalog_version <= CATALOG_MAR2018) {
+	if (store->catalog_version <= CATALOG_MAR2018) {
 		/* In the past, the sys._tables.readonly and
 		 * tmp._tables.readonly columns were renamed to
 		 * (sys|tmp)._tables.access and the type was changed
@@ -412,7 +421,7 @@ bl_postversion(void *lg)
 #endif
 
 #ifdef CATALOG_AUG2018
-	if (catalog_version <= CATALOG_AUG2018) {
+	if (store->catalog_version <= CATALOG_AUG2018) {
 		int id;
 		lng lid;
 		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
@@ -462,7 +471,7 @@ bl_postversion(void *lg)
 		}
 		bat_destroy(b);
 		int sid;
-		int tid = find_table_id(lg, "functions", &sid);
+		int tid = find_table_id(lg, "sys", "functions", &sid);
 		if (tabins(lg, true, -1, NULL, "sys", "_columns",
 			   "id", &id,
 			   "name", "system",
@@ -772,7 +781,7 @@ bl_postversion(void *lg)
 #endif
 
 #ifdef CATALOG_NOV2019
-	if (catalog_version <= CATALOG_NOV2019) {
+	if (store->catalog_version <= CATALOG_NOV2019) {
 		BAT *te, *tne;
 		const int *ocl;	/* old eclass */
 		int *ncl;	/* new eclass */
@@ -824,7 +833,7 @@ bl_postversion(void *lg)
 #endif
 
 #ifdef CATALOG_JUN2020
-	if (catalog_version <= CATALOG_JUN2020) {
+	if (store->catalog_version <= CATALOG_JUN2020) {
 		int id;
 		lng lid;
 		BAT *fid = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
@@ -858,7 +867,7 @@ bl_postversion(void *lg)
 		}
 		bat_destroy(sem);
 		int sid;
-		int tid = find_table_id(lg, "functions", &sid);
+		int tid = find_table_id(lg, "sys", "functions", &sid);
 		if (tabins(lg, true, -1, NULL, "sys", "_columns",
 			   "id", &id,
 			   "name", "semantics",
@@ -1055,26 +1064,141 @@ bl_postversion(void *lg)
 	}
 #endif
 
+#ifdef CATALOG_OCT2020
+	if (store->catalog_version <= CATALOG_OCT2020) {
+		lng lid;
+		if (logger_sequence(lg, OBJ_SID, &lid) == 0)
+			return GDK_FAIL;
+		int id = (int) lid;
+		char *schemas[2] = {"sys", "tmp"};
+		for (int i = 0 ; i < 2; i++) { /* create for both tmp and sys schemas */
+			int sid, tid = find_table_id(lg, schemas[i], "objects", &sid);
+			if (tabins(lg, true, -1, NULL, "sys", "_columns",
+				"id", &id,
+				"name", "sub",
+				"type", "int",
+				"type_digits", &((const int) {32}),
+				"type_scale", &((const int) {0}),
+				"table_id", &tid,
+				"default", str_nil,
+				"null", &((const bit) {TRUE}),
+				"number", &((const int) {3}),
+				"storage", str_nil,
+				NULL) != GDK_SUCCEED)
+				return GDK_FAIL;
+			id++;
+		}
+
+		/* add sub column to "objects" table. This is required for merge tables */
+		BAT *objs_id = temp_descriptor(logger_find_bat(lg, N("sys", "objects", "id"), 0, 0));
+		if (!objs_id)
+			return GDK_FAIL;
+
+		BAT *objs_sub = BATconstant(objs_id->hseqbase, TYPE_int, ATOMnilptr(TYPE_int), BATcount(objs_id), PERSISTENT);
+		if (!objs_sub) {
+			bat_destroy(objs_id);
+			return GDK_FAIL;
+		}
+		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED || logger_add_bat(lg, objs_sub, N("sys", "objects", "sub"), 0, 0) != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+
+		BAT *objs_nr = temp_descriptor(logger_find_bat(lg, N("sys", "objects", "nr"), 0, 0));
+		if (!objs_nr) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+
+		/* hopefully no one will create a key or index with more than 2000 columns */
+		BAT *tids = BATthetaselect(objs_nr, NULL, &((const int) {2000}), ">");
+		if (!tids) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+
+		BAT *prj = BATproject2(tids, objs_nr, NULL);
+		if (!prj) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+		gdk_return res = BATreplace(objs_sub, tids, prj, TRUE); /* 'sub' takes the id of the child */
+		bat_destroy(objs_sub);
+		bat_destroy(prj);
+		if (res != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(tids);
+			return res;
+		}
+
+		if (!(prj = BATproject2(tids, objs_id, NULL))) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+		res = BATreplace(objs_nr, tids, prj, TRUE); /* 'nr' takes the id of the parent */
+		bat_destroy(objs_nr);
+		bat_destroy(prj);
+		if (res != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(tids);
+			return res;
+		}
+		if (logger_upgrade_bat(lg, N("sys", "objects", "nr"), LOG_COL, 0) != GDK_SUCCEED || logger_upgrade_bat(lg, N("sys", "objects", "sub"), LOG_COL, 0) != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+
+		BAT *new_ids = BATconstant(objs_id->hseqbase, TYPE_int, ATOMnilptr(TYPE_int), BATcount(tids), PERSISTENT);
+		if (!new_ids) {
+			bat_destroy(objs_id);
+			bat_destroy(tids);
+			return GDK_FAIL;
+		}
+		res = BATreplace(objs_id, tids, new_ids, TRUE); /* 'id' will get initialized at load_part */
+		bat_destroy(objs_id);
+		bat_destroy(tids);
+		bat_destroy(new_ids);
+		if (res != GDK_SUCCEED)
+			return res;
+
+		if (logger_upgrade_bat(lg, N("sys", "objects", "id"), LOG_COL, 0) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+#endif
+
 	return GDK_SUCCEED;
 }
 
 static int
-bl_create(int debug, const char *logdir, int cat_version)
+bl_create(sqlstore *store, int debug, const char *logdir, int cat_version)
 {
-	if (bat_logger)
+	if (store->logger)
 		return LOG_ERR;
-	bat_logger = logger_create(debug, "sql", logdir, cat_version, bl_preversion, bl_postversion);
-	if (bat_logger)
+	store->logger = logger_create(debug, "sql", logdir, cat_version, (preversionfix_fptr)&bl_preversion, (postversionfix_fptr)&bl_postversion, store);
+	if (store->logger)
 		return LOG_OK;
 	return LOG_ERR;
 }
 
 static void
-bl_destroy(void)
+bl_destroy(sqlstore *store)
 {
-	logger *l = bat_logger;
+	logger *l = store->logger;
 
-	bat_logger = NULL;
+	store->logger = NULL;
 	if (l) {
 		close_stream(l->log);
 		GDKfree(l->fn);
@@ -1086,43 +1210,44 @@ bl_destroy(void)
 }
 
 static int
-bl_flush(lng save_id)
+bl_flush(sqlstore *store, lng save_id)
 {
-	if (bat_logger)
-		return logger_flush(bat_logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (store->logger)
+		return logger_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
 static int
-bl_cleanup(void)
+bl_cleanup(sqlstore *store)
 {
-	if (bat_logger)
-		return logger_cleanup(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (store->logger)
+		return logger_cleanup(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 	return LOG_OK;
 }
 
 static void
-bl_with_ids(void)
+bl_with_ids(sqlstore *store)
 {
-	if (bat_logger)
-		logger_with_ids(bat_logger);
+	if (store->logger)
+		logger_with_ids(store->logger);
 }
 
 static int
-bl_changes(void)
+bl_changes(sqlstore *store)
 {
-	return (int) MIN(logger_changes(bat_logger), GDK_int_max);
+	return (int) MIN(logger_changes(store->logger), GDK_int_max);
 }
 
 static int
-bl_get_sequence(int seq, lng *id)
+bl_get_sequence(sqlstore *store, int seq, lng *id)
 {
-	return logger_sequence(bat_logger, seq, id);
+	return logger_sequence(store->logger, seq, id);
 }
 
 static int
-bl_log_isnew(void)
+bl_log_isnew(sqlstore *store)
 {
+	logger *bat_logger = store->logger;
 	if (BATcount(bat_logger->catalog_bid) > 10) {
 		return 0;
 	}
@@ -1130,37 +1255,38 @@ bl_log_isnew(void)
 }
 
 static bool
-bl_log_needs_update(void)
+bl_log_needs_update(sqlstore *store)
 {
+	logger *bat_logger = store->logger;
 	return !bat_logger->with_ids;
 }
 
 static int
-bl_tstart(void)
+bl_tstart(sqlstore *store)
 {
-	return log_tstart(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
-bl_tend(void)
+bl_tend(sqlstore *store)
 {
-	return log_tend(bat_logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tend(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static lng
-bl_tid(void)
+bl_tid(sqlstore *store)
 {
-	return log_save_id(bat_logger);
+	return log_save_id(store->logger);
 }
 
 static int
-bl_sequence(int seq, lng id)
+bl_sequence(sqlstore *store, int seq, lng id)
 {
-	return log_sequence(bat_logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_sequence(store->logger, seq, id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static void *
-bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
+bl_find_table_value(sqlstore *store, const char *tabnam, const char *tab, const void *val, ...)
 {
 	BAT *s = NULL;
 	BAT *b;
@@ -1168,7 +1294,7 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 
 	va_start(va, val);
 	do {
-		b = temp_descriptor(logger_find_bat(bat_logger, tab, 0, 0));
+		b = temp_descriptor(logger_find_bat(store->logger, tab, 0, 0));
 		if (b == NULL) {
 			bat_destroy(s);
 			va_end(va);
@@ -1194,7 +1320,7 @@ bl_find_table_value(const char *tabnam, const char *tab, const void *val, ...)
 	oid o = BUNtoid(s, 0);
 	bat_destroy(s);
 
-	b = temp_descriptor(logger_find_bat(bat_logger, tabnam, 0, 0));
+	b = temp_descriptor(logger_find_bat(store->logger, tabnam, 0, 0));
 	if (b == NULL)
 		return NULL;
 	BATiter bi = bat_iterator(b);
@@ -1286,7 +1412,7 @@ end:
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
 static gdk_return
-snapshot_wal(stream *plan, const char *db_dir)
+snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
 	char meta_file[FILENAME_MAX] = {0};     // ../sql_logs/sql/log
 	char log_file[FILENAME_MAX] = {0};      // ../sql_logs/sql/log.N
@@ -1567,8 +1693,9 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 	return GDK_FAIL;
 }
 static gdk_return
-bl_snapshot(stream *plan)
+bl_snapshot(sqlstore *store, stream *plan)
 {
+	logger *bat_logger = store->logger;
 	gdk_return ret;
 	char *db_dir = NULL;
 	size_t db_dir_len;
@@ -1592,7 +1719,7 @@ bl_snapshot(stream *plan)
 	if (ret != GDK_SUCCEED)
 		goto end;
 
-	ret = snapshot_wal(plan, db_dir);
+	ret = snapshot_wal(bat_logger, plan, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 

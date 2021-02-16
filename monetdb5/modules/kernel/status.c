@@ -23,7 +23,6 @@
 #include "gdk.h"
 #include <time.h>
 #include "mal_exception.h"
-#include "status.h"
 #ifdef HAVE_UNISTD_H
 # include <unistd.h>
 #endif
@@ -45,21 +44,21 @@ pseudo(bat *ret, bat *ret2, BAT *bn, BAT *b) {
 	return 0;
 }
 
-str
+static str
 SYSgetmem_cursize(lng *num)
 {
 	*num = GDKmem_cursize();
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SYSgetmem_maxsize(lng *num)
 {
 	*num = GDK_mem_maxsize;
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SYSsetmem_maxsize(void *ret, const lng *num)
 {
 	size_t sze = 0;
@@ -77,21 +76,21 @@ SYSsetmem_maxsize(void *ret, const lng *num)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SYSgetvm_cursize(lng *num)
 {
 	*num = GDKvm_cursize();
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SYSgetvm_maxsize(lng *num)
 {
 	*num = GDK_vm_maxsize;
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SYSsetvm_maxsize(void *ret, const lng *num)
 {
 	(void) ret;
@@ -118,7 +117,7 @@ static time_t clk = 0;
 static struct tms state;
 #endif
 
-str
+static str
 SYScpuStatistics(bat *ret, bat *ret2)
 {
 	lng i;
@@ -198,7 +197,7 @@ SYScpuStatistics(bat *ret, bat *ret2)
 }
 
 static size_t memincr;
-str
+static str
 SYSmemStatistics(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;
@@ -250,7 +249,7 @@ SYSmemStatistics(bat *ret, bat *ret2)
 		X3 += sz; tot += sz;								\
 	}
 
-str
+static str
 SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, n = 0, sz;
@@ -365,7 +364,7 @@ SYSmem_usage(bat *ret, bat *ret2, const lng *minsize)
 	throw(MAL, "status.memUsage", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-str
+static str
 SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
 {
 	lng hbuns = 0, tbuns = 0, hhsh = 0, thsh = 0, hind = 0, tind = 0, head = 0, tail = 0, tot = 0, sz;
@@ -483,7 +482,7 @@ SYSvm_usage(bat *ret, bat *ret2, const lng *minsize)
  *
  * The BAT grows. It should be compacted.
  */
-str
+static str
 SYSioStatistics(bat *ret, bat *ret2)
 {
 #ifdef HAVE_SYS_RESOURCE_H
@@ -568,7 +567,7 @@ SYSioStatistics(bat *ret, bat *ret2)
 	throw(MAL, "status.ioStatistics", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 }
 
-str
+static str
 SYSgdkEnv(bat *ret, bat *ret2)
 {
 	int pbat = 0;
@@ -614,7 +613,7 @@ SYSgdkEnv(bat *ret, bat *ret2)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 SYSgdkThread(bat *ret, bat *ret2)
 {
 	BAT *b, *bn;

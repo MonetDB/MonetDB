@@ -8,6 +8,8 @@
 
 #include "monetdb_config.h"
 #include "dotmonetdb.h"
+#define LIBMUTILS 1
+#include "mutils.h"
 #include <string.h>
 
 void
@@ -30,7 +32,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 	if ((cfile = getenv("DOTMONETDBFILE")) == NULL) {
 		/* no environment variable: use a default */
 		cfile = ".monetdb";
-		if ((config = fopen(cfile, "r")) == NULL) {
+		if ((config = MT_fopen(cfile, "r")) == NULL) {
 			const char *xdg = getenv("XDG_CONFIG_HOME");
 			const char *home = getenv("HOME");
 			int len = -1;
@@ -39,15 +41,15 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				len = snprintf(buf, sizeof(buf), "%s%cmonetdb", xdg, DIR_SEP);
 			else if (home != NULL)
 				len = snprintf(buf, sizeof(buf), "%s%c.config%cmonetdb", home, DIR_SEP, DIR_SEP);
-			if (len == -1 || len >= FILENAME_MAX || (config = fopen(buf, "r")) == NULL) {
+			if (len == -1 || len >= FILENAME_MAX || (config = MT_fopen(buf, "r")) == NULL) {
 				if (home) {
 					len = snprintf(buf, sizeof(buf), "%s%c.monetdb", home, DIR_SEP);
 					if (len >= 0 && len < FILENAME_MAX)
-						config = fopen(buf, "r");
+						config = MT_fopen(buf, "r");
 				}
 			}
 		}
-	} else if (*cfile != 0 && (config = fopen(cfile, "r")) == NULL) {
+	} else if (*cfile != 0 && (config = MT_fopen(cfile, "r")) == NULL) {
 		fprintf(stderr, "failed to open file '%s': %s\n",
 			cfile, strerror(errno));
 	}

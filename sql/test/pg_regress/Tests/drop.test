@@ -243,4 +243,3 @@ DROP TABLE  bt_txt_heap
 statement ok
 DROP TABLE  bt_f8_heap
 
-

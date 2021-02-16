@@ -16,21 +16,20 @@ querylog.define
 1
 sql.mvc
 1
-sql.update_prep
-1
 sql.tid
 1
 algebra.project
 1
-sql.update_exec
+sql.update_prep
 1
-aggr.count
+sql.update_exec
 1
 sql.append_finish
 1
+aggr.count
+1
 sql.affectedRows
 1
-
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET b = 10000000000
@@ -41,21 +40,20 @@ querylog.define
 1
 sql.mvc
 1
-sql.update_prep
-1
 sql.tid
 1
 algebra.project
 1
-sql.update_exec
+sql.update_prep
 1
-aggr.count
+sql.update_exec
 1
 sql.append_finish
 1
+aggr.count
+1
 sql.affectedRows
 1
-
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET c = a * b
@@ -66,19 +64,19 @@ querylog.define
 1
 sql.mvc
 1
-sql.update_prep
-1
 sql.tid
 1
 sql.bind
 2
 algebra.projection
 2
+sql.update_prep
+1
 sql.update_exec
 1
-aggr.count
-1
 sql.append_finish
+1
+aggr.count
 1
 sql.affectedRows
 1
@@ -92,23 +90,22 @@ querylog.define
 1
 sql.mvc
 1
-sql.update_prep
-1
 sql.tid
 1
 sql.bind
 2
 algebra.projection
 2
-sql.update_exec
+sql.update_prep
 1
-aggr.count
+sql.update_exec
 1
 sql.append_finish
 1
+aggr.count
+1
 sql.affectedRows
 1
-
 
 query T python .explain.function_histogram
 explain UPDATE mytest SET e = d + a
@@ -119,19 +116,19 @@ querylog.define
 1
 sql.mvc
 1
-sql.update_prep
-1
 sql.tid
 1
 sql.bind
 2
 algebra.projection
 2
+sql.update_prep
+1
 sql.update_exec
 1
-aggr.count
-1
 sql.append_finish
+1
+aggr.count
 1
 sql.affectedRows
 1
@@ -205,3 +202,4 @@ ROLLBACK
 
 statement ok
 set optimizer = 'default_pipe'
+

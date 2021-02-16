@@ -32,4 +32,3 @@ SELECT ROUND(CAST(999.9 AS DECIMAL(4,1)), 0.1)
 statement ok
 drop table decimals
 
-

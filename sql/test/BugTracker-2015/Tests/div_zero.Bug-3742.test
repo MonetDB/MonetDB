@@ -16,4 +16,3 @@ SELECT count(*) * ((max("end")-min("start")) / 60) FROM t GROUP BY s HAVING max(
 statement ok
 drop table t
 
-

@@ -10,632 +10,1766 @@ start transaction
 query R rowsort
 select percent_rank() over (partition by aa) from analytics
 ----
-10 values hashing to 5395eb5827c9cdfa042cd5e47d31da11
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 query R rowsort
 select percent_rank() over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to 5395eb5827c9cdfa042cd5e47d31da11
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 query R rowsort
 select percent_rank() over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to 5395eb5827c9cdfa042cd5e47d31da11
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 query R rowsort
 select percent_rank() over (order by aa) from analytics
 ----
-10 values hashing to ead655a38c62fcec079dfc00dda9e341
+0.000
+0.000
+0.222
+0.333
+0.333
+0.556
+0.667
+0.778
+0.889
+1.000
 
 query R rowsort
 select percent_rank() over (order by aa desc) from analytics
 ----
-10 values hashing to 8a1e4797d2802b2efd9408edff16da67
+0.000
+0.111
+0.222
+0.333
+0.444
+0.556
+0.556
+0.778
+0.889
+0.889
 
 query R rowsort
 select percent_rank() over (partition by bb) from analytics
 ----
-10 values hashing to 5395eb5827c9cdfa042cd5e47d31da11
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 query R rowsort
 select percent_rank() over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 5395eb5827c9cdfa042cd5e47d31da11
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 query R rowsort
 select percent_rank() over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 5395eb5827c9cdfa042cd5e47d31da11
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 query R rowsort
 select percent_rank() over (order by bb) from analytics
 ----
-10 values hashing to c1b62ad233a780051ab99567d7c76223
+0.000
+0.000
+0.000
+0.333
+0.333
+0.333
+0.667
+0.667
+0.667
+1.000
 
 query R rowsort
 select percent_rank() over (order by bb desc) from analytics
 ----
-10 values hashing to 8b454877d9242885a71822575efe15f3
+0.000
+0.111
+0.111
+0.111
+0.444
+0.444
+0.444
+0.778
+0.778
+0.778
 
 query R rowsort
 select cume_dist() over (partition by aa) from analytics
 ----
-10 values hashing to 6b30ac6cf647148cb343fab8333da947
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
 
 query R rowsort
 select cume_dist() over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to 6b30ac6cf647148cb343fab8333da947
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
 
 query R rowsort
 select cume_dist() over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to 6b30ac6cf647148cb343fab8333da947
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
 
 query R rowsort
 select cume_dist() over (order by aa) from analytics
 ----
-10 values hashing to 0430c4043b57d3926605ca12c6e96a5f
+0.200
+0.200
+0.300
+0.500
+0.500
+0.600
+0.700
+0.800
+0.900
+1.000
 
 query R rowsort
 select cume_dist() over (order by aa desc) from analytics
 ----
-10 values hashing to 10ad2ad13838551377eed2a095611933
+0.100
+0.200
+0.300
+0.400
+0.500
+0.700
+0.700
+0.800
+1.000
+1.000
 
 query R rowsort
 select cume_dist() over (partition by bb) from analytics
 ----
-10 values hashing to 6b30ac6cf647148cb343fab8333da947
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
 
 query R rowsort
 select cume_dist() over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 6b30ac6cf647148cb343fab8333da947
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
 
 query R rowsort
 select cume_dist() over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 6b30ac6cf647148cb343fab8333da947
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
 
 query R rowsort
 select cume_dist() over (order by bb) from analytics
 ----
-10 values hashing to 58c74bc4b92fee6f87b7039c349fb4fc
+0.300
+0.300
+0.300
+0.600
+0.600
+0.600
+0.900
+0.900
+0.900
+1.000
 
 query R rowsort
 select cume_dist() over (order by bb desc) from analytics
 ----
-10 values hashing to 329910a722e44f2afe11a20343723900
+0.100
+0.400
+0.400
+0.400
+0.700
+0.700
+0.700
+1.000
+1.000
+1.000
 
 query I rowsort
 select ntile(1) over (partition by aa) from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select ntile(1) over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select ntile(1) over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select ntile(1) over (order by aa) from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select ntile(1) over (order by aa desc) from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select ntile(3) over (partition by bb) from analytics
 ----
-10 values hashing to 54697bf57ed23745baffa3ed44db8764
+1
+1
+1
+1
+2
+2
+2
+3
+3
+3
 
 query I rowsort
 select ntile(3) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 54697bf57ed23745baffa3ed44db8764
+1
+1
+1
+1
+2
+2
+2
+3
+3
+3
 
 query I rowsort
 select ntile(3) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 54697bf57ed23745baffa3ed44db8764
+1
+1
+1
+1
+2
+2
+2
+3
+3
+3
 
 query I rowsort
 select ntile(3) over (order by bb) from analytics
 ----
-10 values hashing to 54697bf57ed23745baffa3ed44db8764
+1
+1
+1
+1
+2
+2
+2
+3
+3
+3
 
 query I rowsort
 select ntile(3) over (order by bb desc) from analytics
 ----
-10 values hashing to 54697bf57ed23745baffa3ed44db8764
+1
+1
+1
+1
+2
+2
+2
+3
+3
+3
 
 query I rowsort
 select ntile(10) over (partition by aa) from analytics
 ----
-10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
 
 query I rowsort
 select ntile(10) over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
 
 query I rowsort
 select ntile(10) over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
 
 query I rowsort
 select ntile(10) over (order by aa) from analytics
 ----
-10 values hashing to ff2650590d3f27ea6644b5573ccc37ba
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select ntile(10) over (order by aa desc) from analytics
 ----
-10 values hashing to ff2650590d3f27ea6644b5573ccc37ba
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select ntile(aa) over (partition by aa) from analytics
 ----
-10 values hashing to f871e1c1a4d701261fdfc8918b4c2680
+1
+1
+1
+1
+1
+1
+1
+2
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to f871e1c1a4d701261fdfc8918b4c2680
+1
+1
+1
+1
+1
+1
+1
+2
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to f871e1c1a4d701261fdfc8918b4c2680
+1
+1
+1
+1
+1
+1
+1
+2
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (order by aa) from analytics
 ----
-10 values hashing to 378b0e9bc05cb025371d16015928bfe2
+1
+1
+10
+2
+2
+4
+4
+7
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (order by aa desc) from analytics
 ----
-10 values hashing to f8f708a022c3ac9f19ea73b87d5efa73
+1
+1
+2
+2
+2
+2
+2
+2
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (partition by bb) from analytics
 ----
-10 values hashing to 27b058d7906ad891df93c29aab24bc34
+1
+1
+1
+2
+2
+3
+3
+3
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 27b058d7906ad891df93c29aab24bc34
+1
+1
+1
+2
+2
+3
+3
+3
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 27b058d7906ad891df93c29aab24bc34
+1
+1
+1
+2
+2
+3
+3
+3
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (order by bb) from analytics
 ----
-10 values hashing to 7fedc481c0aa651a66f355fd9166c0f5
+1
+1
+1
+2
+4
+4
+5
+7
+NULL
+NULL
 
 query I rowsort
 select ntile(aa) over (order by bb desc) from analytics
 ----
-10 values hashing to daf3fbd2c07451285de76c6ea2ecee88
+2
+2
+2
+2
+2
+3
+4
+5
+NULL
+NULL
 
 query I rowsort
 select ntile(bb) over (partition by aa) from analytics
 ----
-10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
 
 query I rowsort
 select ntile(bb) over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
 
 query I rowsort
 select ntile(bb) over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
 
 query I rowsort
 select ntile(bb) over (order by aa) from analytics
 ----
-10 values hashing to 8839d88e6e52919d30ff7eff55219941
+1
+1
+1
+1
+1
+1
+2
+2
+3
+3
 
 query I rowsort
 select ntile(bb) over (order by aa desc) from analytics
 ----
-10 values hashing to b07b6bafeaf663ee810add742cee2d04
+1
+1
+1
+1
+1
+1
+1
+2
+2
+4
 
 query I rowsort
 select ntile(bb) over (partition by bb) from analytics
 ----
-10 values hashing to e43d93f234ebef0074ce0c72fc0b75b1
+1
+1
+1
+1
+1
+1
+1
+2
+2
+3
 
 query I rowsort
 select ntile(bb) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to e43d93f234ebef0074ce0c72fc0b75b1
+1
+1
+1
+1
+1
+1
+1
+2
+2
+3
 
 query I rowsort
 select ntile(bb) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to e43d93f234ebef0074ce0c72fc0b75b1
+1
+1
+1
+1
+1
+1
+1
+2
+2
+3
 
 query I rowsort
 select ntile(bb) over (order by bb) from analytics
 ----
-10 values hashing to 3cc1da67c58593b22cef26c1f1f296f9
+1
+1
+1
+1
+1
+2
+2
+3
+3
+4
 
 query I rowsort
 select ntile(bb) over (order by bb desc) from analytics
 ----
-10 values hashing to a495de31cd8c6bc96c95248b0455f9c2
+1
+1
+1
+1
+1
+1
+1
+1
+2
+2
 
 query I rowsort
 select first_value(aa) over (partition by aa) from analytics
 ----
-10 values hashing to ce989f6ec986409e7cf421e952763d55
+15
+2
+3
+3
+4
+5
+6
+8
+NULL
+NULL
 
 query I rowsort
 select first_value(aa) over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to ce989f6ec986409e7cf421e952763d55
+15
+2
+3
+3
+4
+5
+6
+8
+NULL
+NULL
 
 query I rowsort
 select first_value(aa) over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to ce989f6ec986409e7cf421e952763d55
+15
+2
+3
+3
+4
+5
+6
+8
+NULL
+NULL
 
 query I rowsort
 select first_value(aa) over (order by aa) from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select first_value(aa) over (order by aa desc) from analytics
 ----
-10 values hashing to f16f7876558d4bacfdad4993a413a74c
+15
+15
+15
+15
+15
+15
+15
+15
+15
+15
 
 query I rowsort
 select first_value(aa) over (partition by bb) from analytics
 ----
-10 values hashing to 862543e7b183e7d869a12132115bc3d3
+15
+15
+15
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select first_value(aa) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 862543e7b183e7d869a12132115bc3d3
+15
+15
+15
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select first_value(aa) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 862543e7b183e7d869a12132115bc3d3
+15
+15
+15
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select first_value(aa) over (order by bb) from analytics
 ----
-10 values hashing to 10a571d85ca14138608b216a65876a7a
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select first_value(aa) over (order by bb desc) from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(aa, 1) over (partition by bb) from analytics
 ----
-10 values hashing to 862543e7b183e7d869a12132115bc3d3
+15
+15
+15
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(aa, 1) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 862543e7b183e7d869a12132115bc3d3
+15
+15
+15
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(aa, 1) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 862543e7b183e7d869a12132115bc3d3
+15
+15
+15
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(aa, 1) over (order by bb) from analytics
 ----
-10 values hashing to 10a571d85ca14138608b216a65876a7a
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select nth_value(aa, 1) over (order by bb desc) from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select last_value(bb) over (partition by aa) from analytics
 ----
-10 values hashing to a6744bdc066e831cdc5cdce8789ab565
+1
+1
+2
+2
+2
+3
+3
+3
+4
+4
 
 query I rowsort
 select last_value(bb) over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to a6744bdc066e831cdc5cdce8789ab565
+1
+1
+2
+2
+2
+3
+3
+3
+4
+4
 
 query I rowsort
 select last_value(bb) over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to a6744bdc066e831cdc5cdce8789ab565
+1
+1
+2
+2
+2
+3
+3
+3
+4
+4
 
 query I rowsort
 select last_value(bb) over (order by aa) from analytics
 ----
-10 values hashing to a6744bdc066e831cdc5cdce8789ab565
+1
+1
+2
+2
+2
+3
+3
+3
+4
+4
 
 query I rowsort
 select last_value(bb) over (order by aa desc) from analytics
 ----
-10 values hashing to a6744bdc066e831cdc5cdce8789ab565
+1
+1
+2
+2
+2
+3
+3
+3
+4
+4
 
 query I rowsort
 select last_value(bb) over (partition by bb) from analytics
 ----
-10 values hashing to 4f1e70f17e0591c506e32f87331cb192
+1
+1
+1
+2
+2
+2
+3
+3
+3
+4
 
 query I rowsort
 select last_value(bb) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 4f1e70f17e0591c506e32f87331cb192
+1
+1
+1
+2
+2
+2
+3
+3
+3
+4
 
 query I rowsort
 select last_value(bb) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 4f1e70f17e0591c506e32f87331cb192
+1
+1
+1
+2
+2
+2
+3
+3
+3
+4
 
 query I rowsort
 select last_value(bb) over (order by bb) from analytics
 ----
-10 values hashing to 4f1e70f17e0591c506e32f87331cb192
+1
+1
+1
+2
+2
+2
+3
+3
+3
+4
 
 query I rowsort
 select last_value(bb) over (order by bb desc) from analytics
 ----
-10 values hashing to 4f1e70f17e0591c506e32f87331cb192
+1
+1
+1
+2
+2
+2
+3
+3
+3
+4
 
 query I rowsort
 select nth_value(bb, 3) over (partition by bb) from analytics
 ----
-10 values hashing to 0a7f405d838cb866f2bdda41a6e53526
+1
+1
+1
+2
+2
+2
+3
+3
+3
+NULL
 
 query I rowsort
 select nth_value(bb, 3) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 0a7f405d838cb866f2bdda41a6e53526
+1
+1
+1
+2
+2
+2
+3
+3
+3
+NULL
 
 query I rowsort
 select nth_value(bb, 3) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 0a7f405d838cb866f2bdda41a6e53526
+1
+1
+1
+2
+2
+2
+3
+3
+3
+NULL
 
 query I rowsort
 select nth_value(bb, 3) over (order by bb) from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select nth_value(bb, 3) over (order by bb desc) from analytics
 ----
-10 values hashing to a908eae5d690f6a2bab5b8b619a143f2
+3
+3
+3
+3
+3
+3
+3
+3
+3
+NULL
 
 query I rowsort
 select lag(bb) over (partition by aa) from analytics
 ----
-10 values hashing to 5d45ea499a6438ad4d2cb02c11afaab2
+1
+2
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lag(bb) over (partition by aa order by aa asc) from analytics
 ----
-10 values hashing to 5d45ea499a6438ad4d2cb02c11afaab2
+1
+2
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lag(bb) over (partition by aa order by aa desc) from analytics
 ----
-10 values hashing to 5d45ea499a6438ad4d2cb02c11afaab2
+1
+2
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lag(bb) over (order by aa) from analytics
 ----
-10 values hashing to 711429f15026ad2b819c6937b6a4a385
+1
+1
+1
+2
+2
+2
+3
+3
+4
+NULL
 
 query I rowsort
 select lag(bb) over (order by aa desc) from analytics
 ----
-10 values hashing to 0a7f405d838cb866f2bdda41a6e53526
+1
+1
+1
+2
+2
+2
+3
+3
+3
+NULL
 
 query I rowsort
 select lead(bb) over (partition by bb) from analytics
 ----
-10 values hashing to 4d227310307eadde3028329cd8ece0ca
+1
+1
+2
+2
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lead(bb) over (partition by bb order by bb asc) from analytics
 ----
-10 values hashing to 4d227310307eadde3028329cd8ece0ca
+1
+1
+2
+2
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lead(bb) over (partition by bb order by bb desc) from analytics
 ----
-10 values hashing to 4d227310307eadde3028329cd8ece0ca
+1
+1
+2
+2
+3
+3
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lead(bb) over (order by bb) from analytics
 ----
-10 values hashing to 657c4502c8c8ae0722e090e8dd41a128
+1
+1
+2
+2
+2
+3
+3
+3
+4
+NULL
 
 query I rowsort
 select lead(bb) over (order by bb desc) from analytics
 ----
-10 values hashing to 0a7f405d838cb866f2bdda41a6e53526
+1
+1
+1
+2
+2
+2
+3
+3
+3
+NULL
 
 query R rowsort
 select percent_rank() over () from analytics
 ----
-10 values hashing to 5395eb5827c9cdfa042cd5e47d31da11
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
+0.000
 
 query R rowsort
 select cume_dist() over () from analytics
 ----
-10 values hashing to 6b30ac6cf647148cb343fab8333da947
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
+1.000
 
 query I rowsort
 select ntile(1) over () from analytics
 ----
-10 values hashing to eabdbd29c5918a1ebe3bdb572dcae04a
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
 
 query I rowsort
 select ntile(2) over () from analytics
 ----
-10 values hashing to a22626845b7b64b173b733db11578f22
+1
+1
+1
+1
+1
+2
+2
+2
+2
+2
 
 query I rowsort
 select ntile(5) over () from analytics
 ----
-10 values hashing to 963829efae320775f796c643e8848ba6
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
 
 query I rowsort
 select ntile(11) over () from analytics
 ----
-10 values hashing to ff2650590d3f27ea6644b5573ccc37ba
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select ntile(100) over () from analytics
 ----
-10 values hashing to ff2650590d3f27ea6644b5573ccc37ba
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select first_value(aa) over () from analytics
 ----
-10 values hashing to f16f7876558d4bacfdad4993a413a74c
+15
+15
+15
+15
+15
+15
+15
+15
+15
+15
 
 query I rowsort
 select first_value(bb) over () from analytics
 ----
-10 values hashing to 10a571d85ca14138608b216a65876a7a
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select last_value(aa) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select last_value(bb) over () from analytics
 ----
-10 values hashing to 435a973fa5179dbc7eeeb4ccf5ede561
+4
+4
+4
+4
+4
+4
+4
+4
+4
+4
 
 query I rowsort
 select nth_value(aa, 2) over () from analytics
 ----
-10 values hashing to 10a571d85ca14138608b216a65876a7a
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select nth_value(bb, 1) over () from analytics
 ----
-10 values hashing to 10a571d85ca14138608b216a65876a7a
+3
+3
+3
+3
+3
+3
+3
+3
+3
+3
 
 query I rowsort
 select nth_value(bb, 1000) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lag(aa) over () from analytics
 ----
-10 values hashing to ce989f6ec986409e7cf421e952763d55
+15
+2
+3
+3
+4
+5
+6
+8
+NULL
+NULL
 
 query I rowsort
 select lead(bb) over () from analytics
 ----
-10 values hashing to 711429f15026ad2b819c6937b6a4a385
+1
+1
+1
+2
+2
+2
+3
+3
+4
+NULL
 
 query I rowsort
 select lag(aa) over () from analytics
 ----
-10 values hashing to ce989f6ec986409e7cf421e952763d55
+15
+2
+3
+3
+4
+5
+6
+8
+NULL
+NULL
 
 query I rowsort
 select lead(bb) over () from analytics
 ----
-10 values hashing to 711429f15026ad2b819c6937b6a4a385
+1
+1
+1
+2
+2
+2
+3
+3
+4
+NULL
 
 query I rowsort
 select ntile(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select first_value(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select last_value(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(null, 1) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(aa, null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(1, null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(null, null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lag(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lag(null, null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lag(null, null, null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lead(null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lead(null, null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select lead(null, null, null) over () from analytics
 ----
-10 values hashing to db761b746c7d0f18810c20311a9f8974
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 create table stressme (aa varchar(64), bb int)
@@ -1426,17 +2560,74 @@ NULL
 query IIII rowsort
 select aa, bb, lead(aa, 2, 100) over (partition by bb), lead(aa, 1, '100') over (partition by bb) from analytics
 ----
-40 values hashing to 5d87490c8911e56c02113cfe47bab4af
+15
+3
+6
+5
+2
+1
+100
+4
+3
+1
+4
+2
+3
+2
+100
+8
+4
+1
+100
+100
+5
+3
+100
+6
+6
+3
+100
+100
+8
+2
+100
+100
+NULL
+2
+8
+3
+NULL
+4
+100
+100
 
 query I rowsort
 select nth_value(aa, aa) over () from analytics
 ----
-10 values hashing to 78ab2ce87f46591d31bc705bfa3b8455
+2
+2
+3
+3
+5
+6
+NULL
+NULL
+NULL
+NULL
 
 query I rowsort
 select nth_value(1, aa) over () from analytics
 ----
-10 values hashing to 85893b34ac9e822f53d59442edee1d2c
+1
+1
+1
+1
+1
+1
+1
+NULL
+NULL
+NULL
 
 statement ok
 create table t1 (col1 int, col2 int)
@@ -1447,17 +2638,113 @@ insert into t1 values (8481, 0), (8489, 0), (8489, 1), (8498, 0), (8498, 1), (84
 query IIIII rowsort
 select col1, col2, lag(col2) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2), lag(col2, 3) over (partition by col1 ORDER BY col2) from t1
 ----
-45 values hashing to 179eb6609b31d4aa18a15641cdc5ac14
+8481
+0
+NULL
+NULL
+NULL
+8489
+0
+NULL
+NULL
+NULL
+8489
+1
+0
+NULL
+NULL
+8498
+0
+NULL
+NULL
+NULL
+8498
+1
+0
+NULL
+NULL
+8498
+2
+1
+0
+NULL
+8507
+0
+NULL
+NULL
+NULL
+8507
+1
+0
+NULL
+NULL
+8507
+2
+1
+0
+NULL
 
 query III rowsort
 select lag(col2, -1) over (partition by col1 ORDER BY col2), lag(col2, 1) over (partition by col1 ORDER BY col2), lag(col2, 2) over (partition by col1 ORDER BY col2) from t1
 ----
-27 values hashing to 117bee1cc71734cf78d3d28bff9d3d62
+1
+NULL
+NULL
+1
+NULL
+NULL
+1
+NULL
+NULL
+2
+0
+NULL
+2
+0
+NULL
+NULL
+0
+NULL
+NULL
+1
+0
+NULL
+1
+0
+NULL
+NULL
+NULL
 
 query III rowsort
 select lead(col2, -1) over (partition by col1 ORDER BY col2), lead(col2, 1) over (partition by col1 ORDER BY col2), lead(col2, 2) over (partition by col1 ORDER BY col2) from t1
 ----
-27 values hashing to d37c588b61a725acd861e3fc336f0dd6
+0
+2
+NULL
+0
+2
+NULL
+0
+NULL
+NULL
+1
+NULL
+NULL
+1
+NULL
+NULL
+NULL
+1
+2
+NULL
+1
+2
+NULL
+1
+NULL
+NULL
+NULL
+NULL
 
 statement ok
 CREATE TABLE "sys"."test1" (
@@ -1485,7 +2772,24 @@ LAST_VALUE(t0.points) OVER (PARTITION BY CAST(t0.start_time AS DATE) ORDER BY t0
 FROM test1 t0
 WHERE (t0.start_time >= '2017/12/01 00:00:00' AND t0.start_time <= '2017/12/02 00:00:00')
 ----
-18 values hashing to 3412ec70d8662695814cb27b52aa144e
+2017-12-01
+20.000
+50.000
+2017-12-01
+20.000
+50.000
+2017-12-01
+20.000
+90.000
+2017-12-01
+20.000
+90.000
+2017-12-01
+20.000
+90.000
+2017-12-01
+20.000
+90.000
 
 query TRR rowsort
 SELECT DISTINCT CAST(t0.start_time AS DATE) AS start_time,
@@ -1563,5 +2867,4 @@ select lead(aa, 34, 1000000000000) over (partition by bb) from analytics
 
 statement ok
 drop table analytics
-
 

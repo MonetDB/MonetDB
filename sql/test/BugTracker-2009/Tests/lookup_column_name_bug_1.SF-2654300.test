@@ -33,4 +33,3 @@ drop view x1
 statement ok
 drop table x
 
-

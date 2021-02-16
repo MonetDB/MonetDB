@@ -38,4 +38,3 @@ SELECT * FROM tab0 AS cor0 WHERE NOT NULL IN ( col3 )
 statement ok
 drop table tab0
 
-

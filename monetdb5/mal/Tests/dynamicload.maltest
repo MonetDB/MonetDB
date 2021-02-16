@@ -9,4 +9,3 @@ comment "Should not be callable";
 statement error
 wrong();
 
-

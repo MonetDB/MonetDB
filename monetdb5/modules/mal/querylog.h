@@ -11,18 +11,12 @@
 #include "mal.h"
 #include "mal_interpreter.h"
 
-mal_export str initQlog(void);
 mal_export str QLOGcatalog(BAT **r);
 mal_export str QLOGcalls(BAT **r);
 mal_export str QLOGenable(void *ret);
 mal_export str QLOGenableThreshold(void *ret, int *threshold);
 mal_export str QLOGdisable(void *ret);
 mal_export int QLOGisset(void);
-mal_export str QLOGissetFcn(int *ret);
 mal_export str QLOGempty(void *ret);
-mal_export str QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-mal_export str QLOGdefineNaive(void *ret, str *qry, str *opt, int *nr);
-mal_export str QLOGcontextNaive(void *ret, str *release, str *version, str *revision, str *uri);
-mal_export str QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _QLOG_H */

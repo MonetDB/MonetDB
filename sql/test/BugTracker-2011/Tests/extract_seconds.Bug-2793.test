@@ -48,4 +48,3 @@ select extract(year from timestamp '2011-3-10 9:30:42.246+01:00')
 ----
 2011
 
-

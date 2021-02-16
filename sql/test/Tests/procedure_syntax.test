@@ -139,4 +139,3 @@ p1
 statement ok
 DROP PROCEDURE p1
 
-

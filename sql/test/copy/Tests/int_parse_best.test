@@ -116,4 +116,3 @@ drop table t_int
 statement ok
 rollback
 
-

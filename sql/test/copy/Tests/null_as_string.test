@@ -15,7 +15,18 @@ copy 4 records into null_as_string from stdin delimiters ',',E'\n' NULL as ''
 query ITR rowsort
 Select * from null_as_string
 ----
-12 values hashing to 2bce66d0ded55d01253254dd32f2c458
+1
+NULL
+1.000
+2
+two
+NULL
+NULL
+NULL
+NULL
+NULL
+zero
+0.000
 
 statement ok
 delete from null_as_string
@@ -31,7 +42,18 @@ NULL,zero,0
 query ITR rowsort
 Select * from null_as_string
 ----
-12 values hashing to 2bce66d0ded55d01253254dd32f2c458
+1
+NULL
+1.000
+2
+two
+NULL
+NULL
+NULL
+NULL
+NULL
+zero
+0.000
 
 statement ok
 delete from null_as_string
@@ -47,7 +69,18 @@ copy 4 records into null_as_string from stdin delimiters ',',E'\n' NULL as E'\\N
 query ITR rowsort
 Select * from null_as_string
 ----
-12 values hashing to 2bce66d0ded55d01253254dd32f2c458
+1
+NULL
+1.000
+2
+two
+NULL
+NULL
+NULL
+NULL
+NULL
+zero
+0.000
 
 statement ok
 delete from null_as_string
@@ -57,5 +90,4 @@ drop table null_as_string
 
 statement ok
 rollback
-
 

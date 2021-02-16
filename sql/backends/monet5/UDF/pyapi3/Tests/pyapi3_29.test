@@ -27,4 +27,3 @@ DROP FUNCTION myfunc
 statement ok
 ROLLBACK
 
-

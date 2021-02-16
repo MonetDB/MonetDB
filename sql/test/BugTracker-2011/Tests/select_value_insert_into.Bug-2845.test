@@ -31,4 +31,3 @@ drop table table2
 statement ok
 drop table table1
 
-

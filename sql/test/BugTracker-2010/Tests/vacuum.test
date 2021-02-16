@@ -7,12 +7,46 @@ insert into vac1 values(1,'the'), (2,'quick'),(3,'brown'),(5,'runs'),(4,'fox'),(
 query IT rowsort
 select * from vac1 order by i
 ----
-18 values hashing to e6a46c50bbc43408130880abcf0e7a45
+1
+the
+2
+quick
+3
+brown
+4
+fox
+5
+runs
+6
+over
+7
+the
+8
+lazy
+9
+dog
 
 query IT rowsort
 select * from vac1
 ----
-18 values hashing to e6a46c50bbc43408130880abcf0e7a45
+1
+the
+2
+quick
+3
+brown
+4
+fox
+5
+runs
+6
+over
+7
+the
+8
+lazy
+9
+dog
 
 statement ok
 call shrink('sys','vac1')
@@ -20,7 +54,24 @@ call shrink('sys','vac1')
 query IT rowsort
 select * from vac1
 ----
-18 values hashing to e6a46c50bbc43408130880abcf0e7a45
+1
+the
+2
+quick
+3
+brown
+4
+fox
+5
+runs
+6
+over
+7
+the
+8
+lazy
+9
+dog
 
 statement ok
 delete from vac1 where i = 8
@@ -31,7 +82,22 @@ call shrink('sys','vac1')
 query IT rowsort
 select * from vac1
 ----
-16 values hashing to ab1dd24685f05db23930da39687fda46
+1
+the
+2
+quick
+3
+brown
+4
+fox
+5
+runs
+6
+over
+7
+the
+9
+dog
 
 statement ok
 delete from vac1 where i = 2
@@ -42,7 +108,20 @@ call shrink('sys','vac1')
 query IT rowsort
 select * from vac1
 ----
-14 values hashing to 6c73f12da74df665651b517fe1d81666
+1
+the
+3
+brown
+4
+fox
+5
+runs
+6
+over
+7
+the
+9
+dog
 
 statement ok
 delete from vac1 where i > 6
@@ -53,9 +132,17 @@ call vacuum('sys','vac1')
 query IT rowsort
 select * from vac1
 ----
-10 values hashing to 026789135df8babe2e640c722c998fd9
+1
+the
+3
+brown
+4
+fox
+5
+runs
+6
+over
 
 statement ok
 drop table vac1
-
 

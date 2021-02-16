@@ -16,7 +16,18 @@ COPY 3 RECORDS INTO bulk from stdin USING DELIMITERS '|', E'\n'
 query RRRR rowsort
 select * from bulk
 ----
-12 values hashing to f01a9c0eb6c2721cb94fd8d98ce22663
+1001.000
+NULL
+231231234.000
+1001.000
+1001.000
+NULL
+231231234.000
+1001.000
+1002.000
+1234.000
+1231231235.000
+1002.000
 
 statement ok
 drop table bulk
@@ -39,9 +50,19 @@ COPY 3 RECORDS INTO bulk from stdin USING DELIMITERS '|', E'\n'
 query IIII rowsort
 select * from bulk
 ----
-12 values hashing to 6aa601a0feddf1b3838c84fa2ca65e0d
+1001
+NULL
+231231234
+1001
+1001
+NULL
+231231234
+1001
+1002
+1234
+1231231235
+1002
 
 statement ok
 drop table bulk
-
 

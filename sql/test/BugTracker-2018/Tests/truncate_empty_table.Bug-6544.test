@@ -89,4 +89,3 @@ DROP TABLE bam_rg
 statement ok
 DROP TABLE bam_files
 
-

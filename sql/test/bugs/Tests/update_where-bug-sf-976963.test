@@ -28,3 +28,4 @@ b
 
 statement ok
 drop table test_update
+

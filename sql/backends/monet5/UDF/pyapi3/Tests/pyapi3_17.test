@@ -13,13 +13,13 @@ language P
 	return retval
 }
 
-query TTIT rowsort
+query TTII rowsort
 SELECT * FROM pyapi17()
 ----
 foo
 bar
 0
-True
+1
 
 statement ok
 DROP FUNCTION pyapi17
@@ -37,13 +37,13 @@ language P
 	return retval
 }
 
-query TTIT rowsort
+query TTII rowsort
 SELECT * FROM pyapi17()
 ----
 foo
 bar
 0
-True
+1
 
 statement ok
 DROP FUNCTION pyapi17
@@ -138,5 +138,4 @@ DROP FUNCTION pyapi17
 
 statement ok
 ROLLBACK
-
 

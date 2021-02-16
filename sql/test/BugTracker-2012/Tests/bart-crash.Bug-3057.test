@@ -9,7 +9,6 @@ create table im
   ,primary key (imageid)
   )
 
-
 statement ok
 create table xtr
   (xtrsrcid int
@@ -26,7 +25,6 @@ create table xtr
   ,foreign key (image_id) references im (imageid)
   )
 
-
 statement ok
 create table rc
   (xtrsrc_id int
@@ -39,7 +37,6 @@ create table rc
   ,y double
   ,z double
   )
-
 
 statement ok
 insert into rc values (1, 1, 331.79744325500002, 43.448623302500003,
@@ -96,5 +93,4 @@ SELECT r.xtrsrc_id
 
 statement ok
 rollback
-
 
