@@ -963,7 +963,8 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 			tpe = l->type->sqlname;
 			digits = (!r->digits)?0:l->digits;
 		} else { /* both */
-			tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+			tpe = !strcmp(l->type->base.name, "clob")?l->type->sqlname:!strcmp(r->type->base.name, "clob")?r->type->sqlname:
+			(l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
 			digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
 		}
 		sql_find_subtype(super, tpe, digits, 0);
@@ -1035,8 +1036,17 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 
 	lsuper = *r;
 	/* EC_STRING class is superior to EC_CHAR */
-	if (i->type->base.id > r->type->base.id ||
-	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass)) || i->type->eclass == EC_STRING) {
+	if (EC_VARCHAR(i->type->eclass) && EC_VARCHAR(r->type->eclass)) {
+		if (!strcmp(i->type->sqlname, "clob") || !strcmp(r->type->sqlname, "clob")) {
+			lsuper = !strcmp(i->type->sqlname, "clob") ? *i : *r;
+			radix = lsuper.type->radix;
+			tpe = lsuper.type->sqlname;
+		} else {
+			lsuper = i->type->base.id > r->type->base.id ? *i : *r;
+			radix = lsuper.type->radix;
+			tpe = lsuper.type->sqlname;
+		}
+	} else if (i->type->base.id > r->type->base.id || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
 		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
