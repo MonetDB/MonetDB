@@ -2113,6 +2113,7 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
  */
 #define MAXPARAMS	32
 
+#define CHECK_QRY_TIMEOUT_STEP 10000
 #define _CHECK_TIMEOUT(starttime, querytimeout) \
 	if (querytimeout && starttime && (GDKusec() - starttime) > querytimeout) { \
 		GDKerror("Timeout was reached!"); \
