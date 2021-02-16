@@ -33,9 +33,17 @@
  * Using the Monet Performance Profiler is constrained by the mal_profiler.
  */
 #include "monetdb_config.h"
-#include "profiler.h"
+#include "gdk.h"
+#include <time.h>
+#include "mal_stack.h"
+#include "mal_resolve.h"
+#include "mal_exception.h"
+#include "mal_client.h"
+#include "mal_profiler.h"
+#include "mal_interpreter.h"
+#include "mal_runtime.h"
 
-str
+static str
 CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	(void) cntxt;
@@ -45,7 +53,7 @@ CMDopenProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	return openProfilerStream(cntxt);
 }
 
-str
+static str
 CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	(void) mb;
@@ -55,7 +63,7 @@ CMDcloseProfilerStream(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 }
 
 // initialize SQL tracing
-str
+static str
 CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 {
 	(void)mb;
@@ -65,7 +73,7 @@ CMDstartProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc)
 	return startProfiler(cntxt);
 }
 
-str
+static str
 CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -76,7 +84,7 @@ CMDstopProfiler(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 // called by the SQL front end optional a directory to keep the traces.
-str
+static str
 CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -85,7 +93,7 @@ CMDstartTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return startTrace(cntxt);
 }
 
-str
+static str
 CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -94,14 +102,14 @@ CMDstopTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return stopTrace(cntxt);
 }
 
-str
+static str
 CMDnoopProfiler(void *res)
 {
 	(void) res;		/* fool compiler */
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
@@ -111,7 +119,7 @@ CMDcleanupTraces(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str path = *getArgReference_str(stk,pci,1);
@@ -128,14 +136,14 @@ CMDgetTrace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	throw(MAL, "getTrace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING  "%s", path);
 }
 
-str
+static str
 CMDgetprofilerlimit(int *res)
 {
 	*res = getprofilerlimit();
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDsetprofilerlimit(void *res, int *lim)
 {
 	(void) res;
@@ -147,7 +155,7 @@ CMDsetprofilerlimit(void *res, int *lim)
  * Tracing an active system.
  */
 
-str
+static str
 CMDsetHeartbeat(void *res, int *ev)
 {
 	(void) res;
@@ -155,39 +163,39 @@ CMDsetHeartbeat(void *res, int *ev)
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDgetDiskReads(lng *ret)
 {
 	*ret= getDiskReads();
 	return MAL_SUCCEED;
 }
-str
+static str
 CMDgetDiskWrites(lng *ret)
 {
 	*ret= getDiskWrites();
 	return MAL_SUCCEED;
 }
-str
+static str
 CMDgetUserTime(lng *ret)
 {
 	*ret= getUserTime();
 	return MAL_SUCCEED;
 }
-str
+static str
 CMDgetSystemTime(lng *ret)
 {
 	*ret= getUserTime();
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDcpustats(lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
 	profilerGetCPUStat(user,nice,sys,idle,iowait);
 	return MAL_SUCCEED;
 }
 
-str
+static str
 CMDcpuloadPercentage(int *cycles, int *io, lng *user, lng *nice, lng *sys, lng *idle, lng *iowait)
 {
 	lng userN, niceN, sysN, idleN, iowaitN, N;

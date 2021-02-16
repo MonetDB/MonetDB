@@ -7,4 +7,3 @@ select * from t()
 statement error
 drop function t
 
-

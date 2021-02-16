@@ -17,4 +17,3 @@ query I rowsort
 SELECT * FROM foo
 ----
 
-

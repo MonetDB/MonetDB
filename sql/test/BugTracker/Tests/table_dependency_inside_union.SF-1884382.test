@@ -28,4 +28,3 @@ drop table t1884382a
 statement ok
 drop table t1884382b
 
-

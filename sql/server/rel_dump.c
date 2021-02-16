@@ -1179,15 +1179,15 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			if (!f && nops > 1) { /* window functions without frames get 2 extra arguments */
 				sql->session->status = 0; /* if the function was not found clean the error */
 				sql->errstr[0] = '\0';
-				list_remove_node(ops, ops->t);
-				list_remove_node(ops, ops->t);
+				list_remove_node(ops, NULL, ops->t);
+				list_remove_node(ops, NULL, ops->t);
 				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
 			}
 			if (!f && nops > 4) { /* window functions with frames get 5 extra arguments */
 				sql->session->status = 0; /* if the function was not found clean the error */
 				sql->errstr[0] = '\0';
 				for (int i = 0 ; i < 3 ; i++)
-					list_remove_node(ops, ops->t);
+					list_remove_node(ops, NULL, ops->t);
 				f = sql_bind_func_(sql, tname, cname, ops, F_ANALYTIC);
 			}
 

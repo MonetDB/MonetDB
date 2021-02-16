@@ -17,4 +17,3 @@ SELECT MIN(aap),MAX(aap),cast(SUM(aap) as bigint) FROM t1123132
 statement ok
 ROLLBACK
 
-

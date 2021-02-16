@@ -1,7 +1,16 @@
 query I rowsort
 select * from generate_series(0,10)
 ----
-10 values hashing to e20b902b49a98b1a05ed62804c757f94
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select * from generate_series(0,10,2)
@@ -56,7 +65,16 @@ select * from generate_series(0,10,2) as v where value <7 and value >3 and value
 query I rowsort
 select * from generate_series(10,0)
 ----
-10 values hashing to ff2650590d3f27ea6644b5573ccc37ba
+1
+10
+2
+3
+4
+5
+6
+7
+8
+9
 
 query I rowsort
 select * from generate_series(10,0,-2)
@@ -118,5 +136,4 @@ select * from generate_series(-2,8,2)
 query I rowsort
 select * from generate_series(0,0,2)
 ----
-
 

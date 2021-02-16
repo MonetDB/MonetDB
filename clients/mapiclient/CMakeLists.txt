@@ -94,6 +94,7 @@ target_link_libraries(stethoscope
   stream
   mapi
   mprompt
+  mutils
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<PLATFORM_ID:Windows>:ws2_32>)
 

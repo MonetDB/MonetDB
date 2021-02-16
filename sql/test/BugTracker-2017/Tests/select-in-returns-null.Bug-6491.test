@@ -4,19 +4,18 @@ CREATE TABLE t(i INT)
 statement ok
 INSERT INTO t VALUES (1), (2), (3)
 
-query T rowsort
+query I rowsort
 SELECT 1 IN (SELECT i FROM t)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 -- expect true
 SELECT 4 IN (SELECT i FROM t)
 ----
-False
+0
 
 statement ok
 -- expect false, got null
 drop table t
-
 

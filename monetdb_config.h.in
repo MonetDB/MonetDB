@@ -382,10 +382,19 @@ stpcpy(char *restrict dst, const char *restrict src)
 #define HAVE_GETOPT_LONG 1
 
 /* there is something very similar to localtime_r on Windows: */
+#include <time.h>
 #define HAVE_LOCALTIME_R 1
-#define localtime_r(tp,tm)		(localtime_s(tm,tp) == 0 ? (tm) : NULL)
+static inline struct tm *
+localtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	return localtime_s(result, timep) == 0 ? result : NULL;
+}
 #define HAVE_GMTIME_R 1
-#define gmtime_r(tp,tm)         (gmtime_s(tm,tp) == 0 ? (tm) : NULL)
+static inline struct tm *
+gmtime_r(const time_t *restrict timep, struct tm *restrict result)
+{
+	return gmtime_s(result, timep) == 0 ? result : NULL;
+}
 
 /* Define if you have ctime_r(time_t*,char *buf,size_t s) */
 #define HAVE_CTIME_R 1

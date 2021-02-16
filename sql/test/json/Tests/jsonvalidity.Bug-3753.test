@@ -1,175 +1,175 @@
-query T rowsort
+query I rowsort
 SELECT json.isvalid('[0,1]')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isvalid('[0,,1]')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(null)
 ----
 NULL
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('null')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('"')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('""')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('"""')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(E'"\\""')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('""""')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(E'"\\"\\""')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('[]')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('[null]')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('[""]')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('["""]')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(E'["\\""]')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('[""""]')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(E'["\\"\\""]')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('{}')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('{"test":null}')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('{"test":""}')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('{"test":"""}')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(E'{"test":"\\""}')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid('{"test":""""}')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(E'{"test":"\\"\\""}')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(R'"\u003c\""')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(R'01')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(R'[01]')
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(r'0.001')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(r'-0.001')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(r'0.001e12')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(r'-0.001e-12')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(r'1290345')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(r'{"foo": 90}')
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT json.isValid(r'{"foo": 9}')
 ----
-True
+1
 

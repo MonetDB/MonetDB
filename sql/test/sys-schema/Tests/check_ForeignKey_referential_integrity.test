@@ -1,72 +1,72 @@
-query ITIIT rowsort
+query ITIII rowsort
 SELECT * FROM sys.schemas WHERE authorization NOT IN (SELECT id FROM sys.auths)
 ----
 
-query ITIIT rowsort
+query ITIII rowsort
 SELECT * FROM sys.schemas WHERE owner NOT IN (SELECT id FROM sys.auths)
 ----
 
-query ITITITIII rowsort
+query ITITIIIII rowsort
 SELECT * FROM sys.tables WHERE schema_id NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query ITITITII rowsort
+query ITITIIII rowsort
 SELECT * FROM sys._tables WHERE schema_id NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query ITITITII rowsort
+query ITITIIII rowsort
 SELECT * FROM tmp._tables WHERE schema_id NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query ITITITIII rowsort
+query ITITIIIII rowsort
 SELECT * FROM sys.tables WHERE type NOT IN (SELECT table_type_id FROM sys.table_types)
 ----
 
-query ITITITII rowsort
+query ITITIIII rowsort
 SELECT * FROM sys._tables WHERE type NOT IN (SELECT table_type_id FROM sys.table_types)
 ----
 
-query ITITITII rowsort
+query ITITIIII rowsort
 SELECT * FROM tmp._tables WHERE type NOT IN (SELECT table_type_id FROM sys.table_types)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys.columns WHERE table_id NOT IN (SELECT id FROM sys.tables)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE table_id NOT IN (SELECT id FROM sys._tables)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM tmp._columns WHERE table_id NOT IN (SELECT id FROM tmp._tables)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys.columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM sys._columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query ITTIIITTIT rowsort
+query ITTIIITIIT rowsort
 SELECT * FROM tmp._columns WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query ITTTIITTTITT rowsort
+query ITTTIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE schema_id NOT IN (SELECT id FROM sys.schemas)
 ----
 
-query ITTTIITTTITT rowsort
+query ITTTIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE type NOT IN (SELECT function_type_id FROM sys.function_types)
 ----
 
-query ITTTIITTTITT rowsort
+query ITTTIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE language NOT IN (SELECT language_id FROM sys.function_languages)
 ----
 
-query ITTTIITTTITT rowsort
+query ITTTIIIIIIII rowsort
 SELECT * FROM sys.functions WHERE system AND schema_id NOT IN (SELECT id FROM sys.schemas WHERE system)
 ----
 
@@ -86,7 +86,7 @@ query ITTIIIII rowsort
 SELECT * FROM sys.types WHERE schema_id NOT IN (SELECT id FROM sys.schemas) AND schema_id <> 0
 ----
 
-query ITI rowsort
+query ITII rowsort
 SELECT * FROM sys.objects WHERE id NOT IN (SELECT id FROM sys.ids)
 ----
 
@@ -150,7 +150,7 @@ query IIIT rowsort
 SELECT * FROM tmp.idxs WHERE type NOT IN (SELECT index_type_id FROM sys.index_types)
 ----
 
-query IITIIIIIT rowsort
+query IITIIIIII rowsort
 SELECT * FROM sys.sequences WHERE schema_id NOT IN (SELECT id FROM sys.schemas)
 ----
 
@@ -242,27 +242,27 @@ query IIIII rowsort
 SELECT * FROM sys.privileges WHERE privileges NOT IN (SELECT privilege_code_id FROM sys.privilege_codes)
 ----
 
-query TTTTTTII rowsort
+query ITTTTTII rowsort
 SELECT * FROM sys.querylog_catalog WHERE owner NOT IN (SELECT name FROM sys.users)
 ----
 
-query TTTTTTII rowsort
+query ITTTTTII rowsort
 SELECT * FROM sys.querylog_catalog WHERE pipe NOT IN (SELECT name FROM sys.optimizers)
 ----
 
-query TTTTIIIII rowsort
+query ITTTIIIII rowsort
 SELECT * FROM sys.querylog_calls   WHERE id NOT IN (SELECT id FROM sys.querylog_catalog)
 ----
 
-query TTTTTTIITTTIIIII rowsort
+query ITTTTTIITTTIIIII rowsort
 SELECT * FROM sys.querylog_history WHERE id NOT IN (SELECT id FROM sys.querylog_catalog)
 ----
 
-query TTTTTTIITTTIIIII rowsort
+query ITTTTTIITTTIIIII rowsort
 SELECT * FROM sys.querylog_history WHERE owner NOT IN (SELECT name FROM sys.users)
 ----
 
-query TTTTTTIITTTIIIII rowsort
+query ITTTTTIITTTIIIII rowsort
 SELECT * FROM sys.querylog_history WHERE pipe NOT IN (SELECT name FROM sys.optimizers)
 ----
 
@@ -286,51 +286,51 @@ query ITTTTIIII rowsort
 SELECT * FROM sys.sessions WHERE "username" NOT IN (SELECT name FROM sys.users)
 ----
 
-query ITITIIIITTTT rowsort
+query ITITIIIITTII rowsort
 SELECT * FROM sys.statistics WHERE column_id NOT IN (SELECT id FROM sys._columns UNION ALL SELECT id FROM tmp._columns)
 ----
 
-query ITITIIIITTTT rowsort
+query ITITIIIITTII rowsort
 SELECT * FROM sys.statistics WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage() WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage() WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage() WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage() WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage() WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
-query TTTTTTIIIIITITTTI rowsort
+query TTTTTTIIIIIIIIIII rowsort
 SELECT * FROM sys.storage WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
@@ -350,43 +350,43 @@ query TIIIIII rowsort
 SELECT * FROM sys.schemastorage WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
-query TTTTIIIIIITTT rowsort
+query TTTTIIIIIIIII rowsort
 SELECT * FROM sys.storagemodel WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
-query TTTTIIIIIITTT rowsort
+query TTTTIIIIIIIII rowsort
 SELECT * FROM sys.storagemodel WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
-query TTTTIIIIIITTT rowsort
+query TTTTIIIIIIIII rowsort
 SELECT * FROM sys.storagemodel WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
-query TTTTIIIIIITTT rowsort
+query TTTTIIIIIIIII rowsort
 SELECT * FROM sys.storagemodel WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
-query TTTTIIIIIITTT rowsort
+query TTTTIIIIIIIII rowsort
 SELECT * FROM sys.storagemodel WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
-query TTTTIIIITTTT rowsort
+query TTTTIIIIIIII rowsort
 SELECT * FROM sys.storagemodelinput WHERE schema NOT IN (SELECT name FROM sys.schemas)
 ----
 
-query TTTTIIIITTTT rowsort
+query TTTTIIIIIIII rowsort
 SELECT * FROM sys.storagemodelinput WHERE table NOT IN (SELECT name FROM sys._tables UNION ALL SELECT name FROM tmp._tables)
 ----
 
-query TTTTIIIITTTT rowsort
+query TTTTIIIIIIII rowsort
 SELECT * FROM sys.storagemodelinput WHERE (schema, table) NOT IN (SELECT sch.name, tbl.name FROM sys.schemas AS sch JOIN sys.tables AS tbl ON sch.id = tbl.schema_id)
 ----
 
-query TTTTIIIITTTT rowsort
+query TTTTIIIIIIII rowsort
 SELECT * FROM sys.storagemodelinput WHERE column NOT IN (SELECT name FROM sys._columns UNION ALL SELECT name FROM tmp._columns UNION ALL SELECT name FROM sys.keys UNION ALL SELECT name FROM tmp.keys UNION ALL SELECT name FROM sys.idxs UNION ALL SELECT name FROM tmp.idxs)
 ----
 
-query TTTTIIIITTTT rowsort
+query TTTTIIIIIIII rowsort
 SELECT * FROM sys.storagemodelinput WHERE type NOT IN (SELECT sqlname FROM sys.types)
 ----
 
@@ -414,11 +414,11 @@ query IIITI rowsort
 SELECT * FROM sys.table_partitions WHERE "type" NOT IN (5,6,9,10)
 ----
 
-query IITTT rowsort
+query IITTI rowsort
 SELECT * FROM sys.range_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._tables)
 ----
 
-query IITTT rowsort
+query IITTI rowsort
 SELECT * FROM sys.range_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions)
 ----
 
@@ -429,5 +429,4 @@ SELECT * FROM sys.value_partitions WHERE "table_id" NOT IN (SELECT id FROM sys._
 query IIT rowsort
 SELECT * FROM sys.value_partitions WHERE "partition_id" NOT IN (SELECT id FROM sys.table_partitions)
 ----
-
 

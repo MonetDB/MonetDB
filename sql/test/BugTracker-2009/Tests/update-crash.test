@@ -49,4 +49,3 @@ WHERE
 statement ok
 drop table phpbb_topics
 
-

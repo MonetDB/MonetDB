@@ -39,7 +39,7 @@ where (true)
 111
 1111
 
-query TI rowsort
+query II rowsort
 select
       (select cast("col0" + 1 as boolean) from tab1 where col0=51) as c3,
        subq_0.c0 as c9
@@ -49,16 +49,15 @@ from
               where sample_0.col2 is not NULL limit 95) as subq_0
 where cast(coalesce(17, subq_0.c1) as int) is not NULL
 ----
-True
 1
-True
+1
+1
 11
-True
+1
 111
-True
+1
 1111
 
 statement ok
 ROLLBACK
-
 

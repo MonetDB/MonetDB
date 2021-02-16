@@ -33,4 +33,3 @@ drop table get_results
 statement ok
 rollback
 
-

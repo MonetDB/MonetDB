@@ -64,4 +64,3 @@ commit
 statement ok
 drop table if exists savepointtest
 
-

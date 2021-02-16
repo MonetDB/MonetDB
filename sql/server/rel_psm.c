@@ -441,7 +441,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 				sql_exp *e = (sql_exp *) n->data;
 
 				if (!strcmp(exp_name(e), TID)) { /* The TID column must not be in the return projection */
-					list_remove_node(rel->exps, n);
+					list_remove_node(rel->exps, NULL, n);
 					break;
 				}
 			}
@@ -837,7 +837,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	is_func = (type != F_PROC && type != F_LOADER);
 	assert(lang != FUNC_LANG_INT);
 
-	if (STORE_READONLY && create)
+	if (create && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
 
 	if (res && type == F_PROC)
@@ -987,7 +987,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 			if (create) { /* needed for recursive functions */
 				q = query_cleaned(sql->ta, q);
-				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, "user", q, q, FALSE, vararg, FALSE);
+				sql->forward = f = mvc_create_func(sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, q, q, FALSE, vararg, FALSE);
 			}
 			sql->session->schema = s;
 			b = sequential_block(query, (ra)?&ra->type:NULL, ra?NULL:restype, body, NULL, is_func);
@@ -1020,10 +1020,14 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 				return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: external name %s.%s not bound (%s.%s)", F, fmod, fnme, s->base.name, fname );
 			} else {
 				sql_func *f = sf->func;
-				if (!f->mod || strcmp(f->mod, fmod))
-					f->mod = (f->sa)?sa_strdup(f->sa, fmod):sa_strdup(sql->pa, fmod);
-				if (!f->imp || strcmp(f->imp, fnme))
-					f->imp = (f->sa)?sa_strdup(f->sa, fnme):sa_strdup(sql->pa, fnme);
+				if (!f->mod || strcmp(f->mod, fmod)) {
+					_DELETE(f->mod);
+					f->mod = SA_STRDUP(NULL, fmod) ;//(f->sa)?sa_strdup(f->sa, fmod):sa_strdup(sql->pa, fmod);
+				}
+				if (!f->imp || strcmp(f->imp, fnme)) {
+					_DELETE(f->imp);
+					f->imp = SA_STRDUP(NULL, fnme);//(f->sa)?sa_strdup(f->sa, fnme):sa_strdup(sql->pa, fnme);
+				}
 				if (!f->mod || !f->imp)
 					return sql_error(sql, 02, SQLSTATE(HY013) "CREATE %s: could not allocate space", F);
 				f->sql = 0; /* native */
@@ -1543,7 +1547,7 @@ rel_psm(sql_query *query, symbol *s)
 		int all = l->h->next->next->next->next->data.i_val;
 		int drop_action = l->h->next->next->next->next->next->data.i_val;
 
-		if (STORE_READONLY)
+		if (store_readonly(sql->session->tr->store))
 			return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
 
 		if (all)

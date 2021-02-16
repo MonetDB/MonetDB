@@ -21,12 +21,31 @@ DELETE FROM sys.statistics
 statement ok
 ANALYZE sys.abc
 
-query TIIIIITTTT rowsort
+query TIIIIITTII rowsort
 SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics
 ----
-20 values hashing to dd6300a929beaf00a4dc41eaa61e30a3
+int
+4
+2
+2
+2
+0
+1
+2
+1
+0
+varchar
+1
+2
+2
+2
+0
+one
+two
+1
+0
 
-query TIIIIITTTT rowsort
+query TIIIIITTII rowsort
 -- expected 2 rows
 SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns)
 ----
@@ -35,7 +54,7 @@ statement ok
 -- expected 0 rows
 ALTER TABLE sys.abc DROP COLUMN b
 
-query TIIIIITTTT rowsort
+query TIIIIITTII rowsort
 SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns)
 ----
 
@@ -43,11 +62,11 @@ statement ok
 -- expected 0 rows but found 1 row !
 DROP TABLE sys.abc CASCADE
 
-query TIIIIITTTT rowsort
+query TIIIIITTII rowsort
 SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics where column_id not in (select id from sys.columns)
 ----
 
-query TIIIIITTTT rowsort
+query TIIIIITTII rowsort
 -- expected 0 rows but found 2 rows !
 SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorted, revsorted FROM sys.statistics
 ----
@@ -55,5 +74,4 @@ SELECT   type, width,   "sample", "count", "unique", nils, minval, maxval, sorte
 statement ok
 -- expected 0 rows but found 2 rows !
 DELETE FROM sys.statistics
-
 

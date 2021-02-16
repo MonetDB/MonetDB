@@ -10,7 +10,7 @@ event 2
 2009-06-23
 description2
 
-query ITTT nosort
+query IITT nosort
 select * from event_metadata
 ----
 1
@@ -29,3 +29,4 @@ artist2
 2
 location
 location2
+

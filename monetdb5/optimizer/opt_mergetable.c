@@ -473,76 +473,31 @@ mat_apply1(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int var)
 }
 
 static int
-mat_apply2(matlist_t *ml, MalBlkPtr mb, InstrPtr p, mat_t *mat, int m, int n, int mvar, int nvar)
+mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 {
-	int k, l, is_select = isSelect(p);
-	InstrPtr *r = NULL;
-	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
-	if(!r)
-		return -1;
-	for(k=0; k < p->retc; k++) {
-		if((r[k] = newInstructionArgs(mb, matRef, packRef, mat[m].mi->argc)) == NULL) {
-			for(l=0; l < k; l++)
-				freeInstruction(r[l]);
-			GDKfree(r);
-			return -1;
-		}
-		getArg(r[k],0) = getArg(p,k);
-	}
+	int matvar[8], fargument[8], k, l, parts = 0;
 
-	for(k=1; k < mat[m].mi->argc; k++) {
-		int tpe;
-		InstrPtr q = copyInstruction(p);
-		if(!q) {
-			GDKfree(r);
-			return -1;
-		}
+	assert(nrmats <= 8);
 
-		for(l=0; l < p->retc; l++) {
-			tpe = getArgType(mb,p,l);
-			getArg(q, l) = newTmpVariable(mb, tpe);
-		}
-		getArg(q, mvar) = getArg(mat[m].mi, k);
-		getArg(q, nvar) = getArg(mat[n].mi, k);
-		pushInstruction(mb, q);
-		for(l=0; l < p->retc; l++) {
-			int res = 0;
-			if (is_select)
-				res = propagatePartnr(ml, getArg(q,p->retc+1), getArg(q,l), k);
-			else
-				res = propagatePartnr(ml, -1, getArg(q,l), k);
-			if(res) {
-				for(l=0; l < k; l++)
-					freeInstruction(r[l]);
-				GDKfree(r);
+	for(k=p->retc, l=0; k < p->argc; k++) {
+		int mv = is_a_mat(getArg(p,k), ml);
+		if (mv >=0) {
+			matvar[l] = mv;
+			fargument[l] = k;
+			l++;
+			if (parts==0)
+				parts = ml->v[mv].mi->argc;
+			if (parts != ml->v[mv].mi->argc)
 				return -1;
-			}
-			r[l] = addArgument(mb, r[l], getArg(q, l));
 		}
 	}
 
-	for(k=0; k < p->retc; k++) {
-		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 0)) {
-			for(l=0; l < k; l++)
-				freeInstruction(r[l]);
-			GDKfree(r);
-			return -1;
-		}
-	}
-	GDKfree(r);
-	return 0;
-}
-
-static int
-mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mvar, int nvar, int ovar)
-{
-	int k, l;
 	InstrPtr *r = NULL;
 	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	if(!r)
 		return -1;
 	for(k=0; k < p->retc; k++) {
-		if((r[k] = newInstructionArgs(mb, matRef, packRef, ml->v[m].mi->argc)) == NULL) {
+		if((r[k] = newInstructionArgs(mb, matRef, packRef, parts)) == NULL) {
 			for(l=0; l < k; l++)
 				freeInstruction(r[l]);
 			GDKfree(r);
@@ -551,7 +506,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 		getArg(r[k],0) = getArg(p,k);
 	}
 
-	for(k = 1; k < ml->v[m].mi->argc; k++) {
+	for(k = 1; k < ml->v[matvar[0]].mi->argc; k++) {
 		int tpe;
 		InstrPtr q = copyInstruction(p);
 		if(!q) {
@@ -563,9 +518,8 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 			tpe = getArgType(mb,p,l);
 			getArg(q, l) = newTmpVariable(mb, tpe);
 		}
-		getArg(q, mvar) = getArg(ml->v[m].mi, k);
-		getArg(q, nvar) = getArg(ml->v[n].mi, k);
-		getArg(q, ovar) = getArg(ml->v[o].mi, k);
+		for (l = 0; l<nrmats; l++)
+			getArg(q, fargument[l]) = getArg(ml->v[matvar[l]].mi, k);
 		pushInstruction(mb, q);
 		for(l=0; l < p->retc; l++) {
 			if(setPartnr(ml, -1, getArg(q,l), k)) {
@@ -578,7 +532,7 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 		}
 	}
 	for(k=0; k < p->retc; k++) {
-		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 1)) {
+		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, matvar[0]),  -1, -1, 1)) {
 			for(l=0; l < k; l++)
 				freeInstruction(r[l]);
 			GDKfree(r);
@@ -590,63 +544,6 @@ mat_apply3(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int mva
 	return 0;
 }
 
-static int
-mat_apply4(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o, int e, int mvar, int nvar, int ovar, int evar)
-{
-	int k, l;
-	InstrPtr *r = NULL;
-	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
-	if(!r)
-		return -1;
-	for(k=0; k < p->retc; k++) {
-		if((r[k] = newInstructionArgs(mb, matRef, packRef, ml->v[m].mi->argc)) == NULL) {
-			for(l=0; l < k; l++)
-				freeInstruction(r[l]);
-			GDKfree(r);
-			return -1;
-		}
-		getArg(r[k],0) = getArg(p,k);
-	}
-
-	for(k = 1; k < ml->v[m].mi->argc; k++) {
-		int tpe;
-		InstrPtr q = copyInstruction(p);
-		if(!q) {
-			GDKfree(r);
-			return -1;
-		}
-
-		for(l=0; l < p->retc; l++) {
-			tpe = getArgType(mb,p,l);
-			getArg(q, l) = newTmpVariable(mb, tpe);
-		}
-		getArg(q, mvar) = getArg(ml->v[m].mi, k);
-		getArg(q, nvar) = getArg(ml->v[n].mi, k);
-		getArg(q, ovar) = getArg(ml->v[o].mi, k);
-		getArg(q, evar) = getArg(ml->v[e].mi, k);
-		pushInstruction(mb, q);
-		for(l=0; l < p->retc; l++) {
-			if(setPartnr(ml, -1, getArg(q,l), k)) {
-				for(l=0; l < k; l++)
-					freeInstruction(r[l]);
-				GDKfree(r);
-				return -1;
-			}
-			r[l] = addArgument(mb, r[l], getArg(q, l));
-		}
-	}
-	for(k=0; k < p->retc; k++) {
-		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, m),  -1, -1, 1)) {
-			for(l=0; l < k; l++)
-				freeInstruction(r[l]);
-			GDKfree(r);
-			return -1;
-		}
-		pushInstruction(mb, r[k]);
-	}
-	GDKfree(r);
-	return 0;
-}
 
 static int
 mat_setop(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int m, int n, int o)
@@ -2119,8 +2016,7 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	mb->stop = 0;
 
 	for( i=0; i<oldtop; i++){
-		int bats = 0;
-		int nilbats = 0;
+		int bats = 0, nilbats = 0;
 		InstrPtr r, cp;
 
 		p = old[i];
@@ -2444,53 +2340,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			continue;
 		}
 
-		if (match == 4 && bats == 4 && isMap2Op(p) &&  p->retc == 1 &&
-		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
-		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
-		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0 &&
-		   (e=is_a_mat(getArg(p,fe), &ml)) >= 0){
-			assert(ml.v[m].mi->argc == ml.v[n].mi->argc);
-			if(mat_apply4(mb, p, &ml, m, n, o, e, fm, fn, fo, fe)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			actions++;
-			continue;
-		}
-
-		if (match == 3 && bats == 3 && (isFragmentGroup(p) || isFragmentGroup2(p) || isMapOp(p)) &&  p->retc != 2 &&
-		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
-		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0 &&
-		   (o=is_a_mat(getArg(p,fo), &ml)) >= 0){
-			assert(ml.v[m].mi->argc == ml.v[n].mi->argc);
-			if(mat_apply3(mb, p, &ml, m, n, o, fm, fn, fo)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			actions++;
-			continue;
-		}
-		if (match == 2 && bats == 2 && (isFragmentGroup(p) || isFragmentGroup2(p) || isMapOp(p)) &&  p->retc != 2 &&
-		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0 &&
-		   (n=is_a_mat(getArg(p,fn), &ml)) >= 0){
-			assert(ml.v[m].mi->argc == ml.v[n].mi->argc);
-			if(mat_apply2(&ml, mb, p, ml.v, m, n, fm, fn)) {
-				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto cleanup;
-			}
-			actions++;
-			continue;
-		}
-
-		if (match == 1 && bats == 1 && (isFragmentGroup(p) || isMapOp(p) ||
-		   (!getModuleId(p) && !getFunctionId(p) && p->barrier == 0 /* simple assignment */)) && p->retc != 2 &&
-		   (m=is_a_mat(getArg(p,fm), &ml)) >= 0){
-			if ((r = mat_apply1(mb, p, &ml, m, fm)) != NULL) {
-				if(mat_add(&ml, r, mat_type(ml.v, m), getFunctionId(p))) {
-					msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto cleanup;
-				}
-			} else {
+		if (match == bats && p->retc == 1 && (isMap2Op(p) || isMapOp(p) || isFragmentGroup(p) || isFragmentGroup2(p))) {
+			if(mat_apply(mb, p, &ml, match)) {
 				msg = createException(MAL,"optimizer.mergetable",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto cleanup;
 			}

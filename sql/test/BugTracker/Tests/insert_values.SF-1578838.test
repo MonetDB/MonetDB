@@ -128,4 +128,3 @@ WHERE "name" LIKE 'vic%'
 statement ok
 rollback
 
-

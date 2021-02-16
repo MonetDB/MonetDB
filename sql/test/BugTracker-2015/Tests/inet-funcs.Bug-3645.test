@@ -1,41 +1,40 @@
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' << inet'192.168.0.0/24'
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' <<= inet'192.168.0.0/24'
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' >> inet'192.168.0.0/24'
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' >>= inet'192.168.0.0/24'
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' << inet'192.168.0.1/24'
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' <<= inet'192.168.0.1/24'
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' >> inet'192.168.0.1/24'
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT inet'192.168.0.1' >>= inet'192.168.0.1/24'
 ----
-False
-
+0
 

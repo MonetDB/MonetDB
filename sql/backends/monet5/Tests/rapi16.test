@@ -50,4 +50,3 @@ DROP TABLE rapi16
 statement ok
 ROLLBACK
 
-

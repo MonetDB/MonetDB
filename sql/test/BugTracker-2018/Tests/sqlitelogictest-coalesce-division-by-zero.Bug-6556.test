@@ -3,4 +3,3 @@ SELECT CAST(COALESCE ( + 55, + 71 * - 23 + 20 + 74 / - COUNT ( ALL - 0 ) / + 75,
 ----
 7421
 
-

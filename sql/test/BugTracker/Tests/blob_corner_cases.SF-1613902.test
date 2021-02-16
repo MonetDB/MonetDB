@@ -27,4 +27,3 @@ VALUES (2, NULL)
 statement ok
 drop table testtable
 
-

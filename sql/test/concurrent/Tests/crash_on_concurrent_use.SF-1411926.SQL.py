@@ -23,14 +23,19 @@ class Client(threading.Thread):
         threading.Thread.__init__ (self)
         self.client = client
         self.dbh = pymonetdb.connect(port=int(os.getenv('MAPIPORT')),hostname=os.getenv('MAPIHOST'),database=os.getenv('TSTDB'))
+        self.error = 0
 
     def run(self):
         cursor = self.dbh.cursor();
-        cursor.execute(query)
-        self.result = cursor.fetchall()
+        try:
+            cursor.execute(query)
+            self.result = cursor.fetchall()
+        except:
+            self.error = 1
+            pass
 
     def output(self):
-        if self.result != [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)]:
+        if self.error == 0 and self.result != [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)]:
             sys.stderr.write('[(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,), (0,)] expected')
 
 def main():

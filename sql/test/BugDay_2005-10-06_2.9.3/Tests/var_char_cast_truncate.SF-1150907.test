@@ -19,14 +19,31 @@ insert into t11 values ('bladibaldibla')
 query TI rowsort
 select cast(str as varchar(4)), length(cast(str as varchar(4))) from t11
 ----
-10 values hashing to ffa1642b4fa23081c962298f28ebaa21
+5
+1
+bla
+3
+bla 
+4
+blab
+4
+blad
+4
 
 query TI rowsort
 select cast(str as char(4)), length(cast(str as char(4))) from t11
 ----
-10 values hashing to ffa1642b4fa23081c962298f28ebaa21
+5
+1
+bla
+3
+bla 
+4
+blab
+4
+blad
+4
 
 statement ok
 drop table t11
-
 

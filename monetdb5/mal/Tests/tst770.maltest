@@ -13,4 +13,3 @@ function test(b:bat[:any_2]):void;
         reduce := batcalc./(b,1,nil:bat);
 end test;
 
-

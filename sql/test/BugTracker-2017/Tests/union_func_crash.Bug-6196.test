@@ -23,4 +23,3 @@ select ser(1, 4)
 statement ok
 rollback
 
-

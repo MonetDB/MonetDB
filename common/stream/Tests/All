@@ -14,3 +14,7 @@ HAVE_CURL?urlstream
 read_iconv
 write_iconv
 
+HAVE_LIBBZ2?read_concatenated_bz2
+HAVE_LIBZ?read_concatenated_gz
+HAVE_LIBLZ4&HAVE_PYTHON_LZ4?read_concatenated_lz4
+HAVE_LIBLZMA?read_concatenated_xz

@@ -4,11 +4,10 @@ CREATE TABLE OID_TBL(f1 oid)
 statement error
 INSERT INTO OID_TBL(f1) VALUES (-1040)
 
-query T rowsort
+query I rowsort
 SELECT * FROM OID_TBL
 ----
 
 statement ok
 drop table OID_TBL
-
 

@@ -20,4 +20,3 @@ drop table foo
 statement ok
 rollback
 
-

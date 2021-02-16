@@ -133,4 +133,3 @@ and i < timestamp '2008-03-01 21:00' order by X.value, Y.i
 statement ok
 drop table tmp
 
-

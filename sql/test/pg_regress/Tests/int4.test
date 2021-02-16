@@ -170,7 +170,21 @@ SELECT '' AS three, i.* FROM INT4_TBL i WHERE (i.f1 % cast('2' as integer)) = ca
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i
 ----
-15 values hashing to ae041f8979ef338e83073173757ea3fe
+(empty)
+-123456
+-246912
+(empty)
+-2147483647
+-4294967294
+(empty)
+0
+0
+(empty)
+123456
+246912
+(empty)
+2147483647
+4294967294
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 * cast('2' as smallint) AS x FROM INT4_TBL i
@@ -189,7 +203,21 @@ WHERE abs(f1) < 1073741824
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i
 ----
-15 values hashing to ae041f8979ef338e83073173757ea3fe
+(empty)
+-123456
+-246912
+(empty)
+-2147483647
+-4294967294
+(empty)
+0
+0
+(empty)
+123456
+246912
+(empty)
+2147483647
+4294967294
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 * cast('2' as integer) AS x FROM INT4_TBL i
@@ -208,56 +236,184 @@ WHERE abs(f1) < 1073741824
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i
 ----
-15 values hashing to 10d44cff3a6aa7eeb84e3d2c40e70603
+(empty)
+-123456
+-123454
+(empty)
+-2147483647
+-2147483645
+(empty)
+0
+2
+(empty)
+123456
+123458
+(empty)
+2147483647
+2147483649
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 + cast('2' as smallint) AS x FROM INT4_TBL i
 WHERE f1 < 2147483646
 ----
-12 values hashing to 9e5d33869febe94cc99b44e91ba82953
+(empty)
+-123456
+-123454
+(empty)
+-2147483647
+-2147483645
+(empty)
+0
+2
+(empty)
+123456
+123458
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i
 ----
-15 values hashing to 10d44cff3a6aa7eeb84e3d2c40e70603
+(empty)
+-123456
+-123454
+(empty)
+-2147483647
+-2147483645
+(empty)
+0
+2
+(empty)
+123456
+123458
+(empty)
+2147483647
+2147483649
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 + cast('2' as integer) AS x FROM INT4_TBL i
 WHERE f1 < 2147483646
 ----
-12 values hashing to 9e5d33869febe94cc99b44e91ba82953
+(empty)
+-123456
+-123454
+(empty)
+-2147483647
+-2147483645
+(empty)
+0
+2
+(empty)
+123456
+123458
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i
 ----
-15 values hashing to 264497fdb70d7ce9c7d57236f51f9c40
+(empty)
+-123456
+-123458
+(empty)
+-2147483647
+-2147483649
+(empty)
+0
+-2
+(empty)
+123456
+123454
+(empty)
+2147483647
+2147483645
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 - cast('2' as smallint) AS x FROM INT4_TBL i
 WHERE f1 > -2147483647
 ----
-12 values hashing to 95ff1806337be23aba3511fcfe5f0a98
+(empty)
+-123456
+-123458
+(empty)
+0
+-2
+(empty)
+123456
+123454
+(empty)
+2147483647
+2147483645
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i
 ----
-15 values hashing to 264497fdb70d7ce9c7d57236f51f9c40
+(empty)
+-123456
+-123458
+(empty)
+-2147483647
+-2147483649
+(empty)
+0
+-2
+(empty)
+123456
+123454
+(empty)
+2147483647
+2147483645
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 - cast('2' as integer) AS x FROM INT4_TBL i
 WHERE f1 > -2147483647
 ----
-12 values hashing to 95ff1806337be23aba3511fcfe5f0a98
+(empty)
+-123456
+-123458
+(empty)
+0
+-2
+(empty)
+123456
+123454
+(empty)
+2147483647
+2147483645
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 / cast('2' as smallint) AS x FROM INT4_TBL i
 ----
-15 values hashing to 8728595117f123e7fa4a37ba0618df65
+(empty)
+-123456
+-61728
+(empty)
+-2147483647
+-1073741823
+(empty)
+0
+0
+(empty)
+123456
+61728
+(empty)
+2147483647
+1073741823
 
 query TII rowsort
 SELECT '' AS five, i.f1, i.f1 / cast('2' as integer) AS x FROM INT4_TBL i
 ----
-15 values hashing to 8728595117f123e7fa4a37ba0618df65
+(empty)
+-123456
+-61728
+(empty)
+-2147483647
+-1073741823
+(empty)
+0
+0
+(empty)
+123456
+61728
+(empty)
+2147483647
+1073741823
 
 query I rowsort
 SELECT -2+3 AS one
@@ -279,25 +435,25 @@ SELECT 2 - -2 AS four
 ----
 4
 
-query T rowsort
+query I rowsort
 SELECT cast('2' as smallint) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as smallint) AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT cast('2' as integer) * cast('2' as smallint) = cast('16' as smallint) / cast('4' as integer) AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT cast('2' as smallint) * cast('2' as integer) = cast('16' as integer) / cast('4' as smallint) AS "true"
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT cast('1000' as integer)  < cast('999' as integer) AS "false"
 ----
-False
+0
 
 statement error
 SELECT 4! AS twenty_four
@@ -319,5 +475,4 @@ query I rowsort
 SELECT (2 + 2) / 2 AS two
 ----
 2
-
 

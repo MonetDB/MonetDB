@@ -110,7 +110,33 @@ select b.name, c.id, c.name from facts left join a
 group by b.name, c.name, c.id
 order by b.name, c.id, c.name
 ----
-27 values hashing to dc5cfd554c7ae40924e9f6801323bd84
+b1
+1
+c1
+b1
+2
+c2
+b1
+3
+c3
+b2
+1
+c1
+b2
+2
+c2
+b2
+3
+c3
+b3
+1
+c1
+b3
+2
+c2
+b3
+3
+c3
 
 statement ok
 alter table c drop constraint c_id_pkey
@@ -120,7 +146,33 @@ select b.name, c.id, c.name from facts left join a on a_id = a.id left join b
 on b_id = b.id left join c on c_id = c.id group by b.name, c.name, c.id
 order by b.name, c.id, c.name
 ----
-27 values hashing to dc5cfd554c7ae40924e9f6801323bd84
+b1
+1
+c1
+b1
+2
+c2
+b1
+3
+c3
+b2
+1
+c1
+b2
+2
+c2
+b2
+3
+c3
+b3
+1
+c1
+b3
+2
+c2
+b3
+3
+c3
 
 statement ok
 drop table facts
@@ -133,5 +185,4 @@ drop table b
 
 statement ok
 drop table c
-
 

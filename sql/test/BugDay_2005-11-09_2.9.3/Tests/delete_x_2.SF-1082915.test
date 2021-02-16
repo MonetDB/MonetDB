@@ -13,4 +13,3 @@ delete from test
 statement ok
 delete from test
 
-

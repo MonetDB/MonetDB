@@ -11,7 +11,9 @@
 
 #include "mal_interpreter.h"
 #include "mal_scenario.h"
-#include "oltp.h"
+#include "gdk.h"
+#include "mal_exception.h"
+#include "mal_interpreter.h"
 #include "opt_support.h"
 #include "opt_prelude.h"
 

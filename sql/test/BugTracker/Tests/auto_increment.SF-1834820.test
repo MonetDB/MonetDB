@@ -53,4 +53,3 @@ select count(*) from sequences
 ----
 0
 
-

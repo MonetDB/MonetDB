@@ -77,7 +77,22 @@ where dd.c = 1
   and d1.d = 1
   and (((dd.c = 1 or dd.c = 3) and d2.d is null) or ((dd.c = 1 or dd.c = 3) and d2.d = 2))
 ----
-16 values hashing to 8c4406a5d205a253f738bc056d3de2c5
+1
+1
+1
+2
+1
+1
+3
+2
+1
+1
+1
+3
+2
+1
+3
+2
 
 query IIIIIIII rowsort
 select *
@@ -104,5 +119,4 @@ drop table test_dic1
 
 statement ok
 rollback
-
 

@@ -19,14 +19,14 @@ cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy)
 }
 
 void
-cs_destroy(changeset * cs)
+cs_destroy(changeset * cs, void *data)
 {
 	if (cs->set) {
-		list_destroy(cs->set);
+		list_destroy2(cs->set, data);
 		cs->set = NULL;
 	}
 	if (cs->dset) {
-		list_destroy(cs->dset);
+		list_destroy2(cs->dset, data);
 		cs->dset = NULL;
 	}
 }
@@ -42,18 +42,18 @@ cs_add(changeset * cs, void *elm, int flags)
 }
 
 void *
-cs_transverse_with_validate(changeset * cs, void *elm, fvalidate cmp)
+cs_transverse_with_validate(changeset * cs, void *elm, void *extra, fvalidate cmp)
 {
-	return list_traverse_with_validate(cs->set, elm, cmp);
+	return list_transverse_with_validate(cs->set, elm, extra, cmp);
 }
 
-void*
-cs_add_with_validate(changeset * cs, void *elm, int flags, fvalidate cmp)
+void *
+cs_add_with_validate(changeset * cs, void *elm, void *extra, int flags, fvalidate cmp)
 {
 	void* res = NULL;
 	if (!cs->set)
 		cs->set = list_new(cs->sa, cs->destroy);
-	if((res = list_append_with_validate(cs->set, elm, cmp)) != NULL)
+	if((res = list_append_with_validate(cs->set, elm, extra, cmp)) != NULL)
 		return res;
 	if (newFlagSet(flags) && !cs->nelm)
 		cs->nelm = cs->set->t;
@@ -67,12 +67,12 @@ cs_add_before(changeset * cs, node *n, void *elm)
 }
 
 void
-cs_del(changeset * cs, node *elm, int flags)
+cs_del(changeset * cs, void *gdata, node *elm, int flags)
 {
+	if (cs->nelm == elm)
+		cs->nelm = elm->next;
 	if (newFlagSet(flags)) {	/* remove just added */
-		if (cs->nelm == elm)
-			cs->nelm = elm->next;
-		list_remove_node(cs->set, elm);
+		list_remove_node(cs->set, gdata, elm);
 	} else {
 		if (!cs->dset)
 			cs->dset = list_new(cs->sa, cs->destroy);
@@ -106,14 +106,4 @@ node *
 cs_last_node(changeset * cs)
 {
 	return cs->set->t;
-}
-
-void
-cs_remove_node(changeset * cs, node *n)
-{
-	node *nxt = n->next;
-
-	list_remove_node(cs->set, n);
-	if (cs->nelm == n)
-		cs->nelm = nxt;
 }

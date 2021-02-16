@@ -16,4 +16,3 @@ select st_numPoints(geom) AS "POINTS" from geometries where id in (2,3,4)
 4
 6
 
-

@@ -1,6 +1,5 @@
-query T rowsort
+query I rowsort
 SELECT ST_IsSimple(shore) FROM lakes WHERE name = 'Blue Lake'
 ----
-True
-
+1
 

@@ -13,7 +13,7 @@ bat.new
 sql.mvc
 1
 sql.bind
-7
+9
 sql.tid
 2
 algebra.thetaselect
@@ -21,9 +21,7 @@ algebra.thetaselect
 sql.subdelta
 1
 sql.projectdelta
-1
-algebra.projection
-1
+2
 bat.append
 2
 bat.pack
@@ -33,5 +31,4 @@ sql.resultSet
 
 statement ok
 set optimizer='default_pipe'
-
 

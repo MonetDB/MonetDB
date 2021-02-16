@@ -58,4 +58,3 @@ DROP TABLE mt1
 statement ok
 DROP TABLE t1
 
-

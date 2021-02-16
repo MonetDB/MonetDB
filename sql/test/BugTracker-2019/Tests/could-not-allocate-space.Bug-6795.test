@@ -237,7 +237,7 @@ COPY 22 RECORDS INTO "sys"."eoproduct" FROM stdin USING DELIMITERS E'\t',E'\n','
 26	26	26
 27	27	27
 
-query TIITIIIIITTTTTTTTTTTTTTTTITTTITIRTIRTRRTTRRIIRRTRRRRIITRRRRIITRRRRIITRRRRIITRRRRTRRIIRRTRRIIRRIIIITTTTIIITIITTI rowsort
+query TIITIIIIITTTTTTTTTTTTTTTTITTTITIRTIRTRRTTRRIIRRTRRRRIITRRRRIITRRRRIITRRRRIITRRRRTRRIIRRTRRIIRRIIIITTTTIIIIIITTI rowsort
 Select ' ' as selected, i.image_id, *
     from metadata m
     join "image" i on m.metadata_id=i.metadata_id
@@ -245,9 +245,8 @@ Select ' ' as selected, i.image_id, *
     join ingestion ing on ing.ingestion_id=eo.ingestion_id
     where  m.mission = 'S2A'
 ----
-999 values hashing to 9b6cd8b94ccef5d2fc79d1ee87ded428
+999 values hashing to 576b83514e9682dc06c342d176ed0b95
 
 statement ok
 ROLLBACK
-
 

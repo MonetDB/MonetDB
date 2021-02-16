@@ -18,4 +18,3 @@ SELECT CAST(0.50 AS INTEGER)
 ----
 1
 
-

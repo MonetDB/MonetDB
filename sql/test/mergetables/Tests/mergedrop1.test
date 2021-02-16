@@ -49,4 +49,3 @@ alter table t add table t1
 statement ok
 rollback
 
-

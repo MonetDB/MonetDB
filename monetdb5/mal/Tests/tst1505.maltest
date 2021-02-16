@@ -49,18 +49,48 @@ statement ok
 statement ok
 	y:= bat.append(y,af_a)
 
-query TT rowsort
+query IR rowsort
 io.print(y)
 ----
-16 values hashing to 56100a666db1f7b6ee39551171c64c65
+0
+1.000
+1
+2.000
+2
+2.000
+3
+2.000
+4
+2.000
+5
+3.000
+6
+1.000
+7
+1.000
 
 statement ok
 z:= batcalc.<(y,2.0:dbl)
 
-query TT rowsort
+query II rowsort
 io.print(z)
 ----
-16 values hashing to c0a575e4ae9136e9992439f9155b93c1
+0
+1
+1
+0
+2
+0
+3
+0
+4
+0
+5
+0
+6
+1
+7
+1
 
 statement ok
 c:= aggr.count(z)
@@ -90,17 +120,17 @@ statement ok
 statement ok
 	x:= bat.append(x,false)
 
-query TT rowsort
+query II rowsort
 	io.print(x)
 ----
 0
-True
 1
-False
+1
+0
 2
-True
+1
 3
-False
+0
 
 statement ok
 	A:= bat.new(:bit)
@@ -117,41 +147,74 @@ statement ok
 statement ok
 	A:= bat.append(A,false)
 
-query TT rowsort
+query II rowsort
 	io.print(A)
 ----
 0
-True
 1
-True
+1
+1
 2
-False
+0
 3
-False
+0
 
 statement ok
 	xn:= batcalc.not(x)
 
-query TTT rowsort
+query III rowsort
 io.print(x,xn)
 ----
-12 values hashing to aadeabf79ed8132e380121e5ccfe07a4
+0
+1
+0
+1
+0
+1
+2
+1
+0
+3
+0
+1
 
 statement ok
 	xandx:= batcalc.and(x,A)
 
-query TTT rowsort
+query III rowsort
 io.print(x,xandx)
 ----
-12 values hashing to 1bd0fbe2fcac5b9e31aaab8fed03adf8
+0
+1
+1
+1
+0
+0
+2
+1
+0
+3
+0
+0
 
 statement ok
 	xorx:= batcalc.or(x,A)
 
-query TTT rowsort
+query III rowsort
 io.print(x,xorx)
 ----
-12 values hashing to 4147b4c4b9bc7fef0aa75f255607c60d
+0
+1
+1
+1
+0
+1
+2
+1
+1
+3
+0
+0
 
 query T rowsort
 io.print("ifthen group")
@@ -161,25 +224,69 @@ io.print("ifthen group")
 statement ok
 	xif2:= batcalc.ifthenelse(x,x,xn)
 
-query TTTTT rowsort
+query IIIII rowsort
 io.print(x,x,xn,xif2)
 ----
-20 values hashing to 18699b095356b3b87dd5df600f3e2ee1
+0
+1
+1
+0
+1
+1
+0
+0
+1
+1
+2
+1
+1
+0
+1
+3
+0
+0
+1
+1
 
 statement ok
 	xif3:= batcalc.ifthenelse(x,x,true)
 
-query TTTT rowsort
+query IIII rowsort
 io.print(x,x,xif3)
 ----
-16 values hashing to c23fed359e03d2ffb855025da406a1c9
+0
+1
+1
+1
+1
+0
+0
+1
+2
+1
+1
+1
+3
+0
+0
+1
 
 statement ok
 	xif4:= batcalc.ifthenelse(x,1,2)
 
-query TTI rowsort
+query III rowsort
 io.print(x,xif4)
 ----
-12 values hashing to 8986ae362618b5d93e967b7f70d572ab
-
+0
+1
+1
+1
+0
+2
+2
+1
+1
+3
+0
+2
 

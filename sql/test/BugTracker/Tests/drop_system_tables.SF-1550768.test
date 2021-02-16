@@ -7,4 +7,3 @@ drop view tables
 statement error
 drop table _tables
 
-

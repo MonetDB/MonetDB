@@ -9,6 +9,13 @@
 #include "monetdb_config.h"
 #include "store_dependency.h"
 
+static void
+_free(void *dummy, void *data)
+{
+	(void)dummy;
+	GDKfree(data);
+}
+
 static sqlid
 list_find_func_id(list *ids, sqlid id)
 {
@@ -27,61 +34,66 @@ list_find_func_id(list *ids, sqlid id)
 void
 sql_trans_create_dependency(sql_trans* tr, sqlid id, sqlid depend_id, sql_dependency depend_type)
 {
+	assert(id && depend_id);
+	sqlstore *store = tr->store;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table *t = find_sql_table(s, "dependencies");
+	sql_table *t = find_sql_table(tr, s, "dependencies");
 	sql_column *c_id = find_sql_column(t, "id");
 	sql_column *c_dep_id = find_sql_column(t, "depend_id");
 	sql_column *c_dep_type = find_sql_column(t, "depend_type");
 	sht dtype = (sht) depend_type;
 
-	if (is_oid_nil(table_funcs.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &dtype, NULL)))
-		table_funcs.table_insert(tr, t, &id, &depend_id, &dtype);
+	if (is_oid_nil(store->table_api.column_find_row(tr, c_id, &id, c_dep_id, &depend_id, c_dep_type, &dtype, NULL)))
+		store->table_api.table_insert(tr, t, &id, &depend_id, &dtype);
 }
 
 /*Function to drop the dependencies on depend_id*/
 void
 sql_trans_drop_dependencies(sql_trans* tr, sqlid depend_id)
 {
+	sqlstore *store = tr->store;
 	oid rid;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table* deps = find_sql_table(s, "dependencies");
+	sql_table* deps = find_sql_table(tr, s, "dependencies");
 	sql_column * dep_dep_id = find_sql_column(deps, "depend_id");
 	rids *rs;
 
-	rs = table_funcs.rids_select(tr, dep_dep_id, &depend_id, &depend_id, NULL);
-	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs))
-		table_funcs.table_delete(tr, deps, rid);
-	table_funcs.rids_destroy(rs);
+	rs = store->table_api.rids_select(tr, dep_dep_id, &depend_id, &depend_id, NULL);
+	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs))
+		store->table_api.table_delete(tr, deps, rid);
+	store->table_api.rids_destroy(rs);
 }
 
 /*Function to drop the dependency between object and target, ie obj_id/depend_id*/
 void
 sql_trans_drop_dependency(sql_trans* tr, sqlid obj_id, sqlid depend_id, sql_dependency depend_type)
 {
+	sqlstore *store = tr->store;
 	oid rid;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table* deps = find_sql_table(s, "dependencies");
+	sql_table* deps = find_sql_table(tr, s, "dependencies");
 	sql_column *dep_obj_id = find_sql_column(deps, "id");
 	sql_column *dep_dep_id = find_sql_column(deps, "depend_id");
 	sql_column *dep_dep_type = find_sql_column(deps, "depend_type");
 	sht dtype = (sht) depend_type;
 	rids *rs;
 
-	rs = table_funcs.rids_select(tr, dep_obj_id, &obj_id, &obj_id, dep_dep_id, &depend_id, &depend_id, dep_dep_type, &dtype, &dtype, NULL);
-	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs))
-		table_funcs.table_delete(tr, deps, rid);
-	table_funcs.rids_destroy(rs);
+	rs = store->table_api.rids_select(tr, dep_obj_id, &obj_id, &obj_id, dep_dep_id, &depend_id, &depend_id, dep_dep_type, &dtype, &dtype, NULL);
+	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs))
+		store->table_api.table_delete(tr, deps, rid);
+	store->table_api.rids_destroy(rs);
 }
 
 /*It returns a list with depend_id_1, depend_type_1, depend_id_2, depend_type_2, ....*/
 list*
 sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, list * ignore_ids)
 {
+	sqlstore *store = tr->store;
 	void *v;
 	sql_schema *s = find_sql_schema(tr, "sys");
-	sql_table *deps = find_sql_table(s, "dependencies");
+	sql_table *deps = find_sql_table(tr, s, "dependencies");
 	sql_column *dep_id, *dep_dep_id, *dep_dep_type, *tri_id, *table_id;
-	list *dep_list = list_create((fdestroy) GDKfree);
+	list *dep_list = list_create((fdestroy) _free);
 	oid rid;
 	rids *rs;
 
@@ -92,29 +104,29 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 	dep_dep_id = find_sql_column(deps, "depend_id");
 	dep_dep_type = find_sql_column(deps, "depend_type");
 
-	rs = table_funcs.rids_select(tr, dep_id, &id, &id, NULL);
-	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)){
-		v = table_funcs.column_find_value(tr, dep_dep_id, rid);
+	rs = store->table_api.rids_select(tr, dep_id, &id, &id, NULL);
+	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)){
+		v = store->table_api.column_find_value(tr, dep_dep_id, rid);
 		id = *(sqlid*)v;
 		if (!(ignore_ids  && list_find_func_id(ignore_ids, id))) {
 			list_append(dep_list, v);
-			v = table_funcs.column_find_value(tr, dep_dep_type, rid);
+			v = store->table_api.column_find_value(tr, dep_dep_type, rid);
 			list_append(dep_list, v);
 		} else {
 			_DELETE(v);
 		}
 	}
-	table_funcs.rids_destroy(rs);
+	store->table_api.rids_destroy(rs);
 
 	if (depend_type == TABLE_DEPENDENCY) {
-		sql_table *triggers = find_sql_table(s, "triggers");
+		sql_table *triggers = find_sql_table(tr, s, "triggers");
 		table_id = find_sql_column(triggers, "table_id");
 		tri_id = find_sql_column(triggers, "id");
 		depend_type = TRIGGER_DEPENDENCY;
 
-		rs = table_funcs.rids_select(tr, table_id, &id, &id, NULL);
-		for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
-			v = table_funcs.column_find_value(tr, tri_id, rid);
+		rs = store->table_api.rids_select(tr, table_id, &id, &id, NULL);
+		for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
+			v = store->table_api.column_find_value(tr, tri_id, rid);
 			list_append(dep_list, v);
 			v = MNEW(sht);
 			if (v) {
@@ -125,7 +137,7 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 			}
 			list_append(dep_list, v);
 		}
-		table_funcs.rids_destroy(rs);
+		store->table_api.rids_destroy(rs);
 	}
 	return dep_list;
 }
@@ -134,6 +146,7 @@ sql_trans_get_dependencies(sql_trans* tr, sqlid id, sql_dependency depend_type, 
 sqlid
 sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_type)
 {
+	sqlstore *store = tr->store;
 	oid rid;
 	sql_schema *s;
 	sql_table *dep;
@@ -141,14 +154,14 @@ sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_typ
 	sht dtype = (sht) depend_type;
 
 	s = find_sql_schema(tr, "sys");
-	dep = find_sql_table(s, "dependencies");
+	dep = find_sql_table(tr, s, "dependencies");
 	dep_id = find_sql_column(dep, "id");
 	dep_dep_id = find_sql_column(dep, "depend_id");
 	dep_dep_type = find_sql_column(dep, "depend_type");
 
-	rid = table_funcs.column_find_row(tr, dep_id, &id, dep_dep_type, &dtype, NULL);
+	rid = store->table_api.column_find_row(tr, dep_id, &id, dep_dep_type, &dtype, NULL);
 	if (!is_oid_nil(rid)) {
-		int r, *v = table_funcs.column_find_value(tr, dep_dep_id, rid);
+		int r, *v = store->table_api.column_find_value(tr, dep_dep_id, rid);
 
 		r = *v;
 		_DELETE(v);
@@ -162,6 +175,7 @@ sql_trans_get_dependency_type(sql_trans *tr, sqlid id, sql_dependency depend_typ
 int
 sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_dependency depend_type)
 {
+	sqlstore *store = tr->store;
 	oid rid;
 	sql_schema *s;
 	sql_table *dep;
@@ -169,12 +183,12 @@ sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_depende
 	sht dtype = (sht) depend_type;
 
 	s = find_sql_schema(tr, "sys");
-	dep = find_sql_table(s, "dependencies");
+	dep = find_sql_table(tr, s, "dependencies");
 	dep_id = find_sql_column(dep, "id");
 	dep_dep_id = find_sql_column(dep, "depend_id");
 	dep_dep_type = find_sql_column(dep, "depend_type");
 
-	rid = table_funcs.column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, dep_dep_type, &dtype, NULL);
+	rid = store->table_api.column_find_row(tr, dep_id, &id, dep_dep_id, &depend_id, dep_dep_type, &dtype, NULL);
 	if (!is_oid_nil(rid))
 		return 1;
 	else return 0;
@@ -185,12 +199,13 @@ sql_trans_check_dependency(sql_trans *tr, sqlid id, sqlid depend_id, sql_depende
 list *
 sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 {
+	sqlstore *store = tr->store;
 	void *v;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table *auths = find_sql_table(s, "auths");
+	sql_table *auths = find_sql_table(tr, s, "auths");
 	sql_column *auth_id = find_sql_column(auths, "id");
 	sql_dependency type = USER_DEPENDENCY;
-	list *l = list_create((fdestroy) GDKfree);
+	list *l = list_create((fdestroy) _free);
 	rids *users;
 	oid rid;
 
@@ -199,20 +214,20 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 
 	users = backend_schema_user_dependencies(tr, schema_id);
 
-	for (rid = table_funcs.rids_next(users); !is_oid_nil(rid); rid = table_funcs.rids_next(users)) {
-		v = table_funcs.column_find_value(tr, auth_id, rid);
+	for (rid = store->table_api.rids_next(users); !is_oid_nil(rid); rid = store->table_api.rids_next(users)) {
+		v = store->table_api.column_find_value(tr, auth_id, rid);
 		list_append(l,v);
 		v = MNEW(sht);
 		if (v) {
 			*(sht*)v = (sht) type;
 		} else {
 			list_destroy(l);
-			table_funcs.rids_destroy(users);
+			store->table_api.rids_destroy(users);
 			return NULL;
 		}
 		list_append(l,v);
 	}
-	table_funcs.rids_destroy(users);
+	store->table_api.rids_destroy(users);
 	return l;
 }
 
@@ -220,35 +235,36 @@ sql_trans_schema_user_dependencies(sql_trans *tr, sqlid schema_id)
 list *
 sql_trans_owner_schema_dependencies(sql_trans *tr, sqlid owner_id)
 {
+	sqlstore *store = tr->store;
 	void *v;
 	sql_schema * s = find_sql_schema(tr, "sys");
-	sql_table *schemas = find_sql_table(s, "schemas");
+	sql_table *schemas = find_sql_table(tr, s, "schemas");
 	sql_column *schema_owner = find_sql_column(schemas, "authorization");
 	sql_column *schema_id = find_sql_column(schemas, "id");
 	sql_dependency type = SCHEMA_DEPENDENCY;
-	list *l = list_create((fdestroy) GDKfree);
+	list *l = list_create((fdestroy) _free);
 	rids *rs;
 	oid rid;
 
 	if (!l)
 		return NULL;
 
-	rs = table_funcs.rids_select(tr, schema_owner, &owner_id, &owner_id, NULL);
+	rs = store->table_api.rids_select(tr, schema_owner, &owner_id, &owner_id, NULL);
 
-	for (rid = table_funcs.rids_next(rs); !is_oid_nil(rid); rid = table_funcs.rids_next(rs)) {
-		v = table_funcs.column_find_value(tr, schema_id, rid);
+	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
+		v = store->table_api.column_find_value(tr, schema_id, rid);
 		list_append(l, v);
 		v = MNEW(sht);
 		if (v) {
 			*(sht*)v = (sht) type;
 		} else {
 			list_destroy(l);
-			table_funcs.rids_destroy(rs);
+			store->table_api.rids_destroy(rs);
 			return NULL;
 		}
 		list_append(l,v);
 	}
-	table_funcs.rids_destroy(rs);
+	store->table_api.rids_destroy(rs);
 	return l;
 }
 

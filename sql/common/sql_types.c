@@ -87,6 +87,37 @@ unsigned int bits2digits(unsigned int bits)
 #endif
 }
 
+unsigned int type_digits_to_char_digits(sql_subtype *t)
+{
+	if (!t)
+		return 0;
+	switch (t->type->eclass) {
+		case EC_BIT:
+			return 1;
+		case EC_POS:
+		case EC_NUM:
+		case EC_MONTH:
+			return bits2digits(t->digits) + 1; /* add '-' */
+		case EC_FLT:
+			return bits2digits(t->digits) + 2; /* TODO for floating-points maybe more is needed */
+		case EC_DEC:
+		case EC_SEC:
+			return t->digits + 2; /* add '-' and '.' */
+		case EC_TIMESTAMP:
+		case EC_TIMESTAMP_TZ:
+			return 40; /* TODO this needs more tunning */
+		case EC_TIME:
+		case EC_TIME_TZ:
+			return 20; /* TODO this needs more tunning */
+		case EC_DATE:
+			return 20; /* TODO this needs more tunning */
+		case EC_BLOB:
+			return t->digits * 2; /* TODO BLOBs don't have digits, so this is wrong */
+		default:
+			return t->digits; /* What to do with EC_GEOM? */
+	}
+}
+
 /* 0 cannot convert */
 /* 1 set operations have very limited coersion rules */
 /* 2 automatic coersion (could still require dynamic checks for overflow) */
@@ -98,7 +129,7 @@ static int convert_matrix[EC_MAX][EC_MAX] = {
 /* EC_BIT */		{ 0, 0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_CHAR */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
 /* EC_STRING */		{ 2, 2, 2, 1, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 },
-/* EC_BLOB */		{ 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+/* EC_BLOB */		{ 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_POS */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_NUM */		{ 0, 0, 2, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0 },
 /* EC_MONTH*/		{ 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
@@ -127,12 +158,11 @@ bool is_commutative(const char *fnm)
 void
 base_init(sql_allocator *sa, sql_base * b, sqlid id, int flags, const char *name)
 {
-	assert(sa);
 	*b = (sql_base) {
 		.id = id,
 		.flags = flags,
 		.refcnt = 1,
-		.name = (name) ? sa_strdup(sa, name) : NULL,
+		.name = (name) ? SA_STRDUP(sa, name) : NULL,
 	};
 }
 
@@ -506,7 +536,7 @@ sql_dup_subfunc(sql_allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 					} else if (r->scale)
 						scale = r->scale;
 				}
-				if (member && f->fix_scale == INOUT)
+				if (member && (f->fix_scale == INOUT || r->type->eclass == EC_ANY))
 					digits = member->digits;
 				if (IS_ANALYTIC(f) && mscale)
 					scale = mscale;
@@ -566,12 +596,14 @@ sql_bind_alias(const char *alias)
 	return NULL;
 }
 
+static sqlid local_id = 1;
+
 static sql_type *
 sql_create_type(sql_allocator *sa, const char *sqlname, unsigned int digits, unsigned int scale, unsigned char radix, sql_class eclass, const char *name)
 {
 	sql_type *t = SA_ZNEW(sa, sql_type);
 
-	base_init(sa, &t->base, store_next_oid(), 0, name);
+	base_init(sa, &t->base, local_id++, 0, name);
 	t->sqlname = sa_strdup(sa, sqlname);
 	t->digits = digits;
 	t->scale = scale;
@@ -611,7 +643,7 @@ static sql_func *
 sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const char *imp, sql_ftype type, bit semantics, bit side_effect,
 				 int fix_scale, unsigned int res_scale, sql_type *res, int nargs, va_list valist)
 {
-	list *ops = sa_list(sa);
+	list *ops = SA_LIST(sa, (fdestroy) &arg_destroy);
 	sql_arg *fres = NULL;
 	sql_func *t = SA_ZNEW(sa, sql_func);
 
@@ -621,7 +653,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	}
 	if (res)
 		fres = create_arg(sa, NULL, sql_create_subtype(sa, res, 0, 0), ARG_OUT);
-	base_init(sa, &t->base, store_next_oid(), 0, name);
+	base_init(sa, &t->base, local_id++, 0, name);
 
 	t->imp = sa_strdup(sa, imp);
 	t->mod = sa_strdup(sa, mod);
@@ -630,7 +662,7 @@ sql_create_func_(sql_allocator *sa, const char *name, const char *mod, const cha
 	if (fres) {
 		if (res_scale)
 			fres->type.scale = res_scale;
-		t->res = list_append(sa_list(sa), fres);
+		t->res = list_append(SA_LIST(sa, (fdestroy) &arg_destroy), fres);
 	} else
 		t->res = NULL;
 	t->nr = list_length(funcs);
@@ -762,9 +794,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_alias(sa, BIT->sqlname, "BOOL");
 
 	strings = t;
+	/* create clob type first, so functions by default will bind to the clob version which doesn't require length validation on some cases */
+	STR = *t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
+	*t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
 	*t++ = sql_create_type(sa, "CHAR",    0, 0, 0, EC_CHAR,   "str");
-	STR = *t++ = sql_create_type(sa, "VARCHAR", 0, 0, 0, EC_STRING, "str");
-	*t++ = sql_create_type(sa, "CLOB",    0, 0, 0, EC_STRING, "str");
 
 	numerical = t;
 #if SIZEOF_OID == SIZEOF_INT
@@ -917,9 +950,10 @@ sqltypeinit( sql_allocator *sa)
 	sql_create_func(sa, "least", "calc", "min_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "greatest", "calc", "max_no_nil", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "ifthenelse", "calc", "ifthenelse", TRUE, FALSE, SCALE_FIX, 0, ANY, 3, BIT, ANY, ANY);
-	/* nullif and coalesce don't have a backend implementation */
+	/* nullif, coalesce and casewhen don't have a backend implementation */
 	sql_create_func(sa, "nullif", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	sql_create_func(sa, "coalesce", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
+	sql_create_func(sa, "casewhen", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 2, ANY, ANY);
 	/* needed for count(*) and window functions without input col */
 	sql_create_func(sa, "star", "", "", TRUE, FALSE, SCALE_FIX, 0, ANY, 0);
 
@@ -1503,6 +1537,7 @@ sqltypeinit( sql_allocator *sa)
 void
 types_init(sql_allocator *sa)
 {
+	local_id = 1;
 	aliases = sa_list(sa);
 	types = sa_list(sa);
 	localtypes = sa_list(sa);

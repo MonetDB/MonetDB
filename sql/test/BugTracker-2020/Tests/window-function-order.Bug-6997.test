@@ -15,9 +15,39 @@ cast(sum("num") over(order by orderB,orderA) as bigint) as orderbyBA,
 cast(sum("num") over(order by orderB) as bigint) as orderbyB
 from "ordertest"
 ----
-32 values hashing to be2ba4a9ebc38a56e601c0eb5cff7b31
+a
+1
+1
+1
+1
+1
+1
+61
+a
+2
+1
+10
+11
+11
+11
+61
+a
+3
+1
+20
+31
+31
+31
+61
+a
+4
+1
+30
+61
+61
+61
+61
 
 statement ok
 rollback
-
 

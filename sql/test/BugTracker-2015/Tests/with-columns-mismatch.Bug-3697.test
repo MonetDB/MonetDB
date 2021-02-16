@@ -25,4 +25,3 @@ WITH cte(qtime, open, close, sdate, id, rnk) as (
 statement ok
 ROLLBACK
 
-

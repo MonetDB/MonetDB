@@ -4315,8 +4315,6 @@ END;
 
 CREATE TABLE sys.dump_statements(o INT, s STRING);
 
-CREATE FUNCTION sys.current_size_dump_statements() RETURNS INT BEGIN RETURN SELECT COUNT(*) FROM dump_statements; END;
-
 CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
 
     DECLARE k INT;
@@ -4336,7 +4334,7 @@ CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
             SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || FQN(sch, tbl) || '(' || DQ(cname);
 
             DECLARE SELECT_DATA_STMT STRING;
-            SET SELECT_DATA_STMT = 'SELECT current_size_dump_statements() + RANK() OVER(), ' || prepare_esc(cname, ctype);
+            SET SELECT_DATA_STMT = 'SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), ' || prepare_esc(cname, ctype);
 
             DECLARE M INT;
             SET M = (SELECT MAX(c.id) FROM columns c, tables t WHERE c.table_id = t.id AND t.name = tbl);
@@ -4352,7 +4350,7 @@ CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
             SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
             SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || FQN(sch, tbl);
 
-            insert into dump_statements VALUES (current_size_dump_statements() + 1, COPY_INTO_STMT);
+            insert into dump_statements VALUES ( (SELECT COUNT(*) FROM dump_statements) + 1, COPY_INTO_STMT);
 
             CALL sys.EVAL('INSERT INTO dump_statements ' || SELECT_DATA_STMT || ';');
         END IF;
@@ -4391,41 +4389,41 @@ BEGIN
     TRUNCATE dump_statements;
 
     INSERT INTO dump_statements VALUES (1, 'START TRANSACTION;');
-    INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'SET SCHEMA "sys";');
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_create_roles;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_create_users;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_create_schemas;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_grant_user_priviledges;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_sequences;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_start_sequences;
+    INSERT INTO dump_statements VALUES ( (SELECT COUNT(*) FROM dump_statements) + 1, 'SET SCHEMA "sys";');
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_users;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_priviledges;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
 
     --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(ORDER BY stmts.o), stmts.s
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
     FROM (
             SELECT * FROM sys.dump_functions f
             UNION
             SELECT * FROM sys.dump_tables t
         ) AS stmts(o, s);
 
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_column_defaults;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_indices;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_partition_tables;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_triggers;
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_comments;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_foreign_keys;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
 
     --We are dumping ALL privileges so we need to erase existing privileges on the receiving side;
-    INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'TRUNCATE sys.privileges;');
-    INSERT INTO dump_statements SELECT current_size_dump_statements() + RANK() OVER(), stmt FROM sys.dump_privileges;
+    INSERT INTO dump_statements VALUES ( (SELECT COUNT(*) FROM dump_statements) + 1, 'TRUNCATE sys.privileges;');
+    INSERT INTO dump_statements SELECT  (SELECT COUNT(*) FROM dump_statements) + RANK() OVER(), stmt FROM sys.dump_privileges;
 
     IF NOT DESCRIBE THEN
         CALL dump_table_data();
     END IF;
 
-    INSERT INTO dump_statements VALUES (current_size_dump_statements() + 1, 'COMMIT;');
+    INSERT INTO dump_statements VALUES ( (SELECT COUNT(*) FROM dump_statements) + 1, 'COMMIT;');
 
     RETURN dump_statements;
 END;

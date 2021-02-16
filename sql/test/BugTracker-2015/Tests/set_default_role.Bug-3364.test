@@ -6,4 +6,3 @@ monetdb
 statement ok
 set role "monetdb"
 
-

@@ -71,4 +71,3 @@ select count(*) FROM (
 statement ok
 rollback
 
-

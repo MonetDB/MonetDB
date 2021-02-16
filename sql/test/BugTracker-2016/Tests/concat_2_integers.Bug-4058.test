@@ -32,28 +32,112 @@ INSERT INTO "sys"."test_bug4058" VALUES
 (769,1402,'A',true),
 (760,1511,'A',true)
 
-query IITT rowsort
+query IITI rowsort
 select * from "sys"."test_bug4058" limit 10
 ----
-40 values hashing to 4906e28e4c76d00e9032e9e1b173aaa1
+267
+1604
+A
+1
+303
+1205
+V
+1
+386
+1409
+G
+0
+408
+1302
+G
+0
+556
+1208
+G
+0
+601
+1502
+V
+1
+665
+1410
+V
+1
+81
+1310
+V
+1
+831
+1606
+A
+1
+839
+1312
+A
+1
 
 statement ok
 create table "sys"."test_bug4058_tmp" as ( select * from "sys"."test_bug4058" limit 10)
 
-query IITT rowsort
+query IITI rowsort
 select * from (select * from "sys"."test_bug4058" where f3='V' AND f4=true) as tmp where f1||f2 NOT IN (select f1||f2 from "sys"."test_bug4058_tmp")
 ----
-16 values hashing to 03ec192ebf2c2fc9c1fc2c7a5af73e21
+682
+1402
+V
+1
+743
+1505
+V
+1
+781
+1407
+V
+1
+796
+1507
+V
+1
 
-query IITT rowsort
+query IITI rowsort
 select * from (select * from "sys"."test_bug4058" where f1||f2 NOT IN (select f1||f2 from "sys"."test_bug4058_tmp")) as tmp where f3='V' AND f4=true
 ----
-16 values hashing to 03ec192ebf2c2fc9c1fc2c7a5af73e21
+682
+1402
+V
+1
+743
+1505
+V
+1
+781
+1407
+V
+1
+796
+1507
+V
+1
 
-query IITT rowsort
+query IITI rowsort
 select * from "sys"."test_bug4058" where f3='V' AND f4=true AND f1||f2 NOT IN (select f1||f2 from "sys"."test_bug4058_tmp")
 ----
-16 values hashing to 03ec192ebf2c2fc9c1fc2c7a5af73e21
+682
+1402
+V
+1
+743
+1505
+V
+1
+781
+1407
+V
+1
+796
+1507
+V
+1
 
 statement ok
 DROP TABLE "sys"."test_bug4058_tmp"
@@ -63,5 +147,4 @@ DROP TABLE "sys"."test_bug4058"
 
 statement ok
 ROLLBACK
-
 

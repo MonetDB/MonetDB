@@ -45,4 +45,3 @@ select g, pyapi23(n) from pyapi23table group by g
 statement ok
 ROLLBACK
 
-

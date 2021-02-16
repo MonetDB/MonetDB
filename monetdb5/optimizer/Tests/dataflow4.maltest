@@ -14,14 +14,3 @@ function tst();
 	io.print(d);
 end tst
 
-#mdb.list("user","tst")
-
-statement ok
-optimizer.dataflow("user","tst")
-
-statement ok
-optimizer.garbageCollector("user","tst")
-
-#mdb.list("user","tst")
-
-

@@ -44,12 +44,7 @@
 
 #include <stdio.h>
 
-struct DIR {
-	wchar_t *dir_name;
-	int just_opened;
-	HANDLE find_file_handle;
-	void *find_file_data;
-};
+struct DIR;
 
 typedef struct DIR DIR;
 struct dirent {

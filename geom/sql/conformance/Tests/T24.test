@@ -3,4 +3,3 @@ SELECT ST_AsText(ST_Centroid(boundary)) FROM named_places WHERE name = 'Goose Is
 ----
 POINT (63 15.5)
 
-

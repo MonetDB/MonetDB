@@ -100,4 +100,3 @@ select count(*) from DBObjects
 statement ok
 drop table DBObjects
 
-

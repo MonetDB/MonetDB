@@ -19,4 +19,3 @@ SELECT count(*) FROM rval WHERE rsample(val,10)
 ----
 10
 
-

@@ -45,4 +45,3 @@ project (
 statement ok
 drop table t4311
 
-

@@ -12,4 +12,3 @@ select case when (bla1 - bla2) > 0 then 1/(bla1 - bla2) else 0 end from test2791
 statement ok
 drop table test2791356
 
-

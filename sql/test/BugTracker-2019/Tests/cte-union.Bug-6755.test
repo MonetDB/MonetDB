@@ -55,4 +55,3 @@ ORDER BY "Carrier", "Hour"
 statement ok
 rollback
 
-

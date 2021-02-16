@@ -19,7 +19,7 @@ get function properties
 statement ok
 l:= inspect.getSignature("user","dummy")
 
-query TT rowsort
+query IT rowsort
 io.print(l)
 ----
 0
@@ -29,5 +29,4 @@ query T rowsort
 mdb.list("user","dummy")
 ----
 end user.dummy;
-
 

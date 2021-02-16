@@ -25,14 +25,14 @@ INSERT INTO table_two VALUES (1)
 statement ok
 INSERT INTO table_two VALUES (2)
 
-query T rowsort
+query I rowsort
 SELECT ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) AS new_column FROM table_one
 ----
-False
-False
-False
-True
-True
+0
+0
+0
+1
+1
 
 query I rowsort
 SELECT ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FROM table_two ) ) THEN 1 ELSE 0 END ) AS new_column FROM table_one
@@ -54,12 +54,30 @@ SELECT COUNT(*) , ( CASE WHEN ( table_one.this_column IN ( SELECT this_column FR
 query II rowsort
 SELECT this_column, (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) AS new_column FROM table_one
 ----
-10 values hashing to 0fa1e7be1e8b3f7952d7081ad259e6a9
+1
+1
+2
+1
+3
+0
+4
+0
+5
+0
 
 query II rowsort
 SELECT this_column, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column FROM table_one
 ----
-10 values hashing to 0fa1e7be1e8b3f7952d7081ad259e6a9
+1
+1
+2
+1
+3
+0
+4
+0
+5
+0
 
 query II rowsort
 SELECT COUNT(*) AS count, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) = 0 THEN 0 ELSE 1 END) AS new_column  FROM table_one GROUP BY new_column
@@ -72,7 +90,18 @@ SELECT COUNT(*) AS count, (CASE WHEN (SELECT COUNT(*) FROM table_two t2 WHERE t2
 query IIIRII rowsort
 WITH table_one_cte AS (SELECT this_column, (CASE (SELECT COUNT(*) FROM table_two t2 WHERE t2.this_column = table_one.this_column) WHEN 0 THEN 0 ELSE 1 END) AS new_column FROM table_one) SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_cte GROUP BY new_column
 ----
-12 values hashing to d26df847428ff3991b3c3a68e1de6116
+2
+1
+2
+1.500
+3
+1
+3
+3
+5
+4.000
+12
+0
 
 statement ok
 CREATE VIEW table_one_vw AS
@@ -89,7 +118,18 @@ SELECT COUNT(*), new_column FROM table_one_vw GROUP BY new_column
 query IIIRII rowsort
 SELECT COUNT(*) AS count, MIN(this_column) AS min_this_column, MAX(this_column) AS max_this_column, AVG(this_column) AS avg_this_column, CAST(SUM(this_column) AS bigint) AS sum_this_column, new_column FROM table_one_vw GROUP BY new_column
 ----
-12 values hashing to d26df847428ff3991b3c3a68e1de6116
+2
+1
+2
+1.500
+3
+1
+3
+3
+5
+4.000
+12
+0
 
 query II rowsort
 SELECT COUNT(*) AS count, 1 AS new_column FROM table_one
@@ -139,5 +179,4 @@ DROP TABLE table_two
 
 statement ok
 DROP TABLE table_one
-
 

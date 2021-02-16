@@ -10,213 +10,213 @@ INSERT INTO t_boolean VALUES (false, 'False')
 statement ok
 INSERT INTO t_boolean VALUES (Null, 'Null')
 
-query TTT rowsort
+query ITI rowsort
 SELECT val, valstr, cast(val as bool) as cast2bool FROM t_boolean order by val
 ----
+0
 False
-False
-False
+0
+1
+True
+1
 NULL
 Null
 NULL
-True
-True
-True
 
-query TTT rowsort
+query ITI rowsort
 SELECT val, valstr, cast(valstr as bool) as caststr2bool FROM t_boolean where val is not null order by val
 ----
+0
 False
-False
-False
+0
+1
 True
-True
-True
+1
 
-query TTT rowsort
+query ITT rowsort
 -- conversions to char strings
 SELECT val, valstr, cast(val as string) as cast2str FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTT rowsort
+query ITT rowsort
 SELECT val, valstr, cast(val as char(5)) as cast2char5 FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTT rowsort
+query ITT rowsort
 SELECT val, valstr, cast(val as varchar(5)) as cast2varchar5 FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTT rowsort
+query ITT rowsort
 SELECT val, valstr, cast(val as clob) as cast2clob FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTT rowsort
+query ITT rowsort
 SELECT val, valstr, convert(val, string) as convert2str FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTT rowsort
+query ITT rowsort
 SELECT val, valstr, convert(val, char(5)) as convert2char5 FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTT rowsort
+query ITT rowsort
 SELECT val, valstr, convert(val, varchar(5)) as convert2varchar5 FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTT rowsort
+query ITT rowsort
 SELECT val, valstr, convert(val, clob) as convert2clob FROM t_boolean order by val
 ----
-False
+0
 False
 false
+1
+True
+true
 NULL
 Null
 NULL
-True
-True
-true
 
-query TTI rowsort
+query ITI rowsort
 -- conversions to integer number 0 or 1
 SELECT val, valstr, cast(val as int) as cast2int FROM t_boolean order by val
 ----
-False
+0
 False
 0
+1
+True
+1
 NULL
 Null
 NULL
-True
-True
-1
 
-query TTI rowsort
+query ITI rowsort
 SELECT val, valstr, cast(val as smallint) as cast2smallint FROM t_boolean order by val
 ----
-False
+0
 False
 0
+1
+True
+1
 NULL
 Null
 NULL
-True
-True
-1
 
-query TTI rowsort
+query ITI rowsort
 SELECT val, valstr, cast(val as tinyint) as cast2tinyint FROM t_boolean order by val
 ----
-False
+0
 False
 0
+1
+True
+1
 NULL
 Null
 NULL
-True
-True
-1
 
-query TTI rowsort
+query ITI rowsort
 SELECT val, valstr, cast(val as bigint) as cast2bigint FROM t_boolean order by val
 ----
-False
+0
 False
 0
+1
+True
+1
 NULL
 Null
 NULL
-True
-True
-1
 
-query TTI rowsort
+query ITI rowsort
 -- SELECT val, valstr, cast(val as hugeint) as cast2hugeint FROM t_boolean order by val
 ----
-False
+0
 False
 0
+1
+True
+1
 NULL
 Null
 NULL
-True
-True
-1
 
-query TTT rowsort
+query ITT rowsort
 -- conversions to char(1) resulting in '0' or '1'
 SELECT val, valstr, cast(cast(val as tinyint) as char(1)) as cast2char1 FROM t_boolean order by val
 ----
-False
+0
 False
 0
+1
+True
+1
 NULL
 Null
 NULL
-True
-True
-1
 
 statement error
 -- next casting should fail as they are not supported
@@ -239,5 +239,4 @@ SELECT val, valstr, cast(val as timestamp) as cast2timestamp FROM t_boolean orde
 
 statement ok
 DROP TABLE t_boolean
-
 

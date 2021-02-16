@@ -8,4 +8,3 @@ select cast(cast(13.8 as double) as int)
 ----
 14
 
-

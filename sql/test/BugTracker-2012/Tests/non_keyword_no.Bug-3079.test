@@ -7,4 +7,3 @@ create table test1 ( no int)
 statement ok
 rollback
 
-

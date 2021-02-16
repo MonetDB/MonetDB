@@ -32,7 +32,16 @@ copy 1 records into t_str from stdin delimiters ',',E'\n','"'
 query TT rowsort
 select * from t_str
 ----
-10 values hashing to a6dbadc81143452216f62c11e22b2497
+hello
+world
+hello
+world
+hello
+world
+hello,world
+all
+hello@world
+all
 
 statement ok
 copy 1 records into t_str from stdin delimiters ',',E'\n','"'
@@ -43,12 +52,22 @@ world","all"
 query TT rowsort
 select * from t_str
 ----
-12 values hashing to d44a98cf9491f612e5dfefc441dae383
+hello
+world
+hello
+world
+hello
+world
+hello,world
+all
+hello@world
+all
+hello@world
+all
 
 statement ok
 drop table t_str
 
 statement ok
 rollback
-
 

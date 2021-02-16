@@ -122,4 +122,3 @@ DROP FUNCTION pyapi13_random_table_nulls
 statement ok
 ROLLBACK
 
-

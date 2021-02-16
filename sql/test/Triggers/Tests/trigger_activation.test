@@ -66,4 +66,3 @@ alter table t_5_1 drop constraint t_5_1_constraint
 statement ok
 drop table t_5_1
 
-

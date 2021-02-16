@@ -42,4 +42,3 @@ select * from urls where urlid in
 statement ok
 drop table urls
 
-

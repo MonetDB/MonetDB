@@ -17,4 +17,3 @@ statement ok
 statement ok
 (d,d1):= user.f(true,false)
 
-

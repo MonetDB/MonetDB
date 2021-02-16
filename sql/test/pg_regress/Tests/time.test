@@ -81,7 +81,18 @@ SELECT f1, hour(f1) FROM TIME_TBL
 query TI rowsort
 SELECT f1, "hour"(f1) FROM TIME_TBL
 ----
-12 values hashing to 74887904801095a1ea94969d27aa9fc7
+00:00:00
+0
+01:00:00
+1
+12:00:00
+12
+12:01:00
+12
+23:59:00
+23
+NULL
+NULL
 
 statement error
 SELECT f1, minute(f1) FROM TIME_TBL
@@ -89,7 +100,18 @@ SELECT f1, minute(f1) FROM TIME_TBL
 query TI rowsort
 SELECT f1, "minute"(f1) FROM TIME_TBL
 ----
-12 values hashing to 7d325c35646f63d407f3d4ae9acced9a
+00:00:00
+0
+01:00:00
+0
+12:00:00
+0
+12:01:00
+1
+23:59:00
+59
+NULL
+NULL
 
 statement error
 SELECT f1, second(f1) FROM TIME_TBL
@@ -97,7 +119,18 @@ SELECT f1, second(f1) FROM TIME_TBL
 query TR rowsort
 SELECT f1, "second"(f1) FROM TIME_TBL
 ----
-12 values hashing to ca05e56d3cf36d7adbe4fc31992f9124
+00:00:00
+0.000
+01:00:00
+0.000
+12:00:00
+0.000
+12:01:00
+0.000
+23:59:00
+0.000
+NULL
+NULL
 
 statement error
 SELECT f1, extract(day from f1) FROM TIME_TBL
@@ -105,22 +138,66 @@ SELECT f1, extract(day from f1) FROM TIME_TBL
 query TI rowsort
 SELECT f1, extract(hour from f1) FROM TIME_TBL
 ----
-12 values hashing to 74887904801095a1ea94969d27aa9fc7
+00:00:00
+0
+01:00:00
+1
+12:00:00
+12
+12:01:00
+12
+23:59:00
+23
+NULL
+NULL
 
 query TI rowsort
 SELECT f1, extract(minute from f1) FROM TIME_TBL
 ----
-12 values hashing to 7d325c35646f63d407f3d4ae9acced9a
+00:00:00
+0
+01:00:00
+0
+12:00:00
+0
+12:01:00
+1
+23:59:00
+59
+NULL
+NULL
 
 query TR rowsort
 SELECT f1, extract(second from f1) FROM TIME_TBL
 ----
-12 values hashing to ca05e56d3cf36d7adbe4fc31992f9124
+00:00:00
+0.000
+01:00:00
+0.000
+12:00:00
+0.000
+12:01:00
+0.000
+23:59:00
+0.000
+NULL
+NULL
 
 query TI rowsort
 SELECT f1, extract(epoch from f1) FROM TIME_TBL
 ----
-12 values hashing to a6225af1687967b1b001567fe62b1fb4
+00:00:00
+0
+01:00:00
+3600000
+12:00:00
+43200000
+12:01:00
+43260000
+23:59:00
+86340000
+NULL
+NULL
 
 statement error
 SELECT f1, sql_add(f1, 12*60*60.0 + 66) FROM TIME_TBL
@@ -143,12 +220,34 @@ SELECT f1, sql_sub(f1, cast(2*60*60 as interval second)) FROM TIME_TBL
 query TT rowsort
 SELECT f1, sql_sub(f1, cast('23:22:21' as time)) FROM TIME_TBL
 ----
-12 values hashing to d29847f9b37c3509d6007e16552a96ea
+00:00:00
+-1 day, 0:37:39
+01:00:00
+-1 day, 1:37:39
+12:00:00
+-1 day, 12:37:39
+12:01:00
+-1 day, 12:38:39
+23:59:00
+0:36:39
+NULL
+NULL
 
 query TT rowsort
 SELECT f1, sql_sub(cast('23:22:21' as time), f1) FROM TIME_TBL
 ----
-12 values hashing to 81e13210fa89940b9c16d315376400d4
+00:00:00
+23:22:21
+01:00:00
+22:22:21
+12:00:00
+11:22:21
+12:01:00
+11:21:21
+23:59:00
+-1 day, 23:23:21
+NULL
+NULL
 
 statement error
 SELECT f1, month(f1) FROM TIME_TBL
@@ -188,5 +287,4 @@ SELECT f1, dayofyear(f1) FROM TIME_TBL
 
 statement ok
 DROP TABLE TIME_TBL
-
 

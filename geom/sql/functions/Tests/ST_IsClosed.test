@@ -1,37 +1,37 @@
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10, 20 20)'))
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10, 20 20, 10 10)'))
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(st_mlinefromtext('MULTILINESTRING((10 10, 20 20, 10 10),(10 10, 20 20))'))
 ----
-False
+0
 
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(st_pointfromtext('POINT(10 10)'))
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(st_mpointfromtext('MULTIPOINT((10 10), (20 20))'))
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(st_polygonfromtext('POLYGON((10 10 10, 20 20 20, 30 30 30, 10 10 10))'))
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT ST_IsClosed(st_linefromtext('LINESTRING(10 10 10, 20 20 20, 10 10 10)'))
 ----
-True
+1
 
 statement ok
 create table geo (g geometry(linestring, 4326))
@@ -42,11 +42,11 @@ insert into geo values (st_linefromtext('LINESTRING(10 10, 20 20)', 4326))
 statement ok
 insert into geo values (st_linefromtext('LINESTRING(10 10, 20 20, 10 10)', 4326))
 
-query T rowsort
+query I rowsort
 select st_isclosed(g) from geo
 ----
-False
-True
+0
+1
 
 statement ok
 drop table geo
@@ -57,17 +57,41 @@ create table geo (g geometry(polygonz, 4326))
 statement ok
 insert into geo values (st_polygonfromtext('polygon((10 10 10, 20 20 20, 30 30 30, 10 10 10))', 4326))
 
-query T rowsort
+query I rowsort
 select st_isclosed(g) from geo
 ----
-True
+1
 
 statement ok
 drop table geo
 
-query TT rowsort
+query TI rowsort
 SELECT geom AS "GEOMETRY", ST_IsClosed(geom) FROM geometries WHERE id<14
 ----
-26 values hashing to 82bfb34137bb3aeaa63ded85d29445af
-
+GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))
+0
+GEOMETRYCOLLECTION (POINT (10 20), LINESTRING (10 20, 30 40, 10 20), POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10)))
+1
+LINESTRING (10 10, 50 50, 30 80, 25 5)
+0
+LINESTRING (10 20, 30 40, 50 60)
+0
+LINESTRING (10 20, 30 40, 50 60, 80 60, 60 40, 10 20)
+1
+MULTILINESTRING ((30 40, 40 50), (50 60, 60 70))
+0
+MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 40 50, 20 30, 50 60))
+1
+MULTILINESTRING ((30 40, 40 50, 30 40), (50 60, 60 70))
+0
+MULTIPOINT (10 20, 30 40)
+1
+MULTIPOLYGON (((10 10, 10 20, 20 20, 20 10, 10 10), (30 30, 30 40, 40 40, 40 30, 30 30)))
+1
+MULTIPOLYGON EMPTY
+0
+POINT (10 20)
+1
+POLYGON ((10 10, 10 20, 20 20, 20 10, 10 10))
+1
 

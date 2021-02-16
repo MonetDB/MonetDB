@@ -16,4 +16,3 @@ INSERT INTO temptest VALUES (3)
 statement error
 DROP TABLE temptest
 
-

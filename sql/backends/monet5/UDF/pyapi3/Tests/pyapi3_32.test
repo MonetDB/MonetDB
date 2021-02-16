@@ -38,4 +38,3 @@ SELECT pyapi32_function_mapped(i) FROM integers WHERE i > 50
 statement ok
 ROLLBACK
 
-

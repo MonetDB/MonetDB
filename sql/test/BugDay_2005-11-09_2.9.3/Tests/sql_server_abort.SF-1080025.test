@@ -1,12 +1,11 @@
 statement ok
 START TRANSACTION
 
-query T rowsort
+query I rowsort
 select 5 not between 4 and 6
 ----
-False
+0
 
 statement ok
 rollback
-
 

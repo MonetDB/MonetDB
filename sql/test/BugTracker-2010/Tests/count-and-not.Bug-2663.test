@@ -1,55 +1,54 @@
-query T rowsort
+query I rowsort
 SELECT COUNT (*) > 0 as res
   FROM (SELECT id, COUNT (*) AS cnt
           FROM tables
          GROUP BY id) as i
  WHERE NOT (1 < i.cnt)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT COUNT (*) > 0 as res
   FROM (SELECT id, COUNT (*) AS cnt
           FROM tables
          GROUP BY id) as i
  WHERE NOT (i.cnt > 1)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT COUNT (*) > 0 as res
   FROM (SELECT id, 1 AS cnt
           FROM tables
          GROUP BY id) as i
  WHERE NOT (1 < i.cnt)
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT COUNT (*) > 0 as res
   FROM (SELECT id, COUNT (*) AS cnt
           FROM tables
          GROUP BY id) as i
  WHERE 1 >= i.cnt
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT COUNT (*) > 0 as res
   FROM (SELECT id, COUNT (*) AS cnt
           FROM tables
          GROUP BY id) as i
  WHERE i.cnt <= 1
 ----
-True
+1
 
-query T rowsort
+query I rowsort
 SELECT COUNT (*) = 0 as res
   FROM (SELECT id, COUNT (*) AS cnt
           FROM tables
          GROUP BY id) as i
  WHERE 1 < i.cnt
 ----
-True
-
+1
 

@@ -23,4 +23,3 @@ SELECT * FROM test
 statement ok
 ROLLBACK
 
-

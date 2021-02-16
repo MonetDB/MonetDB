@@ -29,4 +29,3 @@ query I rowsort
 select 1 from (values ('one'), ('two')) as l(s), (values ('three'), ('four')) as r(s) where l.s like r.s
 ----
 
-

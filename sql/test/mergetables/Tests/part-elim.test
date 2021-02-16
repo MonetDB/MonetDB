@@ -165,4 +165,3 @@ drop table mt1
 statement ok
 drop table mt2
 
-

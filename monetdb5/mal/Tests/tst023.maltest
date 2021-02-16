@@ -34,15 +34,29 @@ bat.append(b2, 12.34)
 statement ok
 bat.append(b2, 12.35)
 
-query TIT rowsort
+query IIR rowsort
 io.print(b1,b2)
 ----
-15 values hashing to feaced8a9a1855a8e337ffe1dc3f7fa8
+0
+1
+12.310
+1
+2
+12.320
+2
+3
+12.330
+3
+4
+12.340
+4
+2
+12.350
 
 statement ok
 s:= algebra.select(b1,nil:bat[:oid],2,2,true,true,false)
 
-query TT rowsort
+query II rowsort
 io.print(s)
 ----
 0
@@ -53,7 +67,7 @@ io.print(s)
 statement ok
 bat.delete(b1,s)
 
-query TI rowsort
+query II rowsort
 io.print(b1)
 ----
 0
@@ -66,27 +80,26 @@ io.print(b1)
 statement ok
 bat.delete(b2,s)
 
-query TT rowsort
+query IR rowsort
 io.print(b2)
 ----
 0
-12.31
+12.310
 1
-12.33
+12.330
 2
-12.34
+12.340
 
-query TIT rowsort
+query IIR rowsort
 io.print(b1,b2)
 ----
 0
 1
-12.31
+12.310
 1
 3
-12.33
+12.330
 2
 4
-12.34
-
+12.340
 

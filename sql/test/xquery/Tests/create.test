@@ -156802,4 +156802,3 @@ create view xmldoc(pre,size,level,kind,nameid,value,name) as
 statement ok
 COMMIT
 
-

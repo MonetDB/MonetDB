@@ -99,4 +99,3 @@ mdb.setDebug(dbgmsk_set);
 statement ok
 r:= mmath.srand(0);
 
-

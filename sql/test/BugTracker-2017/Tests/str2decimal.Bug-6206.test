@@ -68,4 +68,3 @@ select cast('1110' as decimal(7,3))
 ----
 1110.000
 
-

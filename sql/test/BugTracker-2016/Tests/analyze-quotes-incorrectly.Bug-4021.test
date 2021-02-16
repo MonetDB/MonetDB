@@ -13,4 +13,3 @@ analyze sys.bug4021
 statement ok
 rollback
 
-

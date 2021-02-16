@@ -21,4 +21,3 @@ drop function test_quotes
 statement ok
 drop table quotes
 
-

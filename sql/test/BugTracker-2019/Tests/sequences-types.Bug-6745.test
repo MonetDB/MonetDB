@@ -40,14 +40,47 @@ CREATE SEQUENCE seqBint AS bigint
 statement ok
 CREATE SEQUENCE seqInteger AS integer
 
-query TIIIIIT rowsort
+query TIIIIII rowsort
 select name, start, minvalue, maxvalue, increment, cacheinc, cycle from sequences
 where name in ('seqbool', 'seqchar', 'seqclob', 'seqblob', 'seqdate', 'seqtime', 'seqinet', 'sequuid', 'seqtiny',
                'seqsmall', 'seqint', 'seqbint', 'seqinteger')
 ----
-35 values hashing to 2a3ea86cd231272a0475dfb7f319c1ec
+seqbint
+1
+0
+0
+1
+1
+0
+seqint
+1
+0
+0
+1
+1
+0
+seqinteger
+1
+0
+0
+1
+1
+0
+seqsmall
+1
+0
+0
+1
+1
+0
+seqtiny
+1
+0
+0
+1
+1
+0
 
 statement ok
 rollback
-
 

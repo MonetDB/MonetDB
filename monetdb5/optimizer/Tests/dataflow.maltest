@@ -28,13 +28,3 @@ optimizer.dataflow("user","tst")
 statement ok
 optimizer.garbageCollector("user","tst")
 
-#mdb.List("user","tst")
-
-query T rowsort
-tst()
-----
-"done"
-#[41]  X_27 (0,0,0) = nil :str   not used 
-8
-
-

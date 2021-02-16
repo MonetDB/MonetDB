@@ -228,4 +228,3 @@ select * from foo where i = 40 or i not in (select bar.i from foo as bar where i
 50
 50
 
-

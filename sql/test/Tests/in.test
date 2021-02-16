@@ -17,13 +17,13 @@ select * from tmp where i in (2,1)
 ----
 1
 
-query T rowsort
+query I rowsort
 select i in (NULL,1) from tmp
 ----
+1
 NULL
-True
 
-statement error 22018!conversion of string 'a' to type int failed.
+statement error
 select i in (1,'a') from tmp
 
 statement ok

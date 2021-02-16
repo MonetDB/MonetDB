@@ -23,4 +23,3 @@ select * from t_2906
 statement ok
 drop table t_2906
 
-

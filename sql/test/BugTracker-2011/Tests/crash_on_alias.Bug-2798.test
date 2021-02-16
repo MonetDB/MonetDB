@@ -68,4 +68,3 @@ SELECT a as d, MIN(b) as e, (2 * (MIN(b) / (SELECT 2))) as f FROM dbg GROUP BY d
 statement ok
 ROLLBACK
 
-

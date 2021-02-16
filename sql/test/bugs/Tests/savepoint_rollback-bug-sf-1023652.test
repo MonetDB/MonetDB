@@ -50,4 +50,3 @@ SELECT * FROM trimtest
 statement ok
 ROLLBACK
 
-

@@ -31,15 +31,34 @@ bat.append(b,596516649)
 statement ok
 bat.append(b,1189641421)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
-20 values hashing to 74a3c631a4c9ac875a281da7c6d5441c
+0
+1804289383
+1
+846930886
+2
+1681692777
+3
+1714636915
+4
+1957747793
+5
+424238335
+6
+719885386
+7
+1649760492
+8
+596516649
+9
+1189641421
 
 statement ok
 (t:bat[:dbl], s:bat[:dbl]) := rapi.eval(nil:ptr,"someval2 <- Re(fft(arg1)); print(someval2); return(data.frame(someval2,someval2));",b);
 
-query TRR nosort
+query IRR nosort
 io.print(t,s)
 ----
 0
@@ -72,3 +91,4 @@ io.print(t,s)
 9
 525771362.908
 525771362.908
+

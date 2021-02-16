@@ -40,4 +40,3 @@ query I rowsort
 select * from u1096337
 ----
 
-

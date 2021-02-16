@@ -10,7 +10,7 @@ bat.append(b,2@0)
 statement ok
 bat.append(b,3@0)
 
-query TT rowsort
+query II rowsort
 io.print(b)
 ----
 0
@@ -23,7 +23,7 @@ io.print(b)
 statement ok
 bl:= batcalc.lng(b)
 
-query TT rowsort
+query II rowsort
 io.print(bl)
 ----
 0
@@ -45,7 +45,7 @@ bat.append(bb,2@0)
 statement ok
 bat.append(bb,3@0)
 
-query TT rowsort
+query II rowsort
 io.print(bb)
 ----
 0
@@ -58,7 +58,7 @@ io.print(bb)
 statement ok
 bbl:= batcalc.lng(bb)
 
-query TT rowsort
+query II rowsort
 io.print(bbl)
 ----
 0
@@ -111,17 +111,38 @@ o:= 3@0
 statement ok
 bat.append(c,o)
 
-query TT rowsort
+query II rowsort
 io.print(c)
 ----
-12 values hashing to 77d0360e2dbdb3f7c28ade5b26a1f37b
+0
+1
+1
+2
+2
+3
+3
+1
+4
+2
+5
+3
 
 statement ok
 cl:= batcalc.lng(c)
 
-query TT rowsort
+query II rowsort
 io.print(cl)
 ----
-12 values hashing to 77d0360e2dbdb3f7c28ade5b26a1f37b
-
+0
+1
+1
+2
+2
+3
+3
+1
+4
+2
+5
+3
 

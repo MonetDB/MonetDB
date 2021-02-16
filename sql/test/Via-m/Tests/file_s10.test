@@ -12,4 +12,3 @@ select add_file((select media_id
                         250,
                         250)
 
-

@@ -42,4 +42,3 @@ drop table lrbm_bug_2831.accident
 statement ok
 drop schema lrbm_bug_2831
 
-

@@ -109,4 +109,3 @@ SELECT capi08(i, i * 2) FROM integers
 statement ok
 ROLLBACK
 
-

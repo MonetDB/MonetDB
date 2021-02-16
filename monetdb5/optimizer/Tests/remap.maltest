@@ -14,6 +14,3 @@ statement ok
 statement ok
 	optimizer.multiplex("user","tst")
 
-#	mdb.List("user","tst")
-
-

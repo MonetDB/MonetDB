@@ -22,4 +22,3 @@ insert into t3335 values(3)
 statement ok
 rollback
 
-

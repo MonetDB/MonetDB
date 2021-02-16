@@ -41,4 +41,3 @@ SELECT pk FROM tab0 WHERE (col1 < 94.60) AND (col0 < 90) AND col3 >= 40 AND (col
 statement ok
 rollback
 
-

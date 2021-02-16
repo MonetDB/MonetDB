@@ -16,4 +16,3 @@ r:= user.simple(0,2,"hello");
 ----
 i=1 lim=2 str=hello
 
-

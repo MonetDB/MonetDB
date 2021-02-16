@@ -3,3 +3,4 @@ function foo();
 
 statement error
 io.printi;
+

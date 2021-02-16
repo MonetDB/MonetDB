@@ -1,7 +1,6 @@
-query T rowsort
+query I rowsort
 SELECT (count(columns.number) > 1)
 FROM columns
 ----
-True
-
+1
 

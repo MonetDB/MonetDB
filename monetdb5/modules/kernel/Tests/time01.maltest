@@ -34,7 +34,7 @@ bat.append(b1, x1)
 statement ok
 bat.append(b1, x2)
 
-query TT rowsort
+query IT rowsort
 io.print(b2)
 ----
 0
@@ -44,7 +44,7 @@ io.print(b2)
 2
 10:00:50
 
-query TT rowsort
+query IT rowsort
 io.print(b1)
 ----
 0
@@ -57,14 +57,13 @@ io.print(b1)
 statement ok
 c := batcalc.==(b2, b1)
 
-query TT rowsort
+query II rowsort
 io.print(c)
 ----
 0
-False
+0
 1
-False
+0
 2
-False
-
+0
 

@@ -13,4 +13,3 @@ SELECT extract(month from period) as m, count(1) as cnt FROM mmtest_v GROUP BY m
 statement ok
 rollback
 
-

@@ -117,4 +117,3 @@ io.print("clients.sha2sum (512) not available")
 statement ok
 exit MALException
 
-

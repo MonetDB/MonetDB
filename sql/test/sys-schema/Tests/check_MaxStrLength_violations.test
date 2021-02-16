@@ -606,4 +606,3 @@ query TIIT rowsort
 SELECT '"tmp"."triggers"."statement"' as full_col_nm, 2048 as max_allowed_length, length("statement") as data_length, t."statement" as data_value FROM "tmp"."triggers" t WHERE "statement" IS NOT NULL AND length("statement") > (select type_digits from sys._columns where name = 'statement' and table_id in (select id from tables where name = 'triggers' and schema_id in (select id from sys.schemas where name = 'tmp')))
 ----
 
-

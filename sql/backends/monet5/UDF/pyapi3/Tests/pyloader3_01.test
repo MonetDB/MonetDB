@@ -24,7 +24,7 @@ CREATE LOADER myfunc3(i integer, f string, d double) LANGUAGE PYTHON {
 	_emit.emit({'a':i,'d':4, 's': 'hello'})
 }
 
-query TTTIITTT rowsort
+query TTTIIIII rowsort
 SELECT name,func,mod,language,type,side_effect,varres,vararg FROM functions WHERE name='myfunc'
 ----
 myfunc
@@ -32,9 +32,9 @@ myfunc
 pyapi
 6
 7
-True
-True
-False
+1
+1
+0
 
 statement ok
 COPY LOADER INTO mytable FROM myfunc()
@@ -51,7 +51,18 @@ COPY LOADER INTO mytable FROM myfunc1(44)
 query RIT rowsort
 SELECT * FROM mytable
 ----
-12 values hashing to eccb34e3faa304d259b42a92b22494d6
+42.000
+1
+NULL
+44.000
+2
+NULL
+45.000
+3
+NULL
+46.000
+4
+hello
 
 statement ok
 DROP TABLE mytable
@@ -75,11 +86,10 @@ DROP LOADER myfunc2
 statement ok
 DROP LOADER myfunc3
 
-query ITTTIITTTITT rowsort
+query ITTTIIIIIIII rowsort
 SELECT * FROM functions WHERE name='myfunc'
 ----
 
 statement ok
 ROLLBACK
-
 

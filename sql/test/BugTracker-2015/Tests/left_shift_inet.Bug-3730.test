@@ -26,4 +26,3 @@ select * from sys.test where a << inet '10.0.0.0/8'
 statement ok
 rollback
 
-

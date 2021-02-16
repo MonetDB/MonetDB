@@ -99,3 +99,4 @@ drop table udf_reverse
 
 statement ok
 set optimizer = 'default_pipe'
+

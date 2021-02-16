@@ -68,4 +68,3 @@ drop table tr
 statement ok
 drop table trand
 
-

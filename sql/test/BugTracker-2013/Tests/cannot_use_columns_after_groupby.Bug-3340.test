@@ -16,4 +16,3 @@ query TI rowsort
 statement ok
 drop table filer_volumes
 
-

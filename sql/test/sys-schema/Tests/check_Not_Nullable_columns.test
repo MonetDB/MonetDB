@@ -62,43 +62,43 @@ query TIT rowsort
 SELECT "privilege_code_name", * FROM "sys"."privilege_codes" WHERE "privilege_code_name" IS NULL
 ----
 
-query ITTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "atomwidth", * FROM "sys"."storagemodelinput" WHERE "atomwidth" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query TTTTTIIIIIIII rowsort
 SELECT "column", * FROM "sys"."storagemodelinput" WHERE "column" IS NULL
 ----
 
-query ITTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "count", * FROM "sys"."storagemodelinput" WHERE "count" IS NULL
 ----
 
-query ITTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "distinct", * FROM "sys"."storagemodelinput" WHERE "distinct" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "isacolumn", * FROM "sys"."storagemodelinput" WHERE "isacolumn" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "reference", * FROM "sys"."storagemodelinput" WHERE "reference" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query TTTTTIIIIIIII rowsort
 SELECT "schema", * FROM "sys"."storagemodelinput" WHERE "schema" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query TTTTTIIIIIIII rowsort
 SELECT "table", * FROM "sys"."storagemodelinput" WHERE "table" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query TTTTTIIIIIIII rowsort
 SELECT "type", * FROM "sys"."storagemodelinput" WHERE "type" IS NULL
 ----
 
-query ITTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "typewidth", * FROM "sys"."storagemodelinput" WHERE "typewidth" IS NULL
 ----
 
@@ -114,63 +114,63 @@ query TIT rowsort
 SELECT "table_type_name", * FROM "sys"."table_types" WHERE "table_type_name" IS NULL
 ----
 
-query IITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT "id", * FROM "sys"."_columns" WHERE "id" IS NULL
 ----
 
-query TITTIIITTIT rowsort
+query TITTIIITIIT rowsort
 SELECT "name", * FROM "sys"."_columns" WHERE "name" IS NULL
 ----
 
-query TITTIIITTIT rowsort
+query TITTIIITIIT rowsort
 SELECT "type", * FROM "sys"."_columns" WHERE "type" IS NULL
 ----
 
-query IITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT "type_digits", * FROM "sys"."_columns" WHERE "type_digits" IS NULL
 ----
 
-query IITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT "type_scale", * FROM "sys"."_columns" WHERE "type_scale" IS NULL
 ----
 
-query IITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT "table_id", * FROM "sys"."_columns" WHERE "table_id" IS NULL
 ----
 
-query TITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT "null", * FROM "sys"."_columns" WHERE "null" IS NULL
 ----
 
-query IITTIIITTIT rowsort
+query IITTIIITIIT rowsort
 SELECT "number", * FROM "sys"."_columns" WHERE "number" IS NULL
 ----
 
-query IITITITII rowsort
+query IITITIIII rowsort
 SELECT "id", * FROM "sys"."_tables" WHERE "id" IS NULL
 ----
 
-query TITITITII rowsort
+query TITITIIII rowsort
 SELECT "name", * FROM "sys"."_tables" WHERE "name" IS NULL
 ----
 
-query IITITITII rowsort
+query IITITIIII rowsort
 SELECT "schema_id", * FROM "sys"."_tables" WHERE "schema_id" IS NULL
 ----
 
-query IITITITII rowsort
+query IITITIIII rowsort
 SELECT "type", * FROM "sys"."_tables" WHERE "type" IS NULL
 ----
 
-query TITITITII rowsort
+query IITITIIII rowsort
 SELECT "system", * FROM "sys"."_tables" WHERE "system" IS NULL
 ----
 
-query IITITITII rowsort
+query IITITIIII rowsort
 SELECT "commit_action", * FROM "sys"."_tables" WHERE "commit_action" IS NULL
 ----
 
-query IITITITII rowsort
+query IITITIIII rowsort
 SELECT "access", * FROM "sys"."_tables" WHERE "access" IS NULL
 ----
 
@@ -242,47 +242,47 @@ query IIII rowsort
 SELECT "depend_type", * FROM "sys"."dependencies" WHERE "depend_type" IS NULL
 ----
 
-query IITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "id", * FROM "sys"."functions" WHERE "id" IS NULL
 ----
 
-query TITTTIITTTITT rowsort
+query TITTTIIIIIIII rowsort
 SELECT "name", * FROM "sys"."functions" WHERE "name" IS NULL
 ----
 
-query TITTTIITTTITT rowsort
+query TITTTIIIIIIII rowsort
 SELECT "func", * FROM "sys"."functions" WHERE "func" IS NULL
 ----
 
-query TITTTIITTTITT rowsort
+query TITTTIIIIIIII rowsort
 SELECT "mod", * FROM "sys"."functions" WHERE "mod" IS NULL
 ----
 
-query IITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "language", * FROM "sys"."functions" WHERE "language" IS NULL
 ----
 
-query IITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "type", * FROM "sys"."functions" WHERE "type" IS NULL
 ----
 
-query TITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "side_effect", * FROM "sys"."functions" WHERE "side_effect" IS NULL
 ----
 
-query TITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "varres", * FROM "sys"."functions" WHERE "varres" IS NULL
 ----
 
-query TITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "vararg", * FROM "sys"."functions" WHERE "vararg" IS NULL
 ----
 
-query IITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "schema_id", * FROM "sys"."functions" WHERE "schema_id" IS NULL
 ----
 
-query TITTTIITTTITT rowsort
+query IITTTIIIIIIII rowsort
 SELECT "system", * FROM "sys"."functions" WHERE "system" IS NULL
 ----
 
@@ -326,15 +326,15 @@ query IIIITII rowsort
 SELECT "action", * FROM "sys"."keys" WHERE "action" IS NULL
 ----
 
-query IITI rowsort
+query IITII rowsort
 SELECT "id", * FROM "sys"."objects" WHERE "id" IS NULL
 ----
 
-query TITI rowsort
+query TITII rowsort
 SELECT "name", * FROM "sys"."objects" WHERE "name" IS NULL
 ----
 
-query IITI rowsort
+query IITII rowsort
 SELECT "nr", * FROM "sys"."objects" WHERE "nr" IS NULL
 ----
 
@@ -358,119 +358,119 @@ query IIIIII rowsort
 SELECT "grantable", * FROM "sys"."privileges" WHERE "grantable" IS NULL
 ----
 
-query IIITTT rowsort
+query IIITTI rowsort
 SELECT "partition_id", * FROM "sys"."range_partitions" WHERE "partition_id" IS NULL
 ----
 
-query IIITTT rowsort
+query IIITTI rowsort
 SELECT "table_id", * FROM "sys"."range_partitions" WHERE "table_id" IS NULL
 ----
 
-query TIITTT rowsort
+query IIITTI rowsort
 SELECT "with_nulls", * FROM "sys"."range_partitions" WHERE "with_nulls" IS NULL
 ----
 
-query IITIIT rowsort
+query IITIII rowsort
 SELECT "id", * FROM "sys"."schemas" WHERE "id" IS NULL
 ----
 
-query TITIIT rowsort
+query TITIII rowsort
 SELECT "name", * FROM "sys"."schemas" WHERE "name" IS NULL
 ----
 
-query IITIIT rowsort
+query IITIII rowsort
 SELECT "authorization", * FROM "sys"."schemas" WHERE "authorization" IS NULL
 ----
 
-query IITIIT rowsort
+query IITIII rowsort
 SELECT "owner", * FROM "sys"."schemas" WHERE "owner" IS NULL
 ----
 
-query TITIIT rowsort
+query IITIII rowsort
 SELECT "system", * FROM "sys"."schemas" WHERE "system" IS NULL
 ----
 
-query IIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "cacheinc", * FROM "sys"."sequences" WHERE "cacheinc" IS NULL
 ----
 
-query TIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "cycle", * FROM "sys"."sequences" WHERE "cycle" IS NULL
 ----
 
-query IIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "id", * FROM "sys"."sequences" WHERE "id" IS NULL
 ----
 
-query IIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "increment", * FROM "sys"."sequences" WHERE "increment" IS NULL
 ----
 
-query IIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "maxvalue", * FROM "sys"."sequences" WHERE "maxvalue" IS NULL
 ----
 
-query IIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "minvalue", * FROM "sys"."sequences" WHERE "minvalue" IS NULL
 ----
 
-query TIITIIIIIT rowsort
+query TIITIIIIII rowsort
 SELECT "name", * FROM "sys"."sequences" WHERE "name" IS NULL
 ----
 
-query IIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "schema_id", * FROM "sys"."sequences" WHERE "schema_id" IS NULL
 ----
 
-query IIITIIIIIT rowsort
+query IIITIIIIII rowsort
 SELECT "start", * FROM "sys"."sequences" WHERE "start" IS NULL
 ----
 
-query IITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "column_id", * FROM "sys"."statistics" WHERE "column_id" IS NULL
 ----
 
-query TITITIIIITTTT rowsort
+query TITITIIIITTII rowsort
 SELECT "type", * FROM "sys"."statistics" WHERE "type" IS NULL
 ----
 
-query IITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "width", * FROM "sys"."statistics" WHERE "width" IS NULL
 ----
 
-query TITITIIIITTTT rowsort
+query TITITIIIITTII rowsort
 SELECT "stamp", * FROM "sys"."statistics" WHERE "stamp" IS NULL
 ----
 
-query IITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "sample", * FROM "sys"."statistics" WHERE "sample" IS NULL
 ----
 
-query IITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "count", * FROM "sys"."statistics" WHERE "count" IS NULL
 ----
 
-query IITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "unique", * FROM "sys"."statistics" WHERE "unique" IS NULL
 ----
 
-query IITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "nils", * FROM "sys"."statistics" WHERE "nils" IS NULL
 ----
 
-query TITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "sorted", * FROM "sys"."statistics" WHERE "sorted" IS NULL
 ----
 
-query TITITIIIITTTT rowsort
+query IITITIIIITTII rowsort
 SELECT "revsorted", * FROM "sys"."statistics" WHERE "revsorted" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "sorted", * FROM "sys"."storagemodelinput" WHERE "sorted" IS NULL
 ----
 
-query TTTTTIIIITTTT rowsort
+query ITTTTIIIIIIII rowsort
 SELECT "unique", * FROM "sys"."storagemodelinput" WHERE "unique" IS NULL
 ----
 
@@ -569,5 +569,4 @@ SELECT "partition_id", * FROM "sys"."value_partitions" WHERE "partition_id" IS N
 query IIIT rowsort
 SELECT "table_id", * FROM "sys"."value_partitions" WHERE "table_id" IS NULL
 ----
-
 

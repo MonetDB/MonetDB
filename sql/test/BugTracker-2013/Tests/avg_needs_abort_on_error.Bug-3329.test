@@ -27,4 +27,3 @@ drop procedure test_avg_proc
 statement error
 drop test_avg
 
-

@@ -29,6 +29,3 @@ optimizer.inline("user","qry")
 statement ok
 optimizer.remap("user","qry")
 
-#mdb.List("user","qry")
-
-

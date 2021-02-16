@@ -4,4 +4,3 @@ function f();
 	b:= "the quick brown fox";
 end f;
 
-

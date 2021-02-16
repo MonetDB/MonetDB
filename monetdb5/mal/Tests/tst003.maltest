@@ -4,4 +4,3 @@ function foo();
 	b:=c;
 end foo
 
-

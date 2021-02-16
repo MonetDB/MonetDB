@@ -113,4 +113,3 @@ query T rowsort
 select "name" from sys.tables where "name" in ('trychangeme', 'anothername')
 ----
 
-

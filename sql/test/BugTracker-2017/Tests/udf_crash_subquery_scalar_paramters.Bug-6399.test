@@ -32,4 +32,3 @@ drop function crash2
 statement ok
 drop table data
 
-

@@ -28,4 +28,3 @@ set transaction
 statement ok
 rollback
 
-

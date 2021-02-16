@@ -13,15 +13,15 @@ create table b (k varchar(64))
 statement ok
 insert into b values ('two'),('two'),('two')
 
-query TT rowsort
+query TI rowsort
 select * from a
 ----
 one
-False
+0
 one
-True
+1
 two
-False
+0
 
 query T rowsort
 select * from b
@@ -30,10 +30,21 @@ two
 two
 two
 
-query TT rowsort
+query TI rowsort
 select k, v from a union all select k,NULL from b
 ----
-12 values hashing to 4cdb4345da13acb6cdd6b50076aeda13
+one
+0
+one
+1
+two
+0
+two
+NULL
+two
+NULL
+two
+NULL
 
 query TII rowsort
 select k,count(*),count(v) from (select k,v from a union all select k,null from b) as t(k,v) group by k order by count(*) desc
@@ -44,5 +55,4 @@ one
 two
 4
 1
-
 

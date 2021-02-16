@@ -7,7 +7,18 @@ insert into xx(ival) values(1),(2),(3),(4),(5),(6)
 query II rowsort
 select * from xx
 ----
-12 values hashing to fb5c2d393de0669d41828483355bed9e
+1
+1
+2
+2
+3
+3
+4
+4
+5
+5
+6
+6
 
 statement ok
 create view iview as
@@ -62,5 +73,4 @@ drop view iview
 
 statement ok
 drop table xx
-
 

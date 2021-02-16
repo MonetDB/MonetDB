@@ -118,4 +118,3 @@ select st_mlinefromtext(geom) from geometriesTxt WHERE id=7
 statement error
 select st_mlinefromtext(geom) from geometriesTxt WHERE id=8
 
-

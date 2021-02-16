@@ -36,4 +36,3 @@ drop table syscolumns
 statement ok
 drop table spt_datatype_info
 
-

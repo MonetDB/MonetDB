@@ -143,4 +143,3 @@ call sys.clearrejects()
 statement ok
 drop table null_as_string
 
-

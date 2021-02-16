@@ -183,4 +183,3 @@ DROP TABLE BOX_TBL
 statement ok
 set optimizer = 'default_pipe'
 
-

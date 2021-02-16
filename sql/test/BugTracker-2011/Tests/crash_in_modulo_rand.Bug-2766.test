@@ -10,4 +10,3 @@ update test2766 set v = mod(rand(), 32)
 statement ok
 drop table test2766
 
-

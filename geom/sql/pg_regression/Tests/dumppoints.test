@@ -7,27 +7,114 @@ POINT (0 9)
 query TT rowsort
 SELECT * FROM ST_DumpPoints(ST_WKTToSQL('LINESTRING (0 0, 0 9, 9 9, 9 0, 0 0)'))
 ----
-10 values hashing to 86a75fba8ba3a0a1cb65bd452e1a9906
+1
+POINT (0 0)
+2
+POINT (0 9)
+3
+POINT (9 9)
+4
+POINT (9 0)
+5
+POINT (0 0)
 
 query TT rowsort
 SELECT * FROM ST_DumpPoints(ST_WKTToSQL('POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0))'))
 ----
-10 values hashing to 935b054167c80b2c2c1a40370e3178fd
+1,1
+POINT (0 0)
+1,2
+POINT (0 9)
+1,3
+POINT (9 9)
+1,4
+POINT (9 0)
+1,5
+POINT (0 0)
 
 query TT rowsort
 SELECT * FROM ST_DumpPoints(ST_WKTToSQL('POLYGON ((0 0, 0 9, 9 9, 9 0, 0 0), (1 1, 1 3, 3 2, 1 1), (7 6, 6 8, 8 8, 7 6))'))
 ----
-26 values hashing to 3c6a439048cb62eb6e75988ad6f46a06
+1,1
+POINT (0 0)
+1,2
+POINT (0 9)
+1,3
+POINT (9 9)
+1,4
+POINT (9 0)
+1,5
+POINT (0 0)
+2,1
+POINT (1 1)
+2,2
+POINT (1 3)
+2,3
+POINT (3 2)
+2,4
+POINT (1 1)
+3,1
+POINT (7 6)
+3,2
+POINT (6 8)
+3,3
+POINT (8 8)
+3,4
+POINT (7 6)
 
 query TT rowsort
 SELECT * FROM ST_DumpPoints(ST_WKTToSQL('MULTIPOLYGON (((0 0, 0 3, 4 3, 4 0, 0 0)), ((2 4, 1 6, 4 5, 2 4), (7 6, 6 8, 8 8, 7 6)))'))
 ----
-26 values hashing to bd67298bce542b2f6d48346653b58114
+1,1,1
+POINT (0 0)
+1,1,2
+POINT (0 3)
+1,1,3
+POINT (4 3)
+1,1,4
+POINT (4 0)
+1,1,5
+POINT (0 0)
+2,1,1
+POINT (2 4)
+2,1,2
+POINT (1 6)
+2,1,3
+POINT (4 5)
+2,1,4
+POINT (2 4)
+2,2,1
+POINT (7 6)
+2,2,2
+POINT (6 8)
+2,2,3
+POINT (8 8)
+2,2,4
+POINT (7 6)
 
 query TT rowsort
 SELECT * FROM ST_DumpPoints(ST_WKTToSQL('POLYHEDRALSURFACE (((0 0 0, 0 0 1, 0 1 1, 0 1 0, 0 0 0)), ((0 0 0, 0 1 0, 1 1 0, 1 0 0, 0 0 0)))'))
 ----
-20 values hashing to 5fa8080044442bf419852ad1ad5aac95
+1,1,1
+POINT Z (0 0 0)
+1,1,2
+POINT Z (0 0 1)
+1,1,3
+POINT Z (0 1 1)
+1,1,4
+POINT Z (0 1 0)
+1,1,5
+POINT Z (0 0 0)
+2,1,1
+POINT Z (0 0 0)
+2,1,2
+POINT Z (0 1 0)
+2,1,3
+POINT Z (1 1 0)
+2,1,4
+POINT Z (1 0 0)
+2,1,5
+POINT Z (0 0 0)
 
 query TT rowsort
 SELECT * FROM ST_DumpPoints(ST_WKTToSQL('GEOMETRYCOLLECTION(
@@ -37,6 +124,54 @@ SELECT * FROM ST_DumpPoints(ST_WKTToSQL('GEOMETRYCOLLECTION(
           POLYGON((0 0, 0 9, 9 9, 9 0, 0 0), (5 5, 5 6, 6 6, 5 5)),
           MULTIPOLYGON(((0 0, 0 9, 9 9, 9 0, 0 0), (5 5, 5 6, 6 6, 5 5))))'))
 ----
-50 values hashing to 8ccb309845e1027a239c8be6cd633132
-
+1,1
+POINT (99 98)
+2,1
+POINT (1 1)
+2,2
+POINT (3 3)
+3,1,1
+POINT (0 0)
+3,1,2
+POINT (0 1)
+3,1,3
+POINT (1 1)
+3,1,4
+POINT (0 0)
+4,1,1
+POINT (0 0)
+4,1,2
+POINT (0 9)
+4,1,3
+POINT (9 9)
+4,1,4
+POINT (9 0)
+4,1,5
+POINT (0 0)
+4,2,1
+POINT (5 5)
+4,2,2
+POINT (5 6)
+4,2,3
+POINT (6 6)
+4,2,4
+POINT (5 5)
+5,1,1,1
+POINT (0 0)
+5,1,1,2
+POINT (0 9)
+5,1,1,3
+POINT (9 9)
+5,1,1,4
+POINT (9 0)
+5,1,1,5
+POINT (0 0)
+5,1,2,1
+POINT (5 5)
+5,1,2,2
+POINT (5 6)
+5,1,2,3
+POINT (6 6)
+5,1,2,4
+POINT (5 5)
 

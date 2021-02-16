@@ -23,4 +23,3 @@ INSERT INTO bug6783 values (SYS.STR_TO_TIMESTAMP('0', '%s'))
 statement ok
 ROLLBACK
 
-

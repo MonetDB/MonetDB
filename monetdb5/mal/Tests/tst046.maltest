@@ -10,7 +10,7 @@ bat.append(b,4)
 statement ok
 bat.append(b,9)
 
-query TI rowsort
+query II rowsort
 io.print(b)
 ----
 0
@@ -23,20 +23,20 @@ io.print(b)
 statement ok
 f:= batcalc.flt(b)
 
-query TT rowsort
+query IR rowsort
 io.print(f)
 ----
 0
-1.0
+1.000
 1
-4.0
+4.000
 2
-9.0
+9.000
 
 statement ok
 l:= batcalc.lng(b)
 
-query TT rowsort
+query II rowsort
 io.print(l)
 ----
 0
@@ -49,7 +49,7 @@ io.print(l)
 statement ok
 i:= batcalc.int(f)
 
-query TI rowsort
+query II rowsort
 io.print(i)
 ----
 0
@@ -58,5 +58,4 @@ io.print(i)
 4
 2
 9
-
 

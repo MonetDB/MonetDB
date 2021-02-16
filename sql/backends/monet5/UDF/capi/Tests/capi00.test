@@ -19,7 +19,16 @@ INSERT INTO integers VALUES (1), (2), (3), (4), (5)
 query II rowsort
 SELECT i, capi00(i) FROM integers
 ----
-10 values hashing to 47508a3b5b0c8425b9d1ff6d66c9e7b0
+1
+2
+2
+4
+3
+6
+4
+8
+5
+10
 
 statement ok
 DROP FUNCTION capi00
@@ -29,5 +38,4 @@ DROP TABLE integers
 
 statement ok
 ROLLBACK
-
 

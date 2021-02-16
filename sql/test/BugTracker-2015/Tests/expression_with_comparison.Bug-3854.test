@@ -16,4 +16,3 @@ SELECT t.id, t.foo FROM test t
 statement ok
 DROP TABLE test
 
-

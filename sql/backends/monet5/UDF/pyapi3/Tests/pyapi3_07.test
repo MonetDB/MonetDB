@@ -28,4 +28,3 @@ DROP TABLE rval
 statement ok
 ROLLBACK
 
-

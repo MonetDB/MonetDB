@@ -16,4 +16,3 @@ drop table data1
 statement ok
 drop table data2
 
-

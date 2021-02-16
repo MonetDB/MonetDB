@@ -18,4 +18,3 @@ SELECT DISTINCT + + col1, col1 FROM tab0 AS cor0 GROUP BY col0, col1 HAVING NOT 
 statement ok
 ROLLBACK
 
-

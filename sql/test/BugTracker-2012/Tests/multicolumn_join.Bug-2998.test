@@ -39,4 +39,3 @@ documentStructure
 statement ok
 DROP TABLE treeitems
 
-

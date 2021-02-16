@@ -7,7 +7,7 @@ bat.append(b,"one")
 statement ok
 bat.append(b,"two")
 
-query TT rowsort
+query IT rowsort
 io.print(b)
 ----
 0
@@ -34,5 +34,4 @@ exit (h,t)
 "two"
 0@0
 1@0
-
 

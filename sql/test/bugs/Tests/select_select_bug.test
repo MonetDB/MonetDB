@@ -10,4 +10,3 @@ SELECT (SELECT 1), count(DISTINCT mmsi) FROM vessels
 statement ok
 drop table vessels
 
-

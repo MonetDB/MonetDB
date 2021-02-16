@@ -12,4 +12,3 @@ SELECT ALL - ( - COUNT ( * ) ) FROM tab0 AS cor0 WHERE col0 / ( - + col2 ) NOT I
 statement ok
 DROP TABLE tab0
 
-

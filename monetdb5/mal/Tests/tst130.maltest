@@ -10,13 +10,13 @@ bat.append(bi,nil:int)
 statement ok
 zi:= batcalc.isnil(bi)
 
-query TT rowsort
+query II rowsort
 io.print(zi)
 ----
 0
-False
+0
 1
-True
+1
 
 statement ok
 bb:= bat.new(:bit)
@@ -33,15 +33,15 @@ bat.append(bb,false)
 statement ok
 zb:= batcalc.isnil(bb)
 
-query TT rowsort
+query II rowsort
 io.print(zb)
 ----
 0
-False
+0
 1
-True
+1
 2
-False
+0
 
 statement ok
 bf:= bat.new(:flt)
@@ -55,13 +55,13 @@ bat.append(bf,nil:flt)
 statement ok
 fi:= batcalc.isnil(bf)
 
-query TT rowsort
+query II rowsort
 io.print(fi)
 ----
 0
-False
+0
 1
-True
+1
 
 statement ok
 bs:= bat.new(:str)
@@ -78,15 +78,15 @@ bat.append(bs,"")
 statement ok
 zs:= batcalc.isnil(bs)
 
-query TT rowsort
+query II rowsort
 io.print(zs)
 ----
 0
-False
+0
 1
-True
+1
 2
-False
+0
 
 statement ok
 bo:= bat.new(:oid)
@@ -100,13 +100,13 @@ bat.append(bo,nil:oid)
 statement ok
 fo:= batcalc.isnil(bo)
 
-query TT rowsort
+query II rowsort
 io.print(fo)
 ----
 0
-False
+0
 1
-True
+1
 
 statement ok
 bc:= bat.new(:bte)
@@ -120,12 +120,11 @@ bat.append(bc,nil:bte)
 statement ok
 fc:= batcalc.isnil(bc)
 
-query TT rowsort
+query II rowsort
 io.print(fc)
 ----
 0
-False
+0
 1
-True
-
+1
 

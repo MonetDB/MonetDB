@@ -316,4 +316,3 @@ drop sequence scenario_id_seq
 statement ok
 drop sequence results_id_seq
 
-

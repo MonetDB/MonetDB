@@ -120,4 +120,3 @@ MULTIPOLYGON EMPTY
 statement error
 select st_mpolyfromtext(geom) from geometriesTxt WHERE id=8
 
-

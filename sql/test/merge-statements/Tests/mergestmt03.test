@@ -33,4 +33,3 @@ merge into uppert using (select aa, bb from merging) sub on uppert.bb = sub.bb
 statement ok
 rollback
 
-

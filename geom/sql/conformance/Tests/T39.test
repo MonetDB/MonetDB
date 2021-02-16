@@ -1,6 +1,5 @@
-query T rowsort
+query I rowsort
 SELECT ST_Touches(centerline, shore) FROM streams, lakes WHERE streams.name = 'Cam Stream' AND lakes.name = 'Blue Lake'
 ----
-True
-
+1
 

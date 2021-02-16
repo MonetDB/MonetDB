@@ -16,7 +16,87 @@ GROUP BY a.name, b.name
 HAVING COUNT(*) >= 1
 ORDER BY a.name, b.name
 ----
-81 values hashing to 5464689ee8163f6aeaf4fec86753f820
+args
+columns
+6
+args
+idxs
+6
+args
+keys
+6
+args
+objects
+4
+args
+sequences
+2
+functions
+args
+3
+functions
+columns
+3
+functions
+idxs
+6
+functions
+keys
+6
+functions
+objects
+4
+functions
+sequences
+3
+idxs
+columns
+8
+idxs
+idxs
+4
+idxs
+keys
+4
+idxs
+objects
+6
+keys
+columns
+8
+keys
+idxs
+12
+keys
+keys
+6
+keys
+objects
+6
+objects
+columns
+4
+objects
+idxs
+2
+objects
+keys
+2
+objects
+objects
+4
+sequences
+columns
+2
+sequences
+idxs
+4
+sequences
+keys
+4
+sequences
+objects
+4
 
 statement error
 select name from tables where "type" = 10 and "system" = true
@@ -41,5 +121,4 @@ sequences
 query T rowsort
 select name from tables where "type" = 10 and "system" = true group by name having 1=0
 ----
-
 

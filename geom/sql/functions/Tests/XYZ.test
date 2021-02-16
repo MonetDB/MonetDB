@@ -13,7 +13,18 @@ insert into geo values(st_makepoint(30, 40))
 query RRRT rowsort
 select st_x(g) as X, st_y(g) as Y, st_Z(g) as Z, g from geo
 ----
-12 values hashing to 00a574fa761c867ee442357094d9c8f9
+10.000
+20.000
+NULL
+POINT (10 20)
+20.000
+30.000
+NULL
+POINT (20 30)
+30.000
+40.000
+NULL
+POINT (30 40)
 
 statement ok
 drop table geo
@@ -53,5 +64,4 @@ select st_x(g) as X, st_y(g) as Y, st_Z(g) as Z, g from geo
 
 statement ok
 drop table geo
-
 

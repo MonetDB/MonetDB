@@ -37,4 +37,3 @@ drop table "second"
 statement ok
 drop table "first"
 
-

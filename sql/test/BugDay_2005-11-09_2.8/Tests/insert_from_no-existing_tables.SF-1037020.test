@@ -4,4 +4,3 @@ create table t1037020 (i integer)
 statement error
 insert into t1037020 select * from does_not_exist
 
-

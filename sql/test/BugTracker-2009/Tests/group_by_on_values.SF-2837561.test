@@ -9,4 +9,3 @@ none
 statement ok
 drop view test
 
-

@@ -52,7 +52,7 @@ statement ok
 statement ok
 ti_dv:bat[:int] := algebra.projection(ti,dv)
 
-query TT rowsort
+query II rowsort
 io.print(grp)
 ----
 0
@@ -67,11 +67,11 @@ io.print(grp)
 statement ok
 res:bat[:dbl] := rapi.subeval_aggr(nil:ptr,"res <- aggregate(arg2, by=list(aggr_group), FUN=median); return(res$x)",ti_gv,ti_dv);
 
-query TI nosort
+query IR nosort
 io.print(res)
 ----
 0
-63
+63.000
 1
-31
+31.000
 

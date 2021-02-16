@@ -18,17 +18,80 @@ copy 6 records into two from stdin using delimiters ',',E'\n'
 5,gotham,false,null,null,null
 6,wayne,false,null,null,3
 
-query ITTTTI rowsort
+query ITITTI rowsort
 select * from two
 ----
-36 values hashing to 552da87be57dfd8c2251615c9d6dd61f
+1
+NULL
+0
+2017-12-08
+2014-06-30 14:05:31
+2
+2
+vijay
+0
+2017-12-08
+2014-06-30 14:05:59
+3
+3
+krish
+1
+2017-12-08
+2014-06-30 14:06:17
+5
+4
+bat
+1
+NULL
+NULL
+NULL
+5
+gotham
+0
+NULL
+NULL
+NULL
+6
+wayne
+0
+NULL
+NULL
+3
 
 query ITIIT rowsort
 select two.id, two.name, two.count, twoAlias.id as id2, twoAlias.name as name2 from two left join two as twoAlias on two.count=twoAlias.id
 ----
-30 values hashing to 76736e1f44228e5a94162aaf6d810594
+1
+NULL
+2
+2
+vijay
+2
+vijay
+3
+3
+krish
+3
+krish
+5
+5
+gotham
+4
+bat
+NULL
+NULL
+NULL
+5
+gotham
+NULL
+NULL
+NULL
+6
+wayne
+3
+3
+krish
 
 statement ok
 drop table two
-
 

@@ -125,4 +125,3 @@ SELECT COUNT(*) from range_partitions
 ----
 0
 
-

@@ -18,4 +18,3 @@ SELECT DISTINCT - NULLIF ( - 85, 24 ) * tab1.col1 FROM tab1 GROUP BY tab1.col1
 statement ok
 DROP TABLE tab1
 
-

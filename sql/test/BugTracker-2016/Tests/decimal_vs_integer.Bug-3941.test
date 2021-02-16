@@ -69,7 +69,7 @@ call profiler.stoptrace()
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.int%'
 ----
-1
+0
 
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '%batcalc.lng%'
@@ -86,5 +86,4 @@ rollback
 
 statement ok
 set optimizer = 'default_pipe'
-
 

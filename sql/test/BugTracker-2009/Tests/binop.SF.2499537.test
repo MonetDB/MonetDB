@@ -24,4 +24,3 @@ drop table points
 statement ok
 drop function in_p_l
 
-

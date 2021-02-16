@@ -9,4 +9,3 @@ function foo();
 	wrongTo.message();
 end foo;
 
-

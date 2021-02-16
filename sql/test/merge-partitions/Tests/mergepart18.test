@@ -16,15 +16,15 @@ ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '1' TO '100'
 statement ok
 ALTER TABLE updateme ADD TABLE subt1 AS PARTITION FROM '1' TO '100'
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 1
 100
-False
+0
 201
 300
-False
+0
 
 statement ok
 INSERT INTO updateme VALUES (1, 'first')
@@ -61,15 +61,15 @@ DELETE FROM updateme
 statement ok
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-100' TO '0'
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -100
 0
-False
+0
 201
 300
-False
+0
 
 statement error
 INSERT INTO updateme VALUES (1, 'ups')
@@ -89,15 +89,15 @@ START TRANSACTION
 statement ok
 ALTER TABLE updateme SET TABLE subt1 AS PARTITION FROM '-1' TO '200'
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -1
 200
-False
+0
 201
 300
-False
+0
 
 statement ok
 INSERT INTO updateme VALUES (199, 'third')
@@ -105,15 +105,15 @@ INSERT INTO updateme VALUES (199, 'third')
 statement ok
 ROLLBACK
 
-query TTT rowsort
+query TTI rowsort
 SELECT minimum, maximum, with_nulls FROM range_partitions
 ----
 -100
 0
-False
+0
 201
 300
-False
+0
 
 statement error
 INSERT INTO updateme VALUES (150, 'fourth')
@@ -130,7 +130,16 @@ INSERT INTO subt1 VALUES (-50, 'fifth')
 query IT rowsort
 SELECT a, b FROM updateme
 ----
-10 values hashing to c21d7c4df5e34e9604a6b896ef19b443
+-1
+second
+-1
+second
+-50
+fifth
+-50
+fifth
+201
+other table
 
 query IT rowsort
 SELECT a, b FROM subt1
@@ -164,5 +173,4 @@ DROP TABLE subt2
 
 statement ok
 DROP TABLE updateme
-
 

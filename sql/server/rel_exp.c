@@ -228,26 +228,6 @@ exp_or(sql_allocator *sa, list *l, list *r, int anti)
 	return e;
 }
 
-static int /* if the quantifier has to be upcasted, ignore the upper conversion for the cardinalilty */
-quantifier_has_rel(sql_exp *e)
-{
-	if (!e)
-		return 0;
-	switch(e->type){
-	case e_convert:
-		return quantifier_has_rel(e->l);
-	case e_psm:
-		return exp_is_rel(e);
-	case e_atom:
-	case e_column:
-	case e_func:
-	case e_aggr:
-	case e_cmp:
-		return 0;
-	}
-	return 0;
-}
-
 sql_exp *
 exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 {
@@ -261,7 +241,7 @@ exp_in(sql_allocator *sa, sql_exp *l, list *r, int cmptype)
 	for (node *n = r->h; n ; n = n->next) {
 		sql_exp *next = n->data;
 
-		if (!quantifier_has_rel(next) && exps_card < next->card)
+		if (!exp_is_rel(next) && exps_card < next->card)
 			exps_card = next->card;
 	}
 	e->card = MAX(l->card, exps_card);
@@ -296,10 +276,10 @@ exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple)
 			for (node *n = ((list*)vals->f)->h ; n ; n = n->next) {
 				sql_exp *next = n->data;
 
-				if (!quantifier_has_rel(next) && exps_card < next->card)
+				if (!exp_is_rel(next) && exps_card < next->card)
 					exps_card = next->card;
 			}
-		} else if (!quantifier_has_rel(vals))
+		} else if (!exp_is_rel(vals))
 			exps_card = vals->card;
 
 		e->card = MAX(le->card, exps_card);
@@ -320,7 +300,7 @@ exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int 
 	if (e) {
 		e->flag = quantifier;
 		/* At ANY and ALL operators, the cardinality on the right side is ignored if it is a sub-relation */
-		e->card = quantifier && quantifier_has_rel(re) ? le->card : MAX(le->card, re->card);
+		e->card = quantifier && exp_is_rel(re) ? le->card : MAX(le->card, re->card);
 		if (!has_nil(le) && !has_nil(re))
 			set_has_no_nil(e);
 	}
@@ -1921,7 +1901,28 @@ exp_is_null(sql_exp *e )
 int
 exp_is_rel( sql_exp *e )
 {
-	return (e && e->type == e_psm && e->flag == PSM_REL && e->l);
+	if (e) {
+		switch(e->type){
+		case e_convert:
+			return exp_is_rel(e->l);
+		case e_psm:
+			return e->flag == PSM_REL && e->l;
+		default:
+			return 0;
+		}
+	}
+	return 0;
+}
+
+int
+exps_one_is_rel(list *exps)
+{
+	if (list_empty(exps))
+		return 0;
+	for(node *n = exps->h ; n ; n = n->next)
+		if (exp_is_rel(n->data))
+			return 1;
+	return 0;
 }
 
 int
@@ -2590,7 +2591,7 @@ is_identity( sql_exp *e, sql_rel *r)
 		return 0;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		return (strcmp(f->func->base.name, "identity") == 0);
+		return !f->func->s && strcmp(f->func->base.name, "identity") == 0;
 	}
 	default:
 		return 0;
@@ -2751,12 +2752,12 @@ exp_flatten(mvc *sql, sql_exp *e)
 		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
 
 		/* TODO handle date + x months */
-		if (strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, l->h->data);
 			atom *l2 = exp_flatten(sql, l->h->next->data);
 			if (l1 && l2)
 				return atom_add(l1,l2);
-		} else if (strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, l->h->data);
 			atom *l2 = exp_flatten(sql, l->h->next->data);
 			if (l1 && l2)
@@ -2822,7 +2823,7 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 int
 exp_aggr_is_count(sql_exp *e)
 {
-	if (e->type == e_aggr && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
+	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
 	return 0;
 }
@@ -3050,21 +3051,30 @@ exp_set_list_recurse(mvc *sql, sql_subtype *type, sql_exp *e, const char **relna
 	if (!e)
 		return 0;
 
-	assert(e->type == e_atom);
-	if (e->f) {
-		const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
-		if (next_rel && next_exp && !strcmp(next_rel, *relname) && !strcmp(next_exp, *expname))
-			for (node *n = ((list *) e->f)->h; n; n = n->next)
+	if (exp_is_rel(e)) {
+		/* Try to set parameters on the list of projections of the subquery. For now I won't go any further, ugh */
+		sql_rel *r = exp_rel_get_rel(sql->sa, e);
+		if ((is_simple_project(r->op) || is_groupby(r->op)) && list_length(r->exps) == 1) {
+			for (node *n = r->exps->h; n; n = n->next)
 				if (exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname) < 0)
 					return -1;
-	}
-	if (e->f && !e->tpe.type) {
-		e->tpe = *type;
-	} else if (!e->l && !e->r && !e->f && !e->tpe.type) {
-		if (set_type_param(sql, type, e->flag) == 0)
+		}
+	} else if (e->type == e_atom) {
+		if (e->f) {
+			const char *next_rel = exp_relname(e), *next_exp = exp_name(e);
+			if (next_rel && next_exp && !strcmp(next_rel, *relname) && !strcmp(next_exp, *expname))
+				for (node *n = ((list *) e->f)->h; n; n = n->next)
+					if (exp_set_list_recurse(sql, type, (sql_exp *) n->data, relname, expname) < 0)
+						return -1;
+		}
+		if (e->f && !e->tpe.type) {
 			e->tpe = *type;
-		else
-			return -1;
+		} else if (!e->l && !e->r && !e->f && !e->tpe.type) {
+			if (set_type_param(sql, type, e->flag) == 0)
+				e->tpe = *type;
+			else
+				return -1;
+		}
 	}
 	return 0;
 }
