@@ -270,3 +270,50 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(((t0.c0)>(least(9, t1.c0))) 
 ----
 2
 
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DECIMAL(18,3) NOT NULL,"c3" INT,CONSTRAINT "t0_c0_unique" UNIQUE ("c0"),CONSTRAINT "t0_c3_c0_unique" UNIQUE ("c3", "c0"))
+
+statement ok
+INSERT INTO "t0" VALUES (0.000, NULL), (0.587, 4)
+
+statement ok
+CREATE TABLE "t2" ("c1" INT NOT NULL,"c2" DECIMAL(18,3),"c3" INT,"c4" BIGINT,CONSTRAINT "t2_c1_pkey" PRIMARY KEY ("c1"),CONSTRAINT "t2_c1_unique" UNIQUE ("c1"),
+CONSTRAINT "t2_c2_unique" UNIQUE ("c2"),CONSTRAINT "t2_c1_c2_unique" UNIQUE ("c1", "c2"))
+
+statement ok
+INSERT INTO "t2" VALUES (2, 0.639, 3, 1), (0, NULL, NULL, 0), (8, NULL, NULL, 5)
+
+query I rowsort
+SELECT 1 FROM t0, t2 GROUP BY t2.c1
+----
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t0, t2 GROUP BY t2.c1 HAVING ((((SELECT FALSE WHERE FALSE) EXCEPT (SELECT 'a'))) = FALSE) IS NULL
+----
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t0, t2 GROUP BY t2.c1 HAVING (((SELECT FALSE WHERE FALSE) EXCEPT (SELECT 'a'))) = FALSE
+UNION ALL
+SELECT 1 FROM t0, t2 GROUP BY t2.c1 HAVING NOT ((((SELECT FALSE WHERE FALSE) EXCEPT (SELECT 'a'))) = FALSE)
+UNION ALL
+SELECT 1 FROM t0, t2 GROUP BY t2.c1 HAVING ((((SELECT FALSE WHERE FALSE) EXCEPT (SELECT 'a'))) = FALSE) IS NULL
+----
+1
+1
+1
+
+statement ok
+ROLLBACK
+
