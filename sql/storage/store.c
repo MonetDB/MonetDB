@@ -3374,34 +3374,6 @@ sql_trans_rollback(sql_trans *tr)
 	sqlstore *store = tr->store;
 	ulng commit_ts = 0; /* invalid ts, ie rollback */
 
-	/* global's are done via changes ?
-	   if (0 && commit == 0) {
-	   struct os_iter oi;
-	   os_iterator(&oi, tr->tmp->tables, tr, NULL);
-	   for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-	   sql_table *tt = (sql_table*)b;
-
-	   if (tt->base.flags == TR_NEW)
-	   os_remove(tr->tmp->tables, tr, b->name);
-	   }
-	   }
-	 * */
-
-	if (tr->tmp) { /* handle transaction boundary */
-		struct os_iter oi;
-		os_iterator(&oi, tr->tmp->tables, tr, NULL);
-		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
-			sql_table *tt = (sql_table*)b;
-
-			/*
-			   if ((isGlobal(tt) && tt->commit_action != CA_PRESERVE) || tt->commit_action == CA_DELETE) {
-			   sql_trans_clear_table(tr, tt);
-			   } else*/ if (tt->commit_action == CA_DROP) {
-				   //(void) sql_trans_drop_table_id(tr, tt->s, tt->base.id, DROP_RESTRICT);
-				   os_remove(tr->tmp->tables, tr, tt->base.name);
-			   }
-		}
-	}
 	/* move back deleted */
 	if (tr->localtmps.dset) {
 		for(node *n=tr->localtmps.dset->h; n; ) {
