@@ -28,6 +28,10 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
 
+/* disable upgrades for now */
+	if (store->catalog_version < 52300)
+		return GDK_FAIL;
+
 #ifdef CATALOG_JUN2020
 	if (oldversion == CATALOG_JUN2020) {
 		/* upgrade to default releases */
@@ -585,9 +589,6 @@ bl_postversion(void *Store, void *lg)
 	sqlstore *store = Store;
 	(void)store;
 	(void)lg;
-/* disable upgrades for now */
-	if (store->catalog_version < 52300)
-		return GDK_FAIL;
 	upgrade(lg);
 #ifdef CATALOG_JUN2020
 	if (store->catalog_version <= CATALOG_JUN2020) {
