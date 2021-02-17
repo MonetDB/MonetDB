@@ -17,6 +17,10 @@
 #define CATALOG_JUN2020 52204	/* first in Jun2020 */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 
+/* Note, CATALOG version 52300 is the first one where the basic system
+ * tables (the ones created in store.c) have fixed and unchangeable
+ * ids. */
+
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
  * newversion */
 static gdk_return
@@ -48,9 +52,8 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 #define D(schema, table)	"D_" schema "_" table
 
 #if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
-#if 0
 static int
-find_table_id(logger *lg, const char *val, int *sid)
+old_find_table_id(old_logger *lg, const char *val, int *sid)
 {
 	BAT *s = NULL;
 	BAT *b, *t;
@@ -58,7 +61,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	oid o;
 	int id;
 
-	b = temp_descriptor(logger_find_bat(lg, 2003)); /* schemas.name */
+	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "schemas", "name"), 0, 0));
 	if (b == NULL)
 		return 0;
 	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
@@ -71,7 +74,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	}
 	o = BUNtoid(s, 0);
 	bat_destroy(s);
-	b = temp_descriptor(logger_find_bat(lg, 2002)); /* schemas.id */
+	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "schemas", "id"), 0, 0));
 	if (b == NULL)
 		return 0;
 	bi = bat_iterator(b);
@@ -80,7 +83,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	/* store id of schema "sys" */
 	*sid = id;
 
-	b = temp_descriptor(logger_find_bat(lg, 2069)); /* _tables.name */
+	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "_tables", "name"), 0, 0));
 	if (b == NULL) {
 		bat_destroy(s);
 		return 0;
@@ -93,7 +96,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 		bat_destroy(s);
 		return 0;
 	}
-	b = temp_descriptor(logger_find_bat(lg, 2070)); /* _tables.schema_id */
+	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "_tables", "schema_id"), 0, 0));
 	if (b == NULL) {
 		bat_destroy(s);
 		return 0;
@@ -112,7 +115,7 @@ find_table_id(logger *lg, const char *val, int *sid)
 	o = BUNtoid(s, 0);
 	bat_destroy(s);
 
-	b = temp_descriptor(logger_find_bat(lg, 2068)); /* _tables.id */
+	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "_tables", "id"), 0, 0));
 	if (b == NULL)
 		return 0;
 	bi = bat_iterator(b);
@@ -137,28 +140,28 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 		cval = va_arg(va, void *);
 		len = snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
 		if (len == -1 || (size_t)len >= sizeof(lname) ||
-			(b = temp_descriptor(logger_find_bat(lg, lname, 0, 0))) == NULL) {
+			(b = temp_descriptor(old_logger_find_bat(lg, lname, 0, 0))) == NULL) {
 			va_end(va);
 			return GDK_FAIL;
 		}
 		if (first) {
 			BAT *bn;
 			if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
-				BBPunfix(b->batCacheid);
+				bat_destroy(b);
 				va_end(va);
 				return GDK_FAIL;
 			}
-			BBPunfix(b->batCacheid);
+			bat_destroy(b);
 			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
-			    logger_add_bat(lg, bn, lname, 0, 0) != GDK_SUCCEED) {
-				BBPunfix(bn->batCacheid);
+			    old_logger_add_bat(lg, bn, lname, 0, 0) != GDK_SUCCEED) {
+				bat_destroy(bn);
 				va_end(va);
 				return GDK_FAIL;
 			}
 			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
-		BBPunfix(b->batCacheid);
+		bat_destroy(b);
 		if (rc != GDK_SUCCEED) {
 			va_end(va);
 			return rc;
@@ -170,15 +173,411 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
 			return GDK_FAIL;
 		if ((rc = BATsetaccess(b, BAT_READ)) == GDK_SUCCEED)
-			rc = logger_add_bat(lg, b, nname, 0, 0);
-		BBPunfix(b->batCacheid);
+			rc = old_logger_add_bat(lg, b, nname, 0, 0);
+		bat_destroy(b);
 		if (rc != GDK_SUCCEED)
 			return rc;
 	}
 	return GDK_SUCCEED;
 }
 #endif
+
+struct item {
+	const char *name;
+	int newid;
+	int oldid;
+};
+
+struct item schemas[] = {
+	{.name = "sys", .newid = 2000, },
+	{.name = "tmp", .newid = 2114, },
+	{0}
+};
+
+struct item tables[] = {
+	{.name = "schemas", .newid = 2001, },
+	{.name = "types", .newid = 2007, },
+	{.name = "functions", .newid = 2016, },
+	{.name = "args", .newid = 2028, },
+	{.name = "sequences", .newid = 2037, },
+	{.name = "table_partitions", .newid = 2047, },
+	{.name = "range_partitions", .newid = 2053, },
+	{.name = "value_partitions", .newid = 2059, },
+	{.name = "dependencies", .newid = 2063, },
+	{.name = "_tables", .newid = 2067, },
+	{.name = "_columns", .newid = 2076, },
+	{.name = "keys", .newid = 2087, },
+	{.name = "idxs", .newid = 2094, },
+	{.name = "triggers", .newid = 2099, },
+	{.name = "objects", .newid = 2110, },
+	{0},
+	{.name = "_tables", .newid = 2115, },
+	{.name = "_columns", .newid = 2124, },
+	{.name = "keys", .newid = 2135, },
+	{.name = "idxs", .newid = 2142, },
+	{.name = "triggers", .newid = 2147, },
+	{.name = "objects", .newid = 2158, },
+	{0},
+	{0}
+};
+
+struct item columns[] = {
+	{.name = "id", .newid = 2002, },
+	{.name = "name", .newid = 2003, },
+	{.name = "authorization", .newid = 2004, },
+	{.name = "owner", .newid = 2005, },
+	{.name = "system", .newid = 2006, },
+	{0},
+	{.name = "id", .newid = 2008, },
+	{.name = "systemname", .newid = 2009, },
+	{.name = "sqlname", .newid = 2010, },
+	{.name = "digits", .newid = 2011, },
+	{.name = "scale", .newid = 2012, },
+	{.name = "radix", .newid = 2013, },
+	{.name = "eclass", .newid = 2014, },
+	{.name = "schema_id", .newid = 2015, },
+	{0},
+	{.name = "id", .newid = 2017, },
+	{.name = "name", .newid = 2018, },
+	{.name = "func", .newid = 2019, },
+	{.name = "mod", .newid = 2020, },
+	{.name = "language", .newid = 2021, },
+	{.name = "type", .newid = 2022, },
+	{.name = "side_effect", .newid = 2023, },
+	{.name = "varres", .newid = 2024, },
+	{.name = "vararg", .newid = 2025, },
+	{.name = "schema_id", .newid = 2026, },
+	{.name = "system", .newid = 2027, },
+	{.name = "semantics", .newid = 2162, },
+	{0},
+	{.name = "id", .newid = 2029, },
+	{.name = "func_id", .newid = 2030, },
+	{.name = "name", .newid = 2031, },
+	{.name = "type", .newid = 2032, },
+	{.name = "type_digits", .newid = 2033, },
+	{.name = "type_scale", .newid = 2034, },
+	{.name = "inout", .newid = 2035, },
+	{.name = "number", .newid = 2036, },
+	{0},
+	{.name = "id", .newid = 2038, },
+	{.name = "schema_id", .newid = 2039, },
+	{.name = "name", .newid = 2040, },
+	{.name = "start", .newid = 2041, },
+	{.name = "minvalue", .newid = 2042, },
+	{.name = "maxvalue", .newid = 2043, },
+	{.name = "increment", .newid = 2044, },
+	{.name = "cacheinc", .newid = 2045, },
+	{.name = "cycle", .newid = 2046, },
+	{0},
+	{.name = "id", .newid = 2048, },
+	{.name = "table_id", .newid = 2049, },
+	{.name = "column_id", .newid = 2050, },
+	{.name = "expression", .newid = 2051, },
+	{.name = "type", .newid = 2052, },
+	{0},
+	{.name = "table_id", .newid = 2054, },
+	{.name = "partition_id", .newid = 2055, },
+	{.name = "minimum", .newid = 2056, },
+	{.name = "maximum", .newid = 2057, },
+	{.name = "with_nulls", .newid = 2058, },
+	{0},
+	{.name = "table_id", .newid = 2060, },
+	{.name = "partition_id", .newid = 2061, },
+	{.name = "value", .newid = 2062, },
+	{0},
+	{.name = "id", .newid = 2064, },
+	{.name = "depend_id", .newid = 2065, },
+	{.name = "depend_type", .newid = 2066, },
+	{0},
+	{.name = "id", .newid = 2068, },
+	{.name = "name", .newid = 2069, },
+	{.name = "schema_id", .newid = 2070, },
+	{.name = "query", .newid = 2071, },
+	{.name = "type", .newid = 2072, },
+	{.name = "system", .newid = 2073, },
+	{.name = "commit_action", .newid = 2074, },
+	{.name = "access", .newid = 2075, },
+	{0},
+	{.name = "id", .newid = 2077, },
+	{.name = "name", .newid = 2078, },
+	{.name = "type", .newid = 2079, },
+	{.name = "type_digits", .newid = 2080, },
+	{.name = "type_scale", .newid = 2081, },
+	{.name = "table_id", .newid = 2082, },
+	{.name = "default", .newid = 2083, },
+	{.name = "null", .newid = 2084, },
+	{.name = "number", .newid = 2085, },
+	{.name = "storage", .newid = 2086, },
+	{0},
+	{.name = "id", .newid = 2088, },
+	{.name = "table_id", .newid = 2089, },
+	{.name = "type", .newid = 2090, },
+	{.name = "name", .newid = 2091, },
+	{.name = "rkey", .newid = 2092, },
+	{.name = "action", .newid = 2093, },
+	{0},
+	{.name = "id", .newid = 2095, },
+	{.name = "table_id", .newid = 2096, },
+	{.name = "type", .newid = 2097, },
+	{.name = "name", .newid = 2098, },
+	{0},
+	{.name = "id", .newid = 2100, },
+	{.name = "name", .newid = 2101, },
+	{.name = "table_id", .newid = 2102, },
+	{.name = "time", .newid = 2103, },
+	{.name = "orientation", .newid = 2104, },
+	{.name = "event", .newid = 2105, },
+	{.name = "old_name", .newid = 2106, },
+	{.name = "new_name", .newid = 2107, },
+	{.name = "condition", .newid = 2108, },
+	{.name = "statement", .newid = 2109, },
+	{0},
+	{.name = "id", .newid = 2111, },
+	{.name = "name", .newid = 2112, },
+	{.name = "nr", .newid = 2113, },
+	{.name = "sub", .newid = 2163, },
+	{0},
+	{.name = "id", .newid = 2116, },
+	{.name = "name", .newid = 2117, },
+	{.name = "schema_id", .newid = 2118, },
+	{.name = "query", .newid = 2119, },
+	{.name = "type", .newid = 2120, },
+	{.name = "system", .newid = 2121, },
+	{.name = "commit_action", .newid = 2122, },
+	{.name = "access", .newid = 2123, },
+	{0},
+	{.name = "id", .newid = 2125, },
+	{.name = "name", .newid = 2126, },
+	{.name = "type", .newid = 2127, },
+	{.name = "type_digits", .newid = 2128, },
+	{.name = "type_scale", .newid = 2129, },
+	{.name = "table_id", .newid = 2130, },
+	{.name = "default", .newid = 2131, },
+	{.name = "null", .newid = 2132, },
+	{.name = "number", .newid = 2133, },
+	{.name = "storage", .newid = 2134, },
+	{0},
+	{.name = "id", .newid = 2136, },
+	{.name = "table_id", .newid = 2137, },
+	{.name = "type", .newid = 2138, },
+	{.name = "name", .newid = 2139, },
+	{.name = "rkey", .newid = 2140, },
+	{.name = "action", .newid = 2141, },
+	{0},
+	{.name = "id", .newid = 2143, },
+	{.name = "table_id", .newid = 2144, },
+	{.name = "type", .newid = 2145, },
+	{.name = "name", .newid = 2146, },
+	{0},
+	{.name = "id", .newid = 2148, },
+	{.name = "name", .newid = 2149, },
+	{.name = "table_id", .newid = 2150, },
+	{.name = "time", .newid = 2151, },
+	{.name = "orientation", .newid = 2152, },
+	{.name = "event", .newid = 2153, },
+	{.name = "old_name", .newid = 2154, },
+	{.name = "new_name", .newid = 2155, },
+	{.name = "condition", .newid = 2156, },
+	{.name = "statement", .newid = 2157, },
+	{0},
+	{.name = "id", .newid = 2159, },
+	{.name = "name", .newid = 2160, },
+	{.name = "nr", .newid = 2161, },
+	{.name = "sub", .newid = 2164, },
+	{0},
+	{0}
+};
+
+static struct idtab {
+	const char *fullname;
+	const char *delname;
+} idtabs[] = {
+	{ .fullname = "sys_schemas_id", .delname = "D_sys_schemas", },
+	{ .fullname = "sys_types_schema_id", .delname = "D_sys_types", },
+	{ .fullname = "sys_functions_schema_id", .delname = "D_sys_functions", },
+	{ .fullname = "sys_sequences_schema_id", .delname = "D_sys_sequences", },
+	{ .fullname = "sys_table_partitions_table_id", .delname = "D_sys_table_partitions", },
+	{ .fullname = "sys_table_partitions_column_id", .delname = "D_sys_table_partitions", },
+	{ .fullname = "sys_range_partitions_table_id", .delname = "D_sys_range_partitions", },
+	{ .fullname = "sys_range_partitions_column_id", .delname = "D_sys_range_partitions", },
+	{ .fullname = "sys_value_partitions_table_id", .delname = "D_sys_value_partitions", },
+	{ .fullname = "sys_value_partitions_column_id", .delname = "D_sys_value_partitions", },
+	{ .fullname = "sys_dependencies_id", .delname = "D_sys_dependencies", },
+	{ .fullname = "sys_dependencies_depend_id", .delname = "D_sys_dependencies", },
+	{ .fullname = "sys__tables_id", .delname = "D_sys__tables", },
+	{ .fullname = "sys__tables_schema_id", .delname = "D_sys__tables", },
+	{ .fullname = "sys__columns_id", .delname = "D_sys__columns", },
+	{ .fullname = "sys__columns_table_id", .delname = "D_sys__columns", },
+	{ .fullname = "sys_keys_table_id", .delname = "D_sys_keys", },
+	{ .fullname = "sys_idxs_table_id", .delname = "D_sys_idxs", },
+	{ .fullname = "sys_triggers_table_id", .delname = "D_sys_triggers", },
+	{0}
+};
+
+static int
+lookup(old_logger *lg, BAT *mapold, BAT *mapnew, struct item *items, const char *table, const char *ids, int id)
+{
+	char name[64];
+	strconcat_len(name, sizeof(name), "sys_", table, "_name", NULL);
+	BAT *nmbat = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
+	strconcat_len(name, sizeof(name), "sys_", table, "_id", NULL);
+	BAT *idbat = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
+	strconcat_len(name, sizeof(name), "D_sys_", table, NULL);
+	BAT *cands = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
+	BAT *b;
+	if (nmbat == NULL || idbat == NULL || cands == NULL)
+		goto bailout;
+	if (BATsort(&b, NULL, NULL, cands, NULL, NULL, false, false, false) != GDK_SUCCEED)
+		goto bailout;
+	bat_destroy(cands);
+	cands = BATnegcands(BATcount(nmbat), b);
+	bat_destroy(b);
+	if (cands == NULL)
+		goto bailout;
+	if (ids) {
+		strconcat_len(name, sizeof(name), "sys_", table, "_", ids, NULL);
+		BAT *rfbat = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
+		if (rfbat == NULL)
+			goto bailout;
+		b = BATselect(rfbat, cands, &id, NULL, true, true, false);
+		bat_destroy(cands);
+		bat_destroy(rfbat);
+		cands = b;
+		if (cands == NULL)
+			goto bailout;
+	}
+	int i;
+	for (i = 0; items[i].name; i++) {
+		b = BATselect(nmbat, cands, items[i].name, NULL, true, true, false);
+		if (b == NULL)
+			goto bailout;
+		if (BATcount(b) > 0) {
+			items[i].oldid = ((int *) idbat->theap->base)[BUNtoid(b, 0) - nmbat->hseqbase];
+			if (items[i].oldid != items[i].newid &&
+				(BUNappend(mapold, &items[i].oldid, false) != GDK_SUCCEED ||
+				 BUNappend(mapnew, &items[i].newid, false) != GDK_SUCCEED)) {
+				bat_destroy(b);
+				goto bailout;
+			}
+		}
+		bat_destroy(b);
+	}
+	bat_destroy(nmbat);
+	bat_destroy(idbat);
+	bat_destroy(cands);
+	return i;
+  bailout:
+	bat_destroy(nmbat);
+	bat_destroy(idbat);
+	bat_destroy(cands);
+	return 0;
+}
+
+static gdk_return
+upgrade(old_logger *lg)
+{
+	BAT *mapold = COLnew(0, TYPE_int, 256, TRANSIENT);
+	BAT *mapnew = COLnew(0, TYPE_int, 256, TRANSIENT);
+
+	if (mapold == NULL || mapnew == NULL)
+		goto bailout;
+
+	if (lookup(lg, mapold, mapnew, schemas, "schemas", NULL, 0) == 0)
+		goto bailout;
+	for (int i = 0, j = 0; tables[i].name; i++, j++) {
+		int n = lookup(lg, mapold, mapnew, tables + i, "_tables", "schema_id", schemas[j].oldid);
+		if (n == 0)
+			goto bailout;
+		i += n;
+	}
+	for (int i = 0, j = 0; columns[i].name; i++, j++) {
+		if (tables[j].name == NULL)
+			j++;
+		int n = lookup(lg, mapold, mapnew, columns + i, "_columns", "table_id", tables[j].oldid);
+		if (n == 0)
+			goto bailout;
+		i += n;
+	}
+
+#if 0
+	BAT *args[3];
+	args[0] = BATdense(0, 0, BATcount(mapold));
+	args[1] = mapold;
+	args[2] = mapnew;
+	BATprintcolumns(GDKstdout, 3, args);
+	bat_destroy(args[0]);
 #endif
+
+	if (BATcount(mapold) > 0) {
+		/* we have work to do */
+		for (int i = 0; idtabs[i].fullname; i++) {
+			BAT *b = temp_descriptor(old_logger_find_bat(lg, idtabs[i].fullname, 0, 0));
+			if (b == NULL)
+				continue;
+			BAT *b1, *b2;
+			BAT *cands = temp_descriptor(old_logger_find_bat(lg, idtabs[i].delname, 0, 0));
+			gdk_return rc;
+			if (cands) {
+				if (BATcount(cands) == 0) {
+					bat_destroy(cands);
+					cands = NULL;
+				} else {
+					rc = BATsort(&b1, NULL, NULL, cands, NULL, NULL, false, false, false);
+					bat_destroy(cands);
+					if (rc != GDK_SUCCEED) {
+						bat_destroy(b);
+						goto bailout;
+					}
+					cands = BATnegcands(BATcount(b), b1);
+					bat_destroy(b1);
+					if (cands == NULL) {
+						bat_destroy(b);
+						goto bailout;
+					}
+				}
+			}
+			rc = BATjoin(&b1, &b2, b, mapold, cands, NULL, false, BATcount(mapold));
+			bat_destroy(cands);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(b);
+				goto bailout;
+			}
+			if (BATcount(b1) == 0) {
+				bat_destroy(b1);
+				bat_destroy(b2);
+				bat_destroy(b);
+				continue;
+			}
+			BAT *b3 = COLcopy(b, b->ttype, true, PERSISTENT);
+			bat_destroy(b);
+			b = b3;
+			if (b == NULL) {
+				bat_destroy(b1);
+				bat_destroy(b2);
+				goto bailout;
+			}
+			b3 = BATproject(b2, mapnew);
+			bat_destroy(b2);
+			rc = BATreplace(b, b1, b3, false);
+			bat_destroy(b1);
+			bat_destroy(b3);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(b);
+				goto bailout;
+			}
+			/* now b contains the updated values for the column in idtabs[i] */
+			bat_destroy(b);		/* for now, throw away */
+		}
+	}
+
+	bat_destroy(mapold);
+	bat_destroy(mapnew);
+	return GDK_SUCCEED;
+  bailout:
+	bat_destroy(mapold);
+	bat_destroy(mapnew);
+	return GDK_FAIL;
+}
 
 static gdk_return
 bl_postversion(void *Store, void *lg)
@@ -186,15 +585,21 @@ bl_postversion(void *Store, void *lg)
 	sqlstore *store = Store;
 	(void)store;
 	(void)lg;
+/* disable upgrades for now */
+	if (store->catalog_version < 52300)
+		return GDK_FAIL;
+	upgrade(lg);
 #ifdef CATALOG_JUN2020
 	if (store->catalog_version <= CATALOG_JUN2020) {
+		int id;
 		lng lid;
-		BAT *fid = temp_descriptor(logger_find_bat(lg, 2017)); /* functions.id */
+		BAT *fid = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
 		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
 		    fid == NULL) {
 			bat_destroy(fid);
 			return GDK_FAIL;
 		}
+		id = (int) lid;
 		BAT *sem = COLnew(fid->hseqbase, TYPE_bit, BATcount(fid), PERSISTENT);
 		if (sem == NULL) {
 			bat_destroy(fid);
@@ -212,15 +617,14 @@ bl_postversion(void *Store, void *lg)
 		BATsetcount(sem, BATcount(fid));
 		bat_destroy(fid);
 		if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
-		    log_bat_persists(lg, sem, 2162) != GDK_SUCCEED) {
+		    old_logger_add_bat(lg, sem, N("sys", "functions", "semantics"), 0, 0) != GDK_SUCCEED) {
 
 			bat_destroy(sem);
 			return GDK_FAIL;
 		}
 		bat_destroy(sem);
-#if 0 /* TODO */
 		int sid;
-		int tid = find_table_id(lg, "functions", &sid);
+		int tid = old_find_table_id(lg, "functions", &sid);
 		if (tabins(lg, true, -1, NULL, "sys", "_columns",
 			   "id", &id,
 			   "name", "semantics",
@@ -235,7 +639,7 @@ bl_postversion(void *Store, void *lg)
 			   NULL) != GDK_SUCCEED)
 			return GDK_FAIL;
 		{	/* move sql.degrees, sql.radians, sql.like and sql.ilike functions from 09_like.sql and 10_math.sql script to sql_types list */
-			BAT *func_func = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "name"), 0, 0));
+			BAT *func_func = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "name"), 0, 0));
 			if (func_func == NULL) {
 				return GDK_FAIL;
 			}
@@ -287,7 +691,7 @@ bl_postversion(void *Store, void *lg)
 				return GDK_FAIL;
 			}
 
-			BAT *sys_funcs = temp_descriptor(logger_find_bat(lg, D("sys", "functions"), 0, 0));
+			BAT *sys_funcs = temp_descriptor(old_logger_find_bat(lg, D("sys", "functions"), 0, 0));
 			if (sys_funcs == NULL) {
 				bat_destroy(final_cands);
 				return GDK_FAIL;
@@ -297,11 +701,11 @@ bl_postversion(void *Store, void *lg)
 			bat_destroy(sys_funcs);
 			if (res != GDK_SUCCEED)
 				return res;
-			if ((res = logger_upgrade_bat(lg, D("sys", "functions"), LOG_TAB, 0)) != GDK_SUCCEED)
+			if ((res = old_logger_upgrade_bat(lg, D("sys", "functions"), LOG_TAB, 0)) != GDK_SUCCEED)
 				return res;
 		}
 		{	/* Fix SQL aggregation functions defined on the wrong modules: sql.null, sql.all, sql.zero_or_one and sql.not_unique */
-			BAT *func_mod = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "mod"), 0, 0));
+			BAT *func_mod = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "mod"), 0, 0));
 			if (func_mod == NULL)
 				return GDK_FAIL;
 
@@ -310,7 +714,7 @@ bl_postversion(void *Store, void *lg)
 				bat_destroy(func_mod);
 				return GDK_FAIL;
 			}
-			BAT *func_type = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "type"), 0, 0));
+			BAT *func_type = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "type"), 0, 0));
 			if (func_type == NULL) {
 				bat_destroy(func_mod);
 				bat_destroy(sqlfunc);
@@ -324,7 +728,7 @@ bl_postversion(void *Store, void *lg)
 				return GDK_FAIL;
 			}
 
-			BAT *func_func = temp_descriptor(logger_find_bat(lg, N("sys", "functions", "func"), 0, 0));
+			BAT *func_func = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "func"), 0, 0));
 			if (func_func == NULL) {
 				bat_destroy(func_mod);
 				bat_destroy(sqlaggr_func);
@@ -411,10 +815,9 @@ bl_postversion(void *Store, void *lg)
 			bat_destroy(update_bat);
 			if (res != GDK_SUCCEED)
 				return res;
-			if ((res = logger_upgrade_bat(lg, N("sys", "functions", "mod"), LOG_COL, 0)) != GDK_SUCCEED)
+			if ((res = old_logger_upgrade_bat(lg, N("sys", "functions", "mod"), LOG_COL, 0)) != GDK_SUCCEED)
 				return res;
 		}
-#endif
 	}
 #endif
 
@@ -428,7 +831,7 @@ bl_postversion(void *Store, void *lg)
 		int id = (int) lid;
 		char *schemas[2] = {"sys", "tmp"};
 		for (int i = 0 ; i < 2; i++) { /* create for both tmp and sys schemas */
-			int sid, tid = find_table_id(lg, schemas[i], "objects", &sid);
+			int sid, tid = old_find_table_id(lg, schemas[i], "objects", &sid);
 			if (tabins(lg, true, -1, NULL, "sys", "_columns",
 				"id", &id,
 				"name", "sub",
@@ -446,7 +849,7 @@ bl_postversion(void *Store, void *lg)
 		}
 
 		/* add sub column to "objects" table. This is required for merge tables */
-		BAT *objs_id = temp_descriptor(logger_find_bat(lg, N("sys", "objects", "id"), 0, 0));
+		BAT *objs_id = temp_descriptor(old_old_logger_find_bat(lg, N("sys", "objects", "id"), 0, 0));
 		if (!objs_id)
 			return GDK_FAIL;
 
@@ -455,13 +858,13 @@ bl_postversion(void *Store, void *lg)
 			bat_destroy(objs_id);
 			return GDK_FAIL;
 		}
-		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED || logger_add_bat(lg, objs_sub, N("sys", "objects", "sub"), 0, 0) != GDK_SUCCEED) {
+		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED || old_logger_add_bat(lg, objs_sub, N("sys", "objects", "sub"), 0, 0) != GDK_SUCCEED) {
 			bat_destroy(objs_id);
 			bat_destroy(objs_sub);
 			return GDK_FAIL;
 		}
 
-		BAT *objs_nr = temp_descriptor(logger_find_bat(lg, N("sys", "objects", "nr"), 0, 0));
+		BAT *objs_nr = temp_descriptor(old_old_logger_find_bat(lg, N("sys", "objects", "nr"), 0, 0));
 		if (!objs_nr) {
 			bat_destroy(objs_id);
 			bat_destroy(objs_nr);
@@ -511,7 +914,7 @@ bl_postversion(void *Store, void *lg)
 			bat_destroy(tids);
 			return res;
 		}
-		if (logger_upgrade_bat(lg, N("sys", "objects", "nr"), LOG_COL, 0) != GDK_SUCCEED || logger_upgrade_bat(lg, N("sys", "objects", "sub"), LOG_COL, 0) != GDK_SUCCEED) {
+		if (old_logger_upgrade_bat(lg, N("sys", "objects", "nr"), LOG_COL, 0) != GDK_SUCCEED || old_logger_upgrade_bat(lg, N("sys", "objects", "sub"), LOG_COL, 0) != GDK_SUCCEED) {
 			bat_destroy(objs_id);
 			bat_destroy(tids);
 			return GDK_FAIL;
@@ -530,7 +933,7 @@ bl_postversion(void *Store, void *lg)
 		if (res != GDK_SUCCEED)
 			return res;
 
-		if (logger_upgrade_bat(lg, N("sys", "objects", "id"), LOG_COL, 0) != GDK_SUCCEED)
+		if (old_logger_upgrade_bat(lg, N("sys", "objects", "id"), LOG_COL, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 #endif
 	}
