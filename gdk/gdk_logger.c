@@ -1192,7 +1192,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 	}
 	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
 		fclose(fp);
-		if (old_logger_load(lg->debug, fn, logdir, lg->version, lg->prefuncp, lg->postfuncp, lg->funcdata) != GDK_SUCCEED) {
+		if (old_logger_load(lg, fn, logdir) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
 			GDKerror("Incompatible database version %06d, "
