@@ -1724,7 +1724,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 
 		if (compare_op[0] == '>')
 			compare_op[0] = '<';
-		else if (compare_op[0] == '<')
+		else if (compare_op[0] == '<' && compare_op[1] != '>')
 			compare_op[0] = '>';
 		cmp_type = swap_compare(cmp_type);
 	}

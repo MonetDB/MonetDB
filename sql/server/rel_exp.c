@@ -25,17 +25,14 @@ compare_str2type(const char *compare_op)
 		type = cmp_equal;
 	} else if (compare_op[0] == '<') {
 		type = cmp_lt;
-		if (compare_op[1] != '\0') {
-			if (compare_op[1] == '>')
-				type = cmp_notequal;
-			else if (compare_op[1] == '=')
-				type = cmp_lte;
-		}
+		if (compare_op[1] == '>')
+			type = cmp_notequal;
+		else if (compare_op[1] == '=')
+			type = cmp_lte;
 	} else if (compare_op[0] == '>') {
 		type = cmp_gt;
-		if (compare_op[1] != '\0')
-			if (compare_op[1] == '=')
-				type = cmp_gte;
+		if (compare_op[1] == '=')
+			type = cmp_gte;
 	}
 	return type;
 }

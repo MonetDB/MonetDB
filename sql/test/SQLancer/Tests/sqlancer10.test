@@ -403,6 +403,20 @@ TRUE
 statement ok
 ROLLBACK
 
+query I rowsort
+SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL
+----
+0
+
+query I rowsort
+SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL HAVING ((SELECT TRUE)) = FALSE
+UNION ALL
+SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL HAVING NOT (((SELECT TRUE)) = FALSE)
+UNION ALL
+SELECT covar_pop(0.9, 0.5) FROM (select 762812975) t2(c0) WHERE t2.c0 IS NOT NULL HAVING (((SELECT TRUE)) = FALSE) IS NULL
+----
+0
+
 statement ok
 START TRANSACTION
 
