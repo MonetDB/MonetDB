@@ -14,8 +14,7 @@
 #include "gdk_logger_internals.h"
 #include "mutils.h"
 
-#define CATALOG_AUG2018 52202
-#define CATALOG_JUN2020 52204
+#define CATALOG_JUN2020 52204	/* first in Jun2020 */
 #define CATALOG_OCT2020 52205	/* first in Oct2020 */
 
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
@@ -48,7 +47,7 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #define D(schema, table)	"D_" schema "_" table
 
-#if defined CATALOG_AUG2018 || defined CATALOG_JUN2020 || defined CATALOG_OCT2020
+#if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
 #if 0
 static int
 find_table_id(logger *lg, const char *val, int *sid)
