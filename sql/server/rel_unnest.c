@@ -1537,6 +1537,14 @@ _rel_unnest(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static void
+reset_has_nil(sql_exp *e)
+{
+	set_has_nil(e);
+	if (is_convert(e->type))
+		reset_has_nil(e->l);
+}
+
 static sql_exp *
 rewrite_inner(mvc *sql, sql_rel *rel, sql_rel *inner, operator_type *op)
 {
@@ -1620,7 +1628,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			e = exp_rel_update_exp(v->sql, e);
 		}
 		if (is_left(op))
-			set_has_nil(e);
+			reset_has_nil(e);
 	}
 	return e;
 }
@@ -2515,7 +2523,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					operator_type op = op_join;
 					(void)rewrite_inner(sql, rel, lsq, &op);
 					if (is_left(op))
-						set_has_nil(le);
+						reset_has_nil(le);
 				}
 				if (rsq) {
 					if (on_right) {
@@ -2526,7 +2534,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 						operator_type op = !is_tuple?((depth>0)?op_left:op_join):is_anyequal(sf)?op_semi:op_anti;
 						(void)rewrite_inner(sql, rel, rsq, &op);
 						if (is_left(op))
-							set_has_nil(re);
+							reset_has_nil(re);
 					}
 				}
 
@@ -2575,13 +2583,13 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 					operator_type op = op_join;
 					(void)rewrite_inner(sql, rel, lsq, &op);
 					if (is_left(op))
-						set_has_nil(le);
+						reset_has_nil(le);
 				}
 				if (rsq) {
 					operator_type op = !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti;
 					(void)rewrite_inner(sql, rel, rsq, &op);
 					if (is_left(op))
-						set_has_nil(re);
+						reset_has_nil(re);
 				}
 				if (is_tuple) {
 					list *t = le->f;
@@ -2709,7 +2717,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					operator_type op = (depth||quantifier)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, sq, &op);
 					if (is_left(op))
-						set_has_nil(le);
+						reset_has_nil(le);
 				}
 				if (quantifier) {
 					sql_subfunc *a;
@@ -2737,7 +2745,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					operator_type op = ((!quantifier && depth > 0)||is_cnt)?op_left:op_join;
 					(void)rewrite_inner(v->sql, rel, rsq, &op);
 					if (is_left(op))
-						set_has_nil(re);
+						reset_has_nil(re);
 				}
 
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
@@ -2762,13 +2770,13 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					operator_type op = op_join;
 					(void)rewrite_inner(v->sql, rel, lsq, &op);
 					if (is_left(op))
-						set_has_nil(le);
+						reset_has_nil(le);
 				}
 				if (rsq) {
 					operator_type op = !is_tuple?op_join:is_anyequal(sf)?op_semi:op_anti;
 					(void)rewrite_inner(v->sql, rel, rsq, &op);
 					if (is_left(op))
-						set_has_nil(re);
+						reset_has_nil(re);
 				}
 				if (is_tuple) {
 					list *t = le->f;
