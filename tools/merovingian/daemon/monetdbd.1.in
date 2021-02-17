@@ -176,16 +176,36 @@ This property specifies which TCP port
 .I monetdbd
 should listen to for connection requests.  Defaults to 50000.
 .TP
-.B ipv6
-This property forces
-.I monetdbd
-to bind connections on IPv6 addresses only.
-Defaults to false.
-.TP
 .B listenaddr
-This property specifies an address that is allowed to connect to the server.
-The user can specify one IP(v6) address, or use the 0.0.0.0 notation to allow
-connections from everywhere. Defaults to localhost (127.0.0.1).
+This property specifies an address that is allowed to connect to the
+server.
+The following possibilities exist:
+.RS
+.TP
+.B localhost
+The server only listens on the IPv4 and IPv6 loopback interface (if
+available).  This is the default.
+.TP
+.B 127.0.0.1
+The server only listens on the IPv4 loopback interface.
+.TP
+.B ::1
+The server only listens on the IPv6 loopback interface.
+.TP
+.B all
+The server listens on all available IPv4 and IPv6 interfaces.
+.TP
+.B 0.0.0.0
+The server listens on all available IPv4 interfaces.
+.TP
+.B ::
+The server listens on all available IPv6 interfaces.
+.TP
+.I hostname
+The server listens on the interface designated by
+.I hostname
+which is looked up using the normal hostname lookup facilities.
+.RE
 .TP
 .B control
 For remote management of

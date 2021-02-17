@@ -388,17 +388,170 @@ query T rowsort
 select t2.c3 from t2 left join (select distinct least(lower('䙕<x?L!'), substr(t2.c3, t2.c2, t2.c4)) from t2, t1 where (t2.c0) = false) as sub0 on t2.c0 where
 case when true then t2.c3 when t2.c0 then t2.c3 when t2.c0 then t2.c3 end <> all(values (greatest('jG', '}')), (splitpart('薍噥', '', 6)), (greatest('', 'n8駞Rr')))
 ----
-*F᢬#W\t7.#
-苌RM2o>+Ꮉ
-TRUE
+*F@#W@7.#
+.9E'G.F_&
+0.27948064932943084
+0.27948064932943084
+0.27948064932943084
+0.27948064932943084
 0.6612383260040383
 1.0
-0.27948064932943084
-0.27948064932943084
-0.27948064932943084
-0.27948064932943084
+@RM2o>+@
 CB
-.9E'G.F_&
+TRUE
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" INTEGER,"c1" BOOLEAN NOT NULL,"c3" CHARACTER LARGE OBJECT,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"))
+
+statement ok
+COPY 2 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0	false	""
+NULL	true	"A8TW"
+
+statement ok
+CREATE TABLE "t1" ("c1" BOOLEAN,"c3" BOOLEAN)
+
+statement ok
+COPY 18 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+false	false
+false	false
+NULL	false
+true	NULL
+true	true
+false	false
+false	false
+true	NULL
+true	false
+false	false
+false	false
+NULL	NULL
+NULL	true
+NULL	true
+NULL	true
+NULL	false
+NULL	true
+NULL	false
+
+statement ok
+CREATE TABLE "t2" ("c3" DECIMAL(18,3),"c2" TINYINT)
+
+statement ok
+COPY 15 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.046	9
+0.046	9
+0.046	9
+0.046	9
+0.046	9
+0.046	9
+0.046	9
+0.046	9
+0.046	9
+NULL	0
+0.046	9
+0.046	9
+0.046	9
+0.046	9
+NULL	2
+
+query I rowsort
+SELECT 1 FROM t1 RIGHT OUTER JOIN (SELECT 2) AS sub0 ON least((SELECT true WHERE FALSE), true) WHERE NOT EXISTS ((SELECT 'b' WHERE FALSE) UNION ALL (SELECT 'a'))
+----
+
+
+query T rowsort
+SELECT ALL t1.c1 FROM t0, t1 RIGHT OUTER JOIN ((SELECT DISTINCT ((least(6, 529595761))-(least(4, 1032827696))), least(-859534381, 0.01807380825433357873777140412130393087863922119140625)
+FROM t0, t1 WHERE t0.c1 GROUP BY t1.c3) EXCEPT ALL (SELECT ALL - (COALESCE(2, 0.78330755, 0.6467953977457632230851913845981471240520477294921875, 1)), - (0.24474563528854787) FROM t0, t1 WHERE t1.c3)) AS sub0 ON 
+least(((SELECT ALL l2t0.c1 FROM t0 AS l2t0, t2 AS l2t2, t1 AS l2t1 WHERE FALSE) UNION ALL (SELECT DISTINCT l2t0.c1 FROM t0 AS l2t0 WHERE l2t0.c1)), (t1.c3) BETWEEN ASYMMETRIC (t1.c1) AND (t1.c1)) WHERE
+NOT EXISTS ((SELECT DISTINCT NULLIF('0.9825037007815074', 'sqR]&'), 20 WHERE FALSE) UNION ALL (SELECT DISTINCT NULLIF(l1t0.c3, l1t0.c3), - (4) FROM t0 AS l1t0 WHERE l1t0.c1))
+----
+
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NOT EXISTS ((SELECT DISTINCT NULLIF('0.9825037007815074', 'sqR]&'), 20 WHERE FALSE) UNION ALL (SELECT DISTINCT NULLIF(l1t0.c3, l1t0.c3), - (4) FROM
+t0 AS l1t0 WHERE l1t0.c1)) AS INT) as count FROM t0, t1 RIGHT OUTER JOIN ((SELECT DISTINCT ((least(6, 529595761))-(least(4, 1032827696))), least(-859534381, 0.01807380825433357873777140412130393087863922119140625)
+FROM t0, t1 WHERE t0.c1 GROUP BY t1.c3) EXCEPT ALL (SELECT ALL - (COALESCE(2, 0.78330755, 0.6467953977457632230851913845981471240520477294921875, 1)), - (0.24474563528854787) FROM t0, t1 WHERE t1.c3)) AS sub0
+ON least(((SELECT l2t0.c1 FROM t0 AS l2t0, t2 AS l2t2, t1 AS l2t1 WHERE FALSE) UNION ALL (SELECT DISTINCT l2t0.c1 FROM t0 AS l2t0 WHERE l2t0.c1)), (t1.c3) BETWEEN ASYMMETRIC (t1.c1) AND (t1.c1))) as res
+----
+0
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" VARCHAR(335),"c2" DECIMAL(18,3),"c3" CHARACTER LARGE OBJECT)
+
+statement ok
+COPY 12 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	NULL	"9"
+"-5733674980"	NULL	"9"
+NULL	2055375593.000	"9"
+NULL	0.993	"9"
+NULL	0.413	"9"
+NULL	NULL	"9"
+NULL	NULL	"9"
+"zDON唄"	NULL	NULL
+NULL	1.000	NULL
+NULL	0.000	NULL
+NULL	0.002	NULL
+NULL	5.000	NULL
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" VARCHAR(335),"c1" BIGINT,"c3" DECIMAL(18,3),"c4" BOOLEAN,"c5" BOOLEAN)
+
+statement ok
+COPY 11 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	NULL	0.707	NULL	NULL
+NULL	NULL	0.265	NULL	NULL
+NULL	NULL	0.888	NULL	NULL
+NULL	NULL	0.026	NULL	NULL
+"8"	NULL	NULL	false	false
+"'"	404410629	NULL	false	false
+"FxH델洓H"	6	NULL	true	true
+"E"	1426753368	NULL	NULL	false
+NULL	NULL	NULL	NULL	false
+NULL	NULL	NULL	NULL	true
+NULL	NULL	NULL	NULL	true
+
+statement ok
+CREATE TABLE "sys"."t2" ("c1" BIGINT NOT NULL)
+
+statement ok
+COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1
+1
+8
+1
+0
+
+query I rowsort
+SELECT 1 FROM t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 END, true)
+---
+132 rows in the output. After getting the right result I will approve the hash
+
+query T rowsort
+SELECT t1.c3 FROM t2, t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0)))
+----
+120 rows in the output. After getting the right result I will approve the hash
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0))) AS INT) as count FROM t2, t0, t1) as res
+----
+120
 
 statement ok
 ROLLBACK
