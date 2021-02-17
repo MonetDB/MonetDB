@@ -400,7 +400,7 @@ JSONstr2json(json *ret, str *j)
 }
 
 static str
-JSONisvalid(bit *ret, json *j)
+JSONisvalid(bit *ret, str *j)
 {
 	if (strNil(*j)) {
 		*ret = bit_nil;
@@ -2708,7 +2708,6 @@ static mel_atom json_init_atoms[] = {
 static mel_func json_init_funcs[] = {
  command("json", "new", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
  command("calc", "json", JSONstr2json, false, "Convert string to its JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",str))),
- command("calc", "json", JSONstr2json, false, "Convert JSON to JSON. Dealing with escape characters", args(1,2, arg("",json),arg("j",json))),
  command("json", "str", JSONjson2str, false, "Convert JSON to its string equivalent. Dealing with escape characters", args(1,2, arg("",str),arg("j",json))),
  command("json", "text", JSONjson2text, false, "Convert JSON values to their plain string equivalent.", args(1,2, arg("",str),arg("j",json))),
  command("json", "text", JSONjson2textSeparator, false, "Convert JSON values to their plain string equivalent, injecting a separator.", args(1,3, arg("",str),arg("j",json),arg("s",str))),
@@ -2728,12 +2727,9 @@ static mel_func json_init_funcs[] = {
  command("json", "filter", JSONfilterArray_hge, false, "", args(1,3, arg("",json),arg("name",json),arg("idx",hge))),
  command("json", "filter", JSONfilterArrayDefault_hge, false, "Extract a single array element", args(1,4, arg("",json),arg("name",json),arg("idx",hge),arg("other",str))),
 #endif
- command("json", "isvalid", JSONisvalid, false, "Validate the string as a valid JSON document", args(1,2, arg("",bit),arg("val",json))),
  command("json", "isobject", JSONisobject, false, "Validate the string as a valid JSON object", args(1,2, arg("",bit),arg("val",json))),
  command("json", "isarray", JSONisarray, false, "Validate the string as a valid JSON array", args(1,2, arg("",bit),arg("val",json))),
  command("json", "isvalid", JSONisvalid, false, "Validate the string as a valid JSON document", args(1,2, arg("",bit),arg("val",str))),
- command("json", "isobject", JSONisobject, false, "Validate the string as a valid JSON object", args(1,2, arg("",bit),arg("val",str))),
- command("json", "isarray", JSONisarray, false, "Validate the string as a valid JSON array", args(1,2, arg("",bit),arg("val",str))),
  command("json", "length", JSONlength, false, "Returns the number of elements in the outermost JSON object.", args(1,2, arg("",int),arg("val",json))),
  pattern("json", "unfold", JSONunfold, false, "Expands the outermost JSON object into key-value pairs.", args(2,3, batarg("k",str),batarg("v",json),arg("val",json))),
  pattern("json", "unfold", JSONunfold, false, "Expands the outermost JSON object into key-value pairs.", args(3,4, batarg("o",oid),batarg("k",str),batarg("v",json),arg("val",json))),

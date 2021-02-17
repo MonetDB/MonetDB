@@ -22,10 +22,6 @@ command calc.json(j:str):json
 address JSONstr2json
 comment "Convert string to its JSON. Dealing with escape characters";
 
-command calc.json(j:json):json
-address JSONstr2json
-comment "Convert JSON to JSON. Dealing with escape characters";
-
 command str(j:json):str
 address JSONjson2str
 comment "Convert JSON to its string equivalent. Dealing with escape characters";
@@ -72,10 +68,6 @@ command filter(name:json, idx:lng, other:str) :json
 address JSONfilterArrayDefault_lng
 comment "Extract a single array element";
 
-command isvalid(val:json):bit
-address JSONisvalid
-comment "Validate the string as a valid JSON document";
-
 command isobject(val:json):bit
 address JSONisobject
 comment "Validate the string as a valid JSON object";
@@ -87,14 +79,6 @@ comment "Validate the string as a valid JSON array";
 command isvalid(val:str):bit
 address JSONisvalid
 comment "Validate the string as a valid JSON document";
-
-command isobject(val:str):bit
-address JSONisobject
-comment "Validate the string as a valid JSON object";
-
-command isarray(val:str):bit
-address JSONisarray
-comment "Validate the string as a valid JSON array";
 
 command length(val:json):int
 address JSONlength
