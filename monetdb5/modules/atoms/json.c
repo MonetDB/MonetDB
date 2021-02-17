@@ -918,17 +918,29 @@ JSONfractionParser(const char *j, const char **next) {
 
 static bool
 JSONexponentParser(const char *j, const char **next) {
+	const char *s = j;
+	bool saw_digit = false;
+
 	if (*j != 'e' && *j != 'E') {
 		return false;
 	}
 
 	j++;
-	if (*j == '-')
+	if (*j == '-' || *j == '+')
 		j++;
 
-	for (; *j; j++)
+	for (; *j; j++) {
 		if (!isdigit((unsigned char)*j))
 			break;
+		saw_digit = true;
+	}
+
+
+	if (!saw_digit) {
+		j = s;
+		return false;
+	}
+
 
 	*next = j;
 
