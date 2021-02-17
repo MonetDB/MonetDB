@@ -1001,21 +1001,15 @@ bl_log_isnew(sqlstore *store)
 }
 
 static int
-bl_tstart(sqlstore *store)
+bl_tstart(sqlstore *store, ulng commit_ts)
 {
-	return log_tstart(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	return log_tstart(store->logger, commit_ts) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
 }
 
 static int
 bl_tend(sqlstore *store)
 {
 	return log_tend(store->logger) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
-}
-
-static lng
-bl_tid(sqlstore *store)
-{
-	return log_save_id(store->logger);
 }
 
 static int
@@ -1115,7 +1109,7 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	}
 	snapshot_immediate_copy_file(plan, log_file, log_file + strlen(db_dir) + 1);
 
-	for (lng id = bat_logger->saved_id+1; id <= bat_logger->id; id++) {
+	for (ulng id = bat_logger->saved_id+1; id <= bat_logger->id; id++) {
 		struct stat statbuf;
 
 		len = snprintf(log_file, sizeof(log_file), "%s/%s%s." LLFMT, db_dir, bat_logger->dir, LOGFILE, id);
@@ -1402,7 +1396,6 @@ bat_logger_init( logger_functions *lf )
 	lf->log_isnew = bl_log_isnew;
 	lf->log_tstart = bl_tstart;
 	lf->log_tend = bl_tend;
-	lf->log_save_id = bl_tid;
 	lf->log_sequence = bl_sequence;
 	lf->get_snapshot_files = bl_snapshot;
 }

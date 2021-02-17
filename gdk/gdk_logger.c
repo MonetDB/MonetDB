@@ -924,11 +924,23 @@ logger_open_output(logger *lg)
 	}
 	lg->end = 0;
 
-	if (lg->output_log == NULL || mnstr_errnr(lg->output_log)) {
+	logged_range *new_range = (logged_range*)GDKmalloc(sizeof(logged_range));
+
+	if (lg->output_log == NULL || mnstr_errnr(lg->output_log) || !new_range) {
 		TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
+	new_range->id = lg->id;
+	new_range->first_tid = lg->tid;
+	new_range->last_tid = lg->tid;
+	new_range->last_ts = 0;
+	new_range->next = NULL;
+	if (lg->current)
+		lg->current->next = new_range;
+	lg->current = new_range;
+	if (!lg->pending)
+		lg->pending = new_range;
 	GDKfree(filename);
 	return GDK_SUCCEED;
 }
@@ -1020,12 +1032,14 @@ logger_read_transaction(logger *lg)
 		case LOG_START:
 			if (l.id > lg->tid)
 				lg->tid = l.id;
-			if ((tr = tr_create(tr, l.id)) == NULL) {
+			lng trans_id;
+			if (!mnstr_readLng(lg->input_log, &trans_id) ||
+			   (tr = tr_create(tr, l.id)) == NULL) {
 				err = LOG_ERR;
 				break;
 			}
 			if (lg->debug & 1)
-				fprintf(stderr, "#logger tstart %d\n", tr->tid);
+				fprintf(stderr, "#logger tstart %d-" LLFMT "\n", tr->tid, trans_id);
 			break;
 		case LOG_END:
 			if (tr == NULL)
@@ -1833,7 +1847,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	GDKdebug = dbg;
 
 	if (readlogs) {
-		lng log_id = lg->saved_id+1;
+		ulng log_id = lg->saved_id+1;
 		if (logger_readlogs(lg, filename) != GDK_SUCCEED) {
 			goto error;
 		}
@@ -1992,21 +2006,43 @@ logger_create(int debug, const char *fn, const char *logdir, int version, prever
 	return lg;
 }
 
+static ulng
+logger_next_logfile(logger *lg, ulng ts)
+{
+	if (!lg->pending || !lg->pending->next)
+		return 0;
+	if (lg->pending->last_ts < ts)
+		return lg->pending->id;
+	return 0;
+}
+
+static void
+logger_cleanup_range(logger *lg)
+{
+	logged_range *p = lg->pending;
+	if (p) {
+		lg->pending = p->next;
+		GDKfree(p);
+	}
+}
 
 gdk_return
-logger_flush(logger *lg, lng saved_id)
+logger_flush(logger *lg, ulng ts)
 {
+	ulng lid = logger_next_logfile(lg, ts);
 	if (LOG_DISABLED(lg)) {
-		lg->saved_id = saved_id;
+		lg->saved_id = lid;
 		lg->saved_tid = lg->tid;
+		if (lid)
+			logger_cleanup_range(lg);
 		return GDK_SUCCEED;
 	}
-	if (lg->saved_id >= saved_id)
+	if (lg->saved_id >= lid)
 		return GDK_SUCCEED;
 	if (lg->saved_id+1 >= lg->id) /* logger should first release the file */
 		return GDK_SUCCEED;
 	log_return res = LOG_OK;
-	while(lg->saved_id < saved_id && res == LOG_OK) {
+	while(lg->saved_id < lid && res == LOG_OK) {
 		if (lg->saved_id >= lg->id)
 			break;
 		if (!lg->input_log) {
@@ -2059,6 +2095,9 @@ logger_flush(logger *lg, lng saved_id)
 		}
 		logger_unlock(lg);
 	}
+	assert(res==LOG_OK);
+	if (lid && res == LOG_OK)
+		logger_cleanup_range(lg);
 	return res == LOG_ERR ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -2572,23 +2611,24 @@ logger_find_bat(logger *lg, log_id id)
 
 
 gdk_return
-log_tstart(logger *lg)
+log_tstart(logger *lg, ulng commit_ts)
 {
 	logformat l;
 
 	if (LOG_DISABLED(lg))
 		return GDK_SUCCEED;
 
+	assert(lg->current);
+	lg->current->last_tid = lg->tid+1;
+	lg->current->last_ts = commit_ts;
+
 	l.flag = LOG_START;
 	l.id = ++lg->tid;
 
 	if (lg->debug & 1)
 		fprintf(stderr, "#log_tstart %d\n", lg->tid);
-	return log_write_format(lg, &l);
-}
-
-lng
-log_save_id(logger *lg)
-{
-	return lg->id;
+	if (log_write_format(lg, &l) != GDK_SUCCEED ||
+	    !mnstr_writeLng(lg->output_log, commit_ts))
+		return GDK_FAIL;
+	return GDK_SUCCEED;
 }

@@ -9,14 +9,24 @@
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
 
+typedef struct logged_range_t {
+	ulng id;			/* log file id */
+	int first_tid;		/* first */
+	int last_tid;		/* last tid */
+	ulng last_ts;		/* last stored timestamp */
+	struct logged_range_t *next;
+} logged_range;
+
 struct logger {
 	int debug;
 	int version;
-	lng id;			/* current log output id */
-	lng saved_id;		/* id of last fully handled log file */
+	ulng id;		/* current log output file id */
+	ulng saved_id;		/* id of last fully handled log file */
 	int tid;		/* current transaction id */
 	int saved_tid;		/* id of transaction which was flushed out (into BBP storage)  */
 	bool flushing;
+	logged_range *pending;
+	logged_range *current;
 
 	int row_insert_nrcols;	/* nrcols == 0 no rowinsert, log_update will include the logformat */
 
