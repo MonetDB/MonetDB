@@ -5541,22 +5541,18 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 static sql_rel*
 rel_unique_names(mvc *sql, sql_rel *rel)
 {
-	node *n;
 	list *l;
 
 	if (!is_project(rel->op))
 		return rel;
 	l = sa_list(sql->sa);
-	for (n = rel->exps->h; n; n = n->next) {
+	for (node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
+		const char *name = exp_name(e);
 
-		if (exp_relname(e)) {
-			if (exp_name(e) && exps_bind_column2(l, exp_relname(e), exp_name(e), NULL))
-				exp_label(sql->sa, e, ++sql->label);
-		} else {
-			if (exp_name(e) && exps_bind_column(l, exp_name(e), NULL, NULL, 0))
-				exp_label(sql->sa, e, ++sql->label);
-		}
+		/* If there are two identical expression names, there will be ambiguity */
+		if (!name || exps_bind_column(l, name, NULL, NULL, 0))
+			exp_label(sql->sa, e, ++sql->label);
 		append(l,e);
 	}
 	rel->exps = l;
