@@ -541,7 +541,7 @@ COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 query I rowsort
 SELECT 1 FROM t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 END, true)
 ---
-120 rows in the output. After getting the right result I will approve the hash
+132 rows in the output. After getting the right result I will approve the hash
 
 query T rowsort
 SELECT t1.c3 FROM t2, t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0)))
