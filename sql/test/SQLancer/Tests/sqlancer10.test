@@ -502,6 +502,23 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t2" ("c2" BIGINT NOT NULL,CONSTRAINT "t2_c2_unique" UNIQUE ("c2"))
+
+statement ok
+INSERT INTO "t2" VALUES (0), (5), (-463833803)
+
+query I rowsort
+select 1 from t2 where 8 = any(select 0.8673676855585512601720665770699270069599151611328125 from t2) and (values (true))
+----
+
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c0" INTEGER,"c1" BOOLEAN NOT NULL,"c3" CHARACTER LARGE OBJECT,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"))
 
 statement ok
