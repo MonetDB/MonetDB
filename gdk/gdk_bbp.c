@@ -401,295 +401,6 @@ static gdk_return BBPrecover(int farmid);
 static gdk_return BBPrecover_subdir(void);
 static bool BBPdiskscan(const char *, size_t);
 
-#ifdef GDKLIBRARY_OLDDATE
-#define leapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
-#define YEARDAYS(y)		(leapyear(y) ? 366 : 365)
-static int CUMLEAPDAYS[13] = {
-	0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366
-};
-static int CUMDAYS[13] = {
-	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
-};
-static int
-leapyears(int year)
-{
-	/* count the 4-fold years that passed since jan-1-0 */
-	int y4 = year / 4;
-
-	/* count the 100-fold years */
-	int y100 = year / 100;
-
-	/* count the 400-fold years */
-	int y400 = year / 400;
-
-	return y4 + y400 - y100 + (year >= 0);	/* may be negative */
-}
-
-#define YEAR_OFFSET	4712
-#define YEAR_MIN	(-YEAR_OFFSET)
-#define DTDAY_WIDTH	5		/* 1..28/29/30/31, depending on month */
-#define DTDAY_SHIFT	0
-#define DTMONTH_WIDTH	21		/* enough for 174761 years */
-#define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
-#define YEAR_MAX	(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
-#define mkdate(d, m, y)	(((((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
-			 | ((d) << DTDAY_SHIFT))
-#define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
-#define TSTIME_SHIFT	0
-#define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
-#define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
-#define mktimestamp(d, t)	((lng) (((uint64_t) (d) << TSDATE_SHIFT) | \
-					((uint64_t) (t) << TSTIME_SHIFT)))
-
-int
-cvtdate(int n)
-{
-	int day, month, year;
-
-	year = n / 365;
-	day = (n - year * 365) - leapyears(year >= 0 ? year - 1 : year);
-	if (n < 0) {
-		year--;
-		while (day >= 0) {
-			year++;
-			day -= YEARDAYS(year);
-		}
-		day = YEARDAYS(year) + day;
-	} else {
-		while (day < 0) {
-			year--;
-			day += YEARDAYS(year);
-		}
-	}
-
-	day++;
-	if (leapyear(year)) {
-		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
-			if (day > CUMLEAPDAYS[month - 1] && day <= CUMLEAPDAYS[month]) {
-				break;
-			}
-		day -= CUMLEAPDAYS[month - 1];
-	} else {
-		for (month = day / 31 == 0 ? 1 : day / 31; month <= 12; month++)
-			if (day > CUMDAYS[month - 1] && day <= CUMDAYS[month]) {
-				break;
-			}
-		day -= CUMDAYS[month - 1];
-	}
-	/* clamp date */
-	if (year < YEAR_MIN) {
-		day = 1;
-		month = 1;
-		year = YEAR_MIN;
-	} else if (year > YEAR_MAX) {
-		day = 31;
-		month = 12;
-		year = YEAR_MAX;
-	}
-	return mkdate(day, month, year);
-}
-
-static gdk_return
-fixdateheap(BAT *b, const char *anme)
-{
-	long_str filename;
-	Heap h1;		/* old heap */
-	Heap h2;		/* new heap */
-	const char *nme, *bnme;
-	char *srcdir;
-	BUN i;
-	bool nofix = true;
-
-	nme = BBP_physical(b->batCacheid);
-	srcdir = GDKfilepath(NOFARM, BATDIR, nme, NULL);
-	if (srcdir == NULL) {
-		TRC_CRITICAL(GDK, "GDKfilepath failed\n");
-		return GDK_FAIL;
-	}
-	char *s;
-	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
-		*s = 0;
-
-	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
-		bnme++;
-	else
-		bnme = nme;
-	snprintf(filename, sizeof(filename), "BACKUP%c%s", DIR_SEP, bnme);
-
-	/* we don't maintain index structures */
-	HASHdestroy(b);
-	IMPSdestroy(b);
-	OIDXdestroy(b);
-	PROPdestroy(b);
-
-	/* make backup of heap */
-	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail", BAKDIR, bnme, "tail") != GDK_SUCCEED) {
-		GDKfree(srcdir);
-		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
-		return GDK_FAIL;
-	}
-	/* load old heap */
-	h1 = *b->theap;
-	strconcat_len(h1.filename, sizeof(h1.filename),
-		      filename, ".tail", NULL);
-	h1.base = NULL;
-	h1.dirty = false;
-	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
-		GDKfree(srcdir);
-		TRC_CRITICAL(GDK, "loading old tail heap "
-			     "for BAT %d failed\n", b->batCacheid);
-		return GDK_FAIL;
-	}
-
-	/* create new heap */
-	h2 = *b->theap;
-	strconcat_len(h2.filename, sizeof(h2.filename), nme, ".tail", NULL);
-	if (HEAPalloc(&h2, b->batCapacity, strcmp(anme, "date") == 0 ? 4 : 8, 0) != GDK_SUCCEED) {
-		GDKfree(srcdir);
-		HEAPfree(&h1, false);
-		TRC_CRITICAL(GDK, "allocating new tail heap "
-			     "for BAT %d failed\n", b->batCacheid);
-		return GDK_FAIL;
-	}
-	h2.dirty = true;
-	h2.free = h1.free;
-
-	if (strcmp(anme, "date") == 0) {
-		const int *restrict o = (const int *) h1.base;
-		int *restrict n = (int *) h2.base;
-
-		for (i = 0; i < b->batCount; i++) {
-			if (is_int_nil(o[i])) {
-				b->tnil = true;
-				n[i] = int_nil;
-			} else {
-				n[i] = cvtdate(o[i]);
-				nofix = false;
-			}
-		}
-	} else if (strcmp(anme, "timestamp") == 0) {
-		union timestamp {
-			lng l;
-			struct {
-#ifndef WORDS_BIGENDIAN
-				int p_msecs;
-				int p_days;
-#else
-				int p_days;
-				int p_msecs;
-#endif
-			} t;
-		};
-		const union timestamp *restrict o = (const union timestamp *) h1.base;
-		lng *restrict n = (lng *) h2.base;
-		for (i = 0; i < b->batCount; i++) {
-			if (is_lng_nil(o[i].l)) {
-				b->tnil = true;
-				n[i] = lng_nil;
-			} else {
-				n[i] = mktimestamp(cvtdate(o[i].t.p_days),
-						   o[i].t.p_msecs * LL_CONSTANT(1000));
-				nofix = false;
-			}
-		}
-	} else {
-		/* daytime */
-		const int *restrict o = (const int *) h1.base;
-		lng *restrict n = (lng *) h2.base;
-
-		h2.free <<= 1;
-		nofix = false;
-		for (i = 0; i < b->batCount; i++) {
-			if (is_int_nil(o[i])) {
-				b->tnil = true;
-				n[i] = lng_nil;
-			} else {
-				n[i] = o[i] * LL_CONSTANT(1000);
-			}
-		}
-	}
-
-	/* cleanup */
-	HEAPfree(&h1, false);
-	if (nofix) {
-		/* didn't fix anything, move backup back */
-		HEAPfree(&h2, true);
-		if (GDKmove(b->theap->farmid, BAKDIR, bnme, "tail", srcdir, bnme, "tail") != GDK_SUCCEED) {
-			GDKfree(srcdir);
-			TRC_CRITICAL(GDK, "cannot restore backup of %s.tail\n", nme);
-			return GDK_FAIL;
-		}
-	} else {
-		/* heap was fixed */
-		b->batDirtydesc = true;
-		if (HEAPsave(&h2, nme, "tail", true) != GDK_SUCCEED) {
-			HEAPfree(&h2, false);
-			GDKfree(srcdir);
-			TRC_CRITICAL(GDK, "saving heap failed\n");
-			return GDK_FAIL;
-		}
-		if (strcmp(anme, "daytime") == 0) {
-			b->twidth = 8;
-			b->tshift = 3;
-		}
-		HEAPfree(&h2, false);
-		*b->theap = h2;
-	}
-	GDKfree(srcdir);
-	return GDK_SUCCEED;
-}
-
-static gdk_return
-fixdatebats(void)
-{
-	bat bid;
-	BAT *b;
-	char filename[FILENAME_MAX];
-	FILE *fp;
-	size_t len;
-	int written;
-
-	for (bid = 1; bid < (bat) ATOMIC_GET(&BBPsize); bid++) {
-		if ((b = BBP_desc(bid)) == NULL) {
-			/* not a valid BAT */
-			continue;
-		}
-		if (BBP_logical(bid) &&
-		    (len = strlen(BBP_logical(bid))) > 12 &&
-		    strcmp(BBP_logical(bid) + len - 12, "_catalog_nme") == 0) {
-			/* this is one of the files used by the
-			 * logger.  We need to communicate to the
-			 * logger that it also needs to do a
-			 * conversion.  That is done by creating a
-			 * file here based on the name of this BAT. */
-			written = snprintf(filename, sizeof(filename),
-					   "%s/%.*s_date-convert",
-					   BBPfarms[0].dirname,
-					   (int) (len - 12), BBP_logical(bid));
-			if (written == -1 || written >= FILENAME_MAX) {
-				TRC_CRITICAL(GDK, "cannot create file %s has a very large pathname\n",
-					     filename);
-				return GDK_FAIL;
-			}
-			fp = MT_fopen(filename, "w");
-			if (fp == NULL) {
-				GDKsyserror("cannot create file %s\n",
-					    filename);
-				return GDK_FAIL;
-			}
-			fclose(fp);
-		}
-		if ((b->ttype == TYPE_date ||
-		     b->ttype == TYPE_timestamp ||
-		     b->ttype == TYPE_daytime) &&
-		    fixdateheap(b, ATOMname(b->ttype)) != GDK_SUCCEED) {
-			return GDK_FAIL;
-		}
-	}
-	return GDK_SUCCEED;
-}
-#endif
-
 static int
 heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, const char *filename, int lineno)
 {
@@ -745,11 +456,6 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 	if (strcmp(type, "hge") == 0)
 		havehge = true;
 #endif
-#ifdef GDKLIBRARY_BLOB_SORT
-	/* sqlblob was changed to plain blob in the Apr2019 release */
-	if (strcmp(type, "sqlblob") == 0)
-		strcpy(type, "blob");
-#endif
 	if ((t = ATOMindex(type)) < 0) {
 		if ((t = ATOMunknown_find(type)) == 0) {
 			TRC_CRITICAL(GDK, "no space for atom %s", type);
@@ -799,13 +505,6 @@ heapinit(BAT *b, const char *buf, int *hashash, unsigned bbpversion, bat bid, co
 		BATsetprop(b, GDK_MIN_POS, TYPE_oid, &(oid){(oid)minpos});
 	if (maxpos < b->batCount)
 		BATsetprop(b, GDK_MAX_POS, TYPE_oid, &(oid){(oid)maxpos});
-#ifdef GDKLIBRARY_BLOB_SORT
-	if (bbpversion <= GDKLIBRARY_BLOB_SORT && strcmp(type, "blob") == 0) {
-		b->tsorted = b->trevsorted = false;
-		b->tnosorted = b->tnorevsorted = 0;
-		OIDXdestroy(b);
-	}
-#endif
 	if (b->theap->free > b->theap->size) {
 		TRC_CRITICAL(GDK, "\"free\" value larger than \"size\" in heap of bat %d on line %d\n", (int) bid, lineno);
 		return -1;
@@ -1093,9 +792,7 @@ BBPheader(FILE *fp, int *lineno)
 		return 0;
 	}
 	if (bbpversion != GDKLIBRARY &&
-	    bbpversion != GDKLIBRARY_MINMAX_POS &&
-	    bbpversion != GDKLIBRARY_OLDDATE &&
-	    bbpversion != GDKLIBRARY_BLOB_SORT) {
+	    bbpversion != GDKLIBRARY_MINMAX_POS) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
 			     GDKLIBRARY, bbpversion,
@@ -1398,11 +1095,6 @@ BBPinit(void)
 		}
 	}
 
-#ifdef GDKLIBRARY_OLDDATE
-	if (bbpversion <= GDKLIBRARY_OLDDATE)
-		if (fixdatebats() != GDK_SUCCEED)
-			return GDK_FAIL;
-#endif
 	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "TMcommit failed\n");
 		return GDK_FAIL;

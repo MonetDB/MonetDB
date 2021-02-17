@@ -715,8 +715,6 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_BLOB_SORT	061040U /* first in Mar2018: blob compare changed */
-#define GDKLIBRARY_OLDDATE	061041U /* first in Apr2019: time/date in old format */
 #define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
 #define GDKLIBRARY		061043U /* first after Oct2020 */
