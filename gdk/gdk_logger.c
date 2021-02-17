@@ -1720,12 +1720,11 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 				 fn, fn, lg->dir);
 			goto error;
 		}
-		if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) {
+		if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) { /* closes the file */
 			fp = NULL;
 			goto error;
 		}
 		readlogs = 1;
-		fclose(fp);
 		fp = NULL;
 
 		assert(!lg->inmemory);
