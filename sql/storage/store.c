@@ -2045,7 +2045,7 @@ store_apply_deltas(sqlstore *store)
 	ulng oldest = store_oldest(store);
 	store_unlock(store);
 	if (oldest)
-	    res = store->logger_api.flush(store, oldest);
+	    res = store->logger_api.flush(store, oldest-1);
 	flusher.working = false;
 	return res;
 }
@@ -3387,7 +3387,7 @@ sql_trans_commit(sql_trans *tr)
 	if (tr->changes) {
 		/* log changes should only be done if there is something to log */
 		if (tr->logchanges > 0) {
-			ok = store->logger_api.log_tstart(store);
+			ok = store->logger_api.log_tstart(store, commit_ts);
 			/* log */
 			for(node *n=tr->changes->h; n && ok == LOG_OK; n = n->next) {
 				sql_change *c = n->data;

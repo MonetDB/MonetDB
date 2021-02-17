@@ -250,6 +250,30 @@ rollback_segments(segments *segs, sql_trans *tr, ulng oldest)
 	return cur;
 }
 
+static void
+local_merge_segments(segments *segs, sql_trans *tr)
+{
+	segment *cur = segs->h, *seg = NULL;
+	for (; cur; cur = cur->next) {
+		if (cur->ts == tr->tid) {
+			if (!seg) { /* skip first */
+				seg = cur;
+			} else if (seg->end == cur->start && seg->deleted == cur->deleted) {
+				/* merge with previous */
+				seg->end = cur->end;
+				seg->next = cur->next;
+				cur->next = NULL;
+				if (cur == segs->t)
+					segs->t = seg;
+				destroy_segs(cur);
+				cur = seg;
+			} else {
+				seg = cur; /* begin of new merge */
+			}
+		}
+	}
+}
+
 static segment *
 merge_segments(segments *segs, sql_trans *tr, ulng commit_ts, ulng oldest)
 {
@@ -1312,6 +1336,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 			break;
 		}
 	}
+	local_merge_segments(s->segs, tr);
 	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return LOG_OK;
@@ -1355,15 +1380,6 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 
 	if (i->ttype == TYPE_msk || mask_cand(i))
 		i = BATunmask(i);
-	/*
-	msk T = TRUE;
-	BAT *b = BATconstant(i->hseqbase, TYPE_msk, &T, BATcount(i), TRANSIENT);
-
-	assert(i->ttype != TYPE_msk);
-	if (b)
-		ok = cs_update_bat( &s->cs, i, b, is_new);
-	bat_destroy(b);
-	*/
 	/* assume order oid bat */
 	if (BATcount(i)) {
 		if (BATtdense(i)) {
@@ -1401,6 +1417,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			}
 		}
 	}
+	local_merge_segments(s->segs, tr);
 	in_transaction = 0;
 	if (i != oi)
 		bat_destroy(i);
@@ -3020,10 +3037,18 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* re-use old deleted or rolledback append */
 			/* TODO use some lockless claim method */
 
-			if ((seg->end - seg->start) > cnt) {
+			if ((seg->end - seg->start) >= cnt) {
 				assert(SEG_VALID_4_CLAIM(seg,tr));
+
+				/* if previous is claimed before we could simply adjust the end/start */
+				if (p && p->ts == tr->tid && !p->deleted) {
+					slot = p->end;
+					p->end += cnt;
+					seg->start += cnt;
+					reused = 1;
+					break;
+				}
 				/* we claimed part of the old segment, the split off part needs too stay deleted */
-				/* todo pass s->segs and p */
 				if ((seg=split_segment(s->segs, seg, p, tr, seg->start, cnt, false)) == NULL) {
 					return BUN_NONE;
 				}
