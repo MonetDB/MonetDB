@@ -2750,7 +2750,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 			sql_arg *a = f->func->ops->h->data;
 
 			t = &a->type;
-			if (rel_set_type_param(sql, t, rel, e, f->func->fix_scale != INOUT) < 0)
+			if (rel_set_type_param(sql, t, rel, e, f->func->fix_scale != INOUT && !UDF_LANG(f->func->lang)) < 0)
 				return NULL;
 		}
 	 } else {
@@ -2857,13 +2857,13 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 				sql_subtype *t = arg_type(f->func->ops->h->data);
 				if (t->type->eclass == EC_ANY && t2)
 					t = t2;
-				rel_set_type_param(sql, t, rel, l, f->func->fix_scale != INOUT);
+				rel_set_type_param(sql, t, rel, l, f->func->fix_scale != INOUT && !UDF_LANG(f->func->lang));
 			}
 			if (!t2) {
 				sql_subtype *t = arg_type(f->func->ops->h->next->data);
 				if (t->type->eclass == EC_ANY && t1)
 					t = t1;
-				rel_set_type_param(sql, t, rel, r, f->func->fix_scale != INOUT);
+				rel_set_type_param(sql, t, rel, r, f->func->fix_scale != INOUT && !UDF_LANG(f->func->lang));
 			}
 			f = NULL;
 
