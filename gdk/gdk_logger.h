@@ -45,6 +45,9 @@ typedef int log_id;
 /* interface for the "old" logger */
 typedef struct old_logger old_logger;
 gdk_export gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir);
+gdk_export log_bid old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id);
+gdk_export gdk_return old_logger_add_bat(old_logger *lg, BAT *b, const char *name, char tpe, oid id);
+gdk_export gdk_return old_logger_upgrade_bat(old_logger *lg, const char *name, char tpe, oid id);
 
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_export void logger_destroy(logger *lg);

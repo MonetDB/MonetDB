@@ -131,7 +131,6 @@ struct old_logger {
 
 static gdk_return logger_exit(old_logger *lg);
 static gdk_return logger_cleanup(old_logger *lg);
-static gdk_return old_logger_add_bat(old_logger *lg, BAT *b, const char *name, char tpe, oid id);
 static gdk_return old_logger_del_bat(old_logger *lg, log_bid bid);
 
 static const char *log_commands[] = {
@@ -319,7 +318,7 @@ avoid_snapshot(old_logger *lg, log_bid bid)
 	return 0;
 }
 
-static log_bid
+log_bid
 old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id)
 {
 	if (!tpe || !lg->with_ids) {
@@ -2493,7 +2492,7 @@ bm_commit(old_logger *lg)
 	return GDK_FAIL;
 }
 
-static gdk_return
+gdk_return
 old_logger_add_bat(old_logger *lg, BAT *b, const char *name, char tpe, oid id)
 {
 	log_bid bid = old_logger_find_bat(lg, name, tpe, id);
@@ -2535,11 +2534,8 @@ old_logger_add_bat(old_logger *lg, BAT *b, const char *name, char tpe, oid id)
 }
 
 
-/*
-gdk_export gdk_return logger_upgrade_bat(old_logger *lg, log_id id) __attribute__ ((__warn_unused_result__));
-
 gdk_return
-logger_upgrade_bat(old_logger *lg, const char *name, char tpe, oid id)
+old_logger_upgrade_bat(old_logger *lg, const char *name, char tpe, oid id)
 {
 	log_bid bid = old_logger_find_bat(lg, name, tpe, id);
 
@@ -2556,7 +2552,6 @@ logger_upgrade_bat(old_logger *lg, const char *name, char tpe, oid id)
 	}
 	return GDK_SUCCEED;
 }
-*/
 
 static gdk_return
 old_logger_del_bat(old_logger *lg, log_bid bid)
