@@ -42,7 +42,9 @@ typedef int log_id;
 #define LOG_BATGROUP_ID 5
 #define LOG_BATGROUP_END 6
 
-gdk_export gdk_return old_logger_load(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
+/* interface for the "old" logger */
+typedef struct old_logger old_logger;
+gdk_export gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir);
 
 gdk_export logger *logger_create(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata);
 gdk_export void logger_destroy(logger *lg);
