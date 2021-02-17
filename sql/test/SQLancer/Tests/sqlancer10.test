@@ -486,3 +486,73 @@ ON least(((SELECT l2t0.c1 FROM t0 AS l2t0, t2 AS l2t2, t1 AS l2t1 WHERE FALSE) U
 statement ok
 ROLLBACK
 
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" VARCHAR(335),"c2" DECIMAL(18,3),"c3" CHARACTER LARGE OBJECT)
+
+statement ok
+COPY 12 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	NULL	"9"
+"-5733674980"	NULL	"9"
+NULL	2055375593.000	"9"
+NULL	0.993	"9"
+NULL	0.413	"9"
+NULL	NULL	"9"
+NULL	NULL	"9"
+"zDON唄"	NULL	NULL
+NULL	1.000	NULL
+NULL	0.000	NULL
+NULL	0.002	NULL
+NULL	5.000	NULL
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" VARCHAR(335),"c1" BIGINT,"c3" DECIMAL(18,3),"c4" BOOLEAN,"c5" BOOLEAN)
+
+statement ok
+COPY 11 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+NULL	NULL	0.707	NULL	NULL
+NULL	NULL	0.265	NULL	NULL
+NULL	NULL	0.888	NULL	NULL
+NULL	NULL	0.026	NULL	NULL
+"8"	NULL	NULL	false	false
+"'"	404410629	NULL	false	false
+"FxH델洓H"	6	NULL	true	true
+"E"	1426753368	NULL	NULL	false
+NULL	NULL	NULL	NULL	false
+NULL	NULL	NULL	NULL	true
+NULL	NULL	NULL	NULL	true
+
+statement ok
+CREATE TABLE "sys"."t2" ("c1" BIGINT NOT NULL)
+
+statement ok
+COPY 5 RECORDS INTO "sys"."t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1
+1
+8
+1
+0
+
+query I rowsort
+SELECT 1 FROM t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 END, true)
+---
+120 rows in the output. After getting the right result I will approve the hash
+
+query T rowsort
+SELECT t1.c3 FROM t2, t0, t1 WHERE least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0)))
+----
+120 rows in the output. After getting the right result I will approve the hash
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(least(CASE WHEN t1.c4 THEN t1.c4 WHEN t1.c5 THEN t1.c5 WHEN t1.c5 THEN t1.c4 ELSE t1.c4 END, ((t1.c0)NOT LIKE(t1.c0))) AS INT) as count FROM t2, t0, t1) as res
+----
+120
+
+statement ok
+ROLLBACK
+
