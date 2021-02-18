@@ -999,10 +999,12 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		if (bn->ttype >= 0 && (p = BATgetprop(bn, GDK_MIN_POS)) != NULL) {
 			/* for known types cache the value corresponding to the
 			 * position */
-			if ((bn = BATdescriptor(bn->batCacheid)) != NULL) {
+			BAT *b;
+			if ((b = BATdescriptor(bn->batCacheid)) != NULL) {
 				loaded = true;
 				BATiter bi = bat_iterator(bn);
 				BATsetprop(bn, GDK_MIN_VALUE, bn->ttype, BUNtail(bi, p->v.val.oval));
+				bn = b;
 			}
 		}
 		if (bn->ttype >= 0 && (p = BATgetprop(bn, GDK_MAX_POS)) != NULL) {
