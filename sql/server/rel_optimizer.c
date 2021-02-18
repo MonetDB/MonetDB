@@ -4490,10 +4490,11 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	/* push select through join */
 	if (is_select(rel->op) && r && is_join(r->op) && !(rel_is_ref(r))) {
-		sql_rel *jl = r->l;
-		sql_rel *jr = r->r;
+		sql_rel *jl = r->l, *oldjl = jl;
+		sql_rel *jr = r->r, *oldjr = jr;
 		int left = r->op == op_join || r->op == op_left;
 		int right = r->op == op_join || r->op == op_right;
+		int pushed_left = 0, pushed_right = 0;
 
 		if (r->op == op_full || is_single(r))
 			return rel;
@@ -4515,11 +4516,13 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				ne = exp_push_down(v->sql, e, jl, jl);
 			if (ne && ne != e) {
 				done = 1;
+				pushed_left = 1;
 				rel_select_add_exp(v->sql->sa, jl, ne);
 			} else if (right) {
 				ne = exp_push_down(v->sql, e, jr, jr);
 				if (ne && ne != e) {
 					done = 1;
+					pushed_right = 1;
 					rel_select_add_exp(v->sql->sa, jr, ne);
 				}
 			}
@@ -4527,6 +4530,10 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				append(rel->exps, e);
 			v->changes += done;
 		}
+		if (!pushed_left) /* revert to previous relations if there were no changes */
+			r->l = oldjl;
+		if (!pushed_right)
+			r->r = oldjr;
 	}
 
 	/* merge select and cross product ? */
@@ -4551,15 +4558,15 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	if (is_select(rel->op) && r && r->op == op_project && !(rel_is_ref(r))){
 		list *exps = rel->exps;
-		sql_rel *pl;
+		sql_rel *pl = r->l, *oldpl = pl;
+		int oldchanges = v->changes;
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
-		if (!r->l || project_unsafe(r,1))
+		if (!pl || project_unsafe(r,1))
 			return rel;
 
 		/* here we need to fix aliases */
 		rel->exps = new_exp_list(v->sql->sa);
-		pl = r->l;
 		/* introduce selects under the project (if needed) */
 		set_processed(pl);
 		if (!is_select(pl->op) || rel_is_ref(pl))
@@ -4583,6 +4590,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				list_append(rel->exps, e);
 			}
 		}
+		if (v->changes == oldchanges)
+			r->l = oldpl;
 		return rel;
 	}
 	return rel;
@@ -9606,6 +9615,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			ev = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
+	int changes = 0;
 
 	TRC_DEBUG_IF(SQL_REWRITER) {
 		int i;
@@ -9701,11 +9711,13 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
 
 	if (gp.cnt[op_select]) {
+		changes = v.changes;
 		if (gp.cnt[op_union]) {
 			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_union);
 			rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
 		}
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (v.changes > changes)
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_groupby]) {
@@ -9721,11 +9733,13 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 
 		rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
 		rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
+		changes = v.changes;
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
 		/* rel_join_order may introduce empty selects */
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (v.changes > changes)
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 
 		if (level <= 0)
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
@@ -9735,8 +9749,10 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && gp.cnt[op_groupby]) {
 		rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
 		if (level <= 0) {
+			changes = v.changes;
 			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+			if (v.changes > changes)
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 			rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
 		}
 
@@ -9762,13 +9778,14 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
 	   because pushing down select expressions makes rel_join_order more difficult */
 	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
+		changes = v.changes;
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (v.changes > changes)
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
+	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
 		rel = rel_visitor_topdown(&v, rel, &rel_simplify_fk_joins);
-	}
 
 	if (gp.cnt[op_select] && value_based_opt)
 		rel = rel_visitor_bottomup(&v, rel, &rel_simplify_like_select);
@@ -9789,8 +9806,10 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 	    gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_func_down);
+		changes = v.changes;
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (v.changes > changes)
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
