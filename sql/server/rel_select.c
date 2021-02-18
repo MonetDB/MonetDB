@@ -1716,8 +1716,9 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		compare_op = "=";
 	}
 
-	if (!ro2 && lo->token == SQL_SELECT && ro->token != SQL_SELECT) { /* swap subquery to the right hand side */
-		symbol *tmp = lo;
+	if (!ro2 && (lo->token == SQL_SELECT || lo->token == SQL_UNION || lo->token == SQL_EXCEPT || lo->token == SQL_INTERSECT) &&
+		(ro->token != SQL_SELECT && ro->token != SQL_UNION && ro->token != SQL_EXCEPT && ro->token != SQL_INTERSECT)) {
+		symbol *tmp = lo; /* swap subquery to the right hand side */
 
 		lo = ro;
 		ro = tmp;

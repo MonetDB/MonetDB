@@ -519,6 +519,118 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t0" ("c0" BOOLEAN,"c2" DOUBLE PRECISION)
+
+statement ok
+COPY 15 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+false	NULL
+false	NULL
+NULL	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+true	NULL
+false	NULL
+true	NULL
+false	NULL
+true	NULL
+NULL	NULL
+false	NULL
+false	NULL
+
+statement ok
+CREATE TABLE "t1" ("c1" BIGINT NOT NULL)
+
+statement ok
+COPY 9 RECORDS INTO "t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0
+8
+-1152079685
+523426296
+7
+-3
+8
+440352293
+0
+
+statement ok
+CREATE TABLE "t2" ("c3" BOOLEAN)
+
+statement ok
+COPY 15 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+false
+false
+false
+true
+false
+true
+true
+true
+false
+true
+false
+false
+true
+NULL
+true
+
+query I rowsort
+SELECT 1 FROM t1 WHERE (SELECT 4) < ALL(SELECT 2 WHERE FALSE)
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT 1 FROM t1 WHERE (SELECT 4) < ALL((SELECT 2) INTERSECT (SELECT 0.58))
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I rowsort
+SELECT ALL t1.c1 FROM t1 WHERE (SELECT DISTINCT 4 FROM t1 AS l2t1, t2 AS l2t2, t0 AS l2t0 WHERE l2t2.c3) < ALL((SELECT DISTINCT 847727159 FROM t1 AS l1t1, t0 AS l1t0 WHERE l1t0.c0)
+INTERSECT (SELECT DISTINCT + (0.58453983) FROM t2 AS l1t2 WHERE l1t2.c3))
+----
+-1152079685
+-3
+0
+0
+440352293
+523426296
+7
+8
+8
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST((SELECT DISTINCT 4 FROM t1 AS l2t1, t2 AS l2t2, t0 AS l2t0 WHERE l2t2.c3) < ALL((SELECT DISTINCT 847727159 FROM t1 AS l1t1,
+t0 AS l1t0 WHERE l1t0.c0) INTERSECT DISTINCT (SELECT DISTINCT + (0.58453983) FROM t2 AS l1t2 WHERE l1t2.c3)) AS INT) as count FROM t1) as res
+----
+9
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c0" INTEGER,"c1" BOOLEAN NOT NULL,"c3" CHARACTER LARGE OBJECT,CONSTRAINT "t0_c1_pkey" PRIMARY KEY ("c1"))
 
 statement ok
