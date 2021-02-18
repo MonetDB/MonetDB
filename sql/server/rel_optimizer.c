@@ -8735,14 +8735,6 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* rewrite sqltype into backend types */
-static sql_rel *
-rel_rewrite_types(visitor *v, sql_rel *rel)
-{
-	(void)v;
-	return rel;
-}
-
 static sql_exp *
 exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de, bit unique)
 {
@@ -9640,11 +9632,14 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		if (level <= 0) {
 			if (value_based_opt)
 				rel = rel_visitor_bottomup(&v, rel, &rel_simplify_math);
-			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_aggregate_on_unique_values);
-			rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
+			if (gp.cnt[op_groupby])
+				rel = rel_visitor_bottomup(&v, rel, &rel_distinct_aggregate_on_unique_values);
 			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_project2groupby);
 		}
 	}
+
+	if (level <= 0 && (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
+		rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
 
 	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 1)
@@ -9689,8 +9684,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_project])
 		rel = rel_visitor_bottomup(&v, rel, &rel_project_cse);
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_types);
-
 	if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(&v, rel, &rel_split_outerjoin);
 
@@ -9708,14 +9701,14 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
 
-	if (gp.cnt[op_select]) {
-		changes = v.changes;
-		if (gp.cnt[op_union]) {
+	if (gp.cnt[op_union]) {
+		rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
+		if (gp.cnt[op_select]) {
+			changes = v.changes;
 			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_union);
-			rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
+			if (v.changes > changes)
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 		}
-		if (v.changes > changes)
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_groupby]) {
@@ -9798,7 +9791,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_select])
 		rel = rel_visitor_bottomup(&v, rel, &rel_select_order);
 
-	if (gp.cnt[op_select] || gp.cnt[op_join])
+	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
 		rel = rel_visitor_bottomup(&v, rel, &rel_use_index);
 
 	if (gp.cnt[op_project] && gp.cnt[op_union])
