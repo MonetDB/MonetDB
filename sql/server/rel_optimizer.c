@@ -7669,6 +7669,24 @@ static sql_exp *
 rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	(void)depth;
+	if (is_func(e->type) && list_length(e->l) == 3 && is_ifthenelse_func((sql_subfunc*)e->f)) {
+		list *args = e->l;
+		sql_exp *ie = args->h->data;
+
+		if (exp_is_true(ie)) { /* ifthenelse(true, x, y) -> x */
+			sql_exp *res = args->h->next->data;
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, res, e);
+			v->changes++;
+			return res;
+		} else if (exp_is_false(ie) || exp_is_null(ie)) { /* ifthenelse(false or null, x, y) -> y */
+			sql_exp *res = args->h->next->next->data;
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, res, e);
+			v->changes++;
+			return res;
+		}
+	}
 	if (is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) {
 		if (is_compare(e->type) && is_semantics(e) && (e->flag == cmp_equal || e->flag == cmp_notequal) && exp_is_null(e->r)) {
 			/* simplify 'is null' predicates on constants */
@@ -7819,33 +7837,6 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						e = exp_atom_bool(v->sql->sa, (e->flag == cmp_lt || e->flag == cmp_lte || e->flag == cmp_notequal) ? flag : !flag);
 					v->changes++;
 				}
-			}
-		}
-	}
-	return e;
-}
-
-static sql_exp *
-rel_simplify_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
-{
-	(void) depth;
-	if (is_project(rel->op)) {
-		if (is_func(e->type) && list_length(e->l) == 3 && is_ifthenelse_func((sql_subfunc*)e->f)) {
-			list *args = e->l;
-			sql_exp *ie = args->h->data;
-
-			if (exp_is_true(ie)) { /* ifthenelse(true, x, y) -> x */
-				sql_exp *res = args->h->next->data;
-				if (exp_name(e))
-					exp_prop_alias(v->sql->sa, res, e);
-				v->changes++;
-				return res;
-			} else if (exp_is_false(ie) || exp_is_null(ie)) { /* ifthenelse(false or null, x, y) -> y */
-				sql_exp *res = args->h->next->next->data;
-				if (exp_name(e))
-					exp_prop_alias(v->sql->sa, res, e);
-				v->changes++;
-				return res;
 			}
 		}
 	}
@@ -9650,15 +9641,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (level <= 0 && (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
 		rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
 
-	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
-		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 1)
-		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
-
-	if ((gp.cnt[op_project] || gp.cnt[op_groupby] ||
-		 gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except]) && level <= 1)
-		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_ifthenelse, false);
+	if (level <= 1 && value_based_opt)
+		rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten
@@ -9757,13 +9741,15 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 				rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
 			if (v.changes > changes)
 				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
-			if (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left])
+			if (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left]) {
+				changes = v.changes;
+				/* push_join_down introduces semijoins */
+				/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
 				rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
+				if (v.changes > changes)
+					rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_semijoin);
+			}
 		}
-
-		/* push_join_down introduces semijoins */
-		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_semijoin);
 	}
 
 	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
