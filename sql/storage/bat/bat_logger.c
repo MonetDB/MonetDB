@@ -1959,14 +1959,8 @@ bl_destroy(sqlstore *store)
 	logger *l = store->logger;
 
 	store->logger = NULL;
-	if (l) {
-		close_stream(l->output_log);
-		GDKfree(l->fn);
-		GDKfree(l->dir);
-		GDKfree(l->local_dir);
-		GDKfree(l->buf);
-		GDKfree(l);
-	}
+	if (l)
+		logger_destroy(l);
 }
 
 static int

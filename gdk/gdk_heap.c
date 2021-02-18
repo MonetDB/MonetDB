@@ -722,7 +722,6 @@ HEAPdecref(Heap *h, bool remove)
 void
 HEAPincref(Heap *h)
 {
-	assert((int)h->refs > 0);
 	//printf("inc ref(%d) %p %d\n", (int)h->refs, h, h->parentid);
 	(void)ATOMIC_INC(&h->refs);
 }
