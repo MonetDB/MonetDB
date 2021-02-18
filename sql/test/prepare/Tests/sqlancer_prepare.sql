@@ -58,3 +58,9 @@ from cte0 as l0cte0, cte1 as l0cte1 order by l0cte0.c0 desc nulls last, l0cte1.c
 prepare with cte0(c0) as (select 2) select 1 <> all(select 2 from (values (1),(2)) as t1) from cte0 as l0cte0 group by ?; --error, cannot have a parameter for group by column
 
 prepare with cte0(c0) as (select 2) select 1 <> all(select 2 from (values (1),(2)) as t1) from cte0 as l0cte0 order by ?; --error, cannot have a parameter for order by column
+
+START TRANSACTION;
+CREATE FUNCTION myintudf(a INT) RETURNS INT RETURN a + 1;
+PREPARE SELECT myintudf(?);
+EXEC **(1);
+ROLLBACK;
