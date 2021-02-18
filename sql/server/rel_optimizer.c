@@ -15,157 +15,13 @@
 #include "rel_planner.h"
 #include "rel_propagate.h"
 #include "rel_rewriter.h"
+#include "rel_statistics.h"
 #include "sql_mvc.h"
 #include "gdk_time.h"
 
+static sql_rel *rel_dce(mvc *sql, sql_rel *rel);
+
 static sql_subfunc *find_func(mvc *sql, char *name, list *exps);
-
-static int
-find_member_pos(list *l, sql_table *t)
-{
-	int i = 0;
-	if (l) {
-		for (node *n = l->h; n ; n = n->next, i++) {
-			sql_part *pt = n->data;
-			if (pt->member == t->base.id)
-				return i;
-		}
-	}
-	return -1;
-}
-
-/* The important task of the relational optimizer is to optimize the
-   join order.
-
-   The current implementation chooses the join order based on
-   select counts, ie if one of the join sides has been reduced using
-   a select this join is choosen over one without such selections.
- */
-
-/* currently we only find simple column expressions */
-void *
-name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )
-{
-	sql_exp *alias = NULL;
-	sql_column *c = NULL;
-
-	switch (rel->op) {
-	case op_basetable: {
-		sql_table *t = rel->l;
-
-		if (rel->exps) {
-			sql_exp *e;
-
-			if (rname)
-				e = exps_bind_column2(rel->exps, rname, name, NULL);
-			else
-				e = exps_bind_column(rel->exps, name, NULL, NULL, 0);
-			if (!e || e->type != e_column)
-				return NULL;
-			if (e->l)
-				rname = e->l;
-			name = e->r;
-		}
-		if (name && !t)
-			return rel->r;
-		if (rname && strcmp(t->base.name, rname) != 0)
-			return NULL;
-		node *cn;
-		sql_table *mt = rel->r;
-		for (cn = t->columns.set->h; cn; cn = cn->next) {
-			sql_column *c = cn->data;
-			if (strcmp(c->base.name, name) == 0) {
-				if (bt)
-					*bt = rel;
-				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members.set, c->t) == pnr))
-					return c;
-			}
-		}
-		if (t->idxs.set)
-		for (cn = t->idxs.set->h; cn; cn = cn->next) {
-			sql_idx *i = cn->data;
-			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
-				if (bt)
-					*bt = rel;
-				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members.set, i->t) == pnr)) {
-					sql_kc *c = i->columns->h->data;
-					return c->c;
-				}
-			}
-		}
-		break;
-	}
-	case op_table:
-		/* table func */
-		return NULL;
-	case op_ddl:
-		if (is_updateble(rel))
-			return name_find_column( rel->l, rname, name, pnr, bt);
-		return NULL;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-		/* first right (possible subquery) */
-		c = name_find_column( rel->r, rname, name, pnr, bt);
-		/* fall through */
-	case op_semi:
-	case op_anti:
-		if (!c)
-			c = name_find_column( rel->l, rname, name, pnr, bt);
-		return c;
-	case op_select:
-	case op_topn:
-	case op_sample:
-		return name_find_column( rel->l, rname, name, pnr, bt);
-	case op_union:
-	case op_inter:
-	case op_except:
-
-		if (pnr >= 0 || pnr == -2) {
-			/* first right (possible subquery) */
-			c = name_find_column( rel->r, rname, name, pnr, bt);
-			if (!c)
-				c = name_find_column( rel->l, rname, name, pnr, bt);
-			return c;
-		}
-		return NULL;
-
-	case op_project:
-	case op_groupby:
-		if (!rel->exps)
-			break;
-		if (rname)
-			alias = exps_bind_column2(rel->exps, rname, name, NULL);
-		else
-			alias = exps_bind_column(rel->exps, name, NULL, NULL, 1);
-		if (is_groupby(rel->op) && alias && alias->type == e_column && rel->r) {
-			if (alias->l)
-				alias = exps_bind_column2(rel->r, alias->l, alias->r, NULL);
-			else
-				alias = exps_bind_column(rel->r, alias->r, NULL, NULL, 1);
-		}
-		if (is_groupby(rel->op) && !alias && rel->l) {
-			/* Group by column not found as alias in projection
-			 * list, fall back to check plain input columns */
-			return name_find_column( rel->l, rname, name, pnr, bt);
-		}
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-		break;
-	}
-	if (alias) { /* we found an expression with the correct name, but
-			we need sql_columns */
-		if (rel->l && alias->type == e_column) /* real alias */
-			return name_find_column(rel->l, alias->l, alias->r, pnr, bt);
-	}
-	return NULL;
-}
 
 static sql_column *
 exp_find_column( sql_rel *rel, sql_exp *exp, int pnr )
@@ -7122,7 +6978,7 @@ rel_add_projects(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
-sql_rel *
+static sql_rel *
 rel_dce(mvc *sql, sql_rel *rel)
 {
 	list *refs = sa_list(sql->sa);
@@ -9611,9 +9467,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
+	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
 		rel = rel_visitor_topdown(&v, rel, &rel_simplify_fk_joins);
-	}
 
 	if (gp.cnt[op_select] && value_based_opt)
 		rel = rel_visitor_bottomup(&v, rel, &rel_simplify_like_select);
@@ -9626,6 +9481,19 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 
 	if (gp.cnt[op_project])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_project_down_union);
+
+	if (v.storage_based_opt && level <= 0) { /* storage statistics related optimizations */
+		int changes = v.changes;
+		rel = rel_visitor_bottomup(&v, rel, &rel_get_statistics);
+		/* there were changes by rel_simplify_count or rel_prune_predicates, run rewrite_simplify */
+		if (v.changes > changes && (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || 
+			gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])) { 
+			changes = ev.changes;
+			rel = rel_visitor_bottomup(&ev, rel, &rewrite_simplify);
+			if (ev.changes > changes)
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		}
+	}
 
 	/* Remove unused expressions */
 	if (level <= 0)

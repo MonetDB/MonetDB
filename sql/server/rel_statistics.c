@@ -8,7 +8,6 @@
 
 #include "monetdb_config.h"
 #include "rel_statistics.h"
-#include "rel_optimizer.h"
 #include "rel_rewriter.h"
 
 static sql_exp *
@@ -353,8 +352,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (look)
 				look(sql, e);
 		}
-		assert(e->type == e_func || is_groupby(rel->op));
-		if (!e->semantics && e->l && !have_nil(e->l) && (e->type != e_aggr || list_length(rel->r)))
+		if (!e->semantics && e->l && !have_nil(e->l) && (e->type != e_aggr || (is_groupby(rel->op) && list_length(rel->r))))
 			set_has_no_nil(e);
 	} break;
 	case e_atom: {
@@ -544,7 +542,7 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 	return rel->exps;
 }
 
-static sql_rel *
+sql_rel *
 rel_get_statistics(visitor *v, sql_rel *rel)
 {
 	switch(rel->op){
@@ -620,25 +618,6 @@ rel_get_statistics(visitor *v, sql_rel *rel)
 	case op_sample:*/
 	default:
 		break;
-	}
-
-	return rel;
-}
-
-sql_rel *
-rel_statistics(mvc *sql, sql_rel *rel)
-{
-	visitor v = { .sql = sql, .value_based_opt = 1, .storage_based_opt = 1 }, ev = { .sql = sql, .value_based_opt = 1, .storage_based_opt = 1 };
-	global_props gp = (global_props) {.cnt = {0},};
-	rel_properties(sql, &gp, rel);
-
-	rel = rel_visitor_bottomup(&v, rel, &rel_get_statistics);
-	if (v.changes > 0) { /* there were changes by rel_simplify_count or rel_prune_predicates, run rewrite_simplify */
-		if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])
-			rel = rel_visitor_bottomup(&ev, rel, &rewrite_simplify);
-		if (gp.cnt[op_select])
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
-		rel = rel_dce(sql, rel);
 	}
 
 	return rel;

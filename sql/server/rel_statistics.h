@@ -86,6 +86,6 @@ set_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 
 extern sql_hash *sql_functions_lookup;
 extern void initialize_sql_functions_lookup(sql_allocator *sa);
-extern sql_rel *rel_statistics(mvc *sql, sql_rel *rel);
+extern sql_rel *rel_get_statistics(visitor *v, sql_rel *rel);
 
 #endif /*_REL_STATISTICS_H_*/
