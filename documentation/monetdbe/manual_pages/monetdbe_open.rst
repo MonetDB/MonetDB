@@ -56,7 +56,7 @@ EXAMPLES
     remote->lang = NULL; // NOT USED
     opts->remote = remote;
 
-    monetdbe_open(db, "mapi:monetdb://localhost:50000/test", opts)
+    monetdbe_open(db, "mapi:monetdb://localhost:50000/test", opts);
 
 
 SEE ALSO
