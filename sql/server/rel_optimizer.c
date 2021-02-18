@@ -7834,11 +7834,15 @@ rel_merge_cmp_or_null(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	(void) depth;
 	if (is_compare(e->type) && e->flag == cmp_or && !is_anti(e)) {
 		sql_exp *ne = try_rewrite_equal_or_is_null(v->sql, e, e->l, e->r);
-		if (ne != e)
+		if (ne != e) {
+			v->changes++;
 			return ne;
+		}
 		ne = try_rewrite_equal_or_is_null(v->sql, e, e->r, e->l);
-		if (ne != e)
+		if (ne != e) {
+			v->changes++;
 			return ne;
+		}
 	}
 	return e;
 }
