@@ -250,6 +250,7 @@ rollback_segments(segments *segs, sql_trans *tr, ulng oldest)
 	return cur;
 }
 
+#if 0
 static void
 local_merge_segments(segments *segs, sql_trans *tr)
 {
@@ -273,6 +274,7 @@ local_merge_segments(segments *segs, sql_trans *tr)
 		}
 	}
 }
+#endif
 
 static segment *
 merge_segments(segments *segs, sql_trans *tr, ulng commit_ts, ulng oldest)
@@ -1336,7 +1338,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 			break;
 		}
 	}
-	local_merge_segments(s->segs, tr);
+	//local_merge_segments(s->segs, tr);
 	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return LOG_OK;
@@ -1417,7 +1419,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 			}
 		}
 	}
-	local_merge_segments(s->segs, tr);
+	//local_merge_segments(s->segs, tr);
 	in_transaction = 0;
 	if (i != oi)
 		bat_destroy(i);

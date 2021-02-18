@@ -928,6 +928,7 @@ logger_open_output(logger *lg)
 
 	if (lg->output_log == NULL || mnstr_errnr(lg->output_log) || !new_range) {
 		TRC_CRITICAL(GDK, "creating %s failed: %s\n", filename, mnstr_peek_error(NULL));
+		GDKfree(new_range);
 		GDKfree(filename);
 		return GDK_FAIL;
 	}
@@ -1948,6 +1949,11 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 void
 logger_destroy(logger *lg)
 {
+	for (logged_range *p = lg->pending; p; ){
+		logged_range *n = p->next;
+		GDKfree(p);
+		p = n;
+	}
 	if (lg->catalog_bid) {
 		logger_lock(lg);
 		BUN p, q;
@@ -1974,6 +1980,7 @@ logger_destroy(logger *lg)
 	}
 	GDKfree(lg->fn);
 	GDKfree(lg->dir);
+	GDKfree(lg->buf);
 	logger_close_input(lg);
 	logger_close_output(lg);
 	GDKfree(lg);
