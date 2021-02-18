@@ -186,340 +186,1286 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 }
 #endif
 
-struct item {
-	const char *name;
-	int newid;
-	int oldid;
-};
-
-struct item schemas[] = {
-	{.name = "sys", .newid = 2000, },
-	{.name = "tmp", .newid = 2114, },
-	{0}
-};
-
-struct item tables[] = {
-	{.name = "schemas", .newid = 2001, },
-	{.name = "types", .newid = 2007, },
-	{.name = "functions", .newid = 2016, },
-	{.name = "args", .newid = 2028, },
-	{.name = "sequences", .newid = 2037, },
-	{.name = "table_partitions", .newid = 2047, },
-	{.name = "range_partitions", .newid = 2053, },
-	{.name = "value_partitions", .newid = 2059, },
-	{.name = "dependencies", .newid = 2063, },
-	{.name = "_tables", .newid = 2067, },
-	{.name = "_columns", .newid = 2076, },
-	{.name = "keys", .newid = 2087, },
-	{.name = "idxs", .newid = 2094, },
-	{.name = "triggers", .newid = 2099, },
-	{.name = "objects", .newid = 2110, },
-	{0},
-	{.name = "_tables", .newid = 2115, },
-	{.name = "_columns", .newid = 2124, },
-	{.name = "keys", .newid = 2135, },
-	{.name = "idxs", .newid = 2142, },
-	{.name = "triggers", .newid = 2147, },
-	{.name = "objects", .newid = 2158, },
-	{0},
-	{0}
-};
-
-struct item columns[] = {
-	{.name = "id", .newid = 2002, },
-	{.name = "name", .newid = 2003, },
-	{.name = "authorization", .newid = 2004, },
-	{.name = "owner", .newid = 2005, },
-	{.name = "system", .newid = 2006, },
-	{0},
-	{.name = "id", .newid = 2008, },
-	{.name = "systemname", .newid = 2009, },
-	{.name = "sqlname", .newid = 2010, },
-	{.name = "digits", .newid = 2011, },
-	{.name = "scale", .newid = 2012, },
-	{.name = "radix", .newid = 2013, },
-	{.name = "eclass", .newid = 2014, },
-	{.name = "schema_id", .newid = 2015, },
-	{0},
-	{.name = "id", .newid = 2017, },
-	{.name = "name", .newid = 2018, },
-	{.name = "func", .newid = 2019, },
-	{.name = "mod", .newid = 2020, },
-	{.name = "language", .newid = 2021, },
-	{.name = "type", .newid = 2022, },
-	{.name = "side_effect", .newid = 2023, },
-	{.name = "varres", .newid = 2024, },
-	{.name = "vararg", .newid = 2025, },
-	{.name = "schema_id", .newid = 2026, },
-	{.name = "system", .newid = 2027, },
-	{.name = "semantics", .newid = 2162, },
-	{0},
-	{.name = "id", .newid = 2029, },
-	{.name = "func_id", .newid = 2030, },
-	{.name = "name", .newid = 2031, },
-	{.name = "type", .newid = 2032, },
-	{.name = "type_digits", .newid = 2033, },
-	{.name = "type_scale", .newid = 2034, },
-	{.name = "inout", .newid = 2035, },
-	{.name = "number", .newid = 2036, },
-	{0},
-	{.name = "id", .newid = 2038, },
-	{.name = "schema_id", .newid = 2039, },
-	{.name = "name", .newid = 2040, },
-	{.name = "start", .newid = 2041, },
-	{.name = "minvalue", .newid = 2042, },
-	{.name = "maxvalue", .newid = 2043, },
-	{.name = "increment", .newid = 2044, },
-	{.name = "cacheinc", .newid = 2045, },
-	{.name = "cycle", .newid = 2046, },
-	{0},
-	{.name = "id", .newid = 2048, },
-	{.name = "table_id", .newid = 2049, },
-	{.name = "column_id", .newid = 2050, },
-	{.name = "expression", .newid = 2051, },
-	{.name = "type", .newid = 2052, },
-	{0},
-	{.name = "table_id", .newid = 2054, },
-	{.name = "partition_id", .newid = 2055, },
-	{.name = "minimum", .newid = 2056, },
-	{.name = "maximum", .newid = 2057, },
-	{.name = "with_nulls", .newid = 2058, },
-	{0},
-	{.name = "table_id", .newid = 2060, },
-	{.name = "partition_id", .newid = 2061, },
-	{.name = "value", .newid = 2062, },
-	{0},
-	{.name = "id", .newid = 2064, },
-	{.name = "depend_id", .newid = 2065, },
-	{.name = "depend_type", .newid = 2066, },
-	{0},
-	{.name = "id", .newid = 2068, },
-	{.name = "name", .newid = 2069, },
-	{.name = "schema_id", .newid = 2070, },
-	{.name = "query", .newid = 2071, },
-	{.name = "type", .newid = 2072, },
-	{.name = "system", .newid = 2073, },
-	{.name = "commit_action", .newid = 2074, },
-	{.name = "access", .newid = 2075, },
-	{0},
-	{.name = "id", .newid = 2077, },
-	{.name = "name", .newid = 2078, },
-	{.name = "type", .newid = 2079, },
-	{.name = "type_digits", .newid = 2080, },
-	{.name = "type_scale", .newid = 2081, },
-	{.name = "table_id", .newid = 2082, },
-	{.name = "default", .newid = 2083, },
-	{.name = "null", .newid = 2084, },
-	{.name = "number", .newid = 2085, },
-	{.name = "storage", .newid = 2086, },
-	{0},
-	{.name = "id", .newid = 2088, },
-	{.name = "table_id", .newid = 2089, },
-	{.name = "type", .newid = 2090, },
-	{.name = "name", .newid = 2091, },
-	{.name = "rkey", .newid = 2092, },
-	{.name = "action", .newid = 2093, },
-	{0},
-	{.name = "id", .newid = 2095, },
-	{.name = "table_id", .newid = 2096, },
-	{.name = "type", .newid = 2097, },
-	{.name = "name", .newid = 2098, },
-	{0},
-	{.name = "id", .newid = 2100, },
-	{.name = "name", .newid = 2101, },
-	{.name = "table_id", .newid = 2102, },
-	{.name = "time", .newid = 2103, },
-	{.name = "orientation", .newid = 2104, },
-	{.name = "event", .newid = 2105, },
-	{.name = "old_name", .newid = 2106, },
-	{.name = "new_name", .newid = 2107, },
-	{.name = "condition", .newid = 2108, },
-	{.name = "statement", .newid = 2109, },
-	{0},
-	{.name = "id", .newid = 2111, },
-	{.name = "name", .newid = 2112, },
-	{.name = "nr", .newid = 2113, },
-	{.name = "sub", .newid = 2163, },
-	{0},
-	{.name = "id", .newid = 2116, },
-	{.name = "name", .newid = 2117, },
-	{.name = "schema_id", .newid = 2118, },
-	{.name = "query", .newid = 2119, },
-	{.name = "type", .newid = 2120, },
-	{.name = "system", .newid = 2121, },
-	{.name = "commit_action", .newid = 2122, },
-	{.name = "access", .newid = 2123, },
-	{0},
-	{.name = "id", .newid = 2125, },
-	{.name = "name", .newid = 2126, },
-	{.name = "type", .newid = 2127, },
-	{.name = "type_digits", .newid = 2128, },
-	{.name = "type_scale", .newid = 2129, },
-	{.name = "table_id", .newid = 2130, },
-	{.name = "default", .newid = 2131, },
-	{.name = "null", .newid = 2132, },
-	{.name = "number", .newid = 2133, },
-	{.name = "storage", .newid = 2134, },
-	{0},
-	{.name = "id", .newid = 2136, },
-	{.name = "table_id", .newid = 2137, },
-	{.name = "type", .newid = 2138, },
-	{.name = "name", .newid = 2139, },
-	{.name = "rkey", .newid = 2140, },
-	{.name = "action", .newid = 2141, },
-	{0},
-	{.name = "id", .newid = 2143, },
-	{.name = "table_id", .newid = 2144, },
-	{.name = "type", .newid = 2145, },
-	{.name = "name", .newid = 2146, },
-	{0},
-	{.name = "id", .newid = 2148, },
-	{.name = "name", .newid = 2149, },
-	{.name = "table_id", .newid = 2150, },
-	{.name = "time", .newid = 2151, },
-	{.name = "orientation", .newid = 2152, },
-	{.name = "event", .newid = 2153, },
-	{.name = "old_name", .newid = 2154, },
-	{.name = "new_name", .newid = 2155, },
-	{.name = "condition", .newid = 2156, },
-	{.name = "statement", .newid = 2157, },
-	{0},
-	{.name = "id", .newid = 2159, },
-	{.name = "name", .newid = 2160, },
-	{.name = "nr", .newid = 2161, },
-	{.name = "sub", .newid = 2164, },
-	{0},
-	{0}
-};
-
-static struct idtab {
+struct table {
+	const char *schema;
+	const char *table;
+	const char *column;
 	const char *fullname;
-	const char *delname;
-} idtabs[] = {
-	{ .fullname = "sys_schemas_id", .delname = "D_sys_schemas", },
-	{ .fullname = "sys_types_schema_id", .delname = "D_sys_types", },
-	{ .fullname = "sys_functions_schema_id", .delname = "D_sys_functions", },
-	{ .fullname = "sys_sequences_schema_id", .delname = "D_sys_sequences", },
-	{ .fullname = "sys_table_partitions_table_id", .delname = "D_sys_table_partitions", },
-	{ .fullname = "sys_table_partitions_column_id", .delname = "D_sys_table_partitions", },
-	{ .fullname = "sys_range_partitions_table_id", .delname = "D_sys_range_partitions", },
-	{ .fullname = "sys_range_partitions_column_id", .delname = "D_sys_range_partitions", },
-	{ .fullname = "sys_value_partitions_table_id", .delname = "D_sys_value_partitions", },
-	{ .fullname = "sys_value_partitions_column_id", .delname = "D_sys_value_partitions", },
-	{ .fullname = "sys_dependencies_id", .delname = "D_sys_dependencies", },
-	{ .fullname = "sys_dependencies_depend_id", .delname = "D_sys_dependencies", },
-	{ .fullname = "sys__tables_id", .delname = "D_sys__tables", },
-	{ .fullname = "sys__tables_schema_id", .delname = "D_sys__tables", },
-	{ .fullname = "sys__columns_id", .delname = "D_sys__columns", },
-	{ .fullname = "sys__columns_table_id", .delname = "D_sys__columns", },
-	{ .fullname = "sys_keys_table_id", .delname = "D_sys_keys", },
-	{ .fullname = "sys_idxs_table_id", .delname = "D_sys_idxs", },
-	{ .fullname = "sys_triggers_table_id", .delname = "D_sys_triggers", },
+	int newid;
+	bool hasids;
+} tables[] = {
+	{
+		.schema = "sys",
+		.newid = 2000,
+	},
+	{
+		.schema = "sys",
+		.table = "schemas",
+		.fullname = "D_sys_schemas",
+		.newid = 2001,
+	},
+	{
+		.schema = "sys",
+		.table = "schemas",
+		.column = "id",
+		.fullname = "sys_schemas_id",
+		.newid = 2002,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "schemas",
+		.column = "name",
+		.fullname = "sys_schemas_name",
+		.newid = 2003,
+	},
+	{
+		.schema = "sys",
+		.table = "schemas",
+		.column = "authorization",
+		.fullname = "sys_schemas_authorization",
+		.newid = 2004,
+	},
+	{
+		.schema = "sys",
+		.table = "schemas",
+		.column = "owner",
+		.fullname = "sys_schemas_owner",
+		.newid = 2005,
+	},
+	{
+		.schema = "sys",
+		.table = "schemas",
+		.column = "system",
+		.fullname = "sys_schemas_system",
+		.newid = 2006,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.fullname = "D_sys_types",
+		.newid = 2007,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "id",
+		.fullname = "sys_types_id",
+		.newid = 2008,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "systemname",
+		.fullname = "sys_types_systemname",
+		.newid = 2009,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "sqlname",
+		.fullname = "sys_types_sqlname",
+		.newid = 2010,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "digits",
+		.fullname = "sys_types_digits",
+		.newid = 2011,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "scale",
+		.fullname = "sys_types_scale",
+		.newid = 2012,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "radix",
+		.fullname = "sys_types_radix",
+		.newid = 2013,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "eclass",
+		.fullname = "sys_types_eclass",
+		.newid = 2014,
+	},
+	{
+		.schema = "sys",
+		.table = "types",
+		.column = "schema_id",
+		.fullname = "sys_types_schema_id",
+		.newid = 2015,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.fullname = "D_sys_functions",
+		.newid = 2016,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "id",
+		.fullname = "sys_functions_id",
+		.newid = 2017,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "name",
+		.fullname = "sys_functions_name",
+		.newid = 2018,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "func",
+		.fullname = "sys_functions_func",
+		.newid = 2019,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "mod",
+		.fullname = "sys_functions_mod",
+		.newid = 2020,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "language",
+		.fullname = "sys_functions_language",
+		.newid = 2021,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "type",
+		.fullname = "sys_functions_type",
+		.newid = 2022,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "side_effect",
+		.fullname = "sys_functions_side_effect",
+		.newid = 2023,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "varres",
+		.fullname = "sys_functions_varres",
+		.newid = 2024,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "vararg",
+		.fullname = "sys_functions_vararg",
+		.newid = 2025,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "schema_id",
+		.fullname = "sys_functions_schema_id",
+		.newid = 2026,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "system",
+		.fullname = "sys_functions_system",
+		.newid = 2027,
+	},
+	{
+		.schema = "sys",
+		.table = "functions",
+		.column = "semantics",
+		.fullname = "sys_functions_semantics",
+		.newid = 2162,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.fullname = "D_sys_args",
+		.newid = 2028,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "id",
+		.fullname = "sys_args_id",
+		.newid = 2029,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "func_id",
+		.fullname = "sys_args_func_id",
+		.newid = 2030,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "name",
+		.fullname = "sys_args_name",
+		.newid = 2031,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "type",
+		.fullname = "sys_args_type",
+		.newid = 2032,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "type_digits",
+		.fullname = "sys_args_type_digits",
+		.newid = 2033,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "type_scale",
+		.fullname = "sys_args_type_scale",
+		.newid = 2034,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "inout",
+		.fullname = "sys_args_inout",
+		.newid = 2035,
+	},
+	{
+		.schema = "sys",
+		.table = "args",
+		.column = "number",
+		.fullname = "sys_args_number",
+		.newid = 2036,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.fullname = "D_sys_sequences",
+		.newid = 2037,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "id",
+		.fullname = "sys_sequences_id",
+		.newid = 2038,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "schema_id",
+		.fullname = "sys_sequences_schema_id",
+		.newid = 2039,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "name",
+		.fullname = "sys_sequences_name",
+		.newid = 2040,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "start",
+		.fullname = "sys_sequences_start",
+		.newid = 2041,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "minvalue",
+		.fullname = "sys_sequences_minvalue",
+		.newid = 2042,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "maxvalue",
+		.fullname = "sys_sequences_maxvalue",
+		.newid = 2043,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "increment",
+		.fullname = "sys_sequences_increment",
+		.newid = 2044,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "cacheinc",
+		.fullname = "sys_sequences_cacheinc",
+		.newid = 2045,
+	},
+	{
+		.schema = "sys",
+		.table = "sequences",
+		.column = "cycle",
+		.fullname = "sys_sequences_cycle",
+		.newid = 2046,
+	},
+	{
+		.schema = "sys",
+		.table = "table_partitions",
+		.fullname = "D_sys_table_partitions",
+		.newid = 2047,
+	},
+	{
+		.schema = "sys",
+		.table = "table_partitions",
+		.column = "id",
+		.fullname = "sys_table_partitions_id",
+		.newid = 2048,
+	},
+	{
+		.schema = "sys",
+		.table = "table_partitions",
+		.column = "table_id",
+		.fullname = "sys_table_partitions_table_id",
+		.newid = 2049,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "table_partitions",
+		.column = "column_id",
+		.fullname = "sys_table_partitions_column_id",
+		.newid = 2050,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "table_partitions",
+		.column = "expression",
+		.fullname = "sys_table_partitions_expression",
+		.newid = 2051,
+	},
+	{
+		.schema = "sys",
+		.table = "table_partitions",
+		.column = "type",
+		.fullname = "sys_table_partitions_type",
+		.newid = 2052,
+	},
+	{
+		.schema = "sys",
+		.table = "range_partitions",
+		.fullname = "D_sys_range_partitions",
+		.newid = 2053,
+	},
+	{
+		.schema = "sys",
+		.table = "range_partitions",
+		.column = "table_id",
+		.fullname = "sys_range_partitions_table_id",
+		.newid = 2054,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "range_partitions",
+		.column = "partition_id",
+		.fullname = "sys_range_partitions_partition_id",
+		.newid = 2055,
+	},
+	{
+		.schema = "sys",
+		.table = "range_partitions",
+		.column = "minimum",
+		.fullname = "sys_range_partitions_minimum",
+		.newid = 2056,
+	},
+	{
+		.schema = "sys",
+		.table = "range_partitions",
+		.column = "maximum",
+		.fullname = "sys_range_partitions_maximum",
+		.newid = 2057,
+	},
+	{
+		.schema = "sys",
+		.table = "range_partitions",
+		.column = "with_nulls",
+		.fullname = "sys_range_partitions_with_nulls",
+		.newid = 2058,
+	},
+	{
+		.schema = "sys",
+		.table = "value_partitions",
+		.fullname = "D_sys_value_partitions",
+		.newid = 2059,
+	},
+	{
+		.schema = "sys",
+		.table = "value_partitions",
+		.column = "table_id",
+		.fullname = "sys_value_partitions_table_id",
+		.newid = 2060,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "value_partitions",
+		.column = "partition_id",
+		.fullname = "sys_value_partitions_partition_id",
+		.newid = 2061,
+	},
+	{
+		.schema = "sys",
+		.table = "value_partitions",
+		.column = "value",
+		.fullname = "sys_value_partitions_value",
+		.newid = 2062,
+	},
+	{
+		.schema = "sys",
+		.table = "dependencies",
+		.fullname = "D_sys_dependencies",
+		.newid = 2063,
+	},
+	{
+		.schema = "sys",
+		.table = "dependencies",
+		.column = "id",
+		.fullname = "sys_dependencies_id",
+		.newid = 2064,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "dependencies",
+		.column = "depend_id",
+		.fullname = "sys_dependencies_depend_id",
+		.newid = 2065,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "dependencies",
+		.column = "depend_type",
+		.fullname = "sys_dependencies_depend_type",
+		.newid = 2066,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.fullname = "D_sys__tables",
+		.newid = 2067,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "id",
+		.fullname = "sys__tables_id",
+		.newid = 2068,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "name",
+		.fullname = "sys__tables_name",
+		.newid = 2069,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "schema_id",
+		.fullname = "sys__tables_schema_id",
+		.newid = 2070,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "query",
+		.fullname = "sys__tables_query",
+		.newid = 2071,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "type",
+		.fullname = "sys__tables_type",
+		.newid = 2072,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "system",
+		.fullname = "sys__tables_system",
+		.newid = 2073,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "commit_action",
+		.fullname = "sys__tables_commit_action",
+		.newid = 2074,
+	},
+	{
+		.schema = "sys",
+		.table = "_tables",
+		.column = "access",
+		.fullname = "sys__tables_access",
+		.newid = 2075,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.fullname = "D_sys__columns",
+		.newid = 2076,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "id",
+		.fullname = "sys__columns_id",
+		.newid = 2077,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "name",
+		.fullname = "sys__columns_name",
+		.newid = 2078,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "type",
+		.fullname = "sys__columns_type",
+		.newid = 2079,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "type_digits",
+		.fullname = "sys__columns_type_digits",
+		.newid = 2080,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "type_scale",
+		.fullname = "sys__columns_type_scale",
+		.newid = 2081,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "table_id",
+		.fullname = "sys__columns_table_id",
+		.newid = 2082,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "default",
+		.fullname = "sys__columns_default",
+		.newid = 2083,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "null",
+		.fullname = "sys__columns_null",
+		.newid = 2084,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "number",
+		.fullname = "sys__columns_number",
+		.newid = 2085,
+	},
+	{
+		.schema = "sys",
+		.table = "_columns",
+		.column = "storage",
+		.fullname = "sys__columns_storage",
+		.newid = 2086,
+	},
+	{
+		.schema = "sys",
+		.table = "keys",
+		.fullname = "D_sys_keys",
+		.newid = 2087,
+	},
+	{
+		.schema = "sys",
+		.table = "keys",
+		.column = "id",
+		.fullname = "sys_keys_id",
+		.newid = 2088,
+	},
+	{
+		.schema = "sys",
+		.table = "keys",
+		.column = "table_id",
+		.fullname = "sys_keys_table_id",
+		.newid = 2089,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "keys",
+		.column = "type",
+		.fullname = "sys_keys_type",
+		.newid = 2090,
+	},
+	{
+		.schema = "sys",
+		.table = "keys",
+		.column = "name",
+		.fullname = "sys_keys_name",
+		.newid = 2091,
+	},
+	{
+		.schema = "sys",
+		.table = "keys",
+		.column = "rkey",
+		.fullname = "sys_keys_rkey",
+		.newid = 2092,
+	},
+	{
+		.schema = "sys",
+		.table = "keys",
+		.column = "action",
+		.fullname = "sys_keys_action",
+		.newid = 2093,
+	},
+	{
+		.schema = "sys",
+		.table = "idxs",
+		.fullname = "D_sys_idxs",
+		.newid = 2094,
+	},
+	{
+		.schema = "sys",
+		.table = "idxs",
+		.column = "id",
+		.fullname = "sys_idxs_id",
+		.newid = 2095,
+	},
+	{
+		.schema = "sys",
+		.table = "idxs",
+		.column = "table_id",
+		.fullname = "sys_idxs_table_id",
+		.newid = 2096,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "idxs",
+		.column = "type",
+		.fullname = "sys_idxs_type",
+		.newid = 2097,
+	},
+	{
+		.schema = "sys",
+		.table = "idxs",
+		.column = "name",
+		.fullname = "sys_idxs_name",
+		.newid = 2098,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.fullname = "D_sys_triggers",
+		.newid = 2099,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "id",
+		.fullname = "sys_triggers_id",
+		.newid = 2100,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "name",
+		.fullname = "sys_triggers_name",
+		.newid = 2101,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "table_id",
+		.fullname = "sys_triggers_table_id",
+		.newid = 2102,
+		.hasids = true,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "time",
+		.fullname = "sys_triggers_time",
+		.newid = 2103,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "orientation",
+		.fullname = "sys_triggers_orientation",
+		.newid = 2104,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "event",
+		.fullname = "sys_triggers_event",
+		.newid = 2105,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "old_name",
+		.fullname = "sys_triggers_old_name",
+		.newid = 2106,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "new_name",
+		.fullname = "sys_triggers_new_name",
+		.newid = 2107,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "condition",
+		.fullname = "sys_triggers_condition",
+		.newid = 2108,
+	},
+	{
+		.schema = "sys",
+		.table = "triggers",
+		.column = "statement",
+		.fullname = "sys_triggers_statement",
+		.newid = 2109,
+	},
+	{
+		.schema = "sys",
+		.table = "objects",
+		.fullname = "D_sys_objects",
+		.newid = 2110,
+	},
+	{
+		.schema = "sys",
+		.table = "objects",
+		.column = "id",
+		.fullname = "sys_objects_id",
+		.newid = 2111,
+	},
+	{
+		.schema = "sys",
+		.table = "objects",
+		.column = "name",
+		.fullname = "sys_objects_name",
+		.newid = 2112,
+	},
+	{
+		.schema = "sys",
+		.table = "objects",
+		.column = "nr",
+		.fullname = "sys_objects_nr",
+		.newid = 2113,
+	},
+	{
+		.schema = "sys",
+		.table = "objects",
+		.column = "sub",
+		.fullname = "sys_objects_sub",
+		.newid = 2163,
+	},
+	{
+		.schema = "tmp",
+		.newid = 2114,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.fullname = "D_tmp__tables",
+		.newid = 2115,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "id",
+		.fullname = "tmp__tables_id",
+		.newid = 2116,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "name",
+		.fullname = "tmp__tables_name",
+		.newid = 2117,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "schema_id",
+		.fullname = "tmp__tables_schema_id",
+		.newid = 2118,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "query",
+		.fullname = "tmp__tables_query",
+		.newid = 2119,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "type",
+		.fullname = "tmp__tables_type",
+		.newid = 2120,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "system",
+		.fullname = "tmp__tables_system",
+		.newid = 2121,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "commit_action",
+		.fullname = "tmp__tables_commit_action",
+		.newid = 2122,
+	},
+	{
+		.schema = "tmp",
+		.table = "_tables",
+		.column = "access",
+		.fullname = "tmp__tables_access",
+		.newid = 2123,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.fullname = "D_tmp__columns",
+		.newid = 2124,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "id",
+		.fullname = "tmp__columns_id",
+		.newid = 2125,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "name",
+		.fullname = "tmp__columns_name",
+		.newid = 2126,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "type",
+		.fullname = "tmp__columns_type",
+		.newid = 2127,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "type_digits",
+		.fullname = "tmp__columns_type_digits",
+		.newid = 2128,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "type_scale",
+		.fullname = "tmp__columns_type_scale",
+		.newid = 2129,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "table_id",
+		.fullname = "tmp__columns_table_id",
+		.newid = 2130,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "default",
+		.fullname = "tmp__columns_default",
+		.newid = 2131,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "null",
+		.fullname = "tmp__columns_null",
+		.newid = 2132,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "number",
+		.fullname = "tmp__columns_number",
+		.newid = 2133,
+	},
+	{
+		.schema = "tmp",
+		.table = "_columns",
+		.column = "storage",
+		.fullname = "tmp__columns_storage",
+		.newid = 2134,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.fullname = "D_tmp_keys",
+		.newid = 2135,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "id",
+		.fullname = "tmp_keys_id",
+		.newid = 2136,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "table_id",
+		.fullname = "tmp_keys_table_id",
+		.newid = 2137,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "type",
+		.fullname = "tmp_keys_type",
+		.newid = 2138,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "name",
+		.fullname = "tmp_keys_name",
+		.newid = 2139,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "rkey",
+		.fullname = "tmp_keys_rkey",
+		.newid = 2140,
+	},
+	{
+		.schema = "tmp",
+		.table = "keys",
+		.column = "action",
+		.fullname = "tmp_keys_action",
+		.newid = 2141,
+	},
+	{
+		.schema = "tmp",
+		.table = "idxs",
+		.fullname = "D_tmp_idxs",
+		.newid = 2142,
+	},
+	{
+		.schema = "tmp",
+		.table = "idxs",
+		.column = "id",
+		.fullname = "tmp_idxs_id",
+		.newid = 2143,
+	},
+	{
+		.schema = "tmp",
+		.table = "idxs",
+		.column = "table_id",
+		.fullname = "tmp_idxs_table_id",
+		.newid = 2144,
+	},
+	{
+		.schema = "tmp",
+		.table = "idxs",
+		.column = "type",
+		.fullname = "tmp_idxs_type",
+		.newid = 2145,
+	},
+	{
+		.schema = "tmp",
+		.table = "idxs",
+		.column = "name",
+		.fullname = "tmp_idxs_name",
+		.newid = 2146,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.fullname = "D_tmp_triggers",
+		.newid = 2147,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "id",
+		.fullname = "tmp_triggers_id",
+		.newid = 2148,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "name",
+		.fullname = "tmp_triggers_name",
+		.newid = 2149,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "table_id",
+		.fullname = "tmp_triggers_table_id",
+		.newid = 2150,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "time",
+		.fullname = "tmp_triggers_time",
+		.newid = 2151,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "orientation",
+		.fullname = "tmp_triggers_orientation",
+		.newid = 2152,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "event",
+		.fullname = "tmp_triggers_event",
+		.newid = 2153,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "old_name",
+		.fullname = "tmp_triggers_old_name",
+		.newid = 2154,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "new_name",
+		.fullname = "tmp_triggers_new_name",
+		.newid = 2155,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "condition",
+		.fullname = "tmp_triggers_condition",
+		.newid = 2156,
+	},
+	{
+		.schema = "tmp",
+		.table = "triggers",
+		.column = "statement",
+		.fullname = "tmp_triggers_statement",
+		.newid = 2157,
+	},
+	{
+		.schema = "tmp",
+		.table = "objects",
+		.fullname = "D_tmp_objects",
+		.newid = 2158,
+	},
+	{
+		.schema = "tmp",
+		.table = "objects",
+		.column = "id",
+		.fullname = "tmp_objects_id",
+		.newid = 2159,
+	},
+	{
+		.schema = "tmp",
+		.table = "objects",
+		.column = "name",
+		.fullname = "tmp_objects_name",
+		.newid = 2160,
+	},
+	{
+		.schema = "tmp",
+		.table = "objects",
+		.column = "nr",
+		.fullname = "tmp_objects_nr",
+		.newid = 2161,
+	},
+	{
+		.schema = "tmp",
+		.table = "objects",
+		.column = "sub",
+		.fullname = "tmp_objects_sub",
+		.newid = 2164,
+	},
 	{0}
 };
-
-static int
-lookup(old_logger *lg, BAT *mapold, BAT *mapnew, struct item *items, const char *table, const char *ids, int id)
-{
-	char name[64];
-	strconcat_len(name, sizeof(name), "sys_", table, "_name", NULL);
-	BAT *nmbat = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
-	strconcat_len(name, sizeof(name), "sys_", table, "_id", NULL);
-	BAT *idbat = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
-	strconcat_len(name, sizeof(name), "D_sys_", table, NULL);
-	BAT *cands = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
-	BAT *b;
-	if (nmbat == NULL || idbat == NULL || cands == NULL)
-		goto bailout;
-	if (BATsort(&b, NULL, NULL, cands, NULL, NULL, false, false, false) != GDK_SUCCEED)
-		goto bailout;
-	bat_destroy(cands);
-	cands = BATnegcands(BATcount(nmbat), b);
-	bat_destroy(b);
-	if (cands == NULL)
-		goto bailout;
-	if (ids) {
-		strconcat_len(name, sizeof(name), "sys_", table, "_", ids, NULL);
-		BAT *rfbat = temp_descriptor(old_logger_find_bat(lg, name, 0, 0));
-		if (rfbat == NULL)
-			goto bailout;
-		b = BATselect(rfbat, cands, &id, NULL, true, true, false);
-		bat_destroy(cands);
-		bat_destroy(rfbat);
-		cands = b;
-		if (cands == NULL)
-			goto bailout;
-	}
-	int i;
-	for (i = 0; items[i].name; i++) {
-		b = BATselect(nmbat, cands, items[i].name, NULL, true, true, false);
-		if (b == NULL)
-			goto bailout;
-		if (BATcount(b) > 0) {
-			items[i].oldid = ((int *) idbat->theap->base)[BUNtoid(b, 0) - nmbat->hseqbase];
-			if (items[i].oldid != items[i].newid &&
-				(BUNappend(mapold, &items[i].oldid, false) != GDK_SUCCEED ||
-				 BUNappend(mapnew, &items[i].newid, false) != GDK_SUCCEED)) {
-				bat_destroy(b);
-				goto bailout;
-			}
-		}
-		bat_destroy(b);
-	}
-	bat_destroy(nmbat);
-	bat_destroy(idbat);
-	bat_destroy(cands);
-	return i;
-  bailout:
-	bat_destroy(nmbat);
-	bat_destroy(idbat);
-	bat_destroy(cands);
-	return 0;
-}
 
 static gdk_return
 upgrade(old_logger *lg)
 {
+	gdk_return rc = GDK_FAIL;
+	struct bats {
+		BAT *nmbat;
+		BAT *idbat;
+		BAT *parbat;
+		BAT *cands;
+	} bats[3];
 	BAT *mapold = COLnew(0, TYPE_int, 256, TRANSIENT);
 	BAT *mapnew = COLnew(0, TYPE_int, 256, TRANSIENT);
+	BAT *catalog_bid = NULL;
+	BAT *catalog_id = NULL;
+	BAT *dcatalog = NULL;
+	int schid = 0;
+	int tabid = 0;
+	int parid = 0;
 
+	bats[0].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_name", 0, 0));
+	bats[0].idbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_id", 0, 0));
+	bats[0].parbat = NULL;
+	bats[0].cands = temp_descriptor(old_logger_find_bat(lg, "D_sys_schemas", 0, 0));
+	bats[1].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys__tables_name", 0, 0));
+	bats[1].idbat = temp_descriptor(old_logger_find_bat(lg, "sys__tables_id", 0, 0));
+	bats[1].parbat = temp_descriptor(old_logger_find_bat(lg, "sys__tables_schema_id", 0, 0));
+	bats[1].cands = temp_descriptor(old_logger_find_bat(lg, "D_sys__tables", 0, 0));
+	bats[2].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys__columns_name", 0, 0));
+	bats[2].idbat = temp_descriptor(old_logger_find_bat(lg, "sys__columns_id", 0, 0));
+	bats[2].parbat = temp_descriptor(old_logger_find_bat(lg, "sys__columns_table_id", 0, 0));
+	bats[2].cands = temp_descriptor(old_logger_find_bat(lg, "D_sys__columns", 0, 0));
 	if (mapold == NULL || mapnew == NULL)
 		goto bailout;
-
-	if (lookup(lg, mapold, mapnew, schemas, "schemas", NULL, 0) == 0)
-		goto bailout;
-	for (int i = 0, j = 0; tables[i].name; i++, j++) {
-		int n = lookup(lg, mapold, mapnew, tables + i, "_tables", "schema_id", schemas[j].oldid);
-		if (n == 0)
+	for (int i = 0; i < 3; i++) {
+		if (bats[i].nmbat == NULL || bats[i].idbat == NULL || bats[i].cands == NULL)
 			goto bailout;
-		i += n;
-	}
-	for (int i = 0, j = 0; columns[i].name; i++, j++) {
-		if (tables[j].name == NULL)
-			j++;
-		int n = lookup(lg, mapold, mapnew, columns + i, "_columns", "table_id", tables[j].oldid);
-		if (n == 0)
+		if (i > 0 && bats[i].parbat == NULL)
 			goto bailout;
-		i += n;
+		if (BATcount(bats[i].cands) == 0) {
+			bat_destroy(bats[i].cands);
+			bats[i].cands = NULL;
+		} else {
+			BAT *b;
+			if (BATsort(&b, NULL, NULL, bats[i].cands, NULL, NULL, false, false, false) != GDK_SUCCEED)
+				goto bailout;
+			bat_destroy(bats[i].cands);
+			bats[i].cands = BATnegcands(BATcount(bats[i].nmbat), b);
+			bat_destroy(b);
+			if (bats[i].cands == NULL)
+				goto bailout;
+		}
 	}
 
-#if 0
-	BAT *args[3];
-	args[0] = BATdense(0, 0, BATcount(mapold));
-	args[1] = mapold;
-	args[2] = mapnew;
-	BATprintcolumns(GDKstdout, 3, args);
-	bat_destroy(args[0]);
-#endif
+	for (int i = 0; tables[i].schema != NULL; i++) {
+		int lookup;
+		const char *name;
+		if (tables[i].table == NULL) {
+			/* it's a schema */
+			name = tables[i].schema;
+			lookup = 0;
+			parid = 0;
+		} else if (tables[i].column == NULL) {
+			/* it's a table */
+			name = tables[i].table;
+			lookup = 1;
+			parid = schid;
+		} else {
+			/* it's a column */
+			name = tables[i].column;
+			lookup = 2;
+			parid = tabid;
+		}
+		BAT *cand = bats[lookup].cands;
+		if (bats[lookup].parbat != NULL) {
+			cand = BATselect(bats[lookup].parbat, cand, &parid, NULL, true, true, false);
+			if (cand == NULL)
+				goto bailout;
+		}
+		BAT *b = BATselect(bats[lookup].nmbat, cand, name, NULL, true, true, false);
+		if (cand != bats[lookup].cands)
+			bat_destroy(cand);
+		if (b == NULL)
+			goto bailout;
+		if (BATcount(b) > 0) {
+			int oldid = ((int *) bats[lookup].idbat->theap->base)[BUNtoid(b, 0) - bats[lookup].nmbat->hseqbase];
+			if (oldid != tables[i].newid &&
+				(BUNappend(mapold, &oldid, false) != GDK_SUCCEED ||
+				 BUNappend(mapnew, &tables[i].newid, false) != GDK_SUCCEED)) {
+				bat_destroy(b);
+				goto bailout;
+			}
+			if (tables[i].table == NULL)
+				schid = oldid;
+			else if (tables[i].column == NULL)
+				tabid = oldid;
+		}
+		bat_destroy(b);
+	}
 
-	if (BATcount(mapold) > 0) {
-		/* we have work to do */
-		for (int i = 0; idtabs[i].fullname; i++) {
-			BAT *b = temp_descriptor(old_logger_find_bat(lg, idtabs[i].fullname, 0, 0));
-			if (b == NULL)
-				continue;
+	if (BATcount(mapold) == 0) {
+		bat_destroy(mapold);
+		bat_destroy(mapnew);
+		mapold = NULL;
+		mapnew = NULL;
+	}
+
+	catalog_bid = COLnew(0, TYPE_int, 0, PERSISTENT);
+	catalog_id = COLnew(0, TYPE_int, 0, PERSISTENT);
+	dcatalog = COLnew(0, TYPE_oid, 0, PERSISTENT);
+
+	const char *delname;
+	delname = NULL;
+	for (int i = 0; tables[i].schema != NULL; i++) {
+		if (tables[i].fullname == NULL) /* schema */
+			continue;
+		if (tables[i].column == NULL) /* table */
+			delname = tables[i].fullname;
+		BAT *b = temp_descriptor(old_logger_find_bat(lg, tables[i].fullname, 0, 0));
+		if (b == NULL)
+			continue;
+		BAT *orig = b;
+		if (tables[i].hasids && mapold) {
 			BAT *b1, *b2;
-			BAT *cands = temp_descriptor(old_logger_find_bat(lg, idtabs[i].delname, 0, 0));
+			BAT *cands = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
 			gdk_return rc;
 			if (cands) {
 				if (BATcount(cands) == 0) {
@@ -549,38 +1495,91 @@ upgrade(old_logger *lg)
 			if (BATcount(b1) == 0) {
 				bat_destroy(b1);
 				bat_destroy(b2);
-				bat_destroy(b);
-				continue;
-			}
-			BAT *b3 = COLcopy(b, b->ttype, true, PERSISTENT);
-			bat_destroy(b);
-			b = b3;
-			if (b == NULL) {
-				bat_destroy(b1);
+			} else {
+				BAT *b3 = COLcopy(b, b->ttype, true, PERSISTENT);
+				b = b3;
+				if (b == NULL) {
+					bat_destroy(orig);
+					bat_destroy(b1);
+					bat_destroy(b2);
+					goto bailout;
+				}
+				b3 = BATproject(b2, mapnew);
 				bat_destroy(b2);
-				goto bailout;
+				rc = BATreplace(b, b1, b3, false);
+				bat_destroy(b1);
+				bat_destroy(b3);
+				if (rc != GDK_SUCCEED) {
+					bat_destroy(orig);
+					bat_destroy(b);
+					goto bailout;
+				}
 			}
-			b3 = BATproject(b2, mapnew);
-			bat_destroy(b2);
-			rc = BATreplace(b, b1, b3, false);
-			bat_destroy(b1);
-			bat_destroy(b3);
-			if (rc != GDK_SUCCEED) {
-				bat_destroy(b);
-				goto bailout;
-			}
-			/* now b contains the updated values for the column in idtabs[i] */
-			bat_destroy(b);		/* for now, throw away */
+			/* now b contains the updated values for the column in tables[i] */
 		}
+		/* here, b is either the original, unchanged bat or the updated one */
+		if (BUNappend(catalog_bid, &b->batCacheid, false) != GDK_SUCCEED ||
+			BUNappend(catalog_id, &tables[i].newid, false) != GDK_SUCCEED) {
+			if (b != orig)
+				bat_destroy(orig);
+			bat_destroy(b);
+			goto bailout;
+		}
+		if (b != orig) {
+			BBPretain(b->batCacheid);
+			BBPrelease(orig->batCacheid);
+			BATmode(b, false);
+			BATmode(orig, true);
+			bat_destroy(orig);
+		}
+		bat_destroy(b);
 	}
 
-	bat_destroy(mapold);
-	bat_destroy(mapnew);
-	return GDK_SUCCEED;
+	BAT *cands, *b;
+	if (BATcount(lg->dcatalog) == 0) {
+		cands = NULL;
+	} else {
+		if (BATsort(&b, NULL, NULL, lg->dcatalog, NULL, NULL, false, false, false) != GDK_SUCCEED)
+			goto bailout;
+		cands = BATnegcands(BATcount(lg->catalog_oid), b);
+		bat_destroy(b);
+		if (cands == NULL)
+			goto bailout;
+	}
+	b = BATselect(lg->catalog_oid, cands, &(lng){0}, NULL, true, true, true);
+	bat_destroy(cands);
+	if (b == NULL)
+		goto bailout;
+	cands = b;
+	b = BATconvert(lg->catalog_oid, cands, TYPE_int, true, 0, 0, 0);
+	if (b == NULL) {
+		bat_destroy(cands);
+		goto bailout;
+	}
+	if (BATappend(catalog_id, b, NULL, false) != GDK_SUCCEED ||
+		BATappend(catalog_bid, lg->catalog_bid, cands, false) != GDK_SUCCEED) {
+		bat_destroy(cands);
+		bat_destroy(b);
+		goto bailout;
+	}
+	bat_destroy(cands);
+	bat_destroy(b);
+
+	rc = GDK_SUCCEED;
+
   bailout:
 	bat_destroy(mapold);
 	bat_destroy(mapnew);
-	return GDK_FAIL;
+	for (int i = 0; i < 3; i++) {
+		bat_destroy(bats[i].nmbat);
+		bat_destroy(bats[i].idbat);
+		bat_destroy(bats[i].parbat);
+		bat_destroy(bats[i].cands);
+	}
+	bat_destroy(catalog_bid);
+	bat_destroy(catalog_id);
+	bat_destroy(dcatalog);
+	return rc;
 }
 
 static gdk_return
