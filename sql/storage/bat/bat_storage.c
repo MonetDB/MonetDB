@@ -2479,6 +2479,7 @@ tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid
 		if (segs->ts == tr->tid) {
 			BAT *ins = temp_descriptor(cs->bid);
 			assert(ins);
+			assert(BATcount(ins) >= segs->end);
 			ok = log_bat(store->logger, ins, id, segs->start, segs->end-segs->start);
 			bat_destroy(ins);
 		}
@@ -2521,18 +2522,23 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				/* append col*/
 				BAT *ins = temp_descriptor(cs->bid);
 				assert(ins);
+				assert(BATcount(ins) >= cur->end);
 				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start);
 				bat_destroy(ins);
 			}
 			if (t->idxs.set) {
 				for (node *n = t->idxs.set->h; n && ok; n = n->next) {
 					sql_idx *i = n->data;
+
+					if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
+						continue;
 					column_storage *cs = ATOMIC_PTR_GET(&i->data);
 
 					if (cs) {
 						/* append idx */
 						BAT *ins = temp_descriptor(cs->bid);
 						assert(ins);
+						assert(BATcount(ins) >= cur->end);
 						ok = log_bat(store->logger, ins, i->base.id, cur->start, cur->end-cur->start);
 						bat_destroy(ins);
 					}
