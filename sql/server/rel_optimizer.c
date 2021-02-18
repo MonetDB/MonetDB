@@ -4415,8 +4415,6 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  */
-
-/* TODO push select expressions in outer joins down */
 static sql_rel *
 rel_push_select_down(visitor *v, sql_rel *rel)
 {
@@ -4967,7 +4965,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 static sql_rel *
 rel_join_push_exps_down(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) && !is_outerjoin(rel->op)) || is_semi(rel->op)) {
+	if (is_innerjoin(rel->op) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		list *jexps = NULL, *lexps = NULL, *rexps = NULL;
 		node *n;
@@ -9731,29 +9729,35 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(&v, rel);
 
-		rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
-		rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
+		if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && gp.cnt[op_select])
+			rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
+		if (gp.cnt[op_join])
+			rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
 		changes = v.changes;
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
-		rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
+		if (gp.cnt[op_union])
+			rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
 		/* rel_join_order may introduce empty selects */
 		if (v.changes > changes)
 			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 
-		if (level <= 0)
+		if (level <= 0 && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
 	}
 
 	/* Important -> Re-write semijoins after rel_join_order */
-	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && gp.cnt[op_groupby]) {
-		rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
+	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left] || gp.cnt[op_right]) && gp.cnt[op_groupby]) {
+		if (gp.cnt[op_join])
+			rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
 		if (level <= 0) {
 			changes = v.changes;
-			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
+			if (gp.cnt[op_select])
+				rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
 			if (v.changes > changes)
 				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
-			rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
+			if (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left])
+				rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
 		}
 
 		/* push_join_down introduces semijoins */
@@ -9770,14 +9774,15 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		if (level == 0) /* for now count optimizer changes just for first iteration */
 			v.changes += ev.changes;
 		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
-		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_antijoin);
+		if (gp.cnt[op_anti] && gp.cnt[op_union])
+			rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_antijoin);
 		if (level <= 0)
 			rel = rel_visitor_topdown(&v, rel, &rel_semijoin_use_fk);
 	}
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
 	   because pushing down select expressions makes rel_join_order more difficult */
-	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
+	if (gp.cnt[op_select] && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left] || gp.cnt[op_right])) {
 		changes = v.changes;
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
 		if (v.changes > changes)
@@ -9796,7 +9801,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_select] || gp.cnt[op_join])
 		rel = rel_visitor_bottomup(&v, rel, &rel_use_index);
 
-	if (gp.cnt[op_project])
+	if (gp.cnt[op_project] && gp.cnt[op_union])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_project_down_union);
 
 	/* Remove unused expressions */
@@ -9806,10 +9811,12 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 	    gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_func_down);
-		changes = v.changes;
-		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		if (v.changes > changes)
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (gp.cnt[op_select]) {
+			changes = v.changes;
+			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
+			if (v.changes > changes)
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		}
 	}
 
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
