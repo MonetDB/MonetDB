@@ -2860,25 +2860,32 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
-			if (is_func(e->type) && is_anyequal_func(sf)) {
-				list *args = e->l;
-				sql_exp *l, *r;
+			/* If the left relation cannot hold the comparison it cannot be pushed to the semi(anti)-join
+			   For now I guess only comparisons or anyequal func can appear here */
+			assert((is_func(e->type) && is_anyequal_func(sf)) || e->type == e_cmp);
+			if ((is_func(e->type) && is_anyequal_func(sf)) || !rel_has_cmp_exp(j->l, e)) {
+				if (e->type == e_cmp) {
+					append(j->exps, e);
+				} else {
+					list *args = e->l;
+					sql_exp *l, *r;
 
-				assert(list_length(args)==2);
-				l = args->h->data;
-				r = args->h->next->data;
-				j->op = (is_anyequal(sf))?op_semi:op_anti;
+					assert(list_length(args)==2);
+					l = args->h->data;
+					r = args->h->next->data;
+					j->op = (is_anyequal(sf))?op_semi:op_anti;
 
-				if (is_values(l)) {
-					assert(is_values(r));
-					list *ll = l->f, *rl = r->f;
-					for(node *n=ll->h, *m=rl->h; n && m; n=n->next, m=m->next) {
-						e = exp_compare(v->sql->sa, n->data, m->data, j->op == op_semi?mark_in:mark_notin);
+					if (is_values(l)) {
+						assert(is_values(r));
+						list *ll = l->f, *rl = r->f;
+						for(node *n=ll->h, *m=rl->h; n && m; n=n->next, m=m->next) {
+							e = exp_compare(v->sql->sa, n->data, m->data, j->op == op_semi?mark_in:mark_notin);
+							append(j->exps, e);
+						}
+					} else {
+						e = exp_compare(v->sql->sa, l, r, j->op == op_semi?mark_in:mark_notin);
 						append(j->exps, e);
 					}
-				} else {
-					e = exp_compare(v->sql->sa, l, r, j->op == op_semi?mark_in:mark_notin);
-					append(j->exps, e);
 				}
 			} else {
 				append(exps, e);
