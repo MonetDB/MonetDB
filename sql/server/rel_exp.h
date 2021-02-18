@@ -170,6 +170,8 @@ extern int rel_has_exp(sql_rel *rel, sql_exp *e);
 extern int rel_has_exps(sql_rel *rel, list *e);
 /* return 1 when the relation contains all of the passed expressions else 0 */
 extern int rel_has_all_exps(sql_rel *rel, list *e);
+/* return 1 when the relation contains the expression else 0 */
+extern int rel_has_cmp_exp(sql_rel *rel, sql_exp *e);
 
 extern sql_rel *find_rel(list *rels, sql_exp *e);
 extern sql_rel *find_one_rel(list *rels, sql_exp *e);

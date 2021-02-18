@@ -4799,25 +4799,6 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	return 0;
 }
 
-static int
-rel_has_cmp_exp(sql_rel *rel, sql_exp *e)
-{
-	if (e->type == e_cmp) {
-		if (e->flag == cmp_or || e->flag == cmp_filter) {
-			return rel_has_all_exps(rel, e->l) &&
-				rel_has_all_exps(rel, e->r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			return rel_has_exp(rel, e->l) == 0 &&
-				rel_has_all_exps(rel, e->r);
-		} else {
-			return rel_has_exp(rel, e->l) == 0 &&
-				rel_has_exp(rel, e->r) == 0 &&
-		 		(!e->f || rel_has_exp(rel, e->f) == 0);
-		}
-	}
-	return 0;
-}
-
 static sql_rel *
 rel_join_push_exps_down(visitor *v, sql_rel *rel)
 {
