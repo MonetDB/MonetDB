@@ -136,8 +136,6 @@ sql_symbol2relation(backend *be, symbol *sym)
 		rel = rel_distribute(be->mvc, rel);
 	if (rel)
 		rel = rel_partition(be->mvc, rel);
-	if (rel && storage_based_opt)
-		rel = rel_statistics(be->mvc, rel);
 	if (rel && (rel_no_mitosis(rel) || rel_need_distinct_query(rel)))
 		be->no_mitosis = 1;
 	be->reloptimizer = GDKusec() - Tbegin;

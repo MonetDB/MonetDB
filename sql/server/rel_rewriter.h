@@ -31,4 +31,7 @@ extern sql_rel *rewrite_reset_used(visitor *v, sql_rel *rel);
 
 extern void rel_properties(mvc *sql, global_props *gp, sql_rel *rel);
 
+extern int find_member_pos(list *l, sql_table *t);
+extern void *name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt);
+
 #endif /*_REL_REWRITER_H_*/
