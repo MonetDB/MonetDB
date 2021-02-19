@@ -1670,8 +1670,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 	/* check for foreign key join */
 	if (!r->exps || list_length(r->exps) != 1)
 		return r;
-	je = r->exps->h->data;
-	if (je && !find_prop(je->p, PROP_JOINIDX))
+	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
 		return r;
 	/* je->l == foreign expression, je->r == primary expression */
 	if (rel_find_exp(r->l, je->l)) {
@@ -1730,8 +1729,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 	/* check for foreign key join */
 	if (!r->exps || list_length(r->exps) != 1)
 		return r;
-	je = r->exps->h->data;
-	if (je && !find_prop(je->p, PROP_JOINIDX))
+	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
 		return r;
 	/* je->l == foreign expression, je->r == primary expression */
 	if (rel_find_exp(r->l, je->l)) {
@@ -5067,7 +5065,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps;
-		sql_exp *je = !list_empty(exps)?exps->h->data:NULL;
+		sql_exp *je = exps_find_prop(exps, PROP_JOINIDX);
 
 		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;
@@ -5078,10 +5076,10 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 
 		/* both sides only if we have a join index */
 		if (!l || !r ||(is_union(l->op) && is_union(r->op) &&
-			je && !find_prop(je->p, PROP_JOINIDX) && /* FKEY JOIN */
+			!je && /* FKEY JOIN */
 			!rel_is_join_on_pkey(rel))) /* aligned PKEY JOIN */
 			return rel;
-		if (is_semi(rel->op) && is_union(l->op) && je && !find_prop(je->p, PROP_JOINIDX))
+		if (is_semi(rel->op) && is_union(l->op) && !je)
 			return rel;
 
 		if ((is_union(l->op) && !need_distinct(l) && !is_single(l)) && !is_union(r->op)){
@@ -5112,7 +5110,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (is_union(l->op) && !need_distinct(l) && !is_single(l) &&
-			   is_union(r->op) && !need_distinct(r) && !is_single(r)) {
+			   is_union(r->op) && !need_distinct(r) && !is_single(r) && !je) {
 			sql_rel *nl, *nr;
 			sql_rel *ll = rel_dup(l->l), *lr = rel_dup(l->r);
 			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
