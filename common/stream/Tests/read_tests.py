@@ -115,6 +115,27 @@ def all_tests(filename_filter):
     return failures
 
 
+def read_concatenated(ext):
+    tf1 = TestFile("concatenated1", ext)
+    tf1.write(b"hi")
+    compressed_content = open(tf1.path(), "rb").read()
+
+    tf2 = TestFile("concatenated2", ext)
+    tf2.write_raw(compressed_content + compressed_content)
+
+    cmd = ['streamcat', 'read', tf2.path(), "rstream"]
+    results = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    if results.returncode != 0 or results.stderr:
+        raise SystemExit(f"Command {cmd} returned with exit code {results.returncode}:\n{results.stderr or ''}")
+
+    output = results.stdout
+
+    expected = b'hihi'
+    if output != expected:
+        raise SystemExit(f"Expected {expected!r}, got {output!r}")
+
+
 if __name__ == "__main__":
     # generate test data for manual testing
     if len(sys.argv) == 1:

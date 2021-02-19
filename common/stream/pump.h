@@ -66,6 +66,7 @@ typedef struct pump_state {
 	buf_getter get_buffer;
 	pump_worker worker;
 	void (*finalizer)(inner_state_t *inner_state);
+	const char *(*get_error)(inner_state_t *inner_state);
 	size_t elbow_room;
 } pump_state;
 

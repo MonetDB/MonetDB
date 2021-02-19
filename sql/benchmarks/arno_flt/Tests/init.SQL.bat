@@ -1,5 +1,4 @@
 @prompt # $t $g  
-@echo on
 
 %SQL_CLIENT% < "%TSTSRCBASE%\%TSTDIR%\create_tables.flt.sql"
 

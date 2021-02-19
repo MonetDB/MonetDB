@@ -61,7 +61,7 @@ statement error
 SELECT '' AS count, popen(f1) AS open_path FROM PATH_TBL_VW
 
 query ITT rowsort
-SELECT Length(f1), * FROM PATH_TBL_VW
+SELECT Length(txt), * FROM PATH_TBL_VW
 ----
 21
 LINESTRING (1 2, 3 4)

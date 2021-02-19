@@ -1148,7 +1148,19 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	/* from here on we don't have to worry about nil values */
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	while (lstart < lend && rstart < rend) {
+		if (timeoffset) {
+			if (counter > CHECK_QRY_TIMEOUT_STEP) {
+				_CHECK_TIMEOUT(timeoffset);
+				counter = 0;
+			} else {
+				counter++;
+			}
+		}
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
@@ -1445,8 +1457,19 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		} /* else l is candidate list: no nils */
 	}
 	/* from here on we don't have to worry about nil values */
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	while (lstart < lend && rci.next < rci.ncand) {
+		if (timeoffset) {
+			if (counter > CHECK_QRY_TIMEOUT_STEP) {
+				_CHECK_TIMEOUT(timeoffset);
+				counter = 0;
+			} else {
+				counter++;
+			}
+		}
 		v = canditer_peek(&rci);
 
 		if (lvals) {
@@ -2412,8 +2435,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			nr = 0;						\
 			if ((!nil_matches || not_in) && is_##TYPE##_nil(v)) { \
 				/* no match */				\
-				if (not_in)				\
+				if (not_in) {				\
+					lskipped = BATcount(r1) > 0;	\
 					continue;			\
+				}					\
 			} else if (hash_cand) {				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
@@ -2685,8 +2710,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			nr = 0;
 			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
 				/* no match */
-				if (not_in)
+				if (not_in) {
+					lskipped = BATcount(r1) > 0;
 					continue;
+				}
 			} else if (hash_cand) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
 				     rb != HASHnil(hsh);

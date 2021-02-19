@@ -25,17 +25,14 @@ compare_str2type(const char *compare_op)
 		type = cmp_equal;
 	} else if (compare_op[0] == '<') {
 		type = cmp_lt;
-		if (compare_op[1] != '\0') {
-			if (compare_op[1] == '>')
-				type = cmp_notequal;
-			else if (compare_op[1] == '=')
-				type = cmp_lte;
-		}
+		if (compare_op[1] == '>')
+			type = cmp_notequal;
+		else if (compare_op[1] == '=')
+			type = cmp_lte;
 	} else if (compare_op[0] == '>') {
 		type = cmp_gt;
-		if (compare_op[1] != '\0')
-			if (compare_op[1] == '=')
-				type = cmp_gte;
+		if (compare_op[1] == '=')
+			type = cmp_gte;
 	}
 	return type;
 }
@@ -1509,11 +1506,9 @@ rel_has_exp(sql_rel *rel, sql_exp *e)
 int
 rel_has_exps(sql_rel *rel, list *exps)
 {
-	node *n;
-
-	if (!exps)
-		return -1;
-	for (n = exps->h; n; n = n->next)
+	if (list_empty(exps))
+		return 0;
+	for (node *n = exps->h; n; n = n->next)
 		if (rel_has_exp(rel, n->data) >= 0)
 			return 0;
 	return -1;
@@ -1522,16 +1517,28 @@ rel_has_exps(sql_rel *rel, list *exps)
 int
 rel_has_all_exps(sql_rel *rel, list *exps)
 {
-	node *n;
-
-	if (!exps)
-		return -1;
-	for (n = exps->h; n; n = n->next)
+	if (list_empty(exps))
+		return 1;
+	for (node *n = exps->h; n; n = n->next)
 		if (rel_has_exp(rel, n->data) < 0)
 			return 0;
 	return 1;
 }
 
+int
+rel_has_cmp_exp(sql_rel *rel, sql_exp *e)
+{
+	if (e->type == e_cmp) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			return rel_has_all_exps(rel, e->l) && rel_has_all_exps(rel, e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return rel_has_exp(rel, e->l) == 0 && rel_has_all_exps(rel, e->r);
+		} else {
+			return rel_has_exp(rel, e->l) == 0 && rel_has_exp(rel, e->r) == 0 && (!e->f || rel_has_exp(rel, e->f) == 0);
+		}
+	}
+	return 0;
+}
 
 sql_rel *
 find_rel(list *rels, sql_exp *e)
@@ -2589,7 +2596,7 @@ is_identity( sql_exp *e, sql_rel *r)
 		return 0;
 	case e_func: {
 		sql_subfunc *f = e->f;
-		return (strcmp(f->func->base.name, "identity") == 0);
+		return !f->func->s && strcmp(f->func->base.name, "identity") == 0;
 	}
 	default:
 		return 0;
@@ -2750,12 +2757,12 @@ exp_flatten(mvc *sql, sql_exp *e)
 		sql_arg *res = (f->func->res)?(f->func->res->h->data):NULL;
 
 		/* TODO handle date + x months */
-		if (strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		if (!f->func->s && strcmp(f->func->base.name, "sql_add") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, l->h->data);
 			atom *l2 = exp_flatten(sql, l->h->next->data);
 			if (l1 && l2)
 				return atom_add(l1,l2);
-		} else if (strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
+		} else if (!f->func->s && strcmp(f->func->base.name, "sql_sub") == 0 && list_length(l) == 2 && res && EC_NUMBER(res->type.type->eclass)) {
 			atom *l1 = exp_flatten(sql, l->h->data);
 			atom *l2 = exp_flatten(sql, l->h->next->data);
 			if (l1 && l2)
@@ -2821,7 +2828,7 @@ exp_sum_scales(sql_subfunc *f, sql_exp *l, sql_exp *r)
 int
 exp_aggr_is_count(sql_exp *e)
 {
-	if (e->type == e_aggr && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
+	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
 	return 0;
 }

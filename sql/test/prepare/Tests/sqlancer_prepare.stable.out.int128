@@ -101,3 +101,20 @@
 [ "decimal",	3,	2,	"",	"%1",	"%1"	]
 [ "tinyint",	2,	0,	"",	"%2",	"%2"	]
 [ "tinyint",	2,	0,	NULL,	NULL,	NULL	]
+#START TRANSACTION;
+#CREATE FUNCTION myintudf(a INT) RETURNS INT RETURN a + 1;
+#PREPARE SELECT myintudf(?);
+#PREPARE SELECT myintudf(?);
+% .prepare,	.prepare,	.prepare,	.prepare,	.prepare,	.prepare # table_name
+% type,	digits,	scale,	schema,	table,	column # name
+% varchar,	int,	int,	str,	str,	str # type
+% 3,	3,	1,	0,	2,	2 # length
+[ "int",	32,	0,	"",	"%2",	"%2"	]
+[ "int",	32,	0,	NULL,	NULL,	NULL	]
+#EXEC  0(1);
+% .%2 # table_name
+% %2 # name
+% int # type
+% 1 # length
+[ 2	]
+#ROLLBACK;

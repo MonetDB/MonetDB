@@ -1,5 +1,4 @@
 @prompt # $t $g  
-@echo on
 
 %SQL_CLIENT% < "%TSTSRCDIR%\check0.sql"
 

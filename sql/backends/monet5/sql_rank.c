@@ -66,10 +66,8 @@ SQLdiff(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				gdk_code = GDKanalyticaldiff(r, b, c, b->ttype);
 			} else { /* the input is a constant, so the output is the previous sql.diff output */
 				assert(b->ttype == TYPE_bit);
-				if (!(r = COLcopy(b, TYPE_bit, false, TRANSIENT))) {
-					msg = createException(SQL, "sql.diff", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto bailout;
-				}
+				BBPkeepref(*res = b->batCacheid);
+				return MAL_SUCCEED;
 			}
 		} else {
 			if (!(r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT))) {

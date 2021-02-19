@@ -963,7 +963,8 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 			tpe = l->type->sqlname;
 			digits = (!r->digits)?0:l->digits;
 		} else { /* both */
-			tpe = (l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
+			tpe = !strcmp(l->type->base.name, "clob")?l->type->sqlname:!strcmp(r->type->base.name, "clob")?r->type->sqlname:
+			(l->type->base.id > r->type->base.id)?l->type->sqlname:r->type->sqlname;
 			digits = (!l->digits||!r->digits)?0:sql_max(l->digits, r->digits);
 		}
 		sql_find_subtype(super, tpe, digits, 0);
@@ -1026,7 +1027,6 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 {
 	/* first find super type */
 	char *tpe = r->type->sqlname;
-	sql_class eclass = r->type->eclass;
 	unsigned int radix = (unsigned int) r->type->radix;
 	unsigned int digits = 0;
 	unsigned int idigits = i->digits;
@@ -1036,19 +1036,25 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 
 	lsuper = *r;
 	/* EC_STRING class is superior to EC_CHAR */
-	if (i->type->base.id > r->type->base.id ||
-	    (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass)) || i->type->eclass == EC_STRING) {
+	if (EC_VARCHAR(i->type->eclass) && EC_VARCHAR(r->type->eclass)) {
+		if (!strcmp(i->type->sqlname, "clob") || !strcmp(r->type->sqlname, "clob")) {
+			lsuper = !strcmp(i->type->sqlname, "clob") ? *i : *r;
+			radix = lsuper.type->radix;
+			tpe = lsuper.type->sqlname;
+		} else {
+			lsuper = i->type->base.id > r->type->base.id ? *i : *r;
+			radix = lsuper.type->radix;
+			tpe = lsuper.type->sqlname;
+		}
+	} else if (i->type->base.id > r->type->base.id || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
 		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
-		eclass = i->type->eclass;
 	}
 	if (EC_VARCHAR(lsuper.type->eclass))
 		scale = 0; /* strings don't have scale */
-	if (!lsuper.type->localtype) {
+	if (!lsuper.type->localtype)
 		tpe = "smallint";
-		eclass = EC_NUM;
-	}
 	/*
 	 * In case of different radix we should change one.
 	 */
@@ -1067,27 +1073,16 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		}
 	}
 	/* handle OID horror */
-	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0) {
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0)
 		tpe = i->type->sqlname;
-		eclass = i->type->eclass;
-	}
-	if (scale == 0 && (idigits == 0 || rdigits == 0)) { /* clob falls here */
+	if (scale == 0 && (idigits == 0 || rdigits == 0 || !strcmp(tpe, "clob"))) { /* clob falls here */
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
 		/* for strings use the max of both */
-		if (eclass == EC_CHAR) {
-			if (i->type->eclass == EC_NUM)
-				idigits++; /* add '-' */
-			else if (i->type->eclass == EC_DEC || i->type->eclass == EC_FLT)
-				idigits+=2; /* add '-' and '.' TODO for floating-points maybe more is needed */
-			if (r->type->eclass == EC_NUM)
-				rdigits++;
-			else if (r->type->eclass == EC_DEC || r->type->eclass == EC_FLT)
-				rdigits+=2;
-			digits = sql_max(idigits, rdigits);
-		} else {
+		if (!strcmp(tpe, "char") || !strcmp(tpe, "varchar"))
+			digits = sql_max(type_digits_to_char_digits(i), type_digits_to_char_digits(r));
+		else
 			digits = sql_max(idigits - i->scale, rdigits - r->scale);
-		}
 		sql_find_subtype(&lsuper, tpe, digits+scale, scale);
 	}
 	*super = lsuper;
