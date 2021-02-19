@@ -1192,7 +1192,7 @@ heap_entry(FILE *fp, BAT *b, BUN size)
 	maxprop = BATgetprop(b, GDK_MAX_POS);
 	size_t free = b->theap->free;
 	if (size < BUN_NONE) {
-		if (ATOMstorage(b->ttype) == TYPE_msk) {
+		if ((b->ttype >= 0 && ATOMstorage(b->ttype) == TYPE_msk)) {
 			BUN bytes = ((size + 31) / 32) * 4;
 			if (free > bytes)
 				free = bytes;
