@@ -1033,6 +1033,12 @@ order_joins(visitor *v, list *rels, list *exps)
 			} else
 				rel_select_add_exp(v->sql->sa, top, e);
 		}
+		if (list_empty(top->exps)) { /* empty select */
+			sql_rel *l = top->l;
+			top->l = NULL;
+			rel_destroy(top);
+			top = l;
+		}
 	}
 	return top;
 }
@@ -1193,8 +1199,6 @@ reorder_join(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_join_order(visitor *v, sql_rel *rel)
 {
-	visitor ev = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
-
 	if (!rel)
 		return rel;
 
@@ -1241,7 +1245,6 @@ rel_join_order(visitor *v, sql_rel *rel)
 		break;
 	}
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 		if (rel && !rel_is_ref(rel))
 			rel = reorder_join(v, rel);
 	} else if (is_join(rel->op)) {
@@ -9718,15 +9721,10 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
 		if (gp.cnt[op_join])
 			rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
-		changes = v.changes;
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
 		if (gp.cnt[op_union])
 			rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
-		/* rel_join_order may introduce empty selects */
-		if (v.changes > changes)
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
-
 		if (level <= 0 && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
 	}
