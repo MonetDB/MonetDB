@@ -56,14 +56,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		for (i = 0; i < cnt1; i++) {
 			oid x = canditer_next(&ci1);
 			for (j = 0; j < cnt2; j++) {
-				if (timeoffset) {
-					if (counter > CHECK_QRY_TIMEOUT_STEP) {
-						_CHECK_TIMEOUT(timeoffset);
-						counter = 0;
-					} else {
-						counter++;
-					}
-				}
+				GDK_CHECK_TIMEOUT(timeoffset, counter);
 				*p++ = x;
 			}
 		}
@@ -80,14 +73,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 			counter = 0;
 			for (i = 0; i < cnt1; i++) {
 				for (j = 0; j < cnt2; j++) {
-					if (timeoffset) {
-						if (counter > CHECK_QRY_TIMEOUT_STEP) {
-							_CHECK_TIMEOUT(timeoffset);
-							counter = 0;
-						} else {
-							counter++;
-						}
-					}
+					GDK_CHECK_TIMEOUT(timeoffset, counter);
 					*p++ = canditer_next(&ci2);
 				}
 				canditer_reset(&ci2);
