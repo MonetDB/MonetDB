@@ -837,7 +837,19 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	/* from here on we don't have to worry about nil values */
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	while (lstart < lend && rstart < rend) {
+		if (timeoffset) {
+			if (counter > CHECK_QRY_TIMEOUT_STEP) {
+				_CHECK_TIMEOUT(timeoffset);
+				counter = 0;
+			} else {
+				counter++;
+			}
+		}
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
