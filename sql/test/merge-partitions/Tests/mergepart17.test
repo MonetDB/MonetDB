@@ -76,6 +76,9 @@ START TRANSACTION
 statement ok
 ALTER TABLE testupdates ADD TABLE sublimits1 AS PARTITION FROM 1 TO 100
 
+statement error
+INSERT INTO sublimits1 VALUES (500, 'wrong')
+
 statement ok
 ROLLBACK
 

@@ -1716,15 +1716,16 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		compare_op = "=";
 	}
 
-	if (!ro2 && lo->token == SQL_SELECT && ro->token != SQL_SELECT) { /* swap subquery to the right hand side */
-		symbol *tmp = lo;
+	if (!ro2 && (lo->token == SQL_SELECT || lo->token == SQL_UNION || lo->token == SQL_EXCEPT || lo->token == SQL_INTERSECT) &&
+		(ro->token != SQL_SELECT && ro->token != SQL_UNION && ro->token != SQL_EXCEPT && ro->token != SQL_INTERSECT)) {
+		symbol *tmp = lo; /* swap subquery to the right hand side */
 
 		lo = ro;
 		ro = tmp;
 
 		if (compare_op[0] == '>')
 			compare_op[0] = '<';
-		else if (compare_op[0] == '<')
+		else if (compare_op[0] == '<' && compare_op[1] != '>')
 			compare_op[0] = '>';
 		cmp_type = swap_compare(cmp_type);
 	}
@@ -2750,7 +2751,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 			sql_arg *a = f->func->ops->h->data;
 
 			t = &a->type;
-			if (rel_set_type_param(sql, t, rel, e, f->func->fix_scale != INOUT) < 0)
+			if (rel_set_type_param(sql, t, rel, e, f->func->fix_scale != INOUT && !UDF_LANG(f->func->lang)) < 0)
 				return NULL;
 		}
 	 } else {
@@ -2857,13 +2858,13 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 				sql_subtype *t = arg_type(f->func->ops->h->data);
 				if (t->type->eclass == EC_ANY && t2)
 					t = t2;
-				rel_set_type_param(sql, t, rel, l, f->func->fix_scale != INOUT);
+				rel_set_type_param(sql, t, rel, l, f->func->fix_scale != INOUT && !UDF_LANG(f->func->lang));
 			}
 			if (!t2) {
 				sql_subtype *t = arg_type(f->func->ops->h->next->data);
 				if (t->type->eclass == EC_ANY && t1)
 					t = t1;
-				rel_set_type_param(sql, t, rel, r, f->func->fix_scale != INOUT);
+				rel_set_type_param(sql, t, rel, r, f->func->fix_scale != INOUT && !UDF_LANG(f->func->lang));
 			}
 			f = NULL;
 
@@ -5541,22 +5542,18 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 static sql_rel*
 rel_unique_names(mvc *sql, sql_rel *rel)
 {
-	node *n;
 	list *l;
 
 	if (!is_project(rel->op))
 		return rel;
 	l = sa_list(sql->sa);
-	for (n = rel->exps->h; n; n = n->next) {
+	for (node *n = rel->exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
+		const char *name = exp_name(e);
 
-		if (exp_relname(e)) {
-			if (exp_name(e) && exps_bind_column2(l, exp_relname(e), exp_name(e), NULL))
-				exp_label(sql->sa, e, ++sql->label);
-		} else {
-			if (exp_name(e) && exps_bind_column(l, exp_name(e), NULL, NULL, 0))
-				exp_label(sql->sa, e, ++sql->label);
-		}
+		/* If there are two identical expression names, there will be ambiguity */
+		if (!name || exps_bind_column(l, name, NULL, NULL, 0))
+			exp_label(sql->sa, e, ++sql->label);
 		append(l,e);
 	}
 	rel->exps = l;

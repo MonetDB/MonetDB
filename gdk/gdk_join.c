@@ -2399,8 +2399,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			nr = 0;						\
 			if ((!nil_matches || not_in) && is_##TYPE##_nil(v)) { \
 				/* no match */				\
-				if (not_in)				\
+				if (not_in) {				\
+					lskipped = BATcount(r1) > 0;	\
 					continue;			\
+				}					\
 			} else if (hash_cand) {				\
 				for (rb = HASHget(hsh, hash_##TYPE(hsh, &v)); \
 				     rb != HASHnil(hsh);		\
@@ -2676,8 +2678,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			nr = 0;
 			if ((!nil_matches || not_in) && cmp(v, nil) == 0) {
 				/* no match */
-				if (not_in)
+				if (not_in) {
+					lskipped = BATcount(r1) > 0;
 					continue;
+				}
 			} else if (hash_cand) {
 				for (rb = HASHget(hsh, HASHprobe(hsh, v));
 				     rb != HASHnil(hsh);
