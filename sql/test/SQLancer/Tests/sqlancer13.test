@@ -1,7 +1,4 @@
 statement ok
-START TRANSACTION
-
-statement ok
 CREATE TABLE "t0" ("c0" INTEGER NOT NULL,"c1" BOOLEAN,"c2" DECIMAL(18,3),"c4" VARCHAR(328),"c5" BIGINT,"c6" BIGINT,
 	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c1_c2_c0_unique" UNIQUE ("c1", "c2", "c0"))
 
@@ -30,22 +27,24 @@ COPY 1 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 3	0.800	""
 
-query I rowsort
+statement error
 select ((((select 1.75) union all (select 4))) between ((select 3 from t1)) and 2) = true
-----
-NULL
 
-query I rowsort
+statement error
 select cast(sum(count) as bigint) from (select all cast(((((select all -1.75501356E8 from t0 as l3t0 where l3t0.c1) union all (select 1699564541 from t0 as l3t0 where l3t0.c1)))
 not between symmetric ((select -1732113123 from t2 as l3t2, t1 as l3t1 where l3t1.c5)) and (((0)%(6)))) = true as int) as count from t2) as res
-----
-NULL
-
-statement ok
-ROLLBACK
 
 statement error
 select substr(((select 'i') union all (select 'am')),(select 3 where false), 2) = 'wrong'
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE t2
 
 statement ok
 START TRANSACTION
