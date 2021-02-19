@@ -13,6 +13,7 @@
 #include "sql_mvc.h"
 #include "sql_atom.h"
 #include "sql_semantic.h"
+#include "rel_prop.h"
 
 #define new_exp_list(sa) sa_list(sa)
 #define exp2list(sa,e)   append(sa_list(sa),e)
@@ -163,6 +164,8 @@ extern int exps_are_atoms(list *exps);
 extern int exp_has_func(sql_exp *e);
 extern int exp_unsafe(sql_exp *e, int allow_identity);
 extern int exp_has_sideeffect(sql_exp *e);
+
+extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
 
 /* returns 0 when the relation contain the passed expression else < 0 */
 extern int rel_has_exp(sql_rel *rel, sql_exp *e);

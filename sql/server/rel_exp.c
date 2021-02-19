@@ -11,7 +11,7 @@
 #include "sql_semantic.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
-#include "rel_prop.h" /* for prop_copy() */
+#include "rel_prop.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
@@ -1611,6 +1611,20 @@ exp_is_eqjoin(sql_exp *e)
 			return 0;
 	}
 	return -1;
+}
+
+sql_exp *
+exps_find_prop(list *exps, rel_prop kind)
+{
+	if (list_empty(exps))
+		return NULL;
+	for (node *n = exps->h ; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (find_prop(e->p, kind))
+			return e;
+	}
+	return NULL;
 }
 
 static sql_exp *
