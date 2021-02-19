@@ -31,6 +31,8 @@
  */
 #include "monetdb_config.h"
 #include "blob.h"
+#include "mal_client.h"
+#include "mal_interpreter.h"
 
 int TYPE_blob;
 
@@ -168,58 +170,94 @@ BLOBput(Heap *h, var_t *bun, const void *VAL)
 	return *bun;
 }
 
-static inline int
-blob_nitems(blob *b)
-{
-	if (is_blob_nil(b))
-		return int_nil;
-	assert(b->nitems <INT_MAX);
-	return (int) b->nitems;
-}
-
 static str
 BLOBnitems(int *ret, blob **b)
 {
-	*ret = blob_nitems(*b);
+	if (is_blob_nil(*b)) {
+		*ret = int_nil;
+	} else {
+		assert((*b)->nitems < INT_MAX);
+		*ret = (int) (*b)->nitems;
+	}
 	return MAL_SUCCEED;
 }
 
 static str
-BLOBnitems_bulk(bat *ret, const bat *bid)
+BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	BAT *b = NULL, *bn = NULL;
-	BUN n, p, q;
-	int *restrict dst;
-	str msg = MAL_SUCCEED;
 	BATiter bi;
+	BAT *bn = NULL, *b = NULL, *bs = NULL;
+	BUN q = 0;
+	int *restrict vals;
+	str msg = MAL_SUCCEED;
+	bool nils = false;
+	struct canditer ci1 = {0};
+	oid off1;
+	bat *res = getArgReference_bat(stk, pci, 0), *bid = getArgReference_bat(stk, pci, 1),
+		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
 
-	if ((b = BATdescriptor(*bid)) == NULL)	{
-		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	(void) cntxt;
+	(void) mb;
+	if (!(b = BATdescriptor(*bid))) {
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	n = BATcount(b);
-	if ((bn = COLnew(b->hseqbase, TYPE_int, n, TRANSIENT)) == NULL) {
+	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	q = canditer_init(&ci1, b, bs);
+	if (!(bn = COLnew(ci1.hseq, TYPE_int, q, TRANSIENT))) {
 		msg = createException(MAL, "blob.nitems_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
-	dst = Tloc(bn, 0);
+
+	off1 = b->hseqbase;
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		blob *restrict next = BUNtvar(bi, p);
-		dst[p] = blob_nitems(next);
+	vals = Tloc(bn, 0);
+	if (ci1.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next_dense(&ci1) - off1);
+			blob *b = (blob*) BUNtvar(bi, p1);
+
+			if (is_blob_nil(b)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				assert((int) b->nitems < INT_MAX);
+				vals[i] = (int) b->nitems;
+			}
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p1 = (canditer_next(&ci1) - off1);
+			blob *b = (blob*) BUNtvar(bi, p1);
+
+			if (is_blob_nil(b)) {
+				vals[i] = int_nil;
+				nils = true;
+			} else {
+				assert((int) b->nitems < INT_MAX);
+				vals[i] = (int) b->nitems;
+			}
+		}
 	}
-	bn->tnonil = b->tnonil;
-	bn->tnil = b->tnil;
-	BATsetcount(bn, n);
-	bn->tsorted = bn->trevsorted = n < 2;
-	bn->tkey = false;
+
 bailout:
+	if (bn && !msg) {
+		BATsetcount(bn, q);
+		bn->tnil = nils;
+		bn->tnonil = !nils;
+		bn->tkey = BATcount(bn) <= 1;
+		bn->tsorted = BATcount(bn) <= 1;
+		bn->trevsorted = BATcount(bn) <= 1;
+		BBPkeepref(*res = bn->batCacheid);
+	} else if (bn)
+		BBPreclaim(bn);
 	if (b)
 		BBPunfix(b->batCacheid);
-	if (msg && bn)
-		BBPreclaim(bn);
-	else if (bn)
-		BBPkeepref(*ret = bn->batCacheid);
+	if (bs)
+		BBPunfix(bs->batCacheid);
 	return msg;
 }
 
@@ -386,6 +424,80 @@ BLOBblob_blob(blob **d, blob **s)
 }
 
 static str
+BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
+{
+	BAT *b = NULL, *s = NULL, *dst = NULL;
+	BATiter bi;
+	str msg = NULL;
+	struct canditer ci;
+	BUN q;
+	oid off;
+	bool nils = false;
+
+	if ((b = BATdescriptor(*bid)) == NULL) {
+		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+		goto bailout;
+	}
+	if (sid && !is_bat_nil(*sid)) {
+		if ((s = BATdescriptor(*sid)) == NULL) {
+			msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY005) RUNTIME_OBJECT_MISSING);
+			goto bailout;
+		}
+	} else {
+		BBPkeepref(*res = b->batCacheid); /* nothing to convert, return */
+		return MAL_SUCCEED;
+	}
+	off = b->hseqbase;
+	q = canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	if (!(dst = COLnew(ci.hseq, TYPE_blob, q, TRANSIENT))) {
+		msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto bailout;
+	}
+
+	if (ci.tpe == cand_dense) {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next_dense(&ci) - off);
+			blob *v = (blob*) BUNtvar(bi, p);
+
+			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_blob_nil(v);
+		}
+	} else {
+		for (BUN i = 0; i < q; i++) {
+			oid p = (canditer_next(&ci) - off);
+			blob *v = (blob*) BUNtvar(bi, p);
+
+			if (tfastins_nocheckVAR(dst, i, v, Tsize(dst)) != GDK_SUCCEED) {
+				msg = createException(SQL, "batcalc.blob_blob_bulk", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				goto bailout;
+			}
+			nils |= is_blob_nil(v);
+		}
+	}
+
+bailout:
+	if (b)
+		BBPunfix(b->batCacheid);
+	if (s)
+		BBPunfix(s->batCacheid);
+	if (dst && !msg) {
+		BATsetcount(dst, q);
+		dst->tnil = nils;
+		dst->tnonil = !nils;
+		dst->tkey = BATcount(dst) <= 1;
+		dst->tsorted = BATcount(dst) <= 1;
+		dst->trevsorted = BATcount(dst) <= 1;
+		BBPkeepref(*res = dst->batCacheid);
+	} else if (dst)
+		BBPreclaim(dst);
+	return msg;
+}
+
+static str
 BLOBblob_fromstr(blob **b, const char **s)
 {
 	size_t len = 0;
@@ -404,9 +516,11 @@ static mel_func blob_init_funcs[] = {
  command("blob", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
  command("blob", "toblob", BLOBtoblob, false, "store a string as a blob.", args(1,2, arg("",blob),arg("v",str))),
  command("blob", "nitems", BLOBnitems, false, "get the number of bytes in this blob.", args(1,2, arg("",int),arg("b",blob))),
- command("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,2, batarg("",int),batarg("b",blob))),
+ pattern("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,2, batarg("",int),batarg("b",blob))),
+ pattern("batblob", "nitems", BLOBnitems_bulk, false, "", args(1,3, batarg("",int),batarg("b",blob),batarg("s",oid))),
  command("blob", "prelude", BLOBprelude, false, "", args(1,1, arg("",void))),
  command("calc", "blob", BLOBblob_blob, false, "", args(1,2, arg("",blob),arg("b",blob))),
+ command("batcalc", "blob", BLOBblob_blob_bulk, false, "", args(1,3, batarg("",blob),batarg("b",blob),batarg("s",oid))),
  command("calc", "blob", BLOBblob_fromstr, false, "", args(1,2, arg("",blob),arg("s",str))),
  { .imp=NULL }
 };

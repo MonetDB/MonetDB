@@ -28,6 +28,7 @@ struct inner_state {
 		LZ4F_dctx *d;
 	} ctx;
 	LZ4F_preferences_t compression_prefs;
+	LZ4F_errorCode_t error_code;
 	bool finished;
 };
 
@@ -85,10 +86,11 @@ decomp(inner_state_t *inner_state, pump_action action)
 	inner_state->dst_win.start += ndst;
 	inner_state->dst_win.count -= ndst;
 
-	if (LZ4F_isError(ret))
+	if (LZ4F_isError(ret)) {
+		inner_state->error_code = ret;
 		return PUMP_ERROR;
-	else
-		return PUMP_OK;
+	}
+	return PUMP_OK;
 }
 
 static void
@@ -157,8 +159,10 @@ compr(inner_state_t *inner_state, pump_action action)
 			return PUMP_ERROR;
 	}
 
-	if (LZ4F_isError(produced))
+	if (LZ4F_isError(produced)) {
+		inner_state->error_code = produced;
 		return PUMP_ERROR;
+	}
 
 	inner_state->src_win.start += consumed;
 	inner_state->src_win.count -= consumed;
@@ -174,6 +178,12 @@ compr_end(inner_state_t *inner_state)
 	LZ4F_freeCompressionContext(inner_state->ctx.c);
 	free(inner_state->buffer.start);
 	free(inner_state);
+}
+
+static const char*
+get_error(inner_state_t *inner_state)
+{
+	return LZ4F_getErrorName(inner_state->error_code);
 }
 
 static stream *
@@ -287,6 +297,7 @@ lz4_stream(stream *inner, int level)
 	state->get_dst_win = get_dst_win;
 	state->set_dst_win = set_dst_win;
 	state->get_buffer = get_buffer;
+	state->get_error = get_error;
 
 	stream *s;
 	if (inner->readonly)

@@ -45,6 +45,18 @@ mcrypt_getHashAlgorithms(void)
 	 * desire.
 	 */
 	static const char *algorithms =
+		/* When compiling MonetDBe for docker, we use -DWITH_CRYPTO=OFF. This means that none of the hashing algorithms
+		 * are available and so we get a syntax error at mcrypt_getHashAlgorithms.
+		 *
+		 * This used to compile because it
+		 * unconditionally included PROT10.
+
+		 * This hack is dangerous because it will allow MonetDB server to be built even without openssl installed. A
+		 * sever like that will be incompatible with all clients because it does not implement MAPI correctly. Ideally
+		 * we should solve this at CMake level but it is difficult because the common modules between MonetDBe and
+		 * MonetDB server require substantially different compilation parameters.
+		 */
+		"INVALID"
 #ifdef HAVE_RIPEMD160_UPDATE
 		",RIPEMD160"
 #endif

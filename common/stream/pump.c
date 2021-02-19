@@ -35,6 +35,7 @@ pump_stream(stream *inner, pump_state *state)
 	assert(state->set_dst_win != NULL);
 	assert(state->get_buffer != NULL);
 	assert(state->worker != NULL);
+	assert(state->get_error != NULL);
 	assert(state->finalizer != NULL);
 
 	inner_state_t *inner_state = state->inner_state;
@@ -78,7 +79,10 @@ pump_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	state->set_dst_win(inner_state, (pump_buffer){ .start = buf, .count = size});
 	pump_result ret = pump_in(s);
 	if (ret == PUMP_ERROR) {
-		assert(s->errkind != MNSTR_NO__ERROR);
+		const char *msg = state->get_error(inner_state);
+		if (msg != NULL)
+			msg = "processing failed without further error indication";
+		mnstr_set_error(s, MNSTR_READ_ERROR, "%s", msg);
 		return -1;
 	}
 
@@ -102,7 +106,10 @@ pump_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t 
 	state->set_src_win(inner_state, (pump_buffer){ .start = (void*)buf, .count = size });
 	pump_result ret = pump_out(s, PUMP_NO_FLUSH);
 	if (ret == PUMP_ERROR) {
-		assert(s->errkind != MNSTR_NO__ERROR);
+		const char *msg = state->get_error(inner_state);
+		if (msg != NULL)
+			msg = "processing failed without further error indication";
+		mnstr_set_error(s, MNSTR_READ_ERROR, "%s", msg);
 		return -1;
 	}
 	ssize_t nwritten = state->get_src_win(inner_state).start - (char*)buf;

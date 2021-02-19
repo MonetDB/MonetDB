@@ -982,8 +982,14 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		BBP_physical(bid)[sizeof(BBP_physical(bid)) - 1] = 0;
 #endif
 		BBP_options(bid) = NULL;
-		if (options)
+		if (options) {
 			BBP_options(bid) = GDKstrdup(options);
+			if (BBP_options(bid) == NULL) {
+				BATdestroy(bn);
+				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
+				return GDK_FAIL;
+			}
+		}
 		BBP_refs(bid) = 0;
 		BBP_lrefs(bid) = 1;	/* any BAT we encounter here is persistent, so has a logical reference */
 		BBP_desc(bid) = bn;
