@@ -646,13 +646,31 @@ static bool urls_matches(const char* l, const char* r) {
 	return (l && r && (strcmp(l, r) == 0)) || (l == NULL && r == NULL);
 }
 
+static inline str
+monetdbe_create_uri(const char* host, const int port, const char* database) {
+	const char* protocol = "mapi:monetdb://";
+
+	const int sl_protocol = strlen(protocol);
+	const int sl_host = strlen(host);
+	const int sl_max_port = 6; // 2^16-1 < 100 000 = 10^5, i.e. always less then 6 digits.
+	const int sl_database = strlen(database);
+
+	const int sl_total = sl_protocol + sl_host + 1 /*:*/ + sl_max_port + 1 + /*/*/ + sl_database ;
+
+	str uri_buffer = GDKmalloc(sl_total + 1 /*terminator*/);
+
+	snprintf(uri_buffer, sl_total, "%s%s:%d/%s", protocol, host, port, database);
+
+	return uri_buffer;
+}
+
 static int
-monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_options *opts) {
+monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	assert(opts);
 
 	monetdbe_remote* remote = opts->remote;
 	if (!remote) {
-		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", "Missing user credential for monetdbe remote proxy set up");
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", "Missing remote proxy settings");
 		return -1;
 	}
 
@@ -670,6 +688,8 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_optio
 		return -2;
 	}
 
+	char* url = monetdbe_create_uri(remote->host, remote->port, remote->database);
+
 	MalBlkPtr mb = c->curprg->def;
 
 	InstrPtr q = getInstrPtr(mb, 0);
@@ -682,6 +702,9 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, char *url, monetdbe_optio
 	p = pushStr(mb, p, remote->password);
 	p = pushStr(mb, p, "msql");
 	p = pushBit(mb, p, 1);
+
+	GDKfree(url);
+	url = NULL;
 
 	q = newInstruction(mb, NULL, NULL);
 	q->barrier= RETURNsymbol;
@@ -735,8 +758,8 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 		 * it is still necessary to have an initialized monetdbe. E.g. for BAT life cycle management.
 		 * Use an ephemeral/anonymous dbfarm when there is no initialized monetdbe yet.
 		 */
-		char* _url = is_remote?NULL:url;
-		monetdbe_startup(mdbe, _url, opts);
+		assert(!is_remote||url==NULL);
+		monetdbe_startup(mdbe, url, opts);
 	}
 	else if (!is_remote && !urls_matches(monetdbe_embedded_url, url)) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open", "monetdbe_open currently only one active database is supported");
@@ -745,7 +768,7 @@ monetdbe_open(monetdbe_database *dbhdl, char *url, monetdbe_options *opts)
 		res = monetdbe_open_internal(mdbe);
 
 	if (res == 0 && is_remote)
-		res = monetdbe_open_remote(mdbe, url, opts);
+		res = monetdbe_open_remote(mdbe, opts);
 
 	MT_lock_unset(&embedded_lock);
 	if (mdbe->msg)
