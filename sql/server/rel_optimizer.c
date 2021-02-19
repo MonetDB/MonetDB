@@ -20,6 +20,8 @@
 
 typedef struct global_props {
 	int cnt[ddl_maxops];
+	uint8_t
+		has_mergetable:1;
 } global_props;
 
 static sql_subfunc *find_func(mvc *sql, char *name, list *exps);
@@ -289,11 +291,19 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 	gp->cnt[(int)rel->op]++;
 	switch (rel->op) {
 	case op_basetable:
-		break;
-	case op_table:
-		if (rel->l && rel->flag != TRIGGER_WRAPPER)
+	case op_table: {
+		if (!find_prop(rel->p, PROP_COUNT))
+			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
+		if (is_basetable(rel->op)) {
+			sql_table *t = (sql_table *) rel->l;
+			sql_part *pt;
+
+			/* If the plan has a merge table or a child of a partitioned one, then rel_merge_table_rewrite has to run */
+			gp->has_mergetable |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL)) && !isNonPartitionedTable(pt->t)));
+		}
+		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER)
 			rel_properties(sql, gp, rel->l);
-		break;
+	} break;
 	case op_join:
 	case op_left:
 	case op_right:
@@ -335,40 +345,6 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 			if (rel->r)
 				rel_properties(sql, gp, rel->r);
 		}
-		break;
-	}
-
-	switch (rel->op) {
-	case op_basetable:
-	case op_table:
-		if (!find_prop(rel->p, PROP_COUNT))
-			rel->p = prop_create(sql->sa, PROP_COUNT, rel->p);
-		break;
-	case op_join:
-	case op_left:
-	case op_right:
-	case op_full:
-
-	case op_semi:
-	case op_anti:
-
-	case op_union:
-	case op_inter:
-	case op_except:
-		break;
-
-	case op_project:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-	case op_select:
-		break;
-
-	case op_insert:
-	case op_update:
-	case op_delete:
-	case op_truncate:
-	case op_ddl:
 		break;
 	}
 }
@@ -9807,7 +9783,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_topn_and_sample_down);
 
-	rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
+	if (gp.has_mergetable)
+		rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rel_visitor_topdown(&v, rel, &rel_add_dicts);
 
