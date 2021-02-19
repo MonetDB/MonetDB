@@ -1862,6 +1862,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * is nil.
 	 */
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	/* Before we start adding values to r1 and r2, the properties
 	 * are as follows:
 	 * tseqbase - 0
@@ -1873,6 +1877,14 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * We will modify these as we go along.
 	 */
 	while (lci->next < lci->ncand) {
+		if (timeoffset) {
+			if (counter > CHECK_QRY_TIMEOUT_STEP) {
+				_CHECK_TIMEOUT(timeoffset);
+				counter = 0;
+			} else {
+				counter++;
+			}
+		}
 		if (lscan == 0) {
 			/* always search r completely */
 			assert(equal_order);
