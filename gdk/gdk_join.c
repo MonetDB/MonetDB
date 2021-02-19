@@ -794,6 +794,9 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	lvals = (const int *) Tloc(l, 0);
 	rvals = (const int *) Tloc(r, 0);
 	assert(!r->tvarsized || !r->ttype);
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -837,19 +840,8 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	/* from here on we don't have to worry about nil values */
 
-	size_t counter = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-
 	while (lstart < lend && rstart < rend) {
-		if (timeoffset) {
-			if (counter > CHECK_QRY_TIMEOUT_STEP) {
-				_CHECK_TIMEOUT(timeoffset);
-				counter = 0;
-			} else {
-				counter++;
-			}
-		}
+		GDK_CHECK_TIMEOUT(timeoffset, counter);
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
@@ -1105,6 +1097,9 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	lvals = (const lng *) Tloc(l, 0);
 	rvals = (const lng *) Tloc(r, 0);
 	assert(!r->tvarsized || !r->ttype);
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1148,19 +1143,8 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	}
 	/* from here on we don't have to worry about nil values */
 
-	size_t counter = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
-
 	while (lstart < lend && rstart < rend) {
-		if (timeoffset) {
-			if (counter > CHECK_QRY_TIMEOUT_STEP) {
-				_CHECK_TIMEOUT(timeoffset);
-				counter = 0;
-			} else {
-				counter++;
-			}
-		}
+		GDK_CHECK_TIMEOUT(timeoffset, counter);
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
@@ -1424,6 +1408,9 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	assert(r->ttype == TYPE_void && r->tvheap != NULL);
 	canditer_init(&rci, NULL, r);
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1457,19 +1444,9 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		} /* else l is candidate list: no nils */
 	}
 	/* from here on we don't have to worry about nil values */
-	size_t counter = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	while (lstart < lend && rci.next < rci.ncand) {
-		if (timeoffset) {
-			if (counter > CHECK_QRY_TIMEOUT_STEP) {
-				_CHECK_TIMEOUT(timeoffset);
-				counter = 0;
-			} else {
-				counter++;
-			}
-		}
+		GDK_CHECK_TIMEOUT(timeoffset, counter);
 		v = canditer_peek(&rci);
 
 		if (lvals) {
@@ -1751,6 +1728,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(r->tsorted || r->trevsorted);
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	MT_thread_setalgorithm(__func__);
 	if (BATtvoid(l)) {
 		/* l->ttype == TYPE_void && is_oid_nil(l->tseqbase) is
@@ -1862,9 +1843,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * is nil.
 	 */
 
-	size_t counter = 0;
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 
 	/* Before we start adding values to r1 and r2, the properties
 	 * are as follows:
@@ -1877,14 +1855,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * We will modify these as we go along.
 	 */
 	while (lci->next < lci->ncand) {
-		if (timeoffset) {
-			if (counter > CHECK_QRY_TIMEOUT_STEP) {
-				_CHECK_TIMEOUT(timeoffset);
-				counter = 0;
-			} else {
-				counter++;
-			}
-		}
+		GDK_CHECK_TIMEOUT(timeoffset, counter);
 		if (lscan == 0) {
 			/* always search r completely */
 			assert(equal_order);
@@ -2442,6 +2413,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE *lvals = Tloc(l, 0);				\
 		TYPE v;							\
 		while (lci->next < lci->ncand) {			\
+			GDK_CHECK_TIMEOUT(timeoffset, counter);		\
 			lo = canditer_next(lci);			\
 			v = lvals[lo - l->hseqbase];			\
 			nr = 0;						\
@@ -2573,6 +2545,10 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(!BATtvoid(r));
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	int t = ATOMbasetype(r->ttype);
 	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
 		t = TYPE_void;
@@ -2703,6 +2679,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (lci->tpe != cand_dense)
 		r1->tseqbase = oid_nil;
 
+
 	switch (t) {
 	case TYPE_int:
 		HASHJOIN(int);
@@ -2712,6 +2689,7 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		break;
 	default:
 		while (lci->next < lci->ncand) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter);
 			lo = canditer_next(lci);
 			if (BATtvoid(l)) {
 				if (BATtdense(l))
