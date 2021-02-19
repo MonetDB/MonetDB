@@ -2018,7 +2018,7 @@ exps_have_rel_exp( list *exps)
 static sql_rel *
 exps_rel_get_rel(sql_allocator *sa, list *exps )
 {
-	sql_rel *xp = NULL;
+	sql_rel *r = NULL, *xp = NULL;
 
 	if (list_empty(exps))
 		return NULL;
@@ -2026,14 +2026,9 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 		sql_exp *e = n->data;
 
 		if (exp_has_rel(e)) {
-			sql_rel *r = exp_rel_get_rel(sa, e);
-
-			if (!r)
+			if (!(r = exp_rel_get_rel(sa, e)))
 				return NULL;
-			if (xp)
-				xp = rel_crossproduct(sa, xp, r, op_join);
-			else
-				xp = r;
+			xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
 		}
 	}
 	return xp;
@@ -2049,26 +2044,41 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 	case e_func:
 	case e_aggr:
 		return exps_rel_get_rel(sa, e->l);
-	case e_cmp:
+	case e_cmp: {
+		sql_rel *r = NULL, *xp = NULL;
+
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (exps_have_rel_exp(e->l))
-				return exps_rel_get_rel(sa, e->l);
-			if (exps_have_rel_exp(e->r))
-				return exps_rel_get_rel(sa, e->r);
+				xp = exps_rel_get_rel(sa, e->l);
+			if (exps_have_rel_exp(e->r)) {
+				if (!(r = exps_rel_get_rel(sa, e->r)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_has_rel(e->l))
-				return exp_rel_get_rel(sa, e->l);
-			if (exps_have_rel_exp(e->r))
-				return exps_rel_get_rel(sa, e->r);
+				xp = exp_rel_get_rel(sa, e->l);
+			if (exps_have_rel_exp(e->r)) {
+				if (!(r = exps_rel_get_rel(sa, e->r)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
 		} else {
 			if (exp_has_rel(e->l))
-				return exp_rel_get_rel(sa, e->l);
-			if (exp_has_rel(e->r))
-				return exp_rel_get_rel(sa, e->r);
-			if (e->f && exp_has_rel(e->f))
-				return exp_rel_get_rel(sa, e->f);
+				xp = exp_rel_get_rel(sa, e->l);
+			if (exp_has_rel(e->r)) {
+				if (!(r = exp_rel_get_rel(sa, e->r)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
+			if (e->f && exp_has_rel(e->f)) {
+				if (!(r = exp_rel_get_rel(sa, e->f)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
 		}
-		return NULL;
+		return xp;
+	}
 	case e_convert:
 		return exp_rel_get_rel(sa, e->l);
 	case e_psm:

@@ -2,6 +2,55 @@ statement ok
 START TRANSACTION
 
 statement ok
+CREATE TABLE "t0" ("c0" INTEGER NOT NULL,"c1" BOOLEAN,"c2" DECIMAL(18,3),"c4" VARCHAR(328),"c5" BIGINT,"c6" BIGINT,
+	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c1_c2_c0_unique" UNIQUE ("c1", "c2", "c0"))
+
+statement ok
+COPY 10 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0	true	0.003	NULL	5	NULL
+61	true	0.003	NULL	NULL	NULL
+63	true	0.003	""	NULL	NULL
+64	true	0.003	"-1736272448"	NULL	NULL
+5	true	0.003	NULL	NULL	NULL
+1791642786	true	0.003	NULL	NULL	NULL
+66	NULL	0.533	"vBow손1s"	NULL	NULL
+67	true	0.071	NULL	NULL	NULL
+68	NULL	NULL	NULL	9	NULL
+4	false	0.051	"-d'o"	9	8
+
+statement ok
+CREATE TABLE "t1" ("c0" INTEGER,"c1" BOOLEAN,"c2" DECIMAL(18,3),"c4" BIGINT,"c5" BOOLEAN)
+
+statement ok
+CREATE TABLE "t2" ("c0" INTEGER,"c2" DECIMAL(18,3),"c4" CHAR(238))
+
+statement ok
+COPY 1 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+3	0.800	""
+
+query I rowsort
+select ((((select 1.75) union all (select 4))) between ((select 3 from t1)) and 2) = true
+----
+NULL
+
+query I rowsort
+select cast(sum(count) as bigint) from (select all cast(((((select all -1.75501356E8 from t0 as l3t0 where l3t0.c1) union all (select 1699564541 from t0 as l3t0 where l3t0.c1)))
+not between symmetric ((select -1732113123 from t2 as l3t2, t1 as l3t1 where l3t1.c5)) and (((0)%(6)))) = true as int) as count from t2) as res
+----
+NULL
+
+statement ok
+ROLLBACK
+
+statement error
+select substr(((select 'i') union all (select 'am')),(select 3 where false), 2) = 'wrong'
+
+statement ok
+START TRANSACTION
+
+statement ok
 CREATE TABLE "t0" ("c0" DOUBLE PRECISION NOT NULL,"c1" DOUBLE PRECISION NOT NULL,"c3" VARCHAR(262),
 	CONSTRAINT "t0_c1_c0_pkey" PRIMARY KEY ("c1", "c0"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"),CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1"))
 
@@ -40,6 +89,11 @@ NULL
 3
 15
 0.6251660224137027
+
+query I rowsort
+SELECT 1 FROM t2 WHERE NULL NOT IN (SELECT 1 FROM t2)
+----
+
 
 query I rowsort
 SELECT 1 FROM t2 WHERE NULL <> ALL(SELECT 1 FROM t2)
