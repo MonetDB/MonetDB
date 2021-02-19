@@ -105,6 +105,9 @@ SELECT value FROM value_partitions
 statement ok
 INSERT INTO testme VALUES (52, 'third')
 
+statement error
+INSERT INTO subt1 VALUES (60, 'wrong')
+
 statement ok
 ROLLBACK
 

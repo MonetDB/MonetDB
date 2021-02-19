@@ -295,6 +295,42 @@ bailout:
 }
 
 static bool
+has_schema_path(Mapi mid)
+{
+	MapiHdl hdl;
+	bool ret;
+	static int answer = -1;
+
+	if (answer >= 0)
+		return answer;
+
+	if ((hdl = mapi_query(mid, "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info' and schema_id = (select id from sys.schemas where name = 'sys')) and name = 'schema_path'")) == NULL ||
+	    mapi_error(mid))
+		goto bailout;
+	ret = mapi_get_row_count(hdl) == 1;
+	while ((mapi_fetch_row(hdl)) != 0) {
+		if (mapi_error(mid))
+			goto bailout;
+	}
+	if (mapi_error(mid))
+		goto bailout;
+	mapi_close_handle(hdl);
+	answer = ret;
+	return ret;
+
+bailout:
+	if (hdl) {
+		if (mapi_result_error(hdl))
+			mapi_explain_result(hdl, stderr);
+		else
+			mapi_explain_query(hdl, stderr);
+		mapi_close_handle(hdl);
+	} else
+		mapi_explain(mid, stderr);
+	return false;
+}
+
+static bool
 has_table_partitions(Mapi mid)
 {
 	MapiHdl hdl;
@@ -2225,11 +2261,23 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 	const char *start_trx = "START TRANSACTION";
 	const char *end = "ROLLBACK";
 	const char *users =
+		has_schema_path(mid) ?
 		"SELECT ui.name, "
 		       "ui.fullname, "
 		       "password_hash(ui.name), "
 		       "s.name, "
 			   "ui.schema_path "
+		"FROM sys.db_user_info ui, "
+		     "sys.schemas s "
+		"WHERE ui.default_schema = s.id "
+		  "AND ui.name <> 'monetdb' "
+		  "AND ui.name <> '.snapshot' "
+		"ORDER BY ui.name" :
+		"SELECT ui.name, "
+		       "ui.fullname, "
+		       "password_hash(ui.name), "
+		       "s.name, "
+			   "cast(null as clob) "
 		"FROM sys.db_user_info ui, "
 		     "sys.schemas s "
 		"WHERE ui.default_schema = s.id "
@@ -2481,8 +2529,12 @@ dump_database(Mapi mid, stream *toConsole, bool describe, bool useInserts, bool 
 			mnstr_printf(toConsole, " NAME ");
 			squoted_print(toConsole, fullname, '\'', false);
 			mnstr_printf(toConsole, " SCHEMA ");
-			dquoted_print(toConsole, describe ? sname : "sys", " ");
-			mnstr_printf(toConsole, "SCHEMA PATH '%s';\n", spath);
+			dquoted_print(toConsole, describe ? sname : "sys", NULL);
+			if (spath) {
+				mnstr_printf(toConsole, " SCHEMA PATH ");
+				squoted_print(toConsole, spath, '\'', false);
+			}
+			mnstr_printf(toConsole, ";\n");
 		}
 		if (mapi_error(mid))
 			goto bailout;
