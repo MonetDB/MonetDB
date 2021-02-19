@@ -406,7 +406,6 @@ int yydebug=1;
 	opt_null_string
 	opt_to_savepoint
 	opt_uescape
-	opt_user_schema_path
 	opt_using
 	opt_XML_attribute_name
 	restricted_ident
@@ -1470,17 +1469,13 @@ CREATE [ UNIQUE ] INDEX index_name
 }
 */
 
-opt_user_schema_path:
-   SCHEMA PATH string { $$ = $3; }
- |					 { $$ = NULL; }
-
 role_def:
     ROLE ident opt_grantor
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_int(l, $3);
 	  $$ = _symbol_create_list( SQL_CREATE_ROLE, l ); }
- |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident opt_user_schema_path
+ |  USER ident WITH opt_encrypted PASSWORD string sqlNAME string SCHEMA ident user_schema_path
 	{ dlist *l = L();
 	  append_string(l, $2);
 	  append_string(l, $6);
