@@ -20,9 +20,11 @@ main(void)
 	char* err = NULL;
 	monetdbe_database mdbe = NULL;
 	monetdbe_result* result = NULL;
+	monetdbe_remote remote = {.host="localhost", .port=50000, .database="devdb", .username="monetdb", .password="monetdb"};
+	monetdbe_options opts = {.remote = &remote};
 
 	// second argument is a string for the db directory or NULL for in-memory mode
-	if (monetdbe_open(&mdbe, "monetdb://localhost:5000/sf1?user=monetdb&password=monetdb", NULL))
+	if (monetdbe_open(&mdbe, NULL, &opts))
 		expected_error("Failed to open database")
 	/*if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string)", NULL, NULL)) != NULL)
 		error(err)
