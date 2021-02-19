@@ -688,7 +688,11 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		return -2;
 	}
 
-	char* url = monetdbe_create_uri(remote->host, remote->port, remote->database);
+	char* url;
+	if ((url = monetdbe_create_uri(remote->host, remote->port, remote->database) == NULL) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL);
+		return -2;
+	}
 
 	MalBlkPtr mb = c->curprg->def;
 
