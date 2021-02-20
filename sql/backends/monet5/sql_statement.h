@@ -133,7 +133,7 @@ typedef struct stmt {
 /* which MAL modules can push candidates */
 #define can_push_cands(sel, f) \
 	(sel && (strcmp(sql_func_mod(f->func), "calc") == 0 || strcmp(sql_func_mod(f->func), "mmath") == 0 || \
-			 strcmp(sql_func_mod(f->func), "mtime") == 0 || \
+			 strcmp(sql_func_mod(f->func), "mtime") == 0 || strcmp(sql_func_mod(f->func), "blob") == 0 || \
 			 (strcmp(sql_func_mod(f->func), "str") == 0 && batstr_func_has_candidates(sql_func_imp(f->func)))))
 
 extern void create_merge_partitions_accumulator(backend *be);

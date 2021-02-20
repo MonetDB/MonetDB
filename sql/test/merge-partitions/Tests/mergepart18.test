@@ -102,6 +102,9 @@ SELECT minimum, maximum, with_nulls FROM range_partitions
 statement ok
 INSERT INTO updateme VALUES (199, 'third')
 
+statement error
+INSERT INTO updateme VALUES (301, 'wrong')
+
 statement ok
 ROLLBACK
 

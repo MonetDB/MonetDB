@@ -282,7 +282,7 @@ class SQLLogic:
         except:
             type, value, traceback = sys.exc_info()
             self.query_error(statement, 'unexpected error from pymonetdb', str(value))
-            return
+            return ['statement', 'error']
         else:
             result = ['statement', 'ok']
             if expectok:

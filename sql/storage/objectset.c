@@ -407,22 +407,6 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	_DELETE(ov);
 }
 
-static inline objectversion*
-get_name_based_older_locked(objectversion* ov) {
-	lock_reader(ov->os);
-	objectversion* name_based_older = ov->name_based_older;
-	unlock_reader(ov->os);
-	return name_based_older;
-}
-
-static inline objectversion*
-get_id_based_older_locked(objectversion* ov) {
-	lock_reader(ov->os);
-	objectversion* id_based_older = ov->id_based_older;
-	unlock_reader(ov->os);
-	return id_based_older;
-}
-
 static void
 _os_rollback(objectversion *ov, sqlstore *store)
 {
@@ -442,7 +426,9 @@ _os_rollback(objectversion *ov, sqlstore *store)
 	 * We have to use the readers-writer lock here,
 	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
 	 */
-	objectversion* name_based_older = get_name_based_older_locked(ov);
+	lock_reader(ov->os);
+	objectversion* name_based_older = ov->name_based_older;
+	unlock_reader(ov->os);
 
 	if (name_based_older && !((state_older= os_atmc_get_state(name_based_older)) & rollbacked)) {
 		if (ov->ts != name_based_older->ts) {
@@ -471,7 +457,9 @@ _os_rollback(objectversion *ov, sqlstore *store)
 	 * We have to use the readers-writer lock here,
 	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
 	 */
-	objectversion* id_based_older = get_id_based_older_locked(ov);
+	lock_reader(ov->os);
+	objectversion* id_based_older = ov->id_based_older;
+	unlock_reader(ov->os);
 	if (id_based_older && !((state_older= os_atmc_get_state(id_based_older)) & rollbacked)) {
 		if (ov->ts != id_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
@@ -700,46 +688,6 @@ os_destroy(objectset *os, sql_store store)
 		_DELETE(os);
 }
 
-// disabled because we need functions a in order (need some insert - order preserving hash) ..
-//#define USE_HASH
-#ifdef USE_HASH
-static sql_hash*
-os_hash_create(objectset *os)
-{
-	lock_writer(os);
-	if ((!os->name_map || os->name_map->size*16 < os->name_based_cnt) && os->sa) {
-		os->name_map = hash_new(os->sa, os->name_based_cnt, (fkeyvalue)&os_name_key);
-		if (os->name_map == NULL) {
-			unlock_writer(os);
-			return NULL;
-		}
-
-		for (versionhead  *n = os->name_based_h; n; n = n->next ) {
-			int key = os_name_key(n);
-			if (hash_add(os->name_map, key, n) == NULL) {
-				unlock_writer(os);
-				return NULL;
-			}
-		}
-	}
-	unlock_writer(os);
-	return os->name_map;
-}
-
-static sql_hash_e *
-find_hash_entry(sql_hash *map, const char *name)
-{
-	int key = hash_key(name);
-	sql_hash_e *he = map->buckets[key&(map->size-1)];
-
-	return he;
-}
-#endif
-
-
-/*
-*/
-
 static versionhead  *
 find_name(objectset *os, const char *name)
 {
@@ -780,8 +728,11 @@ get_valid_object_name(sql_trans *tr, objectversion *ov)
 	while(ov) {
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts)) || ov->ts < tr->ts)
 			return ov;
-		else
-			ov = get_name_based_older_locked(ov);
+		else {
+			lock_reader(ov->os);
+			ov = ov->name_based_older;
+			unlock_reader(ov->os);
+		}
 	}
 	return ov;
 }
@@ -792,8 +743,11 @@ get_valid_object_id(sql_trans *tr, objectversion *ov)
 	while(ov) {
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts))  || ov->ts < tr->ts)
 			return ov;
-		else
-			ov = get_id_based_older_locked(ov);
+		else {
+			lock_reader(ov->os);
+			ov = ov->id_based_older;
+			unlock_reader(ov->os);
+		}
 	}
 	return ov;
 }
@@ -930,7 +884,6 @@ os_add(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	store_unlock(tr->store);
 	return res;
 }
-
 
 static int
 os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectversion *ov) {
@@ -1101,16 +1054,10 @@ os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, cons
 		.tr = tr,
 		.name = name,
 	};
-#ifdef USE_HASH
-	if (os->name_based_h && name) {
-		if (!os->name_map)
-			os->name_map = os_hash_create(os);
-		oi->e = find_hash_entry(os->name_map, name);
-	} else
-#endif
-		lock_reader(os);
-		oi->n =	os->name_based_h;
-		unlock_reader(os);
+
+	lock_reader(os);
+	oi->n =	os->name_based_h;
+	unlock_reader(os);
 }
 
 sql_base *
@@ -1118,25 +1065,6 @@ oi_next(struct os_iter *oi)
 {
 	sql_base *b = NULL;
 
-#ifdef USE_HASH
-	if (oi->name) {
-		sql_hash_e *e = oi->e;
-
-		while (e && !b) {
-			versionhead  *n = e->value;
-
-			if (n && n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
-				objectversion *ov = n->ov;
-				e = oi->e = e->chain;
-
-				ov = get_valid_object_name(oi->tr, ov);
-				if (ov && os_atmc_get_state(ov) == active)
-					b = ov->b;
-			} else {
-				e = e->chain;
-			}
-	 	}
-#else
 	if (oi->name) {
 		versionhead  *n = oi->n;
 
@@ -1155,7 +1083,6 @@ oi_next(struct os_iter *oi)
 				unlock_reader(oi->os);
 			}
 	 	}
-#endif
 	} else {
 		versionhead  *n = oi->n;
 

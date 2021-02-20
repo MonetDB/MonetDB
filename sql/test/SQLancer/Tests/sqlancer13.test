@@ -1,0 +1,179 @@
+statement ok
+CREATE TABLE "t0" ("c0" INTEGER NOT NULL,"c1" BOOLEAN,"c2" DECIMAL(18,3),"c4" VARCHAR(328),"c5" BIGINT,"c6" BIGINT,
+	CONSTRAINT "t0_c0_pkey" PRIMARY KEY ("c0"),CONSTRAINT "t0_c1_c2_c0_unique" UNIQUE ("c1", "c2", "c0"))
+
+statement ok
+COPY 10 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0	true	0.003	NULL	5	NULL
+61	true	0.003	NULL	NULL	NULL
+63	true	0.003	""	NULL	NULL
+64	true	0.003	"-1736272448"	NULL	NULL
+5	true	0.003	NULL	NULL	NULL
+1791642786	true	0.003	NULL	NULL	NULL
+66	NULL	0.533	"vBow손1s"	NULL	NULL
+67	true	0.071	NULL	NULL	NULL
+68	NULL	NULL	NULL	9	NULL
+4	false	0.051	"-d'o"	9	8
+
+statement ok
+CREATE TABLE "t1" ("c0" INTEGER,"c1" BOOLEAN,"c2" DECIMAL(18,3),"c4" BIGINT,"c5" BOOLEAN)
+
+statement ok
+CREATE TABLE "t2" ("c0" INTEGER,"c2" DECIMAL(18,3),"c4" CHAR(238))
+
+statement ok
+COPY 1 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+3	0.800	""
+
+statement error
+select ((((select 1.75) union all (select 4))) between ((select 3 from t1)) and 2) = true
+
+statement error
+select cast(sum(count) as bigint) from (select all cast(((((select all -1.75501356E8 from t0 as l3t0 where l3t0.c1) union all (select 1699564541 from t0 as l3t0 where l3t0.c1)))
+not between symmetric ((select -1732113123 from t2 as l3t2, t1 as l3t1 where l3t1.c5)) and (((0)%(6)))) = true as int) as count from t2) as res
+
+statement error
+select substr(((select 'i') union all (select 'am')),(select 3 where false), 2) = 'wrong'
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE t2
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "t0" ("c0" DOUBLE PRECISION NOT NULL,"c1" DOUBLE PRECISION NOT NULL,"c3" VARCHAR(262),
+	CONSTRAINT "t0_c1_c0_pkey" PRIMARY KEY ("c1", "c0"),CONSTRAINT "t0_c1_unique" UNIQUE ("c1"),CONSTRAINT "t0_c0_c1_unique" UNIQUE ("c0", "c1"))
+
+statement ok
+COPY 9 RECORDS INTO "t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.07173150209697887	0.3762572797867427	"⫦"
+0.07173150209697887	0.7497553638422215	"⫦"
+0.07173150209697887	0.89932406	"⫦"
+0.07173150209697887	0.07273821484427745	"⫦"
+0.8777133490819231	0.1691861742790084	"-1570122933"
+7	0.09299678140556933	"2"
+0	1.0368e+09	"-555907821"
+-7.2367456e-09	9	"yTP&ZZRpc"
+0.7609541233251694	0.3262794048812502	"-1e500"
+
+statement ok
+CREATE TABLE "t2" ("c1" DOUBLE PRECISION)
+
+statement ok
+COPY 16 RECORDS INTO "t2" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+134379065
+1
+NULL
+3
+15
+0.6251660224137027
+
+query I rowsort
+SELECT 1 FROM t2 WHERE NULL NOT IN (SELECT 1 FROM t2)
+----
+
+
+query I rowsort
+SELECT 1 FROM t2 WHERE NULL <> ALL(SELECT 1 FROM t2)
+----
+
+
+query T rowsort
+SELECT t0.c3 FROM t0, t2 WHERE NULLIF(t0.c3, t0.c3) <> ALL(SELECT DISTINCT '1' FROM t0)
+----
+
+
+query I rowsort
+SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT CAST(NULLIF(t0.c3, t0.c3) <> ALL(SELECT DISTINCT '1' FROM t0) AS INT) as count FROM t0, t2) as res
+----
+NULL
+
+statement ok
+ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "sys"."t0" ("c0" REAL NOT NULL)
+
+statement ok
+COPY 13 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.4565038
+0.16247
+2.3203078e+08
+3
+5
+6
+0.10937838
+0
+7.6096134e+08
+0.38702926
+0.7541958
+-0.81387746
+-2.0329117e+09
+
+statement ok
+CREATE TABLE "sys"."t1" ("c0" DECIMAL(18,3) NOT NULL)
+
+statement ok
+COPY 29 RECORDS INTO "sys"."t1" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+0.000
+0.872
+0.697
+7335630872.000
+0.138
+0.725
+0.094
+0.408
+0.289
+0.099
+-1.000
+0.090
+0.006
+-0.222
+-7.000
+0.727
+0.882
+0.647
+5.000
+0.638
+0.227
+0.036
+-3.000
+0.755
+0.014
+0.548
+0.254
+841884503.000
+0.784
+
+statement error
+select ((select 1 from t1, t0)) in (2, t1.c0) from t1
+
+statement ok
+ROLLBACK
+

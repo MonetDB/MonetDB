@@ -11,7 +11,7 @@
 #include "sql_semantic.h"
 #include "rel_exp.h"
 #include "rel_rel.h"
-#include "rel_prop.h" /* for prop_copy() */
+#include "rel_prop.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
 #include "rel_distribute.h"
@@ -25,17 +25,14 @@ compare_str2type(const char *compare_op)
 		type = cmp_equal;
 	} else if (compare_op[0] == '<') {
 		type = cmp_lt;
-		if (compare_op[1] != '\0') {
-			if (compare_op[1] == '>')
-				type = cmp_notequal;
-			else if (compare_op[1] == '=')
-				type = cmp_lte;
-		}
+		if (compare_op[1] == '>')
+			type = cmp_notequal;
+		else if (compare_op[1] == '=')
+			type = cmp_lte;
 	} else if (compare_op[0] == '>') {
 		type = cmp_gt;
-		if (compare_op[1] != '\0')
-			if (compare_op[1] == '=')
-				type = cmp_gte;
+		if (compare_op[1] == '=')
+			type = cmp_gte;
 	}
 	return type;
 }
@@ -1509,11 +1506,9 @@ rel_has_exp(sql_rel *rel, sql_exp *e)
 int
 rel_has_exps(sql_rel *rel, list *exps)
 {
-	node *n;
-
-	if (!exps)
-		return -1;
-	for (n = exps->h; n; n = n->next)
+	if (list_empty(exps))
+		return 0;
+	for (node *n = exps->h; n; n = n->next)
 		if (rel_has_exp(rel, n->data) >= 0)
 			return 0;
 	return -1;
@@ -1522,16 +1517,28 @@ rel_has_exps(sql_rel *rel, list *exps)
 int
 rel_has_all_exps(sql_rel *rel, list *exps)
 {
-	node *n;
-
-	if (!exps)
-		return -1;
-	for (n = exps->h; n; n = n->next)
+	if (list_empty(exps))
+		return 1;
+	for (node *n = exps->h; n; n = n->next)
 		if (rel_has_exp(rel, n->data) < 0)
 			return 0;
 	return 1;
 }
 
+int
+rel_has_cmp_exp(sql_rel *rel, sql_exp *e)
+{
+	if (e->type == e_cmp) {
+		if (e->flag == cmp_or || e->flag == cmp_filter) {
+			return rel_has_all_exps(rel, e->l) && rel_has_all_exps(rel, e->r);
+		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			return rel_has_exp(rel, e->l) == 0 && rel_has_all_exps(rel, e->r);
+		} else {
+			return rel_has_exp(rel, e->l) == 0 && rel_has_exp(rel, e->r) == 0 && (!e->f || rel_has_exp(rel, e->f) == 0);
+		}
+	}
+	return 0;
+}
 
 sql_rel *
 find_rel(list *rels, sql_exp *e)
@@ -1604,6 +1611,20 @@ exp_is_eqjoin(sql_exp *e)
 			return 0;
 	}
 	return -1;
+}
+
+sql_exp *
+exps_find_prop(list *exps, rel_prop kind)
+{
+	if (list_empty(exps))
+		return NULL;
+	for (node *n = exps->h ; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (find_prop(e->p, kind))
+			return e;
+	}
+	return NULL;
 }
 
 static sql_exp *
@@ -1997,7 +2018,7 @@ exps_have_rel_exp( list *exps)
 static sql_rel *
 exps_rel_get_rel(sql_allocator *sa, list *exps )
 {
-	sql_rel *xp = NULL;
+	sql_rel *r = NULL, *xp = NULL;
 
 	if (list_empty(exps))
 		return NULL;
@@ -2005,14 +2026,9 @@ exps_rel_get_rel(sql_allocator *sa, list *exps )
 		sql_exp *e = n->data;
 
 		if (exp_has_rel(e)) {
-			sql_rel *r = exp_rel_get_rel(sa, e);
-
-			if (!r)
+			if (!(r = exp_rel_get_rel(sa, e)))
 				return NULL;
-			if (xp)
-				xp = rel_crossproduct(sa, xp, r, op_join);
-			else
-				xp = r;
+			xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
 		}
 	}
 	return xp;
@@ -2028,26 +2044,41 @@ exp_rel_get_rel(sql_allocator *sa, sql_exp *e)
 	case e_func:
 	case e_aggr:
 		return exps_rel_get_rel(sa, e->l);
-	case e_cmp:
+	case e_cmp: {
+		sql_rel *r = NULL, *xp = NULL;
+
 		if (e->flag == cmp_or || e->flag == cmp_filter) {
 			if (exps_have_rel_exp(e->l))
-				return exps_rel_get_rel(sa, e->l);
-			if (exps_have_rel_exp(e->r))
-				return exps_rel_get_rel(sa, e->r);
+				xp = exps_rel_get_rel(sa, e->l);
+			if (exps_have_rel_exp(e->r)) {
+				if (!(r = exps_rel_get_rel(sa, e->r)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
 			if (exp_has_rel(e->l))
-				return exp_rel_get_rel(sa, e->l);
-			if (exps_have_rel_exp(e->r))
-				return exps_rel_get_rel(sa, e->r);
+				xp = exp_rel_get_rel(sa, e->l);
+			if (exps_have_rel_exp(e->r)) {
+				if (!(r = exps_rel_get_rel(sa, e->r)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
 		} else {
 			if (exp_has_rel(e->l))
-				return exp_rel_get_rel(sa, e->l);
-			if (exp_has_rel(e->r))
-				return exp_rel_get_rel(sa, e->r);
-			if (e->f && exp_has_rel(e->f))
-				return exp_rel_get_rel(sa, e->f);
+				xp = exp_rel_get_rel(sa, e->l);
+			if (exp_has_rel(e->r)) {
+				if (!(r = exp_rel_get_rel(sa, e->r)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
+			if (e->f && exp_has_rel(e->f)) {
+				if (!(r = exp_rel_get_rel(sa, e->f)))
+					return NULL;
+				xp = xp ? rel_crossproduct(sa, xp, r, op_join) : r;
+			}
 		}
-		return NULL;
+		return xp;
+	}
 	case e_convert:
 		return exp_rel_get_rel(sa, e->l);
 	case e_psm:

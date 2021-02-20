@@ -89,6 +89,7 @@ typedef void* monetdbe_database;
 typedef struct {
 	const char *host;
 	int port;
+	const char *database;
 	const char *username;
 	const char *password;
 	const char *lang;
