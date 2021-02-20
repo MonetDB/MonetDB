@@ -2113,4 +2113,9 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
  */
 #define MAXPARAMS	32
 
+/*
+ * String Imprints Development/Testing. TODO: remove the following.
+ */
+
+#include "gdk_strimps.h"
 #endif /* _GDK_H_ */
