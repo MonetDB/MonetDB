@@ -654,10 +654,11 @@ monetdbe_create_uri(const char* host, const int port, const char* database) {
 	const int sl_host = strlen(host);
 	const int sl_max_port = 6; // 2^16-1 < 100 000 = 10^5, i.e. always less then 6 digits.
 	const int sl_database = strlen(database);
+	const int sl_total = sl_protocol + sl_host + 1 /* : */ + sl_max_port + 1 + /* / */ + sl_database ;
 
-	const int sl_total = sl_protocol + sl_host + 1 /*:*/ + sl_max_port + 1 + /*/*/ + sl_database ;
-
-	str uri_buffer = GDKmalloc(sl_total + 1 /*terminator*/);
+	str uri_buffer = GDKmalloc(sl_total + 1 /* terminator */);
+	if (!uri_buffer)
+		return NULL;
 
 	snprintf(uri_buffer, sl_total, "%s%s:%d/%s", protocol, host, port, database);
 
