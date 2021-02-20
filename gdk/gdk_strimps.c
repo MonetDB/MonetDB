@@ -14,9 +14,31 @@
  * contains.
  */
 static size_t
-GDKstrimp_strlen(const char *s)
+GDKstrimp_strlen(const uint8_t *s)
 {
-	return strlen(s);
+	size_t ret = 0;
+	size_t i;
+	int m,n;
+	uint8_t c;
+
+	i = 0;
+	while((c = *(s + i)) != 0) {
+		if (c < 0x80)
+			i++;
+		else {
+			for (n = 0, m=0x40; c & m; n++, m >>= 1)
+				;
+			/* n is now the number of 10xxxxxx bytes that should
+			   follow. */
+			if (n == 0 || n >= 4)
+				/* TODO: handle invalid utf-8 */
+				{}
+			i += n+1;
+		}
+		ret++;
+	}
+
+	return ret;
 }
 
 /* Given a BAT return the number of digrams in it. The observation is
@@ -33,7 +55,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 	// lng t0;
 	BUN i;
 	BATiter bi;
-	char *s;
+	uint8_t *s;
 	// GDKtracer_set_component_level("ALGO", "DEBUG");
 	// struct canditer ci;
 
@@ -44,12 +66,13 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 	bi = bat_iterator(b);
 	*n = 0;
 	for (i = 0; i < b->batCount; i++) {
-		s = (char *)BUNtail(bi, i);
+		s = (uint8_t *)BUNtail(bi, i);
                 *n += GDKstrimp_strlen(s) - 1;
-		// TRC_DEBUG(ALGO, "s["LLFMT"]=%s\n", i, (char *)BUNtail(bi, i));
+		// TRC_DEBUG(ALGO, "s["LLFMT"]=%s\n", i, s);
 	}
 
 	// TRC_DEBUG(ALGO, LLFMT "usec\n", GDKusec() - t0);
+	// GDKtracer_flush_buffer();
 
 	return GDK_SUCCEED;
 }
