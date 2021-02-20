@@ -522,7 +522,7 @@ CROSS JOIN (VALUES (2, ((0.53827864)>>("day"(DATE '1969-12-27'))), CAST(((2)+(-1
 statement error
 SELECT ALL t1.c0 FROM t1, t2 CROSS JOIN ((SELECT 1 FROM t2)
 EXCEPT (SELECT ALL ((CASE 0.1 WHEN 0.2 THEN t2.c2 END)>(greatest(t2.c2, t2.c0))) FROM t2)) AS sub0
-WHERE (3.0) IS NOT NULL; --error
+WHERE (3.0) IS NOT NULL
 
 statement ok
 ROLLBACK

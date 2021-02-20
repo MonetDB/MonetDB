@@ -785,6 +785,11 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 		if (!l)
 			l = bin_first_column(be, left);
 		case_when = stmt_const(be, l, case_when);
+		if (case_when)
+			case_when->cand = isel;
+	}
+	if (!single_value && isel && !case_when->cand) {
+		case_when = stmt_project(be, isel, case_when);
 		case_when->cand = isel;
 	}
 
@@ -811,11 +816,27 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 			return NULL;
 		if (next_cond) {
 			stmt *l = case_when;
-			assert(!es->cand || !l->cand || es->cand == l->cand);
-			if (es->cand && !l->cand)
-				l = stmt_project(be, es->cand, case_when);
-			else if (l->cand && !es->cand)
-				es = stmt_project(be, l->cand, es);
+			if (!single_value) {
+				if (rsel && isel) {
+					assert(l->cand == isel);
+					l = stmt_project(be, rsel, l);
+					l->cand = nsel;
+				}
+
+				if (es->cand && !l->cand) {
+					assert(es->cand == rsel);
+					l = stmt_project(be, es->cand, l);
+					l->cand = es->cand;
+				} else if (nsel && !es->cand) {
+					es = stmt_project(be, nsel, es);
+					es->cand = nsel;
+					if (!l->cand) {
+						l = stmt_project(be, nsel, l);
+						l->cand = nsel;
+					}
+				}
+				assert(l->cand == es->cand);
+			}
 			es = stmt_binop(be, l, es, NULL, cmp);
 		}
 		if (!single_value) {
@@ -2690,7 +2711,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *c, *lcand = NULL;
 	int semijoin_only = 0, l_is_base = 0;
 
-	if (rel->op == op_anti && !list_empty(rel->exps) && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
+	if (rel->op == op_anti && list_length(rel->exps) == 1 && ((sql_exp*)rel->exps->h->data)->flag == mark_notin)
 		return rel2bin_antijoin(be, rel, refs);
 
 	if (rel->l) { /* first construct the left sub relation */

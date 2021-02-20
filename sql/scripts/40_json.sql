@@ -40,22 +40,13 @@ create function json."integer"(js json)
 returns bigint external name json."integer";
 GRANT EXECUTE ON FUNCTION json."integer"(json) TO PUBLIC;
 
--- test string for JSON compliancy
+-- test string for JSON validity
 create function json.isvalid(js string)
 returns bool external name json.isvalid;
 GRANT EXECUTE ON FUNCTION json.isvalid(string) TO PUBLIC;
 
-create function json.isobject(js string)
-returns bool external name json.isobject;
-GRANT EXECUTE ON FUNCTION json.isobject(string) TO PUBLIC;
-
-create function json.isarray(js string)
-returns bool external name json.isarray;
-GRANT EXECUTE ON FUNCTION json.isarray(string) TO PUBLIC;
-
 create function json.isvalid(js json)
-returns bool external name json.isvalid;
-GRANT EXECUTE ON FUNCTION json.isvalid(json) TO PUBLIC;
+returns bool begin return true; end;
 
 create function json.isobject(js json)
 returns bool external name json.isobject;

@@ -76,16 +76,16 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 							ValRecord *x = &getVarConstant(mb, getArg(p, 6)), cst = {.vtype = TYPE_int};
 							switch (x->val.ival) {
 							case JOIN_LT:
-								cst.val.ival = JOIN_GE;
-								break;
-							case JOIN_LE:
 								cst.val.ival = JOIN_GT;
 								break;
+							case JOIN_LE:
+								cst.val.ival = JOIN_GE;
+								break;
 							case JOIN_GT:
-								cst.val.ival = JOIN_LE;
+								cst.val.ival = JOIN_LT;
 								break;
 							case JOIN_GE:
-								cst.val.ival = JOIN_LT;
+								cst.val.ival = JOIN_LE;
 								break;
 							default:
 								cst.val.ival = x->val.ival;

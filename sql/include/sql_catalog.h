@@ -204,7 +204,7 @@ typedef struct sql_base {
 	char *name;
 } sql_base;
 
-#define newFlagSet(x)     ((x & TR_NEW) == TR_NEW)
+#define newFlagSet(x)     (((x) & TR_NEW) == TR_NEW)
 #define removeNewFlag(x)  ((x)->base.flags &= ~TR_NEW)
 #define isNew(x)          (newFlagSet((x)->base.flags))
 
@@ -345,19 +345,19 @@ typedef enum sql_class {
 
 #define has_tz(e,n)		(EC_TEMP_TZ(e))
 #define type_has_tz(t)		has_tz((t)->type->eclass, (t)->type->sqlname)
-#define EC_VARCHAR(e)		(e==EC_CHAR||e==EC_STRING)
-#define EC_INTERVAL(e)		(e==EC_MONTH||e==EC_SEC)
-#define EC_NUMBER(e)		(e==EC_POS||e==EC_NUM||EC_INTERVAL(e)||e==EC_DEC||e==EC_FLT)
-#define EC_EXACTNUM(e)		(e==EC_NUM||e==EC_DEC)
-#define EC_APPNUM(e)		(e==EC_FLT)
-#define EC_COMPUTE(e)		(e==EC_NUM||e==EC_FLT)
-#define EC_BOOLEAN(e)		(e==EC_BIT||e==EC_NUM||e==EC_FLT)
-#define EC_TEMP_TZ(e)		(e==EC_TIME_TZ||e==EC_TIMESTAMP_TZ)
-#define EC_TEMP(e)			(e==EC_TIME||e==EC_DATE||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
-#define EC_TEMP_FRAC(e)		(e==EC_TIME||e==EC_TIMESTAMP||EC_TEMP_TZ(e))
-#define EC_TEMP_NOFRAC(e)	(e==EC_TIME||e==EC_TIMESTAMP)
-#define EC_SCALE(e)			(e==EC_DEC||EC_TEMP_FRAC(e)||e==EC_SEC)
-#define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||e==EC_BIT||EC_TEMP(e))
+#define EC_VARCHAR(e)		((e)==EC_CHAR||(e)==EC_STRING)
+#define EC_INTERVAL(e)		((e)==EC_MONTH||(e)==EC_SEC)
+#define EC_NUMBER(e)		((e)==EC_POS||(e)==EC_NUM||EC_INTERVAL(e)||(e)==EC_DEC||(e)==EC_FLT)
+#define EC_EXACTNUM(e)		((e)==EC_NUM||(e)==EC_DEC)
+#define EC_APPNUM(e)		((e)==EC_FLT)
+#define EC_COMPUTE(e)		((e)==EC_NUM||(e)==EC_FLT)
+#define EC_BOOLEAN(e)		((e)==EC_BIT||(e)==EC_NUM||(e)==EC_FLT)
+#define EC_TEMP_TZ(e)		((e)==EC_TIME_TZ||(e)==EC_TIMESTAMP_TZ)
+#define EC_TEMP(e)			((e)==EC_TIME||(e)==EC_DATE||(e)==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP_FRAC(e)		((e)==EC_TIME||(e)==EC_TIMESTAMP||EC_TEMP_TZ(e))
+#define EC_TEMP_NOFRAC(e)	((e)==EC_TIME||(e)==EC_TIMESTAMP)
+#define EC_SCALE(e)			((e)==EC_DEC||EC_TEMP_FRAC(e)||(e)==EC_SEC)
+#define EC_BACKEND_FIXED(e)	(EC_NUMBER(e)||(e)==EC_BIT||EC_TEMP(e))
 
 typedef struct sql_type {
 	sql_base base;
@@ -465,7 +465,8 @@ typedef enum sql_flang {
 	FUNC_LANG_CPP = 12      /* create .. language CPP */
 } sql_flang;
 
-#define LANG_EXT(l)  (l>FUNC_LANG_SQL)
+#define LANG_EXT(l)  ((l)>FUNC_LANG_SQL)
+#define UDF_LANG(l)  ((l)>=FUNC_LANG_SQL)
 
 typedef struct sql_func {
 	sql_base base;
@@ -533,10 +534,10 @@ typedef enum idx_type {
 	new_idx_types
 } idx_type;
 
-#define hash_index(t) 		(t == hash_idx || t == oph_idx )
-#define idx_has_column(t) 	(hash_index(t) || t == join_idx)
-#define oid_index(t)		(t == join_idx)
-#define non_updatable_index(t) (t == ordered_idx || t == no_idx || !idx_has_column(t))
+#define hash_index(t) 		((t) == hash_idx || (t) == oph_idx)
+#define idx_has_column(t) 	(hash_index(t) || (t) == join_idx)
+#define oid_index(t)		((t) == join_idx)
+#define non_updatable_index(t) ((t) == ordered_idx || (t) == no_idx || !idx_has_column(t))
 
 typedef struct sql_idx {
 	sql_base base;
@@ -626,11 +627,11 @@ typedef enum table_types {
 	tt_replica_table = 6	/* multiple replica of the same table */
 } table_types;
 
-#define TABLE_TYPE_DESCRIPTION(tt,properties)                                                                       \
-(tt == tt_table)?"TABLE":(tt == tt_view)?"VIEW":(tt == tt_merge_table && !properties)?"MERGE TABLE":                \
-(tt == tt_remote)?"REMOTE TABLE":                                                  \
-(tt == tt_merge_table && (properties & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
-(tt == tt_merge_table && (properties & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
+#define TABLE_TYPE_DESCRIPTION(tt, properties)                                                                      \
+((tt) == tt_table)?"TABLE":((tt) == tt_view)?"VIEW":((tt) == tt_merge_table && !(properties))?"MERGE TABLE":                \
+((tt) == tt_remote)?"REMOTE TABLE":                                                  \
+((tt) == tt_merge_table && ((properties) & PARTITION_LIST) == PARTITION_LIST)?"LIST PARTITION TABLE":                   \
+((tt) == tt_merge_table && ((properties) & PARTITION_RANGE) == PARTITION_RANGE)?"RANGE PARTITION TABLE":"REPLICA TABLE"
 
 #define isTable(x)                        ((x)->type==tt_table)
 #define isView(x)                         ((x)->type==tt_view)
