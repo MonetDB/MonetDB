@@ -1368,6 +1368,39 @@ CMDifthen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+
+/*
+ * String imprints dev/testing. TODO: remove.
+ */
+static str
+CMDstrimp_ndigrams(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat bid;
+	BAT *b;
+	size_t n;
+
+	(void)cntxt;
+	(void)mb;
+
+	// return mythrow(MAL, "batcalc.striter", OPERATION_FAILED);
+	bid = *getArgReference_bat(stk, pci, 1);
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "batcalc.ndigrams", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if (!GDKstrimp_ndigrams(b, &n)) {
+		throw(MAL, "batcalc.ndigrams", SQLSTATE(HY002) OPERATION_FAILED);
+	}
+
+	*getArgReference_lng(stk, pci, 0) = n;
+
+	return MAL_SUCCEED;
+}
+
+
+/*
+ * String imprints dev/testing. TODO: end remove.
+ */
+
 #include "mel.h"
 
 static str
@@ -2187,7 +2220,17 @@ static mel_func batcalc_init_funcs[] = {
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),batargany("b1",1),argany("v2",1))),
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),argany("v1",1),batargany("b2",1))),
  pattern("batcalc", "ifthenelse", CMDifthen, false, "If-then-else operation to assemble a conditional result", args(1,4, batargany("",1),batarg("b",bit),batargany("b1",1),batargany("b2",1))),
+
+ /*
+  * String imprints dev/testing. TODO: remove.
+  */
+ pattern("batcalc", "count_digrams", CMDstrimp_ndigrams, false, "count digrams in a string bat", args(1, 2, arg("",lng), batarg("b", str))),
+
+ /*
+  * String imprints dev/testing. TODO: end remove.
+  */
  { .imp=NULL }
+
 };
 #include "mal_import.h"
 #ifdef _MSC_VER

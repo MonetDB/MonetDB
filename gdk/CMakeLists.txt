@@ -78,6 +78,7 @@ target_sources(bat
   gdk_analytic_func.c
   gdk_analytic.h
   gdk_tracer.c gdk_tracer.h
+  gdk_strimps.c gdk_strimps.h
   PUBLIC
   ${gdk_public_headers})
 
