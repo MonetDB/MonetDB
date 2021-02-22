@@ -2885,7 +2885,7 @@ new_table( sql_trans *tr, sql_table *t)
 {
 //	t = find_sql_table_id(tr, t->s, t->base.id); /* could have changed by depending changes */
 	t = find_sql_table(tr, t->s, t->base.name); /* could have changed by depending changes */
-	if (!inTransaction(tr, t))
+	if (!isLocalTemp(t) && !os_obj_intransaction(t->s->tables, tr, &t->base))
 		t = table_dup(tr, t, t->s, NULL);
 	return t;
 }

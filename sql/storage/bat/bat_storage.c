@@ -18,6 +18,8 @@
 #define NR_TABLE_LOCKS 64
 //static MT_Lock table_locks[NR_TABLE_LOCKS]; /* set of locks to protect table changes (claim) */
 
+#define inTransaction(tr,t) (isLocalTemp(t) || os_obj_intransaction(t->s->tables, tr, &t->base))
+
 static int log_update_col( sql_trans *tr, sql_change *c);
 static int log_update_idx( sql_trans *tr, sql_change *c);
 static int log_update_del( sql_trans *tr, sql_change *c);
@@ -303,6 +305,19 @@ merge_segments(segments *segs, sql_trans *tr, ulng commit_ts, ulng oldest)
 		}
 	}
 	return cur;
+}
+
+static int
+segments_in_transaction(sql_trans *tr, sql_table *t)
+{
+	storage *s = ATOMIC_PTR_GET(&t->data);
+	segment *seg = s->segs->h;
+
+	for (; seg ; seg=seg->next) {
+		if (seg->ts == tr->tid)
+			return 1;
+	}
+	return 0;
 }
 
 static int
@@ -1252,13 +1267,14 @@ static void*
 append_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
+	int in_transaction = segments_in_transaction(tr, c->t);
 
 	if ((delta = bind_col_data(tr, c, false)) == NULL)
 		return NULL;
 
 	assert(delta && (!isTempTable(c->t) || delta->cs.ts == tr->tid));
 	if (isTempTable(c->t))
-	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
+	if ((!inTransaction(tr, c->t) && (odelta != delta || !in_transaction || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
 		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 	return make_cookie(sa, tr, delta, c->t, false);
 }
@@ -1299,13 +1315,14 @@ static void*
 append_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
+	int in_transaction = segments_in_transaction(tr, i->t);
 
 	if ((delta = bind_idx_data(tr, i, false)) == NULL)
 		return NULL;
 
 	assert(delta && (!isTempTable(i->t) || delta->cs.ts == tr->tid));
 	if (isTempTable(i->t))
-	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
+	if ((!inTransaction(tr, i->t) && (odelta != delta || !in_transaction || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
 	return make_cookie(sa, tr, delta, i->t, false);
 }
@@ -1325,7 +1342,8 @@ append_idx(sql_trans *tr, sql_idx * i, size_t offset, void *data, int tpe)
 static int
 storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 {
-	int in_transaction = 1;
+	int in_transaction = segments_in_transaction(tr, t);
+
 	/* find segment of rid, split, mark new segment deleted (for tr->tid) */
 	segment *seg = s->segs->h, *p = NULL;//, *os = seg;
 	for (; seg; p = seg, seg = seg->next) {
@@ -1334,21 +1352,18 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 			if (!SEG_VALID_4_DELETE(seg,tr))
 					return LOG_ERR;
 			(void)split_segment(s->segs, seg, p, tr, rid, 1, true);
-				in_transaction = 0;
 			break;
 		}
 	}
 	//local_merge_segments(s->segs, tr);
-	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return LOG_OK;
 }
 
-/* 0/1 or -1 */
 static int
 delete_range(sql_trans *tr, storage *s, size_t start, size_t cnt)
 {
-	int in_transaction = 1;
 	segment *seg = s->segs->h, *p = NULL;//, *os = seg;
 	for (; seg; p = seg, seg = seg->next) {
 		if (seg->start <= start && seg->end > start) {
@@ -1362,23 +1377,23 @@ delete_range(sql_trans *tr, storage *s, size_t start, size_t cnt)
 			} else if (!SEG_VALID_4_DELETE(seg, tr))
 				return LOG_ERR;
 			seg = split_segment(s->segs, seg, p, tr, start, lcnt, true);
-			//if (os != seg)
-				in_transaction = 0;
 			start += lcnt;
 			cnt -= lcnt;
 		}
 		if (start+cnt <= seg->end)
 			break;
 	}
-	return in_transaction;;
+	return LOG_OK;;
 }
 
 static int
 storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 {
+	int in_transaction = segments_in_transaction(tr, t);
+
 	/* update ids */
 	BAT *oi = i;
-	int ok = LOG_OK, in_transaction = 1;
+	int ok = LOG_OK;
 
 	if (i->ttype == TYPE_msk || mask_cand(i))
 		i = BATunmask(i);
@@ -1387,8 +1402,7 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 		if (BATtdense(i)) {
 			size_t start = i->tseqbase;
 			size_t cnt = BATcount(i);
-			in_transaction = delete_range(tr, s, start, cnt);
-			if (in_transaction == LOG_ERR)
+			if (delete_range(tr, s, start, cnt) == LOG_ERR)
 				return LOG_ERR;
 		} else {
 			assert(BATtordered(i));
@@ -1400,10 +1414,8 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 					lcnt++;
 					n++;
 				} else {
-					int lin_transaction = delete_range(tr, s, n-lcnt, lcnt);
-					if (lin_transaction == LOG_ERR)
+					if (delete_range(tr, s, n-lcnt, lcnt) == LOG_ERR)
 						return LOG_ERR;
-					in_transaction &= lin_transaction;
 					lcnt = 0;
 				}
 				if (!lcnt) {
@@ -1412,18 +1424,15 @@ storage_delete_bat(sql_trans *tr, sql_table *t, storage *s, BAT *i)
 				}
 			}
 			if (lcnt) {
-				int lin_transaction = delete_range(tr, s, n-lcnt, lcnt);
-				if (lin_transaction == LOG_ERR)
+				if (delete_range(tr, s, n-lcnt, lcnt) == LOG_ERR)
 					return LOG_ERR;
-				in_transaction &= lin_transaction;
 			}
 		}
 	}
 	//local_merge_segments(s->segs, tr);
-	in_transaction = 0;
 	if (i != oi)
 		bat_destroy(i);
-	if ((!inTransaction(tr, t) && ( !in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return ok;
 }
@@ -2398,17 +2407,16 @@ clear_storage(sql_trans *tr, storage *s)
 static BUN
 clear_del(sql_trans *tr, sql_table *t)
 {
+	int in_transaction = segments_in_transaction(tr, t);
 	storage *bat;
-	int in_transaction = 1;
 
 	if ((bat = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
 	if (!isTempTable(t)) {
-		in_transaction = delete_range(tr, bat, 0, bat->segs->t->end);
-		if (in_transaction == LOG_ERR)
+		if (delete_range(tr, bat, 0, bat->segs->t->end) == LOG_ERR)
 			return LOG_ERR;
 	}
-	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, bat, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	if (isTempTable(t))
 		return clear_storage(tr, bat);
@@ -3032,10 +3040,11 @@ table_claim_space(sql_trans *tr, sql_table *t, size_t cnt)
 static BUN
 claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 {
+	int in_transaction = segments_in_transaction(tr, t);
 	assert(s->segs);
 	ulng oldest = store_oldest(tr->store);
 	BUN slot = 0;
-	int in_transaction = 0, reused = 0;
+	int reused = 0;
 
 	/* naive vacuum approach, iterator through segments, check for large enough deleted segments
 	 * or create new segment at the end */
@@ -3072,7 +3081,6 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (s->segs->t && s->segs->t->ts == tr->tid && !s->segs->t->deleted) {
 			slot = s->segs->t->end;
 			s->segs->t->end += cnt;
-			in_transaction = 1;
 		} else {
 			s->segs->t = new_segment(s->segs->t, tr, cnt);
 			if (!s->segs->h)
@@ -3082,7 +3090,7 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 	}
 
 	/* hard to only add this once per transaction (probably want to change to once per new segment) */
-	if ((!inTransaction(tr, t) && (!in_transaction || isTempTable(t)) && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
+	if ((!inTransaction(tr, t) && !in_transaction && isGlobal(t)) || (!isNew(t) && isLocalTemp(t)))
 		trans_add(tr, &t->base, s, &tc_gc_del, &commit_update_del, isLocalTemp(t)?NULL:&log_update_del);
 	return slot;
 }

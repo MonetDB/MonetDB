@@ -441,7 +441,6 @@ extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
 extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri);
 
-#define inTransaction(tr,t) (isLocalTemp(t) || os_obj_intransaction(t->s->tables, tr, &t->base))
 #define TRANSACTION_ID_BASE	(1ULL<<63)
 
 typedef struct sqlstore {
