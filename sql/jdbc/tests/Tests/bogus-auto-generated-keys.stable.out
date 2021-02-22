@@ -7,7 +7,7 @@ stdout of test 'bogus-auto-generated-keys` in directory 'sql/jdbc/tests` itself:
 
 
 # 19:33:44 >  
-# 19:33:44 >  java nl.cwi.monetdb.client.JdbcClient -h monetdb-nuc2 -p 30491 -d mTests_sql_jdbc_tests -e -f "/home/dinther/dev/dev/MonetDB/sql/jdbc/tests/Tests/bogus-auto-generated-keys.sql"
+# 19:33:44 >  java org.monetdb.client.JdbcClient -h monetdb-nuc2 -p 30491 -d mTests_sql_jdbc_tests -e -f "/home/dinther/dev/dev/MonetDB/sql/jdbc/tests/Tests/bogus-auto-generated-keys.sql"
 # 19:33:44 >  
 
 START TRANSACTION;
