@@ -1675,11 +1675,11 @@ BATsort(BAT **sorted, BAT **order, BAT **groups,
 			b->tsorted = true;
 			b->batDirtydesc = true;
 		}
-		if (b->trevsorted != is_oid_nil(b->tseqbase) || b->batCount <= 1) {
+		if (b->trevsorted != (is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->trevsorted = !b->trevsorted;
 			b->batDirtydesc = true;
 		}
-		if (b->tkey != !is_oid_nil(b->tseqbase)) {
+		if (b->tkey != (!is_oid_nil(b->tseqbase) || b->batCount <= 1)) {
 			b->tkey = !b->tkey;
 			b->batDirtydesc = true;
 		}

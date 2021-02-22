@@ -655,14 +655,9 @@ main(int argc, char *argv[])
 	}
 	host = kv->val;
 
-	if (strncmp(host, "127.0.0.1", strlen("127.0.0.1")) == 0 ||
-		strncmp(host, "0.0.0.0", strlen("0.0.0.0")) == 0) {
-		use_ipv6 = false;
-	} else {
-		use_ipv6 = true;
-	}
+	use_ipv6 = (strcmp(host, "127.0.0.1") != 0 && strcmp(host, "0.0.0.0") != 0);
 
-	if (strncmp(host, "all", strlen("all")) == 0) {
+	if (strcmp(host, "all") == 0) {
 		host = NULL;
 	}
 

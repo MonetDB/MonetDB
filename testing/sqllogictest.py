@@ -57,7 +57,12 @@ class SQLLogic:
     def drop(self):
         self.crs.execute('select name from tables where not system')
         for row in self.crs.fetchall():
-            self.crs.execute('drop table "%s" cascade' % row[0])
+            try:
+                self.crs.execute('drop table "%s" cascade' % row[0].replace('"', '""'))
+            except KeyboardInterrupt:
+                raise
+            except:
+                pass
 
     def exec_statement(self, statement, expectok):
         if skipidx.search(statement) is not None:
@@ -68,6 +73,12 @@ class SQLLogic:
         except pymonetdb.DatabaseError:
             if not expectok:
                 return
+        except KeyboardInterrupt:
+            raise
+        except:
+            type, value, traceback = sys.exc_info()
+            self.query_error(statement, 'unexpected error from pymonetdb', str(value))
+            return
         else:
             if expectok:
                 return
@@ -127,13 +138,26 @@ class SQLLogic:
         except pymonetdb.DatabaseError as e:
             self.query_error(query, 'query failed', e.args[0])
             return
+        except KeyboardInterrupt:
+            raise
+        except:
+            type, value, traceback = sys.exc_info()
+            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            return
         if len(self.crs.description) != len(columns):
             self.query_error(query, 'received {} columns, expected {} columns'.format(len(self.crs.description), len(columns)))
             return
         if self.crs.rowcount * len(columns) != nresult:
             self.query_error(query, 'received {} rows, expected {} rows'.format(self.crs.rowcount, nresult // len(columns)))
             return
-        data = self.crs.fetchall()
+        try:
+            data = self.crs.fetchall()
+        except KeyboardInterrupt:
+            raise
+        except:
+            type, value, traceback = sys.exc_info()
+            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            return
         if self.res is not None:
             for row in data:
                 sep=''

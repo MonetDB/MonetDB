@@ -1982,17 +1982,26 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
 		for(node *n=rel->exps->h; n; n=n->next) {
-			sql_exp *e = n->data;
+			sql_exp *e = n->data, *id;
 
 			if (is_compare(e->type) && e->flag == cmp_or) {
 				/* check for exp_is_rel */
 				if (exps_have_rel_exp(e->l) || exps_have_rel_exp(e->r)) {
 					/* rewrite into setop */
+					list_remove_node(rel->exps, n); /* remove or expression */
+					if (is_select(rel->op) && list_empty(rel->exps) && !(rel_is_ref(rel))) { /* remove empty select if that's the case */
+						sql_rel *l = rel->l;
+						rel->l = NULL;
+						rel_destroy(rel);
+						rel = l;
+					}
+					rel = rel_add_identity(v->sql, rel, &id); /* identity function needed */
+					(void) id;
+					assert(id);
+
 					sql_rel *l = rel;
 					sql_rel *r = rel_dup(rel);
 					list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
-
-					list_remove_node(rel->exps, n); /* remove or expression */
 
 					l = rel_select(v->sql->sa, l, NULL);
 					l->exps = e->l;
@@ -2562,7 +2571,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					set_processed(rsq);
 				}
 				if (rsq)
-					(void)rewrite_inner(v->sql, rel, rsq, is_cnt?op_left:op_join);
+					(void)rewrite_inner(v->sql, rel, rsq, ((!quantifier && depth > 0)||is_cnt)?op_left:op_join);
 
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 					return NULL;

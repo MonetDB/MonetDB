@@ -16,7 +16,7 @@
 #define CATALOG_MAR2018 52201	/* first in Jun2016 */
 #define CATALOG_AUG2018 52202	/* first in Aug2018 */
 #define CATALOG_NOV2019 52203	/* first in Apr2019 */
-#define CATALOG_JUN2020 52204
+#define CATALOG_JUN2020 52204	/* first in Jun2020 */
 
 logger *bat_logger = NULL;
 

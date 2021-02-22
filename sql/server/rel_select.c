@@ -1541,9 +1541,10 @@ rel_select_push_exp_down(mvc *sql, sql_rel *rel, sql_exp *e, sql_exp *ls, sql_ex
 {
 	if (!is_join(rel->op) && !is_select(rel->op))
 		return rel_select(sql->sa, rel, e);
-	if (rs->card <= CARD_ATOM && (exp_is_atom(rs) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
-	   (!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
-		if ((ls->card == rs->card && (!rs2 || ls->card == rs2->card)) || rel->processed)  /* bin compare op */
+	if ((rs->card <= CARD_ATOM || (rs2 && ls->card <= CARD_ATOM)) &&
+		(exp_is_atom(rs) || (rs2 && exp_is_atom(ls)) || exp_has_freevar(sql, rs) || exp_has_freevar(sql, ls)) &&
+		(!rs2 || (rs2->card <= CARD_ATOM && (exp_is_atom(rs2) || exp_has_freevar(sql, rs2))))) {
+		if ((ls->card == rs->card && (!rs2 || ls->card == rs2->card || rs->card == rs2->card)) || rel->processed)  /* bin compare op */
 			return rel_select(sql->sa, rel, e);
 
 		return push_select_exp(sql, rel, e, ls, L, f);

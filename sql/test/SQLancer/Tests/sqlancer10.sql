@@ -67,5 +67,14 @@ INSERT INTO t1(c0) VALUES(9), (1), (3), (2), (5);
 SELECT 1 FROM v4 JOIN (SELECT 2) AS sub0 ON COALESCE(v4.vc0, v4.vc0 BETWEEN v4.vc0 AND v4.vc0);
 ROLLBACK;
 
+START TRANSACTION;
+CREATE TABLE "t0" ("c0" TINYINT NOT NULL,"c1" TINYINT NOT NULL,"c3" BOOLEAN,"c4" INT,"c5" BIGINT);
+CREATE TABLE "t1" ("c0" INT,"c3" VARCHAR(32));
+INSERT INTO "t1" VALUES (NULL, ''),(NULL, 'E5E0'),(NULL, '396B34AC'),(NULL, '68AB5D04'),(NULL, ''),(0, NULL),(NULL, 'D5E5'),(NULL, '4E');
+
+select case t0.c1 = any(select 2 from t1) when false then 'a' when true then 'b' end from t0;
+	-- empty
+ROLLBACK;
+
 select case 3 <> any(select 4) when true then 2 when false then 8 end;
 	-- 2

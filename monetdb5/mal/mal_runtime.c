@@ -52,7 +52,7 @@ clearUSRstats(size_t idx)
  * If USRstats is full, extend it.
  */
 static
-size_t 
+size_t
 getUSRstatsIdx(MalBlkPtr mb, oid user)
 {
 	size_t i = 0;
@@ -289,6 +289,7 @@ void
 runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 {
 	size_t i;
+	bool found = false;
 
 	MT_lock_set(&mal_delayLock);
 	i=qtail;
@@ -309,12 +310,36 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 			updateUserStats(cntxt, mb, QRYqueue[i].ticks, QRYqueue[i].start, QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
 			cntxt->idle = time(0);
+			found = true;
 			break;
 		}
 		i++;
 		if ( i >= qsize)
 			i = 0;
 	}
+
+	// every query that has been started has an entry in QRYqueue.  If this
+	// finished query is not found, we want to print some informational
+	// messages for debugging.
+	if (!found) {
+		TRC_INFO_IF(MAL_SERVER) {
+			TRC_INFO_ENDIF(MAL_SERVER, "runtimeProfilerFinish: stk (%p) not found in QRYqueue", stk);
+			i = qtail;
+			while (i != qhead){
+				// print some info. of queries not "finished"
+				if (strcmp(QRYqueue[i].status, "finished") != 0) {
+					TRC_INFO_ENDIF(MAL_SERVER, "QRYqueue[%zu]: stk(%p), tag("OIDFMT"), username(%s), start(%ld), status(%s), query(%s)",
+								   i, QRYqueue[i].stk, QRYqueue[i].tag,
+								   QRYqueue[i].username, QRYqueue[i].start,
+								   QRYqueue[i].status, QRYqueue[i].query);
+				}
+				i++;
+				if ( i >= qsize)
+					i = 0;
+			}
+		}
+	}
+
 	MT_lock_unset(&mal_delayLock);
 }
 
