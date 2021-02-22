@@ -471,8 +471,7 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 		}
 	}
 
-	InstrPtr *r = NULL;
-	r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
+	InstrPtr *r = (InstrPtr*) GDKmalloc(sizeof(InstrPtr)* p->retc);
 	if(!r)
 		return -1;
 	for(k=0; k < p->retc; k++) {
@@ -511,13 +510,12 @@ mat_apply(MalBlkPtr mb, InstrPtr p, matlist_t *ml, int nrmats)
 		}
 	}
 	for(k=0; k < p->retc; k++) {
-		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, matvar[0]),  -1, -1, 1)) {
+		if(mat_add_var(ml, r[k], NULL, getArg(r[k], 0), mat_type(ml->v, matvar[0]),  -1, -1, 0)) {
 			for(l=0; l < k; l++)
 				freeInstruction(r[l]);
 			GDKfree(r);
 			return -1;
 		}
-		pushInstruction(mb, r[k]);
 	}
 	GDKfree(r);
 	return 0;
