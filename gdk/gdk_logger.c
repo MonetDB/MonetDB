@@ -1207,6 +1207,13 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 	}
 	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
 		fclose(fp);
+		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+		lg->catalog_id = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
+		if (lg->catalog_bid == NULL || lg->catalog_id == NULL || lg->dcatalog == NULL) {
+			GDKerror("cannot create catalog bats");
+			return GDK_FAIL;
+		}
 		if (old_logger_load(lg, fn, logdir) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
@@ -1721,7 +1728,9 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		 * require a logical reference we also add a logical
 		 * reference for the persistent bats */
 		BUN p, q;
-		BAT *b = BATdescriptor(catalog_bid), *o, *d;
+		BAT *b, *o, *d;
+
+		assert(!lg->inmemory);
 
 		/* the catalog exists, and so should the log file */
 		if (fp == NULL && !LOG_DISABLED(lg)) {
@@ -1735,41 +1744,43 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 				 fn, fn, lg->dir);
 			goto error;
 		}
-		if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) { /* closes the file */
+		if (fp != NULL && check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) { /* closes the file */
 			fp = NULL;
 			goto error;
 		}
 		readlogs = 1;
 		fp = NULL;
 
-		assert(!lg->inmemory);
-		if (b == NULL) {
-			GDKerror("inconsistent database, catalog does not exist");
-			goto error;
-		}
+		if (lg->catalog_bid == NULL && lg->catalog_id == NULL && lg->dcatalog == NULL) {
+			b = BATdescriptor(catalog_bid);
+			if (b == NULL) {
+				GDKerror("inconsistent database, catalog does not exist");
+				goto error;
+			}
 
-		strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
-		catalog_id = BBPindex(bak);
-		o = BATdescriptor(catalog_id);
-		if (o == NULL) {
-			BBPunfix(b->batCacheid);
-			GDKerror("inconsistent database, catalog_id does not exist");
-			goto error;
-		}
+			strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
+			catalog_id = BBPindex(bak);
+			o = BATdescriptor(catalog_id);
+			if (o == NULL) {
+				BBPunfix(b->batCacheid);
+				GDKerror("inconsistent database, catalog_id does not exist");
+				goto error;
+			}
 
-		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
-		dcatalog = BBPindex(bak);
-		d = BATdescriptor(dcatalog);
-		if (d == NULL) {
-			GDKerror("cannot create dcatalog bat");
-			BBPunfix(b->batCacheid);
-			BBPunfix(o->batCacheid);
-			goto error;
-		}
+			strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
+			dcatalog = BBPindex(bak);
+			d = BATdescriptor(dcatalog);
+			if (d == NULL) {
+				GDKerror("cannot create dcatalog bat");
+				BBPunfix(b->batCacheid);
+				BBPunfix(o->batCacheid);
+				goto error;
+			}
 
-		lg->catalog_bid = b;
-		lg->catalog_id = o;
-		lg->dcatalog = d;
+			lg->catalog_bid = b;
+			lg->catalog_id = o;
+			lg->dcatalog = d;
+		}
 		BBPretain(lg->catalog_bid->batCacheid);
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);

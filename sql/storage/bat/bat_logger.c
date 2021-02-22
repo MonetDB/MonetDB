@@ -1354,12 +1354,6 @@ upgrade(old_logger *lg)
 	} bats[3];
 	BAT *mapold = COLnew(0, TYPE_int, 256, TRANSIENT);
 	BAT *mapnew = COLnew(0, TYPE_int, 256, TRANSIENT);
-	BAT *catalog_bid = NULL;
-	BAT *catalog_id = NULL;
-	BAT *dcatalog = NULL;
-	int schid = 0;
-	int tabid = 0;
-	int parid = 0;
 
 	bats[0].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_name", 0, 0));
 	bats[0].idbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_id", 0, 0));
@@ -1380,7 +1374,9 @@ upgrade(old_logger *lg)
 			goto bailout;
 		if (i > 0 && bats[i].parbat == NULL)
 			goto bailout;
+		/* create a candidate list from the deleted rows bat */
 		if (BATcount(bats[i].cands) == 0) {
+			/* no deleted rows -> no candidate list */
 			bat_destroy(bats[i].cands);
 			bats[i].cands = NULL;
 		} else {
@@ -1395,27 +1391,30 @@ upgrade(old_logger *lg)
 		}
 	}
 
+	int schid, tabid, parid;
+	schid = tabid = parid = 0;	/* restrict search to parent object */
 	for (int i = 0; tables[i].schema != NULL; i++) {
-		int lookup;
-		const char *name;
+		int lookup;				/* which system table to look the name up in */
+		const char *name;		/* the name to look up */
 		if (tables[i].table == NULL) {
 			/* it's a schema */
 			name = tables[i].schema;
 			lookup = 0;
-			parid = 0;
+			parid = 0;			/* no parent object */
 		} else if (tables[i].column == NULL) {
 			/* it's a table */
 			name = tables[i].table;
 			lookup = 1;
-			parid = schid;
+			parid = schid;		/* parent object is last schema */
 		} else {
 			/* it's a column */
 			name = tables[i].column;
 			lookup = 2;
-			parid = tabid;
+			parid = tabid;		/* parent object is last table */
 		}
 		BAT *cand = bats[lookup].cands;
 		if (bats[lookup].parbat != NULL) {
+			/* restrict search to parent object */
 			cand = BATselect(bats[lookup].parbat, cand, &parid, NULL, true, true, false);
 			if (cand == NULL)
 				goto bailout;
@@ -1442,15 +1441,12 @@ upgrade(old_logger *lg)
 	}
 
 	if (BATcount(mapold) == 0) {
+		/* skip unnecessary work if there is no need for mapping */
 		bat_destroy(mapold);
 		bat_destroy(mapnew);
 		mapold = NULL;
 		mapnew = NULL;
 	}
-
-	catalog_bid = COLnew(0, TYPE_int, 0, PERSISTENT);
-	catalog_id = COLnew(0, TYPE_int, 0, PERSISTENT);
-	dcatalog = COLnew(0, TYPE_oid, 0, PERSISTENT);
 
 	const char *delname;
 	delname = NULL;
@@ -1462,7 +1458,7 @@ upgrade(old_logger *lg)
 		BAT *b = temp_descriptor(old_logger_find_bat(lg, tables[i].fullname, 0, 0));
 		if (b == NULL)
 			continue;
-		BAT *orig = b;
+		BAT *orig = NULL;
 		if (tables[i].hasids && mapold) {
 			BAT *b1, *b2;
 			BAT *cands = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
@@ -1496,14 +1492,15 @@ upgrade(old_logger *lg)
 				bat_destroy(b1);
 				bat_destroy(b2);
 			} else {
-				BAT *b3 = COLcopy(b, b->ttype, true, PERSISTENT);
-				b = b3;
+				orig = b;
+				b = COLcopy(orig, orig->ttype, true, PERSISTENT);
 				if (b == NULL) {
 					bat_destroy(orig);
 					bat_destroy(b1);
 					bat_destroy(b2);
 					goto bailout;
 				}
+				BAT *b3;
 				b3 = BATproject(b2, mapnew);
 				bat_destroy(b2);
 				rc = BATreplace(b, b1, b3, false);
@@ -1518,14 +1515,13 @@ upgrade(old_logger *lg)
 			/* now b contains the updated values for the column in tables[i] */
 		}
 		/* here, b is either the original, unchanged bat or the updated one */
-		if (BUNappend(catalog_bid, &b->batCacheid, false) != GDK_SUCCEED ||
-			BUNappend(catalog_id, &tables[i].newid, false) != GDK_SUCCEED) {
-			if (b != orig)
-				bat_destroy(orig);
+		if (BUNappend(lg->lg->catalog_bid, &b->batCacheid, false) != GDK_SUCCEED ||
+			BUNappend(lg->lg->catalog_id, &tables[i].newid, false) != GDK_SUCCEED) {
+			bat_destroy(orig);	/* may be NULL */
 			bat_destroy(b);
 			goto bailout;
 		}
-		if (b != orig) {
+		if (orig != NULL) {
 			BBPretain(b->batCacheid);
 			BBPrelease(orig->batCacheid);
 			BATmode(b, false);
@@ -1556,8 +1552,8 @@ upgrade(old_logger *lg)
 		bat_destroy(cands);
 		goto bailout;
 	}
-	if (BATappend(catalog_id, b, NULL, false) != GDK_SUCCEED ||
-		BATappend(catalog_bid, lg->catalog_bid, cands, false) != GDK_SUCCEED) {
+	if (BATappend(lg->lg->catalog_id, b, NULL, false) != GDK_SUCCEED ||
+		BATappend(lg->lg->catalog_bid, lg->catalog_bid, cands, false) != GDK_SUCCEED) {
 		bat_destroy(cands);
 		bat_destroy(b);
 		goto bailout;
@@ -1576,9 +1572,6 @@ upgrade(old_logger *lg)
 		bat_destroy(bats[i].parbat);
 		bat_destroy(bats[i].cands);
 	}
-	bat_destroy(catalog_bid);
-	bat_destroy(catalog_id);
-	bat_destroy(dcatalog);
 	return rc;
 }
 
@@ -1588,7 +1581,8 @@ bl_postversion(void *Store, void *lg)
 	sqlstore *store = Store;
 	(void)store;
 	(void)lg;
-	upgrade(lg);
+	if (store->catalog_version < 52300 && upgrade(lg) != GDK_SUCCEED)
+		return GDK_FAIL;
 #ifdef CATALOG_JUN2020
 	if (store->catalog_version <= CATALOG_JUN2020) {
 		int id;
