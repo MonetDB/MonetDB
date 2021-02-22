@@ -730,8 +730,9 @@ get_valid_object_name(sql_trans *tr, objectversion *ov)
 			return ov;
 		else {
 			lock_reader(ov->os);
-			ov = ov->name_based_older;
+			objectversion* name_based_older = ov->name_based_older;
 			unlock_reader(ov->os);
+			ov = name_based_older;
 		}
 	}
 	return ov;
@@ -745,8 +746,9 @@ get_valid_object_id(sql_trans *tr, objectversion *ov)
 			return ov;
 		else {
 			lock_reader(ov->os);
-			ov = ov->id_based_older;
+			objectversion* id_based_older = ov->id_based_older;
 			unlock_reader(ov->os);
+			ov = id_based_older;
 		}
 	}
 	return ov;
