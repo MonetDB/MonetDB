@@ -3001,7 +3001,9 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		mask = HASHmask(ci.ncand);
 		if (mask < ((BUN) 1 << 16))
 			mask = (BUN) 1 << 16;
-		if (snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
+		if ((hs.heaplink.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    (hs.heapbckt.farmid = BBPselectfarm(TRANSIENT, b->ttype, hashheap)) < 0 ||
+		    snprintf(hs.heaplink.filename, sizeof(hs.heaplink.filename), "%s.thshunil%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heaplink.filename) ||
 		    snprintf(hs.heapbckt.filename, sizeof(hs.heapbckt.filename), "%s.thshunib%x", nme, (unsigned) THRgettid()) >= (int) sizeof(hs.heapbckt.filename) ||
 		    HASHnew(&hs, b->ttype, BUNlast(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
