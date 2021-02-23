@@ -17,6 +17,7 @@
 int
 main(int argc, char** argv)
 {
+	(void) argc;
 	char* err = NULL;
 	monetdbe_database mdbe = NULL;
 	monetdbe_result* result = NULL;
