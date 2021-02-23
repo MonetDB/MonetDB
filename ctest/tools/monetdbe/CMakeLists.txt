@@ -92,5 +92,6 @@ endif()
 
 if (TESTING)
   install(TARGETS
-  example_proxy)
+  example_proxy
+  DESTINATION ${CMAKE_INSTALL_BINDIR}
 endif()
