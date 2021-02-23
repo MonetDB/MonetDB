@@ -203,7 +203,6 @@ atom_from_valptr( sql_allocator *sa, sql_subtype *tpe, ValPtr pt)
 	} else {
 		VALcopy(&a->data, pt);
 	}
-	a->isnull = VALisnil(&a->data);
 	return a;
 }
 
@@ -221,11 +220,11 @@ rel_basetable_get_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			set_has_no_nil(e);
  
 		if (EC_NUMBER(c->type.type->eclass) || EC_VARCHAR(c->type.type->eclass) || EC_TEMP_NOFRAC(c->type.type->eclass) || c->type.type->eclass == EC_DATE) {
-			if ((max = mvc_has_max_value(sql, c))) {
+			if ((max = mvc_has_max_value(sql, c)) && !VALisnil(max)) {
 				prop *p = e->p = prop_create(sql->sa, PROP_MAX, e->p);
 				p->value = atom_from_valptr(sql->sa, &c->type, max);
 			}
-			if ((min = mvc_has_min_value(sql, c))) {
+			if ((min = mvc_has_min_value(sql, c)) && !VALisnil(min)) {
 				prop *p = e->p = prop_create(sql->sa, PROP_MIN, e->p);
 				p->value = atom_from_valptr(sql->sa, &c->type, min);
 			}
@@ -243,8 +242,7 @@ rel_setop_get_statistics(mvc *sql, sql_rel *rel, list *lexps, list *rexps, sql_e
 
 	/* for the intersection, if both expresssions don't overlap, it can be pruned */
 	if (is_inter(rel->op) && exp_is_not_null(le) && exp_is_not_null(re) &&
-		lval_min && rval_min && lval_max && rval_max && !lval_min->isnull && !rval_min->isnull && !lval_max->isnull && !rval_max->isnull &&
-		(atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0))
+		lval_min && rval_min && lval_max && rval_max && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0))
 		return true;
 
 	if (lval_min && rval_min) {
@@ -375,14 +373,12 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			for (node *n = vals->h ? vals->h->next : NULL ; n ; n = n->next) {
 				sql_exp *ee = n->data;
 
-				if (max) {
+				if (min && max) {
 					if ((lval = find_prop_and_get(ee->p, PROP_MAX))) {
 						max = atom_cmp(lval, max) > 0 ? lval : max;
 					} else {
 						max = NULL;
 					}
-				}
-				if (min) {
 					if ((lval = find_prop_and_get(ee->p, PROP_MIN))) {
 						min = atom_cmp(min, lval) > 0 ? lval : min;
 					} else {
@@ -391,10 +387,10 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 
-			if (max)
+			if (min && max) {
 				set_property(sql, e, PROP_MAX, max);
-			if (min)
 				set_property(sql, e, PROP_MIN, min);
+			}
 		}
 	} break;
 	case e_cmp:
@@ -415,6 +411,19 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	case e_psm:
 		break;
 	}
+
+#ifndef NDEBUG
+	{
+		/* min and max cannot be NULL and min must be <= than max */
+		atom *min = find_prop_and_get(e->p, PROP_MIN), *max = find_prop_and_get(e->p, PROP_MAX);
+
+		(void) min;
+		(void) max;
+		assert(!min || !min->isnull);
+		assert(!max || !max->isnull);
+		assert(!min || !max || atom_cmp(min, max) <= 0);
+	}
+#endif
 	return e;
 }
 
@@ -433,51 +442,59 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 			if (fe && !(e->flag & CMP_SYMMETRIC)) {
 				atom *fval_min = find_prop_and_get(fe->p, PROP_MIN), *fval_max = find_prop_and_get(fe->p, PROP_MAX);
 				comp_type lower = range2lcompare(e->flag), higher = range2rcompare(e->flag);
-				int not_int1 = rval_min && lval_max && !rval_min->isnull && !lval_max->isnull && /* the middle and left intervals don't overlap */
+				int not_int1 = rval_min && lval_max && /* the middle and left intervals don't overlap */
 					(!e->anti && (lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0)),
-					not_int2 = lval_min && fval_max && !lval_min->isnull && !fval_max->isnull && /* the middle and right intervals don't overlap */
+					not_int2 = lval_min && fval_max && /* the middle and right intervals don't overlap */
 					(!e->anti && (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0)),
-					not_int3 = rval_min && fval_max && !rval_min->isnull && !fval_max->isnull && /* the left interval is after the right one */
+					not_int3 = rval_min && fval_max && /* the left interval is after the right one */
 					(!e->anti && (atom_cmp(rval_min, fval_max) > 0));
 
 				always_false |= not_int1 || not_int2 || not_int3;
 				/* for anti the middle must be before the left or after the right or the right after the left, for the other the middle must be always between the left and right intervals */
 				always_true |= exp_is_not_null(le) && exp_is_not_null(re) && exp_is_not_null(fe) &&
-					lval_min && lval_max && rval_min && rval_max && fval_min && fval_max && !lval_min->isnull && !lval_max->isnull && !rval_min->isnull && !rval_max->isnull && !fval_min->isnull && !fval_max->isnull &&
+					lval_min && lval_max && rval_min && rval_max && fval_min && fval_max &&
 					(e->anti ? ((lower == cmp_gte ? atom_cmp(rval_min, lval_max) > 0 : atom_cmp(rval_min, lval_max) >= 0) || (higher == cmp_lte ? atom_cmp(lval_min, fval_max) > 0 : atom_cmp(lval_min, fval_max) >= 0) || atom_cmp(rval_min, fval_max) > 0) :
 					((lower == cmp_gte ? atom_cmp(lval_min, rval_max) >= 0 : atom_cmp(lval_min, rval_max) > 0) && (higher == cmp_lte ? atom_cmp(fval_min, lval_max) >= 0 : atom_cmp(fval_min, lval_max) > 0)));
 			} else {
 				switch (e->flag) {
 				case cmp_equal:
-					if (lval_min && lval_max && rval_min && rval_max && !lval_min->isnull && !lval_max->isnull && !rval_min->isnull && !rval_max->isnull)
-						always_false |= (!e->anti && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0)) || (e->anti && atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0);
-					if (is_semantics(e))
-						always_false |= is_semantics(e) ?
-							e->anti ? (exp_is_null(le) && exp_is_null(re)) || (exp_is_not_null(le) && exp_is_not_null(re)) : (exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)) :
-							e->anti ? exp_is_not_null(le) && exp_is_not_null(re) : (exp_is_null(le) && exp_is_null(re)) || (exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re));
+					if (lval_min && lval_max && rval_min && rval_max)
+						always_false |= e->anti ? (atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0) : (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0);
+					if (is_semantics(e)) { /* prune *= NULL cases */
+						always_false |= e->anti ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
+						always_true |= e->anti ? ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))) : (exp_is_null(le) && exp_is_null(re));
+					}
+					break;
+				case cmp_notequal:
+					if (lval_min && lval_max && rval_min && rval_max)
+						always_true |= e->anti ? (atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0) : (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0);
+					if (is_semantics(e)) {
+						always_true |= e->anti ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
+						always_false |= e->anti ? ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))) : (exp_is_null(le) && exp_is_null(re));
+					}
 					break;
 				case cmp_gt:
-					if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					if (lval_max && rval_min)
 						always_false |= e->anti ? atom_cmp(lval_max, rval_min) > 0 : atom_cmp(lval_max, rval_min) <= 0;
-					if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					if (lval_min && rval_max)
 						always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_min, rval_max) <= 0 : atom_cmp(lval_min, rval_max) > 0);
 					break;
 				case cmp_gte:
-					if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					if (lval_max && rval_min)
 						always_false |= e->anti ? atom_cmp(lval_max, rval_min) >= 0 : atom_cmp(lval_max, rval_min) < 0;
-					if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					if (lval_min && rval_max)
 						always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_min, rval_max) < 0 : atom_cmp(lval_min, rval_max) >= 0);
 					break;
 				case cmp_lt:
-					if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					if (lval_min && rval_max)
 						always_false |= e->anti ? atom_cmp(lval_min, rval_max) < 0 : atom_cmp(lval_min, rval_max) >= 0;
-					if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					if (lval_max && rval_min)
 						always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_max, rval_min) >= 0 : atom_cmp(lval_max, rval_min) < 0);
 					break;
 				case cmp_lte:
-					if (lval_min && rval_max && !lval_min->isnull && !rval_max->isnull)
+					if (lval_min && rval_max)
 						always_false |= e->anti ? atom_cmp(lval_min, rval_max) <= 0 : atom_cmp(lval_min, rval_max) > 0;
-					if (lval_max && rval_min && !lval_max->isnull && !rval_min->isnull)
+					if (lval_max && rval_min)
 						always_true |= exp_is_not_null(le) && exp_is_not_null(re) && (e->anti ? atom_cmp(lval_max, rval_min) > 0 : atom_cmp(lval_max, rval_min) <= 0);
 					break;
 				default: /* Maybe later I can do cmp_in and cmp_notin */
@@ -486,7 +503,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 			}
 			assert(!always_false || !always_true);
 			if (always_false || always_true) {
-				sql_exp *ne = exp_atom_bool(v->sql->sa, always_true);
+				sql_exp *ne = exp_atom_bool(v->sql->sa, always_true /* if always_true set then true else false */);
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, ne, e);
 				n->data = ne;
