@@ -719,14 +719,20 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	if (p == NULL) {
 		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL);
+		freeSymbol(c->curprg);
+		c->curprg= NULL;
 		return -2;
 	}
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
+		freeSymbol(c->curprg);
+		c->curprg= NULL;
 		return -2;
 	}
 	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
 	stk->keepAlive = TRUE;
-	if ( (mdbe->msg = runMAL(c, mb, 0, stk)) != MAL_SUCCEED ) {
+	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
+		freeSymbol(c->curprg);
+		c->curprg= NULL;
 		return -2;
 	}
 
@@ -734,6 +740,9 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	garbageCollector(c, mb, stk, TRUE);
 	freeStack(stk);
+
+	freeSymbol(c->curprg);
+	c->curprg= NULL;
 
 	return 0;
 }
@@ -1275,22 +1284,20 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 	r->argc= r->retc=0;
 	pushInstruction(mb, r);
 
-	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
-		return mdbe->msg;
-	}
+	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED )
+		goto finalize;
 
 	if ( (mdbe->msg = runMAL(c, mb, 0, NULL)) != MAL_SUCCEED )
-		return mdbe->msg;
+		goto finalize;
 
 	if (result) {
-		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED) {
-			return mdbe->msg;
-		}
+		if ((mdbe->msg = monetdbe_get_results(result, mdbe)) != MAL_SUCCEED)
+			goto finalize;
 
 		mvc* m = NULL;
 		backend * be = NULL;
 		if ((mdbe->msg = getSQLContext(c, NULL, &m, &be)) != MAL_SUCCEED)
-			return mdbe->msg;
+			goto finalize;
 
 		if (m->emode & m_prepare)
 			((monetdbe_result_internal*) *result)->type = Q_PREPARE;
@@ -1302,6 +1309,8 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 			*affected_rows = be->rowcnt;
 	}
 
+finalize:
+	freeSymbol(prg);
 	return mdbe->msg;
 }
 
