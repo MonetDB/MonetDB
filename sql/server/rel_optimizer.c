@@ -19,8 +19,6 @@
 #include "sql_mvc.h"
 #include "gdk_time.h"
 
-static sql_rel *rel_dce(mvc *sql, sql_rel *rel);
-
 static sql_subfunc *find_func(mvc *sql, char *name, list *exps);
 
 static sql_column *
@@ -733,6 +731,12 @@ order_joins(visitor *v, list *rels, list *exps)
 			} else
 				rel_select_add_exp(v->sql->sa, top, e);
 		}
+		if (list_empty(top->exps)) { /* empty select */
+			sql_rel *l = top->l;
+			top->l = NULL;
+			rel_destroy(top);
+			top = l;
+		}
 	}
 	return top;
 }
@@ -893,8 +897,6 @@ reorder_join(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_join_order(visitor *v, sql_rel *rel)
 {
-	visitor ev = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
-
 	if (!rel)
 		return rel;
 
@@ -941,7 +943,6 @@ rel_join_order(visitor *v, sql_rel *rel)
 		break;
 	}
 	if (is_join(rel->op) && rel->exps && !rel_is_ref(rel)) {
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 		if (rel && !rel_is_ref(rel))
 			rel = reorder_join(v, rel);
 	} else if (is_join(rel->op)) {
@@ -1391,8 +1392,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 	/* check for foreign key join */
 	if (!r->exps || list_length(r->exps) != 1)
 		return r;
-	je = r->exps->h->data;
-	if (je && !find_prop(je->p, PROP_JOINIDX))
+	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
 		return r;
 	/* je->l == foreign expression, je->r == primary expression */
 	if (rel_find_exp(r->l, je->l)) {
@@ -1451,8 +1451,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 	/* check for foreign key join */
 	if (!r->exps || list_length(r->exps) != 1)
 		return r;
-	je = r->exps->h->data;
-	if (je && !find_prop(je->p, PROP_JOINIDX))
+	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
 		return r;
 	/* je->l == foreign expression, je->r == primary expression */
 	if (rel_find_exp(r->l, je->l)) {
@@ -3349,6 +3348,65 @@ merge_notequal(mvc *sql, list *exps, int *changes)
 	return nexps;
 }
 
+/* optimize (a = b) or (a is null and b is null) -> a = b with null semantics */
+static sql_exp *
+try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
+{
+	if (list_length(l1) == 1) {
+		bool valid = true, first_is_null_found = false, second_is_null_found = false;
+		sql_exp *cmp = l1->h->data;
+		sql_exp *first = cmp->l, *second = cmp->r;
+
+		if (is_compare(cmp->type) && !is_anti(cmp) && !cmp->f && cmp->flag == cmp_equal) {
+			for(node *n = l2->h ; n && valid; n = n->next) {
+				sql_exp *e = n->data;
+
+				if (is_compare(e->type) && e->flag == cmp_equal && !e->f &&
+					!is_anti(e) && is_semantics(e) && exp_is_null(e->r)) {
+					if (exp_match_exp(first, e->l))
+						first_is_null_found = true;
+					else if (exp_match_exp(second, e->l))
+						second_is_null_found = true;
+					else
+						valid = false;
+				} else {
+					valid = false;
+				}
+			}
+			if (valid && first_is_null_found && second_is_null_found) {
+				sql_exp *res = exp_compare(sql->sa, first, second, cmp->flag);
+				set_semantics(res);
+				if (exp_name(or))
+					exp_prop_alias(sql->sa, res, or);
+				return res;
+			}
+		}
+	}
+	return or;
+}
+
+static list *
+merge_cmp_or_null(mvc *sql, list *exps, int *changes)
+{
+	for (node *n = exps->h; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (is_compare(e->type) && e->flag == cmp_or && !is_anti(e)) {
+			sql_exp *ne = try_rewrite_equal_or_is_null(sql, e, e->l, e->r);
+			if (ne != e) {
+				(*changes)++;
+				n->data = ne;
+			}
+			ne = try_rewrite_equal_or_is_null(sql, e, e->r, e->l);
+			if (ne != e) {
+				(*changes)++;
+				n->data = ne;
+			}
+		}
+	}
+	return exps;
+}
+
 static sql_rel *
 rel_select_cse(visitor *v, sql_rel *rel)
 {
@@ -3357,6 +3415,9 @@ rel_select_cse(visitor *v, sql_rel *rel)
 
 	if (is_select(rel->op) && rel->exps)
 		rel->exps = merge_notequal(v->sql, rel->exps, &v->changes); /* x <> 1 and x <> 2 => x not in (1, 2)*/
+
+	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps)
+		rel->exps = merge_cmp_or_null(v->sql, rel->exps, &v->changes); /* (a = b) or (a is null and b is null) -> a = b with null semantics */
 
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && rel->exps) {
 		node *n;
@@ -4115,8 +4176,6 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
  */
-
-/* TODO push select expressions in outer joins down */
 static sql_rel *
 rel_push_select_down(visitor *v, sql_rel *rel)
 {
@@ -4190,10 +4249,11 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	/* push select through join */
 	if (is_select(rel->op) && r && is_join(r->op) && !(rel_is_ref(r))) {
-		sql_rel *jl = r->l;
-		sql_rel *jr = r->r;
+		sql_rel *jl = r->l, *oldjl = jl;
+		sql_rel *jr = r->r, *oldjr = jr;
 		int left = r->op == op_join || r->op == op_left;
 		int right = r->op == op_join || r->op == op_right;
+		int pushed_left = 0, pushed_right = 0;
 
 		if (r->op == op_full || is_single(r))
 			return rel;
@@ -4215,11 +4275,13 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				ne = exp_push_down(v->sql, e, jl, jl);
 			if (ne && ne != e) {
 				done = 1;
+				pushed_left = 1;
 				rel_select_add_exp(v->sql->sa, jl, ne);
 			} else if (right) {
 				ne = exp_push_down(v->sql, e, jr, jr);
 				if (ne && ne != e) {
 					done = 1;
+					pushed_right = 1;
 					rel_select_add_exp(v->sql->sa, jr, ne);
 				}
 			}
@@ -4227,6 +4289,10 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				append(rel->exps, e);
 			v->changes += done;
 		}
+		if (!pushed_left) /* revert to previous relations if there were no changes */
+			r->l = oldjl;
+		if (!pushed_right)
+			r->r = oldjr;
 	}
 
 	/* merge select and cross product ? */
@@ -4251,15 +4317,15 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	if (is_select(rel->op) && r && r->op == op_project && !(rel_is_ref(r))){
 		list *exps = rel->exps;
-		sql_rel *pl;
+		sql_rel *pl = r->l, *oldpl = pl;
+		int oldchanges = v->changes;
 		/* we cannot push through rank (row_number etc) functions or
 		   projects with distinct */
-		if (!r->l || project_unsafe(r,1))
+		if (!pl || project_unsafe(r,1))
 			return rel;
 
 		/* here we need to fix aliases */
 		rel->exps = new_exp_list(v->sql->sa);
-		pl = r->l;
 		/* introduce selects under the project (if needed) */
 		set_processed(pl);
 		if (!is_select(pl->op) || rel_is_ref(pl))
@@ -4283,6 +4349,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 				list_append(rel->exps, e);
 			}
 		}
+		if (v->changes == oldchanges)
+			r->l = oldpl;
 		return rel;
 	}
 	return rel;
@@ -4658,7 +4726,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 static sql_rel *
 rel_join_push_exps_down(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) && !is_outerjoin(rel->op)) || is_semi(rel->op)) {
+	if (is_innerjoin(rel->op) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r;
 		list *jexps = NULL, *lexps = NULL, *rexps = NULL;
 		node *n;
@@ -4719,7 +4787,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps;
-		sql_exp *je = !list_empty(exps)?exps->h->data:NULL;
+		sql_exp *je = exps_find_prop(exps, PROP_JOINIDX);
 
 		if (!l || !r || need_distinct(l) || need_distinct(r) || rel_is_ref(l) || rel_is_ref(r))
 			return rel;
@@ -4730,10 +4798,10 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 
 		/* both sides only if we have a join index */
 		if (!l || !r ||(is_union(l->op) && is_union(r->op) &&
-			je && !find_prop(je->p, PROP_JOINIDX) && /* FKEY JOIN */
+			!je && /* FKEY JOIN */
 			!rel_is_join_on_pkey(rel))) /* aligned PKEY JOIN */
 			return rel;
-		if (is_semi(rel->op) && is_union(l->op) && je && !find_prop(je->p, PROP_JOINIDX))
+		if (is_semi(rel->op) && is_union(l->op) && !je)
 			return rel;
 
 		if ((is_union(l->op) && !need_distinct(l) && !is_single(l)) && !is_union(r->op)){
@@ -4764,7 +4832,7 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 			v->changes++;
 			return rel_inplace_setop(v->sql, rel, nl, nr, op_union, rel_projections(v->sql, rel, NULL, 1, 1));
 		} else if (is_union(l->op) && !need_distinct(l) && !is_single(l) &&
-			   is_union(r->op) && !need_distinct(r) && !is_single(r)) {
+			   is_union(r->op) && !need_distinct(r) && !is_single(r) && je) {
 			sql_rel *nl, *nr;
 			sql_rel *ll = rel_dup(l->l), *lr = rel_dup(l->r);
 			sql_rel *rl = rel_dup(r->l), *rr = rel_dup(r->r);
@@ -7300,6 +7368,24 @@ static sql_exp *
 rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	(void)depth;
+	if (is_func(e->type) && list_length(e->l) == 3 && is_ifthenelse_func((sql_subfunc*)e->f)) {
+		list *args = e->l;
+		sql_exp *ie = args->h->data;
+
+		if (exp_is_true(ie)) { /* ifthenelse(true, x, y) -> x */
+			sql_exp *res = args->h->next->data;
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, res, e);
+			v->changes++;
+			return res;
+		} else if (exp_is_false(ie) || exp_is_null(ie)) { /* ifthenelse(false or null, x, y) -> y */
+			sql_exp *res = args->h->next->next->data;
+			if (exp_name(e))
+				exp_prop_alias(v->sql->sa, res, e);
+			v->changes++;
+			return res;
+		}
+	}
 	if (is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) {
 		if (is_compare(e->type) && is_semantics(e) && (e->flag == cmp_equal || e->flag == cmp_notequal) && exp_is_null(e->r)) {
 			/* simplify 'is null' predicates on constants */
@@ -7452,86 +7538,6 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 			}
 		}
-	}
-	return e;
-}
-
-static sql_exp *
-rel_simplify_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
-{
-	(void) depth;
-	if (is_project(rel->op)) {
-		if (is_func(e->type) && list_length(e->l) == 3 && is_ifthenelse_func((sql_subfunc*)e->f)) {
-			list *args = e->l;
-			sql_exp *ie = args->h->data;
-
-			if (exp_is_true(ie)) { /* ifthenelse(true, x, y) -> x */
-				sql_exp *res = args->h->next->data;
-				if (exp_name(e))
-					exp_prop_alias(v->sql->sa, res, e);
-				v->changes++;
-				return res;
-			} else if (exp_is_false(ie) || exp_is_null(ie)) { /* ifthenelse(false or null, x, y) -> y */
-				sql_exp *res = args->h->next->next->data;
-				if (exp_name(e))
-					exp_prop_alias(v->sql->sa, res, e);
-				v->changes++;
-				return res;
-			}
-		}
-	}
-	return e;
-}
-
-/* optimize (a = b) or (a is null and b is null) -> a = b with null semantics */
-static sql_exp *
-try_rewrite_equal_or_is_null(mvc *sql, sql_exp *or, list *l1, list *l2)
-{
-	if (list_length(l1) == 1) {
-		bool valid = true, first_is_null_found = false, second_is_null_found = false;
-		sql_exp *cmp = l1->h->data;
-		sql_exp *first = cmp->l, *second = cmp->r;
-
-		if (is_compare(cmp->type) && !is_anti(cmp) && !cmp->f && cmp->flag == cmp_equal) {
-			for(node *n = l2->h ; n && valid; n = n->next) {
-				sql_exp *e = n->data;
-
-				if (is_compare(e->type) && e->flag == cmp_equal && !e->f &&
-					!is_anti(e) && is_semantics(e) && exp_is_null(e->r)) {
-					if (exp_match_exp(first, e->l))
-						first_is_null_found = true;
-					else if (exp_match_exp(second, e->l))
-						second_is_null_found = true;
-					else
-						valid = false;
-				} else {
-					valid = false;
-				}
-			}
-			if (valid && first_is_null_found && second_is_null_found) {
-				sql_exp *res = exp_compare(sql->sa, first, second, cmp->flag);
-				set_semantics(res);
-				if (exp_name(or))
-					exp_prop_alias(sql->sa, res, or);
-				return res;
-			}
-		}
-	}
-	return or;
-}
-
-static sql_exp *
-rel_merge_cmp_or_null(visitor *v, sql_rel *rel, sql_exp *e, int depth)
-{
-	(void) rel;
-	(void) depth;
-	if (is_compare(e->type) && e->flag == cmp_or && !is_anti(e)) {
-		sql_exp *ne = try_rewrite_equal_or_is_null(v->sql, e, e->l, e->r);
-		if (ne != e)
-			return ne;
-		ne = try_rewrite_equal_or_is_null(v->sql, e, e->r, e->l);
-		if (ne != e)
-			return ne;
 	}
 	return e;
 }
@@ -8428,14 +8434,6 @@ rel_split_outerjoin(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-/* rewrite sqltype into backend types */
-static sql_rel *
-rel_rewrite_types(visitor *v, sql_rel *rel)
-{
-	(void)v;
-	return rel;
-}
-
 static sql_exp *
 exp_indexcol(mvc *sql, sql_exp *e, const char *tname, const char *cname, int de, bit unique)
 {
@@ -9307,6 +9305,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			ev = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
+	int changes = 0;
 
 	TRC_DEBUG_IF(SQL_REWRITER) {
 		int i;
@@ -9333,21 +9332,16 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		if (level <= 0) {
 			if (value_based_opt)
 				rel = rel_visitor_bottomup(&v, rel, &rel_simplify_math);
-			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_aggregate_on_unique_values);
-			rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
+			if (gp.cnt[op_groupby])
+				rel = rel_visitor_bottomup(&v, rel, &rel_distinct_aggregate_on_unique_values);
+			if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti])
+				rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
 			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_project2groupby);
 		}
 	}
 
-	if ((gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
-		 gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && level <= 1)
-		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
-
-	if ((gp.cnt[op_project] || gp.cnt[op_groupby] ||
-		 gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except]) && level <= 1)
-		if (value_based_opt)
-			rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_ifthenelse, false);
+	if (level <= 1 && value_based_opt)
+		rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
 
 	/* join's/crossproducts between a relation and a constant (row).
 	 * could be rewritten
@@ -9363,7 +9357,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		gp.cnt[op_semi] || gp.cnt[op_anti] ||
 		gp.cnt[op_select]) {
 
-		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_cmp_or_null, false);
 		rel = rel_visitor_bottomup(&v, rel, &rel_find_range);
 		if (value_based_opt) {
 			rel = rel_project_reduce_casts(&v, rel);
@@ -9382,8 +9375,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_project])
 		rel = rel_visitor_bottomup(&v, rel, &rel_project_cse);
 
-	rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_types);
-
 	if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(&v, rel, &rel_split_outerjoin);
 
@@ -9401,12 +9392,14 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
 
-	if (gp.cnt[op_select]) {
-		if (gp.cnt[op_union]) {
+	if (gp.cnt[op_union]) {
+		rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
+		if (gp.cnt[op_select]) {
+			changes = v.changes;
 			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_union);
-			rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
+			if (v.changes > changes)
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 		}
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_groupby]) {
@@ -9420,30 +9413,37 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(&v, rel);
 
-		rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
-		rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
+		if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && gp.cnt[op_select])
+			rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
+		if (gp.cnt[op_join])
+			rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
-		rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
-		/* rel_join_order may introduce empty selects */
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
-
-		if (level <= 0)
+		if (gp.cnt[op_union])
+			rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
+		if (level <= 0 && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
 	}
 
 	/* Important -> Re-write semijoins after rel_join_order */
-	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) && gp.cnt[op_groupby]) {
-		rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
+	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left] || gp.cnt[op_right]) && gp.cnt[op_groupby]) {
+		if (gp.cnt[op_join])
+			rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
 		if (level <= 0) {
-			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
-			rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
+			changes = v.changes;
+			if (gp.cnt[op_select])
+				rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
+			if (v.changes > changes)
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+			if (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left]) {
+				changes = v.changes;
+				/* push_join_down introduces semijoins */
+				/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
+				rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
+				if (v.changes > changes)
+					rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_semijoin);
+			}
 		}
-
-		/* push_join_down introduces semijoins */
-		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_semijoin);
 	}
 
 	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
@@ -9455,16 +9455,19 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		if (level == 0) /* for now count optimizer changes just for first iteration */
 			v.changes += ev.changes;
 		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
-		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_antijoin);
+		if (gp.cnt[op_anti] && gp.cnt[op_union])
+			rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_antijoin);
 		if (level <= 0)
 			rel = rel_visitor_topdown(&v, rel, &rel_semijoin_use_fk);
 	}
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
 	   because pushing down select expressions makes rel_join_order more difficult */
-	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
+	if (gp.cnt[op_select] && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left] || gp.cnt[op_right])) {
+		changes = v.changes;
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (v.changes > changes)
+			rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
 	}
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
@@ -9476,10 +9479,10 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_select])
 		rel = rel_visitor_bottomup(&v, rel, &rel_select_order);
 
-	if (gp.cnt[op_select] || gp.cnt[op_join])
+	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
 		rel = rel_visitor_bottomup(&v, rel, &rel_use_index);
 
-	if (gp.cnt[op_project])
+	if (gp.cnt[op_project] && gp.cnt[op_union])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_project_down_union);
 
 	if (v.storage_based_opt && level <= 0) { /* storage statistics related optimizations */
@@ -9502,14 +9505,19 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 	    gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
 		rel = rel_visitor_bottomup(&v, rel, &rel_push_func_down);
-		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-		rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		if (gp.cnt[op_select]) {
+			changes = v.changes;
+			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
+			if (v.changes > changes)
+				rel = rel_visitor_bottomup(&ev, rel, &rel_remove_empty_select);
+		}
 	}
 
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_topn_and_sample_down);
 
-	rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
+	if (gp.has_mergetable)
+		rel = rel_visitor_topdown(&v, rel, &rel_merge_table_rewrite);
 	if (level <= 0 && mvc_debug_on(sql,8))
 		rel = rel_visitor_topdown(&v, rel, &rel_add_dicts);
 

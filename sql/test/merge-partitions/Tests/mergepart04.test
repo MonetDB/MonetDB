@@ -18,6 +18,9 @@ SELECT COUNT(*) from value_partitions
 ----
 3
 
+statement error
+INSERT INTO anothertest VALUES (4, 'wrong')
+
 statement ok
 ROLLBACK
 
