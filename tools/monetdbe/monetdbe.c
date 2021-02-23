@@ -650,11 +650,11 @@ static inline str
 monetdbe_create_uri(const char* host, const int port, const char* database) {
 	const char* protocol = "mapi:monetdb://";
 
-	const int sl_protocol = strlen(protocol);
-	const int sl_host = strlen(host);
-	const int sl_max_port = 6; // 2^16-1 < 100 000 = 10^5, i.e. always less then 6 digits.
-	const int sl_database = strlen(database);
-	const int sl_total = sl_protocol + sl_host + 1 /* : */ + sl_max_port + 1 + /* / */ + sl_database ;
+	const size_t sl_protocol = strlen(protocol);
+	const size_t sl_host = strlen(host);
+	const size_t sl_max_port = 6; // 2^16-1 < 100 000 = 10^5, i.e. always less then 6 digits.
+	const size_t sl_database = strlen(database);
+	const size_t sl_total = sl_protocol + sl_host + 1 /* : */ + sl_max_port + 1 + /* / */ + sl_database;
 
 	str uri_buffer = GDKmalloc(sl_total + 1 /* terminator */);
 	if (!uri_buffer)
