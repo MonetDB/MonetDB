@@ -337,6 +337,75 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+/*
+ * String imprints dev/testing. TODO: remove.
+ */
+static str
+CMDstrimp_ndigrams(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat bid;
+	BAT *b;
+	size_t n;
+
+	(void)cntxt;
+	(void)mb;
+
+	// return mythrow(MAL, "batcalc.striter", OPERATION_FAILED);
+	bid = *getArgReference_bat(stk, pci, 1);
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "batcalc.ndigrams", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if (!GDKstrimp_ndigrams(b, &n)) {
+		throw(MAL, "batcalc.ndigrams", SQLSTATE(HY002) OPERATION_FAILED);
+	}
+
+	*getArgReference_lng(stk, pci, 0) = n;
+
+	return MAL_SUCCEED;
+}
+
+static str
+CMDstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat bid;
+	BAT *b, *ob;
+	size_t i;
+	uint64_t hist[STRIMP_HISTSIZE];
+	uint16_t count;
+
+	(void)cntxt;
+	(void)mb;
+
+	bid = *getArgReference_bat(stk, pci, 2);
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "batcalc.ndigrams", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if (!GDKstrimp_makehistogram(b, hist, STRIMP_HISTSIZE, &count)) {
+		throw(MAL, "batcalc.ndigrams", SQLSTATE(HY002) OPERATION_FAILED);
+	}
+
+	ob = COLnew(0, TYPE_lng, STRIMP_HISTSIZE, TRANSIENT);
+	if (ob == NULL) {
+		throw(MAL, "strimp.makehist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	for (i=0; i < STRIMP_HISTSIZE; i++) {
+		if (BUNappend(ob, hist + i, false) != GDK_SUCCEED)
+			throw(MAL, "strimp.makehist", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+
+	*getArgReference_bat(stk, pci, 0) = count;
+	// *getArgReference_bat(stk, pci, 1) = ob->batCacheid;
+
+	// BBPkeepref(ob->batCacheid);
+	return MAL_SUCCEED;
+}
+
+/*
+ * String imprints dev/testing. TODO: end remove.
+ */
+
+
 #include "mel.h"
 mel_func batExtensions_init_funcs[] = {
  pattern("bat", "new", CMDBATnew, false, "", args(1,2, batargany("",1),argany("tt",1))),
@@ -365,6 +434,17 @@ mel_func batExtensions_init_funcs[] = {
 #endif
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),varargany("ins",1))),
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
+
+  /*
+  * String imprints dev/testing. TODO: remove.
+  */
+ pattern("bat", "count_digrams", CMDstrimp_ndigrams, false, "count digrams in a string bat", args(1, 2, arg("",lng), batarg("b", str))),
+ //pattern("batcalc", "make_histogam", CMDstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2, 3, arg("", sht), batarg("", lng), batarg("b", str))),
+ pattern("bat", "make_histogam", CMDstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(1, 2, arg("", sht), batarg("b", str))),
+ /*
+  * String imprints dev/testing. TODO: end remove.
+  */
+
  { .imp=NULL }
 };
 #include "mal_import.h"
