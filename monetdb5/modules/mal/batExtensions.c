@@ -371,7 +371,7 @@ CMDstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *ob;
 	size_t i;
 	uint64_t hist[STRIMP_HISTSIZE];
-	uint16_t count;
+	size_t count;
 
 	(void)cntxt;
 	(void)mb;
@@ -394,10 +394,10 @@ CMDstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "bat.strimpHistogram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	*getArgReference_bat(stk, pci, 0) = count;
-	// *getArgReference_bat(stk, pci, 1) = ob->batCacheid;
+	*getArgReference_lng(stk, pci, 0) = count;
+	*getArgReference_bat(stk, pci, 1) = ob->batCacheid;
 
-	// BBPkeepref(ob->batCacheid);
+	BBPkeepref(ob->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -433,7 +433,7 @@ mel_func batExtensions_init_funcs[] = {
 
  /* String imprints */
  pattern("bat", "strimpNDigrams", CMDstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
- pattern("bat", "strimpHistogam", CMDstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(1,2,arg("",lng), batarg("b",str))),
+ pattern("bat", "strimpHistogram", CMDstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
  //pattern("batcalc", "make_histogam", CMDstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2, 3, arg("", sht), batarg("", lng), batarg("b", str))),
  { .imp=NULL }
 };
