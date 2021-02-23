@@ -407,22 +407,6 @@ objectversion_destroy(sqlstore *store, objectset* os, objectversion *ov)
 	_DELETE(ov);
 }
 
-static inline objectversion*
-get_name_based_older_locked(objectversion* ov) {
-	lock_reader(ov->os);
-	objectversion* name_based_older = ov->name_based_older;
-	unlock_reader(ov->os);
-	return name_based_older;
-}
-
-static inline objectversion*
-get_id_based_older_locked(objectversion* ov) {
-	lock_reader(ov->os);
-	objectversion* id_based_older = ov->id_based_older;
-	unlock_reader(ov->os);
-	return id_based_older;
-}
-
 static void
 _os_rollback(objectversion *ov, sqlstore *store)
 {
@@ -442,7 +426,9 @@ _os_rollback(objectversion *ov, sqlstore *store)
 	 * We have to use the readers-writer lock here,
 	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
 	 */
-	objectversion* name_based_older = get_name_based_older_locked(ov);
+	lock_reader(ov->os);
+	objectversion* name_based_older = ov->name_based_older;
+	unlock_reader(ov->os);
 
 	if (name_based_older && !((state_older= os_atmc_get_state(name_based_older)) & rollbacked)) {
 		if (ov->ts != name_based_older->ts) {
@@ -471,7 +457,9 @@ _os_rollback(objectversion *ov, sqlstore *store)
 	 * We have to use the readers-writer lock here,
 	 * since the pointer containing the adress of the older objectversion might be concurrently overwritten if the older itself hass just been put in the under_destruction state .
 	 */
-	objectversion* id_based_older = get_id_based_older_locked(ov);
+	lock_reader(ov->os);
+	objectversion* id_based_older = ov->id_based_older;
+	unlock_reader(ov->os);
 	if (id_based_older && !((state_older= os_atmc_get_state(id_based_older)) & rollbacked)) {
 		if (ov->ts != id_based_older->ts) {
 			// older is last committed state or belongs to parent transaction.
@@ -740,8 +728,12 @@ get_valid_object_name(sql_trans *tr, objectversion *ov)
 	while(ov) {
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts)) || ov->ts < tr->ts)
 			return ov;
-		else
-			ov = get_name_based_older_locked(ov);
+		else {
+			lock_reader(ov->os);
+			objectversion* name_based_older = ov->name_based_older;
+			unlock_reader(ov->os);
+			ov = name_based_older;
+		}
 	}
 	return ov;
 }
@@ -752,8 +744,12 @@ get_valid_object_id(sql_trans *tr, objectversion *ov)
 	while(ov) {
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts))  || ov->ts < tr->ts)
 			return ov;
-		else
-			ov = get_id_based_older_locked(ov);
+		else {
+			lock_reader(ov->os);
+			objectversion* id_based_older = ov->id_based_older;
+			unlock_reader(ov->os);
+			ov = id_based_older;
+		}
 	}
 	return ov;
 }

@@ -19,6 +19,8 @@
 
 typedef struct global_props {
 	int cnt[ddl_maxops];
+	uint8_t
+		has_mergetable:1;
 } global_props;
 
 extern sql_exp *rewrite_simplify_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth);
