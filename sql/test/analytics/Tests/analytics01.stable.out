@@ -1452,6 +1452,51 @@ stdout of test 'analytics01` in directory 'sql/test/analytics` itself:
 [ 1	]
 [ 1	]
 [ NULL	]
+#select row_number() over () from analytics;
+% sys.%3 # table_name
+% %3 # name
+% int # type
+% 2 # length
+[ 1	]
+[ 2	]
+[ 3	]
+[ 4	]
+[ 5	]
+[ 6	]
+[ 7	]
+[ 8	]
+[ 9	]
+[ 10	]
+#select rank() over () from analytics;
+% sys.%3 # table_name
+% %3 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+#select dense_rank() over () from analytics;
+% sys.%3 # table_name
+% %3 # name
+% int # type
+% 1 # length
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
+[ 1	]
 #select percent_rank() over () from analytics;
 % sys.%3 # table_name
 % %3 # name

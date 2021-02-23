@@ -117,6 +117,9 @@ select lead(bb) over (partition by bb order by bb desc) from analytics;
 select lead(bb) over (order by bb) from analytics;
 select lead(bb) over (order by bb desc) from analytics;
 
+select row_number() over () from analytics;
+select rank() over () from analytics;
+select dense_rank() over () from analytics;
 select percent_rank() over () from analytics;
 select cume_dist() over () from analytics;
 select ntile(1) over () from analytics;
