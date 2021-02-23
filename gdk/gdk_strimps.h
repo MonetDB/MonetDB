@@ -17,6 +17,6 @@
 #define STRIMP_HISTSIZE 256*256
 
 gdk_export gdk_return GDKstrimp_ndigrams(BAT *b, size_t *n);
-gdk_export gdk_return GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, uint16_t *count);
+gdk_export gdk_return GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *count);
 
 #endif /* _GDK_STRIMPS_H_ */

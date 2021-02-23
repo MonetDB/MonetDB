@@ -85,7 +85,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 #define pairToIndex(b1, b2) (b1)<<8 | (b2)
 
 gdk_return
-GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, uint16_t *count)
+GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *count)
 {
 	size_t hi;
 	BUN i;
