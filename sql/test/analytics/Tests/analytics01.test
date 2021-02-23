@@ -1337,6 +1337,48 @@ select lead(bb) over (order by bb desc) from analytics
 3
 NULL
 
+query I nosort
+select row_number() over () from analytics
+----
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+
+query I nosort
+select rank() over () from analytics
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
+query I nosort
+select dense_rank() over () from analytics
+----
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+
 query R rowsort
 select percent_rank() over () from analytics
 ----

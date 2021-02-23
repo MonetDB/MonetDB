@@ -3837,8 +3837,7 @@ rel_case(sql_query *query, sql_rel **rel, symbol *opt_cond, dlist *when_search_l
 		append(args, result);
 	}
 	assert(res);
-	if (res)
-		list_append(args, res);
+	list_append(args, res);
 	list *types = sa_list(sql->sa);
 	if (!opt_cond_exp)
 		types = append(sa_list(sql->sa), condtype);
