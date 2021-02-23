@@ -1,0 +1,58 @@
+#CREATE VIEW onboard_people AS
+#SELECT * FROM (
+#   SELECT 'craftsmen' AS type, craftsmen.* FROM craftsmen
+#   UNION ALL
+#   SELECT 'impotenten' AS type, impotenten.* FROM impotenten
+#   UNION ALL
+#   SELECT 'passengers' AS type, passengers.* FROM passengers
+#   UNION ALL
+#   SELECT 'seafarers' AS type, seafarers.* FROM seafarers
+#   UNION ALL
+#   SELECT 'soldiers' AS type, soldiers.* FROM soldiers
+#   UNION ALL
+#   SELECT 'total' AS type, total.* FROM total
+#) AS onboard_people_table;
+#SELECT type, COUNT(*) AS total FROM onboard_people GROUP BY type ORDER BY type;
+% .onboard_people,	. # table_name
+% type,	total # name
+% char,	bigint # type
+% 10,	4 # length
+[ "craftsmen",	2349	]
+[ "impotenten",	938	]
+[ "passengers",	2813	]
+[ "seafarers",	4468	]
+[ "soldiers",	4177	]
+[ "total",	2454	]
+#select count(*) from impotenten;
+% .%1 # table_name
+% %1 # name
+% bigint # type
+% 3 # length
+[ 938	]
+#SELECT COUNT(*) FROM voyages WHERE particulars LIKE '%_recked%';
+% voc.%1 # table_name
+% %1 # name
+% bigint # type
+% 3 # length
+[ 358	]
+#SELECT chamber, CAST(AVG(invoice) AS integer) AS average
+#FROM invoices
+#WHERE invoice IS NOT NULL
+#GROUP BY chamber
+#ORDER BY average DESC;
+% voc.invoices,	voc. # table_name
+% chamber,	average # name
+% char,	int # type
+% 1,	6 # length
+[ "A",	282997	]
+[ "Z",	259301	]
+[ "H",	150182	]
+[ "R",	149628	]
+[ "D",	149523	]
+[ "E",	149518	]
+[ NULL,	83309	]
+#CREATE VIEW extended_onboard AS
+#SELECT number, number_sup, trip, trip_sup, onboard_at_departure, death_at_cape, 
+#   left_at_cape, onboard_at_cape, death_during_voyage, onboard_at_arrival,
+#   death_during_voyage - left_at_cape AS death_at_arrival 
+#FROM onboard_people;
