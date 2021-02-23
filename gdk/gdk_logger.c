@@ -95,13 +95,13 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
 
-static void
+static inline void
 logger_lock(logger *lg)
 {
 	MT_lock_set(&lg->lock);
 }
 
-static void
+static inline void
 logger_unlock(logger *lg)
 {
 	MT_lock_unset(&lg->lock);
@@ -897,8 +897,7 @@ logger_create_types_file(logger *lg, const char *filename)
 static gdk_return
 logger_open_output(logger *lg)
 {
-	int len;
-	char id[BUFSIZ];
+	char id[32];
 	char *filename;
 
 	if (LOG_DISABLED(lg)) {
@@ -907,8 +906,7 @@ logger_open_output(logger *lg)
 			lg->id--;
 		return GDK_SUCCEED;
 	}
-	len = snprintf(id, sizeof(id), LLFMT, lg->id);
-	if (len == -1 || len >= BUFSIZ) {
+	if (snprintf(id, sizeof(id), LLFMT, lg->id) >= (int) sizeof(id)) {
 		TRC_CRITICAL(GDK, "filename is too large\n");
 		return GDK_FAIL;
 	}
@@ -1223,6 +1221,18 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
 			return GDK_FAIL;
 		}
+		/* give the catalog bats names so we can find them
+		 * next time */
+		char bak[IDLENGTH];
+		if (strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL) >= sizeof(bak) ||
+		    BBPrename(lg->catalog_bid->batCacheid, bak) < 0 ||
+		    strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL) >= sizeof(bak) ||
+		    BBPrename(lg->catalog_id->batCacheid, bak) < 0 ||
+		    strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL) >= sizeof(bak) ||
+		    BBPrename(lg->dcatalog->batCacheid, bak) < 0) {
+			return GDK_FAIL;
+		}
+
 		if (logger_create_types_file(lg, filename) != GDK_SUCCEED)
 			return GDK_FAIL;
 		return GDK_SUCCEED;
@@ -1265,23 +1275,18 @@ bm_tids(BAT *b, BAT *d)
 static gdk_return
 logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 {
-	int len;
-	char bak[BUFSIZ];
+	char bak[IDLENGTH];
 
 	if (BATmode(old, true) != GDK_SUCCEED) {
-		GDKerror("Logger_new: cannot convert old %s to transient", name);
+		GDKerror("cannot convert old %s to transient", name);
 		return GDK_FAIL;
 	}
-	len = snprintf(bak, sizeof(bak), "tmp_%o", (unsigned) old->batCacheid);
-	if (len == -1 || len >= BUFSIZ) {
-		GDKerror("Logger_new: filename is too large");
+	if (strconcat_len(bak, sizeof(bak), fn, "_", name, NULL) >= sizeof(bak)) {
+		GDKerror("name %s_%s too long\n", fn, name);
 		return GDK_FAIL;
 	}
-	if (BBPrename(old->batCacheid, bak) != 0) {
-		return GDK_FAIL;
-	}
-	strconcat_len(bak, sizeof(bak), fn, "_", name, NULL);
-	if (BBPrename(new->batCacheid, bak) != 0) {
+	if (BBPrename(old->batCacheid, NULL) != 0 ||
+	    BBPrename(new->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -2065,10 +2070,8 @@ logger_flush(logger *lg, ulng ts)
 			break;
 		if (!lg->input_log) {
 			char *filename;
-			char id[BUFSIZ];
-			int len = snprintf(id, sizeof(id), LLFMT, lg->saved_id+1);
-
-			if (len == -1 || len >= BUFSIZ) {
+			char id[32];
+			if (snprintf(id, sizeof(id), LLFMT, lg->saved_id+1) >= (int) sizeof(id)) {
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
