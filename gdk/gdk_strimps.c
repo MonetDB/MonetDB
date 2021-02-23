@@ -76,3 +76,41 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 
 	return GDK_SUCCEED;
 }
+
+/* The isIgnored is a bit suspect in terms of unicode. There are
+ * non-ASCII codepoints that are considered spaces, for example the
+ * codepoints in the range U+2000-U+200f.
+ */
+#define isIgnored(x) isspace((x)) || isdigit((x))
+#define pairToIndex(b1, b2) (b1)<<8 | (b2)
+
+gdk_return
+GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, uint16_t *count)
+{
+	size_t hi;
+	BUN i;
+	BATiter bi;
+	uint8_t *ptr, *s;
+	assert(b->ttype == TYPE_str);
+
+	for(hi = 0; hi < hist_size; hi++)
+		hist[hi] = 0;
+
+	bi = bat_iterator(b);
+	*count = 0;
+	for(i = 0; i < b->batCount; i++) {
+		s = (uint8_t *)BUNtail(bi, i);
+		for(ptr = s; *(ptr + 1) != 0; ptr++) {
+			if (isIgnored(*ptr)) /* skip the current pair and the next at the end of the loop */
+				ptr++;
+			else {
+				hi = pairToIndex(*(ptr), *(ptr+1));
+				assert(hi < hist_size);
+				if (hist[hi] == 0)
+					(*count)++;
+				hist[hi]++;
+			}
+		}
+	}
+	return GDK_SUCCEED;
+}
