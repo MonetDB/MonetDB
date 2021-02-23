@@ -9611,12 +9611,11 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 				rel = rel_visitor_bottomup(&v, rel, &rel_simplify_math);
 			if (gp.cnt[op_groupby])
 				rel = rel_visitor_bottomup(&v, rel, &rel_distinct_aggregate_on_unique_values);
+			if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti])
+				rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
 			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_project2groupby);
 		}
 	}
-
-	if (level <= 0 && (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
-		rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
 
 	if (level <= 1 && value_based_opt)
 		rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_predicates, false);
