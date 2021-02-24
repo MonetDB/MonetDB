@@ -668,7 +668,7 @@ cs_bind_bat( column_storage *cs, int access, size_t cnt)
 	return s;
 }
 
-static BAT *
+static void *					/* BAT * */
 bind_col(sql_trans *tr, sql_column *c, int access)
 {
 	assert(access == QUICK || tr->active);
@@ -681,7 +681,7 @@ bind_col(sql_trans *tr, sql_column *c, int access)
 	return cs_bind_bat( &d->cs, access, cnt);
 }
 
-static BAT *
+static void *					/* BAT * */
 bind_idx(sql_trans *tr, sql_idx * i, int access)
 {
 	assert(access == QUICK || tr->active);
@@ -694,7 +694,7 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	return cs_bind_bat( &d->cs, access, cnt);
 }
 
-static BAT *
+static void *					/* BAT * */
 bind_del(sql_trans *tr, sql_table *t, int access)
 {
 	assert(access == QUICK || tr->active);
@@ -3163,7 +3163,7 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 	return b;
 }
 
-static BAT *
+static void *					/* BAT * */
 bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 {
 	/* with nr_of_parts - part_nr we can adjust parts */
