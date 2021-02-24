@@ -2282,7 +2282,7 @@ destroy_del(sqlstore *store, sql_table *t)
 }
 
 static int
-log_destroy_storage(sql_trans *tr, storage *bat, oid id)
+log_destroy_storage(sql_trans *tr, storage *bat, sqlid id)
 {
 	gdk_return ok = GDK_SUCCEED;
 
