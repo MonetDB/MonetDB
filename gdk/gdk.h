@@ -1407,6 +1407,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
 #define BBPRENAME_LONG		(-3)
+#define BBPRENAME_MEMORY	(-4)
 
 gdk_export void BBPlock(void);
 

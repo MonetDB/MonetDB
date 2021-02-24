@@ -95,13 +95,13 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
 static gdk_return bm_commit(logger *lg);
 static gdk_return tr_grow(trans *tr);
 
-static void
+static inline void
 logger_lock(logger *lg)
 {
 	MT_lock_set(&lg->lock);
 }
 
-static void
+static inline void
 logger_unlock(logger *lg)
 {
 	MT_lock_unset(&lg->lock);
@@ -897,8 +897,7 @@ logger_create_types_file(logger *lg, const char *filename)
 static gdk_return
 logger_open_output(logger *lg)
 {
-	int len;
-	char id[BUFSIZ];
+	char id[32];
 	char *filename;
 
 	if (LOG_DISABLED(lg)) {
@@ -907,8 +906,7 @@ logger_open_output(logger *lg)
 			lg->id--;
 		return GDK_SUCCEED;
 	}
-	len = snprintf(id, sizeof(id), LLFMT, lg->id);
-	if (len == -1 || len >= BUFSIZ) {
+	if (snprintf(id, sizeof(id), LLFMT, lg->id) >= (int) sizeof(id)) {
 		TRC_CRITICAL(GDK, "filename is too large\n");
 		return GDK_FAIL;
 	}
@@ -1207,6 +1205,13 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 	}
 	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
 		fclose(fp);
+		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+		lg->catalog_id = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
+		if (lg->catalog_bid == NULL || lg->catalog_id == NULL || lg->dcatalog == NULL) {
+			GDKerror("cannot create catalog bats");
+			return GDK_FAIL;
+		}
 		if (old_logger_load(lg, fn, logdir) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
@@ -1216,6 +1221,18 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
 			return GDK_FAIL;
 		}
+		/* give the catalog bats names so we can find them
+		 * next time */
+		char bak[IDLENGTH];
+		if (strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL) >= sizeof(bak) ||
+		    BBPrename(lg->catalog_bid->batCacheid, bak) < 0 ||
+		    strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL) >= sizeof(bak) ||
+		    BBPrename(lg->catalog_id->batCacheid, bak) < 0 ||
+		    strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL) >= sizeof(bak) ||
+		    BBPrename(lg->dcatalog->batCacheid, bak) < 0) {
+			return GDK_FAIL;
+		}
+
 		if (logger_create_types_file(lg, filename) != GDK_SUCCEED)
 			return GDK_FAIL;
 		return GDK_SUCCEED;
@@ -1258,23 +1275,18 @@ bm_tids(BAT *b, BAT *d)
 static gdk_return
 logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
 {
-	int len;
-	char bak[BUFSIZ];
+	char bak[IDLENGTH];
 
 	if (BATmode(old, true) != GDK_SUCCEED) {
-		GDKerror("Logger_new: cannot convert old %s to transient", name);
+		GDKerror("cannot convert old %s to transient", name);
 		return GDK_FAIL;
 	}
-	len = snprintf(bak, sizeof(bak), "tmp_%o", (unsigned) old->batCacheid);
-	if (len == -1 || len >= BUFSIZ) {
-		GDKerror("Logger_new: filename is too large");
+	if (strconcat_len(bak, sizeof(bak), fn, "_", name, NULL) >= sizeof(bak)) {
+		GDKerror("name %s_%s too long\n", fn, name);
 		return GDK_FAIL;
 	}
-	if (BBPrename(old->batCacheid, bak) != 0) {
-		return GDK_FAIL;
-	}
-	strconcat_len(bak, sizeof(bak), fn, "_", name, NULL);
-	if (BBPrename(new->batCacheid, bak) != 0) {
+	if (BBPrename(old->batCacheid, NULL) != 0 ||
+	    BBPrename(new->batCacheid, bak) != 0) {
 		return GDK_FAIL;
 	}
 	return GDK_SUCCEED;
@@ -1721,7 +1733,9 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		 * require a logical reference we also add a logical
 		 * reference for the persistent bats */
 		BUN p, q;
-		BAT *b = BATdescriptor(catalog_bid), *o, *d;
+		BAT *b, *o, *d;
+
+		assert(!lg->inmemory);
 
 		/* the catalog exists, and so should the log file */
 		if (fp == NULL && !LOG_DISABLED(lg)) {
@@ -1735,46 +1749,48 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 				 fn, fn, lg->dir);
 			goto error;
 		}
-		if (check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) { /* closes the file */
+		if (fp != NULL && check_version(lg, fp, fn, logdir, filename) != GDK_SUCCEED) { /* closes the file */
 			fp = NULL;
 			goto error;
 		}
 		readlogs = 1;
 		fp = NULL;
 
-		assert(!lg->inmemory);
-		if (b == NULL) {
-			GDKerror("inconsistent database, catalog does not exist");
-			goto error;
-		}
+		if (lg->catalog_bid == NULL && lg->catalog_id == NULL && lg->dcatalog == NULL) {
+			b = BATdescriptor(catalog_bid);
+			if (b == NULL) {
+				GDKerror("inconsistent database, catalog does not exist");
+				goto error;
+			}
 
-		strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
-		catalog_id = BBPindex(bak);
-		o = BATdescriptor(catalog_id);
-		if (o == NULL) {
-			BBPunfix(b->batCacheid);
-			GDKerror("inconsistent database, catalog_id does not exist");
-			goto error;
-		}
+			strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL);
+			catalog_id = BBPindex(bak);
+			o = BATdescriptor(catalog_id);
+			if (o == NULL) {
+				BBPunfix(b->batCacheid);
+				GDKerror("inconsistent database, catalog_id does not exist");
+				goto error;
+			}
 
-		strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
-		dcatalog = BBPindex(bak);
-		d = BATdescriptor(dcatalog);
-		if (d == NULL) {
-			GDKerror("cannot create dcatalog bat");
-			BBPunfix(b->batCacheid);
-			BBPunfix(o->batCacheid);
-			goto error;
-		}
+			strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
+			dcatalog = BBPindex(bak);
+			d = BATdescriptor(dcatalog);
+			if (d == NULL) {
+				GDKerror("cannot create dcatalog bat");
+				BBPunfix(b->batCacheid);
+				BBPunfix(o->batCacheid);
+				goto error;
+			}
 
-		lg->catalog_bid = b;
-		lg->catalog_id = o;
-		lg->dcatalog = d;
+			lg->catalog_bid = b;
+			lg->catalog_id = o;
+			lg->dcatalog = d;
+		}
 		BBPretain(lg->catalog_bid->batCacheid);
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 		const log_bid *bids = (const log_bid *) Tloc(b, 0);
-		BATloop(b, p, q) {
+		BATloop(lg->catalog_bid, p, q) {
 			bat bid = bids[p];
 			oid pos = p;
 
@@ -2054,10 +2070,8 @@ logger_flush(logger *lg, ulng ts)
 			break;
 		if (!lg->input_log) {
 			char *filename;
-			char id[BUFSIZ];
-			int len = snprintf(id, sizeof(id), LLFMT, lg->saved_id+1);
-
-			if (len == -1 || len >= BUFSIZ) {
+			char id[32];
+			if (snprintf(id, sizeof(id), LLFMT, lg->saved_id+1) >= (int) sizeof(id)) {
 				TRC_CRITICAL(GDK, "log_id filename is too large\n");
 				return GDK_FAIL;
 			}
