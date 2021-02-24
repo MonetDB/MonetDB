@@ -773,24 +773,6 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 	clrVarCleanup(mb, n);
 }
 
-static inline void
-myitoa(char *p, int i) /* convert integer into string, but this code doesn't deal with negative integers! */
-{
-	char const digit[] = "0123456789";
-	int shift = i;
-
-	do { /* Find end of string */
-		++p;
-		shift /= 10;
-	} while (shift);
-
-	*p = '\0';
-	do { /* Insert digits value while going back */
-		*--p = digit[i%10];
-		i /= 10;
-	} while (i);
-}
-
 int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
@@ -810,7 +792,7 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		/* Don't call snprintf because it's expensive on this common code */
 		vname[0] = REFMARKER;
 		vname[1] = TMPMARKER;
-		myitoa(vname + 2, mb->vid++);
+		int_to_str(vname + 2, mb->vid++);
 
 		assert(strlen(vname) < IDLENGTH);
 	} else {
@@ -958,7 +940,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 			/* Don't call snprintf because it's too expensive on this common code */
 			vname[0] = REFMARKER;
 			vname[1] = TMPMARKER;
-			myitoa(vname + 2, mb->vid++);
+			int_to_str(vname + 2, mb->vid++);
 
 			assert(strlen(vname) < IDLENGTH);
 		}
