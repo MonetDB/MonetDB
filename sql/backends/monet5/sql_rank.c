@@ -315,9 +315,9 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					goto bailout;
 				}
 				np = (bit*)Tloc(p, 0);
-				for(j=1,k=1; rp<end; k++, np++, rp++) {
+				for(j=1; rp<end; np++, rp++) {
 					if (*np)
-						j=k=1;
+						j=1;
 					*rp = j;
 				}
 			}
@@ -334,11 +334,10 @@ SQLrank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					*rp = j;
 				}
 			} else { /* single value, ie no ordering */
-				int icnt = (int) cnt;
-				for(j=1; j<=icnt; j++, rp++)
-					*rp = j;
+				for(; rp<end; rp++)
+					*rp = 1;
 				r->tsorted = true;
-				r->tkey = true;
+				r->trevsorted = true;
 			}
 		}
 		BATsetcount(r, cnt);
@@ -432,11 +431,10 @@ SQLdense_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					*rp = j;
 				}
 			} else { /* single value, ie no ordering */
-				int icnt = (int) cnt;
-				for(j=1; j<=icnt; j++, rp++)
-					*rp = j;
+				for(; rp<end; rp++)
+					*rp = 1;
 				r->tsorted = true;
-				r->tkey = true;
+				r->trevsorted = true;
 			}
 		}
 		BATsetcount(r, cnt);
@@ -472,10 +470,10 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 	(void)cntxt;
 	if (isaBatType(getArgType(mb, pci, 1))) {
-		BUN cnt;
+		BUN ncnt, cnt;
 		int j, k;
 		dbl *rp, *end, cnt_cast;
-		bit *np, *no;
+		bit *np, *np2, *no, *no2;
 
 		res = getArgReference_bat(stk, pci, 0);
 		if (!(b = BATdescriptor(*getArgReference_bat(stk, pci, 1)))) {
@@ -489,7 +487,6 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		r->tsorted = r->trevsorted = BATcount(b) <= 1;
 
 		cnt = BATcount(b);
-		cnt_cast = (dbl) (cnt - 1);
 		rp = (dbl*)Tloc(r, 0);
 		end = rp + cnt;
 		if (isaBatType(getArgType(mb, pci, 2))) {
@@ -499,25 +496,46 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					goto bailout;
 				}
 				np = (bit*)Tloc(p, 0);
-				no = (bit*)Tloc(o, 0);
-				for(j=0,k=0; rp<end; k++, np++, no++, rp++) {
-					if (*np)
-						j=k=0;
-					if (*no)
-						j=k;
-					*rp = j / cnt_cast;
+				np2 = np + BATcount(p);
+				no2 = no = (bit*)Tloc(o, 0);
+
+				for (; np<np2; np++, no++) {
+					if (*np) {
+						ncnt = no - no2;
+						if (ncnt == 1) {
+							for (; no2<no; no2++, rp++)
+								*rp = 0.0;
+						} else {
+							cnt_cast = (dbl) (ncnt - 1);
+							j = 0;
+							k = 0;
+							for (; no2<no; k++, no2++, rp++) {
+								if (*no2)
+									j=k;
+								*rp = j / cnt_cast;
+							}
+						}
+					}
+				}
+				ncnt = no - no2;
+				if (ncnt == 1) {
+					for (; no2<no; no2++, rp++)
+						*rp = 0.0;
+				} else {
+					cnt_cast = (dbl) (ncnt - 1);
+					j = 0;
+					k = 0;
+					for (; no2<no; k++, no2++, rp++) {
+						if (*no2)
+							j=k;
+						*rp = j / cnt_cast;
+					}
 				}
 			} else { /* single value, ie no ordering */
-				if (!(p = BATdescriptor(*getArgReference_bat(stk, pci, 2)))) {
-					msg = createException(SQL, "sql.percent_rank", SQLSTATE(HY005) "Cannot access column descriptor");
-					goto bailout;
-				}
-				np = (bit*)Tloc(p, 0);
-				for(j=0; rp<end; np++, rp++) {
-					if (*np)
-						j=0;
-					*rp = j / cnt_cast;
-				}
+				for(; rp<end; rp++)
+					*rp = 0.0;
+				r->tsorted = true;
+				r->trevsorted = true;
 			}
 		} else { /* single value, ie no partitions */
 			if (isaBatType(getArgType(mb, pci, 3))) {
@@ -526,14 +544,23 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					goto bailout;
 				}
 				no = (bit*)Tloc(o, 0);
-				for(j=0,k=0; rp<end; k++, no++, rp++) {
-					if (*no)
-						j=k;
-					*rp = j / cnt_cast;
+
+				if (cnt == 1) {
+					for (; rp<end; rp++)
+						*rp = 0.0;
+					r->tsorted = true;
+					r->trevsorted = true;
+				} else {
+					cnt_cast = (dbl) (cnt - 1);
+					for(j=0,k=0; rp<end; k++, no++, rp++) {
+						if (*no)
+							j=k;
+						*rp = j / cnt_cast;
+					}
 				}
-			} else { /* single value, ie no ordering - the outcome will always be 0 */
+			} else { /* single value, ie no ordering */
 				for(; rp<end; rp++)
-					*rp = 0;
+					*rp = 0.0;
 				r->tsorted = true;
 				r->trevsorted = true;
 			}
@@ -544,7 +571,7 @@ SQLpercent_rank(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
 
-		*res = 1;
+		*res = 0.0;
 	}
 
 bailout:
@@ -611,7 +638,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 						}
 						for (; bo1 < bo2; bo1++, rb++)
-							*rb = 1;
+							*rb = 1.0;
 					}
 				}
 				j = 0;
@@ -626,11 +653,11 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 				}
 				for (; bo1 < bo2; bo1++, rb++)
-					*rb = 1;
+					*rb = 1.0;
 			} else { /* single value, ie no ordering */
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
-					*rb = 1;
+					*rb = 1.0;
 				r->tsorted = true;
 				r->trevsorted = true;
 			}
@@ -652,11 +679,11 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					}
 				}
 				for (; bo1 < bo2; bo1++, rb++)
-					*rb = 1;
+					*rb = 1.0;
 			} else { /* single value, ie no ordering */
 				rp = rb + BATcount(b);
 				for (; rb<rp; rb++)
-					*rb = 1;
+					*rb = 1.0;
 				r->tsorted = true;
 				r->trevsorted = true;
 			}
@@ -667,7 +694,7 @@ SQLcume_dist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		dbl *res = getArgReference_dbl(stk, pci, 0);
 
-		*res = 1;
+		*res = 1.0;
 	}
 
 bailout:
