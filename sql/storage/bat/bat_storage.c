@@ -32,9 +32,6 @@ static int log_create_del(sql_trans *tr, sql_change *change);
 static int commit_create_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
 static int commit_create_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
 static int commit_create_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest);
-static int log_destroy_col(sql_trans *tr, sql_change *change);
-static int log_destroy_idx(sql_trans *tr, sql_change *change);
-static int log_destroy_del(sql_trans *tr, sql_change *change);
 static int tc_gc_col( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
 static int tc_gc_idx( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
 static int tc_gc_del( sql_store Store, sql_change *c, ulng commit_ts, ulng oldest);
@@ -2227,8 +2224,10 @@ log_destroy_col_(sql_trans *tr, sql_column *c)
 }
 
 static int
-log_destroy_col(sql_trans *tr, sql_change *change)
+log_destroy_col(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	(void) commit_ts;
+	(void) oldest;
 	return log_destroy_col_(tr, (sql_column*)change->obj);
 }
 
@@ -2257,8 +2256,10 @@ log_destroy_idx_(sql_trans *tr, sql_idx *i)
 }
 
 static int
-log_destroy_idx(sql_trans *tr, sql_change *change)
+log_destroy_idx(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
+	(void) commit_ts;
+	(void) oldest;
 	return log_destroy_idx_(tr, (sql_idx*)change->obj);
 }
 
@@ -2294,12 +2295,14 @@ log_destroy_storage(sql_trans *tr, storage *bat, sqlid id)
 }
 
 static int
-log_destroy_del(sql_trans *tr, sql_change *change)
+log_destroy_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
 	int ok = LOG_OK;
 	sql_table *t = (sql_table*)change->obj;
 	assert(!isTempTable(t));
 	storage *dbat = ATOMIC_PTR_GET(&t->data);
+	(void) commit_ts;
+	(void) oldest;
 	if (dbat->cs.ts < tr->ts) /* no changes ? */
 		return ok;
 	//dbat->cs.ts = commit_ts;
@@ -3190,56 +3193,56 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 void
 bat_storage_init( store_functions *sf)
 {
-	sf->bind_col = (bind_col_fptr)&bind_col;
-	sf->bind_idx = (bind_idx_fptr)&bind_idx;
-	sf->bind_del = (bind_del_fptr)&bind_del;
-	sf->bind_cands = (bind_cands_fptr)&bind_cands;
+	sf->bind_col = &bind_col;
+	sf->bind_idx = &bind_idx;
+	sf->bind_del = &bind_del;
+	sf->bind_cands = &bind_cands;
 
-	sf->claim_tab = (claim_tab_fptr)&claim_tab;
+	sf->claim_tab = &claim_tab;
 
-	sf->append_col = (append_col_fptr)&append_col;
-	sf->append_idx = (append_idx_fptr)&append_idx;
+	sf->append_col = &append_col;
+	sf->append_idx = &append_idx;
 
-	sf->append_col_prep = (modify_col_prep_fptr)&append_col_prepare;
-	sf->append_idx_prep = (modify_idx_prep_fptr)&append_idx_prepare;
-	sf->append_col_exec = (append_col_exec_fptr)&append_col_execute;
-	sf->update_col = (update_col_fptr)&update_col;
-	sf->update_idx = (update_idx_fptr)&update_idx;
+	sf->append_col_prep = &append_col_prepare;
+	sf->append_idx_prep = &append_idx_prepare;
+	sf->append_col_exec = &append_col_execute;
+	sf->update_col = &update_col;
+	sf->update_idx = &update_idx;
 
-	sf->update_col_prep = (modify_col_prep_fptr)&update_col_prepare;
-	sf->update_idx_prep = (modify_idx_prep_fptr)&update_idx_prepare;
-	sf->update_col_exec = (update_col_exec_fptr)&update_col_execute;
+	sf->update_col_prep = &update_col_prepare;
+	sf->update_idx_prep = &update_idx_prepare;
+	sf->update_col_exec = &update_col_execute;
 
-	sf->delete_tab = (delete_tab_fptr)&delete_tab;
+	sf->delete_tab = &delete_tab;
 
-	sf->count_del = (count_del_fptr)&count_del;
-	sf->count_col = (count_col_fptr)&count_col;
-	sf->count_idx = (count_idx_fptr)&count_idx;
-	sf->dcount_col = (dcount_col_fptr)&dcount_col;
-	sf->sorted_col = (prop_col_fptr)&sorted_col;
-	sf->unique_col = (prop_col_fptr)&unique_col;
-	sf->double_elim_col = (prop_col_fptr)&double_elim_col;
+	sf->count_del = &count_del;
+	sf->count_col = &count_col;
+	sf->count_idx = &count_idx;
+	sf->dcount_col = &dcount_col;
+	sf->sorted_col = &sorted_col;
+	sf->unique_col = &unique_col;
+	sf->double_elim_col = &double_elim_col;
 
-	sf->col_dup = (col_dup_fptr)&col_dup;
-	sf->idx_dup = (idx_dup_fptr)&idx_dup;
-	sf->del_dup = (del_dup_fptr)&del_dup;
+	sf->col_dup = &col_dup;
+	sf->idx_dup = &idx_dup;
+	sf->del_dup = &del_dup;
 
-	sf->create_col = (create_col_fptr)&create_col;
-	sf->create_idx = (create_idx_fptr)&create_idx;
-	sf->create_del = (create_del_fptr)&create_del;
+	sf->create_col = &create_col;
+	sf->create_idx = &create_idx;
+	sf->create_del = &create_del;
 
-	sf->destroy_col = (destroy_col_fptr)&destroy_col;
-	sf->destroy_idx = (destroy_idx_fptr)&destroy_idx;
-	sf->destroy_del = (destroy_del_fptr)&destroy_del;
+	sf->destroy_col = &destroy_col;
+	sf->destroy_idx = &destroy_idx;
+	sf->destroy_del = &destroy_del;
 
 	/* change into drop_* */
-	sf->log_destroy_col = (log_destroy_col_fptr)&log_destroy_col;
-	sf->log_destroy_idx = (log_destroy_idx_fptr)&log_destroy_idx;
-	sf->log_destroy_del = (log_destroy_del_fptr)&log_destroy_del;
+	sf->log_destroy_col = &log_destroy_col;
+	sf->log_destroy_idx = &log_destroy_idx;
+	sf->log_destroy_del = &log_destroy_del;
 
-	sf->clear_table = (clear_table_fptr)&clear_table;
+	sf->clear_table = &clear_table;
 
-	sf->cleanup = (cleanup_fptr)&cleanup;
+	sf->cleanup = &cleanup;
 	/*
 	for(int i=0;i<NR_TABLE_LOCKS;i++)
 		MT_lock_init(&table_locks[i], "table_lock");
