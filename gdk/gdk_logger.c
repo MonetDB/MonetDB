@@ -2830,7 +2830,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, const char *name, char tpe, oid id)
 			fprintf(stderr, "#Logged %s " LLFMT " inserts\n", name, l.nr);
 	}
 	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+		TRC_CRITICAL(GDK, "write failed for %s\n", name);
 	return ok;
 }
 
@@ -2878,7 +2878,7 @@ log_bat(logger *lg, BAT *b, const char *name, char tpe, oid id)
 	}
 
 	if (ok != GDK_SUCCEED)
-		TRC_CRITICAL(GDK, "write failed\n");
+		TRC_CRITICAL(GDK, "write failed for %s\n", name);
 	return ok;
 }
 
