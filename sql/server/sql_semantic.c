@@ -1199,7 +1199,7 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			concat = stpcpy(concat, ")");
 		}
 		return res;
-	} break;
+	}
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
@@ -1217,7 +1217,7 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"("), l), ","), r), ")");
 		}
 		return res;
-	} break;
+	}
 	case SQL_OP: {
 		dnode *lst = se->data.lval->h;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
@@ -1232,7 +1232,7 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"()");
 		}
 		return res;
-	} break;
+	}
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
@@ -1309,9 +1309,8 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = _symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval))) {
+		if (!(val = _symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval)))
 			return NULL;
-		}
 		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(val) + strlen(tpe) + 11)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
 		return res;
