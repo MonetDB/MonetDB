@@ -1929,13 +1929,13 @@ mvc_append_exec_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (BATcount(b) > 4096 && !b->batTransient)
 			BATmsync(b);
 
-		ret = store->storage_api.append_col_exec(cookie, pos, b, true);
+		ret = store->storage_api.append_col_exec(cookie, (size_t) pos, b, true);
 		BBPunfix(b->batCacheid);
 	} else {
 		if (ATOMextern(incoming_type))
 			incoming = *(ptr*)incoming;
 
-		ret = store->storage_api.append_col_exec(cookie, pos, incoming, false);
+		ret = store->storage_api.append_col_exec(cookie, (size_t) pos, incoming, false);
 	}
 
 	if (ret != LOG_OK)
