@@ -1683,6 +1683,8 @@ SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id =
 
 query I nosort
 SELECT 1 FROM location loc,segment1 s1,fact f WHERE s1.id = f.s1_id AND loc.id = f.location_id AND ( s1.code = '03' OR loc.code = '0010094' )
+----
+
 
 statement ok
 ROLLBACK
