@@ -1790,7 +1790,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
 		const log_bid *bids = (const log_bid *) Tloc(b, 0);
-		BATloop(b, p, q) {
+		BATloop(lg->catalog_bid, p, q) {
 			bat bid = bids[p];
 			oid pos = p;
 
