@@ -264,81 +264,8 @@ writable
 False
 0
 
-query TTTTTIITI rowsort
+statement ok
 call sys.storagemodelinit()
-----
-sys
-_tables
-access
-smallint
-writable
-2
-0
-False
-0
-sys
-_tables
-commit_action
-smallint
-writable
-2
-0
-False
-0
-sys
-_tables
-id
-int
-writable
-4
-0
-False
-0
-sys
-_tables
-name
-varchar
-writable
-99
-0
-False
-0
-sys
-_tables
-query
-varchar
-writable
-99
-0
-False
-0
-sys
-_tables
-schema_id
-int
-writable
-4
-0
-False
-0
-sys
-_tables
-system
-boolean
-writable
-1
-0
-False
-0
-sys
-_tables
-type
-smallint
-writable
-2
-0
-False
-0
 
 statement ok
 update sys.storagemodelinput set "count" =10000 where "table" ='bug3923'
