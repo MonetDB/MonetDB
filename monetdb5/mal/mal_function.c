@@ -100,11 +100,16 @@ chkFlow(MalBlkPtr mb)
 	int endseen=0, retseen=0, yieldseen=0;
 	InstrPtr p;
 	str msg = MAL_SUCCEED;
+	size_t pos;
 
 	if ( mb->errors != MAL_SUCCEED)
 		return mb->errors ;
 	p = getInstrPtr(mb, 0);
-	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
+
+	pos  = strcpy_len(buf, getModuleId(p), sizeof(buf));
+	pos += strcpy_len(buf, ".", sizeof(buf) - pos);
+	strcpy_len(buf, getFunctionId(p), sizeof(buf) - pos);
+
 	lastInstruction = mb->stop-1;
 	for(i= 0; i<mb->stop; i++){
 		p= getInstrPtr(mb,i);
@@ -676,6 +681,7 @@ chkDeclarations(MalBlkPtr mb){
 	int dflow = -1;
 	char buf[IDLENGTH * 2 +2];
 	str msg = MAL_SUCCEED;
+	size_t pos;
 
 	if( mb->errors)
 		return GDKstrdup(mb->errors);
@@ -689,7 +695,10 @@ chkDeclarations(MalBlkPtr mb){
 	p= getInstrPtr(mb,0);
 	for(k=0;k<p->argc; k++)
 		setVarScope(mb, getArg(p,k), blkId);
-	snprintf(buf, IDLENGTH * 2 +2, "%s.%s", getModuleId(p), getFunctionId(p));
+
+	pos  = strcpy_len(buf, getModuleId(p), sizeof(buf));
+	pos += strcpy_len(buf, ".", sizeof(buf) - pos);
+	strcpy_len(buf, getFunctionId(p), sizeof(buf) - pos);
 
 	for(pc=1;pc<mb->stop; pc++){
 		p= getInstrPtr(mb,pc);

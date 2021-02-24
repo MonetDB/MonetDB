@@ -496,7 +496,8 @@ DFLOWinitialize(void)
 	}
 	for (i = 0; i < THREADS; i++) {
 		char name[MT_NAME_LEN];
-		snprintf(name, sizeof(name), "DFLOWsema%d", i);
+		int_to_str(stpcpy(name, "DFLOWsema"), i); /* should fit */
+		assert(strlen(name) < MT_NAME_LEN);
 		MT_sema_init(&workers[i].s, 0, name);
 		workers[i].flag = IDLE;
 		if (first)				/* only initialize once */
@@ -516,7 +517,8 @@ DFLOWinitialize(void)
 		workers[i].flag = RUNNING;
 		ATOMIC_PTR_SET(&workers[i].cntxt, NULL);
 		char name[MT_NAME_LEN];
-		snprintf(name, sizeof(name), "DFLOWworker%d", i);
+		int_to_str(stpcpy(name, "DFLOWworker"), i); /* should fit */
+		assert(strlen(name) < MT_NAME_LEN);
 		if ((workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i], MT_THR_JOINABLE, name)) == 0) {
 			GDKfree(workers[i].errbuf);
 			workers[i].errbuf = NULL;

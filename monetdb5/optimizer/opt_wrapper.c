@@ -116,7 +116,8 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if( mb->errors)
 		throw(MAL, "opt_wrapper", SQLSTATE(42000) "MAL block contains errors");
-	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
+	fcnnme = getFunctionId(p);
+	strcpy_len(optimizer, fcnnme, sizeof(optimizer));
 
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||

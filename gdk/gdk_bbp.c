@@ -644,9 +644,9 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		bn->batInserted = bn->batCount;
 		bn->batCapacity = (BUN) capacity;
 		char name[MT_NAME_LEN];
-		snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
+		int_to_str(stpcpy(name, "heaplock"), bn->batCacheid); /* fits */
 		MT_lock_init(&bn->theaplock, name);
-		snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
+		int_to_str(stpcpy(name, "BATlock"), bn->batCacheid); /* fits */
 		MT_lock_init(&bn->batIdxLock, name);
 		ATOMIC_INIT(&bn->theap->refs, 1);
 
