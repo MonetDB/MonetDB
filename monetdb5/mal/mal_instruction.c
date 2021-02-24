@@ -773,7 +773,7 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 	clrVarCleanup(mb, n);
 }
 
-inline void
+static inline void
 myitoa(char *p, int i) /* convert integer into string, but this code doesn't deal with negative integers! */
 {
 	char const digit[] = "0123456789";
