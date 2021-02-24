@@ -59,7 +59,7 @@ typedef struct expression {
 
 	 base:1,
 	 ref:1,		/* used to indicate an other expression may reference this one */
-	 used:1;	/* used for quick dead code removal */
+	 used:2;	/* used by rewriters at rel_unnest and rel_dce, so a relation is not modified twice */
 	sql_subtype	tpe;
 	void *p;	/* properties for the optimizer */
 } sql_exp;
