@@ -20,6 +20,13 @@
 #include "sql_query.h"
 #include "mal_errors.h" /* for SQLSTATE() */
 
+/* some unnesting steps use the 'used' flag to avoid further rewrites. List them here, so only one reset flag iteration will be used */
+#define rewrite_fix_count_used (1 << 0)
+#define rewrite_values_used    (1 << 1)
+
+#define is_rewrite_fix_count_used(X) ((X & rewrite_fix_count_used) == rewrite_fix_count_used)
+#define is_rewrite_values_used(X)    ((X & rewrite_values_used) == rewrite_values_used)
+
 static void
 exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 {
@@ -3173,7 +3180,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 		int rel_changes = 0;
 		sql_rel *r = rel->r;
 
-		if (!r->used) {
+		if (!is_rewrite_fix_count_used(r->used)) {
 			/* TODO create an exp iterator */
 			list *rexps = rel_projections(v->sql, r, NULL, 1, 1), *exps;
 
@@ -3207,7 +3214,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 				exps = list_merge(rel_projections(v->sql, rel->l, NULL, 1, 1), rexps, (fdup)NULL);
 				rel = rel_project(v->sql->sa, rel, exps);
 				set_processed(rel);
-				r->used = 1;
+				r->used |= rewrite_fix_count_used;
 				v->changes++;
 			}
 		}
@@ -3468,11 +3475,12 @@ rewrite_values(visitor *v, sql_rel *rel)
 	if (!is_simple_project(rel->op) || list_empty(rel->exps))
 		return rel;
 
-	if (rel_is_ref(rel)) { /* need extra project */
+	if (rel_is_ref(rel) && !is_rewrite_values_used(rel->used)) { /* need extra project */
 		rel->l = rel_project(v->sql->sa, rel->l, rel->exps);
 		rel->exps = rel_projections(v->sql, rel->l, NULL, 1, 1);
 		((sql_rel*)rel->l)->r = rel->r; /* propagate order by exps */
 		rel->r = NULL;
+		rel->used |= rewrite_values_used;
 		return rel;
 	}
 	sql_exp *e = rel->exps->h->data;
@@ -3545,7 +3553,8 @@ rel_unnest(mvc *sql, sql_rel *rel)
 		rel = rel_visitor_bottomup(&v, rel, &rel_remove_empty_select);
 	rel = rel_visitor_bottomup(&v, rel, &_rel_unnest);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_reset_used);	/* rewrite_fix_count uses 'used' property from sql_rel, reset it after it's done */
+	/* both rewrite_values and rewrite_fix_count use 'used' property from sql_rel, reset it */
+	rel = rel_visitor_bottomup(&v, rel, &rewrite_reset_used);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_remove_xp);	/* remove crossproducts with project [ atom ] */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_groupings);	/* transform group combinations into union of group relations */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);

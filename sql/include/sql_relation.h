@@ -277,7 +277,7 @@ typedef struct relation {
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
-	 used:1;	/* used by rewrite_fix_count at rel_unnest, so a relation is not modified twice */
+	 used:2;	/* used by rewriters at rel_unnest and rel_dce, so a relation is not modified twice */
 	void *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 
