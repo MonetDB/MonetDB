@@ -64,14 +64,9 @@ table_has_updates(sql_trans *tr, sql_table *t)
 
 	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
 		sql_column *c = n->data;
-		BAT *b = store->storage_api.bind_col(tr, c, RD_UPD_ID);
-		if ( b == 0)
-			return -1;
-		cnt |= BATcount(b) > 0;
-		if (isTable(t) && t->access != TABLE_READONLY && (!isNew(t) /* alter */ ) &&
-		    t->persistence == SQL_PERSIST && !t->commit_action)
-			cnt |= store->storage_api.count_col(tr, c, 0) > 0;
-		BBPunfix(b->batCacheid);
+
+		size_t upd = store->storage_api.count_col( tr, c, 2/* count updates */);
+		cnt |= upd > 0;
 	}
 	return cnt;
 }

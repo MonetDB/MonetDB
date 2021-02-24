@@ -21,7 +21,6 @@
 #include "rel_semantic.h"
 #include "rel_unnest.h"
 #include "rel_optimizer.h"
-#include "gdk_geomlogger.h"
 
 #include "rel_remote.h"
 #include "mal_authorize.h"
@@ -261,212 +260,6 @@ sql_update_hugeint(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 	return err;		/* usually MAL_SUCCEED */
 }
 #endif
-
-static str
-sql_update_geom(Client c, mvc *sql, int olddb, const char *prev_schema)
-{
-	size_t bufsize, pos = 0;
-	char *buf, *err = NULL, *geomupgrade;
-	geomsqlfix_fptr fixfunc;
-	node *n;
-	sql_schema *s = mvc_bind_schema(sql, "sys");
-
-	if ((fixfunc = geomsqlfix_get()) == NULL)
-		return NULL;
-
-	geomupgrade = (*fixfunc)(olddb);
-	if (geomupgrade == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	bufsize = strlen(geomupgrade) + 512;
-	buf = GDKmalloc(bufsize);
-	if (buf == NULL) {
-		GDKfree(geomupgrade);
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"sys\";\n");
-	pos += snprintf(buf + pos, bufsize - pos, "%s", geomupgrade);
-	GDKfree(geomupgrade);
-
-	pos += snprintf(buf + pos, bufsize - pos, "delete from sys.types where systemname in ('mbr', 'wkb', 'wkba');\n");
-	for (n = types->h; n; n = n->next) {
-		sql_type *t = n->data;
-
-		if (t->base.id < FUNC_OIDS &&
-		    (strcmp(t->base.name, "mbr") == 0 ||
-		     strcmp(t->base.name, "wkb") == 0 ||
-		     strcmp(t->base.name, "wkba") == 0))
-			pos += snprintf(buf + pos, bufsize - pos, "insert into sys.types values (%d, '%s', '%s', %u, %u, %d, %d, %d);\n",
-							t->base.id, t->base.name, t->sqlname, t->digits, t->scale, t->radix, (int) t->eclass,
-							t->s ? t->s->base.id : s->base.id);
-	}
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_remote_tables(Client c, mvc *sql, const char *prev_schema)
-{
-	res_table *output = NULL;
-	char* err = MAL_SUCCEED, *buf;
-	size_t bufsize = 1000, pos = 0;
-	BAT *tbl = NULL, *uri = NULL;
-
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	/* Create the SQL function needed to dump the remote table credentials */
-	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create function sys.remote_table_credentials (tablename string)"
-			" returns table (\"uri\" string, \"username\" string, \"hash\" string)"
-			" external name sql.rt_credentials;\n"
-			"update sys.functions set system = true where system <> true and name = 'remote_table_credentials' and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
-			(int) F_FUNC);
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, buf, "create function", true, false, NULL);
-	if (err)
-		goto bailout;
-
-	pos = 0;
-	pos += snprintf(buf + pos, bufsize - pos,
-			"SELECT concat(concat(scm.name, '.'), tbl.name), tbl.query"
-			" FROM sys._tables AS tbl JOIN sys.schemas AS scm ON"
-			" tbl.schema_id=scm.id WHERE tbl.type=5;\n");
-
-	assert(pos < bufsize);
-
-	err = SQLstatementIntern(c, buf, "get remote table names", true, false, &output);
-	if (err)
-		goto bailout;
-
-	/* We executed the query, now process the results */
-	tbl = BATdescriptor(output->cols[0].b);
-	uri = BATdescriptor(output->cols[1].b);
-
-	if (tbl && uri) {
-		size_t cnt;
-		assert(BATcount(tbl) == BATcount(uri));
-		if ((cnt = BATcount(tbl)) > 0) {
-			BATiter tbl_it = bat_iterator(tbl);
-			BATiter uri_it = bat_iterator(uri);
-			const void *restrict nil = ATOMnilptr(tbl->ttype);
-			int (*cmp)(const void *, const void *) = ATOMcompare(tbl->ttype);
-			const char *v;
-			const char *u;
-			const char *remote_server_uri;
-
-			/* This is probably not correct: offsets? */
-			for (BUN i = 0; i < cnt; i++) {
-				v = BUNtvar(tbl_it, i);
-				u = BUNtvar(uri_it, i);
-				if (v == NULL || (*cmp)(v, nil) == 0 ||
-				    u == NULL || (*cmp)(u, nil) == 0)
-					goto bailout;
-
-				/* Since the loop might fail, it might be a good idea
-				 * to update the credentials as a second step
-				 */
-				remote_server_uri = mapiuri_uri((char *)u, sql->sa);
-				if ((err = AUTHaddRemoteTableCredentials((char *)v, "monetdb", remote_server_uri, "monetdb", "monetdb", false)) != MAL_SUCCEED)
-					goto bailout;
-			}
-		}
-	} else {
-		err = createException(SQL, "sql_update_remote_tables", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	}
-
-bailout:
-	if (tbl)
-		BBPunfix(tbl->batCacheid);
-	if (uri)
-		BBPunfix(uri->batCacheid);
-	if (output)
-		res_table_destroy(output);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_aug2018(Client c, mvc *sql, const char *prev_schema)
-{
-	size_t bufsize = 1000, pos = 0;
-	char *buf, *err;
-
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-	pos += snprintf(buf + pos, bufsize - pos,
-			"create aggregate sys.group_concat(str string) returns string external name \"aggr\".\"str_group_concat\";\n"
-			"grant execute on aggregate sys.group_concat(string) to public;\n"
-			"create aggregate sys.group_concat(str string, sep string) returns string external name \"aggr\".\"str_group_concat\";\n"
-			"grant execute on aggregate sys.group_concat(string, string) to public;\n"
-			"update sys.functions set system = true where system <> true and name in ('group_concat') and schema_id = (select id from sys.schemas where name = 'sys') and type = %d;\n",
-			(int) F_AGGR);
-
-	pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-
-	assert(pos < bufsize);
-	printf("Running database upgrade commands:\n%s\n", buf);
-	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-	if (err)
-		goto bailout;
-	err = sql_update_remote_tables(c, sql, prev_schema);
-
-  bailout:
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
-
-static str
-sql_update_aug2018_sp2(Client c, const char *prev_schema)
-{
-	size_t bufsize = 1000, pos = 0;
-	char *buf, *err;
-	res_table *output;
-	BAT *b;
-
-	if ((buf = GDKmalloc(bufsize)) == NULL)
-		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	/* required update for changeset 23e1231ada99 */
-	pos += snprintf(buf + pos, bufsize - pos,
-			"select id from sys.functions where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
-	err = SQLstatementIntern(c, buf, "update", true, false, &output);
-	if (err) {
-		GDKfree(buf);
-		return err;
-	}
-	b = BATdescriptor(output->cols[0].b);
-	if (b) {
-		if (BATcount(b) > 0) {
-			pos = 0;
-			pos += snprintf(buf + pos, bufsize - pos, "set schema sys;\n");
-			pos += snprintf(buf + pos, bufsize - pos,
-					"update sys.functions set side_effect = true where language <> 0 and not side_effect and type <> 4 and (type = 2 or (language <> 2 and id not in (select func_id from sys.args where inout = 1)));\n");
-
-			pos += snprintf(buf + pos, bufsize - pos, "set schema \"%s\";\n", prev_schema);
-
-			assert(pos < bufsize);
-			printf("Running database upgrade commands:\n%s\n", buf);
-			err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-		}
-		BBPunfix(b->batCacheid);
-	}
-	res_table_destroy(output);
-	GDKfree(buf);
-	return err;		/* usually MAL_SUCCEED */
-}
 
 static str
 sql_drop_functions_dependencies_Xs_on_Ys(Client c, const char *prev_schema)
@@ -1084,9 +877,9 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 			}
 		}
 		if (s->tables) {
-            struct os_iter oi;
+			struct os_iter oi;
 			os_iterator(&oi, s->tables, tr, NULL);
-            for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
+			for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 				sql_table *t = (sql_table*) b;
 
 				if (t->query && isView(t)) {
@@ -2098,7 +1891,7 @@ sql_update_jun2020_bam(Client c, mvc *m, const char *prev_schema)
 			"drop procedure bam.sam_export;\n"
 			"drop procedure bam.bam_export;\n");
 	if (b) {
-		if (BATcount(b) > 0 && ((lng *) b->theap.base)[0] == 0) {
+		if (BATcount(b) > 0 && *(lng *) Tloc(b, 0) == 0) {
 			/* tables in bam schema are empty: drop them */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"drop table bam.sq;\n"
@@ -3588,46 +3381,6 @@ SQLupgrades(Client c, mvc *m)
 		store->table_api.table_insert(m->session->tr, privs, &f->func->base.id, &pub, &p, &zero, &zero);
 	}
 
-	/* If the point type exists, but the geometry type does not
-	 * exist any more at the "sys" schema (i.e., the first part of
-	 * the upgrade has been completed succesfully), then move on
-	 * to the second part */
-	if (find_sql_type(m->session->tr, s, "point") != NULL) {
-		/* type sys.point exists: this is an old geom-enabled
-		 * database */
-		if ((err = sql_update_geom(c, m, 1, prev_schema)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			GDKfree(prev_schema);
-			return -1;
-		}
-	} else if (geomsqlfix_get() != NULL) {
-		/* the geom module is loaded... */
-		sql_find_subtype(&tp, "clob", 0, 0);
-		if (!sql_bind_func(m, s->base.name, "st_wkttosql", &tp, NULL, F_FUNC)) {
-			m->session->status = 0; /* if the function was not found clean the error */
-			m->errstr[0] = '\0';
-			/* ... but the database is not geom-enabled */
-			if ((err = sql_update_geom(c, m, 0, prev_schema)) != NULL) {
-				TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-				freeException(err);
-				GDKfree(prev_schema);
-				return -1;
-			}
-		}
-	}
-
-	sql_find_subtype(&tp, "clob", 0, 0);
-	if (!sql_bind_func(m, s->base.name, "group_concat", &tp, NULL, F_AGGR)) {
-		m->session->status = 0; /* if the function was not found clean the error */
-		m->errstr[0] = '\0';
-		if ((err = sql_update_aug2018(c, m, prev_schema)) != NULL) {
-			TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-			freeException(err);
-			GDKfree(prev_schema);
-			return -1;
-		}
-	}
 
 	if (sql_bind_func(m, s->base.name, "dependencies_schemas_on_users", NULL, NULL, F_UNION)
 	 && sql_bind_func(m, s->base.name, "dependencies_owners_on_schemas", NULL, NULL, F_UNION)
@@ -3657,12 +3410,6 @@ SQLupgrades(Client c, mvc *m)
 		m->errstr[0] = '\0';
 	}
 
-	if ((err = sql_update_aug2018_sp2(c, prev_schema)) != NULL) {
-		TRC_CRITICAL(SQL_PARSER, "%s\n", err);
-		freeException(err);
-		GDKfree(prev_schema);
-		return -1;
-	}
 
 	if ((t = mvc_bind_table(m, s, "systemfunctions")) != NULL &&
 	    t->type == tt_table) {

@@ -727,12 +727,13 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	/* add row in the fits_files catalog table */
+	size_t pos = store->storage_api.claim_tab(m->session->tr, fits_fl, 1);
 	col = mvc_bind_column(m, fits_fl, "id");
 	fid = store->storage_api.count_col(tr, col, 1) + 1;
 	store->storage_api.append_col(m->session->tr,
-		mvc_bind_column(m, fits_fl, "id"), &fid, TYPE_int);
+		mvc_bind_column(m, fits_fl, "id"), pos, &fid, TYPE_int);
 	store->storage_api.append_col(m->session->tr,
-		mvc_bind_column(m, fits_fl, "name"), fname, TYPE_str);
+		mvc_bind_column(m, fits_fl, "name"), pos, fname, TYPE_str);
 
 	col = mvc_bind_column(m, fits_tbl, "id");
 	tid = store->storage_api.count_col(tr, col, 1) + 1;
@@ -800,33 +801,35 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		fits_get_num_cols(fptr, &cnum, &status);
 
+		size_t pos = store->storage_api.claim_tab(m->session->tr, fits_tbl, 1);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "id"), &tid, TYPE_int);
+			mvc_bind_column(m, fits_tbl, "id"), pos, &tid, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "name"), tname_low, TYPE_str);
+			mvc_bind_column(m, fits_tbl, "name"), pos, tname_low, TYPE_str);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "columns"), &cnum, TYPE_int);
+			mvc_bind_column(m, fits_tbl, "columns"), pos, &cnum, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "file_id"), &fid, TYPE_int);
+			mvc_bind_column(m, fits_tbl, "file_id"), pos, &fid, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "hdu"), &i, TYPE_int);
+			mvc_bind_column(m, fits_tbl, "hdu"), pos, &i, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "date"), tdate, TYPE_str);
+			mvc_bind_column(m, fits_tbl, "date"), pos, tdate, TYPE_str);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "origin"), orig, TYPE_str);
+			mvc_bind_column(m, fits_tbl, "origin"), pos, orig, TYPE_str);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tbl, "comment"), comm, TYPE_str);
+			mvc_bind_column(m, fits_tbl, "comment"), pos, comm, TYPE_str);
 
+		pos = store->storage_api.claim_tab(m->session->tr, fits_tp, 1);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "table_id"), &tid, TYPE_int);
+			mvc_bind_column(m, fits_tp, "table_id"), pos, &tid, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "xtension"), xtensionname, TYPE_str);
+			mvc_bind_column(m, fits_tp, "xtension"), pos, xtensionname, TYPE_str);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "bitpix"), &bitpixnumber, TYPE_int);
+			mvc_bind_column(m, fits_tp, "bitpix"), pos, &bitpixnumber, TYPE_int);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "stilvers"), stilversion, TYPE_str);
+			mvc_bind_column(m, fits_tp, "stilvers"), pos, stilversion, TYPE_str);
 		store->storage_api.append_col(m->session->tr,
-			mvc_bind_column(m, fits_tp, "stilclas"), stilclass, TYPE_str);
+			mvc_bind_column(m, fits_tp, "stilclas"), pos, stilclass, TYPE_str);
 
 		/* read columns description */
 		s = stmt;
@@ -941,7 +944,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	/* create a SQL table to hold the FITS table */
 	/*	col = mvc_bind_column(m, fits_tbl, "columns");
-	   cnum = *(int*) store->table_apstore->table_api.column_find_value(m->session->tr, col, rid); */
+	   cnum = *(int*) store->table_api.column_find_value(m->session->tr, col, rid); */
 	fits_get_num_cols(fptr, &cnum, &status);
 	tbl = mvc_create_table(m, sch, tname, tt_table, 0, SQL_PERSIST, 0, cnum, 0);
 
@@ -1087,7 +1090,8 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 
 		TRC_INFO(FITS, "#Column %s loaded for %d ms\t", cname[j-1], GDKms() - time0);
-		if (store->storage_api.append_col(m->session->tr, col, tmp, TYPE_bat) != LOG_OK) {
+		size_t pos = store->storage_api.claim_tab(m->session->tr, tbl, BATcount(tmp));
+		if (store->storage_api.append_col(m->session->tr, col, pos, tmp, TYPE_bat) != LOG_OK) {
 			BBPunfix(tmp->batCacheid);
 			msg = createException(MAL, "fits.loadtable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			break;

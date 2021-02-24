@@ -1389,14 +1389,14 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 }
 
 static sql_rel *
-rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int locked, int best_effort, dlist *fwf_widths, int onclient, int escape)
+rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const char *ssep, const char *ns, const char *filename, lng nr, lng offset, int best_effort, dlist *fwf_widths, int onclient, int escape)
 {
 	sql_rel *res;
 	list *exps, *args;
 	node *n;
 	sql_subtype tpe;
 	sql_exp *import;
-	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 13, F_UNION, NULL);
+	sql_subfunc *f = sql_find_func(sql, "sys", "copyfrom", 12, F_UNION, NULL);
 	char *fwf_string = NULL;
 
 	assert(f); /* we do expect copyfrom to be there */
@@ -1432,11 +1432,9 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 							append(
 								append(
 									append(
-										append(
-											append(args,
-												   exp_atom_lng(sql->sa, nr)),
-											exp_atom_lng(sql->sa, offset)),
-										exp_atom_int(sql->sa, locked)),
+										append(args,
+											   exp_atom_lng(sql->sa, nr)),
+										exp_atom_lng(sql->sa, offset)),
 									exp_atom_int(sql->sa, best_effort)),
 								exp_atom_str(sql->sa, fwf_string, &tpe)),
 							exp_atom_int(sql->sa, onclient)),
@@ -1453,7 +1451,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 }
 
 static sql_rel *
-copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int locked, int best_effort, int constraint, dlist *fwf_widths, int onclient, int escape)
+copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, int constraint, dlist *fwf_widths, int onclient, int escape)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
@@ -1471,9 +1469,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	assert(!nr_offset || nr_offset->h->type == type_lng);
 	assert(!nr_offset || nr_offset->h->next->type == type_lng);
 
-	if (locked)
-		locked = 0;
-
 	if (strstr(rsep, "\r\n") != NULL)
 		return sql_error(sql, 02, SQLSTATE(42000)
 				"COPY INTO: record separator contains '\\r\\n' but "
@@ -1482,35 +1477,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
-	/* Only the MONETDB user is allowed copy into with
-	   a lock and only on tables without idx */
-	if (locked && !copy_allowed(sql, 1)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-		    "COPY INTO from .. LOCKED requires database administrator rights");
-	}
-	if (locked && (!list_empty(t->idxs.set) || !list_empty(t->keys.set))) {
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: insufficient privileges: "
-		    "COPY INTO from .. LOCKED requires tables without indices");
-	}
-	if (locked && has_snapshots(sql->session->tr)) {
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed on snapshots");
-	}
-	if (locked && !sql->session->auto_commit) {
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: only allowed in auto commit mode");
-	}
-	/* lock the store, for single user/transaction */
-	if (locked) {
-		sqlstore *store = sql->session->tr->store;
-		if (headers)
-			return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO .. LOCKED: not allowed with column lists");
-		store_lock(store);
-		while (ATOMIC_GET(&store->nr_active) > 1) {
-			store_unlock(store);
-			MT_sleep_ms(100);
-			store_lock(store);
-		}
-		sql->emod |= mod_locked;
-	}
 
 	collist = check_table_columns(sql, t, columns, "COPY INTO", tname);
 	if (!collist)
@@ -1578,7 +1544,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				return NULL;
 			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, locked, best_effort, fwf_widths, onclient, escape);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape);
 
 			if (!rel)
 				rel = nrel;
@@ -1591,7 +1557,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 		}
 	} else {
 		assert(onclient == 0);
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, locked, best_effort, NULL, onclient, escape);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape);
 	}
 	if (headers) {
 		dnode *n;
@@ -1648,11 +1614,6 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			return NULL;
 	}
 	rel = rel_insert_table(query, t, tname, rel);
-	if (rel && locked) {
-		rel->flag |= UPD_LOCKED;
-		if (rel->flag & UPD_COMP)
-			((sql_rel *) rel->r)->flag |= UPD_LOCKED;
-	}
 	if (rel && !constraint)
 		rel->flag |= UPD_NO_CONSTRAINT;
 	return rel;
@@ -1948,10 +1909,9 @@ rel_updates(sql_query *query, symbol *s)
 				l->h->next->next->next->next->next->next->data.sval,
 				l->h->next->next->next->next->next->next->next->data.i_val,
 				l->h->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->next->next->data.i_val);
+				l->h->next->next->next->next->next->next->next->next->next->data.lval,
+				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->next->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
 	}
 		break;

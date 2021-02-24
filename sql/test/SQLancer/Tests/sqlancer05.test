@@ -478,9 +478,6 @@ CREATE TABLE "sys"."t0" ("c0" INTERVAL MONTH,"c1" INTERVAL SECOND)
 statement ok
 create view v0(c0) as (select all t0.c1 from t0)
 
-statement error
-CALL sys.reuse('sys', 'v0')
-
 statement ok
 ROLLBACK
 
@@ -498,9 +495,6 @@ INSERT INTO t1(c1) VALUES(FALSE), (TRUE), (FALSE), (FALSE), (FALSE), (FALSE), (T
 
 statement ok
 DELETE FROM t1 WHERE t1.c1
-
-statement ok
-CALL sys.reuse('sys', 't1')
 
 statement ok
 DROP TABLE "sys"."t1"

@@ -218,7 +218,6 @@ scanner_init_keywords(void)
 	failed += keywords_insert("SEED", SEED);
 	failed += keywords_insert("LAST", LAST);
 	failed += keywords_insert("LOCAL", LOCAL);
-	failed += keywords_insert("LOCKED", LOCKED);
 	failed += keywords_insert("NATURAL", NATURAL);
 	failed += keywords_insert("NOT", NOT);
 	failed += keywords_insert("NULL", sqlNULL);

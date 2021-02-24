@@ -129,6 +129,8 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("oltp", "Inject the OLTP locking primitives"),
  optwrapper_pattern("wlc", "Inject the workload capture-replay primitives"),
  optwrapper_pattern("postfix", "Postfix the plan,e.g. pushing projections"),
+ pattern("optimizer", "mask", OPTwrapper, false, "", args(1,1, arg("",str))),
+ pattern("optimizer", "mask", OPTwrapper, false, "Manipulate the MSK objects", args(1,3, arg("",str),arg("mod",str),arg("fcn",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -180,13 +180,14 @@ makeArgument(MalBlkPtr mb, mel_arg *a, int *idx)
 		if (a->nr > 0)
 			setTypeIndex(tpe, a->nr);
 	} else {
+		int mask = 0;
 #ifdef MEL_STR
 		tpe = getAtomIndex(a->type, strlen(a->type),-1);
 #else
 		tpe = a->type ;
 #endif
 		if (a->isbat)
-			tpe = newBatType(tpe);
+			tpe = newBatType(tpe) | mask;
 	}
 	/*
 	  if (a->name){
@@ -302,7 +303,7 @@ makeFuncArgument(MalBlkPtr mb, mel_func_arg *a)
 		if (a->nr > 0)
 			setTypeIndex(tpe, a->nr);
 	} else {
-		tpe = a->type;;
+		tpe = a->type;
 		if (a->isbat)
 			tpe = newBatType(tpe);
 	}

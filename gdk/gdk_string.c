@@ -71,7 +71,7 @@ strHeap(Heap *d, size_t cap)
 
 	cap = MAX(cap, BATTINY);
 	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
-	if (HEAPalloc(d, size, 1) == GDK_SUCCEED) {
+	if (HEAPalloc(d, size, 1, 1) == GDK_SUCCEED) {
 		d->free = GDK_STRHASHTABLE * sizeof(stridx_t);
 		d->dirty = true;
 		memset(d->base, 0, d->free);
@@ -177,8 +177,10 @@ strLocate(Heap *h, const char *v)
 }
 
 var_t
-strPut(Heap *h, var_t *dst, const char *v)
+strPut(BAT *b, var_t *dst, const void *V)
 {
+	const char *v = V;
+	Heap *h = b->tvheap;
 	size_t elimbase = GDK_ELIMBASE(h->free);
 	size_t pad;
 	size_t pos, len = strLen(v);
@@ -290,9 +292,13 @@ strPut(Heap *h, var_t *dst, const char *v)
 			return 0;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPextend(h, newsize, true) != GDK_SUCCEED) {
+		Heap *new = HEAPgrow(h, newsize);
+		if (new == NULL)
 			return 0;
-		}
+		MT_lock_set(&b->theaplock);
+		HEAPdecref(h, false);
+		b->tvheap = h = new;
+		MT_lock_unset(&b->theaplock);
 #ifndef NDEBUG
 		/* fill should solve initialization problems within
 		 * valgrind */

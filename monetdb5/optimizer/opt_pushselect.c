@@ -211,7 +211,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}
 		lastbat = lastbat_arg(mb, p);
 		if (isSelect(p) && p->retc == 1 &&
-		   /* no cand list */ getArgType(mb, p, lastbat) != newBatType(TYPE_oid)) {
+			/* no cand list */ getArgType(mb, p, lastbat) != newBatType(TYPE_oid)) {
 			int i1 = getArg(p, 1), tid = 0;
 			InstrPtr q = old[vars[i1]];
 
@@ -454,12 +454,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						freeInstruction(p);
 						continue;
 					}
-					/* c = sql.delta(b,uid,uval,ins);
+					/* c = sql.delta(b,uid,uval);
 		 		 	 * l = projection(x, c);
 		 		 	 * into
-		 		 	 * l = sql.projectdelta(x,b,uid,uval,ins);
+		 		 	 * l = sql.projectdelta(x,b,uid,uval);
 		 		 	 */
-					else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
+					else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
 						q = copyInstruction(q);
 						if( q == NULL){
 							for (; i<limit; i++)
@@ -640,13 +640,12 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			}
 		}
 
-		/* c = delta(b, uid, uvl, ins)
+		/* c = delta(b, uid, uvl)
 		 * s = select(c, C1..)
 		 *
 		 * nc = select(b, C1..)
-		 * ni = select(ins, C1..)
 		 * nu = select(uvl, C1..)
-		 * s = subdelta(nc, uid, nu, ni);
+		 * s = subdelta(nc, uid, nu);
 		 *
 		 * doesn't handle Xselect(x, .. z, C1.. cases) ie multicolumn selects
 		 *
@@ -699,13 +698,11 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 			} else if (q && getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef) {
 				InstrPtr r = copyInstruction(p);
 				InstrPtr s = copyInstruction(p);
-				InstrPtr t = copyInstruction(p);
 				InstrPtr u = copyInstruction(q);
 
-				if( r == NULL || s == NULL || t== NULL ||u == NULL){
+				if( r == NULL || s == NULL ||u == NULL){
 					freeInstruction(r);
 					freeInstruction(s);
-					freeInstruction(t);
 					freeInstruction(u);
 					GDKfree(vars);
 					GDKfree(nvars);
@@ -731,19 +728,17 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
         			s->fcn = NULL;
         			s->blk = NULL;
 				pushInstruction(mb,s);
-				getArg(t, 0) = newTmpVariable(mb, newBatType(TYPE_oid));
-				setVarCList(mb,getArg(t,0));
-				getArg(t, 1) = getArg(q, 4); /* inserts */
-				pushInstruction(mb,t);
 
 				setFunctionId(u, subdeltaRef);
 				getArg(u, 0) = getArg(p,0);
 				getArg(u, 1) = getArg(r,0);
 				getArg(u, 2) = getArg(p,2); /* pre-cands */
 				getArg(u, 3) = getArg(q,2); /* update ids */
-				getArg(u, 4) = getArg(s,0);
-				u = pushArgument(mb, u, getArg(t,0));
+				u = pushArgument(mb, u, getArg(s,0)); /* selected updated values ids */
+				u->token = ASSIGNsymbol;
 				u->typechk = TYPE_UNKNOWN;
+        			u->fcn = NULL;
+        			u->blk = NULL;
 				pushInstruction(mb,u);
 				oclean[i] = 1;
 				continue;
@@ -791,7 +786,7 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 				pushInstruction(mb,u);
 				oclean[i] = 1;
 				continue;
-			} else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 5) {
+			} else if (getModuleId(q) == sqlRef && getFunctionId(q) == deltaRef && q->argc == 4) {
 				q = copyInstruction(q);
 				if( q == NULL){
 					GDKfree(vars);

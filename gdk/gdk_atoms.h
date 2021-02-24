@@ -54,7 +54,7 @@ typedef struct {
 	gdk_return (*atomUnfix) (const void *atom);
 
 	/* varsized atom-only ADT functions */
-	var_t (*atomPut) (Heap *, var_t *off, const void *src);
+	var_t (*atomPut) (BAT *, var_t *off, const void *src);
 	void (*atomDel) (Heap *, var_t *atom);
 	size_t (*atomLen) (const void *atom);
 	void (*atomHeap) (Heap *, size_t);
@@ -288,10 +288,10 @@ gdk_export const ptr ptr_nil;
  */
 
 static inline gdk_return __attribute__((__warn_unused_result__))
-ATOMputVAR(int type, Heap *heap, var_t *dst, const void *src)
+ATOMputVAR(BAT *b, var_t *dst, const void *src)
 {
-	assert(BATatoms[type].atomPut != NULL);
-	if ((*BATatoms[type].atomPut)(heap, dst, src) == 0)
+	assert(BATatoms[b->ttype].atomPut != NULL);
+	if ((*BATatoms[b->ttype].atomPut)(b, dst, src) == 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -334,16 +334,17 @@ ATOMputFIX(int type, void *dst, const void *src)
 }
 
 static inline gdk_return __attribute__((__warn_unused_result__))
-ATOMreplaceVAR(int type, Heap *heap, var_t *dst, const void *src)
+ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
 {
 	var_t loc = *dst;
+	int type = b->ttype;
 
 	assert(BATatoms[type].atomPut != NULL);
-	if ((*BATatoms[type].atomPut)(heap, &loc, src) == 0)
+	if ((*BATatoms[type].atomPut)(b, &loc, src) == 0)
 		return GDK_FAIL;
 	if (ATOMunfix(type, dst) != GDK_SUCCEED)
 		return GDK_FAIL;
-	ATOMdel(type, heap, dst);
+	ATOMdel(type, b->tvheap, dst);
 	*dst = loc;
 	return ATOMfix(type, src);
 }
@@ -413,24 +414,22 @@ strCmp(const char *l, const char *r)
 		: strNil(l) ? -1 : strcmp(l, r);
 }
 
-static inline var_t
-VarHeapValRaw(const void *b, BUN p, int w)
+static inline size_t
+VarHeapVal(const void *b, BUN p, int w)
 {
 	switch (w) {
 	case 1:
-		return (var_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
+		return (size_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
 	case 2:
-		return (var_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
+		return (size_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
 #if SIZEOF_VAR_T == 8
 	case 4:
-		return (var_t) ((const uint32_t *) b)[p];
+		return (size_t) ((const uint32_t *) b)[p];
 #endif
 	default:
-		return ((const var_t *) b)[p];
+		return (size_t) ((const var_t *) b)[p];
 	}
 }
-
-#define VarHeapVal(b,p,w)	((size_t) VarHeapValRaw(b,p,w))
 
 static inline BUN __attribute__((__pure__))
 strHash(const char *key)

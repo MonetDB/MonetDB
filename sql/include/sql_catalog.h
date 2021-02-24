@@ -90,7 +90,6 @@ typedef enum sql_dependency {
 #define TR_NEW 1
 
 #define RDONLY 0
-#define RD_INS 1
 #define RD_UPD_ID 2
 #define RD_UPD_VAL 3
 #define QUICK  4

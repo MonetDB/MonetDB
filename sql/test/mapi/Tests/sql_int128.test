@@ -180,6 +180,8 @@ querylog.define
 1
 sql.mvc
 1
+sql.claim
+1
 sql.append_prep
 1
 sql.append_exec

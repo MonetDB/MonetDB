@@ -156,16 +156,16 @@ BLOBheap(Heap *heap, size_t capacity)
 }
 
 static var_t
-BLOBput(Heap *h, var_t *bun, const void *VAL)
+BLOBput(BAT *b, var_t *bun, const void *VAL)
 {
 	const blob *val = VAL;
 	char *base = NULL;
 
-	*bun = HEAP_malloc(h, blobsize(val->nitems));
- 	base = h->base;
+	*bun = HEAP_malloc(b, blobsize(val->nitems));
+ 	base = b->tvheap->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, blobsize(val->nitems));
-		h->dirty = true;
+		b->tvheap->dirty = true;
 	}
 	return *bun;
 }

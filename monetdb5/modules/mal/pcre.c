@@ -2105,7 +2105,7 @@ PCRElikeselect5(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	return PCRElikeselect2(ret, bid, sid, pat, &esc, &f, anti);
 }
 
-#define APPEND(b, o)	(((oid *) b->theap.base)[b->batCount++] = (o))
+#define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
 #define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##width))
 
 #ifdef HAVE_LIBPCRE
@@ -2254,8 +2254,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
-	assert(sl == NULL || sl->tsorted);
-	assert(sr == NULL || sr->tsorted);
 
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
@@ -2298,9 +2296,9 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc, bo
 		BATsetcount(r2, BATcount(r2));
 	if (BATcount(r1) > 0) {
 		if (BATtdense(r1))
-			r1->tseqbase = ((oid *) r1->theap.base)[0];
+			r1->tseqbase = ((oid *) r1->theap->base)[0];
 		if (r2 && BATtdense(r2))
-			r2->tseqbase = ((oid *) r2->theap.base)[0];
+			r2->tseqbase = ((oid *) r2->theap->base)[0];
 	} else {
 		r1->tseqbase = 0;
 		if (r2)

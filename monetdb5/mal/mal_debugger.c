@@ -75,8 +75,8 @@ printBATproperties(stream *f, BAT *b)
 		mnstr_printf(f, " refs=%d ", BBP_refs(b->batCacheid));
 	if (b->batSharecnt)
 		mnstr_printf(f, " views=%d", b->batSharecnt);
-	if (b->theap.parentid)
-		mnstr_printf(f, "view on %s ", BBPname(b->theap.parentid));
+	if (b->theap->parentid != b->batCacheid)
+		mnstr_printf(f, "view on %s ", BBPname(b->theap->parentid));
 }
 
 static void
@@ -346,7 +346,7 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "batCacheid", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batCacheid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "tparentid", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_itoa((ssize_t) b->theap.parentid, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_itoa((ssize_t) b->theap->parentid, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batSharecnt", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batSharecnt, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCount", false) != GDK_SUCCEED ||
@@ -401,15 +401,15 @@ BATinfo(BAT **key, BAT **val, const bat bid)
 	    BUNappend(bk, "batInserted", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_utoa(b->batInserted, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "ttop", false) != GDK_SUCCEED ||
-	    BUNappend(bv, local_utoa(b->theap.free, buf), false) != GDK_SUCCEED ||
+	    BUNappend(bv, local_utoa(b->theap->free, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED ||
 	    BUNappend(bv, local_itoa((ssize_t) b->batCopiedtodisk, buf), false) != GDK_SUCCEED ||
 	    BUNappend(bk, "batDirtydesc", false) != GDK_SUCCEED ||
 	    BUNappend(bv, b->batDirtydesc ? "dirty" : "clean", false) != GDK_SUCCEED ||
 
 	    BUNappend(bk, "theap.dirty", false) != GDK_SUCCEED ||
-	    BUNappend(bv, b->theap.dirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
-		infoHeap(bk, bv, &b->theap, "tail.") != GDK_SUCCEED ||
+	    BUNappend(bv, b->theap->dirty ? "dirty" : "clean", false) != GDK_SUCCEED ||
+		infoHeap(bk, bv, b->theap, "tail.") != GDK_SUCCEED ||
 
 	    BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED ||
 	    BUNappend(bv, (b->tvheap && b->tvheap->dirty) ? "dirty" : "clean", false) != GDK_SUCCEED ||

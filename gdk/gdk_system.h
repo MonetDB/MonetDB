@@ -435,9 +435,9 @@ typedef struct MT_Lock {
 } MT_Lock;
 
 #ifdef LOCK_STATS
-#define MT_LOCK_INITIALIZER(n)	{ .next = (struct MT_Lock *) -1, .name = #n, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .next = (struct MT_Lock *) -1, .name = #n, }
 #else
-#define MT_LOCK_INITIALIZER(n)	{ .name = #n, }
+#define MT_LOCK_INITIALIZER(n)	{ .lock = ATOMIC_FLAG_INIT, .name = #n, }
 #endif
 
 #define MT_lock_try(l)	(ATOMIC_TAS(&(l)->lock) == 0)

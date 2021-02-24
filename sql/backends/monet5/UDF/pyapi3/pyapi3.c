@@ -736,7 +736,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 				goto aggrwrapup;
 			}
 
-			aggr_group_arr = (oid *)aggr_group->theap.base;
+			aggr_group_arr = (oid *)aggr_group->theap->base + aggr_group->tbaseoff;
 			for (element_it = 0; element_it < elements; element_it++) {
 				group_counts[aggr_group_arr[element_it]]++;
 			}
@@ -754,7 +754,7 @@ static str PyAPIeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, bo
 			// now split the columns one by one
 			for (i = 0; i < named_columns; i++) {
 				PyInput input = pyinput_values[i];
-				void *basevals = input.bat->theap.base;
+				void *basevals = Tloc(input.bat, 0);
 
 				if (!input.scalar) {
 					switch (input.bat_type) {

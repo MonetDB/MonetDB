@@ -35,11 +35,11 @@ bat.new
 sql.mvc
 1
 sql.bind
-3
+2
 sql.tid
 2
 algebra.thetaselect
-3
+2
 sql.subdelta
 1
 aggr.count

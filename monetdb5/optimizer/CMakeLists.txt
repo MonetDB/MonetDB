@@ -29,6 +29,7 @@ target_sources(optimizer
   opt_jit.c opt_jit.h
   opt_projectionpath.c opt_projectionpath.h
   opt_macro.c opt_macro.h
+  opt_mask.c opt_mask.h
   opt_matpack.c opt_matpack.h
   opt_json.c opt_json.h
   opt_mergetable.c opt_mergetable.h

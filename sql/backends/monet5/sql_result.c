@@ -686,13 +686,12 @@ has_whitespace(const char *s)
 }
 
 str
-mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int locked, int best, bool from_stdin, bool escape)
+mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, const char *sep, const char *rsep, const char *ssep, const char *ns, lng sz, lng offset, int best, bool from_stdin, bool escape)
 {
 	int i = 0, j;
 	node *n;
 	Tablet as;
 	Column *fmt;
-	BUN cnt = 0;
 	str msg = MAL_SUCCEED;
 
 	*bats =0;	// initialize the receiver
@@ -711,13 +710,6 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 	if (offset < 0 || offset > (lng) BUN_MAX) {
 		sql_error(m, 500, "offset out of range");
 		return NULL;
-	}
-
-	if (locked) {
-		/* flush old changes to disk */
-		sql_trans_end(m->session, 1);
-		store_apply_deltas(m->session->tr->store, true);
-		sql_trans_begin(m->session);
 	}
 
 	if (offset > 0)
@@ -743,7 +735,6 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 
-		sqlstore *store = m->session->tr->store;
 		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
 
@@ -782,38 +773,8 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 				fmt[i].frstr = &sec_frstr;
 			}
 			fmt[i].size = ATOMsize(fmt[i].adt);
-
-			if (locked) {
-				BAT *b = store->storage_api.bind_col(m->session->tr, col, RDONLY);
-				if (b == NULL) {
-					for (j = 0; j < i; j++) {
-						GDKfree(fmt[j].data);
-						BBPunfix(fmt[j].c->batCacheid);
-					}
-					GDKfree(fmt[i].data);
-					sql_error(m, 500, "failed to bind to table column");
-					return NULL;
-				}
-
-				HASHdestroy(b);
-
-				fmt[i].c = b;
-				cnt = BATcount(b);
-				if (sz > 0 && BATcapacity(b) < (BUN) sz) {
-					if (BATextend(fmt[i].c, (BUN) sz) != GDK_SUCCEED) {
-						for (j = 0; j <= i; j++) {
-							GDKfree(fmt[j].data);
-							BBPunfix(fmt[j].c->batCacheid);
-						}
-						sql_error(m, 500, SQLSTATE(HY013) "failed to allocate space for column");
-						return NULL;
-					}
-				}
-				fmt[i].ci = bat_iterator(fmt[i].c);
-				fmt[i].c->batDirtydesc = true;
-			}
 		}
-		if ( (locked || (msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED)  ){
+		if ((msg = TABLETcreate_bats(&as, (BUN) (sz < 0 ? 1000 : sz))) == MAL_SUCCEED){
 			if (!sz || (SQLload_file(cntxt, &as, bs, out, sep, rsep, ssep ? ssep[0] : 0, offset, sz, best, from_stdin, t->base.name, escape) != BUN_NONE &&
 				(best || !as.error))) {
 				*bats = (BAT**) GDKzalloc(sizeof(BAT *) * as.nr_attrs);
@@ -822,35 +783,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 					TABLETdestroy_format(&as);
 					return NULL;
 				}
-				if (locked)
-					msg = TABLETcollect_parts(*bats,&as, cnt);
-				else
-					msg = TABLETcollect(*bats,&as);
-			} else if (locked) {	/* restore old counts */
-				for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
-					sql_column *col = n->data;
-					BAT *b = store->storage_api.bind_col(m->session->tr, col, RDONLY);
-					if (b == NULL)
-						sql_error(m, 500, "failed to bind to temporary column");
-					else {
-						BATsetcount(b, cnt);
-						BBPunfix(b->batCacheid);
-					}
-				}
-			}
-		}
-		if (locked) {	/* fix delta structures and transaction */
-			for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
-				sql_column *c = n->data;
-				BAT *b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
-				sql_delta *d = ATOMIC_PTR_GET(&c->data);
-
-				if ( b == NULL)
-					sql_error(m, 500, "failed to bind to delta column");
-				else {
-					d->ibase = (oid) (d->cnt = BATcount(b));
-					BBPunfix(b->batCacheid);
-				}
+				msg = TABLETcollect(*bats,&as);
 			}
 		}
 		if (as.error) {
