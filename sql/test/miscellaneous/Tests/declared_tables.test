@@ -69,3 +69,27 @@ SELECT * FROM func()
 
 statement ok
 ROLLBACK
+
+statement ok
+START TRANSACTION
+
+statement ok
+create schema myschema
+
+statement ok
+set schema myschema
+
+statement ok
+create table testtab(ts timestamp default now)
+
+query T
+select "default" from sys._columns where table_id = (select id from sys._tables where name = 'testtab')
+----
+"current_timestamp"()
+
+statement ok
+set schema sys
+
+statement ok
+ROLLBACK
+
