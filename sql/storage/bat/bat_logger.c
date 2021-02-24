@@ -56,95 +56,20 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 #define D(schema, table)	"D_" schema "_" table
 
 #if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
-static int
-old_find_table_id(old_logger *lg, const char *val, int *sid)
-{
-	BAT *s = NULL;
-	BAT *b, *t;
-	BATiter bi;
-	oid o;
-	int id;
-
-	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "schemas", "name"), 0, 0));
-	if (b == NULL)
-		return 0;
-	s = BATselect(b, NULL, "sys", NULL, 1, 1, 0);
-	bat_destroy(b);
-	if (s == NULL)
-		return 0;
-	if (BATcount(s) == 0) {
-		bat_destroy(s);
-		return 0;
-	}
-	o = BUNtoid(s, 0);
-	bat_destroy(s);
-	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "schemas", "id"), 0, 0));
-	if (b == NULL)
-		return 0;
-	bi = bat_iterator(b);
-	id = * (const int *) BUNtloc(bi, o - b->hseqbase);
-	bat_destroy(b);
-	/* store id of schema "sys" */
-	*sid = id;
-
-	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "_tables", "name"), 0, 0));
-	if (b == NULL) {
-		bat_destroy(s);
-		return 0;
-	}
-	s = BATselect(b, NULL, val, NULL, 1, 1, 0);
-	bat_destroy(b);
-	if (s == NULL)
-		return 0;
-	if (BATcount(s) == 0) {
-		bat_destroy(s);
-		return 0;
-	}
-	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "_tables", "schema_id"), 0, 0));
-	if (b == NULL) {
-		bat_destroy(s);
-		return 0;
-	}
-	t = BATselect(b, s, &id, NULL, 1, 1, 0);
-	bat_destroy(b);
-	bat_destroy(s);
-	s = t;
-	if (s == NULL)
-		return 0;
-	if (BATcount(s) == 0) {
-		bat_destroy(s);
-		return 0;
-	}
-
-	o = BUNtoid(s, 0);
-	bat_destroy(s);
-
-	b = temp_descriptor(old_logger_find_bat(lg, N("sys", "_tables", "id"), 0, 0));
-	if (b == NULL)
-		return 0;
-	bi = bat_iterator(b);
-	id = * (const int *) BUNtloc(bi, o - b->hseqbase);
-	bat_destroy(b);
-	return id;
-}
-
 static gdk_return
-tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const char *tname, ...)
+tabins(logger *lg, bool first, int tt, int nid, ...)
 {
 	va_list va;
-	char lname[64];
-	const char *cname;
+	int cid;
 	const void *cval;
 	gdk_return rc;
 	BAT *b;
-	int len;
+	BUN pos;
 
-	va_start(va, tname);
-	while ((cname = va_arg(va, char *)) != NULL) {
+	va_start(va, nid);
+	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
-		len = snprintf(lname, sizeof(lname), "%s_%s_%s", sname, tname, cname);
-		if (len == -1 || (size_t)len >= sizeof(lname) ||
-			(b = temp_descriptor(old_logger_find_bat(lg, lname, 0, 0))) == NULL) {
+		if ((b = temp_descriptor(logger_find_bat(lg, cid))) == NULL) {
 			va_end(va);
 			return GDK_FAIL;
 		}
@@ -157,7 +82,12 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 			}
 			bat_destroy(b);
 			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
-			    old_logger_add_bat(lg, bn, lname, 0, 0) != GDK_SUCCEED) {
+				(lg->catalog_lid ?
+				 /* established new catalog */
+				 log_bat_persists(lg, bn, cid) != GDK_SUCCEED :
+				 /* upgrading to new catalog */
+				 ((pos = BUNfnd(lg->catalog_id, &cid)) == BUN_NONE ||
+				  BUNreplace(lg->catalog_bid, pos + lg->catalog_bid->hseqbase, &bn->batCacheid, false) != GDK_SUCCEED))) {
 				bat_destroy(bn);
 				va_end(va);
 				return GDK_FAIL;
@@ -176,8 +106,7 @@ tabins(void *lg, bool first, int tt, const char *nname, const char *sname, const
 	if (tt >= 0) {
 		if ((b = COLnew(0, tt, 0, PERSISTENT)) == NULL)
 			return GDK_FAIL;
-		if ((rc = BATsetaccess(b, BAT_READ)) == GDK_SUCCEED)
-			rc = old_logger_add_bat(lg, b, nname, 0, 0);
+		rc = log_bat_persists(lg, b, nid);
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED)
 			return rc;
@@ -1354,12 +1283,6 @@ upgrade(old_logger *lg)
 	} bats[3];
 	BAT *mapold = COLnew(0, TYPE_int, 256, TRANSIENT);
 	BAT *mapnew = COLnew(0, TYPE_int, 256, TRANSIENT);
-	BAT *catalog_bid = NULL;
-	BAT *catalog_id = NULL;
-	BAT *dcatalog = NULL;
-	int schid = 0;
-	int tabid = 0;
-	int parid = 0;
 
 	bats[0].nmbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_name", 0, 0));
 	bats[0].idbat = temp_descriptor(old_logger_find_bat(lg, "sys_schemas_id", 0, 0));
@@ -1380,7 +1303,9 @@ upgrade(old_logger *lg)
 			goto bailout;
 		if (i > 0 && bats[i].parbat == NULL)
 			goto bailout;
+		/* create a candidate list from the deleted rows bat */
 		if (BATcount(bats[i].cands) == 0) {
+			/* no deleted rows -> no candidate list */
 			bat_destroy(bats[i].cands);
 			bats[i].cands = NULL;
 		} else {
@@ -1395,27 +1320,30 @@ upgrade(old_logger *lg)
 		}
 	}
 
+	int schid, tabid, parid;
+	schid = tabid = parid = 0;	/* restrict search to parent object */
 	for (int i = 0; tables[i].schema != NULL; i++) {
-		int lookup;
-		const char *name;
+		int lookup;				/* which system table to look the name up in */
+		const char *name;		/* the name to look up */
 		if (tables[i].table == NULL) {
 			/* it's a schema */
 			name = tables[i].schema;
 			lookup = 0;
-			parid = 0;
+			parid = 0;			/* no parent object */
 		} else if (tables[i].column == NULL) {
 			/* it's a table */
 			name = tables[i].table;
 			lookup = 1;
-			parid = schid;
+			parid = schid;		/* parent object is last schema */
 		} else {
 			/* it's a column */
 			name = tables[i].column;
 			lookup = 2;
-			parid = tabid;
+			parid = tabid;		/* parent object is last table */
 		}
 		BAT *cand = bats[lookup].cands;
 		if (bats[lookup].parbat != NULL) {
+			/* restrict search to parent object */
 			cand = BATselect(bats[lookup].parbat, cand, &parid, NULL, true, true, false);
 			if (cand == NULL)
 				goto bailout;
@@ -1442,15 +1370,12 @@ upgrade(old_logger *lg)
 	}
 
 	if (BATcount(mapold) == 0) {
+		/* skip unnecessary work if there is no need for mapping */
 		bat_destroy(mapold);
 		bat_destroy(mapnew);
 		mapold = NULL;
 		mapnew = NULL;
 	}
-
-	catalog_bid = COLnew(0, TYPE_int, 0, PERSISTENT);
-	catalog_id = COLnew(0, TYPE_int, 0, PERSISTENT);
-	dcatalog = COLnew(0, TYPE_oid, 0, PERSISTENT);
 
 	const char *delname;
 	delname = NULL;
@@ -1462,7 +1387,7 @@ upgrade(old_logger *lg)
 		BAT *b = temp_descriptor(old_logger_find_bat(lg, tables[i].fullname, 0, 0));
 		if (b == NULL)
 			continue;
-		BAT *orig = b;
+		BAT *orig = NULL;
 		if (tables[i].hasids && mapold) {
 			BAT *b1, *b2;
 			BAT *cands = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
@@ -1496,14 +1421,15 @@ upgrade(old_logger *lg)
 				bat_destroy(b1);
 				bat_destroy(b2);
 			} else {
-				BAT *b3 = COLcopy(b, b->ttype, true, PERSISTENT);
-				b = b3;
+				orig = b;
+				b = COLcopy(orig, orig->ttype, true, PERSISTENT);
 				if (b == NULL) {
 					bat_destroy(orig);
 					bat_destroy(b1);
 					bat_destroy(b2);
 					goto bailout;
 				}
+				BAT *b3;
 				b3 = BATproject(b2, mapnew);
 				bat_destroy(b2);
 				rc = BATreplace(b, b1, b3, false);
@@ -1518,14 +1444,13 @@ upgrade(old_logger *lg)
 			/* now b contains the updated values for the column in tables[i] */
 		}
 		/* here, b is either the original, unchanged bat or the updated one */
-		if (BUNappend(catalog_bid, &b->batCacheid, false) != GDK_SUCCEED ||
-			BUNappend(catalog_id, &tables[i].newid, false) != GDK_SUCCEED) {
-			if (b != orig)
-				bat_destroy(orig);
+		if (BUNappend(lg->lg->catalog_bid, &b->batCacheid, false) != GDK_SUCCEED ||
+			BUNappend(lg->lg->catalog_id, &tables[i].newid, false) != GDK_SUCCEED) {
+			bat_destroy(orig);	/* may be NULL */
 			bat_destroy(b);
 			goto bailout;
 		}
-		if (b != orig) {
+		if (orig != NULL) {
 			BBPretain(b->batCacheid);
 			BBPrelease(orig->batCacheid);
 			BATmode(b, false);
@@ -1556,8 +1481,8 @@ upgrade(old_logger *lg)
 		bat_destroy(cands);
 		goto bailout;
 	}
-	if (BATappend(catalog_id, b, NULL, false) != GDK_SUCCEED ||
-		BATappend(catalog_bid, lg->catalog_bid, cands, false) != GDK_SUCCEED) {
+	if (BATappend(lg->lg->catalog_id, b, NULL, false) != GDK_SUCCEED ||
+		BATappend(lg->lg->catalog_bid, lg->catalog_bid, cands, false) != GDK_SUCCEED) {
 		bat_destroy(cands);
 		bat_destroy(b);
 		goto bailout;
@@ -1576,366 +1501,245 @@ upgrade(old_logger *lg)
 		bat_destroy(bats[i].parbat);
 		bat_destroy(bats[i].cands);
 	}
-	bat_destroy(catalog_bid);
-	bat_destroy(catalog_id);
-	bat_destroy(dcatalog);
 	return rc;
 }
 
 static gdk_return
-bl_postversion(void *Store, void *lg)
+bl_postversion(void *Store, old_logger *old_lg)
 {
 	sqlstore *store = Store;
 	(void)store;
-	(void)lg;
-	upgrade(lg);
+	if (store->catalog_version < 52300 && upgrade(old_lg) != GDK_SUCCEED)
+		return GDK_FAIL;
+	logger *lg = old_lg->lg;
 #ifdef CATALOG_JUN2020
 	if (store->catalog_version <= CATALOG_JUN2020) {
-		int id;
-		lng lid;
-		BAT *fid = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "id"), 0, 0));
-		if (logger_sequence(lg, OBJ_SID, &lid) == 0 ||
-		    fid == NULL) {
-			bat_destroy(fid);
-			return GDK_FAIL;
-		}
-		id = (int) lid;
-		BAT *sem = COLnew(fid->hseqbase, TYPE_bit, BATcount(fid), PERSISTENT);
-		if (sem == NULL) {
-			bat_destroy(fid);
-			return GDK_FAIL;
-		}
-		bit *fsys = (bit *) Tloc(sem, 0);
-		for (BUN p = 0, q = BATcount(fid); p < q; p++) {
-			fsys[p] = 1;
-		}
-
-		sem->tkey = false;
-		sem->tsorted = sem->trevsorted = true;
-		sem->tnonil = true;
-		sem->tnil = false;
-		BATsetcount(sem, BATcount(fid));
-		bat_destroy(fid);
-		if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
-		    old_logger_add_bat(lg, sem, N("sys", "functions", "semantics"), 0, 0) != GDK_SUCCEED) {
-
+		BAT *b;								 /* temp variable */
+		{
+			/* new BOOLEAN column sys.functions.semantics */
+			b = temp_descriptor(logger_find_bat(lg, 2017)); /* sys.functions.id */
+			BAT *sem = BATconstant(b->hseqbase, TYPE_bit, &(bit){1}, BATcount(b), PERSISTENT);
+			bat_destroy(b);
+			if (sem == NULL)
+				return GDK_FAIL;
+			if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_id, &(int) {2162}, false) != GDK_SUCCEED ||
+				BUNappend(lg->catalog_bid, &sem->batCacheid, false) != GDK_SUCCEED) {
+				bat_destroy(sem);
+				return GDK_FAIL;
+			}
+			BBPretain(sem->batCacheid);
 			bat_destroy(sem);
-			return GDK_FAIL;
+			if (tabins(lg, false, -1, 0,
+					   2077, &(int) {2162},		/* sys._columns.id */
+					   2078, "semantics",		/* sys._columns.name */
+					   2079, "boolean",			/* sys._columns.type */
+					   2080, &(int) {1},		/* sys._columns.type_digits */
+					   2081, &(int) {0},		/* sys._columns.type_scale */
+					   2082, &(int) {2016},		/* sys._columns.table_id */
+					   2083, str_nil,			/* sys._columns.default */
+					   2084, &(bit) {TRUE},		/* sys._columns.null */
+					   2085, &(int) {11},		/* sys._columns.number */
+					   2086, str_nil,			/* sys._columns.storage */
+					   0) != GDK_SUCCEED)
+				return GDK_FAIL;
 		}
-		bat_destroy(sem);
-		int sid;
-		int tid = old_find_table_id(lg, "functions", &sid);
-		if (tabins(lg, true, -1, NULL, "sys", "_columns",
-			   "id", &id,
-			   "name", "semantics",
-			   "type", "boolean",
-			   "type_digits", &((const int) {1}),
-			   "type_scale", &((const int) {0}),
-			   "table_id", &tid,
-			   "default", str_nil,
-			   "null", &((const bit) {TRUE}),
-			   "number", &((const int) {11}),
-			   "storage", str_nil,
-			   NULL) != GDK_SUCCEED)
-			return GDK_FAIL;
-		{	/* move sql.degrees, sql.radians, sql.like and sql.ilike functions from 09_like.sql and 10_math.sql script to sql_types list */
-			BAT *func_func = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "name"), 0, 0));
-			if (func_func == NULL) {
-				return GDK_FAIL;
-			}
-			BAT *degrees_func = BATselect(func_func, NULL, "degrees", NULL, 1, 1, 0);
-			if (degrees_func == NULL) {
-				bat_destroy(func_func);
-				return GDK_FAIL;
-			}
-			BAT *radians_func = BATselect(func_func, NULL, "radians", NULL, 1, 1, 0);
-			if (radians_func == NULL) {
-				bat_destroy(degrees_func);
-				return GDK_FAIL;
-			}
 
-			BAT *cands = BATmergecand(degrees_func, radians_func);
-			bat_destroy(degrees_func);
-			bat_destroy(radians_func);
+		BAT *func_tid;
+		{
+			/* move sql.degrees, sql.radians, sql.like and sql.ilike functions
+			 * from 09_like.sql and 10_math.sql script to sql_types list */
+			BAT *del_funcs = temp_descriptor(logger_find_bat(lg, 2016));
+			BAT *func_func = temp_descriptor(logger_find_bat(lg, 2018));
+			BAT *func_schem = temp_descriptor(logger_find_bat(lg, 2026));
+			BAT *cands;
+			if (del_funcs == NULL || func_func == NULL || func_schem == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(func_func);
+				bat_destroy(func_schem);
+				return GDK_FAIL;
+			}
+			gdk_return rc = BATsort(&b, NULL, NULL, del_funcs, NULL, NULL, false, false, false);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(del_funcs);
+				bat_destroy(func_func);
+				bat_destroy(func_schem);
+				return rc;
+			}
+			func_tid = BATnegcands(BATcount(func_func), b);
+			bat_destroy(b);
+			if (func_tid == NULL) {
+				bat_destroy(del_funcs);
+				bat_destroy(func_func);
+				bat_destroy(func_schem);
+				return GDK_FAIL;
+			}
+			b = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
+			bat_destroy(func_schem);
+			cands = b;
 			if (cands == NULL) {
+				bat_destroy(del_funcs);
 				bat_destroy(func_func);
+				bat_destroy(func_tid);
 				return GDK_FAIL;
 			}
 
-			BAT *like_func = BATselect(func_func, NULL, "like", NULL, 1, 1, 0);
-			if (like_func == NULL) {
-				bat_destroy(func_func);
-				bat_destroy(cands);
-				return GDK_FAIL;
+			const char *funcs[] = {
+				"degrees",
+				"radians",
+				"like",
+				"ilike",
+				NULL,
+			};
+			for (int i = 0; funcs[i]; i++) {
+				if ((b = BATselect(func_func, cands, funcs[i], NULL, true, true, false)) == NULL ||
+					BATappend(del_funcs, b, NULL, true) != GDK_SUCCEED) {
+					bat_destroy(del_funcs);
+					bat_destroy(func_func);
+					bat_destroy(func_tid);
+					return GDK_FAIL;
+				}
+				bat_destroy(b);
 			}
-
-			BAT *ncands = BATmergecand(cands, like_func);
 			bat_destroy(cands);
-			bat_destroy(like_func);
-			if (ncands == NULL) {
-				bat_destroy(func_func);
-				return GDK_FAIL;
-			}
-
-			BAT *ilike_func = BATselect(func_func, NULL, "ilike", NULL, 1, 1, 0);
 			bat_destroy(func_func);
-			if (ilike_func == NULL) {
-				bat_destroy(ncands);
-				return GDK_FAIL;
-			}
-
-			BAT *final_cands = BATmergecand(ncands, ilike_func);
-			bat_destroy(ncands);
-			bat_destroy(ilike_func);
-			if (final_cands == NULL) {
-				return GDK_FAIL;
-			}
-
-			BAT *sys_funcs = temp_descriptor(old_logger_find_bat(lg, D("sys", "functions"), 0, 0));
-			if (sys_funcs == NULL) {
-				bat_destroy(final_cands);
-				return GDK_FAIL;
-			}
-			gdk_return res = BATappend(sys_funcs, final_cands, NULL, true);
-			bat_destroy(final_cands);
-			bat_destroy(sys_funcs);
-			if (res != GDK_SUCCEED)
-				return res;
-			if ((res = old_logger_upgrade_bat(lg, D("sys", "functions"), LOG_TAB, 0)) != GDK_SUCCEED)
-				return res;
+			bat_destroy(del_funcs);
 		}
-		{	/* Fix SQL aggregation functions defined on the wrong modules: sql.null, sql.all, sql.zero_or_one and sql.not_unique */
-			BAT *func_mod = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "mod"), 0, 0));
+
+		{
+			/* Fix SQL aggregation functions defined on the wrong modules:
+			 * sql.null, sql.all, sql.zero_or_one and sql.not_unique */
+			BAT *func_mod = temp_descriptor(logger_find_bat(lg, 2020));
 			if (func_mod == NULL)
 				return GDK_FAIL;
 
-			BAT *sqlfunc = BATselect(func_mod, NULL, "sql", NULL, 1, 1, 0); /* Find the functions defined on sql module */
+			/* find the (undeleted) functions defined on "sql" module */
+			BAT *sqlfunc = BATselect(func_mod, func_tid, "sql", NULL, true, true, false);
+			bat_destroy(func_tid);
 			if (sqlfunc == NULL) {
 				bat_destroy(func_mod);
 				return GDK_FAIL;
 			}
-			BAT *func_type = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "type"), 0, 0));
+			BAT *func_type = temp_descriptor(logger_find_bat(lg, 2022));
 			if (func_type == NULL) {
 				bat_destroy(func_mod);
 				bat_destroy(sqlfunc);
 				return GDK_FAIL;
 			}
-			int three = 3; /* and are aggregates */
-			BAT *sqlaggr_func = BATselect(func_type, sqlfunc, &three, NULL, 1, 1, 0);
+			/* and are aggregates (3) */
+			BAT *sqlaggr_func = BATselect(func_type, sqlfunc, &(int) {3}, NULL, true, true, false);
 			bat_destroy(sqlfunc);
 			if (sqlaggr_func == NULL) {
 				bat_destroy(func_mod);
 				return GDK_FAIL;
 			}
 
-			BAT *func_func = temp_descriptor(old_logger_find_bat(lg, N("sys", "functions", "func"), 0, 0));
+			BAT *func_func = temp_descriptor(logger_find_bat(lg, 2019));
 			if (func_func == NULL) {
 				bat_destroy(func_mod);
 				bat_destroy(sqlaggr_func);
 				return GDK_FAIL;
 			}
-			BAT *nullfunc = BATselect(func_func, sqlaggr_func, "null", NULL, 1, 1, 0);
-			if (nullfunc == NULL) {
-				bat_destroy(func_mod);
-				bat_destroy(sqlaggr_func);
-				bat_destroy(func_func);
-				return GDK_FAIL;
+			const char *aggrs[] = {
+				"null",
+				"all",
+				"zero_or_one",
+				"not_unique",
+				NULL
+			};
+			for (int i = 0; aggrs[i] != NULL; i++) {
+				BAT *func = BATselect(func_func, sqlaggr_func, aggrs[i], NULL, true, true, false);
+				if (func == NULL) {
+					bat_destroy(func_mod);
+					bat_destroy(sqlaggr_func);
+					bat_destroy(func_func);
+					return GDK_FAIL;
+				}
+				BAT *aggr = BATconstant(0, TYPE_str, "aggr", BATcount(func), TRANSIENT);
+				if (func == NULL) {
+					bat_destroy(func_mod);
+					bat_destroy(sqlaggr_func);
+					bat_destroy(func_func);
+					bat_destroy(func);
+					return GDK_FAIL;
+				}
+				gdk_return rc = BATreplace(func_mod, func, aggr, true);
+				bat_destroy(func);
+				bat_destroy(aggr);
+				if (rc != GDK_SUCCEED) {
+					bat_destroy(func_mod);
+					bat_destroy(sqlaggr_func);
+					bat_destroy(func_func);
+					return rc;
+				}
 			}
-			BAT *allfunc = BATselect(func_func, sqlaggr_func, "all", NULL, 1, 1, 0);
-			if (allfunc == NULL) {
-				bat_destroy(func_mod);
-				bat_destroy(sqlaggr_func);
-				bat_destroy(func_func);
-				bat_destroy(nullfunc);
-				return GDK_FAIL;
-			}
-			BAT *zero_or_onefunc = BATselect(func_func, sqlaggr_func, "zero_or_one", NULL, 1, 1, 0);
-			if (zero_or_onefunc == NULL) {
-				bat_destroy(func_func);
-				bat_destroy(sqlaggr_func);
-				bat_destroy(func_mod);
-				bat_destroy(nullfunc);
-				bat_destroy(allfunc);
-				return GDK_FAIL;
-			}
-			BAT *not_uniquefunc = BATselect(func_func, sqlaggr_func, "not_unique", NULL, 1, 1, 0);
-			bat_destroy(func_func);
-			bat_destroy(sqlaggr_func);
-			if (not_uniquefunc == NULL) {
-				bat_destroy(func_mod);
-				bat_destroy(nullfunc);
-				bat_destroy(allfunc);
-				bat_destroy(zero_or_onefunc);
-				return GDK_FAIL;
-			}
-
-			BAT *cands1 = BATmergecand(nullfunc, allfunc);
-			bat_destroy(nullfunc);
-			bat_destroy(allfunc);
-			if (cands1 == NULL) {
-				bat_destroy(func_mod);
-				bat_destroy(zero_or_onefunc);
-				bat_destroy(not_uniquefunc);
-				return GDK_FAIL;
-			}
-			BAT *cands2 = BATmergecand(cands1, zero_or_onefunc);
-			bat_destroy(zero_or_onefunc);
-			bat_destroy(cands1);
-			if (cands2 == NULL) {
-				bat_destroy(func_mod);
-				bat_destroy(not_uniquefunc);
-				return GDK_FAIL;
-			}
-			BAT *cands3 = BATmergecand(cands2, not_uniquefunc);
-			bat_destroy(not_uniquefunc);
-			bat_destroy(cands2);
-			if (cands3 == NULL) {
-				bat_destroy(func_mod);
-				return GDK_FAIL;
-			}
-
-			BAT *cands_project = BATproject(cands3, func_mod);
-			if (cands_project == NULL) {
-				bat_destroy(func_mod);
-				bat_destroy(cands3);
-				return GDK_FAIL;
-			}
-			const char *right_module = "aggr"; /* set module to 'aggr' */
-			BAT *update_bat = BATconstant(cands_project->hseqbase, TYPE_str, right_module, BATcount(cands_project), TRANSIENT);
-			bat_destroy(cands_project);
-			if (update_bat == NULL) {
-				bat_destroy(func_mod);
-				bat_destroy(cands3);
-				return GDK_FAIL;
-			}
-
-			gdk_return res = BATreplace(func_mod, cands3, update_bat, TRUE);
-			bat_destroy(func_mod);
-			bat_destroy(cands3);
-			bat_destroy(update_bat);
-			if (res != GDK_SUCCEED)
-				return res;
-			if ((res = old_logger_upgrade_bat(lg, N("sys", "functions", "mod"), LOG_COL, 0)) != GDK_SUCCEED)
-				return res;
 		}
 	}
 #endif
 
 #ifdef CATALOG_OCT2020
 	if (store->catalog_version <= CATALOG_OCT2020) {
-		lng lid;
-		if (logger_sequence(lg, OBJ_SID, &lid) == 0)
-			return GDK_FAIL;
-		(void)lid;
-#if 0 /* TODO */
-		int id = (int) lid;
-		char *schemas[2] = {"sys", "tmp"};
-		for (int i = 0 ; i < 2; i++) { /* create for both tmp and sys schemas */
-			int sid, tid = old_find_table_id(lg, schemas[i], "objects", &sid);
-			if (tabins(lg, true, -1, NULL, "sys", "_columns",
-				"id", &id,
-				"name", "sub",
-				"type", "int",
-				"type_digits", &((const int) {32}),
-				"type_scale", &((const int) {0}),
-				"table_id", &tid,
-				"default", str_nil,
-				"null", &((const bit) {TRUE}),
-				"number", &((const int) {3}),
-				"storage", str_nil,
-				NULL) != GDK_SUCCEED)
-				return GDK_FAIL;
-			id++;
-		}
-
 		/* add sub column to "objects" table. This is required for merge tables */
-		BAT *objs_id = temp_descriptor(old_old_logger_find_bat(lg, N("sys", "objects", "id"), 0, 0));
-		if (!objs_id)
+		if (tabins(lg, false, -1, 0,
+				   2077, &(int) {2163},		/* sys._columns.id */
+				   2078, "sub",				/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {32},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2110},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {3},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg, false, -1, 0,
+				   2077, &(int) {2164},		/* sys._columns.id */
+				   2078, "sub",				/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {32},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2158},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {3},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
 			return GDK_FAIL;
 
-		BAT *objs_sub = BATconstant(objs_id->hseqbase, TYPE_int, ATOMnilptr(TYPE_int), BATcount(objs_id), PERSISTENT);
-		if (!objs_sub) {
-			bat_destroy(objs_id);
+		/* alter table sys.objects add column sub integer; */
+		BAT *objs_id = temp_descriptor(logger_find_bat(lg, 2111));
+		if (objs_id == NULL)
 			return GDK_FAIL;
-		}
-		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED || old_logger_add_bat(lg, objs_sub, N("sys", "objects", "sub"), 0, 0) != GDK_SUCCEED) {
-			bat_destroy(objs_id);
-			bat_destroy(objs_sub);
-			return GDK_FAIL;
-		}
 
-		BAT *objs_nr = temp_descriptor(old_old_logger_find_bat(lg, N("sys", "objects", "nr"), 0, 0));
-		if (!objs_nr) {
-			bat_destroy(objs_id);
-			bat_destroy(objs_nr);
-			bat_destroy(objs_sub);
-			return GDK_FAIL;
-		}
-
-		/* hopefully no one will create a key or index with more than 2000 columns */
-		BAT *tids = BATthetaselect(objs_nr, NULL, &((const int) {2000}), ">");
-		if (!tids) {
-			bat_destroy(objs_id);
-			bat_destroy(objs_nr);
-			bat_destroy(objs_sub);
-			return GDK_FAIL;
-		}
-
-		BAT *prj = BATproject2(tids, objs_nr, NULL);
-		if (!prj) {
-			bat_destroy(objs_id);
-			bat_destroy(objs_nr);
-			bat_destroy(objs_sub);
-			bat_destroy(tids);
-			return GDK_FAIL;
-		}
-		gdk_return res = BATreplace(objs_sub, tids, prj, TRUE); /* 'sub' takes the id of the child */
-		bat_destroy(objs_sub);
-		bat_destroy(prj);
-		if (res != GDK_SUCCEED) {
-			bat_destroy(objs_id);
-			bat_destroy(objs_nr);
-			bat_destroy(tids);
-			return res;
-		}
-
-		if (!(prj = BATproject2(tids, objs_id, NULL))) {
-			bat_destroy(objs_id);
-			bat_destroy(objs_nr);
-			bat_destroy(objs_sub);
-			bat_destroy(tids);
-			return GDK_FAIL;
-		}
-		res = BATreplace(objs_nr, tids, prj, TRUE); /* 'nr' takes the id of the parent */
-		bat_destroy(objs_nr);
-		bat_destroy(prj);
-		if (res != GDK_SUCCEED) {
-			bat_destroy(objs_id);
-			bat_destroy(tids);
-			return res;
-		}
-		if (old_logger_upgrade_bat(lg, N("sys", "objects", "nr"), LOG_COL, 0) != GDK_SUCCEED || old_logger_upgrade_bat(lg, N("sys", "objects", "sub"), LOG_COL, 0) != GDK_SUCCEED) {
-			bat_destroy(objs_id);
-			bat_destroy(tids);
-			return GDK_FAIL;
-		}
-
-		BAT *new_ids = BATconstant(objs_id->hseqbase, TYPE_int, ATOMnilptr(TYPE_int), BATcount(tids), PERSISTENT);
-		if (!new_ids) {
-			bat_destroy(objs_id);
-			bat_destroy(tids);
-			return GDK_FAIL;
-		}
-		res = BATreplace(objs_id, tids, new_ids, TRUE); /* 'id' will get initialized at load_part */
+		BAT *objs_sub = BATconstant(objs_id->hseqbase, TYPE_int, &int_nil, BATcount(objs_id), PERSISTENT);
 		bat_destroy(objs_id);
-		bat_destroy(tids);
-		bat_destroy(new_ids);
-		if (res != GDK_SUCCEED)
-			return res;
-
-		if (old_logger_upgrade_bat(lg, N("sys", "objects", "id"), LOG_COL, 0) != GDK_SUCCEED)
+		if (objs_sub == NULL) {
 			return GDK_FAIL;
-#endif
+		}
+		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_id, &(int) {2163}, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_bid, &objs_sub->batCacheid, false) != GDK_SUCCEED) {
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+		BBPretain(objs_sub->batCacheid);
+		bat_destroy(objs_sub);
+		/* update sys.objects o set sub = (select t.id from sys.dependencies d, sys._tables t where o.nr = d.depend_id and d.id = t.id and o.name = t.name); */
+
+		/* alter table tmp.objects add column sub integer; */
+		objs_sub = BATconstant(0, TYPE_int, &int_nil, 0, PERSISTENT);
+		if (objs_sub == NULL) {
+			return GDK_FAIL;
+		}
+		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_id, &(int) {2164}, false) != GDK_SUCCEED ||
+			BUNappend(lg->catalog_bid, &objs_sub->batCacheid, false) != GDK_SUCCEED) {
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+		BBPretain(objs_sub->batCacheid);
+		bat_destroy(objs_sub);
 	}
 #endif
 

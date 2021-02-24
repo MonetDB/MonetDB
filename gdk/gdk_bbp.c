@@ -677,24 +677,29 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno)
 		if (buf[nread] == ' ')
 			options = buf + nread + 1;
 
+		if (snprintf(BBP_bak(bid), sizeof(BBP_bak(bid)), "tmp_%o", (unsigned) bid) >= (int) sizeof(BBP_bak(bid))) {
+			BATdestroy(bn);
+			TRC_CRITICAL(GDK, "BBP logical filename directory is too large, on line %d\n", lineno);
+			return GDK_FAIL;
+		}
 		if ((s = strchr(headname, '~')) != NULL && s == headname) {
-			int len = snprintf(logical, sizeof(logical), "tmp_%o", (unsigned) bid);
-			if (len == -1 || len >= (int) sizeof(logical)) {
-				BATdestroy(bn);
-				TRC_CRITICAL(GDK, "BBP logical filename directory is too large, on line %d\n", lineno);
-				return GDK_FAIL;
-			}
+			/* sizeof(logical) > sizeof(BBP_bak(bid)), so
+			 * this fits */
+			strcpy(logical, BBP_bak(bid));
 		} else {
 			if (s)
 				*s = 0;
 			strcpy_len(logical, headname, sizeof(logical));
 		}
-		s = logical;
-		BBP_logical(bid) = GDKstrdup(s);
-		if (BBP_logical(bid) == NULL) {
-			BATdestroy(bn);
-			TRC_CRITICAL(GDK, "GDKstrdup failed\n");
-			return GDK_FAIL;
+		if (strcmp(logical, BBP_bak(bid)) == 0) {
+			BBP_logical(bid) = BBP_bak(bid);
+		} else {
+			BBP_logical(bid) = GDKstrdup(logical);
+			if (BBP_logical(bid) == NULL) {
+				BATdestroy(bn);
+				TRC_CRITICAL(GDK, "GDKstrdup failed\n");
+				return GDK_FAIL;
+			}
 		}
 		/* tailname is ignored */
 		strcpy_len(BBP_physical(bid), filename, sizeof(BBP_physical(bid)));
@@ -1924,9 +1929,8 @@ BBPclear(bat i)
 /*
  * @- BBP rename
  *
- * Each BAT has a logical name that is globally unique. Its reverse
- * view can also be assigned a name, that also has to be globally
- * unique.  The batId is the same as the logical BAT name.
+ * Each BAT has a logical name that is globally unique.
+ * The batId is the same as the logical BAT name.
  *
  * The default logical name of a BAT is tmp_X, where X is the
  * batCacheid.  Apart from being globally unique, new logical bat
@@ -1954,6 +1958,16 @@ BBPrename(bat bid, const char *nme)
 	if (b == NULL)
 		return 0;
 
+	if (nme == NULL) {
+		if (BBP_bak(bid)[0] == 0 &&
+		    snprintf(BBP_bak(bid), sizeof(BBP_bak(bid)), "tmp_%o", (unsigned) bid) >= (int) sizeof(BBP_bak(bid))) {
+			/* cannot happen */
+			TRC_CRITICAL(GDK, "BBP default filename too long\n");
+			return BBPRENAME_LONG;
+		}
+		nme = BBP_bak(bid);
+	}
+
 	/* If name stays same, do nothing */
 	if (BBP_logical(bid) && strcmp(BBP_logical(bid), nme) == 0)
 		return 0;
@@ -1968,6 +1982,7 @@ BBPrename(bat bid, const char *nme)
 		GDKerror("illegal temporary name: '%s'\n", nme);
 		return BBPRENAME_LONG;
 	}
+
 	idx = threadmask(MT_getpid());
 	MT_lock_set(&GDKtrimLock(idx));
 	MT_lock_set(&GDKnameLock);
@@ -1979,13 +1994,25 @@ BBPrename(bat bid, const char *nme)
 		return BBPRENAME_ALREADY;
 	}
 
+	char *nnme;
+	if (nme == BBP_bak(bid) || strcmp(nme, BBP_bak(bid)) == 0) {
+		nnme = BBP_bak(bid);
+	} else {
+		nnme = GDKstrdup(nme);
+		if (nnme == NULL) {
+			MT_lock_unset(&GDKnameLock);
+			MT_lock_unset(&GDKtrimLock(idx));
+			return BBPRENAME_MEMORY;
+		}
+	}
+
 	/* carry through the name change */
 	if (BBP_logical(bid) && BBPtmpcheck(BBP_logical(bid)) == 0) {
 		BBP_delete(bid);
 	}
 	if (BBP_logical(bid) != BBP_bak(bid))
 		GDKfree(BBP_logical(bid));
-	BBP_logical(bid) = GDKstrdup(nme);
+	BBP_logical(bid) = nnme;
 	if (tmpid == 0) {
 		BBP_insert(bid);
 	}
