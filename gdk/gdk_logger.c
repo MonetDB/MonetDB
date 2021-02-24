@@ -1652,9 +1652,9 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	catalog_bid = BBPindex(bak);
 
 	/* create transient bats for type mapping, to be read from disk */
-	lg->type_id = logbat_new(TYPE_bte, BATSIZE, PERSISTENT);
-	lg->type_nme = logbat_new(TYPE_str, BATSIZE, PERSISTENT);
-	lg->type_nr = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
+	lg->type_id = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
+	lg->type_nme = logbat_new(TYPE_str, BATSIZE, TRANSIENT);
+	lg->type_nr = logbat_new(TYPE_int, BATSIZE, TRANSIENT);
 
 	if (lg->type_id == NULL || lg->type_nme == NULL || lg->type_nr == NULL) {
 		if (fp)
@@ -2575,10 +2575,7 @@ logger_add_bat(logger *lg, BAT *b, log_id id)
 	       b == lg->dcatalog ||
 	       b == lg->seqs_id ||
 	       b == lg->seqs_val ||
-	       b == lg->dseqs ||
-	       b == lg->type_id ||
-	       b == lg->type_nme ||
-	       b == lg->type_nr);
+	       b == lg->dseqs);
 	assert(b->batRole == PERSISTENT);
 	if (bid) {
 		if (bid != b->batCacheid) {
