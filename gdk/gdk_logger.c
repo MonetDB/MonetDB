@@ -86,7 +86,7 @@ typedef struct trans {
 } trans;
 
 typedef struct logformat_t {
-	char flag;
+	bte flag;
 	int id;
 } logformat;
 
@@ -107,11 +107,11 @@ logger_unlock(logger *lg)
 	MT_lock_unset(&lg->lock);
 }
 
-static char
+static bte
 find_type(logger *lg, int tpe)
 {
 	BATiter cni = bat_iterator(lg->type_nr);
-	char *res = (char*)Tloc(lg->type_id, 0);
+	bte *res = (bte*)Tloc(lg->type_id, 0);
 	BUN p;
 
 	/* type should be there !*/
@@ -124,7 +124,7 @@ find_type(logger *lg, int tpe)
 }
 
 static int
-find_type_nr(logger *lg, char tpe)
+find_type_nr(logger *lg, bte tpe)
 {
 	BATiter cni = bat_iterator(lg->type_id);
 	int *res = (int*)Tloc(lg->type_nr, 0);
@@ -318,7 +318,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 {
 	log_return res = LOG_OK;
 	lng nr, pnr;
-	char type_id = -1;
+	bte type_id = -1;
 	int tpe;
 
 	assert(!lg->inmemory);
@@ -629,7 +629,7 @@ la_bat_destroy(logger *lg, logaction *la)
 static log_return
 log_read_create(logger *lg, trans *tr, log_id id)
 {
-	char tt;
+	bte tt;
 	int tpe;
 
 	assert(!lg->inmemory);
@@ -675,7 +675,7 @@ la_bat_create(logger *lg, logaction *la)
 static gdk_return
 logger_write_new_types(logger *lg, FILE *fp)
 {
-	char id = 0;
+	bte id = 0;
 
 	/* write types and insert into bats */
 	/* first the fixed sized types */
@@ -845,7 +845,7 @@ logger_read_types_file(logger *lg, FILE *fp)
 			GDKerror("unknown type in log file '%s'\n", atom_name);
 			return GDK_FAIL;
 		}
-		char lid = (char)id;
+		bte lid = (bte)id;
 		if (BUNappend(lg->type_id, &lid, false) != GDK_SUCCEED ||
 		    BUNappend(lg->type_nme, atom_name, false) != GDK_SUCCEED ||
 		    BUNappend(lg->type_nr, &i, false) != GDK_SUCCEED) {
@@ -1013,7 +1013,7 @@ logger_read_transaction(logger *lg)
 		if (lg->debug & 1) {
 			fprintf(stderr, "#logger_readlog: ");
 			if (l.flag > 0 &&
-			    l.flag < (char) (sizeof(log_commands) / sizeof(log_commands[0])))
+			    l.flag < (bte) (sizeof(log_commands) / sizeof(log_commands[0])))
 				fprintf(stderr, "%s", log_commands[(int) l.flag]);
 			else
 				fprintf(stderr, "%d", l.flag);
@@ -2149,7 +2149,7 @@ logger_sequence(logger *lg, int seq, lng *id)
 gdk_return
 log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 {
-	char tpe = find_type(lg, type);
+	bte tpe = find_type(lg, type);
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	lng nr;
@@ -2191,7 +2191,7 @@ log_constant(logger *lg, int type, ptr val, log_id id, lng offset, lng cnt)
 static gdk_return
 internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced)
 {
-	char tpe = find_type(lg, b->ttype);
+	bte tpe = find_type(lg, b->ttype);
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
@@ -2270,7 +2270,7 @@ gdk_return
 log_bat_persists(logger *lg, BAT *b, int id)
 {
 	logger_lock(lg);
-	char ta = find_type(lg, b->ttype);
+	bte ta = find_type(lg, b->ttype);
 	logformat l;
 
 	if (logger_add_bat(lg, b, id) != GDK_SUCCEED) {
@@ -2339,7 +2339,7 @@ gdk_return
 log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 {
 	logger_lock(lg);
-	char tpe = find_type(lg, uval->ttype);
+	bte tpe = find_type(lg, uval->ttype);
 	gdk_return ok = GDK_SUCCEED;
 	logformat l;
 	BUN p;
