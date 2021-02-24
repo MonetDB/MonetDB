@@ -49,6 +49,9 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_void:
 		v->val.oval = *(oid *) p;
 		break;
+	case TYPE_msk:
+		v->val.mval = *(msk *) p;
+		break;
 	case TYPE_bte:
 		v->val.btval = *(bte *) p;
 		break;
@@ -93,6 +96,7 @@ VALget(ValPtr v)
 {
 	switch (ATOMstorage(v->vtype)) {
 	case TYPE_void: return (void *) &v->val.oval;
+	case TYPE_msk: return (void *) &v->val.mval;
 	case TYPE_bte: return (void *) &v->val.btval;
 	case TYPE_sht: return (void *) &v->val.shval;
 	case TYPE_int: return (void *) &v->val.ival;
@@ -178,6 +182,9 @@ VALinit(ValPtr d, int tpe, const void *s)
 	switch (ATOMstorage(d->vtype = tpe)) {
 	case TYPE_void:
 		d->val.oval = *(const oid *) s;
+		break;
+	case TYPE_msk:
+		d->val.mval = *(const msk *) s;
 		break;
 	case TYPE_bte:
 		d->val.btval = *(const bte *) s;
@@ -294,12 +301,14 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 }
 
 /* Return TRUE if the value in V is NIL. */
-int
+bool
 VALisnil(const ValRecord *v)
 {
 	switch (v->vtype) {
 	case TYPE_void:
-		return 1;
+		return true;
+	case TYPE_msk:
+		return false;
 	case TYPE_bte:
 		return is_bte_nil(v->val.btval);
 	case TYPE_sht:

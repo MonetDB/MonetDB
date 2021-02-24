@@ -371,6 +371,28 @@ BATcalcnot(BAT *b, BAT *s)
 		return NULL;
 
 	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_msk:
+		if (ci.tpe == cand_dense) {
+			const uint32_t *restrict src = Tloc(b, (ci.seq - b->hseqbase) / 32);
+			uint32_t *restrict dst = Tloc(bn, 0);
+			int bits = (ci.seq - b->hseqbase) % 32;
+			ncand = (ncand + 31) / 32;
+			if (bits == 0) {
+				for (i = 0; i < ncand; i++)
+					dst[i] = ~src[i];
+			} else {
+				for (i = 0; i < ncand; i++)
+					dst[i] = (~src[i] >> bits) | ~(src[i + 1] >> (32 - bits));
+			}
+			if (ci.ncand % 32 != 0)
+				dst[ci.ncand / 32] &= (1U << (ci.ncand % 32)) - 1;
+		} else {
+			for (i = 0; i < ci.ncand; i++) {
+				x = canditer_next(&ci) - b->hseqbase;
+				mskSetVal(bn, i, !mskGetVal(b, x));
+			}
+		}
+		break;
 	case TYPE_bte:
 		if (b->ttype == TYPE_bit) {
 			UNARY_2TYPE_FUNC(bit, bit, NOTBIT);
@@ -398,7 +420,7 @@ BATcalcnot(BAT *b, BAT *s)
 		return NULL;
 	}
 
-	BATsetcount(bn, ncand);
+	BATsetcount(bn, ci.ncand);
 
 	/* NOT reverses the order, but NILs mess it up */
 	bn->tsorted = nils == 0 && b->trevsorted;
@@ -420,6 +442,9 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 {
 	ret->vtype = v->vtype;
 	switch (ATOMbasetype(v->vtype)) {
+	case TYPE_msk:
+		ret->val.mval = !v->val.mval;
+		break;
 	case TYPE_bte:
 		if (is_bit_nil(v->val.btval))
 			ret->val.btval = bit_nil;
@@ -1364,7 +1389,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1456,7 +1481,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1703,7 +1728,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -1795,7 +1820,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			goto bunins_failed;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	bn->tnil = nils > 0;
 	bn->tnonil = nils == 0;
 	if (ncand <= 1) {
@@ -3414,7 +3439,7 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 		}
 	}
 	GDKfree(s);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return nils;
 
   bunins_failed:
@@ -13594,19 +13619,20 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 			l += incr2;					\
 		}							\
 	} while (0)
-#define IFTHENELSELOOP_oid()						\
-	do {								\
-		for (i = 0; i < cnt; i++) {				\
-			if (src[i] && !is_bit_nil(src[i])) {		\
-				((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1; \
-			} else {					\
-				((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2; \
-			}						\
-			k += incr1;					\
-			l += incr2;					\
-			seq1 += incr1;					\
-			seq2 += incr2;					\
-		}							\
+#define IFTHENELSELOOP_msk(TYPE)				\
+	do {							\
+		for (i = 0; i < cnt; i++) {			\
+			if (n == 32) {				\
+				n = 0;				\
+				mask = src[i / 32];		\
+			}					\
+			((TYPE *) dst)[i] = mask & (1U << n) ?	\
+				((TYPE *) col1)[k] :		\
+				((TYPE *) col2)[l];		\
+			k += incr1;				\
+			l += incr2;				\
+			n++;					\
+		}						\
 	} while (0)
 
 static BAT *
@@ -13621,7 +13647,6 @@ BATcalcifthenelse_intern(BAT *b,
 	void *restrict dst;
 	BUN i, k, l;
 	const void *p;
-	const bit *src;
 	BUN cnt = b->batCount;
 
 	/* col1 and col2 can only be NULL for void columns */
@@ -13638,74 +13663,218 @@ BATcalcifthenelse_intern(BAT *b,
 	if (cnt == 0)
 		return bn;
 
-	src = (const bit *) Tloc(b, 0);
-
 	dst = (void *) Tloc(bn, 0);
 	k = l = 0;
 	if (bn->tvarsized) {
-		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == false));
-		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == false));
-		for (i = 0; i < cnt; i++) {
-			if (src[i] && !is_bit_nil(src[i])) {
-				if (heap1)
-					p = heap1 + VarHeapVal(col1, k, width1);
-				else
-					p = col1;
-			} else {
-				if (heap2)
-					p = heap2 + VarHeapVal(col2, l, width2);
-				else
-					p = col2;
+		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
+		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			const uint32_t *src = Tloc(b, 0);
+			BUN n = cnt / 32;
+			for (i = 0; i <= n; i++) {
+				BUN rem = i == n ? cnt % 32 : 32;
+				uint32_t mask = rem != 0 ? src[i] : 0;
+				for (BUN j = 0; j < rem; j++) {
+					if (mask & (1U << j)) {
+						if (heap1)
+							p = heap1 + VarHeapVal(col1, k, width1);
+						else
+							p = col1;
+					} else {
+						if (heap2)
+							p = heap2 + VarHeapVal(col2, l, width2);
+						else
+							p = col2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+						BBPreclaim(bn);
+						return NULL;
+					}
+					k += incr1;
+					l += incr2;
+				}
 			}
-			if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				return NULL;
+		} else {
+			const bit *src = Tloc(b, 0);
+			for (i = 0; i < cnt; i++) {
+				if (src[i] && !is_bit_nil(src[i])) {
+					if (heap1)
+						p = heap1 + VarHeapVal(col1, k, width1);
+					else
+						p = col1;
+				} else {
+					if (heap2)
+						p = heap2 + VarHeapVal(col2, l, width2);
+					else
+						p = col2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p, Tsize(bn)) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return NULL;
+				}
+				k += incr1;
+				l += incr2;
 			}
-			k += incr1;
-			l += incr2;
 		}
 	} else {
 		assert(heap1 == NULL);
 		assert(heap2 == NULL);
-		if (ATOMtype(tpe) == TYPE_oid) {
-			IFTHENELSELOOP_oid();
-		} else {
-			switch (bn->twidth) {
-			case 1:
-				IFTHENELSELOOP(bte);
-				break;
-			case 2:
-				IFTHENELSELOOP(sht);
-				break;
-			case 4:
-				IFTHENELSELOOP(int);
-				break;
-			case 8:
-				IFTHENELSELOOP(lng);
-				break;
-#ifdef HAVE_HGE
-			case 16:
-				IFTHENELSELOOP(hge);
-				break;
-#endif
-			default:
+		if (ATOMstorage(b->ttype) == TYPE_msk) {
+			const uint32_t *src = Tloc(b, 0);
+			uint32_t mask = 0;
+			BUN n = 32;
+			if (ATOMtype(tpe) == TYPE_oid) {
 				for (i = 0; i < cnt; i++) {
-					if (src[i] && !is_bit_nil(src[i])) {
-						p = ((const char *) col1) + k * width1;
-					} else {
-						p = ((const char *) col2) + l * width2;
+					if (n == 32) {
+						n = 0;
+						mask = src[i / 32];
 					}
-					memcpy(dst, p, bn->twidth);
-					dst = (void *) ((char *) dst + bn->twidth);
+					((oid *) dst)[i] = mask & (1U << n) ?
+						col1 ? ((oid *)col1)[k] : seq1 :
+						col2 ? ((oid *)col2)[l] : seq2;
 					k += incr1;
 					l += incr2;
+					seq1 += incr1;
+					seq2 += incr2;
+					n++;
+				}
+			} else if (ATOMstorage(tpe) == TYPE_msk) {
+				uint32_t v1, v2;
+				if (incr1) {
+					v1 = 0;
+				} else {
+					v1 = * (msk *) col1 ? ~0U : 0U;
+				}
+				if (incr2) {
+					v2 = 0;
+				} else {
+					v2 = * (msk *) col2 ? ~0U : 0U;
+				}
+				n = (cnt + 31) / 32;
+				for (i = 0; i < n; i++) {
+					if (incr1)
+						v1 = ((uint32_t *) col1)[i];
+					if (incr2)
+						v2 = ((uint32_t *) col2)[i];
+					((uint32_t *) dst)[i] = (src[i] & v1)
+						| (~src[i] & v2);
+				}
+			} else {
+				switch (bn->twidth) {
+				case 1:
+					IFTHENELSELOOP_msk(bte);
+					break;
+				case 2:
+					IFTHENELSELOOP_msk(sht);
+					break;
+				case 4:
+					IFTHENELSELOOP_msk(int);
+					break;
+				case 8:
+					IFTHENELSELOOP_msk(lng);
+					break;
+#ifdef HAVE_HGE
+				case 16:
+					IFTHENELSELOOP_msk(hge);
+					break;
+#endif
+				default:
+					for (i = 0; i < cnt; i++) {
+						if (n == 32) {
+							n = 0;
+							mask = src[i / 32];
+						}
+						if (mask & (1U << n))
+							p = ((const char *) col1) + k * width1;
+						else
+							p = ((const char *) col2) + l * width2;
+						memcpy(dst, p, bn->twidth);
+						dst = (void *) ((char *) dst + bn->twidth);
+						k += incr1;
+						l += incr2;
+						n++;
+					}
+				}
+			}
+		} else {
+			const bit *src = Tloc(b, 0);
+			if (ATOMtype(tpe) == TYPE_oid) {
+				for (i = 0; i < cnt; i++) {
+					if (src[i] && !is_bit_nil(src[i])) {
+						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
+					} else {
+						((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2;
+					}
+					k += incr1;
+					l += incr2;
+					seq1 += incr1;
+					seq2 += incr2;
+				}
+			} else if (ATOMstorage(tpe) == TYPE_msk) {
+				uint32_t v1, v2;
+				uint32_t *d = dst;
+				if (incr1) {
+					v1 = 0;
+				} else {
+					v1 = * (msk *) col1 ? ~0U : 0U;
+				}
+				if (incr2) {
+					v2 = 0;
+				} else {
+					v2 = * (msk *) col2 ? ~0U : 0U;
+				}
+				i = 0;
+				while (i < cnt) {
+					uint32_t mask = 0;
+					if (incr1)
+						v1 = ((uint32_t *) col1)[i/32];
+					if (incr2)
+						v2 = ((uint32_t *) col2)[i/32];
+					for (int n = 0; n < 32; n++) {
+						mask |= (uint32_t) (src[i] != 0) << n;
+						if (++i == cnt)
+							break;
+					}
+					*d++ = (mask & v1) | (~mask & v2);
+				}
+			} else {
+				switch (bn->twidth) {
+				case 1:
+					IFTHENELSELOOP(bte);
+					break;
+				case 2:
+					IFTHENELSELOOP(sht);
+					break;
+				case 4:
+					IFTHENELSELOOP(int);
+					break;
+				case 8:
+					IFTHENELSELOOP(lng);
+					break;
+#ifdef HAVE_HGE
+				case 16:
+					IFTHENELSELOOP(hge);
+					break;
+#endif
+				default:
+					for (i = 0; i < cnt; i++) {
+						if (src[i] && !is_bit_nil(src[i])) {
+							p = ((const char *) col1) + k * width1;
+						} else {
+							p = ((const char *) col2) + l * width2;
+						}
+						memcpy(dst, p, bn->twidth);
+						dst = (void *) ((char *) dst + bn->twidth);
+						k += incr1;
+						l += incr2;
+					}
 				}
 			}
 		}
 	}
 
 	BATsetcount(bn, cnt);
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 
 	bn->tsorted = cnt <= 1;
 	bn->trevsorted = cnt <= 1;
@@ -14306,6 +14475,104 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 	return nils;							\
 }
 
+#define convertimpl_msk(TYPE)						\
+static BUN								\
+convert_##TYPE##_msk(const TYPE *src, uint32_t *restrict dst,		\
+		     struct canditer *restrict ci,			\
+		     oid candoff, bool *reduce)				\
+{									\
+	BUN cnt = ci->ncand / 32;					\
+	BUN i, j, k;							\
+	uint32_t mask;							\
+	oid x;								\
+									\
+	*reduce = true;							\
+	k = 0;								\
+	if (ci->tpe == cand_dense) {					\
+		for (i = 0; i < cnt; i++) {				\
+			mask = 0;					\
+			for (j = 0; j < 32; j++) {			\
+				x = canditer_next_dense(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+		cnt = ci->ncand % 32;					\
+		if (cnt > 0) {						\
+			mask = 0;					\
+			for (j = 0; j < cnt; j++) {			\
+				x = canditer_next_dense(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+	} else {							\
+		for (i = 0; i < cnt; i++) {				\
+			mask = 0;					\
+			for (j = 0; j < 32; j++) {			\
+				x = canditer_next(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+		cnt = ci->ncand % 32;					\
+		if (cnt > 0) {						\
+			mask = 0;					\
+			for (j = 0; j < cnt; j++) {			\
+				x = canditer_next(ci) - candoff;	\
+				mask |= (uint32_t) (!is_##TYPE##_nil(src[x]) && src[x] != 0) << j; \
+				k++;					\
+			}						\
+			dst[i] = mask;					\
+		}							\
+	}								\
+	return 0;							\
+}									\
+									\
+static BUN								\
+convert_msk_##TYPE(const uint32_t *src, TYPE *restrict dst,		\
+		   struct canditer *restrict ci,			\
+		   oid candoff, bool *reduce)				\
+{									\
+	BUN nils = 0;							\
+	BUN k;								\
+									\
+	*reduce = false;						\
+	if (ci->tpe == cand_dense) {					\
+		uint32_t mask;						\
+		BUN i = (ci->seq - candoff) / 32;			\
+		BUN cnt = (ci->seq + ci->ncand - candoff) / 32;		\
+		BUN first = (ci->seq - candoff) % 32;			\
+		BUN rem = (ci->seq + ci->ncand - candoff) % 32;		\
+		BUN j;							\
+		k = 0;							\
+		for (; i < cnt; i++) {					\
+			mask = src[i];					\
+			for (j = first; j < 32; j++) {			\
+				dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
+				k++;					\
+			}						\
+			first = 0;					\
+		}							\
+		if (rem > first) {					\
+			mask = src[i];					\
+			for (j = first; j < rem; j++) {			\
+				dst[k] = (TYPE) ((mask & (1U << j)) != 0); \
+				k++;					\
+			}						\
+		}							\
+	} else {							\
+		for (k = 0; k < ci->ncand; k++) {			\
+			oid x = canditer_next(ci) - candoff;		\
+			dst[k] = (TYPE) ((src[x / 32] & (1U << (x % 32))) != 0); \
+		}							\
+	}								\
+	return nils;							\
+}
+
 convertimpl(bte, bte)
 convertimpl(bte, sht)
 convertimpl(bte, int)
@@ -14400,6 +14667,16 @@ convert2bit_impl(hge)
 convert2bit_impl(flt)
 convert2bit_impl(dbl)
 
+convertimpl_msk(bte)
+convertimpl_msk(sht)
+convertimpl_msk(int)
+convertimpl_msk(lng)
+#ifdef HAVE_HGE
+convertimpl_msk(hge)
+#endif
+convertimpl_msk(flt)
+convertimpl_msk(dbl)
+
 static BUN
 convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 {
@@ -14446,6 +14723,15 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 					goto bunins_failed;
 			}
 		}
+	} else if (ATOMstorage(b->ttype) == TYPE_msk) {
+		for (i = 0; i < ci->ncand; i++) {
+			const char *v;
+			x = canditer_next(ci) - candoff;
+			v = mskGetVal(b, x) ? "1" : "0";
+			if (tfastins_nocheckVAR(bn, i, v,
+						bn->twidth) != GDK_SUCCEED)
+				goto bunins_failed;
+		}
 	} else {
 		for (i = 0; i < ci->ncand; i++) {
 			x = canditer_next(ci) - candoff;
@@ -14462,7 +14748,7 @@ convert_any_str(BAT *b, BAT *bn, struct canditer *restrict ci)
 			}
 		}
 	}
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	BATsetcount(bn, ci->ncand);
 	GDKfree(dst);
 	return nils;
@@ -14482,7 +14768,36 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 	ssize_t l;
 	ssize_t (*atomfromstr)(const char *, size_t *, ptr *, bool) = BATatoms[tp].atomFromStr;
 	BATiter bi = bat_iterator(b);
+	const char *s = NULL;
 
+	if (ATOMstorage(tp) == TYPE_msk) {
+		uint32_t mask = 0;
+		uint32_t *d = dst;
+		int j = 0;
+		for (BUN i = 0; i < ci->ncand; i++) {
+			oid x = canditer_next(ci) - candoff;
+			uint32_t v;
+			s = BUNtvar(bi, x);
+			if (strcmp(s, "0") == 0)
+				v = 0;
+			else if (strcmp(s, "1") == 0)
+				v = 1;
+			else if (!abort_on_error)
+				v = 0;
+			else
+				goto conversion_failed;
+			mask |= v << j;
+			if (++j == 32) {
+				*d++ = mask;
+				j = 0;
+				mask = 0;
+			}
+		}
+		if (j > 0)
+			*d = mask;
+		return 0;
+
+	}
 	for (BUN i = 0; i < ci->ncand; i++) {
 		oid x = canditer_next(ci) - candoff;
 		const char *s = BUNtvar(bi, x);
@@ -14494,21 +14809,7 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 			if ((l = (*atomfromstr)(s, &len, &d, false)) < 0 ||
 			    l < (ssize_t) strlen(s)) {
 				if (abort_on_error) {
-					GDKclrerr();
-					size_t sz = escapedStrlen(s, NULL, NULL, '\'');
-					char *bf = GDKmalloc(sz + 1);
-					if (bf) {
-						escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
-						GDKerror("22018!conversion of string "
-							 "'%s' to type %s failed.\n",
-							 bf, ATOMname(tp));
-						GDKfree(bf);
-					} else {
-						GDKerror("22018!conversion of string "
-							 "to type %s failed.\n",
-							 ATOMname(tp));
-					}
-					return BUN_NONE;
+					goto conversion_failed;
 				}
 				memcpy(dst, nil, len);
 			}
@@ -14519,6 +14820,28 @@ convert_str_any(BAT *b, int tp, void *restrict dst,
 		dst = (void *) ((char *) dst + len);
 	}
 	return nils;
+
+  conversion_failed:
+	GDKclrerr();
+	size_t sz = 0;
+	char *bf = NULL;
+
+	if (s) {
+		sz = escapedStrlen(s, NULL, NULL, '\'');
+		bf = GDKmalloc(sz + 1);
+	}
+	if (bf) {
+		escapedStr(bf, s, sz + 1, NULL, NULL, '\'');
+		GDKerror("22018!conversion of string "
+			 "'%s' to type %s failed.\n",
+			 bf, ATOMname(tp));
+		GDKfree(bf);
+	} else {
+		GDKerror("22018!conversion of string "
+			 "to type %s failed.\n",
+			 ATOMname(tp));
+	}
+	return BUN_NONE;
 }
 
 static BUN
@@ -14628,7 +14951,7 @@ convert_void_any(oid seq, BAT *bn,
 		return BUN_NONE + 1;
 	}
 
-	bn->theap.dirty = true;
+	bn->theap->dirty = true;
 	return nils;
 
   bunins_failed:
@@ -14645,8 +14968,41 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 	assert(scale1 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
 	assert(scale2 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
 	switch (ATOMbasetype(stp)) {
+	case TYPE_msk:
+		switch (ATOMbasetype(dtp)) {
+		/* case TYPE_msk not needed: it is done with the help
+		 * of BATappend */
+		case TYPE_bte:
+			return convert_bte_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_sht:
+			return convert_sht_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_int:
+			return convert_int_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_lng:
+			return convert_lng_msk(src, dst, ci, candoff,
+					       reduce);
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			return convert_hge_msk(src, dst, ci, candoff,
+					       reduce);
+#endif
+		case TYPE_flt:
+			return convert_flt_msk(src, dst, ci, candoff,
+					       reduce);
+		case TYPE_dbl:
+			return convert_dbl_msk(src, dst, ci, candoff,
+					       reduce);
+		default:
+			return BUN_NONE + 1;
+		}
 	case TYPE_bte:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_bte(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_bte_bit(src, dst, ci,
@@ -14707,6 +15063,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_sht:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_sht(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit)
 				return convert_sht_bit(src, dst, ci,
@@ -14767,6 +15126,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_int:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_int(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_int_bit(src, dst, ci,
@@ -14828,6 +15190,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_lng:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_lng(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_lng_bit(src, dst, ci,
@@ -14890,6 +15255,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 #ifdef HAVE_HGE
 	case TYPE_hge:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_hge(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_hge_bit(src, dst, ci,
@@ -14941,6 +15309,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 #endif
 	case TYPE_flt:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_flt(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_flt_bit(src, dst, ci,
@@ -14997,6 +15368,9 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 	case TYPE_dbl:
 		switch (ATOMbasetype(dtp)) {
+		case TYPE_msk:
+			return convert_msk_dbl(src, dst, ci, candoff,
+					       reduce);
 		case TYPE_bte:
 			if (dtp == TYPE_bit) {
 				return convert_dbl_bit(src, dst, ci,
@@ -15099,6 +15473,22 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 			 ATOMname(b->ttype), ATOMname(tp));
 		return NULL;
 	}
+	if (ATOMstorage(tp) == TYPE_msk) {
+		if (BATtdense(b)) {
+			/* dense to msk is easy: all values 1, except
+			 * maybe the first */
+			bn = BATconstant(ci.hseq, tp, &(msk){1}, ncand,
+					 TRANSIENT);
+			if (bn && b->tseqbase == 0)
+				mskClr(bn, 0);
+			return bn;
+		} else if (b->ttype == TYPE_void) {
+			/* void-nil to msk is easy: all values 0 */
+			bn = BATconstant(ci.hseq, tp, &(msk){0}, ncand,
+					 TRANSIENT);
+			return bn;
+		}
+	}
 
 	bn = COLnew(ci.hseq, tp, ncand, TRANSIENT);
 	if (bn == NULL)
@@ -15115,6 +15505,10 @@ BATconvert(BAT *b, BAT *s, int tp, bool abort_on_error,
 		nils = convert_str_any(b, tp, Tloc(bn, 0),
 				       &ci, b->hseqbase,
 				       abort_on_error);
+	} else if (ATOMstorage(b->ttype) == TYPE_msk &&
+		   ATOMstorage(tp) == TYPE_msk) {
+		if (BATappend(bn, b, s, false) != GDK_SUCCEED)
+			nils = BUN_NONE + 2;
 	} else
 		nils = convert_typeswitchloop(Tloc(b, 0), b->ttype,
 					      Tloc(bn, 0), tp,
@@ -15167,7 +15561,23 @@ VARconvert(ValPtr ret, const ValRecord *v, bool abort_on_error,
 	BUN nils = 0;
 	bool reduce;
 
-	if (ret->vtype == TYPE_str) {
+	if (ret->vtype == TYPE_msk) {
+		ValRecord tmp;
+		tmp.vtype = TYPE_bit;
+		if (VARconvert(&tmp, v, abort_on_error, scale1, scale2, precision) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (is_bte_nil(tmp.val.btval)) {
+			GDKerror("22003!cannot convert nil to msk.\n");
+			nils = BUN_NONE;
+		}
+		ret->val.mval = tmp.val.btval;
+	} else if (v->vtype == TYPE_msk) {
+		ValRecord tmp;
+		tmp.vtype = TYPE_bit;
+		tmp.val.btval = v->val.mval;
+		if (VARconvert(ret, &tmp, abort_on_error, scale1, scale2, precision) != GDK_SUCCEED)
+			return GDK_FAIL;
+	} else if (ret->vtype == TYPE_str) {
 		if (v->vtype == TYPE_void ||
 		    (*ATOMcompare(v->vtype))(VALptr(v),
 					     ATOMnilptr(v->vtype)) == 0) {

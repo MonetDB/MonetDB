@@ -61,7 +61,7 @@ static str CLRbat##NAME(bat *ret, const bat *l)							\
 		if ((APP) != GDK_SUCCEED)										\
 			goto bunins_failed;											\
 	}																	\
-	bn->theap.dirty |= BATcount(bn) > 0;								\
+	bn->theap->dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\
@@ -146,7 +146,7 @@ static str CLRbat##NAME(bat *ret, const bat *l, const bat *bid2, const bat *bid3
 		if (bunfastappTYPE(color, bn, &y) != GDK_SUCCEED)				\
 			goto bunins_failed;											\
 	}																	\
-	bn->theap.dirty |= BATcount(bn) > 0;								\
+	bn->theap->dirty |= BATcount(bn) > 0;								\
 	*ret = bn->batCacheid;												\
 	BBPkeepref(*ret);													\
 	BBPunfix(b->batCacheid);											\

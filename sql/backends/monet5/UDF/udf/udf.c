@@ -124,7 +124,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	if (src->ttype != TYPE_str)
 		throw(MAL, "batudf.reverse", SQLSTATE(42000) "tail-type of input BAT must be TYPE_str");
 
-	/* to avoid many allocations, we allocate a single buffer, which will reallocate if a 
+	/* to avoid many allocations, we allocate a single buffer, which will reallocate if a
 	   larger string is found and freed at the end */
 	if (!(buf = GDKmalloc(buflen))) {
 		msg = createException(MAL, "batudf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -173,7 +173,7 @@ bailout:
 		bn->tkey = BATcount(bn) <= 1;
 		bn->tsorted = BATcount(bn) <= 1;
 		bn->trevsorted = BATcount(bn) <= 1;
-		bn->theap.dirty = true;
+		bn->theap->dirty = true;
 	} else if (bn) {
 		BBPreclaim(bn);
 		bn = NULL;

@@ -35,6 +35,12 @@
  * NaN). */
 
 static int
+mskCmp(const msk *l, const msk *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
 bteCmp(const bte *l, const bte *r)
 {
 	return (*l > *r) - (*l < *r);
@@ -449,6 +455,42 @@ voidWrite(const void *a, stream *s, size_t cnt)
  * experiments showed that library function is even slightly faster and we
  * now also support True/False (and trUe/FAlSE should this become a thing).
  */
+static ssize_t
+mskFromStr(const char *src, size_t *len, msk **dst, bool external)
+{
+	const char *p = src;
+
+	(void) external;
+	atommem(sizeof(msk));
+
+	if (strNil(src))
+		return -1;
+
+	while (GDKisspace(*p))
+		p++;
+	if (*p == '0') {
+		**dst = 0;
+		p++;
+	} else if (*p == '1') {
+		**dst = 1;
+		p++;
+	} else {
+		return -1;
+	}
+	while (GDKisspace(*p))
+		p++;
+	return (ssize_t) (p - src);
+}
+
+static ssize_t
+mskToStr(char **dst, size_t *len, const msk *src, bool external)
+{
+	(void) external;
+	atommem(2);
+	strcpy(*dst, *src ? "1" : "0");
+	return 1;
+}
+
 ssize_t
 bitFromStr(const char *src, size_t *len, bit **dst, bool external)
 {
@@ -856,6 +898,30 @@ TYPE##Write(const TYPE *a, stream *s, size_t cnt)			\
 		GDK_SUCCEED : GDK_FAIL;					\
 }
 
+static gdk_return
+mskWrite(const msk *a, stream *s, size_t cnt)
+{
+	if (cnt == 0)
+		return GDK_SUCCEED;
+	if (cnt == 1)
+		return mnstr_writeBte(s, (int8_t) *a) ? GDK_SUCCEED : GDK_FAIL;
+	return GDK_FAIL;
+}
+
+static void *
+mskRead(msk *a, stream *s, size_t cnt)
+{
+	int8_t v;
+	if (cnt != 1)
+		return NULL;
+	if (mnstr_readBte(s, &v) != 1)
+		return NULL;
+	if (a == NULL && (a = GDKmalloc(1)) == NULL)
+		return NULL;
+	*a = v != 0;
+	return a;
+}
+
 atom_io(bat, Int, int)
 atom_io(bit, Bte, bte)
 
@@ -1201,6 +1267,17 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
 		.atomHash = (BUN (*)(const void *)) bteHash,
 	},
+	[TYPE_msk] = {
+		.name = "msk",
+		.storage = TYPE_msk,
+		.linear = false,
+		.size = 1,	/* really 1/8 */
+		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) mskFromStr,
+		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) mskToStr,
+		.atomRead = (void *(*)(void *, stream *, size_t)) mskRead,
+		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) mskWrite,
+		.atomCmp = (int (*)(const void *, const void *)) mskCmp,
+	},
 	[TYPE_bte] = {
 		.name = "bte",
 		.storage = TYPE_bte,
@@ -1400,7 +1477,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) strWrite,
 		.atomCmp = (int (*)(const void *, const void *)) strCmp,
 		.atomHash = (BUN (*)(const void *)) strHash,
-		.atomPut = (var_t (*)(Heap *, var_t *, const void *)) strPut,
+		.atomPut = strPut,
 		.atomLen = (size_t (*)(const void *)) strLen,
 		.atomHeap = strHeap,
 	},

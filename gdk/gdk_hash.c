@@ -139,12 +139,12 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->width = HASHwidth(size);
 
 	if (!bcktonly) {
-		if (HEAPalloc(&h->heaplink, size, h->width) != GDK_SUCCEED)
+		if (HEAPalloc(&h->heaplink, size, h->width, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 		h->heaplink.free = size * h->width;
 		h->Link = h->heaplink.base;
 	}
-	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width) != GDK_SUCCEED)
+	if (HEAPalloc(&h->heapbckt, mask + HASH_HEADER_SIZE * SIZEOF_SIZE_T / h->width, h->width, 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	h->heapbckt.free = mask * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->nbucket = mask;
@@ -330,7 +330,7 @@ HASHgrowbucket(BAT *b)
 		BUN new = h->nbucket;
 		BUN old = new & h->mask1;
 		BATiter bi = bat_iterator(b);
-		BUN msk = h->mask1 + 1; /* == h->mask2 - h->mask1 */
+		BUN mask = h->mask1 + 1; /* == h->mask2 - h->mask1 */
 
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
 		if (h->heapbckt.free + h->width > h->heapbckt.size) {
@@ -360,8 +360,8 @@ HASHgrowbucket(BAT *b)
 			do {
 				const void *v = BUNtail(bi, hb);
 				BUN hsh = ATOMhash(h->type, v);
-				assert((hsh & (msk - 1)) == old);
-				if (hsh & msk) {
+				assert((hsh & (mask - 1)) == old);
+				if (hsh & mask) {
 					/* move to new list */
 					if (lnew == HASHnil(h)) {
 						HASHput(h, new, hb);
@@ -427,7 +427,7 @@ BATcheckhash(BAT *b)
 			Hash *h;
 			int fd;
 
-			assert(!GDKinmemory(b->theap.farmid));
+			assert(!GDKinmemory(b->theap->farmid));
 			b->thash = NULL;
 			if ((h = GDKzalloc(sizeof(*h))) != NULL &&
 			    (h->heaplink.farmid = BBPselectfarm(b->batRole, b->ttype, hashheap)) >= 0 &&
@@ -586,7 +586,7 @@ BAThashsave(BAT *b, bool dosync)
 		((size_t *) hp->base)[4] = (size_t) BATcount(b);
 		((size_t *) hp->base)[5] = (size_t) h->nunique;
 		((size_t *) hp->base)[6] = (size_t) h->nheads;
-		if (!b->theap.dirty &&
+		if (!b->theap->dirty &&
 		    HEAPsave(&h->heaplink, h->heaplink.filename, NULL, dosync) == GDK_SUCCEED &&
 		    HEAPsave(hp, hp->filename, NULL, dosync) == GDK_SUCCEED) {
 			h->heaplink.dirty = false;
@@ -715,7 +715,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	oid o;
 	BUN hnil, hget, hb;
 	Hash *h = NULL;
-	const char *nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+	const char *nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 	BATiter bi = bat_iterator(b);
 	PROPrec *prop;
 	bool hascand = ci->tpe != cand_dense || ci->ncand != BATcount(b);
@@ -753,7 +753,7 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 	strconcat_len(h->heapbckt.filename, sizeof(h->heapbckt.filename),
 		      nme, ".", ext, "b", NULL);
 	if (HEAPalloc(&h->heaplink, hascand ? ci->ncand : BATcapacity(b),
-		      h->width) != GDK_SUCCEED) {
+		      h->width, 0) != GDK_SUCCEED) {
 		GDKfree(h);
 		return NULL;
 	}
@@ -972,7 +972,7 @@ BAThash(BAT *b)
 			return GDK_FAIL;
 		}
 #ifdef PERSISTENTHASH
-		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap.dirty && !GDKinmemory(b->theap.farmid)) {
+		if (BBP_status(b->batCacheid) & BBPEXISTING && !b->theap->dirty && !GDKinmemory(b->theap->farmid)) {
 			MT_Id tid;
 			BBPfix(b->batCacheid);
 			char name[MT_NAME_LEN];

@@ -728,10 +728,10 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush)
 	}
 
 	if (bb.tailsize > 0) {
-		if (HEAPextend(&b->theap, bb.tailsize, true) != GDK_SUCCEED ||
-			mnstr_read(in, b->theap.base, bb.tailsize, 1) < 0)
+		if (HEAPextend(b->theap, bb.tailsize, true) != GDK_SUCCEED ||
+			mnstr_read(in, b->theap->base, bb.tailsize, 1) < 0)
 			goto bailout;
-		b->theap.dirty = true;
+		b->theap->dirty = true;
 	}
 	if (bb.theapsize > 0) {
 		if (HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED ||

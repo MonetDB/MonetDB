@@ -401,12 +401,6 @@ mvc_logmanager(sql_store store)
 	store_manager(store);
 }
 
-void
-mvc_idlemanager(sql_store store)
-{
-	idle_manager(store);
-}
-
 int
 mvc_status(mvc *m)
 {

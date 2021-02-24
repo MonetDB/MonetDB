@@ -28,21 +28,8 @@
 static lng
 SQLgetColumnSize(sql_trans *tr, sql_column *c, int access)
 {
-	lng size = 0;
 	sqlstore *store = tr->store;
-
-	switch(access){
-	case 0: /* Read only */
-		size = store->storage_api.count_col(tr, c, 1);
-		break;
-	case 1: /* inserts */
-		size = store->storage_api.count_col(tr, c, 0);
-		break;
-	case 2: /* updates */
-		size = store->storage_api.count_col_upd(tr, c);
-		break;
-	}
-	return size;
+	return store->storage_api.count_col(tr, c, access);
 }
 
 /*

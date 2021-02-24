@@ -424,7 +424,8 @@
 
 enum {
 	TYPE_void = 0,
-	TYPE_bit,
+	TYPE_msk,		/* bit mask */
+	TYPE_bit,		/* TRUE, FALSE, or nil */
 	TYPE_bte,
 	TYPE_sht,
 	TYPE_bat,		/* BAT id: index in BBPcache */
@@ -444,6 +445,7 @@ enum {
 	TYPE_any = 255,		/* limit types to <255! */
 };
 
+typedef bool msk;
 typedef int8_t bit;
 typedef int8_t bte;
 typedef int16_t sht;
@@ -528,11 +530,12 @@ typedef struct {
 	char filename[40];	/* file containing image of the heap */
 #endif
 
+	ATOMIC_TYPE refs;	/* reference count for this heap */
 	bte farmid;		/* id of farm where heap is located */
-	bool copied:1,		/* a copy of an existing map. */
-		hashash:1,	/* the string heap contains hash values */
+	bool hashash:1,		/* the string heap contains hash values */
 		cleanhash:1,	/* string heaps must clean hash */
-		dirty:1;	/* specific heap dirty marker */
+		dirty:1,	/* specific heap dirty marker */
+		remove:1;	/* remove storage file when freeing */
 	storage_t storage;	/* storage mode (mmap/malloc). */
 	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
@@ -601,6 +604,7 @@ typedef struct {
 		oid oval;
 		sht shval;
 		bte btval;
+		msk mval;
 		flt fval;
 		ptr pval;
 		bat bval;
@@ -625,7 +629,7 @@ gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, void *p);
 gdk_export void *VALget(ValPtr v);
 gdk_export int VALcmp(const ValRecord *p, const ValRecord *q);
-gdk_export int VALisnil(const ValRecord *v);
+gdk_export bool VALisnil(const ValRecord *v);
 
 /*
  * @- The BAT record
@@ -696,7 +700,8 @@ typedef struct {
 	BUN norevsorted;	/* position that proves revsorted==FALSE */
 	oid seq;		/* start of dense sequence */
 
-	Heap heap;		/* space for the column. */
+	Heap *heap;		/* space for the column. */
+	BUN baseoff;		/* offset in heap->base (in whole items) */
 	Heap *vheap;		/* space for the varsized data. */
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
@@ -710,10 +715,7 @@ typedef struct {
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
 
-#define GDKLIBRARY_BLOB_SORT	061040U /* first in Mar2018: blob compare changed */
-#define GDKLIBRARY_OLDDATE	061041U /* first in Apr2019: time/date in old format */
-#define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019 */
-
+#define GDKLIBRARY_MINMAX_POS	061042U /* first in Nov2019: no min/max position; no BBPinfo value */
 /* if the version number is updated, also fix snapshot_bats() in bat_logger.c */
 #define GDKLIBRARY		061043U /* first after Oct2020 */
 
@@ -742,13 +744,17 @@ typedef struct BAT {
 
 	/* dynamic column properties */
 	COLrec T;		/* column info */
+	MT_Lock theaplock;	/* lock protecting heap reference changes */
 
 	MT_Lock batIdxLock;	/* lock to manipulate indexes */
 } BAT;
 
 typedef struct BATiter {
 	BAT *b;
-	oid tvid;
+	union {
+		oid tvid;
+		bool tmsk;
+	};
 } BATiter;
 
 /* macros to hide complexity of the BAT structure */
@@ -768,12 +774,40 @@ typedef struct BATiter {
 #define tnosorted	T.nosorted
 #define tnorevsorted	T.norevsorted
 #define theap		T.heap
+#define tbaseoff	T.baseoff
 #define tvheap		T.vheap
 #define thash		T.hash
 #define timprints	T.imprints
 #define tprops		T.props
 
 
+/* some access functions for the bitmask type */
+static inline void
+mskSet(BAT *b, BUN p)
+{
+	((uint32_t *) b->theap->base)[p / 32] |= 1U << (p % 32);
+}
+
+static inline void
+mskClr(BAT *b, BUN p)
+{
+	((uint32_t *) b->theap->base)[p / 32] &= ~(1U << (p % 32));
+}
+
+static inline void
+mskSetVal(BAT *b, BUN p, msk v)
+{
+	if (v)
+		mskSet(b, p);
+	else
+		mskClr(b, p);
+}
+
+static inline msk
+mskGetVal(BAT *b, BUN p)
+{
+	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
+}
 
 /*
  * @- Heap Management
@@ -815,6 +849,8 @@ gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
 	__attribute__((__warn_unused_result__));
 gdk_export size_t HEAPvmsize(Heap *h);
 gdk_export size_t HEAPmemsize(Heap *h);
+gdk_export void HEAPdecref(Heap *h, bool remove);
+gdk_export void HEAPincref(Heap *h);
 
 /*
  * @- Internal HEAP Chunk Management
@@ -852,7 +888,7 @@ gdk_export void HEAP_initialize(
 	int alignment		/* alignment restriction for allocated chunks */
 	);
 
-gdk_export var_t HEAP_malloc(Heap *heap, size_t nbytes);
+gdk_export var_t HEAP_malloc(BAT *b, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
 
 /*
@@ -886,11 +922,14 @@ gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 gdk_export uint8_t ATOMelmshift(int sz)
 	__attribute__((__const__));
 
-gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, bool copyall, bool mayshare)
+gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force)
+	__attribute__((__warn_unused_result__));
+
+gdk_export gdk_return BUNreplace(BAT *b, oid left, const void *right, bool force)
 	__attribute__((__warn_unused_result__));
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o)
@@ -927,17 +966,21 @@ gdk_export BUN BUNfnd(BAT *b, const void *right);
 
 #define Tsize(b)	((b)->twidth)
 
-#define tailsize(b,p)	((b)->ttype?((size_t)(p))<<(b)->tshift:0)
+#define tailsize(b,p)	((b)->ttype ?				\
+			 (ATOMstorage((b)->ttype) == TYPE_msk ?	\
+			  (((size_t) (p) + 31) / 32) * 4 :	\
+			  ((size_t) (p)) << (b)->tshift) :	\
+			 0)
 
-#define Tloc(b,p)	((void *)((b)->theap.base+(((size_t)(p))<<(b)->tshift)))
+#define Tloc(b,p)	((void *)((b)->theap->base+(((size_t)(p)+(b)->tbaseoff)<<(b)->tshift)))
 
 typedef var_t stridx_t;
 #define SIZEOF_STRIDX_T SIZEOF_VAR_T
 #define GDK_VARALIGN SIZEOF_STRIDX_T
 
-#define BUNtvaroff(bi,p) VarHeapVal((bi).b->theap.base, (p), (bi).b->twidth)
+#define BUNtvaroff(bi,p) VarHeapVal(Tloc((bi).b, 0), (p), (bi).b->twidth)
 
-#define BUNtloc(bi,p)	Tloc((bi).b,p)
+#define BUNtloc(bi,p)	(ATOMstorage((bi).b->ttype) == TYPE_msk ? Tmsk(&(bi), p) : Tloc((bi).b,p))
 #define BUNtpos(bi,p)	Tpos(&(bi),p)
 #define BUNtvar(bi,p)	(assert((bi).b->ttype && (bi).b->tvarsized), (void *) (Tbase((bi).b)+BUNtvaroff(bi,p)))
 #define BUNtail(bi,p)	((bi).b->ttype?(bi).b->tvarsized?BUNtvar(bi,p):BUNtloc(bi,p):BUNtpos(bi,p))
@@ -947,6 +990,8 @@ typedef var_t stridx_t;
 #define BATcount(b)	((b)->batCount)
 
 #include "gdk_atoms.h"
+
+#include "gdk_cand.h"
 
 /* return the oid value at BUN position p from the (v)oid bat b
  * works with any TYPE_void or TYPE_oid bat */
@@ -962,22 +1007,23 @@ BUNtoid(BAT *b, BUN p)
 	if (is_oid_nil(b->tseqbase)) {
 		if (b->ttype == TYPE_void)
 			return b->tseqbase;
-		return ((const oid *) (b)->theap.base)[p];
+		return ((const oid *) b->theap->base)[p + b->tbaseoff];
 	}
 	oid o = b->tseqbase + p;
 	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
 		return o;
 	}
-	/* only exceptions allowed on transient BATs */
+	assert(!mask_cand(b));
+	/* exceptions only allowed on transient BATs */
 	assert(b->batRole == TRANSIENT);
 	/* make sure exception area is a reasonable size */
-	assert(b->tvheap->free % SIZEOF_OID == 0);
-	BUN nexc = (BUN) (b->tvheap->free / SIZEOF_OID);
+	assert(ccand_free(b) % SIZEOF_OID == 0);
+	BUN nexc = (BUN) (ccand_free(b) / SIZEOF_OID);
 	if (nexc == 0) {
 		/* no exceptions (why the vheap?) */
 		return o;
 	}
-	const oid *exc = (oid *) b->tvheap->base;
+	const oid *exc = (oid *) ccand_first(b);
 	if (o < exc[0])
 		return o;
 	if (o + nexc > exc[nexc - 1])
@@ -1071,10 +1117,10 @@ gdk_export restrict_t BATgetaccess(BAT *b);
 
 #define BATdirty(b)	(!(b)->batCopiedtodisk ||			\
 			 (b)->batDirtydesc ||				\
-			 (b)->theap.dirty ||				\
+			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 #define BATdirtydata(b)	(!(b)->batCopiedtodisk ||			\
-			 (b)->theap.dirty ||				\
+			 (b)->theap->dirty ||				\
 			 ((b)->tvheap != NULL && (b)->tvheap->dirty))
 
 #define BATcapacity(b)	(b)->batCapacity
@@ -1227,7 +1273,7 @@ BATsettrivprop(BAT *b)
 			}
 		} else if (b->ttype == TYPE_oid) {
 			/* b->batCount == 1 */
-			oid sqbs = ((const oid *) b->theap.base)[0];
+			oid sqbs = ((const oid *) b->theap->base)[b->tbaseoff];
 			if (is_oid_nil(sqbs)) {
 				b->tnonil = false;
 				b->tnil = true;
@@ -1241,8 +1287,8 @@ BATsettrivprop(BAT *b)
 		int c;
 		if (b->tvarsized)
 			c = ATOMcmp(b->ttype,
-				    Tbase(b) + VarHeapVal(b->theap.base, 0, b->twidth),
-				    Tbase(b) + VarHeapVal(b->theap.base, 1, b->twidth));
+				    Tbase(b) + VarHeapVal(Tloc(b, 0), 0, b->twidth),
+				    Tbase(b) + VarHeapVal(Tloc(b, 0), 1, b->twidth));
 		else
 			c = ATOMcmp(b->ttype, Tloc(b, 0), Tloc(b, 1));
 		b->tsorted = c <= 0;
@@ -1361,6 +1407,7 @@ gdk_export BBPrec *BBP[N_BBPINIT];
 #define BBPRENAME_ALREADY	(-1)
 #define BBPRENAME_ILLEGAL	(-2)
 #define BBPRENAME_LONG		(-3)
+#define BBPRENAME_MEMORY	(-4)
 
 gdk_export void BBPlock(void);
 
@@ -1495,37 +1542,39 @@ gdk_export void GDKclrerr(void);
 static inline gdk_return __attribute__((__warn_unused_result__))
 Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 {
+	assert(b->tbaseoff == 0);
 	if (b->tvarsized && b->ttype) {
 		var_t d;
 		gdk_return rc;
 
-		rc = ATOMputVAR(b->ttype, b->tvheap, &d, v);
+		rc = ATOMputVAR(b, &d, v);
 		if (rc != GDK_SUCCEED)
 			return rc;
 		if (b->twidth < SIZEOF_VAR_T &&
 		    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 			/* doesn't fit in current heap, upgrade it */
-			rc = GDKupgradevarheap(b, d, copyall,
-					       b->batRestricted == BAT_READ);
+			rc = GDKupgradevarheap(b, d, 0, copyall);
 			if (rc != GDK_SUCCEED)
 				return rc;
 		}
 		switch (b->twidth) {
 		case 1:
-			((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+			((uint8_t *) b->theap->base)[p] = (uint8_t) (d - GDK_VAROFFSET);
 			break;
 		case 2:
-			((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+			((uint16_t *) b->theap->base)[p] = (uint16_t) (d - GDK_VAROFFSET);
 			break;
 		case 4:
-			((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+			((uint32_t *) b->theap->base)[p] = (uint32_t) d;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 8:
-			((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+			((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 			break;
 #endif
 		}
+	} else if (b->ttype == TYPE_msk) {
+		mskSetVal(b, p, * (msk *) v);
 	} else {
 		return ATOMputFIX(b->ttype, Tloc(b, p), v);
 	}
@@ -1535,7 +1584,14 @@ Tputvalue(BAT *b, BUN p, const void *v, bool copyall)
 static inline gdk_return __attribute__((__warn_unused_result__))
 tfastins_nocheck(BAT *b, BUN p, const void *v, int s)
 {
-	b->theap.free += s;
+	assert(b->theap->parentid == b->batCacheid);
+	if (ATOMstorage(b->ttype) == TYPE_msk) {
+		if (p % 32 == 0) {
+			((uint32_t *) b->theap->base)[b->theap->free / 4] = 0;
+			b->theap->free += 4;
+		}
+	} else
+		b->theap->free += s;
 	return Tputvalue(b, p, v, false);
 }
 
@@ -1571,8 +1627,9 @@ bunfastapp(BAT *b, const void *v)
 	    true)) ||							\
 	  BATextend((b), BATgrows(b)) != GDK_SUCCEED) ?			\
 	 GDK_FAIL :							\
-	 ((b)->theap.free += sizeof(TYPE),				\
-	  ((TYPE *) (b)->theap.base)[(b)->batCount++] = * (const TYPE *) (v), \
+	 (assert((b)->theap->parentid == (b)->batCacheid),		\
+	  (b)->theap->free += sizeof(TYPE),				\
+	  ((TYPE *) (b)->theap->base)[(b)->batCount++] = * (const TYPE *) (v), \
 	  GDK_SUCCEED))
 
 static inline gdk_return __attribute__((__warn_unused_result__))
@@ -1580,30 +1637,31 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v, int s)
 {
 	var_t d;
 	gdk_return rc;
-	b->theap.free += s;
-	if ((rc = ATOMputVAR(b->ttype, b->tvheap, &d, v)) != GDK_SUCCEED)
+	assert(b->tbaseoff == 0);
+	assert(b->theap->parentid == b->batCacheid);
+	b->theap->free += s;
+	if ((rc = ATOMputVAR(b, &d, v)) != GDK_SUCCEED)
 		return rc;
 	if (b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 * b->twidth))) {
 		/* doesn't fit in current heap, upgrade it */
-		rc = GDKupgradevarheap(b, d, false,
-				       b->batRestricted == BAT_READ);
+		rc = GDKupgradevarheap(b, d, 0, false);
 		if (rc != GDK_SUCCEED)
 			return rc;
 	}
 	switch (b->twidth) {
 	case 1:
-		((uint8_t *) b->theap.base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+		((uint8_t *) b->theap->base)[p] = (uint8_t) (d - GDK_VAROFFSET);
 		break;
 	case 2:
-		((uint16_t *) b->theap.base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+		((uint16_t *) b->theap->base)[p] = (uint16_t) (d - GDK_VAROFFSET);
 		break;
 	case 4:
-		((uint32_t *) b->theap.base)[p] = (uint32_t) d;
+		((uint32_t *) b->theap->base)[p] = (uint32_t) d;
 		break;
 #if SIZEOF_VAR_T == 8
 	case 8:
-		((uint64_t *) b->theap.base)[p] = (uint64_t) d;
+		((uint64_t *) b->theap->base)[p] = (uint64_t) d;
 		break;
 #endif
 	}
@@ -1683,6 +1741,7 @@ VALptr(const ValRecord *v)
 {
 	switch (ATOMstorage(v->vtype)) {
 	case TYPE_void: return (const void *) &v->val.oval;
+	case TYPE_msk: return (const void *) &v->val.mval;
 	case TYPE_bte: return (const void *) &v->val.btval;
 	case TYPE_sht: return (const void *) &v->val.shval;
 	case TYPE_int: return (const void *) &v->val.ival;
@@ -1741,8 +1800,6 @@ gdk_export void *THRdata[THREADDATA];
 #define THRget_errbuf(t)	((char*)t->data[2])
 #define THRset_errbuf(t,b)	(t->data[2] = b)
 
-#ifndef GDK_NOLINK
-
 static inline bat
 BBPcheck(bat x, const char *y)
 {
@@ -1780,7 +1837,12 @@ Tpos(BATiter *bi, BUN p)
 	return (void*)&bi->tvid;
 }
 
-#endif
+static inline void *
+Tmsk(BATiter *bi, BUN p)
+{
+	bi->tmsk = mskGetVal(bi->b, p);
+	return &bi->tmsk;
+}
 
 /*
  * @+ Transaction Management
@@ -1847,7 +1909,7 @@ Tpos(BATiter *bi, BUN p)
 gdk_export gdk_return TMcommit(void);
 gdk_export void TMabort(void);
 gdk_export gdk_return TMsubcommit(BAT *bl);
-gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
+gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit, BUN *restrict sizes, int cnt, lng logno, lng transid);
 
 /*
  * @- Delta Management
@@ -1885,7 +1947,7 @@ gdk_export gdk_return TMsubcommit_list(bat *subcommit, int cnt);
  * TMcommit does the BATcommits @emph{before} attempting to sync to
  * disk instead of @sc{after} doing this.
  */
-gdk_export void BATcommit(BAT *b);
+gdk_export void BATcommit(BAT *b, BUN size);
 gdk_export void BATfakeCommit(BAT *b);
 gdk_export void BATundo(BAT *b);
 
@@ -1953,10 +2015,10 @@ gdk_export void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
  */
 #define isVIEW(x)							\
 	(assert((x)->batCacheid > 0),					\
-	 ((x)->theap.parentid ||					\
+	 (((x)->theap && (x)->theap->parentid != (x)->batCacheid) ||	\
 	  ((x)->tvheap && (x)->tvheap->parentid != (x)->batCacheid)))
 
-#define VIEWtparent(x)	((x)->theap.parentid)
+#define VIEWtparent(x)	((x)->theap == NULL || (x)->theap->parentid == (x)->batCacheid ? 0 : (x)->theap->parentid)
 #define VIEWvtparent(x)	((x)->tvheap == NULL || (x)->tvheap->parentid == (x)->batCacheid ? 0 : (x)->tvheap->parentid)
 
 /*
@@ -2062,7 +2124,7 @@ gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl,
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
+gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches, bool match_one, BUN estimate)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int op, bool nil_matches, BUN estimate)
 	__attribute__((__warn_unused_result__));
@@ -2091,7 +2153,6 @@ gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands, BAT *grps, BUN n, bool asc, bool nilslast, bool distinct)
 	__attribute__((__warn_unused_result__));
 
-#include "gdk_cand.h"
 #include "gdk_calc.h"
 
 /*

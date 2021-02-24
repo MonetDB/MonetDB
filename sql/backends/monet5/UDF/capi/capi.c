@@ -242,7 +242,7 @@ static void *wrapped_GDK_zalloc_nojump(size_t size)
 		}                                                                      \
 		self->bat = (void*) b;                                                 \
 		self->count = count;                                                   \
-		self->data = (type*) b->theap.base;                                    \
+		self->data = (type*) b->theap->base;                                   \
 		BATsetcount(b, count);                                                 \
 	}
 
@@ -1167,7 +1167,8 @@ static str CUDFeval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			BATloop(input_bats[index], p, q)
 			{
 				void *t = BUNtail(li, p);
-				if (BATatoms[bat_type].atomCmp(
+				if (BATatoms[bat_type].atomNull &&
+					BATatoms[bat_type].atomCmp(
 						t, BATatoms[bat_type].atomNull) == 0) {
 					bat_data->data[j] = NULL;
 				} else {

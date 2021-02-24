@@ -8,11 +8,11 @@ insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file1", bigint "-1", bigint "0", int "0", varchar "NULL", int "0", int "1"), 
 | | | ) [ "cm_tmp"."i" ] COUNT 
 | | ) [ "cm_tmp"."i" ],
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "\\file2", bigint "-1", bigint "0", int "0", varchar "NULL", int "0", int "1"), 
 | | | ) [ "cm_tmp"."i" ] COUNT 
 | | ) [ "cm_tmp"."i" ]
 | ) [ int "NULL" ]
@@ -26,11 +26,11 @@ insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\\file1", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "a:\\file1", bigint "-1", bigint "0", int "0", varchar "NULL", int "0", int "1"), 
 | | | ) [ "cm_tmp"."i" ] COUNT 
 | | ) [ "cm_tmp"."i" ],
 | | project (
-| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0", int "0", varchar "NULL", int "0", int "1"), 
+| | | table ("sys"."copyfrom"(table("cm_tmp"), varchar "|", varchar "\n", varchar "NULL", varchar "null", varchar "Z:/file2", bigint "-1", bigint "0", int "0", varchar "NULL", int "0", int "1"), 
 | | | ) [ "cm_tmp"."i" ] COUNT 
 | | ) [ "cm_tmp"."i" ]
 | ) [ int "NULL" ]

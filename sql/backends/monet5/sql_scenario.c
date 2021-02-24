@@ -365,7 +365,7 @@ SQLresetClient(Client c)
 	return msg;
 }
 
-MT_Id sqllogthread, idlethread;
+MT_Id sqllogthread;
 
 static str
 SQLinit(Client c)
@@ -393,6 +393,7 @@ SQLinit(Client c)
 	be_funcs = (backend_functions) {
 		.fcode = &monet5_freecode,
 		.fresolve_function = &monet5_resolve_function,
+		.fhas_module_function = &monet5_has_module,
 	};
 	monet5_user_init(&be_funcs);
 
@@ -552,11 +553,6 @@ SQLinit(Client c)
 
 	if ((sqllogthread = THRcreate((void (*)(void *)) mvc_logmanager, SQLstore, MT_THR_DETACHED, "logmanager")) == 0) {
 		throw(SQL, "SQLinit", SQLSTATE(42000) "Starting log manager failed");
-	}
-	if (!(SQLdebug&1024)) {
-		if ((idlethread = THRcreate((void (*)(void *)) mvc_idlemanager, SQLstore, MT_THR_DETACHED, "idlemanager")) == 0) {
-			throw(SQL, "SQLinit", SQLSTATE(42000) "Starting idle manager failed");
-		}
 	}
 	if ( wlc_state == WLC_STARTUP)
 		return WLCinit();

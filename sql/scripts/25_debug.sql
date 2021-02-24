@@ -49,8 +49,10 @@ create procedure sys.evalAlgebra( ra_stmt string, opt bool)
 
 -- enqueue a flush log, ie as soon as no transactions are active
 -- flush the log and cleanup the used storage
+/*
 create procedure sys.flush_log ()
 	external name sql."flush_log";
+*/
 
 -- Helper function to disable the log merger
 create procedure sys.suspend_log_flushing()

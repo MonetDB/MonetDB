@@ -483,9 +483,6 @@ statement ok
 INSERT INTO t1(c0) VALUES(TIME '09:41:58')
 
 statement ok
-CALL sys.vacuum('sys', 't1')
-
-statement ok
 DROP TABLE t1
 
 statement ok

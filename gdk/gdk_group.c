@@ -619,10 +619,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 	if (cnt == 0) {
 		hseqb = 0;
-	} else if (s) {
-		hseqb = s->hseqbase + ci.offset;
 	} else {
-		hseqb = b->hseqbase;
+		hseqb = ci.seq;
 	}
 	if (b->tkey || cnt <= 1 || (g && (g->tkey || BATtdense(g)))) {
 		/* grouping is trivial: 1 element per group */
@@ -990,7 +988,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		   (BATcheckhash(b) ||
 		    (!b->batTransient &&
 		     BAThash(b) == GDK_SUCCEED) ||
-		    ((parent = VIEWtparent(b)) != 0 &&
+		    (/* DISABLES CODE */ (0) &&
+		     (parent = VIEWtparent(b)) != 0 &&
 		     BATcheckhash(BBPdescriptor(parent))))) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table, or b
@@ -1001,12 +1000,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * group */
 		bool phash = false;
 		algomsg = "existing hash -- ";
-		if (b->thash == NULL && (parent = VIEWtparent(b)) != 0) {
+		if (b->thash == NULL &&
+		    /* DISABLES CODE */ (0) &&
+		    (parent = VIEWtparent(b)) != 0) {
 			/* b is a view on another bat (b2 for now).
 			 * calculate the bounds [lo, lo+BATcount(b))
 			 * in the parent that b uses */
 			BAT *b2 = BBPdescriptor(parent);
-			lo = (BUN) ((b->theap.base - b2->theap.base) >> b->tshift);
+			lo = b->tbaseoff - b2->tbaseoff;
 			b = b2;
 			bi = bat_iterator(b);
 			algomsg = "existing parent hash -- ";
@@ -1058,7 +1059,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * BATassertProps for similar code; we also exploit if
 		 * g is clustered */
 		algomsg = "new partial hash -- ";
-		nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+		nme = GDKinmemory(b->theap->farmid) ? ":memory:" : BBP_physical(b->batCacheid);
 		if (grps && !gc) {
 			/* we manipulate the hash value after having
 			 * calculated it, and when doing that, we

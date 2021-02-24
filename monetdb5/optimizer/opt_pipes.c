@@ -51,6 +51,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
 /* The default pipe line contains as of Feb2010
@@ -90,6 +91,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -128,6 +130,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -167,6 +170,7 @@ static struct PIPELINES {
 	 "optimizer.volcano();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -210,6 +214,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api
@@ -252,6 +257,7 @@ static struct PIPELINES {
 	 "optimizer.generator();"
 	 "optimizer.profiler();"
 	 "optimizer.candidates();"
+	 //"optimizer.mask();"
 	 "optimizer.deadcode();"
 	 "optimizer.postfix();"
 //	 "optimizer.jit();" awaiting the new batcalc api

@@ -597,7 +597,6 @@ int yydebug=1;
 	opt_distinct
 	opt_escape
 	opt_grant_for
-	opt_locked
 	opt_nulls_first_last
 	opt_on_location
 	opt_with_admin
@@ -628,7 +627,7 @@ int yydebug=1;
 /* the tokens used in geom */
 %token <sval> GEOMETRY GEOMETRYSUBTYPE GEOMETRYA 
 
-%token	USER CURRENT_USER SESSION_USER LOCAL LOCKED BEST EFFORT
+%token	USER CURRENT_USER SESSION_USER LOCAL BEST EFFORT
 %token  CURRENT_ROLE sqlSESSION CURRENT_SCHEMA CURRENT_TIMEZONE
 %token <sval> sqlDELETE UPDATE SELECT INSERT MATCHED
 %token <sval> LATERAL LEFT RIGHT FULL OUTER NATURAL CROSS JOIN INNER
@@ -2733,7 +2732,7 @@ opt_on_location:
   ;
 
 copyfrom_stmt:
-    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_locked opt_best_effort opt_constraint opt_fwf_widths
+    COPY opt_nr INTO qname opt_column_list FROM string_commalist opt_header_list opt_on_location opt_seps opt_escape opt_null_string opt_best_effort opt_constraint opt_fwf_widths
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2744,12 +2743,11 @@ copyfrom_stmt:
 	  append_string(l, $12);
 	  append_int(l, $13);
 	  append_int(l, $14);
-	  append_int(l, $15);
-	  append_list(l, $16);
+	  append_list(l, $15);
 	  append_int(l, $9);
 	  append_int(l, $11);
 	  $$ = _symbol_create_list( SQL_COPYFROM, l ); }
-  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_locked opt_best_effort opt_constraint
+  | COPY opt_nr INTO qname opt_column_list FROM STDIN  opt_header_list opt_seps opt_escape opt_null_string opt_best_effort opt_constraint
 	{ dlist *l = L();
 	  append_list(l, $4);
 	  append_list(l, $5);
@@ -2760,7 +2758,6 @@ copyfrom_stmt:
 	  append_string(l, $11);
 	  append_int(l, $12);
 	  append_int(l, $13);
-	  append_int(l, $14);
 	  append_list(l, NULL);
 	  append_int(l, 0);
 	  append_int(l, $10);
@@ -2879,11 +2876,6 @@ opt_escape:
 	/* empty */	{ $$ = TRUE; }		/* ESCAPE is default */
  |  	ESCAPE		{ $$ = TRUE; }
  |  	NO ESCAPE	{ $$ = FALSE; }
- ;
-
-opt_locked:
-	/* empty */	{ $$ = FALSE; }
- |  	LOCKED		{ $$ = TRUE; }
  ;
 
 opt_best_effort:

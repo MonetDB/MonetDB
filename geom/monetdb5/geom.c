@@ -2095,8 +2095,6 @@ geom_prelude(void *ret)
 	mbrNIL.ymax = flt_nil;
 	libgeom_init();
 	TYPE_mbr = malAtomSize(sizeof(mbr), "mbr");
-	geomcatalogfix_set(geom_catalog_upgrade);
-	geomsqlfix_set(geom_sql_upgrade);
 
 	return MAL_SUCCEED;
 }
@@ -5200,9 +5198,7 @@ wkbREAD(void *A, stream *s, size_t cnt)
 	assert(cnt == 1);
 	if (mnstr_readInt(s, &len) != 1)
 		return NULL;
-	if (geomversion_get())
-		srid = 0;
-	else if (mnstr_readInt(s, &srid) != 1)
+	if (mnstr_readInt(s, &srid) != 1)
 		return NULL;
 	if ((a = GDKmalloc(wkb_size(len))) == NULL)
 		return NULL;
@@ -5236,16 +5232,16 @@ wkbWRITE(const void *A, stream *s, size_t cnt)
 }
 
 static var_t
-wkbPUT(Heap *h, var_t *bun, const void *VAL)
+wkbPUT(BAT *b, var_t *bun, const void *VAL)
 {
 	const wkb *val = VAL;
 	char *base;
 
-	*bun = HEAP_malloc(h, wkb_size(val->len));
-	base = h->base;
+	*bun = HEAP_malloc(b, wkb_size(val->len));
+	base = b->tvheap->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, wkb_size(val->len));
-		h->dirty = true;
+		b->tvheap->dirty = true;
 	}
 	return *bun;
 }
@@ -5682,16 +5678,16 @@ wkbaWRITE(const void *A, stream *s, size_t cnt)
 }
 
 static var_t
-wkbaPUT(Heap *h, var_t *bun, const void *VAL)
+wkbaPUT(BAT *b, var_t *bun, const void *VAL)
 {
 	const wkba *val = VAL;
 	char *base;
 
-	*bun = HEAP_malloc(h, wkba_size(val->itemsNum));
-	base = h->base;
+	*bun = HEAP_malloc(b, wkba_size(val->itemsNum));
+	base = b->tvheap->base;
 	if (*bun) {
 		memcpy(&base[*bun], val, wkba_size(val->itemsNum));
-		h->dirty = true;
+		b->tvheap->dirty = true;
 	}
 	return *bun;
 }

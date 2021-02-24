@@ -1,7 +1,7 @@
 statement ok
 create table bug3923(i integer)
 
-query TTTTTIIII rowsort
+query TTTTTIITI rowsort
 select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from storage('sys','_tables')
 ----
 sys
@@ -11,7 +11,7 @@ smallint
 writable
 2
 0
-0
+False
 0
 sys
 _tables
@@ -20,7 +20,7 @@ smallint
 writable
 2
 0
-0
+False
 0
 sys
 _tables
@@ -29,7 +29,7 @@ int
 writable
 4
 0
-0
+False
 0
 sys
 _tables
@@ -38,7 +38,7 @@ varchar
 writable
 99
 0
-0
+False
 0
 sys
 _tables
@@ -47,7 +47,7 @@ varchar
 writable
 99
 0
-0
+False
 0
 sys
 _tables
@@ -56,7 +56,7 @@ int
 writable
 4
 0
-0
+False
 0
 sys
 _tables
@@ -65,7 +65,7 @@ boolean
 writable
 1
 0
-0
+False
 0
 sys
 _tables
@@ -74,11 +74,84 @@ smallint
 writable
 2
 0
-0
+False
 0
 
-statement ok
+query TTTTTIITI rowsort
 call storagemodelinit()
+----
+sys
+_tables
+access
+smallint
+writable
+2
+0
+False
+0
+sys
+_tables
+commit_action
+smallint
+writable
+2
+0
+False
+0
+sys
+_tables
+id
+int
+writable
+4
+0
+False
+0
+sys
+_tables
+name
+varchar
+writable
+99
+0
+False
+0
+sys
+_tables
+query
+varchar
+writable
+99
+0
+False
+0
+sys
+_tables
+schema_id
+int
+writable
+4
+0
+False
+0
+sys
+_tables
+system
+boolean
+writable
+1
+0
+False
+0
+sys
+_tables
+type
+smallint
+writable
+2
+0
+False
+0
 
 statement ok
 update storagemodelinput set "count" =10000 where "table" ='bug3923'
@@ -86,7 +159,7 @@ update storagemodelinput set "count" =10000 where "table" ='bug3923'
 statement ok
 update storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
 
-query TTTTIIIIIIIII rowsort
+query TTTTIIIIIITTT rowsort
 select * from storagemodel where "table" = 'bug3923'
 ----
 sys
@@ -99,9 +172,9 @@ int
 0
 2000
 0
-1
-NULL
-1
+True
+True
+True
 
 statement ok
 drop table bug3923
@@ -115,7 +188,7 @@ set schema bug3923schema
 statement ok
 create table bug3923(i integer)
 
-query TTTTTIIII rowsort
+query TTTTTIITI rowsort
 select "schema", "table", "column", "type", "mode", case when typewidth < 14 then typewidth else 99 end as typewidth, hashes, phash, imprints from sys.storage('sys','_tables')
 ----
 sys
@@ -125,7 +198,7 @@ smallint
 writable
 2
 0
-0
+False
 0
 sys
 _tables
@@ -134,7 +207,7 @@ smallint
 writable
 2
 0
-0
+False
 0
 sys
 _tables
@@ -143,7 +216,7 @@ int
 writable
 4
 0
-0
+False
 0
 sys
 _tables
@@ -152,7 +225,7 @@ varchar
 writable
 99
 0
-0
+False
 0
 sys
 _tables
@@ -161,7 +234,7 @@ varchar
 writable
 99
 0
-0
+False
 0
 sys
 _tables
@@ -170,7 +243,7 @@ int
 writable
 4
 0
-0
+False
 0
 sys
 _tables
@@ -179,7 +252,7 @@ boolean
 writable
 1
 0
-0
+False
 0
 sys
 _tables
@@ -188,11 +261,84 @@ smallint
 writable
 2
 0
-0
+False
 0
 
-statement ok
+query TTTTTIITI rowsort
 call sys.storagemodelinit()
+----
+sys
+_tables
+access
+smallint
+writable
+2
+0
+False
+0
+sys
+_tables
+commit_action
+smallint
+writable
+2
+0
+False
+0
+sys
+_tables
+id
+int
+writable
+4
+0
+False
+0
+sys
+_tables
+name
+varchar
+writable
+99
+0
+False
+0
+sys
+_tables
+query
+varchar
+writable
+99
+0
+False
+0
+sys
+_tables
+schema_id
+int
+writable
+4
+0
+False
+0
+sys
+_tables
+system
+boolean
+writable
+1
+0
+False
+0
+sys
+_tables
+type
+smallint
+writable
+2
+0
+False
+0
 
 statement ok
 update sys.storagemodelinput set "count" =10000 where "table" ='bug3923'
@@ -200,7 +346,7 @@ update sys.storagemodelinput set "count" =10000 where "table" ='bug3923'
 statement ok
 update sys.storagemodelinput set "distinct" =10 where "table" ='bug3923' and "column" ='i'
 
-query TTTTIIIIIIIII rowsort
+query TTTTIIIIIITTT rowsort
 select * from sys.storagemodel where "table" = 'bug3923'
 ----
 bug3923schema
@@ -213,10 +359,11 @@ int
 0
 2000
 0
-1
-NULL
-1
+True
+True
+True
 
 statement ok
 drop table bug3923
+
 

@@ -61,6 +61,7 @@ target_sources(bat
   gdk_value.c
   gdk_posix.c
   gdk_logger.c gdk_logger.h
+  gdk_logger_old.c
   gdk_sample.c
   xoshiro256starstar.h
   gdk_private.h
