@@ -773,6 +773,24 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 	clrVarCleanup(mb, n);
 }
 
+inline void
+myitoa(char *p, int i) /* convert integer into string, but this code doesn't deal with negative integers! */
+{
+	char const digit[] = "0123456789";
+	int shift = i;
+
+	do { /* Find end of string */
+		++p;
+		shift /= 10;
+	} while (shift);
+
+	*p = '\0';
+	do { /* Insert digits value while going back */
+		*--p = digit[i%10];
+		i /= 10;
+	} while (i);
+}
+
 int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
@@ -787,7 +805,14 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		return -1;
 	n = mb->vtop;
 	if( name == 0 || len == 0){
-		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+		char *vname = getVarName(mb,n);
+
+		/* Don't call snprintf because it's expensive on this common code */
+		vname[0] = REFMARKER;
+		vname[1] = TMPMARKER;
+		myitoa(vname + 2, mb->vid++);
+
+		assert(strlen(vname) < IDLENGTH);
 	} else {
 		/* avoid calling strcpy_len since we're not interested in the
 		 * source length, and that may be very large */
@@ -927,8 +952,16 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	/* rename the temporary variable */
 	mb->vid = 0;
 	for( i =0; i< cnt; i++)
-	if( isTmpVar(mb,i))
-        (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+		if( isTmpVar(mb,i)) {
+			char *vname = mb->var[i].id;
+
+			/* Don't call snprintf because it's too expensive on this common code */
+			vname[0] = REFMARKER;
+			vname[1] = TMPMARKER;
+			myitoa(vname + 2, mb->vid++);
+
+			assert(strlen(vname) < IDLENGTH);
+		}
 
 	GDKfree(alias);
 	mb->vtop = cnt;
