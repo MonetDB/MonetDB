@@ -45,7 +45,7 @@ typedef struct {
 	/* generic (fixed + varsized atom) ADT functions */
 	ssize_t (*atomFromStr) (const char *src, size_t *len, void **dst, bool external);
 	ssize_t (*atomToStr) (char **dst, size_t *len, const void *src, bool external);
-	void *(*atomRead) (void *dst, stream *s, size_t cnt);
+	void *(*atomRead) (void *dst, size_t *dstlen, stream *s, size_t cnt);
 	gdk_return (*atomWrite) (const void *src, stream *s, size_t cnt);
 	int (*atomCmp) (const void *v1, const void *v2);
 	BUN (*atomHash) (const void *v);

@@ -334,11 +334,7 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 	if (tpe >= 0) {
 		BAT *uid = NULL;
 		BAT *r = NULL;
-		void *(*rt) (ptr, stream *, size_t) = BATatoms[tpe].atomRead;
-		void *tv = NULL;
-
-		if (ATOMstorage(tpe) < TYPE_str)
-			tv = lg->buf;
+		void *(*rt) (ptr, size_t *, stream *, size_t) = BATatoms[tpe].atomRead;
 
 		assert(nr <= (lng) BUN_MAX);
 		if (!lg->flushing && l->flag == LOG_UPDATE) {
@@ -362,10 +358,13 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					BBPreclaim(r);
 				return LOG_ERR;
 			}
-			void *t = rt(tv, lg->input_log, 1);
+			size_t tlen = lg->bufsize;
+			void *t = rt(lg->buf, &tlen, lg->input_log, 1);
 			if (t == NULL) {
 				res = LOG_ERR;
 			} else {
+				lg->buf = t;
+				lg->bufsize = tlen;
 				for(BUN p = 0; p<(BUN) nr; p++) {
 					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
 						res = LOG_ERR;
@@ -401,7 +400,8 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 				}
 			} else {
 				for (; res == LOG_OK && nr > 0; nr--) {
-					void *t = rt(tv, lg->input_log, 1);
+					size_t tlen = lg->bufsize;
+					void *t = rt(lg->buf, &tlen, lg->input_log, 1);
 
 					if (t == NULL) {
 						/* see if failure was due to
@@ -412,24 +412,25 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 							res = LOG_EOF;
 						else
 							res = LOG_ERR;
-						if (t != tv)
-							GDKfree(t);
+					} else {
+						lg->buf = t;
+						lg->bufsize = tlen;
 					}
 					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
 						res = LOG_ERR;
-					if (t != tv)
-						GDKfree(t);
 				}
 			}
 		} else {
-			void *(*rh) (ptr, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
+			void *(*rh) (ptr, size_t *, stream *, size_t) = BATatoms[TYPE_oid].atomRead;
 			void *hv = ATOMnil(TYPE_oid);
 
 			if (hv == NULL)
 				res = LOG_ERR;
 			for (; res == LOG_OK && nr > 0; nr--) {
-				void *h = rh(hv, lg->input_log, 1);
-
+				size_t hlen = sizeof(oid);
+				void *h = rh(hv, &hlen, lg->input_log, 1);
+				assert(hlen == sizeof(oid));
+				assert(h == hv);
 				if ((uid && BUNappend(uid, h, true) != GDK_SUCCEED))
 					res = LOG_ERR;
 			}
@@ -458,24 +459,24 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 				}
 			} else {
 				for (; res == LOG_OK && nr > 0; nr--) {
-					void *t = rt(tv, lg->input_log, 1);
+					size_t tlen = lg->bufsize;
+					void *t = rt(lg->buf, &tlen, lg->input_log, 1);
 
 					if (t == NULL) {
 						if (strstr(GDKerrbuf, "malloc") == NULL)
 							res = LOG_EOF;
 						else
 							res = LOG_ERR;
+					} else {
+						lg->buf = t;
+						lg->bufsize = tlen;
 					}
 					if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
 						res = LOG_ERR;
-					if (t != tv)
-						GDKfree(t);
 				}
 			}
 			GDKfree(hv);
 		}
-		if (tv != lg->buf)
-			GDKfree(tv);
 
 		if (res == LOG_OK) {
 			if (tr_grow(tr) == GDK_SUCCEED) {

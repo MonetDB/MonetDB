@@ -433,8 +433,9 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 #define mult16(x)	((x) << 4)
 
 static void *
-voidRead(void *a, stream *s, size_t cnt)
+voidRead(void *a, size_t *dstlen, stream *s, size_t cnt)
 {
+	(void) dstlen;
 	(void) s;
 	(void) cnt;
 	return a;
@@ -878,11 +879,14 @@ hgeFromStr(const char *src, size_t *len, hge **dst, bool external)
 
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
-TYPE##Read(TYPE *A, stream *s, size_t cnt)				\
+TYPE##Read(TYPE *A, size_t *dstlen, stream *s, size_t cnt)		\
 {									\
 	TYPE *a = A;							\
-	if (a == NULL && (a = GDKmalloc(cnt * sizeof(TYPE))) == NULL)	\
-		return NULL;						\
+	if (a == NULL || *dstlen < cnt * sizeof(TYPE)) {		\
+		if ((a = GDKrealloc(a, cnt * sizeof(TYPE))) == NULL)	\
+			return NULL;					\
+		*dstlen = cnt * sizeof(TYPE);				\
+	}								\
 	if (mnstr_read##NAME##Array(s, (CAST *) a, cnt) == 0 ||		\
 	    mnstr_errnr(s)) {						\
 		if (a != A)						\
@@ -909,14 +913,17 @@ mskWrite(const msk *a, stream *s, size_t cnt)
 }
 
 static void *
-mskRead(msk *a, stream *s, size_t cnt)
+mskRead(msk *a, size_t *dstlen, stream *s, size_t cnt)
 {
 	int8_t v;
 	if (cnt != 1)
 		return NULL;
+	if (a == NULL || *dstlen == 0) {
+		if ((a = GDKrealloc(a, 1)) == NULL)
+			return NULL;
+		*dstlen = 1;
+	}
 	if (mnstr_readBte(s, &v) != 1)
-		return NULL;
-	if (a == NULL && (a = GDKmalloc(1)) == NULL)
 		return NULL;
 	*a = v != 0;
 	return a;
@@ -1251,7 +1258,7 @@ atomDesc BATatoms[MAXATOMS] = {
 #endif
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) OIDfromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) OIDtoStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) voidRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) voidRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) voidWrite,
 	},
 	[TYPE_bit] = {
@@ -1262,7 +1269,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &bte_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) bitFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) bitToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) bitRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bitRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bitWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
 		.atomHash = (BUN (*)(const void *)) bteHash,
@@ -1274,7 +1281,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.size = 1,	/* really 1/8 */
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) mskFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) mskToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) mskRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) mskRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) mskWrite,
 		.atomCmp = (int (*)(const void *, const void *)) mskCmp,
 	},
@@ -1286,7 +1293,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &bte_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) bteFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) bteToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) bteRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bteRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bteWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
 		.atomHash = (BUN (*)(const void *)) bteHash,
@@ -1299,7 +1306,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &sht_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) shtFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) shtToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) shtRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) shtRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) shtWrite,
 		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
 		.atomHash = (BUN (*)(const void *)) shtHash,
@@ -1312,7 +1319,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &int_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) batFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) batToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) batRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) batRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) batWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
@@ -1327,7 +1334,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &int_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) intFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) intToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
@@ -1339,14 +1346,14 @@ atomDesc BATatoms[MAXATOMS] = {
 #if SIZEOF_OID == SIZEOF_INT
 		.storage = TYPE_int,
 		.atomNull = (void *) &int_nil,
-		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else
 		.storage = TYPE_lng,
 		.atomNull = (void *) &lng_nil,
-		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
@@ -1362,7 +1369,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &ptr_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ptrFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ptrToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) ptrRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) ptrRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) ptrWrite,
 #if SIZEOF_VOID_P == SIZEOF_INT
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
@@ -1380,7 +1387,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &flt_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) fltFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) fltToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) fltRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) fltRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
 		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
@@ -1393,7 +1400,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &dbl_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) dblFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) dblToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) dblRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) dblRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
 		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
@@ -1406,7 +1413,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &lng_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) lngFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) lngToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
@@ -1420,7 +1427,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &hge_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) hgeFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) hgeToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) hgeRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) hgeRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) hgeWrite,
 		.atomCmp = (int (*)(const void *, const void *)) hgeCmp,
 		.atomHash = (BUN (*)(const void *)) hgeHash,
@@ -1434,7 +1441,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &int_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) date_fromstr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) date_tostr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) intRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
 		.atomHash = (BUN (*)(const void *)) intHash,
@@ -1447,7 +1454,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &lng_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) daytime_tz_fromstr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) daytime_tostr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
@@ -1460,7 +1467,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) &lng_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) timestamp_fromstr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) timestamp_tostr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) lngRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
@@ -1473,7 +1480,7 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomNull = (void *) str_nil,
 		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) strFromStr,
 		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) strToStr,
-		.atomRead = (void *(*)(void *, stream *, size_t)) strRead,
+		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) strRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) strWrite,
 		.atomCmp = (int (*)(const void *, const void *)) strCmp,
 		.atomHash = (BUN (*)(const void *)) strHash,
