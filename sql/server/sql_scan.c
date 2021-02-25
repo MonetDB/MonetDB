@@ -800,42 +800,14 @@ keyword_or_ident(mvc * c, int cur)
 		if (!iswalnum(cur) && cur != '_') {
 			utf8_putchar(lc, cur);
 			(void)scanner_token(lc, IDENT);
-			k = find_keyword_bs(lc,s);
-			if (k) {
+			if ((k = find_keyword_bs(lc,s)))
 				lc->yyval = k->token;
-			} else {
-				char buf[ERRSIZE];
-				int err_status = c->session->status;
-				strcpy(buf, c->errstr);
-
-				/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-				if (sql_find_func(c, "sys", lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) {
-					lc->yyval = FILTER_FUNC;
-				} else {
-					c->session->status = err_status; 
-					strcpy(c->errstr, buf);
-				}
-			}
 			return lc->yyval;
 		}
 	}
 	(void)scanner_token(lc, IDENT);
-	k = find_keyword_bs(lc,s);
-	if (k) {
+	if ((k = find_keyword_bs(lc,s)))
 		lc->yyval = k->token;
-	} else {
-		char buf[ERRSIZE];
-		int err_status = c->session->status;
-		strcpy(buf, c->errstr);
-
-		/* find keyword in SELECT/JOIN/UNION FUNCTIONS */
-		if (sql_find_func(c, "sys", lc->rs->buf+lc->rs->pos+s, -1, F_FILT, NULL)) {
-			lc->yyval = FILTER_FUNC;
-		} else {
-			c->session->status = err_status; 
-			strcpy(c->errstr, buf);
-		}
-	}
 	return lc->yyval;
 }
 
@@ -1269,7 +1241,7 @@ sql_get_next_token(YYSTYPE *yylval, void *parm)
 	if (token == KW_TYPE)
 		token = aTYPE;
 
-	if (token == IDENT || token == COMPARISON || token == FILTER_FUNC ||
+	if (token == IDENT || token == COMPARISON ||
 	    token == RANK || token == aTYPE || token == ALIAS) {
 		yylval->sval = sa_strndup(c->sa, yylval->sval, lc->yycur-lc->yysval);
 #ifdef SQL_STRINGS_USE_ESCAPES
