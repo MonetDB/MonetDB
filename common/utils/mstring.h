@@ -76,25 +76,4 @@ strconcat_len(char *restrict dst, size_t n, const char *restrict src, ...)
 	return i;
 }
 
-/* convert integer into string, BUT this code does NOT deal with NEGATIVE INTEGERS! */
-static inline char *
-int_to_str(char *restrict dst, int i)
-{
-	char const digit[] = "0123456789";
-	int shift = i;
-
-	assert(i > 0);
-	do { /* Find end of string */
-		++dst;
-		shift /= 10;
-	} while (shift);
-
-	*dst = '\0';
-	do { /* Insert digits value while going back */
-		*--dst = digit[i%10];
-		i /= 10;
-	} while (i);
-	return dst;
-}
-
 #endif

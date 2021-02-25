@@ -839,8 +839,7 @@ runMALdataflow(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, MalStkPtr st
 			}
 			workers[i].flag = RUNNING;
 			char name[MT_NAME_LEN];
-			int_to_str(stpcpy(name, "DFLOWworker"), i); /* should fit */
-			assert(strlen(name) < MT_NAME_LEN);
+			snprintf(name, sizeof(name), "DFLOWworker%d", i);
 			if ((workers[i].errbuf = GDKmalloc(GDKMAXERRLEN)) == NULL ||
 				(workers[i].id = THRcreate(DFLOWworker, (void *) &workers[i],
 										   MT_THR_JOINABLE, name)) == 0) {
