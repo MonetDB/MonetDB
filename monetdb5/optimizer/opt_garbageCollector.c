@@ -102,10 +102,14 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	if( used[i]){
 		p = getInstrPtr(mb, used[i]);
 		if( p){
+#ifdef NDEBUG
+			snprintf(buf,1024,"Unused variable %s", getVarName(mb, i));
+#else
 			str msg = instruction2str(mb, NULL, p, LIST_MAL_ALL);
 			snprintf(buf,1024,"Unused variable %s: %s", getVarName(mb, i), msg);
-			newComment(mb,buf);
 			GDKfree(msg);
+#endif
+			newComment(mb,buf);
 		}
 	}
 	GDKfree(used);
