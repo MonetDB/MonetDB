@@ -1615,7 +1615,7 @@ BUNfnd(BAT *b, const void *v)
 	BATiter bi;
 
 	BATcheck(b, BUN_NONE);
-	if (!v)
+	if (!v || BATcount(b) == 0)
 		return r;
 	if (complex_cand(b)) {
 		struct canditer ci;
