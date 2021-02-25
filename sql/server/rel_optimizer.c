@@ -416,6 +416,12 @@ exp_count(int *cnt, sql_exp *e)
 		case cmp_lt:
 		case cmp_lte:
 			*cnt += 6;
+			if (e->l) {
+				sql_exp *l = e->l;
+				sql_subtype *t = exp_subtype(l);
+				if (EC_TEMP(t->type->eclass)) /* give preference too temporal ranges */
+					*cnt += 200;
+			}
 			if (e->f){ /* range */
 				*cnt += 6;
 				return 12;
@@ -5234,6 +5240,43 @@ rel_push_join_down_union(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_push_join_down_outer(visitor *v, sql_rel *rel)
+{
+	if (is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel) && !list_empty(rel->exps) && !rel_is_ref(rel)) {
+		sql_rel *l = rel->l, *r = rel->r;
+
+		if (is_left(r->op) && (is_select(l->op) || (is_join(l->op) && !is_outerjoin(l->op))) && !rel_is_ref(l) &&
+				!rel_is_ref(r)) {
+			sql_rel *rl = r->l;
+			sql_rel *rr = r->r;
+			if (rel_is_ref(rl) || rel_is_ref(rr))
+				return rel;
+			/* join exps should only include l and r.l */
+			list *njexps = sa_list(v->sql->sa);
+			for(node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *je = n->data;
+
+				assert(je->type == e_cmp);
+				if (je->f)
+					return rel;
+				if ((rel_find_exp(l, je->l) && rel_find_exp(rl, je->r)) || (rel_find_exp(l, je->r) && rel_find_exp(rl, je->l))) {
+					list_append(njexps, je);
+				} else {
+					return rel;
+				}
+			}
+			sql_rel *nl = rel_crossproduct(v->sql->sa, rel_dup(l), rl, rel->op);
+			r->l = nl;
+			nl->exps = njexps;
+			rel_dup(r);
+			rel_destroy(rel);
+			rel = r;
+		}
+	}
+	return rel;
+}
+
 static int
 rel_is_empty( sql_rel *rel )
 {
@@ -9679,6 +9722,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
 		if (gp.cnt[op_join])
 			rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
+		rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_outer);
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
 		if (gp.cnt[op_union])
