@@ -83,7 +83,7 @@ int_to_str(char *restrict dst, int i)
 	char const digit[] = "0123456789";
 	int shift = i;
 
-	assert(i > 0);
+	assert(i >= 0);
 	do { /* Find end of string */
 		++dst;
 		shift /= 10;
