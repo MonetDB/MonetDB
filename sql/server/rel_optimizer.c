@@ -9694,7 +9694,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_visitor_topdown(&v, rel, &rel_out2inner);
 		if (gp.cnt[op_join])
 			rel = rel_visitor_bottomup(&v, rel, &rel_join2semijoin);
-		rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_outer);
+		if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && gp.cnt[op_join])
+			rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_outer);
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
 		if (gp.cnt[op_union])
