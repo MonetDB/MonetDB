@@ -64,6 +64,15 @@ target_link_libraries(example_backup
 add_test(run_example_backup example_backup)
 endif()
 
+if(NOT WIN32)
+add_executable(example_copy example_copy.c)
+target_link_libraries(example_copy
+  PRIVATE
+    monetdb_config_header
+    monetdbe)
+add_test(run_example_copy example_copy)
+endif()
+
 add_executable(example_connections example_connections.c)
 target_link_libraries(example_connections
   PRIVATE
