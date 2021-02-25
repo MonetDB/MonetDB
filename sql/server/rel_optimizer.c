@@ -4453,9 +4453,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			/* add inplace empty select */
 			sql_rel *l = rel_select(v->sql->sa, rel->l, NULL);
 
-			if (!l->exps)
-				l->exps = sa_list(v->sql->sa);
-			(void)list_merge(l->exps, rel->exps, (fdup)NULL);
+			l->exps = rel->exps;
 			rel->exps = NULL;
 			rel->l = l;
 			v->changes++;
@@ -4980,8 +4978,10 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 		for(node *n=rel->exps->h; n;) {
 			node *next = n->next;
 			sql_exp *e = n->data;
-			int le = rel_has_cmp_exp(l, e);
-			int re = rel_has_cmp_exp(r, e);
+			int le = rel_has_cmp_exp(l, e), re = 0;
+
+			if (e->type == e_cmp && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in)))
+				re = rel_has_cmp_exp(r, e);
 
 			/* select expressions on left */
 			if (le && !re) {
@@ -4990,7 +4990,7 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 				append(lexps, e);
 				list_remove_node(rel->exps, NULL, n);
 			/* select expressions on right */
-			} else if (!le && re && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in))) {
+			} else if (!le && re) {
 				if (!rexps)
 					rexps=sa_list(v->sql->sa);
 				append(rexps, e);
@@ -4999,20 +4999,22 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 			n = next;
 		}
 		if (lexps) {
-			l = rel->l = rel_select(v->sql->sa, rel->l, NULL);
-			if (l->exps)
-				list_merge(lexps, l->exps, NULL);
-
-			l->exps = lexps;
-			v->changes = 1;
+			if (is_select(l->op)) {
+				l->exps = list_empty(l->exps) ? lexps : list_merge(l->exps, lexps, (fdup) NULL);
+			} else {
+				l = rel->l = rel_select(v->sql->sa, rel->l, NULL);
+				l->exps = lexps;
+			}
+			v->changes++;
 		}
 		if (rexps) {
-			r = rel->r = rel_select(v->sql->sa, rel->r, NULL);
-			if (r->exps)
-				list_merge(rexps, r->exps, NULL);
-
-			r->exps = rexps;
-			v->changes = 1;
+			if (is_select(r->op)) {
+				r->exps = list_empty(r->exps) ? rexps : list_merge(r->exps, rexps, (fdup) NULL);
+			} else {
+				r = rel->r = rel_select(v->sql->sa, rel->r, NULL);
+				r->exps = rexps;
+			}
+			v->changes++;
 		}
 	}
 	return rel;
