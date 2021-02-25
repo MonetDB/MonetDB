@@ -150,6 +150,7 @@ typedef struct mvc {
 	unsigned int label;	/* numbers for relational projection labels */
 	list *cascade_action;  /* protection against recursive cascade actions */
 	list *schema_path; /* schema search path for object lookup */
+	uintptr_t sp;
 } mvc;
 
 extern sql_table *mvc_init_create_view(mvc *sql, sql_schema *s, const char *name, const char *query);
@@ -303,5 +304,6 @@ extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ c
 	__attribute__((__format__(__printf__, 3, 4)));
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
+extern int mvc_highwater(mvc *sql);
 
 #endif /*_SQL_MVC_H*/

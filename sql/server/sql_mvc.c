@@ -728,6 +728,7 @@ mvc_create(sql_store *store, sql_allocator *pa, int clientid, int debug, bstream
 	m->pa = pa;
 	m->sa = NULL;
 	m->ta = sa_create(m->pa);
+	m->sp = (uintptr_t)(&m);
 
 	m->params = NULL;
 	m->sizeframes = MAXPARAMS;
@@ -1662,4 +1663,16 @@ int
 symbol_cmp(mvc *sql, symbol *s1, symbol *s2)
 {
 	return _symbol_cmp(sql, s1, s2);
+}
+
+int
+mvc_highwater(mvc *sql)
+{
+	int l = 0, rc = 0;
+	uintptr_t c = (uintptr_t) (&l);
+
+	size_t diff = c < sql->sp ? sql->sp - c : c - sql->sp;
+	if (diff > THREAD_STACK_SIZE - 280 * 1024)
+		rc = 1;
+	return rc;
 }
