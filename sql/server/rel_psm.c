@@ -855,11 +855,18 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
 
 	type_list = create_type_list(sql, params, 1);
-	if (type == F_FUNC || type == F_AGGR) {
-		if (sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC) ? F_AGGR : F_FUNC))
-			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F, (type == F_FUNC) ? "an aggregate" : "a function", fname);
-		sql->session->status = 0; /* if the function was not found clean the error */
-		sql->errstr[0] = '\0';
+	if (type == F_FUNC || type == F_AGGR || type == F_FILT) {
+		sql_ftype ftpyes[3] = {F_FUNC, F_AGGR, F_FILT};
+
+		for (int i = 0; i < 3; i++) {
+			if (ftpyes[i] != type) {
+				if (sql_bind_func_(sql, s->base.name, fname, type_list, ftpyes[i]))
+					return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: there's %s with the name '%s' and the same parameters, which causes ambiguous calls", F,
+									 (ftpyes[i] == F_AGGR) ? "an aggregate" : (ftpyes[i] == F_FILT) ? "a filter function" : "a function", fname);
+				sql->session->status = 0; /* if the function was not found clean the error */
+				sql->errstr[0] = '\0';
+			}
+		}
 	}
 
 	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type)) != NULL && create) {

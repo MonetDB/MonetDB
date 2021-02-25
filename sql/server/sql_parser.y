@@ -663,7 +663,6 @@ int yydebug=1;
 %left JOIN CROSS LEFT FULL RIGHT INNER NATURAL
 %left WITH DATA
 %left <operation> '(' ')'
-%left <sval> FILTER_FUNC 
 
 %left <operation> NOT
 %left <operation> '='
@@ -5356,7 +5355,6 @@ calc_ident:
  |  UIDENT opt_uescape
 		{ $$ = uescape_xform($1, $2); }
  |  aTYPE	{ $$ = $1; }
- |  FILTER_FUNC	{ $$ = $1; }
  |  ALIAS	{ $$ = $1; }
  |  RANK	{ $$ = $1; }	/* without '(' */
  |  non_reserved_word
