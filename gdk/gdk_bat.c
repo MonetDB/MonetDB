@@ -139,9 +139,9 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role)
 		assert(bn->theap == NULL);
 	}
 	char name[MT_NAME_LEN];
-	int_to_str(stpcpy(name, "heaplock"), bn->batCacheid); /* fits */
+	snprintf(name, sizeof(name), "heaplock%d", bn->batCacheid); /* fits */
 	MT_lock_init(&bn->theaplock, name);
-	int_to_str(stpcpy(name, "BATlock"), bn->batCacheid); /* fits */
+	snprintf(name, sizeof(name), "BATlock%d", bn->batCacheid); /* fits */
 	MT_lock_init(&bn->batIdxLock, name);
 	bn->batDirtydesc = true;
 	return bn;
