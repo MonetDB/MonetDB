@@ -70,16 +70,15 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 	int showtype = 0, closequote=0;
 	int varid = getArg(p,idx);
 
-	buf = GDKmalloc(maxlen);
+	buf = GDKzalloc(maxlen);
 	if( buf == NULL) {
 		addMalException(mb, "renderTerm:Failed to allocate");
 		return NULL;
 	}
-	buf[0] = '\0';
 	// show the name when required or is used
 	if ((flg & LIST_MAL_NAME) && !isVarConstant(mb,varid) && !isVarTypedef(mb,varid)) {
 		nme = getVarName(mb,varid);
-		len += strcpy_len(buf, nme, maxlen);
+		len +=snprintf(buf, maxlen, "%s", nme);
 		nameused =1;
 	}
 	// show the value when required or being a constant
@@ -156,7 +155,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg)
 		strcat(buf + len,":");
 		len++;
 		tpe = getTypeName(getVarType(mb, varid));
-		len += strcpy_len(buf+len, tpe, maxlen-len);
+		len += snprintf(buf+len,maxlen-len,"%s",tpe);
 		GDKfree(tpe);
 	}
 
