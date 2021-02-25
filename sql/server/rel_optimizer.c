@@ -3229,27 +3229,23 @@ rel_simplify_math(visitor *v, sql_rel *rel)
 	int ochanges = 0;
 
 	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
-		list *exps = rel->exps;
-		node *n;
 		int needed = 0;
 
-		for (n = exps->h; n && !needed; n = n->next) {
+		for (node *n = rel->exps->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
 
-			if (e->type == e_func || e->type == e_convert ||
-			    e->type == e_aggr || e->type == e_psm)
+			if (e->type == e_func || e->type == e_convert || e->type == e_aggr || e->type == e_psm)
 				needed = 1;
 		}
 		if (!needed)
 			return rel;
 
-		rel->exps = new_exp_list(v->sql->sa);
-		for (n = exps->h; n; n = n->next) {
-			sql_exp *e = exp_simplify_math( v->sql, n->data, &ochanges);
+		for (node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = exp_simplify_math(v->sql, n->data, &ochanges);
 
 			if (!e)
 				return NULL;
-			list_append(rel->exps, e);
+			n->data = e;
 		}
 	}
 	v->changes += ochanges;
@@ -4518,11 +4514,10 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 	/* push select through join */
 	if (is_select(rel->op) && r && is_join(r->op) && !(rel_is_ref(r))) {
-		sql_rel *jl = r->l, *oldjl = jl;
-		sql_rel *jr = r->r, *oldjr = jr;
+		sql_rel *jl = r->l;
+		sql_rel *jr = r->r;
 		int left = r->op == op_join || r->op == op_left;
 		int right = r->op == op_join || r->op == op_right;
-		int pushed_left = 0, pushed_right = 0;
 
 		if (r->op == op_full || is_single(r))
 			return rel;
@@ -4530,78 +4525,60 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		/* introduce selects under the join (if needed) */
 		set_processed(jl);
 		set_processed(jr);
-		if (!is_select(jl->op) || rel_is_ref(jl))
-			r->l = jl = rel_select(v->sql->sa, jl, NULL);
-		if (!is_select(jr->op) || rel_is_ref(jr))
-			r->r = jr = rel_select(v->sql->sa, jr, NULL);
-
-		rel->exps = new_exp_list(v->sql->sa);
-		for (n = exps->h; n; n = n->next) {
+		for (n = exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data, *ne = NULL;
-			int done = 0;
 
 			if (left)
 				ne = exp_push_down(v->sql, e, jl, jl);
 			if (ne && ne != e) {
-				done = 1;
-				pushed_left = 1;
+				if (!is_select(jl->op) || rel_is_ref(jl))
+					r->l = jl = rel_select(v->sql->sa, jl, NULL);
 				rel_select_add_exp(v->sql->sa, jl, ne);
+				list_remove_node(exps, NULL, n);
+				v->changes++;
 			} else if (right) {
 				ne = exp_push_down(v->sql, e, jr, jr);
 				if (ne && ne != e) {
-					done = 1;
-					pushed_right = 1;
+					if (!is_select(jr->op) || rel_is_ref(jr))
+						r->r = jr = rel_select(v->sql->sa, jr, NULL);
 					rel_select_add_exp(v->sql->sa, jr, ne);
+					list_remove_node(exps, NULL, n);
+					v->changes++;
 				}
 			}
-			if (!done)
-				append(rel->exps, e);
-			v->changes += done;
+			n = next;
 		}
-		if (!pushed_left) /* revert to previous relations if there were no changes */
-			r->l = oldjl;
-		if (!pushed_right)
-			r->r = oldjr;
 	}
 
 	/* merge select and cross product ? */
 	if (is_select(rel->op) && r && r->op == op_join && !(rel_is_ref(r))) {
-		list *exps = rel->exps;
-
-		if (!r->exps)
-			r->exps = new_exp_list(v->sql->sa);
-		rel->exps = new_exp_list(v->sql->sa);
-		for (n = exps->h; n; n = n->next) {
+		for (n = exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data;
 
 			if (exp_is_join(e, NULL) == 0) {
+				if (!r->exps)
+					r->exps = new_exp_list(v->sql->sa);
 				append(r->exps, e);
+				list_remove_node(exps, NULL, n);
 				v->changes++;
-			} else {
-				append(rel->exps, e);
 			}
+			n = next;
 		}
 		return rel;
 	}
 
 	if (is_select(rel->op) && r && r->op == op_project && !(rel_is_ref(r))){
-		list *exps = rel->exps;
-		sql_rel *pl = r->l, *oldpl = pl;
-		int oldchanges = v->changes;
-		/* we cannot push through rank (row_number etc) functions or
-		   projects with distinct */
+		sql_rel *pl = r->l;
+		/* we cannot push through rank (row_number etc) functions or projects with distinct */
 		if (!pl || project_unsafe(r,1))
 			return rel;
 
-		/* here we need to fix aliases */
-		rel->exps = new_exp_list(v->sql->sa);
 		/* introduce selects under the project (if needed) */
 		set_processed(pl);
-		if (!is_select(pl->op) || rel_is_ref(pl))
-			r->l = pl = rel_select(v->sql->sa, pl, NULL);
-
-		/* for each exp check if we can rename it */
-		for (n = exps->h; n; n = n->next) {
+		for (n = exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data, *ne = NULL;
 
 			if (e->type == e_cmp) {
@@ -4609,17 +4586,15 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 
 				/* can we move it down */
 				if (ne && ne != e && pl->exps) {
+					if (!is_select(pl->op) || rel_is_ref(pl))
+						r->l = pl = rel_select(v->sql->sa, pl, NULL);
 					rel_select_add_exp(v->sql->sa, pl, ne);
+					list_remove_node(exps, NULL, n);
 					v->changes++;
-				} else {
-					append(rel->exps, (ne)?ne:e);
 				}
-			} else {
-				list_append(rel->exps, e);
 			}
+			n = next;
 		}
-		if (v->changes == oldchanges)
-			r->l = oldpl;
 		return rel;
 	}
 	return rel;
@@ -4997,13 +4972,13 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 {
 	if (is_innerjoin(rel->op) || is_semi(rel->op)) {
 		sql_rel *l = rel->l, *r = rel->r;
-		list *jexps = NULL, *lexps = NULL, *rexps = NULL;
-		node *n;
+		list *lexps = NULL, *rexps = NULL;
 
 		if (list_empty(rel->exps))
 			return rel;
 
-		for(n=rel->exps->h; n; n=n->next) {
+		for(node *n=rel->exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data;
 			int le = rel_has_cmp_exp(l, e);
 			int re = rel_has_cmp_exp(r, e);
@@ -5013,19 +4988,16 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 				if (!lexps)
 					lexps=sa_list(v->sql->sa);
 				append(lexps, e);
+				list_remove_node(rel->exps, NULL, n);
 			/* select expressions on right */
 			} else if (!le && re && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in))) {
 				if (!rexps)
 					rexps=sa_list(v->sql->sa);
 				append(rexps, e);
-			} else {
-				if (!jexps)
-					jexps=sa_list(v->sql->sa);
-				append(jexps, e);
+				list_remove_node(rel->exps, NULL, n);
 			}
+			n = next;
 		}
-		if (lexps || rexps)
-			rel->exps = jexps;
 		if (lexps) {
 			l = rel->l = rel_select(v->sql->sa, rel->l, NULL);
 			if (l->exps)
