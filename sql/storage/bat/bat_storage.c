@@ -3133,7 +3133,7 @@ static BAT *
 segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 {
 	size_t nr = end - start, pos = 0;
-	BAT *b = COLnew(0, TYPE_msk, nr, TRANSIENT);
+	BAT *b = COLnew(0, TYPE_msk, nr, TRANSIENT), *bn = NULL;
 	if (!b)
 		return NULL;
 
@@ -3159,10 +3159,13 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 		}
 		pos += lnr;
 	}
-	b = BATmaskedcands(start, nr, b, true);
+	if (!(bn = BATmaskedcands(start, nr, b, true))) {
+		BBPreclaim(b);
+		return NULL;
+	}
 	(void)pos;
 	assert (pos == nr);
-	return b;
+	return bn;
 }
 
 static void *					/* BAT * */
