@@ -2657,6 +2657,7 @@ mvc_export_table_wrap( Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			close_stream(s);
 			goto wrapup_result_set1;
 		}
+		be->output_format = OFMT_CSV;
 	} else {
 		while (!m->scanner.rs->eof)
 			bstream_next(m->scanner.rs);

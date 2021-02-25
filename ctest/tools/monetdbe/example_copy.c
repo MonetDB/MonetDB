@@ -26,10 +26,12 @@ main(void)
 	if (monetdbe_open(&mdbe, NULL, NULL))
 		error("Failed to open database");
 
-	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (b bool, x integer, f float, y string)", NULL, NULL)) != NULL)
+	if ((err = monetdbe_query(mdbe, "CREATE TABLE test (x integer, y string, ts timestamp, dt date, t time, b blob)", NULL, NULL)) != NULL)
 		error(err)
-
-	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (TRUE, 42, 42.42, 'Hello'), (NULL, NULL, NULL, 'World')", NULL, NULL)) != NULL)
+	if ((err = monetdbe_query(mdbe, "INSERT INTO test VALUES (42, 'Hello', '2020-01-02 10:20:30', '2020-01-02', '10:20:30', '01020308'), \
+															(NULL, 'World', NULL, NULL, NULL, NULL),	\
+															(NULL, 'Foo', NULL, NULL, NULL, NULL), \
+															(43, 'Bar', '2021-02-03 11:21:31', '2021-02-03', '11:21:31', '01020306')", NULL, NULL)) != NULL)
 		error(err)
 
 	// Get working directory and construct the CSV path
@@ -40,12 +42,12 @@ main(void)
 
     strcpy(sql, "COPY SELECT * FROM test INTO '");
     strcat(sql, csv_path);
-    strcat(sql, "' USING DELIMITERS ',' NULL AS ''");
+    strcat(sql, "' USING DELIMITERS ','");
 
 	if ((err = monetdbe_query(mdbe, sql, NULL, NULL)) != NULL)
 		error(err)
 	
-	if ((err = monetdbe_query(mdbe, "CREATE TABLE test_copy (b bool, x integer, f float, y string)", NULL, NULL)) != NULL) {
+	if ((err = monetdbe_query(mdbe, "CREATE TABLE test_copy (x integer, y string, ts timestamp, dt date, t time, b blob)", NULL, NULL)) != NULL) {
 		delete_file(csv_path)
 		error(err)
 	}
