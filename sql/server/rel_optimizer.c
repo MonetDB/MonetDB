@@ -2996,15 +2996,6 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					}
 				}
 			}
-			/* move constants to the right, ie c*A = A*c */
-			else if (exp_is_atom(le)) {
-				l->h->data = re;
-				l->h->next->data = le;
-				e->f = sql_bind_func(sql, "sys", "sql_mul", exp_subtype(re), exp_subtype(le), F_FUNC);
-				exp_sum_scales(e->f, re, le);
-				(*changes)++;
-				return e;
-			}
 			/* change a*a into pow(a,2), later change pow(a,2) back into a*a */
 			if (/* DISABLES CODE */ (0) && exp_equal(le, re)==0 && exp_subtype(le)->type->eclass == EC_FLT) {
 				/* pow */
@@ -3098,13 +3089,7 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 					}
 				}
 			}
-			/* move constants to the right, ie c+A = A+c */
-			else if (exp_is_atom(le)) {
-				l->h->data = re;
-				l->h->next->data = le;
-				(*changes)++;
-				return e;
-			} else if (is_func(le->type)) {
+			if (is_func(le->type)) {
 				list *ll = le->l;
 				sql_subfunc *f = le->f;
 				if (!f->func->s && !strcmp(f->func->base.name, "sql_add") && list_length(ll) == 2) {
