@@ -1341,16 +1341,8 @@ logger_commit(old_logger *lg)
 #endif
 
 static gdk_return
-check_version(old_logger *lg, FILE *fp)
+check_version(old_logger *lg, FILE *fp, int version)
 {
-	int version = 0;
-
-	if (fscanf(fp, "%6d", &version) != 1) {
-		GDKerror("Could not read the version number from the file '%slog'.\n",
-			 lg->lg->dir);
-
-		return GDK_FAIL;
-	}
 	/* if these were equal we wouldn't have gotten here */
 	assert(version != lg->lg->version);
 
@@ -1598,10 +1590,9 @@ bm_subcommit(old_logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT
  * unless running in read-only mode
  * Load data and persist it in the BATs */
 static gdk_return
-logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg)
+logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *fp, int version)
 {
 	size_t len;
-	FILE *fp = NULL;
 	char bak[FILENAME_MAX];
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
@@ -1622,25 +1613,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg)
 	len = strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL);
 	if (len >= FILENAME_MAX) {
 		GDKerror("Logger filename path is too large\n");
-		goto error;
-	}
-
-	/* try to open logfile backup, or failing that, the file
-	 * itself. we need to know whether this file exists when
-	 * checking the database consistency later on */
-	if ((fp = MT_fopen(bak, "r")) != NULL) {
-		fclose(fp);
-		fp = NULL;
-		if (GDKunlink(0, lg->lg->dir, LOGFILE, NULL) != GDK_SUCCEED ||
-		    GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, NULL) != GDK_SUCCEED)
-			goto error;
-	} else if (errno != ENOENT) {
-		GDKsyserror("open %s failed", bak);
-		goto error;
-	}
-	fp = MT_fopen(filename, "r");
-	if (fp == NULL) {
-		GDKsyserror("open %s failed", filename);
 		goto error;
 	}
 
@@ -1896,7 +1868,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg)
 	}
 	GDKdebug = dbg;
 
-	if (check_version(lg, fp) != GDK_SUCCEED) {
+	if (check_version(lg, fp, version) != GDK_SUCCEED) {
 		goto error;
 	}
 
@@ -1937,7 +1909,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg)
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static old_logger *
-logger_new(logger *lg, const char *fn, const char *logdir)
+logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version)
 {
 	old_logger *old_lg;
 	char filename[FILENAME_MAX];
@@ -1974,7 +1946,7 @@ logger_new(logger *lg, const char *fn, const char *logdir)
 		fprintf(stderr, "#logger_new dir set to %s\n", old_lg->lg->dir);
 	}
 
-	if (logger_load(fn, filename, old_lg) == GDK_SUCCEED) {
+	if (logger_load(fn, filename, old_lg, fp, version) == GDK_SUCCEED) {
 		return old_lg;
 	}
 	return NULL;
@@ -2018,10 +1990,10 @@ old_logger_destroy(old_logger *lg)
 
 /* Create a new logger */
 gdk_return
-old_logger_load(logger *lg, const char *fn, const char *logdir)
+old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version)
 {
 	old_logger *old_lg;
-	old_lg = logger_new(lg, fn, logdir);
+	old_lg = logger_new(lg, fn, logdir, fp, version);
 	if (old_lg == NULL)
 		return GDK_FAIL;
 	BBPrename(old_lg->catalog_bid->batCacheid, NULL);
