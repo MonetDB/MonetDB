@@ -2848,6 +2848,15 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	if (card == card_loader)
 		card = card_none;
 
+	if (is_commutative(fname) && l->card < r->card) { /* move constants to the right if possible */
+		sql_subtype *tmp = t1;
+		t1 = t2;
+		t2 = tmp;
+		res = l;
+		l = r;
+		r = res;
+	}
+
 	/* handle param's early */
 	if (!t1 || !t2) {
 		f = sql_resolve_function_with_undefined_parameters(sql, sname, fname, list_append(list_append(sa_list(sql->sa), t1), t2), type);
