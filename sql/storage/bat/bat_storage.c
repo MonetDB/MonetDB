@@ -3134,6 +3134,8 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 {
 	size_t nr = end - start, pos = 0;
 	BAT *b = COLnew(0, TYPE_msk, nr, TRANSIENT);
+	if (!b)
+		return NULL;
 
 	for( ; s; s=s->next) {
 		if (s->end < start)
