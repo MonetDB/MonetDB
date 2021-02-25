@@ -1855,6 +1855,7 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 	size_t i, cnt;
 	node *n;
 	Symbol remote_prg = NULL;
+	size_t pos = 0;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -1942,13 +1943,13 @@ remote_cleanup:
 	}
 
 	cnt = input[0]->count;
+	pos = store->storage_api.claim_tab(m->session->tr, t, cnt);
 
 	for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
 		sql_column *c = n->data;
 		int mtype = monetdbe_type(input[i]->type);
 		const void* nil = (mtype>=0)?ATOMnilptr(mtype):NULL;
 		char *v = input[i]->data;
-		size_t pos = store->storage_api.claim_tab(m->session->tr, t, cnt);
 
 		if (mtype < 0) {
 			mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot find type for column %zu", i);
@@ -2010,7 +2011,7 @@ remote_cleanup:
 				if (!s)
 					s = (char*) nil;
 
-				if (store->storage_api.append_col(m->session->tr, c, pos, s, mtype) != 0) {
+				if (store->storage_api.append_col(m->session->tr, c, pos+j, s, mtype) != 0) {
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
@@ -2023,7 +2024,7 @@ remote_cleanup:
 				if(!timestamp_is_null(ts+j))
 					t = timestamp_from_data(&ts[j]);
 
-				if (store->storage_api.append_col(m->session->tr, c, pos, &t, mtype) != 0) {
+				if (store->storage_api.append_col(m->session->tr, c, pos+j, &t, mtype) != 0) {
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
@@ -2036,7 +2037,7 @@ remote_cleanup:
 				if(!date_is_null(de+j))
 					d = date_from_data(&de[j]);
 
-				if (store->storage_api.append_col(m->session->tr, c, pos, &d, mtype) != 0) {
+				if (store->storage_api.append_col(m->session->tr, c, pos+j, &d, mtype) != 0) {
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
@@ -2049,7 +2050,7 @@ remote_cleanup:
 				if(!time_is_null(t+j))
 					dt = time_from_data(&t[j]);
 
-				if (store->storage_api.append_col(m->session->tr, c, pos, &dt, mtype) != 0) {
+				if (store->storage_api.append_col(m->session->tr, c, pos+j, &dt, mtype) != 0) {
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
 				}
@@ -2070,7 +2071,7 @@ remote_cleanup:
 					memcpy(b->data, be[j].data, len);
 				}
 
-				res = store->storage_api.append_col(m->session->tr, c, pos, b, mtype);
+				res = store->storage_api.append_col(m->session->tr, c, pos+j, b, mtype);
 				if (b && b != (blob*)nil)
 					GDKfree(b);
 				if (res != 0) {
