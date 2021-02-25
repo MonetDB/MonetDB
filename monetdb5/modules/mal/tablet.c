@@ -818,13 +818,15 @@ SQLinsert_val(READERtask *task, int col, int idx)
 		fmt->c->tnonil = false;
 	} else {
 		if (task->escape) {
-			char *data = GDKmalloc(strlen(s) + 1);
+			size_t slen = strlen(s) + 1;
+			char *data = slen <= sizeof(buf) ? buf : GDKmalloc(strlen(s) + 1);
 			if (data == NULL ||
 				GDKstrFromStr((unsigned char *) data, (unsigned char *) s, strlen(s)) < 0)
 				adt = NULL;
 			else
 				adt = fmt->frstr(fmt, fmt->adt, data);
-			GDKfree(data);
+			if (data != buf)
+				GDKfree(data);
 		} else
 			adt = fmt->frstr(fmt, fmt->adt, s);
 	}
