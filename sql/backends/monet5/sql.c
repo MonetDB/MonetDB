@@ -1180,28 +1180,6 @@ bailout:
 	return msg;
 }
 
-/*
-static BAT *
-mvc_bind_dbat(mvc *m, const char *sname, const char *tname, int access)
-{
-	sql_trans *tr = m->session->tr;
-	BAT *b = NULL;
-	sql_schema *s = NULL;
-	sql_table *t = NULL;
-
-	s = mvc_bind_schema(m, sname);
-	if (s == NULL)
-		return NULL;
-	t = mvc_bind_table(m, s, tname);
-	if (t == NULL)
-		return NULL;
-
-	sqlstore *store = tr->store;
-	b = store->storage_api.bind_del(tr, t, access);
-	return b;
-}
-*/
-
 BAT *
 mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname, int access)
 {
@@ -1222,10 +1200,6 @@ mvc_bind_idxbat(mvc *m, const char *sname, const char *tname, const char *iname,
 	b = store->storage_api.bind_idx(tr, i, access);
 	return b;
 }
-
-#define BAT_ALIGN 32
-#undef ALIGN
-#define ALIGN(s, a)	((s+(a-1))&(~(a-1)))
 
 /* str mvc_bind_wrap(int *bid, str *sname, str *tname, str *cname, int *access); */
 str
@@ -1260,9 +1234,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (access == 0) {
 				BUN l, h;
-				/* here we align the parts to multiples of 'BAT_ALIGN', needed for efficient 'msk' slices */
 				psz = cnt ? (cnt / nr_parts) : 0;
-				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
@@ -1286,7 +1258,6 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
-				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
@@ -1601,9 +1572,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (access == 0) {
 				BUN l, h;
-				/* here we align the parts to multiples of 'BAT_ALIGN', needed for efficient 'msk' slices */
 				psz = cnt ? (cnt / nr_parts) : 0;
-				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
@@ -1624,7 +1593,6 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				}
 				cnt = BATcount(c);
 				psz = cnt ? (cnt / nr_parts) : 0;
-				//psz = ALIGN(psz, BAT_ALIGN);
 				l = part_nr * psz;
 				if (l > cnt)
 					l = cnt;
