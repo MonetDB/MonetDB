@@ -304,6 +304,16 @@ extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ c
 	__attribute__((__format__(__printf__, 3, 4)));
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
-extern int mvc_highwater(mvc *sql);
+
+static inline int mvc_highwater(mvc *sql)
+{
+	int l = 0, rc = 0;
+	uintptr_t c = (uintptr_t) (&l);
+
+	size_t diff = c < sql->sp ? sql->sp - c : c - sql->sp;
+	if (diff > THREAD_STACK_SIZE - 280 * 1024)
+		rc = 1;
+	return rc;
+}
 
 #endif /*_SQL_MVC_H*/
