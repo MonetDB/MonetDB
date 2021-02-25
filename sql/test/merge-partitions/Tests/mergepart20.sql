@@ -1,4 +1,4 @@
-CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (md5(a));
+CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (sys.md5(a));
 CREATE TABLE subtable1 (a int, b varchar(32));
 CREATE TABLE subtable2 (a int, b varchar(32));
 SELECT column_id, expression FROM table_partitions;
@@ -25,7 +25,7 @@ CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (iamdu
 
 CREATE FUNCTION iamdummy(a int) RETURNS INT BEGIN RETURN a + 1; END;
 
-CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (iamdummy(a));
+CREATE MERGE TABLE testme (a int, b varchar(32)) PARTITION BY RANGE USING (sys.iamdummy(a));
 CREATE TABLE subtable1 (a int, b varchar(32));
 CREATE TABLE subtable2 (a int, b varchar(32));
 CREATE TABLE subtable3 (a int, b varchar(32));
@@ -54,7 +54,7 @@ DROP TABLE testme;
 DROP FUNCTION iamdummy;
 
 CREATE FUNCTION iamdummy(a int, b int, c int) RETURNS INT BEGIN RETURN a + b + c; END;
-CREATE MERGE TABLE testme(d int, e int, f int) PARTITION BY RANGE USING (iamdummy(d, e, f));
+CREATE MERGE TABLE testme(d int, e int, f int) PARTITION BY RANGE USING (sys.iamdummy(d, e, f));
 SELECT column_id, expression FROM table_partitions;
 DROP TABLE testme;
 DROP FUNCTION iamdummy;
@@ -62,7 +62,7 @@ DROP FUNCTION iamdummy;
 /* Testing bad expressions */
 
 CREATE FUNCTION iamdummy(a int) RETURNS INT BEGIN RETURN SELECT a UNION ALL SELECT a; END;
-CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (iamdummy(a));
+CREATE MERGE TABLE testme(a int) PARTITION BY RANGE USING (sys.iamdummy(a));
 CREATE TABLE subtable1 (a int);
 ALTER TABLE testme ADD TABLE subtable1 AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
 INSERT INTO testme VALUES (1); --error, more than one row

@@ -398,14 +398,10 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = lst->next->next->data.lval->h, *aux;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = qname_schema(lst->data.lval);
+				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
-		size_t inputs_length = 0;
-
-		if (!sname)
-			sname = sql->session->schema->base.name;
-		sname = symbol_escape_ident(sql->ta, sname);
+		size_t inputs_length = 0, extra = sname ? strlen(sname) + 3 : 0;
 
 		for (aux = ops; aux; aux = aux->next)
 			nargs++;
@@ -420,8 +416,11 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			i++;
 		}
 
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + inputs_length + 6 + (nargs - 1 /* commas */) + 2))) {
-			char *concat = stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"(");
+		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + inputs_length + 3 + (nargs - 1 /* commas */) + 2))) {
+			char *concat = res;
+			if (sname)
+				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
+			concat = stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"(");
 			i = 0;
 			for (aux = ops; aux; aux = aux->next) {
 				concat = stpcpy(concat, inputs[i]);
@@ -432,55 +431,56 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 			concat = stpcpy(concat, ")");
 		}
 		return res;
-	} break;
+	}
 	case SQL_BINOP: {
 		dnode *lst = se->data.lval->h;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = qname_schema(lst->data.lval);
+				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
 		char *l = NULL, *r = NULL, *res;
-
-		if (!sname)
-			sname = sql->session->schema->base.name;
-		sname = symbol_escape_ident(sql->ta, sname);
+		size_t extra = sname ? strlen(sname) + 3 : 0;
 
 		if (!(l = _symbol2string(sql, lst->next->next->data.sym, expression, err)) || !(r = _symbol2string(sql, lst->next->next->next->data.sym, expression, err)))
 			return NULL;
 
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + strlen(l) + strlen(r) + 9)))
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ","), r), ")");
-
+		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + strlen(l) + strlen(r) + 6))) {
+			char *concat = res;
+			if (sname)
+				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"("), l), ","), r), ")");
+		}
 		return res;
-	} break;
+	}
 	case SQL_OP: {
 		dnode *lst = se->data.lval->h;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = qname_schema(lst->data.lval);
+				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
 		char *res;
+		size_t extra = sname ? strlen(sname) + 3 : 0;
 
-		if (!sname)
-			sname = sql->session->schema->base.name;
-		sname = symbol_escape_ident(sql->ta, sname);
-
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + 8)))
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"()");
-
+		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + 5))) {
+			char *concat = res;
+			if (sname)
+				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
+			stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"()");
+		}
 		return res;
-	} break;
+	}
 	case SQL_UNOP: {
 		dnode *lst = se->data.lval->h;
 		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = qname_schema(lst->data.lval);
+				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
 		char *l = _symbol2string(sql, lst->next->next->data.sym, expression, err), *res;
+		size_t extra = sname ? strlen(sname) + 3 : 0;
 
-		if (!sname)
-			sname = sql->session->schema->base.name;
-		sname = symbol_escape_ident(sql->ta, sname);
 		if (!l)
 			return NULL;
 
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(sname) + strlen(op) + strlen(l) + 8)))
-			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".\""), op), "\"("), l), ")");
-
+		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + strlen(l) + 5))) {
+			char *concat = res;
+			if (sname)
+				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
+			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(concat, "\""), op), "\"("), l), ")");
+		}
 		return res;
 	}
 	case SQL_PARAMETER:
@@ -541,9 +541,8 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = _symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval))) {
+		if (!(val = _symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval)))
 			return NULL;
-		}
 		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(val) + strlen(tpe) + 11)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
 		return res;
