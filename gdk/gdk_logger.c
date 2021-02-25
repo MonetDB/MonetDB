@@ -1204,7 +1204,6 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 		return GDK_FAIL;
 	}
 	if (version < 52300) {	/* first CATALOG_VERSION for "new" log format */
-		fclose(fp);
 		lg->catalog_bid = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
 		lg->catalog_id = logbat_new(TYPE_int, BATSIZE, PERSISTENT);
 		lg->dcatalog = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
@@ -1212,7 +1211,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 			GDKerror("cannot create catalog bats");
 			return GDK_FAIL;
 		}
-		if (old_logger_load(lg, fn, logdir) != GDK_SUCCEED) {
+		if (old_logger_load(lg, fn, logdir, fp, version) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
 			GDKerror("Incompatible database version %06d, "
