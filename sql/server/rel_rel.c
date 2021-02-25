@@ -137,7 +137,7 @@ rel_copy(mvc *sql, sql_rel *i, int deep)
 {
 	sql_rel *rel;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	rel = rel_create(sql->sa);
@@ -237,7 +237,7 @@ rel_bind_column_(mvc *sql, int *exp_has_nil, sql_rel *rel, const char *cname, in
 	int ambiguous = 0, multi = 0;
 	sql_rel *l = NULL, *r = NULL;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	switch(rel->op) {
@@ -1002,7 +1002,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 {
 	list *lexps, *rexps, *exps;
 
-	if (THRhighwater())
+	if (mvc_highwater(sql))
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
@@ -1137,7 +1137,7 @@ rel_bind_path_(mvc *sql, sql_rel *rel, sql_exp *e, list *path )
 {
 	int found = 0;
 
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return 0;
 	}
@@ -1720,7 +1720,7 @@ static int rel_deps(mvc *sql, sql_rel *r, list *refs, list *l);
 static int
 exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
@@ -1803,7 +1803,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 static int
 rel_deps(mvc *sql, sql_rel *r, list *refs, list *l)
 {
-	if (THRhighwater()) {
+	if (mvc_highwater(sql)) {
 		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 		return -1;
 	}
@@ -1930,7 +1930,7 @@ static sql_rel *rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_r
 static sql_exp *
 exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter, bool topdown, bool relations_topdown)
 {
-	if (THRhighwater())
+	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	assert(e);
@@ -2018,7 +2018,7 @@ exps_exp_visitor(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fp
 static inline sql_rel *
 rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topdown, bool relations_topdown)
 {
-	if (THRhighwater())
+	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
@@ -2115,7 +2115,7 @@ static list *exps_rel_visitor(visitor *v, list *exps, rel_rewrite_fptr rel_rewri
 static sql_exp *
 exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topdown)
 {
-	if (THRhighwater())
+	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	assert(e);
@@ -2215,7 +2215,7 @@ rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool topdow
 {
 	sql_rel *parent = v->parent;
 
-	if (THRhighwater())
+	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (!rel)
