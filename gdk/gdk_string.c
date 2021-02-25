@@ -761,16 +761,19 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 }
 
 str
-strRead(str a, stream *s, size_t cnt)
+strRead(str a, size_t *dstlen, stream *s, size_t cnt)
 {
 	int len;
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1)
+	if (mnstr_readInt(s, &len) != 1 || len < 0)
 		return NULL;
-	if ((a = GDKmalloc(len + 1)) == NULL)
-		return NULL;
+	if (a == NULL || *dstlen < (size_t) len + 1) {
+		if ((a = GDKrealloc(a, len + 1)) == NULL)
+			return NULL;
+		*dstlen = len + 1;
+	}
 	if (len && mnstr_read(s, a, len, 1) != 1) {
 		GDKfree(a);
 		return NULL;

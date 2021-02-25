@@ -419,11 +419,14 @@ UUIDnull(void)
 }
 
 static void *
-UUIDread(void *U, stream *s, size_t cnt)
+UUIDread(void *U, size_t *dstlen, stream *s, size_t cnt)
 {
 	uuid *u = U;
-	if (u == NULL && (u = GDKmalloc(cnt * sizeof(uuid))) == NULL)
-		return NULL;
+	if (u == NULL || *dstlen < cnt * sizeof(uuid)) {
+		if ((u = GDKrealloc(u, cnt * sizeof(uuid))) == NULL)
+			return NULL;
+		*dstlen = cnt * sizeof(uuid);
+	}
 	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt) {
 		if (u != U)
 			GDKfree(u);

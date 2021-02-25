@@ -29,7 +29,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 	int (*nequal) (const void *, const void *);
 	BUN (*hash) (const void *);
 	const void *(*null) (void);
-	void *(*read) (void *, stream *, size_t);
+	void *(*read) (void *, size_t *, stream *, size_t);
 	gdk_return (*write) (const void *, stream *, size_t);
 	var_t (*put) (BAT *, var_t *, const void *);
 	void (*del) (Heap *, var_t *);

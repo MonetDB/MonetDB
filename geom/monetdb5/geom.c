@@ -5188,7 +5188,7 @@ wkbCOMP(const void *L, const void *R)
 
 /* read wkb from log */
 static void *
-wkbREAD(void *A, stream *s, size_t cnt)
+wkbREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	wkb *a = A;
 	int len;
@@ -5200,8 +5200,12 @@ wkbREAD(void *A, stream *s, size_t cnt)
 		return NULL;
 	if (mnstr_readInt(s, &srid) != 1)
 		return NULL;
-	if ((a = GDKmalloc(wkb_size(len))) == NULL)
-		return NULL;
+	size_t wkblen = (size_t) wkb_size(len);
+	if (a == NULL || *dstlen < wkblen) {
+		if ((a = GDKrealloc(a, wkblen)) == NULL)
+			return NULL;
+		*dstlen = wkblen;
+	}
 	a->len = len;
 	a->srid = srid;
 	if (len > 0 && mnstr_read(s, (char *) a->data, len, 1) != 1) {
@@ -5417,7 +5421,7 @@ mbrCOMP(const void *L, const void *R)
 
 /* read mbr from log */
 static void *
-mbrREAD(void *A, stream *s, size_t cnt)
+mbrREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	mbr *a = A;
 	mbr *c;
@@ -5425,8 +5429,11 @@ mbrREAD(void *A, stream *s, size_t cnt)
 	int v[4];
 	flt vals[4];
 
-	if (a == NULL && (a = GDKmalloc(cnt * sizeof(mbr))) == NULL)
-		return NULL;
+	if (a == NULL || *dstlen < cnt * sizeof(mbr)) {
+		if ((a = GDKrealloc(a, cnt * sizeof(mbr))) == NULL)
+			return NULL;
+		*dstlen = cnt * sizeof(mbr);
+	}
 	for (i = 0, c = a; i < cnt; i++, c++) {
 		if (!mnstr_readIntArray(s, v, 4)) {
 			if (a != A)
@@ -5633,7 +5640,7 @@ wkbaCOMP(const void *L, const void *R)
 
 /* read wkb from log */
 static void *
-wkbaREAD(void *A, stream *s, size_t cnt)
+wkbaREAD(void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	wkba *a = A;
 	int items, i;
@@ -5644,13 +5651,19 @@ wkbaREAD(void *A, stream *s, size_t cnt)
 	if (mnstr_readInt(s, &items) != 1)
 		return NULL;
 
-	if ((a = GDKmalloc(wkba_size(items))) == NULL)
-		return NULL;
+	size_t wkbalen = (size_t) wkba_size(items);
+	if (a == NULL || *dstlen < wkbalen) {
+		if ((a = GDKrealloc(a, wkbalen)) == NULL)
+			return NULL;
+		*dstlen = wkbalen;
+	}
 
 	a->itemsNum = items;
 
-	for (i = 0; i < items; i++)
-		wkbREAD(a->data[i], s, cnt);
+	for (i = 0; i < items; i++) {
+		size_t wlen = 0;
+		a->data[i] = wkbREAD(NULL, &wlen, s, cnt);
+	}
 
 	return a;
 }
