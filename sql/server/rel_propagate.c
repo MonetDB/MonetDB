@@ -521,9 +521,11 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 	if (!rel)
 		return NULL;
 
-	if (rel->exps)
+	if (rel->exps) {
 		for (node *n = rel->exps->h ; n ; n = n->next)
 			n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
+		list_hash_clear(rel->exps);
+	}
 
 	switch (rel->op) {
 		case op_basetable:
