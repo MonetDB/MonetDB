@@ -1241,18 +1241,17 @@ static sql_exp * exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 static list *
 exps_rename(mvc *sql, list *l, sql_rel *f, sql_rel *t)
 {
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	for(n=l->h; n; n=n->next) {
+	if (list_empty(l))
+		return l;
+	for(node *n=l->h; n; n=n->next) {
 		sql_exp *arg = n->data;
 
 		arg = exp_rename(sql, arg, f, t);
 		if (!arg)
 			return NULL;
-		append(nl, arg);
+		n->data = arg;
 	}
-	return nl;
+	return l;
 }
 
 /* exp_rename */
@@ -5836,7 +5835,6 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 				}
 				if (cnr && nr && list_length(tbls[j]->pkey->k.columns) == nr) {
 					list *ngbe = new_exp_list(v->sql->sa);
-					list *exps = rel->exps, *nexps = new_exp_list(v->sql->sa);
 
 					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
 						sql_exp *e = n->data;
@@ -5848,7 +5846,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					}
 					rel->r = ngbe;
 					/* rewrite gbe and aggr, in the aggr list */
-					for (m = exps->h; m; m = m->next ){
+					for (m = rel->exps->h; m; m = m->next ){
 						sql_exp *e = m->data;
 						int fnd = 0;
 
@@ -5862,11 +5860,10 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 								fnd = 1;
 							}
 						}
-						append(nexps, e);
+						m->data = e;
 					}
 					/* new reduced aggr expression list */
-					assert(list_length(nexps)>0);
-					rel->exps = nexps;
+					assert(list_length(rel->exps)>0);
 					/* only one reduction at a time */
 					v->changes = 1;
 					return rel;
@@ -5904,7 +5901,6 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 			rel->r = ngbe;
 			if (!list_empty(dgbe)) {
 				/* use atom's directly in the aggr expr list */
-				list *nexps = new_exp_list(v->sql->sa);
 
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data, *ne = NULL;
@@ -5920,9 +5916,8 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 							e = ne;
 						}
 					}
-					append(nexps, e);
+					n->data = e;
 				}
-				rel->exps = nexps;
 				v->changes++;
 			}
 		}
@@ -6176,21 +6171,18 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts);
 static list *
 exps_use_consts(mvc *sql, list *exps, list *consts)
 {
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	if (!exps)
-		return sa_list(sql->sa);
-	for(n = exps->h; n; n = n->next) {
+	if (list_empty(exps))
+		return exps;
+	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data, *narg = NULL;
 
 		narg = exp_use_consts(sql, arg, consts);
 		if (!narg)
 			return NULL;
 		narg = exp_propagate(sql->sa, narg, arg);
-		append(nl, narg);
+		n->data = narg;
 	}
-	return nl;
+	return exps;
 }
 
 static sql_exp *
@@ -6267,20 +6259,19 @@ exp_use_consts(mvc *sql, sql_exp *e, list *consts)
 }
 
 static list *
-exps_remove_dictexps(mvc *sql, list *exps, sql_rel *r)
+exps_remove_dictexps(list *exps, sql_rel *r)
 {
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	if (!exps)
-		return nl;
-	for(n = exps->h; n; n = n->next) {
+	if (list_empty(exps))
+		return exps;
+	for (node *n = exps->h; n;) {
+		node *next = n->next;
 		sql_exp *arg = n->data;
 
-		if (!list_find_exp(r->exps, arg->l) && !list_find_exp(r->exps, arg->r))
-			append(nl, arg);
+		if (list_find_exp(r->exps, arg->l) || list_find_exp(r->exps, arg->r))
+			list_remove_node(exps, NULL, n);
+		n = next;
 	}
-	return nl;
+	return exps;
 }
 
 static sql_rel *
@@ -6339,7 +6330,7 @@ rel_remove_join(visitor *v, sql_rel *rel)
 			l = r;
 			r = s;
 		}
-		rel->exps = exps_remove_dictexps(v->sql, rel->exps, r);
+		rel->exps = exps_remove_dictexps(rel->exps, r);
 		/* change into select */
 		rel->op = op_select;
 		rel->l = l;
@@ -6513,16 +6504,13 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		if (l->op == op_project) {
 			/* rewrite rel from rel->l into rel->l->l */
 			if (rel->exps) {
-				list *nexps = new_exp_list(v->sql->sa);
-
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
 
 					e = exp_rename(v->sql, e, l, l->l);
 					assert(e);
-					list_append(nexps, e);
+					n->data = e;
 				}
-				rel->exps = nexps;
 			}
 			rel->l = l->l;
 			l->l = NULL;
@@ -6531,16 +6519,13 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 		if (is_join(rel->op) && r->op == op_project) {
 			/* rewrite rel from rel->r into rel->r->l */
 			if (rel->exps) {
-				list *nexps = new_exp_list(v->sql->sa);
-
 				for (n = rel->exps->h; n; n = n->next) {
 					sql_exp *e = n->data;
 
 					e = exp_rename(v->sql, e, r, r->l);
 					assert(e);
-					list_append(nexps, e);
+					n->data = e;
 				}
-				rel->exps = nexps;
 			}
 			rel->r = r->l;
 			r->l = NULL;
@@ -6967,10 +6952,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	/* fall through */
 	case op_table:
 		if (rel->exps && (rel->op != op_table || !IS_TABLE_PROD_FUNC(rel->flag))) {
-			node *n;
-			list *exps;
-
-			for(n=rel->exps->h; n && !needed; n = n->next) {
+			for(node *n=rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
 				if (!e->used)
@@ -6980,17 +6962,15 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			if (!needed)
 				return rel;
 
-			exps = new_exp_list(sql->sa);
-			for(n=rel->exps->h; n; n = n->next) {
+			for(node *n=rel->exps->h; n;) {
+				node *next = n->next;
 				sql_exp *e = n->data;
 
-				if (e->used)
-					append(exps, e);
+				/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by rel_exps_mark_used */
+				if (!e->used && list_length(rel->exps) > 1)
+					list_remove_node(rel->exps, NULL, n);
+				n = next;
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) !, handled by rel_exps_mark_used */
-			if (list_length(exps) == 0)
-				append(exps, rel->exps->h->data);
-			rel->exps = exps;
 		}
 		if (rel->op == op_table && (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION))
 			rel->l = rel_remove_unused(sql, rel->l);
@@ -7007,10 +6987,7 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 	case op_groupby:
 
 		if (/*rel->l &&*/ rel->exps) {
-			node *n;
-			list *exps;
-
-			for(n=rel->exps->h; n && !needed; n = n->next) {
+			for(node *n=rel->exps->h; n && !needed; n = n->next) {
 				sql_exp *e = n->data;
 
 				if (!e->used)
@@ -7019,17 +6996,15 @@ rel_remove_unused(mvc *sql, sql_rel *rel)
 			if (!needed)
 				return rel;
 
-			exps = new_exp_list(sql->sa);
-			for(n=rel->exps->h; n; n = n->next) {
+			for(node *n=rel->exps->h; n;) {
+				node *next = n->next;
 				sql_exp *e = n->data;
 
-				if (e->used)
-					append(exps, e);
+				/* atleast one (needed for crossproducts, count(*), rank() and single value projections) */
+				if (!e->used && list_length(rel->exps) > 1)
+					list_remove_node(rel->exps, NULL, n);
+				n = next;
 			}
-			/* atleast one (needed for crossproducts, count(*), rank() and single value projections) */
-			if (list_length(exps) <= 0)
-				append(exps, rel->exps->h->data);
-			rel->exps = exps;
 		}
 		return rel;
 
