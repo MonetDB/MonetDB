@@ -57,14 +57,13 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
 static gdk_return
-tabins(logger *lg, bool first, int tt, int nid, ...)
+tabins(logger *lg, int tt, int nid, ...)
 {
 	va_list va;
 	int cid;
 	const void *cval;
 	gdk_return rc;
 	BAT *b;
-	BUN pos;
 
 	va_start(va, nid);
 	while ((cid = va_arg(va, int)) != 0) {
@@ -72,27 +71,6 @@ tabins(logger *lg, bool first, int tt, int nid, ...)
 		if ((b = temp_descriptor(logger_find_bat(lg, cid))) == NULL) {
 			va_end(va);
 			return GDK_FAIL;
-		}
-		if (first) {
-			BAT *bn;
-			if ((bn = COLcopy(b, b->ttype, true, PERSISTENT)) == NULL) {
-				bat_destroy(b);
-				va_end(va);
-				return GDK_FAIL;
-			}
-			bat_destroy(b);
-			if (BATsetaccess(bn, BAT_READ) != GDK_SUCCEED ||
-				(lg->catalog_lid ?
-				 /* established new catalog */
-				 log_bat_persists(lg, bn, cid) != GDK_SUCCEED :
-				 /* upgrading to new catalog */
-				 ((pos = BUNfnd(lg->catalog_id, &cid)) == BUN_NONE ||
-				  BUNreplace(lg->catalog_bid, pos + lg->catalog_bid->hseqbase, &bn->batCacheid, false) != GDK_SUCCEED))) {
-				bat_destroy(bn);
-				va_end(va);
-				return GDK_FAIL;
-			}
-			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
 		bat_destroy(b);
@@ -1320,6 +1298,8 @@ upgrade(old_logger *lg)
 		}
 	}
 
+	/* figure out mapping from old IDs to new stable IDs, result in two
+	 * aligned BATs, mapold and mapnew */
 	int schid, tabid, parid;
 	schid = tabid = parid = 0;	/* restrict search to parent object */
 	for (int i = 0; tables[i].schema != NULL; i++) {
@@ -1377,17 +1357,49 @@ upgrade(old_logger *lg)
 		mapnew = NULL;
 	}
 
+	/* do the mapping in the system tables: all tables with the .hasids
+	 * flag set may contain IDs that have to be mapped; also add all
+	 * system tables to the new catalog bats and add the new ones to the
+	 * lg->add bat and the old ones that were replaced to the lg->del bat */
 	const char *delname;
 	delname = NULL;
+	int delidx;
+	delidx = -1;
 	for (int i = 0; tables[i].schema != NULL; i++) {
 		if (tables[i].fullname == NULL) /* schema */
 			continue;
-		if (tables[i].column == NULL) /* table */
+		if (tables[i].column == NULL) { /* table */
 			delname = tables[i].fullname;
+			delidx = i;
+			continue;
+		}
 		BAT *b = temp_descriptor(old_logger_find_bat(lg, tables[i].fullname, 0, 0));
 		if (b == NULL)
 			continue;
 		BAT *orig = NULL;
+		if (delidx >= 0) {
+			BAT *d = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
+			BAT *m = BATconstant(0, TYPE_msk, &(msk){0}, BATcount(b), PERSISTENT);
+			if (d == NULL || m == NULL) {
+				bat_destroy(d);
+				bat_destroy(m);
+				goto bailout;
+			}
+			const oid *dels = (const oid *) Tloc(d, 0);
+			for (BUN q = BUNlast(d), p = 0; p < q; p++)
+				mskSetVal(m, (BUN) dels[p], true);
+			if (BUNappend(lg->lg->catalog_bid, &m->batCacheid, false) != GDK_SUCCEED ||
+				BUNappend(lg->lg->catalog_id, &tables[delidx].newid, false) != GDK_SUCCEED ||
+				BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED) {
+				bat_destroy(d);
+				bat_destroy(m);
+				goto bailout;
+			}
+			BBPretain(m->batCacheid);
+			bat_destroy(d);
+			bat_destroy(m);
+			delidx = -1;
+		}
 		if (tables[i].hasids && mapold) {
 			BAT *b1, *b2;
 			BAT *cands = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
@@ -1451,15 +1463,18 @@ upgrade(old_logger *lg)
 			goto bailout;
 		}
 		if (orig != NULL) {
+			if (BUNappend(lg->del, &orig->batCacheid, false) != GDK_SUCCEED) {
+				bat_destroy(orig);
+				bat_destroy(b);
+				goto bailout;
+			}
 			BBPretain(b->batCacheid);
-			BBPrelease(orig->batCacheid);
-			BATmode(b, false);
-			BATmode(orig, true);
 			bat_destroy(orig);
 		}
 		bat_destroy(b);
 	}
 
+	/* add all extant non-system bats to the new catalog */
 	BAT *cands, *b;
 	if (BATcount(lg->dcatalog) == 0) {
 		cands = NULL;
@@ -1530,7 +1545,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 			}
 			BBPretain(sem->batCacheid);
 			bat_destroy(sem);
-			if (tabins(lg, false, -1, 0,
+			if (tabins(lg, -1, 0,
 					   2077, &(int) {2162},		/* sys._columns.id */
 					   2078, "semantics",		/* sys._columns.name */
 					   2079, "boolean",			/* sys._columns.type */
@@ -1680,7 +1695,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 #ifdef CATALOG_OCT2020
 	if (store->catalog_version <= CATALOG_OCT2020) {
 		/* add sub column to "objects" table. This is required for merge tables */
-		if (tabins(lg, false, -1, 0,
+		if (tabins(lg, -1, 0,
 				   2077, &(int) {2163},		/* sys._columns.id */
 				   2078, "sub",				/* sys._columns.name */
 				   2079, "int",				/* sys._columns.type */
@@ -1693,7 +1708,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 				   2086, str_nil,			/* sys._columns.storage */
 				   0) != GDK_SUCCEED)
 			return GDK_FAIL;
-		if (tabins(lg, false, -1, 0,
+		if (tabins(lg, -1, 0,
 				   2077, &(int) {2164},		/* sys._columns.id */
 				   2078, "sub",				/* sys._columns.name */
 				   2079, "int",				/* sys._columns.type */

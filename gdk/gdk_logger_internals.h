@@ -66,6 +66,7 @@ struct logger {
 
 struct old_logger {
 	logger *lg;		/* the new logger instance */
+	const char *filename;	/* name of log file */
 	lng changes;
 	lng id;
 	int tid;
@@ -90,6 +91,10 @@ struct old_logger {
 				   These snapshot bats should be freed
 				   directly (on transaction
 				   commit). */
+	BAT *add;		/* bat ids of bats being added by upgrade */
+	BAT *del;		/* bat ids of bats being deleted by upgrade */
 };
+
+gdk_return logger_create_types_file(logger *lg, const char *filename);
 
 #endif /* _LOGGER_INTERNALS_H_ */
