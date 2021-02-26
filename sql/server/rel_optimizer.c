@@ -3224,7 +3224,7 @@ rel_simplify_math(visitor *v, sql_rel *rel)
 	int ochanges = 0;
 
 	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
-		int needed = 0;
+		int needed = 0, clean_hash = 0;
 
 		for (node *n = rel->exps->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
@@ -3236,12 +3236,16 @@ rel_simplify_math(visitor *v, sql_rel *rel)
 			return rel;
 
 		for (node *n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = exp_simplify_math(v->sql, n->data, &ochanges);
+			sql_exp *e = n->data, *ne = exp_simplify_math(v->sql, e, &ochanges);
 
 			if (!e)
 				return NULL;
-			n->data = e;
+			if (ne != e)
+				clean_hash = 1;
+			n->data = ne;
 		}
+		if (clean_hash)
+			list_hash_clear(rel->exps);
 	}
 	v->changes += ochanges;
 	return rel;
@@ -5920,6 +5924,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					}
 					n->data = e;
 				}
+				list_hash_clear(rel->exps);
 				v->changes++;
 			}
 		}
