@@ -2379,22 +2379,17 @@ exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, i
 		node *en;
 
 		if (exps) {
-			MT_lock_set(&exps->ht_lock);
 			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
-				if (exps->ht == NULL) {
-					MT_lock_unset(&exps->ht_lock);
+				if (exps->ht == NULL)
 					return NULL;
-				}
 				for (en = exps->h; en; en = en->next ) {
 					sql_exp *e = en->data;
 					if (e->alias.name) {
 						int key = exp_key(e);
 
-						if (hash_add(exps->ht, key, e) == NULL) {
-							MT_lock_unset(&exps->ht_lock);
+						if (hash_add(exps->ht, key, e) == NULL)
 							return NULL;
-						}
 					}
 				}
 			}
@@ -2414,16 +2409,13 @@ exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, i
 						if (res && res != e && e->alias.rname && res->alias.rname && strcmp(e->alias.rname, res->alias.rname) != 0 ) {
 							if (ambiguous)
 								*ambiguous = 1;
-							MT_lock_unset(&exps->ht_lock);
 							return NULL;
 						}
 						res = e;
 					}
 				}
-				MT_lock_unset(&exps->ht_lock);
 				return res;
 			}
-			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;
@@ -2455,23 +2447,18 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 		node *en;
 
 		if (exps) {
-			MT_lock_set(&exps->ht_lock);
 			if (!exps->ht && list_length(exps) > HASH_MIN_SIZE) {
 				exps->ht = hash_new(exps->sa, list_length(exps), (fkeyvalue)&exp_key);
-				if (exps->ht == NULL) {
-					MT_lock_unset(&exps->ht_lock);
+				if (exps->ht == NULL)
 					return res;
-				}
 
 				for (en = exps->h; en; en = en->next ) {
 					sql_exp *e = en->data;
 					if (e->alias.name) {
 						int key = exp_key(e);
 
-						if (hash_add(exps->ht, key, e) == NULL) {
-							MT_lock_unset(&exps->ht_lock);
+						if (hash_add(exps->ht, key, e) == NULL)
 							return res;
-						}
 					}
 				}
 			}
@@ -2489,10 +2476,8 @@ exps_bind_column2(list *exps, const char *rname, const char *cname, int *multipl
 							res = e;
 					}
 				}
-				MT_lock_unset(&exps->ht_lock);
 				return res;
 			}
-			MT_lock_unset(&exps->ht_lock);
 		}
 		for (en = exps->h; en; en = en->next ) {
 			sql_exp *e = en->data;

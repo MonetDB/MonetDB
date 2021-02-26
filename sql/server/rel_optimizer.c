@@ -1915,9 +1915,7 @@ rel_rename_exps( mvc *sql, list *exps1, list *exps2)
 			rname = exp_relname(e2);
 		exp_setalias(e2, rname, exp_name(e1));
 	}
-	MT_lock_set(&exps2->ht_lock);
 	exps2->ht = NULL;
-	MT_lock_unset(&exps2->ht_lock);
 }
 
 static sql_rel *
@@ -8953,9 +8951,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 
 						prel = rel_rename_part(v->sql, prel, tname, t);
 
-						MT_lock_set(&prel->exps->ht_lock);
 						prel->exps->ht = NULL;
-						MT_lock_unset(&prel->exps->ht_lock);
 						exps = sa_list(v->sql->sa);
 						for (node *n = rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
 							sql_exp *e = n->data;
