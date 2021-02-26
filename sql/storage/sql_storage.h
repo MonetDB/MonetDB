@@ -441,6 +441,7 @@ extern sql_key *sql_trans_copy_key(sql_trans *tr, sql_table *t, sql_key *k);
 extern sql_idx *sql_trans_copy_idx(sql_trans *tr, sql_table *t, sql_idx *i);
 extern sql_trigger *sql_trans_copy_trigger(sql_trans *tr, sql_table *t, sql_trigger *tri);
 
+#define NR_TABLE_LOCKS 64
 #define TRANSACTION_ID_BASE	(1ULL<<63)
 
 typedef struct sqlstore {
@@ -449,6 +450,7 @@ typedef struct sqlstore {
 	sql_schema *tmp;		/* keep pointer to default (empty) tmp schema */
 	MT_Lock lock;			/* lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
+	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too table (storage) */
 	list *active;			/* list of running transactions */
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
     ATOMIC_TYPE timestamp;	/* timestamp counter */
