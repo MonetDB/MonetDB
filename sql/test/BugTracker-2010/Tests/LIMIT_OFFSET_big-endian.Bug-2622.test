@@ -439,3 +439,5 @@ query I rowsort
 statement ok
 drop table oblo
 
+statement ok
+set optimizer = 'default_pipe'
