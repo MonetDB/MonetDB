@@ -1937,7 +1937,7 @@ static gdk_return
 old_logger_destroy(old_logger *lg)
 {
 	BUN p, q;
-	BAT *b;
+	BAT *b = NULL;
 	const log_bid *bids;
 
 	bat *subcommit = GDKmalloc(sizeof(log_bid) * (BATcount(lg->add) + BATcount(lg->del) + BATcount(lg->lg->catalog_bid) + 1));
