@@ -2458,7 +2458,7 @@ clear_table(sql_trans *tr, sql_table *t)
 	return sz;
 }
 
-static gdk_return
+static int
 tr_log_cs( sql_trans *tr, sql_table *t, column_storage *cs, segment *segs, sqlid id)
 {
 	sqlstore *store = tr->store;
