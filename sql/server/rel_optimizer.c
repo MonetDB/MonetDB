@@ -707,11 +707,10 @@ static list *
 distinct_join_exps(list *aje, list *lrels, list *rrels)
 {
 	node *n, *m, *o, *p;
-	int len = 0, i, j;
-	char *used = SA_NEW_ARRAY(aje->sa, char, len = list_length(aje));
+	int len = list_length(aje), i, j;
+	char *used = SA_ZNEW_ARRAY(aje->sa, char, len);
 	list *res = sa_list(aje->sa);
 
-	memset(used, 0, len);
 	assert(len == list_length(lrels));
 	for(n = lrels->h, m = rrels->h, j = 0; n && m;
 	    n = n->next, m = m->next, j++) {
@@ -2308,8 +2307,7 @@ exps_unique(mvc *sql, sql_rel *rel, list *exps)
 	if (!k || list_length(k->k.columns) > list_length(exps))
 		return 0;
 	if (rel) {
-		matched = (char*)sa_alloc(sql->sa, list_length(k->k.columns));
-		memset(matched, 0, list_length(k->k.columns));
+		matched = SA_ZNEW_ARRAY(sql->sa, char, list_length(k->k.columns));
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 			fcmp cmp = (fcmp)&kc_column_cmp;
@@ -4646,18 +4644,10 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 		return rel;
     /* push select exps part of the join expressions down */
 	} else if (is_innerjoin(rel->op) && !list_empty(exps)) {
-		int can_push = 0;
-		for (n = exps->h; !can_push && n; n = n->next) {
+		for (n = exps->h; n;) {
+			node *next = n->next;
 			sql_exp *e = n->data;
-			if (rel_rebind_exp(v->sql, rel->l, e) || rel_rebind_exp(v->sql, rel->r, e))
-				can_push = 1;
-		}
-		if (!can_push)
-			return rel;
 
-		rel->exps = sa_list(v->sql->sa);
-		for (n = exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
 			if (rel_rebind_exp(v->sql, rel->l, e)) {
 				sql_rel *l = rel->l;
 				if (!is_select(l->op)) {
@@ -4665,6 +4655,7 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 					rel->l = l = rel_select(v->sql->sa, rel->l, NULL);
 				}
 				rel_select_add_exp(v->sql->sa, rel->l, e);
+				list_remove_node(exps, NULL, n);
 				v->changes++;
 			} else if (rel_rebind_exp(v->sql, rel->r, e)) {
 				sql_rel *r = rel->r;
@@ -4673,10 +4664,10 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
 					rel->r = r = rel_select(v->sql->sa, rel->r, NULL);
 				}
 				rel_select_add_exp(v->sql->sa, rel->r, e);
+				list_remove_node(exps, NULL, n);
 				v->changes++;
-			} else {
-				append(rel->exps, e);
 			}
+			n = next;
 		}
 	}
 	return rel;
@@ -4824,23 +4815,22 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 	}
 	/* first push down the expressions involving only A */
 	if (rel->op == op_semi && rel->exps && rel->l) {
-		list *exps = rel->exps, *nexps = sa_list(v->sql->sa);
-		node *n;
+		for (node *n = rel->exps->h; n;) {
+			node *next = n->next;
+			sql_exp *e = n->data;
 
-		if (nexps == NULL)
-			return NULL;
-		for(n = exps->h; n; n = n->next) {
-			sql_exp *sje = n->data;
-
-			if (n != exps->h && sje->type == e_cmp && rel_rebind_exp(v->sql, rel->l, sje)) {
-				rel->l = rel_select(v->sql->sa, rel->l, NULL);
-				rel_select_add_exp(v->sql->sa, rel->l, sje);
+			if (n != rel->exps->h && e->type == e_cmp && rel_rebind_exp(v->sql, rel->l, e)) {
+				sql_rel *l = rel->l;
+				if (!is_select(l->op)) {
+					set_processed(l);
+					rel->l = l = rel_select(v->sql->sa, rel->l, NULL);
+				}
+				rel_select_add_exp(v->sql->sa, rel->l, e);
+				list_remove_node(rel->exps, NULL, n);
 				v->changes++;
-			} else {
-				append(nexps, sje);
 			}
+			n = next;
 		}
-		rel->exps = nexps;
 	}
 	if (rel->op == op_semi && rel->exps && rel->l) {
 		operator_type op = rel->op, lop;
@@ -4980,17 +4970,17 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
 			sql_exp *e = n->data;
 			int le = rel_has_cmp_exp(l, e), re = 0;
 
-			if (e->type == e_cmp && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in)))
+			if (!le && e->type == e_cmp && (rel->op != op_anti || (e->flag != mark_notin && e->flag != mark_in)))
 				re = rel_has_cmp_exp(r, e);
 
 			/* select expressions on left */
-			if (le && !re) {
+			if (le) {
 				if (!lexps)
 					lexps=sa_list(v->sql->sa);
 				append(lexps, e);
 				list_remove_node(rel->exps, NULL, n);
 			/* select expressions on right */
-			} else if (!le && re) {
+			} else if (re) {
 				if (!rexps)
 					rexps=sa_list(v->sql->sa);
 				append(rexps, e);
