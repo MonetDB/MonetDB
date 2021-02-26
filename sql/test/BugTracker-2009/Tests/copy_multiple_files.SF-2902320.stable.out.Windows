@@ -3,7 +3,7 @@
 % .plan # table_name
 % rel # name
 % clob # type
-% 203 # length
+% 194 # length
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (
@@ -21,7 +21,7 @@ insert(
 % .plan # table_name
 % rel # name
 % clob # type
-% 205 # length
+% 196 # length
 insert(
 | table("sys"."cm_tmp") [ "cm_tmp"."i", "cm_tmp"."%TID%" NOT NULL ] COUNT 
 | union (
