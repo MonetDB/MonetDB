@@ -165,7 +165,6 @@ typedef enum {LOG_OK, LOG_EOF, LOG_ERR} log_return;
  * indicate that to the function wkbREAD during reading of the log. */
 static bool geomisoldversion;
 
-static gdk_return bm_commit(old_logger *lg);
 static gdk_return tr_grow(trans *tr);
 
 static BUN
@@ -1366,6 +1365,7 @@ check_version(old_logger *lg, FILE *fp, int version)
 	return GDK_SUCCEED;
 }
 
+#if 0
 static BAT *
 bm_tids(BAT *b, BAT *d)
 {
@@ -1382,7 +1382,6 @@ bm_tids(BAT *b, BAT *d)
 	}
 	return tids;
 }
-
 
 static gdk_return
 logger_switch_bat(BAT *old, BAT *new, const char *fn, const char *name)
@@ -1587,6 +1586,7 @@ bm_subcommit(old_logger *lg, BAT *list_bid, BAT *list_nme, BAT *catalog_bid, BAT
 		TRC_CRITICAL(GDK, "commit failed\n");
 	return res;
 }
+#endif
 
 /* Load data from the logger logdir
  * Initialize new directories and catalog files if none are present,
@@ -1600,7 +1600,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	str filenamestr = NULL;
 	log_bid snapshots_bid = 0;
 	bat catalog_bid, catalog_nme, catalog_tpe, catalog_oid, dcatalog;
-	bool needcommit = false;
 	int dbg = GDKdebug;
 
 	assert(!LOG_DISABLED(lg));
@@ -1609,11 +1608,6 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		goto error;
 	len = strcpy_len(filename, filenamestr, FILENAME_MAX);
 	GDKfree(filenamestr);
-	if (len >= FILENAME_MAX) {
-		GDKerror("Logger filename path is too large\n");
-		goto error;
-	}
-	len = strconcat_len(bak, FILENAME_MAX, filename, ".bak", NULL);
 	if (len >= FILENAME_MAX) {
 		GDKerror("Logger filename path is too large\n");
 		goto error;
@@ -1650,7 +1644,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	catalog_tpe = BBPindex(bak);
 	t = BATdescriptor(catalog_tpe);
 	if (t == NULL) {
-		t = logbat_new(TYPE_bte, BATSIZE, PERSISTENT);
+		t = logbat_new(TYPE_bte, BATSIZE, TRANSIENT);
 		if (t == NULL
 		    ||BBPrename(t->batCacheid, bak) < 0) {
 			BBPunfix(b->batCacheid);
@@ -1666,13 +1660,14 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				goto error;
 		}
 		lg->with_ids = false;
-	}
+	} else if (BUNappend(lg->del, &t->batCacheid, false) != GDK_SUCCEED)
+		goto error;
 
 	strconcat_len(bak, sizeof(bak), fn, "_catalog_oid", NULL);
 	catalog_oid = BBPindex(bak);
 	o = BATdescriptor(catalog_oid);
 	if (o == NULL) {
-		o = logbat_new(TYPE_lng, BATSIZE, PERSISTENT);
+		o = logbat_new(TYPE_lng, BATSIZE, TRANSIENT);
 		if (o == NULL
 		    ||BBPrename(o->batCacheid, bak) < 0) {
 			BBPunfix(b->batCacheid);
@@ -1689,7 +1684,8 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				goto error;
 		}
 		lg->with_ids = false;
-	}
+	} else if (BUNappend(lg->del, &o->batCacheid, false) != GDK_SUCCEED)
+		goto error;
 
 	strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
 	dcatalog = BBPindex(bak);
@@ -1698,7 +1694,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		/* older database: create dcatalog and convert
 		 * catalog_bid and catalog_nme to
 		 * dense-headed */
-		d = logbat_new(TYPE_oid, BATSIZE, PERSISTENT);
+		d = logbat_new(TYPE_oid, BATSIZE, TRANSIENT);
 		if (d == NULL) {
 			GDKerror("Logger_new: cannot create dcatalog bat");
 			BBPunfix(b->batCacheid);
@@ -1714,13 +1710,18 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			BBPunfix(o->batCacheid);
 			goto error;
 		}
-	}
+	} else if (BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED)
+		goto error;
 
 	lg->catalog_bid = b;
 	lg->catalog_nme = n;
 	lg->catalog_tpe = t;
 	lg->catalog_oid = o;
 	lg->dcatalog = d;
+	if (BUNappend(lg->del, &b->batCacheid, false) != GDK_SUCCEED ||
+	    BUNappend(lg->del, &n->batCacheid, false) != GDK_SUCCEED)
+		goto error;
+
 	const log_bid *bids;
 	bids = (const log_bid *) Tloc(b, 0);
 	BATloop(b, p, q) {
@@ -1744,48 +1745,13 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	}
 	snapshots_bid = old_logger_find_bat(lg, "snapshots_bid", 0, 0);
 	if (snapshots_bid == 0) {
-		lg->snapshots_bid = logbat_new(TYPE_int, 1, PERSISTENT);
-		lg->snapshots_tid = logbat_new(TYPE_int, 1, PERSISTENT);
-		lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
+		lg->snapshots_bid = logbat_new(TYPE_int, 1, TRANSIENT);
+		lg->snapshots_tid = logbat_new(TYPE_int, 1, TRANSIENT);
+		lg->dsnapshots = logbat_new(TYPE_oid, 1, TRANSIENT);
 		if (lg->snapshots_bid == NULL ||
 		    lg->snapshots_tid == NULL ||
 		    lg->dsnapshots == NULL) {
 			GDKerror("Logger_new: failed to create snapshots bats");
-			goto error;
-		}
-
-		strconcat_len(bak, sizeof(bak), fn, "_snapshots_bid", NULL);
-		if (BBPrename(lg->snapshots_bid->batCacheid, bak) < 0) {
-			goto error;
-		}
-		if (logger_add_bat(lg, lg->snapshots_bid, "snapshots_bid", 0, 0) != GDK_SUCCEED) {
-			GDKerror("logger_add_bat for "
-				 "%s failed", bak);
-			goto error;
-		}
-
-		strconcat_len(bak, sizeof(bak), fn, "_snapshots_tid", NULL);
-		if (BBPrename(lg->snapshots_tid->batCacheid, bak) < 0) {
-			goto error;
-		}
-		if (logger_add_bat(lg, lg->snapshots_tid, "snapshots_tid", 0, 0) != GDK_SUCCEED) {
-			GDKerror("logger_add_bat for "
-				 "%s failed", bak);
-			goto error;
-		}
-
-		strconcat_len(bak, sizeof(bak), fn, "_dsnapshots", NULL);
-		if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
-			goto error;
-		}
-		if (logger_add_bat(lg, lg->dsnapshots, "dsnapshots", 0, 0) != GDK_SUCCEED) {
-			GDKerror("logger_add_bat for "
-				 "%s failed", bak);
-			goto error;
-		}
-
-		if (bm_subcommit(lg, lg->catalog_bid, lg->catalog_nme, lg->catalog_bid, lg->catalog_nme, lg->catalog_tpe, lg->catalog_oid, lg->dcatalog, NULL) != GDK_SUCCEED) {
-			GDKerror("Logger_new: commit failed");
 			goto error;
 		}
 	} else {
@@ -1811,24 +1777,18 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				GDKerror("Logger_new: inconsistent database, snapshots_tid does not exist");
 				goto error;
 			}
+			if (BUNappend(lg->del, &dsnapshots, false) != GDK_SUCCEED)
+				goto error;
 		} else {
-			lg->dsnapshots = logbat_new(TYPE_oid, 1, PERSISTENT);
+			lg->dsnapshots = logbat_new(TYPE_oid, 1, TRANSIENT);
 			if (lg->dsnapshots == NULL) {
 				GDKerror("Logger_new: cannot create dsnapshot bat");
 				goto error;
 			}
-			strconcat_len(bak, sizeof(bak),
-				      fn, "_dsnapshots", NULL);
-			if (BBPrename(lg->dsnapshots->batCacheid, bak) < 0) {
-				goto error;
-			}
-			if (logger_add_bat(lg, lg->dsnapshots, "dsnapshots", 0, 0) != GDK_SUCCEED) {
-				GDKerror("logger_add_bat for "
-					 "%s failed", bak);
-				goto error;
-			}
-			needcommit = true;
 		}
+		if (BUNappend(lg->del, &snapshots_bid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->del, &snapshots_tid, false) != GDK_SUCCEED)
+			goto error;
 	}
 	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
 	if (BBPindex(bak)) {
@@ -1862,14 +1822,11 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
 			goto error;
 		}
-		needcommit = true;
+		if (BUNappend(lg->add, &lg->seqs_id->batCacheid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->add, &lg->seqs_val->batCacheid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->add, &lg->dseqs->batCacheid, false) != GDK_SUCCEED)
+			goto error;
 	}
-	GDKdebug &= ~CHECKMASK;
-	if (needcommit && bm_commit(lg) != GDK_SUCCEED) {
-		GDKerror("Logger_new: commit failed");
-		goto error;
-	}
-	GDKdebug = dbg;
 
 	if (check_version(lg, fp, version) != GDK_SUCCEED) {
 		goto error;
@@ -1883,6 +1840,12 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 
 	if (lg->lg->postfuncp &&
 	    (*lg->lg->postfuncp)(lg->lg->funcdata, lg) != GDK_SUCCEED)
+		goto error;
+	lg->lg->postfuncp = NULL; /* not again */
+
+	if (BUNappend(lg->add, &lg->lg->catalog_bid->batCacheid, false) != GDK_SUCCEED ||
+	    BUNappend(lg->add, &lg->lg->catalog_id->batCacheid, false) != GDK_SUCCEED ||
+	    BUNappend(lg->add, &lg->lg->dcatalog->batCacheid, false) != GDK_SUCCEED)
 		goto error;
 
 	/* done reading the log, revert to "normal" behavior */
@@ -1904,6 +1867,8 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
+	logbat_destroy(lg->add);
+	logbat_destroy(lg->del);
 	GDKfree(lg->local_dir);
 	GDKfree(lg);
 	return GDK_FAIL;
@@ -1912,7 +1877,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 /* Initialize a new logger
  * It will load any data in the logdir and persist it in the BATs*/
 static old_logger *
-logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version)
+logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *logfile)
 {
 	old_logger *old_lg;
 	char filename[FILENAME_MAX];
@@ -1936,14 +1901,21 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 
 	*old_lg = (struct old_logger) {
 		.lg = lg,
+		.filename = logfile,
 		.with_ids = true,
 		.id = 1,
 	};
 
+	old_lg->add = COLnew(0, TYPE_int, 0, TRANSIENT);
+	old_lg->del = COLnew(0, TYPE_int, 0, TRANSIENT);
+	if (old_lg->add == NULL || old_lg->del == NULL) {
+		TRC_CRITICAL(GDK, "cannot allocate temporary bats\n");
+		goto bailout;
+	}
+
 	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
 		TRC_CRITICAL(GDK, "filename is too large\n");
-		GDKfree(old_lg);
-		return NULL;
+		goto bailout;
 	}
 	if (old_lg->lg->debug & 1) {
 		fprintf(stderr, "#logger_new dir set to %s\n", old_lg->lg->dir);
@@ -1953,61 +1925,129 @@ logger_new(logger *lg, const char *fn, const char *logdir, FILE *fp, int version
 		return old_lg;
 	}
 	return NULL;
+
+  bailout:
+	logbat_destroy(old_lg->add);
+	logbat_destroy(old_lg->del);
+	GDKfree(old_lg);
+	return NULL;
 }
 
-static void
+static gdk_return
 old_logger_destroy(old_logger *lg)
 {
-	if (lg->catalog_bid) {
-		BUN p, q;
-		BAT *b = lg->catalog_bid;
+	BUN p, q;
+	BAT *b;
+	const log_bid *bids;
 
-		if (logger_cleanup(lg) != GDK_SUCCEED)
-			TRC_CRITICAL(GDK, "logger_cleanup failed\n");
-
-		/* free resources */
-		const log_bid *bids = (const log_bid *) Tloc(b, 0);
-		BATloop(b, p, q) {
-			bat bid = bids[p];
-			oid pos = p;
-
-			if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
-				BBPrelease(bid);
-		}
-
-		BBPrelease(lg->catalog_bid->batCacheid);
-		BBPrelease(lg->catalog_nme->batCacheid);
-		BBPrelease(lg->catalog_tpe->batCacheid);
-		BBPrelease(lg->catalog_oid->batCacheid);
-		BBPrelease(lg->dcatalog->batCacheid);
-		logbat_destroy(lg->catalog_bid);
-		logbat_destroy(lg->catalog_nme);
-		logbat_destroy(lg->catalog_tpe);
-		logbat_destroy(lg->catalog_oid);
-		logbat_destroy(lg->dcatalog);
-		logbat_destroy(lg->freed);
+	bat *subcommit = GDKmalloc(sizeof(log_bid) * (BATcount(lg->add) + BATcount(lg->del) + BATcount(lg->lg->catalog_bid) + 1));
+	if (subcommit == NULL) {
+		TRC_CRITICAL(GDK, "logger_destroy failed\n");
+		return GDK_FAIL;
 	}
-	logger_close(lg);
+	int i = 0;
+	subcommit[i++] = 0;
+
+	bids = (const log_bid *) Tloc(lg->add, 0);
+	BATloop(lg->add, p, q) {
+		b = BATdescriptor(bids[p]);
+		if (b) {
+			BATmode(b, false);
+			BBPunfix(bids[p]);
+		}
+		subcommit[i++] = bids[p];
+	}
+	bids = (const log_bid *) Tloc(lg->del, 0);
+	BATloop(lg->del, p, q) {
+		b = BATdescriptor(bids[p]);
+		if (b) {
+			BATmode(b, true);
+			BBPunfix(bids[p]);
+		}
+		subcommit[i++] = bids[p];
+	}
+	bids = (const log_bid *) Tloc(lg->lg->catalog_bid, 0);
+	BATloop(lg->lg->catalog_bid, p, q) {
+		b = BBPquickdesc(bids[p], false);
+		if (BATdirty(b))
+			subcommit[i++] = bids[p];
+	}
+	/* give the catalog bats names so we can find them
+	 * next time */
+	char bak[IDLENGTH];
+	if (BBPrename(lg->catalog_bid->batCacheid, NULL) < 0 ||
+	    BBPrename(lg->catalog_nme->batCacheid, NULL) < 0 ||
+	    BBPrename(lg->catalog_tpe->batCacheid, NULL) < 0 ||
+	    BBPrename(lg->catalog_oid->batCacheid, NULL) < 0 ||
+	    BBPrename(lg->dcatalog->batCacheid, NULL) < 0 ||
+	    BBPrename(lg->snapshots_bid->batCacheid, NULL) < 0 ||
+	    BBPrename(lg->snapshots_tid->batCacheid, NULL) < 0 ||
+	    BBPrename(lg->dsnapshots->batCacheid, NULL) < 0 ||
+	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_catalog_bid", NULL) >= sizeof(bak) ||
+	    BBPrename(lg->lg->catalog_bid->batCacheid, bak) < 0 ||
+	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_catalog_id", NULL) >= sizeof(bak) ||
+	    BBPrename(lg->lg->catalog_id->batCacheid, bak) < 0 ||
+	    strconcat_len(bak, sizeof(bak), lg->lg->fn, "_dcatalog", NULL) >= sizeof(bak) ||
+	    BBPrename(lg->lg->dcatalog->batCacheid, bak) < 0) {
+		return GDK_FAIL;
+	}
+	if (GDKmove(0, lg->lg->dir, LOGFILE, NULL, lg->lg->dir, LOGFILE, "bak") != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "logger_destroy failed\n");
+		return GDK_FAIL;
+	}
+	if (logger_create_types_file(lg->lg, lg->filename) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "logger_destroy failed\n");
+		return GDK_FAIL;
+	}
+	if (TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "logger_destroy failed\n");
+		return GDK_FAIL;
+	}
+	snprintf(bak, sizeof(bak), "bak-" LLFMT, lg->id);
+	if (GDKmove(0, lg->lg->dir, LOGFILE, "bak", lg->lg->dir, LOGFILE, bak) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "logger_destroy failed\n");
+		return GDK_FAIL;
+	}
+	bids = (const log_bid *) Tloc(lg->lg->catalog_bid, 0);
+	BATloop(lg->lg->catalog_bid, p, q) {
+		if (BBP_lrefs(bids[p]) > 1)
+			BBPrelease(bids[p]);
+	}
+
+	if (logger_cleanup(lg) != GDK_SUCCEED)
+		TRC_CRITICAL(GDK, "logger_cleanup failed\n");
+
+	/* free resources */
+	bids = (const log_bid *) Tloc(b, 0);
+	BATloop(b, p, q) {
+		bat bid = bids[p];
+		oid pos = p;
+
+		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
+			BBPrelease(bid);
+	}
+
+	logbat_destroy(lg->catalog_bid);
+	logbat_destroy(lg->catalog_nme);
+	logbat_destroy(lg->catalog_tpe);
+	logbat_destroy(lg->catalog_oid);
+	logbat_destroy(lg->dcatalog);
+	logbat_destroy(lg->freed);
+
+	lg->lg->id = (ulng) lg->id;
+
 	GDKfree(lg);
+	return GDK_SUCCEED;
 }
 
 /* Create a new logger */
 gdk_return
-old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version)
+old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename)
 {
 	old_logger *old_lg;
-	old_lg = logger_new(lg, fn, logdir, fp, version);
+	old_lg = logger_new(lg, fn, logdir, fp, version, filename);
 	if (old_lg == NULL)
 		return GDK_FAIL;
-	BBPrename(old_lg->catalog_bid->batCacheid, NULL);
-	BBPrename(old_lg->catalog_nme->batCacheid, NULL);
-	BBPrename(old_lg->catalog_tpe->batCacheid, NULL);
-	BBPrename(old_lg->catalog_oid->batCacheid, NULL);
-	BBPrename(old_lg->dcatalog->batCacheid, NULL);
-	BBPrename(old_lg->snapshots_bid->batCacheid, NULL);
-	BBPrename(old_lg->snapshots_tid->batCacheid, NULL);
-	BBPrename(old_lg->dsnapshots->batCacheid, NULL);
-
 	old_logger_destroy(old_lg);
 	return GDK_SUCCEED;
 }
@@ -2158,6 +2198,7 @@ logger_cleanup(old_logger *lg)
 	return GDK_SUCCEED;
 }
 
+#if 0
 static gdk_return
 bm_commit(old_logger *lg)
 {
@@ -2231,6 +2272,7 @@ bm_commit(old_logger *lg)
 	}
 	return GDK_FAIL;
 }
+#endif
 
 static gdk_return
 logger_add_bat(old_logger *lg, BAT *b, const char *name, char tpe, oid id)

@@ -857,7 +857,7 @@ logger_read_types_file(logger *lg, FILE *fp)
 }
 
 
-static gdk_return
+gdk_return
 logger_create_types_file(logger *lg, const char *filename)
 {
 	FILE *fp;
@@ -1172,9 +1172,10 @@ logger_readlogs(logger *lg, char *filename)
 
 		lg->id = lg->saved_id+1;
 		while (res == GDK_SUCCEED && !filemissing) {
-			int len = snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id);
-			if (len == -1 || len >= FILENAME_MAX)
+			if (snprintf(log_filename, sizeof(log_filename), "%s." LLFMT, filename, lg->id) >= FILENAME_MAX) {
 				GDKerror("Logger filename path is too large\n");
+				return GDK_FAIL;
+			}
 			res = logger_readlog(lg, log_filename, &filemissing);
 			if (!filemissing) {
 				lg->saved_id++;
@@ -1212,7 +1213,7 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 			GDKerror("cannot create catalog bats");
 			return GDK_FAIL;
 		}
-		if (old_logger_load(lg, fn, logdir, fp, version) != GDK_SUCCEED) {
+		if (old_logger_load(lg, fn, logdir, fp, version, filename) != GDK_SUCCEED) {
 			//loads drop no longer needed catalog, snapshots bats
 			//convert catalog_oid -> catalog_id (lng->int)
 			GDKerror("Incompatible database version %06d, "
@@ -1221,36 +1222,30 @@ check_version(logger *lg, FILE *fp, const char *fn, const char *logdir, const ch
 				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
 			return GDK_FAIL;
 		}
-		/* give the catalog bats names so we can find them
-		 * next time */
-		char bak[IDLENGTH];
-		if (strconcat_len(bak, sizeof(bak), fn, "_catalog_bid", NULL) >= sizeof(bak) ||
-		    BBPrename(lg->catalog_bid->batCacheid, bak) < 0 ||
-		    strconcat_len(bak, sizeof(bak), fn, "_catalog_id", NULL) >= sizeof(bak) ||
-		    BBPrename(lg->catalog_id->batCacheid, bak) < 0 ||
-		    strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL) >= sizeof(bak) ||
-		    BBPrename(lg->dcatalog->batCacheid, bak) < 0) {
+		return GDK_SUCCEED;
+	} else if (version != lg->version) {
+		if (lg->prefuncp == NULL ||
+		    (*lg->prefuncp)(lg->funcdata, version, lg->version) != GDK_SUCCEED) {
+			GDKerror("Incompatible database version %06d, "
+				 "this server supports version %06d.\n%s",
+				 version, lg->version,
+				 version < lg->version ? "Maybe you need to upgrade to an intermediate release first.\n" : "");
 			return GDK_FAIL;
 		}
-
-		if (logger_create_types_file(lg, filename) != GDK_SUCCEED)
-			return GDK_FAIL;
-		return GDK_SUCCEED;
 	} else {
 		lg->postfuncp = NULL;	 /* don't call */
-
-		if (fgetc(fp) != '\n' ||	 /* skip \n */
-	    	    fgetc(fp) != '\n') {	 /* skip \n */
-			fclose(fp);
-			GDKerror("Badly formatted log file");
-			return GDK_FAIL;
-		}
-		if (logger_read_types_file(lg, fp) != GDK_SUCCEED) {
-			fclose(fp);
-			return GDK_FAIL;
-		}
-		fclose(fp);
 	}
+	if (fgetc(fp) != '\n' ||	 /* skip \n */
+	    fgetc(fp) != '\n') {	 /* skip \n */
+		fclose(fp);
+		GDKerror("Badly formatted log file");
+		return GDK_FAIL;
+	}
+	if (logger_read_types_file(lg, fp) != GDK_SUCCEED) {
+		fclose(fp);
+		return GDK_FAIL;
+	}
+	fclose(fp);
 	return GDK_SUCCEED;
 }
 
@@ -1362,7 +1357,7 @@ bm_subcommit(logger *lg)
 	BATloop(catalog_bid, p, q) {
 		bat col = bids[p];
 
-		if (lids[p] != lng_nil && lids[p] <= lg->saved_tid)
+		if (lids && lids[p] != lng_nil && lids[p] <= lg->saved_tid)
 			cleanup++;
 		if (lg->debug & 1)
 			fprintf(stderr, "#commit new %s (%d)\n", BBPname(col), col);
@@ -1582,8 +1577,7 @@ logger_cleanup(logger *lg, lng id)
 {
 	char log_id[FILENAME_MAX];
 
-	int len = snprintf(log_id, sizeof(log_id), LLFMT, id);
-	if (len == -1 || len >= FILENAME_MAX) {
+	if (snprintf(log_id, sizeof(log_id), LLFMT, id) >= FILENAME_MAX) {
 		fprintf(stderr, "#logger_cleanup: log_id filename is too large\n");
 		return GDK_FAIL;
 	}
@@ -1606,7 +1600,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 	bat catalog_bid, catalog_id, dcatalog;
 	bool needcommit = false;
 	int dbg = GDKdebug;
-	int readlogs = 0;
+	bool readlogs = false;
 
 	/* refactor */
 	if (!LOG_DISABLED(lg)) {
@@ -1753,7 +1747,7 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 			fp = NULL;
 			goto error;
 		}
-		readlogs = 1;
+		readlogs = true;
 		fp = NULL;
 
 		if (lg->catalog_bid == NULL && lg->catalog_id == NULL && lg->dcatalog == NULL) {
@@ -1904,7 +1898,6 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 static logger *
 logger_new(int debug, const char *fn, const char *logdir, int version, preversionfix_fptr prefuncp, postversionfix_fptr postfuncp, void *funcdata)
 {
-	int len;
 	logger *lg;
 	char filename[FILENAME_MAX];
 
@@ -1934,8 +1927,7 @@ logger_new(int debug, const char *fn, const char *logdir, int version, preversio
 	MT_lock_init(&lg->lock, fn);
 
 	/* probably open file and check version first, then call call old logger code */
-	len = snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP);
-	if (len == -1 || len >= FILENAME_MAX) {
+	if (snprintf(filename, sizeof(filename), "%s%c%s%c", logdir, DIR_SEP, fn, DIR_SEP) >= FILENAME_MAX) {
 		TRC_CRITICAL(GDK, "filename is too large\n");
 		GDKfree(lg);
 		return NULL;
