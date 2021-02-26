@@ -14,10 +14,6 @@
 #include "gdk_atoms.h"
 #include "matomic.h"
 
-//static MT_Lock segs_lock = MT_LOCK_INITIALIZER(segs_lock);
-#define NR_TABLE_LOCKS 64
-//static MT_Lock table_locks[NR_TABLE_LOCKS]; /* set of locks to protect table changes (claim) */
-
 #define inTransaction(tr,t) (isLocalTemp(t) || os_obj_intransaction(t->s->tables, tr, &t->base))
 
 static int log_update_col( sql_trans *tr, sql_change *c);
@@ -53,23 +49,17 @@ static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 #define SEG_VALID_4_CLAIM(seg,tr) SEG_VALID_4_WRITE(seg,tr,false)
 #define SEG_VALID_4_DELETE(seg,tr) SEG_VALID_4_WRITE(seg,tr,true)
 
-#if 0
 static void
 lock_table(sqlstore *store, sqlid id)
 {
-	(void)store;
-	(void)id;
-	//MT_lock_set(&table_locks[id&(NR_TABLE_LOCKS-1)]);
+	MT_lock_set(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
 
 static void
 unlock_table(sqlstore *store, sqlid id)
 {
-	(void)store;
-	(void)id;
-	//MT_lock_unset(&table_locks[id&(NR_TABLE_LOCKS-1)]);
+	MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
-#endif
 
 /* used for communication between {append,update}_prepare and {append,update}_execute */
 struct prep_exec_cookie {
@@ -1252,9 +1242,7 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat, int temp)
 	if (temp) {
 		bat->segs = new_segments(tr, 0);
 	} else {
-		//MT_lock_set(&segs_lock);
 		bat->segs = dup_segments(obat->segs);
-		//MT_lock_unset(&segs_lock);
 	}
 	return dup_cs(tr, &obat->cs, &bat->cs, TYPE_msk, temp);
 }
@@ -1280,19 +1268,18 @@ static int
 append_col_execute(void *incoming_cookie, size_t offset, void *incoming_data, bool is_bat)
 {
 	struct prep_exec_cookie *cookie = incoming_cookie;
-	int ok;
+	int ok = LOG_OK;
 
-	//lock_table(c->t->base.id);
+	lock_table(cookie->tr->store, cookie->table->base.id);
 	if (is_bat) {
 		BAT *bat = incoming_data;
 
-		if (!BATcount(bat))
-			return LOG_OK;
-		ok = delta_append_bat(cookie->delta, offset, bat);
+		if (BATcount(bat))
+			ok = delta_append_bat(cookie->delta, offset, bat);
 	} else {
 		ok = delta_append_val(cookie->delta, offset, incoming_data);
 	}
-	//unlock_table(c->t->base.id);
+	unlock_table(cookie->tr->store, cookie->table->base.id);
 	return ok;
 }
 
@@ -3107,23 +3094,16 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 static size_t
 claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 {
-	storage *s;/*, *ps = ATOMIC_PTR_GET(&t->data);*/
-	BUN slot = 0;
+	storage *s;
 
-	/* we have a single segment structure for each persistent table */
-	/* for temporary tables each has its own */
-	if ((s = bind_del_data(tr, t)) == NULL) /* TODO fix bind_del_data for this */
+	/* we have a single segment structure for each persistent table
+	 * for temporary tables each has its own */
+	if ((s = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
 
-	/* use (resizeable) array of locks like BBP */
-	//lock_table(t->base.id);
-	/* make lockless ? */
-	/*
-	if (isTempTable(t))
-		ps = s;
-		*/
-	/* find slot */
-	slot = claim_segment(tr, t, s, cnt);
+	lock_table(tr->store, t->base.id);
+	BUN slot = claim_segment(tr, t, s, cnt); /* find slot */
+	unlock_table(tr->store, t->base.id);
 	if (slot == BUN_NONE)
 		return BUN_NONE;
 	return (size_t)slot;
@@ -3248,10 +3228,6 @@ bat_storage_init( store_functions *sf)
 	sf->clear_table = &clear_table;
 
 	sf->cleanup = &cleanup;
-	/*
-	for(int i=0;i<NR_TABLE_LOCKS;i++)
-		MT_lock_init(&table_locks[i], "table_lock");
-		*/
 }
 
 #if 0
