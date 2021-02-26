@@ -92,18 +92,12 @@ hash_destroy(sql_hash *h) /* this code should be called for hash tables created 
 }
 
 unsigned int
-hash_key(const char *k)
+hash_key(const char *restrict k)
 {
-	unsigned int h = 0;
-
+	unsigned int h = 37; /* prime number */
 	while (*k) {
-		h += *k;
-		h += (h << 10);
-		h ^= (h >> 6);
+		h = (h * 54059) ^ (k[0] * 76963); /* prime numbers */
 		k++;
 	}
-	h += (h << 3);
-	h ^= (h >> 11);
-	h += (h << 15);
 	return h;
 }

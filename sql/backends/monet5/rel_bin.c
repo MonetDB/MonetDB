@@ -137,23 +137,18 @@ list_find_column(backend *be, list *l, const char *rname, const char *name )
 
 	if (!l)
 		return NULL;
-	MT_lock_set(&l->ht_lock);
 	if (!l->ht && list_length(l) > HASH_MIN_SIZE) {
 		l->ht = hash_new(l->sa, MAX(list_length(l), l->expected_cnt), (fkeyvalue)&stmt_key);
-		if (l->ht == NULL) {
-			MT_lock_unset(&l->ht_lock);
+		if (l->ht == NULL)
 			return NULL;
-		}
 
 		for (n = l->h; n; n = n->next) {
 			const char *nme = column_name(be->mvc->sa, n->data);
 			if (nme) {
 				int key = hash_key(nme);
 
-				if (hash_add(l->ht, key, n->data) == NULL) {
-					MT_lock_unset(&l->ht_lock);
+				if (hash_add(l->ht, key, n->data) == NULL)
 					return NULL;
-				}
 			}
 		}
 	}
@@ -185,12 +180,10 @@ list_find_column(backend *be, list *l, const char *rname, const char *name )
 				}
 			}
 		}
-		MT_lock_unset(&l->ht_lock);
 		if (!res)
 			return NULL;
 		return res;
 	}
-	MT_lock_unset(&l->ht_lock);
 	if (rname) {
 		for (n = l->h; n; n = n->next) {
 			const char *rnme = table_name(be->mvc->sa, n->data);
