@@ -239,19 +239,18 @@ static sql_exp * _exp_push_down(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t);
 static list *
 exps_push_down(mvc *sql, list *exps, sql_rel *f, sql_rel *t)
 {
-	node *n;
-	list *nl = new_exp_list(sql->sa);
-
-	for(n = exps->h; n; n = n->next) {
+	if (list_empty(exps))
+		return exps;
+	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *arg = n->data, *narg = NULL;
 
 		narg = _exp_push_down(sql, arg, f, t);
 		if (!narg)
 			return NULL;
 		narg = exp_propagate(sql->sa, narg, arg);
-		append(nl, narg);
+		n->data = narg;
 	}
-	return nl;
+	return exps;
 }
 
 static sql_exp *

@@ -5833,6 +5833,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 				}
 				if (cnr && nr && list_length(tbls[j]->pkey->k.columns) == nr) {
 					list *ngbe = new_exp_list(v->sql->sa);
+					bool changed = false;
 
 					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
 						sql_exp *e = n->data;
@@ -5856,10 +5857,13 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 								exp_setname(v->sql->sa, rs, exp_find_rel_name(e), exp_name(e));
 								e = rs;
 								fnd = 1;
+								changed = true;
 							}
 						}
 						m->data = e;
 					}
+					if (changed)
+						list_hash_clear(rel->exps);
 					/* new reduced aggr expression list */
 					assert(list_length(rel->exps)>0);
 					/* only one reduction at a time */
@@ -6509,6 +6513,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 					assert(e);
 					n->data = e;
 				}
+				list_hash_clear(rel->exps);
 			}
 			rel->l = l->l;
 			l->l = NULL;
@@ -6524,6 +6529,7 @@ rel_push_project_up(visitor *v, sql_rel *rel)
 					assert(e);
 					n->data = e;
 				}
+				list_hash_clear(rel->exps);
 			}
 			rel->r = r->l;
 			r->l = NULL;
