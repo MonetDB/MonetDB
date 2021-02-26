@@ -35,7 +35,7 @@ sql.bind
 algebra.projection
 2
 algebra.sort
-2
+1
 sql.resultSet
 1
 
@@ -75,7 +75,7 @@ algebra.project
 bat.pack
 5
 algebra.sort
-2
+1
 sql.resultSet
 1
 

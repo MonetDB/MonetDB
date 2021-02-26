@@ -250,7 +250,7 @@ sql.delta
 algebra.projection
 2
 algebra.sort
-3
+1
 bat.pack
 5
 sql.resultSet
@@ -276,7 +276,7 @@ sql.delta
 algebra.projection
 3
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
@@ -306,7 +306,7 @@ algebra.projection
 algebra.firstn
 1
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
@@ -336,7 +336,7 @@ algebra.projection
 algebra.firstn
 1
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
@@ -366,7 +366,7 @@ algebra.projection
 algebra.firstn
 1
 algebra.sort
-3
+1
 algebra.subslice
 1
 bat.pack
