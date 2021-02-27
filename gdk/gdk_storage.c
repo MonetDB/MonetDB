@@ -794,7 +794,6 @@ BATsave(BAT *bd)
 		HEAPincref(&vhs);
 		b->tvheap = &vhs;
 	}
-	MT_lock_unset(&bd->theaplock);
 
 	/* start saving data */
 	nme = BBP_physical(b->batCacheid);
@@ -810,7 +809,6 @@ BATsave(BAT *bd)
 	if (b->thash && b->thash != (Hash *) 1)
 		BAThashsave(b, dosync);
 
-	MT_lock_set(&bd->theaplock);
 	HEAPdecref(b->theap, false);
 	if (b->tvheap)
 		HEAPdecref(b->tvheap, false);
