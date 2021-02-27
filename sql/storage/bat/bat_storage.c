@@ -46,7 +46,6 @@ static int tr_merge_delta( sql_trans *tr, sql_delta *obat);
 #define SEG_VALID_4_WRITE(seg,tr,d) \
 	(seg->deleted != d && VALID_4_READ(seg->ts, tr))
 
-#define SEG_VALID_4_CLAIM(seg,tr) SEG_VALID_4_WRITE(seg,tr,false)
 #define SEG_VALID_4_DELETE(seg,tr) SEG_VALID_4_WRITE(seg,tr,true)
 
 static void
@@ -66,7 +65,7 @@ struct prep_exec_cookie {
 	sql_trans *tr;
 	sql_delta *delta;
 	sql_table *table;
-	bool is_new; // only used for updates
+	bool is_new; /* only used for updates */
 };
 
 /* creates a new cookie, backed by sql allocator memory so it is
@@ -527,7 +526,7 @@ segs_end( segments *segs, sql_trans *tr)
 	segment *s = segs->h, *l = NULL;
 
 	for(;s; s = s->next) {
-		if (s->ts == tr->tid || s->ts < tr->ts)
+		if (VALID_4_READ(s->ts, tr))
 				l = s;
 	}
 	if (!l)
@@ -540,11 +539,10 @@ count_col(sql_trans *tr, sql_column *c, int access)
 {
 	storage *d;
 	sql_delta *ds;
-	sql_table *t = c->t;
 
 	if (!isTable(c->t))
 		return 0;
-	d = tab_timestamp_storage(tr, t);
+	d = tab_timestamp_storage(tr, c->t);
 	ds = col_timestamp_delta(tr, c);
 	if (!d)
 		return 0;
@@ -552,7 +550,7 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
-	if (tr->parent || isTempTable(c->t))
+	if (isTempTable(c->t))
 		return d->segs->t?d->segs->t->end:0;
 	return segs_end(d->segs, tr);
 }
@@ -573,7 +571,7 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
-	if (tr->parent || isTempTable(i->t))
+	if (isTempTable(i->t))
 		return d->segs->t?d->segs->t->end:0;
 	return segs_end(d->segs, tr);
 }
@@ -1301,7 +1299,7 @@ storage_delete_val(sql_trans *tr, sql_table *t, storage *s, oid rid)
 	int in_transaction = segments_in_transaction(tr, t);
 
 	/* find segment of rid, split, mark new segment deleted (for tr->tid) */
-	segment *seg = s->segs->h, *p = NULL;//, *os = seg;
+	segment *seg = s->segs->h, *p = NULL;
 	for (; seg; p = seg, seg = seg->next) {
 		if (seg->start <= rid && seg->end > rid) {
 			if (!SEG_VALID_4_DELETE(seg,tr))
@@ -1821,7 +1819,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 		bat->cs.ts = tr->tid;
 
 	if (!isNew(ni) && !isTempTable(ni->t)){
-		bat->cs.ts = 1;//tr->ts;
+		bat->cs.ts = 1;
 		return load_cs(tr, &bat->cs, type, ni->base.id);
 	} else if (bat && bat->cs.bid && !isTempTable(ni->t)) {
 		return new_persistent_delta(ATOMIC_PTR_GET(&ni->data));
@@ -2920,7 +2918,6 @@ claim_segment(sql_trans *tr, sql_table *t, storage *s, size_t cnt)
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* re-use old deleted or rolledback append */
 
 			if ((seg->end - seg->start) >= cnt) {
-				assert(SEG_VALID_4_CLAIM(seg,tr));
 
 				/* if previous is claimed before we could simply adjust the end/start */
 				if (p && p->ts == tr->tid && !p->deleted) {
@@ -3002,7 +2999,7 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 			m = FALSE;
 		size_t lnr = s->end-s->start;
 		if (s->start < start)
-			lnr -= start - s->start;
+			lnr -= (start - s->start);
 		if (s->end > end)
 			lnr -= s->end - end;
 		/* later optimize per 32 bits */
@@ -3031,7 +3028,7 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 
 	if (!s)
 		return NULL;
-	size_t nr = (s->segs->t)?s->segs->t->end:0;
+	size_t nr = segs_end(s->segs, tr);
 
 	if (!nr)
 		return BATdense(0, 0, 0);
@@ -3047,7 +3044,10 @@ bind_cands(sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr)
 	size_t dnr = count_deletes(s->segs->h, tr);
 	if (!dnr)
 		return BATdense(start, start, end-start);
-	return segments2cands(s->segs->h, tr, start, end);
+	lock_table(tr->store, t->base.id);
+	BAT *r = segments2cands(s->segs->h, tr, start, end);
+	unlock_table(tr->store, t->base.id);
+	return r;
 }
 
 void
