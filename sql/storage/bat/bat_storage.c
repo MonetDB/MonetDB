@@ -522,6 +522,20 @@ count_deletes( segment *s, sql_trans *tr)
 }
 
 static size_t
+segs_end( segments *segs, sql_trans *tr)
+{
+	segment *s = segs->h, *l = NULL;
+
+	for(;s; s = s->next) {
+		if (s->ts == tr->tid || s->ts < tr->ts)
+				l = s;
+	}
+	if (!l)
+		return 0;
+	return l->end;
+}
+
+static size_t
 count_col(sql_trans *tr, sql_column *c, int access)
 {
 	storage *d;
@@ -538,7 +552,9 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
-	return d->segs->t->end;
+	if (tr->parent || isTempTable(c->t))
+		return d->segs->t?d->segs->t->end:0;
+	return segs_end(d->segs, tr);
 }
 
 static size_t
@@ -557,7 +573,9 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
-	return d->segs->t?d->segs->t->end:0;
+	if (tr->parent || isTempTable(i->t))
+		return d->segs->t?d->segs->t->end:0;
+	return segs_end(d->segs, tr);
 }
 
 static BAT *
