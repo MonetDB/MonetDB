@@ -415,9 +415,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					} else {
 						lg->buf = t;
 						lg->bufsize = tlen;
+						if (r && BUNappend(r, t, true) != GDK_SUCCEED)
+							res = LOG_ERR;
 					}
-					if (r && BUNappend(r, t, true) != GDK_SUCCEED)
-						res = LOG_ERR;
 				}
 			}
 		} else {
@@ -470,9 +470,9 @@ log_read_updates(logger *lg, trans *tr, logformat *l, log_id id, lng offset)
 					} else {
 						lg->buf = t;
 						lg->bufsize = tlen;
+						if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
+							res = LOG_ERR;
 					}
-					if ((r && BUNappend(r, t, true) != GDK_SUCCEED))
-						res = LOG_ERR;
 				}
 			}
 			GDKfree(hv);
