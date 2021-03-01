@@ -1211,6 +1211,7 @@ static str RMTregisterInternal(Client cntxt, char** fcn_id, const char *conn, co
 	prg->def = NULL;
 
 	if ((prg->def = copyMalBlk(sym->def)) == NULL) {
+		MT_lock_unset(&c->lock);
 		freeSymbol(prg);
 		throw(MAL, "Remote register", MAL_MALLOC_FAIL);
 	}
@@ -1303,8 +1304,10 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	/* this call should be a single transaction over the channel*/
 	MT_lock_set(&c->lock);
 
-	if(!no_return_arguments && pci->argc - pci->retc < 3) /* conn, mod, func, ... */
+	if(!no_return_arguments && pci->argc - pci->retc < 3) { /* conn, mod, func, ... */
+		MT_lock_unset(&c->lock);
 		throw(MAL, "remote.exec", ILLEGAL_ARGUMENT  " MAL instruction misses arguments");
+	}
 
 	len = 0;
 	/* count how big a buffer we need */
@@ -1324,8 +1327,10 @@ static str RMTexec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
 	}
 	len += 2;
 	buflen = len + 1;
-	if ((qbuf = GDKmalloc(buflen)) == NULL)
+	if ((qbuf = GDKmalloc(buflen)) == NULL) {
+		MT_lock_unset(&c->lock);
 		throw(MAL, "remote.exec", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	len = 0;
 

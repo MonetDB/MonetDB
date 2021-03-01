@@ -729,14 +729,27 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		return -2;
 	}
 	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	if (!stk) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL);
+		freeSymbol(c->curprg);
+		c->curprg= NULL;
+		return -2;
+	}
 	stk->keepAlive = TRUE;
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
+		freeStack(stk);
 		freeSymbol(c->curprg);
 		c->curprg= NULL;
 		return -2;
 	}
 
-	mdbe->mid = GDKstrdup(*getArgReference_str(stk, p, 0));
+	if ((mdbe->mid = GDKstrdup(*getArgReference_str(stk, p, 0))) == NULL) {
+		mdbe->msg = createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL);
+		freeStack(stk);
+		freeSymbol(c->curprg);
+		c->curprg= NULL;
+		return -2;
+	}
 
 	garbageCollector(c, mb, stk, TRUE);
 	freeStack(stk);
@@ -962,6 +975,10 @@ monetdbe_result_cb(void* context, char* tblname, columnar_result* results, size_
 		return mdbe->msg;
 
 	BAT* order = BATdescriptor(results[0].id);
+	if (!order) {
+		mdbe->msg = createException(MAL,"monetdbe.monetdbe_result_cb",SQLSTATE(HY005) "Cannot access column descriptor ");
+		return mdbe->msg;
+	}
 
 	mvc_result_table(be, 0, (int) nr_results, Q_TABLE, order);
 
@@ -1431,7 +1448,8 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	MalStkPtr glb = (MalStkPtr) (NULL);
 	Symbol s = findSymbolInModule(mdbe->c->usermodule, q->f->imp);
 
-	mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0);
+	if ((mdbe->msg = callMAL(mdbe->c, s->def, &glb, stmt_internal->args, 0)) != MAL_SUCCEED)
+		goto cleanup;
 
 	if (!b->results && b->rowcnt >= 0 && affected_rows)
 		*affected_rows = b->rowcnt;
@@ -2064,8 +2082,10 @@ remote_cleanup:
 				if (!blob_is_null(be+j)) {
 					size_t len = be[j].size;
 					b = (blob*) GDKmalloc(blobsize(len));
-					if (b == NULL)
+					if (b == NULL) {
 						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+						goto cleanup;
+					}
 
 					b->nitems = len;
 					memcpy(b->data, be[j].data, len);
