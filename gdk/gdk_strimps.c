@@ -93,7 +93,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 gdk_return
 GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *count)
 {
-	lng t0;
+	lng t0=0;
 	size_t hi;
 	BUN i;
 	BATiter bi;
@@ -111,7 +111,21 @@ GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *count)
 		s = (char *)BUNtvar(bi, i);
 		if (!strNil(s)) {
 			for(ptr = s; *ptr != 0 && *(ptr + 1) != 0; ptr++) {
-				if (isNotIgnored(*ptr) && isNotIgnored(*(ptr+1))) {
+				if (isIgnored(*(ptr+1))) {
+					/* Skip this and the next pair
+					 * if the next char is ignored.
+					 */
+					ptr++;
+				}
+				else if (isIgnored(*ptr)) {
+					/* Skip this pair if the current
+					 * char is ignored. This should
+					 * only happen at the beginnig
+					 * of a string.
+					 */
+					;
+				}
+				else {
 					hi = pairToIndex(*(ptr), *(ptr+1));
 					assert(hi < hist_size);
 					if (hist[hi] == 0)
