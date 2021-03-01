@@ -550,7 +550,7 @@ void mo_print_options(opt *set, int setlen);
 int mo_system_config(opt **Set, int setlen);
 const oid oid_nil;
 log_bid old_logger_find_bat(old_logger *lg, const char *name, char tpe, oid id);
-gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir);
+gdk_return old_logger_load(logger *lg, const char *fn, const char *logdir, FILE *fp, int version, const char *filename);
 DIR *opendir(const char *dirname);
 void print_trace(void);
 ssize_t ptrFromStr(const char *src, size_t *len, ptr **dst, bool external);
