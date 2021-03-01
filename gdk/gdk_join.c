@@ -314,6 +314,10 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(lci->ncand > 0);
 	assert(lci->ncand == 1 || (l->tsorted && l->trevsorted));
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	MT_thread_setalgorithm(__func__);
 	oid o = canditer_next(lci);
 	v = BUNtail(li, o - l->hseqbase);
@@ -370,6 +374,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BUN p, q = BATcount(bn);
 
 		do {
+			GDK_CHECK_TIMEOUT(timeoffset, counter);
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -387,6 +392,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BUN p, q = BATcount(bn);
 
 		do {
+			GDK_CHECK_TIMEOUT(timeoffset, counter);
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -842,6 +848,7 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 	while (lstart < lend && rstart < rend) {
 		GDK_CHECK_TIMEOUT(timeoffset, counter);
+
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
