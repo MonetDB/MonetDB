@@ -341,7 +341,7 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * String imprints.
  */
 static str
-CMDstrimp_ndigrams(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PATstrimp_ndigrams(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *b;
@@ -365,7 +365,7 @@ CMDstrimp_ndigrams(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PATstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *b, *ob;
@@ -401,6 +401,24 @@ CMDstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
+static str
+PATstrimp_makeheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	bat bid;
+	BAT *b;
+	(void)cntxt;
+	(void)mb;
+
+	bid = *getArgReference_bat(stk, pci, 2);
+	if ((b = BATdescriptor(bid)) == NULL)
+		throw(MAL, "bat.strimpHeader", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+
+	if(GDKstrimp_make_header(b) != GDK_SUCCEED)
+		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) OPERATION_FAILED);
+
+	return MAL_SUCCEED;
+}
+
 
 #include "mel.h"
 mel_func batExtensions_init_funcs[] = {
@@ -432,9 +450,9 @@ mel_func batExtensions_init_funcs[] = {
  pattern("bat", "appendBulk", CMDBATappend_bulk, false, "append the arguments ins to i", args(1,4, batargany("",1), batargany("i",1),arg("force",bit),batvarargany("ins",1))),
 
  /* String imprints */
- pattern("bat", "strimpNDigrams", CMDstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
- pattern("bat", "strimpHistogram", CMDstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
- //pattern("batcalc", "make_histogam", CMDstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2, 3, arg("", sht), batarg("", lng), batarg("b", str))),
+ pattern("bat", "strimpNDigrams", PATstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
+ pattern("bat", "strimpHistogram", PATstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
+ pattern("bat", "strimpHeader", PATstrimp_makeheader, false, "construct the strimp header from a BAT", args(1,2,arg("",void),batarg("b",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -15,8 +15,15 @@
  * just handling ASCII and full UTF-8 support.
  */
 #define STRIMP_HISTSIZE 256*256
+#define STRIMP_SIZE 64
 
-gdk_export gdk_return GDKstrimp_ndigrams(BAT *b, size_t *n);
+typedef struct {
+	// TODO: find a better name for this
+	uint16_t bytepairs[STRIMP_SIZE];
+} StrimpHeader;
 
-gdk_export gdk_return GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins);
+gdk_export gdk_return GDKstrimp_ndigrams(BAT *b, size_t *n); // Remove?
+gdk_export gdk_return GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins); // make static
+// gdk_export gdk_return GDKstrimp_make_header(StrimpHeader *h, uint64_t *hist, size_t hist_size); // make static
+gdk_export gdk_return GDKstrimp_make_header(BAT *b);
 #endif /* _GDK_STRIMPS_H_ */
