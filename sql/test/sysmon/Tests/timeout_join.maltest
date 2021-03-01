@@ -1,0 +1,9 @@
+a:=bat.new(:lng);
+b:=bat.new(:lng);
+barrier i:= 0:lng;
+    bat.append(a, i);
+	bat.append(b, i);
+	redo i:= iterator.next(1:lng,1000000:lng);
+exit i;
+clients.setquerytimeout(1);
+(vg_a,xg_b):=algebra.join(a,b,nil:bat,nil:bat,false,nil:lng);
