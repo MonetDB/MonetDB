@@ -208,30 +208,18 @@ SQLrun(Client c, mvc *m)
 	}
 	TRC_INFO(SQL_EXECUTION, "Executing: %s", c->query);
 	MT_thread_setworking(c->query);
-	// locate and inline the query template instruction
-	mb = copyMalBlk(c->curprg->def);
-	if (!mb) {
-		MT_thread_setworking(NULL);
-		throw(SQL, "sql.prepare", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	mb->history = c->curprg->def->history;
-	c->curprg->def->history = 0;
-
 	// JIT optimize the SQL query using all current information
 	// This include template constants, BAT sizes.
 	if( m->emod & mod_debug)
 		mb->keephistory = TRUE;
 	msg = SQLoptimizeQuery(c, mb);
 	if( msg != MAL_SUCCEED){
-		// freeMalBlk(mb);
 		MT_thread_setworking(NULL);
 		return msg;
 	}
 	mb->keephistory = FALSE;
 
 	if (mb->errors){
-		// freeMalBlk(mb);
-		// mal block might be so broken free causes segfault
 		msg = mb->errors;
 		mb->errors = 0;
 		MT_thread_setworking(NULL);
@@ -262,8 +250,6 @@ SQLrun(Client c, mvc *m)
 	/* after the query has been finished we enter the idle state */
 	c->idle = time(0);
 	c->lastcmd = 0;
-	// release the resources
-	freeMalBlk(mb);
 	MT_thread_setworking(NULL);
 	return msg;
 }
