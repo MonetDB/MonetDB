@@ -283,7 +283,7 @@ sql5_export str second_interval_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr st
 sql5_export str checkSQLContext(Client cntxt);
 sql5_export str getSQLContext(Client cntxt, MalBlkPtr mb, mvc **c, backend **b);
 
-sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start);
+sql5_export void freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid);
 sql5_export str second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export str date_2_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
