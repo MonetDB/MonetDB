@@ -1873,7 +1873,8 @@ monetdbe_append(monetdbe_database dbhdl, const char *schema, const char *table, 
 	size_t i, cnt;
 	node *n;
 	Symbol remote_prg = NULL;
-	size_t pos = 0;
+	blob *bbuf = NULL;
+	size_t pos = 0, bbuf_len = 0;
 
 	if ((mdbe->msg = validate_database_handle(mdbe, "monetdbe.monetdbe_append")) != MAL_SUCCEED) {
 		return mdbe->msg;
@@ -2076,24 +2077,38 @@ remote_cleanup:
 		} else if (mtype == TYPE_blob) {
 			monetdbe_data_blob* be = (monetdbe_data_blob*)v;
 
+			if (!bbuf) {
+				if (!(bbuf = (blob*) GDKmalloc(1024))) {
+					mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+					goto cleanup;
+				}
+				bbuf_len = 1024;
+			}
+
 			for (size_t j=0; j<cnt; j++){
-				blob* b = (blob*) nil;
 				int res;
-				if (!blob_is_null(be+j)) {
+
+				if (blob_is_null(be+j)) {
+					res = store->storage_api.append_col(m->session->tr, c, pos+j, (blob*)nil, mtype);
+				} else {
 					size_t len = be[j].size;
-					b = (blob*) GDKmalloc(blobsize(len));
-					if (b == NULL) {
-						mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
-						goto cleanup;
+
+					if (len > bbuf_len) { /* reuse buffer and reallocate only when the new input size becomes larger */
+						size_t newlen = (((len) + 1023) & ~1023); /* align to a multiple of 1024 bytes */
+						blob *newbuf = GDKmalloc(newlen);
+						if (!newbuf) {
+							mdbe->msg = createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
+							goto cleanup;
+						}
+						GDKfree(bbuf);
+						bbuf = newbuf;
+						bbuf_len = newlen;
 					}
 
-					b->nitems = len;
-					memcpy(b->data, be[j].data, len);
+					bbuf->nitems = len;
+					memcpy(bbuf->data, be[j].data, len);
+					res = store->storage_api.append_col(m->session->tr, c, pos+j, bbuf, mtype);
 				}
-
-				res = store->storage_api.append_col(m->session->tr, c, pos+j, b, mtype);
-				if (b && b != (blob*)nil)
-					GDKfree(b);
 				if (res != 0) {
 					mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Cannot append values");
 					goto cleanup;
@@ -2169,6 +2184,7 @@ remote_cleanup:
 	}
 
 cleanup:
+	GDKfree(bbuf);
 	mdbe->msg = commit_action(m, mdbe, NULL, NULL);
 
 	return mdbe->msg;
