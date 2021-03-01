@@ -144,7 +144,7 @@ enum MT_thr_detach { MT_THR_JOINABLE, MT_THR_DETACHED };
 typedef int64_t lng;
 
 typedef struct QryCtx {
-	lng starttime;
+	const lng starttime;
 	lng querytimeout;
 } QryCtx;
 
