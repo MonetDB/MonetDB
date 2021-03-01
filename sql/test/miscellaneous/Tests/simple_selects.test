@@ -200,6 +200,13 @@ select cast(b as interval second) from x
 statement error
 select cast(b as interval month) from x
 
+query TTT rowsort
+select cast(blob 'AA' as char(2)), cast(blob 'BB' as varchar(2)), cast(blob 'CC' as clob)
+----
+AA
+BB
+CC
+
 statement ok
 drop table x
 
