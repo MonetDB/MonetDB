@@ -84,7 +84,56 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define isNotIgnored(x) (!isIgnored(x))
 #define pairToIndex(b1, b2) (((uint8_t)b1)<<8 | ((uint8_t)b2))
+#define indexToPair1(idx) (idx & 0xff00) >> 8
+#define indexToPair2(idx) (idx & 0xff)
+#define swp(_a, _i, _j, TPE)			\
+	do {					\
+		TPE _t = ((TPE *)_a)[_i];	\
+		((TPE *) _a)[_i] = ((TPE *) _a)[_j];	\
+		((TPE *) _a)[_j] = _t;			\
+	} while(0)
 
+static StrimpHeader *
+make_header(StrimpHeader *h, uint64_t* hist, size_t hist_size)
+{
+	lng t0 = 0;
+	size_t i;
+	uint64_t max_counts[STRIMP_SIZE] = {0};
+	const size_t cmin_max = STRIMP_SIZE - 1;
+	size_t hidx;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	for(i = 0; i < STRIMP_SIZE; i++)
+		h->bytepairs[i] = 0;
+
+	for(i = 0; i < hist_size; i++) {
+		if (max_counts[cmin_max] < hist[i]) {
+			max_counts[cmin_max] = hist[i];
+			h->bytepairs[cmin_max] = i;
+                        for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
+				swp(max_counts, hidx, hidx-1, uint64_t);
+				swp(h->bytepairs, hidx, hidx-1, uint16_t);
+			}
+		}
+	}
+
+	for(i = 0; i < STRIMP_SIZE; i++) {
+		TRC_DEBUG(ALGO, "%u %u: %lu", indexToPair1(h->bytepairs[i]), indexToPair2(h->bytepairs[i]), max_counts[i]);
+	}
+
+	TRC_DEBUG_ENDIF(ALGO, LLFMT "usec\n", GDKusec() - t0);
+
+	return h;
+}
+
+
+/* static uint64_t */
+/* add_to_header(size_t idx, uint64_t count) */
+/* { */
+/* 	while */
+/* 	return GDK_SUCCEED; */
+/* } */
 /* Construct a histogram of pairs of bytes.
  *
  * Return the histogram in hist and the number of non-zero bins in
@@ -98,6 +147,7 @@ GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins
 	BUN i;
 	BATiter bi;
 	char *ptr, *s;
+	/* uint64_t cur_min = 0; */
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	assert(b->ttype == TYPE_str);
@@ -131,12 +181,61 @@ GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins
 					if (hist[hi] == 0)
 						(*nbins)++;
 					hist[hi]++;
+					/* if (hist[hi] > cur_min) */
+					/* 	cur_min = add_to_header(hi, hist[hi]); */
 				}
 			}
 		}
 	}
 
-	TRC_DEBUG(ALGO, LLFMT "usec\n", GDKusec() - t0);
+	TRC_DEBUG_ENDIF(ALGO, LLFMT "usec\n", GDKusec() - t0);
 	GDKtracer_flush_buffer();
 	return GDK_SUCCEED;
 }
+
+gdk_return
+GDKstrimp_make_header(BAT *b)
+{
+	uint64_t hist[STRIMP_HISTSIZE] = {0};
+	size_t nbins = 0;
+	StrimpHeader header;
+	if(GDKstrimp_make_histogram(b, hist, STRIMP_HISTSIZE, &nbins) != GDK_SUCCEED) {
+		return GDK_FAIL;
+	}
+
+	make_header(&header, hist, STRIMP_HISTSIZE);
+
+	return GDK_SUCCEED;
+}
+
+
+/* static uint8_t */
+/* lookup_index(StrimpHeader *h, uint16_t n) */
+/* { */
+/* 	size_t i; */
+/* 	for(i = 0; i < STRIMP_SIZE; i++) */
+/* 		if(h->bytepairs[i] == n) */
+/* 			return i; */
+
+/* 	return 0; */
+/* } */
+
+
+/* Given a strimp header and a string compute the bitstring of which
+ * digrams(byte pairs) are present in the string. The strimp header is a
+ * map from digram(byte pair) to index in the strimp.
+ */
+/* static uint64_t */
+/* GDKstrimp_make_bitstring(str s, StrimpHeader *h) */
+/* { */
+/* 	uint64_t ret = 0; */
+/* 	uint8_t pair_idx; */
+/* 	char *it; */
+
+/* 	for(it = s; *it != 0 && *(it+1) != 0; it++) { */
+/* 		pair_idx = lookup_index(h, pairToIndex(*it, *(it+1))); */
+/* 		ret |= 0x1 << pair_idx; */
+/* 	} */
+
+/* 	return ret; */
+/* } */
