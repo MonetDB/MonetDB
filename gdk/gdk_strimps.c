@@ -91,7 +91,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
  * count.
  */
 gdk_return
-GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *count)
+GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins)
 {
 	lng t0=0;
 	size_t hi;
@@ -106,7 +106,7 @@ GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *count)
 		hist[hi] = 0;
 
 	bi = bat_iterator(b);
-	*count = 0;
+	*nbins = 0;
 	for(i = 0; i < b->batCount; i++) {
 		s = (char *)BUNtvar(bi, i);
 		if (!strNil(s)) {
@@ -129,7 +129,7 @@ GDKstrimp_makehistogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *count)
 					hi = pairToIndex(*(ptr), *(ptr+1));
 					assert(hi < hist_size);
 					if (hist[hi] == 0)
-						(*count)++;
+						(*nbins)++;
 					hist[hi]++;
 				}
 			}
