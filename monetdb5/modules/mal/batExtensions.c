@@ -380,7 +380,7 @@ CMDstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if (!GDKstrimp_makehistogram(b, hist, STRIMP_HISTSIZE, &count)) {
+	if (!GDKstrimp_make_histogram(b, hist, STRIMP_HISTSIZE, &count)) {
 		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) OPERATION_FAILED);
 	}
 
