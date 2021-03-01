@@ -499,8 +499,12 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
 		msg = createException(MAL,"clients.queryTimeout","Session not active anymore");
-	else
-		mal_clients[idx].querytimeout = (lng) qto * 1000000;
+	else {
+		lng timeout_micro = (lng) qto * 1000000;
+		mal_clients[idx].querytimeout = timeout_micro;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx->querytimeout = timeout_micro;
+	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }

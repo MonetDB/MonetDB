@@ -2,4 +2,5 @@ sys_queue
 sys_queue_expand
 sys_user_statistics
 sys_queue_multisessions
-query_timeout
+timeout_cp
+timeout_join
