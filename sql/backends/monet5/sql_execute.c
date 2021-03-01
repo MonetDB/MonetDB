@@ -314,7 +314,7 @@ SQLescapeString(str s)
 str
 SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit output, res_table **result)
 {
-	int status = 0, err = 0, oldvtop, oldstop = 1, inited = 0, ac, sizeframes, topframes;
+	int status = 0, err = 0, oldvtop, oldstop = 1, oldvid, inited = 0, ac, sizeframes, topframes;
 	unsigned int label;
 	mvc *o = NULL, *m = NULL;
 	sql_frame **frames;
@@ -464,6 +464,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 		}
 		oldvtop = c->curprg->def->vtop;
 		oldstop = c->curprg->def->stop;
+		oldvid = c->curprg->def->vid;
 		r = sql_symbol2relation(sql, m->sym);
 #ifdef _SQL_COMPILE
 		mnstr_printf(c->fdout, "#SQLstatement:\n");
@@ -481,7 +482,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				sqlcleanup(sql, err);
 				/* restore the state */
 				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, c->glb, oldvtop);
+				freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
 				c->curprg->def->errors = 0;
 				goto endofcompile;
 			}
@@ -559,7 +560,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			sqlcleanup(sql, err);
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, c->glb, oldvtop);
+			freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
 			c->curprg->def->errors = 0;
 			goto endofcompile;
 		}
@@ -574,7 +575,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 				// restore the state
 				char *error = NULL;
 				MSresetInstructions(c->curprg->def, oldstop);
-				freeVariables(c, c->curprg->def, c->glb, oldvtop);
+				freeVariables(c, c->curprg->def, c->glb, oldvtop, oldvid);
 				c->curprg->def->errors = 0;
 				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					error = createException(PARSE, "SQLparser", "%s", m->errstr);
@@ -600,7 +601,7 @@ SQLstatementIntern(Client c, const char *expr, const char *nme, bit execute, bit
 			msg = SQLrun(c,m);
 			be->depth--;
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 			sqlcleanup(sql, 0);
 			if (!execute)
 				goto endofcompile;
@@ -727,7 +728,7 @@ cleanup_engine:
 	be->q = NULL;
 	sqlcleanup(be, (!msg) ? 0 : -1);
 	MSresetInstructions(c->curprg->def, 1);
-	freeVariables(c, c->curprg->def, NULL, be->vtop);
+	freeVariables(c, c->curprg->def, NULL, be->vtop, be->vid);
 	be->language = oldlang;
 	/*
 	 * Any error encountered during execution should block further processing
@@ -768,8 +769,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	refs = sa_list(m->sa);
 	rel = rel_read(m, *expr, &pos, refs);
 	if (rel) {
-		int oldvtop = c->curprg->def->vtop;
-		int oldstop = c->curprg->def->stop;
+		int oldvtop = c->curprg->def->vtop, oldstop = c->curprg->def->stop, oldvid = c->curprg->def->vid;
 
 		if (*opt && rel)
 			rel = sql_processrelation(m, rel, 1, 1);
@@ -792,7 +792,7 @@ RAstatement(Client c, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			msg = SQLrun(c,m);
 		if (!msg) {
 			resetMalBlk(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 		}
 		if (!msg)
 			msg = mvc_commit(m, 0, NULL, false);

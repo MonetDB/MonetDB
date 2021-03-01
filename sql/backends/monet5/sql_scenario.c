@@ -922,7 +922,7 @@ SQLparser(Client c)
 	str msg = NULL;
 	backend *be;
 	mvc *m;
-	int oldvtop, oldstop;
+	int oldvtop, oldstop, oldvid;
 	int pstatus = 0;
 	int err = 0, opt, preparedid = -1;
 
@@ -936,9 +936,12 @@ SQLparser(Client c)
 		c->mode = FINISHCLIENT;
 		throw(SQL, "SQLparser", SQLSTATE(42000) "State descriptor missing, aborting");
 	}
+	oldvid = c->curprg->def->vid;
 	oldvtop = c->curprg->def->vtop;
 	oldstop = c->curprg->def->stop;
 	be->vtop = oldvtop;
+	be->vid = oldvid;
+
 	m = be->mvc;
 	m->type = Q_PARSE;
 	if (be->language != 'X') {
@@ -1216,7 +1219,7 @@ SQLparser(Client c)
 #endif
 					c->curprg->def->errors = 0;
 					MSresetInstructions(c->curprg->def, oldstop);
-					freeVariables(c, c->curprg->def, NULL, oldvtop);
+					freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 					if (other != msg)
 						freeException(other);
 					goto finalize;
@@ -1230,7 +1233,7 @@ SQLparser(Client c)
 			c->curprg->def->errors = 0;
 			/* restore the state */
 			MSresetInstructions(c->curprg->def, oldstop);
-			freeVariables(c, c->curprg->def, NULL, oldvtop);
+			freeVariables(c, c->curprg->def, NULL, oldvtop, oldvid);
 			if (msg == NULL && *m->errstr){
 				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
 					msg = createException(PARSE, "SQLparser", "%s", m->errstr);

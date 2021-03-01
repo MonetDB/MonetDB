@@ -4280,11 +4280,9 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 void
-freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
+freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int oldvtop, int oldvid)
 {
-	int i;
-
-	for (i = start; i < mb->vtop;) {
+	for (int i = oldvtop; i < mb->vtop;) {
 		if (glb) {
 			if (isVarCleanup(mb, i))
 				garbageElement(c, &glb->stk[i]);
@@ -4296,7 +4294,8 @@ freeVariables(Client c, MalBlkPtr mb, MalStkPtr glb, int start)
 		clearVariable(mb, i);
 		i++;
 	}
-	mb->vtop = start;
+	mb->vtop = oldvtop;
+	mb->vid = oldvid;
 }
 
 /* if at least (2*SIZEOF_BUN), also store length (heaps are then
