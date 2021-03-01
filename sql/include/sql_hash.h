@@ -37,6 +37,6 @@ extern sql_hash_e *hash_add(sql_hash *ht, int key, void *value);
 extern void hash_del(sql_hash *ht, int key, void *value);
 extern void hash_destroy(sql_hash *h);
 
-extern unsigned int hash_key(const char *n);
+extern unsigned int hash_key(const char *restrict k);
 
 #endif /* SQL_HASH_H */
