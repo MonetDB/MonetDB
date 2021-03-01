@@ -844,7 +844,7 @@ HEAPsave_intern(Heap *h, const char *nme, const char *ext, const char *suffix, b
 	}
 	TRC_DEBUG(HEAP,
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
-		  nme, ext, (int) h->newstorage, h->free, h->size,
+		  nme?nme:"", ext, (int) h->newstorage, h->free, h->size,
 		  dosync?"true":"false");
 	return GDKsave(h->farmid, nme, ext, h->base, h->free, store, dosync);
 }
