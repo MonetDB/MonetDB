@@ -2324,27 +2324,6 @@ exps_exp_visitor_bottomup(visitor *v, sql_rel *rel, list *exps, int depth, exp_r
 }
 
 static sql_exp *
-exp_check_has_analytics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
-{
-	(void)rel; (void)depth;
-	if (e && e->type == e_func) {
-		sql_subfunc *f = e->f;
-
-		if (f && f->func && f->func->type == F_ANALYTIC)
-			v->changes++;
-	}
-	return e;
-}
-
-int
-exps_have_analytics(mvc *sql, list *exps)
-{
-	visitor v = { .sql = sql };
-	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_check_has_analytics, true);
-	return v.changes;
-}
-
-static sql_exp *
 _rel_rebind_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	(void)depth;

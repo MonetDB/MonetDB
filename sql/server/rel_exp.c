@@ -2319,7 +2319,7 @@ exp_has_sideeffect( sql_exp *e )
 	return 0;
 }
 
-static int
+int
 exps_have_unsafe(list *exps, int allow_identity)
 {
 	int unsafe = 0;
