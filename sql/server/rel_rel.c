@@ -2323,26 +2323,50 @@ exps_exp_visitor_bottomup(visitor *v, sql_rel *rel, list *exps, int depth, exp_r
 	return exps_exp_visitor(v, rel, exps, depth, exp_rewriter, false, relations_topdown);
 }
 
-static sql_exp *
-_rel_rebind_exp(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+static bool
+exps_rebind_exp(mvc *sql, sql_rel *rel, list *exps)
 {
-	(void)depth;
-	/* visitor will handle recursion, ie only need to check columns here */
-	if (e->type == e_column) {
-		sql_exp *ne = rel_find_exp(rel, e);
-		if (!ne)
-			v->changes++;
+	bool ok = true;
+
+	if (mvc_highwater(sql)) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return false;
 	}
-	return e;
+
+	if (list_empty(exps))
+		return true;
+	for (node *n = exps->h; n && ok; n = n->next)
+		ok &= rel_rebind_exp(sql, rel, n->data);
+	return ok;
 }
 
 bool
 rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 {
-	visitor v = { .sql = sql };
-	exp_visitor(&v, rel, e, 0, &_rel_rebind_exp, true, true);
-	/* problems are passed via changes */
-	return (v.changes==0);
+	if (mvc_highwater(sql)) {
+		(void) sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return false;
+	}
+
+	switch (e->type) {
+	case e_convert:
+		return rel_rebind_exp(sql, rel, e->l);
+	case e_aggr:
+	case e_func:
+		return exps_rebind_exp(sql, rel, e->l);
+	case e_cmp:
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return rel_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return exps_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
+		return rel_rebind_exp(sql, rel, e->l) && rel_rebind_exp(sql, rel, e->r) && (!e->f || rel_rebind_exp(sql, rel, e->f));
+	case e_column:
+		return rel_find_exp(rel, e) != NULL;
+	case e_atom:
+	case e_psm:
+		return true;
+	}
+	return true;
 }
 
 static sql_exp *
