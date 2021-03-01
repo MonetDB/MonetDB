@@ -16,18 +16,19 @@
 % .explain # table_name
 % mal # name
 % clob # type
-% 274 # length
+% 280 # length
 function user.main():void;
     querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
-    X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x0000025CF9E874C0:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
-    (X_87:int, X_86:ptr, X_91:ptr, X_94:ptr) := sql.append_prep(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
-    X_89:ptr := sql.append_exec(X_86:ptr, X_28:bat[:int]);
-    X_92:ptr := sql.append_exec(X_91:ptr, X_29:bat[:int]);
-    X_95:ptr := sql.append_exec(X_94:ptr, X_30:bat[:int]);
-    X_40:int := sql.append_finish(X_87:int, X_89:ptr, X_92:ptr, X_95:ptr);
-    X_42:lng := aggr.count(X_30:bat[:int]);
-    sql.affectedRows(X_40:int, X_42:lng);
+    X_183:int := sql.mvc();
+    (X_206:bat[:int], X_207:bat[:int], X_208:bat[:int]) := sql.copy_from(0x0000000005E3D310:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    X_209:lng := aggr.count(X_206:bat[:int]);
+    X_210:lng := sql.claim(X_183:int, "sys":str, "ttt":str, X_209:lng);
+    (X_237:int, X_236:ptr, X_241:ptr, X_244:ptr) := sql.append_prep(X_183:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
+    X_239:ptr := sql.append_exec(X_236:ptr, X_210:lng, X_206:bat[:int]);
+    X_242:ptr := sql.append_exec(X_241:ptr, X_210:lng, X_207:bat[:int]);
+    X_245:ptr := sql.append_exec(X_244:ptr, X_210:lng, X_208:bat[:int]);
+    X_220:int := sql.append_finish(X_237:int, X_239:ptr, X_242:ptr, X_245:ptr);
+    sql.affectedRows(X_220:int, X_209:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=0 usec 
@@ -59,18 +60,19 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 274 # length
+% 280 # length
 function user.main():void;
     querylog.define("explain copy into ttt from E\\'a:\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
-    X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x0000025CF9E874C0:ptr, "|":str, "\n":str, nil:str, "null":str, "a:\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
-    (X_87:int, X_86:ptr, X_91:ptr, X_94:ptr) := sql.append_prep(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
-    X_89:ptr := sql.append_exec(X_86:ptr, X_28:bat[:int]);
-    X_92:ptr := sql.append_exec(X_91:ptr, X_29:bat[:int]);
-    X_95:ptr := sql.append_exec(X_94:ptr, X_30:bat[:int]);
-    X_40:int := sql.append_finish(X_87:int, X_89:ptr, X_92:ptr, X_95:ptr);
-    X_42:lng := aggr.count(X_30:bat[:int]);
-    sql.affectedRows(X_40:int, X_42:lng);
+    X_266:int := sql.mvc();
+    (X_289:bat[:int], X_290:bat[:int], X_291:bat[:int]) := sql.copy_from(0x0000000005E3D310:ptr, "|":str, "\n":str, nil:str, "null":str, "a:\\tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    X_292:lng := aggr.count(X_289:bat[:int]);
+    X_293:lng := sql.claim(X_266:int, "sys":str, "ttt":str, X_292:lng);
+    (X_320:int, X_319:ptr, X_324:ptr, X_327:ptr) := sql.append_prep(X_266:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
+    X_322:ptr := sql.append_exec(X_319:ptr, X_293:lng, X_289:bat[:int]);
+    X_325:ptr := sql.append_exec(X_324:ptr, X_293:lng, X_290:bat[:int]);
+    X_328:ptr := sql.append_exec(X_327:ptr, X_293:lng, X_291:bat[:int]);
+    X_303:int := sql.append_finish(X_320:int, X_322:ptr, X_325:ptr, X_328:ptr);
+    sql.affectedRows(X_303:int, X_292:lng);
 end user.main;
 #inline               actions= 0 time=1 usec 
 #remap                actions= 0 time=2 usec 
@@ -119,18 +121,19 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 274 # length
+% 280 # length
 function user.main():void;
     querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "user_0":str, 22:int);
-    X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x0000023F54B19930:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
-    (X_88:int, X_87:ptr, X_92:ptr, X_95:ptr) := sql.append_prep(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
-    X_90:ptr := sql.append_exec(X_87:ptr, X_28:bat[:int]);
-    X_93:ptr := sql.append_exec(X_92:ptr, X_29:bat[:int]);
-    X_96:ptr := sql.append_exec(X_95:ptr, X_30:bat[:int]);
-    X_40:int := sql.append_finish(X_88:int, X_90:ptr, X_93:ptr, X_96:ptr);
-    X_42:lng := aggr.count(X_30:bat[:int]);
-    sql.affectedRows(X_40:int, X_42:lng);
+    X_746:int := sql.mvc();
+    (X_769:bat[:int], X_770:bat[:int], X_771:bat[:int]) := sql.copy_from(0x0000000005E3D310:ptr, "|":str, "\n":str, nil:str, "null":str, "\\tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    X_772:lng := aggr.count(X_769:bat[:int]);
+    X_773:lng := sql.claim(X_746:int, "sys":str, "ttt":str, X_772:lng);
+    (X_800:int, X_799:ptr, X_804:ptr, X_807:ptr) := sql.append_prep(X_746:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
+    X_802:ptr := sql.append_exec(X_799:ptr, X_773:lng, X_769:bat[:int]);
+    X_805:ptr := sql.append_exec(X_804:ptr, X_773:lng, X_770:bat[:int]);
+    X_808:ptr := sql.append_exec(X_807:ptr, X_773:lng, X_771:bat[:int]);
+    X_783:int := sql.append_finish(X_800:int, X_802:ptr, X_805:ptr, X_808:ptr);
+    sql.affectedRows(X_783:int, X_772:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=0 usec 
@@ -163,18 +166,19 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 274 # length
+% 280 # length
 function user.main():void;
     querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';":str, "user_0":str, 22:int);
-    X_4:int := sql.mvc();
-    (X_28:bat[:int], X_29:bat[:int], X_30:bat[:int]) := sql.copy_from(0x0000023F54B19930:ptr, "|":str, "\n":str, nil:str, "null":str, "Z:/tmp/xyz":str, -1:lng, 0:lng, 0:int, 0:int, nil:str, 0:int, 1:int);
-    (X_88:int, X_87:ptr, X_92:ptr, X_95:ptr) := sql.append_prep(X_4:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
-    X_90:ptr := sql.append_exec(X_87:ptr, X_28:bat[:int]);
-    X_93:ptr := sql.append_exec(X_92:ptr, X_29:bat[:int]);
-    X_96:ptr := sql.append_exec(X_95:ptr, X_30:bat[:int]);
-    X_40:int := sql.append_finish(X_88:int, X_90:ptr, X_93:ptr, X_96:ptr);
-    X_42:lng := aggr.count(X_30:bat[:int]);
-    sql.affectedRows(X_40:int, X_42:lng);
+    X_830:int := sql.mvc();
+    (X_853:bat[:int], X_854:bat[:int], X_855:bat[:int]) := sql.copy_from(0x0000000005E3D310:ptr, "|":str, "\n":str, nil:str, "null":str, "Z:/tmp/xyz":str, -1:lng, 0:lng, 0:int, nil:str, 0:int, 1:int);
+    X_856:lng := aggr.count(X_853:bat[:int]);
+    X_857:lng := sql.claim(X_830:int, "sys":str, "ttt":str, X_856:lng);
+    (X_884:int, X_883:ptr, X_888:ptr, X_891:ptr) := sql.append_prep(X_830:int, "sys":str, "ttt":str, "averylongcolumnnametomakeitlargeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee":str, "b":str, "c":str);
+    X_886:ptr := sql.append_exec(X_883:ptr, X_857:lng, X_853:bat[:int]);
+    X_889:ptr := sql.append_exec(X_888:ptr, X_857:lng, X_854:bat[:int]);
+    X_892:ptr := sql.append_exec(X_891:ptr, X_857:lng, X_855:bat[:int]);
+    X_867:int := sql.append_finish(X_884:int, X_886:ptr, X_889:ptr, X_892:ptr);
+    sql.affectedRows(X_867:int, X_856:lng);
 end user.main;
 #inline               actions= 0 time=0 usec 
 #remap                actions= 0 time=2 usec 
