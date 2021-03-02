@@ -22,6 +22,7 @@
  *
  * The life time of such BATs is forcefully terminated after the block exit.
  */
+
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -39,20 +40,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		return 0;
 
 	limit = mb->stop;
+	renameVariables(mb);
 
-	/* variables get their name from the position */
-	/* rename all temporaries for ease of variable table interpretation */
-	/* this code should not be necessary is variables always keep their position */
-	for( i = 0; i < mb->vtop; i++) {
-		//strcpy(buf, getVarName(mb,i));
-		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
-			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-		else
-		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
-			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
-		//if(strcmp(buf, getVarName(mb,i)) )
-			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
-	}
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
