@@ -16,7 +16,7 @@
 % .explain # table_name
 % mal # name
 % clob # type
-% 280 # length
+% 274 # length
 function user.main():void;
     querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
@@ -60,7 +60,7 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 280 # length
+% 274 # length
 function user.main():void;
     querylog.define("explain copy into ttt from E\\'a:\\\\\\\\tmp/xyz\\';":str, "sequential_pipe":str, 22:int);
     X_4:int := sql.mvc();
@@ -121,7 +121,7 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 280 # length
+% 274 # length
 function user.main():void;
     querylog.define("explain copy into ttt from E\\'\\\\\\\\tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
@@ -166,7 +166,7 @@ end user.main;
 % .explain # table_name
 % mal # name
 % clob # type
-% 280 # length
+% 274 # length
 function user.main():void;
     querylog.define("explain copy into ttt from \\'Z:/tmp/xyz\\';":str, "user_0":str, 22:int);
     X_4:int := sql.mvc();
