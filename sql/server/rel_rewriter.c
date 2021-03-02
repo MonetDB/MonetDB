@@ -198,6 +198,7 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 				}
 				rel->l = rel_project(v->sql->sa, NULL, nexps);
 				rel->card = CARD_ATOM;
+				v->changes++;
 			}
 		}
 	}
