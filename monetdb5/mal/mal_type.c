@@ -42,7 +42,7 @@ getTypeName(malType tpe)
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)
-			snprintf(buf, sizeof(buf), "bat[:any%c%d]",TMPMARKER,  k);
+			snprintf(buf, sizeof(buf), "bat[:any_%d]",  k);
 		else if (getBatType(tpe) == TYPE_any)
 			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
@@ -50,8 +50,7 @@ getTypeName(malType tpe)
 		return GDKstrdup(buf);
 	}
 	if (isAnyExpression(tpe)) {
-		snprintf(buf, sizeof(buf), "any%c%d",
-				 TMPMARKER, getTypeIndex(tpe));
+		snprintf(buf, sizeof(buf), "any_%d", getTypeIndex(tpe));
 		return GDKstrdup(buf);
 	}
 	return GDKstrdup(ATOMname(tpe));

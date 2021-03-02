@@ -56,11 +56,9 @@ typedef struct MDBSTATE{
 static void
 printStackHdr(stream *f, MalBlkPtr mb, ValPtr v, int index)
 {
-	VarPtr n = getVar(mb, index);
-
 	if (v == 0 && isVarConstant(mb, index))
 		v = &getVarConstant(mb, index);
-	mnstr_printf(f, "#[%2d] %5s", index, n->id);
+	mnstr_printf(f, "#[%2d] %5s", index, getVarName(mb,index));
 	mnstr_printf(f, " (%d,%d,%d) = ", getBeginScope(mb,index), getLastUpdate(mb,index),getEndScope(mb, index));
 	if (v)
 		ATOMprint(v->vtype, VALptr(v), f);
@@ -592,7 +590,6 @@ mdbSetBreakRequest(Client cntxt, MalBlkPtr mb, str request, char cmd)
 	}
 	/* the final step is to break on a variable */
 	i = findVariable(mb, request);
-	/* ignore a possible dummy TMPMARKER character */
 	if ( i < 0)
 		i = findVariable(mb, request+1);
 	if (i < 0)
