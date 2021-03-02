@@ -777,6 +777,7 @@ int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
 	int n;
+	int kind = REFMARKER;
 
 	if( len >= IDLENGTH){
 		mb->errors = createMalException(mb,0,TYPE, "newVariable: id too long");
@@ -787,7 +788,7 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		return -1;
 	n = mb->vtop;
 	if( name == 0 || len == 0){
-		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c_%d", kind, mb->vid++);
 	} else {
 		/* avoid calling strcpy_len since we're not interested in the
 		 * source length, and that may be very large */
@@ -795,9 +796,11 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		for (size_t i = 0; i < len; i++)
 			nme[i] = name[i];
 		nme[len] = 0;
+		kind = nme[0];
 	}
 
 	mb->vtop++;
+	setVarKind(mb, n, kind);
 	setVariableType(mb, n, type);
 	return n;
 }
@@ -824,6 +827,7 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	if (isVarCleanup(mb, x))
 		setVarCleanup(tm, res);
 	getVarSTC(tm,x) = getVarSTC(mb,x);
+	setVarKind(tm,x, getVarKind(mb,x));
 	return res;
 }
 
@@ -928,7 +932,7 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	mb->vid = 0;
 	for( i =0; i< cnt; i++)
 	if( isTmpVar(mb,i))
-        (void) snprintf(mb->var[i].id, IDLENGTH,"%c%c%d", REFMARKER, TMPMARKER,mb->vid++);
+		(void) snprintf(getVarName(mb,i), IDLENGTH,"%c_%d", getVarKind(mb,i), mb->vid++);
 
 	GDKfree(alias);
 	mb->vtop = cnt;
