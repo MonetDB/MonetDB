@@ -1136,10 +1136,8 @@ SQLparser(Client c)
 			setVarType(c->curprg->def, 0, 0);
 			if (backend_dumpstmt(be, c->curprg->def, r, 1, 0, c->query) < 0)
 				err = 1;
-			/*
 			else
-				opt = (r->card > CARD_ATOM);
-				*/
+				opt = 1;
 		} else {
 			char *q_copy = sa_strdup(m->sa, c->query);
 
