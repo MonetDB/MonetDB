@@ -743,6 +743,8 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "algebra",	"copy",	"command algebra.copy(X_1:bat[:any_1]):bat[:any_1] ",	"ALGcopy;",	""	]
 [ "algebra",	"crossproduct",	"command algebra.crossproduct(X_1:bat[:any_1], X_2:bat[:any_2], X_3:bit):bat[:oid] ",	"ALGcrossproduct1;",	""	]
 [ "algebra",	"crossproduct",	"command algebra.crossproduct(X_2:bat[:any_1], X_3:bat[:any_2], X_4:bit) (X_0:bat[:oid], X_1:bat[:oid]) ",	"ALGcrossproduct2;",	""	]
+[ "algebra",	"crossproduct",	"command algebra.crossproduct(X_2:bat[:any_1], X_3:bat[:any_2], X_4:bat[:oid], X_5:bat[:oid], X_6:bit) (X_0:bat[:oid], X_1:bat[:oid]) ",	"ALGcrossproduct3;",	""	]
+[ "algebra",	"crossproduct",	"command algebra.crossproduct(X_1:bat[:any_1], X_2:bat[:any_2], X_3:bat[:oid], X_4:bat[:oid], X_5:bit):bat[:oid] ",	"ALGcrossproduct4;",	""	]
 [ "algebra",	"difference",	"command algebra.difference(X_1:bat[:any_1], X_2:bat[:any_1], X_3:bat[:oid], X_4:bat[:oid], X_5:bit, X_6:bit, X_7:lng):bat[:oid] ",	"ALGdifference;",	""	]
 [ "algebra",	"exist",	"command algebra.exist(X_1:bat[:any_1], X_2:any_1):bit ",	"ALGexist;",	""	]
 [ "algebra",	"fetch",	"command algebra.fetch(X_1:bat[:any_1], X_2:oid):any_1 ",	"ALGfetchoid;",	""	]
