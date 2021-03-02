@@ -2076,8 +2076,15 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 		q = pushArgument(mb, q, op1->nr);
 		q = pushArgument(mb, q, op2->nr);
+		if (!lcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, lcand->nr);
+		if (!rcand)
+			q = pushNil(mb, q, TYPE_bat);
+		else
+			q = pushArgument(mb, q, rcand->nr);
 		q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
-		assert(!lcand && !rcand);
 		if (q == NULL)
 			return NULL;
 		break;
