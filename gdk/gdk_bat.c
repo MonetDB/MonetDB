@@ -355,7 +355,7 @@ BATattach(int tt, const char *heapfile, role_t role)
 		}
 	} else {
 		struct stat st;
-		unsigned int atomsize;
+		int atomsize;
 		BUN cap;
 		lng n;
 
