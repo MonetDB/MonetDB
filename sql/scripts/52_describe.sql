@@ -145,16 +145,16 @@ BEGIN
     END;
 END;
 
-CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || s || ''' '; END;
-CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || s || '"'; END; --TODO: Figure out why this breaks with the space
-CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN DQ(s) || '.' || DQ(t); END;
-CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || FQN(s, t) || ' '; END;
+CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || sys.replace(s,'''','''''') || ''' '; END;
+CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"'; END; --TODO: Figure out why this breaks with the space
+CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN sys.DQ(s) || '.' || sys.DQ(t); END;
+CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t) || ' '; END;
 
 --We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
 CREATE FUNCTION sys.replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
 CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
 RETURN
-	SELECT replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || FQN(sch, nme) || ' ', 'imsx');
+	SELECT sys.replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || sys.FQN(sch, nme) || ' ', 'imsx');
 END;
 
 CREATE VIEW sys.describe_constraints AS
@@ -203,7 +203,7 @@ CREATE VIEW sys.describe_column_defaults AS
 		t.name tbl,
 		c.name col,
 		c."default" def
-	FROM schemas s, tables t, columns c
+	FROM sys.schemas s, sys.tables t, sys.columns c
 	WHERE
 		s.id = t.schema_id AND
 		t.id = c.table_id AND
@@ -265,7 +265,7 @@ BEGIN
 				END ||
 				CASE
 					WHEN bit_and(tp.type, 4) = 4 --column expression
-					THEN 'ON ' || '(' || (SELECT DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
+					THEN 'ON ' || '(' || (SELECT sys.DQ(c.name) || ')' FROM sys.columns c WHERE c.id = tp.column_id)
 					ELSE 'USING ' || '(' || tp.expression || ')' --generic expression
 				END
 			ELSE									--read only partition merge table.
@@ -276,7 +276,7 @@ END;
 
 --TODO: gives mergejoin errors when inlined
 CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
-	RETURN SELECT ' ON ' || SQ(uri) || ' WITH USER ' || SQ(username) || ' ENCRYPTED PASSWORD ' || SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
+	RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
 END;
 
 CREATE VIEW sys.describe_tables AS
@@ -288,7 +288,7 @@ CREATE VIEW sys.describe_tables AS
 		(SELECT
 			' (' ||
 			GROUP_CONCAT(
-				DQ(c.name) || ' ' ||
+				sys.DQ(c.name) || ' ' ||
 				sys.describe_type(c.type, c.type_digits, c.type_scale) ||
 				ifthenelse(c."null" = 'false', ' NOT NULL', '')
 			, ', ') || ')'
@@ -304,7 +304,7 @@ CREATE VIEW sys.describe_tables AS
 			ELSE
 				''
 		END opt
-	FROM sys.schemas s, table_types ts, sys.tables t
+	FROM sys.schemas s, sys.table_types ts, sys.tables t
 	WHERE ts.table_type_name IN ('TABLE', 'VIEW', 'MERGE TABLE', 'REMOTE TABLE', 'REPLICA TABLE')
 		AND t.system = FALSE
 		AND s.id = t.schema_id
@@ -327,32 +327,32 @@ CREATE VIEW sys.describe_comments AS
 			o.nme fqn,
 			c.remark rem
 		FROM (
-			SELECT id, 'SCHEMA', DQ(name) FROM schemas
+			SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas
 
 			UNION ALL
 
-			SELECT t.id, CASE WHEN ts.table_type_name = 'VIEW' THEN 'VIEW' ELSE 'TABLE' END, FQN(s.name, t.name)
-			FROM schemas s JOIN tables t ON s.id = t.schema_id JOIN table_types ts ON t.type = ts.table_type_id
+			SELECT t.id, CASE WHEN ts.table_type_name = 'VIEW' THEN 'VIEW' ELSE 'TABLE' END, sys.FQN(s.name, t.name)
+			FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
 			WHERE NOT s.name <> 'tmp'
 
 			UNION ALL
 
-			SELECT c.id, 'COLUMN', FQN(s.name, t.name) || '.' || DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
+			SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
 
 			UNION ALL
 
-			SELECT idx.id, 'INDEX', FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
+			SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
 
 			UNION ALL
 
-			SELECT seq.id, 'SEQUENCE', FQN(s.name, seq.name) FROM sys.sequences seq, schemas s WHERE seq.schema_id = s.id
+			SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
 
 			UNION ALL
 
-			SELECT f.id, ft.function_type_keyword, FQN(s.name, f.name) FROM functions f, function_types ft, schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
+			SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
 
 			) AS o(id, tpe, nme)
-			JOIN comments c ON c.id = o.id;
+			JOIN sys.comments c ON c.id = o.id;
 
 CREATE VIEW sys.fully_qualified_functions AS
 	WITH fqn(id, tpe, sig, num) AS
@@ -366,7 +366,7 @@ CREATE VIEW sys.fully_qualified_functions AS
 				s.name || '.' || f.name || '(' || group_concat(describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
 			END,
 			a.number
-		FROM schemas s, sys.function_types ft, functions f LEFT JOIN args a ON f.id = a.func_id
+		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
 		WHERE s.id= f.schema_id AND f.type = ft.function_type_id
 	)
 	SELECT
@@ -398,7 +398,7 @@ CREATE VIEW sys.describe_privileges AS
 		g.name g_nme,
 		p.grantable grantable
 	FROM
-		privileges p LEFT JOIN
+		sys.privileges p LEFT JOIN
 		(
 		SELECT t.id, s.name || '.' || t.name , 'TABLE'
 			from sys.schemas s, sys.tables t where s.id = t.schema_id
@@ -407,7 +407,7 @@ CREATE VIEW sys.describe_privileges AS
 			FROM sys.schemas s, sys.tables t, sys.columns c where s.id = t.schema_id AND t.id = c.table_id
 		UNION ALL
 			SELECT f.id, f.nme, f.tpe
-			FROM fully_qualified_functions f
+			FROM sys.fully_qualified_functions f
 		) o(id, nme, tpe) ON o.id = p.obj_id,
 		sys.privilege_codes pc,
 		auths a, auths g
@@ -459,10 +459,10 @@ CREATE VIEW sys.describe_partition_tables AS
 	FROM 
     (WITH
 		tp("type", table_id) AS
-		(SELECT CASE WHEN (table_partitions."type" & 2) = 2 THEN 'VALUES' ELSE 'RANGE' END, table_partitions.table_id FROM table_partitions),
+		(SELECT CASE WHEN (table_partitions."type" & 2) = 2 THEN 'VALUES' ELSE 'RANGE' END, table_partitions.table_id FROM sys.table_partitions),
 		subq(m_tid, p_mid, "type", m_sch, m_tbl, p_sch, p_tbl) AS
 		(SELECT m_t.id, p_m.id, m_t."type", m_s.name, m_t.name, p_s.name, p_m.name
-		FROM schemas m_s, sys._tables m_t, dependencies d, schemas p_s, sys._tables p_m
+		FROM sys.schemas m_s, sys._tables m_t, sys.dependencies d, sys.schemas p_s, sys._tables p_m
 		WHERE m_t."type" IN (3, 6)
 			AND m_t.schema_id = m_s.id
 			AND m_s.name <> 'tmp'
@@ -478,20 +478,20 @@ CREATE VIEW sys.describe_partition_tables AS
 		subq.p_tbl,
 		tp."type" AS p_raw_type,
 		CASE WHEN tp."type" = 'VALUES'
-			THEN (SELECT GROUP_CONCAT(vp.value, ',')FROM value_partitions vp WHERE vp.table_id = subq.p_mid)
+			THEN (SELECT GROUP_CONCAT(vp.value, ',')FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid)
 			ELSE NULL
 		END AS pvalues,
 		CASE WHEN tp."type" = 'RANGE'
-			THEN (SELECT minimum FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
+			THEN (SELECT minimum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
 			ELSE NULL
 		END AS minimum,
 		CASE WHEN tp."type" = 'RANGE'
-			THEN (SELECT maximum FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
+			THEN (SELECT maximum FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
 			ELSE NULL
 		END AS maximum,
 		CASE WHEN tp."type" = 'VALUES'
-			THEN EXISTS(SELECT vp.value FROM value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)
-			ELSE (SELECT rp.with_nulls FROM range_partitions rp WHERE rp.table_id = subq.p_mid)
+			THEN EXISTS(SELECT vp.value FROM sys.value_partitions vp WHERE vp.table_id = subq.p_mid AND vp.value IS NULL)
+			ELSE (SELECT rp.with_nulls FROM sys.range_partitions rp WHERE rp.table_id = subq.p_mid)
 		END AS with_nulls
 	FROM 
 		subq LEFT OUTER JOIN tp
@@ -519,7 +519,7 @@ CREATE VIEW sys.describe_functions AS
 		s.name sch,
 		f.name fun,
 		f.func def
-	FROM functions f JOIN schemas s ON f.schema_id = s.id WHERE s.name <> 'tmp' AND NOT f.system;
+	FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id WHERE s.name <> 'tmp' AND NOT f.system;
 
 CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)
 	RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
