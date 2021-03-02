@@ -2158,7 +2158,6 @@ exp_rel_update_exps(mvc *sql, list *exps)
 		else if (!exp_is_atom(e))
 			exp_rel_update_set_freevar(e);
 	}
-	list_hash_clear(exps);
 	return exps;
 }
 

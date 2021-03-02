@@ -1539,8 +1539,10 @@ rel_unnest_dependent(mvc *sql, sql_rel *rel)
 static sql_rel *
 _rel_unnest(visitor *v, sql_rel *rel)
 {
-	if (is_dependent(rel))
+	if (is_dependent(rel)) {
 		rel = rel_unnest_dependent(v->sql, rel);
+		v->changes++;
+	}
 	return rel;
 }
 
@@ -1617,6 +1619,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			/* has to apply recursively */
 			if (!(e->l = rel_exp_visitor_bottomup(v, nrel, &rewrite_exp_rel, true)))
 				return NULL;
+			v->changes++;
 		}
 	} else if (exp_has_rel(e) && !is_ddl(rel->op)) {
 		operator_type op = depth?op_left:op_join;
@@ -1636,6 +1639,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		}
 		if (is_left(op))
 			reset_has_nil(e);
+		v->changes++;
 	}
 	return e;
 }
@@ -1690,10 +1694,10 @@ not_anyequal_helper(visitor *v, sql_rel *rel)
 		nrel->exps = rel->exps;
 		rel->exps = NULL;
 		rel = nrel;
+		v->changes++;
 	}
 	return rel;
 }
-
 
 /*
  * For decimals and intervals we need to adjust the scale for some operations.
@@ -1795,8 +1799,11 @@ exp_physical_types(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			}
 		}
 	}
-	if (ne != e && exp_name(e))
-		exp_prop_alias(v->sql->sa, ne, e);
+	if (ne != e) {
+		if (exp_name(e))
+			exp_prop_alias(v->sql->sa, ne, e);
+		v->changes++;
+	}
 	return ne;
 }
 
@@ -1892,6 +1899,8 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 static list*
 aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 {
+	bool clear_hash = false;
+
 	if (list_empty(aggrs))
 		return aggrs;
 	for (node *n=aggrs->h; n; n = n->next) {
@@ -1917,6 +1926,7 @@ aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 			}
 			e1 = exp_ref(sql, e1);
 			n->data = e1; /* replace by reference */
+			clear_hash = true;
 			continue;
 		}
 		list *args = a->l;
@@ -1944,13 +1954,17 @@ aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 				}
 				e1 = exp_ref(sql, e1);
 				/* replace by reference */
-				if (convert)
+				if (convert) {
 					eo->l = e1;
-				else
+				} else {
 					an->data = e1;
+					clear_hash = true;
+				}
 			}
 		}
 	}
+	if (clear_hash)
+		list_hash_clear(aggrs);
 	return aggrs;
 }
 
@@ -1976,12 +1990,8 @@ aggrs_complex(list *exps)
 	for(node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		if (e->type != e_column) {
-			if (e->type == e_aggr) {
-				if (exps_complex(e->l))
-					return 1;
-			}
-		}
+		if (e->type == e_aggr && exps_complex(e->l))
+				return 1;
 	}
 	return 0;
 }
@@ -2320,9 +2330,11 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			e = exp_label(v->sql->sa, e, ++v->sql->label);
 		append(rell->exps, e);
 		e = exp_ref(v->sql, e);
+		v->changes++;
 	} else {
 		/* remove obe argument, so this function won't be called again on this expression */
 		list_remove_node(r, NULL, r->t);
+		v->changes++;
 	}
 	return e;
 }
@@ -2438,7 +2450,7 @@ exp_in_compare(mvc *sql, sql_exp **l, list *vals, int anyequal)
 
 /* exp visitor */
 static inline sql_exp *
-rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
+rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_subfunc *sf;
 	if (e->type != e_func)
@@ -2449,6 +2461,7 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 		return e;
 	if (is_anyequal_func(sf) && !list_empty(e->l)) {
 		list *l = e->l;
+		mvc *sql = v->sql;
 
 		if (list_length(l) == 2) { /* input is a set */
 
@@ -2473,11 +2486,13 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				list *vals = re->f;
 
 				if (is_select(rel->op)) {
+					v->changes++;
 					return exp_in_compare(sql, &le, vals, is_anyequal(sf));
 				} else {
 					le = exp_in_project(sql, &le, vals, is_anyequal(sf));
 					if (le && exp_name(e))
 						exp_prop_alias(sql->sa, le, e);
+					v->changes++;
 					return le;
 				}
 			} else if (!lsq && is_tuple && is_values(re) && !exps_have_rel_exp(re->f)) {
@@ -2583,8 +2598,11 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(sql->sa, le, e);
 				set_processed(lsq);
-				if (depth == 1 && is_ddl(rel->op)) /* anyequal is at a ddl statment, it must be inside a relation */
+				if (depth == 1 && is_ddl(rel->op)) { /* anyequal is at a ddl statment, it must be inside a relation */
+					v->changes++;
 					return exp_rel(sql, lsq);
+				}
+				v->changes++;
 				return le;
 			} else {
 				if (lsq) {
@@ -2616,10 +2634,12 @@ rewrite_anyequal(mvc *sql, sql_rel *rel, sql_exp *e, int depth)
 						re = exp_ref(sql, re);
 						append(r, re);
 					}
+					v->changes++;
 					return exp_in_func(sql, exp_values(sql->sa, l), exp_values(sql->sa, r), is_anyequal(sf), 1);
 				} else {
 					if (exp_has_freevar(sql, le))
 						rel_bind_var(sql, rel, le);
+					v->changes++;
 					return exp_in_func(sql, le, re, is_anyequal(sf), 0);
 				}
 			}
@@ -2674,11 +2694,13 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 					return NULL;
 				if (depth == 0 && is_select(rel->op)) {
+					v->changes++;
 					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
 				} else {
 					le = exp_compare_func(v->sql, le, re, op, 0);
 					if (exp_name(e))
 						exp_prop_alias(v->sql->sa, le, e);
+					v->changes++;
 					return le;
 				}
 			}
@@ -2687,11 +2709,13 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 				assert(0);
 				if (depth == 0 && is_select(rel->op)) {
+					v->changes++;
 					return exp_in_compare(v->sql, &le, vals, is_anyequal(sf));
 				} else {
 					le = exp_in_project(v->sql, &le, vals, is_anyequal(sf));
 					if (le && exp_name(e))
 						exp_prop_alias(v->sql->sa, le, e);
+					v->changes++;
 					return le;
 				}
 			}
@@ -2768,10 +2792,12 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				} else if (is_project(rel->op) || depth) {
 					le = exp_compare_func(v->sql, le, re, op, 0);
 				} else {
+					v->changes++;
 					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
 				}
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, le, e);
+				v->changes++;
 				return le;
 			} else {
 				if (lsq) {
@@ -2802,12 +2828,14 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						append(l, le);
 						append(r, re);
 					}
+					v->changes++;
 					return exp_compare(v->sql->sa, exp_values(v->sql->sa, l), exp_values(v->sql->sa, r), compare_str2type(op));
 				} else {
 					if (exp_has_freevar(v->sql, le))
 						rel_bind_var(v->sql, rel, le);
 					if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 						return NULL;
+					v->changes++;
 					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
 				}
 			}
@@ -2952,6 +2980,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				le = exp_atom_bool(v->sql->sa, is_exists(sf)?1:0);
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, le, e);
+				v->changes++;
 				return le;
 			}
 
@@ -2994,13 +3023,17 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, le, e);
 				set_processed(sq);
-				if (depth == 1 && is_ddl(rel->op)) /* exists is at a ddl statment, it must be inside a relation */
+				if (depth == 1 && is_ddl(rel->op)) { /* exists is at a ddl statment, it must be inside a relation */
+					v->changes++;
 					return exp_rel(v->sql, sq);
+				}
 			} else { /* rewrite into semi/anti join */
 				operator_type op = is_exists(sf)?op_semi:op_anti;
 				(void)rewrite_inner(v->sql, rel, sq, &op);
+				v->changes++;
 				return exp_atom_bool(v->sql->sa, 1);
 			}
+			v->changes++;
 			return le;
 		}
 	}
@@ -3019,6 +3052,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		e->ref = 0;
 		set_processed(r);
 		append(r->exps, e);
+		v->changes++;
 		return exp_ref(v->sql, e);
 	}
 
@@ -3088,6 +3122,7 @@ rewrite_ifthenelse(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				set_single(usq);
 			set_processed(usq);
 			e = exp_rel(v->sql, usq);
+			v->changes++;
 		}
 	}
 	return e;
@@ -3116,7 +3151,6 @@ rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 				return NULL;
 		}
 	}
-	list_hash_clear(exps);
 	return exps;
 }
 
@@ -3393,6 +3427,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					op_union);
 			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			set_processed(nrel);
+			v->changes++;
 			return nrel;
 		} else if (is_right(rel->op)) {
 			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
@@ -3410,6 +3445,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					op_union);
 			rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			set_processed(nrel);
+			v->changes++;
 			return nrel;
 		} else if (is_full(rel->op)) {
 			sql_rel *prel = rel_project(v->sql->sa, rel, rel_projections(v->sql, rel, NULL, 1, 1));
@@ -3441,6 +3477,7 @@ rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 					op_union);
 			rel_setop_set_exps(v->sql, lrel, rel_projections(v->sql, rel, NULL, 1, 1));
 			set_processed(lrel);
+			v->changes++;
 			return lrel;
 		}
 	}
@@ -3455,7 +3492,7 @@ rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	if (e->type != e_func)
 		return e;
 
-	res = rewrite_anyequal(v->sql, rel, e, depth);
+	res = rewrite_anyequal(v, rel, e, depth);
 	if (!res || res != e)
 		return res;
 	res = rewrite_exists(v, rel, e, depth);
@@ -3481,6 +3518,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 		((sql_rel*)rel->l)->r = rel->r; /* propagate order by exps */
 		rel->r = NULL;
 		rel->used |= rewrite_values_used;
+		v->changes++;
 		return rel;
 	}
 	sql_exp *e = rel->exps->h->data;
@@ -3518,6 +3556,7 @@ rewrite_values(visitor *v, sql_rel *rel)
 		if (single)
 			set_single(rel);
 	}
+	v->changes++;
 	return rel;
 }
 

@@ -629,7 +629,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 	if (is_project(r->op) && r->exps) {
 		node *ne = r->exps->h;
 
-		r->exps->ht = NULL;
+		list_hash_clear(r->exps);
 		for (; ne; ne = ne->next) {
 			sql_exp *e = ne->data;
 
@@ -647,7 +647,7 @@ rel_label( mvc *sql, sql_rel *r, int all)
 		list *exps = r->r;
 		node *ne = exps->h;
 
-		exps->ht = NULL;
+		list_hash_clear(exps);
 		for (; ne; ne = ne->next) {
 			if (all) {
 				nr = ++sql->label;
@@ -1106,26 +1106,6 @@ rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int int
 {
 	assert(tname == NULL);
 	return _rel_projections(sql, rel, tname, settname, intern, 0);
-}
-
-/* add a project around a project where each inner expression gets a unique label */
-sql_rel *
-rel_safe_project(mvc *sql, sql_rel *rel)
-{
-	list *nexps = sa_list(sql->sa);
-
-	assert(!list_empty(rel->exps));
-	for(node *n = rel->exps->h; n; n=n->next) {
-		sql_exp *e = n->data, *ne;
-
-		n->data = e = exp_label(sql->sa, e, ++sql->label);
-		ne = exp_ref(sql, e);
-		if (exp_name(e))
-			exp_prop_alias(sql->sa, ne, e);
-		append(nexps, ne);
-	}
-	list_hash_clear(rel->exps);
-	return rel_project(sql->sa, rel, nexps);
 }
 
 /* find the path to the relation containing the base of the expression
@@ -1928,20 +1908,24 @@ exps_exps_exp_visitor(visitor *v, sql_rel *rel, list *lists, int depth, exp_rewr
 static sql_rel *rel_exp_visitor(visitor *v, sql_rel *rel, exp_rewrite_fptr exp_rewriter, bool topdown, bool relations_topdown);
 
 static sql_exp *
-exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter, bool topdown, bool relations_topdown)
+exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr exp_rewriter, bool topdown, bool relations_topdown, bool *changed)
 {
 	if (mvc_highwater(v->sql))
 		return sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	assert(e);
-	if (topdown && !(e = exp_rewriter(v, rel, e, depth)))
-		return NULL;
+	if (topdown) {
+		int changes = v->changes;
+		if (!(e = exp_rewriter(v, rel, e, depth)))
+			return NULL;
+		*changed |= v->changes > changes;
+	}
 
 	switch(e->type) {
 	case e_column:
 		break;
 	case e_convert:
-		if  ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
+		if  ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, changed)) == NULL)
 			return NULL;
 		break;
 	case e_aggr:
@@ -1960,27 +1944,27 @@ exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr ex
 			if ((e->r = exps_exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
+			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, changed)) == NULL)
 				return NULL;
 			if ((e->r = exps_exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
 		} else {
-			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
+			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, changed)) == NULL)
 				return NULL;
-			if ((e->r = exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
+			if ((e->r = exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown, changed)) == NULL)
 				return NULL;
-			if (e->f && (e->f = exp_visitor(v, rel, e->f, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
+			if (e->f && (e->f = exp_visitor(v, rel, e->f, depth+1, exp_rewriter, topdown, relations_topdown, changed)) == NULL)
 				return NULL;
 		}
 		break;
 	case e_psm:
 		if (e->flag & PSM_SET || e->flag & PSM_RETURN || e->flag & PSM_EXCEPTION) {
-			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
+			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, changed)) == NULL)
 				return NULL;
 		} else if (e->flag & PSM_VAR) {
 			return e;
 		} else if (e->flag & PSM_WHILE || e->flag & PSM_IF) {
-			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
+			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, changed)) == NULL)
 				return NULL;
 			if ((e->r = exps_exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown)) == NULL)
 				return NULL;
@@ -1997,21 +1981,26 @@ exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr ex
 				return NULL;
 		break;
 	}
-	if (!topdown && !(e = exp_rewriter(v, rel, e, depth)))
-		return NULL;
+	if (!topdown) {
+		int changes = v->changes;
+		if (!(e = exp_rewriter(v, rel, e, depth)))
+			return NULL;
+		*changed |= v->changes > changes;
+	}
 	return e;
 }
 
 static list *
 exps_exp_visitor(visitor *v, sql_rel *rel, list *exps, int depth, exp_rewrite_fptr exp_rewriter, bool topdown, bool relations_topdown)
 {
+	bool changed = false;
 	if (list_empty(exps))
 		return exps;
-	for (node *n = exps->h; n; n = n->next) {
-		if (n->data && (n->data = exp_visitor(v, rel, n->data, depth, exp_rewriter, topdown, relations_topdown)) == NULL)
+	for (node *n = exps->h; n; n = n->next)
+		if (n->data && (n->data = exp_visitor(v, rel, n->data, depth, exp_rewriter, topdown, relations_topdown, &changed)) == NULL)
 			return NULL;
-	}
-	list_hash_clear(exps);
+	if (changed && depth == 0) /* only level 0 exps use hash, so remove only on those */
+		list_hash_clear(exps);
 	return exps;
 }
 
@@ -2186,17 +2175,11 @@ exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topd
 static list *
 exps_rel_visitor(visitor *v, list *exps, rel_rewrite_fptr rel_rewriter, bool topdown)
 {
-	node *n;
-
 	if (list_empty(exps))
 		return exps;
-	for (n = exps->h; n; n = n->next) {
-		sql_exp *e = n->data;
-
-		if (e && (n->data = exp_rel_visitor(v, e, rel_rewriter, topdown)) == NULL)
+	for (node *n = exps->h; n; n = n->next)
+		if (n->data && (n->data = exp_rel_visitor(v, n->data, rel_rewriter, topdown)) == NULL)
 			return NULL;
-	}
-	list_hash_clear(exps);
 	return exps;
 }
 
@@ -2207,7 +2190,14 @@ do_rel_visitor(visitor *v, sql_rel *rel, rel_rewrite_fptr rel_rewriter, bool top
 		return NULL;
 	if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r && (rel->r = exps_rel_visitor(v, rel->r, rel_rewriter, topdown)) == NULL)
 		return NULL;
-	return rel_rewriter(v, rel);
+	int changes = v->changes;
+	rel = rel_rewriter(v, rel);
+	if (rel && rel->exps && v->changes > changes) {
+		list_hash_clear(rel->exps);
+		if ((is_groupby(rel->op) || is_simple_project(rel->op)) && rel->r)
+			list_hash_clear(rel->r);
+	}
+	return rel;
 }
 
 static inline sql_rel *
@@ -2383,8 +2373,11 @@ _exp_freevar_offset(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 int
 exp_freevar_offset(mvc *sql, sql_exp *e)
 {
+	bool changed = false;
 	visitor v = { .sql = sql };
-	exp_visitor(&v, NULL, e, 0, &_exp_freevar_offset, true, true);
+
+	(void) changed;
+	exp_visitor(&v, NULL, e, 0, &_exp_freevar_offset, true, true, &changed);
 	/* freevar offset is passed via changes */
 	return (v.changes);
 }
