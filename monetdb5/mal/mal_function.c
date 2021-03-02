@@ -471,6 +471,24 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 		printInstruction(fd, mb, stk, getInstrPtr(mb, i), flg);
 }
 
+
+void
+renameVariables(MalBlkPtr mb)
+{
+	int i;
+	/* variables get their name from the position in the symbol table */
+	/* During optimization they may be copied around, which means there name should be re-establised */
+	/* rename all temporaries for ease of variable table interpretation */
+	/* this code should not be necessary is variables always keep their position */
+	for( i = 0; i < mb->vtop; i++) {
+		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
+			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
+		else
+		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
+			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+	}
+}
+
 void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
 	int i,j;
