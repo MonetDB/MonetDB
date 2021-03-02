@@ -2411,21 +2411,14 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr;
 	stmt *ld = NULL, *rd = NULL;
-	stmt *lcand = NULL, *rcand = NULL;
 	int need_left = (rel->flag == LEFT_JOIN);
 
 	if (rel->l) /* first construct the left sub relation */
 		left = subrel_bin(be, rel->l, refs);
 	if (rel->r) /* first construct the right sub relation */
 		right = subrel_bin(be, rel->r, refs);
-
-	if (list_length(rel->exps) > 1) {
-		left = subrel_project(be, left, refs, rel->l);
-		right = subrel_project(be, right, refs, rel->r);
-	} else {
-		lcand = left->cand;
-		rcand = right->cand;
-	}
+	left = subrel_project(be, left, refs, rel->l);
+	right = subrel_project(be, right, refs, rel->r);
 	if (!left || !right)
 		return NULL;
 	left = row2cols(be, left);
@@ -2443,7 +2436,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			stmt *l = bin_first_column(be, left);
 			stmt *r = bin_first_column(be, right);
-			join = stmt_join_cand(be, l, r, lcand, rcand, 0, cmp_all, 0, 0, false);
+			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		}
 
 		if (join) {
@@ -2479,11 +2472,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 					}
 				}
 
-				if ((lcand || rcand) && e->flag != cmp_equal) {
-					left = subrel_project(be, left, refs, rel->l);
-					right = subrel_project(be, right, refs, rel->r);
-					lcand = rcand = NULL;
-				}
 				s = exp_bin(be, e, left, right, NULL, NULL, NULL, NULL, 0, 1, 0);
 				if (!s) {
 					assert(sql->session->status == -10); /* Stack overflow errors shouldn't terminate the server */
@@ -2504,16 +2492,15 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			}
 			if (list_length(lje) > 1) {
 				join = releqjoin(be, lje, rje, exps, used_hash, need_left, 0);
-			} else if (!join || need_left || lcand || rcand) {
+			} else if (!join || need_left) {
 				sql_exp *e = exps->h->data;
-				join = stmt_join_cand(be, lje->h->data, rje->h->data, lcand, rcand, 0, cmp_equal, need_left, is_semantics(e), false);
-				lcand = rcand = NULL;
+				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, need_left, is_semantics(e), false);
 			}
 		}
 	} else {
 		stmt *l = bin_first_column(be, left);
 		stmt *r = bin_first_column(be, right);
-		join = stmt_join_cand(be, l, r, lcand, rcand, 0, cmp_all, 0, 0, rel->single);
+		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, rel->single);
 	}
 	jl = stmt_result(be, join, 0);
 	jr = stmt_result(be, join, 1);

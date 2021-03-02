@@ -9804,9 +9804,6 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt
 {
 	int level = 0, changes = 1;
 
-	if (rel->card <= CARD_ATOM)
-		return rel;
-
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
 		rel = optimize_rel(sql, rel, &changes, level, value_based_opt, storage_based_opt);
