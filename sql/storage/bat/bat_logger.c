@@ -1380,17 +1380,19 @@ upgrade(old_logger *lg)
 		if (delidx >= 0) {
 			BAT *d = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
 			BAT *m = BATconstant(0, TYPE_msk, &(msk){0}, BATcount(b), PERSISTENT);
-			if (d == NULL || m == NULL) {
+			if (m == NULL) {
 				bat_destroy(d);
 				bat_destroy(m);
 				goto bailout;
 			}
-			const oid *dels = (const oid *) Tloc(d, 0);
-			for (BUN q = BUNlast(d), p = 0; p < q; p++)
-				mskSetVal(m, (BUN) dels[p], true);
+			if (d != NULL) {
+				const oid *dels = (const oid *) Tloc(d, 0);
+				for (BUN q = BUNlast(d), p = 0; p < q; p++)
+					mskSetVal(m, (BUN) dels[p], true);
+			}
 			if (BUNappend(lg->lg->catalog_bid, &m->batCacheid, false) != GDK_SUCCEED ||
 				BUNappend(lg->lg->catalog_id, &tables[delidx].newid, false) != GDK_SUCCEED ||
-				BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED) {
+				(d != NULL && BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED)) {
 				bat_destroy(d);
 				bat_destroy(m);
 				goto bailout;
@@ -1504,6 +1506,83 @@ upgrade(old_logger *lg)
 	}
 	bat_destroy(cands);
 	bat_destroy(b);
+
+	BAT *tabs;
+	tabs = BATselect(lg->lg->catalog_id, NULL, &(int){2165}, &int_nil, true, true, false);
+	if (tabs == NULL)
+		goto bailout;
+	BAT *b1;
+	b1 = BATintersect(lg->lg->catalog_id, bats[1].idbat, tabs, bats[1].cands, false, false, BUN_NONE);
+	bat_destroy(tabs);
+	if (b1 == NULL)
+		goto bailout;
+	BAT *b3, *b4;
+	if (BATsemijoin(&b3, &b4, lg->lg->catalog_id, bats[2].parbat, b1, bats[2].cands, false, false, BUN_NONE) != GDK_SUCCEED) {
+		bat_destroy(b1);
+		goto bailout;
+	}
+	bat_destroy(b3);
+	b3 = BATproject(b4, bats[2].idbat);
+	bat_destroy(b4);
+	if (b3 == NULL) {
+		bat_destroy(b1);
+		goto bailout;
+	}
+	b4 = BATintersect(lg->lg->catalog_id, b3, NULL, NULL, false, false, BUN_NONE);
+	bat_destroy(b3);
+	if (b4 == NULL) {
+		bat_destroy(b1);
+		goto bailout;
+	}
+	struct canditer ci;
+	canditer_init(&ci, lg->lg->catalog_bid, b1);
+	const int *bids;
+	const oid *cbids;
+	bids = Tloc(lg->lg->catalog_bid, 0);
+	cbids = Tloc(b4, 0);
+	for (BUN i = 0; i < ci.ncand; i++) {
+		bat cbid = bids[cbids[i]];
+		b = temp_descriptor(cbid);
+		if (b == NULL) {
+			bat_destroy(b1);
+			bat_destroy(b3);
+			goto bailout;
+		}
+		BUN len;
+		len = BATcount(b);
+		bat_destroy(b);
+		oid o;
+		o = canditer_next(&ci);
+		bat tbid;
+		tbid = bids[o - lg->lg->catalog_bid->hseqbase];
+		b = temp_descriptor(tbid);
+		BAT *bn;
+		bn = BATconstant(0, TYPE_msk, &(msk){0}, len, PERSISTENT);
+		if (b == NULL || bn == NULL) {
+			bat_destroy(b);
+			bat_destroy(bn);
+			bat_destroy(b1);
+			bat_destroy(b3);
+			goto bailout;
+		}
+		const oid *dels;
+		dels = Tloc(b, 0);
+		for (BUN q = BUNlast(b), p = 0; p < q; p++) {
+			mskSetVal(bn, (BUN) dels[p], true);
+		}
+		bat_destroy(b);
+		if (BUNappend(lg->del, &tbid, false) != GDK_SUCCEED ||
+		    BUNreplace(lg->lg->catalog_bid, o, &bn->batCacheid, false) != GDK_SUCCEED) {
+			bat_destroy(bn);
+			bat_destroy(b1);
+			bat_destroy(b3);
+			goto bailout;
+		}
+		BBPretain(bn->batCacheid);
+		bat_destroy(bn);
+	}
+	bat_destroy(b1);
+	bat_destroy(b4);
 
 	rc = GDK_SUCCEED;
 
@@ -1724,22 +1803,90 @@ bl_postversion(void *Store, old_logger *old_lg)
 
 		/* alter table sys.objects add column sub integer; */
 		BAT *objs_id = temp_descriptor(logger_find_bat(lg, 2111));
-		if (objs_id == NULL)
-			return GDK_FAIL;
-
+		BAT *objs_nr = temp_descriptor(logger_find_bat(lg, 2113));
 		BAT *objs_sub = BATconstant(objs_id->hseqbase, TYPE_int, &int_nil, BATcount(objs_id), PERSISTENT);
-		bat_destroy(objs_id);
-		if (objs_sub == NULL) {
+		BAT *b = temp_descriptor(logger_find_bat(lg, 2110));
+		if (objs_id == NULL || objs_nr == NULL || objs_sub == NULL || b == NULL || BUNappend(old_lg->del, &objs_nr->batCacheid, false) != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(b);
+			bat_destroy(objs_sub);
 			return GDK_FAIL;
 		}
-		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
+		BAT *cands = BATmaskedcands(0, BATcount(b), b, false);
+		bat_destroy(b);
+		if (cands == NULL) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+		b = BATselect(objs_nr, cands, &(int) {2000}, &int_nil, false, false, false);
+		bat_destroy(cands);
+		if (b == NULL) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+		cands = b;
+		b = BATproject2(cands, objs_nr, NULL);
+		if (b == NULL) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		gdk_return rc = BATreplace(objs_sub, cands, b, false);
+		bat_destroy(b);
+		if (rc != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		b = COLcopy(objs_nr, objs_nr->ttype, true, PERSISTENT);
+		bat_destroy(objs_nr);
+		if (b == NULL) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_sub);
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		objs_nr = b;
+		b = BATproject2(cands, objs_id, NULL);
+		bat_destroy(objs_id);
+		if (b == NULL) {
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		rc = BATreplace(objs_nr, cands, b, false);
+		bat_destroy(b);
+		bat_destroy(cands);
+		if (rc != GDK_SUCCEED) {
+			bat_destroy(objs_nr);
+			bat_destroy(objs_sub);
+			return GDK_FAIL;
+		}
+
+		/* now do something with objs_nr and objs_sub */
+
+		if (BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2113}), &objs_nr->batCacheid, false) != GDK_SUCCEED ||
+			BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
+			BATsetaccess(objs_nr, BAT_READ) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_id, &(int) {2163}, false) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &objs_sub->batCacheid, false) != GDK_SUCCEED) {
 			bat_destroy(objs_sub);
 			return GDK_FAIL;
 		}
 		BBPretain(objs_sub->batCacheid);
+		BBPretain(objs_nr->batCacheid);
 		bat_destroy(objs_sub);
+		bat_destroy(objs_nr);
 		/* update sys.objects o set sub = (select t.id from sys.dependencies d, sys._tables t where o.nr = d.depend_id and d.id = t.id and o.name = t.name); */
 
 		/* alter table tmp.objects add column sub integer; */
