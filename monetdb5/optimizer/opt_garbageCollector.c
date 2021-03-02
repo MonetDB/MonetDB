@@ -40,7 +40,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	limit = mb->stop;
 
-#ifndef NDEBUG
 	/* variables get their name from the position */
 	/* rename all temporaries for ease of variable table interpretation */
 	/* this code should not be necessary is variables always keep their position */
@@ -54,7 +53,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		//if(strcmp(buf, getVarName(mb,i)) )
 			//fprintf(stderr, "non-matching name/entry %s %s\n", buf, getVarName(mb,i));
 	}
-#endif
 
 	// move SQL query definition to the front for event profiling tools
 	p = NULL;
