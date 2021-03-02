@@ -87,7 +87,7 @@ GDKenvironment(const char *dbpath)
 		TRC_CRITICAL(GDK, "Database name too long.\n");
 		return false;
 	}
-	if (!MT_path_absolute(dbpath)) {
+	if (!GDKembedded() && !MT_path_absolute(dbpath)) {
 		TRC_CRITICAL(GDK, "Directory not an absolute path: %s.\n", dbpath);
 		return false;
 	}

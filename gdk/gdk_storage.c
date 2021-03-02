@@ -62,7 +62,7 @@ GDKfilepath(int farmid, const char *dir, const char *name, const char *ext)
 	assert(dir == NULL || *dir != DIR_SEP);
 	assert(farmid == NOFARM ||
 	       (farmid >= 0 && farmid < MAXFARMS && BBPfarms[farmid].dirname));
-	if (MT_path_absolute(name)) {
+	if (!GDKembedded() && MT_path_absolute(name)) {
 		GDKerror("name should not be absolute\n");
 		return NULL;
 	}
@@ -103,7 +103,7 @@ GDKcreatedir(const char *dir)
 
 	TRC_DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
 	assert(!GDKinmemory());
-	if (!MT_path_absolute(dir)) {
+	if (!GDKembedded() && !MT_path_absolute(dir)) {
 		GDKerror("directory '%s' is not absolute\n", dir);
 		return GDK_FAIL;
 	}
