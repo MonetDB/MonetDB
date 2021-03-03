@@ -1890,14 +1890,24 @@ bl_postversion(void *Store, old_logger *old_lg)
 			return GDK_FAIL;
 		}
 		b = COLcopy(objs_nr, objs_nr->ttype, true, PERSISTENT);
+		rc = BUNappend(old_lg->del, &objs_nr->batCacheid, false);
 		bat_destroy(objs_nr);
-		if (b == NULL) {
+		if (b == NULL || rc != GDK_SUCCEED) {
 			bat_destroy(objs_id);
 			bat_destroy(objs_sub);
 			bat_destroy(cands);
+			bat_destroy(b);
 			return GDK_FAIL;
 		}
 		objs_nr = b;
+		if (BUNappend(old_lg->add, &objs_nr->batCacheid, false) != GDK_SUCCEED) {
+			bat_destroy(objs_id);
+			bat_destroy(objs_sub);
+			bat_destroy(objs_nr);
+			bat_destroy(cands);
+			return GDK_FAIL;
+		}
+		BBPretain(objs_nr->batCacheid);
 		b = BATproject2(cands, objs_id, NULL);
 		bat_destroy(objs_id);
 		if (b == NULL) {
