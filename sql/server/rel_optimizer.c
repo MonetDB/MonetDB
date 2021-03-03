@@ -1667,12 +1667,12 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 {
 	sql_rel *rl = r->l;
 	sql_rel *rr = r->r;
-	sql_exp *je;
+	sql_exp *je, *le, *nje, *re;
 	node *n;
 	int fk_left = 1;
 
 	/* check for foreign key join */
-	if (!r->exps || list_length(r->exps) != 1)
+	if (list_length(r->exps) != 1)
 		return r;
 	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
 		return r;
@@ -1715,11 +1715,24 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 			return r;
 	}
 
+	/* rewrite, ie remove pkey side if possible */
+	le = (sql_exp*)je->l, re = (sql_exp*)je->l;
+
+	/* both have NULL and there are semantics, the join cannot be removed */
+	if (is_semantics(je) && has_nil(le) && has_nil(re))
+		return r;
+
 	(*changes)++;
-	/* rewrite, ie remove pkey side */
-	if (fk_left)
-		return r->l;
-	return r->r;
+	/* if the foreign key column doesn't have NULL values, then return it */
+	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op)))
+		return fk_left ? r->l : r->r;
+
+	/* remove NULL values, ie generate a select not null */
+	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+	set_anti(nje);
+	set_has_no_nil(nje);
+	set_semantics(nje);
+	return rel_select(sql->sa, fk_left ? r->l : r->r, nje);
 }
 
 static sql_rel *
@@ -1727,11 +1740,11 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 {
 	sql_rel *rl = r->l;
 	sql_rel *rr = r->r;
-	sql_exp *oce, *je;
+	sql_exp *je, *le, *nje, *re, *oce;
 	int fk_left = 1;
 
 	/* check for foreign key join */
-	if (!r->exps || list_length(r->exps) != 1)
+	if (list_length(r->exps) != 1)
 		return r;
 	if (!(je = exps_find_prop(r->exps, PROP_JOINIDX)))
 		return r;
@@ -1762,11 +1775,24 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 		r->r = rr;
 	}
 
+	/* rewrite, ie remove pkey side if possible */
+	le = (sql_exp*)je->l, re = (sql_exp*)je->l;
+
+	/* both have NULL and there are semantics, the join cannot be removed */
+	if (is_semantics(je) && has_nil(le) && has_nil(re))
+		return r;
+
 	(*changes)++;
-	/* rewrite, ie remove pkey side */
-	if (fk_left)
-		return r->l;
-	return r->r;
+	/* if the foreign key column doesn't have NULL values, then return it */
+	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op)))
+		return fk_left ? r->l : r->r;
+
+	/* remove NULL values, ie generate a select not null */
+	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL)), cmp_equal);
+	set_anti(nje);
+	set_has_no_nil(nje);
+	set_semantics(nje);
+	return rel_select(sql->sa, fk_left ? r->l : r->r, nje);
 }
 
 /*
