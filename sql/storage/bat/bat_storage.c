@@ -550,7 +550,7 @@ count_col(sql_trans *tr, sql_column *c, int access)
 		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
-	if (isTempTable(c->t))
+	if (access == QUICK || isTempTable(c->t))
 		return d->segs->t?d->segs->t->end:0;
 	return segs_end(d->segs, tr);
 }
@@ -571,7 +571,7 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 		return ds?ds->cs.ucnt:0;
 	if (access == 1)
 		return count_inserts(d->segs->h, tr);
-	if (isTempTable(i->t))
+	if (access == QUICK || isTempTable(i->t))
 		return d->segs->t?d->segs->t->end:0;
 	return segs_end(d->segs, tr);
 }
