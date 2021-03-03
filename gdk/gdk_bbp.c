@@ -1490,39 +1490,42 @@ BBPdump(void)
 	int n = 0, nc = 0;
 
 	for (i = 0; i < (bat) ATOMIC_GET(&BBPsize); i++) {
-		BAT *b = BBP_cache(i);
-		if (b == NULL)
+		if (BBP_refs(i) == 0 && BBP_lrefs(i) == 0)
 			continue;
+		BAT *b = BBP_desc(i);
 		fprintf(stderr,
-			"# %d: " ALGOBATFMT " "
+			"# %d: " ALGOOPTBATFMT " "
 			"refs=%d lrefs=%d "
-			"status=%u",
+			"status=%u%s",
 			i,
-			ALGOBATPAR(b),
+			ALGOOPTBATPAR(b),
 			BBP_refs(i),
 			BBP_lrefs(i),
-			BBP_status(i));
+			BBP_status(i),
+			BBP_cache(i) ? "" : " not cached");
 		if (b->batSharecnt > 0)
 			fprintf(stderr, " shares=%d", b->batSharecnt);
 		if (b->batDirtydesc)
 			fprintf(stderr, " DirtyDesc");
-		if (b->theap->parentid != b->batCacheid) {
-			fprintf(stderr, " Theap -> %d", b->theap->parentid);
-		} else {
-			fprintf(stderr,
-				" Theap=[%zu,%zu,f=%d]%s",
-				HEAPmemsize(b->theap),
-				HEAPvmsize(b->theap),
-				b->theap->farmid,
-				b->theap->dirty ? "(Dirty)" : "");
-			if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
-				cmem += HEAPmemsize(b->theap);
-				cvm += HEAPvmsize(b->theap);
-				nc++;
+		if (b->theap) {
+			if (b->theap->parentid != b->batCacheid) {
+				fprintf(stderr, " Theap -> %d", b->theap->parentid);
 			} else {
-				mem += HEAPmemsize(b->theap);
-				vm += HEAPvmsize(b->theap);
-				n++;
+				fprintf(stderr,
+					" Theap=[%zu,%zu,f=%d]%s",
+					HEAPmemsize(b->theap),
+					HEAPvmsize(b->theap),
+					b->theap->farmid,
+					b->theap->dirty ? "(Dirty)" : "");
+				if (BBP_logical(i) && BBP_logical(i)[0] == '.') {
+					cmem += HEAPmemsize(b->theap);
+					cvm += HEAPvmsize(b->theap);
+					nc++;
+				} else {
+					mem += HEAPmemsize(b->theap);
+					vm += HEAPvmsize(b->theap);
+					n++;
+				}
 			}
 		}
 		if (b->tvheap) {

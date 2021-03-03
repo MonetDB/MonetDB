@@ -280,7 +280,7 @@ BAT *virtualize(BAT *bn)
 	b ? "[" : "",							\
 	b ? ATOMname(b->ttype) : "",					\
 	b ? "]" : "",							\
-	b ? !b->batTransient ? "P" : b->theap->parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
+	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "",	\
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
@@ -288,7 +288,7 @@ BAT *virtualize(BAT *bn)
 	b && b->tnonil ? "N" : "",					\
 	b && b->thash ? "H" : "",					\
 	b && b->torderidx ? "O" : "",					\
-	b ? b->timprints ? "I" : b->theap->parentid && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
+	b ? b->timprints ? "I" : b->theap && b->theap->parentid && BBP_cache(b->theap->parentid) && BBP_cache(b->theap->parentid)->timprints ? "(I)" : "" : ""
 
 #define BBP_BATMASK	(128 * SIZEOF_SIZE_T - 1)
 #define BBP_THREADMASK	63
