@@ -160,9 +160,6 @@ mal_export malType getType(MalBlkPtr mb, const char *nme);
 mal_export str getArgDefault(MalBlkPtr mb, InstrPtr p, int idx);
 mal_export int newVariable(MalBlkPtr mb, const char *name, size_t len, malType type);
 mal_export int cloneVariable(MalBlkPtr dst, MalBlkPtr src, int varid);
-/* generate a new variable name based on a pattern with 1 %d argument
- * -- not used, but this is how to do it */
-/* #define renameVariable(mb, id, pattern, newid) snprintf(getVarName(mb,id),IDLENGTH,pattern,newid) */
 mal_export void setVariableType(MalBlkPtr mb, const int idx, malType type);
 mal_export int newTmpVariable(MalBlkPtr mb, malType type);
 mal_export int newTypeVariable(MalBlkPtr mb, malType type);

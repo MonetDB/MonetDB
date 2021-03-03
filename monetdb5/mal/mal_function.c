@@ -446,8 +446,10 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int si
 	}
 	if ( flg == 0)
 		return;
+
 	assert(size>=0);
 	assert(first>=0 && first <mb->stop);
+	renameVariables(mb);
 	if (flg & LIST_MAL_MAPI) {
 		size_t len = 0;
 		str ps;
@@ -476,16 +478,18 @@ void
 renameVariables(MalBlkPtr mb)
 {
 	int i;
-	/* variables get their name from the position in the symbol table */
+	char *s;
+
+	/* Temporary variables get their name from the position in the symbol table */
+	/* However, also MAL input may contain temporary names. At some point you need to clean it up to avoid clashes */
+	/* Certainly when you are about to print the MAL function */
 	/* During optimization they may be copied around, which means there name should be re-establised */
 	/* rename all temporaries for ease of variable table interpretation */
 	/* this code should not be necessary is variables always keep their position */
 	for( i = 0; i < mb->vtop; i++) {
-		if (getVarName(mb,i)[0] == 'X' && getVarName(mb,i)[1] == '_')
-			snprintf(getVarName(mb,i),IDLENGTH,"X_%d",i);
-		else
-		if (getVarName(mb,i)[0] == 'C' && getVarName(mb,i)[1] == '_')
-			snprintf(getVarName(mb,i),IDLENGTH,"C_%d",i);
+		s = getVarName(mb, i);
+		if( s[1] == '_' && (*s == 'C' || *s == 'X'))
+			snprintf(s + 2, IDLENGTH-2, "%d", i);
 	}
 }
 
@@ -493,9 +497,13 @@ void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 {
 	int i,j;
 	InstrPtr p;
+
+
 	// Set the used bits properly
 	for(i=0; i< mb->vtop; i++)
 		clrVarUsed(mb,i);
+
+
 	for(i=0; i< mb->stop; i++){
 		p= getInstrPtr(mb,i);
 		for(j= p->retc; j<p->argc; j++)
