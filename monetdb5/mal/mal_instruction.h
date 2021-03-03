@@ -47,7 +47,8 @@
 
 #define getVar(M,I)		(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
-#define getVarName(M,I)		((M)->var[I].name)
+mal_export char* getVarName(MalBlkPtr mb, int idx);
+
 #define getVarKind(M,I)   	((M)->var[I].kind)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)
 #define setVarType(M,I,V)   	((M)->var[I].type = V)
