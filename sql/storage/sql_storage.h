@@ -138,9 +138,9 @@ typedef size_t (*claim_tab_fptr) (sql_trans *tr, sql_table *t, size_t cnt);
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
  */
-typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t, int upd);
-typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int upd);
-typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int upd);
+typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t, int access);
+typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int access);
+typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 

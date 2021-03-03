@@ -558,7 +558,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	if (t && (!isRemote(t) && !isMergeTable(t)) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
-		BUN rows = (BUN) store->storage_api.count_col(tr, t->columns.set->h->data, 0);
+		BUN rows = (BUN) store->storage_api.count_col(tr, t->columns.set->h->data, QUICK);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
@@ -625,7 +625,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sqlstore *store = tr->store;
 
 		if (c && (!isRemote(c->t) && !isMergeTable(c->t))) {
-			BUN rows = (BUN) store->storage_api.count_col(tr, c, 0);
+			BUN rows = (BUN) store->storage_api.count_col(tr, c, QUICK);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
@@ -679,7 +679,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		sqlstore *store = tr->store;
 
 		if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-			BUN rows = (BUN) store->storage_api.count_idx(tr, i, 0);
+			BUN rows = (BUN) store->storage_api.count_idx(tr, i, QUICK);
 			setRowCnt(mb,getArg(q,0),rows);
 		}
 	}
