@@ -104,7 +104,6 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 	const char *fcnnme = "(NONE)";
 	Symbol s= NULL;
 	int i;
-	char optimizer[256];
 	str msg = MAL_SUCCEED;
 	lng clk;
 
@@ -116,7 +115,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 
 	if( mb->errors)
 		throw(MAL, "opt_wrapper", SQLSTATE(42000) "MAL block contains errors");
-	snprintf(optimizer,256,"%s", fcnnme = getFunctionId(p));
+	fcnnme = getFunctionId(p);
 
 	if( p && p->argc > 1 ){
 		if( getArgType(mb,p,1) != TYPE_str ||
@@ -124,7 +123,7 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 			!isVarConstant(mb,getArg(p,1)) ||
 			!isVarConstant(mb,getArg(p,2))
 			)
-			throw(MAL, optimizer, SQLSTATE(42000) ILLARG_CONSTANTS);
+			throw(MAL, getFunctionId(p), SQLSTATE(42000) ILLARG_CONSTANTS);
 
 		if( stk != 0){
 			modnme= *getArgReference_str(stk,p,1);
@@ -137,28 +136,28 @@ str OPTwrapper (Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p){
 		s= findSymbol(cntxt->usermodule, putName(modnme),putName(fcnnme));
 
 		if( s == NULL)
-			throw(MAL, optimizer, SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED ":%s.%s", modnme, fcnnme);
+			throw(MAL, getFunctionId(p), SQLSTATE(HY002) RUNTIME_OBJECT_UNDEFINED "%s.%s", modnme, fcnnme);
 		mb = s->def;
 		stk= 0;
 	} else if( p )
 		removeInstruction(mb, p);
 
 	for (i=0; codes[i].nme; i++)
-		if (strcmp(codes[i].nme, optimizer) == 0){
+		if (strcmp(codes[i].nme, getFunctionId(p)) == 0){
 			clk = GDKusec();
 			msg = (str)(*(codes[i].fcn))(cntxt, mb, stk, 0);
 			codes[i].timing += GDKusec() - clk;
 			codes[i].calls++;
 			if (msg) {
-				throw(MAL, optimizer, SQLSTATE(42000) "Error in optimizer %s: %s", optimizer, msg);
+				throw(MAL, getFunctionId(p), SQLSTATE(42000) "Error in optimizer %s: %s", getFunctionId(p), msg);
 			}
 			break;
 		}
 	if (codes[i].nme == 0)
-		throw(MAL, optimizer, SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
+		throw(MAL, fcnnme,  SQLSTATE(HY002) "Optimizer implementation '%s' missing", fcnnme);
 
 	if ( mb->errors)
-		throw(MAL, optimizer, SQLSTATE(42000) PROGRAM_GENERAL ":%s.%s %s", modnme, fcnnme, mb->errors);
+		throw(MAL, fcnnme, SQLSTATE(42000) PROGRAM_GENERAL "%s.%s %s", modnme, fcnnme, mb->errors);
 	return MAL_SUCCEED;
 }
 
