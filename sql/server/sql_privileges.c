@@ -809,7 +809,7 @@ sql_drop_granted_users(mvc *sql, sqlid user_id, char *user, list *deleted_users)
 		A = store->table_api.rids_select(tr, find_sql_column(auths, "grantor"), &user_id, &user_id, NULL);
 		/* remove them and continue the deletion */
 		for(rid = store->table_api.rids_next(A); !is_oid_nil(rid); rid = store->table_api.rids_next(A)) {
-			sqlid nuid = *(sqlid*)store->table_api.column_find_value(tr, find_sql_column(auths, "id"), rid);
+			sqlid nuid = store->table_api.column_find_sqlid(tr, find_sql_column(auths, "id"), rid);
 			char* nname = store->table_api.column_find_value(tr, find_sql_column(auths, "name"), rid);
 
 			sql_drop_granted_users(sql, nuid, nname, deleted_users);

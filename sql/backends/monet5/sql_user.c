@@ -617,10 +617,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 		GDKfree(username);
 		return NULL;
 	}
-	p = store->table_api.column_find_value(m->session->tr, users_schema, rid);
-	assert(p);
-	schema_id = *(sqlid *) p;
-	_DELETE(p);
+	schema_id = store->table_api.column_find_sqlid(m->session->tr, users_schema, rid);
 
 	p = store->table_api.column_find_value(m->session->tr, users_schema_path, rid);
 	assert(p);
@@ -646,10 +643,7 @@ monet5_user_set_def_schema(mvc *m, oid user)
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, username, NULL);
 	if (!is_oid_nil(rid)) {
 		sql_column *auths_id = find_sql_column(auths, "id");
-		sqlid id;
-		p = store->table_api.column_find_value(m->session->tr, auths_id, rid);
-		id = *(sqlid *) p;
-		_DELETE(p);
+		sqlid id = store->table_api.column_find_sqlid(m->session->tr, auths_id, rid);
 
 		m->user_id = m->role_id = id;
 	} else {
