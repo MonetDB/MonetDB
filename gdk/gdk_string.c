@@ -176,6 +176,46 @@ strLocate(Heap *h, const char *v)
 	return 0;
 }
 
+static inline gdk_return
+checkUTF8(const char *v)
+{
+	if (v[0] != '\200' || v[1] != '\0') {
+		/* check that string is correctly encoded UTF-8; there
+		 * was no need to do this earlier: if the string was
+		 * found above, it must have gone through here in the
+		 * past */
+		int nutf8 = 0;
+		int m = 0;
+		for (size_t i = 0; v[i]; i++) {
+			if (nutf8 > 0) {
+				if ((v[i] & 0xC0) != 0x80 ||
+				    (m != 0 && (v[i] & m) == 0))
+					goto badutf8;
+				m = 0;
+				nutf8--;
+			} else if ((v[i] & 0xE0) == 0xC0) {
+				nutf8 = 1;
+				if ((v[i] & 0x1E) == 0)
+					goto badutf8;
+			} else if ((v[i] & 0xF0) == 0xE0) {
+				nutf8 = 2;
+				if ((v[i] & 0x0F) == 0)
+					m = 0x20;
+			} else if ((v[i] & 0xF8) == 0xF0) {
+				nutf8 = 3;
+				if ((v[i] & 0x07) == 0)
+					m = 0x30;
+			} else if ((v[i] & 0x80) != 0) {
+				goto badutf8;
+			}
+		}
+	}
+	return GDK_SUCCEED;
+
+  badutf8:
+	return GDK_FAIL;
+}
+
 var_t
 strPut(Heap *h, var_t *dst, const char *v)
 {
@@ -219,39 +259,9 @@ strPut(Heap *h, var_t *dst, const char *v)
 	}
 	/* the string was not found in the heap, we need to enter it */
 
-	if (v[0] != '\200' || v[1] != '\0') {
-		/* check that string is correctly encoded UTF-8; there
-		 * was no need to do this earlier: if the string was
-		 * found above, it must have gone through here in the
-		 * past */
-		int nutf8 = 0;
-		int m = 0;
-		for (size_t i = 0; v[i]; i++) {
-			if (nutf8 > 0) {
-				if ((v[i] & 0xC0) != 0x80 ||
-				    (m != 0 && (v[i] & m) == 0)) {
-				  badutf8:
-					GDKerror("incorrectly encoded UTF-8");
-					return 0;
-				}
-				m = 0;
-				nutf8--;
-			} else if ((v[i] & 0xE0) == 0xC0) {
-				nutf8 = 1;
-				if ((v[i] & 0x1E) == 0)
-					goto badutf8;
-			} else if ((v[i] & 0xF0) == 0xE0) {
-				nutf8 = 2;
-				if ((v[i] & 0x0F) == 0)
-					m = 0x20;
-			} else if ((v[i] & 0xF8) == 0xF0) {
-				nutf8 = 3;
-				if ((v[i] & 0x07) == 0)
-					m = 0x30;
-			} else if ((v[i] & 0x80) != 0) {
-				goto badutf8;
-			}
-		}
+	if (checkUTF8(v) != GDK_SUCCEED) {
+		GDKerror("incorrectly encoded UTF-8\n");
+		return 0;
 	}
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
@@ -780,6 +790,10 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
+	if (checkUTF8(a) != GDK_SUCCEED) {
+		GDKerror("incorrectly encoded UTF-8\n");
+		return GDK_FAIL;
+	}
 	if (mnstr_writeInt(s, (int) len) && mnstr_write(s, a, len, 1) == 1)
 		return GDK_SUCCEED;
 	else

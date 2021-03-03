@@ -828,6 +828,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 			sql_idx *i = cn->data;
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
 			char *iname = NULL;
+			int has_nils = 0;
 
 			/* do not include empty indices in the plan */
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
@@ -837,7 +838,13 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 				t = sql_bind_localtype("oid");
 
 			iname = sa_strconcat( sa, "%", i->base.name);
-			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, 0, 1);
+			for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
+				sql_kc *kc = n->data;
+
+				if (kc->c->null)
+					has_nils = 1;
+			}
+			e = exp_alias(sa, atname, iname, tname, iname, t, CARD_MULTI, has_nils, 1);
 			/* index names are prefixed, to make them independent */
 			if (hash_index(i->type)) {
 				p = e->p = prop_create(sa, PROP_HASHIDX, e->p);
