@@ -1657,6 +1657,18 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 		GDKerror("cannot create type bats");
 		goto error;
 	}
+	strconcat_len(bak, sizeof(bak), fn, "_type_id", NULL);
+	if (BBPrename(lg->type_id->batCacheid, bak) < 0) {
+		goto error;
+	}
+	strconcat_len(bak, sizeof(bak), fn, "_type_nme", NULL);
+	if (BBPrename(lg->type_nme->batCacheid, bak) < 0) {
+		goto error;
+	}
+	strconcat_len(bak, sizeof(bak), fn, "_type_nr", NULL);
+	if (BBPrename(lg->type_nr->batCacheid, bak) < 0) {
+		goto error;
+	}
 
 	/* this is intentional - if catalog_bid is 0, force it to find
 	 * the persistent catalog */
@@ -1779,20 +1791,20 @@ logger_load(int debug, const char *fn, const char *logdir, logger *lg, char file
 			lg->catalog_bid = b;
 			lg->catalog_id = o;
 			lg->dcatalog = d;
+			const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
+			BATloop(lg->catalog_bid, p, q) {
+				bat bid = bids[p];
+				oid pos = p;
+
+				if (BBPretain(bid) == 0 && /* any bid in the catalog_bid, needs one logical ref */
+				    BUNfnd(lg->dcatalog, &pos) == BUN_NONE &&
+				    BUNappend(lg->dcatalog, &pos, false) != GDK_SUCCEED)
+					goto error;
+			}
 		}
 		BBPretain(lg->catalog_bid->batCacheid);
 		BBPretain(lg->catalog_id->batCacheid);
 		BBPretain(lg->dcatalog->batCacheid);
-		const log_bid *bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
-		BATloop(lg->catalog_bid, p, q) {
-			bat bid = bids[p];
-			oid pos = p;
-
-			if (BBPretain(bid) == 0 && /* any bid in the catalog_bid, needs one logical ref */
-			    BUNfnd(lg->dcatalog, &pos) == BUN_NONE &&
-			    BUNappend(lg->dcatalog, &pos, false) != GDK_SUCCEED)
-				goto error;
-		}
 	}
 	lg->catalog_cnt = logbat_new(TYPE_lng, 1, TRANSIENT);
 	if (lg->catalog_cnt == NULL) {
