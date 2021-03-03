@@ -623,7 +623,7 @@ findVariableLength(MalBlkPtr mb, const char *name, int len)
 	int i;
 
 	for (i = mb->vtop - 1; i >= 0; i--) {
-		const char *s = getVarName(mb, i);
+		const char *s = mb->var[i].name; 
 
 		if (s && strncmp(name, s, len) == 0 && s[len] == 0)
 			return i;
@@ -773,6 +773,22 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 	clrVarCleanup(mb, n);
 }
 
+
+char *
+getVarName(MalBlkPtr mb, int idx)
+{
+	char buf[IDLENGTH] = {0};
+	char *s = mb->var[idx].name;
+	if( getVarKind(mb,idx) == 0)
+		setVarKind(mb,idx, REFMARKER);
+	
+	if( *s &&  s[1] != '_' && (s[0] != 'X' && s[0] != 'C'))
+		return s;
+	if ( *s == 0)
+		(void) snprintf(buf, IDLENGTH,"%c_%d", getVarKind(mb, idx), mb->vid++);
+	return s;
+}
+
 int
 newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 {
@@ -788,11 +804,11 @@ newVariable(MalBlkPtr mb, const char *name, size_t len, malType type)
 		return -1;
 	n = mb->vtop;
 	if( name == 0 || len == 0){
-		(void) snprintf(getVarName(mb,n), IDLENGTH,"%c_%d", kind, mb->vid++);
+		mb->var[n].name[0] = 0;
 	} else {
 		/* avoid calling strcpy_len since we're not interested in the
 		 * source length, and that may be very large */
-		char *nme = getVarName(mb,n);
+		char *nme = mb->var[n].name;  
 		for (size_t i = 0; i < len; i++)
 			nme[i] = name[i];
 		nme[len] = 0;
