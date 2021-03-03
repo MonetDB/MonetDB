@@ -60,7 +60,9 @@ typedef struct {
 	void (*atomHeap) (Heap *, size_t);
 } atomDesc;
 
-gdk_export atomDesc BATatoms[];
+#define MAXATOMS	128
+
+gdk_export atomDesc BATatoms[MAXATOMS];
 gdk_export int GDKatomcnt;
 
 gdk_export int ATOMallocate(const char *nme);
@@ -74,8 +76,6 @@ gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(int id, const void *val);
 
 gdk_export void *ATOMdup(int id, const void *val);
-
-#define MAXATOMS	128
 
 /*
  * @- maximum atomic string lengths
