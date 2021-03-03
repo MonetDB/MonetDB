@@ -153,6 +153,6 @@ drop table savepointtest
 statement ok
 commit
 
-statement error 42S02!SELECT: no such table 'savepointtest'
+statement error
 select * from savepointtest
 
