@@ -1850,7 +1850,6 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 			return r;
 	}
 
-	(*changes)++;
 	/* rewrite, ie remove pkey side if possible */
 	le = (sql_exp*)je->l, re = (sql_exp*)je->l;
 
@@ -1858,6 +1857,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 	if (is_semantics(je) && has_nil(le) && has_nil(re))
 		return r;
 
+	(*changes)++;
 	/* if the foreign key column doesn't have NULL values, then return it */
 	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op)))
 		return fk_left ? r->l : r->r;
@@ -1911,7 +1911,6 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 		r->r = rr;
 	}
 
-	(*changes)++;
 	/* rewrite, ie remove pkey side if possible */
 	le = (sql_exp*)je->l, re = (sql_exp*)je->l;
 
@@ -1919,6 +1918,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 	if (is_semantics(je) && has_nil(le) && has_nil(re))
 		return r;
 
+	(*changes)++;
 	/* if the foreign key column doesn't have NULL values, then return it */
 	if (!has_nil(le) || is_full(r->op) || (fk_left && is_left(r->op)) || (!fk_left && is_right(r->op)))
 		return fk_left ? r->l : r->r;
