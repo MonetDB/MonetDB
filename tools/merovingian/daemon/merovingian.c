@@ -350,7 +350,6 @@ main(int argc, char *argv[])
 	FILE *oerr = NULL;
 	int thret;
 	bool merodontfork = false;
-	bool use_ipv6 = false;
 	confkeyval ckv[] = {
 		{"logfile",       strdup("merovingian.log"), 0,                STR},
 		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
@@ -654,12 +653,6 @@ main(int argc, char *argv[])
 		writeProps(_mero_props, ".");
 	}
 	host = kv->val;
-
-	use_ipv6 = (strcmp(host, "127.0.0.1") != 0 && strcmp(host, "0.0.0.0") != 0);
-
-	if (strcmp(host, "all") == 0) {
-		host = NULL;
-	}
 
 	kv = findConfKey(_mero_props, "port");
 	if (kv->ival <= 0 || kv->ival > 65535) {
@@ -970,9 +963,9 @@ main(int argc, char *argv[])
 	Mfprintf(stdout, "monitoring dbfarm %s\n", dbfarm);
 
 	/* open up connections */
-	if ((e = openConnectionIP(socks, false, use_ipv6, host, port, stdout)) == NO_ERR &&
+	if ((e = openConnectionIP(socks, false, host, port, stdout)) == NO_ERR &&
 		(e = openConnectionUNIX(&socks[2], mapi_usock, 0, stdout)) == NO_ERR &&
-		(!discovery || (e = openConnectionIP(discsocks, true, use_ipv6, host, port, _mero_discout)) == NO_ERR) &&
+		(!discovery || (e = openConnectionIP(discsocks, true, host, port, _mero_discout)) == NO_ERR) &&
 		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
