@@ -57,7 +57,7 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 
 #if defined CATALOG_JUN2020 || defined CATALOG_OCT2020
 static gdk_return
-tabins(logger *lg, int tt, int nid, ...)
+tabins(logger *lg, old_logger *old_lg, bool first, int tt, int nid, ...)
 {
 	va_list va;
 	int cid;
@@ -71,6 +71,29 @@ tabins(logger *lg, int tt, int nid, ...)
 		if ((b = temp_descriptor(logger_find_bat(lg, cid))) == NULL) {
 			va_end(va);
 			return GDK_FAIL;
+		}
+		if (first && BUNfnd(old_lg->add, &b->batCacheid) == BUN_NONE) {
+			BAT *bn = COLcopy(b, b->ttype, true, PERSISTENT);
+			if (bn == NULL ||
+				BUNappend(old_lg->add, &bn->batCacheid, false) != GDK_SUCCEED ||
+				BUNappend(old_lg->del, &b->batCacheid, false) != GDK_SUCCEED) {
+				va_end(va);
+				bat_destroy(b);
+				bat_destroy(bn);
+				return GDK_FAIL;
+			}
+			BBPretain(bn->batCacheid);
+			/* logical refs of b stay the same: it is moved from catalog_bid to del */
+			bat_destroy(b);
+			BUN p = BUNfnd(lg->catalog_id, &cid);
+			assert(p != BUN_NONE);
+			if (BUNreplace(lg->catalog_bid, p, &bn->batCacheid, false) != GDK_SUCCEED) {
+				va_end(va);
+				bat_destroy(bn);
+				return GDK_FAIL;
+			}
+			BBPretain(bn->batCacheid);
+			b = bn;
 		}
 		rc = BUNappend(b, cval, true);
 		bat_destroy(b);
@@ -1321,13 +1344,15 @@ upgrade(old_logger *lg)
 			lookup = 2;
 			parid = tabid;		/* parent object is last table */
 		}
+		/* restrict search to non-deleted rows */
 		BAT *cand = bats[lookup].cands;
 		if (bats[lookup].parbat != NULL) {
-			/* restrict search to parent object */
+			/* further restrict search to parent object */
 			cand = BATselect(bats[lookup].parbat, cand, &parid, NULL, true, true, false);
 			if (cand == NULL)
 				goto bailout;
 		}
+		/* look for name, should be one (or maybe zero) result */
 		BAT *b = BATselect(bats[lookup].nmbat, cand, name, NULL, true, true, false);
 		if (cand != bats[lookup].cands)
 			bat_destroy(cand);
@@ -1376,7 +1401,6 @@ upgrade(old_logger *lg)
 		BAT *b = temp_descriptor(old_logger_find_bat(lg, tables[i].fullname, 0, 0));
 		if (b == NULL)
 			continue;
-		BAT *orig = NULL;
 		if (delidx >= 0) {
 			BAT *d = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
 			BAT *m = BATconstant(0, TYPE_msk, &(msk){0}, BATcount(b), PERSISTENT);
@@ -1390,9 +1414,13 @@ upgrade(old_logger *lg)
 				for (BUN q = BUNlast(d), p = 0; p < q; p++)
 					mskSetVal(m, (BUN) dels[p], true);
 			}
-			if (BUNappend(lg->lg->catalog_bid, &m->batCacheid, false) != GDK_SUCCEED ||
+			if (BUNappend(lg->add, &m->batCacheid, false) != GDK_SUCCEED ||
+				BBPretain(m->batCacheid) == 0 ||
+				BUNappend(lg->lg->catalog_bid, &m->batCacheid, false) != GDK_SUCCEED ||
 				BUNappend(lg->lg->catalog_id, &tables[delidx].newid, false) != GDK_SUCCEED ||
-				(d != NULL && BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED)) {
+				(d != NULL &&
+				 (BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED ||
+				  BBPretain(d->batCacheid) == 0))) {
 				bat_destroy(d);
 				bat_destroy(m);
 				goto bailout;
@@ -1435,7 +1463,7 @@ upgrade(old_logger *lg)
 				bat_destroy(b1);
 				bat_destroy(b2);
 			} else {
-				orig = b;
+				BAT *orig = b;
 				b = COLcopy(orig, orig->ttype, true, PERSISTENT);
 				if (b == NULL) {
 					bat_destroy(orig);
@@ -1454,25 +1482,25 @@ upgrade(old_logger *lg)
 					bat_destroy(b);
 					goto bailout;
 				}
+				if (BUNappend(lg->del, &orig->batCacheid, false) != GDK_SUCCEED ||
+					BUNappend(lg->add, &b->batCacheid, false) != GDK_SUCCEED) {
+					bat_destroy(orig);
+					bat_destroy(b);
+					goto bailout;
+				}
+				BBPretain(orig->batCacheid);
+				BBPretain(b->batCacheid);
+				bat_destroy(orig);
 			}
 			/* now b contains the updated values for the column in tables[i] */
 		}
 		/* here, b is either the original, unchanged bat or the updated one */
 		if (BUNappend(lg->lg->catalog_bid, &b->batCacheid, false) != GDK_SUCCEED ||
 			BUNappend(lg->lg->catalog_id, &tables[i].newid, false) != GDK_SUCCEED) {
-			bat_destroy(orig);	/* may be NULL */
 			bat_destroy(b);
 			goto bailout;
 		}
-		if (orig != NULL) {
-			if (BUNappend(lg->del, &orig->batCacheid, false) != GDK_SUCCEED) {
-				bat_destroy(orig);
-				bat_destroy(b);
-				goto bailout;
-			}
-			BBPretain(b->batCacheid);
-			bat_destroy(orig);
-		}
+		BBPretain(b->batCacheid);
 		bat_destroy(b);
 	}
 
@@ -1504,6 +1532,13 @@ upgrade(old_logger *lg)
 		bat_destroy(b);
 		goto bailout;
 	}
+	struct canditer ci;
+	canditer_init(&ci, lg->catalog_bid, cands);
+	const int *bids;
+	bids = (const int *) Tloc(lg->catalog_bid, 0);
+	for (BUN i = 0; i < ci.ncand; i++) {
+		BBPretain(bids[canditer_next(&ci) - lg->catalog_bid->hseqbase]);
+	}
 	bat_destroy(cands);
 	bat_destroy(b);
 
@@ -1534,9 +1569,7 @@ upgrade(old_logger *lg)
 		bat_destroy(b1);
 		goto bailout;
 	}
-	struct canditer ci;
 	canditer_init(&ci, lg->lg->catalog_bid, b1);
-	const int *bids;
 	const oid *cbids;
 	bids = Tloc(lg->lg->catalog_bid, 0);
 	cbids = Tloc(b4, 0);
@@ -1572,13 +1605,17 @@ upgrade(old_logger *lg)
 		}
 		bat_destroy(b);
 		if (BUNappend(lg->del, &tbid, false) != GDK_SUCCEED ||
+		    BUNappend(lg->add, &bn->batCacheid, false) != GDK_SUCCEED ||
 		    BUNreplace(lg->lg->catalog_bid, o, &bn->batCacheid, false) != GDK_SUCCEED) {
 			bat_destroy(bn);
 			bat_destroy(b1);
 			bat_destroy(b3);
 			goto bailout;
 		}
+		/* moving tbid from lg->lg->catalog_bid to lg->del does not change
+		 * lrefs of tbid (old location is overwritten by new table id) */
 		BBPretain(bn->batCacheid);
+		BBPretain(bn->batCacheid); /* yep, twice */
 		bat_destroy(bn);
 	}
 	bat_destroy(b1);
@@ -1606,6 +1643,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 	if (store->catalog_version < 52300 && upgrade(old_lg) != GDK_SUCCEED)
 		return GDK_FAIL;
 	logger *lg = old_lg->lg;
+	bool tabins_first = true;
 #ifdef CATALOG_JUN2020
 	if (store->catalog_version <= CATALOG_JUN2020) {
 		BAT *b;								 /* temp variable */
@@ -1618,13 +1656,15 @@ bl_postversion(void *Store, old_logger *old_lg)
 				return GDK_FAIL;
 			if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_id, &(int) {2162}, false) != GDK_SUCCEED ||
+				BUNappend(old_lg->add, &sem->batCacheid, false) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_bid, &sem->batCacheid, false) != GDK_SUCCEED) {
 				bat_destroy(sem);
 				return GDK_FAIL;
 			}
 			BBPretain(sem->batCacheid);
+			BBPretain(sem->batCacheid); /* yep, twice */
 			bat_destroy(sem);
-			if (tabins(lg, -1, 0,
+			if (tabins(lg, old_lg, tabins_first, -1, 0,
 					   2077, &(int) {2162},		/* sys._columns.id */
 					   2078, "semantics",		/* sys._columns.name */
 					   2079, "boolean",			/* sys._columns.type */
@@ -1637,6 +1677,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 					   2086, str_nil,			/* sys._columns.storage */
 					   0) != GDK_SUCCEED)
 				return GDK_FAIL;
+			tabins_first = false;
 		}
 
 		BAT *func_tid;
@@ -1774,7 +1815,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 #ifdef CATALOG_OCT2020
 	if (store->catalog_version <= CATALOG_OCT2020) {
 		/* add sub column to "objects" table. This is required for merge tables */
-		if (tabins(lg, -1, 0,
+		if (tabins(lg, old_lg, tabins_first, -1, 0,
 				   2077, &(int) {2163},		/* sys._columns.id */
 				   2078, "sub",				/* sys._columns.name */
 				   2079, "int",				/* sys._columns.type */
@@ -1787,7 +1828,8 @@ bl_postversion(void *Store, old_logger *old_lg)
 				   2086, str_nil,			/* sys._columns.storage */
 				   0) != GDK_SUCCEED)
 			return GDK_FAIL;
-		if (tabins(lg, -1, 0,
+		tabins_first = false;
+		if (tabins(lg, old_lg, tabins_first, -1, 0,
 				   2077, &(int) {2164},		/* sys._columns.id */
 				   2078, "sub",				/* sys._columns.name */
 				   2079, "int",				/* sys._columns.type */
@@ -1873,16 +1915,16 @@ bl_postversion(void *Store, old_logger *old_lg)
 			return GDK_FAIL;
 		}
 
-		/* now do something with objs_nr and objs_sub */
-
 		if (BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2113}), &objs_nr->batCacheid, false) != GDK_SUCCEED ||
 			BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
 			BATsetaccess(objs_nr, BAT_READ) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_id, &(int) {2163}, false) != GDK_SUCCEED ||
+			BUNappend(old_lg->add, &objs_sub->batCacheid, false) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &objs_sub->batCacheid, false) != GDK_SUCCEED) {
 			bat_destroy(objs_sub);
 			return GDK_FAIL;
 		}
+		BBPretain(objs_sub->batCacheid);
 		BBPretain(objs_sub->batCacheid);
 		BBPretain(objs_nr->batCacheid);
 		bat_destroy(objs_sub);
@@ -1896,10 +1938,12 @@ bl_postversion(void *Store, old_logger *old_lg)
 		}
 		if (BATsetaccess(objs_sub, BAT_READ) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_id, &(int) {2164}, false) != GDK_SUCCEED ||
+			BUNappend(old_lg->add, &objs_sub->batCacheid, false) != GDK_SUCCEED ||
 			BUNappend(lg->catalog_bid, &objs_sub->batCacheid, false) != GDK_SUCCEED) {
 			bat_destroy(objs_sub);
 			return GDK_FAIL;
 		}
+		BBPretain(objs_sub->batCacheid);
 		BBPretain(objs_sub->batCacheid);
 		bat_destroy(objs_sub);
 	}

@@ -1660,8 +1660,11 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				goto error;
 		}
 		lg->with_ids = false;
-	} else if (BUNappend(lg->del, &t->batCacheid, false) != GDK_SUCCEED)
-		goto error;
+	} else {
+		if (BUNappend(lg->del, &t->batCacheid, false) != GDK_SUCCEED)
+			goto error;
+		BBPretain(t->batCacheid);
+	}
 
 	strconcat_len(bak, sizeof(bak), fn, "_catalog_oid", NULL);
 	catalog_oid = BBPindex(bak);
@@ -1684,8 +1687,11 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				goto error;
 		}
 		lg->with_ids = false;
-	} else if (BUNappend(lg->del, &o->batCacheid, false) != GDK_SUCCEED)
-		goto error;
+	} else {
+		if (BUNappend(lg->del, &o->batCacheid, false) != GDK_SUCCEED)
+			goto error;
+		BBPretain(o->batCacheid);
+	}
 
 	strconcat_len(bak, sizeof(bak), fn, "_dcatalog", NULL);
 	dcatalog = BBPindex(bak);
@@ -1710,17 +1716,23 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			BBPunfix(o->batCacheid);
 			goto error;
 		}
-	} else if (BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED)
-		goto error;
+	} else {
+		if (BUNappend(lg->del, &d->batCacheid, false) != GDK_SUCCEED)
+			goto error;
+		BBPretain(d->batCacheid);
+	}
 
 	lg->catalog_bid = b;
 	lg->catalog_nme = n;
 	lg->catalog_tpe = t;
 	lg->catalog_oid = o;
 	lg->dcatalog = d;
-	if (BUNappend(lg->del, &b->batCacheid, false) != GDK_SUCCEED ||
-	    BUNappend(lg->del, &n->batCacheid, false) != GDK_SUCCEED)
+	if (BUNappend(lg->del, &b->batCacheid, false) != GDK_SUCCEED)
 		goto error;
+	BBPretain(b->batCacheid);
+	if (BUNappend(lg->del, &n->batCacheid, false) != GDK_SUCCEED)
+		goto error;
+	BBPretain(n->batCacheid);
 
 	const log_bid *bids;
 	bids = (const log_bid *) Tloc(b, 0);
@@ -1779,6 +1791,7 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 			}
 			if (BUNappend(lg->del, &dsnapshots, false) != GDK_SUCCEED)
 				goto error;
+			BBPretain(dsnapshots);
 		} else {
 			lg->dsnapshots = logbat_new(TYPE_oid, 1, TRANSIENT);
 			if (lg->dsnapshots == NULL) {
@@ -1786,9 +1799,12 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 				goto error;
 			}
 		}
-		if (BUNappend(lg->del, &snapshots_bid, false) != GDK_SUCCEED ||
-		    BUNappend(lg->del, &snapshots_tid, false) != GDK_SUCCEED)
+		if (BUNappend(lg->del, &snapshots_bid, false) != GDK_SUCCEED)
 			goto error;
+		BBPretain(snapshots_bid);
+		if (BUNappend(lg->del, &snapshots_tid, false) != GDK_SUCCEED)
+			goto error;
+		BBPretain(snapshots_tid);
 	}
 	strconcat_len(bak, sizeof(bak), fn, "_seqs_id", NULL);
 	if (BBPindex(bak)) {
@@ -1822,10 +1838,15 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		if (BBPrename(lg->dseqs->batCacheid, bak) < 0) {
 			goto error;
 		}
-		if (BUNappend(lg->add, &lg->seqs_id->batCacheid, false) != GDK_SUCCEED ||
-		    BUNappend(lg->add, &lg->seqs_val->batCacheid, false) != GDK_SUCCEED ||
-		    BUNappend(lg->add, &lg->dseqs->batCacheid, false) != GDK_SUCCEED)
+		if (BUNappend(lg->add, &lg->seqs_id->batCacheid, false) != GDK_SUCCEED)
 			goto error;
+		BBPretain(lg->seqs_id->batCacheid);
+		if (BUNappend(lg->add, &lg->seqs_val->batCacheid, false) != GDK_SUCCEED)
+			goto error;
+		BBPretain(lg->seqs_val->batCacheid);
+		if (BUNappend(lg->add, &lg->dseqs->batCacheid, false) != GDK_SUCCEED)
+			goto error;
+		BBPretain(lg->dseqs->batCacheid);
 	}
 
 	if (check_version(lg, fp, version) != GDK_SUCCEED) {
@@ -1843,10 +1864,15 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 		goto error;
 	lg->lg->postfuncp = NULL; /* not again */
 
-	if (BUNappend(lg->add, &lg->lg->catalog_bid->batCacheid, false) != GDK_SUCCEED ||
-	    BUNappend(lg->add, &lg->lg->catalog_id->batCacheid, false) != GDK_SUCCEED ||
-	    BUNappend(lg->add, &lg->lg->dcatalog->batCacheid, false) != GDK_SUCCEED)
+	if (BUNappend(lg->add, &lg->lg->catalog_bid->batCacheid, false) != GDK_SUCCEED)
 		goto error;
+	BBPretain(lg->lg->catalog_bid->batCacheid);
+	if (BUNappend(lg->add, &lg->lg->catalog_id->batCacheid, false) != GDK_SUCCEED)
+		goto error;
+	BBPretain(lg->lg->catalog_id->batCacheid);
+	if (BUNappend(lg->add, &lg->lg->dcatalog->batCacheid, false) != GDK_SUCCEED)
+		goto error;
+	BBPretain(lg->lg->dcatalog->batCacheid);
 
 	/* done reading the log, revert to "normal" behavior */
 	geomisoldversion = false;
@@ -1867,7 +1893,15 @@ logger_load(const char *fn, char filename[FILENAME_MAX], old_logger *lg, FILE *f
 	logbat_destroy(lg->seqs_id);
 	logbat_destroy(lg->seqs_val);
 	logbat_destroy(lg->dseqs);
+	bids = (const log_bid *) Tloc(lg->add, 0);
+	BATloop(lg->add, p, q) {
+		BBPrelease(bids[p]);
+	}
 	logbat_destroy(lg->add);
+	bids = (const log_bid *) Tloc(lg->del, 0);
+	BATloop(lg->del, p, q) {
+		BBPrelease(bids[p]);
+	}
 	logbat_destroy(lg->del);
 	GDKfree(lg->local_dir);
 	GDKfree(lg);
@@ -1940,7 +1974,7 @@ old_logger_destroy(old_logger *lg)
 	BAT *b = NULL;
 	const log_bid *bids;
 
-	bat *subcommit = GDKmalloc(sizeof(log_bid) * (BATcount(lg->add) + BATcount(lg->del) + BATcount(lg->lg->catalog_bid) + 1));
+	bat *subcommit = GDKmalloc(sizeof(log_bid) * (BATcount(lg->add) + BATcount(lg->del) + 1));
 	if (subcommit == NULL) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		return GDK_FAIL;
@@ -1965,12 +1999,6 @@ old_logger_destroy(old_logger *lg)
 			BBPunfix(bids[p]);
 		}
 		subcommit[i++] = bids[p];
-	}
-	bids = (const log_bid *) Tloc(lg->lg->catalog_bid, 0);
-	BATloop(lg->lg->catalog_bid, p, q) {
-		b = BBPquickdesc(bids[p], false);
-		if (BATdirty(b))
-			subcommit[i++] = bids[p];
 	}
 	/* give the catalog bats names so we can find them
 	 * next time */
@@ -2008,24 +2036,29 @@ old_logger_destroy(old_logger *lg)
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		return GDK_FAIL;
 	}
-	bids = (const log_bid *) Tloc(lg->lg->catalog_bid, 0);
-	BATloop(lg->lg->catalog_bid, p, q) {
-		if (BBP_lrefs(bids[p]) > 1)
-			BBPrelease(bids[p]);
-	}
 
 	if (logger_cleanup(lg) != GDK_SUCCEED)
 		TRC_CRITICAL(GDK, "logger_cleanup failed\n");
 
 	/* free resources */
-	bids = (const log_bid *) Tloc(b, 0);
-	BATloop(b, p, q) {
+	bids = (const log_bid *) Tloc(lg->catalog_bid, 0);
+	BATloop(lg->catalog_bid, p, q) {
 		bat bid = bids[p];
 		oid pos = p;
 
 		if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE)
 			BBPrelease(bid);
 	}
+	bids = (const log_bid *) Tloc(lg->add, 0);
+	BATloop(lg->add, p, q) {
+		BBPrelease(bids[p]);
+	}
+	logbat_destroy(lg->add);
+	bids = (const log_bid *) Tloc(lg->del, 0);
+	BATloop(lg->del, p, q) {
+		BBPrelease(bids[p]);
+	}
+	logbat_destroy(lg->del);
 
 	logbat_destroy(lg->catalog_bid);
 	logbat_destroy(lg->catalog_nme);
@@ -2033,7 +2066,12 @@ old_logger_destroy(old_logger *lg)
 	logbat_destroy(lg->catalog_oid);
 	logbat_destroy(lg->dcatalog);
 	logbat_destroy(lg->freed);
-
+	logbat_destroy(lg->seqs_id);
+	logbat_destroy(lg->seqs_val);
+	logbat_destroy(lg->dseqs);
+	logbat_destroy(lg->snapshots_bid);
+	logbat_destroy(lg->snapshots_tid);
+	logbat_destroy(lg->dsnapshots);
 	lg->lg->id = (ulng) lg->id;
 
 	GDKfree(lg);
