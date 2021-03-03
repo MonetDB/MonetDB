@@ -29,7 +29,7 @@ CREATE VIEW sys.dump_add_schemas_to_users AS
 		AND ui.name <> '.snapshot'
 		AND s.name <> 'sys';
 
-CREATE VIEW sys.dump_grant_user_priviledges AS
+CREATE VIEW sys.dump_grant_user_privileges AS
 	SELECT
 		'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';' stmt
 	FROM sys.auths a1, sys.auths a2, sys.user_role ur
@@ -64,7 +64,7 @@ CREATE VIEW sys.dump_foreign_keys AS
 
 CREATE VIEW sys.dump_partition_tables AS
 	SELECT
-		ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
+		sys.ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
 		CASE 
 			WHEN tpe = 'VALUES' THEN ' AS PARTITION IN (' || pvalues || ')'
 			WHEN tpe = 'RANGE' THEN ' AS PARTITION FROM ' || ifthenelse(minimum IS NOT NULL, sys.SQ(minimum), 'RANGE MINVALUE') || ' TO ' || ifthenelse(maximum IS NOT NULL, sys.SQ(maximum), 'RANGE MAXVALUE')
@@ -94,7 +94,7 @@ CREATE VIEW sys.dump_start_sequences AS
 	FROM sys.describe_sequences;
 
 CREATE VIEW sys.dump_functions AS
-	SELECT f.o o, schema_guard(f.sch, f.fun, f.def) stmt FROM sys.describe_functions f;
+	SELECT f.o o, sys.schema_guard(f.sch, f.fun, f.def) stmt FROM sys.describe_functions f;
 
 CREATE VIEW sys.dump_tables AS
 	SELECT
@@ -108,7 +108,7 @@ CREATE VIEW sys.dump_tables AS
 	FROM sys.describe_tables t;
 
 CREATE VIEW sys.dump_triggers AS
-	SELECT schema_guard(sch, tab, def) stmt FROM sys.describe_triggers;
+	SELECT sys.schema_guard(sch, tab, def) stmt FROM sys.describe_triggers;
 
 CREATE VIEW sys.dump_comments AS
 	SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
@@ -148,7 +148,7 @@ BEGIN
     RETURN
         CASE
             WHEN (t = 'varchar' OR t ='char' OR t = 'clob' OR t = 'json' OR t = 'geometry' OR t = 'url') THEN
-                'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE ' || 'esc(' || sys.DQ(s) || ')' || ' END'
+                'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE ' || 'sys.esc(' || sys.DQ(s) || ')' || ' END'
             ELSE
                 'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE CAST(' || sys.DQ(s) || ' AS STRING) END'
         END;
@@ -180,7 +180,7 @@ CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
 			SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
 
 			DECLARE SELECT_DATA_STMT STRING;
-			SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || prepare_esc(cname, ctype);
+			SET SELECT_DATA_STMT = 'SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
 
 			DECLARE M INT;
 			SET M = (SELECT MAX(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
@@ -190,7 +190,7 @@ CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
 				SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
 				SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
 				SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
-				SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || prepare_esc(cname, ctype);
+				SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);
 			END WHILE;
 
 			SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
@@ -218,13 +218,13 @@ CREATE PROCEDURE sys.dump_table_data() BEGIN
 		WHILE i < M DO
 			set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
 			set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-			CALL _dump_table_data(sch, tbl);
+			CALL sys._dump_table_data(sch, tbl);
 			SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);
 		END WHILE;
 
 		set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
 		set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
-		CALL _dump_table_data(sch, tbl);
+		CALL sys._dump_table_data(sch, tbl);
 	END IF;
 END;
 
@@ -241,7 +241,7 @@ BEGIN
 	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_schemas;
 	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_user_defined_types;
 	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_add_schemas_to_users;
-	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_priviledges;
+	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
 	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
 	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
 
@@ -266,7 +266,7 @@ BEGIN
 	INSERT INTO sys.dump_statements SELECT (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_privileges;
 
 	IF NOT DESCRIBE THEN
-		CALL dump_table_data();
+		CALL sys.dump_table_data();
 	END IF;
 	--TODO Improve performance of dump_table_data.
 	--TODO loaders ,procedures, window and filter sys.functions.
