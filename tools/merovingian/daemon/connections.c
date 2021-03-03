@@ -25,7 +25,7 @@
 #include "connections.h"
 
 err
-openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, unsigned short port, FILE *log)
+openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port, FILE *log)
 {
 	struct addrinfo *result = NULL, *rp = NULL;
 	int sock = -1, check = 0;
@@ -35,9 +35,10 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 	char host[512] = "";
 	int e = 0;
 	const char *msghost = bindaddr ? bindaddr : "any"; /* for messages */
+	int ipv6_vs6only = -1;
 
 	struct addrinfo hints = (struct addrinfo) {
-		.ai_family = bind_ipv6 ? AF_INET6 : AF_INET,
+		.ai_family = AF_INET6,
 		.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM,
 		.ai_flags = AI_PASSIVE | AI_NUMERICSERV,
 		.ai_protocol = udp ? 0 : IPPROTO_TCP,
@@ -45,6 +46,38 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 	snprintf(sport, sizeof(sport), "%hu", port);
 
 	socks[0] = socks[1] = -1;
+
+	if (bindaddr == NULL || strcmp(bindaddr, "localhost") == 0) {
+		hints.ai_family = AF_INET6;
+		hints.ai_flags |= AI_NUMERICHOST;
+		ipv6_vs6only = 0;
+		bindaddr = "::1";
+		strcpy_len(host, "localhost", sizeof(host));
+	} else if (strcmp(bindaddr, "all") == 0) {
+		hints.ai_family = AF_INET6;
+		ipv6_vs6only = 0;
+		bindaddr = NULL;
+	} else if (strcmp(bindaddr, "::") == 0) {
+		hints.ai_family = AF_INET6;
+		ipv6_vs6only = 1;
+		bindaddr = NULL;
+	} else if (strcmp(bindaddr, "0.0.0.0") == 0) {
+		hints.ai_family = AF_INET;
+		hints.ai_flags |= AI_NUMERICHOST;
+		bindaddr = NULL;
+	} else if (strcmp(bindaddr, "::1") == 0) {
+		hints.ai_family = AF_INET6;
+		hints.ai_flags |= AI_NUMERICHOST;
+		ipv6_vs6only = 1;
+		strcpy_len(host, "localhost", sizeof(host));
+	} else if (strcmp(bindaddr, "127.0.0.1") == 0) {
+		hints.ai_family = AF_INET;
+		hints.ai_flags |= AI_NUMERICHOST;
+		strcpy_len(host, "localhost", sizeof(host));
+	} else {
+		hints.ai_family = AF_INET6;
+		ipv6_vs6only = 0;
+	}
 
 	for (;;) {					/* max twice */
 		check = getaddrinfo(bindaddr, sport, &hints, &result);
@@ -122,9 +155,12 @@ openConnectionIP(int *socks, bool udp, bool bind_ipv6, const char *bindaddr, uns
 			break;					/* working */
 		}
 		freeaddrinfo(result);
-		if (hints.ai_family == AF_INET6)
+		if (ipv6_vs6only == 0) {
+			ipv6_vs6only = -1;
 			hints.ai_family = AF_INET;
-		else
+			if (bindaddr && strcmp(bindaddr, "::1") == 0)
+				bindaddr = "127.0.0.1";
+		} else
 			break;
 	}
 
