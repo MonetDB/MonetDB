@@ -16,7 +16,7 @@ BAT *BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s);
 BAT *BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s);
 gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force) __attribute__((__warn_unused_result__));
 void BATassertProps(BAT *b);
-atomDesc BATatoms[];
+atomDesc BATatoms[MAXATOMS];
 BAT *BATattach(int tt, const char *heapfile, role_t role);
 gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, const void *c1, const void *c2, bool li, bool hi, BUN estimate) __attribute__((__warn_unused_result__));
 BAT *BATcalcabsolute(BAT *b, BAT *s);
