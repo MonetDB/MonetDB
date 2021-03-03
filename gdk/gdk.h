@@ -2115,19 +2115,29 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
 
 #define CHECK_QRY_TIMEOUT_STEP 10000
 
-#define GDK_CHECK_TIMEOUT(timeoffset, counter)				\
+#define DEFAULT_TIMEOUT_HANDLER()					\
+	do {								\
+		GDKerror("Timeout was reached!");			\
+		return GDK_FAIL;					\
+	} while(0)
+
+#define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
+	do {								\
+		goto label;						\
+	} while(0)
+
+#define GDK_CHECK_TIMEOUT(timeoffset, counter, callback)		\
 	do {								\
 	if (timeoffset) {						\
 		if (counter > CHECK_QRY_TIMEOUT_STEP) {			\
 			if (GDKusec() > timeoffset) {			\
-				GDKerror("Timeout was reached!");	\
-				return GDK_FAIL;			\
+				callback;				\
 			}						\
 			counter = 0;					\
 		} else {						\
 			counter++;					\
 		}							\
 	}								\
-	} while (false)
+	} while (0)
 
 #endif /* _GDK_H_ */
