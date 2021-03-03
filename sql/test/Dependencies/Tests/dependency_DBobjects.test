@@ -352,7 +352,7 @@ DEP_FUNC
 dump_functions
 dump_database
 DEP_FUNC
-dump_grant_user_priviledges
+dump_grant_user_privileges
 dump_database
 DEP_FUNC
 dump_indices
