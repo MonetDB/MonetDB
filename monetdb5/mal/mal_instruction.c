@@ -777,7 +777,6 @@ setVariableType(MalBlkPtr mb, const int n, malType type)
 char *
 getVarName(MalBlkPtr mb, int idx)
 {
-	char buf[IDLENGTH] = {0};
 	char *s = mb->var[idx].name;
 	if( getVarKind(mb,idx) == 0)
 		setVarKind(mb,idx, REFMARKER);
@@ -785,7 +784,7 @@ getVarName(MalBlkPtr mb, int idx)
 	if( *s &&  s[1] != '_' && (s[0] != 'X' && s[0] != 'C'))
 		return s;
 	if ( *s == 0)
-		(void) snprintf(buf, IDLENGTH,"%c_%d", getVarKind(mb, idx), mb->vid++);
+		(void) snprintf(s, IDLENGTH,"%c_%d", getVarKind(mb, idx), mb->vid++);
 	return s;
 }
 
@@ -828,8 +827,12 @@ cloneVariable(MalBlkPtr tm, MalBlkPtr mb, int x)
 	int res;
 	if (isVarConstant(mb, x))
 		res = cpyConstant(tm, getVar(mb, x));
-	else
-		res = newVariable(tm, getVarName(mb, x), strlen(getVarName(mb,x)), getVarType(mb, x));
+	else {
+		res = newTmpVariable(tm, getVarType(mb, x));
+		if( *mb->var[x].name)
+			strcpy(tm->var[x].name, mb->var[x].name);
+		//res = newVariable(tm, getVarName(mb, x), strlen(getVarName(mb,x)), getVarType(mb, x));
+	}
 	if (res < 0)
 		return res;
 	if (isVarFixed(mb, x))
