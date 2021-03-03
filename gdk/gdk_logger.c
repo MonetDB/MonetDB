@@ -528,17 +528,21 @@ static gdk_return
 la_bat_updates(logger *lg, logaction *la)
 {
 	log_bid bid = internal_find_bat(lg, la->cid);
+	BAT *b = NULL;
 
 	if (bid == 0)
 		return GDK_SUCCEED; /* ignore bats no longer in the catalog */
 
-	BAT *b = BATdescriptor(bid);
-	if (b == NULL)
-		return GDK_FAIL;
+	if (!lg->flushing) {
+		b = BATdescriptor(bid);
+		if (b == NULL)
+			return GDK_FAIL;
+	}
 	if (la->type == LOG_UPDATE_BULK) {
-		BUN cnt = BATcount(b);
+		BUN cnt = 0;
 
 		if (!lg->flushing) {
+			cnt = BATcount(b);
 			int is_msk = (b->ttype == TYPE_msk);
 			/* handle offset 0 ie clear */
 			if (/* DISABLES CODE */ (0) && la->offset == 0 && cnt)
@@ -583,7 +587,8 @@ la_bat_updates(logger *lg, logaction *la)
 		}
 		cnt = (BUN)(la->offset + la->nr);
 		if (la_bat_update_count(lg, la->cid, cnt) != GDK_SUCCEED) {
-			logbat_destroy(b);
+			if (b)
+				logbat_destroy(b);
 			return GDK_FAIL;
 		}
 	} else if (!lg->flushing && la->type == LOG_UPDATE) {
@@ -600,7 +605,8 @@ la_bat_updates(logger *lg, logaction *la)
 			}
 		}
 	}
-	logbat_destroy(b);
+	if (b)
+		logbat_destroy(b);
 	return GDK_SUCCEED;
 }
 
