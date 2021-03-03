@@ -3821,7 +3821,7 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.db_user_info",	".snapshot",	"Snapshot User",	"sys"	]
 [ "sys.db_user_info",	"monetdb",	"MonetDB Admin",	"sys"	]
 #select 'function used by function', s1.name, f1.name, s2.name, f2.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.functions f1, sys.functions f2, sys.schemas s1, sys.schemas s2 where d.id = f1.id and d.depend_id = f2.id and f1.schema_id = s1.id and f2.schema_id = s2.id order by s2.name, f2.name, s1.name, f1.name;
-% .%1,	sys.s1,	sys.f1,	sys.s2,	sys.f2,	.dt # table_name
+% .%1,	sys.s1,	sys.f1,	.s2,	.f2,	.dt # table_name
 % %1,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 25,	3,	17,	3,	13,	8 # length
@@ -3832,7 +3832,7 @@ drop function pcre_replace(string, string, string, string);
 [ "function used by function",	"sys",	"internaltransform",	"sys",	"st_transform",	"FUNCTION"	]
 [ "function used by function",	"sys",	"st_srid",	"sys",	"st_transform",	"FUNCTION"	]
 #select 'table used by function', s1.name, t.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = t.id and d.depend_id = f.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name;
-% .%1,	sys.s1,	sys.t,	sys.s2,	sys.f,	.dt # table_name
+% .%1,	sys.s1,	sys.t,	.s2,	.f,	.dt # table_name
 % %1,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 22,	3,	17,	3,	16,	9 # length
@@ -3845,7 +3845,7 @@ drop function pcre_replace(string, string, string, string);
 [ "table used by function",	"sys",	"storagemodelinput",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 [ "table used by function",	"sys",	"tables",	"sys",	"storagemodelinit",	"PROCEDURE"	]
 #select 'column used by function', s1.name, t.name, c.name, s2.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys._columns c, sys._tables t, sys.schemas s1, sys.functions f, sys.schemas s2 where d.id = c.id and d.depend_id = f.id and c.table_id = t.id and t.schema_id = s1.id and f.schema_id = s2.id order by s2.name, f.name, s1.name, t.name, c.name;
-% .%1,	sys.s1,	sys.t,	sys.c,	sys.s2,	sys.f,	.dt # table_name
+% .%1,	sys.s1,	sys.t,	sys.c,	.s2,	.f,	.dt # table_name
 % %1,	name,	name,	name,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 23,	3,	17,	13,	3,	16,	9 # length
@@ -4488,7 +4488,7 @@ drop function pcre_replace(string, string, string, string);
 [ "column used by index",	"sys",	"table_types",	"table_type_id",	"sys",	"table_types",	"table_types_table_type_id_pkey",	"INDEX"	]
 [ "column used by index",	"sys",	"table_types",	"table_type_name",	"sys",	"table_types",	"table_types_table_type_name_unique",	"INDEX"	]
 #select 'type used by function', t.systemname, t.sqlname, s.name, f.name, dt.dependency_type_name from sys.dependencies d left outer join sys.dependency_types dt on d.depend_type = dt.dependency_type_id, sys.types t, sys.functions f, sys.schemas s where d.id = t.id and d.depend_id = f.id and f.schema_id = s.id order by s.name, f.name, t.systemname, t.sqlname;
-% .%1,	sys.t,	sys.t,	sys.s,	sys.f,	.dt # table_name
+% .%1,	sys.t,	sys.t,	.s,	.f,	.dt # table_name
 % %1,	systemname,	sqlname,	name,	name,	dependency_type_name # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar # type
 % 21,	4,	4,	4,	18,	4 # length
@@ -4703,7 +4703,7 @@ drop function pcre_replace(string, string, string, string);
 [ "grant on table",	"value_partitions",	"public",	"SELECT",	NULL,	0	]
 [ "grant on table",	"var_values",	"public",	"SELECT",	"monetdb",	0	]
 #select 'grant on column', t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
-% .%1,	sys.t,	sys.c,	sys.a,	.pc,	.g,	.p # table_name
+% .%1,	.t,	.c,	sys.a,	.pc,	.g,	.p # table_name
 % %1,	name,	name,	name,	privilege_code_name,	name,	grantable # name
 % char,	varchar,	varchar,	varchar,	varchar,	varchar,	int # type
 % 15,	0,	0,	0,	0,	0,	1 # length
