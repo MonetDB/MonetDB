@@ -40,7 +40,6 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 		return 0;
 
 	limit = mb->stop;
-	renameVariables(mb);
 
 
 	// move SQL query definition to the front for event profiling tools
