@@ -374,7 +374,8 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BUN p, q = BATcount(bn);
 
 		do {
-			GDK_CHECK_TIMEOUT(timeoffset, counter);
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					DEFAULT_TIMEOUT_HANDLER());
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -392,7 +393,8 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		BUN p, q = BATcount(bn);
 
 		do {
-			GDK_CHECK_TIMEOUT(timeoffset, counter);
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					DEFAULT_TIMEOUT_HANDLER());
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -847,7 +849,8 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* from here on we don't have to worry about nil values */
 
 	while (lstart < lend && rstart < rend) {
-		GDK_CHECK_TIMEOUT(timeoffset, counter);
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 
 		v = rvals[rstart];
 
@@ -1151,7 +1154,8 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* from here on we don't have to worry about nil values */
 
 	while (lstart < lend && rstart < rend) {
-		GDK_CHECK_TIMEOUT(timeoffset, counter);
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		v = rvals[rstart];
 
 		if (lscan < lend - lstart && lvals[lstart + lscan] < v) {
@@ -1453,7 +1457,8 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	/* from here on we don't have to worry about nil values */
 
 	while (lstart < lend && rci.next < rci.ncand) {
-		GDK_CHECK_TIMEOUT(timeoffset, counter);
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		v = canditer_peek(&rci);
 
 		if (lvals) {
@@ -1862,7 +1867,8 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	 * We will modify these as we go along.
 	 */
 	while (lci->next < lci->ncand) {
-		GDK_CHECK_TIMEOUT(timeoffset, counter);
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		if (lscan == 0) {
 			/* always search r completely */
 			assert(equal_order);
@@ -2420,7 +2426,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		TYPE *lvals = Tloc(l, 0);				\
 		TYPE v;							\
 		while (lci->next < lci->ncand) {			\
-			GDK_CHECK_TIMEOUT(timeoffset, counter);		\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, GOTO_LABEL_TIMEOUT_HANDLER(bailout));		\
 			lo = canditer_next(lci);			\
 			v = lvals[lo - l->hseqbase];			\
 			nr = 0;						\
@@ -2696,7 +2702,8 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		break;
 	default:
 		while (lci->next < lci->ncand) {
-			GDK_CHECK_TIMEOUT(timeoffset, counter);
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			lo = canditer_next(lci);
 			if (BATtvoid(l)) {
 				if (BATtdense(l))
