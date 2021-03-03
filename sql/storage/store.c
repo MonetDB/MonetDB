@@ -322,8 +322,7 @@ load_key(sql_trans *tr, sql_table *t, oid rid)
 		fk->on_delete = action & 255;
 		fk->on_update = (action>>8) & 255;
 
-		v = store->table_api.column_find_value(tr, find_sql_column(keys, "rkey"), rid);
- 		fk->rkey = *(sqlid *)v; 		_DELETE(v);
+		fk->rkey = store->table_api.column_find_sqlid(tr, find_sql_column(keys, "rkey"), rid);
 	}
 
 	kc_id = find_sql_column(objects, "id");
@@ -434,12 +433,9 @@ load_trigger(sql_trans *tr, sql_table *t, oid rid)
 	v = store->table_api.column_find_value(tr, find_sql_column(triggers, "name"), rid);
 	base_init(tr->sa, &nt->base, tid, 0, v);	_DELETE(v);
 
-	v = store->table_api.column_find_value(tr, find_sql_column(triggers, "time"), rid);
-	nt->time = *(sht*)v;			_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(triggers, "orientation"),rid);
-	nt->orientation = *(sht*)v;		_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(triggers, "event"), rid);
-	nt->event = *(sht*)v;			_DELETE(v);
+	nt->time = store->table_api.column_find_sht(tr, find_sql_column(triggers, "time"), rid);
+	nt->orientation = store->table_api.column_find_sht(tr, find_sql_column(triggers, "orientation"),rid);
+	nt->event = store->table_api.column_find_sht(tr, find_sql_column(triggers, "event"), rid);
 
 	v = store->table_api.column_find_value(tr, find_sql_column(triggers, "old_name"), rid);
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0)
@@ -505,8 +501,7 @@ load_column(sql_trans *tr, sql_table *t, oid rid)
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), def) != 0)
 		c->def = SA_STRDUP(tr->sa, def);
 	_DELETE(def);
-	v = store->table_api.column_find_value(tr, find_sql_column(columns, "null"), rid);
-	c->null = *(bit *)v;			_DELETE(v);
+	c->null = (bit) store->table_api.column_find_bte(tr, find_sql_column(columns, "null"), rid);
 	c->colnr = store->table_api.column_find_int(tr, find_sql_column(columns, "number"), rid);
 	c->unique = 0;
 	c->storage_type = NULL;
@@ -533,7 +528,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 
 	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->member, &pt->member, NULL);
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
-		void *v1, *v2, *v3;
+		void *v1, *v2;
 		ValRecord vmin, vmax;
 		ptr ok;
 
@@ -547,9 +542,7 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 		_DELETE(v1);
 		_DELETE(v2);
 		if (ok) {
-			v3 = store->table_api.column_find_value(tr, find_sql_column(ranges, "with_nulls"), rid);
-			pt->with_nills = *((bit*)v3);
-			_DELETE(v3);
+			pt->with_nills = (bit) store->table_api.column_find_bte(tr, find_sql_column(ranges, "with_nulls"), rid);
 
 			pt->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, vmin.len);
 			pt->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, vmax.len);
@@ -685,19 +678,15 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), query) != 0)
 		t->query = SA_STRDUP(tr->sa, query);
 	_DELETE(query);
-	v = store->table_api.column_find_value(tr, find_sql_column(tables, "type"), rid);
-	t->type = *(sht *)v;			_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(tables, "system"), rid);
-	t->system = *(bit *)v;			_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(tables, "commit_action"),rid);
-	t->commit_action = (ca_t)*(sht *)v;	_DELETE(v);
+	t->type = store->table_api.column_find_sht(tr, find_sql_column(tables, "type"), rid);
+	t->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(tables, "system"), rid);
+	t->commit_action = (ca_t) store->table_api.column_find_sht(tr, find_sql_column(tables, "commit_action"),rid);
 	t->persistence = SQL_PERSIST;
 	if (t->commit_action)
 		t->persistence = SQL_GLOBAL_TEMP;
 	if (isRemote(t))
 		t->persistence = SQL_REMOTE;
-	v = store->table_api.column_find_value(tr, find_sql_column(tables, "access"),rid);
-	t->access = *(sht*)v;	_DELETE(v);
+	t->access = store->table_api.column_find_sht(tr, find_sql_column(tables, "access"),rid);
 
 	t->pkey = NULL;
 	t->s = s;
@@ -722,19 +711,16 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	partitions_table_id = find_sql_column(partitions, "table_id");
 	rs = store->table_api.rids_select(tr, partitions_table_id, &t->base.id, &t->base.id, NULL);
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
-		v = store->table_api.column_find_value(tr, find_sql_column(partitions, "type"), rid);
-		t->properties |= *(bte*)v;
-		_DELETE(v);
+		t->properties |= store->table_api.column_find_bte(tr, find_sql_column(partitions, "type"), rid);
 
 		if (isPartitionedByColumnTable(t)) {
 			pcolid = store->table_api.column_find_sqlid(tr, find_sql_column(partitions, "column_id"), rid);
 		} else {
 			v = store->table_api.column_find_value(tr, find_sql_column(partitions, "expression"), rid);
-			if (ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) == 0)
-				assert(0);
+			assert(ATOMcmp(TYPE_str, ATOMnilptr(TYPE_str), v) != 0);
 			exp = SA_STRDUP(tr->sa, v);
+			_DELETE(v);
 		}
-		_DELETE(v);
 	}
 	store->table_api.rids_destroy(rs);
 
@@ -842,8 +828,7 @@ load_arg(sql_trans *tr, sql_func * f, oid rid)
 	(void)f;
 	v = store->table_api.column_find_value(tr, find_sql_column(args, "name"), rid);
 	a->name = SA_STRDUP(tr->sa, v);	_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(args, "inout"), rid);
-	a->inout = *(bte *)v;	_DELETE(v);
+	a->inout = store->table_api.column_find_bte(tr, find_sql_column(args, "inout"), rid);
 	digits = store->table_api.column_find_int(tr, find_sql_column(args, "type_digits"), rid);
 	scale = store->table_api.column_find_int(tr, find_sql_column(args, "type_scale"), rid);
 
@@ -894,18 +879,13 @@ load_func(sql_trans *tr, sql_schema *s, sqlid fid, subrids *rs)
 	t->lang = (sql_flang) store->table_api.column_find_int(tr, find_sql_column(funcs, "language"), rid);
 	t->sql = (t->lang==FUNC_LANG_SQL||t->lang==FUNC_LANG_MAL);
 	t->type = (sql_ftype) store->table_api.column_find_int(tr, find_sql_column(funcs, "type"), rid);
-	v = store->table_api.column_find_value(tr, find_sql_column(funcs, "side_effect"), rid);
-	t->side_effect = *(bit *)v;		_DELETE(v);
+	t->side_effect = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "side_effect"), rid);
 	if (t->type==F_FILT)
 		t->side_effect=FALSE;
-	v = store->table_api.column_find_value(tr, find_sql_column(funcs, "varres"), rid);
-	t->varres = *(bit *)v;	_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(funcs, "vararg"), rid);
-	t->vararg = *(bit *)v;	_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(funcs, "system"), rid);
-	t->system = *(bit *)v;	_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(funcs, "semantics"), rid);
-	t->semantics = *(bit *)v;		_DELETE(v);
+	t->varres = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "varres"), rid);
+	t->vararg = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "vararg"), rid);
+	t->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "system"), rid);
+	t->semantics = (bit) store->table_api.column_find_bte(tr, find_sql_column(funcs, "semantics"), rid);
 	t->res = NULL;
 	t->s = s;
 	t->fix_scale = SCALE_EQ;
@@ -958,18 +938,12 @@ load_seq(sql_trans *tr, sql_schema * s, oid rid)
 	sid = store->table_api.column_find_sqlid(tr, find_sql_column(seqs, "id"), rid);
 	v = store->table_api.column_find_value(tr, find_sql_column(seqs, "name"), rid);
 	base_init(tr->sa, &seq->base, sid, 0, v); _DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(seqs, "start"), rid);
-	seq->start = *(lng *)v;			_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(seqs, "minvalue"), rid);
-	seq->minvalue = *(lng *)v;		_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(seqs, "maxvalue"), rid);
-	seq->maxvalue = *(lng *)v; 		_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(seqs, "increment"), rid);
-	seq->increment = *(lng *)v; 		_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(seqs, "cacheinc"), rid);
-	seq->cacheinc = *(lng *)v;		_DELETE(v);
-	v = store->table_api.column_find_value(tr, find_sql_column(seqs, "cycle"), rid);
-	seq->cycle = *(bit *)v;			_DELETE(v);
+	seq->start = store->table_api.column_find_lng(tr, find_sql_column(seqs, "start"), rid);
+	seq->minvalue = store->table_api.column_find_lng(tr, find_sql_column(seqs, "minvalue"), rid);
+	seq->maxvalue = store->table_api.column_find_lng(tr, find_sql_column(seqs, "maxvalue"), rid);
+	seq->increment = store->table_api.column_find_lng(tr, find_sql_column(seqs, "increment"), rid);
+	seq->cacheinc = store->table_api.column_find_lng(tr, find_sql_column(seqs, "cacheinc"), rid);
+	seq->cycle = (bit) store->table_api.column_find_bte(tr, find_sql_column(seqs, "cycle"), rid);
 	seq->s = s;
 	return seq;
 }
@@ -995,8 +969,7 @@ sql_trans_update_schema(sql_trans *tr, oid rid)
 	_DELETE(s->base.name);
 	base_init(tr->sa, &s->base, sid, 0, v); _DELETE(v);
 	s->auth_id = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "authorization"), rid);
-	v = store->table_api.column_find_value(tr, find_sql_column(ss, "system"), rid);
-	s->system = *(bit *)v;          _DELETE(v);
+	s->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(ss, "system"), rid);
 	s->owner = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "owner"), rid);
 }
 
@@ -1040,8 +1013,7 @@ load_schema(sql_trans *tr, oid rid)
 		v = store->table_api.column_find_value(tr, find_sql_column(ss, "name"), rid);
 		base_init(tr->sa, &s->base, sid, 0, v); _DELETE(v);
 		s->auth_id = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "authorization"), rid);
-		v = store->table_api.column_find_value(tr, find_sql_column(ss, "system"), rid);
-		s->system = *(bit *)v;          _DELETE(v);
+		s->system = (bit) store->table_api.column_find_bte(tr, find_sql_column(ss, "system"), rid);
 		s->owner = store->table_api.column_find_sqlid(tr, find_sql_column(ss, "owner"), rid);
 
 		s->tables = os_new(tr->sa, (destroy_fptr) &table_destroy, false, true);
