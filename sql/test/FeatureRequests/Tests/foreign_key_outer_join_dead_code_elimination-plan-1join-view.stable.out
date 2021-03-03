@@ -52,13 +52,13 @@ project (
 % .plan # table_name
 % rel # name
 % clob # type
-% 116 # length
+% 107 # length
 project (
 | project (
 | | left outer join (
-| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
+| | | table(sys.fk) [ "fk"."id" NOT NULL HASHCOL , "fk"."%fk_fk1_fkey" JOINIDX sys.fk.fk_fk1_fkey ] COUNT ,
 | | | table(sys.pk1) [ "pk1"."v1", "pk1"."%TID%" NOT NULL ] COUNT 
-| | ) [ "fk"."%fk_fk1_fkey" NOT NULL = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
+| | ) [ "fk"."%fk_fk1_fkey" = "pk1"."%TID%" NOT NULL JOINIDX sys.fk.fk_fk1_fkey ]
 | ) [ "fk"."id" NOT NULL HASHCOL  as "v1"."id", "pk1"."v1" as "v1"."v1" ]
 ) [ "v1"."id" NOT NULL HASHCOL , "v1"."v1" ] [ "v1"."id" ASC NOT NULL HASHCOL  ]
 
