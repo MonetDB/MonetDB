@@ -14,7 +14,7 @@
 #include "gdk_atoms.h"
 #include "matomic.h"
 
-#define inTransaction(tr,t) (isLocalTemp(t) || os_obj_intransaction(t->s->tables, tr, &t->base))
+#define inTransaction(tr,t) (isLocalTemp(t))
 
 static int log_update_col( sql_trans *tr, sql_change *c);
 static int log_update_idx( sql_trans *tr, sql_change *c);
