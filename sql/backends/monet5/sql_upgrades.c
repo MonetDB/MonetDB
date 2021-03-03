@@ -2374,6 +2374,28 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 
 			pos = snprintf(buf, bufsize, "set schema \"sys\";\n");
 
+			/* 20_vacuum.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop procedure sys.shrink(string, string);\n"
+							"drop procedure sys.reuse(string, string);\n"
+							"drop procedure sys.vacuum(string, string);\n");
+
+			/* 25_debug.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop procedure sys.flush_log();\n");
+
+			/* 41_json.sql */
+			pos += snprintf(buf + pos, bufsize - pos,
+							"drop function json.isobject(string);\n"
+							"drop function json.isarray(string);\n"
+							"drop function json.isvalid(json);\n"
+							"create function json.isvalid(js json)\n"
+							"returns bool begin return true; end;\n"
+							"grant execute on function json.isvalid(json) to public;\n"
+							"update sys.functions set system = true"
+							" where schema_id = (select id from sys.schemas where name = 'json')"
+							" and name = 'isvalid';\n");
+
 			/* 51_sys_schema_extensions, remove stream table entries and update window function description */
 			pos += snprintf(buf + pos, bufsize - pos,
 					"ALTER TABLE sys.keywords SET READ WRITE;\n"
@@ -3113,7 +3135,7 @@ sql_update_default(Client c, mvc *sql, const char *prev_schema, bool *systabfixe
 					"            SET M = (SELECT MAX(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);\n"
 					"\n"
 					"            WHILE (k < M) DO\n"
-					"                SET k = (SELECT MIN(c.id) FROM sys.columns c, tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);\n"
+					"                SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);\n"
 					"                SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);\n"
 					"                SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);\n"
 					"                SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));\n"
