@@ -5,17 +5,5 @@ HAVE_JDBCTESTS&HAVE_HGE?Test_Int128
 HAVE_JDBCCLIENT_JAR?Test_JdbcClient
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
 #HAVE_JDBCTESTS?Test_PSlargeamount # scalabity test which is disabled by default (it takes a long time to run and does not need to be run everytime, only before a new release)
-HAVE_JDBCTESTS?BugConcurrent_clients_SF_1504657
-HAVE_JDBCTESTS?BugConcurrent_sequences
-HAVE_JDBCTESTS?BugExecuteUpdate_Bug_3350
-HAVE_JDBCTESTS?BugDatabaseMetaData_Bug_3356
-HAVE_JDBCTESTS?BugSetQueryTimeout_Bug_3357
-HAVE_JDBCTESTS?BugDecimalRound_Bug_3561
-HAVE_JDBCTESTS?BugResultSetMetaData_Bug_6183
-HAVE_JDBCTESTS?Bug_PrepStmtSetObject_CLOB_6349
-HAVE_JDBCTESTS?Bug_Connect_as_voc_getMetaData_Failure_Bug_6388
-HAVE_JDBCTESTS?Bug_LargeQueries_6571_6693
-HAVE_JDBCTESTS?Bug_IsValid_Timeout_Bug_6782
-HAVE_JDBCTESTS?Bug_PrepStmt_With_Errors_Jira292
 # next test should be done AFTER all the other tests have completed
 HAVE_JDBCCLIENT_JAR?ValidateSystemCatalogTables
