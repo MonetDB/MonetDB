@@ -9799,10 +9799,23 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 	return rel;
 }
 
+static int
+need_optimization(sql_rel *rel)
+{
+ 	if (rel->card <= CARD_ATOM && is_simple_project(rel->op) && !rel->l)
+		return 0;
+	else if (rel->card <= CARD_ATOM && is_simple_project(rel->op))
+		return need_optimization(rel->l);
+	return 1;
+}
+
 sql_rel *
 rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt)
 {
 	int level = 0, changes = 1;
+
+ 	if (!need_optimization(rel))
+ 		return rel;
 
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
