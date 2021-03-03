@@ -290,7 +290,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s)
 	t = mvc_init_create_view(m, s, "users",
 			    "create view sys.users as select u.\"name\" as \"name\", "
 			    "ui.\"fullname\", ui.\"default_schema\", "
-				"ui.\"schema_path\" from db_users() as u "
+				"ui.\"schema_path\" from sys.db_users() as u "
 				"left join \"sys\".\"db_user_info\" as ui "
 			    "on u.\"name\" = ui.\"name\";");
 	if (!t) {
