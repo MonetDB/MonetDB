@@ -1403,7 +1403,7 @@ upgrade(old_logger *lg)
 			continue;
 		if (delidx >= 0) {
 			BAT *d = temp_descriptor(old_logger_find_bat(lg, delname, 0, 0));
-			BAT *m = BATconstant(0, TYPE_msk, &(msk){0}, BATcount(b), PERSISTENT);
+			BAT *m = BATconstant(0, TYPE_msk, &(msk){false}, BATcount(b), PERSISTENT);
 			if (m == NULL) {
 				bat_destroy(d);
 				bat_destroy(m);
@@ -1590,7 +1590,7 @@ upgrade(old_logger *lg)
 		tbid = bids[o - lg->lg->catalog_bid->hseqbase];
 		b = temp_descriptor(tbid);
 		BAT *bn;
-		bn = BATconstant(0, TYPE_msk, &(msk){0}, len, PERSISTENT);
+		bn = BATconstant(0, TYPE_msk, &(msk){false}, len, PERSISTENT);
 		if (b == NULL || bn == NULL) {
 			bat_destroy(b);
 			bat_destroy(bn);
@@ -1665,6 +1665,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 			BBPretain(sem->batCacheid); /* yep, twice */
 			bat_destroy(sem);
 			if (tabins(lg, old_lg, tabins_first, -1, 0,
+					   2076, &(msk) {false},	/* sys._columns */
 					   2077, &(int) {2162},		/* sys._columns.id */
 					   2078, "semantics",		/* sys._columns.name */
 					   2079, "boolean",			/* sys._columns.type */
@@ -1816,6 +1817,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 	if (store->catalog_version <= CATALOG_OCT2020) {
 		/* add sub column to "objects" table. This is required for merge tables */
 		if (tabins(lg, old_lg, tabins_first, -1, 0,
+				   2076, &(msk) {false},	/* sys._columns */
 				   2077, &(int) {2163},		/* sys._columns.id */
 				   2078, "sub",				/* sys._columns.name */
 				   2079, "int",				/* sys._columns.type */
@@ -1830,6 +1832,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 			return GDK_FAIL;
 		tabins_first = false;
 		if (tabins(lg, old_lg, tabins_first, -1, 0,
+				   2076, &(msk) {false},	/* sys._columns */
 				   2077, &(int) {2164},		/* sys._columns.id */
 				   2078, "sub",				/* sys._columns.name */
 				   2079, "int",				/* sys._columns.type */
