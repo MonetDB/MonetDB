@@ -296,11 +296,11 @@ CREATE VIEW sys.describe_tables AS
 		WHERE c.table_id = t.id) col,
 		CASE
 			WHEN ts.table_type_name = 'REMOTE TABLE' THEN
-				get_remote_table_expressions(s.name, t.name)
+				sys.get_remote_table_expressions(s.name, t.name)
 			WHEN ts.table_type_name = 'MERGE TABLE' THEN
-				get_merge_table_partition_expressions(t.id)
+				sys.get_merge_table_partition_expressions(t.id)
 			WHEN ts.table_type_name = 'VIEW' THEN
-				schema_guard(s.name, t.name, t.query)
+				sys.schema_guard(s.name, t.name, t.query)
 			ELSE
 				''
 		END opt
@@ -363,7 +363,7 @@ CREATE VIEW sys.fully_qualified_functions AS
 			CASE WHEN a.type IS NULL THEN
 				s.name || '.' || f.name || '()'
 			ELSE
-				s.name || '.' || f.name || '(' || group_concat(describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
+				s.name || '.' || f.name || '(' || group_concat(sys.describe_type(a.type, a.type_digits, a.type_scale), ',') OVER (PARTITION BY f.id ORDER BY a.number)  || ')'
 			END,
 			a.number
 		FROM sys.schemas s, sys.function_types ft, sys.functions f LEFT JOIN sys.args a ON f.id = a.func_id
@@ -524,7 +524,7 @@ CREATE VIEW sys.describe_functions AS
 CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)
 	RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
 BEGIN
-	RETURN SELECT c.name, c."type", c.type_digits, c.type_scale, c."null", c."default", c.number, describe_type(c."type", c.type_digits, c.type_scale), com.remark
+	RETURN SELECT c.name, c."type", c.type_digits, c.type_scale, c."null", c."default", c.number, sys.describe_type(c."type", c.type_digits, c.type_scale), com.remark
 		FROM sys._tables t, sys.schemas s, sys._columns c
 		LEFT OUTER JOIN sys.comments com ON c.id = com.id
 			WHERE c.table_id = t.id
