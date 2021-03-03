@@ -2346,9 +2346,6 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		pushInstruction(mb, cp);
 	}
 	(void) stk;
-	msg = chkTypes(cntxt->usermodule,mb, TRUE);
-	if( msg)
-		goto cleanup;
 
 	if ( mb->errors == MAL_SUCCEED) {
 		for(i=0; i<slimit; i++)
