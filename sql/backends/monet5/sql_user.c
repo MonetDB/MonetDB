@@ -520,51 +520,37 @@ str
 monet5_user_get_def_schema(mvc *m, int user)
 {
 	oid rid;
-	sqlid schema_id = 0;
+	sqlid schema_id = int_nil;
 	sql_schema *sys = NULL;
 	sql_table *user_info = NULL;
-	sql_column *users_name = NULL;
-	sql_column *users_schema = NULL;
 	sql_table *schemas = NULL;
-	sql_column *schemas_name = NULL;
-	sql_column *schemas_id = NULL;
 	sql_table *auths = NULL;
-	sql_column *auths_id = NULL;
-	sql_column *auths_name = NULL;
 	str username = NULL;
 	str schema = NULL;
+	sqlstore *store = m->session->tr->store;
+	ptr cbat;
 
 	sys = find_sql_schema(m->session->tr, "sys");
 	auths = find_sql_table(m->session->tr, sys, "auths");
-	auths_id = find_sql_column(auths, "id");
-	auths_name = find_sql_column(auths, "name");
-	sqlstore *store = m->session->tr->store;
-	rid = store->table_api.column_find_row(m->session->tr, auths_id, &user, NULL);
+	user_info = find_sql_table(m->session->tr, sys, "db_user_info");
+	schemas = find_sql_table(m->session->tr, sys, "schemas");
+
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(auths, "id"), &user, NULL);
 	if (is_oid_nil(rid))
 		return NULL;
-	username = store->table_api.column_find_value(m->session->tr, auths_name, rid);
+	username = store->table_api.column_find_string_start(m->session->tr, find_sql_column(auths, "name"), rid, &cbat);
+	rid = store->table_api.column_find_row(m->session->tr, find_sql_column(user_info, "name"), username, NULL);
+	store->table_api.column_find_string_end(cbat);
 
-	user_info = find_sql_table(m->session->tr, sys, "db_user_info");
-	users_name = find_sql_column(user_info, "name");
-	users_schema = find_sql_column(user_info, "default_schema");
-	rid = store->table_api.column_find_row(m->session->tr, users_name, username, NULL);
 	if (!is_oid_nil(rid))
-		schema_id = store->table_api.column_find_sqlid(m->session->tr, users_schema, rid);
-
-	_DELETE(username);
-
-	schemas = find_sql_table(m->session->tr, sys, "schemas");
-	schemas_name = find_sql_column(schemas, "name");
-	schemas_id = find_sql_column(schemas, "id");
-
-	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
-	if (!is_oid_nil(rid)) {
-		schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid);
-	}
-	if (schema) {
-		char *old = schema;
-		schema = sa_strdup(m->session->sa, schema);
-		_DELETE(old);
+		schema_id = store->table_api.column_find_sqlid(m->session->tr, find_sql_column(user_info, "default_schema"), rid);
+	if (!is_int_nil(schema_id)) {
+		rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas, "id"), &schema_id, NULL);
+		if (!is_oid_nil(rid)) {
+			str sname = store->table_api.column_find_string_start(m->session->tr, find_sql_column(schemas, "name"), rid, &cbat);
+			schema = sa_strdup(m->session->sa, sname);
+			store->table_api.column_find_string_end(cbat);
+		}
 	}
 	return schema;
 }

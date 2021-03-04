@@ -5297,11 +5297,7 @@ sql_trans_dist_count( sql_trans *tr, sql_column *col )
 			sql_column *stats_column_id = find_sql_column(stats, "column_id");
 			oid rid = store->table_api.column_find_row(tr, stats_column_id, &col->base.id, NULL);
 			if (!is_oid_nil(rid)) {
-				sql_column *stats_unique = find_sql_column(stats, "unique");
-				void *v = store->table_api.column_find_value(tr, stats_unique, rid);
-
-				col->dcount = *(size_t*)v;
-				_DELETE(v);
+				col->dcount = (size_t) store->table_api.column_find_lng(tr, find_sql_column(stats, "unique"), rid);
 			} else { /* sample and put in statistics */
 				col->dcount = store->storage_api.dcount_col(tr, col);
 			}
