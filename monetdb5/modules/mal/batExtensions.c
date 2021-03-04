@@ -65,6 +65,25 @@ CMDBATnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p){
 }
 
 static str
+CMDBATdup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	BAT *b, *i;
+	bat *ret= getArgReference_bat(stk, pci, 0);
+	int tt = getArgType(mb, pci, 1);
+	bat input = *getArgReference_bat(stk, pci, 2);
+
+	(void)cntxt;
+	if ((i = BATdescriptor(input)) == NULL)
+		throw(MAL, "bat.new", INTERNAL_BAT_ACCESS);
+	b = COLnew(i->hseqbase, tt, BATcount(i), TRANSIENT);
+	BBPunfix(i->batCacheid);
+	if (b == 0)
+		throw(MAL,"bat.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	BBPkeepref(*ret = b->batCacheid);
+	return MAL_SUCCEED;
+}
+
+static str
 CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	BAT *b;
@@ -344,6 +363,7 @@ mel_func batExtensions_init_funcs[] = {
  pattern("bat", "new", CMDBATnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",lng),arg("persist",bit))),
  pattern("bat", "new", CMDBATnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",int),arg("persist",bit))),
  pattern("bat", "new", CMDBATnew, false, "Creates a new empty transient BAT, with tail-types as indicated.", args(1,3, batargany("",1),argany("tt",1),arg("size",lng))),
+ pattern("bat", "new", CMDBATdup, false, "Creates a new empty transient BAT, with tail-type tt and hseqbase and size from the input bat argument.", args(1,3, batargany("",1), argany("tt",1),batargany("i",2))),
  pattern("bat", "single", CMDBATsingle, false, "Create a BAT with a single elemenet", args(1,2, batargany("",1),argany("val",1))),
  pattern("bat", "partition", CMDBATpartition, false, "Create a serie of slices over the BAT argument. The BUNs are distributed evenly.", args(1,2, batvarargany("",1),batargany("b",1))),
  pattern("bat", "partition", CMDBATpartition2, false, "Create the n-th slice over the BAT broken into several pieces.", args(1,4, batargany("",1),batargany("b",1),arg("pieces",int),arg("n",int))),
