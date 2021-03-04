@@ -7442,64 +7442,59 @@ find_index(sql_allocator *sa, sql_rel *rel, sql_rel *sub, list **EXPS)
 	return NULL;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_use_index(visitor *v, sql_rel *rel)
 {
-	if (rel->l && (is_select(rel->op) || is_join(rel->op))) {
-		list *exps = NULL;
-		sql_idx *i = find_index(v->sql->sa, rel, rel->l, &exps);
-		int left = 1;
+	list *exps = NULL;
+	sql_idx *i = find_index(v->sql->sa, rel, rel->l, &exps);
+	int left = 1;
 
-		if (!i && is_join(rel->op)) {
-			left = 0;
-			i = find_index(v->sql->sa, rel, rel->r, &exps);
+	assert(is_select(rel->op) || is_join(rel->op));
+	if (!i && is_join(rel->op)) {
+		left = 0;
+		i = find_index(v->sql->sa, rel, rel->r, &exps);
+	}
+
+	if (i) {
+		prop *p;
+		node *n;
+		int single_table = 1;
+		sql_exp *re = NULL;
+
+		for( n = exps->h; n && single_table; n = n->next) {
+			sql_exp *e = n->data;
+			sql_exp *nre = e->r;
+
+			if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l))))
+				nre = e->l;
+			single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
+			re = nre;
 		}
-
-		if (i) {
-			prop *p;
-			node *n;
-			int single_table = 1;
-			sql_exp *re = NULL;
-
-			for( n = exps->h; n && single_table; n = n->next) {
+		if (single_table) { /* add PROP_HASHCOL to all column exps */
+			for( n = exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				sql_exp *nre = e->r;
+				int anti = is_anti(e), semantics = is_semantics(e);
 
-				if (is_join(rel->op) &&
-				 	((left && !rel_find_exp(rel->l, e->l)) ||
-				 	(!left && !rel_find_exp(rel->r, e->l))))
-					nre = e->l;
-				single_table = (!re || (exp_relname(nre) && exp_relname(re) && strcmp(exp_relname(nre), exp_relname(re)) == 0));
-				re = nre;
+				/* swapped ? */
+				if (is_join(rel->op) && ((left && !rel_find_exp(rel->l, e->l)) || (!left && !rel_find_exp(rel->r, e->l))))
+					n->data = e = exp_compare(v->sql->sa, e->r, e->l, cmp_equal);
+				if (anti) set_anti(e);
+				if (semantics) set_semantics(e);
+				p = find_prop(e->p, PROP_HASHCOL);
+				if (!p)
+					e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);
+				p->value = i;
 			}
-			if (single_table) { /* add PROP_HASHCOL to all column exps */
-				for( n = exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
-					int anti = is_anti(e), semantics = is_semantics(e);
-
-					/* swapped ? */
-					if (is_join(rel->op) &&
-					 	((left && !rel_find_exp(rel->l, e->l)) ||
-					 	(!left && !rel_find_exp(rel->r, e->l))))
-						n->data = e = exp_compare(v->sql->sa, e->r, e->l, cmp_equal);
-					if (anti) set_anti(e);
-					if (semantics) set_semantics(e);
-					p = find_prop(e->p, PROP_HASHCOL);
-					if (!p)
-						e->p = p = prop_create(v->sql->sa, PROP_HASHCOL, e->p);
-					p->value = i;
-				}
-			}
-			/* add the remaining exps to the new exp list */
-			if (list_length(rel->exps) > list_length(exps)) {
-				for( n = rel->exps->h; n; n = n->next) {
-					sql_exp *e = n->data;
-					if (!list_find(exps, e, (fcmp)&exp_cmp))
-						list_append(exps, e);
-				}
-			}
-			rel->exps = exps;
 		}
+		/* add the remaining exps to the new exp list */
+		if (list_length(rel->exps) > list_length(exps)) {
+			for( n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (!list_find(exps, e, (fcmp)&exp_cmp))
+					list_append(exps, e);
+			}
+		}
+		rel->exps = exps;
 	}
 	return rel;
 }
@@ -7653,8 +7648,11 @@ rel_simplify_like_select(visitor *v, sql_rel *rel)
 
 /* pack select optimizers into a single function to void iterations in the AST */
 static sql_rel *
-rel_optimize_select(visitor *v, sql_rel *rel)
+rel_optimize_select_and_index(visitor *v, sql_rel *rel)
 {
+	if (rel->l && (is_select(rel->op) || is_join(rel->op)))
+		rel = rel_use_index(v, rel);
+
 	if (!is_select(rel->op) || list_empty(rel->exps))
 		return rel;
 
@@ -9766,11 +9764,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
 		rel = rel_visitor_topdown(&v, rel, &rel_simplify_fk_joins);
 
-	if (gp.cnt[op_select])
-		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select);
-
-	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
-		rel = rel_visitor_bottomup(&v, rel, &rel_use_index);
+	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full])
+		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select_and_index);
 
 	if (gp.cnt[op_project] && gp.cnt[op_union])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_project_down_union);
