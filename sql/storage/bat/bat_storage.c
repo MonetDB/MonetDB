@@ -3046,7 +3046,8 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 			assert(lnr==0);
 		}
 	}
-	*dst=cur;
+	if (pos%32)
+		*dst=cur;
 	BATsetcount(b, nr);
 	if (!(bn = BATmaskedcands(start, nr, b, true))) {
 		BBPreclaim(b);
