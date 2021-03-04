@@ -701,6 +701,7 @@ typedef struct {
 	Hash *hash;		/* hash table */
 	Imprints *imprints;	/* column imprints index */
 	Heap *orderidx;		/* order oid index */
+	Heap *strimps;		/* string imprint index  */
 
 	PROPrec *props;		/* list of dynamic properties stored in the bat descriptor */
 } COLrec;
@@ -772,6 +773,7 @@ typedef struct BATiter {
 #define thash		T.hash
 #define timprints	T.imprints
 #define tprops		T.props
+#define tstrimps	T.strimps
 
 
 

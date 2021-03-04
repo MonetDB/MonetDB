@@ -267,3 +267,85 @@ GDKstrimp_make_bitstring(const str s, StrimpHeader *h)
 
 	return ret;
 }
+
+/* Create the heap for a string imprint. Returns NULL on failure. */
+static Heap *
+createStrimpheap(BAT *b, StrimpHeader *h)
+{
+	Heap *r = NULL;
+	uint64_t *d;
+	size_t i,j;
+	const char *nme;
+
+	nme = GDKinmemory(b->theap.farmid) ? ":memory:" : BBP_physical(b->batCacheid);
+	if ((r = GDKzalloc(sizeof(Heap))) == NULL ||
+	    (r->farmid = BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
+	    strconcat_len(r->filename, sizeof(r->filename),
+			  nme, ".strimp", NULL) >= sizeof(r->filename) ||
+	    HEAPalloc(r, BATcount(b) + STRIMP_OFFSET, sizeof(uint64_t)) != GDK_SUCCEED)	{
+		GDKfree(r);
+		return NULL;
+	}
+	r->free = STRIMP_OFFSET * sizeof(uint64_t);
+
+	d = (uint64_t *)r->base;
+	/* This loop assumes that we are working with byte pairs
+	 * (i.e. the type of the header is uint16_t). TODO: generalize.
+	 */
+	for(i = 0; i < STRIMP_HEADER_SIZE; i += 4) {
+		*d = 0;
+		for(j = 0; j < 4; j++) {
+			*d <<= 16;
+			*d |= h->bytepairs[i + j];
+		}
+	}
+	return r;
+}
+
+/* Create */
+gdk_return
+GDKstrimp_create_strimp(BAT *b)
+{
+	lng t0 = 0;
+	BATiter bi;
+	BUN i;
+	str s;
+	StrimpHeader *head;
+	Heap *h;
+	uint64_t *dh;
+
+	assert(b->ttype == TYPE_str);
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	if ((head = create_header(b)) == NULL) {
+		return GDK_FAIL;
+	}
+
+	if ((h = createStrimpheap(b, head)) == NULL) {
+		GDKfree(head);
+		return GDK_FAIL;
+	}
+	dh = (uint64_t *)h->base + h->free;
+
+	bi = bat_iterator(b);
+	for (i = 0; i < b->batCount; i++) {
+		s = (str)BUNtvar(bi, i);
+		if (!strNil(s))
+			*dh++ = GDKstrimp_make_bitstring(s, head);
+		else
+			*dh++ = 0; /* no pairs in nil values */
+
+	}
+
+	/* After we have computed the strimp, attempt to write it back
+	 * to the BAT.
+	 */
+	MT_lock_set(&b->batIdxLock);
+	b->tstrimps = h;
+	b->batDirtydesc = true;
+	/* persistStrimp(b) */
+	MT_lock_unset(&b->batIdxLock);
+
+	TRC_DEBUG(ALGO, "strimp creation took " LLFMT " usec\n", GDKusec()-t0);
+	return GDK_SUCCEED;
+}
