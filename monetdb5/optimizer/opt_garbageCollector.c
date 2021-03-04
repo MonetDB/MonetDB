@@ -26,13 +26,14 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, j, limit, vlimit;
+	int i, limit, vlimit;
 	InstrPtr p;
 	int actions = 0;
 	char buf[1024];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 #ifndef NDEBUG
+	int j;
 	int *used;
 #endif
 
@@ -101,8 +102,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			newComment(mb,buf);
 		}
 	}
-#endif
 	GDKfree(used);
+#endif
 	getInstrPtr(mb,0)->gc |= GARBAGECONTROL;
 
 	/* leave a consistent scope admin behind */
