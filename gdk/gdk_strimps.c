@@ -94,48 +94,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
 		((TPE *) _a)[_j] = _t;			\
 	} while(0)
 
-static StrimpHeader *
-make_header(StrimpHeader *h, uint64_t* hist, size_t hist_size)
-{
-	lng t0 = 0;
-	size_t i;
-	uint64_t max_counts[STRIMP_SIZE] = {0};
-	const size_t cmin_max = STRIMP_SIZE - 1;
-	size_t hidx;
-
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-
-	for(i = 0; i < STRIMP_SIZE; i++)
-		h->bytepairs[i] = 0;
-
-	for(i = 0; i < hist_size; i++) {
-		if (max_counts[cmin_max] < hist[i]) {
-			max_counts[cmin_max] = hist[i];
-			h->bytepairs[cmin_max] = i;
-                        for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
-				swp(max_counts, hidx, hidx-1, uint64_t);
-				swp(h->bytepairs, hidx, hidx-1, uint16_t);
-			}
-		}
-	}
-
-	for(i = 0; i < STRIMP_SIZE; i++) {
-		TRC_DEBUG(ALGO, "%u %u: %lu", indexToPair1(h->bytepairs[i]), indexToPair2(h->bytepairs[i]), max_counts[i]);
-	}
-
-	TRC_DEBUG_ENDIF(ALGO, LLFMT "usec\n", GDKusec() - t0);
-
-	return h;
-}
-
-
-/* static uint64_t */
-/* add_to_header(size_t idx, uint64_t count) */
-/* { */
-/* 	while */
-/* 	return GDK_SUCCEED; */
-/* } */
-/* Construct a histogram of pairs of bytes.
+/* Construct a histogram of pairs of bytes in the input BAT.
  *
  * Return the histogram in hist and the number of non-zero bins in
  * count.
@@ -194,8 +153,59 @@ GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins
 	return GDK_SUCCEED;
 }
 
-gdk_return
-GDKstrimp_make_header(BAT *b)
+/* Given a histogram find the indices of the 64 largest counts.
+ *
+ * We make one scan of histogram and every time we find a count that is
+ * greater than the current minimum of the 64, we bubble it up in the
+ * header until we find a count that is greater. We carry the index in
+ * the histogram because this is the information we are actually
+ * interested in keeping.
+ *
+ * At the end of this process we have the indices of 64 largest counts
+ * in the histogram. This process is O(n) in time since we are doing
+ * constant work (at most 63 comparisons and swaps) for each item in the
+ * histogram and as such is (theoretically) more efficient than sorting
+ * (O(nlog n))and taking the 64 largest elements. This depends on the
+ * size of the histogram n. For some small n sorting might be more
+ * efficient, but for such inputs the difference should not be
+ * noticeable.
+ *
+ * In the current implementation each index is a DataPair value that is
+ * constructed by pairToIndex from 2 consecutive bytes in the input.
+ */
+static StrimpHeader *
+make_header(StrimpHeader *h, uint64_t* hist, size_t hist_size)
+{
+	lng t0 = 0;
+	size_t i;
+	uint64_t max_counts[STRIMP_HEADER_SIZE] = {0};
+	const size_t cmin_max = STRIMP_HEADER_SIZE - 1;
+	size_t hidx;
+
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
+
+	for(i = 0; i < STRIMP_HEADER_SIZE; i++)
+		h->bytepairs[i] = 0;
+
+	for(i = 0; i < hist_size; i++) {
+		if (max_counts[cmin_max] < hist[i]) {
+			max_counts[cmin_max] = hist[i];
+			h->bytepairs[cmin_max] = i;
+                        for(hidx = cmin_max; hidx > 0 && max_counts[hidx] > max_counts[hidx-1]; hidx--) {
+				swp(max_counts, hidx, hidx-1, uint64_t);
+				swp(h->bytepairs, hidx, hidx-1, DataPair);
+			}
+		}
+	}
+
+	for(i = 0; i < STRIMP_HEADER_SIZE; i++) {
+		TRC_DEBUG(ALGO, "%u %u: %lu", indexToPair1(h->bytepairs[i]), indexToPair2(h->bytepairs[i]), max_counts[i]);
+	}
+
+	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
+
+	return h;
+}
 {
 	uint64_t hist[STRIMP_HISTSIZE] = {0};
 	size_t nbins = 0;
