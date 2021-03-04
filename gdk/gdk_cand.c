@@ -982,10 +982,8 @@ canditer_search(struct canditer *ci, oid o, bool next)
 		o %= 32;
 		if (p == ci->nvals - 1 && o >= ci->lastbit)
 			return next ? ci->ncand : BUN_NONE;
-		if (ci->mask[p] & (1U << o))
-			return count_mask_bits(ci, 0, p);
-		if (next)
-			return count_mask_bits(ci, 0, p) + 1;
+		if (next || ci->mask[p] & (1U << o))
+			return count_mask_bits(ci, 0, p) + (o == 0 ? 0 : candmask_pop(ci->mask[p] << (32 - o))) + !(ci->mask[p] & (1U << o));
 		break;
 	}
 	return BUN_NONE;
