@@ -262,7 +262,7 @@ node_create(sql_allocator *sa, objectversion *ov)
 	return n;
 }
 
-static int
+static inline int
 os_name_key(versionhead  *n)
 {
 	return hash_key(n->ov->b->name);

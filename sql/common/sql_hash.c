@@ -40,20 +40,6 @@ hash_new(sql_allocator *sa, int size, fkeyvalue key)
 	return ht;
 }
 
-sql_hash_e*
-hash_add(sql_hash *h, int key, void *value)
-{
-	sql_hash_e *e = (h->sa)?SA_ZNEW(h->sa, sql_hash_e):ZNEW(sql_hash_e);
-
-	if (e == NULL)
-		return NULL;
-	e->chain = h->buckets[key&(h->size-1)];
-	h->buckets[key&(h->size-1)] = e;
-	e->key = key;
-	e->value = value;
-	return e;
-}
-
 void
 hash_del(sql_hash *h, int key, void *value)
 {
@@ -91,13 +77,3 @@ hash_destroy(sql_hash *h) /* this code should be called for hash tables created 
 	_DELETE(h);
 }
 
-unsigned int
-hash_key(const char *restrict k)
-{
-	unsigned int h = 37; /* prime number */
-	while (*k) {
-		h = (h * 54059) ^ (k[0] * 76963); /* prime numbers */
-		k++;
-	}
-	return h;
-}
