@@ -1652,8 +1652,8 @@ bl_postversion(void *Store, old_logger *old_lg)
 				return GDK_FAIL;
 			if (BATsetaccess(sem, BAT_READ) != GDK_SUCCEED ||
 				BUNappend(lg->catalog_id, &(int) {2162}, false) != GDK_SUCCEED ||
-				BUNappend(old_lg->add, &sem->batCacheid, false) != GDK_SUCCEED ||
-				BUNappend(lg->catalog_bid, &sem->batCacheid, false) != GDK_SUCCEED) {
+				BUNappend(lg->catalog_bid, &sem->batCacheid, false) != GDK_SUCCEED ||
+				BUNappend(old_lg->add, &sem->batCacheid, false) != GDK_SUCCEED) {
 				bat_destroy(sem);
 				return GDK_FAIL;
 			}
@@ -1677,13 +1677,13 @@ bl_postversion(void *Store, old_logger *old_lg)
 			tabins_first = false;
 		}
 
-		BAT *func_tid;
+		BAT *del_funcs = temp_descriptor(logger_find_bat(lg, 2016));
 		{
 			/* move sql.degrees, sql.radians, sql.like and sql.ilike functions
 			 * from 09_like.sql and 10_math.sql script to sql_types list */
-			BAT *del_funcs = temp_descriptor(logger_find_bat(lg, 2016));
 			BAT *func_func = temp_descriptor(logger_find_bat(lg, 2018));
 			BAT *func_schem = temp_descriptor(logger_find_bat(lg, 2026));
+			BAT *func_tid;
 			BAT *cands;
 			if (del_funcs == NULL || func_func == NULL || func_schem == NULL) {
 				bat_destroy(del_funcs);
@@ -1691,59 +1691,62 @@ bl_postversion(void *Store, old_logger *old_lg)
 				bat_destroy(func_schem);
 				return GDK_FAIL;
 			}
-			gdk_return rc = BATsort(&b, NULL, NULL, del_funcs, NULL, NULL, false, false, false);
-			if (rc != GDK_SUCCEED) {
-				bat_destroy(del_funcs);
-				bat_destroy(func_func);
-				bat_destroy(func_schem);
-				return rc;
-			}
-			func_tid = BATnegcands(BATcount(func_func), b);
-			bat_destroy(b);
+			func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
 			if (func_tid == NULL) {
 				bat_destroy(del_funcs);
 				bat_destroy(func_func);
 				bat_destroy(func_schem);
 				return GDK_FAIL;
 			}
+			/* select * from sys.functions where schema_id = 2000; */
 			b = BATselect(func_schem, func_tid, &(int) {2000}, NULL, true, true, false);
 			bat_destroy(func_schem);
+			bat_destroy(func_tid);
 			cands = b;
 			if (cands == NULL) {
 				bat_destroy(del_funcs);
 				bat_destroy(func_func);
-				bat_destroy(func_tid);
 				return GDK_FAIL;
 			}
 
-			const char *funcs[] = {
-				"degrees",
-				"radians",
-				"like",
-				"ilike",
-				NULL,
-			};
-			for (int i = 0; funcs[i]; i++) {
-				if ((b = BATselect(func_func, cands, funcs[i], NULL, true, true, false)) == NULL ||
-					BATappend(del_funcs, b, NULL, true) != GDK_SUCCEED) {
-					bat_destroy(del_funcs);
-					bat_destroy(func_func);
-					bat_destroy(func_tid);
-					return GDK_FAIL;
-				}
-				bat_destroy(b);
+			BAT *funcs;
+			if ((funcs = COLnew(0, TYPE_str, 4, TRANSIENT)) == NULL ||
+				BUNappend(funcs, "degrees", false) != GDK_SUCCEED ||
+				BUNappend(funcs, "ilike", false) != GDK_SUCCEED ||
+				BUNappend(funcs, "like", false) != GDK_SUCCEED ||
+				BUNappend(funcs, "radians", false) != GDK_SUCCEED) {
+				bat_destroy(funcs);
+				bat_destroy(del_funcs);
+				bat_destroy(func_func);
+				return GDK_FAIL;
 			}
-			bat_destroy(cands);
+			b = BATintersect(func_func, funcs, cands, NULL, false, false, 4);
 			bat_destroy(func_func);
-			bat_destroy(del_funcs);
+			bat_destroy(funcs);
+			bat_destroy(cands);
+			funcs = NULL;
+			gdk_return rc;
+			rc = GDK_FAIL;
+			if (b != NULL &&
+				(funcs = BATconstant(0, TYPE_msk, &(msk){true}, BATcount(b), TRANSIENT)) != NULL)
+				rc = BATreplace(del_funcs, b, funcs, false);
+			bat_destroy(b);
+			bat_destroy(funcs);
+			if (rc != GDK_SUCCEED)
+				return rc;
 		}
 
 		{
 			/* Fix SQL aggregation functions defined on the wrong modules:
 			 * sql.null, sql.all, sql.zero_or_one and sql.not_unique */
+			BAT *func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
 			BAT *func_mod = temp_descriptor(logger_find_bat(lg, 2020));
-			if (func_mod == NULL)
+			bat_destroy(del_funcs);
+			if (func_tid == NULL || func_mod == NULL) {
+				bat_destroy(func_tid);
+				bat_destroy(func_mod);
 				return GDK_FAIL;
+			}
 
 			/* find the (undeleted) functions defined on "sql" module */
 			BAT *sqlfunc = BATselect(func_mod, func_tid, "sql", NULL, true, true, false);
@@ -1761,6 +1764,7 @@ bl_postversion(void *Store, old_logger *old_lg)
 			/* and are aggregates (3) */
 			BAT *sqlaggr_func = BATselect(func_type, sqlfunc, &(int) {3}, NULL, true, true, false);
 			bat_destroy(sqlfunc);
+			bat_destroy(func_type);
 			if (sqlaggr_func == NULL) {
 				bat_destroy(func_mod);
 				return GDK_FAIL;
@@ -1772,39 +1776,52 @@ bl_postversion(void *Store, old_logger *old_lg)
 				bat_destroy(sqlaggr_func);
 				return GDK_FAIL;
 			}
-			const char *aggrs[] = {
-				"null",
-				"all",
-				"zero_or_one",
-				"not_unique",
-				NULL
-			};
-			for (int i = 0; aggrs[i] != NULL; i++) {
-				BAT *func = BATselect(func_func, sqlaggr_func, aggrs[i], NULL, true, true, false);
-				if (func == NULL) {
-					bat_destroy(func_mod);
-					bat_destroy(sqlaggr_func);
-					bat_destroy(func_func);
-					return GDK_FAIL;
-				}
-				BAT *aggr = BATconstant(0, TYPE_str, "aggr", BATcount(func), TRANSIENT);
-				if (func == NULL) {
-					bat_destroy(func_mod);
-					bat_destroy(sqlaggr_func);
-					bat_destroy(func_func);
-					bat_destroy(func);
-					return GDK_FAIL;
-				}
-				gdk_return rc = BATreplace(func_mod, func, aggr, true);
-				bat_destroy(func);
-				bat_destroy(aggr);
-				if (rc != GDK_SUCCEED) {
-					bat_destroy(func_mod);
-					bat_destroy(sqlaggr_func);
-					bat_destroy(func_func);
-					return rc;
-				}
+			b = COLcopy(func_mod, func_mod->ttype, true, PERSISTENT);
+			if (b == NULL) {
+				bat_destroy(func_func);
+				bat_destroy(func_mod);
+				bat_destroy(sqlaggr_func);
+				return GDK_FAIL;
 			}
+			if (BUNappend(old_lg->del, &func_mod->batCacheid, false) != GDK_SUCCEED ||
+				BUNappend(old_lg->add, &b->batCacheid, false) != GDK_SUCCEED ||
+				BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2020}), &b->batCacheid, false) != GDK_SUCCEED) {
+				bat_destroy(func_func);
+				bat_destroy(func_mod);
+				bat_destroy(sqlaggr_func);
+				bat_destroy(b);
+				return GDK_FAIL;
+			}
+			BBPretain(b->batCacheid);
+			BBPretain(b->batCacheid);
+			bat_destroy(func_mod);
+			func_mod = b;
+			BAT *aggrs;
+			if ((aggrs = COLnew(0, TYPE_str, 4, TRANSIENT)) == NULL ||
+				BUNappend(aggrs, "all", false) != GDK_SUCCEED ||
+				BUNappend(aggrs, "no_unique", false) != GDK_SUCCEED ||
+				BUNappend(aggrs, "null", false) != GDK_SUCCEED ||
+				BUNappend(aggrs, "zero_or_one", false) != GDK_SUCCEED) {
+				bat_destroy(aggrs);
+				bat_destroy(func_func);
+				bat_destroy(func_mod);
+				bat_destroy(sqlaggr_func);
+				return GDK_FAIL;
+			}
+			b = BATintersect(func_func, aggrs, sqlaggr_func, NULL, false, false, 4);
+			bat_destroy(func_func);
+			bat_destroy(aggrs);
+			bat_destroy(sqlaggr_func);
+			aggrs = NULL;
+			gdk_return rc = GDK_FAIL;
+			if (b != NULL &&
+				(aggrs = BATconstant(0, TYPE_str, "aggr", BATcount(b), TRANSIENT)) != NULL)
+				rc = BATreplace(func_mod, b, aggrs, false);
+			bat_destroy(b);
+			bat_destroy(aggrs);
+			bat_destroy(func_mod);
+			if (rc != GDK_SUCCEED)
+				return rc;
 		}
 	}
 #endif
@@ -1955,6 +1972,61 @@ bl_postversion(void *Store, old_logger *old_lg)
 		BBPretain(objs_sub->batCacheid);
 		BBPretain(objs_sub->batCacheid);
 		bat_destroy(objs_sub);
+
+		/* update sys.functions set mod = 'sql' where mod = 'user'; */
+		BAT *del_funcs = temp_descriptor(logger_find_bat(lg, 2016));
+		if (del_funcs == NULL)
+			return GDK_FAIL;
+		BAT *func_tid = BATmaskedcands(0, BATcount(del_funcs), del_funcs, false);
+		BAT *func_mod = temp_descriptor(logger_find_bat(lg, 2020));
+		bat_destroy(del_funcs);
+		if (func_tid == NULL || func_mod == NULL) {
+			bat_destroy(func_tid);
+			bat_destroy(func_mod);
+			return GDK_FAIL;
+		}
+		BAT *userfunc = BATselect(func_mod, func_tid, "user", NULL, true, true, false);
+		bat_destroy(func_tid);
+		if (userfunc == NULL) {
+			bat_destroy(func_mod);
+			return GDK_FAIL;
+		}
+		if (BATcount(userfunc) > 0) {
+			if (BUNfnd(old_lg->add, &func_mod->batCacheid) == BUN_NONE) {
+				b = COLcopy(func_mod, func_mod->ttype, true, PERSISTENT);
+				if (b == NULL) {
+					bat_destroy(userfunc);
+					bat_destroy(func_mod);
+					return GDK_FAIL;
+				}
+				if (BUNappend(old_lg->del, &func_mod->batCacheid, false) != GDK_SUCCEED ||
+					BUNappend(old_lg->add, &b->batCacheid, false) != GDK_SUCCEED ||
+					BUNreplace(lg->catalog_bid, BUNfnd(lg->catalog_id, &(int){2020}), &b->batCacheid, false) != GDK_SUCCEED) {
+					bat_destroy(userfunc);
+					bat_destroy(func_mod);
+					bat_destroy(b);
+					return GDK_FAIL;
+				}
+				BBPretain(b->batCacheid);
+				BBPretain(b->batCacheid);
+				bat_destroy(func_mod);
+				func_mod = b;
+			}
+			b = BATconstant(0, TYPE_str, "sql", BATcount(userfunc), TRANSIENT);
+			if (b == NULL) {
+				bat_destroy(userfunc);
+				bat_destroy(func_mod);
+				return GDK_FAIL;
+			}
+			rc = BATreplace(func_mod, userfunc, b, false);
+			bat_destroy(b);
+			bat_destroy(func_mod);
+			if (rc != GDK_SUCCEED) {
+				bat_destroy(userfunc);
+				return rc;
+			}
+		}
+		bat_destroy(userfunc);
 	}
 #endif
 
