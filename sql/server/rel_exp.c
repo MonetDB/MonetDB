@@ -2361,7 +2361,7 @@ exp_unsafe(sql_exp *e, int allow_identity)
 	return 0;
 }
 
-static int
+static inline int
 exp_key( sql_exp *e )
 {
 	if (e->alias.name)

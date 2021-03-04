@@ -12,7 +12,7 @@
 
 const char *TID = "%TID%";
 
-int
+inline int
 base_key( sql_base *b )
 {
 	return hash_key(b->name);
