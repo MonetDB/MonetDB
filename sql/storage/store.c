@@ -541,36 +541,18 @@ load_range_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 
 	rs = store->table_api.rids_select(tr, find_sql_column(ranges, "table_id"), &pt->member, &pt->member, NULL);
 	if ((rid = store->table_api.rids_next(rs)) != oid_nil) {
-		ValRecord vmin, vmax;
-		ptr ok, cbat;
+		ptr cbat;
 		str v;
 
-		vmin = vmax = (ValRecord) {.vtype = TYPE_void,};
-
+		pt->with_nills = (bit) store->table_api.column_find_bte(tr, find_sql_column(ranges, "with_nulls"), rid);
 		v = store->table_api.column_find_string_start(tr, find_sql_column(ranges, "minimum"), rid, &cbat);
-		ok = VALinit(&vmin, TYPE_str, v);
+		pt->part.range.minvalue = SA_STRDUP(tr->sa, v);
+		pt->part.range.minlength = strLen(v);
 		store->table_api.column_find_string_end(cbat);
-		if (ok) {
-			v = store->table_api.column_find_string_start(tr, find_sql_column(ranges, "maximum"), rid, &cbat); 
-			ok = VALinit(&vmax, TYPE_str, v);
-			store->table_api.column_find_string_end(cbat);
-		}
-		if (ok) {
-			pt->with_nills = (bit) store->table_api.column_find_bte(tr, find_sql_column(ranges, "with_nulls"), rid);
-
-			pt->part.range.minvalue = SA_NEW_ARRAY(tr->sa, char, vmin.len);
-			pt->part.range.maxvalue = SA_NEW_ARRAY(tr->sa, char, vmax.len);
-			memcpy(pt->part.range.minvalue, VALget(&vmin), vmin.len);
-			memcpy(pt->part.range.maxvalue, VALget(&vmax), vmax.len);
-			pt->part.range.minlength = vmin.len;
-			pt->part.range.maxlength = vmax.len;
-		}
-		VALclear(&vmin);
-		VALclear(&vmax);
-		if (!ok) {
-			store->table_api.rids_destroy(rs);
-			return -1;
-		}
+		v = store->table_api.column_find_string_start(tr, find_sql_column(ranges, "maximum"), rid, &cbat);
+		pt->part.range.maxvalue = SA_STRDUP(tr->sa, v);
+		pt->part.range.maxlength = strLen(v);
+		store->table_api.column_find_string_end(cbat);
 	}
 	store->table_api.rids_destroy(rs);
 	return 0;
@@ -584,7 +566,6 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	list *vals = NULL;
 	oid rid;
 	rids *rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->member, &pt->member, NULL);
-	int i = 0;
 
 	vals = SA_LIST(tr->sa, (fdestroy) &part_value_destroy);
 	if (!vals) {
@@ -593,33 +574,19 @@ load_value_partition(sql_trans *tr, sql_schema *syss, sql_part *pt)
 	}
 
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
-		sql_part_value* nextv;
-		ValRecord vvalue;
-		ptr ok, cbat;
+		ptr cbat;
 		str v;
 
-		vvalue = (ValRecord) {.vtype = TYPE_void,};
 		v = store->table_api.column_find_string_start(tr, find_sql_column(values, "value"), rid, &cbat);
-		ok = VALinit(&vvalue, TYPE_str, v);
+		if (strNil(v)) { /* check for null value */
+			pt->with_nills = true;
+		} else {
+			sql_part_value *nextv = SA_ZNEW(tr->sa, sql_part_value);
+			nextv->value = SA_STRDUP(tr->sa, v);
+			nextv->length = strLen(v);
+			list_append(vals, nextv);
+		}
 		store->table_api.column_find_string_end(cbat);
-		if (ok) {
-			if (VALisnil(&vvalue)) { /* check for null value */
-				pt->with_nills = true;
-			} else {
-				nextv = SA_ZNEW(tr->sa, sql_part_value);
-				nextv->value = SA_NEW_ARRAY(tr->sa, char, vvalue.len);
-				memcpy(nextv->value, VALget(&vvalue), vvalue.len);
-				nextv->length = vvalue.len;
-				list_append(vals, nextv);
-			}
-		}
-		VALclear(&vvalue);
-		if (!ok) {
-			store->table_api.rids_destroy(rs);
-			list_destroy2(vals, tr->store);
-			return -i - 1;
-		}
-		i++;
 	}
 	store->table_api.rids_destroy(rs);
 	pt->part.values = vals;
