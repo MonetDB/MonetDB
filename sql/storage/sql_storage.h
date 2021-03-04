@@ -46,6 +46,8 @@ typedef bte (*column_find_bte_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef sht (*column_find_sht_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef int (*column_find_int_fptr)(sql_trans *tr, sql_column *c, oid rid);
 typedef lng (*column_find_lng_fptr)(sql_trans *tr, sql_column *c, oid rid);
+typedef str (*column_find_string_start_fptr)(sql_trans *tr, sql_column *c, oid rid, ptr *cbat);
+typedef void (*column_find_string_end_fptr)(ptr cbat);
 typedef int (*column_update_value_fptr)(sql_trans *tr, sql_column *c, oid rid, void *value);
 typedef int (*table_insert_fptr)(sql_trans *tr, sql_table *t, ...);
 typedef int (*table_delete_fptr)(sql_trans *tr, sql_table *t, oid rid);
@@ -96,6 +98,9 @@ typedef struct table_functions {
 	column_find_sht_fptr column_find_sht;
 	column_find_int_fptr column_find_int;
 	column_find_lng_fptr column_find_lng;
+	column_find_string_start_fptr column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
+	column_find_string_end_fptr column_find_string_end; /* don't forget to call this function to unfix the bat descriptor! */
+
 	column_update_value_fptr column_update_value;
 	table_insert_fptr table_insert;
 	table_delete_fptr table_delete;
