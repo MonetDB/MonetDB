@@ -2432,10 +2432,14 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 			BATtseqbase(bn, oid_nil);
 			break;
 		case TYPE_msk:
-			if (*(msk*)v)
-				memset(p, 0xFF, (n + 7) / 8);
-			else
-				memset(p, 0x00, (n + 7) / 8);
+			if (*(msk*)v) {
+				memset(p, 0xFF, 4 * ((n + 31) / 32));
+				if (n & 31) {
+					uint32_t *m = p;
+					m[n / 32] &= ~((1U << (n % 32)) - 1);
+				}
+			} else
+				memset(p, 0x00, 4 * ((n + 31) / 32));
 			break;
 		case TYPE_bte:
 			memset(p, *(bte*)v, n);
