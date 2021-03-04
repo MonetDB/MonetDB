@@ -6,6 +6,40 @@
  * Copyright 1997 - July 2008 CWI, August 2008 - 2021 MonetDB B.V.
  */
 
+
+/* A string imprint is an index that can be used as a prefilter in LIKE
+ * queries. It has 2 components:
+ *
+ * - a header of 64 string element pairs (bytes in the current
+ *   implementation but maybe unicode chars might make more sense).
+ *
+ * - a 64 bit mask for each item in the BAT that encodes the presence or
+ *   absence of each element of the header in the specific item.
+ *
+ * A string imprint is stored in a new Heap in the BAT.
+ *
+ * In the current (byte pair) implementation the first 136 bytes
+ * (i.e. the first 17 64 bit quantities) in the Heap are as follows:
+ *
+ * |                       Version Number                      |   -----
+ * | byte pair 01 | byte pair 02 | byte pair 03 | byte pair 04 |     |
+ * | byte pair 05 | byte pair 06 | byte pair 07 | byte pair 08 |     |  17 64 bit quantities
+ * [...]                                                             |
+ * | byte pair 61 | byte pair 62 | byte pair 63 | byte pair 64 |   -----
+ *
+ * The bitmasks for each string in the BAT follow after this.
+ *
+ * Strimp creation goes as follows:
+ *
+ * - Construct a histogram of the element (byte or character) pairs for
+ *   all the strings in the BAT.
+ *
+ * - Take the 64 most frequent pairs as the Strimp Header.
+ *
+ * - For each string in the bat construct a 64 bit mask that encodes the
+ *   presence or absence of each member of the header in the string.
+ */
+
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
@@ -13,33 +47,35 @@
 /* This counts how many unicode codepoints the given string
  * contains.
  */
-/* static size_t */
-/* GDKstrimp_strlen(const uint8_t *s) */
-/* { */
-/* 	size_t ret = 0; */
-/* 	size_t i; */
-/* 	int m,n; */
-/* 	uint8_t c; */
+#if 0
+static size_t
+GDKstrimp_strlen(const uint8_t *s)
+{
+	size_t ret = 0;
+	size_t i;
+	int m,n;
+	uint8_t c;
 
-/* 	i = 0; */
-/* 	while((c = *(s + i)) != 0) { */
-/* 		if (c < 0x80) */
-/* 			i++; */
-/* 		else { */
-/* 			for (n = 0, m=0x40; c & m; n++, m >>= 1) */
-/* 				; */
-/* 			/\* n is now the number of 10xxxxxx bytes that should */
-/* 			   follow. *\/ */
-/* 			if (n == 0 || n >= 4) */
-/* 				/\* TODO: handle invalid utf-8 *\/ */
-/* 				{} */
-/* 			i += n+1; */
-/* 		} */
-/* 		ret++; */
-/* 	} */
+	i = 0;
+	while((c = *(s + i)) != 0) {
+		if (c < 0x80)
+			i++;
+		else {
+			for (n = 0, m=0x40; c & m; n++, m >>= 1)
+				;
+			/* n is now the number of 10xxxxxx bytes that should
+			   follow. */
+			if (n == 0 || n >= 4)
+				/* TODO: handle invalid utf-8 */
+				{}
+			i += n+1;
+		}
+		ret++;
+	}
 
-/* 	return ret; */
-/* } */
+	return ret;
+}
+#endif
 
 /* Given a BAT return the number of digrams in it. The observation is
  * that the number of digrams is the number of characters - 1:
