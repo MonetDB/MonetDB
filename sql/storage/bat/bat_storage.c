@@ -2990,7 +2990,7 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 	if (!b)
 		return NULL;
 
-	int *dst = Tloc(b, 0);
+	int *restrict dst = Tloc(b, 0);
 	for( ; s; s=s->next) {
 		if (s->end < start)
 			continue;
