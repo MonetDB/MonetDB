@@ -25,7 +25,8 @@ enum heaptype {
 	varheap,
 	hashheap,
 	imprintsheap,
-	orderidxheap
+	orderidxheap,
+	strimpheap
 };
 
 #ifdef GDKLIBRARY_OLDDATE
