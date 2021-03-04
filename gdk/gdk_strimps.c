@@ -206,17 +206,24 @@ make_header(StrimpHeader *h, uint64_t* hist, size_t hist_size)
 
 	return h;
 }
+
+static StrimpHeader *
+create_header(BAT *b)
 {
 	uint64_t hist[STRIMP_HISTSIZE] = {0};
 	size_t nbins = 0;
-	StrimpHeader header;
+	StrimpHeader *header;
+	if ((header = (StrimpHeader*)GDKmalloc(sizeof(StrimpHeader))) == NULL)
+		return NULL;
+
 	if(GDKstrimp_make_histogram(b, hist, STRIMP_HISTSIZE, &nbins) != GDK_SUCCEED) {
-		return GDK_FAIL;
+		GDKfree(header);
+		return NULL;
 	}
 
-	make_header(&header, hist, STRIMP_HISTSIZE);
+	make_header(header, hist, STRIMP_HISTSIZE);
 
-	return GDK_SUCCEED;
+	return header;
 }
 
 
