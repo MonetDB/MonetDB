@@ -84,7 +84,7 @@ GDKstrimp_ndigrams(BAT *b, size_t *n)
  */
 #define isIgnored(x) (isspace((x)) || isdigit((x)) || ispunct((x)))
 #define isNotIgnored(x) (!isIgnored(x))
-#define pairToIndex(b1, b2) (((uint8_t)b1)<<8 | ((uint8_t)b2))
+#define pairToIndex(b1, b2) (DataPair)(((uint8_t)b1)<<8 | ((uint8_t)b2))
 #define indexToPair1(idx) (idx & 0xff00) >> 8
 #define indexToPair2(idx) (idx & 0xff)
 #define swp(_a, _i, _j, TPE)			\
@@ -148,7 +148,7 @@ GDKstrimp_make_histogram(BAT *b, uint64_t *hist, size_t hist_size, size_t *nbins
 		}
 	}
 
-	TRC_DEBUG_ENDIF(ALGO, LLFMT "usec\n", GDKusec() - t0);
+	TRC_DEBUG(ALGO, LLFMT " usec\n", GDKusec() - t0);
 	GDKtracer_flush_buffer();
 	return GDK_SUCCEED;
 }
