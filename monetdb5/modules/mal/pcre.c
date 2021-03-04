@@ -1331,13 +1331,16 @@ PCRElike4(bit *ret, const str *s, const str *pat, const str *esc, const bit *ise
 {
 	str res = MAL_SUCCEED;
 	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, isnull = false;
+	bool use_re = false, use_strcmp = false, empty = false;
 	struct RE *re = NULL;
 
-	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &isnull, pat, esc)) != MAL_SUCCEED)
+	if ((res = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
 		return res;
 
-	if (strNil(*s) || isnull) {
+	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
+						   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
+
+	if (strNil(*s) || empty) {
 		*ret = bit_nil;
 	} else if (use_re) {
 		if (use_strcmp) {
@@ -1625,7 +1628,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 	str msg = MAL_SUCCEED, input = NULL, pat = NULL;
 	BAT *b = NULL, *pbn = NULL, *bn = NULL;
 	char *ppat = NULL;
-	bool use_re = false, use_strcmp = false, allnulls = false, isensitive = (bool) *isens, anti = (bool) *not, has_nil = false,
+	bool use_re = false, use_strcmp = false, empty = false, isensitive = (bool) *isens, anti = (bool) *not, has_nil = false,
 		 input_is_a_bat = isaBatType(getArgType(mb, pci, 1)), pattern_is_a_bat = isaBatType(getArgType(mb, pci, 2));
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BUN q = 0;
@@ -1675,7 +1678,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 		for (BUN p = 0; p < q; p++) {
 			const str next_input = b ? BUNtail(bi, p) : input, np = BUNtail(pi, p);
 
-			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &allnulls, &np, esc)) != MAL_SUCCEED)
+			if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &np, esc)) != MAL_SUCCEED)
 				goto bailout;
 
 			if (use_re) {
@@ -1683,7 +1686,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 					goto bailout;
 				ret[p] = re_like_proj_apply(next_input, re_simple, wpat, np, isensitive, anti, use_strcmp);
 				re_like_clean(&re_simple, &wpat);
-			} else if (allnulls) {
+			} else if (empty) {
 				ret[p] = bit_nil;
 			} else {
 				if ((msg = pcre_like_build(&re, &ex, ppat, isensitive, 1)) != MAL_SUCCEED)
@@ -1699,8 +1702,11 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 	} else {
 		bi = bat_iterator(b);
 		pat = *getArgReference_str(stk, pci, 2);
-		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &allnulls, &pat, esc)) != MAL_SUCCEED)
+		if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, &pat, esc)) != MAL_SUCCEED)
 			goto bailout;
+
+		MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
+							   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
 
 		if (use_re) {
 			if ((msg = re_like_build(&re_simple, &wpat, pat, isensitive, use_strcmp, (unsigned char) **esc)) != MAL_SUCCEED)
@@ -1710,7 +1716,7 @@ BATPCRElike3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, const str 
 				ret[p] = re_like_proj_apply(s, re_simple, wpat, pat, isensitive, anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
-		} else if (allnulls) {
+		} else if (empty) {
 			for (BUN p = 0; p < q; p++)
 				ret[p] = bit_nil;
 			has_nil = true;
@@ -2052,6 +2058,9 @@ PCRElikeselect2(bat *ret, const bat *bid, const bat *sid, const str *pat, const 
 	assert(ATOMstorage(b->ttype) == TYPE_str);
 	if ((msg = choose_like_path(&ppat, &use_re, &use_strcmp, &empty, pat, esc)) != MAL_SUCCEED)
 		goto bailout;
+
+	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ? "pcrelike: pattern matching using strcmp" :
+						   use_re ? "pcrelike: pattern matching using RE" : "pcrelike: pattern matching using pcre");
 
 	if (use_re) {
 		msg = re_likeselect(&bn, b, s, *pat, (bool) *caseignore, (bool) *anti, use_strcmp, (unsigned char) **esc);
