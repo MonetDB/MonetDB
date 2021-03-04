@@ -4079,7 +4079,7 @@ exps_uses_any(list *exps, list *l)
  * into
  * 	groupby ( [ union all( groupby( a, [gbe], [ count, sum] ), [ groupby( b, [gbe], [ count, sum] )) , [gbe], [sum, sum] )
  */
-static sql_rel *
+static inline sql_rel *
 rel_push_aggr_down(visitor *v, sql_rel *rel)
 {
 	if (rel->op == op_groupby && rel->l) {
@@ -4373,7 +4373,7 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
  * 	project(join(groupby (A)[a.i],[a.i]), Dict)[a.i==dict.i])[dict.n]
  *
  */
-static sql_rel *
+static inline sql_rel *
 rel_push_groupby_down(visitor *v, sql_rel *rel)
 {
 	sql_rel *p = rel->l;
@@ -5737,7 +5737,7 @@ score_gbe(visitor *v, sql_rel *rel, sql_exp *e)
 }
 
 /* reorder group by expressions */
-static sql_rel *
+static inline sql_rel *
 rel_groupby_order(visitor *v, sql_rel *rel)
 {
 	int *scores = NULL;
@@ -5782,7 +5782,7 @@ rel_groupby_order(visitor *v, sql_rel *rel)
  * The reduced group by and (derived) aggr expressions are restored via
  * extra (new) aggregate columns.
  */
-static sql_rel *
+static inline sql_rel *
 rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 {
 	list *gbe = rel->r;
@@ -6060,7 +6060,7 @@ rel_groupby_distinct2(visitor *v, sql_rel *rel)
  * 	groupby(R) [e,f,a,b] [ a, b, aggr3 c, aggr4 d]
  * ) [e,f]( aggr1 a distinct, aggr2 b distinct, aggr3_phase2 c, aggr4_phase2 d)
  */
-static sql_rel *
+static inline sql_rel *
 rel_groupby_distinct(visitor *v, sql_rel *rel)
 {
 	node *n;
@@ -6158,16 +6158,29 @@ rel_groupby_distinct(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+/* pack grouby optimizers into a single function to void iterations in the AST */
+static sql_rel *
+rel_optimize_group_by(visitor *v, sql_rel *rel)
+{
+	if (!is_groupby(rel->op))
+		return rel;
+
+	rel = rel_push_aggr_down(v, rel);
+	rel = rel_push_groupby_down(v, rel);
+	rel = rel_groupby_order(v, rel);
+	rel = rel_reduce_groupby_exps(v, rel);
+	rel = rel_groupby_distinct(v, rel);
+	return rel;
+}
+
 static sql_exp *split_aggr_and_project(mvc *sql, list *aexps, sql_exp *e);
 
 static void
 list_split_aggr_and_project(mvc *sql, list *aexps, list *exps)
 {
-	node *n;
-
-	if (!exps)
+	if (list_empty(exps))
 		return ;
-	for(n = exps->h; n; n = n->next)
+	for(node *n = exps->h; n; n = n->next)
 		n->data = split_aggr_and_project(sql, aexps, n->data);
 }
 
@@ -7533,13 +7546,14 @@ score_se(visitor *v, sql_rel *rel, sql_exp *e)
 	return score;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_select_order(visitor *v, sql_rel *rel)
 {
 	int *scores = NULL;
 	sql_exp **exps = NULL;
 
-	if (is_select(rel->op) && list_length(rel->exps) > 1) {
+	assert(is_select(rel->op));
+	if (list_length(rel->exps) > 1) {
 		node *n;
 		int i, nexps = list_length(rel->exps);
 		scores = SA_NEW_ARRAY(v->sql->ta, int, nexps);
@@ -7558,87 +7572,95 @@ rel_select_order(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_simplify_like_select(visitor *v, sql_rel *rel)
 {
-	if (is_select(rel->op) && rel->exps) {
-		node *n;
-		list *exps;
-		int needed = 0;
+	list *exps;
+	int needed = 0;
 
-		for (n = rel->exps->h; n && !needed; n = n->next) {
-			sql_exp *e = n->data;
-			list *l = e->l;
+	assert(is_select(rel->op) && !list_empty(rel->exps));
+	for (node *n = rel->exps->h; n && !needed; n = n->next) {
+		sql_exp *e = n->data;
+		list *l = e->l;
+		list *r = e->r;
+
+		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e))
+			needed = 1;
+	}
+
+	if (!needed)
+		return rel;
+
+	exps = sa_list(v->sql->sa);
+	if (exps == NULL)
+		return NULL;
+	for (node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		list *l = e->l;
+		list *r = e->r;
+
+		if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e)) {
 			list *r = e->r;
+			sql_exp *fmt = r->h->data;
+			sql_exp *esc = (r->h->next)?r->h->next->data:NULL;
+			int rewrite = 0, isnull = 0;
 
-			if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e))
-				needed = 1;
-		}
+			if (fmt->type == e_convert)
+				fmt = fmt->l;
+			/* check for simple like expression */
+			if (is_atom(fmt->type)) {
+				atom *fa = NULL;
 
-		if (!needed)
-			return rel;
+				if (fmt->l)
+					fa = fmt->l;
+				if (fa && fa->isnull)
+					isnull = 1;
+				else if (fa && fa->data.vtype == TYPE_str && !strchr(fa->data.val.sval, '%') && !strchr(fa->data.val.sval, '_'))
+					rewrite = 1;
+			}
+			if (rewrite && !isnull && esc && is_atom(esc->type)) {
+				atom *ea = NULL;
 
-		exps = sa_list(v->sql->sa);
-		if (exps == NULL)
-			return NULL;
-		for (n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			list *l = e->l;
-			list *r = e->r;
-
-			if (e->type == e_cmp && e->flag == cmp_filter && strcmp(((sql_subfunc*)e->f)->func->base.name, "like") == 0 && list_length(l) == 1 && list_length(r) <= 2 && !is_anti(e)) {
+				if (esc->l)
+					ea = esc->l;
+				if (ea && ea->isnull)
+					isnull = 1;
+				else if (ea && (ea->data.vtype != TYPE_str || strlen(ea->data.val.sval) != 0))
+					rewrite = 0;
+			}
+			if (isnull) {
+				list_append(exps, exp_null(v->sql->sa, sql_bind_localtype("bit")));
+				v->changes++;
+			} else if (rewrite) { 	/* rewrite to cmp_equal ! */
+				list *l = e->l;
 				list *r = e->r;
-				sql_exp *fmt = r->h->data;
-				sql_exp *esc = (r->h->next)?r->h->next->data:NULL;
-				int rewrite = 0, isnull = 0;
+				sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, cmp_equal);
 
-				if (fmt->type == e_convert)
-					fmt = fmt->l;
-				/* check for simple like expression */
-				if (is_atom(fmt->type)) {
-					atom *fa = NULL;
-
-					if (fmt->l)
-						fa = fmt->l;
-					if (fa && fa->isnull)
-						isnull = 1;
-					else if (fa && fa->data.vtype == TYPE_str &&
-					    !strchr(fa->data.val.sval, '%') &&
-					    !strchr(fa->data.val.sval, '_'))
-						rewrite = 1;
-				}
-				if (rewrite && !isnull && esc && is_atom(esc->type)) {
-			 		atom *ea = NULL;
-
-					if (esc->l)
-						ea = esc->l;
-					if (ea && ea->isnull)
-						isnull = 1;
-					else if (ea && (ea->data.vtype != TYPE_str ||
-					    strlen(ea->data.val.sval) != 0))
-						rewrite = 0;
-				}
-				if (isnull) {
-					list_append(exps, exp_null(v->sql->sa, sql_bind_localtype("bit")));
-					v->changes++;
-				} else if (rewrite) { 	/* rewrite to cmp_equal ! */
-					list *l = e->l;
-					list *r = e->r;
-					sql_exp *ne = exp_compare(v->sql->sa, l->h->data, r->h->data, cmp_equal);
-
-					if (is_anti(e)) set_anti(ne);
-					if (is_semantics(e)) set_semantics(ne);
-					list_append(exps, ne);
-					v->changes++;
-				} else {
-					list_append(exps, e);
-				}
+				if (is_anti(e)) set_anti(ne);
+				if (is_semantics(e)) set_semantics(ne);
+				list_append(exps, ne);
+				v->changes++;
 			} else {
 				list_append(exps, e);
 			}
+		} else {
+			list_append(exps, e);
 		}
-		rel->exps = exps;
 	}
+	rel->exps = exps;
+	return rel;
+}
+
+/* pack select optimizers into a single function to void iterations in the AST */
+static sql_rel *
+rel_optimize_select(visitor *v, sql_rel *rel)
+{
+	if (!is_select(rel->op) || list_empty(rel->exps))
+		return rel;
+
+	if (v->value_based_opt)
+		rel = rel_simplify_like_select(v, rel);
+	rel = rel_select_order(v, rel);
 	return rel;
 }
 
@@ -8243,14 +8265,6 @@ exp_merge_range(visitor *v, list *exps)
 	return exps;
 }
 
-static sql_rel *
-rel_find_range(visitor *v, sql_rel *rel)
-{
-	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op)) && rel->exps && !list_empty(rel->exps))
-		rel->exps = exp_merge_range(v, rel->exps);
-	return rel;
-}
-
 /*
  * Casting decimal values on both sides of a compare expression is expensive,
  * both in preformance (cpu cost) and memory requirements (need for large
@@ -8350,83 +8364,94 @@ rel_project_reduce_casts(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_reduce_casts(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op)) &&
-			rel->exps && list_length(rel->exps)) {
-		list *exps = rel->exps;
-		node *n;
+	list *exps = rel->exps;
+	assert(!list_empty(rel->exps));
 
-		for (n=exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-			sql_exp *le = e->l;
-			sql_exp *re = e->r;
-			int anti = is_anti(e);
-			int semantics = is_semantics(e);
+	for (node *n=exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		sql_exp *le = e->l;
+		sql_exp *re = e->r;
+		int anti = is_anti(e);
+		int semantics = is_semantics(e);
 
-			/* handle the and's in the or lists */
-			if (e->type != e_cmp || !is_theta_exp(e->flag) || e->f)
-				continue;
-			/* rewrite e if left or right is a cast */
-			if (le->type == e_convert || re->type == e_convert) {
-				sql_rel *r = rel->r;
+		/* handle the and's in the or lists */
+		if (e->type != e_cmp || !is_theta_exp(e->flag) || e->f)
+			continue;
+		/* rewrite e if left or right is a cast */
+		if (le->type == e_convert || re->type == e_convert) {
+			sql_rel *r = rel->r;
 
-				/* if convert on left then find
-				 * mul or div on right which increased
-				 * scale!
-				 */
-				if (le->type == e_convert && re->type == e_column && (e->flag == cmp_lt || e->flag == cmp_gt) && r && is_project(r->op)) {
-					sql_exp *nre = rel_find_exp(r, re);
-					sql_subtype *tt = exp_totype(le);
-					sql_subtype *ft = exp_fromtype(le);
+			/* if convert on left then find
+			 * mul or div on right which increased
+			 * scale!
+			 */
+			if (le->type == e_convert && re->type == e_column && (e->flag == cmp_lt || e->flag == cmp_gt) && r && is_project(r->op)) {
+				sql_exp *nre = rel_find_exp(r, re);
+				sql_subtype *tt = exp_totype(le);
+				sql_subtype *ft = exp_fromtype(le);
 
-					if (nre && nre->type == e_func) {
-						sql_subfunc *f = nre->f;
+				if (nre && nre->type == e_func) {
+					sql_subfunc *f = nre->f;
 
-						if (!f->func->s && !strcmp(f->func->base.name, "sql_mul")) {
-							list *args = nre->l;
-							sql_exp *ce = args->t->data;
-							sql_subtype *fst = exp_subtype(args->h->data);
-							atom *a;
+					if (!f->func->s && !strcmp(f->func->base.name, "sql_mul")) {
+						list *args = nre->l;
+						sql_exp *ce = args->t->data;
+						sql_subtype *fst = exp_subtype(args->h->data);
+						atom *a;
 
-							if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
+						if (fst->scale && fst->scale == ft->scale && (a = exp_value(v->sql, ce)) != NULL) {
 #ifdef HAVE_HGE
-								hge val = 1;
+							hge val = 1;
 #else
-								lng val = 1;
+							lng val = 1;
 #endif
-								/* multiply with smallest value, then scale and (round) */
-								int scale = (int) tt->scale - (int) ft->scale;
-								int rs = reduce_scale(a);
+							/* multiply with smallest value, then scale and (round) */
+							int scale = (int) tt->scale - (int) ft->scale;
+							int rs = reduce_scale(a);
 
-								scale -= rs;
+							scale -= rs;
 
-								args = new_exp_list(v->sql->sa);
-								while(scale > 0) {
-									scale--;
-									val *= 10;
-								}
-								append(args, re);
-#ifdef HAVE_HGE
-								append(args, exp_atom_hge(v->sql->sa, val));
-#else
-								append(args, exp_atom_lng(v->sql->sa, val));
-#endif
-								f = find_func(v->sql, "scale_down", args);
-								nre = exp_op(v->sql->sa, args, f);
-								e = exp_compare(v->sql->sa, le->l, nre, e->flag);
-								v->changes++;
+							args = new_exp_list(v->sql->sa);
+							while(scale > 0) {
+								scale--;
+								val *= 10;
 							}
+							append(args, re);
+#ifdef HAVE_HGE
+							append(args, exp_atom_hge(v->sql->sa, val));
+#else
+							append(args, exp_atom_lng(v->sql->sa, val));
+#endif
+							f = find_func(v->sql, "scale_down", args);
+							nre = exp_op(v->sql->sa, args, f);
+							e = exp_compare(v->sql->sa, le->l, nre, e->flag);
+							v->changes++;
 						}
 					}
 				}
 			}
-			if (anti) set_anti(e);
-			if (semantics) set_semantics(e);
-			n->data = e;
 		}
+		if (anti) set_anti(e);
+		if (semantics) set_semantics(e);
+		n->data = e;
 	}
+	return rel;
+}
+
+/* pack join and select optimizers into a single function to void iterations in the AST */
+static sql_rel *
+rel_optimize_select_and_joins(visitor *v, sql_rel *rel)
+{
+	if ((!is_join(rel->op) && !is_semi(rel->op) && !is_select(rel->op)) || list_empty(rel->exps))
+		return rel;
+
+	rel->exps = exp_merge_range(v, rel->exps);
+	if (v->value_based_opt)
+		rel = rel_reduce_casts(v, rel);
+	rel = rewrite_simplify(v, rel);
 	return rel;
 }
 
@@ -9633,15 +9658,11 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] ||
 		gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 		gp.cnt[op_semi] || gp.cnt[op_anti] ||
-		gp.cnt[op_select]) {
+		gp.cnt[op_select])
+		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select_and_joins);
 
-		rel = rel_visitor_bottomup(&v, rel, &rel_find_range);
-		if (value_based_opt) {
-			rel = rel_project_reduce_casts(&v, rel);
-			rel = rel_visitor_bottomup(&v, rel, &rel_reduce_casts);
-		}
-		rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
-	}
+	if (value_based_opt)
+		rel = rel_project_reduce_casts(&v, rel);
 
 	if (gp.cnt[op_union])
 		rel = rel_visitor_bottomup(&v, rel, &rel_merge_union);
@@ -9680,13 +9701,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		}
 	}
 
-	if (gp.cnt[op_groupby]) {
-		rel = rel_visitor_topdown(&v, rel, &rel_push_aggr_down);
-		rel = rel_visitor_topdown(&v, rel, &rel_push_groupby_down);
-		rel = rel_visitor_bottomup(&v, rel, &rel_groupby_order);
-		rel = rel_visitor_bottomup(&v, rel, &rel_reduce_groupby_exps);
-		rel = rel_visitor_bottomup(&v, rel, &rel_groupby_distinct);
-	}
+	if (gp.cnt[op_groupby])
+		rel = rel_visitor_topdown(&v, rel, &rel_optimize_group_by);
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(&v, rel);
@@ -9750,11 +9766,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
 		rel = rel_visitor_topdown(&v, rel, &rel_simplify_fk_joins);
 
-	if (gp.cnt[op_select] && value_based_opt)
-		rel = rel_visitor_bottomup(&v, rel, &rel_simplify_like_select);
-
 	if (gp.cnt[op_select])
-		rel = rel_visitor_bottomup(&v, rel, &rel_select_order);
+		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select);
 
 	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
 		rel = rel_visitor_bottomup(&v, rel, &rel_use_index);
