@@ -2985,10 +2985,12 @@ static BAT *
 segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 {
 	size_t nr = end - start, pos = 0;
+	int cur = 0;
 	BAT *b = COLnew(0, TYPE_msk, nr, TRANSIENT), *bn = NULL;
 	if (!b)
 		return NULL;
 
+	int *dst = Tloc(b, 0);
 	for( ; s; s=s->next) {
 		if (s->end < start)
 			continue;
@@ -3002,15 +3004,50 @@ segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 			lnr -= (start - s->start);
 		if (s->end > end)
 			lnr -= s->end - end;
-		/* later optimize per 32 bits */
-		for(size_t i = 0; i<lnr; i++) {
-			if (BUNappend(b, (ptr) &m, true) != GDK_SUCCEED) {
-				BBPreclaim(b);
-				return NULL;
+
+		if (m) {
+			size_t used = pos&31, end = 32;
+			if (used) {
+				if (lnr < (32-used))
+					end = used + lnr;
+				for(size_t j=used; j < end; j++, pos++, lnr--)
+					cur |= 1U<<j;
+				if (end == 32) {
+					*dst++ = cur;
+					cur = 0;
+				}
 			}
+			size_t full = lnr/32;
+			size_t rest = lnr%32;
+			for(size_t i = 0; i<full; i++, pos+=32, lnr-=32)
+				*dst++ = ~0;
+			for(size_t j=0; j < rest; j++, pos++, lnr--)
+				cur |= 1U<<j;
+			assert(lnr==0);
+		} else {
+			size_t used = pos&31, end = 32;
+			if (used) {
+				if (lnr < (32-used))
+					end = used + lnr;
+
+				pos+= (end-used);
+				lnr-= (end-used);
+				if (end == 32) {
+					*dst++ = cur;
+					cur = 0;
+				}
+			}
+			size_t full = lnr/32;
+			size_t rest = lnr%32;
+			for(size_t i = 0; i<full; i++, pos+=32, lnr-=32)
+				*dst++ = 0;
+			pos+= rest;
+			lnr-= rest;
+			assert(lnr==0);
 		}
-		pos += lnr;
 	}
+	*dst=cur;
+	BATsetcount(b, nr);
 	if (!(bn = BATmaskedcands(start, nr, b, true))) {
 		BBPreclaim(b);
 		return NULL;
