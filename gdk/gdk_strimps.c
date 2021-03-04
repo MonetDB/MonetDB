@@ -227,33 +227,43 @@ create_header(BAT *b)
 }
 
 
-/* static uint8_t */
-/* lookup_index(StrimpHeader *h, uint16_t n) */
-/* { */
-/* 	size_t i; */
-/* 	for(i = 0; i < STRIMP_SIZE; i++) */
-/* 		if(h->bytepairs[i] == n) */
-/* 			return i; */
+/* Given a strimp h and a DataPair p, return the index i for which
+ *
+ * h[i] == p
+ *
+ * Returns 0 if p is not in h.
+ *
+ * TODO: Should this be inlined somehow? (probably yes)
+ */
+static uint8_t
+lookup_index(StrimpHeader *h, DataPair n)
+{
+	size_t i;
+	for(i = 0; i < STRIMP_HEADER_SIZE; i++)
+		if(h->bytepairs[i] == n)
+			return i;
 
-/* 	return 0; */
-/* } */
+	return 0;
+}
 
 
 /* Given a strimp header and a string compute the bitstring of which
  * digrams(byte pairs) are present in the string. The strimp header is a
  * map from digram(byte pair) to index in the strimp.
+ *
+ * This should probably be inlined.
  */
-/* static uint64_t */
-/* GDKstrimp_make_bitstring(str s, StrimpHeader *h) */
-/* { */
-/* 	uint64_t ret = 0; */
-/* 	uint8_t pair_idx; */
-/* 	char *it; */
+static uint64_t
+GDKstrimp_make_bitstring(const str s, StrimpHeader *h)
+{
+	uint64_t ret = 0;
+	uint8_t pair_idx;
+	char *it;
 
-/* 	for(it = s; *it != 0 && *(it+1) != 0; it++) { */
-/* 		pair_idx = lookup_index(h, pairToIndex(*it, *(it+1))); */
-/* 		ret |= 0x1 << pair_idx; */
-/* 	} */
+	for(it = s; *it != 0 && *(it+1) != 0; it++) {
+		pair_idx = lookup_index(h, pairToIndex(*it, *(it+1)));
+		ret |= 0x1 << pair_idx;
+	}
 
-/* 	return ret; */
-/* } */
+	return ret;
+}
