@@ -172,6 +172,34 @@ column_find_tpe(sht)
 column_find_tpe(int)
 column_find_tpe(lng)
 
+static str
+column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
+{
+	BUN q = BUN_NONE;
+	BAT **b = (BAT**) cbat;
+	str res = NULL;
+
+	*b = full_column(tr, c);
+	if (*b) {
+		if (rid < (*b)->hseqbase || rid >= (*b)->hseqbase + BATcount(*b))
+			q = BUN_NONE;
+		else
+			q = rid - (*b)->hseqbase;
+	}
+	if (q != BUN_NONE) {
+		BATiter bi = bat_iterator(*b);
+		res = (str) BUNtvar(bi, q);
+	}
+	return res;
+}
+
+static void
+column_find_string_end(ptr cbat)
+{
+	BAT *b = (BAT*) cbat;
+	full_destroy(NULL, b);
+}
+
 static int
 column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 {
@@ -621,7 +649,8 @@ bat_table_init( table_functions *tf )
 	tf->column_find_sht = column_find_sht;
 	tf->column_find_int = column_find_int;
 	tf->column_find_lng = column_find_lng;
-
+	tf->column_find_string_start = column_find_string_start; /* this function returns a pointer to the heap, use it with care! */
+	tf->column_find_string_end = column_find_string_end; /* don't forget to call this function to unfix the bat descriptor! */
 	tf->column_update_value = column_update_value;
 	tf->table_insert = table_insert;
 	tf->table_delete = table_delete;
