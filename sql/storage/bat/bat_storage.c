@@ -278,7 +278,7 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 			if (BATcount(b) < s->start) {
 				msk nil = bit_nil;
 				for(BUN i=BATcount(b); i<s->start; i++){
-					if (BUNappend(b, &nil, TRUE) != GDK_SUCCEED) {
+					if (BUNappend(b, &nil, true) != GDK_SUCCEED) {
 						bat_destroy(b);
 						return LOG_ERR;
 					}
@@ -2985,20 +2985,18 @@ static BAT *
 segments2cands(segment *s, sql_trans *tr, size_t start, size_t end)
 {
 	size_t nr = end - start, pos = 0;
-	int cur = 0;
+	uint32_t cur = 0;
 	BAT *b = COLnew(0, TYPE_msk, nr, TRANSIENT), *bn = NULL;
 	if (!b)
 		return NULL;
 
-	int *restrict dst = Tloc(b, 0);
+	uint32_t *restrict dst = Tloc(b, 0);
 	for( ; s; s=s->next) {
 		if (s->end < start)
 			continue;
 		if (s->start >= end)
 			break;
-		msk m = TRUE;
-		if (SEG_IS_DELETED(s, tr))
-			m = FALSE;
+		msk m = !(SEG_IS_DELETED(s, tr));
 		size_t lnr = s->end-s->start;
 		if (s->start < start)
 			lnr -= (start - s->start);
