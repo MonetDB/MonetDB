@@ -402,7 +402,7 @@ PATstrimp_makehist(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-PATstrimp_makeheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+PATstrimp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat bid;
 	BAT *b;
@@ -413,9 +413,10 @@ PATstrimp_makeheader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, "bat.strimpHeader", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
-	if(GDKstrimp_make_header(b) != GDK_SUCCEED)
+	if(GDKstrimp_create_strimp(b) != GDK_SUCCEED)
 		throw(MAL, "bat.strimpHistogram", SQLSTATE(HY002) OPERATION_FAILED);
 
+	// *getArgReference_lng(stk, pci, 0) = 0;
 	return MAL_SUCCEED;
 }
 
@@ -452,7 +453,7 @@ mel_func batExtensions_init_funcs[] = {
  /* String imprints */
  pattern("bat", "strimpNDigrams", PATstrimp_ndigrams, false, "count digrams in a string bat", args(1,2,arg("",lng),batarg("b",str))),
  pattern("bat", "strimpHistogram", PATstrimp_makehist, false, "make a histogram of all the byte pairs in a BAT", args(2,3,arg("",lng), batarg("",lng),batarg("b",str))),
- pattern("bat", "strimpHeader", PATstrimp_makeheader, false, "construct the strimp header from a BAT", args(1,2,arg("",void),batarg("b",str))),
+ pattern("bat", "strimp", PATstrimp, false, "construct the strimp a BAT", args(1,2,arg("",void),batarg("b",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"
