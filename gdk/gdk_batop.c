@@ -2436,7 +2436,7 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				memset(p, 0xFF, 4 * ((n + 31) / 32));
 				if (n & 31) {
 					uint32_t *m = p;
-					m[n / 32] &= ~((1U << (n % 32)) - 1);
+					m[n / 32] &= (1U << (n % 32)) - 1;
 				}
 			} else
 				memset(p, 0x00, 4 * ((n + 31) / 32));
