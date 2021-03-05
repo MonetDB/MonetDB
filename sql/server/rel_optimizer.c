@@ -1797,7 +1797,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
  *   2 project ( fk-pk-join () ) [ fk-column ] -> project (fk table)[ fk-column ]
  *   3 project ( fk1-pk1-join( fk2-pk2-join()) [ fk-column, pk1 column ] -> project (fk1-pk1-join)[ fk-column, pk1 column ]
  */
-static sql_rel *
+static inline sql_rel *
 rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 {
 	sql_rel *r = NULL;
@@ -9566,7 +9566,7 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 
 /* pack optimizers into a single function call to avoid iterations in the AST */
 static sql_rel *
-rel_optimize_select_and_joins(visitor *v, sql_rel *rel)
+rel_optimize_select_and_joins_bottomup(visitor *v, sql_rel *rel)
 {
 	if ((!is_join(rel->op) && !is_semi(rel->op) && !is_select(rel->op)) || list_empty(rel->exps))
 		return rel;
@@ -9641,10 +9641,12 @@ rel_optimize_semi_and_anti(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-rel_optimize_select_and_use_index(visitor *v, sql_rel *rel)
+rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 {
 	if (rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
+
+	rel = rel_simplify_fk_joins(v, rel);
 
 	if (!is_select(rel->op) || list_empty(rel->exps))
 		return rel;
@@ -9708,7 +9710,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_visitor_bottomup(&v, rel, &rel_remove_join);
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
-		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select_and_joins);
+		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select_and_joins_bottomup);
 		if (level == 1)
 			rel = rel_visitor_bottomup(&v, rel, &rewrite_reset_used); /* reset used flag, used by rel_merge_select_rse */
 	}
@@ -9763,11 +9765,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_select] && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left] || gp.cnt[op_right]))
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
 
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti])
-		rel = rel_visitor_topdown(&v, rel, &rel_simplify_fk_joins);
-
-	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full])
-		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select_and_use_index);
+	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])
+		rel = rel_visitor_topdown(&v, rel, &rel_optimize_select_and_joins_topdown);
 
 	/* Remove unused expressions */
 	if (level <= 0)
