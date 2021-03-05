@@ -3770,19 +3770,16 @@ BEGIN
     END
     END;
 END;
-
 CREATE FUNCTION sys.SQ (s STRING) RETURNS STRING BEGIN RETURN ' ''' || sys.replace(s,'''','''''') || ''' '; END;
 CREATE FUNCTION sys.DQ (s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(s,'"','""') || '"'; END; --TODO: Figure out why this breaks with the space
 CREATE FUNCTION sys.FQN(s STRING, t STRING) RETURNS STRING BEGIN RETURN sys.DQ(s) || '.' || sys.DQ(t); END;
 CREATE FUNCTION sys.ALTER_TABLE(s STRING, t STRING) RETURNS STRING BEGIN RETURN 'ALTER TABLE ' || sys.FQN(s, t) || ' '; END;
-
 --We need pcre to implement a header guard which means adding the schema of an object explicitely to its identifier.
 CREATE FUNCTION sys.replace_first(ori STRING, pat STRING, rep STRING, flg STRING) RETURNS STRING EXTERNAL NAME "pcre"."replace_first";
 CREATE FUNCTION sys.schema_guard(sch STRING, nme STRING, stmt STRING) RETURNS STRING BEGIN
 RETURN
     SELECT sys.replace_first(stmt, '(\\s*"?' || sch ||  '"?\\s*\\.|)\\s*"?' || nme || '"?\\s*', ' ' || sys.FQN(sch, nme) || ' ', 'imsx');
 END;
-
 CREATE VIEW sys.describe_constraints AS
     SELECT
         s.name sch,
@@ -3797,7 +3794,6 @@ CREATE VIEW sys.describe_constraints AS
         AND t.system = FALSE
         AND k.type in (0, 1)
         AND t.type IN (0, 6);
-
 CREATE VIEW sys.describe_indices AS
     WITH it (id, idx) AS (VALUES (0, 'INDEX'), (4, 'IMPRINTS INDEX'), (5, 'ORDERED INDEX')) --UNIQUE INDEX wraps to INDEX.
     SELECT
@@ -3822,7 +3818,6 @@ CREATE VIEW sys.describe_indices AS
         AND k.type IS NULL
         AND i.type = it.id
     ORDER BY i.name, kc.nr;
-
 CREATE VIEW sys.describe_column_defaults AS
     SELECT
         s.name sch,
@@ -3836,7 +3831,6 @@ CREATE VIEW sys.describe_column_defaults AS
         s.name <> 'tmp' AND
         NOT t.system AND
         c."default" IS NOT NULL;
-
 CREATE VIEW sys.describe_foreign_keys AS
         WITH action_type (id, act) AS (VALUES
             (0, 'NO ACTION'),
@@ -3876,7 +3870,6 @@ CREATE VIEW sys.describe_foreign_keys AS
         AND (fkk."action" & 255)         = od.id
         AND ((fkk."action" >> 8) & 255)  = ou.id
         ORDER BY fkk.name, fkkc.nr;
-
 --TODO: CRASHES when this function gets inlined into describe_tables
 CREATE FUNCTION sys.get_merge_table_partition_expressions(tid INT) RETURNS STRING
 BEGIN
@@ -3899,12 +3892,10 @@ BEGIN
             END
         FROM (VALUES (tid)) t(id) LEFT JOIN sys.table_partitions tp ON t.id = tp.table_id;
 END;
-
 --TODO: gives mergejoin errors when inlined
 CREATE FUNCTION sys.get_remote_table_expressions(s STRING, t STRING) RETURNS STRING BEGIN
     RETURN SELECT ' ON ' || sys.SQ(uri) || ' WITH USER ' || sys.SQ(username) || ' ENCRYPTED PASSWORD ' || sys.SQ("hash") FROM sys.remote_table_credentials(s ||'.' || t);
 END;
-
 CREATE VIEW sys.describe_tables AS
     SELECT
         t.id o,
@@ -3936,7 +3927,6 @@ CREATE VIEW sys.describe_tables AS
         AND s.id = t.schema_id
         AND ts.table_type_id = t.type
         AND s.name <> 'tmp';
-
 CREATE VIEW sys.describe_triggers AS
         SELECT
             s.name sch,
@@ -3945,7 +3935,6 @@ CREATE VIEW sys.describe_triggers AS
             tr.statement def
         FROM sys.schemas s, sys.tables t, sys.triggers tr
         WHERE s.id = t.schema_id AND t.id = tr.table_id AND NOT t.system;
-
 CREATE VIEW sys.describe_comments AS
         SELECT
             o.id id,
@@ -3954,32 +3943,20 @@ CREATE VIEW sys.describe_comments AS
             c.remark rem
         FROM (
             SELECT id, 'SCHEMA', sys.DQ(name) FROM sys.schemas
-
             UNION ALL
-
             SELECT t.id, CASE WHEN ts.table_type_name = 'VIEW' THEN 'VIEW' ELSE 'TABLE' END, sys.FQN(s.name, t.name)
             FROM sys.schemas s JOIN sys.tables t ON s.id = t.schema_id JOIN sys.table_types ts ON t.type = ts.table_type_id
             WHERE NOT s.name <> 'tmp'
-
             UNION ALL
-
             SELECT c.id, 'COLUMN', sys.FQN(s.name, t.name) || '.' || sys.DQ(c.name) FROM sys.columns c, sys.tables t, sys.schemas s WHERE c.table_id = t.id AND t.schema_id = s.id
-
             UNION ALL
-
             SELECT idx.id, 'INDEX', sys.FQN(s.name, idx.name) FROM sys.idxs idx, sys._tables t, sys.schemas s WHERE idx.table_id = t.id AND t.schema_id = s.id
-
             UNION ALL
-
             SELECT seq.id, 'SEQUENCE', sys.FQN(s.name, seq.name) FROM sys.sequences seq, sys.schemas s WHERE seq.schema_id = s.id
-
             UNION ALL
-
             SELECT f.id, ft.function_type_keyword, sys.FQN(s.name, f.name) FROM sys.functions f, sys.function_types ft, sys.schemas s WHERE f.type = ft.function_type_id AND f.schema_id = s.id
-
             ) AS o(id, tpe, nme)
             JOIN sys.comments c ON c.id = o.id;
-
 CREATE VIEW sys.fully_qualified_functions AS
     WITH fqn(id, tpe, sig, num) AS
     (
@@ -4002,7 +3979,6 @@ CREATE VIEW sys.fully_qualified_functions AS
     FROM
         fqn fqn1 JOIN (SELECT id, max(num) FROM fqn GROUP BY id)  fqn2(id, num)
         ON fqn1.id = fqn2.id AND (fqn1.num = fqn2.num OR fqn1.num IS NULL AND fqn2.num is NULL);
-
 CREATE VIEW sys.describe_privileges AS
     SELECT
         CASE
@@ -4041,7 +4017,6 @@ CREATE VIEW sys.describe_privileges AS
         p.privileges = pc.privilege_code_id AND
         p.auth_id = a.id AND
         p.grantor = g.id;
-
 CREATE FUNCTION sys.describe_table(schemaName string, tableName string)
   RETURNS TABLE(name string, query string, type string, id integer, remark string)
 BEGIN
@@ -4053,7 +4028,6 @@ BEGIN
             AND t.name = tableName
             AND t.type = tt.table_type_id;
 END;
-
 CREATE VIEW sys.describe_user_defined_types AS
     SELECT
         s.name sch,
@@ -4066,7 +4040,6 @@ CREATE VIEW sys.describe_user_defined_types AS
             (s.name = 'sys' AND t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml')) OR
             (s.name <> 'sys')
         );
-
 CREATE VIEW sys.describe_partition_tables AS
     SELECT 
         m_sch,
@@ -4122,7 +4095,6 @@ CREATE VIEW sys.describe_partition_tables AS
     FROM 
         subq LEFT OUTER JOIN tp
         ON subq.m_tid = tp.table_id) AS tmp_pi;
-
 CREATE VIEW sys.describe_sequences AS
     SELECT
         s.name as sch,
@@ -4138,7 +4110,6 @@ CREATE VIEW sys.describe_sequences AS
     WHERE s.id = seq.schema_id
     AND s.name <> 'tmp'
     ORDER BY s.name, seq.name;
-
 CREATE VIEW sys.describe_functions AS
     SELECT
         f.id o,
@@ -4146,7 +4117,6 @@ CREATE VIEW sys.describe_functions AS
         f.name fun,
         f.func def
     FROM sys.functions f JOIN sys.schemas s ON f.schema_id = s.id WHERE s.name <> 'tmp' AND NOT f.system;
-
 CREATE FUNCTION sys.describe_columns(schemaName string, tableName string)
     RETURNS TABLE(name string, type string, digits integer, scale integer, Nulls boolean, cDefault string, number integer, sqltype string, remark string)
 BEGIN
@@ -4159,7 +4129,6 @@ BEGIN
             AND s.name = schemaName
         ORDER BY c.number;
 END;
-
 CREATE FUNCTION sys.describe_function(schemaName string, functionName string)
     RETURNS TABLE(id integer, name string, type string, language string, remark string)
 BEGIN
@@ -4171,12 +4140,52 @@ BEGIN
         LEFT OUTER JOIN sys.comments c ON f.id = c.id
         WHERE f.name=functionName AND s.name = schemaName;
 END;
+drop procedure sys.storagemodelinit();
+create procedure sys.storagemodelinit()
+begin
+    delete from sys.storagemodelinput;
+    insert into sys.storagemodelinput
+    select "schema", "table", "column", "type", typewidth, "count",
+        -- assume all variable size types contain distinct values
+        case when ("unique" or "type" IN ('varchar', 'char', 'clob', 'json', 'url', 'blob', 'geometry', 'geometrya'))
+            then "count" else 0 end,
+        case when "count" > 0 and heapsize >= 8192 and "type" in ('varchar', 'char', 'clob', 'json', 'url')
+            -- string heaps have a header of 8192
+            then cast((heapsize - 8192) / "count" as bigint)
+        when "count" > 0 and heapsize >= 32 and "type" in ('blob', 'geometry', 'geometrya')
+            -- binary data heaps have a header of 32
+            then cast((heapsize - 32) / "count" as bigint)
+        else typewidth end,
+        FALSE, case sorted when true then true else false end, "unique", TRUE
+      from sys."storage";  -- view sys."storage" excludes system tables (as those are not useful to be modeled for storagesize by application users)
+    update sys.storagemodelinput
+       set reference = TRUE
+     where ("schema", "table", "column") in (
+        SELECT fkschema."name", fktable."name", fkkeycol."name"
+          FROM    sys."keys" AS fkkey,
+            sys."objects" AS fkkeycol,
+            sys."tables" AS fktable,
+            sys."schemas" AS fkschema
+        WHERE fktable."id" = fkkey."table_id"
+          AND fkkey."id" = fkkeycol."id"
+          AND fkschema."id" = fktable."schema_id"
+          AND fkkey."rkey" > -1 );
+    update sys.storagemodelinput
+       set isacolumn = FALSE
+     where ("schema", "table", "column") NOT in (
+        SELECT sch."name", tbl."name", col."name"
+          FROM sys."schemas" AS sch,
+            sys."tables" AS tbl,
+            sys."columns" AS col
+        WHERE sch."id" = tbl."schema_id"
+          AND tbl."id" = col."table_id");
+end;
+update sys.functions set system = true where name = 'storagemodelinit' and schema_id = 2000;
 CREATE VIEW sys.dump_create_roles AS
     SELECT
         'CREATE ROLE ' || sys.dq(name) || ';' stmt FROM sys.auths
     WHERE name NOT IN (SELECT name FROM sys.db_user_info)
     AND grantor <> 0;
-
 CREATE VIEW sys.dump_create_users AS
     SELECT
         'CREATE USER ' ||  sys.dq(ui.name) ||  ' WITH ENCRYPTED PASSWORD ' ||
@@ -4186,13 +4195,11 @@ CREATE VIEW sys.dump_create_users AS
     WHERE ui.default_schema = s.id
         AND ui.name <> 'monetdb'
         AND ui.name <> '.snapshot';
-
 CREATE VIEW sys.dump_create_schemas AS
     SELECT
         'CREATE SCHEMA ' ||  sys.dq(s.name) || ifthenelse(a.name <> 'sysadmin', ' AUTHORIZATION ' || a.name, ' ') || ';' stmt
     FROM sys.schemas s, sys.auths a
     WHERE s.authorization = a.id AND s.system = FALSE;
-
 CREATE VIEW sys.dump_add_schemas_to_users AS
     SELECT
         'ALTER USER ' || sys.dq(ui.name) || ' SET SCHEMA ' || sys.dq(s.name) || ';' stmt
@@ -4201,31 +4208,26 @@ CREATE VIEW sys.dump_add_schemas_to_users AS
         AND ui.name <> 'monetdb'
         AND ui.name <> '.snapshot'
         AND s.name <> 'sys';
-
 CREATE VIEW sys.dump_grant_user_privileges AS
     SELECT
         'GRANT ' || sys.dq(a2.name) || ' ' || ifthenelse(a1.name = 'public', 'PUBLIC', sys.dq(a1.name)) || ';' stmt
     FROM sys.auths a1, sys.auths a2, sys.user_role ur
     WHERE a1.id = ur.login_id AND a2.id = ur.role_id;
-
 CREATE VIEW sys.dump_table_constraint_type AS
     SELECT
         'ALTER TABLE ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
         ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
         tpe || ' (' || GROUP_CONCAT(sys.DQ(col), ', ') || ');' stmt
     FROM sys.describe_constraints GROUP BY sch, tbl, con, tpe;
-
 CREATE VIEW sys.dump_indices AS
     SELECT
         'CREATE ' || tpe || ' ' ||
         sys.DQ(ind) || ' ON ' || sys.DQ(sch) || '.' || sys.DQ(tbl) ||
         '(' || GROUP_CONCAT(col) || ');' stmt
     FROM sys.describe_indices GROUP BY ind, tpe, sch, tbl;
-
 CREATE VIEW sys.dump_column_defaults AS
     SELECT 'ALTER TABLE ' || sys.FQN(sch, tbl) || ' ALTER COLUMN ' || sys.DQ(col) || ' SET DEFAULT ' || def || ';' stmt
     FROM sys.describe_column_defaults;
-
 CREATE VIEW sys.dump_foreign_keys AS
     SELECT
         'ALTER TABLE ' || sys.DQ(fk_s) || '.'|| sys.DQ(fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
@@ -4234,7 +4236,6 @@ CREATE VIEW sys.dump_foreign_keys AS
         'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
         ';' stmt
     FROM sys.describe_foreign_keys GROUP BY fk_s, fk_t, pk_s, pk_t, fk, on_delete, on_update;
-
 CREATE VIEW sys.dump_partition_tables AS
     SELECT
         sys.ALTER_TABLE(m_sch, m_tbl) || ' ADD TABLE ' || sys.FQN(p_sch, p_tbl) ||
@@ -4247,7 +4248,6 @@ CREATE VIEW sys.dump_partition_tables AS
         CASE WHEN tpe in ('VALUES', 'RANGE') AND with_nulls THEN ' WITH NULL VALUES' ELSE '' END ||
         ';' stmt
     FROM sys.describe_partition_tables;
-
 CREATE VIEW sys.dump_sequences AS
     SELECT
         'CREATE SEQUENCE ' || sys.FQN(sch, seq) || ' AS BIGINT ' ||
@@ -4258,17 +4258,14 @@ CREATE VIEW sys.dump_sequences AS
         CASE WHEN "cache" <> 1 THEN ' CACHE ' || "cache" ELSE '' END ||
         CASE WHEN "cycle" THEN ' CYCLE' ELSE '' END || ';' stmt
     FROM sys.describe_sequences;
-
 CREATE VIEW sys.dump_start_sequences AS
     SELECT
         'UPDATE sys.sequences seq SET start = ' || s  ||
         ' WHERE name = ' || sys.SQ(seq) ||
         ' AND schema_id = (SELECT s.id FROM sys.schemas s WHERE s.name = ' || sys.SQ(sch) || ');' stmt
     FROM sys.describe_sequences;
-
 CREATE VIEW sys.dump_functions AS
     SELECT f.o o, sys.schema_guard(f.sch, f.fun, f.def) stmt FROM sys.describe_functions f;
-
 CREATE VIEW sys.dump_tables AS
     SELECT
         t.o o,
@@ -4279,16 +4276,12 @@ CREATE VIEW sys.dump_tables AS
                 t.opt
         END stmt
     FROM sys.describe_tables t;
-
 CREATE VIEW sys.dump_triggers AS
     SELECT sys.schema_guard(sch, tab, def) stmt FROM sys.describe_triggers;
-
 CREATE VIEW sys.dump_comments AS
     SELECT 'COMMENT ON ' || c.tpe || ' ' || c.fqn || ' IS ' || sys.SQ(c.rem) || ';' stmt FROM sys.describe_comments c;
-
 CREATE VIEW sys.dump_user_defined_types AS
         SELECT 'CREATE TYPE ' || sys.FQN(sch, sql_tpe) || ' EXTERNAL NAME ' || sys.DQ(ext_tpe) || ';' stmt FROM sys.describe_user_defined_types;
-
 CREATE VIEW sys.dump_privileges AS
     SELECT
         'INSERT INTO sys.privileges VALUES (' ||
@@ -4311,11 +4304,8 @@ CREATE VIEW sys.dump_privileges AS
             dp.grantable ||
         ');' stmt
     FROM sys.describe_privileges dp;
-
 CREATE PROCEDURE sys.EVAL(stmt STRING) EXTERNAL NAME sql.eval;
-
 CREATE FUNCTION sys.esc(s STRING) RETURNS STRING BEGIN RETURN '"' || sys.replace(sys.replace(sys.replace(s,E'\\', E'\\\\'), E'\n', E'\\n'), '"', E'\\"') || '"'; END;
-
 CREATE FUNCTION sys.prepare_esc(s STRING, t STRING) RETURNS STRING
 BEGIN
     RETURN
@@ -4326,33 +4316,24 @@ BEGIN
                 'CASE WHEN ' || sys.DQ(s) || ' IS NULL THEN ''null'' ELSE CAST(' || sys.DQ(s) || ' AS STRING) END'
         END;
 END;
-
 CREATE TABLE sys.dump_statements(o INT, s STRING);
-
 CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
-
     DECLARE k INT;
     SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
     IF k IS NOT NULL THEN
-
         DECLARE cname STRING;
         DECLARE ctype STRING;
         SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
         SET ctype = (SELECT c.type FROM sys.columns c WHERE c.id = k);
-
         DECLARE COPY_INTO_STMT STRING;
         DECLARE _cnt INT;
         SET _cnt = (SELECT MIN(s.count) FROM sys.storage() s WHERE s.schema = sch AND s.table = tbl);
-
         IF _cnt > 0 THEN
             SET COPY_INTO_STMT = 'COPY ' || _cnt ||  ' RECORDS INTO ' || sys.FQN(sch, tbl) || '(' || sys.DQ(cname);
-
             DECLARE SELECT_DATA_STMT STRING;
             SET SELECT_DATA_STMT = 'SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), ' || sys.prepare_esc(cname, ctype);
-
             DECLARE M INT;
             SET M = (SELECT MAX(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl);
-
             WHILE (k < M) DO
                 SET k = (SELECT MIN(c.id) FROM sys.columns c, sys.tables t WHERE c.table_id = t.id AND t.name = tbl AND c.id > k);
                 SET cname = (SELECT c.name FROM sys.columns c WHERE c.id = k);
@@ -4360,48 +4341,36 @@ CREATE PROCEDURE sys._dump_table_data(sch STRING, tbl STRING) BEGIN
                 SET COPY_INTO_STMT = (COPY_INTO_STMT || ', ' || sys.DQ(cname));
                 SET SELECT_DATA_STMT = SELECT_DATA_STMT || '|| ''|'' || ' || sys.prepare_esc(cname, ctype);
             END WHILE;
-
             SET COPY_INTO_STMT = (COPY_INTO_STMT || ') FROM STDIN USING DELIMITERS ''|'',E''\\n'',''"'';');
             SET SELECT_DATA_STMT =  SELECT_DATA_STMT || ' FROM ' || sys.FQN(sch, tbl);
-
             insert into sys.dump_statements VALUES ( (SELECT COUNT(*) FROM sys.dump_statements) + 1, COPY_INTO_STMT);
-
             CALL sys.EVAL('INSERT INTO sys.dump_statements ' || SELECT_DATA_STMT || ';');
         END IF;
     END IF;
 END;
-
 CREATE PROCEDURE sys.dump_table_data() BEGIN
-
     DECLARE i INT;
     SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
-
     IF i IS NOT NULL THEN
         DECLARE M INT;
         SET M = (SELECT MAX(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system);
-
         DECLARE sch STRING;
         DECLARE tbl STRING;
-
         WHILE i < M DO
             set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
             set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
             CALL sys._dump_table_data(sch, tbl);
             SET i = (SELECT MIN(t.id) FROM sys.tables t, sys.table_types ts WHERE t.type = ts.table_type_id AND ts.table_type_name = 'TABLE' AND NOT t.system AND t.id > i);
         END WHILE;
-
         set sch = (SELECT s.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
         set tbl = (SELECT t.name FROM sys.tables t, sys.schemas s WHERE s.id = t.schema_id AND t.id = i);
         CALL sys._dump_table_data(sch, tbl);
     END IF;
 END;
-
 CREATE FUNCTION sys.dump_database(describe BOOLEAN) RETURNS TABLE(o int, stmt STRING)
 BEGIN
-
     SET SCHEMA sys;
     TRUNCATE sys.dump_statements;
-
     INSERT INTO sys.dump_statements VALUES (1, 'START TRANSACTION;');
     INSERT INTO sys.dump_statements VALUES ( (SELECT COUNT(*) FROM sys.dump_statements) + 1, 'SET SCHEMA "sys";');
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_create_roles;
@@ -4412,7 +4381,6 @@ BEGIN
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_grant_user_privileges;
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_sequences;
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_start_sequences;
-
     --functions and table-likes can be interdependent. They should be inserted in the order of their catalogue id.
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(ORDER BY stmts.o), stmts.s
     FROM (
@@ -4420,7 +4388,6 @@ BEGIN
             UNION
             SELECT * FROM sys.dump_tables t
         ) AS stmts(o, s);
-
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_column_defaults;
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_table_constraint_type;
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_indices;
@@ -4428,21 +4395,17 @@ BEGIN
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_partition_tables;
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_triggers;
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_comments;
-
     --We are dumping ALL privileges so we need to erase existing privileges on the receiving side;
     INSERT INTO sys.dump_statements VALUES ( (SELECT COUNT(*) FROM sys.dump_statements) + 1, 'TRUNCATE sys.privileges;');
     INSERT INTO sys.dump_statements SELECT  (SELECT COUNT(*) FROM sys.dump_statements) + RANK() OVER(), stmt FROM sys.dump_privileges;
-
     IF NOT DESCRIBE THEN
         CALL sys.dump_table_data();
     END IF;
-
     INSERT INTO sys.dump_statements VALUES ( (SELECT COUNT(*) FROM sys.dump_statements) + 1, 'COMMIT;');
-
     RETURN sys.dump_statements;
 END;
 UPDATE sys.functions f SET system = true WHERE
-    schema_id = (select id from sys.schemas where name = 'sys') AND
+    schema_id = 2000 AND
     (
         (
             type = (select function_type_id from sys.function_types where function_type_name = 'Function returning a table') AND
@@ -4479,9 +4442,8 @@ UPDATE sys.functions f SET system = true WHERE
             )
         )
 );
-
 UPDATE sys._tables SET system = true WHERE 
-    schema_id = (select id from sys.schemas where name = 'sys') AND
+    schema_id = 2000 AND
     (
         (
             type = (select table_type_id from sys.table_types where table_type_name = 'TABLE') AND
@@ -4538,7 +4500,7 @@ CREATE VIEW sys.dependency_schemas_on_users AS
  WHERE u.default_schema = s.id
  ORDER BY s.name, u.name;
 GRANT SELECT ON sys.dependency_schemas_on_users TO PUBLIC;
-update sys._tables set system = true where system <> true and name in ('users','dependency_schemas_on_users') and schema_id = (select id from sys.schemas where name = 'sys') and type = 1;
+update sys._tables set system = true where system <> true and name in ('users','dependency_schemas_on_users') and schema_id = 2000 and type = 1;
 commit;
 set schema "sys";
 
