@@ -3735,7 +3735,7 @@ rel_select_cse(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_project_cse(visitor *v, sql_rel *rel)
 {
 	if (is_project(rel->op) && rel->exps) {
@@ -4533,9 +4533,6 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 	exps = rel->exps;
 
-	if (rel->op == op_project && r && r->op == op_project && !(rel_is_ref(r)))
-		return rel_merge_projects(v, rel);
-
 	/* push select through join */
 	if (is_select(rel->op) && r && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *jl = r->l;
@@ -4713,7 +4710,7 @@ rel_push_select_down_join(visitor *v, sql_rel *rel)
  * {semi}join( A, groupby( semijoin(B,A) [gbe == A.x] ) [gbe][aggrs] ) [ gbe == A.x ]
  */
 
-static sql_rel *
+static inline sql_rel *
 rel_push_join_down(visitor *v, sql_rel *rel)
 {
 	list *exps = NULL;
@@ -9602,8 +9599,10 @@ rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-rel_optimize_group_by(visitor *v, sql_rel *rel)
+rel_optimize_projections(visitor *v, sql_rel *rel)
 {
+	rel = rel_project_cse(v, rel);
+
 	if (!is_groupby(rel->op))
 		return rel;
 
@@ -9643,10 +9642,15 @@ rel_optimize_semi_and_anti(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 {
-	if (rel->l && (is_select(rel->op) || is_join(rel->op)))
-		rel = rel_use_index(v, rel);
+	/* push_join_down introduces semijoins */
+	int level = *(int*) v->data;
+	if (level <= 0)
+		rel = rel_push_join_down(v, rel);
 
 	rel = rel_simplify_fk_joins(v, rel);
+	rel = rel_push_select_down(v, rel);
+	if (rel->l && (is_select(rel->op) || is_join(rel->op)))
+		rel = rel_use_index(v, rel);
 
 	if (!is_select(rel->op) || list_empty(rel->exps))
 		return rel;
@@ -9721,9 +9725,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_union])
 		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_unions_bottomup);
 
-	if (gp.cnt[op_project])
-		rel = rel_visitor_bottomup(&v, rel, &rel_project_cse);
-
 	if ((gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full]) && /* DISABLES CODE */ (0))
 		rel = rel_visitor_topdown(&v, rel, &rel_split_outerjoin);
 
@@ -9736,8 +9737,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_union])
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_unions_topdown);
 
-	if (gp.cnt[op_groupby])
-		rel = rel_visitor_topdown(&v, rel, &rel_optimize_group_by);
+	if (gp.cnt[op_groupby] || gp.cnt[op_project] || gp.cnt[op_union] || gp.cnt[op_inter] || gp.cnt[op_except])
+		rel = rel_visitor_topdown(&v, rel, &rel_optimize_projections);
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(&v, rel);
@@ -9748,11 +9749,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
 	}
 
-	/* push_join_down introduces semijoins */
-	/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-	if (level <= 0 && gp.cnt[op_groupby] && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left]))
-		rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
-
 	/* Important -> Re-write semijoins after rel_join_order */
 	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
 		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_semi_and_anti);
@@ -9762,9 +9758,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 
 	/* Important -> Make sure rel_push_select_down gets called after rel_join_order,
 	   because pushing down select expressions makes rel_join_order more difficult */
-	if (gp.cnt[op_select] && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left] || gp.cnt[op_right]))
-		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_select_and_joins_topdown);
 
