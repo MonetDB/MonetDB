@@ -1,6 +1,5 @@
 HAVE_JDBCTESTS?JDBC_API_Tester
 #HAVE_JDBCTESTS?Test_Csendthread  # unfortunately has runtime-dependant output
-HAVE_JDBCTESTS&HAVE_HGE?Test_Int128
 HAVE_JDBCCLIENT_JAR?Test_JdbcClient
 HAVE_JDBCCLIENT_JAR?bogus-auto-generated-keys
 #HAVE_JDBCTESTS?Test_PSlargeamount # scalabity test which is disabled by default (it takes a long time to run and does not need to be run everytime, only before a new release)
