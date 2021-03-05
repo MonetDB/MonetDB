@@ -26,7 +26,7 @@
 str
 OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int i, limit, vlimit;
+	int i, limit;
 	InstrPtr p;
 	int actions = 0;
 	char buf[1024];
@@ -61,8 +61,8 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 
 	// Actual garbage collection stuff, just mark them for re-assessment
-	vlimit = mb->vtop;
 #ifndef NDEBUG
+	int vlimit = mb->vtop;
 	used = (int *) GDKzalloc(vlimit * sizeof(int));
 #endif
 	p = NULL;
