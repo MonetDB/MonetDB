@@ -208,24 +208,10 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 sql_rel *
 rel_remove_empty_select(visitor *v, sql_rel *rel)
 {
-	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l) {
-		sql_rel *l = rel->l;
-		if (is_select(l->op) && !(rel_is_ref(l)) && list_empty(l->exps)) {
-			rel->l = l->l;
-			l->l = NULL;
-			rel_destroy(l);
-			v->changes++;
-		}
-	}
-	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r) {
-		sql_rel *r = rel->r;
-		if (is_select(r->op) && !(rel_is_ref(r)) && list_empty(r->exps)) {
-			rel->r = r->l;
-			r->l = NULL;
-			rel_destroy(r);
-			v->changes++;
-		}
-	}
+	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l)
+		rel->l = try_remove_empty_select(v, rel->l);
+	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r)
+		rel->r = try_remove_empty_select(v, rel->r);
 	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
 	return rel;
