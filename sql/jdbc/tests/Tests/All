@@ -1,5 +1,4 @@
 HAVE_JDBCTESTS?JDBC_API_Tester
-HAVE_JDBCTESTS?SQLcopyinto
 #HAVE_JDBCTESTS?Test_Csendthread  # unfortunately has runtime-dependant output
 HAVE_JDBCTESTS&HAVE_HGE?Test_Int128
 HAVE_JDBCCLIENT_JAR?Test_JdbcClient
