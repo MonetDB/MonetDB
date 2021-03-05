@@ -4015,10 +4015,10 @@ sql_insert_triggers(backend *be, sql_table *t, stmt **updates, int time)
 	node *n;
 	int res = 1;
 
-	if (!t->triggers.set)
+	if (!ol_length(t->triggers))
 		return res;
 
-	for (n = t->triggers.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->triggers); n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
 		if (!stack_push_frame(sql, "%OLD-NEW"))
@@ -4979,10 +4979,10 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 	node *n;
 	int res = 1;
 
-	if (!t->triggers.set)
+	if (!ol_length(t->triggers))
 		return res;
 
-	for (n = t->triggers.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->triggers); n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
 		if (!stack_push_frame(sql, "%OLD-NEW"))
@@ -5262,10 +5262,10 @@ sql_delete_triggers(backend *be, sql_table *t, stmt *tids, stmt **deleted_cols, 
 	node *n;
 	int res = 1;
 
-	if (!t->triggers.set)
+	if (!ol_length(t->triggers))
 		return res;
 
-	for (n = t->triggers.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->triggers); n; n = n->next) {
 		sql_trigger *trigger = n->data;
 
 		if (!stack_push_frame(sql, "%OLD-NEW"))
@@ -5400,7 +5400,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 	}
 
 	/*  project all columns */
-	if (list_length(t->triggers.set) || partition_find_part(sql->session->tr, t, NULL)) {
+	if (ol_length(t->triggers) || partition_find_part(sql->session->tr, t, NULL)) {
 		int nr = 0;
 		deleted_cols = table_update_stmts(sql, t, &nr);
 		int i = 0;
@@ -5622,7 +5622,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		v = stmt_tid(be, next, 0);
 
 		/*  project all columns */
-		if (list_length(t->triggers.set) || partition_find_part(sql->session->tr, t, NULL)) {
+		if (ol_length(t->triggers) || partition_find_part(sql->session->tr, t, NULL)) {
 			int nr = 0;
 			deleted_cols = table_update_stmts(sql, t, &nr);
 			int i = 0;

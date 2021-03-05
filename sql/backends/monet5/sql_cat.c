@@ -1733,7 +1733,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
 		if (isDeclaredTable(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
-		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&t->members) || !list_empty(t->triggers.set))
+		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&t->members) || ol_length(t->triggers))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
 		if (!(s = mvc_bind_schema(sql, nschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", nschema_name);
