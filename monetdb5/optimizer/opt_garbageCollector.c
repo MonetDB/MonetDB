@@ -87,7 +87,9 @@ OPTgarbageCollectorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 
 	/* A good MAL plan should end with an END instruction */
 	if( p && p->token != ENDsymbol){
+#ifndef NDEBUG
 		GDKfree(used);
+#endif
 		throw(MAL, "optimizer.garbagecollector", SQLSTATE(42000) "Incorrect MAL plan encountered");
 	}
 #ifndef NDEBUG
