@@ -2123,6 +2123,7 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
 
 #define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
 	do {								\
+		GDKerror("Timeout was reached!");			\
 		goto label;						\
 	} while(0)
 
