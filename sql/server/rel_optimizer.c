@@ -3332,7 +3332,7 @@ exps_has_predicate( list *l )
 	return 0;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_merge_union(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
@@ -5056,7 +5056,7 @@ rel_join_push_exps_down(visitor *v, sql_rel *rel)
  * Push (semi)joins down unions, this is basically for merge tables, where
  * we know that the fk-indices are split over two clustered merge tables.
  */
-static sql_rel *
+static inline sql_rel *
 rel_push_join_down_union(visitor *v, sql_rel *rel)
 {
 	if ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op)) {
@@ -5628,7 +5628,7 @@ rel_push_project_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_push_project_down_union(visitor *v, sql_rel *rel)
 {
 	/* first remove distinct if already unique */
@@ -9598,7 +9598,7 @@ statistics, similarly to the merge table optimizer, e.g.
 	select * from a where x between 1 and 2 union all select * from b where x between 1 and 2
 ->	select * from b where x between 1 and 2   [assuming a has no rows with 1<=x<=2]
 */
-static sql_rel *
+static inline sql_rel *
 rel_remove_union_partitions(visitor *v, sql_rel *rel)
 {
 	if (!is_union(rel->op))
@@ -9623,6 +9623,25 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 		v->changes++;
 		return l;
 	}
+	return rel;
+}
+
+static sql_rel *
+rel_optimize_unions_bottomup(visitor *v, sql_rel *rel)
+{
+	if (!is_union(rel->op))
+		return rel;
+	rel = rel_remove_union_partitions(v, rel);
+	rel = rel_merge_union(v, rel);
+	return rel;
+}
+
+static sql_rel *
+rel_optimize_unions_topdown(visitor *v, sql_rel *rel)
+{
+	rel = rel_push_select_down_union(v, rel);
+	rel = rel_push_project_down_union(v, rel);
+	rel = rel_push_join_down_union(v, rel);
 	return rel;
 }
 
@@ -9688,7 +9707,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 		rel = rel_project_reduce_casts(&v, rel);
 
 	if (gp.cnt[op_union])
-		rel = rel_visitor_bottomup(&v, rel, &rel_merge_union);
+		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_unions_bottomup);
 
 	if (gp.cnt[op_select] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
 		gp.cnt[op_anti] || gp.cnt[op_join] || gp.cnt[op_semi])
@@ -9714,11 +9733,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (gp.cnt[op_join])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
 
-	if (gp.cnt[op_union]) {
-		rel = rel_visitor_bottomup(&v, rel, &rel_remove_union_partitions);
-		if (gp.cnt[op_select])
-			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_union);
-	}
+	if (gp.cnt[op_union])
+		rel = rel_visitor_topdown(&v, rel, &rel_optimize_unions_topdown);
 
 	if (gp.cnt[op_groupby])
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_group_by);
@@ -9734,8 +9750,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_outer);
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
-		if (gp.cnt[op_union])
-			rel = rel_visitor_bottomup(&v, rel, &rel_push_join_down_union);
 		if (level <= 0 && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
 	}
@@ -9771,9 +9785,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 
 	if (gp.cnt[op_select] || gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full])
 		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_select_and_index);
-
-	if (gp.cnt[op_project] && gp.cnt[op_union])
-		rel = rel_visitor_topdown(&v, rel, &rel_push_project_down_union);
 
 	/* Remove unused expressions */
 	if (level <= 0)
