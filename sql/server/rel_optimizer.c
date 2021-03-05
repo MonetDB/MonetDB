@@ -4618,7 +4618,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	return try_remove_empty_select(v, rel);
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_push_select_down_join(visitor *v, sql_rel *rel)
 {
 	list *exps = NULL;
@@ -9618,6 +9618,7 @@ rel_optimize_projections(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_joins(visitor *v, sql_rel *rel)
 {
+	rel = rel_push_select_down_join(v, rel);
 	rel = rel_out2inner(v, rel);
 	rel = rel_join2semijoin(v, rel);
 	rel = rel_push_join_down_outer(v, rel);
@@ -9731,9 +9732,6 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (level <= 1 && gp.cnt[op_project])
 		rel = rel_exp_visitor_bottomup(&v, rel, &rel_merge_project_rse, false);
 
-	if (gp.cnt[op_join])
-		rel = rel_visitor_topdown(&v, rel, &rel_push_select_down_join);
-
 	if (gp.cnt[op_union])
 		rel = rel_visitor_topdown(&v, rel, &rel_optimize_unions_topdown);
 
@@ -9742,7 +9740,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 
 	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti]) {
 		rel = rel_remove_empty_join(&v, rel);
-		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_joins);
+		rel = rel_visitor_topdown(&v, rel, &rel_optimize_joins);
 		if (!gp.cnt[op_update])
 			rel = rel_join_order(&v, rel);
 		if (level <= 0 && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti]))
