@@ -1268,6 +1268,31 @@ struct table {
 	{0}
 };
 
+/* more system tables with schema/table/column ids that need to be remapped */
+struct mapids {
+	// const char *schema;			/* always "sys" */
+	const char *table;
+	const char *column;
+} mapids[] = {
+	{
+		.table = "comments",
+		.column = "id",
+	},
+	{
+		.table = "db_user_info",
+		.column = "default_schema",
+	},
+	{
+		.table = "privileges",
+		.column = "obj_id",
+	},
+	{
+		.table = "statistics",
+		.column = "column_id",
+	},
+	{0}
+};
+
 static gdk_return
 upgrade(old_logger *lg)
 {
@@ -1486,6 +1511,33 @@ upgrade(old_logger *lg)
 				}
 				BBPretain(orig->batCacheid);
 				BBPretain(b->batCacheid);
+				switch (tables[i].newid) {
+				case 2002:		/* sys.schemas.id */
+					bat_destroy(bats[0].idbat);
+					bats[0].idbat = b;
+					BBPfix(b->batCacheid);
+					break;
+				case 2068:		/* sys._tables.id */
+					bat_destroy(bats[1].idbat);
+					bats[1].idbat = b;
+					BBPfix(b->batCacheid);
+					break;
+				case 2070:		/* sys._tables.schema_id */
+					bat_destroy(bats[1].parbat);
+					bats[1].parbat = b;
+					BBPfix(b->batCacheid);
+					break;
+				case 2077:		/* sys._columns.id */
+					bat_destroy(bats[2].idbat);
+					bats[2].idbat = b;
+					BBPfix(b->batCacheid);
+					break;
+				case 2082:		/* sys._columns.table_id */
+					bat_destroy(bats[2].parbat);
+					bats[2].parbat = b;
+					BBPfix(b->batCacheid);
+					break;
+				}
 				bat_destroy(orig);
 			}
 			/* now b contains the updated values for the column in tables[i] */
@@ -1538,6 +1590,8 @@ upgrade(old_logger *lg)
 	bat_destroy(cands);
 	bat_destroy(b);
 
+	/* convert deleted rows bats (catalog id equals table id) from list
+	 * of deleted rows to mask of deleted rows */
 	BAT *tabs;
 	tabs = BATselect(lg->lg->catalog_id, NULL, &(int){2165}, &int_nil, true, true, false);
 	if (tabs == NULL)
@@ -1616,6 +1670,101 @@ upgrade(old_logger *lg)
 	}
 	bat_destroy(b1);
 	bat_destroy(b4);
+
+	/* map schema/table/column ids in other system tables */
+	if (mapold) {
+		/* select tables in sys schema */
+		b1 = BATselect(bats[1].parbat, bats[1].cands, &(int){2000}, NULL, true, true, false);
+		if (b1 == NULL)
+			goto bailout;
+		bids = Tloc(lg->lg->catalog_bid, 0);
+		for (int i = 0; mapids[i].column != NULL; i++) {
+			/* row ids for table in sys schema */
+			BAT *b2 = BATselect(bats[1].nmbat, b1, mapids[i].table, NULL, true, true, false);
+			if (b2 == NULL) {
+				bat_destroy(b1);
+				goto bailout;
+			}
+			/* table ids for table */
+			b3 = BATproject(b2, bats[1].idbat);
+			bat_destroy(b2);
+			if (b3 == NULL) {
+				bat_destroy(b1);
+				goto bailout;
+			}
+			/* row ids for columns of table */
+			b2 = BATintersect(bats[2].parbat, b3, NULL, NULL, false, false, BUN_NONE);
+			bat_destroy(b3);
+			if (b2 == NULL) {
+				bat_destroy(b1);
+				goto bailout;
+			}
+			/* row id for the column in the table we're looking for */
+			b3 = BATselect(bats[2].nmbat, b2, mapids[i].column, NULL, true, true, false);
+			bat_destroy(b2);
+			if (b3 == NULL) {
+				bat_destroy(b1);
+				goto bailout;
+			}
+			/* row ids in catalog for column in table */
+			b2 = BATintersect(lg->lg->catalog_id, bats[2].idbat, NULL, b3, false, false, 1);
+			bat_destroy(b3);
+			if (b2 == NULL) {
+				bat_destroy(b1);
+				goto bailout;
+			}
+			for (BUN j = 0; j < BATcount(b2); j++) {
+				oid p = BUNtoid(b2, j);
+				b3 = BATdescriptor(bids[p]);
+				if (b3 == NULL) {
+					bat_destroy(b1);
+					bat_destroy(b2);
+					goto bailout;
+				}
+				BAT *b4, *b5;
+				if (BATjoin(&b4, &b5, b3, mapold, NULL, NULL, false, BUN_NONE) != GDK_SUCCEED) {
+					bat_destroy(b1);
+					bat_destroy(b2);
+					bat_destroy(b3);
+					goto bailout;
+				}
+				if (BATcount(b4) == 0) {
+					bat_destroy(b3);
+					bat_destroy(b4);
+					bat_destroy(b5);
+				} else {
+					BAT *b6;
+					b6 = COLcopy(b3, b3->ttype, true, PERSISTENT);
+					bat_destroy(b3);
+					b3 = BATproject(b5, mapnew);
+					bat_destroy(b5);
+					if (b3 == NULL || b6 == NULL) {
+						bat_destroy(b1);
+						bat_destroy(b2);
+						bat_destroy(b3);
+						bat_destroy(b4);
+						bat_destroy(b6);
+						goto bailout;
+					}
+					if ((rc = BATreplace(b6, b4, b3, false)) == GDK_SUCCEED &&
+						(rc = BUNappend(lg->del, &bids[p], false)) == GDK_SUCCEED &&
+						(rc = BUNappend(lg->add, &b6->batCacheid, false)) == GDK_SUCCEED)
+						rc = BUNreplace(lg->lg->catalog_bid, p, &b6->batCacheid, false);
+					BBPretain(b6->batCacheid);
+					BBPretain(b6->batCacheid);
+					bat_destroy(b3);
+					bat_destroy(b4);
+					bat_destroy(b6);
+					if (rc != GDK_SUCCEED) {
+						bat_destroy(b1);
+						bat_destroy(b2);
+						goto bailout;
+					}
+				}
+			}
+		}
+		bat_destroy(b1);
+	}
 
 	rc = GDK_SUCCEED;
 
