@@ -1520,7 +1520,7 @@ rel_push_func_down(visitor *v, sql_rel *rel)
 			return rel;
 		if (exps_can_push_func(exps, rel, &push_left, &push_right) && exps_need_push_down(exps)) {
 			sql_rel *nrel, *ol = l, *or = r;
-			visitor nv = { .sql = v->sql, .parent = v->parent, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
+			visitor nv = { .sql = v->sql, .parent = v->parent, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
 
 			/* we need a full projection, group by's and unions cannot be extended
  			 * with more expressions */
@@ -4815,17 +4815,22 @@ rel_push_join_down(visitor *v, sql_rel *rel)
  *
  * in some cases the other way is usefull, ie push join down
  * semijoin. When the join reduces (ie when there are selects on it).
+ * 
+ * At the moment, we only flag changes by this optimizer on the first level of optimization
  */
-static sql_rel *
+static inline sql_rel *
 rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 {
+	int level = *(int*)v->data;
+
 	if (rel->op == op_join && rel->exps && rel->l) {
 		sql_rel *l = rel->l, *r = rel->r;
 
 		if (is_semi(l->op) && !rel_is_ref(l) && is_select(r->op) && !rel_is_ref(r)) {
 			rel->l = l->l;
 			l->l = rel;
-			v->changes++;
+			if (level <= 0)
+				v->changes++;
 			return l;
 		}
 	}
@@ -4840,7 +4845,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			if (is_semi(ll->op) && !rel_is_ref(ll)) {
 				l->l = ll->l;
 				ll->l = rel;
-				v->changes++;
+				if (level <= 0)
+					v->changes++;
 				return ll;
 			}
 		}
@@ -4859,7 +4865,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 				}
 				rel_select_add_exp(v->sql->sa, rel->l, e);
 				list_remove_node(rel->exps, NULL, n);
-				v->changes++;
+				if (level <= 0)
+					v->changes++;
 			}
 			n = next;
 		}
@@ -4927,7 +4934,8 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		l->exps = njexps;
 		rel_destroy(rel);
 		rel = l;
-		v->changes++;
+		if (level <= 0)
+			v->changes++;
 	}
 	return rel;
 }
@@ -8466,10 +8474,11 @@ is_identity_of(sql_exp *e, sql_rel *l)
 	return 1;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 {
-	if (is_semi(rel->op)) {
+	assert(is_semi(rel->op));
+	{
 		sql_rel *l = rel->l;
 		sql_rel *r = rel->r;
 		sql_rel *rl = (r->l)?r->l:NULL;
@@ -8499,7 +8508,7 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 			v->changes++;
 		}
 	}
-	if (is_semi(rel->op)) {
+	{
 		sql_rel *l = rel->l, *rl = NULL;
 		sql_rel *r = rel->r, *or = r;
 
@@ -8583,36 +8592,49 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 }
 
 /* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
-static sql_rel *
+static inline sql_rel *
 rel_rewrite_antijoin(visitor *v, sql_rel *rel)
 {
-	if (rel->op == op_anti) {
-		sql_rel *l = rel->l;
-		sql_rel *r = rel->r;
+	sql_rel *l = rel->l;
+	sql_rel *r = rel->r;
 
-		if (l && !rel_is_ref(l) &&
-		    r && !rel_is_ref(r) && is_union(r->op) && !is_single(r)) {
-			sql_rel *rl = rel_dup(r->l), *nl;
-			sql_rel *rr = rel_dup(r->r);
+	assert(rel->op == op_anti);
+	if (l && !rel_is_ref(l) && r && !rel_is_ref(r) && is_union(r->op) && !is_single(r)) {
+		sql_rel *rl = rel_dup(r->l), *nl;
+		sql_rel *rr = rel_dup(r->r);
 
-			if (!is_project(rl->op))
-				rl = rel_project(v->sql->sa, rl,
-					rel_projections(v->sql, rl, NULL, 1, 1));
-			if (!is_project(rr->op))
-				rr = rel_project(v->sql->sa, rr,
-					rel_projections(v->sql, rr, NULL, 1, 1));
-			rel_rename_exps(v->sql, r->exps, rl->exps);
-			rel_rename_exps(v->sql, r->exps, rr->exps);
+		if (!is_project(rl->op))
+			rl = rel_project(v->sql->sa, rl,
+				rel_projections(v->sql, rl, NULL, 1, 1));
+		if (!is_project(rr->op))
+			rr = rel_project(v->sql->sa, rr,
+				rel_projections(v->sql, rr, NULL, 1, 1));
+		rel_rename_exps(v->sql, r->exps, rl->exps);
+		rel_rename_exps(v->sql, r->exps, rr->exps);
 
-			nl = rel_crossproduct(v->sql->sa, rel->l, rl, op_anti);
-			nl->exps = exps_copy(v->sql, rel->exps);
-			rel->l = nl;
-			rel->r = rr;
-			rel_destroy(r);
-			v->changes++;
-			return rel;
-		}
+		nl = rel_crossproduct(v->sql->sa, rel->l, rl, op_anti);
+		nl->exps = exps_copy(v->sql, rel->exps);
+		rel->l = nl;
+		rel->r = rr;
+		rel_destroy(r);
+		v->changes++;
+		return rel;
 	}
+	return rel;
+}
+
+static sql_rel *
+rel_optimize_semi_and_anti(visitor *v, sql_rel *rel)
+{
+	/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
+	if (is_semi(rel->op))
+		rel = rel_rewrite_semijoin(v, rel);
+	/* push semijoin through join */
+	if (is_semi(rel->op) || is_innerjoin(rel->op))
+		rel = rel_push_semijoin_down_or_up(v, rel);
+	/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
+	if (rel->op == op_anti)
+		rel = rel_rewrite_antijoin(v, rel);
 	return rel;
 }
 
@@ -9315,7 +9337,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 				}
 				rel_destroy(rel);
 				if (sel) {
-					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt };
+					visitor iv = { .sql = v->sql, .value_based_opt = v->value_based_opt, .storage_based_opt = v->storage_based_opt, .data = v->data };
 					sel->l = nrel;
 					sel = rel_visitor_topdown(&iv, sel, &rel_push_select_down_union);
 					if (iv.changes)
@@ -9605,8 +9627,7 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 static sql_rel *
 optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt, bool storage_based_opt)
 {
-	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt },
-			ev = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt };
+	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .data = &level };
 	global_props gp = (global_props) {.cnt = {0},};
 	rel_properties(sql, &gp, rel);
 
@@ -9733,16 +9754,7 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	}
 
 	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
-		/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-		rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_semijoin);
-		/* push semijoin through join */
-		ev.changes = 0;
-		rel = rel_visitor_bottomup(&ev, rel, &rel_push_semijoin_down_or_up);
-		if (level == 0) /* for now count optimizer changes just for first iteration */
-			v.changes += ev.changes;
-		/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
-		if (gp.cnt[op_anti] && gp.cnt[op_union])
-			rel = rel_visitor_bottomup(&v, rel, &rel_rewrite_antijoin);
+		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_semi_and_anti);
 		if (level <= 0)
 			rel = rel_visitor_topdown(&v, rel, &rel_semijoin_use_fk);
 	}
