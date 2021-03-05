@@ -711,7 +711,7 @@ typedef struct sql_table {
 	objlist *columns;
 	objlist *idxs;
 	objlist *keys;
-	changeset triggers;
+	objlist *triggers;
 	changeset members;	/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 

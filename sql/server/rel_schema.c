@@ -2305,7 +2305,7 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change a temporary table schema");
 	if (isView(ot))
 		return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
-	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&ot->members) || !list_empty(ot->triggers.set))
+	if (mvc_check_dependency(sql, ot->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&ot->members) || ol_length(ot->triggers))
 		return sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", tname);
 	if (!(ns = mvc_bind_schema(sql, new_schema)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", new_schema);

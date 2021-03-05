@@ -908,8 +908,8 @@ sql_update_nov2019_missing_dependencies(Client c, mvc *sql)
 						}
 					}
 				}
-				if (t->triggers.set)
-					for (node *mm = t->triggers.set->h; mm; mm = mm->next) {
+				if (t->triggers)
+					for (node *mm = ol_first_node(t->triggers); mm; mm = mm->next) {
 						sql_trigger *tr = (sql_trigger*) mm->data;
 						char *relt;
 						sql_rel *r = NULL;

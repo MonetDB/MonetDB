@@ -422,8 +422,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			}
 		}
 	}
-	if (t->triggers.set) {
-		for (n = t->triggers.set->h; n; n = n->next) {
+	if (t->triggers) {
+		for (n = ol_first_node(t->triggers); n; n = n->next) {
 			sql_trigger *tr = n->data;
 			if (mvc_copy_trigger(sql, nt, tr)) {
 				sql->sa = osa;

@@ -215,7 +215,7 @@ table_destroy(sqlstore *store, sql_table *t)
 	cs_destroy(&t->members, store);
 	ol_destroy(t->idxs, store);
 	ol_destroy(t->keys, store);
-	cs_destroy(&t->triggers, store);
+	ol_destroy(t->triggers, store);
 	ol_destroy(t->columns, store);
 	if (isPartitionedByExpressionTable(t)) {
 		if (t->part.pexp->cols)
@@ -677,7 +677,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->columns = ol_new(tr->sa, (destroy_fptr) &column_destroy);
 	t->idxs = ol_new(tr->sa, (destroy_fptr) &idx_destroy);
 	t->keys = ol_new(tr->sa, (destroy_fptr) &key_destroy);
-	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
+	t->triggers = ol_new(tr->sa, (destroy_fptr) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
 		cs_new(&t->members, tr->sa, (fdestroy) &part_destroy);
 
@@ -761,7 +761,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_trigger *k = load_trigger(tr, t, rid);
 
-		cs_add(&t->triggers, k, 0);
+		ol_add(t->triggers, &k->base);
 		if (os_add(s->triggers, tr, k->base.name, dup_base(&k->base))) {
 			trigger_destroy(store, k);
 			table_destroy(store, t);
@@ -1367,7 +1367,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
 	t->idxs = ol_new(sa, (destroy_fptr) &idx_destroy);
 	t->keys = ol_new(sa, (destroy_fptr) &key_destroy);
-	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+	t->triggers = ol_new(sa, (destroy_fptr) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
 		cs_new(&t->members, sa, (fdestroy) &part_destroy);
 	t->pkey = NULL;
@@ -2755,7 +2755,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
 	t->idxs = ol_new(sa, (destroy_fptr) &idx_destroy);
 	t->keys = ol_new(sa, (destroy_fptr) &key_destroy);
-	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
+	t->triggers = ol_new(sa, (destroy_fptr) &trigger_destroy);
 	if (ot->members.set)
 		cs_new(&t->members, sa, (fdestroy) &part_destroy);
 
@@ -2796,9 +2796,11 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 			sql_key *k = key_dup(tr, n->data, t);
 			ol_add(t->keys, &k->base);
 		}
-	if (ot->triggers.set)
-		for (n = ot->triggers.set->h; n; n = n->next)
-			cs_add(&t->triggers, trigger_dup(tr, n->data, t), 0);
+	if (ot->triggers)
+		for (n = ol_first_node(ot->triggers); n; n = n->next) {
+			sql_trigger *k = trigger_dup(tr, n->data, t);
+			ol_add(t->triggers, &k->base);
+		}
 	if (ot->members.set)
 		for (n = ot->members.set->h; n; n = n->next)
 			cs_add(&t->members, part_dup(tr, n->data, t), 0);
@@ -2956,7 +2958,7 @@ sql_trans_copy_trigger( sql_trans *tr, sql_table *t, sql_trigger *tri)
 			return NULL;
 		sql_trans_create_dependency(tr, ic->c->base.id, nt->base.id, TRIGGER_DEPENDENCY);
 	}
-	cs_add(&t->triggers, nt, TR_NEW);
+	ol_add(t->triggers, &nt->base);
 	if (os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))) {
 		trigger_destroy(store, nt);
 		return NULL;
@@ -3784,8 +3786,8 @@ sys_drop_triggers(sql_trans *tr, sql_table *t)
 {
 	node *n;
 
-	if (cs_size(&t->triggers))
-		for (n = t->triggers.set->h; n; n = n->next) {
+	if (ol_length(t->triggers))
+		for (n = ol_first_node(t->triggers); n; n = n->next) {
 			sql_trigger *i = n->data;
 
 			if (sys_drop_trigger(tr, i))
@@ -5793,7 +5795,7 @@ sql_trans_create_trigger(sql_trans *tr, sql_table *t, const char *name,
 		nt->condition = SA_STRDUP(tr->sa, condition);
 	nt->statement = SA_STRDUP(tr->sa, statement);
 
-	cs_add(&t->triggers, nt, TR_NEW);
+	ol_add(t->triggers, &nt->base);
 	if (os_add(t->s->triggers, tr, nt->base.name, dup_base(&nt->base))) {
 		trigger_destroy(store, nt);
 		return NULL;
@@ -5851,9 +5853,9 @@ sql_trans_drop_trigger(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 
 	if (sys_drop_trigger(tr, i))
 		return -1;
-	node *n = cs_find_name(&i->t->triggers, i->base.name);
+	node *n = ol_find_name(i->t->triggers, i->base.name);
 	if (n)
-		cs_del(&i->t->triggers, store, n, i->base.flags);
+		ol_del(i->t->triggers, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
