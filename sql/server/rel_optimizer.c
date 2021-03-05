@@ -5769,7 +5769,7 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		GDKqsort(scores, exps, NULL, ngbe, sizeof(int), sizeof(void *), TYPE_int, true, true);
 
 		/* second sorting step, give priority to strings with lower number of digits */
-		for (i = ngbe - 1; i && !scores[i]; i--); /* find epressions with no score from the first round */
+		for (i = ngbe - 1; i && !scores[i]; i--); /* find expressions with no score from the first round */
 		if (scores[i])
 			i++;
 		if (ngbe - i > 1) {
@@ -5909,6 +5909,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					/* new reduced aggr expression list */
 					assert(list_length(rel->exps)>0);
 					/* only one reduction at a time */
+					list_hash_clear(rel->exps);
 					v->changes++;
 					return rel;
 				}
@@ -5962,6 +5963,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 					}
 					n->data = e;
 				}
+				list_hash_clear(rel->exps);
 				v->changes++;
 			}
 		}
