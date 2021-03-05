@@ -740,6 +740,7 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "bat",	"isaKey",	"command bat.isaKey(X_0:bat[:any_1]):bit ",	"BKCgetKey;",	""	]
 [ "bat",	"mergecand",	"command bat.mergecand(X_0:bat[:oid], X_1:bat[:oid]):bat[:oid] ",	"BKCmergecand;",	""	]
 [ "bat",	"mirror",	"command bat.mirror(X_0:bat[:any_2]):bat[:oid] ",	"BKCmirror;",	""	]
+[ "bat",	"new",	"pattern bat.new(X_0:any_1, X_1:bat[:any_2]):bat[:any_1] ",	"CMDBATdup;",	""	]
 [ "bat",	"new",	"pattern bat.new(X_0:any_1):bat[:any_1] ",	"CMDBATnew;",	""	]
 [ "bat",	"new",	"pattern bat.new(X_0:any_1, X_1:int):bat[:any_1] ",	"CMDBATnew;",	""	]
 [ "bat",	"new",	"pattern bat.new(X_0:any_1, X_1:int, X_2:bit):bat[:any_1] ",	"CMDBATnew;",	""	]
