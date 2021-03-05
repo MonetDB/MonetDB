@@ -274,19 +274,13 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 #define ol_last_node(ol) (ol->l->t)
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
-extern changeset* cs_dup(changeset * cs);
 extern void cs_destroy(changeset * cs, void *data);
 extern void cs_add(changeset * cs, void *elm, int flag);
 extern void *cs_add_with_validate(changeset * cs, void *elm, void *extra, int flag, fvalidate cmp);
-extern void cs_add_before(changeset * cs, node *n, void *elm);
 extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
-extern void cs_move(changeset *from, changeset *to, void *data);
 extern void *cs_transverse_with_validate(changeset * cs, void *elm, void *extra, fvalidate cmp);
 extern int cs_size(changeset * cs);
-extern node *cs_find_name(changeset * cs, const char *name);
 extern node *cs_find_id(changeset * cs, sqlid id);
-extern node *cs_first_node(changeset * cs);
-extern node *cs_last_node(changeset * cs);
 
 typedef void *backend_code;
 typedef size_t backend_stack;

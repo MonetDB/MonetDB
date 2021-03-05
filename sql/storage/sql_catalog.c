@@ -94,12 +94,6 @@ tr_version_of_parent(sql_trans *tr, ulng ts)
 }
 
 node *
-cs_find_name(changeset * cs, const char *name)
-{
-	return list_find_name(cs->set, name);
-}
-
-node *
 list_find_name(list *l, const char *name)
 {
 	node *n;
