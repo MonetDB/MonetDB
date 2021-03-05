@@ -3565,7 +3565,8 @@ rewrite_values(visitor *v, sql_rel *rel)
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
-	visitor v = { .sql = sql };
+	int level = 0;
+	visitor v = { .sql = sql, .data = &level }; /* make it compatible with rel_optimizer, so set the level to 0 */
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
