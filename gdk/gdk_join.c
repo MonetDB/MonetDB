@@ -3991,6 +3991,10 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	MT_thread_setalgorithm(__func__);
 	*r1p = NULL;
 	if (r2p) {
@@ -4104,6 +4108,8 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 
 	/* nested loop implementation for band join */
 	for (BUN li = 0; li < lcnt; li++) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		lo = canditer_next(&lci);
 		vl = FVALUE(l, lo - l->hseqbase);
 		if (cmp(vl, nil) == 0)

@@ -1782,6 +1782,10 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	bool use_orderidx = false;
 	const char *algo = NULL;
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	assert(ATOMtype(l->ttype) == ATOMtype(rl->ttype));
 	assert(ATOMtype(l->ttype) == ATOMtype(rh->ttype));
 	assert(BATcount(rl) == BATcount(rh));
@@ -1842,6 +1846,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		/* left column is sorted, use binary search */
 		sorted = 2;
 		for (BUN i = 0; i < rci->ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			BUN low, high;
 
 			ro = canditer_next(rci);
@@ -1973,6 +1979,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		sorted = 2;
 		cnt = 0;
 		for (BUN i = 0; i < rci->ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			maxsize = cnt + (rci->ncand - i) * lci->ncand;
 			ro = canditer_next(rci);
 			if (rlvals) {
@@ -2245,6 +2253,8 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 		lvals = l->ttype == TYPE_void ? NULL : (const char *) Tloc(l, 0);
 		vl = &lval;
 		for (BUN i = 0; i < lci->ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			oid lo;
 
 			lo = canditer_next(lci);
