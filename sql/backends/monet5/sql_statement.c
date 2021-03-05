@@ -322,7 +322,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 {
 	int i = 0;
 	node *n;
-	int *l = SA_NEW_ARRAY(sa, int, list_length(t->columns.set) + 1);
+	int *l = SA_NEW_ARRAY(sa, int, ol_length(t->columns) + 1);
 
 	if (!l)
 		return NULL;
@@ -331,7 +331,7 @@ dump_table(sql_allocator *sa, MalBlkPtr mb, sql_table *t)
 	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0)
 		return NULL;
 
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
 		if ((l[i++] = create_bat(mb, c->type.type->localtype)) < 0)
@@ -558,7 +558,7 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	if (t && (!isRemote(t) && !isMergeTable(t)) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
-		BUN rows = (BUN) store->storage_api.count_col(tr, t->columns.set->h->data, QUICK);
+		BUN rows = (BUN) store->storage_api.count_col(tr, ol_first_node(t->columns)->data, QUICK);
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
@@ -3001,7 +3001,7 @@ stmt_table_clear(backend *be, sql_table *t)
 	InstrPtr q = NULL;
 
 	if (!t->s && ATOMIC_PTR_GET(&t->data)) { /* declared table */
-		int *l = ATOMIC_PTR_GET(&t->data), cnt = list_length(t->columns.set)+1;
+		int *l = ATOMIC_PTR_GET(&t->data), cnt = ol_length(t->columns)+1;
 
 		for (int i = 0; i < cnt; i++) {
 			q = newStmt(mb, batRef, deleteRef);

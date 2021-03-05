@@ -1649,7 +1649,7 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const cha
 		goto cleanup;
 	}
 
-	columns = t->columns.set->cnt;
+	columns = ol_length(t->columns);
 	*column_count = columns;
 	*column_names = GDKzalloc(sizeof(char*) * columns);
 	*column_types = GDKzalloc(sizeof(int) * columns);
@@ -1666,7 +1666,7 @@ monetdbe_get_columns(monetdbe_database dbhdl, const char *schema_name, const cha
 		goto cleanup;
 	}
 
-	for (node *n = t->columns.set->h; n; n = n->next) {
+	for (node *n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *col = n->data;
 		(*column_names)[col->colnr] = col->base.name;
 		(*column_types)[col->colnr] = embedded_type(col->type.type->localtype);
@@ -1956,7 +1956,7 @@ remote_cleanup:
 	}
 
 	/* for now no default values, ie user should supply all columns */
-	if (column_count != (size_t)list_length(t->columns.set)) {
+	if (column_count != (size_t)ol_length(t->columns)) {
 		mdbe->msg = createException(SQL, "monetdbe.monetdbe_append", "Incorrect number of columns");
 		goto cleanup;
 	}
@@ -1964,7 +1964,7 @@ remote_cleanup:
 	cnt = input[0]->count;
 	pos = store->storage_api.claim_tab(m->session->tr, t, cnt);
 
-	for (i = 0, n = t->columns.set->h; i < column_count && n; i++, n = n->next) {
+	for (i = 0, n = ol_first_node(t->columns); i < column_count && n; i++, n = n->next) {
 		sql_column *c = n->data;
 		int mtype = monetdbe_type(input[i]->type);
 		const void* nil = (mtype>=0)?ATOMnilptr(mtype):NULL;
@@ -2137,13 +2137,13 @@ remote_cleanup:
 		r = pushStr(mb, r, userRef);
 		r = pushStr(mb, r, putName(remote_prg->name));
 
-		InstrPtr e = newInstructionArgs(mb, remoteRef, execRef, 4 + list_length(t->columns.set));
+		InstrPtr e = newInstructionArgs(mb, remoteRef, execRef, 4 + ol_length(t->columns));
 		setDestVar(e, newTmpVariable(mb, TYPE_any));
 		e = pushStr(mb, e, mdbe->mid);
 		e = pushStr(mb, e, userRef);
 		e = pushArgument(mb, e, getArg(r, 0));
 
-		for (i = 0, n = t->columns.set->h; i < (unsigned) t->columns.set->cnt; i++, n = n->next) {
+		for (i = 0, n = ol_first_node(t->columns); i < (unsigned) ol_length(t->columns); i++, n = n->next) {
 			sql_column *c = n->data;
 			BAT* b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
 			if (b == NULL) {

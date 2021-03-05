@@ -62,7 +62,7 @@ table_has_updates(sql_trans *tr, sql_table *t)
 	int cnt = 0;
 	sqlstore *store = tr->store;
 
-	for ( n = t->columns.set->h; !cnt && n; n = n->next) {
+	for ( n = ol_first_node(t->columns); !cnt && n; n = n->next) {
 		sql_column *c = n->data;
 
 		size_t upd = store->storage_api.count_col( tr, c, 2/* count updates */);
@@ -76,9 +76,9 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 {
 	node *n, *m, *nn, *mm;
 
-	if (cs_size(&nt->columns) != cs_size(&nnt->columns))
+	if (ol_length(nt->columns) != ol_length(nnt->columns))
 		throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table doesn't match %s definition", errtable, errtable);
-	for (n = nt->columns.set->h, m = nnt->columns.set->h; n && m; n = n->next, m = m->next) {
+	for (n = ol_first_node(nt->columns), m = ol_first_node(nnt->columns); n && m; n = n->next, m = m->next) {
 		sql_column *nc = n->data;
 		sql_column *mc = m->data;
 
@@ -890,22 +890,20 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		}
 	}
 
-	/* check for changes */
-	if (t->columns.dset)
-		for (n = t->columns.dset->h; n; n = n->next) {
-			/* propagate alter table .. drop column */
-			sql_column *c = n->data;
-			sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
-			if (mvc_drop_column(sql, nt, nc, c->drop_action))
-				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
-	/* check for changes on current cols */
-	for (n = t->columns.set->h; n != t->columns.nelm; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 
 		/* null or default value changes */
 		sql_column *c = n->data;
-		sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
 
+		if (c->base.new)
+			break;
+
+		sql_column *nc = mvc_bind_column(sql, nt, c->base.name);
+		if (c->base.deleted) {
+			if (mvc_drop_column(sql, nt, nc, c->drop_action))
+				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			continue;
+		}
 		if (c->null != nc->null && isTable(nt)) {
 			if (c->null && nt->pkey) { /* check for primary keys based on this column */
 				node *m;
@@ -938,10 +936,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 			mvc_storage(sql, nc, c->storage_type);
 		}
 	}
+	/* handle new columns */
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
 		sql_column *c = n->data;
 
+		if (c->base.deleted) /* skip */
+			continue;
 		if (mvc_copy_column(sql, nt, c) == NULL)
 			throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create column %s.%s", c->t->base.name, c->base.name);
 	}

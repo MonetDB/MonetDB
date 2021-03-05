@@ -943,7 +943,7 @@ mvc_bind_column(mvc *m, sql_table *t, const char *cname)
 static sql_column *
 first_column(sql_table *t)
 {
-	node *n = cs_first_node(&t->columns);
+	node *n = ol_first_node(t->columns);
 
 	if (n)
 		return n->data;

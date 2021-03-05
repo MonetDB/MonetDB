@@ -888,7 +888,7 @@ rel_reduce_on_column_privileges(mvc *sql, sql_rel *rel, sql_table *t)
 {
 	list *exps = sa_list(sql->sa);
 
-	for (node *n = rel->exps->h, *m = t->columns.set->h; n && m; n = n->next, m = m->next) {
+	for (node *n = rel->exps->h, *m = ol_first_node(t->columns); n && m; n = n->next, m = m->next) {
 		sql_exp *e = n->data;
 		sql_column *c = m->data;
 
@@ -978,7 +978,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 					rel = rel_project(sql->sa, rel, rel_projections(sql, rel, NULL, 1, 0));
 					set_processed(rel);
 				}
-				for (n = t->columns.set->h, m = rel->exps->h; n && m; n = n->next, m = m->next) {
+				for (n = ol_first_node(t->columns), m = rel->exps->h; n && m; n = n->next, m = m->next) {
 					sql_column *c = n->data;
 					sql_exp *e = m->data;
 

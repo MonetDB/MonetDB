@@ -78,7 +78,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			return NULL;
 		node *cn;
 		sql_table *mt = rel->r;
-		for (cn = t->columns.set->h; cn; cn = cn->next) {
+		for (cn = ol_first_node(t->columns); cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0) {
 				*bt = rel;
@@ -513,7 +513,7 @@ table_colexp(sql_exp *e, sql_rel *r)
 				}
 			}
 		}
-		for (cn = t->columns.set->h; cn; cn = cn->next) {
+		for (cn = ol_first_node(t->columns); cn; cn = cn->next) {
 			sql_column *c = cn->data;
 			if (strcmp(c->base.name, name) == 0)
 				return c;
@@ -8843,8 +8843,8 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 {
 	node *n, *m;
 
-	assert(list_length(p->exps) >= list_length(mt->columns.set));
-	for( n = p->exps->h, m = mt->columns.set->h; n && m; n = n->next, m = m->next) {
+	assert(list_length(p->exps) >= ol_length(mt->columns));
+	for( n = p->exps->h, m = ol_first_node(mt->columns); n && m; n = n->next, m = m->next) {
 		sql_exp *ne = n->data;
 		sql_column *c = m->data;
 
@@ -8970,7 +8970,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						sqlstore *store = v->sql->session->tr->store;
 
 						/* Do not include empty partitions */
-						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, pt->columns.set->h->data, 0))
+						if (pt && isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 0))
 							continue;
 
 						prel = rel_rename_part(v->sql, prel, tname, t);

@@ -199,6 +199,9 @@ typedef int sqlid;
 
 typedef struct sql_base {
 	int flags;			/* todo change into bool new */
+	unsigned char
+		new:1,
+		deleted:1;
 	int refcnt;
 	sqlid id;
 	char *name;
@@ -217,6 +220,11 @@ typedef struct changeset {
 	struct list *dset;
 	node *nelm;
 } changeset;
+
+typedef struct objlist {
+	list *l;
+	sql_hash *h;
+} objlist;
 
 typedef void *sql_store;
 
@@ -253,6 +261,17 @@ extern sql_base *os_find_id(struct objectset *os, struct sql_trans *tr, sqlid id
 extern void os_iterator(struct os_iter *oi, struct objectset *os, struct sql_trans *tr, const char *name /*optional*/);
 extern sql_base *oi_next(struct os_iter *oi);
 extern bool os_obj_intransaction(struct objectset *os, struct sql_trans *tr, sql_base *b);
+
+extern objlist *ol_new(sql_allocator *sa, destroy_fptr destroy);
+extern void ol_destroy(objlist *ol, sql_store store);
+extern int ol_add(objlist *ol, sql_base *data);
+extern void ol_del(objlist *ol, sql_store store, node *data);
+extern node *ol_find_name(objlist *ol, const char *name);
+extern node *ol_find_id(objlist *ol, sqlid id);
+extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
+#define ol_length(ol) (list_length(ol->l))
+#define ol_first_node(ol) (ol->l->h)
+#define ol_last_node(ol) (ol->l->t)
 
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern changeset* cs_dup(changeset * cs);
@@ -689,7 +708,7 @@ typedef struct sql_table {
 	int  sz;
 
 	sql_ukey *pkey;
-	changeset columns;
+	objlist *columns;
 	changeset idxs;
 	changeset keys;
 	changeset triggers;

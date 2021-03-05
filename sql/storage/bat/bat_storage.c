@@ -1706,7 +1706,7 @@ create_col(sql_trans *tr, sql_column *c)
 		size_t cnt = 0;
 
 		/* alter ? */
-		if (c->t->columns.set && (fc = c->t->columns.set->h->data) != NULL)
+		if (ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL)
 			cnt = count_col(tr, fc, 1);
 		if (cnt && fc != c) {
 			sql_delta *d = ATOMIC_PTR_GET(&fc->data);
@@ -1824,7 +1824,7 @@ create_idx(sql_trans *tr, sql_idx *ni)
 	} else if (bat && bat->cs.bid && !isTempTable(ni->t)) {
 		return new_persistent_delta(ATOMIC_PTR_GET(&ni->data));
 	} else {
-		sql_column *c = ni->t->columns.set->h->data;
+		sql_column *c = ol_first_node(ni->t->columns)->data;
 		sql_delta *d;
 
 		d = col_timestamp_delta(tr, c);
@@ -2052,7 +2052,7 @@ log_create_del(sql_trans *tr, sql_change *change)
 	assert(!isTempTable(t));
 	ok = log_create_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
 	if (ok == LOG_OK) {
-		for(node *n = t->columns.set->h; n && ok == LOG_OK; n = n->next) {
+		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 			sql_column *c = n->data;
 
 			ok = log_create_col_(tr, c);
@@ -2084,7 +2084,7 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		assert(dbat->cs.ts == tr->tid);
 		dbat->cs.ts = commit_ts;
 		if (ok == LOG_OK) {
-			for(node *n = t->columns.set->h; n && ok == LOG_OK; n = n->next) {
+			for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 				sql_column *c = n->data;
 
 				ok = commit_create_col_(tr, c, commit_ts, oldest);
@@ -2220,7 +2220,7 @@ log_destroy_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 	ok = log_destroy_storage(tr, ATOMIC_PTR_GET(&t->data), t->base.id);
 
 	if (ok == LOG_OK) {
-		for(node *n = t->columns.set->h; n && ok == LOG_OK; n = n->next) {
+		for(node *n = ol_first_node(t->columns); n && ok == LOG_OK; n = n->next) {
 			sql_column *c = n->data;
 
 			ok = log_destroy_col_(tr, c);
@@ -2341,7 +2341,7 @@ static BUN
 clear_table(sql_trans *tr, sql_table *t)
 {
 
-	node *n = t->columns.set->h;
+	node *n = ol_first_node(t->columns);
 	sql_column *c = n->data;
 	BUN sz = count_col(tr, c, 0);
 
@@ -2437,7 +2437,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 		return LOG_OK;
 	for (segment *cur = segs->h; cur && ok; cur = cur->next) {
 		if (cur->ts == tr->tid && !cur->deleted) {
-			for (node *n = t->columns.set->h; n && ok; n = n->next) {
+			for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 				sql_column *c = n->data;
 				column_storage *cs = ATOMIC_PTR_GET(&c->data);
 

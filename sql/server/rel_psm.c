@@ -511,9 +511,9 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 		node *n, *m;
 		const char *tname = t->base.name;
 
-		if (cs_size(&t->columns) != list_length(restypelist))
+		if (ol_length(t->columns) != list_length(restypelist))
 			return sql_error(sql, 02, SQLSTATE(42000) "RETURN: number of columns do not match");
-		for (n = t->columns.set->h, m = restypelist->h; n && m; n = n->next, m = m->next) {
+		for (n = ol_first_node(t->columns), m = restypelist->h; n && m; n = n->next, m = m->next) {
 			sql_column *c = n->data;
 			sql_arg *ce = m->data;
 			sql_exp *e = exp_column(sql->sa, tname, c->base.name, &c->type, CARD_MULTI, c->null, 0);

@@ -663,8 +663,9 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			return SQL_ERR;
 		}
 		cs = mvc_create_column(sql, t, cname, ctype);
-		if (column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
+		if (!cs || column_options(query, opt_list, ss, t, cs, isDeclared) == SQL_ERR)
 			return SQL_ERR;
+		cs->base.new = 1;
 	}
 	return res;
 }
@@ -817,7 +818,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 
 		if (!(ot = find_table_or_view_on_scope(sql, ss, sname, name, action, false)))
 			return SQL_ERR;
-		for (node *n = ot->columns.set->h; n; n = n->next) {
+		for (node *n = ol_first_node(ot->columns); n; n = n->next) {
 			sql_column *oc = n->data;
 
 			if (!isView(t) && oc->base.name && oc->base.name[0] == '%') {
@@ -842,7 +843,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "%s: no such column '%s'\n", action, cname);
 			return SQL_ERR;
 		}
-		if (cs_size(&t->columns) <= 1) {
+		if (ol_length(t->columns) <= 1) {
 			sql_error(sql, 02, SQLSTATE(42000) "%s: cannot drop column '%s': table needs at least one column\n", action, cname);
 			return SQL_ERR;
 		}
@@ -889,6 +890,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(42000) "%s: %s\n", action, MAL_MALLOC_FAIL);
 			return SQL_ERR;
 		}
+		col->base.deleted = 1;
 	} 	break;
 	case SQL_DROP_CONSTRAINT:
 		res = SQL_OK;
@@ -916,7 +918,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			str colname = list2->h->data.sval;
 			node *n;
 			sql_class sql_ec;
-			for (n = t->columns.set->h; n ; n = n->next) {
+			for (n = ol_first_node(t->columns); n ; n = n->next) {
 				sql_column *col = n->data;
 				if (!strcmp(col->base.name, colname)) {
 					t->part.pcol = col;
@@ -1516,13 +1518,16 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 		return res;
 
 	/* New columns need update with default values. Add one more element for new column */
-	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (list_length(nt->columns.set) + 1));
+	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, (ol_length(nt->columns) + 1));
 	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
-	if (nt->columns.nelm) {
-		list *cols = new_exp_list(sql->sa);
-		for (node *n = nt->columns.nelm; n; n = n->next) {
+
+	list *cols = new_exp_list(sql->sa);
+	for (node *n = ol_first_node(nt->columns); n; n = n->next) {
 			sql_column *c = n->data;
+			/* handle new columns */
+			if (!c->base.new || c->base.deleted)
+				continue;
 			if (c->def) {
 				e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
 			} else {
@@ -1537,11 +1542,8 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			assert(!updates[c->colnr]);
 			exp_setname(sql->sa, e, c->t->base.name, c->base.name);
 			updates[c->colnr] = e;
-		}
-		res = rel_update(sql, res, r, updates, cols);
-	} else { /* new indices or keys */
-		res = rel_update(sql, res, r, updates, NULL);
 	}
+	res = rel_update(sql, res, r, updates, list_length(cols)?cols:NULL);
 	return res;
 }
 
@@ -1838,7 +1840,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	}
 
 	/* new columns need update with default values */
-	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(nt->columns.set));
+	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(nt->columns));
 	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));

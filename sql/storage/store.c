@@ -216,7 +216,7 @@ table_destroy(sqlstore *store, sql_table *t)
 	cs_destroy(&t->idxs, store);
 	cs_destroy(&t->keys, store);
 	cs_destroy(&t->triggers, store);
-	cs_destroy(&t->columns, store);
+	ol_destroy(t->columns, store);
 	if (isPartitionedByExpressionTable(t)) {
 		if (t->part.pexp->cols)
 			list_destroy2(t->part.pexp->cols, store);
@@ -674,7 +674,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->s = s;
 	t->sz = COLSIZE;
 
-	cs_new(&t->columns, tr->sa, (fdestroy) &column_destroy);
+	t->columns = ol_new(tr->sa, (destroy_fptr) &column_destroy);
 	cs_new(&t->idxs, tr->sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, tr->sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
@@ -717,7 +717,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 		sql_column* next = load_column(tr, t, rid);
 		if (next == NULL)
 			return NULL;
-		cs_add(&t->columns, next, 0);
+		ol_add(t->columns, &next->base);
 		if (pcolid == next->base.id) {
 			t->part.pcol = next;
 		}
@@ -1247,7 +1247,7 @@ insert_schemas(sql_trans *tr)
 			sht ca = t->commit_action;
 
 			store->table_api.table_insert(tr, systable, &t->base.id, t->base.name, &s->base.id, ATOMnilptr(TYPE_str), &t->type, &t->system, &ca, &t->access);
-			for (o = t->columns.set->h; o; o = o->next) {
+			for (o = t->columns->l->h; o; o = o->next) {
 				sql_column *c = o->data;
 
 				store->table_api.table_insert(tr, syscolumn, &c->base.id, c->base.name, c->type.type->sqlname, &c->type.digits, &c->type.scale, &t->base.id, (c->def) ? c->def : ATOMnilptr(TYPE_str), &c->null, &c->colnr, (c->storage_type)? c->storage_type : ATOMnilptr(TYPE_str));
@@ -1310,9 +1310,9 @@ insert_functions(sql_trans *tr, sql_table *sysfunc, list *funcs_list, sql_table 
 static int
 table_next_column_nr(sql_table *t)
 {
-	int nr = cs_size(&t->columns);
+	int nr = ol_length(t->columns);
 	if (nr) {
-		node *n = cs_last_node(&t->columns);
+		node *n = ol_last_node(t->columns);
 		if (n) {
 			sql_column *c = n->data;
 
@@ -1341,7 +1341,7 @@ bootstrap_create_column(sql_trans *tr, sql_table *t, char *name, sqlid id, char 
 	col->t = t;
 	col->unique = 0;
 	col->storage_type = NULL;
-	cs_add(&t->columns, col, TR_NEW);
+	ol_add(t->columns, &col->base);
 
 	if (isTable(col->t))
 		store->storage_api.create_col(tr, col);
@@ -1364,7 +1364,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 	t->commit_action = (ca_t)commit_action;
 	t->query = NULL;
 	t->access = 0;
-	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
+	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
@@ -1425,7 +1425,7 @@ dup_sql_column(sql_allocator *sa, sql_table *t, sql_column *c)
 		col->storage_type = SA_STRDUP(sa, c->storage_type);
 	col->sorted = c->sorted;
 	col->dcount = c->dcount;
-	cs_add(&t->columns, col, TR_NEW);
+	ol_add(t->columns, &col->base);
 	return col;
 }
 
@@ -1485,15 +1485,12 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 		}
 	}
 
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = t->columns->l->h; n; n = n->next) {
 		sql_column *c = n->data;
 		sql_column *dup = dup_sql_column(sa, nt, c);
 		if (isPartitionedByColumnTable(nt) && c->base.id == t->part.pcol->base.id)
 			nt->part.pcol = dup;
 	}
-
-	nt->columns.dset = NULL;
-	nt->columns.nelm = NULL;
 
 	if (t->members.set)
 		for (n = t->members.set->h; n; n = n->next)
@@ -2755,7 +2752,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 	t->query = (ot->query) ? SA_STRDUP(sa, ot->query) : NULL;
 	t->properties = ot->properties;
 
-	cs_new(&t->columns, sa, (fdestroy) &column_destroy);
+	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
 	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
@@ -2782,12 +2779,12 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 			list_append(t->part.pexp->cols, nid);
 		}
 	}
-	if (ot->columns.set)
-		for (n = ot->columns.set->h; n; n = n->next) {
+	if (ot->columns)
+		for (n = ot->columns->l->h; n; n = n->next) {
 			sql_column *c = n->data, *col = column_dup(tr, c, t);
 			if (isPartitionedByColumnTable(ot) && ot->part.pcol->base.id == c->base.id)
 				t->part.pcol = col;
-			cs_add(&t->columns, col, 0);
+			ol_add(t->columns, &col->base);
 		}
 	if (ot->idxs.set)
 		for (n = ot->idxs.set->h; n; n = n->next)
@@ -3088,7 +3085,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c)
 	if (c->storage_type)
 		col->storage_type = SA_STRDUP(tr->sa, c->storage_type);
 
-	cs_add(&t->columns, col, TR_NEW);
+	ol_add(t->columns, &col->base);
 
 	if (isDeclaredTable(c->t))
 		if (isTable(t))
@@ -3798,8 +3795,8 @@ sys_drop_columns(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
 
-	if (cs_size(&t->columns))
-		for (n = t->columns.set->h; n; n = n->next) {
+	if (ol_length(t->columns))
+		for (n = t->columns->l->h; n; n = n->next) {
 			sql_column *c = n->data;
 
 			if (sys_drop_column(tr, c, drop_action))
@@ -4936,7 +4933,7 @@ create_sql_column_with_id(sql_allocator *sa, sqlid id, sql_table *t, const char 
 	col->unique = 0;
 	col->storage_type = NULL;
 
-	cs_add(&t->columns, col, TR_NEW);
+	ol_add(t->columns, &col->base);
 	return col;
 }
 
@@ -5041,11 +5038,12 @@ sql_trans_create_column(sql_trans *tr, sql_table *t, const char *name, sql_subty
 void
 drop_sql_column(sql_table *t, sqlid id, int drop_action)
 {
-	node *n = list_find_base_id(t->columns.set, id);
+	node *n = ol_find_id(t->columns, id);
 	sql_column *col = n->data;
 
 	col->drop_action = drop_action;
-	cs_del(&t->columns, t->s->store, n, 0);
+	col->base.deleted = 1;
+	//ol_del(t->columns, t->s->store, n);
 }
 
 void
@@ -5078,12 +5076,14 @@ sql_trans_rename_column(sql_trans *tr, sql_table *t, const char *old_name, const
 	t = new_table(tr, t);
 	if (!t)
 		return NULL;
-	sql_column *c = find_sql_column(t, old_name);
+	node *n = ol_find_name(t->columns, old_name);
+	if (!n)
+		return NULL;
+	sql_column *c = n->data;
 
-	list_hash_delete(t->columns.set, c, NULL); /* has to re-hash the entry in the changeset */
 	_DELETE(c->base.name);
 	c->base.name = SA_STRDUP(tr->sa, new_name);
-	if (!list_hash_add(t->columns.set, c, NULL))
+	if (ol_rehash(t->columns, old_name, n) == NULL)
 		return NULL;
 
 	rid = store->table_api.column_find_row(tr, find_sql_column(syscolumn, "id"), &c->base.id, NULL);
@@ -5112,7 +5112,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 	t = new_table(tr, t);
 	if (!t)
 		return -1;
-	for (node *nn = t->columns.set->h ; nn ; nn = nn->next) {
+	for (node *nn = t->columns->l->h ; nn ; nn = nn->next) {
 		sql_column *next = (sql_column *) nn->data;
 		if (next->base.id == id) {
 			n = nn;
@@ -5148,7 +5148,7 @@ sql_trans_drop_column(sql_trans *tr, sql_table *t, sqlid id, int drop_action)
 	if (sys_drop_column(tr, col, drop_action))
 		return -1;
 
-	cs_del(&t->columns, store, n, col->base.flags);
+	ol_del(t->columns, store, n);
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);
 		tr->dropped = NULL;

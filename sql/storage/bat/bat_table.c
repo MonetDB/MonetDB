@@ -214,7 +214,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 {
 	sqlstore *store = tr->store;
 	va_list va;
-	node *n = cs_first_node(&t->columns);
+	node *n = ol_first_node(t->columns);
 	void *val = NULL;
 	int cnt = 0;
 	int ok = LOG_OK;
@@ -236,7 +236,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 	va_end(va);
 	if (n) {
 		// This part of the code should never get reached
-		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, list_length(t->columns.set), cnt);
+		TRC_ERROR(SQL_STORE, "Called table_insert(%s) with wrong number of args (%d,%d)\n", t->base.name, ol_length(t->columns), cnt);
 		assert(0);
 		return LOG_ERR;
 	}
@@ -593,19 +593,19 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	if (!tids)
 		return SQL_ERR;
 	cnt = BATcount(tids);
-	cols = NEW_ARRAY(BAT*, cs_size(&t->columns));
+	cols = NEW_ARRAY(BAT*, ol_length(t->columns));
 	if (!cols) {
 		bat_destroy(tids);
 		return SQL_ERR;
 	}
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		BAT *v = store->storage_api.bind_col(tr, c, RDONLY);
 
 		if (v == NULL ||
 		    (cols[c->colnr] = BATproject(tids, v)) == NULL) {
 			BBPunfix(tids->batCacheid);
-			for (n = t->columns.set->h; n; n = n->next) {
+			for (n = ol_first_node(t->columns); n; n = n->next) {
 				if (n->data == c)
 					break;
 				bat_destroy(cols[((sql_column *) n->data)->colnr]);
@@ -620,7 +620,7 @@ table_vacuum(sql_trans *tr, sql_table *t)
 	sql_trans_clear_table(tr, t);
 	size_t offset = store->storage_api.claim_tab(tr, t, cnt);
 	assert(offset == 0);
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		int ok;
 

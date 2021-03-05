@@ -197,7 +197,6 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	float *realvalue, *readfloatrows;
 	double *doublevalue, *readdoublerows;
 	_Bool *boolvalue, *readboolrows;
-	struct list * set;
 
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != MAL_SUCCEED)
 		return msg;
@@ -216,9 +215,8 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 	}
 
-	set = (*tbl).columns.set;
 
-	columns = list_length(set);
+	columns = ol_length((*tbl).columns);
 	colname = (str *) GDKmalloc(columns * sizeof(str));
 	tform = (str *) GDKmalloc(columns * sizeof(str));
 	if (colname == NULL || tform == NULL) {
