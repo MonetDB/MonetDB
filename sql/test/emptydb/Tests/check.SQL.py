@@ -148,7 +148,7 @@ select 'grant on table', t.name, a.name, pc.privilege_code_name, g.name, p.grant
 --  columns
 select 'grant on column', t.name, c.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys._tables t, sys._columns c, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where c.id = p.obj_id and c.table_id = t.id and p.auth_id = a.id order by t.name, c.name, a.name;
 --  functions
-select 'grant on function', f.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys.functions f, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by f.name, a.name;
+select 'grant on function', s.name, f.name, a.name, pc.privilege_code_name, g.name, p.grantable from sys.functions f left outer join sys.schemas s on f.schema_id = s.id, sys.privileges p left outer join sys.auths g on p.grantor = g.id left outer join sys.privilege_codes pc on p.privileges = pc.privilege_code_id, sys.auths a where f.id = p.obj_id and p.auth_id = a.id order by s.name, f.name, a.name;
 -- sequences
 select 'sys.sequences', s.name, q.name, q.start, q.minvalue, q.maxvalue, q.increment, q.cacheinc, q.cycle from sys.sequences q left outer join sys.schemas s on q.schema_id = s.id order by s.name, q.name;
 -- statistics (expect empty)
