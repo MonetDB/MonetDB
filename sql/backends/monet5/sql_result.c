@@ -714,11 +714,11 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 
 	if (offset > 0)
 		offset--;
-	if (t->columns.set) {
+	if (ol_first_node(t->columns)) {
 		stream *out = m->scanner.ws;
 
 		as = (Tablet) {
-			.nr_attrs = list_length(t->columns.set),
+			.nr_attrs = ol_length(t->columns),
 			.nr = (sz < 1) ? BUN_NONE : (BUN) sz,
 			.offset = (BUN) offset,
 			.error = NULL,
@@ -735,7 +735,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 		if (!isa_block_stream(bs->s))
 			out = NULL;
 
-		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {
 			sql_column *col = n->data;
 
 			fmt[i].name = col->base.name;
@@ -791,7 +791,7 @@ mvc_import_table(Client cntxt, BAT ***bats, mvc *m, bstream *bs, sql_table *t, c
 			freeException(as.error);
 			as.error = NULL;
 		}
-		for (n = t->columns.set->h, i = 0; n; n = n->next, i++) {
+		for (n = ol_first_node(t->columns), i = 0; n; n = n->next, i++) {
 			fmt[i].sep = NULL;
 			fmt[i].rsep = NULL;
 			fmt[i].nullstr = NULL;

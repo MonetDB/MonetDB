@@ -95,7 +95,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
 				if (i && (!isRemote(i->t) && !isMergeTable(i->t))) {
-					sql_column *c = i->t->columns.set->h->data;
+					sql_column *c = ol_first_node(i->t->columns)->data;
 					size = SQLgetColumnSize(tr, c, access);
 
 					if( !prepare && size == 0 && ! i->t->system){

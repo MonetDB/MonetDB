@@ -214,7 +214,10 @@ sql_trans_find_idx(sql_trans *tr, sqlid id)
 sql_column *
 find_sql_column(sql_table *t, const char *cname)
 {
-	return _cs_find_name(&t->columns, cname);
+	node *n = ol_find_name(t->columns, cname);
+	if (n)
+		return n->data;
+	return NULL;
 }
 
 sql_table *

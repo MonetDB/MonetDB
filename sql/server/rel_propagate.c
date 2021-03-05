@@ -55,7 +55,7 @@ rel_create_common_relation(mvc *sql, sql_rel *rel, sql_table *t)
 		rel->r = rel_project(sql->sa, rel->r, l);
 		set_processed((sql_rel*)rel->r);
 		inserts = ((sql_rel*)(rel->r))->l;
-		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
+		for (node *n = ol_first_node(t->columns), *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 
@@ -81,7 +81,7 @@ rel_generate_anti_insert_expression(mvc *sql, sql_rel **anti_rel, sql_table *t)
 		inserts = (*anti_rel)->l;
 		if (inserts->op != op_project && inserts->op != op_union && inserts->op != op_basetable && inserts->op != op_table)
 			inserts = inserts->l;
-		for (node *n = t->columns.set->h, *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
+		for (node *n = ol_first_node(t->columns), *m = inserts->exps->h; n && m; n = n->next, m = m->next) {
 			sql_column *col = n->data;
 			sql_exp *before = m->data, *help;
 

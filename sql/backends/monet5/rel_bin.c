@@ -1657,14 +1657,14 @@ rel2bin_sql_table(backend *be, sql_table *t)
 	node *n;
 	stmt *dels = stmt_tid(be, t, 0);
 
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		stmt *sc = stmt_col(be, c, dels, dels->partition);
 
 		list_append(l, sc);
 	}
 	/* TID column */
-	if (t->columns.set->h) {
+	if (ol_first_node(t->columns)) {
 		/* tid function  sql.tid(t) */
 		const char *rnme = t->base.name;
 
@@ -1925,7 +1925,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 		trigger_input *ti = rel->l;
 		l = sa_list(sql->sa);
 
-		for(n = ti->t->columns.set->h; n; n = n->next) {
+		for(n = ol_first_node(ti->t->columns); n; n = n->next) {
 			sql_column *c = n->data;
 
 			if (ti->type == 2) { /* updates */
@@ -3996,7 +3996,7 @@ sql_stack_add_inserted( mvc *sql, const char *name, sql_table *t, stmt **updates
 	ti->updates = updates;
 	ti->type = 1;
 	ti->nn = name;
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
@@ -4050,7 +4050,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 	node *m, *n;
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 
-	for (n = t->columns.set->h, m = inserts->h; n && m;
+	for (n = ol_first_node(t->columns), m = inserts->h; n && m;
 		n = n->next, m = m->next) {
 		stmt *i = m->data;
 		sql_column *c = n->data;
@@ -4076,7 +4076,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 static stmt **
 table_update_stmts(mvc *sql, sql_table *t, int *Len)
 {
-	*Len = list_length(t->columns.set);
+	*Len = ol_length(t->columns);
 	return SA_ZNEW_ARRAY(sql->sa, stmt *, *Len);
 }
 
@@ -4126,7 +4126,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	l = sa_list(sql->sa);
 
 	updates = table_update_stmts(sql, t, &len);
-	for (n = t->columns.set->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
 		sql_column *c = n->data;
 
 		updates[c->colnr] = m->data;
@@ -4192,7 +4192,7 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 		m = m->next;
 	}
 
-	for (n = t->columns.set->h, m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
+	for (n = ol_first_node(t->columns), m = inserts->op4.lval->h; n && m; n = n->next, m = m->next) {
 
 		stmt *ins = m->data;
 		sql_column *c = n->data;
@@ -4905,7 +4905,7 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 	if (!t->idxs.set)
 		return idx_updates;
 
-	updcol = first_updated_col(updates, list_length(t->columns.set));
+	updcol = first_updated_col(updates, ol_length(t->columns));
 	for (n = t->idxs.set->h; n; n = n->next) {
 		sql_idx *i = n->data;
 		stmt *is = NULL;
@@ -4946,7 +4946,7 @@ sql_stack_add_updated(mvc *sql, const char *on, const char *nn, sql_table *t, st
 	ti->type = 2;
 	ti->on = on;
 	ti->nn = nn;
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
 		if (updates[c->colnr]) {
@@ -5017,7 +5017,7 @@ sql_update_check_null(backend *be, sql_table *t, stmt **updates)
 	node *n;
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR);
 
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
 		if (updates[c->colnr] && !c->null) {
@@ -5044,7 +5044,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 {
 	mvc *sql = be->mvc;
 	list *idx_updates = NULL;
-	int i, nr_cols = list_length(t->columns.set);
+	int i, nr_cols = ol_length(t->columns);
 	list *l = sa_list(sql->sa);
 	node *n;
 
@@ -5071,7 +5071,7 @@ sql_update(backend *be, sql_table *t, stmt *rows, stmt **updates)
 		return sql_error(sql, 02, SQLSTATE(27000) "UPDATE: triggers failed for table '%s'", t->base.name);
 
 /* apply updates */
-	for (i = 0, n = t->columns.set->h; i < nr_cols && n; i++, n = n->next) {
+	for (i = 0, n = ol_first_node(t->columns); i < nr_cols && n; i++, n = n->next) {
 		sql_column *c = n->data;
 
 		if (updates[i])
@@ -5153,7 +5153,7 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 		sql_update_check_null(be, /*(be->cur_append && t->p) ? t->p :*/ t, updates);
 
 	/* check keys + get idx */
-	updcol = first_updated_col(updates, list_length(t->columns.set));
+	updcol = first_updated_col(updates, ol_length(t->columns));
 	for (m = rel->exps->h; m; m = m->next) {
 		sql_exp *ce = m->data;
 		sql_idx *i = find_sql_idx(t, exp_name(ce)+1);
@@ -5243,7 +5243,7 @@ sql_stack_add_deleted(mvc *sql, const char *name, sql_table *t, stmt *tids, stmt
 	ti->updates = deleted_cols;
 	ti->type = type;
 	ti->nn = name;
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		sql_exp *ne = exp_column(sql->sa, name, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 
@@ -5404,7 +5404,7 @@ sql_delete(backend *be, sql_table *t, stmt *rows)
 		int nr = 0;
 		deleted_cols = table_update_stmts(sql, t, &nr);
 		int i = 0;
-		for (node *n = t->columns.set->h; n; n = n->next, i++) {
+		for (node *n = ol_first_node(t->columns); n; n = n->next, i++) {
 			sql_column *c = n->data;
 			stmt *s = stmt_col(be, c, v, v->partition);
 
@@ -5525,7 +5525,7 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 						k = fk;
 						/* make sure it is not a self referencing key */
 						if (k->t != t && !cascade) {
-							node *n = t->columns.set->h;
+							node *n = ol_first_node(t->columns);
 							sql_column *c = n->data;
 							size_t n_rows = store->storage_api.count_col(sql->session->tr, c, 0);
 							size_t n_deletes = store->storage_api.count_del(sql->session->tr, c->t, 0);
@@ -5595,7 +5595,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 		sche = next->s;
 
 		if (restart_sequences) { /* restart the sequences if it's the case */
-			for (node *n = next->columns.set->h; n; n = n->next) {
+			for (node *n = ol_first_node(next->columns); n; n = n->next) {
 				col = n->data;
 
 				if (col->def && !strncmp(col->def, next_value_for, strlen(next_value_for))) {
@@ -5626,7 +5626,7 @@ sql_truncate(backend *be, sql_table *t, int restart_sequences, int cascade)
 			int nr = 0;
 			deleted_cols = table_update_stmts(sql, t, &nr);
 			int i = 0;
-			for (node *n = t->columns.set->h; n; n = n->next, i++) {
+			for (node *n = ol_first_node(t->columns); n; n = n->next, i++) {
 				sql_column *c = n->data;
 				stmt *s = stmt_col(be, c, v, v->partition);
 

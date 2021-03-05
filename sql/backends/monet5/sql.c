@@ -332,7 +332,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' name conflicts", action, t->base.name);
 
 	/* first check default values */
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
 		if (c->def) {
@@ -364,7 +364,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		}
 	}
 
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data, *copied = mvc_copy_column(sql, nt, c);
 
 		if (copied == NULL) {
@@ -1437,7 +1437,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				throw(SQL, "sql.delta", SQLSTATE(3F000) "No such column '%s' in table '%s'", cname, t->base.name);
 			nrows = 1;
 		} else {
-			nrows = (BUN) t->columns.set->cnt;
+			nrows = (BUN) ol_length(t->columns);
 		}
 	} else if (s->tables) {
 		struct os_iter oi;
@@ -1445,7 +1445,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (sql_base *b = oi_next(&oi); b; b = oi_next(&oi)) {
 			t = (sql_table *)b;
 			if (isTable(t))
-				nrows += t->columns.set->cnt;
+				nrows += (BUN) ol_length(t->columns);
 		}
 	}
 
@@ -1486,7 +1486,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, cleared, deletes)) != NULL)
 					goto cleanup;
 			} else {
-				for (n = t->columns.set->h; n ; n = n->next) {
+				for (n = ol_first_node(t->columns); n ; n = n->next) {
 					c = (sql_column*) n->data;
 					if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7, c, cleared, deletes)) != NULL)
 						goto cleanup;
@@ -1501,7 +1501,7 @@ mvc_delta_values(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					cleared = 0;//(t->cleared != 0);
 					deletes = (lng) store->storage_api.count_del(m->session->tr, t, 0);
 
-					for (node *nn = t->columns.set->h; nn ; nn = nn->next) {
+					for (node *nn = ol_first_node(t->columns); nn ; nn = nn->next) {
 						c = (sql_column*) nn->data;
 
 						if ((msg=mvc_insert_delta_values(m, col1, col2, col3, col4, col5, col6, col7,
@@ -3658,9 +3658,9 @@ sql_rowid(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	t = mvc_bind_table(m, s, tname);
 	if (t == NULL)
 		throw(SQL, "sql.rowid", SQLSTATE(42S02) "Table missing %s.%s",sname,tname);
-	if (!s || !t || !t->columns.set->h)
+	if (!s || !t || !ol_first_node(t->columns))
 		throw(SQL, "calc.rowid", SQLSTATE(42S22) "Column missing %s.%s",sname,tname);
-	c = t->columns.set->h->data;
+	c = ol_first_node(t->columns)->data;
 	/* HACK, get insert bat */
 	sqlstore *store = m->session->tr->store;
 	b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
@@ -3869,7 +3869,7 @@ SQLdrop_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  TABLE_TYPE_DESCRIPTION(t->type, t->properties), t->base.name);
 
 	sqlstore *store = m->session->tr->store;
-	for (o = t->columns.set->h; o; o = o->next) {
+	for (o = ol_first_node(t->columns); o; o = o->next) {
 		c = o->data;
 		b = store->storage_api.bind_col(m->session->tr, c, RDONLY);
 		if (b == NULL)
@@ -3992,8 +3992,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if( tname && strcmp(bt->name, tname) )
 						continue;
 					if (isTable(t))
-						if (t->columns.set)
-							for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+						if (ol_first_node(t->columns))
+							for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_column *c = (sql_column *) ncol->data;
 								BAT *bn;

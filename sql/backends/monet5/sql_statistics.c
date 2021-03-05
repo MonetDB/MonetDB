@@ -48,8 +48,8 @@ sql_drop_statistics(mvc *m, sql_table *t)
 	if (!table_privs(m, t, PRIV_SELECT))
 		throw(SQL, "sql_drop_statistics", SQLSTATE(42000) "DROP STATISTICS: access denied for %s to table '%s.%s'",
 			  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
-	if (isTable(t) && t->columns.set) {
-		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+	if (isTable(t) && ol_first_node(t->columns)) {
+		for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 			sql_column *c = (sql_column *) ncol->data;
 
 			if (!column_privs(m, c, PRIV_SELECT))
@@ -59,8 +59,8 @@ sql_drop_statistics(mvc *m, sql_table *t)
 	}
 
 	sqlstore *store = tr->store;
-	if (isTable(t) && t->columns.set) {
-		for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+	if (isTable(t) && ol_first_node(t->columns)) {
+		for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 			sql_column *c = ncol->data;
 
 			rid = store->table_api.column_find_row(tr, statsid, &c->base.id, NULL);
@@ -146,8 +146,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!table_privs(m, t, PRIV_SELECT))
 				throw(SQL, "analyze", SQLSTATE(42000) "ANALYZE: access denied for %s to table '%s.%s'",
 					  get_string_global_var(m, "current_user"), t->s->base.name, t->base.name);
-			if (isTable(t) && t->columns.set) {
-				for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+			if (isTable(t) && ol_first_node(t->columns)) {
+				for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_column *c = (sql_column *) ncol->data;
 
 					if (col && strcmp(c->base.name, col))
@@ -183,8 +183,8 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (tbl && strcmp(b->name, tbl))
 				continue;
-			if (isTable(t) && t->columns.set)
-				for (ncol = (t)->columns.set->h; ncol; ncol = ncol->next) {
+			if (isTable(t) && ol_first_node(t->columns))
+				for (ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
 					sql_base *bc = ncol->data;
 					sql_column *c = (sql_column *) ncol->data;
 					BAT *bn, *br;

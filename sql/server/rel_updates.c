@@ -49,7 +49,7 @@ insert_value(sql_query *query, sql_column *c, sql_rel **r, symbol *s, const char
 static sql_exp **
 insert_exp_array(mvc *sql, sql_table *t, int *Len)
 {
-	*Len = list_length(t->columns.set);
+	*Len = ol_length(t->columns);
 	return SA_ZNEW_ARRAY(sql->sa, sql_exp*, *Len);
 }
 
@@ -285,7 +285,7 @@ check_table_columns(mvc *sql, sql_table *t, dlist *columns, const char *op, char
 			}
 		}
 	} else {
-		collist = t->columns.set;
+		collist = t->columns->l;
 	}
 	return collist;
 }
@@ -325,7 +325,7 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 	}
 	for (i = 0; i < len; i++) {
 		if (!inserts[i]) {
-			for (m = t->columns.set->h; m; m = m->next) {
+			for (m = ol_first_node(t->columns); m; m = m->next) {
 				sql_column *c = m->data;
 
 				if (c->colnr == i) {
@@ -855,7 +855,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 		return NULL;
 
 	if (tab && updates)
-		for (m = tab->columns.set->h; m; m = m->next) {
+		for (m = ol_first_node(tab->columns); m; m = m->next) {
 			sql_column *c = m->data;
 			sql_exp *v = updates[c->colnr];
 
@@ -890,7 +890,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 {
 	mvc *sql = query->sql;
 	sql_table *mt = NULL;
-	sql_exp **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, list_length(t->columns.set));
+	sql_exp **updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(t->columns));
 	list *exps, *pcols = NULL;
 	dnode *n;
 	const char *rname = NULL;
@@ -1366,7 +1366,7 @@ table_column_types(sql_allocator *sa, sql_table *t)
 	node *n;
 	list *types = sa_list(sa);
 
-	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
+	if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		if (c->base.name[0] != '%')
 			append(types, &c->type);
@@ -1380,7 +1380,7 @@ table_column_names_and_defaults(sql_allocator *sa, sql_table *t)
 	node *n;
 	list *types = sa_list(sa);
 
-	if (t->columns.set) for (n = t->columns.set->h; n; n = n->next) {
+	if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		append(types, &c->base.name);
 		append(types, c->def);
@@ -1441,7 +1441,7 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 						exp_atom_int(sql->sa, escape)), f);
 
 	exps = new_exp_list(sql->sa);
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		if (c->base.name[0] != '%')
 			append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
@@ -1485,7 +1485,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 	 * column specification other then the default list we need to reorder
 	 */
 	nt = t;
-	if (headers || collist != t->columns.set)
+	if (headers || collist != t->columns->l)
 		reorder = 1;
 	if (headers) {
 		int has_formats = 0;
@@ -1667,7 +1667,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 		exp_atom_bool(sql->sa, do_byteswap));
 
 	// create the list of files that is passed to the function as parameter
-	for (i = 0; i < list_length(t->columns.set); i++) {
+	for (i = 0; i < ol_length(t->columns); i++) {
 		// we have one file per column, however, because we have column selection that file might be NULL
 		// first, check if this column number is present in the passed in the parameters
 		int found = 0;
@@ -1690,7 +1690,7 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int co
 	import = exp_op(sql->sa,  args, f);
 
 	exps = new_exp_list(sql->sa);
-	for (n = t->columns.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 		append(exps, exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, 0));
 	}
