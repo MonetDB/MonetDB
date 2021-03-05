@@ -2387,12 +2387,12 @@ rel_is_join_on_pkey(sql_rel *rel)
 }
 
 /* if all arguments to a distinct aggregate are unique, remove 'distinct' property */
-static sql_rel *
+static inline sql_rel *
 rel_distinct_aggregate_on_unique_values(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = (sql_rel*) rel->l;
 
-	if (rel->op == op_groupby && (!l || is_base(l->op))) {
+	if (is_groupby(rel->op) && (!l || is_base(l->op))) {
 		for (node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *exp = (sql_exp*) n->data;
 
@@ -2542,7 +2542,7 @@ is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test 
 	return NULL;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_distinct_project2groupby(visitor *v, sql_rel *rel)
 {
 	sql_rel *l = rel->l;
@@ -3245,13 +3245,11 @@ exp_simplify_math( mvc *sql, sql_exp *e, int *changes)
 	return e;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_simplify_math(visitor *v, sql_rel *rel)
 {
-	int ochanges = 0;
-
 	if ((is_project(rel->op) || (rel->op == op_ddl && rel->flag == ddl_psm)) && rel->exps) {
-		int needed = 0;
+		int needed = 0, ochanges = 0;
 
 		for (node *n = rel->exps->h; n && !needed; n = n->next) {
 			sql_exp *e = n->data;
@@ -3269,8 +3267,8 @@ rel_simplify_math(visitor *v, sql_rel *rel)
 				return NULL;
 			n->data = ne;
 		}
+		v->changes += ochanges;
 	}
-	v->changes += ochanges;
 	return rel;
 }
 
@@ -9561,6 +9559,17 @@ rel_remove_union_partitions(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_first_level_optimizations(visitor *v, sql_rel *rel)
+{
+	rel = rel_distinct_aggregate_on_unique_values(v, rel);
+	rel = rel_distinct_project2groupby(v, rel);
+	/* rel_simplify_math optimizer requires to clear the hash, so make sure it runs last in this batch */
+	if (v->value_based_opt)
+		rel = rel_simplify_math(v, rel);
+	return rel;
+}
+
 /* pack optimizers into a single function call to avoid iterations in the AST */
 static sql_rel *
 rel_optimize_select_and_joins_bottomup(visitor *v, sql_rel *rel)
@@ -9690,15 +9699,10 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_visitor_bottomup(&v, rel, &rel_push_project_up);
 		if (level <= 0 && (gp.cnt[op_project] || gp.cnt[op_groupby]))
 			rel = rel_split_project(&v, rel, 1);
-
 		if (level <= 0) {
-			if (value_based_opt)
-				rel = rel_visitor_bottomup(&v, rel, &rel_simplify_math);
-			if (gp.cnt[op_groupby])
-				rel = rel_visitor_bottomup(&v, rel, &rel_distinct_aggregate_on_unique_values);
 			if (gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti])
-				rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join);
-			rel = rel_visitor_bottomup(&v, rel, &rel_distinct_project2groupby);
+				rel = rel_visitor_bottomup(&v, rel, &rel_remove_redundant_join); /* this optimizer has to run before rel_first_level_optimizations */
+			rel = rel_visitor_bottomup(&v, rel, &rel_first_level_optimizations);
 		}
 	}
 
