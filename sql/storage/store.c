@@ -214,7 +214,7 @@ table_destroy(sqlstore *store, sql_table *t)
 	/* cleanup its parts */
 	cs_destroy(&t->members, store);
 	ol_destroy(t->idxs, store);
-	cs_destroy(&t->keys, store);
+	ol_destroy(t->keys, store);
 	cs_destroy(&t->triggers, store);
 	ol_destroy(t->columns, store);
 	if (isPartitionedByExpressionTable(t)) {
@@ -676,7 +676,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 
 	t->columns = ol_new(tr->sa, (destroy_fptr) &column_destroy);
 	t->idxs = ol_new(tr->sa, (destroy_fptr) &idx_destroy);
-	cs_new(&t->keys, tr->sa, (fdestroy) &key_destroy);
+	t->keys = ol_new(tr->sa, (destroy_fptr) &key_destroy);
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
 		cs_new(&t->members, tr->sa, (fdestroy) &part_destroy);
@@ -746,7 +746,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_key *k = load_key(tr, t, rid);
 
-		cs_add(&t->keys, k, 0);
+		ol_add(t->keys, &k->base);
 		if (os_add(s->keys, tr, k->base.name, dup_base(&k->base)) ||
 			os_add(tr->cat->objects, tr, k->base.name, dup_base(&k->base))) {
 			key_destroy(store, k);
@@ -1366,7 +1366,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 	t->access = 0;
 	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
 	t->idxs = ol_new(sa, (destroy_fptr) &idx_destroy);
-	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
+	t->keys = ol_new(sa, (destroy_fptr) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
 		cs_new(&t->members, sa, (fdestroy) &part_destroy);
@@ -2754,7 +2754,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 
 	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
 	t->idxs = ol_new(sa, (destroy_fptr) &idx_destroy);
-	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
+	t->keys = ol_new(sa, (destroy_fptr) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
 	if (ot->members.set)
 		cs_new(&t->members, sa, (fdestroy) &part_destroy);
@@ -2791,9 +2791,11 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 			sql_idx *i = idx_dup(tr, n->data, t);
 			ol_add(t->idxs, &i->base);
 		}
-	if (ot->keys.set)
-		for (n = ot->keys.set->h; n; n = n->next)
-			cs_add(&t->keys, key_dup(tr, n->data, t), 0);
+	if (ot->keys)
+		for (n = ol_first_node(ot->keys); n; n = n->next) {
+			sql_key *k = key_dup(tr, n->data, t);
+			ol_add(t->keys, &k->base);
+		}
 	if (ot->triggers.set)
 		for (n = ot->triggers.set->h; n; n = n->next)
 			cs_add(&t->triggers, trigger_dup(tr, n->data, t), 0);
@@ -2838,7 +2840,7 @@ sql_trans_copy_key( sql_trans *tr, sql_table *t, sql_key *k)
 		return NULL;
 	sql_key *nk = key_dup(tr, k, t);
 	sql_fkey *fk = (sql_fkey*)nk;
-	cs_add(&t->keys, nk, TR_NEW);
+	ol_add(t->keys, &nk->base);
 
 	if (nk->type == fkey)
 		action = (fk->on_update<<8) + fk->on_delete;
@@ -3752,8 +3754,8 @@ sys_drop_keys(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
 
-	if (cs_size(&t->keys))
-		for (n = t->keys.set->h; n; n = n->next) {
+	if (ol_length(t->keys))
+		for (n = ol_first_node(t->keys); n; n = n->next) {
 			sql_key *k = n->data;
 
 			if (sys_drop_key(tr, k, drop_action))
@@ -4849,7 +4851,7 @@ create_sql_ukey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *na
 
 	if (nk->type == pkey)
 		t->pkey = tk;
-	cs_add(&t->keys, nk, TR_NEW);
+	ol_add(t->keys, &nk->base);
 	return tk;
 }
 
@@ -4876,7 +4878,7 @@ create_sql_fkey(sqlstore *store, sql_allocator *sa, sql_table *t, const char *na
 	fk->on_update = on_update;
 
 	fk->rkey = rkey->base.id;
-	cs_add(&t->keys, nk, TR_NEW);
+	ol_add(t->keys, &nk->base);
 	return (sql_fkey*) nk;
 }
 
@@ -5062,11 +5064,12 @@ drop_sql_idx(sql_table *t, sqlid id)
 void
 drop_sql_key(sql_table *t, sqlid id, int drop_action)
 {
-	node *n = list_find_base_id(t->keys.set, id);
+	node *n = ol_find_id(t->keys, id);
 	sql_key *k = n->data;
 
 	k->drop_action = drop_action;
-	cs_del(&t->keys, t->s->store, n, 0);
+	k->base.deleted = 1;
+	//ol_del(t->keys, t->s->store, n);
 }
 
 sql_column*
@@ -5383,7 +5386,7 @@ sql_trans_create_ukey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 	if (nk->type == pkey)
 		t->pkey = uk;
 
-	cs_add(&t->keys, nk, TR_NEW);
+	ol_add(t->keys, &nk->base);
 	if (os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base)) ||
 		os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))) {
 		key_destroy(store, nk);
@@ -5428,7 +5431,7 @@ sql_trans_create_fkey(sql_trans *tr, sql_table *t, const char *name, key_type kt
 
 	fk->rkey = rkey->base.id;
 
-	cs_add(&t->keys, nk, TR_NEW);
+	ol_add(t->keys, &nk->base);
 	if (os_add(t->s->keys, tr, nk->base.name, dup_base(&nk->base)) ||
 		os_add(tr->cat->objects, tr, nk->base.name, dup_base(&nk->base))) {
 		key_destroy(store, nk);
@@ -5629,9 +5632,9 @@ sql_trans_drop_key(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 		sys_drop_key(tr, k, drop_action);
 
 	/*Clean the key from the keys*/
-	node *n = cs_find_name(&k->t->keys, k->base.name);
+	node *n = ol_find_name(k->t->keys, k->base.name);
 	if (n)
-		cs_del(&k->t->keys, store, n, k->base.flags);
+		ol_del(k->t->keys, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);

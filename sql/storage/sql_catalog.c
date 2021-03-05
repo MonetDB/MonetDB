@@ -93,12 +93,6 @@ tr_version_of_parent(sql_trans *tr, ulng ts)
 	return 0;
 }
 
-static void *
-_cs_find_name(changeset * cs, const char *name)
-{
-	return _list_find_name(cs->set, name);
-}
-
 node *
 cs_find_name(changeset * cs, const char *name)
 {
@@ -174,7 +168,10 @@ list_find_base_id(list *l, sqlid id)
 sql_key *
 find_sql_key(sql_table *t, const char *kname)
 {
-	return _cs_find_name(&t->keys, kname);
+	node *n = ol_find_name(t->keys, kname);
+	if (n)
+		return n->data;
+	return NULL;
 }
 
 sql_key *
@@ -228,7 +225,7 @@ find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 {
 	sql_table *t = (sql_table*)os_find_name(s->tables, tr, tname);
 	if (!t && tr->tmp == s)
-		t = (sql_table*)_cs_find_name(&tr->localtmps, tname);
+		t = (sql_table*)_list_find_name(tr->localtmps.set, tname);
 	return t;
 }
 

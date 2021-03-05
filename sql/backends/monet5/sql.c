@@ -319,7 +319,7 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		return sql_message(SQLSTATE(42S01) "%s TABLE: name '%s' already in use", action, t->base.name);
 	} else if (temp != SQL_DECLARED_TABLE && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && temp == SQL_LOCAL_TEMP))) {
 		return sql_message(SQLSTATE(42000) "%s TABLE: insufficient privileges for user '%s' in schema '%s'", action, get_string_global_var(sql, "current_user"), s->base.name);
-	} else if (temp == SQL_DECLARED_TABLE && !list_empty(t->keys.set)) {
+	} else if (temp == SQL_DECLARED_TABLE && ol_length(t->keys)) {
 		return sql_message(SQLSTATE(42000) "%s TABLE: '%s' cannot have constraints", action, t->base.name);
 	}
 
@@ -405,8 +405,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 			}
 		}
 	}
-	if (t->keys.set) {
-		for (n = t->keys.set->h; n; n = n->next) {
+	if (t->keys) {
+		for (n = ol_first_node(t->keys); n; n = n->next) {
 			sql_key *k = n->data;
 			char *err = NULL;
 
