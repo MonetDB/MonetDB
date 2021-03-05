@@ -709,7 +709,7 @@ typedef struct sql_table {
 
 	sql_ukey *pkey;
 	objlist *columns;
-	changeset idxs;
+	objlist *idxs;
 	changeset keys;
 	changeset triggers;
 	changeset members;	/* member tables of merge/replica tables */

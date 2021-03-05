@@ -213,7 +213,7 @@ table_destroy(sqlstore *store, sql_table *t)
 		store->storage_api.destroy_del(store, t);
 	/* cleanup its parts */
 	cs_destroy(&t->members, store);
-	cs_destroy(&t->idxs, store);
+	ol_destroy(t->idxs, store);
 	cs_destroy(&t->keys, store);
 	cs_destroy(&t->triggers, store);
 	ol_destroy(t->columns, store);
@@ -675,7 +675,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->sz = COLSIZE;
 
 	t->columns = ol_new(tr->sa, (destroy_fptr) &column_destroy);
-	cs_new(&t->idxs, tr->sa, (fdestroy) &idx_destroy);
+	t->idxs = ol_new(tr->sa, (destroy_fptr) &idx_destroy);
 	cs_new(&t->keys, tr->sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, tr->sa, (fdestroy) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
@@ -732,7 +732,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	for (rid = store->table_api.rids_next(rs); !is_oid_nil(rid); rid = store->table_api.rids_next(rs)) {
 		sql_idx *i = load_idx(tr, t, rid);
 
-		cs_add(&t->idxs, i, 0);
+		ol_add(t->idxs, &i->base);
 		if (os_add(s->idxs, tr, i->base.name, dup_base(&i->base))) {
 			idx_destroy(store, i);
 			table_destroy(store, t);
@@ -1365,7 +1365,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 	t->query = NULL;
 	t->access = 0;
 	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
-	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
+	t->idxs = ol_new(sa, (destroy_fptr) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
@@ -2753,7 +2753,7 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 	t->properties = ot->properties;
 
 	t->columns = ol_new(sa, (destroy_fptr) &column_destroy);
-	cs_new(&t->idxs, sa, (fdestroy) &idx_destroy);
+	t->idxs = ol_new(sa, (destroy_fptr) &idx_destroy);
 	cs_new(&t->keys, sa, (fdestroy) &key_destroy);
 	cs_new(&t->triggers, sa, (fdestroy) &trigger_destroy);
 	if (ot->members.set)
@@ -2780,15 +2780,17 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 		}
 	}
 	if (ot->columns)
-		for (n = ot->columns->l->h; n; n = n->next) {
+		for (n = ol_first_node(ot->columns); n; n = n->next) {
 			sql_column *c = n->data, *col = column_dup(tr, c, t);
 			if (isPartitionedByColumnTable(ot) && ot->part.pcol->base.id == c->base.id)
 				t->part.pcol = col;
 			ol_add(t->columns, &col->base);
 		}
-	if (ot->idxs.set)
-		for (n = ot->idxs.set->h; n; n = n->next)
-			cs_add(&t->idxs, idx_dup(tr, n->data, t), 0);
+	if (ot->idxs)
+		for (n = ol_first_node(ot->idxs); n; n = n->next) {
+			sql_idx *i = idx_dup(tr, n->data, t);
+			ol_add(t->idxs, &i->base);
+		}
 	if (ot->keys.set)
 		for (n = ot->keys.set->h; n; n = n->next)
 			cs_add(&t->keys, key_dup(tr, n->data, t), 0);
@@ -2900,7 +2902,7 @@ sql_trans_copy_idx( sql_trans *tr, sql_table *t, sql_idx *i)
 
 		sql_trans_create_dependency(tr, ic->c->base.id, ni->base.id, INDEX_DEPENDENCY);
 	}
-	cs_add(&t->idxs, ni, TR_NEW);
+	ol_add(t->idxs, &ni->base);
 	if (os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))) {
 		idx_destroy(store, ni);
 		return NULL;
@@ -3765,8 +3767,8 @@ sys_drop_idxs(sql_trans *tr, sql_table *t, int drop_action)
 {
 	node *n;
 
-	if (cs_size(&t->idxs))
-		for (n = t->idxs.set->h; n; n = n->next) {
+	if (ol_length(t->idxs))
+		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *k = n->data;
 
 			if (sys_drop_idx(tr, k, drop_action))
@@ -4910,12 +4912,13 @@ create_sql_idx(sqlstore *store, sql_allocator *sa, sql_table *t, const char *nam
 	sql_idx *ni = SA_ZNEW(sa, sql_idx);
 
 	base_init(sa, &ni->base, next_oid(store), TR_NEW, name);
+	ni->base.new = 1;
 
 	ni->columns = SA_LIST(sa, (fdestroy) NULL);
 	ni->t = t;
 	ni->type = it;
 	ni->key = NULL;
-	cs_add(&t->idxs, ni, TR_NEW);
+	ol_add(t->idxs, &ni->base);
 	return ni;
 }
 
@@ -5049,9 +5052,11 @@ drop_sql_column(sql_table *t, sqlid id, int drop_action)
 void
 drop_sql_idx(sql_table *t, sqlid id)
 {
-	node *n = list_find_base_id(t->idxs.set, id);
+	node *n = ol_find_id(t->idxs, id);
+	sql_idx *i = n->data;
 
-	cs_del(&t->idxs, t->s->store, n, 0);
+	i->base.deleted = 1;
+	//ol_del(t->idxs, t->s->store, n);
 }
 
 void
@@ -5494,7 +5499,7 @@ table_has_idx( sql_table *t, list *keycols)
 	found = NEW_ARRAY(char, len);
 	if (!found)
 		return NULL;
-	if (t->idxs.set) for ( n = t->idxs.set->h; n; n = n->next ) {
+	if (t->idxs) for ( n = ol_first_node(t->idxs); n; n = n->next ) {
 		sql_idx *i = n->data;
 		int nr;
 
@@ -5651,7 +5656,7 @@ sql_trans_create_idx(sql_trans *tr, sql_table *t, const char *name, idx_type it)
 	ni->t = t;
 	ni->key = NULL;
 
-	cs_add(&t->idxs, ni, TR_NEW);
+	ol_add(t->idxs, &ni->base);
 	if (os_add(t->s->idxs, tr, ni->base.name, dup_base(&ni->base))) {
 		idx_destroy(store, ni);
 		return NULL;
@@ -5743,9 +5748,9 @@ sql_trans_drop_idx(sql_trans *tr, sql_schema *s, sqlid id, int drop_action)
 	if (!isTempTable(i->t))
 		sys_drop_idx(tr, i, drop_action);
 
-	node *n = cs_find_name(&i->t->idxs, i->base.name);
+	node *n = ol_find_name(i->t->idxs, i->base.name);
 	if (n)
-		cs_del(&i->t->idxs, store, n, i->base.flags);
+		ol_del(i->t->idxs, store, n);
 
 	if (drop_action == DROP_CASCADE_START && tr->dropped) {
 		list_destroy(tr->dropped);

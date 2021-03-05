@@ -396,8 +396,8 @@ create_table_or_view(mvc *sql, char* sname, char *tname, sql_table *t, int temp)
 		throw(SQL, "sql.catalog", SQLSTATE(42000) "CREATE TABLE: %s_%s: an internal error occurred", s->base.name, t->base.name);
 	}
 
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
+	if (t->idxs) {
+		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
 			if (!mvc_copy_idx(sql, nt, i)) {
 				sql->sa = osa;
@@ -4111,8 +4111,8 @@ sql_storage(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							}
 
 					if (isTable(t))
-						if (t->idxs.set)
-							for (ncol = (t)->idxs.set->h; ncol; ncol = ncol->next) {
+						if (t->idxs)
+							for (ncol = ol_first_node((t)->idxs); ncol; ncol = ncol->next) {
 								sql_base *bc = ncol->data;
 								sql_idx *c = (sql_idx *) ncol->data;
 								if (idx_has_column(c->type)) {

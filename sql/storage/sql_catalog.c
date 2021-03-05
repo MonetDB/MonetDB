@@ -194,7 +194,10 @@ sql_trans_find_key(sql_trans *tr, sqlid id)
 sql_idx *
 find_sql_idx(sql_table *t, const char *iname)
 {
-	return _cs_find_name(&t->idxs, iname);
+	node *n = ol_find_name(t->idxs, iname);
+	if (n)
+		return n->data;
+	return NULL;
 }
 
 sql_idx *
