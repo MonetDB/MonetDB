@@ -3220,6 +3220,10 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	lng loff = 0, roff = 0;
 	oid lval = oid_nil, rval = oid_nil;
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
 	assert(sr == NULL || sr->tsorted);
@@ -3278,6 +3282,8 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	vl = &lval;
 	vr = &rval;
 	for (BUN li = 0; li < lci.ncand; li++) {
+		GDK_CHECK_TIMEOUT(timeoffset, counter,
+				GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 		lo = canditer_next(&lci);
 		if (lvals)
 			vl = VALUE(l, lo - l->hseqbase);
