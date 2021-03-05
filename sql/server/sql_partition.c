@@ -314,8 +314,8 @@ initialize_sql_parts(mvc *sql, sql_table *mt)
 	find_partition_type(&found, mt);
 	localtype = found.type->localtype;
 
-	if (localtype != TYPE_str && mt->members.set && cs_size(&mt->members)) {
-		for (node *n = mt->members.set->h; n; n = n->next) {
+	if (localtype != TYPE_str && mt->members && list_length(mt->members)) {
+		for (node *n = mt->members->h; n; n = n->next) {
 			sql_part *p = n->data;
 
 			if (isListPartitionTable(mt)) {

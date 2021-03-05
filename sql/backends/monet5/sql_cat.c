@@ -153,7 +153,7 @@ validate_alter_table_add_table(mvc *sql, char* call, char *msname, char *mtname,
 	const char *errtable = TABLE_TYPE_DESCRIPTION(rmt->type, rmt->properties);
 	if (!update && (!isMergeTable(rmt) && !isReplicaTable(rmt)))
 		throw(SQL,call,SQLSTATE(42S02) "ALTER TABLE: cannot add table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	node *n = members_find_child_id(rmt->members.set, rpt->base.id);
+	node *n = members_find_child_id(rmt->members, rpt->base.id);
 	if (isView(rpt))
 		throw(SQL,call,SQLSTATE(42000) "ALTER TABLE: can't add a view into a %s", errtable);
 	if (isDeclaredTable(rpt))
@@ -421,7 +421,7 @@ alter_table_del_table(mvc *sql, char *msname, char *mtname, char *psname, char *
 	const char *errtable = TABLE_TYPE_DESCRIPTION(mt->type, mt->properties);
 	if (!isMergeTable(mt) && !isReplicaTable(mt))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: cannot drop table '%s.%s' to %s '%s.%s'", psname, ptname, errtable, msname, mtname);
-	if (!(n = members_find_child_id(mt->members.set, pt->base.id)))
+	if (!(n = members_find_child_id(mt->members, pt->base.id)))
 		throw(SQL,"sql.alter_table_del_table",SQLSTATE(42S02) "ALTER TABLE: table '%s.%s' isn't part of %s '%s.%s'", ps->base.name, ptname, errtable, ms->base.name, mtname);
 
 	if (sql_trans_del_table(sql->session->tr, mt, pt, drop_action))
@@ -1733,7 +1733,7 @@ SQLrename_table(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a view");
 		if (isDeclaredTable(t))
 			throw(SQL, "sql.rename_table", SQLSTATE(42000) "ALTER TABLE: not possible to change schema of a declared table");
-		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL) || cs_size(&t->members) || ol_length(t->triggers))
+		if (mvc_check_dependency(sql, t->base.id, TABLE_DEPENDENCY, NULL) || list_length(t->members) || ol_length(t->triggers))
 			throw(SQL, "sql.rename_table", SQLSTATE(2BM37) "ALTER TABLE: unable to set schema of table '%s' (there are database objects which depend on it)", otable_name);
 		if (!(s = mvc_bind_schema(sql, nschema_name)))
 			throw(SQL, "sql.rename_table", SQLSTATE(42S02) "ALTER TABLE: no such schema '%s'", nschema_name);
