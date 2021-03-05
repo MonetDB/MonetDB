@@ -1672,8 +1672,8 @@ rel2bin_sql_table(backend *be, sql_table *t)
 		sc = stmt_alias(be, sc, rnme, TID);
 		list_append(l, sc);
 	}
-	if (t->idxs.set) {
-		for (n = t->idxs.set->h; n; n = n->next) {
+	if (t->idxs) {
+		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
 			stmt *sc = stmt_idx(be, i, dels, dels->partition);
 			const char *rnme = t->base.name;
@@ -4152,9 +4152,9 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	}
 	insert = NULL;
 
-	if (t->idxs.set) {
+	if (t->idxs) {
 		idx_m = m;
-		for (n = t->idxs.set->h; n && m; n = n->next) {
+		for (n = ol_first_node(t->idxs); n && m; n = n->next) {
 			stmt *is = m->data;
 			sql_idx *i = n->data;
 
@@ -4177,8 +4177,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 	if (t->s) /* only not declared tables, need this */
 		pos = stmt_claim(be, t, cnt);
 
-	if (t->idxs.set)
-	for (n = t->idxs.set->h, m = idx_m; n && m; n = n->next) {
+	if (t->idxs)
+	for (n = ol_first_node(t->idxs), m = idx_m; n && m; n = n->next) {
 		stmt *is = m->data;
 		sql_idx *i = n->data;
 
@@ -4864,10 +4864,10 @@ cascade_updates(backend *be, sql_table *t, stmt *rows, stmt **updates)
 	mvc *sql = be->mvc;
 	node *n;
 
-	if (!t->idxs.set)
+	if (!ol_length(t->idxs))
 		return 0;
 
-	for (n = t->idxs.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->idxs); n; n = n->next) {
 		sql_idx *i = n->data;
 
 		/* check if update is needed,
@@ -4902,11 +4902,11 @@ update_idxs_and_check_keys(backend *be, sql_table *t, stmt *rows, stmt **updates
 	int updcol;
 	list *idx_updates = sa_list(sql->sa);
 
-	if (!t->idxs.set)
+	if (!ol_length(t->idxs))
 		return idx_updates;
 
 	updcol = first_updated_col(updates, ol_length(t->columns));
-	for (n = t->idxs.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->idxs); n; n = n->next) {
 		sql_idx *i = n->data;
 		stmt *is = NULL;
 

@@ -822,8 +822,8 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	}
 	append(rel->exps, exp_alias(sa, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
 
-	if (t->idxs.set) {
-		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+	if (t->idxs) {
+		for (cn = ol_first_node(t->idxs); cn; cn = cn->next) {
 			sql_exp *e;
 			sql_idx *i = cn->data;
 			sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */

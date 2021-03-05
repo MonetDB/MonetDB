@@ -87,8 +87,8 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 					return c;
 			}
 		}
-		if (t->idxs.set)
-		for (cn = t->idxs.set->h; cn; cn = cn->next) {
+		if (t->idxs)
+		for (cn = ol_first_node(t->idxs); cn; cn = cn->next) {
 			sql_idx *i = cn->data;
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
@@ -586,9 +586,9 @@ find_fk_index(mvc *sql, sql_table *l, list *lcols, sql_table *r, list *rcols)
 {
 	sql_trans *tr = sql->session->tr;
 
-	if (l->idxs.set) {
+	if (l->idxs) {
 		node *in;
-		for (in = l->idxs.set->h; in; in = in->next){
+		for (in = ol_first_node(l->idxs); in; in = in->next){
 			sql_idx *li = in->data;
 			if (li->type == join_idx) {
 				sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)li->key)->rkey);
@@ -2516,7 +2516,7 @@ is_fk_column_of_pk(mvc *sql, sql_rel *rel, sql_column *pkc, sql_exp *e) /* test 
 	if (c) {
 		sql_table *t = c->t;
 
-		for (node *n = t->idxs.set->h; n; n = n->next) {
+		for (node *n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *li = n->data;
 
 			if (li->type == join_idx) {
@@ -4464,7 +4464,7 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 /*
  * Push select down, pushes the selects through (simple) projections. Also
  * it cleans up the projections which become useless.
- * 
+ *
  * WARNING - Make sure to call try_remove_empty_select macro before returning so we ensure
  * possible generated empty selects will get removed without the need to call rel_remove_empty_select optimizer
  */
@@ -4808,7 +4808,7 @@ rel_push_join_down(visitor *v, sql_rel *rel)
  *
  * in some cases the other way is usefull, ie push join down
  * semijoin. When the join reduces (ie when there are selects on it).
- * 
+ *
  * At the moment, we only flag changes by this optimizer on the first level of optimization
  */
 static inline sql_rel *
@@ -8849,9 +8849,9 @@ rel_rename_part(mvc *sql, sql_rel *p, char *tname, sql_table *mt)
 	}
 	if (n) /* skip TID */
 		n = n->next;
-	if (mt->idxs.set) {
+	if (mt->idxs) {
 		/* also possible index name mismatches */
-		for( m = mt->idxs.set->h; n && m; m = m->next) {
+		for( m = ol_first_node(mt->idxs); n && m; m = m->next) {
 			sql_exp *ne = n->data;
 			sql_idx *i = m->data;
 			char *iname = NULL;

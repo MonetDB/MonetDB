@@ -2057,8 +2057,8 @@ log_create_del(sql_trans *tr, sql_change *change)
 
 			ok = log_create_col_(tr, c);
 		}
-		if (t->idxs.set) {
-			for(node *n = t->idxs.set->h; n && ok == LOG_OK; n = n->next) {
+		if (t->idxs) {
+			for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
 				sql_idx *i = n->data;
 
 				if (ATOMIC_PTR_GET(&i->data))
@@ -2089,8 +2089,8 @@ commit_create_del( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 
 				ok = commit_create_col_(tr, c, commit_ts, oldest);
 			}
-			if (t->idxs.set) {
-				for(node *n = t->idxs.set->h; n && ok == LOG_OK; n = n->next) {
+			if (t->idxs) {
+				for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
 					sql_idx *i = n->data;
 
 					if (ATOMIC_PTR_GET(&i->data))
@@ -2225,8 +2225,8 @@ log_destroy_del(sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 
 			ok = log_destroy_col_(tr, c);
 		}
-		if (t->idxs.set) {
-			for(node *n = t->idxs.set->h; n && ok == LOG_OK; n = n->next) {
+		if (t->idxs) {
+			for(node *n = ol_first_node(t->idxs); n && ok == LOG_OK; n = n->next) {
 				sql_idx *i = n->data;
 
 				ok = log_destroy_idx_(tr, i);
@@ -2356,8 +2356,8 @@ clear_table(sql_trans *tr, sql_table *t)
 			if (clear_col(tr, c) == BUN_NONE)
 				return BUN_NONE;
 		}
-		if (t->idxs.set) {
-			for (n = t->idxs.set->h; n; n = n->next) {
+		if (t->idxs) {
+			for (n = ol_first_node(t->idxs); n; n = n->next) {
 				sql_idx *ci = n->data;
 
 				if (isTable(ci->t) && idx_has_column(ci->type) &&
@@ -2448,8 +2448,8 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 				ok = log_bat(store->logger, ins, c->base.id, cur->start, cur->end-cur->start);
 				bat_destroy(ins);
 			}
-			if (t->idxs.set) {
-				for (node *n = t->idxs.set->h; n && ok; n = n->next) {
+			if (t->idxs) {
+				for (node *n = ol_first_node(t->idxs); n && ok; n = n->next) {
 					sql_idx *i = n->data;
 
 					if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))

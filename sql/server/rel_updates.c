@@ -216,11 +216,11 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 {
 	sql_rel *p = inserts->r;
 
-	if (!t->idxs.set)
+	if (!ol_length(t->idxs))
 		return inserts;
 
 	inserts->r = rel_label(sql, inserts->r, 1);
-	for (node *n = t->idxs.set->h; n; n = n->next) {
+	for (node *n = ol_first_node(t->idxs); n; n = n->next) {
 		sql_idx *i = n->data;
 
 		if (hash_index(i->type) || i->type == no_idx) {
@@ -807,10 +807,10 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
 	sql_rel *p = relup->r;
 
-	if (!t->idxs.set)
+	if (!ol_length(t->idxs))
 		return relup;
 
-	for (node *n = t->idxs.set->h; n; n = n->next) {
+	for (node *n = ol_first_node(t->idxs); n; n = n->next) {
 		sql_idx *i = n->data;
 
 		/* check if update is needed,
@@ -859,7 +859,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 			sql_column *c = m->data;
 			sql_exp *v = updates[c->colnr];
 
-			if (tab->idxs.set && !v)
+			if (ol_length(tab->idxs) && !v)
 				v = exp_column(sql->sa, alias, c->base.name, &c->type, CARD_MULTI, c->null, 0);
 			if (v)
 				v = rel_project_add_exp(sql, uprel, v);

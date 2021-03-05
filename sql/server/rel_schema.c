@@ -1831,6 +1831,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 
 	/* add index here */
 	i = mvc_create_idx(sql, nt, iname, itype);
+	i->base.new = 1;
 	for (n = column_list->h; n; n = n->next) {
 		sql_column *c = mvc_bind_column(sql, nt, n->data.sval);
 

@@ -92,10 +92,10 @@ rel_check_tables(mvc *sql, sql_table *nt, sql_table *nnt, const char *errtable)
 		}
 	}
 	if (isNonPartitionedTable(nt)) {
-		if (cs_size(&nt->idxs) != cs_size(&nnt->idxs))
+		if (ol_length(nt->idxs) != ol_length(nnt->idxs))
 			throw(SQL,"sql.rel_check_tables",SQLSTATE(3F000) "ALTER %s: to be added table index doesn't match %s definition", errtable, errtable);
-		if (cs_size(&nt->idxs))
-			for (n = nt->idxs.set->h, m = nnt->idxs.set->h; n && m; n = n->next, m = m->next) {
+		if (ol_length(nt->idxs))
+			for (n = ol_first_node(nt->idxs), m = ol_first_node(nnt->idxs); n && m; n = n->next, m = m->next) {
 				sql_idx *ni = n->data;
 				sql_idx *mi = m->data;
 
@@ -879,11 +879,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		throw(SQL,"sql.alter_table", SQLSTATE(42S02) "ALTER TABLE: no such table '%s'", t->base.name);
 
 	/* First check if all the changes are allowed */
-	if (t->idxs.set) {
+	if (t->idxs) {
 		/* only one pkey */
 		if (nt->pkey) {
-			for (n = t->idxs.nelm; n; n = n->next) {
+			for (n = ol_first_node(t->idxs); n; n = n->next) {
 				sql_idx *i = n->data;
+				if (!i->base.new || i->base.deleted)
+					continue;
 				if (i->key && i->key->type == pkey)
 					throw(SQL,"sql.alter_table", SQLSTATE(40000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			}
@@ -946,18 +948,23 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		if (mvc_copy_column(sql, nt, c) == NULL)
 			throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: Failed to create column %s.%s", c->t->base.name, c->base.name);
 	}
-	if (t->idxs.set) {
+	if (t->idxs) {
 		/* alter drop index */
-		if (t->idxs.dset)
-			for (n = t->idxs.dset->h; n; n = n->next) {
+		if (t->idxs)
+			for (n = ol_first_node(t->idxs); n; n = n->next) {
 				sql_idx *i = n->data;
+				if (i->base.new || !i->base.deleted)
+					continue;
 				sql_idx *ni = mvc_bind_idx(sql, s, i->base.name);
 				if (mvc_drop_idx(sql, s, ni))
 					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		/* alter add index */
-		for (n = t->idxs.nelm; n; n = n->next) {
+		for (n = ol_first_node(t->idxs); n; n = n->next) {
 			sql_idx *i = n->data;
+
+			if (!i->base.new || i->base.deleted)
+				continue;
 
 			if (i->type == ordered_idx) {
 				sql_kc *ic = i->columns->h->data;
