@@ -1593,17 +1593,13 @@ rel_push_func_down(visitor *v, sql_rel *rel)
  *                                                   ) [ sql_mul(.., .. NOT NULL) ]
  *                                              )
  */
-static sql_rel *
+static inline sql_rel *
 rel_push_count_down(visitor *v, sql_rel *rel)
 {
-	sql_rel *r;
+	sql_rel *r = rel->l;
 
-	if (!is_groupby(rel->op))
-		return rel;
-
-	r = rel->l;
-
-	if (is_groupby(rel->op) && !rel_is_ref(rel) && list_empty(rel->r) &&
+	assert(is_groupby(rel->op));
+	if (!rel_is_ref(rel) && list_empty(rel->r) &&
 		r && !r->exps && r->op == op_join && !(rel_is_ref(r)) &&
 		/* currently only single count aggregation is handled, no other projects or aggregation */
 		list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
@@ -6183,6 +6179,7 @@ rel_optimize_group_by(visitor *v, sql_rel *rel)
 	rel = rel_groupby_order(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_groupby_distinct(v, rel);
+	rel = rel_push_count_down(v, rel);
 	return rel;
 }
 
@@ -9754,21 +9751,12 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 			rel = rel_visitor_bottomup(&v, rel, &rel_join_push_exps_down);
 	}
 
-	/* Important -> Re-write semijoins after rel_join_order */
-	if ((gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left] || gp.cnt[op_right]) && gp.cnt[op_groupby]) {
-		if (gp.cnt[op_join])
-			rel = rel_visitor_topdown(&v, rel, &rel_push_count_down);
-		if (level <= 0) {
-			if (gp.cnt[op_select])
-				rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-			if (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left]) {
-				/* push_join_down introduces semijoins */
-				/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
-				rel = rel_visitor_topdown(&v, rel, &rel_push_join_down); /* rel_rewrite_semijoin will run in the next iteration */
-			}
-		}
-	}
+	/* push_join_down introduces semijoins */
+	/* rewrite semijoin (A, join(A,B)) into semijoin (A,B) */
+	if (level <= 0 && gp.cnt[op_groupby] && (gp.cnt[op_join] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_left]))
+		rel = rel_visitor_topdown(&v, rel, &rel_push_join_down);
 
+	/* Important -> Re-write semijoins after rel_join_order */
 	if (gp.cnt[op_anti] || gp.cnt[op_semi]) {
 		rel = rel_visitor_bottomup(&v, rel, &rel_optimize_semi_and_anti);
 		if (level <= 0)
