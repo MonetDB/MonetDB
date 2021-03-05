@@ -309,11 +309,12 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return res;
 		}
-		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key %s already exists", (kt == pkey) ? "PRIMARY KEY" : "UNIQUE", name);
 			return res;
 		}
 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		k->base.new = 1;
 
 		mvc_create_kc(sql, k, cs);
 		mvc_create_ukey_done(sql, k);
@@ -340,7 +341,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 		}
 		if (!rt) {
 			return SQL_ERR;
-		} else if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		} else if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return res;
 		}
@@ -371,6 +372,7 @@ column_constraint_type(mvc *sql, const char *name, symbol *s, sql_schema *ss, sq
 			return res;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		fk->k.base.new = 1;
 		mvc_create_fkc(sql, fk, cs);
 		res = SQL_OK;
 	} 	break;
@@ -504,7 +506,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 		int ref_actions = n->next->next->next->next->data.i_val;
 
 		assert(n->next->next->next->next->type == type_int);
-		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: key '%s' already exists", name);
 			return SQL_ERR;
 		}
@@ -526,6 +528,7 @@ table_foreign_key(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table *t)
 			return SQL_ERR;
 		}
 		fk = mvc_create_fkey(sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255);
+		fk->k.base.new = 1;
 
 		for (fnms = rk->columns->h; nms && fnms; nms = nms->next, fnms = fnms->next) {
 			char *nm = nms->data.sval;
@@ -568,13 +571,14 @@ table_constraint_type(mvc *sql, char *name, symbol *s, sql_schema *ss, sql_table
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT PRIMARY KEY: a table can have only one PRIMARY KEY\n");
 			return SQL_ERR;
 		}
-		if (name && (list_find_name(t->keys.set, name) || mvc_bind_key(sql, ss, name))) {
+		if (name && (ol_find_name(t->keys, name) || mvc_bind_key(sql, ss, name))) {
 			sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT %s: key '%s' already exists",
 					kt == pkey ? "PRIMARY KEY" : "UNIQUE", name);
 			return SQL_ERR;
 		}
 
 		k = (sql_key*)mvc_create_ukey(sql, t, name, kt);
+		k->base.new = 1;
 		for (; nms; nms = nms->next) {
 			char *nm = nms->data.sval;
 			sql_column *c = mvc_bind_column(sql, t, nm);
@@ -859,10 +863,10 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(2BM37) "%s: cannot drop column '%s': there are database objects which depend on it\n", action, cname);
 			return SQL_ERR;
 		}
-		if (!drop_action  && t->keys.set) {
+		if (!drop_action  && t->keys) {
 			node *n, *m;
 
-			for (n = t->keys.set->h; n; n = n->next) {
+			for (n = ol_first_node(t->keys); n; n = n->next) {
 				sql_key *k = n->data;
 				for (m = k->columns->h; m; m = m->next) {
 					sql_kc *kc = m->data;

@@ -5364,10 +5364,10 @@ sql_delete_keys(backend *be, sql_table *t, stmt *rows, list *l, char* which, int
 	int res = 1;
 	node *n;
 
-	if (!t->keys.set)
+	if (!ol_length(t->keys))
 		return res;
 
-	for (n = t->keys.set->h; n; n = n->next) {
+	for (n = ol_first_node(t->keys); n; n = n->next) {
 		sql_key *k = n->data;
 
 		if (k->type == pkey || k->type == ukey) {
@@ -5506,8 +5506,8 @@ check_for_foreign_key_references(mvc *sql, struct tablelist* tlist, struct table
 		return;
 
 	sqlstore *store = sql->session->tr->store;
-	if (t->keys.set) { /* Check for foreign key references */
-		for (n = t->keys.set->h; n; n = n->next) {
+	if (t->keys) { /* Check for foreign key references */
+		for (n = ol_first_node(t->keys); n; n = n->next) {
 			sql_key *k = n->data;
 
 			if (k->type == ukey || k->type == pkey) {

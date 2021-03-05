@@ -1000,8 +1000,8 @@ mvc_bind_ukey(sql_table *t, list *colnames)
 	sql_key *res = NULL;
 	int len = list_length(colnames);
 
-	if (cs_size(&t->keys))
-		for (cur = t->keys.set->h; cur; cur = cur->next) {
+	if (ol_length(t->keys))
+		for (cur = ol_first_node(t->keys); cur; cur = cur->next) {
 			node *cc;
 			sql_key *k = cur->data;
 

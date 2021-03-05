@@ -710,7 +710,7 @@ typedef struct sql_table {
 	sql_ukey *pkey;
 	objlist *columns;
 	objlist *idxs;
-	changeset keys;
+	objlist *keys;
 	changeset triggers;
 	changeset members;	/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
