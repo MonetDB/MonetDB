@@ -112,23 +112,23 @@ chkFlow(MalBlkPtr mb)
 		case BARRIERsymbol:
 		case CATCHsymbol:
 			if(btop== DEPTH)
-			    throw(MAL,"%s.%s Too many nested MAL blocks", getModuleId(sig), getFunctionId(sig));
+			    throw(MAL,"chkFlow", "%s.%s Too many nested MAL blocks", getModuleId(sig), getFunctionId(sig));
 			pc[btop]= i;
 			v= var[btop]= getDestVar(p);
 			stmt[btop]=p;
 
 			for(j=btop-1;j>=0;j--)
 			if( v==var[j])
-			    throw(MAL,"%s.%s recursive %s[%d] shields %s[%d]", getModuleId(sig), getFunctionId(sig), getVarName(mb,v), pc[j], getFcnName(mb),pc[i]);
+			    throw(MAL,"chkFlow", "%s.%s recursive %s[%d] shields %s[%d]", getModuleId(sig), getFunctionId(sig), getVarName(mb,v), pc[j], getFcnName(mb),pc[i]);
 
 			btop++;
 			break;
 		case EXITsymbol:
 			v= getDestVar(p);
 			if( btop>0 && var[btop-1] != v)
-			    throw(MAL, "%s.%s exit-label '%s' doesnot match '%s'", getModuleId(sig), getFunctionId(sig), getVarName(mb,v), getVarName(mb,var[btop-1]));
+			    throw(MAL,"chkFlow",  "%s.%s exit-label '%s' doesnot match '%s'", getModuleId(sig), getFunctionId(sig), getVarName(mb,v), getVarName(mb,var[btop-1]));
 			if(btop==0)
-			    throw(MAL,"%s.%s exit-label '%s' without begin-label",  getModuleId(sig), getFunctionId(sig), getVarName(mb,v));
+			    throw(MAL,"chkFlow", "%s.%s exit-label '%s' without begin-label",  getModuleId(sig), getFunctionId(sig), getVarName(mb,v));
 			/* search the matching block */
 			for(j=btop-1;j>=0;j--)
 			if( var[j]==v) break;
@@ -154,13 +154,13 @@ chkFlow(MalBlkPtr mb)
 			if( var[j]==v) break;
 			if(j<0){
 				str nme=getVarName(mb,v);
-			    throw(MAL, "%s.%s label '%s' not in guarded block", getModuleId(sig), getFunctionId(sig), nme);
+			    throw(MAL,"chkFlow",  "%s.%s label '%s' not in guarded block", getModuleId(sig), getFunctionId(sig), nme);
 			}
 			break;
 		case YIELDsymbol:
 			{ InstrPtr ps= getInstrPtr(mb,0);
 			if( ps->token != FACTORYsymbol){
-			    throw(MAL, "%s.%s yield misplaced!",  getModuleId(sig), getFunctionId(sig));
+			    throw(MAL,"chkFlow",  "%s.%s yield misplaced!",  getModuleId(sig), getFunctionId(sig));
 			}
 			yieldseen= TRUE;
 			 }
@@ -172,7 +172,7 @@ chkFlow(MalBlkPtr mb)
 				if (p->barrier == RETURNsymbol)
 					yieldseen = FALSE;    /* always end with a return */
 				if (ps->retc != p->retc) {
-					throw(MAL, "%s.%s invalid return target!",  getModuleId(sig), getFunctionId(sig));
+					throw(MAL,"chkFlow",  "%s.%s invalid return target!",  getModuleId(sig), getFunctionId(sig));
 				} else
 				if (ps->typechk == TYPE_RESOLVED)
 					for (e = 0; e < p->retc; e++) {
@@ -209,20 +209,20 @@ chkFlow(MalBlkPtr mb)
 	}
 
 	if(lastInstruction < mb->stop-1 )
-		throw(MAL, "%s.%s instructions after END", getModuleId(sig), getFunctionId(sig));
+		throw(MAL,"chkFlow",  "%s.%s instructions after END", getModuleId(sig), getFunctionId(sig));
 
 	if( endseen && btop  > 0)
-			throw(MAL, "%s.%s barrier '%s' without exit in %s[%d]", getModuleId(sig), getFunctionId(sig), i, getVarName(mb,var[btop - 1]),getFcnName(mb),i);
+			throw(MAL,"chkFlow",  "barrier '%s' without exit in %s[%d]", getVarName(mb,var[btop - 1]), getFcnName(mb), i);
 	p= getInstrPtr(mb,0);
 	if( !isaSignature(p))
-		throw( MAL, "%s.%s signature missing",  getModuleId(sig), getFunctionId(sig));
+		throw( MAL,"chkFlow",  "%s.%s signature missing",  getModuleId(sig), getFunctionId(sig));
 	if( retseen == 0){
 		if( getArgType(mb,p,0)!= TYPE_void &&
 			(p->token==FUNCTIONsymbol || p->token==FACTORYsymbol))
-				throw(MAL, "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
+				throw(MAL,"chkFlow",  "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
 	}
 	if ( yieldseen && getArgType(mb,p,0)!= TYPE_void)
-			throw( MAL, "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
+			throw( MAL,"chkFlow",  "%s.%s RETURN missing", getModuleId(sig), getFunctionId(sig));
 	return MAL_SUCCEED;
 }
 
@@ -723,7 +723,7 @@ chkDeclarations(MalBlkPtr mb){
 		for(k=p->retc;k<p->argc; k++) {
 			l=getArg(p,k);
 			if ( l < 0)
-					throw(MAL, "%s.%s Non-declared variable: pc=%d, var= %d",  getModuleId(sig), getFunctionId(sig), pc, k);
+					throw(MAL,"chkFlow",  "%s.%s Non-declared variable: pc=%d, var= %d",  getModuleId(sig), getFunctionId(sig), pc, k);
 			setVarUsed(mb,l);
 			if( getVarScope(mb,l) == 0){
 				/*
@@ -739,7 +739,7 @@ chkDeclarations(MalBlkPtr mb){
 					setVarScope(mb, l, blks[0]);
 				} else if( !( isVarConstant(mb, l) || isVarTypedef(mb,l)) &&
 					!isVarInit(mb,l) ) {
-					throw(MAL, "%s.%s '%s' may not be used before being initialized",  getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
+					throw(MAL,"chkFlow",  "%s.%s '%s' may not be used before being initialized",  getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
 				}
 			} else if( !isVarInit(mb,l) ){
 			    /* is the block still active ? */
@@ -747,7 +747,7 @@ chkDeclarations(MalBlkPtr mb){
 				if( blks[i] == getVarScope(mb,l) )
 					break;
 			    if( i> top || blks[i]!= getVarScope(mb,l) )
-			        throw( MAL, "%s.%s '%s' used outside scope", getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
+			        throw( MAL,"chkFlow",  "%s.%s '%s' used outside scope", getModuleId(sig), getFunctionId(sig), getVarName(mb,l));
 			}
 			if( blockCntrl(p) || blockStart(p) )
 				setVarInit(mb, l);
@@ -775,11 +775,11 @@ chkDeclarations(MalBlkPtr mb){
 		if( p->barrier && msg == MAL_SUCCEED){
 			if ( blockStart(p)){
 				if( top == MAXDEPTH-2)
-					throw(MAL, "%s.%s too deeply nested  MAL program",  getModuleId(sig), getFunctionId(sig));
+					throw(MAL,"chkFlow",  "%s.%s too deeply nested  MAL program",  getModuleId(sig), getFunctionId(sig));
 				blkId++;
 				if (getModuleId(p) && getFunctionId(p) && strcmp(getModuleId(p),"language")==0 && strcmp(getFunctionId(p),"dataflow")== 0){
 					if( dflow != -1)
-						throw(MAL, "%s.%s setLifeSpan nested dataflow blocks not allowed", getModuleId(sig), getFunctionId(sig));
+						throw(MAL,"chkFlow",  "%s.%s setLifeSpan nested dataflow blocks not allowed", getModuleId(sig), getFunctionId(sig));
 					dflow= blkId;
 				}
 				blks[++top]= blkId;
