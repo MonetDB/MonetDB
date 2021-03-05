@@ -462,6 +462,10 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(rci->tpe == cand_dense);
 	assert(BATcount(r) > 0);
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	MT_thread_setalgorithm(__func__);
 	/* figure out range [lo..hi) of values in r that we need to match */
 	lo = r->tseqbase;
@@ -711,6 +715,8 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	r2->tnonil = true;
 	if (l->ttype == TYPE_void && l->tvheap != NULL) {
 		for (i = 0; i < lci->ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					DEFAULT_TIMEOUT_HANDLER());
 			oid c = canditer_next(lci);
 
 			o = BUNtoid(l, c - l->hseqbase);
@@ -725,6 +731,8 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		}
 	} else {
 		for (i = 0; i < lci->ncand; i++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					DEFAULT_TIMEOUT_HANDLER());
 			oid c = canditer_next(lci);
 
 			o = lvals[c - l->hseqbase];
