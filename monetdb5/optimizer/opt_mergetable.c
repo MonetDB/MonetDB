@@ -1878,6 +1878,8 @@ OPTmergetableImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	if( isOptimizerUsed(mb,"mitosis") <= 0)
+		goto cleanup2;
 	//if( optimizerIsApplied(mb, "mergetable") || !optimizerIsApplied(mb,"mitosis"))
 		//return 0;
 	old = mb->stmt;
@@ -2372,6 +2374,7 @@ cleanup:
 	    if (!msg)
         	msg = chkDeclarations(mb);
     }
+cleanup2:
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","mergetable",actions, usec);

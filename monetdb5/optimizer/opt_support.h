@@ -51,6 +51,7 @@ mal_export int isSelect(InstrPtr q);
 mal_export int isSubJoin(InstrPtr q);
 mal_export int isMultiplex(InstrPtr q);
 mal_export int isOptimizerEnabled(MalBlkPtr mb, str opt);
+mal_export int isOptimizerUsed(MalBlkPtr mb, str opt);
 
 #endif /* _OPT_SUPPORT_H */
 
