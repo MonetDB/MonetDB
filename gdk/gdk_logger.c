@@ -2430,8 +2430,8 @@ log_bat_clear(logger *lg, int id)
 #define DBLKSZ		8192
 #define SEGSZ		(64*DBLKSZ)
 
-#define LOG_LARGE	(LL_CONSTANT(2)*1024)
-//*1024*1024
+#define LOG_LARGE	(LL_CONSTANT(2)*1024*1024)
+//(LL_CONSTANT(2)*1024)
 
 static gdk_return
 pre_allocate(logger *lg)
