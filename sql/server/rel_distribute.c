@@ -195,7 +195,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 
 			if (uri) {
 				/* replace by the replica which matches the uri */
-				for (n = t->members.set->h; n; n = n->next) {
+				for (n = t->members->h; n; n = n->next) {
 					sql_part *p = n->data;
 					sql_table *pt = find_sql_table_id(sql->session->tr, t->s, p->member);
 
@@ -205,10 +205,10 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 					}
 				}
 			} else { /* no match, find one without remote or use first */
-				if (t->members.set) {
+				if (t->members) {
 					int fnd = 0;
 					sql_part *p;
-					for (n = t->members.set->h; n; n = n->next) {
+					for (n = t->members->h; n; n = n->next) {
 						sql_part *p = n->data;
 						sql_table *pt = find_sql_table_id(sql->session->tr, t->s, p->member);
 
@@ -219,7 +219,7 @@ replica(mvc *sql, sql_rel *rel, char *uri)
 						}
 					}
 					if (!fnd) {
-						p = t->members.set->h->data;
+						p = t->members->h->data;
 						rel = rewrite_replica(sql, rel, t, p, 1);
 					}
 				} else {

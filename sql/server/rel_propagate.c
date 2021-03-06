@@ -597,7 +597,7 @@ rel_generate_subdeletes(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
@@ -631,7 +631,7 @@ rel_generate_subupdates(mvc *sql, sql_rel *rel, sql_table *t, int *changes)
 	int just_one = 1;
 	sql_rel *sel = NULL;
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1, *dup = NULL;
@@ -701,7 +701,7 @@ rel_generate_subinserts(sql_query *query, sql_rel *rel, sql_table *t, int *chang
 	}
 	anti_le = rel_generate_anti_insert_expression(sql, &anti_rel, t);
 
-	for (node *n = t->members.set->h; n; n = n->next) {
+	for (node *n = t->members->h; n; n = n->next) {
 		sql_part *pt = (sql_part *) n->data;
 		sql_table *sub = find_sql_table_id(sql->session->tr, t->s, pt->member);
 		sql_rel *s1 = NULL, *dup = NULL;
@@ -1076,7 +1076,7 @@ rel_propagate(sql_query *query, sql_rel *rel, int *changes)
 			}
 		}
 		if (isMergeTable(t)) {
-			assert(cs_size(&t->members));
+			assert(list_length(t->members));
 			if (is_delete(propagate->op) || is_truncate(propagate->op)) { /* propagate deletions to the partitions */
 				rel = rel_propagate_delete(sql, rel, t, changes);
 			} else if (isRangePartitionTable(t) || isListPartitionTable(t)) {

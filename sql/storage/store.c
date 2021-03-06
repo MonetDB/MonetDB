@@ -212,7 +212,7 @@ table_destroy(sqlstore *store, sql_table *t)
 	if (isTable(t))
 		store->storage_api.destroy_del(store, t);
 	/* cleanup its parts */
-	cs_destroy(&t->members, store);
+	list_destroy2(t->members, store);
 	ol_destroy(t->idxs, store);
 	ol_destroy(t->keys, store);
 	ol_destroy(t->triggers, store);
@@ -615,7 +615,7 @@ load_part(sql_trans *tr, sql_table *mt, oid rid)
 	store->table_api.column_find_string_end(cbat);
 	pt->t = mt;
 	pt->member = store->table_api.column_find_sqlid(tr, find_sql_column(objects, "sub"), rid);
-	cs_add(&mt->members, pt, 0);
+	list_append(mt->members, pt);
 	return pt;
 }
 
@@ -679,7 +679,7 @@ load_table(sql_trans *tr, sql_schema *s, sqlid tid, subrids *nrs)
 	t->keys = ol_new(tr->sa, (destroy_fptr) &key_destroy);
 	t->triggers = ol_new(tr->sa, (destroy_fptr) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
-		cs_new(&t->members, tr->sa, (fdestroy) &part_destroy);
+		t->members = list_new(tr->sa, (fdestroy) &part_destroy);
 
 	if (isTable(t)) {
 		if (store->storage_api.create_del(tr, t) != LOG_OK) {
@@ -1369,7 +1369,7 @@ create_sql_table_with_id(sql_allocator *sa, sqlid id, const char *name, sht type
 	t->keys = ol_new(sa, (destroy_fptr) &key_destroy);
 	t->triggers = ol_new(sa, (destroy_fptr) &trigger_destroy);
 	if (isMergeTable(t) || isReplicaTable(t))
-		cs_new(&t->members, sa, (fdestroy) &part_destroy);
+		t->members = list_new(sa, (fdestroy) &part_destroy);
 	t->pkey = NULL;
 	t->sz = COLSIZE;
 	t->s = NULL;
@@ -1454,7 +1454,7 @@ dup_sql_part(sql_allocator *sa, sql_table *mt, sql_part *op)
 			list_append(p->part.values, nextv);
 		}
 	}
-	cs_add(&mt->members, p, 0);
+	list_append(mt->members, p);
 	p->t = mt;
 	p->member = op->member;
 	assert(p->member);
@@ -1492,8 +1492,8 @@ dup_sql_table(sql_allocator *sa, sql_table *t)
 			nt->part.pcol = dup;
 	}
 
-	if (t->members.set)
-		for (n = t->members.set->h; n; n = n->next)
+	if (t->members)
+		for (n = t->members->h; n; n = n->next)
 			dup_sql_part(sa, nt, n->data);
 	return nt;
 }
@@ -2756,8 +2756,8 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 	t->idxs = ol_new(sa, (destroy_fptr) &idx_destroy);
 	t->keys = ol_new(sa, (destroy_fptr) &key_destroy);
 	t->triggers = ol_new(sa, (destroy_fptr) &trigger_destroy);
-	if (ot->members.set)
-		cs_new(&t->members, sa, (fdestroy) &part_destroy);
+	if (ot->members)
+		t->members = list_new(sa, (fdestroy) &part_destroy);
 
 	t->pkey = NULL;
 	t->s = s;
@@ -2801,9 +2801,9 @@ table_dup(sql_trans *tr, sql_table *ot, sql_schema *s, const char *name)
 			sql_trigger *k = trigger_dup(tr, n->data, t);
 			ol_add(t->triggers, &k->base);
 		}
-	if (ot->members.set)
-		for (n = ot->members.set->h; n; n = n->next)
-			cs_add(&t->members, part_dup(tr, n->data, t), 0);
+	if (ot->members)
+		for (n = ot->members->h; n; n = n->next)
+			list_append(t->members, part_dup(tr, n->data, t));
 	if (isTable(t)) {
 		if (isTempTable(t)) {
 			if (store->storage_api.create_del(tr, t) != LOG_OK) {
@@ -3850,8 +3850,8 @@ sys_drop_part(sql_trans *tr, sql_part *pt, int drop_action)
 static int
 sys_drop_members(sql_trans *tr, sql_table *t, int drop_action)
 {
-	if (!list_empty(t->members.set)) {
-		for (node *n = t->members.set->h; n; ) {
+	if (!list_empty(t->members)) {
+		for (node *n = t->members->h; n; ) {
 			sql_part *pt = n->data;
 
 			n = n->next;
@@ -4412,13 +4412,13 @@ sql_trans_add_table(sql_trans *tr, sql_table *mt, sql_table *pt)
 	mt = new_table(tr, mt);
 	if (!mt)
 		return NULL;
-	if (!mt->members.set)
-		cs_new(&mt->members, tr->sa, (fdestroy) &part_destroy);
+	if (!mt->members)
+		mt->members = list_new(tr->sa, (fdestroy) &part_destroy);
 	p->t = mt;
 	p->member = pt->base.id;
-	/* TODO parts should have a unique name - id ? */
+
 	base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
-	cs_add(&mt->members, p, TR_NEW);
+	list_append(mt->members, p);
 	if (os_add(mt->s->parts, tr, p->base.name, dup_base(&p->base))) {
 		part_destroy(store, p);
 		return NULL;
@@ -4450,8 +4450,8 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	mt = new_table(tr, mt);
 	if (!mt)
 		return -1;
-	if (!mt->members.set)
-		cs_new(&mt->members, tr->sa, (fdestroy) &part_destroy);
+	if (!mt->members)
+		mt->members = list_new(tr->sa, (fdestroy) &part_destroy);
 	if (min) {
 		ok = VALinit(&vmin, localtype, min);
 		if (ok && localtype != TYPE_str)
@@ -4496,7 +4496,7 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		assert(pt);
 		p->member = pt->base.id;
 	} else {
-		node *n = members_find_child_id(mt->members.set, pt->base.id);
+		node *n = members_find_child_id(mt->members, pt->base.id);
 		p = (sql_part*) n->data;
 	}
 
@@ -4514,11 +4514,11 @@ sql_trans_add_range_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	p->with_nills = with_nills;
 
 	if (!update) {
-		*err = cs_add_with_validate(&mt->members, p, &localtype, 0, sql_range_part_validate_and_insert);
+		*err = list_append_with_validate(mt->members, p, &localtype, sql_range_part_validate_and_insert);
 		if (*err)
 			part_destroy(store, p);
 	} else {
-		*err = cs_transverse_with_validate(&mt->members, p, &localtype, sql_range_part_validate_and_insert);
+		*err = list_transverse_with_validate(mt->members, p, &localtype, sql_range_part_validate_and_insert);
 	}
 	if (*err) {
 		res = -4;
@@ -4578,8 +4578,8 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	mt = new_table(tr, mt);
 	if (!mt)
 		return -1;
-	if (!mt->members.set)
-		cs_new(&mt->members, tr->sa, (fdestroy) &part_destroy);
+	if (!mt->members)
+		mt->members = list_new(tr->sa, (fdestroy) &part_destroy);
 	if (!update) {
 		p = SA_ZNEW(tr->sa, sql_part);
 		base_init(tr->sa, &p->base, next_oid(store), TR_NEW, pt->base.name);
@@ -4589,7 +4589,7 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 		p->member = pt->base.id;
 	} else {
 		rids *rs;
-		node *n = members_find_child_id(mt->members.set, pt->base.id);
+		node *n = members_find_child_id(mt->members, pt->base.id);
 		p = (sql_part*) n->data;
 
 		rs = store->table_api.rids_select(tr, find_sql_column(values, "table_id"), &pt->base.id, &pt->base.id, NULL);
@@ -4657,11 +4657,11 @@ sql_trans_add_value_partition(sql_trans *tr, sql_table *mt, sql_table *pt, sql_s
 	p->part.values = vals;
 
 	if (!update) {
-		*err = cs_add_with_validate(&mt->members, p, &localtype, 0, sql_values_part_validate_and_insert);
+		*err = list_append_with_validate(mt->members, p, &localtype, sql_values_part_validate_and_insert);
 		if (*err)
 			part_destroy(store, p);
 	} else {
-		*err = cs_transverse_with_validate(&mt->members, p, &localtype, sql_values_part_validate_and_insert);
+		*err = list_transverse_with_validate(mt->members, p, &localtype, sql_values_part_validate_and_insert);
 	}
 	if (*err)
 		return -1;
@@ -4733,7 +4733,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	mt = new_table(tr, mt);
 	if (!mt)
 		return -1;
-	node *n = members_find_child_id(mt->members.set, pt->base.id); /* get sqlpart id*/
+	node *n = members_find_child_id(mt->members, pt->base.id); /* get sqlpart id*/
 	sqlid part_id = ((sql_part*)n->data)->base.id;
 	sql_base *b = os_find_id(mt->s->parts, tr, part_id); /* fetch updated part */
 	sql_part *p = (sql_part*)b;
@@ -4741,7 +4741,7 @@ sql_trans_del_table(sql_trans *tr, sql_table *mt, sql_table *pt, int drop_action
 	sys_drop_part(tr, p, drop_action);
 
 	/*Clean the part from members*/
-	cs_del(&mt->members, store, n, p->base.flags);
+	list_remove_node(mt->members, store, n);
 
 	if (drop_action == DROP_CASCADE)
 		sql_trans_drop_table_id(tr, mt->s, pt->base.id, drop_action);
