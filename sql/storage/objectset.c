@@ -272,7 +272,7 @@ static objectset *
 os_append_node_name(objectset *os, versionhead  *n)
 {
 	lock_writer(os);
-	if ((!os->name_map || os->name_map->size*16 < os->name_based_cnt) && os->name_based_cnt > HASH_MIN_SIZE && os->sa) {
+	if ((!os->name_map || os->name_map->size*16 < os->name_based_cnt) && os->name_based_cnt > HASH_MIN_SIZE) {
 		hash_destroy(os->name_map);
 		os->name_map = hash_new(os->sa, os->name_based_cnt, (fkeyvalue)& os_name_key);
 		if (os->name_map == NULL) {
