@@ -60,6 +60,8 @@ hash_del(sql_hash *h, int key, void *value)
 void
 hash_destroy(sql_hash *h) /* this code should be called for hash tables created outside SQL allocators only! */
 {
+	if (h == NULL || h->sa)
+		return;
 	for (int i = 0; i < h->size; i++) {
 		sql_hash_e *e = h->buckets[i], *c = NULL;
 

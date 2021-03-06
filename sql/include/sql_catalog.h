@@ -276,9 +276,7 @@ extern node *ol_rehash(objlist *ol, const char *oldname, node *n);
 extern void cs_new(changeset * cs, sql_allocator *sa, fdestroy destroy);
 extern void cs_destroy(changeset * cs, void *data);
 extern void cs_add(changeset * cs, void *elm, int flag);
-extern void *cs_add_with_validate(changeset * cs, void *elm, void *extra, int flag, fvalidate cmp);
 extern void cs_del(changeset * cs, void *gdata, node *elm, int flag);
-extern void *cs_transverse_with_validate(changeset * cs, void *elm, void *extra, fvalidate cmp);
 extern int cs_size(changeset * cs);
 extern node *cs_find_id(changeset * cs, sqlid id);
 
@@ -706,7 +704,7 @@ typedef struct sql_table {
 	objlist *idxs;
 	objlist *keys;
 	objlist *triggers;
-	changeset members;	/* member tables of merge/replica tables */
+	list *members;		/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
 	ATOMIC_PTR_TYPE data;

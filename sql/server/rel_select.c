@@ -992,7 +992,7 @@ table_ref(sql_query *query, sql_rel *rel, symbol *tableref, int lateral, list *r
 				return sql_error(sql, 02, SQLSTATE(42000) "SELECT: access denied for %s to view '%s.%s'", get_string_global_var(sql, "current_user"), t->s->base.name, tname);
 			return rel;
 		}
-		if ((isMergeTable(t) || isReplicaTable(t)) && cs_size(&t->members)==0)
+		if ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0)
 			return sql_error(sql, 02, SQLSTATE(42000) "MERGE or REPLICA TABLE should have at least one table associated");
 		res = rel_basetable(sql, t, tname);
 		if (!allowed) {

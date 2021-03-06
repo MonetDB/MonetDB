@@ -83,7 +83,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			if (strcmp(c->base.name, name) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members.set, c->t) == pnr))
+					find_member_pos(mt->members, c->t) == pnr))
 					return c;
 			}
 		}
@@ -93,7 +93,7 @@ name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sq
 			if (strcmp(i->base.name, name+1 /* skip % */) == 0) {
 				*bt = rel;
 				if (pnr < 0 || (mt &&
-					find_member_pos(mt->members.set, i->t) == pnr)) {
+					find_member_pos(mt->members, i->t) == pnr)) {
 					sql_kc *c = i->columns->h->data;
 					return c->c;
 				}
@@ -4947,7 +4947,7 @@ rel_part_nr( sql_rel *rel, sql_exp *e )
 		return -1;
 	sql_table *pp = c->t;
 	sql_table *mt = bt->r;
-	return find_member_pos(mt->members.set, pp);
+	return find_member_pos(mt->members, pp);
 }
 
 static int
@@ -4970,7 +4970,7 @@ rel_uses_part_nr( sql_rel *rel, sql_exp *e, int pnr )
 	if (c && bt && bt->r) {
 		sql_table *pp = c->t;
 		sql_table *mt = bt->r;
-		if (find_member_pos(mt->members.set, pp) == pnr)
+		if (find_member_pos(mt->members, pp) == pnr)
 			return 1;
 	}
 	/* for projects we may need to do a rename! */
@@ -8898,7 +8898,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 				char *tname = t->base.name;
 				list *cols = NULL, *ranges = NULL;
 
-				if (cs_size(&t->members)==0)
+				if (list_length(t->members)==0)
 					return rel;
 				if (sel) {
 					cols = sa_list(v->sql->sa);
@@ -8953,10 +8953,10 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 					}
 				}
 				v->changes++;
-				if (t->members.set) {
+				if (t->members) {
 					list *tables = sa_list(v->sql->sa);
 
-					for (node *nt = t->members.set->h; nt; nt = nt->next) {
+					for (node *nt = t->members->h; nt; nt = nt->next) {
 						sql_part *pd = nt->data;
 						sql_table *pt = find_sql_table_id(v->sql->session->tr, t->s, pd->member);
 						sql_rel *prel = rel_basetable(v->sql, pt, tname), *bt = NULL;
@@ -9252,7 +9252,7 @@ rel_merge_table_rewrite(visitor *v, sql_rel *rel)
 						tables = ntables;
 					}
 				}
-				if (nrel && cs_size(&t->members) == 1) {
+				if (nrel && list_length(t->members) == 1) {
 					nrel = rel_project(v->sql->sa, nrel, rel->exps);
 				} else if (nrel) {
 					rel_set_exps(nrel, rel->exps);
