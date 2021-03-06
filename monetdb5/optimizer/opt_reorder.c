@@ -27,6 +27,7 @@
  * by giving preference to variables that are too far
  * away in the plan from their source. It is however not
  * explored.
+ * The reorder is only executed if the mergetable produced results.
  *
  * The secondary approach is to pull instructions to the
  * head of the plan if the dataflow such permits.
@@ -274,7 +275,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	char buf[256];
 	lng usec= GDKusec();
 	str msg = MAL_SUCCEED;
-
+	if( isOptimizerUsed(mb, "mergetable") <= 0){
+		goto wrapup;
+	}
 	(void) cntxt;
 	(void) stk;
 	dep = OPTdependencies(cntxt,mb,&uselist);
@@ -332,6 +335,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	OPTremoveDep(dep, limit);
 	GDKfree(uselist);
 	GDKfree(old);
+wrapup:
 	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
 
     	/* Defense line against incorrect plans */
