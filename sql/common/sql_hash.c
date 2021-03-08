@@ -54,6 +54,8 @@ hash_del(sql_hash *h, int key, void *value)
 			p->chain = e->chain;
 		else
 			h->buckets[key&(h->size-1)] = e->chain;
+		if(!h->sa)
+			_DELETE(p);
 	}
 }
 
