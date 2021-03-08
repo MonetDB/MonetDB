@@ -30,13 +30,11 @@ user.main
 1
 querylog.define
 1
-bat.new
-1
 sql.mvc
 1
-sql.bind
-2
 sql.tid
+2
+sql.bind
 2
 algebra.thetaselect
 2
@@ -45,6 +43,8 @@ sql.subdelta
 aggr.count
 2
 bat.single
+1
+bat.new
 1
 bat.append
 2
