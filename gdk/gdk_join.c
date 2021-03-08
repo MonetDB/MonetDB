@@ -375,7 +375,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					DEFAULT_TIMEOUT_HANDLER());
+					GDK_FAIL_TIMEOUT_HANDLER());
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -394,7 +394,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					DEFAULT_TIMEOUT_HANDLER());
+					GDK_FAIL_TIMEOUT_HANDLER());
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -716,7 +716,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (l->ttype == TYPE_void && l->tvheap != NULL) {
 		for (i = 0; i < lci->ncand; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					DEFAULT_TIMEOUT_HANDLER());
+					GDK_FAIL_TIMEOUT_HANDLER());
 			oid c = canditer_next(lci);
 
 			o = BUNtoid(l, c - l->hseqbase);
@@ -732,7 +732,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else {
 		for (i = 0; i < lci->ncand; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					DEFAULT_TIMEOUT_HANDLER());
+					GDK_FAIL_TIMEOUT_HANDLER());
 			oid c = canditer_next(lci);
 
 			o = lvals[c - l->hseqbase];

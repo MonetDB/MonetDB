@@ -88,6 +88,10 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	oid seq;
 	int (*cmp)(const void *, const void *);
 
+	size_t counter = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+
 	assert(bn->ttype == TYPE_oid);
 	seq = b->hseqbase;
 	l = ci->seq - seq;
@@ -126,6 +130,8 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	cnt = 0;
 	if (ci->tpe != cand_dense) {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			o = (oid) (i + seq - d);
 			if (canditer_contains(ci, o)) {
 				buninsfix(bn, dst, cnt, o,
@@ -136,6 +142,8 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		}
 	} else {
 		HASHloop_bound(bi, b->thash, i, tl, l, h) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter,
+					GOTO_LABEL_TIMEOUT_HANDLER(bailout));
 			o = (oid) (i + seq - d);
 			buninsfix(bn, dst, cnt, o,
 				  maximum - BATcapacity(bn),
@@ -158,6 +166,10 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	bn->trevsorted = bn->batCount <= 1;
 	bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *dst : oid_nil;
 	return bn;
+
+  bailout:
+	BBPreclaim(bn);
+	return NULL;
 }
 
 /* Imprints select code */
