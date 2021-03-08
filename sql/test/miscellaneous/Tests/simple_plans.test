@@ -292,6 +292,7 @@ bat.pack
 sql.resultSet
 1
 
+
 query T python .explain.function_with_more_than_one_result_bat
 EXPLAIN SELECT t1.col1 FROM another_t t1 INNER JOIN another_t t2 ON t1.col1 = t2.col1
 ----
