@@ -1577,7 +1577,10 @@ wrapup:
 					if (data) {
 						GDKfree(data);
 					}
-				} else if (bat_type > TYPE_str) {
+				} else if (bat_type != TYPE_bit && bat_type != TYPE_bte &&
+						   bat_type != TYPE_sht && bat_type != TYPE_int &&
+						   bat_type != TYPE_oid && bat_type != TYPE_lng &&
+						   bat_type != TYPE_flt && bat_type != TYPE_dbl) {
 					// this type was converted to individually malloced
 					// strings
 					// we have to free all the individual strings
