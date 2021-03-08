@@ -2115,7 +2115,13 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
 
 #define CHECK_QRY_TIMEOUT_STEP 10000
 
-#define DEFAULT_TIMEOUT_HANDLER()					\
+#define NULL_TIMEOUT_HANDLER()					\
+	do {								\
+		GDKerror("Timeout was reached!");			\
+		return NULL;					\
+	} while(0)
+
+#define GDK_FAIL_TIMEOUT_HANDLER()					\
 	do {								\
 		GDKerror("Timeout was reached!");			\
 		return GDK_FAIL;					\
