@@ -9825,7 +9825,7 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 static int
 need_optimization(sql_rel *rel)
 {
- 	if (rel->card <= CARD_ATOM && is_simple_project(rel->op) && !rel->l)
+ 	if (rel->card <= CARD_ATOM && ((is_simple_project(rel->op) && !rel->l) || is_insert(rel->op)))
 		return 0;
 	else if (rel->card <= CARD_ATOM && is_simple_project(rel->op))
 		return need_optimization(rel->l);
