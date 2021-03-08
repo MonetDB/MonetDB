@@ -298,8 +298,8 @@ rel_properties(mvc *sql, global_props *gp, sql_rel *rel)
 			sql_table *t = (sql_table *) rel->l;
 			sql_part *pt;
 
-			/* If the plan has a merge table or a child of a partitioned one, then rel_merge_table_rewrite has to run */
-			gp->has_mergetable |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL)) && !isNonPartitionedTable(pt->t)));
+			/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
+			gp->has_mergetable |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		}
 		if (rel->op == op_table && rel->l && rel->flag != TRIGGER_WRAPPER)
 			rel_properties(sql, gp, rel->l);
@@ -9823,12 +9823,24 @@ rel_keep_renames(mvc *sql, sql_rel *rel)
 }
 
 static int
-need_optimization(sql_rel *rel)
+need_optimization(mvc *sql, sql_rel *rel)
 {
- 	if (rel->card <= CARD_ATOM && ((is_simple_project(rel->op) && !rel->l) || is_insert(rel->op)))
-		return 0;
-	else if (rel->card <= CARD_ATOM && is_simple_project(rel->op))
-		return need_optimization(rel->l);
+	if (rel->card <= CARD_ATOM) {
+		if (is_insert(rel->op)) {
+			sql_rel *l = (sql_rel *) rel->l;
+
+			if (is_basetable(l->op)) {
+				sql_table *t = (sql_table *) l->l;
+				sql_part *pt;
+				/* If the plan has a merge table or a child of a partitioned one, then optimization cannot be skipped */
+				if (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))))
+					return 1;
+			}
+			return rel->r ? need_optimization(sql, rel->r) : 0;
+		}
+		if (is_simple_project(rel->op))
+			return rel->l ? need_optimization(sql, rel->l) : 0;
+	}
 	return 1;
 }
 
@@ -9837,8 +9849,8 @@ rel_optimizer(mvc *sql, sql_rel *rel, int value_based_opt, int storage_based_opt
 {
 	int level = 0, changes = 1;
 
- 	if (!need_optimization(rel))
- 		return rel;
+	if (!need_optimization(sql, rel))
+		return rel;
 
 	rel = rel_keep_renames(sql, rel);
 	for( ;rel && level < 20 && changes; level++)
