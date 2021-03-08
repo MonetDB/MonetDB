@@ -653,6 +653,15 @@ BAThashsync(void *arg)
 #endif
 #define EQflt(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : (a) == (b))
 #define EQdbl(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : (a) == (b))
+#ifdef HAVE_HGE
+#define EQuuid(a, b)	((a).h == (b).h)
+#else
+#ifdef HAVE_UUID
+#define EQuuid(a, b)	(uuid_compare((a).u, (b).u) == 0)
+#else
+#define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
+#endif
+#endif
 
 #define starthash(TYPE)							\
 	do {								\
@@ -846,6 +855,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			starthash(hge);
 			break;
 #endif
+		case TYPE_uuid:
+			starthash(uuid);
+			break;
 		default:
 			for (; p < cnt1; p++) {
 				const void *restrict v = BUNtail(bi, o - b->hseqbase);
@@ -917,6 +929,9 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 		finishhash(hge);
 		break;
 #endif
+	case TYPE_uuid:
+		finishhash(uuid);
+		break;
 	default:
 		for (; p < ci->ncand; p++) {
 			const void *restrict v = BUNtail(bi, o - b->hseqbase);
@@ -1016,6 +1031,8 @@ HASHprobe(const Hash *h, const void *v)
 	case TYPE_hge:
 		return hash_hge(h, v);
 #endif
+	case TYPE_uuid:
+		return hash_uuid(h, v);
 	default:
 		return hash_any(h, v);
 	}

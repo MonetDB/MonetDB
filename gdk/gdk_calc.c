@@ -1109,6 +1109,9 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	case TYPE_dbl:
 		ISNIL_TYPE(dbl, notnil);
 		break;
+	case TYPE_uuid:
+		ISNIL_TYPE(uuid, notnil);
+		break;
 	default:
 	{
 		BATiter bi = bat_iterator(b);
@@ -13773,11 +13776,13 @@ BATcalcifthenelse_intern(BAT *b,
 				case 8:
 					IFTHENELSELOOP_msk(lng);
 					break;
-#ifdef HAVE_HGE
 				case 16:
+#ifdef HAVE_HGE
 					IFTHENELSELOOP_msk(hge);
-					break;
+#else
+					IFTHENELSELOOP_msk(uuid);
 #endif
+					break;
 				default:
 					for (i = 0; i < cnt; i++) {
 						if (n == 32) {
@@ -13851,11 +13856,13 @@ BATcalcifthenelse_intern(BAT *b,
 				case 8:
 					IFTHENELSELOOP(lng);
 					break;
-#ifdef HAVE_HGE
 				case 16:
+#ifdef HAVE_HGE
 					IFTHENELSELOOP(hge);
-					break;
+#else
+					IFTHENELSELOOP(uuid);
 #endif
+					break;
 				default:
 					for (i = 0; i < cnt; i++) {
 						if (src[i] && !is_bit_nil(src[i])) {

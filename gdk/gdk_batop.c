@@ -1450,11 +1450,13 @@ BATreplace(BAT *b, BAT *p, BAT *n, bool force)
 			case 8:
 				((lng *) b->theap->base)[updid] = * (lng *) new;
 				break;
-#ifdef HAVE_HGE
 			case 16:
+#ifdef HAVE_HGE
 				((hge *) b->theap->base)[updid] = * (hge *) new;
-				break;
+#else
+				((uuid *) b->theap->base)[updid] = * (uuid *) new;
 #endif
+				break;
 			default:
 				memcpy(BUNtloc(bi, updid), new, ATOMsize(b->ttype));
 				break;
@@ -2466,6 +2468,10 @@ BATconstant(oid hseq, int tailtype, const void *v, BUN n, role_t role)
 				((hge *) p)[i] = *(hge *) v;
 			break;
 #endif
+		case TYPE_uuid:
+			for (i = 0; i < n; i++)
+				((uuid *) p)[i] = *(uuid *) v;
+			break;
 		case TYPE_str:
 			/* insert the first value, then just copy the
 			 * offset lots of times */
@@ -2722,6 +2728,10 @@ BATcount_no_nil(BAT *b, BAT *s)
 	case TYPE_dbl:
 		for (i = 0; i < n; i++)
 			cnt += !is_dbl_nil(((const dbl *) p)[canditer_next(&ci) - hseq]);
+		break;
+	case TYPE_uuid:
+		for (i = 0; i < n; i++)
+			cnt += !is_uuid_nil(((const uuid *) p)[canditer_next(&ci) - hseq]);
 		break;
 	case TYPE_str:
 		base = b->tvheap->base;

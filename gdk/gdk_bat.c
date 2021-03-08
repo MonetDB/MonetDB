@@ -941,7 +941,10 @@ COLcopy(BAT *b, int tt, bool writable, role_t role)
 			* (hge *) dst = * (hge *) src;	\
 		} else
 #else
-#define un_move_sz16(src, dst, sz)
+#define un_move_sz16(src, dst, sz)				\
+		if (sz == 16) {					\
+			* (uuid *) dst = * (uuid *) src;	\
+		} else
 #endif
 
 #define un_move(src, dst, sz)				\
@@ -1454,11 +1457,13 @@ BUNinplace(BAT *b, BUN p, const void *t, bool force)
 		case 8:
 			((lng *) b->theap->base)[p] = * (lng *) t;
 			break;
-#ifdef HAVE_HGE
 		case 16:
+#ifdef HAVE_HGE
 			((hge *) b->theap->base)[p] = * (hge *) t;
-			break;
+#else
+			((uuid *) b->theap->base)[p] = * (uuid *) t;
 #endif
+			break;
 		default:
 			memcpy(BUNtloc(bi, p), t, ATOMsize(b->ttype));
 			break;

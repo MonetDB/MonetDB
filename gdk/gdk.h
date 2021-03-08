@@ -441,6 +441,7 @@ enum {
 	TYPE_date,
 	TYPE_daytime,
 	TYPE_timestamp,
+	TYPE_uuid,
 	TYPE_str,
 	TYPE_any = 255,		/* limit types to <255! */
 };
@@ -463,6 +464,30 @@ typedef void *ptr;		/* Internal coding of types */
 typedef float flt;
 typedef double dbl;
 typedef char *str;
+
+#ifdef HAVE_UUID_UUID_H
+#include <uuid/uuid.h>
+#endif
+
+#ifdef HAVE_UUID
+#define UUID_SIZE	((int) sizeof(uuid_t)) /* size of a UUID */
+#else
+#define UUID_SIZE	16	/* size of a UUID */
+#endif
+#define UUID_STRLEN	36	/* length of string representation */
+
+typedef union {
+#ifdef HAVE_HGE
+	hge h;			/* force alignment, not otherwise used */
+#else
+	lng l[2];		/* force alignment, not otherwise used */
+#endif
+#ifdef HAVE_UUID
+	uuid_t u;
+#else
+	uint8_t u[UUID_SIZE];
+#endif
+} uuid;
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
@@ -614,6 +639,7 @@ typedef struct {
 #ifdef HAVE_HGE
 		hge hval;
 #endif
+		uuid uval;
 	} val;
 	size_t len;
 	int vtype;
@@ -1751,6 +1777,7 @@ VALptr(const ValRecord *v)
 #ifdef HAVE_HGE
 	case TYPE_hge: return (const void *) &v->val.hval;
 #endif
+	case TYPE_uuid: return (const void *) &v->val.uval;
 	case TYPE_ptr: return (const void *) &v->val.pval;
 	case TYPE_str: return (const void *) v->val.sval;
 	default:       return (const void *) v->val.pval;

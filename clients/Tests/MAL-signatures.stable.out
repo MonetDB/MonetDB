@@ -9690,7 +9690,6 @@ stdout of test 'MAL-signatures` in directory 'clients` itself:
 [ "uuid",	"isaUUID",	"command uuid.isaUUID(X_0:str):bit ",	"UUIDisaUUID;",	""	]
 [ "uuid",	"new",	"unsafe command uuid.new():uuid ",	"UUIDgenerateUuid;",	""	]
 [ "uuid",	"new",	"unsafe command uuid.new(X_0:int):uuid ",	"UUIDgenerateUuidInt;",	""	]
-[ "uuid",	"prelude",	"command uuid.prelude():void ",	"UUIDprelude;",	""	]
 [ "uuid",	"str",	"command uuid.str(X_0:uuid):str ",	"UUIDuuid2str;",	""	]
 [ "uuid",	"uuid",	"command uuid.uuid(X_0:str):uuid ",	"UUIDstr2uuid;",	""	]
 [ "wlc",	"action",	"pattern wlc.action(X_0:str):void ",	"WLCaction;",	""	]

@@ -168,6 +168,8 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 		return TYPE_daytime;
 	else if (len == 9 && strncmp(nme, "timestamp", len) == 0)
 		return TYPE_timestamp;
+	else if (len == 4 && strncmp(nme, "uuid", len) == 0)
+		return TYPE_uuid;
 	for (i = TYPE_str; i < GDKatomcnt; i++)
 		if (BATatoms[i].name[0] == nme[0] &&
 			strncmp(nme, BATatoms[i].name, len) == 0 &&

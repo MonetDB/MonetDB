@@ -106,6 +106,7 @@ project_loop(lng)
 #ifdef HAVE_HGE
 project_loop(hge)
 #endif
+project_loop(uuid)
 
 static gdk_return
 project_oid(BAT *restrict bn, BAT *restrict l, struct canditer *restrict lci,
@@ -650,6 +651,9 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 #endif
 	case TYPE_oid:
 		res = project_oid(bn, l, lci, r1, r2);
+		break;
+	case TYPE_uuid:
+		res = project_uuid(bn, l, lci, r1, r2);
 		break;
 	default:
 		res = project_any(bn, l, lci, r1, r2);
