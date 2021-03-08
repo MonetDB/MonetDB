@@ -1521,7 +1521,7 @@ create window var_samp(val tinyint) returns double external name "sql"."variance
 -- helper function
 create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
 -- schemas
-select 'sys.schemas', name, authorization, owner, system from sys.schemas order by name;
+select 'sys.schemas', s.name, a1.name as authorization, a2.name as owner, system from sys.schemas s left outer join sys.auths a1 on s.authorization = a1.id left outer join sys.auths a2 on s.owner = a2.id order by s.name;
 -- _tables
 select 'sys._tables', s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id order by s.name, t.name;
 -- _columns
@@ -1560,7 +1560,7 @@ select 'sys.idxs', t.name, i.name, it.index_type_name from sys.idxs i left outer
 -- keys
 select 'sys.keys', t.name, k.name, kt.key_type_name, k2.name, k.action from sys.keys k left outer join sys.keys k2 on k.rkey = k2.id left outer join sys._tables t on k.table_id = t.id left outer join sys.key_types kt on k.type = kt.key_type_id order by t.name, k.name;
 -- objects
-select 'sys.objects', name, nr from sys.objects order by name, nr;
+select 'sys.objects', o.name, case when nr < 2000 then cast(nr as string) else s1.name || '.' || t1.name end as nr, s2.name || '.' || t2.name as sub from sys.objects o left outer join sys._tables t1 on o.nr = t1.id left outer join sys.schemas s1 on t1.schema_id = s1.id left outer join sys._tables t2 on o.sub = t2.id left outer join sys.schemas s2 on t2.schema_id = s2.id order by name, nr, sub;
 -- privileges
 --  schemas
 select 'default schema of user', s.name, u.name from sys.schemas s, sys.users u where s.id = u.default_schema order by s.name, u.name;
@@ -1600,17 +1600,17 @@ select 'sys.privilege_codes', privilege_code_name from sys.privilege_codes order
 select 'sys.dependency_types', dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
 -- drop helper function
 drop function pcre_replace(string, string, string, string);
-% .%1,	sys.schemas,	sys.schemas,	sys.schemas,	sys.schemas # table_name
+% .%1,	.s,	.,	.,	.s # table_name
 % %1,	name,	authorization,	owner,	system # name
-% char,	varchar,	int,	int,	boolean # type
-% 11,	8,	1,	1,	5 # length
-[ "sys.schemas",	"json",	3,	3,	true	]
-[ "sys.schemas",	"logging",	3,	3,	true	]
-[ "sys.schemas",	"profiler",	3,	3,	true	]
-[ "sys.schemas",	"sys",	2,	3,	true	]
-[ "sys.schemas",	"tmp",	2,	3,	true	]
-[ "sys.schemas",	"wlc",	3,	3,	true	]
-[ "sys.schemas",	"wlr",	3,	3,	true	]
+% char,	varchar,	varchar,	varchar,	boolean # type
+% 11,	8,	8,	7,	5 # length
+[ "sys.schemas",	"json",	"monetdb",	"monetdb",	true	]
+[ "sys.schemas",	"logging",	"monetdb",	"monetdb",	true	]
+[ "sys.schemas",	"profiler",	"monetdb",	"monetdb",	true	]
+[ "sys.schemas",	"sys",	"sysadmin",	"monetdb",	true	]
+[ "sys.schemas",	"tmp",	"sysadmin",	"monetdb",	true	]
+[ "sys.schemas",	"wlc",	"monetdb",	"monetdb",	true	]
+[ "sys.schemas",	"wlr",	"monetdb",	"monetdb",	true	]
 % .%25,	.s,	.t,	.,	.,	.t,	.,	. # table_name
 % %25,	name,	name,	query,	type,	system,	commit_action,	access # name
 % char,	varchar,	varchar,	clob,	varchar,	boolean,	char,	char # type
@@ -5433,44 +5433,44 @@ drop function pcre_replace(string, string, string, string);
 [ "sys.keys",	"spatial_ref_sys",	"spatial_ref_sys_srid_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"table_types",	"table_types_table_type_id_pkey",	"Primary Key",	NULL,	-1	]
 [ "sys.keys",	"table_types",	"table_types_table_type_name_unique",	"Unique Key",	NULL,	-1	]
-% .%1,	sys.objects,	sys.objects # table_name
-% %1,	name,	nr # name
-% char,	varchar,	int # type
-% 11,	20,	1 # length
-[ "sys.objects",	"dependency_type_id",	0	]
-[ "sys.objects",	"dependency_type_id",	0	]
-[ "sys.objects",	"dependency_type_name",	0	]
-[ "sys.objects",	"dependency_type_name",	0	]
-[ "sys.objects",	"function_type_id",	0	]
-[ "sys.objects",	"function_type_id",	0	]
-[ "sys.objects",	"function_type_name",	0	]
-[ "sys.objects",	"function_type_name",	0	]
-[ "sys.objects",	"id",	0	]
-[ "sys.objects",	"id",	0	]
-[ "sys.objects",	"index_type_id",	0	]
-[ "sys.objects",	"index_type_id",	0	]
-[ "sys.objects",	"index_type_name",	0	]
-[ "sys.objects",	"index_type_name",	0	]
-[ "sys.objects",	"key_type_id",	0	]
-[ "sys.objects",	"key_type_id",	0	]
-[ "sys.objects",	"key_type_name",	0	]
-[ "sys.objects",	"key_type_name",	0	]
-[ "sys.objects",	"keyword",	0	]
-[ "sys.objects",	"keyword",	0	]
-[ "sys.objects",	"language_id",	0	]
-[ "sys.objects",	"language_id",	0	]
-[ "sys.objects",	"language_name",	0	]
-[ "sys.objects",	"language_name",	0	]
-[ "sys.objects",	"privilege_code_id",	0	]
-[ "sys.objects",	"privilege_code_id",	0	]
-[ "sys.objects",	"privilege_code_name",	0	]
-[ "sys.objects",	"privilege_code_name",	0	]
-[ "sys.objects",	"srid",	0	]
-[ "sys.objects",	"srid",	0	]
-[ "sys.objects",	"table_type_id",	0	]
-[ "sys.objects",	"table_type_id",	0	]
-[ "sys.objects",	"table_type_name",	0	]
-[ "sys.objects",	"table_type_name",	0	]
+% .%2,	.o,	.,	. # table_name
+% %2,	name,	nr,	sub # name
+% char,	varchar,	clob,	clob # type
+% 11,	20,	1,	0 # length
+[ "sys.objects",	"dependency_type_id",	"0",	NULL	]
+[ "sys.objects",	"dependency_type_id",	"0",	NULL	]
+[ "sys.objects",	"dependency_type_name",	"0",	NULL	]
+[ "sys.objects",	"dependency_type_name",	"0",	NULL	]
+[ "sys.objects",	"function_type_id",	"0",	NULL	]
+[ "sys.objects",	"function_type_id",	"0",	NULL	]
+[ "sys.objects",	"function_type_name",	"0",	NULL	]
+[ "sys.objects",	"function_type_name",	"0",	NULL	]
+[ "sys.objects",	"id",	"0",	NULL	]
+[ "sys.objects",	"id",	"0",	NULL	]
+[ "sys.objects",	"index_type_id",	"0",	NULL	]
+[ "sys.objects",	"index_type_id",	"0",	NULL	]
+[ "sys.objects",	"index_type_name",	"0",	NULL	]
+[ "sys.objects",	"index_type_name",	"0",	NULL	]
+[ "sys.objects",	"key_type_id",	"0",	NULL	]
+[ "sys.objects",	"key_type_id",	"0",	NULL	]
+[ "sys.objects",	"key_type_name",	"0",	NULL	]
+[ "sys.objects",	"key_type_name",	"0",	NULL	]
+[ "sys.objects",	"keyword",	"0",	NULL	]
+[ "sys.objects",	"keyword",	"0",	NULL	]
+[ "sys.objects",	"language_id",	"0",	NULL	]
+[ "sys.objects",	"language_id",	"0",	NULL	]
+[ "sys.objects",	"language_name",	"0",	NULL	]
+[ "sys.objects",	"language_name",	"0",	NULL	]
+[ "sys.objects",	"privilege_code_id",	"0",	NULL	]
+[ "sys.objects",	"privilege_code_id",	"0",	NULL	]
+[ "sys.objects",	"privilege_code_name",	"0",	NULL	]
+[ "sys.objects",	"privilege_code_name",	"0",	NULL	]
+[ "sys.objects",	"srid",	"0",	NULL	]
+[ "sys.objects",	"srid",	"0",	NULL	]
+[ "sys.objects",	"table_type_id",	"0",	NULL	]
+[ "sys.objects",	"table_type_id",	"0",	NULL	]
+[ "sys.objects",	"table_type_name",	"0",	NULL	]
+[ "sys.objects",	"table_type_name",	"0",	NULL	]
 % .%1,	sys.s,	.u # table_name
 % %1,	name,	name # name
 % char,	varchar,	varchar # type
