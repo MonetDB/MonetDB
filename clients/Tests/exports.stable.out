@@ -1123,6 +1123,7 @@ int isMultiplex(InstrPtr q);
 int isNotUsedIn(InstrPtr p, int start, int a);
 int isOptimizerEnabled(MalBlkPtr mb, str opt);
 int isOptimizerPipe(const char *name);
+int isOptimizerUsed(MalBlkPtr mb, str opt);
 int isOrderby(InstrPtr q);
 int isSample(InstrPtr q);
 int isSelect(InstrPtr q);
