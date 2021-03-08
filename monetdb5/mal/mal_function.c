@@ -488,8 +488,6 @@ renameVariables(MalBlkPtr mb)
 		s = getVarName(mb, i);
 		if( s[1] == '_' && (*s == 'C' || *s == 'X'))
 			snprintf(s + 2, IDLENGTH-2, "%d", i);
-		else
-			strcpy(mb->var[i].name, s);
 	}
 }
 
