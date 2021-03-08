@@ -18,6 +18,7 @@
  * The optimizers should all be equiped with debugging code
  * to easily trace their performance.
  */
+mal_export int isSQLinsert(MalBlkPtr mb);
 mal_export str MALoptimizer(Client c);
 mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 mal_export void showOptimizerStep(str fnme,int i, int flg);
