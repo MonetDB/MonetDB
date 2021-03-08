@@ -1032,6 +1032,7 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 	unsigned int idigits = i->digits;
 	unsigned int rdigits = r->digits;
 	unsigned int scale = sql_max(i->scale, r->scale);
+	sql_class eclass = r->type->eclass;
 	sql_subtype lsuper;
 
 	lsuper = *r;
@@ -1041,20 +1042,25 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 			lsuper = !strcmp(i->type->sqlname, "clob") ? *i : *r;
 			radix = lsuper.type->radix;
 			tpe = lsuper.type->sqlname;
+			eclass = lsuper.type->eclass;
 		} else {
 			lsuper = i->type->base.id > r->type->base.id ? *i : *r;
 			radix = lsuper.type->radix;
 			tpe = lsuper.type->sqlname;
+			eclass = lsuper.type->eclass;
 		}
 	} else if (i->type->base.id > r->type->base.id || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
 		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->sqlname;
+		eclass = i->type->eclass;
 	}
 	if (EC_VARCHAR(lsuper.type->eclass))
 		scale = 0; /* strings don't have scale */
-	if (!lsuper.type->localtype)
+	if (!lsuper.type->localtype) {
 		tpe = "smallint";
+		eclass = EC_NUM;
+	}
 	/*
 	 * In case of different radix we should change one.
 	 */
@@ -1073,13 +1079,15 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 		}
 	}
 	/* handle OID horror */
-	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0)
+	if (i->type->radix == r->type->radix && i->type->base.id < r->type->base.id && strcmp(i->type->sqlname, "oid") == 0) {
 		tpe = i->type->sqlname;
-	if (scale == 0 && (idigits == 0 || rdigits == 0 || !strcmp(tpe, "clob"))) { /* clob falls here */
+		eclass = EC_POS;
+	}
+	if (scale == 0 && (idigits == 0 || rdigits == 0)) {
 		sql_find_subtype(&lsuper, tpe, 0, 0);
 	} else {
 		/* for strings use the max of both */
-		if (!strcmp(tpe, "char") || !strcmp(tpe, "varchar"))
+		if (EC_VARCHAR(eclass))
 			digits = sql_max(type_digits_to_char_digits(i), type_digits_to_char_digits(r));
 		else
 			digits = sql_max(idigits - i->scale, rdigits - r->scale);
