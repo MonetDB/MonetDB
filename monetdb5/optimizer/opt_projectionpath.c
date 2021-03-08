@@ -32,6 +32,7 @@ OPTprojectionPrefix(Client cntxt, MalBlkPtr mb, int prefixlength)
 	int limit, slimit;
 	str msg = MAL_SUCCEED;
 
+
 	old = mb->stmt;
 	limit = mb->stop;
 	slimit= mb->ssize;
@@ -148,6 +149,15 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 		//return 0;
 
 
+	for( i = 0; i < mb->stop ; i++){
+		p = getInstrPtr(mb,i);
+		if ( getFunctionId(p) == projectionpathRef ){
+			break;
+		}
+	}
+	if ( i == mb->stop){
+		goto wrapupall;
+	}
 
 	old= mb->stmt;
 	limit= mb->stop;
