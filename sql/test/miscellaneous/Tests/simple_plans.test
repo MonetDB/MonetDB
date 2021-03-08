@@ -199,8 +199,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -213,6 +211,8 @@ algebra.rangejoin
 1
 algebra.project
 1
+bat.pack
+5
 sql.resultSet
 1
 
@@ -223,8 +223,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -239,6 +237,8 @@ algebra.rangejoin
 1
 algebra.project
 1
+bat.pack
+5
 sql.resultSet
 1
 
@@ -249,8 +249,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -263,6 +261,8 @@ algebra.project
 2
 algebra.rangejoin
 1
+bat.pack
+5
 sql.resultSet
 1
 
@@ -273,8 +273,6 @@ user.main
 1
 querylog.define
 1
-bat.pack
-5
 sql.mvc
 1
 sql.tid
@@ -289,6 +287,8 @@ algebra.likejoin
 1
 algebra.project
 1
+bat.pack
+5
 sql.resultSet
 1
 
