@@ -36,6 +36,7 @@ ol_destroy(objlist *ol, sql_store store)
 	if (!ol->l->sa) {
 		hash_destroy(ol->h);
 		list_destroy2(ol->l, store);
+		_DELETE(ol);
 	}
 }
 
