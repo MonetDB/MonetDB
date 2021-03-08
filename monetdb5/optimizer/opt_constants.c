@@ -30,12 +30,15 @@ str
 OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i, k = 1, n  = 0, fnd = 0, actions  = 0, limit = 0;
-	int *alias, *index;
-	VarPtr x,y, *cst;
+	int *alias = NULL, *index = NULL;
+	VarPtr x,y, *cst = NULL;
 	char buf[256];
 	lng usec = GDKusec();
 	str msg = MAL_SUCCEED;
 
+	if( isSQLinsert(mb)){
+		goto wrapup;
+	}
 	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
 	cst= (VarPtr*) GDKzalloc(sizeof(VarPtr) * mb->vtop);
 	index= (int*) GDKzalloc(sizeof(int) * mb->vtop);
@@ -92,13 +95,13 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	// if(!msg)
 	// 	msg = chkDeclarations(mb);
     /* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
 	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","constants",actions,usec);
 	newComment(mb,buf);
 	if (actions > 0)
 		addtoMalBlkHistory(mb);
 
-wrapup:
 	if( alias) GDKfree(alias);
 	if( cst) GDKfree(cst);
 	if( index) GDKfree(index);
