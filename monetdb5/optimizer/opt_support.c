@@ -88,6 +88,24 @@ isOptimizerUsed(MalBlkPtr mb, str opt)
 	return 0;
 }
 
+/* Simple insertion statements do not require complex optimizer steps */
+int
+isSQLinsert(MalBlkPtr mb)
+{
+        int cnt = 0;
+        int i;
+        InstrPtr p;
+
+        for(i = 0; i < mb->stop; i++) {
+                p = getInstrPtr(mb,i);
+                if (p &&  getModuleId(p) == sqlRef && getFunctionId(p) == appendRef ){
+                        cnt ++;
+                }
+        }
+        return cnt > 0.63 * mb->stop;
+}
+
+
 /* Hypothetical, optimizers may massage the plan in such a way
  * that multiple passes are needed.
  * However, the current SQL driven approach only expects a single

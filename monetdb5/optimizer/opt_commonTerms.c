@@ -18,6 +18,10 @@
  * Therefore we skip all constants, except for a constant only situation.
  */
 
+/*
+ * Speed up simple insert operations by skipping the common terms.
+*/
+
 static int
 isProjectConst(InstrPtr p)
 {
@@ -46,14 +50,19 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	int actions = 0;
 	int limit, slimit;
 	int duplicate;
-	int *alias;
-	int *hash, h;
-	int *list;
+	int *alias = NULL;
+	int *hash = NULL, h;
+	int *list = NULL;
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
 	char buf[256];
 	lng usec = GDKusec();
+
+	/* catch simple insert operations */
+	if( isSQLinsert(mb)){
+		goto wrapup;
+	}
 
 	(void) cntxt;
 	(void) stk;
