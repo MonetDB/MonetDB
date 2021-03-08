@@ -167,6 +167,8 @@ hash_delete(sql_hash *h, void *data)
 			h->buckets[key&(h->size-1)] = p->chain;
 		else
 			e->chain = p->chain;
+		if (!h->sa)
+			_DELETE(p);
 	}
 }
 
