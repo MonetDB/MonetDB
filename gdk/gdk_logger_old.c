@@ -2027,6 +2027,8 @@ old_logger_destroy(old_logger *lg)
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		return GDK_FAIL;
 	}
+	lg->lg->id = (ulng) lg->id;
+	lg->lg->saved_id = lg->lg->id;
 	if (TMsubcommit_list(subcommit, NULL, i, lg->lg->saved_id, lg->lg->saved_tid) != GDK_SUCCEED) {
 		TRC_CRITICAL(GDK, "logger_destroy failed\n");
 		return GDK_FAIL;
@@ -2072,7 +2074,6 @@ old_logger_destroy(old_logger *lg)
 	logbat_destroy(lg->snapshots_bid);
 	logbat_destroy(lg->snapshots_tid);
 	logbat_destroy(lg->dsnapshots);
-	lg->lg->id = (ulng) lg->id;
 
 	GDKfree(lg);
 	return GDK_SUCCEED;
