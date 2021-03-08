@@ -194,6 +194,7 @@ gdk_export const hge hge_nil;
 gdk_export const oid oid_nil;
 gdk_export const char str_nil[2];
 gdk_export const ptr ptr_nil;
+gdk_export const uuid uuid_nil;
 
 /* derived NIL values - OIDDEPEND */
 #define bit_nil	((bit) bte_nil)
@@ -221,6 +222,12 @@ gdk_export const ptr ptr_nil;
 #define isnan(x)	_isnan(x)
 #define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
 #define isfinite(x)	_finite(x)
+#endif
+
+#ifdef HAVE_UUID
+#define is_uuid_nil(x)	uuid_is_null((x).u)
+#else
+#define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
 #endif
 
 /*
@@ -321,11 +328,13 @@ ATOMputFIX(int type, void *dst, const void *src)
 	case 8:
 		* (lng *) dst = * (lng *) src;
 		break;
-#ifdef HAVE_HGE
 	case 16:
+#ifdef HAVE_HGE
 		* (hge *) dst = * (hge *) src;
-		break;
+#else
+		* (uuid *) dst = * (uuid *) src;
 #endif
+		break;
 	default:
 		memcpy(dst, src, ATOMsize(type));
 		break;

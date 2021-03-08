@@ -273,6 +273,7 @@ const hge hge_nil = GDK_hge_min-1;
 #endif
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const ptr ptr_nil = NULL;
+const uuid uuid_nil = {0};
 
 ptr
 ATOMnil(int t)
@@ -1242,6 +1243,142 @@ OIDtoStr(char **dst, size_t *len, const oid *src, bool external)
 	return snprintf(*dst, *len, OIDFMT "@0", *src);
 }
 
+static int
+UUIDcompare(const void *L, const void *R)
+{
+	const uuid *l = L, *r = R;
+	if (is_uuid_nil(*r))
+		return !is_uuid_nil(*l);
+	if (is_uuid_nil(*l))
+		return -1;
+#ifdef HAVE_UUID
+	return uuid_compare(l->u, r->u);
+#else
+	return memcmp(l->u, r->u, UUID_SIZE);
+#endif
+}
+
+static ssize_t
+UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
+{
+	uuid **retval = (uuid **) RETVAL;
+	const char *s = svalue;
+
+	if (*len < UUID_SIZE || *retval == NULL) {
+		GDKfree(*retval);
+		if ((*retval = GDKmalloc(UUID_SIZE)) == NULL)
+			return -1;
+		*len = UUID_SIZE;
+	}
+	if (external && strcmp(svalue, "nil") == 0) {
+		**retval = uuid_nil;
+		return 3;
+	}
+	if (strNil(svalue)) {
+		**retval = uuid_nil;
+		return 1;
+	}
+	/* we don't use uuid_parse since we accept UUIDs without hyphens */
+	uuid u;
+	for (int i = 0, j = 0; i < UUID_SIZE; i++) {
+		/* on select locations we allow a '-' in the source string */
+		if (j == 8 || j == 12 || j == 16 || j == 20) {
+			if (*s == '-')
+				s++;
+		}
+		if (isdigit((unsigned char) *s))
+			u.u[i] = *s - '0';
+		else if ('a' <= *s && *s <= 'f')
+			u.u[i] = *s - 'a' + 10;
+		else if ('A' <= *s && *s <= 'F')
+			u.u[i] = *s - 'A' + 10;
+		else
+			goto bailout;
+		s++;
+		j++;
+		u.u[i] <<= 4;
+		if (isdigit((unsigned char) *s))
+			u.u[i] |= *s - '0';
+		else if ('a' <= *s && *s <= 'f')
+			u.u[i] |= *s - 'a' + 10;
+		else if ('A' <= *s && *s <= 'F')
+			u.u[i] |= *s - 'A' + 10;
+		else
+			goto bailout;
+		s++;
+		j++;
+	}
+	if (*s != 0)
+		goto bailout;
+	**retval = u;
+	return (ssize_t) (s - svalue);
+
+  bailout:
+	**retval = uuid_nil;
+	return -1;
+}
+
+static BUN
+UUIDhash(const void *v)
+{
+	return mix_uuid(*(const uuid *) v);
+}
+
+static void *
+UUIDread(void *U, size_t *dstlen, stream *s, size_t cnt)
+{
+	uuid *u = U;
+	if (u == NULL || *dstlen < cnt * sizeof(uuid)) {
+		if ((u = GDKrealloc(u, cnt * sizeof(uuid))) == NULL)
+			return NULL;
+		*dstlen = cnt * sizeof(uuid);
+	}
+	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt) {
+		if (u != U)
+			GDKfree(u);
+		return NULL;
+	}
+	return u;
+}
+
+static gdk_return
+UUIDwrite(const void *u, stream *s, size_t cnt)
+{
+	return mnstr_write(s, u, UUID_SIZE, cnt) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+static ssize_t
+UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
+{
+	const uuid *value = VALUE;
+	if (*len <= UUID_STRLEN || *retval == NULL) {
+		if (*retval)
+			GDKfree(*retval);
+		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
+			return -1;
+		*len = UUID_STRLEN + 1;
+	}
+	if (is_uuid_nil(*value)) {
+		if (external) {
+			return (ssize_t) strcpy_len(*retval, "nil", 4);
+		}
+		return (ssize_t) strcpy_len(*retval, str_nil, 2);
+	}
+#ifdef HAVE_UUID
+	uuid_unparse_lower(value->u, *retval);
+#else
+	snprintf(*retval, *len,
+			 "%02x%02x%02x%02x-%02x%02x-%02x%02x"
+			 "-%02x%02x-%02x%02x%02x%02x%02x%02x",
+			 value->u[0], value->u[1], value->u[2], value->u[3],
+			 value->u[4], value->u[5], value->u[6], value->u[7],
+			 value->u[8], value->u[9], value->u[10], value->u[11],
+			 value->u[12], value->u[13], value->u[14], value->u[15]);
+#endif
+	assert(strlen(*retval) == UUID_STRLEN);
+	return UUID_STRLEN;
+}
+
 atomDesc BATatoms[MAXATOMS] = {
 	[TYPE_void] = {
 		.name = "void",
@@ -1471,6 +1608,19 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
 		.atomHash = (BUN (*)(const void *)) lngHash,
+	},
+	[TYPE_uuid] = {
+		.name = "uuid",
+		.storage = TYPE_uuid,
+		.linear = true,
+		.size = sizeof(uuid),
+		.atomNull = (void *) &uuid_nil,
+		.atomFromStr = UUIDfromString,
+		.atomToStr = UUIDtoString,
+		.atomRead = UUIDread,
+		.atomWrite = UUIDwrite,
+		.atomCmp = UUIDcompare,
+		.atomHash = UUIDhash,
 	},
 	[TYPE_str] = {
 		.name = "str",

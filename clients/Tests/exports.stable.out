@@ -580,6 +580,7 @@ ssize_t timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool extern
 ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external);
 const timestamp unixepoch;
 wchar_t *utf8towchar(const char *src);
+const uuid uuid_nil;
 gdk_return void_inplace(BAT *b, oid id, const void *val, bool force) __attribute__((__warn_unused_result__));
 char *wchartoutf8(const wchar_t *src);
 int winerror(int);

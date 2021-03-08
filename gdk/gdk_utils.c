@@ -892,6 +892,8 @@ GDKinit(opt *set, int setlen, bool embedded)
 		      "error in configure: bad value for SIZEOF_SIZE_T");
 	static_assert(SIZEOF_OID == SIZEOF_INT || SIZEOF_OID == SIZEOF_LNG,
 		      "SIZEOF_OID should be equal to SIZEOF_INT or SIZEOF_LNG");
+	static_assert(sizeof(uuid) == 16,
+		      "sizeof(uuid) should be equal to 16");
 
 	if (first) {
 		/* some things are really only initialized once */

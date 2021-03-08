@@ -285,6 +285,15 @@
 #define int_equ(a, b)	((a) == (b))
 #define lng_equ(a, b)	((a) == (b))
 #define hge_equ(a, b)	((a) == (b))
+#ifdef HAVE_HGE
+#define uuid_equ(a, b)	((a).h == (b).h)
+#else
+#ifdef HAVE_UUID
+#define uuid_equ(a, b)	(uuid_compare((a).u, (b).u) == 0)
+#else
+#define uuid_equ(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
+#endif
+#endif
 
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
@@ -1040,6 +1049,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		case TYPE_dbl:
 			GRP_use_existing_hash_table_tpe(dbl);
 			break;
+		case TYPE_uuid:
+			GRP_use_existing_hash_table_tpe(uuid);
+			break;
 		default:
 			GRP_use_existing_hash_table_any();
 			break;
@@ -1186,6 +1198,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			break;
 		case TYPE_dbl:
 			GRP_create_partial_hash_table_tpe(dbl);
+			break;
+		case TYPE_uuid:
+			GRP_create_partial_hash_table_tpe(uuid);
 			break;
 		default:
 			GRP_create_partial_hash_table_any();

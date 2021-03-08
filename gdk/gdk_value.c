@@ -75,6 +75,9 @@ VALset(ValPtr v, int t, ptr p)
 		v->val.hval = *(hge *) p;
 		break;
 #endif
+	case TYPE_uuid:
+		v->val.uval = *(uuid *) p;
+		break;
 	case TYPE_str:
 		v->val.sval = (str) p;
 		break;
@@ -106,6 +109,7 @@ VALget(ValPtr v)
 #ifdef HAVE_HGE
 	case TYPE_hge: return (void *) &v->val.hval;
 #endif
+	case TYPE_uuid: return (void *) &v->val.uval;
 	case TYPE_ptr: return (void *) &v->val.pval;
 	case TYPE_str: return (void *) v->val.sval;
 	default:       return (void *) v->val.pval;
@@ -209,6 +213,9 @@ VALinit(ValPtr d, int tpe, const void *s)
 		d->val.hval = *(const hge *) s;
 		break;
 #endif
+	case TYPE_uuid:
+		d->val.uval = *(const uuid *) s;
+		break;
 	case TYPE_str:
 		d->val.sval = GDKstrdup(s);
 		if (d->val.sval == NULL)
@@ -321,6 +328,8 @@ VALisnil(const ValRecord *v)
 	case TYPE_hge:
 		return is_hge_nil(v->val.hval);
 #endif
+	case TYPE_uuid:
+		return is_uuid_nil(v->val.uval);
 	case TYPE_flt:
 		return is_flt_nil(v->val.fval);
 	case TYPE_dbl:
