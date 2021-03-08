@@ -237,6 +237,7 @@ rel_insert_idxs(mvc *sql, sql_table *t, const char* alias, sql_rel *inserts)
 		r->op = op_insert;
 		r->l = rel_dup(p);
 		r->r = inserts;
+		r->card = inserts->card;
 		r->flag |= UPD_COMP; /* mark as special update */
 		return r;
 	}
@@ -254,6 +255,7 @@ rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 	r->op = op_insert;
 	r->l = t;
 	r->r = inserts;
+	r->card = inserts->card;
 	/* insert indices */
 	if (tab)
 		return rel_insert_idxs(sql, tab, rel_name(t), r);
@@ -837,6 +839,7 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		r->op = op_update;
 		r->l = rel_dup(p);
 		r->r = relup;
+		r->card = relup->card;
 		r->flag |= UPD_COMP; /* mark as special update */
 		return r;
 	}
@@ -868,6 +871,7 @@ rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
 	r->op = op_update;
 	r->l = t;
 	r->r = uprel;
+	r->card = uprel->card;
 	r->exps = exps;
 	/* update indices */
 	if (tab)
@@ -1110,6 +1114,7 @@ rel_delete(sql_allocator *sa, sql_rel *t, sql_rel *deletes)
 	r->op = op_delete;
 	r->l = t;
 	r->r = deletes;
+	r->card = deletes ? deletes->card : CARD_ATOM;
 	return r;
 }
 
@@ -1125,6 +1130,7 @@ rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_acti
 	r->op = op_truncate;
 	r->l = t;
 	r->r = NULL;
+	r->card = CARD_ATOM;
 	return r;
 }
 
