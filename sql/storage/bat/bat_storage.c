@@ -1578,7 +1578,8 @@ double_elim_col(sql_trans *tr, sql_column *col)
 		if (b && b->tvarsized) /* check double elimination */
 			de = GDK_ELIMDOUBLES(b->tvheap);
 		if (de)
-			de = b->twidth;
+			de = (int) ceil(b->tvheap->free / (double) GDK_VAROFFSET);
+		assert(de >= 0 && de <= 16);
 	}
 	return de;
 }
