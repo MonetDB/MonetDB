@@ -211,7 +211,7 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k=0, actions =0, last=-1;
 	InstrPtr *old, *appends;
-	int limit;
+	int limit, slimit;
 	(void) cntxt;
 	(void) stk;
 	(void) p;
@@ -220,6 +220,7 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if( appends == NULL)
 		return 0;
 	limit= mb->stop;
+	slimit= mb->ssize;
 	old = mb->stmt;
 	if ( newMalBlkStmt(mb, mb->ssize) < 0) {
 		GDKfree(appends);
@@ -260,6 +261,9 @@ OPTpostponeAppends(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for( ; i<limit; i++){
 		pushInstruction(mb,old[i]);
 	}
+	for(; i<slimit; i++)
+		if (old[i])
+			freeInstruction(old[i]);
 	GDKfree(appends);
 	GDKfree(old);
 	return actions;
