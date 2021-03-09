@@ -2,177 +2,113 @@ statement ok
 DELETE FROM sys.statistics
 
 statement ok
--- fill sys.statistics
-ANALYZE sys.statistics
-
-query TIIIIITT rowsort
-SELECT   "type", width,   "sample", "count", "unique", nils,     sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
-----
-bigint
-8
-4
-4
-4
-0
-True
-False
-bigint
-8
-5
-5
-5
-0
-True
-False
-bigint
-8
-6
-6
-6
-0
-True
-False
-bigint
-8
-7
-7
-1
-0
-True
-True
-boolean
-1
-10
-10
-2
-0
-False
-False
-boolean
-1
-11
-11
-2
-0
-False
-False
-clob
-1
-1
-1
-1
-0
-True
-True
-clob
-1
-8
-8
-5
-1
-False
-False
-clob
-1
-9
-9
-7
-1
-False
-False
-int
-4
-0
-0
-0
-0
-True
-True
-int
-4
-2
-2
-2
-0
-False
-True
+CREATE TABLE "sys"."myt" (
+	"column_id" INTEGER,
+	"type"      CHARACTER LARGE OBJECT,
+	"width"     INTEGER,
+	"stamp"     TIMESTAMP,
+	"sample"    BIGINT,
+	"count"     BIGINT,
+	"unique"    BIGINT,
+	"nils"      BIGINT,
+	"minval"    CHARACTER LARGE OBJECT,
+	"maxval"    CHARACTER LARGE OBJECT,
+	"sorted"    BOOLEAN,
+	"revsorted" BOOLEAN
+)
 
 statement ok
--- update the values of: sample, count, unique, nils, minval, maxval, sorted, revsorted of sys.statistics
-ANALYZE sys.statistics
+COPY 12 RECORDS INTO "sys"."myt" FROM stdin USING DELIMITERS E'\t',E'\n','"'
+<COPY_INTO_DATA>
+8125	"int"	4	"2021-03-09 08:10:25.983772"	0	0	0	0	NULL	NULL	true	true
+8126	"clob"	1	"2021-03-09 08:10:25.984054"	1	1	1	0	"int"	"int"	true	true
+8127	"int"	4	"2021-03-09 08:10:25.984139"	2	2	2	0	"1"	"4"	false	true
+8128	"timestamp"	8	"2021-03-09 08:10:25.984313"	3	3	3	0	"2021-03-09 08:10:25.983772"	"2021-03-09 08:10:25.984139"	true	false
+8129	"bigint"	8	"2021-03-09 08:10:25.984393"	4	4	4	0	"0"	"3"	true	false
+8130	"bigint"	8	"2021-03-09 08:10:25.984471"	5	5	5	0	"0"	"4"	true	false
+8131	"bigint"	8	"2021-03-09 08:10:25.984533"	6	6	6	0	"0"	"5"	true	false
+8132	"bigint"	8	"2021-03-09 08:10:25.984649"	7	7	1	0	"0"	"0"	true	true
+8133	"clob"	1	"2021-03-09 08:10:25.985152"	8	8	5	1	"0"	"int"	false	false
+8134	"clob"	1	"2021-03-09 08:10:25.985356"	9	9	7	1	"0"	"int"	false	false
+8135	"boolean"	1	"2021-03-09 08:10:25.985455"	10	10	2	0	"false"	"true"	false	false
+8136	"boolean"	1	"2021-03-09 08:10:25.985546"	11	11	2	0	"false"	"true"	false	false
+
+statement ok
+-- fill "sys"."myt"
+ANALYZE "sys"."myt"
 
 query TIIIIITT rowsort
-SELECT   "type", width,   "sample", "count", "unique", nils,     sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
+SELECT "type", width, "sample", "count", "unique", nils, sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
 ----
 bigint
 8
-16
-16
-16
-0
-True
-False
-bigint
-8
-17
-17
-17
-0
-True
-False
-bigint
-8
-18
-18
+12
+12
 12
 0
+True
+False
+bigint
+8
+12
+12
+12
+0
+True
+False
+bigint
+8
+12
+12
+2
+0
 False
 False
 bigint
 8
-19
-19
+12
+12
+8
+0
+False
+False
+boolean
+1
+12
+12
 2
 0
 False
 False
 boolean
 1
-22
-22
-2
-0
-False
-False
-boolean
-1
-23
-23
+12
+12
 2
 0
 False
 False
 clob
-1
-13
-13
+2
+12
+12
 5
 0
 False
 False
 clob
-1
-20
-20
-8
+2
+12
+12
+6
 1
 False
 False
 clob
 2
-21
-21
-16
+12
+12
+8
 1
 False
 False
@@ -186,88 +122,89 @@ True
 False
 int
 4
-14
-14
+12
+12
 3
 0
 False
 False
 
 statement ok
-CREATE ORDERED INDEX stat_oidx ON sys.statistics (width)
+-- update the values of: sample, count, unique, nils, minval, maxval, sorted, revsorted of "sys"."myt"
+ANALYZE "sys"."myt"
 
 query TIIIIITT rowsort
-SELECT   "type", width,   "sample", "count", "unique", nils,     sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
+SELECT "type", width, "sample", "count", "unique", nils, sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
 ----
 bigint
 8
-16
-16
-16
-0
-True
-False
-bigint
-8
-17
-17
-17
-0
-True
-False
-bigint
-8
-18
-18
+12
+12
 12
 0
+True
+False
+bigint
+8
+12
+12
+12
+0
+True
+False
+bigint
+8
+12
+12
+2
+0
 False
 False
 bigint
 8
-19
-19
+12
+12
+8
+0
+False
+False
+boolean
+1
+12
+12
 2
 0
 False
 False
 boolean
 1
-22
-22
-2
-0
-False
-False
-boolean
-1
-23
-23
+12
+12
 2
 0
 False
 False
 clob
-1
-13
-13
+2
+12
+12
 5
 0
 False
 False
 clob
-1
-20
-20
-8
+2
+12
+12
+6
 1
 False
 False
 clob
 2
-21
-21
-16
+12
+12
+8
 1
 False
 False
@@ -281,8 +218,103 @@ True
 False
 int
 4
-14
-14
+12
+12
+3
+0
+False
+False
+
+statement ok
+CREATE ORDERED INDEX stat_oidx ON "sys"."myt" (width)
+
+query TIIIIITT rowsort
+SELECT "type", width, "sample", "count", "unique", nils, sorted, revsorted FROM sys.statistics WHERE "type" <> 'timestamp' ORDER BY column_id
+----
+bigint
+8
+12
+12
+12
+0
+True
+False
+bigint
+8
+12
+12
+12
+0
+True
+False
+bigint
+8
+12
+12
+2
+0
+False
+False
+bigint
+8
+12
+12
+8
+0
+False
+False
+boolean
+1
+12
+12
+2
+0
+False
+False
+boolean
+1
+12
+12
+2
+0
+False
+False
+clob
+2
+12
+12
+5
+0
+False
+False
+clob
+2
+12
+12
+6
+1
+False
+False
+clob
+2
+12
+12
+8
+1
+False
+False
+int
+4
+12
+12
+12
+0
+True
+False
+int
+4
+12
+12
 3
 0
 False
@@ -291,4 +323,6 @@ False
 statement ok
 DELETE FROM sys.statistics
 
+statement ok
+DROP TABLE "sys"."myt";
 
