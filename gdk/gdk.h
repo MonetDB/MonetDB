@@ -2115,21 +2115,17 @@ gdk_export BAT *BATsample_with_seed(BAT *b, BUN n, unsigned seed);
 
 #define CHECK_QRY_TIMEOUT_STEP 10000
 
-#define NULL_TIMEOUT_HANDLER()					\
-	do {								\
-		GDKerror("Timeout was reached!");			\
-		return NULL;					\
-	} while(0)
+#define TIMEOUT_MSG "Timeout was reached!"
 
-#define GDK_FAIL_TIMEOUT_HANDLER()					\
+#define TIMEOUT_HANDLER(rtpe)						\
 	do {								\
-		GDKerror("Timeout was reached!");			\
-		return GDK_FAIL;					\
+		GDKerror(TIMEOUT_MSG);					\
+		return rtpe;						\
 	} while(0)
 
 #define GOTO_LABEL_TIMEOUT_HANDLER(label)				\
 	do {								\
-		GDKerror("Timeout was reached!");			\
+		GDKerror(TIMEOUT_MSG);					\
 		goto label;						\
 	} while(0)
 

@@ -27,9 +27,12 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 
 	cnt1 = canditer_init(&ci1, l, sl);
 	cnt2 = canditer_init(&ci2, r, sr);
-	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
 	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	if (max_one && cnt1 > 0 && cnt2 > 1) {
 		GDKerror("more than one match");
@@ -56,7 +59,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 		for (i = 0; i < cnt1; i++) {
 			oid x = canditer_next(&ci1);
 			for (j = 0; j < cnt2; j++) {
-				GDK_CHECK_TIMEOUT(timeoffset, counter, GDK_FAIL_TIMEOUT_HANDLER());
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(GDK_FAIL));
 				*p++ = x;
 			}
 		}
@@ -73,7 +76,7 @@ BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool max_one
 			counter = 0;
 			for (i = 0; i < cnt1; i++) {
 				for (j = 0; j < cnt2; j++) {
-					GDK_CHECK_TIMEOUT(timeoffset, counter, GDK_FAIL_TIMEOUT_HANDLER());
+					GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(GDK_FAIL));
 					*p++ = canditer_next(&ci2);
 				}
 				canditer_reset(&ci2);
