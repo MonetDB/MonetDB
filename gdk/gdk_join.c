@@ -315,8 +315,11 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(lci->ncand == 1 || (l->tsorted && l->trevsorted));
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	MT_thread_setalgorithm(__func__);
 	oid o = canditer_next(lci);
@@ -375,7 +378,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GDK_FAIL_TIMEOUT_HANDLER());
+					TIMEOUT_HANDLER(GDK_FAIL));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -394,7 +397,7 @@ selectjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 		do {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GDK_FAIL_TIMEOUT_HANDLER());
+					TIMEOUT_HANDLER(GDK_FAIL));
 			for (p = 0; p < q; p++) {
 				*o1p++ = o;
 			}
@@ -463,8 +466,11 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(BATcount(r) > 0);
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	MT_thread_setalgorithm(__func__);
 	/* figure out range [lo..hi) of values in r that we need to match */
@@ -716,7 +722,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	if (l->ttype == TYPE_void && l->tvheap != NULL) {
 		for (i = 0; i < lci->ncand; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GDK_FAIL_TIMEOUT_HANDLER());
+					TIMEOUT_HANDLER(GDK_FAIL));
 			oid c = canditer_next(lci);
 
 			o = BUNtoid(l, c - l->hseqbase);
@@ -732,7 +738,7 @@ mergejoin_void(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	} else {
 		for (i = 0; i < lci->ncand; i++) {
 			GDK_CHECK_TIMEOUT(timeoffset, counter,
-					GDK_FAIL_TIMEOUT_HANDLER());
+					TIMEOUT_HANDLER(GDK_FAIL));
 			oid c = canditer_next(lci);
 
 			o = lvals[c - l->hseqbase];
@@ -811,8 +817,11 @@ mergejoin_int(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rvals = (const int *) Tloc(r, 0);
 	assert(!r->tvarsized || !r->ttype);
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1116,8 +1125,11 @@ mergejoin_lng(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	rvals = (const lng *) Tloc(r, 0);
 	assert(!r->tvarsized || !r->ttype);
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1428,8 +1440,11 @@ mergejoin_cand(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(r->ttype == TYPE_void && r->tvheap != NULL);
 	canditer_init(&rci, NULL, r);
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	/* basic properties will be adjusted if necessary later on,
 	 * they were initially set by joininitresults() */
@@ -1749,8 +1764,11 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(r->tsorted || r->trevsorted);
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	MT_thread_setalgorithm(__func__);
 	if (BATtvoid(l)) {
@@ -2567,8 +2585,11 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	int t = ATOMbasetype(r->ttype);
 	if (r->ttype == TYPE_void || l->ttype == TYPE_void)
@@ -3221,8 +3242,11 @@ thetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, int opcode, BU
 	oid lval = oid_nil, rval = oid_nil;
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(sl == NULL || sl->tsorted);
@@ -3992,8 +4016,12 @@ BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
+
 
 	MT_thread_setalgorithm(__func__);
 	*r1p = NULL;
