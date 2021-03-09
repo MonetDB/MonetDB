@@ -2436,8 +2436,9 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 
 	if (isTempTable(t))
 		return LOG_OK;
+	size_t end = segs_end(segs, tr);
 	for (segment *cur = segs->h; cur && ok; cur = cur->next) {
-		if (cur->ts == tr->tid && !cur->deleted) {
+		if (cur->ts == tr->tid && !cur->deleted && cur->start < end) {
 			for (node *n = ol_first_node(t->columns); n && ok; n = n->next) {
 				sql_column *c = n->data;
 				column_storage *cs = ATOMIC_PTR_GET(&c->data);
