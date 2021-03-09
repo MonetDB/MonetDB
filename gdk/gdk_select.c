@@ -89,8 +89,11 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 	int (*cmp)(const void *, const void *);
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	assert(bn->ttype == TYPE_oid);
 	seq = b->hseqbase;
@@ -249,6 +252,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		for (i = 0, dcnt = 0, icnt = 0, p = 0;			\
 		     dcnt < imprints->dictcnt && i <= w - hseq + pr_off && p < ci->ncand; \
 		     dcnt++) {						\
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 			limit = ((BUN) d[dcnt].cnt) << rpp;		\
 			while (i + limit <= o - hseq + pr_off) {	\
 				i += limit;				\
@@ -367,6 +371,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 		*algo = "select: " #NAME " " #TEST " (" #canditer_next ")"; \
 		if (BATcapacity(bn) < maximum) {			\
 			for (p = 0; p < ci->ncand; p++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				o = canditer_next(ci);			\
 				v = src[o-hseq];			\
 				if (TEST) {				\
@@ -379,6 +384,7 @@ hashselect(BAT *b, struct canditer *restrict ci, BAT *bn,
 			}						\
 		} else {						\
 			for (p = 0; p < ci->ncand; p++) {		\
+				GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE)); \
 				o = canditer_next(ci);			\
 				v = src[o-hseq];			\
 				assert(cnt < BATcapacity(bn));		\
@@ -478,6 +484,12 @@ NAME##_##TYPE(BAT *b, struct canditer *restrict ci, BAT *bn,		\
 	assert(hi == !anti);						\
 	assert(lval);							\
 	assert(hval);							\
+	size_t counter = 0;						\
+	lng timeoffset = 0;						\
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();			\
+	if (qry_ctx != NULL) {						\
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0; \
+	}								\
 	if (use_imprints && (parent = VIEWtparent(b))) {		\
 		BAT *pbat = BBPdescriptor(parent);			\
 		assert(pbat);						\
@@ -529,10 +541,17 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	(void) maximum;
 	(void) use_imprints;
 	(void) lnil;
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	if (equi) {
 		*algo = "select: fullscan equi";
 		for (p = 0; p < ci->ncand; p++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			o = canditer_next(ci);
 			v = BUNtail(bi,(BUN)(o-hseq));
 			if ((*cmp)(tl, v) == 0) {
@@ -546,6 +565,7 @@ fullscan_any(BAT *b, struct canditer *restrict ci, BAT *bn,
 	} else if (anti) {
 		*algo = "select: fullscan anti";
 		for (p = 0; p < ci->ncand; p++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			o = canditer_next(ci);
 			v = BUNtail(bi,(BUN)(o-hseq));
 			if ((nil == NULL || (*cmp)(v, nil) != 0) &&
@@ -595,6 +615,12 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	var_t pos;
 	BUN p;
 	oid o;
+	size_t counter = 0;
+	lng timeoffset = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	if (!equi || !GDK_ELIMDOUBLES(b->tvheap))
 		return fullscan_any(b, ci, bn, tl, th, li, hi, equi, anti,
@@ -611,6 +637,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 		const unsigned char *ptr = (const unsigned char *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		for (p = 0; p < ci->ncand; p++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			o = canditer_next(ci);
 			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
@@ -626,6 +653,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 		const unsigned short *ptr = (const unsigned short *) Tloc(b, 0);
 		pos -= GDK_VAROFFSET;
 		for (p = 0; p < ci->ncand; p++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			o = canditer_next(ci);
 			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
@@ -641,6 +669,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	case 4: {
 		const unsigned int *ptr = (const unsigned int *) Tloc(b, 0);
 		for (p = 0; p < ci->ncand; p++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			o = canditer_next(ci);
 			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
@@ -656,6 +685,7 @@ fullscan_str(BAT *b, struct canditer *restrict ci, BAT *bn,
 	default: {
 		const var_t *ptr = (const var_t *) Tloc(b, 0);
 		for (p = 0; p < ci->ncand; p++) {
+			GDK_CHECK_TIMEOUT(timeoffset, counter, TIMEOUT_HANDLER(BUN_NONE));
 			o = canditer_next(ci);
 			if (ptr[o - hseq] == pos) {
 				buninsfix(bn, dst, cnt, o,
@@ -1795,8 +1825,11 @@ rangejoin(BAT *r1, BAT *r2, BAT *l, BAT *rl, BAT *rh,
 	const char *algo = NULL;
 
 	size_t counter = 0;
+	lng timeoffset = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-	lng timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	if (qry_ctx != NULL) {
+		timeoffset = (qry_ctx->starttime && qry_ctx->querytimeout) ? (qry_ctx->starttime + qry_ctx->querytimeout) : 0;
+	}
 
 	assert(ATOMtype(l->ttype) == ATOMtype(rl->ttype));
 	assert(ATOMtype(l->ttype) == ATOMtype(rh->ttype));
