@@ -2447,7 +2447,7 @@ decref(bat i, bool logical, bool releaseShare, bool lock, const char *func)
 	 * if they have been made cold or are not dirty */
 	if (BBP_refs(i) > 0 ||
 	    (BBP_lrefs(i) > 0 &&
-	     (b == NULL || BATdirtydata(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory()))) {
+	     (b == NULL || BATdirty(b) || !(BBP_status(i) & BBPPERSISTENT) || GDKinmemory()))) {
 		/* bat cannot be swapped out */
 	} else if (b ? b->batSharecnt == 0 : (BBP_status(i) & BBPTMP)) {
 		/* bat will be unloaded now. set the UNLOADING bit
