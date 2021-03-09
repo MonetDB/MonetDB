@@ -1645,7 +1645,7 @@ rewrite_exp_rel(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 }
 
 /* add an dummy true projection column */
-static sql_rel *
+static inline sql_rel *
 rewrite_empty_project(visitor *v, sql_rel *rel)
 {
 	if (is_simple_project(rel->op) && list_empty(rel->exps)) {
@@ -2000,7 +2000,7 @@ aggrs_complex(list *exps)
 
 /* simplify aggregates, ie push functions under the groupby relation */
 /* rel visitor */
-static sql_rel *
+static inline sql_rel *
 rewrite_aggregates(visitor *v, sql_rel *rel)
 {
 	if (is_groupby(rel->op) && (exps_complex(rel->r) || aggrs_complex(rel->exps))) {
@@ -2070,7 +2070,7 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rewrite_split_select_exps(visitor *v, sql_rel *rel)
 {
 	if (is_select(rel->op) && !list_empty(rel->exps)) {
@@ -3194,7 +3194,7 @@ rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rewrite_remove_xp(visitor *v, sql_rel *rel)
 {
 	if (rel->op == op_join && list_empty(rel->exps)) {
@@ -3262,7 +3262,7 @@ rewrite_fix_count(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rewrite_groupings(visitor *v, sql_rel *rel)
 {
 	prop *found;
@@ -3338,8 +3338,12 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					}
 					append(pexps, ne);
 				}
+				if (list_empty(exps))
+					append(exps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
 				nrel->exps = exps;
 				set_processed(nrel);
+				if (list_empty(pexps))
+					append(pexps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
 				nrel = rel_project(v->sql->sa, nrel, pexps);
 				set_processed(nrel);
 
@@ -3386,9 +3390,13 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 					}
 					append(pexps, ne);
 				}
+				if (list_empty(exps))
+					append(exps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
 				nrel->exps = exps;
 				set_processed(nrel);
 				v->changes++;
+				if (list_empty(pexps))
+					append(pexps, exp_atom_bool(v->sql->sa, 1)); /* protection against empty projections */
 				nrel = rel_project(v->sql->sa, nrel, pexps);
 				set_processed(nrel);
 				return nrel;
@@ -3566,6 +3574,28 @@ rewrite_values(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_unnest_simplify(visitor *v, sql_rel *rel)
+{
+	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed at rewrite_simplify */
+	rel = rewrite_empty_project(v, rel); /* remove empty project/groupby */
+	rel = rewrite_simplify(v, rel);
+	rel = rewrite_or_exp(v, rel);
+	rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
+	rel = rewrite_aggregates(v, rel);
+	return rel;
+}
+
+static sql_rel *
+rel_unnest_projects(visitor *v, sql_rel *rel)
+{
+	/* both rewrite_values and rewrite_fix_count use 'used' property from sql_rel, reset it, so make sure rewrite_reset_used is called first */
+	rel = rewrite_reset_used(v, rel);
+	rel = rewrite_remove_xp(v, rel);	/* remove crossproducts with project [ atom ] */
+	rel = rewrite_groupings(v, rel);	/* transform group combinations into union of group relations */
+	return rel;
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
@@ -3573,17 +3603,11 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	visitor v = { .sql = sql, .data = &level }; /* make it compatible with rel_optimizer, so set the level to 0 */
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
-	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed at rewrite_simplify */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_or_exp);
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_split_select_exps); /* has to run before rewrite_complex */
-
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_aggregates);
+	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_simplify);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_values);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_outer2inner_union);
 
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project); /* remove empty project/groupby */
 	rel = rel_visitor_bottomup(&v, rel, &not_anyequal_helper);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 
@@ -3595,11 +3619,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);		/* as expressions got merged before, lets try to simplify again */
 	rel = rel_visitor_bottomup(&v, rel, &_rel_unnest);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
-	/* both rewrite_values and rewrite_fix_count use 'used' property from sql_rel, reset it */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_reset_used);
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_remove_xp);	/* remove crossproducts with project [ atom ] */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_groupings);	/* transform group combinations into union of group relations */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_empty_project);
+	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_projects);
 	rel = rel_exp_visitor_bottomup(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false);
 	return rel;
 }
