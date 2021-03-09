@@ -2063,6 +2063,9 @@ rewrite_or_exp(visitor *v, sql_rel *rel)
 				}
 			}
 		}
+		if (is_join(rel->op) && list_empty(rel->exps))
+			rel->exps = NULL; /* crossproduct */
+		return try_remove_empty_select(v, rel);
 	}
 	return rel;
 }
@@ -2864,19 +2867,20 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 				needed = 1;
 		}
 		if (needed) {
-			list *exps = sa_list(v->sql->sa), *jexps = sa_list(v->sql->sa);
+			list *exps = sa_list(v->sql->sa);
 			sql_rel *l = j->l = rel_select(v->sql->sa, j->l, NULL);
 
-			for(node *n = rel->exps->h; n; n = n->next) {
+			for (node *n = rel->exps->h; n;) {
+				node *next = n->next;
 				sql_exp *e = n->data;
 				sql_subfunc *sf = e->f;
 
-				if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l))
+				if (is_func(e->type) && exp_card(e) > CARD_ATOM && is_anyequal_func(sf) && rel_has_all_exps(j->l, e->l)) {
 					append(exps, e);
-				else
-					append(jexps, e);
+					list_remove_node(rel->exps, NULL, n);
+				}
+				n = next;
 			}
-			rel->exps = jexps;
 			l->exps = exps;
 			j->l = rewrite_join2semi(v, j->l);
 		}
@@ -2890,11 +2894,11 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 				needed = 1;
 		}
 		if (!needed)
-			return rel;
-		list *exps = sa_list(v->sql->sa);
+			return try_remove_empty_select(v, rel);
 		if (!j->exps)
 			j->exps = sa_list(v->sql->sa);
-		for(node *n = rel->exps->h; n; n = n->next) {
+		for (node *n = rel->exps->h; n; ) {
+			node *next = n->next;
 			sql_exp *e = n->data;
 			sql_subfunc *sf = e->f;
 
@@ -2925,12 +2929,12 @@ rewrite_join2semi(visitor *v, sql_rel *rel)
 						append(j->exps, e);
 					}
 				}
-			} else {
-				append(exps, e);
+				list_remove_node(rel->exps, NULL, n);
 			}
+			n = next;
 		}
-		rel->exps = exps;
 		v->changes++;
+		rel = try_remove_empty_select(v, rel);
 	}
 	return rel;
 }
@@ -3569,10 +3573,9 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	visitor v = { .sql = sql, .data = &level }; /* make it compatible with rel_optimizer, so set the level to 0 */
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
+	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed at rewrite_simplify */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_or_exp);
-	/* at rel_select.c explicit cross-products generate empty selects, if these are not used, they can be removed now */
-	rel = rel_visitor_bottomup(&v, rel, &rel_remove_empty_select);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_split_select_exps); /* has to run before rewrite_complex */
 
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_aggregates);
@@ -3586,13 +3589,10 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
-	v.changes = 0;
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_compare_exp);	/* only allow for e_cmp in selects and  handling */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_remove_xp_project);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);		/* as expressions got merged before, lets try to simplify again */
-	if (v.changes > 0)
-		rel = rel_visitor_bottomup(&v, rel, &rel_remove_empty_select);
 	rel = rel_visitor_bottomup(&v, rel, &_rel_unnest);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	/* both rewrite_values and rewrite_fix_count use 'used' property from sql_rel, reset it */

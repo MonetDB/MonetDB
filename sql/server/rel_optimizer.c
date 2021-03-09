@@ -4465,7 +4465,7 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
  * it cleans up the projections which become useless.
  *
  * WARNING - Make sure to call try_remove_empty_select macro before returning so we ensure
- * possible generated empty selects will get removed without the need to call rel_remove_empty_select optimizer
+ * possible generated empty selects won't never be generated
  */
 static sql_rel *
 rel_push_select_down(visitor *v, sql_rel *rel)

@@ -202,19 +202,9 @@ rewrite_simplify(visitor *v, sql_rel *rel)
 			}
 		}
 	}
-	return rel;
-}
-
-sql_rel *
-rel_remove_empty_select(visitor *v, sql_rel *rel)
-{
-	if ((is_join(rel->op) || is_semi(rel->op) || is_select(rel->op) || is_project(rel->op) || is_topn(rel->op) || is_sample(rel->op)) && rel->l)
-		rel->l = try_remove_empty_select(v, rel->l);
-	if ((is_join(rel->op) || is_semi(rel->op) || is_set(rel->op)) && rel->r)
-		rel->r = try_remove_empty_select(v, rel->r);
 	if (is_join(rel->op) && list_empty(rel->exps))
 		rel->exps = NULL; /* crossproduct */
-	return rel;
+	return try_remove_empty_select(v, rel);
 }
 
 /* push the expression down, ie translate colum references
