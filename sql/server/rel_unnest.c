@@ -2138,7 +2138,7 @@ diff_replace_arguments(mvc *sql, sql_exp *e, list *ordering, int *pos, int *i)
 }
 
 /* exp visitor */
-static sql_exp *
+static inline sql_exp *
 rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_rel *rell = NULL;
@@ -3608,21 +3608,28 @@ rel_unnest_comparison_rewriters(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_exp *
+rel_simplify_exp_and_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+{
+	e = rewrite_simplify_exp(v, rel, e, depth);
+	e = rewrite_rank(v, rel, e, depth);
+	return e;
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
 	int level = 0;
 	visitor v = { .sql = sql, .data = &level }; /* make it compatible with rel_optimizer, so set the level to 0 */
 
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
+	rel = rel_exp_visitor_bottomup(&v, rel, &rel_simplify_exp_and_rank, false);
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_simplify);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank, false);
-
 	rel = rel_visitor_bottomup(&v, rel, &not_anyequal_helper);
-	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 
+	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
+
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_comparison_rewriters);
 	rel = rel_visitor_bottomup(&v, rel, &_rel_unnest);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
