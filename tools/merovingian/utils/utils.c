@@ -59,6 +59,8 @@ readConfFile(confkeyval *list, FILE *cnf) {
 
 	while (fgets(buf, 1024, cnf) != NULL) {
 		/* eliminate fgets' newline */
+		if (buf[0] == '\n' || buf[0] == '#')
+			continue;
 		buf[strlen(buf) - 1] = '\0';
 		for (t = list; t->key != NULL; t++) {
 			len = strlen(t->key);
