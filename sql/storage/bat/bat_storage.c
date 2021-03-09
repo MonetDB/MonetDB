@@ -2974,9 +2974,11 @@ claim_tab(sql_trans *tr, sql_table *t, size_t cnt)
 	if ((s = bind_del_data(tr, t)) == NULL)
 		return BUN_NONE;
 
+	store_lock(tr->store);
 	lock_table(tr->store, t->base.id);
 	BUN slot = claim_segment(tr, t, s, cnt); /* find slot */
 	unlock_table(tr->store, t->base.id);
+	store_unlock(tr->store);
 	if (slot == BUN_NONE)
 		return BUN_NONE;
 	return (size_t)slot;
