@@ -643,7 +643,6 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 	node *n = NULL;
 	int i, *keys, cnt = list_length(dje);
 	void **data;
-	int debug = mvc_debug_on(sql, 16);
 
 	if (cnt == 0)
 		return res;
@@ -661,9 +660,9 @@ order_join_expressions(mvc *sql, list *dje, list *rels)
 			sql_rel *r = find_rel(rels, e->r);
 
 			if (l && is_select(l->op) && l->exps)
-				keys[i] += list_length(l->exps)*10 + exps_count(l->exps)*debug;
+				keys[i] += list_length(l->exps)*10 + exps_count(l->exps);
 			if (r && is_select(r->op) && r->exps)
-				keys[i] += list_length(r->exps)*10 + exps_count(r->exps)*debug;
+				keys[i] += list_length(r->exps)*10 + exps_count(r->exps);
 		}
 		data[i] = n->data;
 	}
@@ -918,6 +917,8 @@ order_joins(visitor *v, list *rels, list *exps)
 	while(list_length(exps) && fnd) {
 		fnd = 0;
 		/* find the first expression which could be added */
+		if (list_length(sdje) > 1)
+			sdje = order_join_expressions(v->sql, sdje, rels);
 		for(djn = sdje->h; djn && !fnd && rels->h; djn = (!fnd)?djn->next:NULL) {
 			node *ln, *rn, *en;
 
