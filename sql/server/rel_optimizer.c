@@ -1508,7 +1508,7 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *l, sql_rel *r, sql_
 	return e;
 }
 
-static sql_rel *
+static inline sql_rel *
 rel_push_func_down(visitor *v, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_joinop(rel->op)) && rel->l && rel->exps && !(rel_is_ref(rel))) {
@@ -9673,6 +9673,14 @@ rel_optimize_select_and_joins_topdown(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+rel_push_func_and_select_down(visitor *v, sql_rel *rel)
+{
+	rel = rel_push_func_down(v, rel);
+	rel = rel_push_select_down(v, rel);
+	return rel;
+}
+
+static sql_rel *
 optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based_opt, bool storage_based_opt)
 {
 	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .data = &level };
@@ -9768,12 +9776,8 @@ optimize_rel(mvc *sql, sql_rel *rel, int *g_changes, int level, bool value_based
 	if (level <= 0)
 		rel = rel_dce(sql, rel);
 
-	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] ||
-	    gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select]) {
-		rel = rel_visitor_bottomup(&v, rel, &rel_push_func_down);
-		if (gp.cnt[op_select])
-			rel = rel_visitor_topdown(&v, rel, &rel_push_select_down);
-	}
+	if (gp.cnt[op_join] || gp.cnt[op_left] || gp.cnt[op_right] || gp.cnt[op_full] || gp.cnt[op_semi] || gp.cnt[op_anti] || gp.cnt[op_select])
+		rel = rel_visitor_topdown(&v, rel, &rel_push_func_and_select_down);
 
 	if (gp.cnt[op_topn] || gp.cnt[op_sample])
 		rel = rel_visitor_topdown(&v, rel, &rel_push_topn_and_sample_down);
