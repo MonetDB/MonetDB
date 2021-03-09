@@ -3161,7 +3161,7 @@ rewrite_compare_exps(visitor *v, sql_rel *rel, list *exps)
 }
 
 /* add an dummy true projection column */
-static sql_rel *
+static inline sql_rel *
 rewrite_compare_exp(visitor *v, sql_rel *rel)
 {
 	if ((is_select(rel->op) || is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps))
@@ -3170,7 +3170,7 @@ rewrite_compare_exp(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-static sql_rel *
+static inline sql_rel *
 rewrite_remove_xp_project(visitor *v, sql_rel *rel)
 {
 	if (rel->op == op_join && list_empty(rel->exps)) {
@@ -3596,6 +3596,16 @@ rel_unnest_projects(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_unnest_comparison_rewriters(visitor *v, sql_rel *rel)
+{
+	rel = rewrite_join2semi(v, rel);	/* where possible convert anyequal functions into marks */
+	rel = rewrite_compare_exp(v, rel);	/* only allow for e_cmp in selects and  handling */
+	rel = rewrite_remove_xp_project(v, rel);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
+	rel = rewrite_simplify(v, rel);		/* as expressions got merged before, lets try to simplify again */
+	return rel;
+}
+
 sql_rel *
 rel_unnest(mvc *sql, sql_rel *rel)
 {
@@ -3613,10 +3623,7 @@ rel_unnest(mvc *sql, sql_rel *rel)
 
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_ifthenelse, false);	/* add isnull handling */
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_exp_rel, true);
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_join2semi);	/* where possible convert anyequal functions into marks */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_compare_exp);	/* only allow for e_cmp in selects and  handling */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_remove_xp_project);	/* remove crossproducts with project ( project [ atom ] ) [ etc ] */
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_simplify);		/* as expressions got merged before, lets try to simplify again */
+	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_comparison_rewriters);
 	rel = rel_visitor_bottomup(&v, rel, &_rel_unnest);
 	rel = rel_visitor_bottomup(&v, rel, &rewrite_fix_count);	/* fix count inside a left join (adds a project (if (cnt IS null) then (0) else (cnt)) */
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_projects);
