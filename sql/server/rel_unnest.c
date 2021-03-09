@@ -3414,7 +3414,7 @@ include_tid(sql_rel *r)
 	return r->nrcols;
 }
 
-static sql_rel *
+static inline sql_rel *
 rewrite_outer2inner_union(visitor *v, sql_rel *rel)
 {
 	if (is_outerjoin(rel->op) && !list_empty(rel->exps) && (((is_left(rel->op) || is_full(rel->op)) && rel_has_freevar(v->sql,rel->l)) ||
@@ -3519,7 +3519,7 @@ rewrite_complex(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 }
 
 /* rewrite project [ [multi values], [multi values2] , .. [] ] -> union ) */
-static sql_rel *
+static inline sql_rel *
 rewrite_values(visitor *v, sql_rel *rel)
 {
 	int single = is_single(rel);
@@ -3583,6 +3583,8 @@ rel_unnest_simplify(visitor *v, sql_rel *rel)
 	rel = rewrite_or_exp(v, rel);
 	rel = rewrite_split_select_exps(v, rel); /* has to run before rewrite_complex */
 	rel = rewrite_aggregates(v, rel);
+	rel = rewrite_outer2inner_union(v, rel);
+	rel = rewrite_values(v, rel);
 	return rel;
 }
 
@@ -3615,8 +3617,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_simplify_exp, false);
 	rel = rel_visitor_bottomup(&v, rel, &rel_unnest_simplify);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_rank, false);
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_values);
-	rel = rel_visitor_bottomup(&v, rel, &rewrite_outer2inner_union);
 
 	rel = rel_visitor_bottomup(&v, rel, &not_anyequal_helper);
 	rel = rel_exp_visitor_bottomup(&v, rel, &rewrite_complex, true);
