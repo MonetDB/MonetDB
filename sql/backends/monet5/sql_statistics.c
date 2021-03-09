@@ -256,6 +256,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						maxval = GDKmalloc(4);
 						if (maxval == NULL) {
 							GDKfree(minval);
+							BBPunfix(bn->batCacheid);
 							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 						maxlen = 4;
@@ -265,6 +266,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						minval = GDKmalloc(4);
 						if (minval == NULL){
 							GDKfree(maxval);
+							BBPunfix(bn->batCacheid);
 							throw(SQL, "analyze", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 						}
 						minlen = 4;
@@ -277,6 +279,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(val);
 								GDKfree(minval);
 								GDKfree(maxval);
+								BBPunfix(bn->batCacheid);
 								throw(SQL, "analyze", GDK_EXCEPTION);
 							}
 							GDKfree(val);
@@ -288,6 +291,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 								GDKfree(val);
 								GDKfree(minval);
 								GDKfree(maxval);
+								BBPunfix(bn->batCacheid);
 								throw(SQL, "analyze", GDK_EXCEPTION);
 							}
 							GDKfree(val);
