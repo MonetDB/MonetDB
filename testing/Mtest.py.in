@@ -4167,6 +4167,8 @@ def main(argv) :
             pass
         body = body_bad + body_good
 
+        if not os.path.exists(os.path.join(TSTTRGBASE, TSTPREF)):
+            os.mkdir(os.path.join(TSTTRGBASE, TSTPREF))
         fn = os.path.join(TSTTRGBASE, TSTPREF, "times.")
         fl = openutf8(fn+"lst","w")
         Failure = [[] for i in FAILURES]
