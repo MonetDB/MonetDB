@@ -1662,34 +1662,59 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 #define is_anyequal(sf) (strcmp((sf)->func->base.name, "sql_anyequal") == 0)
 #define is_not_anyequal(sf) (strcmp((sf)->func->base.name, "sql_not_anyequal") == 0)
 
-static sql_exp *
-exp_check_has_not_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
+static int exps_have_not_anyequal(list *exps);
+
+static int
+exp_has_not_anyequal(sql_exp *e)
 {
-	(void)rel; (void)depth;
-	if (e && e->type == e_func) {
+	if (!e)
+		return 0;
+	switch(e->type){
+	case e_func:
+	case e_aggr: {
 		list *args = e->l;
 		sql_subfunc *f = e->f;
 
-		if (f && f->func && is_not_anyequal(f) && exps_have_rel_exp(args)) {
-			v->changes++;
-		}
+		if (f && f->func && is_not_anyequal(f) && exps_have_rel_exp(args))
+			return 1;
+		return exps_have_not_anyequal(e->l);
 	}
-	return e;
+	case e_cmp:
+		if (e->flag == cmp_or || e->flag == cmp_filter)
+			return (exps_have_not_anyequal(e->l) || exps_have_not_anyequal(e->r));
+		if (e->flag == cmp_in || e->flag == cmp_notin)
+			return (exp_has_not_anyequal(e->l) || exps_have_not_anyequal(e->r));
+		return (exp_has_not_anyequal(e->l) || exp_has_not_anyequal(e->r) || (e->f && exp_has_not_anyequal(e->f)));
+	case e_convert:
+		return exp_has_not_anyequal(e->l);
+	case e_atom:
+		return (e->f && exp_has_not_anyequal(e->f));
+	case e_psm:
+	case e_column:
+		return 0;
+	}
+	return 0;
 }
 
 static int
-exps_have_not_anyequal(mvc *sql, list *exps)
+exps_have_not_anyequal(list *exps)
 {
-	visitor v = { .sql = sql };
-	(void)exps_exp_visitor_topdown(&v, NULL, exps, 0, &exp_check_has_not_anyequal, true);
-	return v.changes;
+	if (list_empty(exps))
+		return 0;
+	for(node *n=exps->h; n; n=n->next) {
+		sql_exp *e = n->data;
+
+		if (exp_has_not_anyequal(e))
+			return 1;
+	}
+	return 0;
 }
 
 /* introduce extra selects for (not) anyequal + subquery */
 static sql_rel *
 not_anyequal_helper(visitor *v, sql_rel *rel)
 {
-	if (is_innerjoin(rel->op) && !list_empty(rel->exps) && exps_have_not_anyequal(v->sql, rel->exps)) {
+	if (is_innerjoin(rel->op) && exps_have_not_anyequal(rel->exps)) {
 		sql_rel *nrel = rel_select(v->sql->sa, rel, NULL);
 		nrel->exps = rel->exps;
 		rel->exps = NULL;
