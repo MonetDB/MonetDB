@@ -38,15 +38,16 @@
 static inline uint8_t __attribute__((__const__))
 HASHwidth(BUN hashsize)
 {
+	(void) hashsize;
+#ifdef BUN2
 	if (hashsize <= (BUN) BUN2_NONE)
 		return BUN2;
-#ifdef BUN8
-	if (hashsize <= (BUN) BUN4_NONE)
-		return BUN4;
-	return BUN8;
-#else
-	return BUN4;
 #endif
+#ifdef BUN8
+	if (hashsize > (BUN) BUN4_NONE)
+		return BUN8;
+#endif
+	return BUN4;
 }
 
 static inline BUN __attribute__((__const__))
@@ -89,7 +90,7 @@ static inline void
 HASHclear(Hash *h)
 {
 	/* since BUN2_NONE, BUN4_NONE, BUN8_NONE
-	 * are all equal to -1 (~0), i.e., have all bits set,
+	 * are all equal to ~0, i.e., have all bits set,
 	 * we can use a simple memset() to clear the Hash,
 	 * rather than iteratively assigning individual
 	 * BUNi_NONE values in a for-loop
@@ -157,10 +158,12 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->mask2 = h->mask1 << 1 | 1;
 	}
 	switch (h->width) {
+#ifdef BUN2
 	case BUN2:
 		h->nil = (BUN) BUN2_NONE;
 		break;
-	case BUN4:
+#endif
+	default:		/* BUN4 */
 		h->nil = (BUN) BUN4_NONE;
 		break;
 #ifdef BUN8
@@ -168,8 +171,6 @@ HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 		h->nil = (BUN) BUN8_NONE;
 		break;
 #endif
-	default:
-		assert(0);
 	}
 	h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	h->type = tpe;
@@ -219,6 +220,7 @@ HASHcollisions(BAT *b, Hash *h, const char *func)
 static gdk_return
 HASHupgradehashheap(BAT *b)
 {
+#if defined(BUN2) || defined(BUN8)
 	Hash *h = b->thash;
 	int nwidth = h->width << 1;
 	BUN i;
@@ -236,6 +238,7 @@ HASHupgradehashheap(BAT *b)
 	h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
 	switch (nwidth) {
 	case BUN4:
+#ifdef BUN2
 		switch (h->width) {
 		case BUN2:
 			i = h->heaplink.free / h->width;
@@ -254,11 +257,13 @@ HASHupgradehashheap(BAT *b)
 			}
 			break;
 		}
+#endif
 		h->nil = BUN4_NONE;
 		break;
 #ifdef BUN8
 	case BUN8:
 		switch (h->width) {
+#ifdef BUN2
 		case BUN2:
 			i = h->heaplink.free / h->width;
 			h->heaplink.free = i * nwidth;
@@ -275,6 +280,7 @@ HASHupgradehashheap(BAT *b)
 				((BUN8type *) h->Bckt)[i] = v == BUN2_NONE ? BUN8_NONE : v;
 			}
 			break;
+#endif
 		case BUN4:
 			i = h->heaplink.free / h->width;
 			h->heaplink.free = i * nwidth;
@@ -297,6 +303,9 @@ HASHupgradehashheap(BAT *b)
 #endif
 	}
 	h->width = nwidth;
+#else
+	(void) b;
+#endif
 	return GDK_SUCCEED;
 }
 
@@ -462,6 +471,15 @@ BATcheckhash(BAT *b)
 #endif
 						    ) &&
 					    hdata[1] > 0 &&
+					    (
+#ifdef BUN2
+						    hdata[3] == BUN2 ||
+#endif
+						    hdata[3] == BUN4
+#ifdef BUN8
+						    || hdata[3] == BUN8
+#endif
+						    ) &&
 					    hdata[4] == (size_t) BATcount(b) &&
 					    fstat(fd, &st) == 0 &&
 					    st.st_size >= (off_t) (h->heapbckt.size = h->heapbckt.free = (h->nbucket = (BUN) hdata[2]) * (BUN) (h->width = (uint8_t) hdata[3]) + HASH_HEADER_SIZE * SIZEOF_SIZE_T) &&
@@ -483,10 +501,12 @@ BATcheckhash(BAT *b)
 							h->nheads = hdata[6];
 							h->type = ATOMtype(b->ttype);
 							switch (h->width) {
+#ifdef BUN2
 							case BUN2:
 								h->nil = (BUN) BUN2_NONE;
 								break;
-							case BUN4:
+#endif
+							default: /* BUN4 */
 								h->nil = (BUN) BUN4_NONE;
 								break;
 #ifdef BUN8
@@ -494,8 +514,6 @@ BATcheckhash(BAT *b)
 								h->nil = (BUN) BUN8_NONE;
 								break;
 #endif
-							default:
-								assert(0);
 							}
 							if (h->nil > h->nbucket) {
 								close(fd);

@@ -40,17 +40,21 @@ gdk_export gdk_return HASHgrowbucket(BAT *b);
 
 #define BUN2 2
 #define BUN4 4
-#if SIZEOF_BUN > 4
+#if SIZEOF_BUN == 8
 #define BUN8 8
 #endif
+#ifdef BUN2
 typedef uint16_t BUN2type;
+#endif
 typedef uint32_t BUN4type;
 #if SIZEOF_BUN > 4
 typedef uint64_t BUN8type;
 #endif
+#ifdef BUN2
 #define BUN2_NONE ((BUN2type) UINT16_C(0xFFFF))
+#endif
 #define BUN4_NONE ((BUN4type) UINT32_C(0xFFFFFFFF))
-#if SIZEOF_BUN > 4
+#ifdef BUN8
 #define BUN8_NONE ((BUN8type) UINT64_C(0xFFFFFFFFFFFFFFFF))
 #endif
 
@@ -60,13 +64,15 @@ static inline void
 HASHput(Hash *h, BUN i, BUN v)
 {
 	switch (h->width) {
-	default:		/* BUN2 */
+#ifdef BUN2
+	case BUN2:
 		((BUN2type *) h->Bckt)[i] = (BUN2type) v;
 		break;
-	case BUN4:
+#endif
+	default:		/* BUN4 */
 		((BUN4type *) h->Bckt)[i] = (BUN4type) v;
 		break;
-#if SIZEOF_BUN == 8
+#ifdef BUN8
 	case BUN8:
 		((BUN8type *) h->Bckt)[i] = (BUN8type) v;
 		break;
@@ -78,13 +84,15 @@ static inline void
 HASHputlink(Hash *h, BUN i, BUN v)
 {
 	switch (h->width) {
-	default:		/* BUN2 */
+#ifdef BUN2
+	case BUN2:
 		((BUN2type *) h->Link)[i] = (BUN2type) v;
 		break;
-	case BUN4:
+#endif
+	default:		/* BUN4 */
 		((BUN4type *) h->Link)[i] = (BUN4type) v;
 		break;
-#if SIZEOF_BUN == 8
+#ifdef BUN8
 	case BUN8:
 		((BUN8type *) h->Link)[i] = (BUN8type) v;
 		break;
@@ -96,26 +104,30 @@ static inline BUN __attribute__((__pure__))
 HASHget(Hash *h, BUN i)
 {
 	switch (h->width) {
-	default:		/* BUN2 */
+#ifdef BUN2
+	case BUN2:
 		return (BUN) ((BUN2type *) h->Bckt)[i];
-	case BUN4:
+#endif
+	default:		/* BUN4 */
 		return (BUN) ((BUN4type *) h->Bckt)[i];
-#if SIZEOF_BUN == 8
+#ifdef BUN8
 	case BUN8:
 		return (BUN) ((BUN8type *) h->Bckt)[i];
 #endif
 	}
 }
 
-static inline BUN __attribute__((__pure__))
+static inline BUN __attribute__((__pure__)) __attribute__((__access__(read_only, 1)))
 HASHgetlink(Hash *h, BUN i)
 {
 	switch (h->width) {
-	default:		/* BUN2 */
+#ifdef BUN2
+	case BUN2:
 		return (BUN) ((BUN2type *) h->Link)[i];
-	case BUN4:
+#endif
+	default:		/* BUN4 */
 		return (BUN) ((BUN4type *) h->Link)[i];
-#if SIZEOF_BUN == 8
+#ifdef BUN8
 	case BUN8:
 		return (BUN) ((BUN8type *) h->Link)[i];
 #endif
