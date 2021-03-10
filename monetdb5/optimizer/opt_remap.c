@@ -372,7 +372,6 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int id
 str
 OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-
 	InstrPtr *old, p;
 	int i, limit, slimit, doit= 0;
 	Module scope = cntxt->usermodule;
@@ -382,7 +381,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	for( i=0; i< mb->stop; i++){
 		p = getInstrPtr(mb, i);
-		if (isMultiplex(p)){
+		if (isMultiplex(p) || (p->argc == 4 && getModuleId(p) == aggrRef && getFunctionId(p) == avgRef)){
 			break;
 		}
 	}
