@@ -1186,7 +1186,7 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 			oid x2 = canditer_next(&ci2) - b2->hseqbase; \
 			TYPE p1 = tb1[x1], p2 = tb2[x2]; \
 			if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
-				nils++; \
+				nils = true; \
 				tbn[i] = TYPE##_nil; \
 			} else {	\
 				tbn[i] = p1 OP p2 ? p1 : p2; \
@@ -1199,7 +1199,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0, ncand;
+	bool nils = false;
+	BUN ncand;
 	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -1257,7 +1258,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			const void *p1 = BUNtail(b1i, x1);
 			const void *p2 = BUNtail(b2i, x2);
 			if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-				nils++;
+				nils = true;
 				p1 = nil;
 			} else {
 				p1 = cmp(p1, p2) < 0 ? p1 : p2;
@@ -1268,8 +1269,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
 	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
@@ -1306,7 +1307,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			if (is_##TYPE##_nil(p1)) { \
 				if (is_##TYPE##_nil(p2)) { \
 					tbn[i] = TYPE##_nil; \
-					nils++; \
+					nils = true; \
 				} else { \
 					tbn[i] = p2; \
 				} \
@@ -1321,7 +1322,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0, ncand;
+	bool nils = false;
+	BUN ncand;
 	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -1381,7 +1383,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			if (cmp(p1, nil) == 0) {
 				if (cmp(p2, nil) == 0) {
 					/* both values are nil */
-					nils++;
+					nils = true;
 				} else {
 					p1 = p2;
 				}
@@ -1394,8 +1396,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
 	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
@@ -1429,7 +1431,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			oid x = canditer_next(&ci) - b->hseqbase;	\
 			TYPE p1 = tb[x]; \
 			if (is_##TYPE##_nil(p1)) {	\
-				nils++;	\
+				nils = true;	\
 				tbn[i] = TYPE##_nil; \
 			} else {	\
 				tbn[i] = p1 OP pp2 ? p1 : pp2; \
@@ -1442,7 +1444,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0, ncand;
+	bool nils = false;
+	BUN ncand;
 	struct canditer ci;
 	const void *p2;
 	const void *restrict nil = ATOMnilptr(b->ttype);
@@ -1498,7 +1501,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 			oid x = canditer_next(&ci) - b->hseqbase;
 			const void *p1 = BUNtail(bi, x);
 			if (cmp(p1, nil) == 0) {
-				nils++;
+				nils = true;
 				p1 = nil;
 			} else {
 				p1 = cmp(p1, p2) < 0 ? p1 : p2;
@@ -1509,8 +1512,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
 	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
@@ -1541,20 +1544,40 @@ BATcalccstmin(const ValRecord *v, BAT *b, BAT *s)
 	return BATcalcmincst(b, v, s);
 }
 
+#define MINMAX_NONIL_CST_TYPE(TYPE, OP)	\
+	do {								\
+		TYPE *restrict tb = Tloc(b, 0), *restrict tbn = Tloc(bn, 0), pp2 = *(TYPE*) p2; \
+		if (is_##TYPE##_nil(pp2)) { \
+			for (BUN i = 0; i < ncand; i++) {	\
+				oid x = canditer_next(&ci) - b->hseqbase; \
+				TYPE p1 = tb[x]; \
+				nils |= is_##TYPE##_nil(p1); \
+				tbn[i] = p1; \
+			} \
+		} else {	\
+			for (BUN i = 0; i < ncand; i++) {	\
+				oid x = canditer_next(&ci) - b->hseqbase; \
+				TYPE p1 = tb[x]; \
+				if (is_##TYPE##_nil(p1)) { \
+					tbn[i] = pp2; \
+				} else { \
+					tbn[i] = p1 OP pp2 ? p1 : pp2; \
+				} \
+			} \
+		}	\
+	} while (0)
+
 BAT *
 BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
-	BUN i;
 	struct canditer ci;
-	oid x;
-	const void *restrict nil;
-	const void *p1, *p2;
-	BATiter bi;
-	int (*cmp)(const void *, const void *);
+	const void *p2;
+	const void *restrict nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1564,46 +1587,70 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype,
-				    nil, ncand, TRANSIENT);
+		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
 
-	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (b->ttype == TYPE_void &&
-	    is_oid_nil(b->tseqbase) &&
-	    is_oid_nil(* (const oid *) p2))
-		return BATconstant(ci.hseq, TYPE_void,
-				   &oid_nil, ncand, TRANSIENT);
+		is_oid_nil(b->tseqbase) &&
+		is_oid_nil(* (const oid *) p2))
+		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	bi = bat_iterator(b);
-	if (cmp(p2, nil) == 0)
-		p2 = NULL;
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b->hseqbase;
-		p1 = BUNtail(bi, x);
-		if (p2) {
-			if (cmp(p1, nil) == 0) {
-				p1 = p2;
-			} else if (cmp(p1, p2) > 0) {
-				p1 = p2;
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+		MINMAX_NONIL_CST_TYPE(bte, <);
+		break;
+	case TYPE_sht:
+		MINMAX_NONIL_CST_TYPE(sht, <);
+		break;
+	case TYPE_int:
+		MINMAX_NONIL_CST_TYPE(int, <);
+		break;
+	case TYPE_lng:
+		MINMAX_NONIL_CST_TYPE(lng, <);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_NONIL_CST_TYPE(hge, <);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_NONIL_CST_TYPE(flt, <);
+		break;
+	case TYPE_dbl:
+		MINMAX_NONIL_CST_TYPE(dbl, <);
+		break;
+	default: {
+		BATiter bi = bat_iterator(b);
+
+		if (cmp(p2, nil) == 0) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - b->hseqbase;
+				const void *p1 = BUNtail(bi, x);
+				nils |= cmp(p1, nil) == 0;
+				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
 		} else {
-			nils += cmp(p1, nil) == 0;
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - b->hseqbase;
+				const void *p1 = BUNtail(bi, x);
+				p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
+				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->theap->dirty = true;
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
@@ -1638,7 +1685,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0, ncand;
+	bool nils = false;
+	BUN ncand;
 	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -1696,7 +1744,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			const void *p1 = BUNtail(b1i, x1);
 			const void *p2 = BUNtail(b2i, x2);
 			if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-				nils++;
+				nils = true;
 				p1 = nil;
 			} else {
 				p1 = cmp(p1, p2) > 0 ? p1 : p2;
@@ -1707,8 +1755,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
 	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
@@ -1740,7 +1788,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0, ncand;
+	bool nils = false;
+	BUN ncand;
 	struct canditer ci1, ci2;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -1801,7 +1850,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			if (cmp(p1, nil) == 0) {
 				if (cmp(p2, nil) == 0) {
 					/* both values are nil */
-					nils++;
+					nils = true;
 				} else {
 					p1 = p2;
 				}
@@ -1814,8 +1863,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
 	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
@@ -1847,7 +1896,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0, ncand;
+	bool nils = false;
+	BUN ncand;
 	struct canditer ci;
 	const void *p2;
 	const void *restrict nil = ATOMnilptr(b->ttype);
@@ -1903,7 +1953,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 			oid x = canditer_next(&ci) - b->hseqbase;
 			const void *p1 = BUNtail(bi, x);
 			if (cmp(p1, nil) == 0) {
-				nils++;
+				nils = true;
 				p1 = nil;
 			} else {
 				p1 = cmp(p1, p2) > 0 ? p1 : p2;
@@ -1914,8 +1964,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	}
 	}
 
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
 	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
@@ -1951,15 +2001,12 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 {
 	lng t0 = 0;
 	BAT *bn;
-	BUN nils = 0;
+	bool nils = false;
 	BUN ncand;
-	BUN i;
 	struct canditer ci;
-	oid x;
-	const void *restrict nil;
-	const void *p1, *p2;
-	BATiter bi;
-	int (*cmp)(const void *, const void *);
+	const void *p2;
+	const void *restrict nil = ATOMnilptr(b->ttype);
+	int (*cmp)(const void *, const void *) = ATOMcompare(b->ttype);
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -1969,46 +2016,71 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		return NULL;
 	}
 
-	nil = ATOMnilptr(b->ttype);
 	ncand = canditer_init(&ci, b, s);
 	if (ncand == 0)
-		return BATconstantV(ci.hseq, b->ttype,
-				    nil, ncand, TRANSIENT);
+		return BATconstantV(ci.hseq, b->ttype, nil, ncand, TRANSIENT);
 
 	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (b->ttype == TYPE_void &&
-	    is_oid_nil(b->tseqbase) &&
-	    is_oid_nil(* (const oid *) p2))
-		return BATconstant(ci.hseq, TYPE_void,
-				   &oid_nil, ncand, TRANSIENT);
+		is_oid_nil(b->tseqbase) &&
+		is_oid_nil(* (const oid *) p2))
+		return BATconstant(ci.hseq, TYPE_void, &oid_nil, ncand, TRANSIENT);
 
 	bn = COLnew(ci.hseq, ATOMtype(b->ttype), ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
-	bi = bat_iterator(b);
-	if (cmp(p2, nil) == 0)
-		p2 = NULL;
 
-	for (i = 0; i < ci.ncand; i++) {
-		x = canditer_next(&ci) - b->hseqbase;
-		p1 = BUNtail(bi, x);
-		if (p2) {
-			if (cmp(p1, nil) == 0) {
-				p1 = p2;
-			} else if (cmp(p1, p2) < 0) {
-				p1 = p2;
+	switch (ATOMbasetype(b->ttype)) {
+	case TYPE_bte:
+		MINMAX_NONIL_CST_TYPE(bte, >);
+		break;
+	case TYPE_sht:
+		MINMAX_NONIL_CST_TYPE(sht, >);
+		break;
+	case TYPE_int:
+		MINMAX_NONIL_CST_TYPE(int, >);
+		break;
+	case TYPE_lng:
+		MINMAX_NONIL_CST_TYPE(lng, >);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		MINMAX_NONIL_CST_TYPE(hge, >);
+		break;
+#endif
+	case TYPE_flt:
+		MINMAX_NONIL_CST_TYPE(flt, >);
+		break;
+	case TYPE_dbl:
+		MINMAX_NONIL_CST_TYPE(dbl, >);
+		break;
+	default: {
+		BATiter bi = bat_iterator(b);
+
+		if (cmp(p2, nil) == 0) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - b->hseqbase;
+				const void *p1 = BUNtail(bi, x);
+				nils |= cmp(p1, nil) == 0;
+				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
 		} else {
-			nils += cmp(p1, nil) == 0;
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - b->hseqbase;
+				const void *p1 = BUNtail(bi, x);
+				p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
+				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
 		}
-		if (bunfastapp(bn, p1) != GDK_SUCCEED)
-			goto bunins_failed;
+	}
 	}
 
-	bn->theap->dirty = true;
-	bn->tnil = nils > 0;
-	bn->tnonil = nils == 0;
+	bn->tnil = nils;
+	bn->tnonil = !nils;
+	BATsetcount(bn, ncand);
 	if (ncand <= 1) {
 		bn->tsorted = true;
 		bn->trevsorted = true;
