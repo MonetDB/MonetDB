@@ -1263,7 +1263,7 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			} else {
 				p1 = cmp(p1, p2) < 0 ? p1 : p2;
 			}
-			if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -1390,7 +1390,7 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			} else {
 				p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 			}
-			if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -1506,7 +1506,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				p1 = cmp(p1, p2) < 0 ? p1 : p2;
 			}
-			if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -1633,7 +1633,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				oid x = canditer_next(&ci) - b->hseqbase;
 				const void *p1 = BUNtail(bi, x);
 				nils |= cmp(p1, nil) == 0;
-				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 		} else {
@@ -1641,7 +1641,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				oid x = canditer_next(&ci) - b->hseqbase;
 				const void *p1 = BUNtail(bi, x);
 				p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
-				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 		}
@@ -1749,7 +1749,7 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			} else {
 				p1 = cmp(p1, p2) > 0 ? p1 : p2;
 			}
-			if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -1857,7 +1857,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			} else {
 				p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 			}
-			if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -1958,7 +1958,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				p1 = cmp(p1, p2) > 0 ? p1 : p2;
 			}
-			if (bunfastapp(bn, p1) != GDK_SUCCEED)
+			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
 	}
@@ -2063,7 +2063,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				oid x = canditer_next(&ci) - b->hseqbase;
 				const void *p1 = BUNtail(bi, x);
 				nils |= cmp(p1, nil) == 0;
-				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 		} else {
@@ -2071,7 +2071,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 				oid x = canditer_next(&ci) - b->hseqbase;
 				const void *p1 = BUNtail(bi, x);
 				p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
-				if (bunfastapp(bn, p1) != GDK_SUCCEED)
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
 		}
