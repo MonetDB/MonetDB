@@ -14,6 +14,6 @@
 #include "opt_support.h"
 #include "opt_prelude.h"
 
-mal_export str OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
+extern str OPTwlcImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 
 #endif /* _OPT_WLC_H */

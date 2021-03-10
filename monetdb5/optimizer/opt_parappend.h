@@ -11,6 +11,7 @@
 #include "opt_prelude.h"
 #include "opt_support.h"
 #include "mal_exception.h"
-mal_export str OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
+
+extern str OPTparappendImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p);
 
 #endif
