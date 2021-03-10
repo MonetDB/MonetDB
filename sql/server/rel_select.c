@@ -5546,8 +5546,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 */
 		pexps = list_merge(pexps, te, (fdup)NULL);
 	}
-	if (rel && is_groupby(rel->op) && !sn->groupby) {
-		set_processed(rel);
+	if (rel && is_groupby(rel->op) && !sn->groupby && !is_processed(rel)) {
 		for (node *n=pexps->h; n; n = n->next) {
 			sql_exp *ce = n->data;
 			if (rel->card < ce->card) {
@@ -5558,6 +5557,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 				}
 			}
 		}
+		set_processed(rel);
 	}
 	rel = rel_project(sql->sa, rel, pexps);
 

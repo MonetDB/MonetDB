@@ -73,6 +73,55 @@ stdout of test 'view-mul-digits` in directory 'sql/test/miscellaneous` itself:
 % 6,	5,	6,	2,	1 # length
 [ "myview",	"mycol",	"bigint",	64,	0	]
 #ROLLBACK;
+#START TRANSACTION;
+#create schema myschema;
+#create table myschema.mygroyp(code varchar(10),amount int);
+#insert into myschema.mygroyp(code,amount)values('a',1),('a',2),('b',3),('b',4);
+[ 4	]
+#select code,  cast(sum(amount) as bigint) as eind from myschema.mygroyp group by code;
+% myschema.mygroyp,	myschema. # table_name
+% code,	eind # name
+% varchar,	bigint # type
+% 1,	1 # length
+[ "a",	3	]
+[ "b",	7	]
+#create view myschema.mygroypview as select code, cast(sum(amount) as bigint) as eind from myschema.mygroyp group by code;
+#select * from myschema.mygroypview;
+% myschema.mygroypview,	myschema.mygroypview # table_name
+% code,	eind # name
+% varchar,	bigint # type
+% 1,	1 # length
+[ "a",	3	]
+[ "b",	7	]
+#select code, eind from myschema.mygroypview;
+% myschema.mygroypview,	myschema.mygroypview # table_name
+% code,	eind # name
+% varchar,	bigint # type
+% 1,	1 # length
+[ "a",	3	]
+[ "b",	7	]
+#select code from myschema.mygroypview;
+% myschema.mygroypview # table_name
+% code # name
+% varchar # type
+% 1 # length
+[ "a"	]
+[ "b"	]
+#select eind from myschema.mygroypview;
+% myschema.mygroypview # table_name
+% eind # name
+% bigint # type
+% 1 # length
+[ 3	]
+[ 7	]
+#select code, cast(sum(eind) as bigint) from myschema.mygroypview group by code;
+% myschema.mygroypview,	myschema.%3 # table_name
+% code,	%3 # name
+% varchar,	bigint # type
+% 1,	1 # length
+[ "a",	3	]
+[ "b",	7	]
+#ROLLBACK;
 
 # 09:17:15 >  
 # 09:17:15 >  "Done."
