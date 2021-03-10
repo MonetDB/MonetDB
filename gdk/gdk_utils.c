@@ -1764,14 +1764,14 @@ GDKversion(void)
 	return (_gdk_version_string);
 }
 
-size_t
+inline size_t
 GDKmem_cursize(void)
 {
 	/* RAM/swapmem that Monet is really using now */
 	return (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 }
 
-size_t
+inline size_t
 GDKvm_cursize(void)
 {
 	/* current Monet VM address space usage */
