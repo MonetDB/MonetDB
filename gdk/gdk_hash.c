@@ -35,7 +35,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-static uint8_t
+static inline uint8_t __attribute__((__const__))
 HASHwidth(BUN hashsize)
 {
 	if (hashsize <= (BUN) BUN2_NONE)
@@ -49,7 +49,7 @@ HASHwidth(BUN hashsize)
 #endif
 }
 
-static inline BUN
+static inline BUN __attribute__((__const__))
 hashmask(BUN m)
 {
 	m |= m >> 1;

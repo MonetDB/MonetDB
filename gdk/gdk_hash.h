@@ -92,7 +92,7 @@ HASHputlink(Hash *h, BUN i, BUN v)
 	}
 }
 
-static inline BUN
+static inline BUN __attribute__((__pure__))
 HASHget(Hash *h, BUN i)
 {
 	switch (h->width) {
@@ -107,7 +107,7 @@ HASHget(Hash *h, BUN i)
 	}
 }
 
-static inline BUN
+static inline BUN __attribute__((__pure__))
 HASHgetlink(Hash *h, BUN i)
 {
 	switch (h->width) {
@@ -180,7 +180,7 @@ HASHgetlink(Hash *h, BUN i)
 #define hash_flt(H,V)	hash_int(H,V)
 #define hash_dbl(H,V)	hash_lng(H,V)
 
-static inline BUN
+static inline BUN __attribute__((__const__))
 mix_uuid(uuid u)
 {
 	ulng u1, u2;
