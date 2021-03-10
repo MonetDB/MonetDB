@@ -279,7 +279,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	char buf[256];
 	lng usec= GDKusec();
 	str msg = MAL_SUCCEED;
-	if( isOptimizerUsed(mb, "mergetable") <= 0){
+	if( isOptimizerUsed(mb, "mitosis") <= 0){
 		goto wrapup;
 	}
 	(void) cntxt;
@@ -339,7 +339,6 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	OPTremoveDep(dep, limit);
 	GDKfree(uselist);
 	GDKfree(old);
-wrapup:
 	(void) OPTpostponeAppends(cntxt, mb, 0, 0);
 
     	/* Defense line against incorrect plans */
@@ -349,6 +348,7 @@ wrapup:
 	if (!msg)
         	msg = chkDeclarations(mb);
     	/* keep all actions taken as a post block comment */
+wrapup:
 	usec = GDKusec()- usec;
     	snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","reorder",1,usec);
     	newComment(mb,buf);
