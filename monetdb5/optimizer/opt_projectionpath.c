@@ -148,10 +148,9 @@ OPTprojectionpathImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Instr
 	//if ( optimizerIsApplied(mb,"projectionpath") )
 		//return 0;
 
-
 	for( i = 0; i < mb->stop ; i++){
 		p = getInstrPtr(mb,i);
-		if ( getFunctionId(p) == projectionpathRef ){
+		if ( getModuleId(p) == algebraRef && ((getFunctionId(p) == projectionRef && p->argc == 3) || getFunctionId(p) == projectionpathRef) ){
 			break;
 		}
 	}
