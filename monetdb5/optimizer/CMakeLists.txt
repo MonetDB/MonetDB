@@ -36,7 +36,6 @@ target_sources(optimizer
   opt_mitosis.c opt_mitosis.h
   opt_multiplex.c opt_multiplex.h
   opt_oltp.c opt_oltp.h
-  opt_parappend.c opt_parappend.h
   opt_wlc.c opt_wlc.h
   opt_pipes.c
   opt_prelude.c opt_prelude.h

@@ -44,7 +44,6 @@
 #include "opt_mergetable.h"
 #include "opt_mitosis.h"
 #include "opt_multiplex.h"
-#include "opt_parappend.h"
 #include "opt_profiler.h"
 #include "opt_pushselect.h"
 #include "opt_querylog.h"
@@ -84,7 +83,6 @@ struct{
 	{"mitosis", &OPTmitosisImplementation,0,0},
 	{"multiplex", &OPTmultiplexImplementation,0,0},
 	{"oltp", &OPToltpImplementation,0,0},
-	{"parappend", &OPTparappendImplementation,0,0},
 	{"postfix", &OPTpostfixImplementation,0,0},
 	{"profiler", &OPTprofilerImplementation,0,0},
 	{"projectionpath", &OPTprojectionpathImplementation,0,0},

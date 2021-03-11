@@ -119,7 +119,6 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("multiplex", "Compiler for multiplexed instructions"),
  optwrapper_pattern("matpack", "Unroll the mat.pack operation"),
  optwrapper_pattern("json", "Unroll the mat.pack operation"),
- optwrapper_pattern("parappend", "Parallellize column loading"),
  optwrapper_pattern("reduce", "Reduce the stack space claims"),
  optwrapper_pattern("remap", "Remapping function calls to a their multiplex variant"),
  optwrapper_pattern("remoteQueries", "Resolve the multi-table definitions"),
