@@ -1774,6 +1774,38 @@ BATkeyed(BAT *b)
 	return b->tkey;
 }
 
+#define BAT_ORDERED(TPE) \
+	do {								\
+		const TPE *restrict vals = Tloc(b, 0); \
+		for (BUN q = BUNlast(b), p = 1; p < q; p++) { \
+			if (vals[p - 1] > vals[p]) { \
+				b->tnosorted = p; \
+				TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0); \
+				goto doreturn; \
+			} else if (!b->trevsorted && b->tnorevsorted == 0 && vals[p - 1] < vals[p]) {  \
+				b->tnorevsorted = p; \
+				TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b)); \
+			} \
+		} \
+	} while (0)
+
+#define BAT_ORDERED_FP(TPE) \
+	do {								\
+		const TPE *restrict vals = Tloc(b, 0); \
+		for (BUN q = BUNlast(b), p = 1; p < q; p++) { \
+			TPE prev = vals[p - 1], next = vals[p];	\
+			int cmp = is_flt_nil(prev) ? -!is_flt_nil(next) : is_flt_nil(next) ? 1 : (prev > next) - (prev < next);	\
+			if (cmp > 0) { \
+				b->tnosorted = p; \
+				TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0); \
+				goto doreturn; \
+			} else if (!b->trevsorted && b->tnorevsorted == 0 && cmp < 0) {  \
+				b->tnorevsorted = p; \
+				TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b)); \
+			} \
+		} \
+	} while (0)
+
 /* Return whether the BAT is ordered or not.  If we don't know, invest
  * in a scan and record the results in the bat descriptor.  If during
  * the scan we happen to find evidence that the BAT is not reverse
@@ -1795,58 +1827,47 @@ BATordered(BAT *b)
 	 * there, and not so likely to be used at the same time. */
 	MT_lock_set(&b->batIdxLock);
 	if (!b->tsorted && b->tnosorted == 0) {
-		BATiter bi = bat_iterator(b);
-		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
-		BUN p, q;
 		b->batDirtydesc = true;
 		switch (ATOMbasetype(b->ttype)) {
-		case TYPE_int: {
-			const int *iptr = (const int *) Tloc(b, 0);
-			for (q = BUNlast(b), p = 1; p < q; p++) {
-				if (iptr[p - 1] > iptr[p]) {
-					b->tnosorted = p;
-					TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
-					goto doreturn;
-				} else if (!b->trevsorted &&
-					   b->tnorevsorted == 0 &&
-					   iptr[p - 1] < iptr[p]) {
-					b->tnorevsorted = p;
-					TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
-				}
-			}
+		case TYPE_bte:
+			BAT_ORDERED(bte);
 			break;
-		}
-		case TYPE_lng: {
-			const lng *lptr = (const lng *) Tloc(b, 0);
-			for (q = BUNlast(b), p = 1; p < q; p++) {
-				if (lptr[p - 1] > lptr[p]) {
-					b->tnosorted = p;
-					TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
-					goto doreturn;
-				} else if (!b->trevsorted &&
-					   b->tnorevsorted == 0 &&
-					   lptr[p - 1] < lptr[p]) {
-					b->tnorevsorted = p;
-					TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
-				}
-			}
+		case TYPE_sht:
+			BAT_ORDERED(sht);
 			break;
-		}
-		default:
-			for (q = BUNlast(b), p = 1; p < q; p++) {
+		case TYPE_int:
+			BAT_ORDERED(int);
+			break;
+		case TYPE_lng:
+			BAT_ORDERED(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BAT_ORDERED(hge);
+			break;
+#endif
+		case TYPE_flt:
+			BAT_ORDERED_FP(flt);
+			break;
+		case TYPE_dbl:
+			BAT_ORDERED_FP(dbl);
+			break;
+		default: {
+			BATiter bi = bat_iterator(b);
+			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
+			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
 				int c;
 				if ((c = cmpf(BUNtail(bi, p - 1), BUNtail(bi, p))) > 0) {
 					b->tnosorted = p;
 					TRC_DEBUG(ALGO, "Fixed nosorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
 					goto doreturn;
-				} else if (!b->trevsorted &&
-					   b->tnorevsorted == 0 &&
-					   c < 0) {
+				} else if (!b->trevsorted && b->tnorevsorted == 0 && c < 0) {
 					b->tnorevsorted = p;
 					TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT "\n", p, BATgetId(b), BATcount(b));
 				}
 			}
 			break;
+		}
 		}
 		/* we only get here if we completed the scan; note
 		 * that if we didn't record evidence about *reverse*
@@ -1863,6 +1884,32 @@ BATordered(BAT *b)
 	MT_lock_unset(&b->batIdxLock);
 	return b->tsorted;
 }
+
+#define BAT_REVORDERED(TPE) \
+	do {								\
+		const TPE *restrict vals = Tloc(b, 0); \
+		for (BUN q = BUNlast(b), p = 1; p < q; p++) { \
+			if (vals[p - 1] < vals[p]) { \
+				b->tnorevsorted = p; \
+				TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0); \
+				goto doreturn; \
+			} \
+		} \
+	} while (0)
+
+#define BAT_REVORDERED_FP(TPE) \
+	do {								\
+		const TPE *restrict vals = Tloc(b, 0); \
+		for (BUN q = BUNlast(b), p = 1; p < q; p++) { \
+			TPE prev = vals[p - 1], next = vals[p];	\
+			int cmp = is_flt_nil(prev) ? -!is_flt_nil(next) : is_flt_nil(next) ? 1 : (prev > next) - (prev < next);	\
+			if (cmp < 0) { \
+				b->tnorevsorted = p; \
+				TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0); \
+				goto doreturn; \
+			} \
+		} \
+	} while (0)
 
 /* Return whether the BAT is reverse ordered or not.  If we don't
  * know, invest in a scan and record the results in the bat
@@ -1882,16 +1929,43 @@ BATordered_rev(BAT *b)
 		return false;
 	MT_lock_set(&b->batIdxLock);
 	if (!b->trevsorted && b->tnorevsorted == 0) {
-		BATiter bi = bat_iterator(b);
-		int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
-		BUN p, q;
 		b->batDirtydesc = true;
-		for (q = BUNlast(b), p = 1; p < q; p++) {
-			if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) < 0) {
-				b->tnorevsorted = p;
-				TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
-				goto doreturn;
+		switch (ATOMbasetype(b->ttype)) {
+		case TYPE_bte:
+			BAT_REVORDERED(bte);
+			break;
+		case TYPE_sht:
+			BAT_REVORDERED(sht);
+			break;
+		case TYPE_int:
+			BAT_REVORDERED(int);
+			break;
+		case TYPE_lng:
+			BAT_REVORDERED(lng);
+			break;
+#ifdef HAVE_HGE
+		case TYPE_hge:
+			BAT_REVORDERED(hge);
+			break;
+#endif
+		case TYPE_flt:
+			BAT_REVORDERED_FP(flt);
+			break;
+		case TYPE_dbl:
+			BAT_REVORDERED_FP(dbl);
+			break;
+		default: {
+			BATiter bi = bat_iterator(b);
+			int (*cmpf)(const void *, const void *) = ATOMcompare(b->ttype);
+			for (BUN q = BUNlast(b), p = 1; p < q; p++) {
+				if (cmpf(BUNtail(bi, p - 1), BUNtail(bi, p)) < 0) {
+					b->tnorevsorted = p;
+					TRC_DEBUG(ALGO, "Fixed norevsorted(" BUNFMT ") for %s#" BUNFMT " (" LLFMT " usec)\n", p, BATgetId(b), BATcount(b), GDKusec() - t0);
+					goto doreturn;
+				}
 			}
+			break;
+		}
 		}
 		b->trevsorted = true;
 		TRC_DEBUG(ALGO, "Fixed revsorted for %s#" BUNFMT " (" LLFMT " usec)\n", BATgetId(b), BATcount(b), GDKusec() - t0);
