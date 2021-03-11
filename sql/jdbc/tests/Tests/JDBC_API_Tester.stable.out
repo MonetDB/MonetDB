@@ -1,0 +1,17 @@
+stdout of test 'JDBC_API_Tester` in directory 'sql/jdbc/tests` itself:
+
+
+# 15:08:18 >  
+# 15:08:18 >  "./JDBC_API_Tester.SQL.sh" "JDBC_API_Tester"
+# 15:08:18 >  
+
+
+# 15:08:18 >  
+# 15:08:18 >  java JDBC_API_Tester "jdbc:monetdb://localhost:30624/mTests_sql_jdbc_tests?user=monetdb&password=monetdb"
+# 15:08:18 >  
+
+
+# 15:08:23 >  
+# 15:08:23 >  "Done."
+# 15:08:23 >  
+
