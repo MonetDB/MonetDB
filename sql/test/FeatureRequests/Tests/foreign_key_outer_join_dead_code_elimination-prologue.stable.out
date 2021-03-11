@@ -383,6 +383,12 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 % int # type
 % 1 # length
 [ 4	]
+#select count(*) from testme inner join "myt" on testme.good = "myt".myid where testme.hello = 'd' group by "myt".great;
+% sys.%3 # table_name
+% %3 # name
+% bigint # type
+% 1 # length
+[ 1	]
 #rollback;
 
 # 01:44:33 >  
