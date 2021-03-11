@@ -1182,17 +1182,31 @@ VARcalcisnotnil(ValPtr ret, const ValRecord *v)
 #define MINMAX_TYPE(TYPE, OP)					\
 	do {								\
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
-		for (BUN i = 0; i < ncand; i++) { \
-			oid x1 = canditer_next(&ci1) - b1hseqbase; \
-			oid x2 = canditer_next(&ci2) - b2hseqbase; \
-			TYPE p1 = tb1[x1], p2 = tb2[x2]; \
-			if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
-				nils = true; \
-				tbn[i] = TYPE##_nil; \
-			} else {	\
-				tbn[i] = p1 OP p2 ? p1 : p2; \
-			}	\
-		} \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {		\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
+					nils = true; \
+					tbn[i] = TYPE##_nil; \
+				} else {	\
+					tbn[i] = p1 OP p2 ? p1 : p2; \
+				}	\
+			} \
+		} else {	\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1) || is_##TYPE##_nil(p2)) { \
+					nils = true; \
+					tbn[i] = TYPE##_nil; \
+				} else {	\
+					tbn[i] = p1 OP p2 ? p1 : p2; \
+				}	\
+			} \
+		}	\
 	} while (0)
 
 BAT *
@@ -1254,19 +1268,36 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		for (BUN i = 0; i < ncand; i++) {
-			oid x1 = canditer_next(&ci1) - b1hseqbase;
-			oid x2 = canditer_next(&ci2) - b2hseqbase;
-			const void *p1 = BUNtail(b1i, x1);
-			const void *p2 = BUNtail(b2i, x2);
-			if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-				nils = true;
-				p1 = nil;
-			} else {
-				p1 = cmp(p1, p2) < 0 ? p1 : p2;
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+				const void *p1 = BUNtail(b1i, x1);
+				const void *p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
-			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-				goto bunins_failed;
+		} else {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next(&ci1) - b1hseqbase;
+				oid x2 = canditer_next(&ci2) - b2hseqbase;
+				const void *p1 = BUNtail(b1i, x1);
+				const void *p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
 		}
 	}
 	}
@@ -1302,21 +1333,39 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 #define MINMAX_NONIL_TYPE(TYPE, OP)			\
 	do {								\
 		TYPE *tb1 = Tloc(b1, 0), *tb2 = Tloc(b2, 0), *restrict tbn = Tloc(bn, 0); \
-		for (BUN i = 0; i < ncand; i++) { \
-			oid x1 = canditer_next(&ci1) - b1hseqbase; \
-			oid x2 = canditer_next(&ci2) - b2hseqbase; \
-			TYPE p1 = tb1[x1], p2 = tb2[x2]; \
-			if (is_##TYPE##_nil(p1)) { \
-				if (is_##TYPE##_nil(p2)) { \
-					tbn[i] = TYPE##_nil; \
-					nils = true; \
-				} else { \
-					tbn[i] = p2; \
-				} \
-			} else {	\
-				tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
-			}	\
-		} \
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {		\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1)) { \
+					if (is_##TYPE##_nil(p2)) { \
+						tbn[i] = TYPE##_nil; \
+						nils = true; \
+					} else { \
+						tbn[i] = p2; \
+					} \
+				} else {	\
+					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
+				}	\
+			} \
+		} else {							\
+			for (BUN i = 0; i < ncand; i++) { \
+				oid x1 = canditer_next(&ci1) - b1hseqbase; \
+				oid x2 = canditer_next(&ci2) - b2hseqbase; \
+				TYPE p1 = tb1[x1], p2 = tb2[x2]; \
+				if (is_##TYPE##_nil(p1)) { \
+					if (is_##TYPE##_nil(p2)) { \
+						tbn[i] = TYPE##_nil; \
+						nils = true; \
+					} else { \
+						tbn[i] = p2; \
+					} \
+				} else {	\
+					tbn[i] = !is_##TYPE##_nil(p2) && p2 OP p1 ? p2 : p1; \
+				}	\
+			} \
+		}	\
 	} while (0)
 
 BAT *
@@ -1378,23 +1427,44 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		for (BUN i = 0; i < ncand; i++) {
-			oid x1 = canditer_next(&ci1) - b1hseqbase;
-			oid x2 = canditer_next(&ci2) - b2hseqbase;
-			const void *p1 = BUNtail(b1i, x1);
-			const void *p2 = BUNtail(b2i, x2);
-			if (cmp(p1, nil) == 0) {
-				if (cmp(p2, nil) == 0) {
-					/* both values are nil */
-					nils = true;
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+				const void *p1 = BUNtail(b1i, x1);
+				const void *p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0) {
+					if (cmp(p2, nil) == 0) {
+						/* both values are nil */
+						nils = true;
+					} else {
+						p1 = p2;
+					}
 				} else {
-					p1 = p2;
+					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 				}
-			} else {
-				p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
-			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-				goto bunins_failed;
+		} else {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next(&ci1) - b1hseqbase;
+				oid x2 = canditer_next(&ci2) - b2hseqbase;
+				const void *p1 = BUNtail(b1i, x1);
+				const void *p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0) {
+					if (cmp(p2, nil) == 0) {
+						/* both values are nil */
+						nils = true;
+					} else {
+						p1 = p2;
+					}
+				} else {
+					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
 		}
 	}
 	}
@@ -1744,19 +1814,36 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		for (BUN i = 0; i < ncand; i++) {
-			oid x1 = canditer_next(&ci1) - b1hseqbase;
-			oid x2 = canditer_next(&ci2) - b2hseqbase;
-			const void *p1 = BUNtail(b1i, x1);
-			const void *p2 = BUNtail(b2i, x2);
-			if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-				nils = true;
-				p1 = nil;
-			} else {
-				p1 = cmp(p1, p2) > 0 ? p1 : p2;
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+				const void *p1 = BUNtail(b1i, x1);
+				const void *p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
-			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-				goto bunins_failed;
+		} else {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next(&ci1) - b1hseqbase;
+				oid x2 = canditer_next(&ci2) - b2hseqbase;
+				const void *p1 = BUNtail(b1i, x1);
+				const void *p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
 		}
 	}
 	}
@@ -1848,24 +1935,46 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		for (BUN i = 0; i < ncand; i++) {
-			oid x1 = canditer_next(&ci1) - b1hseqbase;
-			oid x2 = canditer_next(&ci2) - b2hseqbase;
-			const void *p1, *p2;
-			p1 = BUNtail(b1i, x1);
-			p2 = BUNtail(b2i, x2);
-			if (cmp(p1, nil) == 0) {
-				if (cmp(p2, nil) == 0) {
-					/* both values are nil */
-					nils = true;
+		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+				const void *p1, *p2;
+				p1 = BUNtail(b1i, x1);
+				p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0) {
+					if (cmp(p2, nil) == 0) {
+						/* both values are nil */
+						nils = true;
+					} else {
+						p1 = p2;
+					}
 				} else {
-					p1 = p2;
+					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 				}
-			} else {
-				p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
-			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-				goto bunins_failed;
+		} else {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x1 = canditer_next(&ci1) - b1hseqbase;
+				oid x2 = canditer_next(&ci2) - b2hseqbase;
+				const void *p1, *p2;
+				p1 = BUNtail(b1i, x1);
+				p2 = BUNtail(b2i, x2);
+				if (cmp(p1, nil) == 0) {
+					if (cmp(p2, nil) == 0) {
+						/* both values are nil */
+						nils = true;
+					} else {
+						p1 = p2;
+					}
+				} else {
+					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
+			}
 		}
 	}
 	}
