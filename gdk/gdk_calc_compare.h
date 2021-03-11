@@ -21,7 +21,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		  const char *func)
 {
 	BUN nils = 0;
-	BUN i = 0, j = 0, k;
+	BUN i = 0, j = 0, k, ncand = ci1->ncand;
 	const void *restrict nil;
 	int (*atomcmp)(const void *, const void *);
 
@@ -30,7 +30,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		assert(incr1);
 		assert(tp2 == TYPE_oid || incr2); /* if void, incr2==1 */
 		oid v = lft ? * (const oid *) lft : oid_nil;
-		for (k = 0; k < ci1->ncand; k++) {
+		for (k = 0; k < ncand; k++) {
 			TPE res;
 			i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -630,7 +630,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	case TYPE_oid:
 		if (tp2 == TYPE_void) {
 			oid v = * (const oid *) rgt;
-			for (k = 0; k < ci1->ncand; k++) {
+			for (k = 0; k < ncand; k++) {
 				if (incr1)
 					i = canditer_next(ci1) - candoff1;
 				j = canditer_next(ci2) - candoff2;
@@ -676,7 +676,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 	case TYPE_str:
 		if (tp1 != tp2)
 			goto unsupported;
-		for (k = 0; k < ci1->ncand; k++) {
+		for (k = 0; k < ncand; k++) {
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -727,7 +727,7 @@ op_typeswitchloop(const void *lft, int tp1, bool incr1, const char *hp1, int wd1
 		if (atomcmp == ATOMcompare(TYPE_dbl))
 			goto dbldbl;
 		nil = ATOMnilptr(tp1);
-		for (k = 0; k < ci1->ncand; k++) {
+		for (k = 0; k < ncand; k++) {
 			if (incr1)
 				i = canditer_next(ci1) - candoff1;
 			if (incr2)
@@ -779,10 +779,10 @@ BATcalcop_intern(const void *lft, int tp1, bool incr1, const char *hp1, int wd1,
 		 const char *func)
 {
 	BAT *bn;
-	BUN nils = 0;
+	BUN nils = 0, ncand = ci1->ncand;
 	TPE *restrict dst;
 
-	bn = COLnew(seqbase, TYPE_TPE, ci1->ncand, TRANSIENT);
+	bn = COLnew(seqbase, TYPE_TPE, ncand, TRANSIENT);
 	if (bn == NULL)
 		return NULL;
 
@@ -802,11 +802,11 @@ BATcalcop_intern(const void *lft, int tp1, bool incr1, const char *hp1, int wd1,
 		return NULL;
 	}
 
-	BATsetcount(bn, ci1->ncand);
+	BATsetcount(bn, ncand);
 
-	bn->tsorted = ci1->ncand <= 1 || nils == ci1->ncand;
-	bn->trevsorted = ci1->ncand <= 1 || nils == ci1->ncand;
-	bn->tkey = ci1->ncand <= 1;
+	bn->tsorted = ncand <= 1 || nils == ncand;
+	bn->trevsorted = ncand <= 1 || nils == ncand;
+	bn->tkey = ncand <= 1;
 	bn->tnil = nils != 0;
 	bn->tnonil = nils == 0;
 
