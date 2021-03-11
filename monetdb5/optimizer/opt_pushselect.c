@@ -328,23 +328,45 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
 						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) /* escape is a value */
 						) {
-					bool has_null_semantics = false;
+					bool selectok = true;
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0;
 					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
 
 					/* TODO at the moment we cannot convert if the select statement has NULL semantics
-						we can convert it into VAL is NULL or PATERN is NULL or ESCAPE is NULL
+						we can convert it into VAL is NULL or PATTERN is NULL or ESCAPE is NULL
 					*/
-					if (getFunctionId(p) == selectRef && isVarConstant(mb,getArg(p, 2 + has_cand)) && isVarConstant(mb,getArg(p, 3 + has_cand))
-						&& isVarConstant(mb,getArg(p, 4 + has_cand)) && isVarConstant(mb,getArg(p, 5 + has_cand))) {
-						ValRecord low = getVarConstant(mb, getArg(p, 2 + has_cand)), high = getVarConstant(mb, getArg(p, 3 + has_cand));
+					if (getFunctionId(p) == selectRef) {
+						bit low = *(bit*)getVarValue(mb, getArg(p, 2 + has_cand)), high = *(bit*)getVarValue(mb, getArg(p, 3 + has_cand));
 						bit li = *(bit*)getVarValue(mb, getArg(p, 4 + has_cand)), hi = *(bit*)getVarValue(mb, getArg(p, 5 + has_cand));
+						bit santi = *(bit*)getVarValue(mb, getArg(p, 6 + has_cand)), sunknown = (p->argc == (has_cand ? 9 : 8)) ? 0 : *(bit*)getVarValue(mb, getArg(p, 7 + has_cand));
 
-						if (li && hi && VALisnil(&low) && VALisnil(&high))
-							has_null_semantics = true;
+						/* semantic or not symmetric cases, it cannot be converted */
+						if (is_bit_nil(low) || is_bit_nil(li) || is_bit_nil(santi) || low != high || li != hi || sunknown)
+							selectok = false;
+
+						/* there are no negative candidate lists so on = false situations swap anti flag */
+						if (low == 0)
+							anti = !anti;
+						if (li == 0)
+							anti = !anti;
+						if (santi)
+							anti = !anti;
+					} else if (getFunctionId(p) == thetaselectRef) {
+						bit truth_value = *(bit*)getVarValue(mb, getArg(p, 3));
+						str comparison = (str)getVarValue(mb, getArg(p, 4));
+
+						/* there are no negative candidate lists so on = false situations swap anti flag */
+						if (truth_value == 0)
+							anti = !anti;
+						else if (is_bit_nil(truth_value))
+							selectok = false;
+						if (strcmp(comparison, "<>") == 0)
+							anti = !anti;
+						else if (strcmp(comparison, "==") != 0)
+							selectok = false;
 					}
 
-					if (!has_null_semantics) {
+					if (selectok) {
 						InstrPtr r = newInstruction(mb, algebraRef, likeselectRef);
 						getArg(r,0) = getArg(p,0);
 						r = addArgument(mb, r, getArg(q, 1));
