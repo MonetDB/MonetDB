@@ -47,17 +47,9 @@ store_transaction_id(sqlstore *store)
 static ulng
 store_oldest_given_max(sqlstore *store, ulng commit_ts)
 {
-	ulng oldest = commit_ts;
-	if (store->active && list_length(store->active) == 1)
+	if (ATOMIC_GET(&store->nr_active) <= 1)
 		return commit_ts;
-	if (store->active) {
-		for(node *n = store->active->h; n; n=n->next) {
-			sql_session *s = n->data;
-			if (oldest > s->tr->ts)
-				oldest = s->tr->ts;
-		}
-	}
-	return oldest;
+	return store->oldest;
 }
 
 ulng
@@ -6086,10 +6078,17 @@ sql_trans_end(sql_session *s, int commit)
 	s->tr->active = 0;
 	s->auto_commit = s->ac_on_commit;
 	sqlstore *store = s->tr->store;
-	//if (s->tr->parent == gtrans) {
-		list_remove_data(store->active, NULL, s);
-		(void) ATOMIC_DEC(&store->nr_active);
-	//}
+	list_remove_data(store->active, NULL, s);
+	(void) ATOMIC_DEC(&store->nr_active);
+	if (store->active && store->active->h) {
+		ulng oldest = TRANSACTION_ID_BASE;
+		for(node *n = store->active->h; n; n = n->next) {
+			sql_session *s = n->data;
+			if (s->tr->ts < oldest)
+				oldest = s->tr->ts;
+		}
+		store->oldest = oldest;
+	}
 	assert(list_length(store->active) == (int) ATOMIC_GET(&store->nr_active));
 	return ok;
 }

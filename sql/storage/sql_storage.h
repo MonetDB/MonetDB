@@ -463,10 +463,11 @@ typedef struct sqlstore {
 	MT_Lock flush;			/* flush lock protecting concurrent writes (not reads, ie use rcu) */
 	MT_Lock table_locks[NR_TABLE_LOCKS];		/* protecting concurrent writes too table (storage) */
 	list *active;			/* list of running transactions */
+
 	ATOMIC_TYPE nr_active;	/* count number of transactions */
     ATOMIC_TYPE timestamp;	/* timestamp counter */
     ATOMIC_TYPE transaction;/* transaction id counter */
-
+	ulng oldest;
 	int readonly;			/* store is readonly */
 	int singleuser;			/* store is for a single user only (==1 enable, ==2 single user session running) */
 	int first;				/* just created the db */
