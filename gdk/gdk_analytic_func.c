@@ -229,10 +229,12 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				has_nils |= atomcmp(curval, nil) == 0;
 			}
 		} else {
+			uint16_t width = r->twidth;
+			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
 				const void *curval = (end[k] > start[k]) ? BUNtail(bpi, start[k]) : nil;
-				if (BUNappend(r, curval, TRUE) != GDK_SUCCEED)
-					return GDK_FAIL;
+				memcpy(rcast, curval, width);
+				rcast += width;
 				has_nils |= atomcmp(curval, nil) == 0;
 			}
 		}
@@ -298,10 +300,12 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 				has_nils |= atomcmp(curval, nil) == 0;
 			}
 		} else {
+			uint16_t width = r->twidth;
+			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
 				const void *curval = (end[k] > start[k]) ? BUNtail(bpi, end[k] - 1) : nil;
-				if (BUNappend(r, curval, TRUE) != GDK_SUCCEED)
-					return GDK_FAIL;
+				memcpy(rcast, curval, width);
+				rcast += width;
 				has_nils |= atomcmp(curval, nil) == 0;
 			}
 		}
@@ -406,6 +410,8 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 						return GDK_FAIL;
 				}
 			} else {
+				uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
+				uint16_t width = r->twidth;
 				for (; k < cnt; k++) {
 					lng lnth = tp[k];
 					if (!is_lng_nil(nth) && nth <= 0) goto invalidnth;
@@ -416,8 +422,8 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 						curval = BUNtail(bpi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
-					if (BUNappend(r, curval, TRUE) != GDK_SUCCEED)
-						return GDK_FAIL;
+					memcpy(rcast, curval, width);
+					rcast += width;
 				}
 			}
 		}
@@ -466,17 +472,20 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 					}
 				}
 			} else {
+				uint16_t width = r->twidth;
+				uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 				if (is_lng_nil(nth)) {
 					has_nils = true;
-					for (; k < cnt; k++)
-						if (BUNappend(r, nil, TRUE) != GDK_SUCCEED)
-							return GDK_FAIL;
+					for (; k < cnt; k++) {
+						memcpy(rcast, nil, width);
+						rcast += width;
+					}
 				} else {
 					nth--;
 					for (; k < cnt; k++) {
 						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtail(bpi, start[k] + (oid) nth) : nil;
-						if (BUNappend(r, curval, TRUE) != GDK_SUCCEED)
-							return GDK_FAIL;
+						memcpy(rcast, curval, width);
+						rcast += width;
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
 				}
@@ -872,7 +881,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		j = k; \
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_UNBOUNDED_TILL_CURRENT_ROW(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_UNBOUNDED_TILL_CURRENT_ROW(GT_LT)	\
 	do { \
 		const void *curval = nil;	\
 		if (ATOMvarsized(tpe)) {	\
@@ -906,15 +915,16 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					}					\
 					k++; \
 				} while (k < i && !op[k]);	\
-				for (; j < k; j++) \
-					if (BUNappend(r, curval, TRUE) != GDK_SUCCEED) \
-						return GDK_FAIL; \
+				for (; j < k; j++) {	\
+					memcpy(rcast, curval, width);	\
+					rcast += width;	\
+				} \
 				has_nils |= atomcmp(curval, nil) == 0;		\
 			} \
 		}	\
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_CURRENT_ROW_TILL_UNBOUNDED(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_CURRENT_ROW_TILL_UNBOUNDED(GT_LT)	\
 	do { \
 		const void *curval = nil;	\
 		l = i - 1; \
@@ -950,9 +960,10 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 				}					\
 				if (op[j] || j == k) {	\
+					BUN x = l * width;	\
 					for (; ; l--) { \
-						if (BUNappend(r, curval, TRUE) != GDK_SUCCEED) \
-							return GDK_FAIL; \
+						memcpy(rcast + x, curval, width);	\
+						x -= width;	\
 						if (l == j)	\
 							break;	\
 					} \
@@ -966,7 +977,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		k = i; \
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_ALL_ROWS(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_ALL_ROWS(GT_LT)	\
 	do { \
 		void *curval = (void*) nil; \
 		if (ATOMvarsized(tpe)) {	\
@@ -992,14 +1003,15 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 						curval = atomcmp(next, curval) GT_LT 0 ? curval : next; \
 				}					\
 			} \
-			for (; k < i; k++) \
-				if (BUNappend(r, curval, TRUE) != GDK_SUCCEED) \
-					return GDK_FAIL; \
+			for (; k < i; k++) {	\
+				memcpy(rcast, curval, width);	\
+				rcast += width;	\
+			}	\
 		}	\
 		has_nils |= atomcmp(curval, nil) == 0;		\
 	} while (0)
 
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_CURRENT_ROW(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_CURRENT_ROW(GT_LT)	\
 	do { \
 		if (ATOMvarsized(tpe)) {	\
 			for (; k < i; k++) { \
@@ -1011,22 +1023,22 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		} else {	\
 			for (; k < i; k++) { \
 				void *next = BUNtail(bpi, k); \
-				if (BUNappend(r, next, TRUE) != GDK_SUCCEED) \
-					return GDK_FAIL; \
+				memcpy(rcast, next, width);	\
+				rcast += width;	\
 				has_nils |= atomcmp(next, nil) == 0;		\
 			} \
 		}	\
 	} while (0)
 
-#define INIT_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING1, NOTHING2) \
+#define INIT_AGGREGATE_MIN_MAX_OTHERS(GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		computed = (void*) nil; \
 	} while (0)
-#define COMPUTE_LEVEL0_MIN_MAX_VARSIZED(X, GT_LT, NOTHING1, NOTHING2) \
+#define COMPUTE_LEVEL0_MIN_MAX_OTHERS(X, GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		computed = BUNtail(bpi, j + X); \
 	} while (0)
-#define COMPUTE_LEVELN_MIN_MAX_VARSIZED(VAL, GT_LT, NOTHING1, NOTHING2) \
+#define COMPUTE_LEVELN_MIN_MAX_OTHERS(VAL, GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		if (atomcmp(VAL, nil) != 0) {		\
 			if (atomcmp(computed, nil) == 0)	\
@@ -1035,25 +1047,25 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 				computed = atomcmp(VAL, computed) GT_LT 0 ? computed : VAL; \
 		} \
 	} while (0)
-#define FINALIZE_AGGREGATE_MIN_MAX_VARSIZED(GT_LT, NOTHING1, NOTHING2) \
+#define FINALIZE_AGGREGATE_MIN_MAX_OTHERS(GT_LT, NOTHING1, NOTHING2) \
 	do { \
 		if (ATOMvarsized(tpe)) {	\
 			if ((res = tfastins_nocheckVAR(r, k, computed, Tsize(r))) != GDK_SUCCEED) \
 				goto cleanup; \
 		} else {	\
-			if (BUNappend(r, computed, TRUE) != GDK_SUCCEED) \
-				return GDK_FAIL; \
+			memcpy(rcast, computed, width);	\
+			rcast += width;	\
 		}	\
 		has_nils |= atomcmp(computed, nil) == 0;		\
 	} while (0)
-#define ANALYTICAL_MIN_MAX_CALC_VARSIZED_OTHERS(GT_LT)	\
+#define ANALYTICAL_MIN_MAX_CALC_OTHERS_OTHERS(GT_LT)	\
 	do { \
 		oid ncount = i - k; \
 		if ((res = GDKrebuild_segment_tree(ncount, sizeof(void*), &segment_tree, &tree_capacity, &levels_offset, &nlevels)) != GDK_SUCCEED) \
 			goto cleanup; \
-		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVEL0_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, GT_LT, NOTHING, NOTHING); \
+		populate_segment_tree(void*, ncount, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVEL0_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
 		for (; k < i; k++) \
-			compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_VARSIZED, COMPUTE_LEVELN_MIN_MAX_VARSIZED, FINALIZE_AGGREGATE_MIN_MAX_VARSIZED, GT_LT, NOTHING, NOTHING); \
+			compute_on_segment_tree(void*, start[k] - j, end[k] - j, INIT_AGGREGATE_MIN_MAX_OTHERS, COMPUTE_LEVELN_MIN_MAX_OTHERS, FINALIZE_AGGREGATE_MIN_MAX_OTHERS, GT_LT, NOTHING, NOTHING); \
 		j = k; \
 	} while (0)
 
@@ -1111,7 +1123,7 @@ minmaxfixed##TPE##IMP: \
 				for (; i < cnt; i++) {			\
 				if (np[i]) 	{		\
 minmaxvarsized##IMP: \
-					ANALYTICAL_MIN_MAX_CALC_VARSIZED_##IMP(GT_LT);	\
+					ANALYTICAL_MIN_MAX_CALC_OTHERS_##IMP(GT_LT);	\
 				} \
 				}						\
 			} 					\
@@ -1137,6 +1149,8 @@ GDKanalytical##OP(BAT *r, BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int f
 	int (*atomcmp)(const void *, const void *) = ATOMcompare(tpe); \
 	void *segment_tree = NULL; \
 	gdk_return res = GDK_SUCCEED; \
+	uint16_t width = r->twidth; \
+	uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0); \
 	\
 	if (cnt > 0) {	\
 		switch (frame_type) {		\
