@@ -960,14 +960,14 @@ dup_bat(sql_trans *tr, sql_table *t, sql_delta *obat, sql_delta *bat, int type)
 }
 
 static int
-destroy_delta(sql_delta *b)
+destroy_delta(sql_delta *b, bool recursive)
 {
 	int ok = LOG_OK;
 
 	if (--b->cs.refcnt > 0)
 		return LOG_OK;
-	if (b->next)
-		ok = destroy_delta(b->next);
+	if (recursive && b->next)
+		ok = destroy_delta(b->next, true);
 	if (b->cs.uibid)
 		temp_destroy(b->cs.uibid);
 	if (b->cs.uvbid)
@@ -1005,7 +1005,7 @@ bind_col_data(sql_trans *tr, sql_column *c, bool update)
 	bat->next = obat;
 	if (!ATOMIC_PTR_CAS(&c->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
-		destroy_delta(bat);
+		destroy_delta(bat, false);
 		return NULL;
 	}
 	return bat;
@@ -1079,7 +1079,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool update)
 	bat->next = obat;
 	if (!ATOMIC_PTR_CAS(&i->data, (void**)&bat->next, bat)) {
 		bat->next = NULL;
-		destroy_delta(bat);
+		destroy_delta(bat, false);
 		return NULL;
 	}
 	return bat;
@@ -2122,7 +2122,7 @@ destroy_col(sqlstore *store, sql_column *c)
 	(void)store;
 	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&c->data))
-		ok = destroy_delta(ATOMIC_PTR_GET(&c->data));
+		ok = destroy_delta(ATOMIC_PTR_GET(&c->data), true);
 	ATOMIC_PTR_SET(&c->data, NULL);
 	return ok;
 }
@@ -2151,7 +2151,7 @@ destroy_idx(sqlstore *store, sql_idx *i)
 	(void)store;
 	int ok = LOG_OK;
 	if (ATOMIC_PTR_GET(&i->data))
-		ok = destroy_delta(ATOMIC_PTR_GET(&i->data));
+		ok = destroy_delta(ATOMIC_PTR_GET(&i->data), true);
 	ATOMIC_PTR_SET(&i->data, NULL);
 	return ok;
 }
@@ -2563,7 +2563,7 @@ savepoint_commit_delta( sql_delta *delta, ulng commit_ts)
 			od->next = n;
 			*delta = t;
 			delta->next = NULL;
-			destroy_delta(delta);
+			destroy_delta(delta, true);
 			return od;
 		}
 	}
@@ -2649,7 +2649,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		else
 			o->next = d->next;
 		d->next = NULL;
-		destroy_delta(d);
+		d->cs.rollbacked = true;
 	} else if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
@@ -2658,7 +2658,7 @@ commit_update_col( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (delta && delta != d) {
 			if (delta->next) {
-				ok = destroy_delta(delta->next);
+				ok = destroy_delta(delta->next, true);
 				delta->next = NULL;
 			}
 		}
@@ -2729,7 +2729,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		else
 			o->next = d->next;
 		d->next = NULL;
-		destroy_delta(d);
+		d->cs.rollbacked = true;
 	} else if (ok == LOG_OK && !tr->parent) {
 		sql_delta *d = delta;
 		/* clean up and merge deltas */
@@ -2738,7 +2738,7 @@ commit_update_idx( sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldes
 		}
 		if (delta && delta != d) {
 			if (delta->next) {
-				ok = destroy_delta(delta->next);
+				ok = destroy_delta(delta->next, true);
 				delta->next = NULL;
 			}
 		}
@@ -2841,18 +2841,26 @@ tc_gc_col( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	sqlstore *store = Store;
 	sql_column *c = (sql_column*)change->obj;
 
-	(void)store;
 	/* savepoint commit (did it merge ?) */
 	if (ATOMIC_PTR_GET(&c->data) != change->data || isTempTable(c->t)) /* data is freed by commit */
 		return 1;
 	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
+	if (d->cs.rollbacked) {
+		if (d->cs.ts < oldest) {
+			destroy_delta(d, false);
+			return 1;
+		}
+		if (d->cs.ts > TRANSACTION_ID_BASE)
+			d->cs.ts = store_get_timestamp(store) + 1;
+		return 0;
+	}
 	if (d->next) {
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
-		destroy_delta(d->next);
+		destroy_delta(d->next, true);
 		d->next = NULL;
 	}
 	return 1;
@@ -2871,11 +2879,20 @@ tc_gc_idx( sql_store Store, sql_change *change, ulng commit_ts, ulng oldest)
 	if (commit_ts && commit_ts >= TRANSACTION_ID_BASE) /* cannot cleanup older stuff on savepoint commits */
 		return 0;
 	sql_delta *d = (sql_delta*)change->data;
+	if (d->cs.rollbacked) {
+		if (d->cs.ts < oldest) {
+			destroy_delta(d, false);
+			return 1;
+		}
+		if (d->cs.ts > TRANSACTION_ID_BASE)
+			d->cs.ts = store_get_timestamp(store) + 1;
+		return 0;
+	}
 	if (d->next) {
 		if (d->cs.ts > oldest)
 			return LOG_OK; /* cannot cleanup yet */
 
-		destroy_delta(d->next);
+		destroy_delta(d->next, true);
 		d->next = NULL;
 	}
 	return 1;

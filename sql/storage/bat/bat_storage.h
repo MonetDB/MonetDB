@@ -19,6 +19,7 @@ typedef struct column_storage {
 	int uvbid;		/* bat with values of updates */
 	bool cleared;
 	bool alter;		/* set when the delta is created for an alter statement */
+	bool rollbacked;
 	size_t cnt;		/* number of tuples (excluding? the deletes) */
 	size_t ucnt;	/* number of updates */
 	ulng ts;		/* version timestamp */
