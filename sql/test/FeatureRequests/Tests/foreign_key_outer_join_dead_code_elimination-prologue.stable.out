@@ -370,6 +370,20 @@ stdout of test 'foreign_key_outer_join_dead_code_elimination-prologue` in direct
 [ 1,	21	]
 [ 2,	22	]
 [ 3,	21	]
+#start transaction;
+#CREATE TABLE "myt" ("myid" int NOT NULL,"great" varchar(32),CONSTRAINT "mypkey" PRIMARY KEY ("myid"));
+#insert into myt values (1, 'a'),(2, 'b'),(3, 'c'),(4, 'd');
+[ 4	]
+#CREATE TABLE "testme" ("good" int,"myid" int NOT NULL,"hello" varchar(32),CONSTRAINT "givemeapkey" PRIMARY KEY ("myid"),CONSTRAINT "myfkey" FOREIGN KEY ("good") REFERENCES "myt" ("myid"));
+#insert into testme values (1, 1, 'a'),(2, 2, 'b'),(3, 3, 'c'),(4, 4, 'd');
+[ 4	]
+#select testme.myid from testme inner join "myt" on testme.good = "myt".myid where testme.hello = 'd' order by "myt".great limit 10;
+% sys.testme # table_name
+% myid # name
+% int # type
+% 1 # length
+[ 4	]
+#rollback;
 
 # 01:44:33 >  
 # 01:44:33 >  "Done."

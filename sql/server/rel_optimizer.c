@@ -1797,13 +1797,32 @@ rel_push_count_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static bool
+check_projection_on_foreignside(sql_rel *r, list *pexps, int fk_left) 
+{
+	/* projection columns from the foreign side */
+	if (list_empty(pexps))
+		return true;
+	for (node *n = pexps->h; n; n = n->next) {
+		sql_exp *pe = n->data;
+
+		if (pe && is_atom(pe->type))
+			continue;
+		if (pe && !is_alias(pe->type))
+			return false;
+		/* check for columns from the pk side, then keep the join with the pk */
+		if ((fk_left && rel_find_exp(r->r, pe)) || (!fk_left && rel_find_exp(r->l, pe)))
+			return false;
+	}
+	return true;
+}
+
 static sql_rel *
-rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
+rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps, int *changes)
 {
 	sql_rel *rl = r->l;
 	sql_rel *rr = r->r;
 	sql_exp *je, *le, *nje, *re;
-	node *n;
 	int fk_left = 1;
 
 	/* check for foreign key join */
@@ -1834,22 +1853,11 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 #endif
 	/* primary side must be a full table */
 	if ((fk_left && (!is_left(r->op) && !is_full(r->op)) && !is_basetable(rr->op)) ||
-	    (!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
+		(!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
 		return r;
 
-	/* projection columns from the foreign side */
-	for (n = pexps->h; n; n = n->next) {
-		sql_exp *pe = n->data;
-
-		if (pe && is_atom(pe->type))
-			continue;
-		if (pe && !is_alias(pe->type))
-			return r;
-		/* check for columns from the pk side, then keep the join with the pk */
-		if ((fk_left && rel_find_exp(r->r, pe)) ||
-		    (!fk_left && rel_find_exp(r->l, pe)))
-			return r;
-	}
+	if (!check_projection_on_foreignside(r, pexps, fk_left) || !check_projection_on_foreignside(r, orderexps, fk_left))
+		return r;
 
 	/* rewrite, ie remove pkey side if possible */
 	le = (sql_exp*)je->l, re = (sql_exp*)je->l;
@@ -1872,7 +1880,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, int *changes)
 }
 
 static sql_rel *
-rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
+rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *changes)
 {
 	sql_rel *rl = r->l;
 	sql_rel *rr = r->r;
@@ -1900,17 +1908,20 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 
 	/* primary side must be a full table */
 	if ((fk_left && (!is_left(r->op) && !is_full(r->op)) && !is_basetable(rr->op)) ||
-	    (!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
+		(!fk_left && (!is_right(r->op) && !is_full(r->op)) && !is_basetable(rl->op)))
 		return r;
 
 	if (fk_left && is_join(rl->op) && !rel_is_ref(rl)) {
-		rl = rel_simplify_count_fk_join(sql, rl, gexps, changes);
+		rl = rel_simplify_count_fk_join(sql, rl, gexps, gcols, changes);
 		r->l = rl;
 	}
 	if (!fk_left && is_join(rr->op) && !rel_is_ref(rr)) {
-		rr = rel_simplify_count_fk_join(sql, rr, gexps, changes);
+		rr = rel_simplify_count_fk_join(sql, rr, gexps, gcols, changes);
 		r->r = rr;
 	}
+
+	if (!check_projection_on_foreignside(r, gcols, fk_left))
+		return r;
 
 	/* rewrite, ie remove pkey side if possible */
 	le = (sql_exp*)je->l, re = (sql_exp*)je->l;
@@ -1934,7 +1945,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, int *changes)
 
 /*
  * Handle (left/right/outer/natural) join fk-pk rewrites
- *   1 group by ( fk-pk-join () ) [ count(*) ] -> groub py ( fk )
+ *   1 group by ( fk-pk-join () ) [ count(*) ] -> group by ( fk )
  *   2 project ( fk-pk-join () ) [ fk-column ] -> project (fk table)[ fk-column ]
  *   3 project ( fk1-pk1-join( fk2-pk2-join()) [ fk-column, pk1 column ] -> project (fk1-pk1-join)[ fk-column, pk1 column ]
  */
@@ -1943,13 +1954,13 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 {
 	sql_rel *r = NULL;
 
-	if (rel->op == op_project)
+	if (is_simple_project(rel->op))
 		r = rel->l;
 
-	while (rel->op == op_project && r && r->exps && list_length(r->exps) == 1 && is_join(r->op) && !(rel_is_ref(r))) {
+	while (is_simple_project(rel->op) && r && list_length(r->exps) == 1 && is_join(r->op) && !(rel_is_ref(r))) {
 		sql_rel *or = r;
 
-		r = rel_simplify_project_fk_join(v->sql, r, rel->exps, &v->changes);
+		r = rel_simplify_project_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
 		rel->l = r;
@@ -1959,16 +1970,15 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 		return rel;
 
 	r = rel->l;
-	while(r && r->op == op_project)
+	while(r && is_simple_project(r->op))
 		r = r->l;
 
-	while (is_groupby(rel->op) && !rel_is_ref(rel) &&
-            r && r->exps && is_join(r->op) && list_length(r->exps) == 1 && !(rel_is_ref(r)) &&
-	    /* currently only single count aggregation is handled, no other projects or aggregation */
-	    list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
+	while (is_groupby(rel->op) && !rel_is_ref(rel) && r && is_join(r->op) && list_length(r->exps) == 1 && !(rel_is_ref(r)) &&
+		   /* currently only single count aggregation is handled, no other projects or aggregation */
+		   list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *or = r;
 
-		r = rel_simplify_count_fk_join(v->sql, r, rel->exps, &v->changes);
+		r = rel_simplify_count_fk_join(v->sql, r, rel->exps, rel->r, &v->changes);
 		if (r == or)
 			return rel;
 		rel->l = r;
