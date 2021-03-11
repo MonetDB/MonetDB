@@ -140,17 +140,32 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 				}
 			}
 
-			for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
-				BUN noid = oids[i];
-				void *next;
-				if (noid == BUN_NONE) {
-					next = (void*) nilp;
-					hasnil = 1;
-				} else {
-					next = BUNtail(li, noid);
+			if (ATOMvarsized(l->ttype)) {
+				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
+					BUN noid = oids[i];
+					void *next;
+					if (noid == BUN_NONE) {
+						next = (void*) nilp;
+						hasnil = 1;
+					} else {
+						next = BUNtail(li, noid);
+					}
+					if (tfastins_nocheckVAR(res, i, next, Tsize(res)) != GDK_SUCCEED)
+						goto alloc_fail;
 				}
-				if (tfastins_nocheckVAR(res, i, next, Tsize(res)) != GDK_SUCCEED)
-					goto alloc_fail;
+			} else {
+				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
+					BUN noid = oids[i];
+					void *next;
+					if (noid == BUN_NONE) {
+						next = (void*) nilp;
+						hasnil = 1;
+					} else {
+						next = BUNtail(li, noid);
+					}
+					if (BUNappend(res, next, TRUE) != GDK_SUCCEED)
+						goto alloc_fail;
+				}
 			}
 		}
 		}
