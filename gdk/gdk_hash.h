@@ -117,7 +117,7 @@ HASHget(Hash *h, BUN i)
 	}
 }
 
-static inline BUN __attribute__((__pure__)) __attribute__((__access__(read_only, 1)))
+static inline BUN __attribute__((__pure__))
 HASHgetlink(Hash *h, BUN i)
 {
 	switch (h->width) {
