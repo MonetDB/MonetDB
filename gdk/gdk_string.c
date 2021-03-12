@@ -179,41 +179,54 @@ strLocate(Heap *h, const char *v)
 static inline gdk_return
 checkUTF8(const char *v)
 {
+	/* It is unlikely that this functions returns GDK_FAIL, because
+	 * it is likely that the string presented is a correctly coded
+	 * UTF-8 string.  So we annotate the tests that are very
+	 * unlikely to succeed, i.e. the ones that lead to a return of
+	 * GDK_FAIL, as being expected to return 0 using the
+	 * __builtin_expect function. */
+#ifndef __GNUC__
+	/* __builtin_expect returns its first argument; it is expected
+	 * to be equal to the second argument */
+#define __builtin_expect(expr, expect)	(expr)
+#endif
 	if (v[0] != '\200' || v[1] != '\0') {
-		/* check that string is correctly encoded UTF-8; there
-		 * was no need to do this earlier: if the string was
-		 * found above, it must have gone through here in the
-		 * past */
-		int nutf8 = 0;
-		int m = 0;
+		/* check that string is correctly encoded UTF-8 */
 		for (size_t i = 0; v[i]; i++) {
-			if (nutf8 > 0) {
-				if ((v[i] & 0xC0) != 0x80 ||
-				    (m != 0 && (v[i] & m) == 0))
-					goto badutf8;
-				m = 0;
-				nutf8--;
+			/* we do not annotate all tests, only the ones
+			 * leading directly to an unlikely return
+			 * statement */
+			if ((v[i] & 0x80) == 0) {
+				;
 			} else if ((v[i] & 0xE0) == 0xC0) {
-				nutf8 = 1;
-				if ((v[i] & 0x1E) == 0)
-					goto badutf8;
+				if (__builtin_expect((v[i] & 0x1E) == 0, 0))
+					return GDK_FAIL;
+				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+					return GDK_FAIL;
 			} else if ((v[i] & 0xF0) == 0xE0) {
-				nutf8 = 2;
-				if ((v[i] & 0x0F) == 0)
-					m = 0x20;
+				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+					return GDK_FAIL;
+				if ((v[i] & 0x0F) == 0) {
+					if (__builtin_expect((v[++i] & 0xE0) != 0xA0, 0))
+						return GDK_FAIL;
+				} else if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+					return GDK_FAIL;
 			} else if ((v[i] & 0xF8) == 0xF0) {
-				nutf8 = 3;
-				if ((v[i] & 0x07) == 0)
-					m = 0x30;
-			} else if ((v[i] & 0x80) != 0) {
-				goto badutf8;
+				if (__builtin_expect((v[i+1] & 0x07) == 0 &&
+						     (v[i+2] & 0x30) == 0, 0))
+					return GDK_FAIL;
+				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+					return GDK_FAIL;
+				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+					return GDK_FAIL;
+				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+					return GDK_FAIL;
+			} else {
+				return GDK_FAIL;
 			}
 		}
 	}
 	return GDK_SUCCEED;
-
-  badutf8:
-	return GDK_FAIL;
 }
 
 var_t
@@ -261,6 +274,9 @@ strPut(BAT *b, var_t *dst, const void *V)
 	}
 	/* the string was not found in the heap, we need to enter it */
 
+	/* check that string is correctly encoded UTF-8; there was no
+	 * need to do this earlier: if the string was found above, it
+	 * must have gone through here in the past */
 	if (checkUTF8(v) != GDK_SUCCEED) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return 0;
