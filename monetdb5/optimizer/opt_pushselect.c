@@ -326,8 +326,8 @@ OPTpushselectImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 
 				if (isLikeOp(q) &&
 						!isaBatType(getArgType(mb, q, 2)) && /* pattern is a value */
-						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) /* escape is a value */
-						) {
+						(q->argc != 4 || !isaBatType(getArgType(mb, q, 3))) && /* escape is a value */
+						strcmp(getVarName(mb, getArg(q,0)), getVarName(mb, getArg(p,1))) == 0 /* the output variable from batalgebra.like is the input one for [theta]select */) {
 					bool selectok = true;
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)), offset = 0;
 					int a, anti = (getFunctionId(q)[0] == 'n'), ignore_case = (getFunctionId(q)[anti?4:0] == 'i');
