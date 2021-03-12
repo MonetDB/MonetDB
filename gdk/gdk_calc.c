@@ -1268,35 +1268,71 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-				const void *p1 = BUNtail(b1i, x1);
-				const void *p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next(&ci1) - b1hseqbase;
-				oid x2 = canditer_next(&ci2) - b2hseqbase;
-				const void *p1 = BUNtail(b1i, x1);
-				const void *p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) < 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
 			}
 		}
 	}
@@ -1427,43 +1463,87 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-				const void *p1 = BUNtail(b1i, x1);
-				const void *p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0) {
-					if (cmp(p2, nil) == 0) {
-						/* both values are nil */
-						nils = true;
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
 					} else {
-						p1 = p2;
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
-				} else {
-					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next(&ci1) - b1hseqbase;
-				oid x2 = canditer_next(&ci2) - b2hseqbase;
-				const void *p1 = BUNtail(b1i, x1);
-				const void *p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0) {
-					if (cmp(p2, nil) == 0) {
-						/* both values are nil */
-						nils = true;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
 					} else {
-						p1 = p2;
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
-				} else {
-					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					memcpy(bcast, p1, width);
+					bcast += width;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
 			}
 		}
 	}
@@ -1571,17 +1651,34 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	default: {
 		BATiter bi = bat_iterator(b);
 
-		for (BUN i = 0; i < ncand; i++) {
-			oid x = canditer_next(&ci) - bhseqbase;
-			const void *p1 = BUNtail(bi, x);
-			if (cmp(p1, nil) == 0) {
-				nils = true;
-				p1 = nil;
-			} else {
-				p1 = cmp(p1, p2) < 0 ? p1 : p2;
+		if (ATOMvarsized(b->ttype)) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtail(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
-			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-				goto bunins_failed;
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtail(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) < 0 ? p1 : p2;
+				}
+				memcpy(bcast, p1, width);
+				bcast += width;
+			}
 		}
 	}
 	}
@@ -1703,21 +1800,43 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	default: {
 		BATiter bi = bat_iterator(b);
 
-		if (cmp(p2, nil) == 0) {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *p1 = BUNtail(bi, x);
-				nils |= cmp(p1, nil) == 0;
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+		if (ATOMvarsized(b->ttype)) {
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *p1 = BUNtail(bi, x);
-				p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
 			}
 		}
 	}
@@ -1814,35 +1933,71 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-				const void *p1 = BUNtail(b1i, x1);
-				const void *p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next(&ci1) - b1hseqbase;
-				oid x2 = canditer_next(&ci2) - b2hseqbase;
-				const void *p1 = BUNtail(b1i, x1);
-				const void *p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
-					nils = true;
-					p1 = nil;
-				} else {
-					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1 = BUNtail(b1i, x1);
+					const void *p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+						nils = true;
+						p1 = nil;
+					} else {
+						p1 = cmp(p1, p2) > 0 ? p1 : p2;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
 			}
 		}
 	}
@@ -1935,45 +2090,91 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 		BATiter b1i = bat_iterator(b1), b2i = bat_iterator(b2);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1->ttype);
 
-		if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
-				oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-				const void *p1, *p2;
-				p1 = BUNtail(b1i, x1);
-				p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0) {
-					if (cmp(p2, nil) == 0) {
-						/* both values are nil */
-						nils = true;
+		if (ATOMvarsized(b1->ttype)) {
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtail(b1i, x1);
+					p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
 					} else {
-						p1 = p2;
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
-				} else {
-					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtail(b1i, x1);
+					p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					}
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x1 = canditer_next(&ci1) - b1hseqbase;
-				oid x2 = canditer_next(&ci2) - b2hseqbase;
-				const void *p1, *p2;
-				p1 = BUNtail(b1i, x1);
-				p2 = BUNtail(b2i, x2);
-				if (cmp(p1, nil) == 0) {
-					if (cmp(p2, nil) == 0) {
-						/* both values are nil */
-						nils = true;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
+					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtail(b1i, x1);
+					p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
 					} else {
-						p1 = p2;
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
 					}
-				} else {
-					p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					memcpy(bcast, p1, width);
+					bcast += width;
 				}
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x1 = canditer_next(&ci1) - b1hseqbase;
+					oid x2 = canditer_next(&ci2) - b2hseqbase;
+					const void *p1, *p2;
+					p1 = BUNtail(b1i, x1);
+					p2 = BUNtail(b2i, x2);
+					if (cmp(p1, nil) == 0) {
+						if (cmp(p2, nil) == 0) {
+							/* both values are nil */
+							nils = true;
+						} else {
+							p1 = p2;
+						}
+					} else {
+						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+					}
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
 			}
 		}
 	}
@@ -2066,17 +2267,34 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	default: {
 		BATiter bi = bat_iterator(b);
 
-		for (BUN i = 0; i < ncand; i++) {
-			oid x = canditer_next(&ci) - bhseqbase;
-			const void *p1 = BUNtail(bi, x);
-			if (cmp(p1, nil) == 0) {
-				nils = true;
-				p1 = nil;
-			} else {
-				p1 = cmp(p1, p2) > 0 ? p1 : p2;
+		if (ATOMvarsized(b->ttype)) {
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtail(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+				}
+				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+					goto bunins_failed;
 			}
-			if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-				goto bunins_failed;
+		} else {
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			for (BUN i = 0; i < ncand; i++) {
+				oid x = canditer_next(&ci) - bhseqbase;
+				const void *restrict p1 = BUNtail(bi, x);
+				if (cmp(p1, nil) == 0) {
+					nils = true;
+					p1 = nil;
+				} else {
+					p1 = cmp(p1, p2) > 0 ? p1 : p2;
+				}
+				memcpy(bcast, p1, width);
+				bcast += width;
+			}
 		}
 	}
 	}
@@ -2176,21 +2394,43 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	default: {
 		BATiter bi = bat_iterator(b);
 
-		if (cmp(p2, nil) == 0) {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *p1 = BUNtail(bi, x);
-				nils |= cmp(p1, nil) == 0;
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+		if (ATOMvarsized(b->ttype)) {
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
+					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
+						goto bunins_failed;
+				}
 			}
 		} else {
-			for (BUN i = 0; i < ncand; i++) {
-				oid x = canditer_next(&ci) - bhseqbase;
-				const void *p1 = BUNtail(bi, x);
-				p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
-				if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
-					goto bunins_failed;
+			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
+			uint16_t width = bn->twidth;
+			if (cmp(p2, nil) == 0) {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					nils |= cmp(p1, nil) == 0;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
+			} else {
+				for (BUN i = 0; i < ncand; i++) {
+					oid x = canditer_next(&ci) - bhseqbase;
+					const void *restrict p1 = BUNtail(bi, x);
+					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
+					memcpy(bcast, p1, width);
+					bcast += width;
+				}
 			}
 		}
 	}
