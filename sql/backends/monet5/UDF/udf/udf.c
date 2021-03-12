@@ -141,7 +141,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	li = bat_iterator(src);
 	/* the core of the algorithm */
 	for (p = 0; p < q ; p++) {
-		str x = (str) BUNtail(li, p);
+		str x = (str) BUNtvar(li, p);
 
 		if (strNil(x)) {
 			/* if the input string is null, then append directly */

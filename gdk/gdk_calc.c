@@ -1273,8 +1273,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1288,8 +1288,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1307,8 +1307,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1322,8 +1322,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1468,8 +1468,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -1487,8 +1487,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -1510,8 +1510,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -1529,8 +1529,8 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -1654,7 +1654,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		if (ATOMvarsized(b->ttype)) {
 			for (BUN i = 0; i < ncand; i++) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtail(bi, x);
+				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
 					nils = true;
 					p1 = nil;
@@ -1669,7 +1669,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 			uint16_t width = bn->twidth;
 			for (BUN i = 0; i < ncand; i++) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtail(bi, x);
+				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
 					nils = true;
 					p1 = nil;
@@ -1804,7 +1804,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
@@ -1812,7 +1812,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
@@ -1824,7 +1824,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					memcpy(bcast, p1, width);
 					bcast += width;
@@ -1832,7 +1832,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
@@ -1938,8 +1938,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1953,8 +1953,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtvar(b1i, x1);
+					const void *p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1972,8 +1972,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1987,8 +1987,8 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				for (BUN i = 0; i < ncand; i++) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtail(b1i, x1);
-					const void *p2 = BUNtail(b2i, x2);
+					const void *p1 = BUNtloc(b1i, x1);
+					const void *p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -2096,8 +2096,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtail(b1i, x1);
-					p2 = BUNtail(b2i, x2);
+					p1 = BUNtvar(b1i, x1);
+					p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -2116,8 +2116,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtail(b1i, x1);
-					p2 = BUNtail(b2i, x2);
+					p1 = BUNtvar(b1i, x1);
+					p2 = BUNtvar(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -2140,8 +2140,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtail(b1i, x1);
-					p2 = BUNtail(b2i, x2);
+					p1 = BUNtloc(b1i, x1);
+					p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -2160,8 +2160,8 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtail(b1i, x1);
-					p2 = BUNtail(b2i, x2);
+					p1 = BUNtloc(b1i, x1);
+					p2 = BUNtloc(b2i, x2);
 					if (cmp(p1, nil) == 0) {
 						if (cmp(p2, nil) == 0) {
 							/* both values are nil */
@@ -2270,7 +2270,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		if (ATOMvarsized(b->ttype)) {
 			for (BUN i = 0; i < ncand; i++) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtail(bi, x);
+				const void *restrict p1 = BUNtvar(bi, x);
 				if (cmp(p1, nil) == 0) {
 					nils = true;
 					p1 = nil;
@@ -2285,7 +2285,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 			uint16_t width = bn->twidth;
 			for (BUN i = 0; i < ncand; i++) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtail(bi, x);
+				const void *restrict p1 = BUNtloc(bi, x);
 				if (cmp(p1, nil) == 0) {
 					nils = true;
 					p1 = nil;
@@ -2398,7 +2398,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtvar(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
@@ -2406,7 +2406,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtvar(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1, Tsize(bn)) != GDK_SUCCEED)
 						goto bunins_failed;
@@ -2418,7 +2418,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			if (cmp(p2, nil) == 0) {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtloc(bi, x);
 					nils |= cmp(p1, nil) == 0;
 					memcpy(bcast, p1, width);
 					bcast += width;
@@ -2426,7 +2426,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				for (BUN i = 0; i < ncand; i++) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtail(bi, x);
+					const void *restrict p1 = BUNtloc(bi, x);
 					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
