@@ -599,11 +599,22 @@ MT_init(void)
 					/* assume "max" if not a number */
 					fclose(f);
 				}
-				/* soft limit */
+				/* soft high limit */
 				strcpy(pth + l, "memory.high");
 				f = fopen(pth, "r");
 				if (f != NULL) {
 					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
+						_MT_npages = (size_t) (mem / _MT_pagesize);
+					}
+					success = true;
+					/* assume "max" if not a number */
+					fclose(f);
+				}
+				/* soft low limit */
+				strcpy(pth + l, "memory.low");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					if (fscanf(f, "%" SCNu64, &mem) == 1 && mem > 0 && mem < (uint64_t) _MT_pagesize * _MT_npages) {
 						_MT_npages = (size_t) (mem / _MT_pagesize);
 					}
 					success = true;
