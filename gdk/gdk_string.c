@@ -222,18 +222,21 @@ checkUTF8(const char *v)
 				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
 			} else if ((v[i] & 0xF0) == 0xE0) {
-				if (unlikely((v[++i] & 0xC0) != 0x80))
-					return GDK_FAIL;
-				if ((v[i] & 0x0F) == 0) {
-					if (unlikely((v[++i] & 0xE0) != 0xA0))
+				if ((v[i++] & 0x0F) == 0) {
+					if (unlikely((v[i] & 0xE0) != 0xA0))
 						return GDK_FAIL;
-				} else if (unlikely((v[++i] & 0xC0) != 0x80))
+				} else {
+					if (unlikely((v[i] & 0xC0) != 0x80))
+						return GDK_FAIL;
+				}
+				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
 			} else if ((v[i] & 0xF8) == 0xF0) {
-				if (unlikely((v[i+1] & 0x07) == 0 &&
-						     (v[i+2] & 0x30) == 0))
-					return GDK_FAIL;
-				if (unlikely((v[++i] & 0xC0) != 0x80))
+				if ((v[i++] & 0x07) == 0) {
+					if (unlikely((v[i] & 0x30) == 0))
+						return GDK_FAIL;
+				}
+				if (unlikely((v[i] & 0xC0) != 0x80))
 					return GDK_FAIL;
 				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
@@ -567,15 +570,15 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 			;
 		} else if ((c & 0xE0) == 0xC0) {
 			n = 1;
-			mask = 0x007F;
+			mask = 0x000780;
 			utf8char = c & 0x1F;
 		} else if ((c & 0xF0) == 0xE0) {
 			n = 2;
-			mask = 0x0780;
+			mask = 0x00F800;
 			utf8char = c & 0x0F;
 		} else if ((c & 0xF8) == 0xF0) {
 			n = 3;
-			mask = 0xF800;
+			mask = 0x1F0000;
 			utf8char = c & 0x07;
 		} else {
 			/* incorrect UTF-8 sequence */
