@@ -570,11 +570,11 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 			mask = 0x007F;
 			utf8char = c & 0x1F;
 		} else if ((c & 0xF0) == 0xE0) {
-			n = 1;
+			n = 2;
 			mask = 0x0780;
 			utf8char = c & 0x0F;
 		} else if ((c & 0xF8) == 0xF0) {
-			n = 1;
+			n = 3;
 			mask = 0xF800;
 			utf8char = c & 0x07;
 		} else {
