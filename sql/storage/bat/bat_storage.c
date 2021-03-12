@@ -1011,7 +1011,7 @@ bind_col_data(sql_trans *tr, sql_column *c, bool update)
 	return bat;
 }
 
-static void*
+static struct prep_exec_cookie*
 update_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
@@ -1026,10 +1026,8 @@ update_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 }
 
 static int
-update_col_execute(void *incoming_cookie, void *incoming_tids, void *incoming_values, bool is_bat)
+update_col_execute(struct prep_exec_cookie *cookie, void *incoming_tids, void *incoming_values, bool is_bat)
 {
-	struct prep_exec_cookie *cookie = incoming_cookie;
-
 	if (is_bat) {
 		BAT *tids = incoming_tids;
 		BAT *values = incoming_values;
@@ -1044,7 +1042,7 @@ update_col_execute(void *incoming_cookie, void *incoming_tids, void *incoming_va
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
-	void *cookie = update_col_prepare(tr, NULL, c);
+	struct prep_exec_cookie *cookie = update_col_prepare(tr, NULL, c);
 	if (cookie == NULL)
 		return LOG_ERR;
 
@@ -1085,7 +1083,7 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool update)
 	return bat;
 }
 
-static void*
+static struct prep_exec_cookie*
 update_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
@@ -1102,7 +1100,7 @@ update_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 static int
 update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
-	void *cookie = update_idx_prepare(tr, NULL, i);
+	struct prep_exec_cookie *cookie = update_idx_prepare(tr, NULL, i);
 	if (cookie == NULL)
 		return LOG_ERR;
 
@@ -1218,7 +1216,7 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat, int temp)
 }
 
 
-static void*
+static struct prep_exec_cookie*
 append_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
@@ -1235,9 +1233,8 @@ append_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
 }
 
 static int
-append_col_execute(void *incoming_cookie, size_t offset, void *incoming_data, bool is_bat)
+append_col_execute(struct prep_exec_cookie *cookie, size_t offset, void *incoming_data, bool is_bat)
 {
-	struct prep_exec_cookie *cookie = incoming_cookie;
 	int ok = LOG_OK;
 
 	lock_table(cookie->tr->store, cookie->table->base.id);
@@ -1256,7 +1253,7 @@ append_col_execute(void *incoming_cookie, size_t offset, void *incoming_data, bo
 static int
 append_col(sql_trans *tr, sql_column *c, size_t offset, void *i, int tpe)
 {
-	void *cookie = append_col_prepare(tr, NULL, c);
+	struct prep_exec_cookie *cookie = append_col_prepare(tr, NULL, c);
 	if (cookie == NULL)
 		return LOG_ERR;
 
@@ -1265,7 +1262,7 @@ append_col(sql_trans *tr, sql_column *c, size_t offset, void *i, int tpe)
 	return ok;
 }
 
-static void*
+static struct prep_exec_cookie*
 append_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
@@ -1284,7 +1281,7 @@ append_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
 static int
 append_idx(sql_trans *tr, sql_idx * i, size_t offset, void *data, int tpe)
 {
-	void *cookie = append_idx_prepare(tr, NULL, i);
+	struct prep_exec_cookie *cookie = append_idx_prepare(tr, NULL, i);
 	if (cookie == NULL)
 		return LOG_ERR;
 
@@ -3118,15 +3115,8 @@ bat_storage_init( store_functions *sf)
 	sf->append_col = &append_col;
 	sf->append_idx = &append_idx;
 
-	sf->append_col_prep = &append_col_prepare;
-	sf->append_idx_prep = &append_idx_prepare;
-	sf->append_col_exec = &append_col_execute;
 	sf->update_col = &update_col;
 	sf->update_idx = &update_idx;
-
-	sf->update_col_prep = &update_col_prepare;
-	sf->update_idx_prep = &update_idx_prepare;
-	sf->update_col_exec = &update_col_execute;
 
 	sf->delete_tab = &delete_tab;
 
