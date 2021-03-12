@@ -721,10 +721,12 @@ BAThashsync(void *arg)
 						break;			\
 				}					\
 				h->nunique += hb == hnil;		\
+				o = canditer_next_dense(ci);		\
+			} else {					\
+				o = canditer_next(ci);			\
 			}						\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
-			o = canditer_next(ci);				\
 		}							\
 	} while (0)
 
