@@ -60,31 +60,6 @@ unlock_table(sqlstore *store, sqlid id)
 	MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
 }
 
-/* used for communication between {append,update}_prepare and {append,update}_execute */
-struct prep_exec_cookie {
-	sql_trans *tr;
-	sql_delta *delta;
-	sql_table *table;
-	bool is_new; /* only used for updates */
-};
-
-/* creates a new cookie, backed by sql allocator memory so it is
- * automatically freed even if errors occur
- */
-static struct prep_exec_cookie *
-make_cookie(sql_allocator *sa, sql_trans *tr, sql_delta *delta, sql_table *t, bool is_new)
-{
-	struct prep_exec_cookie *cookie;
-	cookie = SA_NEW(sa, struct prep_exec_cookie);
-	if (!cookie)
-		return NULL;
-	cookie->tr = tr;
-	cookie->delta = delta;
-	cookie->table = t;
-	cookie->is_new = is_new;
-	return cookie;
-}
-
 static void
 destroy_segs(segment *s)
 {
@@ -1011,44 +986,33 @@ bind_col_data(sql_trans *tr, sql_column *c, bool update)
 	return bat;
 }
 
-static struct prep_exec_cookie*
-update_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
-{
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
-
-	if ((delta = bind_col_data(tr, c, true)) == NULL)
-		return NULL;
-
-	assert(delta && delta->cs.ts == tr->tid);
-	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
-	return make_cookie(sa, tr, delta, c->t, isNew(c));
-}
-
 static int
-update_col_execute(struct prep_exec_cookie *cookie, void *incoming_tids, void *incoming_values, bool is_bat)
+update_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, bool is_new, void *incoming_tids, void *incoming_values, bool is_bat)
 {
 	if (is_bat) {
 		BAT *tids = incoming_tids;
 		BAT *values = incoming_values;
 		if (BATcount(tids) == 0)
 			return LOG_OK;
-		return delta_update_bat(cookie->tr, cookie->delta, cookie->table, tids, values, cookie->is_new);
+		return delta_update_bat(tr, delta, table, tids, values, is_new);
 	}
 	else
-		return delta_update_val(cookie->tr, cookie->delta, cookie->table, *(oid*)incoming_tids, incoming_values, cookie->is_new);
+		return delta_update_val(tr, delta, table, *(oid*)incoming_tids, incoming_values, is_new);
 }
 
 static int
 update_col(sql_trans *tr, sql_column *c, void *tids, void *upd, int tpe)
 {
-	struct prep_exec_cookie *cookie = update_col_prepare(tr, NULL, c);
-	if (cookie == NULL)
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
+
+	if ((delta = bind_col_data(tr, c, true)) == NULL)
 		return LOG_ERR;
 
-	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
-	_DELETE(cookie);
-	return ok;
+	assert(delta && delta->cs.ts == tr->tid);
+	if ((!inTransaction(tr, c->t) && (odelta != delta || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
+
+	return update_col_execute(tr, delta, c->t, isNew(c), tids, upd, tpe == TYPE_bat);
 }
 
 static sql_delta *
@@ -1083,30 +1047,19 @@ bind_idx_data(sql_trans *tr, sql_idx *i, bool update)
 	return bat;
 }
 
-static struct prep_exec_cookie*
-update_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
+static int
+update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
 {
 	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
 
 	if ((delta = bind_idx_data(tr, i, true)) == NULL)
-		return NULL;
+		return LOG_ERR;
 
 	assert(delta && delta->cs.ts == tr->tid);
 	if ((!inTransaction(tr, i->t) && (odelta != delta || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
 		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
-	return make_cookie(sa, tr, delta, i->t, isNew(i));
-}
 
-static int
-update_idx(sql_trans *tr, sql_idx * i, void *tids, void *upd, int tpe)
-{
-	struct prep_exec_cookie *cookie = update_idx_prepare(tr, NULL, i);
-	if (cookie == NULL)
-		return LOG_ERR;
-
-	int ok = update_col_execute(cookie, tids, upd, tpe == TYPE_bat);
-	_DELETE(cookie);
-	return ok;
+	return update_col_execute(tr, delta, i->t, isNew(i), tids, upd, tpe == TYPE_bat);
 }
 
 static int
@@ -1215,79 +1168,56 @@ dup_storage( sql_trans *tr, storage *obat, storage *bat, int temp)
 	return dup_cs(tr, &obat->cs, &bat->cs, TYPE_msk, temp);
 }
 
-
-static struct prep_exec_cookie*
-append_col_prepare(sql_trans *tr, sql_allocator *sa, sql_column *c)
-{
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
-	int in_transaction = segments_in_transaction(tr, c->t);
-
-	if ((delta = bind_col_data(tr, c, false)) == NULL)
-		return NULL;
-
-	assert(delta && (!isTempTable(c->t) || delta->cs.ts == tr->tid));
-	if (isTempTable(c->t))
-	if ((!inTransaction(tr, c->t) && (odelta != delta || !in_transaction || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
-		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
-	return make_cookie(sa, tr, delta, c->t, false);
-}
-
 static int
-append_col_execute(struct prep_exec_cookie *cookie, size_t offset, void *incoming_data, bool is_bat)
+append_col_execute(sql_trans *tr, sql_delta *delta, sql_table *table, size_t offset, void *incoming_data, bool is_bat)
 {
 	int ok = LOG_OK;
 
-	lock_table(cookie->tr->store, cookie->table->base.id);
+	lock_table(tr->store, table->base.id);
 	if (is_bat) {
 		BAT *bat = incoming_data;
 
 		if (BATcount(bat))
-			ok = delta_append_bat(cookie->delta, offset, bat);
+			ok = delta_append_bat(delta, offset, bat);
 	} else {
-		ok = delta_append_val(cookie->delta, offset, incoming_data);
+		ok = delta_append_val(delta, offset, incoming_data);
 	}
-	unlock_table(cookie->tr->store, cookie->table->base.id);
+	unlock_table(tr->store, table->base.id);
 	return ok;
 }
 
 static int
 append_col(sql_trans *tr, sql_column *c, size_t offset, void *i, int tpe)
 {
-	struct prep_exec_cookie *cookie = append_col_prepare(tr, NULL, c);
-	if (cookie == NULL)
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&c->data);
+	int in_transaction = segments_in_transaction(tr, c->t);
+
+	if ((delta = bind_col_data(tr, c, false)) == NULL)
 		return LOG_ERR;
 
-	int ok = append_col_execute(cookie, offset, i, tpe == TYPE_bat);
-	_DELETE(cookie);
-	return ok;
-}
+	assert(delta && (!isTempTable(c->t) || delta->cs.ts == tr->tid));
+	if (isTempTable(c->t))
+	if ((!inTransaction(tr, c->t) && (odelta != delta || !in_transaction || isTempTable(c->t)) && isGlobal(c->t)) || (!isNew(c->t) && isLocalTemp(c->t)))
+		trans_add(tr, &c->base, delta, &tc_gc_col, &commit_update_col, isLocalTemp(c->t)?NULL:&log_update_col);
 
-static struct prep_exec_cookie*
-append_idx_prepare(sql_trans *tr, sql_allocator *sa, sql_idx *i)
-{
-	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
-	int in_transaction = segments_in_transaction(tr, i->t);
-
-	if ((delta = bind_idx_data(tr, i, false)) == NULL)
-		return NULL;
-
-	assert(delta && (!isTempTable(i->t) || delta->cs.ts == tr->tid));
-	if (isTempTable(i->t))
-	if ((!inTransaction(tr, i->t) && (odelta != delta || !in_transaction || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
-		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
-	return make_cookie(sa, tr, delta, i->t, false);
+	return append_col_execute(tr, delta, c->t, offset, i, tpe == TYPE_bat);
 }
 
 static int
 append_idx(sql_trans *tr, sql_idx * i, size_t offset, void *data, int tpe)
 {
-	struct prep_exec_cookie *cookie = append_idx_prepare(tr, NULL, i);
-	if (cookie == NULL)
+	sql_delta *delta, *odelta = ATOMIC_PTR_GET(&i->data);
+	int in_transaction = segments_in_transaction(tr, i->t);
+
+	if ((delta = bind_idx_data(tr, i, false)) == NULL)
 		return LOG_ERR;
 
-	int ok = append_col_execute(cookie, offset, data, tpe == TYPE_bat);
-	_DELETE(cookie);
-	return ok;
+	assert(delta && (!isTempTable(i->t) || delta->cs.ts == tr->tid));
+	if (isTempTable(i->t))
+	if ((!inTransaction(tr, i->t) && (odelta != delta || !in_transaction || isTempTable(i->t)) && isGlobal(i->t)) || (!isNew(i->t) && isLocalTemp(i->t)))
+		trans_add(tr, &i->base, delta, &tc_gc_idx, &commit_update_idx, isLocalTemp(i->t)?NULL:&log_update_idx);
+
+	return append_col_execute(tr, delta, i->t, offset, data, tpe == TYPE_bat);
 }
 
 static int
