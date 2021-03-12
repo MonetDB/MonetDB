@@ -325,45 +325,40 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 			}
 		}
 	}
-	for (i = 0; i < len; i++) {
-		if (!inserts[i]) {
-			for (m = ol_first_node(t->columns); m; m = m->next) {
-				sql_column *c = m->data;
+	for (m = ol_first_node(t->columns); m; m = m->next) {
+		sql_column *c = m->data;
+		sql_exp *exps = NULL;
 
-				if (c->colnr == i) {
-					size_t j = 0;
-					sql_exp *exps = NULL;
+		if (!inserts[c->colnr]) {
+			for (size_t j = 0; j < rowcount; j++) {
+				sql_exp *e = NULL;
 
-					for (j = 0; j < rowcount; j++) {
-						sql_exp *e = NULL;
-
-						if (c->def) {
-							e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
-							if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
-								return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
-						} else {
-							atom *a = atom_general(sql->sa, &c->type, NULL);
-							e = exp_atom(sql->sa, a);
-						}
-						if (!e)
-							return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
-						if (exps) {
-							list *vals_list = exps->f;
-
-							list_append(vals_list, e);
-						}
-						if (!exps && j+1 < rowcount) {
-							exps = exp_values(sql->sa, sa_list(sql->sa));
-							exps->tpe = c->type;
-							exp_label(sql->sa, exps, ++sql->label);
-						}
-						if (!exps)
-							exps = e;
-					}
-					inserts[i] = exps;
+				if (c->def) {
+					e = rel_parse_val(sql, c->def, &c->type, sql->emode, NULL);
+					if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL)
+						return sql_error(sql, 02, SQLSTATE(HY005) "%s: default expression could not be evaluated", action);
+				} else {
+					atom *a = atom_general(sql->sa, &c->type, NULL);
+					e = exp_atom(sql->sa, a);
 				}
+				if (!e)
+					return sql_error(sql, 02, SQLSTATE(42000) "%s: column '%s' has no valid default value", action, c->base.name);
+				if (!exps && j+1 < rowcount) {
+					exps = exp_values(sql->sa, sa_list(sql->sa));
+					exps->tpe = c->type;
+					exp_label(sql->sa, exps, ++sql->label);
+				}
+				if (exps) {
+					list *vals_list = exps->f;
+
+					assert(rowcount > 1);
+					list_append(vals_list, e);
+				}
+				if (!exps)
+					exps = e;
 			}
-			assert(inserts[i]);
+			inserts[c->colnr] = exps;
+			assert(inserts[c->colnr]);
 		}
 	}
 	/* now rewrite project exps in proper table order */
@@ -442,7 +437,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 {
 	mvc *sql = query->sql;
 	sql_rel *r = NULL;
-	size_t rowcount = 1;
+	size_t rowcount = 0;
 	list *collist = check_table_columns(sql, t, columns, action, t->base.name);
 	if (!collist)
 		return NULL;
@@ -457,6 +452,8 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 				collist = NULL;
 		}
 
+		if (!rowlist->h) /* no values insert 1 row */
+			rowcount++;
 		for (dnode *o = rowlist->h; o; o = o->next, rowcount++) {
 			dlist *values = o->data.lval;
 
@@ -510,6 +507,7 @@ insert_generate_inserts(sql_query *query, sql_table *t, dlist *columns, symbol *
 		exp_kind ek = {type_value, card_relation, TRUE};
 
 		r = rel_subquery(query, NULL, val_or_q, ek);
+		rowcount++;
 	}
 	if (!r)
 		return NULL;
@@ -577,7 +575,7 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 		return sql_error(sql, 02, SQLSTATE(21S01) "MERGE: query result doesn't match number of columns in table '%s'", t->base.name);
 
 	res->l = r;
-	res->exps = rel_inserts(sql, t, res, collist, 2, 0, "MERGE");
+	res->exps = rel_inserts(sql, t, res, collist, 1, 0, "MERGE");
 	if(!res->exps)
 		return NULL;
 	return res;
