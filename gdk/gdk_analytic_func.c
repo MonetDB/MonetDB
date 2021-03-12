@@ -223,7 +223,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtail(bpi, start[k]) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtvar(bpi, start[k]) : nil;
 				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 					return GDK_FAIL;
 				has_nils |= atomcmp(curval, nil) == 0;
@@ -232,7 +232,7 @@ GDKanalyticalfirst(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			uint16_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtail(bpi, start[k]) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtloc(bpi, start[k]) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
 				has_nils |= atomcmp(curval, nil) == 0;
@@ -294,7 +294,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 	default:{
 		if (ATOMvarsized(tpe)) {
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtail(bpi, end[k] - 1) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtvar(bpi, end[k] - 1) : nil;
 				if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 					return GDK_FAIL;
 				has_nils |= atomcmp(curval, nil) == 0;
@@ -303,7 +303,7 @@ GDKanalyticallast(BAT *r, BAT *b, BAT *s, BAT *e, int tpe)
 			uint16_t width = r->twidth;
 			uint8_t *restrict rcast = (uint8_t *) Tloc(r, 0);
 			for (; k < cnt; k++) {
-				const void *curval = (end[k] > start[k]) ? BUNtail(bpi, end[k] - 1) : nil;
+				const void *curval = (end[k] > start[k]) ? BUNtloc(bpi, end[k] - 1) : nil;
 				memcpy(rcast, curval, width);
 				rcast += width;
 				has_nils |= atomcmp(curval, nil) == 0;
@@ -403,7 +403,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 						curval = (void *) nil;
 						has_nils = true;
 					} else {
-						curval = BUNtail(bpi, start[k] + (oid)(lnth - 1));
+						curval = BUNtvar(bpi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
 					if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
@@ -419,7 +419,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 						curval = (void *) nil;
 						has_nils = true;
 					} else {
-						curval = BUNtail(bpi, start[k] + (oid)(lnth - 1));
+						curval = BUNtloc(bpi, start[k] + (oid)(lnth - 1));
 						has_nils |= atomcmp(curval, nil) == 0;
 					}
 					memcpy(rcast, curval, width);
@@ -465,7 +465,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 				} else {
 					nth--;
 					for (; k < cnt; k++) {
-						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtail(bpi, start[k] + (oid) nth) : nil;
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtvar(bpi, start[k] + (oid) nth) : nil;
 						if (tfastins_nocheckVAR(r, k, curval, Tsize(r)) != GDK_SUCCEED)
 							return GDK_FAIL;
 						has_nils |= atomcmp(curval, nil) == 0;
@@ -483,7 +483,7 @@ GDKanalyticalnthvalue(BAT *r, BAT *b, BAT *s, BAT *e, BAT *t, lng *pnth, int tpe
 				} else {
 					nth--;
 					for (; k < cnt; k++) {
-						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtail(bpi, start[k] + (oid) nth) : nil;
+						const void *curval = (end[k] > start[k] && nth < (lng)(end[k] - start[k])) ? BUNtloc(bpi, start[k] + (oid) nth) : nil;
 						memcpy(rcast, curval, width);
 						rcast += width;
 						has_nils |= atomcmp(curval, nil) == 0;
@@ -888,7 +888,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			for (; k < i;) { \
 				j = k; \
 				do {	\
-					void *next = BUNtail(bpi, k); \
+					void *next = BUNtvar(bpi, k); \
 					if (atomcmp(next, nil) != 0) {		\
 						if (atomcmp(curval, nil) == 0)	\
 							curval = next;		\
@@ -906,7 +906,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			for (; k < i;) { \
 				j = k; \
 				do {	\
-					void *next = BUNtail(bpi, k); \
+					void *next = BUNtloc(bpi, k); \
 					if (atomcmp(next, nil) != 0) {		\
 						if (atomcmp(curval, nil) == 0)	\
 							curval = next;		\
@@ -930,7 +930,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		l = i - 1; \
 		if (ATOMvarsized(tpe)) {	\
 			for (j = l; ; j--) { \
-				void *next = BUNtail(bpi, j); \
+				void *next = BUNtvar(bpi, j); \
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -952,7 +952,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 			}	\
 		} else {	\
 			for (j = l; ; j--) { \
-				void *next = BUNtail(bpi, j); \
+				void *next = BUNtloc(bpi, j); \
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -982,7 +982,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 		void *curval = (void*) nil; \
 		if (ATOMvarsized(tpe)) {	\
 			for (j = k; j < i; j++) { \
-				void *next = BUNtail(bpi, j);	\
+				void *next = BUNtvar(bpi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -995,7 +995,7 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 					return GDK_FAIL; \
 		} else {	\
 			for (j = k; j < i; j++) { \
-				void *next = BUNtail(bpi, j);	\
+				void *next = BUNtloc(bpi, j);	\
 				if (atomcmp(next, nil) != 0) {		\
 					if (atomcmp(curval, nil) == 0)	\
 						curval = next;		\
@@ -1015,14 +1015,14 @@ GDKanalyticallead(BAT *r, BAT *b, BAT *p, BUN lead, const void *restrict default
 	do { \
 		if (ATOMvarsized(tpe)) {	\
 			for (; k < i; k++) { \
-				void *next = BUNtail(bpi, k); \
+				void *next = BUNtvar(bpi, k); \
 				if (tfastins_nocheckVAR(r, k, next, Tsize(r)) != GDK_SUCCEED) \
 					return GDK_FAIL; \
 				has_nils |= atomcmp(next, nil) == 0;		\
 			} \
 		} else {	\
 			for (; k < i; k++) { \
-				void *next = BUNtail(bpi, k); \
+				void *next = BUNtloc(bpi, k); \
 				memcpy(rcast, next, width);	\
 				rcast += width;	\
 				has_nils |= atomcmp(next, nil) == 0;		\

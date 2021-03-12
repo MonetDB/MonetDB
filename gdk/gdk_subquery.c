@@ -148,7 +148,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						next = (void*) nilp;
 						hasnil = 1;
 					} else {
-						next = BUNtail(li, noid);
+						next = BUNtvar(li, noid);
 					}
 					if (tfastins_nocheckVAR(res, i, next, Tsize(res)) != GDK_SUCCEED)
 						goto alloc_fail;
@@ -163,7 +163,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						next = (void*) nilp;
 						hasnil = 1;
 					} else {
-						next = BUNtail(li, noid);
+						next = BUNtloc(li, noid);
 					}
 					memcpy(rcast, next, width);
 					rcast += width;
