@@ -176,6 +176,29 @@ strLocate(Heap *h, const char *v)
 	return 0;
 }
 
+#ifdef __GNUC__
+/* __builtin_expect returns its first argument; it is expected to be
+ * equal to the second argument */
+#define unlikely(expr)	__builtin_expect((expr) != 0, 0)
+#define likely(expr)	__builtin_expect((expr) != 0, 1)
+#else
+#define unlikely(expr)	(expr)
+#define likely(expr)	(expr)
+#endif
+
+/*
+ * UTF-8 encoding is as follows:
+ * U-00000000 - U-0000007F: 0xxxxxxx
+ * U-00000080 - U-000007FF: 110zzzzx 10xxxxxx
+ * U-00000800 - U-0000FFFF: 1110zzzz 10zxxxxx 10xxxxxx
+ * U-00010000 - U-0010FFFF: 11110zzz 10zzxxxx 10xxxxxx 10xxxxxx
+ *
+ * To be correctly coded UTF-8, the sequence should be the shortest
+ * possible encoding of the value being encoded.  This means that at
+ * least one of the z bits must be non-zero.  Also note that the four
+ * byte sequence can encode more than is allowed and that the values
+ * U+D800..U+DFFF are not allowed to be encoded.
+ */
 static inline gdk_return
 checkUTF8(const char *v)
 {
@@ -185,11 +208,6 @@ checkUTF8(const char *v)
 	 * unlikely to succeed, i.e. the ones that lead to a return of
 	 * GDK_FAIL, as being expected to return 0 using the
 	 * __builtin_expect function. */
-#ifndef __GNUC__
-	/* __builtin_expect returns its first argument; it is expected
-	 * to be equal to the second argument */
-#define __builtin_expect(expr, expect)	(expr)
-#endif
 	if (v[0] != '\200' || v[1] != '\0') {
 		/* check that string is correctly encoded UTF-8 */
 		for (size_t i = 0; v[i]; i++) {
@@ -199,27 +217,27 @@ checkUTF8(const char *v)
 			if ((v[i] & 0x80) == 0) {
 				;
 			} else if ((v[i] & 0xE0) == 0xC0) {
-				if (__builtin_expect((v[i] & 0x1E) == 0, 0))
+				if (unlikely((v[i] & 0x1E) == 0))
 					return GDK_FAIL;
-				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
 			} else if ((v[i] & 0xF0) == 0xE0) {
-				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
 				if ((v[i] & 0x0F) == 0) {
-					if (__builtin_expect((v[++i] & 0xE0) != 0xA0, 0))
+					if (unlikely((v[++i] & 0xE0) != 0xA0))
 						return GDK_FAIL;
-				} else if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+				} else if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
 			} else if ((v[i] & 0xF8) == 0xF0) {
-				if (__builtin_expect((v[i+1] & 0x07) == 0 &&
-						     (v[i+2] & 0x30) == 0, 0))
+				if (unlikely((v[i+1] & 0x07) == 0 &&
+						     (v[i+2] & 0x30) == 0))
 					return GDK_FAIL;
-				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
-				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
-				if (__builtin_expect((v[++i] & 0xC0) != 0x80, 0))
+				if (unlikely((v[++i] & 0xC0) != 0x80))
 					return GDK_FAIL;
 			} else {
 				return GDK_FAIL;
@@ -367,29 +385,6 @@ strPut(BAT *b, var_t *dst, const void *V)
  * the input is correct UTF-8.
  */
 
-/*
-   UTF-8 encoding is as follows:
-U-00000000 - U-0000007F: 0xxxxxxx
-U-00000080 - U-000007FF: 110xxxxx 10xxxxxx
-U-00000800 - U-0000FFFF: 1110xxxx 10xxxxxx 10xxxxxx
-U-00010000 - U-001FFFFF: 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-U-00200000 - U-03FFFFFF: 111110xx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-U-04000000 - U-7FFFFFFF: 1111110x 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx 10xxxxxx
-*/
-/* To be correctly coded UTF-8, the sequence should be the shortest
- * possible encoding of the value being encoded.  This means that for
- * an encoding of length n+1 (1 <= n <= 5), at least one of the bits
- * in utf8chkmsk[n] should be non-zero (else the encoding could be
- * shorter). */
-static int utf8chkmsk[] = {
-	0x0000007f,
-	0x00000780,
-	0x0000f800,
-	0x001f0000,
-	0x03e00000,
-	0x7c000000,
-};
-
 ssize_t
 GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ssize_t len)
 {
@@ -424,7 +419,7 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 					cur++;
 					c = mult08(c) + base08(*cur);
 					if (num08(cur[1])) {
-						if (c > 037) {
+						if (unlikely(c > 037)) {
 							/* octal
 							 * escape
 							 * sequence
@@ -455,7 +450,7 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 			case 'U':
 				/* \u with four hexadecimal digits or
 				 * \U with eight hexadecimal digits */
-				if (n > 0) {
+				if (unlikely(n > 0)) {
 					/* not when in the middle of a
 					 * UTF-8 sequence */
 					goto notutf8;
@@ -463,15 +458,15 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 				c = 0;
 				for (n = *cur == 'U' ? 8 : 4; n > 0; n--) {
 					cur++;
-					if (!num16(*cur)) {
+					if (unlikely(!num16(*cur))) {
 						GDKerror("not a Unicode code point escape\n");
 						return -1;
 					}
 					c = c << 4 | base16(*cur);
 				}
 				/* n == 0 now */
-				if (c == 0 || c > 0x10FFFF ||
-				    (c & 0xFFF800) == 0xD800) {
+				if (unlikely(c == 0 || c > 0x10FFFF ||
+					     (c & 0xFFF800) == 0xD800)) {
 					GDKerror("illegal Unicode code point\n");
 					return -1;
 				}
@@ -531,7 +526,7 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 #if 0
 		} else if (c == quote && cur[1] == quote) {
 			assert(c != 0);
-			if (n > 0)
+			if (unlikely(n > 0))
 				goto notutf8;
 			*p++ = quote;
 			cur++;
@@ -542,7 +537,7 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 		if (n > 0) {
 			/* we're still expecting follow-up bytes in a
 			 * UTF-8 sequence */
-			if ((c & 0xC0) != 0x80) {
+			if (unlikely((c & 0xC0) != 0x80)) {
 				/* incorrect UTF-8 sequence: byte is
 				 * not 10xxxxxx */
 				goto notutf8;
@@ -551,44 +546,44 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 			n--;
 			if (n == 0) {
 				/* this was the last byte in the sequence */
-				if ((utf8char & mask) == 0) {
+				if (unlikely((utf8char & mask) == 0)) {
 					/* incorrect UTF-8 sequence:
 					 * not shortest possible */
 					goto notutf8;
 				}
-				if (utf8char > 0x10FFFF) {
+				if (unlikely(utf8char > 0x10FFFF)) {
 					/* incorrect UTF-8 sequence:
 					 * value too large */
 					goto notutf8;
 				}
-				if ((utf8char & 0x1FFF800) == 0xD800) {
+				if (unlikely((utf8char & 0x1FFF800) == 0xD800)) {
 					/* incorrect UTF-8 sequence:
 					 * low or high surrogate
 					 * encoded as UTF-8 */
 					goto notutf8;
 				}
 			}
-		} else if (c >= 0x80) {
-			int m;
-
-			/* start of multi-byte UTF-8 character */
-			for (n = 0, m = 0x40; c & m; n++, m >>= 1)
-				;
-			/* n now is number of 10xxxxxx bytes that
-			 * should follow */
-			if (n == 0 || n >= 4) {
-				/* incorrect UTF-8 sequence */
-				/* n==0: c == 10xxxxxx */
-				/* n>=4: c == 11111xxx */
-				goto notutf8;
-			}
-			mask = utf8chkmsk[n];
-			/* collect the Unicode code point in utf8char */
-			utf8char = c & ~(0xFFC0 >> n);	/* remove non-x bits */
+		} else if ((c & 0x80) == 0) {
+			;
+		} else if ((c & 0xE0) == 0xC0) {
+			n = 1;
+			mask = 0x007F;
+			utf8char = c & 0x1F;
+		} else if ((c & 0xF0) == 0xE0) {
+			n = 1;
+			mask = 0x0780;
+			utf8char = c & 0x0F;
+		} else if ((c & 0xF8) == 0xF0) {
+			n = 1;
+			mask = 0xF800;
+			utf8char = c & 0x07;
+		} else {
+			/* incorrect UTF-8 sequence */
+			goto notutf8;
 		}
 		*p++ = c;
 	}
-	if (n > 0) {
+	if (unlikely(n > 0)) {
 		/* incomplete UTF-8 sequence */
 		goto notutf8;
 	}
