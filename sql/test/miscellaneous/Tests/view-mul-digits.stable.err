@@ -5,12 +5,12 @@ stderr of test 'view-mul-digits` in directory 'sql/test/miscellaneous` itself:
 # 09:17:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38624" "--set" "mapi_usock=/var/tmp/mtest-19962/.s.monetdb.38624" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Nov2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "embedded_r=yes" "--set" "embedded_py=2" "--set" "embedded_c=true"
 # 09:17:14 >  
 
-MAPI  = (monetdb) /var/tmp/mtest-225757/.s.monetdb.31408
-QUERY = select code, cast(sum(eind) as bigint) from myschema.mygroypview;
+MAPI  = (monetdb) /var/tmp/mtest-82078/.s.monetdb.36080
+QUERY = select code, min(eind) from myschema.mygroypview;
 ERROR = !SELECT: cannot use non GROUP BY column 'code' in query results without an aggregate function
 CODE  = 42000
-MAPI  = (monetdb) /var/tmp/mtest-226088/.s.monetdb.37888
-QUERY = create view myschema.ups as select code, sum(amount) as eind from myschema.mygroyp;
+MAPI  = (monetdb) /var/tmp/mtest-82078/.s.monetdb.36080
+QUERY = create view myschema.ups as select code, min(amount) as eind from myschema.mygroyp;
 ERROR = !SELECT: cannot use non GROUP BY column 'code' in query results without an aggregate function
 CODE  = 42000
 MAPI  = (monetdb) /var/tmp/mtest-226088/.s.monetdb.37888
