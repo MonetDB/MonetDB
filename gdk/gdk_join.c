@@ -2388,6 +2388,14 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		nr++;							\
 	} while (false)
 
+#define EQ_int(a, b)	((a) == (b))
+#define EQ_lng(a, b)	((a) == (b))
+#ifdef HAVE_HGE
+#define EQ_uuid(a, b)	((a).h == (b).h)
+#else
+#define EQ_uuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
+#endif
+
 #define HASHJOIN(TYPE)							\
 	do {								\
 		TYPE *rvals = Tloc(r, 0);				\
@@ -2408,7 +2416,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					ro = canditer_idx(rci, rb);	\
-					if (v != rvals[ro - r->hseqbase]) \
+					if (!EQ_##TYPE(v, rvals[ro - r->hseqbase])) \
 						continue;		\
 					if (only_misses) {		\
 						nr++;			\
@@ -2423,7 +2431,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					if (rb >= rl && rb < rh &&	\
-					    v == rvals[rb] &&		\
+					    EQ_##TYPE(v, rvals[rb]) &&	\
 					    canditer_contains(rci, ro = (oid) (rb - roff + rseq))) { \
 						if (only_misses) {	\
 							nr++;		\
@@ -2439,7 +2447,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				     rb != HASHnil(hsh);		\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					if (rb >= rl && rb < rh &&	\
-					    v == rvals[rb]) {		\
+					    EQ_##TYPE(v, rvals[rb])) {	\
 						if (only_misses) {	\
 							nr++;		\
 							break;		\
@@ -2665,6 +2673,9 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 		break;
 	case TYPE_lng:
 		HASHJOIN(lng);
+		break;
+	case TYPE_uuid:
+		HASHJOIN(uuid);
 		break;
 	default:
 		while (lci->next < lci->ncand) {
