@@ -5,21 +5,18 @@ stderr of test 'view-mul-digits` in directory 'sql/test/miscellaneous` itself:
 # 09:17:14 >  "mserver5" "--debug=10" "--set" "gdk_nr_threads=0" "--set" "mapi_open=true" "--set" "mapi_port=38624" "--set" "mapi_usock=/var/tmp/mtest-19962/.s.monetdb.38624" "--forcemito" "--dbpath=/home/ferreira/repositories/MonetDB-Nov2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous" "--set" "embedded_r=yes" "--set" "embedded_py=2" "--set" "embedded_c=true"
 # 09:17:14 >  
 
-# builtin opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Nov2019/BUILD/var/monetdb5/dbfarm/demo
-# builtin opt 	mapi_port = 50000
-# builtin opt 	mapi_open = false
-# builtin opt 	mapi_ipv6 = false
-# builtin opt 	mapi_autosense = false
-# builtin opt 	sql_optimizer = default_pipe
-# builtin opt 	sql_debug = 0
-# cmdline opt 	gdk_nr_threads = 0
-# cmdline opt 	mapi_open = true
-# cmdline opt 	mapi_port = 38624
-# cmdline opt 	mapi_usock = /var/tmp/mtest-19962/.s.monetdb.38624
-# cmdline opt 	gdk_dbpath = /home/ferreira/repositories/MonetDB-Nov2019/BUILD/var/MonetDB/mTests_sql_test_miscellaneous
-# cmdline opt 	embedded_r = yes
-# cmdline opt 	embedded_py = 2
-# cmdline opt 	embedded_c = true
+MAPI  = (monetdb) /var/tmp/mtest-82078/.s.monetdb.36080
+QUERY = select code, min(eind) from myschema.mygroypview;
+ERROR = !SELECT: cannot use non GROUP BY column 'code' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-82078/.s.monetdb.36080
+QUERY = create view myschema.ups as select code, min(amount) as eind from myschema.mygroyp;
+ERROR = !SELECT: cannot use non GROUP BY column 'code' in query results without an aggregate function
+CODE  = 42000
+MAPI  = (monetdb) /var/tmp/mtest-226088/.s.monetdb.37888
+QUERY = create view myschema.ups as select code, amount as eind from myschema.mygroyp group by code;
+ERROR = !SELECT: cannot use non GROUP BY column 'amount' in query results without an aggregate function
+CODE  = 42000
 
 # 09:17:15 >  
 # 09:17:15 >  "mclient" "-lsql" "-ftest" "-tnone" "-Eutf-8" "-i" "-e" "--host=/var/tmp/mtest-19962" "--port=38624"

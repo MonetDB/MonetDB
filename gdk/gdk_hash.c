@@ -686,13 +686,15 @@ BAThashsync(void *arg)
 			c = hash_##TYPE(h, v + o - b->hseqbase);	\
 			hget = HASHget(h, c);				\
 			h->nheads += hget == hnil;			\
-			for (hb = hget;					\
-			     hb != hnil;				\
-			     hb = HASHgetlink(h, hb)) {			\
-				if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
-					break;				\
+			if (!hascand) {					\
+				for (hb = hget;				\
+				     hb != hnil;			\
+				     hb = HASHgetlink(h, hb)) {		\
+					if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
+						break;			\
+				}					\
+				h->nunique += hb == hnil;		\
 			}						\
-			h->nunique += hb == hnil;			\
 			HASHputlink(h, p, hget);			\
 			HASHput(h, c, p);				\
 			o = canditer_next(ci);				\
@@ -923,13 +925,15 @@ BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict
 			c = hash_any(h, v);
 			hget = HASHget(h, c);
 			h->nheads += hget == hnil;
-			for (hb = hget;
-			     hb != hnil;
-			     hb = HASHgetlink(h, hb)) {
-				if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
-					break;
+			if (!hascand) {
+				for (hb = hget;
+				     hb != hnil;
+				     hb = HASHgetlink(h, hb)) {
+					if (ATOMcmp(h->type, v, BUNtail(bi, hb)) == 0)
+						break;
+				}
+				h->nunique += hb == hnil;
 			}
-			h->nunique += hb == hnil;
 			HASHputlink(h, p, hget);
 			HASHput(h, c, p);
 			o = canditer_next(ci);
