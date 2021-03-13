@@ -2977,6 +2977,29 @@ rel2bin_distinct(backend *be, stmt *s, stmt **distinct)
 }
 
 static stmt *
+rel2bin_single(backend *be, stmt *s)
+{
+	if (s->key && s->nrcols == 0)
+		return s;
+
+	mvc *sql = be->mvc;
+	list *rl = sa_list(sql->sa);
+
+	for (node *n = s->op4.lval->h; n; n = n->next) {
+		stmt *t = n->data;
+		const char *rnme = table_name(sql->sa, t);
+		const char *nme = column_name(sql->sa, t);
+		sql_subfunc *zero_or_one = sql_bind_func(sql, "sys", "zero_or_one", tail_type(t), NULL, F_AGGR);
+
+		t = stmt_aggr(be, t, NULL, NULL, zero_or_one, 1, 0, 1);
+		t = stmt_alias(be, t, rnme, nme);
+		list_append(rl, t);
+	}
+	s = stmt_list(be, rl);
+	return s;
+}
+
+static stmt *
 rel_rename(backend *be, sql_rel *rel, stmt *sub)
 {
 	mvc *sql = be->mvc;
@@ -3038,6 +3061,8 @@ rel2bin_union(backend *be, sql_rel *rel, list *refs)
 	sub = rel_rename(be, rel, sub);
 	if (need_distinct(rel))
 		sub = rel2bin_distinct(be, sub, NULL);
+	if (rel->single)
+		sub = rel2bin_single(be, sub);
 	return sub;
 }
 
