@@ -1634,8 +1634,10 @@ create_col(sql_trans *tr, sql_column *c)
 		size_t cnt = 0;
 
 		/* alter ? */
-		if (ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL)
-			cnt = count_col(tr, fc, 1);
+		if (ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
+			storage *s = fc->t->data;
+			cnt = segs_end(s->segs, tr);
+		}
 		if (cnt && fc != c) {
 			sql_delta *d = ATOMIC_PTR_GET(&fc->data);
 
