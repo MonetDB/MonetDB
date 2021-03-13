@@ -693,8 +693,10 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 					} else
 						ncond = stmt_const(be, bin_first_column(be, left), ncond);
 				}
-				if (isel && !ncond->cand)
+				if (isel && !ncond->cand) {
 					ncond = stmt_project(be, nsel, ncond);
+					ncond->cand = nsel;
+				}
 				stmt *s = stmt_uselect(be, ncond, stmt_bool(be, 1), cmp_equal, !ncond->cand?rsel:NULL, 0/*anti*/, 0);
 				if (rsel && ncond->cand)
 					rsel = stmt_project(be, s, rsel);
