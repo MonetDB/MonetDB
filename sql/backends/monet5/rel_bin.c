@@ -1652,37 +1652,75 @@ stmt_rename(backend *be, sql_exp *exp, stmt *s )
 }
 
 static stmt *
-rel2bin_sql_table(backend *be, sql_table *t)
+rel2bin_sql_table(backend *be, sql_table *t, list *aliases)
 {
 	mvc *sql = be->mvc;
 	list *l = sa_list(sql->sa);
 	node *n;
 	stmt *dels = stmt_tid(be, t, 0);
 
-	for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data;
-		stmt *sc = stmt_col(be, c, dels, dels->partition);
+	if (aliases) {
+		for (n = aliases->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			if (e->type != e_column)
+				continue;
+			assert(e->type == e_column);
+			char *name = e->r;
+			if (name[0] == '%') {
+				if (strcmp(name, TID)==0) {
+					/* tid function  sql.tid(t) */
+					const char *rnme = t->base.name;
 
-		list_append(l, sc);
-	}
-	/* TID column */
-	if (ol_first_node(t->columns)) {
-		/* tid function  sql.tid(t) */
-		const char *rnme = t->base.name;
+					stmt *sc = dels?dels:stmt_tid(be, t, 0);
+					sc = stmt_alias(be, sc, rnme, TID);
+					list_append(l, sc);
+				} else {
+					node *m = ol_find_name(t->idxs, name+1);
+					if (!m)
+						assert(0);
+					sql_idx *i = m->data;
+					stmt *sc = stmt_idx(be, i, dels, dels->partition);
+					const char *rnme = t->base.name;
 
-		stmt *sc = dels?dels:stmt_tid(be, t, 0);
-		sc = stmt_alias(be, sc, rnme, TID);
-		list_append(l, sc);
-	}
-	if (t->idxs) {
-		for (n = ol_first_node(t->idxs); n; n = n->next) {
-			sql_idx *i = n->data;
-			stmt *sc = stmt_idx(be, i, dels, dels->partition);
+					/* index names are prefixed, to make them independent */
+					sc = stmt_alias(be, sc, rnme, sa_strconcat(sql->sa, "%", i->base.name));
+					list_append(l, sc);
+				}
+			} else {
+				node *m = ol_find_name(t->columns, name);
+				if (!m)
+					assert(0);
+				sql_column *c = m->data;
+				stmt *sc = stmt_col(be, c, dels, dels->partition);
+				list_append(l, sc);
+			}
+		}
+	} else {
+		for (n = ol_first_node(t->columns); n; n = n->next) {
+			sql_column *c = n->data;
+			stmt *sc = stmt_col(be, c, dels, dels->partition);
+
+			list_append(l, sc);
+		}
+		/* TID column */
+		if (ol_first_node(t->columns)) {
+			/* tid function  sql.tid(t) */
 			const char *rnme = t->base.name;
 
-			/* index names are prefixed, to make them independent */
-			sc = stmt_alias(be, sc, rnme, sa_strconcat(sql->sa, "%", i->base.name));
+			stmt *sc = dels?dels:stmt_tid(be, t, 0);
+			sc = stmt_alias(be, sc, rnme, TID);
 			list_append(l, sc);
+		}
+		if (t->idxs) {
+			for (n = ol_first_node(t->idxs); n; n = n->next) {
+				sql_idx *i = n->data;
+				stmt *sc = stmt_idx(be, i, dels, dels->partition);
+				const char *rnme = t->base.name;
+
+				/* index names are prefixed, to make them independent */
+				sc = stmt_alias(be, sc, rnme, sa_strconcat(sql->sa, "%", i->base.name));
+				list_append(l, sc);
+			}
 		}
 	}
 	return stmt_list(be, l);
@@ -1957,7 +1995,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 				sql_table *t = rel_ddl_table_get(l);
 
 				if (t)
-					sub = rel2bin_sql_table(be, t);
+					sub = rel2bin_sql_table(be, t, NULL);
 			} else {
 				sub = subrel_bin(be, rel->l, refs);
 			}
@@ -3356,7 +3394,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			sql_table *t = rel_ddl_table_get(l);
 
 			if (t)
-				sub = rel2bin_sql_table(be, t);
+				sub = rel2bin_sql_table(be, t, rel->exps);
 		} else {
 			sub = subrel_bin(be, rel->l, refs);
 		}
