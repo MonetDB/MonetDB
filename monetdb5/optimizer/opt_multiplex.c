@@ -220,6 +220,15 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 
 	(void) stk;
 	(void) pci;
+	for (i = 0; i < mb->stop; i++) {
+		p = getInstrPtr(mb,i);
+		if (isMultiplex(p)) {
+			break;
+		}
+	}
+	if( i == mb->stop){
+		goto wrapup;
+	}
 
 	old = mb->stmt;
 	limit = mb->stop;
@@ -263,6 +272,7 @@ OPTmultiplexImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	if (!msg)
         	msg = chkDeclarations(mb);
     }
+wrapup:
     /* keep all actions taken as a post block comment */
 	usec = GDKusec()- usec;
     snprintf(buf,256,"%-20s actions=%2d time=" LLFMT " usec","multiplex",actions, usec);
