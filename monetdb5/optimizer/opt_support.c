@@ -101,6 +101,10 @@ isSQLinsert(MalBlkPtr mb)
                 if (p &&  getModuleId(p) == sqlRef && getFunctionId(p) == appendRef ){
                         cnt ++;
                 }
+		if (p &&  getModuleId(p) == sqlRef && getFunctionId(p) == setVariableRef ){
+                        cnt ++;
+                }
+
         }
         return cnt > 0.63 * mb->stop;
 }
