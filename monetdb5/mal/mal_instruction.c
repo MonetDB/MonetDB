@@ -949,9 +949,11 @@ trimMalVariables_(MalBlkPtr mb, MalStkPtr glb)
 	}
 	/* rename the temporary variable */
 	mb->vid = 0;
+/* Obsolete, name generation is postponed until needed
 	for( i =0; i< cnt; i++)
 	if( isTmpVar(mb,i))
 		(void) snprintf(getVarName(mb,i), IDLENGTH,"%c_%d", getVarKind(mb,i), mb->vid++);
+*/
 
 	GDKfree(alias);
 	mb->vtop = cnt;
