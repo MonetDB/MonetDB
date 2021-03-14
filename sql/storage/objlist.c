@@ -48,8 +48,18 @@ ol_add(objlist *ol, sql_base *data)
 		return -1;
 	node *n = l->t;
 	assert(n->data == data);
-	if (hash_add(ol->h, base_key(data), n) == NULL)
-		return -1;
+	int sz = list_length(ol->l);
+	if (ol->h->size <= sz) {
+		hash_destroy(ol->h);
+		ol->h = hash_new(ol->l->sa, 4*sz, (fkeyvalue)&node_key);
+		for (node *n = ol->l->h; n; n = n->next) {
+			if (hash_add(ol->h, base_key(n->data), n) == NULL)
+				return -1;
+		}
+	} else {
+		if (hash_add(ol->h, base_key(data), n) == NULL)
+			return -1;
+	}
 	return 0;
 }
 
