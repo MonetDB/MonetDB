@@ -105,6 +105,8 @@ static mel_func optimizer_init_funcs[] = {
  optwrapper_pattern("garbageCollector", "Garbage collector optimizer"),
  optwrapper_pattern("generator", "Sequence generator optimizer"),
  optwrapper_pattern("querylog", "Collect SQL query statistics"),
+ optwrapper_pattern("minimalfast", "Fast compound minimal optimizer pipe"),
+ optwrapper_pattern("defaultfast", "Fast compound default optimizer pipe"),
  pattern("optimizer", "prelude", optimizer_prelude, false, "Initialize the optimizer", noargs),
  command("optimizer", "epilogue", optimizer_epilogue, false, "release the resources held by the optimizer module", args(1,1, arg("",void))),
  pattern("optimizer", "optimize", QOToptimize, false, "Optimize a specific operation", args(0,2, arg("mod",str),arg("fcn",str))),

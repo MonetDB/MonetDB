@@ -48,6 +48,7 @@ target_sources(optimizer
   opt_profiler.c opt_profiler.h
   opt_postfix.c opt_postfix.h
   opt_volcano.c opt_volcano.h
+  opt_fastpath.c opt_fastpath.h
   opt_wrapper.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/opt_pipes.h)

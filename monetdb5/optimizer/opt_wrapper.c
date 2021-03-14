@@ -52,6 +52,7 @@
 #include "opt_remoteQueries.h"
 #include "opt_reorder.h"
 #include "opt_volcano.h"
+#include "opt_fastpath.h"
 #include "opt_wlc.h"
 #include "optimizer_private.h"
 
@@ -61,6 +62,8 @@ struct{
 	int calls;
 	lng timing;
 } codes[] = {
+	{"defaultfast", &OPTdefaultfastImplementation,0,0},
+	{"minimalfast", &OPTminimalfastImplementation,0,0},
 	{"aliases", &OPTaliasesImplementation,0,0},
 	{"bincopyfrom", &OPTbincopyfromImplementation,0,0},
 	{"candidates", &OPTcandidatesImplementation,0,0},
