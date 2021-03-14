@@ -1635,7 +1635,7 @@ create_col(sql_trans *tr, sql_column *c)
 
 		/* alter ? */
 		if (ol_first_node(c->t->columns) && (fc = ol_first_node(c->t->columns)->data) != NULL) {
-			storage *s = fc->t->data;
+			storage *s = ATOMIC_PTR_GET(&fc->t->data);
 			cnt = segs_end(s->segs, tr);
 		}
 		if (cnt && fc != c) {
