@@ -53,6 +53,9 @@ static struct PIPELINES {
 	 //"optimizer.mask();"
 	 "optimizer.garbageCollector();",
 	 "stable", NULL, 1},
+	{"minimal_fast",
+	 "optimizer.minimalfast()",
+	 "stable", NULL, 1},
 /* The default pipe line contains as of Feb2010
  * mitosis-mergetable-reorder, aimed at large tables and improved
  * access locality.
@@ -95,6 +98,9 @@ static struct PIPELINES {
 //	 "optimizer.jit();" awaiting the new batcalc api
 	 "optimizer.wlc();"
 	 "optimizer.garbageCollector();",
+	 "stable", NULL, 1},
+	{"default_fast",
+	 "optimizer.defaultfast()",
 	 "stable", NULL, 1},
 /*
  * Optimistic concurreny control in general leads to more transaction failures
@@ -408,6 +414,10 @@ validatePipe(MalBlkPtr mb)
 	if (mb == NULL )
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizer mal block\n");
 	p = getInstrPtr(mb,1);
+
+	if (getFunctionId(p) && (idcmp(getFunctionId(p), "defaultfast") || (idcmp(getFunctionId(p), "minimalfast"))))
+		return MAL_SUCCEED;
+
 	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline"))
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
 
