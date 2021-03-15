@@ -60,7 +60,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 	lng usec = GDKusec();
 
 	/* catch simple insert operations */
-	if( isSQLinsert(mb)){
+	if( isSimpleSQL(mb)){
 		goto wrapup;
 	}
 

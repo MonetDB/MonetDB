@@ -20,6 +20,7 @@
  */
 #include "monetdb_config.h"
 #include "opt_pipes.h"
+#include "opt_support.h"
 #include "mal_client.h"
 #include "mal_instruction.h"
 #include "mal_function.h"
@@ -537,15 +538,25 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 	InstrPtr p,q;
 	str msg = MAL_SUCCEED;
 
-	for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-		if (strcmp(pipes[i].name, name) == 0)
-			break;
+	if (strcmp(name, "default_fast") == 0 && isSimpleSQL(mb)){
+		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
+			if (strcmp(pipes[i].name, "minimal_fast") == 0)
+				break;
+	} else {
+		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
+			if (strcmp(pipes[i].name, name) == 0)
+				break;
+	}
 
 	if (i == MAXOPTPIPES)
 		throw(MAL, "optimizer.addOptimizerPipe", SQLSTATE(HY013) "Out of slots");
 
-	if (pipes[i].mb == NULL)
-		msg = compileOptimizer(cntxt, name);
+	if (pipes[i].mb == NULL){
+		if (strcmp(name, "default_fast") == 0  && isSimpleSQL(mb))
+			msg = compileOptimizer(cntxt, name);
+		else
+			msg = compileOptimizer(cntxt, "minimal_fast");
+	}
 
 	if (pipes[i].mb && pipes[i].mb->stop) {
 		for (j = 1; j < pipes[i].mb->stop - 1; j++) {

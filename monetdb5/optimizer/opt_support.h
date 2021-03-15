@@ -21,7 +21,7 @@
 mal_export str MALoptimizer(Client c);
 mal_export str optimizeMALBlock(Client cntxt, MalBlkPtr mb);
 
-extern int isSQLinsert(MalBlkPtr mb);
+extern int isSimpleSQL(MalBlkPtr mb);
 extern int optimizerIsApplied(MalBlkPtr mb, str name);
 extern int isUnsafeInstruction(InstrPtr q);
 extern int isUnsafeFunction(InstrPtr q);

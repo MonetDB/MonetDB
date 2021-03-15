@@ -90,7 +90,7 @@ isOptimizerUsed(MalBlkPtr mb, str opt)
 
 /* Simple insertion statements do not require complex optimizer steps */
 int
-isSQLinsert(MalBlkPtr mb)
+isSimpleSQL(MalBlkPtr mb)
 {
         int cnt = 0;
         int i;
@@ -101,8 +101,11 @@ isSQLinsert(MalBlkPtr mb)
                 if (p &&  getModuleId(p) == sqlRef && getFunctionId(p) == appendRef ){
                         cnt ++;
                 }
-		if (p &&  getModuleId(p) == sqlRef && getFunctionId(p) == setVariableRef ){
-                        cnt ++;
+		if (p && getModuleId(p) == sqlRef && getFunctionId(p) == setVariableRef ){
+                        return 1;
+                }
+		if (p && getModuleId(p) == sqlcatalogRef ){
+                        return 1;
                 }
 
         }
