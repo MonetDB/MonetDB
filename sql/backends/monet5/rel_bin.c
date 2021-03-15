@@ -248,15 +248,67 @@ static stmt *create_const_column(backend *be, stmt *val )
 	return stmt_append(be, stmt_temp(be, tail_type(val)), val);
 }
 
-static stmt *
-bin_first_column(backend *be, stmt *sub )
+static int
+statment_score(stmt *c)
 {
-	node *n = sub->op4.lval->h;
-	stmt *c = n->data;
+	sql_subtype *t = tail_type(c);
+	int score = 0;
 
-	if (c->nrcols == 0)
-		return const_column(be, c);
-	return c;
+	if (c->nrcols != 0) /* no need to create an extra intermediate */
+		score += 200;
+
+	if (!t)
+		return score;
+	switch (ATOMstorage(t->type->localtype)) { /* give preference to smaller types */
+		case TYPE_bte:
+			score += 150 - 8;
+			break;
+		case TYPE_sht:
+			score += 150 - 16;
+			break;
+		case TYPE_int:
+			score += 150 - 32;
+			break;
+		case TYPE_void:
+		case TYPE_lng:
+			score += 150 - 64;
+			break;
+		case TYPE_uuid:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+			score += 150 - 128;
+			break;
+		case TYPE_flt:
+			score += 75 - 24;
+			break;
+		case TYPE_dbl:
+			score += 75 - 53;
+			break;
+		default:
+			break;
+	}
+	return score;
+}
+
+static stmt *
+bin_find_smallest_column(backend *be, stmt *sub)
+{
+	stmt *res = NULL;
+	int best_score = 0;
+
+	for (node *n = sub->op4.lval->h ; n ; n = n->next) {
+		stmt *c = n->data;
+		int next_score = statment_score(c);
+
+		if (next_score >= best_score) {
+			res = c;
+			best_score = next_score;
+		}
+	}
+	if (res->nrcols == 0)
+		return const_column(be, res);
+	return res;
 }
 
 static stmt *
@@ -372,7 +424,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		return NULL;
 
 	if (reduce && c->nrcols == 0)
-		c = stmt_const(be, bin_first_column(be, left), c);
+		c = stmt_const(be, bin_find_smallest_column(be, left), c);
 
 	if (c->nrcols == 0 || depth || !reduce) {
 		sql_subtype *bt = sql_bind_localtype("bit");
@@ -396,7 +448,7 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 		}
 		if (sel && !(depth || !reduce))
 			s = stmt_uselect(be,
-				stmt_const(be, bin_first_column(be, left), s),
+				stmt_const(be, bin_find_smallest_column(be, left), s),
 				stmt_bool(be, 1), cmp_equal, sel, 0, 0);
 	} else if (list_length(nl) < 16) {
 		comp_type cmp = (in)?cmp_equal:cmp_notequal;
@@ -552,7 +604,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 			assert(f);
 			s = stmt_binop(be, sel1, s, sin, f);
 		} else if (sel1 && (sel1->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_first_column(be, left);
+			stmt *predicate = bin_find_smallest_column(be, left);
 
 			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 			if (s->nrcols == 0)
@@ -579,7 +631,7 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 			assert(f);
 			s = stmt_binop(be, sel2, s, sin, f);
 		} else if (sel2 && (sel2->nrcols == 0 || s->nrcols == 0)) {
-			stmt *predicate = bin_first_column(be, left);
+			stmt *predicate = bin_find_smallest_column(be, left);
 
 			predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 			if (s->nrcols == 0)
@@ -595,13 +647,13 @@ exp_bin_or(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ex
 		return stmt_binop(be, sel1, sel2, NULL, f);
 	}
 	if (sel1->nrcols == 0) {
-		stmt *predicate = bin_first_column(be, left);
+		stmt *predicate = bin_find_smallest_column(be, left);
 
 		predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 		sel1 = stmt_uselect(be, predicate, sel1, cmp_equal, NULL, 0/*anti*/, 0);
 	}
 	if (sel2->nrcols == 0) {
-		stmt *predicate = bin_first_column(be, left);
+		stmt *predicate = bin_find_smallest_column(be, left);
 
 		predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 		sel2 = stmt_uselect(be, predicate, sel2, cmp_equal, NULL, 0/*anti*/, 0);
@@ -656,7 +708,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 			if (!res) {
 				stmt *l = isel;
 				if (!l)
-					l = bin_first_column(be, left);
+					l = bin_find_smallest_column(be, left);
 				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
 				ires = l;
 				if (res)
@@ -691,7 +743,7 @@ exp2bin_case(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, int 
 						ncond = stmt_const(be, isel, ncond);
 						ncond->cand = isel;
 					} else
-						ncond = stmt_const(be, bin_first_column(be, left), ncond);
+						ncond = stmt_const(be, bin_find_smallest_column(be, left), ncond);
 				}
 				if (isel && !ncond->cand) {
 					ncond = stmt_project(be, nsel, ncond);
@@ -778,7 +830,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 	if (!single_value && !case_when->nrcols) {
 		stmt *l = isel;
 		if (!l)
-			l = bin_first_column(be, left);
+			l = bin_find_smallest_column(be, left);
 		case_when = stmt_const(be, l, case_when);
 		if (case_when)
 			case_when->cand = isel;
@@ -839,7 +891,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 			if (!res) {
 				stmt *l = isel;
 				if (!l)
-					l = bin_first_column(be, left);
+					l = bin_find_smallest_column(be, left);
 				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
 				ires = l;
 				if (res)
@@ -874,7 +926,7 @@ exp2bin_casewhen(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 						ncond = stmt_const(be, isel, ncond);
 						ncond->cand = isel;
 					} else
-						ncond = stmt_const(be, bin_first_column(be, left), ncond);
+						ncond = stmt_const(be, bin_find_smallest_column(be, left), ncond);
 				}
 				if (isel && !ncond->cand)
 					ncond = stmt_project(be, nsel, ncond);
@@ -964,7 +1016,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 			if (!res) {
 				stmt *l = isel;
 				if (!l)
-					l = bin_first_column(be, left);
+					l = bin_find_smallest_column(be, left);
 				res = stmt_const(be, l, stmt_atom(be, atom_general(be->mvc->sa, exp_subtype(fe), NULL)));
 				if (res)
 					res->cand = isel;
@@ -977,7 +1029,7 @@ exp2bin_coalesce(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *isel, 
 					sql_subfunc *a = sql_bind_func(be->mvc, "sys", "isnotnull", tail_type(es), NULL, F_FUNC);
 					ncond = stmt_unop(be, es, NULL, a); /*TODO sql/test/coalesce failing for passing 'nsel' here */
 					if (ncond->nrcols == 0) {
-						stmt *l = bin_first_column(be, left);
+						stmt *l = bin_find_smallest_column(be, left);
 						if (nsel && l)
 							l = stmt_project(be, nsel, l);
 						ncond = stmt_const(be, l, ncond);
@@ -1188,10 +1240,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (list_empty(exps) && (strcmp(f->func->base.name, "rand") == 0 || (f1 = sql_find_func(sql, f->func->s ? f->func->s->base.name : NULL, f->func->base.name, 1, f->func->type, NULL)))) {
 				if (f1)
 					f = f1;
-				list_append(l, stmt_const(be, bin_first_column(be, left),
+				list_append(l, stmt_const(be, bin_find_smallest_column(be, left),
 										  stmt_atom(be, atom_general(sql->sa, f1 ? &(((sql_arg*)f1->func->ops->h->data)->type) : sql_bind_localtype("int"), NULL))));
 			} else if (exps_card(exps) < CARD_MULTI) {
-				rows = bin_first_column(be, left);
+				rows = bin_find_smallest_column(be, left);
 			}
 			sql->session->status = 0; /* if the function was not found clean the error */
 			sql->errstr[0] = '\0';
@@ -1220,10 +1272,10 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 					es = stmt_const(be, rows, es);
 				else if (f->func->type == F_ANALYTIC && es->nrcols == 0) {
 					if (en == exps->h && left->nrcols)
-						es = stmt_const(be, bin_first_column(be, left), es); /* ensure the first argument is a column */
+						es = stmt_const(be, bin_find_smallest_column(be, left), es); /* ensure the first argument is a column */
 					if (!f->func->s && !strcmp(f->func->base.name, "window_bound")
 						&& exps->h->next && list_length(f->func->ops) == 6 && en == exps->h->next && left->nrcols)
-						es = stmt_const(be, bin_first_column(be, left), es);
+						es = stmt_const(be, bin_find_smallest_column(be, left), es);
 				}
 				if (es->nrcols > nrcols)
 					nrcols = es->nrcols;
@@ -1253,7 +1305,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				as = exp_bin(be, at, left, right, NULL, NULL, NULL, sel, depth+1, 0, push);
 
 				if (as && as->nrcols <= 0 && left)
-					as = stmt_const(be, bin_first_column(be, left), as);
+					as = stmt_const(be, bin_find_smallest_column(be, left), as);
 				if (en == attr->h && !en->next && exp_aggr_is_count(e))
 					as = exp_count_no_nil_arg(e, ext, at, as);
 				/* insert single value into a column */
@@ -1296,7 +1348,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			if (grp) {
 				as = grp;
 			} else if (left) {
-				as = bin_first_column(be, left);
+				as = bin_find_smallest_column(be, left);
 				as = exp_count_no_nil_arg(e, ext, NULL, as);
 			} else {
 				/* create dummy single value in a column */
@@ -1355,7 +1407,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				if (!s)
 					return s;
 				if (s->nrcols == 0 && first)
-					s = stmt_const(be, bin_first_column(be, swapped?right:left), s);
+					s = stmt_const(be, bin_find_smallest_column(be, swapped?right:left), s);
 				list_append(ops, s);
 				first = 0;
 			}
@@ -1436,11 +1488,11 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		(void)is_select;
 		if (reduce && left && right) {
 			if (l->nrcols == 0)
-				l = stmt_const(be, bin_first_column(be, swapped?right:left), l);
+				l = stmt_const(be, bin_find_smallest_column(be, swapped?right:left), l);
 			if (r->nrcols == 0)
-				r = stmt_const(be, bin_first_column(be, swapped?left:right), r);
+				r = stmt_const(be, bin_find_smallest_column(be, swapped?left:right), r);
 			if (r2 && r2->nrcols == 0)
-				r2 = stmt_const(be, bin_first_column(be, swapped?left:right), r2);
+				r2 = stmt_const(be, bin_find_smallest_column(be, swapped?left:right), r2);
 			if (r2) {
 				s = stmt_join2(be, l, r, r2, (comp_type)e->flag, is_anti(e), swapped);
 			} else if (swapped) {
@@ -1451,7 +1503,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 		} else {
 			if (r2) { /* handle all cases in stmt_uselect, reducing, non reducing, scalar etc */
 				if (l->nrcols == 0 && ((sel && sel->nrcols > 0) || r->nrcols > 0 || r2->nrcols > 0 || reduce))
-					l = left ? stmt_const(be, bin_first_column(be, left), l) : column(be, l);
+					l = left ? stmt_const(be, bin_find_smallest_column(be, left), l) : column(be, l);
 				s = stmt_uselect2(be, l, r, r2, (comp_type)e->flag, sel, is_anti(e), reduce);
 			} else {
 				/* value compare or select */
@@ -2170,7 +2222,7 @@ rel2bin_table(backend *be, sql_rel *rel, list *refs)
 			return NULL;
 		}
 		if (sub && sub->nrcols >= 1 && s->nrcols == 0)
-			s = stmt_const(be, bin_first_column(be, sub), s);
+			s = stmt_const(be, bin_find_smallest_column(be, sub), s);
 		s = stmt_alias(be, s, rnme, exp_name(exp));
 		list_append(l, s);
 	}
@@ -2474,8 +2526,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 		split_join_exps(rel, jexps, sexps);
 		if (list_empty(jexps)) { /* cross product and continue after project */
-			stmt *l = bin_first_column(be, left);
-			stmt *r = bin_first_column(be, right);
+			stmt *l = bin_find_smallest_column(be, left);
+			stmt *r = bin_find_smallest_column(be, right);
 			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		}
 
@@ -2538,8 +2590,8 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 			}
 		}
 	} else {
-		stmt *l = bin_first_column(be, left);
-		stmt *r = bin_first_column(be, right);
+		stmt *l = bin_find_smallest_column(be, left);
+		stmt *r = bin_find_smallest_column(be, right);
 		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, rel->single);
 	}
 	jl = stmt_result(be, join, 0);
@@ -2586,7 +2638,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 					return NULL;
 				}
 				if (s->nrcols == 0) {
-					stmt *l = bin_first_column(be, sub);
+					stmt *l = bin_find_smallest_column(be, sub);
 					s = stmt_uselect(be, stmt_const(be, l, stmt_bool(be, 1)), s, cmp_equal, sel, 0, 0);
 				}
 				sel = s;
@@ -2602,7 +2654,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 
 	if (rel->op == op_left || rel->op == op_full || is_single(rel)) {
 		/* we need to add the missing oid's */
-		stmt *l = ld = stmt_mirror(be, bin_first_column(be, left));
+		stmt *l = ld = stmt_mirror(be, bin_find_smallest_column(be, left));
 		if (rel->op == op_left || rel->op == op_full)
 			ld = stmt_tdiff(be, ld, jl, NULL);
 		if (rel->single && !list_empty(rel->exps)) {
@@ -2613,7 +2665,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 	if (rel->op == op_right || rel->op == op_full) {
 		/* we need to add the missing oid's */
-		rd = stmt_mirror(be, bin_first_column(be, right));
+		rd = stmt_mirror(be, bin_find_smallest_column(be, right));
 		rd = stmt_tdiff(be, rd, jr, NULL);
 	}
 
@@ -2713,9 +2765,9 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 
 			if (ls->nrcols == 0)
-				ls = stmt_const(be, bin_first_column(be, left), ls);
+				ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
 			if (rs->nrcols == 0)
-				rs = stmt_const(be, bin_first_column(be, right), rs);
+				rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
 			join = stmt_tdiff2(be, ls, rs, NULL);
 		}
 	}
@@ -2771,8 +2823,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		split_join_exps(rel, jexps, sexps);
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			right = subrel_project(be, right, refs, rel->r);
-			stmt *l = bin_first_column(be, left);
-			stmt *r = bin_first_column(be, right);
+			stmt *l = bin_find_smallest_column(be, left);
+			stmt *r = bin_find_smallest_column(be, right);
 			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			lcand = left->cand;
 		}
@@ -2796,8 +2848,8 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				/* only handle simple joins here */
 				if ((exp_has_func(e) && e->flag != cmp_filter) || e->flag == cmp_or || (e->f && e->anti)) {
 					if (!join && !list_length(lje)) {
-						stmt *l = bin_first_column(be, left);
-						stmt *r = bin_first_column(be, right);
+						stmt *l = bin_find_smallest_column(be, left);
+						stmt *r = bin_find_smallest_column(be, right);
 						join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 					}
 					break;
@@ -2867,15 +2919,15 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 				sql_exp *e = exps->h->data;
 				join = stmt_join(be, lje->h->data, rje->h->data, 0, cmp_equal, 0, is_semantics(e), false);
 			} else if (!join) {
-				stmt *l = bin_first_column(be, left);
-				stmt *r = bin_first_column(be, right);
+				stmt *l = bin_find_smallest_column(be, left);
+				stmt *r = bin_find_smallest_column(be, right);
 				join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			}
 		}
 	} else {
 		right = subrel_project(be, right, refs, rel->r);
-		stmt *l = bin_first_column(be, left);
-		stmt *r = bin_first_column(be, right);
+		stmt *l = bin_find_smallest_column(be, left);
+		stmt *r = bin_find_smallest_column(be, right);
 		join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		lcand = left->cand;
 	}
@@ -2923,7 +2975,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					return NULL;
 				}
 				if (s->nrcols == 0) {
-					stmt *l = bin_first_column(be, sub);
+					stmt *l = bin_find_smallest_column(be, sub);
 					s = stmt_uselect(be, stmt_const(be, l, stmt_bool(be, 1)), s, cmp_equal, sel, 0, 0);
 				}
 				sel = s;
@@ -2939,7 +2991,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 	/* We did a full join, thats too much.
 	   Reduce this using difference and intersect */
 	if (!semijoin_only) {
-		c = stmt_mirror(be, bin_first_column(be, left));
+		c = stmt_mirror(be, bin_find_smallest_column(be, left));
 		if (rel->op == op_anti) {
 			join = stmt_tdiff(be, c, jl, lcand);
 		} else {
@@ -3422,7 +3474,7 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 		if (topn && rel->r && sub && sub->nrcols == 0 && s->nrcols == 0)
 			s = const_column(be, s);
 		else if (sub && sub->nrcols >= 1 && s->nrcols == 0)
-			s = stmt_const(be, bin_first_column(be, sub), s);
+			s = stmt_const(be, bin_find_smallest_column(be, sub), s);
 
 		if (!exp_name(exp))
 			exp_label(sql->sa, exp, ++sql->label);
@@ -3553,7 +3605,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		if (predicate)
 			return predicate;
 		assert(0);
-		return stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
+		return stmt_const(be, bin_find_smallest_column(be, sub), stmt_bool(be, 1));
 	}
 	if (!sub && predicate) {
 		list *l = sa_list(sql->sa);
@@ -3583,7 +3635,7 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 		}
 		if (s->nrcols == 0){
 			if (!predicate && sub)
-				predicate = stmt_const(be, bin_first_column(be, sub), stmt_bool(be, 1));
+				predicate = stmt_const(be, bin_find_smallest_column(be, sub), stmt_bool(be, 1));
 			if (e->type != e_cmp) {
 				sql_subtype *bt = sql_bind_localtype("bit");
 
@@ -3650,7 +3702,7 @@ rel2bin_groupby(backend *be, sql_rel *rel, list *refs)
 				return NULL;
 			}
 			if (!gbcol->nrcols)
-				gbcol = stmt_const(be, bin_first_column(be, sub), gbcol);
+				gbcol = stmt_const(be, bin_find_smallest_column(be, sub), gbcol);
 			groupby = stmt_group(be, gbcol, grp, ext, cnt, !en->next);
 			grp = stmt_result(be, groupby, 0);
 			ext = stmt_result(be, groupby, 1);
