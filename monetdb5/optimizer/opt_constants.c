@@ -39,7 +39,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 	str msg = MAL_SUCCEED;
 	InstrPtr q;
 
-	if( isSQLinsert(mb)){
+	if( isSimpleSQL(mb)){
 		goto wrapup;
 	}
 	alias= (int*) GDKzalloc(sizeof(int) * mb->vtop);
