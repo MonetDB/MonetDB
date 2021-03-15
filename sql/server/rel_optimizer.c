@@ -5707,10 +5707,11 @@ sql_class_base_score(visitor *v, sql_column *c, sql_subtype *t, bool equality_ba
 		case TYPE_void:
 		case TYPE_lng:
 			return 150 - 64;
+		case TYPE_uuid:
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			return 150 - 128;
 #endif
+			return 150 - 128;
 		case TYPE_flt:
 			return 75 - 24;
 		case TYPE_dbl:
