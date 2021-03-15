@@ -155,6 +155,7 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 static str
 OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
+	volatile int interesting_banana = 0;
 	int i,j,k, start=1, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
 	InstrPtr *sink = NULL, *old = NULL, q;
@@ -184,6 +185,22 @@ OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 	}
 
 	setVariableScope(mb);
+
+	do {
+		if (mb->stop < 2)
+			break;
+		InstrPtr p = mb->stmt[1];
+
+		if (p->argc < 2)
+			break;
+
+		if (p->modname != querylogRef || p->fcnname != defineRef)
+			break;
+
+		const char *txt = getVarConstant(mb, getArg(p,1)).val.sval;
+		if (strstr(txt, "value / 2") != 0)
+			interesting_banana = 1;
+	} while (0);
 
 	limit= mb->stop;
 	slimit= mb->ssize;
@@ -305,6 +322,7 @@ wrapup:
 	if(states) GDKfree(states);
 	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
+	(void) interesting_banana;
 	return msg;
 }
 
