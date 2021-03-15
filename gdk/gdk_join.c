@@ -2380,6 +2380,10 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 #define HASHLOOPBODY()							\
 	do {								\
+		if (nr > 1 && max_one) {				\
+			GDKerror("more than one match");		\
+			goto bailout;					\
+		}							\
 		if (maybeextend(r1, r2, 1, lci->next, lci->ncand, maxsize) != GDK_SUCCEED) \
 			goto bailout;					\
 		APPEND(r1, lo);						\
@@ -2482,9 +2486,6 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				} else {				\
 					lskipped = BATcount(r1) > 0;	\
 				}					\
-			} else if (nr > 1 && max_one) {			\
-				GDKerror("more than one match");	\
-				goto bailout;				\
 			} else if (only_misses) {			\
 				lskipped = BATcount(r1) > 0;		\
 			} else {					\
@@ -2764,9 +2765,6 @@ hashjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				} else {
 					lskipped = BATcount(r1) > 0;
 				}
-			} else if (nr > 1 && max_one) {
-				GDKerror("more than one match");
-				goto bailout;
 			} else if (only_misses) {
 				lskipped = BATcount(r1) > 0;
 			} else {
