@@ -658,7 +658,7 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
 				if ((msg = addPipeDefinition(cntxt, buf, newopt)))
 					return msg;
-			if (!sqlvar_set_string(find_global_var(m, s, varname), buf))
+				if (!sqlvar_set_string(find_global_var(m, s, varname), buf))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else if (!sqlvar_set_string(find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
