@@ -416,10 +416,10 @@ validatePipe(MalBlkPtr mb)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizer mal block\n");
 	p = getInstrPtr(mb,1);
 
-	if (getFunctionId(p) && (idcmp(getFunctionId(p), "defaultfast") || (idcmp(getFunctionId(p), "minimalfast"))))
+	if (getFunctionId(p) && (idcmp(getFunctionId(p), "defaultfast") == 0 || (idcmp(getFunctionId(p), "minimalfast") == 0)))
 		return MAL_SUCCEED;
 
-	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline"))
+	if (getFunctionId(p) == NULL || idcmp(getFunctionId(p), "inline") != 0)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "'inline' should be the first\n");
 
 	for (i = 1; i < mb->stop - 1; i++){
