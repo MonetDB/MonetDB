@@ -952,6 +952,8 @@ gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, bool copyall)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
+	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force)
 	__attribute__((__warn_unused_result__));
 

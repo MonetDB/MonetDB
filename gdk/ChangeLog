@@ -1,6 +1,10 @@
 # ChangeLog file for GDK
 # This file is updated with Maddlog
 
+* Mon Mar 15 2021 Sjoerd Mullender <sjoerd@acm.org>
+- Implemented a function BUNappendmulti which appends an array of values
+  to a BAT.  It is a generalization of the function BUNappend.
+
 * Thu Feb 25 2021 Sjoerd Mullender <sjoerd@acm.org>
 - Changed the interface of the atom read function.  It now requires an
   extra pointer to a size_t value that gives the current size of the

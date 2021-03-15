@@ -1122,38 +1122,42 @@ setcolprops(BAT *b, const void *x)
 	}
 }
 
-/*
- * @+ BUNappend
- * The BUNappend function can be used to add a single value to void
- * and oid headed bats. The new head value will be a unique number,
- * (max(bat)+1).
- */
+/* Append an array of values of length count to the bat.  For
+ * fixed-sized values, `values' is an array of values, for
+ * variable-sized values, `values' is an array of pointers to values. */
 gdk_return
-BUNappend(BAT *b, const void *t, bool force)
+BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 {
 	BUN p;
-	size_t tsize = 0;
 
 	BATcheck(b, GDK_FAIL);
 
 	assert(!VIEWtparent(b));
 
+	if (count == 0)
+		return GDK_SUCCEED;
+
 	p = BUNlast(b);		/* insert at end */
-	if (p == BUN_MAX || b->batCount == BUN_MAX) {
+	if (p == BUN_MAX || BATcount(b) + count >= BUN_MAX) {
 		GDKerror("bat too large\n");
 		return GDK_FAIL;
 	}
 
 	ALIGNapp(b, force, GDK_FAIL);
 	b->batDirtydesc = true;
-	if (b->thash && b->tvheap)
-		tsize = b->tvheap->size;
 
 	if (b->ttype == TYPE_void && BATtdense(b)) {
-		if (b->batCount == 0) {
-			b->tseqbase = * (const oid *) t;
-		} else if (is_oid_nil(* (oid *) t) ||
-			   b->tseqbase + b->batCount != *(const oid *) t) {
+		const oid *ovals = values;
+		bool dense = b->batCount == 0 || b->tseqbase + 1 == ovals[0];
+		for (BUN i = 1; dense && i < count; i++) {
+			dense = ovals[i - 1] + 1 == ovals[i];
+		}
+		if (dense) {
+			if (b->batCount == 0)
+				b->tseqbase = ovals[0];
+			BATsetcount(b, BATcount(b) + count);
+			return GDK_SUCCEED;
+		} else {
 			/* we need to materialize b; allocate enough capacity */
 			b->batCapacity = BATcount(b) + 1;
 			if (BATmaterialize(b) != GDK_SUCCEED)
@@ -1165,21 +1169,31 @@ BUNappend(BAT *b, const void *t, bool force)
 		return GDK_FAIL;
 	}
 
-	setcolprops(b, t);
-
-	if (b->ttype != TYPE_void) {
-		if (bunfastapp(b, t) != GDK_SUCCEED)
-			return GDK_FAIL;
-		b->theap->dirty = true;
-	} else {
-		BATsetcount(b, b->batCount + 1);
+	if (BATcount(b) + count > BATcapacity(b)) {
+		gdk_return rc = BATextend(b, BATgrows(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
 	}
 
+	BATrmprop(b, GDK_NUNIQUE);
+	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
+	for (BUN i = 0; i < count; i++) {
+		void *t = b->ttype && b->tvarsized ? ((void **) values)[i] :
+			(void *) ((char *) values + i * Tsize(b));
+		setcolprops(b, t);
+		gdk_return rc = bunfastapp_nocheck(b, b->batCount, t, Tsize(b));
+		if (rc != GDK_SUCCEED)
+			return rc;
+		if (b->thash) {
+			HASHins(b, p, t);
+		}
+	}
+
+	if (b->thash)
+		BATsetprop(b, GDK_NUNIQUE, TYPE_oid, &(oid){b->thash->nunique});
 
 	IMPSdestroy(b); /* no support for inserts in imprints yet */
 	OIDXdestroy(b);
-	BATrmprop(b, GDK_NUNIQUE);
-	BATrmprop(b, GDK_UNIQUE_ESTIMATE);
 #if 0		/* enable if we have more properties than just min/max */
 	PROPrec *prop;
 	do {
@@ -1192,15 +1206,14 @@ BUNappend(BAT *b, const void *t, bool force)
 			}
 	} while (prop);
 #endif
-	if (b->thash) {
-		HASHins(b, p, t);
-		if (b->thash)
-			BATsetprop(b, GDK_NUNIQUE,
-				   TYPE_oid, &(oid){b->thash->nunique});
-		if (tsize && tsize != b->tvheap->size)
-			HEAPwarm(b->tvheap);
-	}
 	return GDK_SUCCEED;
+}
+
+/* Append a single value to the bat. */
+gdk_return
+BUNappend(BAT *b, const void *t, bool force)
+{
+	return BUNappendmulti(b, b->ttype && b->tvarsized ? (const void *) &t : (const void *) t, 1, force);
 }
 
 gdk_return
