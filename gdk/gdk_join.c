@@ -2380,7 +2380,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 
 #define HASHLOOPBODY()							\
 	do {								\
-		if (nr > 1 && max_one) {				\
+		if (nr >= 1 && max_one) {				\
 			GDKerror("more than one match");		\
 			goto bailout;					\
 		}							\
