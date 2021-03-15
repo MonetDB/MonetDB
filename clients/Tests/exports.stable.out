@@ -221,6 +221,7 @@ gdk_return BBPsync(int cnt, bat *restrict subcommit, BUN *restrict sizes, lng lo
 int BBPunfix(bat b);
 void BBPunlock(void);
 gdk_return BUNappend(BAT *b, const void *right, bool force) __attribute__((__warn_unused_result__));
+gdk_return BUNappendmulti(BAT *b, const void *values, BUN count, bool force) __attribute__((__warn_unused_result__));
 gdk_return BUNdelete(BAT *b, oid o) __attribute__((__warn_unused_result__));
 BUN BUNfnd(BAT *b, const void *right);
 gdk_return BUNinplace(BAT *b, BUN p, const void *right, bool force) __attribute__((__warn_unused_result__));
