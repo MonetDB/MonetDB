@@ -5364,19 +5364,6 @@ find_projection_for_join2semi(sql_rel *rel)
 	if (is_project(rel->op) && !is_union(rel->op)) {
 		if (rel->card < CARD_AGGR) /* const or groupby without group by exps */
 			return true;
-
-		if (is_groupby(rel->op)) { /* if just groupby columns are projected, it will be distinct */
-			bool all_groupby_columns = true;
-
-			if (list_empty(rel->r)) /* global aggregate */
-				return true;
-			for (node *n = rel->exps->h; n && all_groupby_columns; n = n->next) {
-				sql_exp *e = n->data;
-				all_groupby_columns &= (e->type == e_column && (find_prop(e->p, PROP_HASHCOL) || exps_find_exp(rel->r, e)));
-			}
-			if (all_groupby_columns)
-				return true;
-		}
 		if (list_length(rel->exps) == 1) {
 			sql_exp *e = rel->exps->h->data;
 			/* a single group by column in the projection list from a group by relation is guaranteed to be unique, but not an aggregate */
@@ -5385,7 +5372,8 @@ find_projection_for_join2semi(sql_rel *rel)
 				sql_exp *found = NULL;
 				bool underjoin = false;
 
-				if (is_groupby(rel->op) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
+				/* if just one groupby column is projected, it will be distinct */
+				if ((is_groupby(rel->op) && list_length(rel->r) == 1 && exps_find_exp(rel->r, e)) || need_distinct(rel) || find_prop(e->p, PROP_HASHCOL))
 					return true;
 
 				if ((found = rel_find_exp_and_corresponding_rel(rel->l, e, &res, &underjoin)) && !underjoin) { /* grouping column on inner relation */
@@ -5407,6 +5395,7 @@ find_projection_for_join2semi(sql_rel *rel)
 	}
 	return false;
 }
+
 
 static sql_rel *
 find_candidate_join2semi(sql_rel *rel, bool *swap)
