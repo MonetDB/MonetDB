@@ -152,8 +152,8 @@ dflowGarbagesink(Client cntxt, MalBlkPtr mb, int var, InstrPtr *sink, int top)
 /* dataflow blocks are transparent, because they are always
    executed, either sequentially or in parallel */
 
-str
-OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+static str
+OPTdataflowImplementation_wrapped(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 {
 	int i,j,k, start=1, slimit, breakpoint, actions=0, simple = TRUE;
 	int flowblock= 0;
@@ -305,5 +305,37 @@ wrapup:
 	if(states) GDKfree(states);
 	if(sink)   GDKfree(sink);
 	if(old)    GDKfree(old);
+	return msg;
+}
+
+
+str
+OPTdataflowImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
+{
+	int list_flags = LIST_MAL_ALL | LIST_MAL_NOCOMMENTS;
+	stream *before = open_wastream("a0");
+	stream *after = open_wastream("a1");
+
+	if (before == NULL) {
+		return createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) "Couldn't open a0: %s", mnstr_peek_error(NULL));
+	}
+	if (after == NULL) {
+		return createException(MAL,"optimizer.dataflow", SQLSTATE(HY013) "Couldn't open a1: %s", mnstr_peek_error(NULL));
+	}
+
+	printFunction(before, mb, stk, list_flags);
+	mnstr_flush(before, MNSTR_FLUSH_ALL);
+
+	str msg = OPTdataflowImplementation_wrapped(cntxt, mb, stk, p);
+
+	if (msg != MAL_SUCCEED) {
+		mnstr_printf(after, "ERROR: %s\n", msg);
+	}
+	printFunction(after, mb, stk, list_flags);
+	mnstr_flush(after, MNSTR_FLUSH_ALL);
+
+	close_stream(before);
+	close_stream(after);
+
 	return msg;
 }
