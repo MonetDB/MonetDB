@@ -648,17 +648,17 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((var = find_global_var(m, s, varname))) {
 		if (!strcmp("sys", s->base.name) && !strcmp("optimizer", varname)) {
 			const char *newopt = *getArgReference_str(stk, pci, 4);
-			char buf[BUFSIZ];
+			char buf[18];
 
 			if (strNil(newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL", sname, varname);
 			if (!isOptimizerPipe(newopt) && strchr(newopt, (int) ';') == 0)
 				throw(SQL, "sql.setVariable", SQLSTATE(42100) "optimizer '%s' unknown", newopt);
-			(void) snprintf(buf, BUFSIZ, "user_%d", cntxt->idx);
+			(void) snprintf(buf, sizeof(buf), "user_%d", cntxt->idx); /* should always suffice */
 			if (!isOptimizerPipe(newopt) || strcmp(buf, newopt) == 0) {
 				if ((msg = addPipeDefinition(cntxt, buf, newopt)))
 					return msg;
-				if (!sqlvar_set_string(find_global_var(m, s, varname), buf))
+			if (!sqlvar_set_string(find_global_var(m, s, varname), buf))
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else if (!sqlvar_set_string(find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
