@@ -351,7 +351,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk,  InstrPtr p, int flg)
 	case CMDcall:
 	case ASSIGNsymbol :
 		// is any variable explicit or used
-		/* this code was meant to make it easy to detect functions whose 
+		/* this code was meant to make it easy to detect functions whose
 		 * result variable was not used anywhere.
 		 * It is not essential
 		for (i = 0; i < p->retc; i++)
@@ -567,14 +567,19 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	if (fd == 0)
 		return;
 	ps = instruction2str(mb, stk, p, flg);
-	/* ps[strlen(ps)-1] = 0; remove '\n' */
-	if ( ps ){
-		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
+	if (ps && (flg & LIST_MAL_NOCOMMENTS) != 0) {
+		char *hashmark = strchr(ps, '#');
+		if (hashmark) {
+			*hashmark = 0;
+		}
+	}
+	if (ps){
+		if (*ps != '\0')
+			mnstr_printf(fd, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		GDKfree(ps);
 	} else {
-		mnstr_printf(fd,"#failed instruction2str()");
+		mnstr_printf(fd,"#failed instruction2str()\n");
 	}
-	mnstr_printf(fd, "\n");
 }
 
 void
