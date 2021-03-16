@@ -552,14 +552,16 @@ find_table_function(mvc *sql, char *sname, char *fname, list *exps, list *tl, sq
 							 found ? "insufficient privileges for" : "no such", type == F_UNION ? "table returning" : "loader", sname ? "'":"", sname ? sname : "",
 							 sname ? "'.":"", fname, arg_list ? arg_list : "");
 		}
-		found = true;
-		for (node *n = ff->h; n ; ) { /* Reduce on privileges */
-			sql_subfunc *sf = n->data;
-			node *nn = n->next;
+		if (!list_empty(ff)) {
+			found = true;
+			for (node *n = ff->h; n ; ) { /* Reduce on privileges */
+				sql_subfunc *sf = n->data;
+				node *nn = n->next;
 
-			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, NULL, n);
-			n = nn;
+				if (!execute_priv(sql, sf->func))
+					list_remove_node(funcs, NULL, n);
+				n = nn;
+			}
 		}
 		len = list_length(ff);
 		if (len > 1) {
@@ -1788,16 +1790,17 @@ _rel_nop(mvc *sql, char *sname, char *fname, list *tl, sql_rel *rel, list *exps,
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s operator %s%s%s'%s'(%s)",
 							 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", fname, arg_list ? arg_list : "");
 		}
-		found = true;
-		for (node *n = ff->h; n ; ) { /* Reduce on privileges */
-			sql_subfunc *sf = n->data;
-			node *nn = n->next;
+		if (!list_empty(ff)) {
+			found = true;
+			for (node *n = ff->h; n ; ) { /* Reduce on privileges */
+				sql_subfunc *sf = n->data;
+				node *nn = n->next;
 
-			if (!execute_priv(sql, sf->func))
-				list_remove_node(funcs, NULL, n);
-			n = nn;
+				if (!execute_priv(sql, sf->func))
+					list_remove_node(funcs, NULL, n);
+				n = nn;
+			}
 		}
-
 		len = list_length(ff);
 		if (len > 1) {
 			int i, score = 0;
@@ -3712,8 +3715,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 		if (!a) {
 			list *aggrs = sql_find_funcs(sql, sname, aname, list_length(exps), F_AGGR);
 
-			if (aggrs) {
+			if (!list_empty(aggrs)) {
 				found = true;
+				int type_misses = 0;
+
 				for (node *m = aggrs->h ; m; m = m->next) {
 					list *nexps = sa_list(sql->sa);
 					node *n, *op;
@@ -3727,8 +3732,10 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 						sql_exp *e = n->data;
 
 						e = exp_check_type(sql, &arg->type, *rel, e, type_equal); /* rel is a valid pointer */
-						if (!e)
+						if (!e) {
 							a = NULL;
+							type_misses++;
+						}
 						list_append(nexps, e);
 					}
 					if (a) {
@@ -3740,6 +3747,7 @@ _rel_aggr(sql_query *query, sql_rel **rel, int distinct, char *sname, char *anam
 						break;
 					}
 				}
+				found &= !type_misses; /* if 'a' was found but the types didn't match don't give permission error */
 			}
 		}
 	}
@@ -4912,12 +4920,13 @@ rel_rankop(sql_query *query, sql_rel **rel, symbol *se, int f)
 	if (!(wf = bind_func_(sql, sname, aname, types, F_ANALYTIC, &found))) {
 		sql->session->status = 0; /* if the function was not found clean the error */
 		sql->errstr[0] = '\0';
-		wf = find_func(sql, sname, aname, list_length(types), F_ANALYTIC, NULL, &found);
-		if (!wf || (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))) {
+		if (!(wf = find_func(sql, sname, aname, list_length(types), F_ANALYTIC, NULL, &found))) {
 			char *arg_list = nfargs ? nary_function_arg_types_2str(sql, types, nfargs) : NULL;
 			return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "SELECT: %s window function %s%s%s'%s'(%s)",
 							 found ? "insufficient privileges for" : "no such", sname ? "'":"", sname ? sname : "", sname ? "'.":"", aname, arg_list ? arg_list : "");
 		}
+		if (!(fargs = check_arguments_and_find_largest_any_type(sql, NULL, fargs, wf, 0)))
+			return NULL;
 	}
 
 	/* Frame */
