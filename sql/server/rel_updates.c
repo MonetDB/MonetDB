@@ -1088,12 +1088,10 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			if (!(r = rel_logical_exp(query, res, opt_where, sql_where)))
 				return NULL;
 			/* handle join */
-			if (!opt_from && r && is_join(r->op))
+			if (!opt_from && is_join(r->op))
 				r->op = op_semi;
-			else if (r && res && r->nrcols != res->nrcols)
+			else if (r->nrcols != res->nrcols)
 				r = rel_project(sql->sa, r, rel_projections(sql, res, NULL, 1, 1));
-			if (!r)
-				return NULL;
 		} else {	/* update all */
 			r = res;
 		}
@@ -1133,7 +1131,7 @@ rel_truncate(sql_allocator *sa, sql_rel *t, int restart_sequences, int drop_acti
 }
 
 static sql_rel *
-delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
+delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_using, symbol *opt_where)
 {
 	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
@@ -1142,24 +1140,48 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where)
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DELETE FROM", false);
 	if (update_allowed(sql, t, tname, "DELETE FROM", "delete from", 1) != NULL) {
-		sql_rel *r = rel_basetable(sql, t, alias ? alias : tname);
+		sql_rel *r = NULL, *res = rel_basetable(sql, t, alias ? alias : tname);
 
-		if (opt_where) {
-			sql_exp *e;
+		if (opt_where && !table_privs(sql, t, PRIV_SELECT)) {
+			if (!(res = rel_reduce_on_column_privileges(sql, res, t)))
+				return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'",
+								 get_string_global_var(sql, "current_user"), tname);
+			list_append(res->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+		}
 
-			if (!table_privs(sql, t, PRIV_SELECT)) {
-				if (!(r = rel_reduce_on_column_privileges(sql, r, t)))
-					return sql_error(sql, 02, SQLSTATE(42000) "DELETE FROM: insufficient privileges for user '%s' to delete from table '%s'",
-									 get_string_global_var(sql, "current_user"), tname);
-				list_append(r->exps, exp_column(sql->sa, alias ? alias : tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1));
+		if (opt_using) {
+			dlist *ul = opt_using->data.lval;
+			list *refs = list_append(new_exp_list(sql->sa), (char*) rel_name(res));
+
+			for (dnode *n = ul->h; n && res; n = n->next) {
+				sql_rel *fnd = table_ref(query, NULL, n->data.sym, 0, refs);
+
+				if (fnd)
+					res = rel_crossproduct(sql->sa, res, fnd, op_join);
+				else
+					res = fnd;
 			}
-			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
+			if (!res)
 				return NULL;
-			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
-			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
-			r = rel_delete(sql->sa, rel_basetable(sql, t, alias ? alias : tname), r);
-		} else {	/* delete all */
-			r = rel_delete(sql->sa, r, NULL);
+		}
+		if (opt_where) {
+			if (!(res = rel_logical_exp(query, res, opt_where, sql_where)))
+				return NULL;
+			/* handle join */
+			if (is_join(res->op))
+				res->op = op_semi;
+			sql_exp *e = exp_column(sql->sa, rel_name(res), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+			res = rel_project(sql->sa, res, list_append(new_exp_list(sql->sa), e));
+			r = rel_delete(sql->sa, rel_basetable(sql, t, alias ? alias : tname), res);
+		} else if (opt_using) { /* delete all */
+			/* handle delete from t using x */
+			if (is_join(res->op))
+				res->op = op_semi;
+			sql_exp *e = exp_column(sql->sa, rel_name(res), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1);
+			res = rel_project(sql->sa, res, list_append(new_exp_list(sql->sa), e));
+			r = rel_delete(sql->sa, rel_basetable(sql, t, alias ? alias : tname), res);
+		} else { /* delete all */
+			r = rel_delete(sql->sa, res, NULL);
 		}
 		return r;
 	}
@@ -1895,9 +1917,7 @@ rel_updates(sql_query *query, symbol *s)
 {
 	mvc *sql = query->sql;
 	sql_rel *ret = NULL;
-	uint8_t old = sql->use_views;
 
-	sql->use_views = 1;
 	switch (s->token) {
 	case SQL_COPYFROM:
 	{
@@ -1968,7 +1988,7 @@ rel_updates(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym);
+		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym, l->h->next->next->next->data.sym);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -1991,9 +2011,7 @@ rel_updates(sql_query *query, symbol *s)
 		sql->type = Q_UPDATE;
 	} break;
 	default:
-		sql->use_views = old;
 		return sql_error(sql, 01, SQLSTATE(42000) "Updates statement unknown Symbol(%p)->token = %s", s, token2string(s->token));
 	}
-	sql->use_views = old;
 	return ret;
 }

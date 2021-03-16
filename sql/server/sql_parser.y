@@ -259,6 +259,7 @@ int yydebug=1;
 	opt_alt_seq_param
 	opt_as_partition
 	opt_comma_string_value_expression
+	opt_del_using
 	opt_from_clause
 	opt_group_by_clause
 	opt_having_clause
@@ -2898,7 +2899,6 @@ string_commalist_contents:
 			{ $$ = append_string($1, $3); }
  ;
 
-
 opt_endianness:
 	/* empty */		{ $$ = endian_native; }
 	| BIG ENDIAN		{ $$ = endian_big; }
@@ -2906,13 +2906,19 @@ opt_endianness:
 	| NATIVE ENDIAN	{ $$ = endian_native; }
 	;
 
+opt_del_using:
+    /* empty */					{ $$ = NULL; }
+ |  USING table_ref_commalist	{ $$ = _symbol_create_list( SQL_FROM, $2); }
+ ;
+
 delete_stmt:
-    sqlDELETE FROM qname opt_alias_name opt_where_clause
+    sqlDELETE FROM qname opt_alias_name opt_del_using opt_where_clause
 
 	{ dlist *l = L();
 	  append_list(l, $3);
 	  append_string(l, $4);
 	  append_symbol(l, $5);
+	  append_symbol(l, $6);
 	  $$ = _symbol_create_list( SQL_DELETE, l ); }
  ;
 
